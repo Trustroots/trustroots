@@ -4,6 +4,7 @@
 	"description": "Travellers network",
 	"dependencies": {
 		"bootstrap": "~3",
+		"fontawesome": "~4",
 		"angular": "~1.2",
 		"angular-resource": "~1.2",
 		"angular-mocks": "~1.2",

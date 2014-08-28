@@ -11,7 +11,6 @@
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 
 	<!-- Semantic META -->
-	<meta name="keywords" content="{{keywords}}">
 	<meta name="description" content="{{description}}">
 
 	<!-- Facebook META -->
@@ -20,14 +19,14 @@
 	<meta property="og:title" content="{{title}}">
 	<meta property="og:description" content="{{description}}">
 	<meta property="og:url" content="{{url}}">
-	<meta property="og:image" content="/img/brand/logo.png">
+	<meta property="og:image" content="/img/brand/og_image.jpg">
 	<meta property="og:type" content="website">
 
 	<!-- Twitter META -->
 	<meta name="twitter:title" content="{{title}}">
 	<meta name="twitter:description" content="{{description}}">
 	<meta name="twitter:url" content="{{url}}">
-	<meta name="twitter:image" content="/img/brand/logo.png">
+	<meta name="twitter:image" content="/img/brand/og_image.jpg">
 
 	<!-- Fav Icon -->
 	<link href="/modules/core/img/brand/favicon.ico" rel="shortcut icon" type="image/x-icon">
@@ -43,12 +42,53 @@
 </head>
 
 <body class="ng-cloak">
-	<header data-ng-include="'/modules/core/views/header.client.view.html'" class="navbar navbar-fixed-top navbar-inverse"></header>
-	<section class="content">
-		<section class="container">
+  <div id="tr-wrap">
+
+	<header data-ng-include="'/modules/core/views/header.client.view.html'" id="tr-header" class="navbar navbar-default navbar-fixed-top hidden-print" role="banner"></header>
+
+	<section class="content" id="tr-main" role="main">
+
+            <br>
+            <br>
+            <br>
+            <br>
+            <div class="test">TEST!</div>
 			{% block content %}{% endblock %}
-		</section>
 	</section>
+
+
+    <!-- Footer -->
+    <footer id="tr-footer" role="contentinfo" class="hidden-print"><!--footer-transparent footer-sticky-->
+    	<hr>
+    	<div class="container">
+        	<div class="row">
+        	    <div class="col-xs-12 col-sm-2">
+        	        <!--<a href="#"><i class="fa fa-fw fa-lg fa-globe"></i> English </a>-->
+        	    </div>
+        	    <div class="col-xs-12 col-sm-8 text-center">
+        	        <nav id="footer-primary" role="navigation">
+        	            <ul>
+        	                <li><a href="/#!/about/">About</a></li>
+        	                <li><a href="//blog.trustroots.org">Blog</a></li>
+        	                <li><a href="/#!/about/">Press</a></li>
+        	                <li><a href="/#!/legal/">Legal</a></li>
+        	                <li><a href="/#!/team/">Team</a></li>
+        	                <li><a href="https://github.com/Trustroots/">Developers</a></li>
+        	                <li><a href="/#!/contact/">Contact</a></li>
+        	            </ul>
+        	        </nav>
+        	        <small>
+        	            <a href="/#!/team/" class="love">Made with <i class="fa fa-heart"></i></a>
+        	        </small>
+        	    </div>
+        	    <div class="col-xs-12 col-sm-2 text-right">
+        	        <a href="/#!/contact/"><i class="fa fa-lg fa-bolt"></i> Help</a>
+        	    </div>
+        	</div><!-- /.row -->
+    	</div><!-- /.container -->
+	</footer>
+	<!-- /Footer -->
+
 
 	<!--Embedding The User Object-->
 	<script type="text/javascript">
@@ -57,7 +97,7 @@
 
 	<!--Application JavaScript Files-->
 	{% for jsFile in jsFiles %}<script type="text/javascript" src="{{jsFile}}"></script>
-	{% endfor %} 
+	{% endfor %}
 
 	{% if process.env.NODE_ENV === 'development' %}
 	<!--Livereload script rendered -->

@@ -25,11 +25,11 @@
 		</ul>
 		<ul class="nav navbar-nav navbar-right" data-ng-hide="authentication.user">
 			<li ui-route="/signup" ng-class="{active: $uiRoute}">
-				<a href="/#!/signup">Sign Up</a>
+				<a href="/#!/signup"><i class="fa fa-arrow-circle-up"></i> Sign Up</a>
 			</li>
 			<li class="divider-vertical"></li>
 			<li ui-route="/signin" ng-class="{active: $uiRoute}">
-				<a href="/#!/signin">Sign In</a>
+				<a href="/#!/signin"><i class="fa fa-sign-in"></i> Sign In</a>
 			</li>
 		</ul>
 		<ul class="nav navbar-nav navbar-right" data-ng-show="authentication.user">
@@ -38,18 +38,26 @@
 					<span data-ng-bind="authentication.user.displayName"></span> <b class="caret"></b>
 				</a>
 				<ul class="dropdown-menu">
+				    <li>
+				        <a href="/#!/"><i class="fa fa-fw fa-user"></i> My profile</a>
+				    </li>
 					<li>
-						<a href="/#!/settings/profile">Edit Profile</a>
+						<a href="/#!/settings/profile"><i class="fa fa-fw fa-edit"></i> Edit Profile</a>
 					</li>
+					<!--
 					<li>
 						<a href="/#!/settings/accounts">Manage Social Accounts</a>
 					</li>
 					<li data-ng-show="authentication.user.provider === 'local'">
 						<a href="/#!/settings/password">Change Password</a>
 					</li>
-					<li class="divider"></li>
+					-->
+                    <li>
+                        <a href="/#!/contact"><i class="fa fa-lg fa-bolt"></i> Help</a>
+                    </li>
+					<li class="divider" role="presentation"></li>
 					<li>
-						<a href="/auth/signout">Signout</a>
+						<a href="/auth/signout"><i class="fa fa-fw fa-sign-out"></i> Signout</a>
 					</li>
 				</ul>
 			</li>
