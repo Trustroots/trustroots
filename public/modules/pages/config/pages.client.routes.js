@@ -9,7 +9,7 @@ angular.module('pages').config(['$stateProvider', '$urlRouterProvider',
 		// Home state routing
 		$stateProvider.
 		state('todo', {
-			url: '/abouttodo',
+			url: '/todo',
 			templateUrl: 'modules/pages/views/todo.client.view.html'
 		}).
 		state('rules', {
