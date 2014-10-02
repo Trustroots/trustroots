@@ -1,12 +1,11 @@
-<section class="container container-spacer" id="profile-editor" data-ng-controller="ProfileController" data-ng-init="findProfile()">
+<section class="container container-spacer" id="profile" data-ng-controller="ProfileController" data-ng-init="findProfile()">
 
     <div class="row" data-ng-show="profile">
 
       <div class="col-sm-3">
 
         <div class="panel panel-default" id="profile-sidebar">
-          <img src="/modules/core/img/avatar.png" ng-hide="profile.avatar" alt="" width="261" height="261">
-          <img ng-src="{{profile.avatar}}" ng-show="profile.avatar" alt="" width="261" height="261">
+          <div tr-avatar data-user="profile" data-size="261" data-link="false"></div>
           <div class="panel-body">
 
             <p>
