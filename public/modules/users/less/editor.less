@@ -77,19 +77,15 @@
     }
   }//avatar-edit
 
-  .profile-edit-inactive {
-     opacity: 0.4;
-  }
-
   /* Profile tabs aren't active, but keep them visible */
   #profile-tabs {
     // No hover effect...
-    .nav-underline {
+    opacity: 0.4;
+    .nav {
       > li {
         > a {
           &:hover,
           &:focus {
-            color: @link-color;
             border-color: transparent;
           }
         }

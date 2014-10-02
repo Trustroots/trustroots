@@ -68,42 +68,33 @@
                   <li><a href="#" data-toggle="modal" data-target="#profile-reference-new"><i class="fa fa-check-circle"></i> Write a reference</a></li>
                   <li><a href="#"><i class="fa fa-plus-circle"></i> Add contact</a></li>
                 </ul>
-                 usersReferencesNew
               </div>
 
         </div>
 
         <!-- Profile tabs -->
-        <div class="row" id="profile-tabs">
+        <div class="row">
           <div class="col-xs-12">
-            <nav class="panel panel-default" role="navigation">
-                <ul class="nav nav-pills nav-narrow nav-underline" id="profile-tabs">
-                  <li class="active"><a href="#profile-overview" data-toggle="tab">Overview</a></li>
-                  <li><a href="#profile-references" data-toggle="tab">References</a></li>
-                  <li><a href="#profile-images" data-toggle="tab">Images</a></li>
-                  <li><a href="#profile-contacts" data-toggle="tab">7 Contacts</a></li>
-                </ul>
-            </nav>
+            <tabset id="profile-tabs">
+              <tab heading="Overview" active>
+                <div id="profile-overview">
+                  Overview content
+                </div>
+              </tab>
+              <tab heading="References">
+                <div id="profile-references">
+                  References content
+                </div>
+              </tab>
+              <tab heading="Contacts">
+                <div id="profile-contacts">
+                  Contacts content
+                </div>
+              </tab>
+            </tabset>
           </div>
         </div>
         <!-- /Profile tabs -->
-
-        <tabset class="row" id="profile-tabs">
-          <tab heading="Overview">Overview content</tab>
-            <tab heading="References">References content</tab>
-        </tabset>
-
-        <div class="tab-content">
-            <div class="tab-pane active" id="profile-overview">
-               usersOverview
-            </div>
-            <div class="tab-pane" id="profile-references">
-               usersReferences
-            </div>
-            <div class="tab-pane" id="profile-images">
-               usersImages
-            </div>
-        </div><!-- /.tab-content -->
 
       </div><!-- /.col -->
 
