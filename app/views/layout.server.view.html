@@ -12,13 +12,14 @@
 	<meta property="og:title" content="{{title}}">
 	<meta property="og:description" content="{{description}}">
 	<meta property="og:url" content="{{url}}">
-	<meta property="og:image" content="/img/brand/og_image.jpg">
+	<meta property="og:image" content="/modules/core/img/og_image.jpg">
 	<meta property="og:type" content="website">
 	<meta name="twitter:title" content="{{title}}">
 	<meta name="twitter:description" content="{{description}}">
 	<meta name="twitter:url" content="{{url}}">
-	<meta name="twitter:image" content="/img/brand/og_image.jpg">
-	<link href="/favicon.ico" rel="shortcut icon" type="image/x-icon">
+	<meta name="twitter:image" content="/modules/core/img/og_image.jpg">
+  <link href="/modules/core/img/favicon.png" rel="shortcut icon" type="image/png" />
+  <link href="/modules/core/img/favicon.png" rel="bookmark icon" type="image/png" />
 	{% for cssFile in cssFiles %}<link rel="stylesheet" href="{{cssFile}}">{% endfor %}
 	<!--[if lt IE 9]>
         <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
@@ -30,13 +31,11 @@
 
 <body class="ng-cloak">
   <div id="tr-wrap">
-
-	<header data-ng-include="'/modules/core/views/header.client.view.html'" id="tr-header" role="banner" class="navbar navbar-default navbar-fixed-top hidden-print" ng-hide="isHidden" data-ng-controller="HeaderController"></header>
-
-	<section class="content" id="tr-main" role="main">
-	    {% block content %}{% endblock %}
-	</section>
-
+    <header data-ng-include="'/modules/core/views/header.client.view.html'" id="tr-header" role="banner" class="navbar navbar-default navbar-fixed-top hidden-print" ng-hide="isHidden" data-ng-controller="HeaderController"></header>
+    <section class="content" id="tr-main" role="main">
+      {% block content %}{% endblock %}
+    </section>
+  </div>
 	<footer data-ng-include="'/modules/core/views/footer.client.view.html'" id="tr-footer" role="contentinfo" class="hidden-print" ng-class="{ 'footer-transparent footer-sticky' : isTransparent }" ng-hide="isHidden" data-ng-controller="FooterController"></footer>
 
 	<!--Embedding The User Object-->
@@ -45,7 +44,7 @@
 	</script>
 
 	<!-- Socket.io -->
-    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+  <script type="text/javascript" src="/socket.io/socket.io.js"></script>
 
 	<!-- Le JS -->
 	{% for jsFile in jsFiles %}<script type="text/javascript" src="{{jsFile}}"></script>
