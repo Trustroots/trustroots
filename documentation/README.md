@@ -7,5 +7,5 @@ Based on [MEAN.js](http://meanjs.org/).
 * [Yo Generators](http://meanjs.org/generator.html)
 
 
-## Lisence
-[MIT](../LISENCE.md)
+## License
+[MIT](../LICENSE.md)
