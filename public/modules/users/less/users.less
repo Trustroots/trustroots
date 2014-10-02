@@ -1,3 +1,5 @@
+
+/* original from MEAN.JS */
 @media (min-width: 992px) {
 	.nav-users {
 		position: fixed;
@@ -13,4 +15,82 @@
 	top: 10px;
 	right: 10px;
 	position: absolute;
+}
+/* end of original from MEAN.JS */
+
+
+
+#profile {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+
+.profile-name,
+.profile-username {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+}
+
+.profile-name {
+  margin: 0 10px 5px 0;
+}
+
+.profile-username {
+  .text-muted();
+}
+
+.profile-tagline {
+  margin-bottom: @line-height-computed;
+  font-size: 17px;
+  font-weight: 200;
+  line-height: 1.4;
+
+  @media (min-width: @screen-sm-min) {
+    font-size: 17px;
+  }
+}
+
+.profile-quote {
+    display: block;
+    .center-block();
+    width: 80%;
+    .text-muted();
+    text-align: center;
+    font-family: @font-family-serif;
+    font-style: italic;
+    font-size: 18px;
+    padding: 0;
+    border: 0;
+}
+
+#profile-actions {
+  .pull-right();
+  margin-right: 0;
+}
+
+#profile-sidebar {
+  h4,
+  /* Labels occur when editing profile... */
+  .control-label{
+    .text-muted();
+    text-transform: uppercase;
+    margin: 3px 0 0 0;
+  }
+  &,
+  h4,
+  /* Labels occur when editing profile... */
+  .control-label {
+    font-size: 13px;
+    line-height: 20px;
+    font-weight: normal;
+  }
+  .avatar {
+    .img-responsive;
+    border-top-left-radius: @panel-border-radius;
+    border-top-right-radius: @panel-border-radius;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
 }

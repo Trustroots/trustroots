@@ -1,4 +1,4 @@
-<div class="container" data-ng-controller="HeaderController">
+<div class="container">
 	<div class="navbar-header">
 		<button class="navbar-toggle" type="button" data-ng-click="toggleCollapsibleMenu()">
 			<span class="sr-only">Toggle navigation</span>
@@ -6,7 +6,10 @@
 			<span class="icon-bar"></span>
 			<span class="icon-bar"></span>
 		</button>
-		<a href="/#!/" class="navbar-brand">Trust Roots</a>
+		<a ui-sref="home" class="navbar-brand">
+			<span class="logo-horizontal logo-horizontal-white"></span>
+			<span class="sr-only">Trust Roots</span>
+		</a>
 	</div>
 	<nav class="collapse navbar-collapse" collapse="!isCollapsed" role="navigation">
 		<ul class="nav navbar-nav" data-ng-if="menu.shouldRender(authentication.user);">
@@ -29,7 +32,7 @@
 			</li>
 			<li class="divider-vertical"></li>
 			<li ui-route="/signin" ng-class="{active: $uiRoute}">
-				<a href="/#!/signin"><i class="fa fa-sign-in"></i> Sign In</a>
+				<a href="/#!/signin"><i class="fa fa-sign-in"></i> Login</a>
 			</li>
 		</ul>
 		<ul class="nav navbar-nav navbar-right" data-ng-show="authentication.user">
@@ -39,10 +42,10 @@
 				</a>
 				<ul class="dropdown-menu">
 				    <li>
-				        <a href="/#!/"><i class="fa fa-fw fa-user"></i> My profile</a>
+				        <a ui-sref="profile({username: authentication.user.username})"><i class="fa fa-fw fa-user"></i> My profile</a>
 				    </li>
 					<li>
-						<a href="/#!/settings/profile"><i class="fa fa-fw fa-edit"></i> Edit Profile</a>
+						<a ui-sref="profile-edit"><i class="fa fa-fw fa-edit"></i> Edit Profile</a>
 					</li>
 					<!--
 					<li>
@@ -53,7 +56,7 @@
 					</li>
 					-->
                     <li>
-                        <a href="/#!/contact"><i class="fa fa-lg fa-bolt"></i> Help</a>
+                        <a ui-sref="contact"><i class="fa fa-fw fa-lg fa-bolt"></i> Help</a>
                     </li>
 					<li class="divider" role="presentation"></li>
 					<li>

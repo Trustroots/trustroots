@@ -1,15 +1,12 @@
 # humanstxt.org/
-# The humans responsible & technology colophon
+# The humans responsible
 
 # TEAM
 
-    <name> -- <role> -- <twitter>
+    Mikael -- mikaelkorpela.fi
+    Callum -- callum-macdonald.com
+    Kasper -- kaspe.re
 
 # THANKS
 
-    <name>
-
-# TECHNOLOGY COLOPHON
-
-    HTML5, CSS3
-    jQuery, Modernizr
+    Rémi, BeWelcome Welen -project dudes

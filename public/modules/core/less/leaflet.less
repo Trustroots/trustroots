@@ -1,0 +1,13 @@
+/*
+ * Bootstrap3 uses "box-sizing: border-box" for everything - causes issues with maps
+ */
+
+.leaflet-container,
+.leaflet-container * {
+  .box-sizing(content-box);
+}
+
+.leaflet-bar,
+.leaflet-control-layers {
+  border-radius: @border-radius-small;
+}

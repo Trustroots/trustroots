@@ -5,9 +5,17 @@ angular.module('users').config(['$stateProvider',
 	function($stateProvider) {
 		// Users state routing
 		$stateProvider.
+		state('welcome', {
+			url: '/welcome',
+			templateUrl: 'modules/users/views/authentication/welcome.client.view.html'
+		}).
 		state('profile', {
+			url: '/profile/:username',
+			templateUrl: 'modules/users/views/profile/view-profile.client.view.html'
+		}).
+		state('profile-edit', {
 			url: '/settings/profile',
-			templateUrl: 'modules/users/views/settings/edit-profile.client.view.html'
+			templateUrl: 'modules/users/views/profile/edit-profile.client.view.html'
 		}).
 		state('password', {
 			url: '/settings/password',
@@ -29,7 +37,7 @@ angular.module('users').config(['$stateProvider',
 			url: '/password/forgot',
 			templateUrl: 'modules/users/views/password/forgot-password.client.view.html'
 		}).
-		state('reset-invlaid', {
+		state('reset-invalid', {
 			url: '/password/reset/invalid',
 			templateUrl: 'modules/users/views/password/reset-password-invalid.client.view.html'
 		}).

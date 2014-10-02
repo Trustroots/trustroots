@@ -1,0 +1,119 @@
+<section class="container container-spacer" id="profile-editor" data-ng-controller="ProfileController" data-ng-init="findProfile()">
+
+    <div class="row" data-ng-show="profile">
+
+      <div class="col-sm-3">
+
+        <div class="panel panel-default" id="profile-sidebar">
+          <img src="/modules/core/img/avatar.png" ng-hide="profile.avatar" alt="" width="261" height="261">
+          <img ng-src="{{profile.avatar}}" ng-show="profile.avatar" alt="" width="261" height="261">
+          <div class="panel-body">
+
+            <p>
+                yearsSince time=profile.birthday
+                {{profile.gender}}
+              <br>
+
+			<span data-ng-bind="profile.created | date:'mediumDate'"></span>
+
+
+            </p>
+
+            <p>
+              <h4>From</h4>
+              <a href="#">{{ profile.location }}</a>
+            </p>
+
+            <p>
+              <h4>Last seen</h4>
+              ...
+            </p>
+
+            <p>
+              <h4>Languages</h4>
+              languages profile.languages
+            </p>
+
+            <p data-ng-show="hasConnectedAdditionalSocialAccounts()">
+              <h4>Other networks</h4>
+              <ul class="fa-ul authentication-social">
+                <li data-ng-repeat="(providerName, providerData) in user.additionalProvidersData">
+                  <i class="fa fa-li fa-lg" ng-class="fa-{{providerName}}-square"></i> {{providerName}}
+                </li>
+              </ul>
+            </p>
+
+          </div>
+        </div>
+
+      </div>
+      <div class="col-sm-9">
+
+        <div class="row">
+            <div class="col-md-6">
+                <h2 class="profile-name" data-ng-show="profile.displayName" data-ng-bind="profile.displayName"></h2>
+                <h4 class="profile-username" data-ng-show="profile.username">@{{profile.username}}</h4>
+                <p class="profile-tagline" data-ng-show="profile.tagline" data-ng-bind="profile.tagline"></p>
+            </div>
+
+              <!-- When looking at own profile -->
+              <div class="col-md-6 text-right" data-ng-show="user._id === profile._id">
+                <small class="text-muted">This is your profile as others see it.</small> <a ui-sref="profile-edit" class="btn btn-primary">Edit your profile</a>
+              </div>
+
+              <!-- When looking at somebody else's profile -->
+              <div class="col-md-6" data-ng-hide="user._id === profile._id">
+                <ul class="nav nav-pills nav-narrow text-right" id="profile-actions" role="navigation">
+                  <li><a ui-sref="listMessages({userId: profile._id})"><i class="fa fa-comment-o"></i> Send message</a></li>
+                  <li><a href="#" data-toggle="modal" data-target="#profile-reference-new"><i class="fa fa-check-circle"></i> Write a reference</a></li>
+                  <li><a href="#"><i class="fa fa-plus-circle"></i> Add contact</a></li>
+                </ul>
+                 usersReferencesNew
+              </div>
+
+        </div>
+
+        <!-- Profile tabs -->
+        <div class="row" id="profile-tabs">
+          <div class="col-xs-12">
+            <nav class="panel panel-default" role="navigation">
+                <ul class="nav nav-pills nav-narrow nav-underline" id="profile-tabs">
+                  <li class="active"><a href="#profile-overview" data-toggle="tab">Overview</a></li>
+                  <li><a href="#profile-references" data-toggle="tab">References</a></li>
+                  <li><a href="#profile-images" data-toggle="tab">Images</a></li>
+                  <li><a href="#profile-contacts" data-toggle="tab">7 Contacts</a></li>
+                </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /Profile tabs -->
+
+        <tabset class="row" id="profile-tabs">
+          <tab heading="Overview">Overview content</tab>
+            <tab heading="References">References content</tab>
+        </tabset>
+
+        <div class="tab-content">
+            <div class="tab-pane active" id="profile-overview">
+               usersOverview
+            </div>
+            <div class="tab-pane" id="profile-references">
+               usersReferences
+            </div>
+            <div class="tab-pane" id="profile-images">
+               usersImages
+            </div>
+        </div><!-- /.tab-content -->
+
+      </div><!-- /.col -->
+
+    </div><!-- /.row -->
+
+
+    <!-- Couldn't find profile... -->
+    <div class="row" data-ng-hide="profile">
+        <div class="alert alert-warning">No such user...</div>
+    </div><!-- /.row -->
+
+
+</section><!-- /.container -->

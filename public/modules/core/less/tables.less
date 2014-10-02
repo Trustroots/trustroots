@@ -1,0 +1,14 @@
+/* Add a table without visible borders to Bootstrap */
+.table.table-noborders {
+    border: 0;
+    thead,
+    tbody,
+    tfoot {
+        > tr.message {
+            > th,
+            > td {
+                border: 0;
+            }
+        }
+    }
+}

@@ -1,0 +1,110 @@
+/*
+ * TrustRoots Frontpage styles
+ * --------------------------------------------------
+ */
+#home-content {
+  z-index: 999;
+  clear: both;
+  width: 100%;
+  position: relative;
+  top: 0; //@navbar-height
+  bottom: @footer-height;
+  color: #fff;
+  .logo {
+    margin: 200px auto 30px auto;
+  }
+  .home-intro {
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+    p {
+      padding: 0;
+      margin: 0;
+      font-size: @font-size-small;
+    }
+    a {
+      color: #fff;
+      text-decoration: underline;
+    }
+    /*
+    h2 {
+      font-size: 52px;
+      line-height: 55px;
+      margin-top: 230px;
+      margin-bottom: 10px;
+      @media (max-width: @screen-xs-max) {
+        margin-top: 0;
+      }
+    }
+    */
+    h3 {
+      color: #fff;
+      font-size: 20px;
+      font-style: italic;
+      line-height: 20px;
+      margin: 30px 0;
+      padding: 0;
+    }
+  }
+  .btn-group {
+    .box-shadow(0 0 8px rgba(0,0,0,0.3));
+  }
+  .btn-home-readmore,
+  .btn-home-login,
+  .btn-home-signup {
+    color: #fff;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+    font-family: @font-family-brand;
+    font-weight: normal;
+    border: 0;
+    .transition(all 0.2s);
+  }
+  .btn-home-login {
+    background-color: @brand-primary;
+    &:hover {
+      background-color: lighten(@brand-primary, 3%);
+      border: 0;
+    }
+  }
+  .btn-home-signup {
+    background-color: @brand-secondary;
+    &:hover {
+      background-color: lighten(@brand-secondary, 3%);
+      border: 0;
+    }
+  }
+  .btn-home-readmore {
+    background-color: #e79800;
+    &:hover {
+      background-color: lighten(#e79800, 3%);
+      border: 0;
+    }
+  }
+  @media (max-width: @screen-xs-max) {
+    margin-top: @padding-large-horizontal;
+    top: 0;
+    .logo {
+      margin-top: 0;
+    }
+    .btn-group .btn {
+      width: 100%;
+    }
+  }
+}
+#home-carousel {
+  position: absolute;
+  top: 0; //@navbar-height;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  .carousel-inner {
+    height: 100%;
+  }
+  .item {
+    height: 100%;
+    overflow: hidden;
+    background-color: transparent;
+    background-position: 50% bottom;
+    background-repeat: no-repeat;
+    background-size: cover;
+    -moz-background-size: cover;
+  }
+}

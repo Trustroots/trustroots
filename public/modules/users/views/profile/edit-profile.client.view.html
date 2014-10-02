@@ -1,0 +1,184 @@
+<section class="container container-spacer" id="profile-editor" data-ng-controller="SettingsController">
+
+    <div data-ng-show="success" class="text-center text-success">
+        <strong>Profile Saved Successfully</strong>
+    </div>
+    <div data-ng-show="error" class="text-center text-danger">
+        <strong data-ng-bind="error"></strong>
+    </div>
+
+    <form name="userForm" data-ng-submit="updateUserProfile(userForm.$valid)" autocomplete="off">
+        <div class="row">
+
+          <div class="col-sm-3">
+
+            <div class="panel panel-default" id="profile-sidebar">
+              <a href="#" class="avatar-edit">
+                <img src="/modules/core/img/avatar.png" ng-hide="user.avatar" alt="" width="261" height="261">
+                <img ng-src="{{user.avatar}}" ng-show="user.avatar" alt="" width="261" height="261">
+                <label>
+                    <i class="fa fa-3x fa-camera"></i><br>
+                    Change your profile photo
+                </label>
+              </a>
+              <div class="panel-body">
+
+                <p class="profile-edit-inactive">{{user.created}}</p>
+
+                <div class="form-group">
+                  <label for="email"><h4>Email</h4></label>
+                  <input type="email" id="email" name="email" class="form-control" data-ng-model="user.email" placeholder="Email">
+                </div>
+
+                <p>
+                  <label for="gender"><h4>Gender</h4></label>
+    			  <select id="gender" name="gender" class="form-control" data-ng-model="user.gender">
+                    <option>Choose...</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+    			  </select>
+                </p>
+
+    				<div class="form-group">
+    					<label for="birthdate">Birthdate</label>
+    					<input type="text" id="birthdate" name="birthdate" class="form-control" data-ng-model="user.birthdate" placeholder="Birthdate">
+    				</div>
+
+                <p>
+                  <h4>From</h4>
+                  afFieldInput name='from'
+                </p>
+
+                <p>
+                  <h4>Last seen</h4>
+                  <div class="profile-edit-inactive">
+                    {{lastSeen}}
+                  </div>
+                  afFieldInput name='lastSeenTimeHidden'
+                </p>
+
+                <p>
+                  <h4>Languages</h4>
+                  languagesSelector
+                </p>
+
+                <p>
+                  <h4>Social networks</h4>
+
+                  <div data-ng-show="hasConnectedAdditionalSocialAccounts()">
+                  	<h5>Connected:</h5>
+                  	<ul class="fa-ul authentication-social">
+                  	  <li data-ng-repeat="(providerName, providerData) in user.additionalProvidersData" class="remove-account-container">
+                  	    <i class="fa fa-li fa-lg" ng-class="fa-{{providerName}}-square"></i> {{providerName}}
+                  	    <a class="pull-right" data-ng-click="removeUserSocialAccount(providerName)">
+                  	      <i class="fa fa-trash"></i>
+                  	    </a>
+                  	  </li>
+                  	</ul>
+                  </div>
+                  <h5>Connect to:</h5>
+                  <ul class="fa-ul authentication-social">
+                      <li><a href="/auth/facebook" data-ng-hide="isConnectedSocialAccount('facebook')">
+                      	<i class="fa fa-li fa-lg fa-facebook-square"></i>
+                      </a></li>
+                      <li><a href="/auth/twitter" data-ng-hide="isConnectedSocialAccount('twitter')">
+                      	<i class="fa fa-li fa-lg fa-twitter-square"></i>
+                      </a></li>
+                      <li><a href="/auth/google" data-ng-hide="isConnectedSocialAccount('google')">
+                      	<i class="fa fa-li fa-lg fa-google-square"></i>
+                      </a></li>
+                      <li><a href="/auth/linkedin" data-ng-hide="isConnectedSocialAccount('linkedin')">
+                      	<i class="fa fa-li fa-lg fa-linkedin-square"></i>
+                      </a></li>
+                      <li><a href="/auth/github" data-ng-hide="isConnectedSocialAccount('github')">
+                      	<i class="fa fa-li fa-lg fa-github-square"></i>
+                      </a></li>
+                  </ul>
+                </p>
+
+              </div>
+            </div>
+
+          </div>
+          <div class="col-sm-9">
+
+            <div class="row">
+                <div class="col-md-6">
+                  <span class="profile-name">
+    				<div class="form-group">
+    					<label for="firstName">First Name</label>
+    					<input type="text" id="firstName" name="firstName" class="form-control" data-ng-model="user.firstName" placeholder="First Name">
+    				</div>
+    				<div class="form-group">
+    					<label for="lastName">Last Name</label>
+    					<input type="text" id="lastName" name="lastName" class="form-control" data-ng-model="user.lastName" placeholder="Last Name">
+    				</div>
+    				<div class="form-group">
+    					<label for="username">Username</label>
+    					@<input type="text" id="username" name="username" class="form-control" data-ng-model="user.username" placeholder="Username">
+    				</div>
+                  </span>
+                  <div class="profile-tagline">
+    					<label for="tagline" class="sr-only">Tagline</label>
+    					<textarea id="tagline" name="tagline" class="form-control" data-ng-model="user.tagline" placeholder="Short tagline..."></textarea>
+                  </div>
+                </div>
+                <div class="col-md-6 text-right">
+                    <a ui-sref="profile" type="cancel" class="btn btn-link">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save profile</button>
+                </div>
+            </div>
+
+            <!-- Profile tabs -->
+            <div class="row" id="profile-tabs">
+              <div class="col-xs-12">
+                <nav class="panel panel-default profile-edit-inactive">
+                  <ul class="nav nav-pills nav-narrow nav-underline" id="profile-tabs">
+                    <li><a>Overview</a></li>
+                    <li><a>References</a></li>
+                    <li><a>Images</a></li>
+                    <li><a>Contacts</a></li>
+                  </ul>
+                </nav>
+              </div>
+            </div>
+            <!-- /Profile tabs -->
+
+            <div class="row">
+              <div class="col-md-6">
+
+                <!-- About me -->
+                <div class="panel panel-default">
+                  <label for="description" class="panel-heading">Description</label>
+                  <div class="panel-body profile-description">
+    				<div class="form-group">
+    					<textarea id="description" name="description" class="form-control" data-ng-model="user.description" placeholder="Description"></textarea>
+    				</div>
+                  </div>
+                </div>
+
+              </div>
+              <div class="col-md-6">
+
+                <!-- Accommodation -->
+                <div class="panel panel-default">
+                  <div class="panel-heading">
+                    Accommodation
+                  </div>
+                  <div class="panel-body">
+                    ...
+                  </div>
+                </div>
+
+              </div>
+            </div><!-- /.row -->
+
+
+          </div><!-- /.col -->
+
+        </div><!-- /.row -->
+
+      </form>
+
+</section><!-- /.container -->

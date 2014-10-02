@@ -1,45 +1,55 @@
-<section class="row" data-ng-controller="AuthenticationController">
-	<h3 class="col-md-12 text-center">Sign in using your social accounts</h3>
-	<div class="col-md-12 text-center">
-		<a href="/auth/facebook" class="undecorated-link">
-			<img src="/modules/users/img/buttons/facebook.png">
-		</a>
-		<a href="/auth/twitter" class="undecorated-link">
-			<img src="/modules/users/img/buttons/twitter.png">
-		</a>
-		<a href="/auth/google" class="undecorated-link">
-			<img src="/modules/users/img/buttons/google.png">
-		</a>
-		<a href="/auth/linkedin" class="undecorated-link">
-			<img src="/modules/users/img/buttons/linkedin.png">
-		</a>
-		<a href="/auth/github" class="undecorated-link">
-			<img src="/modules/users/img/buttons/github.png">
-		</a>
-	</div>
-	<h3 class="col-md-12 text-center">Or with your account</h3>
-	<div class="col-xs-offset-2 col-xs-8 col-md-offset-5 col-md-2">
-		<form data-ng-submit="signin()" class="signin form-horizontal" autocomplete="off">
-			<fieldset>
-				<div class="form-group">
-					<label for="username">Username</label>
-					<input type="text" id="username" name="username" class="form-control" data-ng-model="credentials.username" placeholder="Username">
-				</div>
-				<div class="form-group">
-					<label for="password">Password</label>
-					<input type="password" id="password" name="password" class="form-control" data-ng-model="credentials.password" placeholder="Password">
-				</div>
-				<div class="text-center form-group">
-					<button type="submit" class="btn btn-primary">Sign in</button>&nbsp; or&nbsp;
-					<a href="/#!/signup">Sign up</a>
-				</div>
-				<div class "forgot-password">
-					<a href="/#!/password/forgot">Forgot your password?</a>
-				</div>
-				<div data-ng-show="error" class="text-center text-danger">
-					<strong data-ng-bind="error"></strong>
-				</div>
-			</fieldset>
-		</form>
-	</div>
-</section>
+<section class="container board board-bokehblue container-fullscreen" data-ng-controller="AuthenticationController">
+  <div class="row">
+    <div class="col-md-12">
+      <a ui-sref="home" class="logo logo-blue center-block"></a>
+    </div>
+    <h3 class="col-md-12 text-center">Login</h3>
+    <div class="col-xs-offset-2 col-xs-8 col-md-offset-5 col-md-2">
+        <form data-ng-submit="signin()" class="signin form-horizontal" autocomplete="off">
+            <fieldset>
+                <div data-ng-show="error" class="alert alert-danger">
+                    <strong data-ng-bind="error"></strong>
+                </div>
+                <div class="form-group">
+                    <label for="username" class="sr-only">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" data-ng-model="credentials.username" placeholder="Username">
+                </div>
+                <div class="form-group">
+                    <label for="password" class="sr-only">Password</label>
+                    <input type="password" id="password" name="password" class="form-control" data-ng-model="credentials.password" placeholder="Password">
+                </div>
+                <div class="text-center form-group">
+                    <button type="submit" class="btn btn-inverse">Sign in</button>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    <h4 class="col-md-12 text-center">...or using your social accounts</h4>
+    <div class="col-md-12 text-center authentication-social">
+      <a href="/auth/facebook" tooltip="Facebook" tooltip-placement="bottom">
+        <i class="fa fa-3x fa-facebook-square"></i>
+      </a>
+      <a href="/auth/twitter" tooltip="Twitter" tooltip-placement="bottom">
+        <i class="fa fa-3x fa-twitter-square"></i>
+      </a>
+      <a href="/auth/google" tooltip="Google+" tooltip-placement="bottom">
+        <i class="fa fa-3x fa-google-plus-square"></i>
+      </a>
+      <a href="/auth/linkedin" tooltip="LinkedIn" tooltip-placement="bottom">
+        <i class="fa fa-3x fa-linkedin-square"></i>
+      </a>
+      <a href="/auth/github" tooltip="GitHub" tooltip-placement="bottom">
+        <i class="fa fa-3x fa-github-square"></i>
+      </a>
+    </div>
+    <div class="col-md-12 text-center text-white">
+      <p>
+        <br>
+        <small>
+          <a href="/#!/password/forgot">Forgot your password?</a><br>
+          <a ui-sref="signup" href="/signup">Become a member</a>
+        </small>
+      </p>
+    </div>
+  </div><!-- .row-->
+</section><!-- .container -->

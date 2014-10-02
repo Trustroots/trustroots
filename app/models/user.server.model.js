@@ -18,8 +18,30 @@ var validateLocalStrategyProperty = function(property) {
  * A Validation function for local strategy password
  */
 var validateLocalStrategyPassword = function(password) {
-	return (this.provider !== 'local' || (password && password.length > 6));
+	return (this.provider !== 'local' || (password && password.length >= 8));
 };
+
+
+/**
+ * A Validation function for username
+ * - at least 3 characters
+ * - maximum 32 characters
+ * - only a-z0-9_-.
+ * - not in list of illegal usernames
+ * - no consecutive dots, "." ok, ".." nope
+ */
+var validateUsername = function(username) {
+    var usernameRegex = /^[a-z0-9.\-_]{3,32}$/,
+        dotsRegex = /^([^.]+\.?)$/,
+        illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'password', 'username', 'user', ' demo', 'test'];
+    return (this.provider !== 'local' || ( username &&
+                                           usernameRegex.test(username) &&
+	                                       illegalUsernames.indexOf(username) < 0) &&
+	                                       dotsRegex.test(username) //strpos(username, '..') === false
+	                                     );
+};
+
+
 
 /**
  * User Schema
@@ -44,20 +66,44 @@ var UserSchema = new Schema({
 	email: {
 		type: String,
 		trim: true,
+        lowercase: true,
 		default: '',
 		validate: [validateLocalStrategyProperty, 'Please fill in your email'],
 		match: [/.+\@.+\..+/, 'Please fill a valid email address']
+		/* this comment only fixes syntax highlight :P  */
+	},
+	tagline: {
+		type: String,
+		default: '',
+		trim: true
+	},
+	description: {
+		type: String,
+		default: '',
+		trim: true
+	},
+	birthdate: {
+		type: Date
+	},
+	gender: {
+		type: [{
+			type: String,
+			enum: ['','male','female','other']
+		}],
+		default: ['']
 	},
 	username: {
 		type: String,
-		unique: 'testing error message',
+		unique: 'Username already exists',
 		required: 'Please fill in a username',
+		validate: [validateUsername, 'Please fill in valid username: 3-32 characters long non banned word, characters "_-.", no consecutive dots, lowercase letters a-z and numbers 0-9.'],
+        lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
 		trim: true
 	},
 	password: {
 		type: String,
 		default: '',
-		validate: [validateLocalStrategyPassword, 'Password should be longer']
+		validate: [validateLocalStrategyPassword, 'Password should be more than 8 characters long.']
 	},
 	salt: {
 		type: String

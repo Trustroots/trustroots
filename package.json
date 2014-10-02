@@ -2,7 +2,7 @@
   "name": "trust-roots",
   "description": "Travellers network",
   "version": "0.0.1",
-  "author": "Bikeshed",
+  "author": "Trust Roots",
   "engines": {
     "node": "0.10.x",
     "npm": "1.4.x"
@@ -35,11 +35,13 @@
     "passport-github": "~0.1.5",
     "lodash": "~2.4.1",
     "forever": "~0.11.0",
-    "bower": "~1.3.8",
+    "bower": "~1.3.11",
     "grunt-cli": "~0.1.13",
     "glob": "~4.0.5",
     "async": "~0.9.0",
-    "nodemailer": "~1.1.1"
+    "nodemailer": "~1.1.1",
+    "socket.io": "~1.1.0",
+    "sanitize-html": "~1.4.2"
   },
   "devDependencies": {
     "supertest": "~0.13.0",
@@ -49,7 +51,9 @@
     "grunt-contrib-watch": "~0.6.1",
     "grunt-contrib-jshint": "~0.10.0",
     "grunt-contrib-csslint": "^0.2.0",
+    "grunt-contrib-concat": "^0.5.0",
     "grunt-ngmin": "0.0.3",
+    "grunt-contrib-less": "~0.11.4",
     "grunt-contrib-uglify": "~0.5.1",
     "grunt-contrib-cssmin": "~0.10.0",
     "grunt-nodemon": "~0.3.0",
@@ -62,7 +66,14 @@
     "karma-coverage": "~0.2.0",
     "karma-chrome-launcher": "~0.1.2",
     "karma-firefox-launcher": "~0.1.3",
-    "karma-phantomjs-launcher": "~0.1.2",
-    "grunt-contrib-less": "~0.11.4"
-  }
+    "karma-phantomjs-launcher": "~0.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trustroots/trustroots"
+  },
+  "bugs": {
+    "url": "https://github.com/trustroots/trustroots/issues"
+  },
+  "license": "MIT"
 }

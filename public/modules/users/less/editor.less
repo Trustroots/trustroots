@@ -1,0 +1,153 @@
+#profile-editor {
+
+  .inline-editor {
+    display: inline;
+    border: 0;
+    background: transparent;
+    .box-shadow(none);
+    height: auto;
+    resize: none;
+    margin: 0;
+    padding: 0;
+    &:hover {
+      background: fade(@brand-primary, 10%);
+    }
+    &:focus {
+      background: transparent;
+      outline: none;
+      border: 0;
+    }
+  }
+
+  .profile-name {
+    input {
+      .inline-editor();
+      .h2();
+      font-family: @font-family-brand;
+      font-weight: normal;
+      font-style: normal;
+      margin: 0;
+    }
+  }
+  .profile-tagline {
+    margin-bottom: 0;
+    textarea {
+      .inline-editor();
+      .profile-tagline();
+      margin-bottom: 0;
+      resize: none;
+    }
+  }
+  .profile-description textarea {
+    .inline-editor();
+  }
+
+  .avatar-edit {
+    display: block;
+    position: relative;
+    width: 100%;
+    max-width: @profile-avatar-size;
+    min-height: @profile-avatar-size;
+    background: #000;
+    &:hover,
+    &:active {
+      label {
+        background: rgba(0,0,0,0.4);
+      }
+    }
+    .avatar,
+    label {
+      position: absolute;
+      top: 0;
+      cursor: pointer;
+    }
+    label {
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.2);
+      display: block;
+      padding-top: (@profile-avatar-size/2.5);
+      color: #fff;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+      text-align: center;
+      font-size: 17px;
+      line-height: 20px;
+      .transition(background 0.2s);
+    }
+  }//avatar-edit
+
+  .profile-edit-inactive {
+     opacity: 0.4;
+  }
+
+  /* Profile tabs aren't active, but keep them visible */
+  #profile-tabs {
+    // No hover effect...
+    .nav-underline {
+      > li {
+        > a {
+          &:hover,
+          &:focus {
+            color: @link-color;
+            border-color: transparent;
+          }
+        }
+      }
+    }
+  }// #profile-tabs
+
+}
+
+
+/* Choose avatar -modal */
+#profile-avatar-choises {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  clear: both;
+  overflow: hidden;
+  li {
+    float: left;
+    margin: 0 10px;
+    padding: 0;
+    text-align: center;
+  }
+  .avatar-source-init-upload {
+    display: block;
+    position: relative;
+    .square(144px);
+    img {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    span {
+      position: absolute;
+      display: block;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      line-height: 96px;
+      text-align: center;
+      color: #fff;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+      .transition(background 0.2s);
+      background: transparent;
+      font-weight: bold;
+    }
+    &:hover,
+    &:active {
+      span {
+        background: rgba(0,0,0,0.1);
+      }
+    }
+  }
+}
+
+/* Location edit -modal */
+.edit-map {
+  width: 100%;
+  min-height: 400px;
+}

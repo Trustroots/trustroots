@@ -1,0 +1,219 @@
+/**
+ * Thread
+ */
+
+
+#thread-container {
+
+}
+
+#messages-thread {
+  position: fixed;
+  bottom: 250px;
+  top: @navbar-height;
+  padding-top: @grid-gutter-width;
+  //padding-right: (@grid-gutter-width / 2); // Leave some space for the scrollbar
+  overflow: hidden; // We'll do scrollbars with angular-perfect-scrollbar
+}
+
+.messages-none {
+    text-align: center;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+// Single message in the thread
+.message {
+  clear: both;
+  margin-left: -(@grid-gutter-width / 2);
+  .panel {
+    .panel-triangle-right();
+  }
+  &.message-pushed {
+      .panel {
+        .transition("ease-in-out linear 1s");
+        border-left-color: @brand-primary;
+        border-left-width: 2px;
+        &.ui-scrollfix,
+        &.ui-fixed {
+            border-left-width: 1px;
+            border-left-color: @panel-default-border; // back to normal when user has seen object
+        }
+      }
+  }
+  .divider {
+    .text-muted;
+    font-size: @font-size-small;
+    margin: 10px 0;
+    &.divider-first {
+        margin-top: 0;
+    }
+    &.divider-last {
+        margin-bottom: 0;
+    }
+  }
+  .message-author {
+    .avatar {
+      margin: 25px auto @padding-small-vertical auto;
+    }
+    .text-center;
+    /*
+    font-size: @font-size-small;
+    a {
+      &,
+      &:hover,
+      &:hover {
+          .text-muted();
+          text-decoration: none;
+      }
+    }
+    */
+  }
+  .message-meta {
+    display: inline-block;
+    font-size: @font-size-small;
+    padding-right: 3px;
+    &,
+    a {
+      .text-muted();
+    }
+  }
+  .message-meta {
+    display: block;
+    text-align: right;
+    clear: both;
+    overflow: hidden;
+    .link-badge {
+      margin-bottom: 0;
+    }
+    .message-request {
+      clear: both;
+      overflow: hidden;
+      margin: @padding-small-vertical 0 0 0;
+      background: @gray-lighter;
+      padding: @padding-small-vertical @padding-small-horizontal;
+      font-size: @font-size-small;
+      line-height: @font-size-small;
+      @media (max-width: @screen-xs-max) {
+        line-height: @line-height-base;
+      }
+      .message-request-status {
+        float: left;
+        font-weight: bold;
+        @media (max-width: @screen-xs-max) {
+          font-size: @font-size-base;
+        }
+      }
+      .message-request-meta {
+        float: right;
+        text-align: right;
+        &.visible-sm {
+          font-weight: bold;
+        }
+        @media (max-width: @screen-xs-max) {
+          display: block;
+          clear: both;
+          float: none;
+          text-align: left;
+        }
+      }
+    }
+  }
+}
+
+// Reply box
+#message-reply {
+  position: fixed;
+  bottom: @padding-base-horizontal;
+  width: 800px;
+
+  .message-reply-title {
+    margin: 0;
+    float: left;
+    font-size: 13px;
+    line-height: 13px;
+  }
+  .message-request-meta {
+    float: right;
+    text-align: right;
+    @media (max-width: @screen-xs-max) {
+      display: block;
+      clear: both;
+      float: none;
+      text-align: left;
+    }
+  }
+  .panel {
+    margin-bottom: @padding-xs-horizontal;
+    .panel-body {
+      padding: @padding-xs-horizontal;
+      background: @gray-lighter;
+    }
+    #message-reply-content {
+      .transition(~"border-color ease-in-out .15s, box-shadow ease-in-out .15s");
+      //.box-shadow(none);//Needed when this is textarea
+      font-size: @font-size-base;
+      line-height: @line-height-base;
+      padding: @padding-base-vertical @padding-base-horizontal;
+      border: 0;
+      border-top: 1px solid transparent;
+      padding-top: 16px;
+      margin-bottom: 16px;
+      min-height: 53px;
+      resize: none;
+      &:focus {
+        outline: none;
+        .box-shadow(none);
+        border-color: @brand-primary;
+      }
+      &:after {
+          top: 16px;
+          left: 12px;
+      }
+    }
+  }
+  .message-request-status {
+    clear: both;
+    overflow: hidden;
+    label {
+      display: inline-block;
+      padding: @padding-base-vertical @padding-base-horizontal;
+      margin: 0;
+      float: right;
+      &:hover {
+        background: lighten(@gray-lighter, 3%);
+      }
+      &.active,
+      &:active {
+        background: @gray-lighter;
+      }
+    }
+  }
+  .message-request-contact {
+    font-size: @font-size-small;
+    background: @gray-lighter;
+    overflow: hidden;
+    float: right;
+    width: 70%;
+    padding: @padding-base-vertical @padding-base-horizontal;
+    .edit {
+      .text-muted;
+      .pull-right;
+      font-size: @font-size-small;
+    }
+    @media (max-width: @screen-xs-max) {
+      float: none;
+      width: 100%;
+      .edit {
+        font-size: @font-size-base;
+        display: inline-block;
+        padding: 5px;
+      }
+    }
+  }
+  .message-reply-btn {
+    float: right;
+  }
+}

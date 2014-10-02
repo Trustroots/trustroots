@@ -27,7 +27,7 @@ module.exports.getGlobbedFiles = function(globPatterns, removeRoot) {
 	// The output array
 	var output = [];
 
-	// If glob pattern is array so we use each pattern in a recursive way, otherwise we use glob 
+	// If glob pattern is array so we use each pattern in a recursive way, otherwise we use glob
 	if (_.isArray(globPatterns)) {
 		globPatterns.forEach(function(globPattern) {
 			output = _.union(output, _this.getGlobbedFiles(globPattern, removeRoot));
@@ -69,8 +69,11 @@ module.exports.getJavaScriptAssets = function(includeTests) {
 
 /**
  * Get the modules CSS files
+ * Combine them with newly produced CSS file from LESS
  */
 module.exports.getCSSAssets = function() {
-	var output = this.getGlobbedFiles(this.assets.lib.css.concat(this.assets.css), 'public/');
-	return output;
+	//var output = this.getGlobbedFiles(this.assets.lib.css.concat(this.assets.css), 'public/');
+	//return output;
+	return ['/dist/application.min.css'];
 };
+

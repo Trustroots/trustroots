@@ -1,0 +1,50 @@
+/**
+ * Takes less space both horizontal/vertical
+ */
+.nav-narrow {
+  > li {
+    > a {
+      padding: 5px 10px;
+      border: 0;
+      &:hover,
+      &:focus {
+        background-color: transparent;
+      }
+    }
+
+    // Active state
+    &.active > a {
+      &,
+      &:hover,
+      &:focus {
+        color: @text-color;
+        background-color: transparent;
+        font-weight: bold;
+      }
+    }
+  }
+}
+
+/**
+ * Navigation where selected/hovered links are underlined
+ */
+.nav-underline {
+  > li {
+    > a {
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      &:hover,
+      &:focus {
+        border-color: @link-hover-color;
+      }
+    }
+    // Active state
+    &.active > a {
+      &,
+      &:hover,
+      &:focus {
+        border-color: @brand-secondary;
+      }
+    }
+  }
+}

@@ -1,0 +1,77 @@
+
+
+.select2-container {
+  width: 100%;
+  .select2-choices {
+    background-color: @input-bg;
+    background-image: none; // Reset unusual Firefox-on-Android default style; see https://github.com/necolas/normalize.css/issues/214
+    border: 1px solid @input-border;
+    border-radius: @input-border-radius;
+    .box-shadow(inset 0 1px 1px rgba(0,0,0,.075));
+  }
+  input {
+    font-size: @font-size-base;
+    line-height: @line-height-base;
+    .placeholder();
+    height: @input-height-base; // Make inputs at least the height of their button counterpart (base line-height + padding + border)
+    padding: @padding-base-vertical @padding-base-horizontal;
+  }
+}
+.select2-results {
+  .select2-highlighted {
+    background: @brand-primary;
+  }
+  .select2-no-results,
+  .select2-searching,
+  .select2-selection-limit {
+    background: transparent;
+    .text-muted();
+  }
+}
+.select2-container-multi {
+  .select2-choices {
+    .select2-search-choice {
+        padding: 3px 5px 3px 18px;
+        margin: 3px 0 3px 5px;
+        position: relative;
+        line-height: 13px;
+        font-weight: normal;
+        cursor: default;
+        border: 0;
+        border-radius: .25em;
+        background-clip: padding-box;
+        text-shadow: none;
+        .box-shadow(1px 1px 1px rgba(0, 0, 0, 0.05));
+        filter: inherit;
+        background-image: none;
+        -webkit-touch-callout: none;
+        .user-select(none);
+        background-color: #ccc;
+        color: #666;
+    }
+    .select2-search-choice-focus {
+        background: #ccc;
+        color: #333;
+    }
+  }
+}
+.select2-container-multi.select2-container-active .select2-choices,
+.select2-container-active .select2-choice,
+.select2-container-active .select2-choices,
+.select2-drop-active,
+.select2-drop.select2-drop-above.select2-drop-active {
+    border-color: @brand-primary;
+}
+.select2-drop {
+  .select2-search {
+    border-bottom: 1px solid @input-border;
+    input {
+      border: 0;
+      border-radius: 0;
+    }
+  }
+
+}
+.select2-drop-active {
+  border: 1px solid @brand-primary;
+}

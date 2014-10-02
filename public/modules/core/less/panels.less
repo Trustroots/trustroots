@@ -1,0 +1,45 @@
+/*
+ * Panels
+ */
+
+// Base class
+.panel {
+    margin-bottom: 20px;
+    background-color: @panel-bg;
+    border: 1px solid @panel-border;
+    border-radius: @panel-border-radius;
+    .box-shadow(0 1px 1px rgba(0,0,0,.05));
+
+    h3 {
+        font-size: @font-size-large;
+        line-height: @line-height-large;
+    }
+
+    // Optional heading
+    .panel-heading {
+        display: block;
+        background-color: @panel-heading-bg;
+        margin: 0 0 10px 0;
+        margin-left: 20px;
+        margin-right: 20px;
+        font-size: 22px;
+        line-height: 24px;
+        background: transparent;
+        border: 0;
+        border-bottom: 1px solid @panel-border;
+        border-radius: 0;
+        padding: 10px 0;
+        font-weight: normal;
+    }
+
+    // Optional footer
+    .panel-footer {
+        margin: 15px -15px -15px;
+        padding: 10px 15px;
+        border: 1px solid @panel-bg;
+        background-color: @panel-footer-bg;
+        border-bottom-left-radius:  (@panel-border-radius - 1);
+        border-bottom-right-radius: (@panel-border-radius - 1);
+    }
+
+}

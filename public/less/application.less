@@ -1,0 +1,124 @@
+/**
+ * TrustRoots LESS CSS
+ * ---------------------------------------
+ */
+
+
+// Defines where the package Bootstrap is
+@bootstrap3-less-root: "../lib/bootstrap";
+
+// Import Bootstrap core variables and mixin
+// ---------------------------------------
+// (you need these first, to get the default setup for bootstrap)
+
+@import "@{bootstrap3-less-root}/less/variables.less";
+@import "@{bootstrap3-less-root}/less/mixins.less";
+
+
+// TrustRoots variables (and overrides to Bootstrap)
+// ---------------------------------------
+@import "variables.less";
+
+
+// Import Bootstrap
+// ---------------------------------------
+// (This is the full set of package files, include only what you need)
+
+// Bootstrap icon font
+@icon-font-path: "/lib/bootstrap/fonts/";
+
+
+// Reset and dependencies
+@import "@{bootstrap3-less-root}/less/normalize.less";
+@import "@{bootstrap3-less-root}/less/print.less";
+@import "@{bootstrap3-less-root}/less/glyphicons.less";
+
+// Core CSS
+@import "@{bootstrap3-less-root}/less/scaffolding.less";
+@import "@{bootstrap3-less-root}/less/type.less";
+@import "@{bootstrap3-less-root}/less/code.less";
+@import "@{bootstrap3-less-root}/less/grid.less";
+@import "@{bootstrap3-less-root}/less/tables.less";
+@import "@{bootstrap3-less-root}/less/forms.less";
+@import "@{bootstrap3-less-root}/less/buttons.less";
+
+// Components
+@import "@{bootstrap3-less-root}/less/component-animations.less";
+@import "@{bootstrap3-less-root}/less/dropdowns.less";
+@import "@{bootstrap3-less-root}/less/button-groups.less";
+@import "@{bootstrap3-less-root}/less/input-groups.less";
+@import "@{bootstrap3-less-root}/less/navs.less";
+@import "@{bootstrap3-less-root}/less/navbar.less";
+@import "@{bootstrap3-less-root}/less/breadcrumbs.less";
+@import "@{bootstrap3-less-root}/less/pagination.less";
+@import "@{bootstrap3-less-root}/less/pager.less";
+@import "@{bootstrap3-less-root}/less/labels.less";
+@import "@{bootstrap3-less-root}/less/badges.less";
+@import "@{bootstrap3-less-root}/less/jumbotron.less";
+@import "@{bootstrap3-less-root}/less/thumbnails.less";
+@import "@{bootstrap3-less-root}/less/alerts.less";
+@import "@{bootstrap3-less-root}/less/progress-bars.less";
+@import "@{bootstrap3-less-root}/less/media.less";
+@import "@{bootstrap3-less-root}/less/list-group.less";
+@import "@{bootstrap3-less-root}/less/panels.less";
+@import "@{bootstrap3-less-root}/less/responsive-embed.less";
+@import "@{bootstrap3-less-root}/less/wells.less";
+@import "@{bootstrap3-less-root}/less/close.less";
+
+// Components w/ JavaScript
+@import "@{bootstrap3-less-root}/less/modals.less";
+@import "@{bootstrap3-less-root}/less/tooltip.less";
+@import "@{bootstrap3-less-root}/less/popovers.less";
+@import "@{bootstrap3-less-root}/less/carousel.less";
+
+// Utility classes
+@import "@{bootstrap3-less-root}/less/utilities.less";
+@import "@{bootstrap3-less-root}/less/responsive-utilities.less";
+
+
+// Font Awesome
+@import "../lib/fontawesome/less/font-awesome.less";
+@fa-font-path: "/lib/fontawesome/fonts";
+// Create new alias
+.@{fa-css-prefix}-google-square:before {
+    content: @fa-var-google-plus-square;
+}
+
+
+// Actual TrustRoots styles
+// ---------------------------------------
+
+// Core
+@import "../modules/core/less/helpers.less";
+@import "../modules/core/less/angular.less";
+@import "../modules/core/less/carousel.less";
+@import "../modules/core/less/panels.less";
+@import "../modules/core/less/tables.less";
+@import "../modules/core/less/buttons.less";
+@import "../modules/core/less/sidebar.less";
+@import "../modules/core/less/nav.less";
+@import "../modules/core/less/tip.less";
+@import "../modules/core/less/badge.less";
+@import "../modules/core/less/headers.less";
+@import "../modules/core/less/monkeybox.less";
+@import "../modules/core/less/select2.less";
+@import "../modules/core/less/leaflet.less";
+@import "../modules/core/less/tinymce.less";
+@import "../modules/core/less/mediumeditor.less";
+
+@import "../modules/core/less/layout.less";
+
+@import "../modules/pages/less/home.less";
+
+@import "../modules/search/less/search.less";
+
+@import "../modules/users/less/users.less";
+@import "../modules/users/less/authentication.less";
+@import "../modules/users/less/editor.less";
+@import "../modules/users/less/references.less";
+@import "../modules/users/less/images.less";
+@import "../modules/users/less/hosting.less";
+@import "../modules/users/less/welcome.less";
+
+@import "../modules/messages/less/inbox.less";
+@import "../modules/messages/less/thread.less";

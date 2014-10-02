@@ -1,0 +1,623 @@
+/**
+ * TrustRoots core styles
+ *
+ * @todo: seperate Theme and structure so it would be easier to replace themes?
+ *
+ */
+
+
+/**
+ * Mixings
+ */
+.fullbg(@image-url) {
+  background: @body-bg url(@image-url) 50% @navbar-height no-repeat;
+  background-size: cover;
+  -moz-background-size: cover;
+}
+
+.bg() {
+  background: @body-bg url(/modules/core/img/bg.png);
+}
+
+
+html,
+body {
+  height: 100%;
+}
+body {
+  .bg();
+}
+
+.container-spacer {
+  margin-top: (@navbar-height + @grid-gutter-width);
+}
+
+.container-fullscreen {
+  position: absolute;
+  top: 0; //@navbar-height;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  &.container-spacer {
+    top: @navbar-height;
+    margin-top: 0;
+  }
+}
+
+
+/**
+ * Typography
+ */
+ /*
+@font-face {
+  font-family: 'Signika';
+  src: url('/modules/core/fonts/signika-regular.eot');
+  src: url('/modules/core/fonts/signika-regular.eot?#iefix') format('embedded-opentype'),
+     url('/modules/core/fonts/signika-regular.woff') format('woff'),
+     url('/modules/core/fonts/signika-regular.ttf') format('truetype'),
+     url('/modules/core/fonts/signika-regular.svg#signikaregular') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+*/
+
+/* Some elements should have brand font (only for some safe languages?) It won't work nicely with Lithuanian for example. */
+h1, h2, h3, h4 {
+  font-family: @font-family-brand;
+  font-weight: normal;
+  font-style: normal;
+}
+
+hr {
+  position: relative;
+  height: .15em;
+  margin: 40px 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  @color-reel-1: #ca7900;
+  @color-reel-2: #e18700;
+  @color-reel-3: #e49a00;
+  @color-reel-4: #e0b521;
+  background: @color-reel-3;
+  &:before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: .15em;
+    width: 10em;
+    background: @brand-primary;
+
+    // Rainbow style hr
+    box-shadow:
+      10em 0 0 0 darken(@brand-primary, 5%),
+      20em 0 0 0 @color-reel-1,
+      30em 0 0 0 @color-reel-2,
+      40em 0 0 0 @color-reel-3,
+      50em 0 0 0 @color-reel-4,
+      60em 0 0 0 @color-reel-3,
+      70em 0 0 0 @color-reel-2,
+      80em 0 0 0 @color-reel-1;
+  }
+}
+
+.undecorated-link:hover {
+  text-decoration: none;
+}
+.text-color-links {
+  a {
+    color: @text-color;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+
+/**
+ * Logo
+ */
+.logo {
+  display: block;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+
+  // Logo sizes: xs, sm, md
+  @logo-size: 210px;
+
+  // md
+  .square(@logo-size);
+  background-size: @logo-size @logo-size;
+
+  &.logo-xs {
+    .square( (@logo-size/2) );
+    background-size: (@logo-size/2) (@logo-size/2);
+  }
+  &.logo-sm {
+    .square( (@logo-size/1.5) );
+    background-size: (@logo-size/1.5) (@logo-size/1.5);
+  }
+  /*
+  &.logo-lg {
+  }
+  */
+
+  // Logo images: green, blue, white, dark
+  background-image: url('/modules/core/img/logo/color-blue.png');
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    background-image: url('/modules/core/img/logo/color-blue@2x.png');
+  }
+  &.logo-white {
+    background-image: url('/modules/core/img/logo/white.png');
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      background-image: url('/modules/core/img/logo/white@2x.png');
+    }
+  }
+  &.logo-dark {
+    background-image: url('/modules/core/img/logo/dark.png');
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      background-image: url('/modules/core/img/logo/dark@2x.png');
+    }
+  }
+  &.logo-green {
+    background-image: url('/modules/core/img/logo/color-green.png');
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      background-image: url('/modules/core/img/logo/color-green@2x.png');
+    }
+  }
+}
+
+// Horizontal version (doesn't have different sizes and other than white version, feel free to add if you need!)
+.logo-horizontal {
+  display: block;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+
+  // Logo sizes: md
+  @logo-size-width: 177px;
+  @logo-size-height: 31px;
+
+  .size(@logo-size-width, @logo-size-height);
+  background-size: @logo-size-width @logo-size-height;
+
+  // Logo images: white
+  background-image: url('/modules/core/img/logo/horizontal-white.png');
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    background-image: url('/modules/core/img/logo/horizontal-white@2x.png');
+  }
+}
+
+
+/**
+ * Header
+ */
+#tr-header {
+  width: 100%;
+  height: @navbar-height;
+  clear: both;
+  .navbar {
+    .box-shadow(0 0 8px rgba(0,0,0,0.1));
+  }
+  .navbar-brand {
+    padding-top: 6px;
+  }
+  a {
+    text-shadow: 1px 1px 1px rgba(0,0,0,.3);
+  }
+  .dropdown {
+    a {
+      text-shadow: none;
+    }
+  }
+
+  /* Profile dropdown */
+  #header-profile {
+    /* Avatar */
+    img {
+      .square(24px);
+      border-radius: @border-radius-base;
+
+      /* Or else our avatar would make header higher,
+       * since avatar won't fit into line-height anyway.
+       * Let this happen only when nav isn't collapsed.
+       */
+      @media (min-width: @grid-float-breakpoint) {
+        position: absolute;
+        margin-left: 5px;
+        top: 10px;
+        right: 12px;
+      }
+      /* Move that avatar to left side on collapsed navi */
+      @media (max-width: @grid-float-breakpoint-max) {
+        float: left;
+        margin-right: 5px;
+      }
+    }
+    @media (min-width: @grid-float-breakpoint) {
+      padding-right: 44px;
+    }
+  }
+}
+
+#hero-header {
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  background-size: cover;
+  -moz-background-size: cover;
+  height: 300px;
+  padding-top: 150px;
+  margin-top: -30px;
+  margin-bottom: 30px;
+}
+
+
+.avatar {
+  border-radius: @border-radius-base;
+  background-color: @gray-lighter;
+}
+
+/**
+ * Main content area. Everything else except header and footer.
+ */
+#tr-main {
+  clear: both;
+  overflow: auto;
+  padding-bottom: (@footer-height + 30px);
+  @media (max-width: @screen-xs-max) {
+    padding-bottom: 30px;
+  }
+}
+
+/**
+ * Everything else, except footer, is wrapped inside this
+ */
+#tr-wrap {
+  min-height: 100%;
+}
+
+/**
+ * Sticky footer
+ */
+#tr-footer {
+  position: relative;
+  overflow: visible;
+  clear: both;
+  margin-top: -@footer-height;
+  height: @footer-height;
+  background: @gray-dark url(/modules/core/img/footer.jpg) 50% 0 repeat-x;
+  font-size: @font-size-small;
+  color: lighten(#000, 70%);
+  text-shadow: 1px 1px 1px rgba(0,0,0,.5);
+  /* Color reel: */
+  hr {
+    margin: 0;
+    width: 100%;
+  }
+  /* Used at map search -view... */
+  &.footer-sticky {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+  /* Used at home -view... */
+  &.footer-transparent {
+    z-index: 999;
+
+    /* http://www.colorzilla.com/gradient-editor/#000000+0,000000+100&0+0,0.65+100;Custom */
+    background: -moz-linear-gradient(top,  rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(0,0,0,0)), color-stop(100%,rgba(0,0,0,0.65))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00000000', endColorstr='#a6000000',GradientType=0 ); /* IE6-9 */
+    border: 0;
+    color: #fff;
+    a {
+      color: #fff;
+    }
+    .copyright {
+      color: darken(#fff, 10%);
+      a {
+        color: darken(#fff, 10%);
+      }
+    }
+    hr {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+  }
+  @media (max-width: @screen-xs-max) {
+    margin-top: 0;
+    height: auto;
+    margin-top: 0;
+    background-image: none;
+    padding-bottom: @padding-base-horizontal;
+    &:before {
+      clear: both;
+      width: 100%;
+    }
+  }
+  a {
+    color: lighten(#000, 70%);
+    text-decoration: none;
+    &:hover,
+    &:active {
+      text-decoration: underline;
+    }
+    &.love {
+      &,
+      &:hover,
+      &:active {
+        text-decoration: none;
+      }
+    }
+  }
+  .container {
+    padding-top: 15px;
+  }
+  nav {
+    font-size: @font-size-small;
+    margin-bottom: 4px;
+    width: 100%;
+    clear: both;
+    overflow: hidden;
+    text-align: center;
+    ul {
+      display: block;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      position: relative;
+      float: left;
+      left: 50%;
+      li {
+        padding: 0;
+        margin: 0 10px;
+        float: left;
+        position: relative;
+        display: block;
+        right: 50%;
+      }
+    }
+  }
+}
+
+
+
+.love {
+  i {
+    color: @brand-secondary;
+  }
+}
+
+/**
+ * Extend navs
+ */
+.meta-toolbar {
+  padding-top: (@grid-gutter-width / 2);
+  padding-bottom: (@grid-gutter-width / 2);
+  h3 {
+    margin: 0 @grid-gutter-width 0 0;
+    float: left;
+    display: inline-block;
+  }
+}
+
+.nav-toolbar {
+  display: block;
+  overflow: hidden;
+  font-size: @font-size-small;
+  line-height: @font-size-small;
+  a {
+    padding: 5px 10px;
+    .label {
+      margin-left: 5px;
+    }
+  }
+}
+
+.nav-toolbar {
+  > li {
+    > a {
+      font-size: @font-size-small;
+      line-height: @font-size-small;
+      padding: 5px 10px;
+    }
+  }
+}
+
+
+/**
+ * Row toolbar containing tabs
+ * Extends Bootstrap .row and .nav-tabs
+ */
+.row.row-nav-tabs {
+  margin-bottom: -1px;
+  .nav-tabs {
+    background: #f5f5f5;
+    border: 1px solid @gray-lighter;
+    border-radius: @border-radius-base @border-radius-base 0 0;
+    > li > a {
+      border-bottom: 1px solid transparent;
+    }
+    /* Inactive tabs have colorful border on hover */
+    > li > a:hover,
+    > li > a:focus {
+      border-bottom-color: @brand-primary;
+    }
+    > li.active > a,
+    > li.active > a:hover,
+    > li.active > a:focus {
+      border-top-color: transparent;
+      border-bottom-color: transparent;
+    }
+    > li:first-child > a {
+      /* Leftmost tab should not have border, because .nav-tabs already has left border */
+      border-left-color: transparent;
+      border-top-left-radius: @border-radius-base;
+    }
+  }
+}
+
+
+/**
+ * Hosting status
+ */
+.hosting-yes {
+  color: @hosting-yes;
+}
+.hosting-maybe {
+  color: @hosting-maybe;
+}
+.hosting-no {
+  color: @hosting-no;
+}
+.hosting-traveling {
+  color: @hosting-traveling;
+}
+
+.btn-hosting-yes {
+  background: @hosting-yes;
+}
+.btn-hosting-maybe {
+  background: @hosting-maybe;
+}
+.btn-hosting-no {
+  background: @hosting-no;
+}
+.btn-hosting-traveling {
+  background: @hosting-traveling;
+}
+.btn-hosting {
+  color: #fff;
+  .hosting-status {
+    color: #fff;
+  }
+  .caret {
+    border-top-color: #fff;
+  }
+}
+
+.dropdown-menu {
+  a.hosting-yes:hover {
+    background: @hosting-yes;
+  }
+  a.hosting-maybe:hover {
+    background: @hosting-maybe;
+  }
+  a.hosting-no:hover {
+    background: @hosting-no;
+  }
+  a.hosting-traveling:hover {
+    background: @hosting-traveling;
+  }
+}
+
+
+/**
+ * Connection experience
+ */
+.experience-positive {
+  font-weight: bold;
+  color: @experience-positive;
+}
+.experience-neutral {
+  font-weight: bold;
+  color: @experience-neutral;
+}
+.experience-negative {
+  font-weight: bold;
+  color: @experience-negative;
+}
+
+
+
+
+/**
+ * Forms
+ */
+textarea,
+input[type="text"],
+input[type="password"],
+input[type="datetime"],
+input[type="datetime-local"],
+input[type="date"],
+input[type="month"],
+input[type="time"],
+input[type="week"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+input[type="tel"],
+input[type="color"] {
+  // Focus state
+  &:focus {
+  border-color: lighten(@brand-primary, 20%);
+    .box-shadow(0 0 3px lighten(@brand-primary, 50%));
+  }
+}
+
+
+
+.thumbnail,
+.img-thumbnail {
+  padding: 1px;
+}
+
+.languages {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  > li {
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.nav-pills > li > a {
+  border-radius: @border-radius-base;
+}
+
+
+/**
+ * Extending Bootstrap panels
+ */
+.panel.is-highlighted {
+  border-color: lighten(@brand-primary, 20%);
+  .box-shadow(0 0 5px lighten(@brand-primary, 35%));
+}
+
+/* Shown to users with old IE */
+/*
+#warning-IE {
+  clear: both;
+  margin: -30px 0 30px 0;
+}
+
+#flashMessages {
+  position: fixed;
+  z-index: 1000;
+  top: @navbar-height;
+  right: 0;
+  left: 0;
+  .alert {
+    margin-bottom: 0;
+    border-top: 0;
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+}
+*/
+
+.cursor-pointer {
+  cursor: pointer;
+}

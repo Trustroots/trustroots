@@ -1,0 +1,19 @@
+<section data-ng-controller="ReferencesController" data-ng-init="find()">
+    <div class="page-header">
+        <h1>References</h1>
+    </div>
+    <div class="list-group">
+        <a data-ng-repeat="reference in references" data-ng-href="#!/references/{{reference._id}}" class="list-group-item">
+			<small class="list-group-item-text">
+				Posted on
+				<span data-ng-bind="reference.created | date:'medium'"></span>
+				by
+				<span data-ng-bind="reference.user.displayName"></span>
+			</small>
+			<h4 class="list-group-item-heading" data-ng-bind="reference.name"></h4>
+        </a>
+    </div>
+    <div class="alert alert-warning text-center" data-ng-hide="!references.$resolved || references.length">
+    	No References yet, why don't you <a href="/#!/references/create">create one</a>?
+    </div>
+</section>

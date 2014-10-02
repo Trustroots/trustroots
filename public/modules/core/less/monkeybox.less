@@ -1,0 +1,42 @@
+// Small monkeybox (users profile in glance)
+// Used eg. at message threads
+.monkeybox {
+  position: fixed;
+  min-width: 250px;
+  text-align: center;
+  font-size: @font-size-small;
+  color: @gray;
+  .avatar-link {
+    .avatar {
+      clear: both;
+      float: none;
+      margin: 0 auto 5px auto;
+      max-width: 64px;
+      max-height: 64px;
+    }
+    .avatar-label {
+      font-size: @font-size-base;
+      display: block;
+      margin: 5px auto;
+      clear: both;
+      float: none;
+      font-weight: bold;
+    }
+  }
+  a {
+    color: @gray;
+    text-decoration: none;
+    &:hover,
+    &:active {
+       text-decoration: underline;
+    }
+  }
+  h4 {
+    .text-muted();
+    text-transform: uppercase;
+    margin: 3px 0 0 0;
+    font-size: 13px;
+    line-height: 20px;
+    font-weight: normal;
+  }
+}

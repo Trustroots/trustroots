@@ -1,0 +1,47 @@
+<section class="container container-spacer" data-ng-controller="MessagesInboxController" data-ng-init="findInbox()">
+
+  <div class="row">
+    <div class="col-xs-12">
+
+      <!-- Other threads -->
+      <h4>Conversations
+        <!-- Unread message count:
+        <small class="text-muted">(2)</small>
+        -->
+      </h4>
+
+      <div class="panel panel-default panel-threadlist panel-threadlist-threads panel-xs-no_margin">
+
+        <!-- Threads -->
+        <table class="table table-condensed table-hover table-threadlist table-threadlist-threads" data-ng-if="threads.$resolved && threads.length">
+          <tbody>
+
+            <tr class="thread" data-ng-class="{ 'thread-unread': !thread.read }" data-ng-repeat="thread in threads" data-ng-click="openThread(thread)">
+              <td class="author col-md-3">
+                  <img src="/modules/core/img/avatar.png" class="avatar" width="36" height="36" alt=""> <span data-ng-bind="otherParticipant(thread, 'displayName')"></span>
+              </td>
+              <td class="summary">
+                <div data-ng-bind="thread.message.excerpt"></div>
+                <small class="indicators">
+                  <i class="fa fa-fw fa-reply text-muted" ng-show="thread.replied"></i>
+                </small>
+              </td>
+              <td class="ago" am-time-ago="thread.updated" title="{{thread.updated}}"></td>
+            </tr>
+
+          </tbody>
+        </table>
+        <!-- /Threads -->
+
+        <!-- No threads -->
+        <div class="text-center" data-ng-if="threads.$resolved && !threads.length">
+          <i class="fa fa-3x fa-comments-o"></i>
+          <h4>No conversations yet.</h4>
+        </div>
+        <!-- /No threads -->
+
+      </div><!-- /.panel -->
+    </div><!-- /.col-* -->
+  </div><!-- /.row -->
+
+</section><!-- /.container -->

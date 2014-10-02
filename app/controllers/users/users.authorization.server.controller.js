@@ -22,6 +22,20 @@ exports.userByID = function(req, res, next, id) {
 };
 
 /**
+ * User middleware with username
+ */
+exports.userByUsername = function(req, res, next, username) {
+	User.findOne({
+		username: username
+	}).exec(function(err, user) {
+		if (err) return next(err);
+		if (!user) return next(new Error('Failed to load User ' + username));
+		req.profile = user;
+		next();
+	});
+};
+
+/**
  * Require login routing middleware
  */
 exports.requiresLogin = function(req, res, next) {

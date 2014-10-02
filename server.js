@@ -26,7 +26,10 @@ var app = require('./config/express')(db);
 require('./config/passport')();
 
 // Start the app by listening on <port>
-app.listen(config.port);
+// Added get() for socket.io - This will make sure we don’t mess up our http server instance of express.
+// @todo: look for TTL issues ( @link http://stackoverflow.com/questions/22698661/mongodb-error-setting-ttl-index-on-collection-sessions )
+app.get('server').listen(config.port);
+//app.listen(config.port);
 
 // Expose app
 exports = module.exports = app;

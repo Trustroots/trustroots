@@ -12,12 +12,18 @@ module.exports = {
 	sessionCollection: 'sessions',
 	assets: {
 		lib: {
+		    //less: [
+			//	'public/lib/bootstrap/less/bootstrap.less',
+			//	'public/lib/fontawesome/less/font-awesome.less',
+			//	'public/modules/variables.less',
+			//	'public/modules/app.less'
+		    //],
 			css: [
-				'public/lib/bootstrap/dist/css/bootstrap.css',
-				//'public/lib/bootstrap/dist/css/bootstrap-theme.css',
-				'public/lib/fontawesome/css/font-awesome.css',
+			    'public/lib/medium-editor/dist/css/medium-editor.css',
+			    'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
 			],
 			js: [
+				'public/lib/jquery/dist/jquery.js',
 				'public/lib/angular/angular.js',
 				'public/lib/angular-resource/angular-resource.js',
 				'public/lib/angular-cookies/angular-cookies.js',
@@ -26,16 +32,23 @@ module.exports = {
 				'public/lib/angular-sanitize/angular-sanitize.js',
 				'public/lib/angular-ui-router/release/angular-ui-router.js',
 				'public/lib/angular-ui-utils/ui-utils.js',
-				'public/lib/angular-bootstrap/ui-bootstrap-tpls.js'
+				'public/lib/angular-bootstrap/ui-bootstrap-tpls.js',
+				'public/lib/moment/moment.js',
+				'public/lib/angular-moment/angular-moment.js',
+				'public/lib/medium-editor/dist/js/medium-editor.js',
+				'public/lib/angular-medium-editor/dist/angular-medium-editor.js',
+				'public/lib/angular-socket-io/socket.js',
+				'public/lib/perfect-scrollbar/src/jquery.mousewheel.js', // @todo: is this really needed?
+				'public/lib/perfect-scrollbar/src/perfect-scrollbar.js',
+				'public/lib/angular-perfect-scrollbar/src/angular-perfect-scrollbar.js',
 			]
 		},
         less: [
         	'public/modules/**/less/*.less'
         ],
-		css: [
-			'public/modules/**/css/*.css',
-			'public/modules/**/less/*.css'
-		],
+        css: [
+            // nada
+        ],
 		js: [
 			'public/config.js',
 			'public/application.js',

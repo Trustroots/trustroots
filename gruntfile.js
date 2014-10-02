@@ -7,8 +7,8 @@ module.exports = function(grunt) {
 		serverJS: ['gruntfile.js', 'server.js', 'config/**/*.js', 'app/**/*.js'],
 		clientViews: ['public/modules/**/views/**/*.html'],
 		clientJS: ['public/js/*.js', 'public/modules/**/*.js'],
-		//clientCSS: ['public/modules/**/*.css'],
-		clientLESS: ['public/modules/**/less/*.less'],
+		clientCSS: ['public/dist/application.css'],
+		clientLESS: ['public/less/*.less', 'public/modules/**/less/*.less'],
 		mochaTests: ['app/tests/**/*.js']
 	};
 
@@ -44,18 +44,18 @@ module.exports = function(grunt) {
 			},
 			clientLESS: {
 				files: watchFiles.clientLESS,
-				tasks: ['less', 'csslint'],
+				tasks: ['loadConfig', 'less:development', 'concat:css'],
 				options: {
 					livereload: true
 				}
-			},
-			//clientCSS: {
-			//  files: watchFiles.clientCSS,
-			//  tasks: ['csslint'],
-			//  options: {
-			//  	livereload: true
-			//  }
-			//}
+			}/*,
+			clientCSS: {
+			  files: watchFiles.clientCSS,
+			  tasks: ['csslint'],
+			  options: {
+			  	livereload: true
+			  }
+			}*/
 		},
 		jshint: {
 			all: {
@@ -67,33 +67,51 @@ module.exports = function(grunt) {
 		},
         less: {
             development: {
+                options: {
+                  paths: ['/'],
+                  compress: false
+                },
                 files: {
-                    'public/dist/modules.css': '<%= applicationLESSFiles %>'
+                    //'public/dist/application.css': '<%= applicationLESSFiles %>'
+                    'public/dist/application.css': 'public/less/application.less'
+                }
+            },
+            production: {
+                options: {
+                  paths: ['/'],
+                  compress: true
+                },
+                files: {
+                    //'public/dist/application.css': '<%= applicationLESSFiles %>'
+                    'public/dist/application.css': 'public/less/application.less'
                 }
             }
+        },
+        concat: {
+        	css: {
+        		src: watchFiles.clientCSS.concat([
+        		    // @todo: should be '<%= applicationCSSFiles %>' instead!
+			        'public/lib/medium-editor/dist/css/medium-editor.css',
+                    'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
+                ]),
+        		dest: 'public/dist/application.min.css',
+        	}
         },
 		csslint: {
 			options: {
 				csslintrc: '.csslintrc',
 			},
 			all: {
-				src: watchFiles.clientLESS
+				src: 'public/dist/application.min.css'
 			}
 		},
 		uglify: {
 			production: {
 				options: {
-					mangle: false
+					mangle: false // Angular doesn't like mangle
 				},
 				files: {
 					'public/dist/application.min.js': 'public/dist/application.js'
-				}
-			}
-		},
-		cssmin: {
-			combine: {
-				files: {
-					'public/dist/application.min.css': '<%= applicationCSSFiles %>'
 				}
 			}
 		},
@@ -165,21 +183,21 @@ module.exports = function(grunt) {
 		var config = require('./config/config');
 
 		grunt.config.set('applicationJavaScriptFiles', config.assets.js);
-		grunt.config.set('applicationCSSFiles', config.assets.css);
-		grunt.config.set('applicationLESSFiles', config.assets.less);
+		grunt.config.set('applicationCSSFiles', config.assets.lib.css.concat(config.assets.css));
+		grunt.config.set('applicationLESSFiles', config.assets.lib.less.concat(config.assets.less) );
 	});
 
 	// Default task(s).
-	grunt.registerTask('default', ['lint', 'concurrent:default']);
+	grunt.registerTask('default', ['loadConfig', 'less:development', 'concat:css', 'concurrent:default']);
 
 	// Debug task.
 	grunt.registerTask('debug', ['lint', 'concurrent:debug']);
 
 	// Lint task(s).
-	grunt.registerTask('lint', ['jshint', 'less', 'csslint']);
+	grunt.registerTask('lint', ['jshint', 'csslint']);
 
 	// Build task(s).
-	grunt.registerTask('build', ['lint', 'loadConfig', 'ngmin', 'uglify', 'cssmin']);
+	grunt.registerTask('build', ['loadConfig', 'less', 'concat:css', 'lint', 'ngmin', 'uglify']);
 
 	// Test task.
 	grunt.registerTask('test', ['env:test', 'mochaTest', 'karma:unit']);
