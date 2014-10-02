@@ -52,9 +52,6 @@ exports.update = function(req, res) {
  * Send User
  */
 exports.me = function(req, res) {
-    console.log('--------------------');
-    console.log('=> me');
-    console.log('--------------------');
 	res.jsonp(req.user || null);
 };
 
@@ -63,10 +60,6 @@ exports.me = function(req, res) {
  * Show the profile of the user
  */
 exports.getUser = function(req, res) {
-    console.log('--------------------');
-    console.log('=> getUser');
-    console.log('will push out: ' + req.user.username);
-    console.log('--------------------');
 	res.jsonp(req.user || null);
 };
 
@@ -75,11 +68,6 @@ exports.getUser = function(req, res) {
  * Pick only certain fields from whole profile @link http://underscorejs.org/#pick
  */
 exports.getMiniUser = function(req, res) {
-    console.log('--------------------');
-    console.log('=> getMiniUser');
-    console.log('will push out: ' + req.user.username);
-    console.log('--------------------');
-
 	res.jsonp( _.pick(req.user, 'id', 'displayName', 'username') || null );
 };
 
@@ -88,10 +76,6 @@ exports.getMiniUser = function(req, res) {
  * List of Profiles
  */
 exports.list = function(req, res) {
-    console.log('--------------------');
-    console.log('=> list');
-    console.log('--------------------');
-
 	User.find().sort('-created').exec(function(err, users) {
 		if (err) {
 			return res.status(400).send({
@@ -108,9 +92,6 @@ exports.list = function(req, res) {
  * Profile middleware
  */
 exports.userByID = function(req, res, next, id) {
-    console.log('--------------------');
-    console.log('=> userById: ' + id);
-    console.log('--------------------');
 	User.findById(id).exec(function(err, user) {
 		if (err) return next(err);
 		if (!user) return next(new Error('Failed to load user ' + id));
@@ -120,9 +101,6 @@ exports.userByID = function(req, res, next, id) {
 };
 
 exports.userByUsername = function(req, res, next, username) {
-    console.log('--------------------');
-    console.log('=> userByUsername: ' + username);
-    console.log('--------------------');
 	User.findOne({
     	username: username
 	}).exec(function(err, user) {
@@ -131,32 +109,5 @@ exports.userByUsername = function(req, res, next, username) {
 		req.user = user;
 		next();
 	});
-
-/*
-	User.findOne({
-		username: username
-	}).exec(function(err, user) {
-		if (err) return next(err);
-		if (!user) return next(new Error('Failed to load user ' + username));
-		req.user = user;
-		next();
-	});
-
-	*/
-
-	/*
-	User.findOne({
-		resetPasswordToken: req.params.token,
-		resetPasswordExpires: {
-			$gt: Date.now()
-		}
-	}, function(err, user) {
-		if (!user) {
-			return res.redirect('/#!/password/reset/invalid');
-		}
-
-		res.redirect('/#!/password/reset/' + req.params.token);
-	});
-	*/
 
 };
