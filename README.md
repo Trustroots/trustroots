@@ -4,37 +4,27 @@
 Trust Roots is developed using MEAN.js boilerplate is based on [MongoDB](http://www.mongodb.org/), [Node.js](http://www.nodejs.org/), [Express](http://expressjs.com/), and [AngularJS](http://angularjs.org/).
 
 ## Prerequisites
-Make sure you have installed all these prerequisites on your development machine.
-* Node.js - [Download & Install Node.js](http://www.nodejs.org/download/) and the npm package manager, if you encounter any problems, you can also use this [Github Gist](https://gist.github.com/isaacs/579814) to install Node.js.
-* MongoDB - [Download & Install MongoDB](http://www.mongodb.org/downloads), and make sure it's running on the default port (27017).
-* Bower - You're going to use the [Bower Package Manager](http://bower.io/) to manage your front-end packages, in order to install it make sure you've installed Node.js and npm, then install bower globally using npm:
+Make sure you have installed all these prerequisites:
+* [Node.js](http://www.nodejs.org/download/) and the npm package manager, if you encounter any problems, you can also use this [Github Gist](https://gist.github.com/isaacs/579814) to install Node.js.
+* [MongoDB](http://www.mongodb.org/downloads), and make sure it's running on the default port (27017).
+* [Bower](http://bower.io/) to manage your front-end packages, in order to install it make sure you've installed Node.js and npm, then install bower globally using npm: `npm install -g bower`
+* [Grunt](http://gruntjs.com/) task runner to automate your development process, in order to install it make sure you've installed Node.js and npm, then install grunt globally using npm: `npm install -g grunt-cli`
 
+### Cloning repository
 ```
-$ npm install -g bower
-```
-
-* Grunt - You're going to use the [Grunt Task Runner](http://gruntjs.com/) to automate your development process, in order to install it make sure you've installed Node.js and npm, then install grunt globally using npm:
-
-```
-$ sudo npm install -g grunt-cli
-```
-
-### Cloning The GitHub Repository
-```
-$ git clone https://github.com/trustroots/trustroots.git trustroots
+$ git clone https://github.com/Trustroots/trustroots.git trustroots
 ```
 This will clone the latest version of the Trust Roots repository to a **trustroots** folder.
 
-### Downloading The Repository Zip File
+### Downloading the repository zip file
 ```
-$ wget https://github.com/trustroots/trustroots/archive/master.zip -O trustroots.zip; unzip trustroots.zip; rm trustroots.zip
+$ wget https://github.com/Trustroots/trustroots/archive/master.zip -O trustroots.zip; unzip trustroots.zip; rm trustroots.zip
 ```
 
 ## Quick Install
 Install the Node.js dependencies.
 
 Run this inside **trustroots** folder:
-
 ```
 $ npm install
 ```
@@ -42,20 +32,19 @@ $ npm install
 This command does a few things:
 * First it will install the dependencies needed for the application to run.
 * If you're running in a development environment, it will then also install development dependencies needed for testing and running your application.
-* Finally, when the install process is over, npm will initiate a bower installcommand to install all the front-end modules needed for the application
+* Finally, when the install process is over, npm will initiate a bower install command to install all the front-end modules needed for the application.
 
 ## Running Your Application
-After the install process is over, you'll be able to run your application using Grunt, just run grunt default task:
+After the install, just run grunt default task:
 
 ```
 $ grunt
 ```
 
-...that equals:
+...that equals to:
 ```
 $ NODE_ENV=development grunt default
 ```
-
 
 Your application should run on the 3000 port so in your browser just go to [http://localhost:3000](http://localhost:3000)
 
@@ -72,19 +61,19 @@ $ fig up
 
 * Local development and testing with just Docker:
 ```bash
-$ docker build -t mean .
+$ docker build -t trustroots .
 $ docker run -p 27017:27017 -d --name db mongo
-$ docker run -p 3000:3000 --link db:db_1 mean
+$ docker run -p 3000:3000 --link db:db_1 trustroots
 $
 ```
 
 * To enable live reload forward 35729 port and mount /app and /public as volumes:
 ```bash
-$ docker run -p 3000:3000 -p 35729:35729 -v /Users/mdl/workspace/mean-stack/mean/public:/home/mean/public -v /Users/mdl/workspa/mean-stack/mean/app:/home/mean/app --link db:db_1 mean
+$ docker run -p 3000:3000 -p 35729:35729 -v /path/to/trustroots/public:/home/trustroots/public -v /path/to/trustroots/app:/home/trustroots/app --link db:db_1 trustroots
 ```
 
 ## Getting Started With Trust Roots Development
-* [Github](https://github.com/trustroots/)
+* [Github](https://github.com/Trustroots/)
 * See [Offical Documentation](http://meanjs.org/docs.html) for MEAN.js
 * [Our docs](documentation/README.md)
 
