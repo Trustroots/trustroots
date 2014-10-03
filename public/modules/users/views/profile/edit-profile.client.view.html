@@ -1,8 +1,9 @@
 <section class="container container-spacer" id="profile-editor" data-ng-controller="SettingsController">
-
+<!--
     <div data-ng-show="success" class="text-center text-success">
         <strong>Profile Saved Successfully</strong>
     </div>
+  -->
     <div data-ng-show="error" class="text-center text-danger">
         <strong data-ng-bind="error"></strong>
     </div>
@@ -14,136 +15,142 @@
 
             <div class="panel panel-default" id="profile-sidebar">
               <a href="#" class="avatar-edit">
-                <img src="/modules/core/img/avatar.png" ng-hide="user.avatar" alt="" width="261" height="261">
-                <img ng-src="{{user.avatar}}" ng-show="user.avatar" alt="" width="261" height="261">
+                <div tr-avatar data-user="profile" data-size="261" data-link="false"></div>
                 <label>
-                    <i class="fa fa-3x fa-camera"></i><br>
+                    <i class="fa fa-2x fa-camera"></i><br>
                     Change your profile photo
                 </label>
               </a>
               <div class="panel-body">
 
-                <p class="profile-edit-inactive">{{user.created}}</p>
+                <div class="form-group text-muted">
+                  Member since <span data-ng-bind="user.created | date:'mediumDate'"></span>
+                </div>
+
+                <div class="form-group">
+                  <label for="location-living"><h4>Lives in</h4></label>
+                  <input type="text" id="location-living" name="location-living" class="form-control" data-ng-model="user.locationLiving" value="City, Countryname">
+                </div>
+
+                <div class="form-group">
+                  <label for="location-from"><h4>From</h4></label>
+                  <input type="text" id="location-from" name="location-from" class="form-control" data-ng-model="user.locationFrom" value="City, Countryname">
+                </div>
 
                 <div class="form-group">
                   <label for="email"><h4>Email</h4></label>
                   <input type="email" id="email" name="email" class="form-control" data-ng-model="user.email" placeholder="Email">
                 </div>
 
-                <p>
+                <div class="form-group">
                   <label for="gender"><h4>Gender</h4></label>
-    			  <select id="gender" name="gender" class="form-control" data-ng-model="user.gender">
-                    <option>Choose...</option>
+    			        <select id="gender" name="gender" class="form-control" data-ng-model="user.gender">
+                    <option value="">I'd rather not tell</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                     <option value="other">Other</option>
-    			  </select>
-                </p>
+    			        </select>
+                </div>
 
-    				<div class="form-group">
-    					<label for="birthdate">Birthdate</label>
-    					<input type="text" id="birthdate" name="birthdate" class="form-control" data-ng-model="user.birthdate" placeholder="Birthdate">
-    				</div>
+    				    <div class="form-group">
+                  <label for="birthdate"><h4>Birthdate</h4></label>
+                  <p class="input-group">
+                    <input id="birthdate" type="text" class="form-control" datepicker-popup="{{birthdateFormat}}" ng-model="user.birthdate" is-open="birthdateOpened" datepicker-options="birthdateOptions" ng-required="false" close-text="Close" />
+                    <span class="input-group-btn">
+                      <button type="button" class="btn btn-inverse" ng-click="birthdateOpen($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                    </span>
+                  </p>
 
-                <p>
-                  <h4>From</h4>
-                  afFieldInput name='from'
-                </p>
+                </div>
 
-                <p>
+                <div class="form-group">
                   <h4>Last seen</h4>
-                  <div class="profile-edit-inactive">
-                    {{lastSeen}}
+                  <div>
+                    <time class="profile-edit-inactive">last-seen-time</time>
+                    <label for="lastseen-hide"><input id="lastseen-hide" type="checkbox"> Hide</label>
                   </div>
-                  afFieldInput name='lastSeenTimeHidden'
-                </p>
+                </div>
 
-                <p>
-                  <h4>Languages</h4>
-                  languagesSelector
-                </p>
+                <div class="form-group">
+                  <label for="languages"><h4>Languages</h4></label>
+                  <select id="languages" class="form-control">
+                    <option value=""></option>
+                  </select>
+                </div>
 
-                <p>
-                  <h4>Social networks</h4>
+                <div class="form-group">
+                  <h4>Other networks</h4>
 
                   <div data-ng-show="hasConnectedAdditionalSocialAccounts()">
+
                   	<h5>Connected:</h5>
                   	<ul class="fa-ul authentication-social">
                   	  <li data-ng-repeat="(providerName, providerData) in user.additionalProvidersData" class="remove-account-container">
                   	    <i class="fa fa-li fa-lg" ng-class="fa-{{providerName}}-square"></i> {{providerName}}
-                  	    <a class="pull-right" data-ng-click="removeUserSocialAccount(providerName)">
-                  	      <i class="fa fa-trash"></i>
-                  	    </a>
+                  	    <a class="pull-right" data-ng-click="removeUserSocialAccount(providerName)">Disconnect</a>
                   	  </li>
                   	</ul>
                   </div>
+
                   <h5>Connect to:</h5>
                   <ul class="fa-ul authentication-social">
                       <li><a href="/auth/facebook" data-ng-hide="isConnectedSocialAccount('facebook')">
-                      	<i class="fa fa-li fa-lg fa-facebook-square"></i>
+                      	<i class="fa fa-li fa-lg fa-facebook-square"></i> Facebook
                       </a></li>
                       <li><a href="/auth/twitter" data-ng-hide="isConnectedSocialAccount('twitter')">
-                      	<i class="fa fa-li fa-lg fa-twitter-square"></i>
+                      	<i class="fa fa-li fa-lg fa-twitter-square"></i> Twitter
                       </a></li>
                       <li><a href="/auth/google" data-ng-hide="isConnectedSocialAccount('google')">
-                      	<i class="fa fa-li fa-lg fa-google-square"></i>
+                      	<i class="fa fa-li fa-lg fa-google-square"></i> Google+
                       </a></li>
                       <li><a href="/auth/linkedin" data-ng-hide="isConnectedSocialAccount('linkedin')">
-                      	<i class="fa fa-li fa-lg fa-linkedin-square"></i>
+                      	<i class="fa fa-li fa-lg fa-linkedin-square"></i> LinkedIn
                       </a></li>
                       <li><a href="/auth/github" data-ng-hide="isConnectedSocialAccount('github')">
-                      	<i class="fa fa-li fa-lg fa-github-square"></i>
+                      	<i class="fa fa-li fa-lg fa-github-square"></i> Github
                       </a></li>
                   </ul>
-                </p>
 
-              </div>
-            </div>
+                </div>
+
+              </div><!-- /.panel-body -->
+            </div><!-- /.panel -->
 
           </div>
           <div class="col-sm-9">
 
-            <div class="row">
-                <div class="col-md-6">
-                  <span class="profile-name">
-    				<div class="form-group">
-    					<label for="firstName">First Name</label>
-    					<input type="text" id="firstName" name="firstName" class="form-control" data-ng-model="user.firstName" placeholder="First Name">
-    				</div>
-    				<div class="form-group">
-    					<label for="lastName">Last Name</label>
-    					<input type="text" id="lastName" name="lastName" class="form-control" data-ng-model="user.lastName" placeholder="Last Name">
-    				</div>
-    				<div class="form-group">
-    					<label for="username">Username</label>
-    					@<input type="text" id="username" name="username" class="form-control" data-ng-model="user.username" placeholder="Username">
-    				</div>
-                  </span>
-                  <div class="profile-tagline">
-    					<label for="tagline" class="sr-only">Tagline</label>
-    					<textarea id="tagline" name="tagline" class="form-control" data-ng-model="user.tagline" placeholder="Short tagline..."></textarea>
-                  </div>
-                </div>
-                <div class="col-md-6 text-right">
-                    <a ui-sref="profile" type="cancel" class="btn btn-link">Cancel</a>
-                    <button type="submit" class="btn btn-primary">Save profile</button>
-                </div>
+        <div class="row">
+          <div class="col-md-6">
+
+            <span class="profile-firstname" data-ng-model="user.firstName" medium-editor options="{'placeholder': 'First name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
+            <span class="profile-lastname" data-ng-model="user.lastName" medium-editor options="{'placeholder': 'Last name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
+
+            <h4 class="profile-username" tooltip="You cannot change your username" tooltip-placement="right">@{{user.username}}</h4>
+
+            <div class="profile-tagline">
+              <div class="profile-tagline" data-ng-model="user.tagline" medium-editor options="{'placeholder': 'Short tagline...', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></div>
             </div>
+
+          </div>
+          <div class="col-md-6 text-right">
+            <a ui-sref="profile" type="cancel" class="btn btn-link">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save profile</button>
+          </div>
+        </div>
 
 
             <!-- Profile tabs -->
-            <div class="row" id="profile-tabs">
-              <div class="col-xs-12">
-                <ul class="nav nav-tabs" >
-                  <li class="disabled">
-                    <a>Overview</a>
+            <div class="row">
+              <div class="col-xs-12"  id="profile-tabs">
+                <ul class="nav nav nav-pills">
+                  <!--
+                  <li class="disabled" data-ng-repeat="tab in tabs">
+                    <a>{{tab.title}}</a>
                   </li>
-                  <li class="disabled">
-                    <a>References</a>
-                  </li>
-                  <li class="disabled">
-                    <a>Contacts</a>
-                  </li>
+                -->
+                  <li class="disabled"><a>Overview</a></li>
+                  <li class="disabled"><a>References</a></li>
+                  <li class="disabled"><a>Contacts</a></li>
                 </ul>
               </div>
             </div>
@@ -154,10 +161,10 @@
 
                 <!-- About me -->
                 <div class="panel panel-default">
-                  <label for="description" class="panel-heading">Description</label>
+                  <label for="description" class="panel-heading">About me</label>
                   <div class="panel-body profile-description">
     				        <div class="form-group">
-    					        <textarea id="description" name="description" class="form-control" data-ng-model="user.description" placeholder="Description"></textarea>
+                      <div id="description" ng-model="user.description" medium-editor options='{"placeholder": "Description", "buttons": ["bold", "italic", "underline", "anchor", "quote", "unorderedlist"]}'></div>
     				        </div>
                   </div>
                 </div>

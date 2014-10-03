@@ -8,29 +8,24 @@
           <div tr-avatar data-user="profile" data-size="261" data-link="false"></div>
           <div class="panel-body">
 
+            <p>Member since <span data-ng-bind="profile.created | date:'mediumDate'"></span></p>
+
             <p>
-                yearsSince time=profile.birthday
-                {{profile.gender}}
-              <br>
-
-			<span data-ng-bind="profile.created | date:'mediumDate'"></span>
-
-
+              Lives in <a href="#">City, Country</a>
             </p>
 
             <p>
-              <h4>From</h4>
-              <a href="#">{{ profile.location }}</a>
+              From <a href="#">City, Country</a>
             </p>
 
             <p>
               <h4>Last seen</h4>
-              ...
+              <time>time</time>
             </p>
 
             <p>
               <h4>Languages</h4>
-              languages profile.languages
+              ...
             </p>
 
             <p data-ng-show="hasConnectedAdditionalSocialAccounts()">
@@ -52,7 +47,7 @@
             <div class="col-md-6">
                 <h2 class="profile-name" data-ng-show="profile.displayName" data-ng-bind="profile.displayName"></h2>
                 <h4 class="profile-username" data-ng-show="profile.username">@{{profile.username}}</h4>
-                <p class="profile-tagline" data-ng-show="profile.tagline" data-ng-bind="profile.tagline"></p>
+                <div class="profile-tagline" data-ng-show="profile.tagline" data-ng-bind="profile.tagline"></div>
             </div>
 
               <!-- When looking at own profile -->

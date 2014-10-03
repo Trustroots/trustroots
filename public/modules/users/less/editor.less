@@ -1,6 +1,6 @@
 #profile-editor {
 
-  .inline-editor {
+  .angular-medium-editor {
     display: inline;
     border: 0;
     background: transparent;
@@ -19,16 +19,48 @@
     }
   }
 
-  .profile-name {
-    input {
-      .inline-editor();
-      .h2();
-      font-family: @font-family-brand;
-      font-weight: normal;
-      font-style: normal;
-      margin: 0;
+  .profile-firstname,
+  .profile-lastname {
+    .h2();
+    font-family: @font-family-brand;
+    font-weight: normal;
+    font-style: normal;
+    margin: 0 10px 5px 0;
+  }
+  .profile-firstname {
+    margin-right: 4px;
+  }
+  .profile-tagline {
+    width: 100%;
+    margin: 5px 0 0 0;
+  }
+  .profile-firstname,
+  .profile-lastname,
+  .profile-tagline {
+    &.medium-editor-placeholder {
+        display: inline;
+        &:after {
+          font-style: normal;
+          display: inline;
+          color: @input-color-placeholder;
+          position: inherit;
+          outline: none;
+        }
     }
   }
+  /*
+    .profile-firstname,
+    .profile-lastname,
+    .profile-tagline {
+        display: inline;
+        &:after {
+          // sorry for '!important', medium-editor's CSS comes after ours so gotta override it
+          color: @input-color-placeholder !important;
+          position: inline !important;
+        }
+    }
+    */
+  /*
   .profile-tagline {
     margin-bottom: 0;
     textarea {
@@ -41,13 +73,14 @@
   .profile-description textarea {
     .inline-editor();
   }
+  */
 
   .avatar-edit {
     display: block;
     position: relative;
     width: 100%;
-    max-width: @profile-avatar-size;
-    min-height: @profile-avatar-size;
+    max-width: 261px;
+    min-height: 261px;
     background: #000;
     &:hover,
     &:active {
@@ -67,12 +100,12 @@
       bottom: 0;
       background: rgba(0,0,0,0.2);
       display: block;
-      padding-top: (@profile-avatar-size/2.5);
+      padding-top: 80%;
       color: #fff;
       text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
       text-align: center;
-      font-size: 17px;
-      line-height: 20px;
+      font-size: 14px;
+      line-height: 14px;
       .transition(background 0.2s);
     }
   }//avatar-edit

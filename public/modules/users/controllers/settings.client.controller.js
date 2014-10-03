@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('users').controller('SettingsController', ['$scope', '$http', '$stateParams', '$location', 'Users', 'Authentication',
-	function($scope, $http, $stateParams, $location, Users, Authentication) {
+angular.module('users').controller('SettingsController', ['$scope', '$http', '$stateParams', '$state', '$location', 'Users', 'Authentication',
+	function($scope, $http, $stateParams, $state, $location, Users, Authentication) {
 		$scope.user = Authentication.user;
 		$scope.profile = false;
 
@@ -48,6 +48,7 @@ angular.module('users').controller('SettingsController', ['$scope', '$http', '$s
 				user.$update(function(response) {
 					$scope.success = true;
 					Authentication.user = response;
+					$state.go('profile-updated', {username: response.username, updated: true});
 				}, function(response) {
 					$scope.error = response.data.message;
 				});

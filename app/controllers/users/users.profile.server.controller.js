@@ -7,7 +7,26 @@ var _ = require('lodash'),
 	errorHandler = require('../errors'),
 	mongoose = require('mongoose'),
 	passport = require('passport'),
+	sanitizeHtml = require('sanitize-html'),
 	User = mongoose.model('User');
+
+
+/**
+* Rules for sanitizing user description coming in and out
+* @link https://github.com/punkave/sanitize-html
+*/
+var userSanitizeOptions = {
+		allowedTags: [ 'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'li', 'ul', 'ol', 'blockquote', 'code', 'pre' ],
+		allowedAttributes: {
+			'a': [ 'href' ],
+			// We don't currently allow img itself, but this would make sense if we did:
+			//'img': [ 'src' ]
+		},
+		selfClosing: [ 'img', 'br' ],
+		// URL schemes we permit
+		allowedSchemes: [ 'http', 'https', 'ftp', 'mailto', 'tel' ]
+	};
+
 
 /**
  * Update user details
@@ -25,6 +44,9 @@ exports.update = function(req, res) {
 		user = _.extend(user, req.body);
 		user.updated = Date.now();
 		user.displayName = user.firstName + ' ' + user.lastName;
+
+	  // Sanitize user description
+	  user.description = sanitizeHtml(user.description, userSanitizeOptions);
 
 		user.save(function(err) {
 			if (err) {
@@ -95,6 +117,10 @@ exports.userByID = function(req, res, next, id) {
 	User.findById(id).exec(function(err, user) {
 		if (err) return next(err);
 		if (!user) return next(new Error('Failed to load user ' + id));
+
+		// Sanitize output
+		user.description = sanitizeHtml(user.description, userSanitizeOptions);
+
 		req.user = user;
 		next();
 	});
@@ -106,6 +132,10 @@ exports.userByUsername = function(req, res, next, username) {
 	}).exec(function(err, user) {
 		if (err) return next(err);
 		if (!user) return next(new Error('Failed to load user ' + username));
+
+		// Sanitize output
+		user.description = sanitizeHtml(user.description, userSanitizeOptions);
+		
 		req.user = user;
 		next();
 	});

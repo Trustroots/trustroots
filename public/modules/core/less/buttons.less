@@ -20,10 +20,16 @@
         text-shadow: none;
         color: @brand-primary;
         background: #fff;
+        &:focus,
+        &:active,
         &:hover {
             color: brighten(@brand-primary, 10%);
         }
     }
+}
+// Fix problem with inverse button hover state covering input border
+.input-group-btn:last-child > .btn.btn-inverse {
+  margin-left: 0;
 }
 
 /*

@@ -6,6 +6,12 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 		$scope.user = Authentication.user; // Currently logged in user
 		$scope.profile = false; // Profile to show
 
+	  // We landed here from profile editor, show success message
+		// @todo: nice notifications https://github.com/Trustroots/trustroots/issues/24
+	  if($stateParams.updated) {
+			$log.log('Profile updated');
+		}
+
 		// If user is not signed in then redirect back home
 		if (!$scope.user) $location.path('signin');
 
@@ -64,6 +70,24 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 			// @link http://angular-ui.github.io/ui-router/site/#/api/ui.router.state.$state
 			// @todo: change path here?
 		};
+
+	  // @link http://angular-ui.github.io/bootstrap/#/datepicker
+		$scope.birthdateFormat = 'dd-MMMM-yyyy';
+		$scope.birthdateMin = new Date(99,0,0);
+		$scope.birthdateMax = new Date();
+		$scope.birthdateOpened = false;
+		$scope.birthdateOptions = {
+			formatYear: 'yy', // Format of year in year range
+			startingDay: 1, // Starting day of the week from 0-6 (0=Sunday, ..., 6=Saturday)
+			yearRange: 40 // Number of years displayed in year selection
+		};
+		$scope.birthdateOpen = function($event) {
+    	$event.preventDefault();
+    	$event.stopPropagation();
+    	$scope.birthdateOpened = true;
+  	};
+
+
 
 	}
 ]);

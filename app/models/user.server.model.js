@@ -92,6 +92,14 @@ var UserSchema = new Schema({
 		}],
 		default: ['']
 	},
+	locationLiving: {
+		type: Schema.ObjectId,
+		ref: 'Geo'
+	},
+	locationFrom: {
+		type: Schema.ObjectId,
+		ref: 'Geo'
+	},
 	username: {
 		type: String,
 		unique: 'Username already exists',
