@@ -14,15 +14,15 @@
   padding-top: @grid-gutter-width;
   //padding-right: (@grid-gutter-width / 2); // Leave some space for the scrollbar
   overflow: hidden; // We'll do scrollbars with angular-perfect-scrollbar
+
+  .content-empty {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+  }
 }
 
-.messages-none {
-    text-align: center;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-}
 
 // Single message in the thread
 .message {
