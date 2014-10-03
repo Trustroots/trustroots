@@ -57,7 +57,7 @@ angular.module('references').controller('ReferencesController', ['$scope', '$sta
 
 		// Find existing Reference
 		$scope.findOne = function() {
-			$scope.reference = References.get({ 
+			$scope.reference = References.get({
 				referenceId: $stateParams.referenceId
 			});
 		};

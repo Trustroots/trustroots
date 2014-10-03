@@ -13,6 +13,10 @@ angular.module('users').config(['$stateProvider',
 			url: '/profile/:username',
 			templateUrl: 'modules/users/views/profile/view-profile.client.view.html'
 		}).
+		state('profile-tab', {
+			url: '/profile/:username/:tab',
+			templateUrl: 'modules/users/views/profile/view-profile.client.view.html'
+		}).
 		state('profile-edit', {
 			url: '/settings/profile',
 			templateUrl: 'modules/users/views/profile/edit-profile.client.view.html'

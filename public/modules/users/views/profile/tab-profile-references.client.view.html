@@ -1,4 +1,4 @@
-<ul class="reference-list">
+<ul class="reference-list" data-ng-controller="ReferencesController" data-ng-init="find()">
 
   <li data-ng-repeat="reference in references | orderBy:'-created':true" id="reference-{{ reference._id }}">
     <div class="row">

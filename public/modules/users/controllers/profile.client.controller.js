@@ -9,7 +9,7 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 		// If user is not signed in then redirect back home
 		if (!$scope.user) $location.path('signin');
 
-        // Fetch profile to show (note: not the currently logged in user's profile)
+    // Fetch profile to show (note: not the currently logged in user's profile)
 		$scope.findProfile = function() {
 		    if(!$stateParams.username) {
 		        $log.log('No username set, showing your own profile');
@@ -40,19 +40,30 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 
   	$scope.tabs = [
 			{
+				path: 'overview',
 				title: 'Overview',
 				content: '/modules/users/views/profile/tab-profile-overview.client.view.html',
-				active: true
+				active: $stateParams.tab && $stateParams.tab === 'overview'
 			},
     	{
+				path: 'references',
 				title: 'References',
 				content: '/modules/users/views/profile/tab-profile-references.client.view.html',
+				active: $stateParams.tab && $stateParams.tab === 'references'
 			},
     	{
+				path: 'contacts',
 				title: 'Contacts',
 				content: '/modules/users/views/profile/tab-profile-contacts.client.view.html',
+				active: $stateParams.tab && $stateParams.tab === 'contacts'
 			}
   	];
+
+		$scope.tabSelect = function(tabPath) {
+			$log.log(tabPath);
+			// @link http://angular-ui.github.io/ui-router/site/#/api/ui.router.state.$state
+			// @todo: change path here?
+		};
 
 	}
 ]);
