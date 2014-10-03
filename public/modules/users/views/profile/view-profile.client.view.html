@@ -74,21 +74,9 @@
         <!-- Profile tabs -->
         <div class="row">
           <div class="col-xs-12">
-            <tabset id="profile-tabs">
-              <tab heading="Overview" active>
-                <div id="profile-overview">
-                  Overview content
-                </div>
-              </tab>
-              <tab heading="References">
-                <div id="profile-references">
-                  References content
-                </div>
-              </tab>
-              <tab heading="Contacts">
-                <div id="profile-contacts">
-                  Contacts content
-                </div>
+            <tabset id="profile-tabs" type="pills">
+              <tab ng-repeat="tab in tabs" heading="{{tab.title}}" active="tab.active">
+                <div data-ng-include src="tab.content"></div>
               </tab>
             </tabset>
           </div>

@@ -37,5 +37,22 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 			return $scope.profile.provider === provider || ($scope.profile.additionalProvidersData && $scope.profile.additionalProvidersData[provider]);
 		};
 
+
+  	$scope.tabs = [
+			{
+				title: 'Overview',
+				content: '/modules/users/views/profile/tab-profile-overview.client.view.html',
+				active: true
+			},
+    	{
+				title: 'References',
+				content: '/modules/users/views/profile/tab-profile-references.client.view.html',
+			},
+    	{
+				title: 'Contacts',
+				content: '/modules/users/views/profile/tab-profile-contacts.client.view.html',
+			}
+  	];
+
 	}
 ]);

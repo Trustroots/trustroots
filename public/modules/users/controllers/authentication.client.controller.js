@@ -21,7 +21,7 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$http
 
 		$scope.signin = function() {
 
-			angular.element("#username")[0].focus();
+			angular.element('#username')[0].focus();
 
 		  // Make sure username is lowercase, as we require it to be at signup
 		  $scope.credentials.username = $scope.credentials.username.toLowerCase();
