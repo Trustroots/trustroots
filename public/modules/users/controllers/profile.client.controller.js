@@ -90,7 +90,7 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 		/**
 		* Open write/update reference -modal
 		*/
-		$scope.referenceModal = function (userTo, $event) {
+		$scope.referenceModal = function (profile, $event) {
 
 			if($event) $event.preventDefault();
 
