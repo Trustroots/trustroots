@@ -56,7 +56,7 @@
               <div class="col-md-6 text-right" data-ng-show="user._id === profile.id">
                 <small class="text-muted">This is your profile as others see it.</small>
                 &nbsp;
-                <a ui-sref="profile-edit" class="btn btn-primary">Edit your profile</a>
+                <a ui-sref="profile-edit({username: user.username})" class="btn btn-primary">Edit your profile</a>
               </div>
 
               <!-- When looking at somebody else's profile -->

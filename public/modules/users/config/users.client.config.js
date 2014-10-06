@@ -6,9 +6,9 @@ angular.module('users').run(['Menus', 'Authentication',
 
 		// Set top bar menu items
 		Menus.addMenuItem('topuserbar', Authentication.user.displayName, 'profile', 'dropdown', '/profile');
-		Menus.addSubMenuItem('topuserbar', 'profile', 'My profile', 'profile', 'profile', null, null, 0, 'user');
+		Menus.addSubMenuItem('topuserbar', 'profile', 'My profile', 'profile/' + Authentication.user.username, 'profile', null, null, 0, 'user');
 		Menus.addSubMenuItem('topuserbar', 'profile', 'Edit profile', 'profile/' + Authentication.user.username + '/edit', 'profile-edit', null, null, 0, 'edit');
-		Menus.addSubMenuItem('topuserbar', 'profile', 'Settings', 'profile-settings', 'profile-settings', null, null, 0, 'cog');
+		Menus.addSubMenuItem('topuserbar', 'profile', 'Settings', 'profile/' + Authentication.user.username + '/settings', 'profile-settings', null, null, 0, 'cog');
 		Menus.addSubMenuItem('topuserbar', 'profile', 'Help', 'contact', 'contact', null, null, 0, 'bolt');
 		Menus.addSubMenuDivider('topuserbar', 'profile');
 		Menus.addSubMenuItem('topuserbar', 'profile', 'Sign out', 'auth/signout', 'signout', null, null, 0, 'sign-out');
