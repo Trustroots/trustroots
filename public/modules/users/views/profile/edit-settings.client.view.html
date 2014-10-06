@@ -34,6 +34,7 @@
                 </div>
             </fieldset>
         </form>
+        <br><br>
     </div>
 
   </div>
@@ -41,9 +42,18 @@
 
   <!-- Remove -->
   <div class="row text-center">
-    <h3 class="col-xs-12">Remove your account</h3>
     <div class="col-xs-12">
-      <p><button class="btn btn-danger" ng-click="removeUser();">Yes, remove my profile</button></p>
+      <h3 class="text-danger">Remove your account</h3>
+      <p>
+        <label for="removal-confirm">
+          <input type="checkbox" id="removal-confirm" ng-model="removalConfirm">
+          <em>I understand this cannot be undone</em>
+        </label>
+      </p>
+      <p>
+        <button class="btn btn-danger" ng-click="removeUser();">Yes, remove my account permanently</button>
+      </p>
+      <br><br>
     </div>
   </div>
   <!-- /Remove -->

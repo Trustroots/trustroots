@@ -83,18 +83,26 @@ angular.module('users').controller('SettingsController', ['$scope', '$http', '$s
 
 
 		// Remove user permanently
+		$scope.removalConfirm = false;
 		$scope.removeUser = function() {
 			$scope.success = $scope.error = null;
 
-			var duhhAreYouSureYouWantToRemoveYourself = confirm('Are you sure you want to remove your account? This cannot be undone.');
+			if($scope.removalConfirm === true) {
 
-			if(duhhAreYouSureYouWantToRemoveYourself) {
-			  $http.post('/users/remove').success(function(response) {
-			  		// Do something!
-			  }).error(function(response) {
-			  	$scope.error = response.message;
-			  });
-		  }//yup, user is sure
+			  var duhhAreYouSureYouWantToRemoveYourself = confirm('Are you sure you want to remove your account? This cannot be undone.');
+
+			  if(duhhAreYouSureYouWantToRemoveYourself) {
+			    $http.post('/users/remove').success(function(response) {
+			    		// Do something!
+			    }).error(function(response) {
+			    	$scope.error = response.message;
+			    });
+		    }//yup, user is sure
+
+		  } // Require checkbox
+			else {
+				alert('Choose "I understand this cannot be undone"');
+			}
 
 		};
 
