@@ -71,14 +71,31 @@ angular.module('users').controller('SettingsController', ['$scope', '$http', '$s
 		};
 
 		$scope.findProfile = function() {
-		    if(!$stateParams.username) {
-                $scope.profile = $scope.user;
-		    }
-		    else {
-                $scope.profile = Users.get({
-                    username: $stateParams.username
-                });
-		    }
+		  if(!$stateParams.username) {
+        $scope.profile = $scope.user;
+		  }
+		  else {
+        $scope.profile = Users.get({
+          username: $stateParams.username
+        });
+		  }
+		};
+
+
+		// Remove user permanently
+		$scope.removeUser = function() {
+			$scope.success = $scope.error = null;
+
+			var duhhAreYouSureYouWantToRemoveYourself = confirm('Are you sure you want to remove your account? This cannot be undone.');
+
+			if(duhhAreYouSureYouWantToRemoveYourself) {
+			  $http.post('/users/remove').success(function(response) {
+			  		// Do something!
+			  }).error(function(response) {
+			  	$scope.error = response.message;
+			  });
+		  }//yup, user is sure
+
 		};
 
 	}
