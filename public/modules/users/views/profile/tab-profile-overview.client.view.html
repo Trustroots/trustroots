@@ -9,7 +9,11 @@
       </div>
       <div class="panel-body">
         <div data-ng-bind-html="profile.description | trustedHtml"></div>
-        <blockquote data-ng-hide="profile.description" class="profile-quote">“Everyone is necessarily the hero of his own life story.”</blockquote>
+
+        <!-- If no description, then deep thoughts... -->
+        <blockquote data-ng-hide="profile.description" class="profile-quote">
+          “Everyone is necessarily the hero of his own life story.”
+        </blockquote>
       </div>
     </div>
 

@@ -11,30 +11,41 @@ var should = require('should'),
 /**
  * Globals
  */
-var user, reference;
+var userFrom, userTo, reference;
 
 /**
  * Unit tests
  */
 describe('Reference Model Unit Tests:', function() {
 	beforeEach(function(done) {
-		user = new User({
+		userFrom = new User({
 			firstName: 'Full',
-			lastName: 'Name',
-			displayName: 'Full Name',
+			lastName: 'Name From',
+			displayName: 'Full Name From',
 			email: 'test@test.com',
-			username: 'username',
+			username: 'username-from',
+			password: 'password'
+		});
+		userTo = new User({
+			firstName: 'Full',
+			lastName: 'Name To',
+			displayName: 'Full Name To',
+			email: 'test-to@test.com',
+			username: 'username-to',
 			password: 'password'
 		});
 
-		user.save(function() { 
-			reference = new Reference({
-				name: 'Reference Name',
-				user: user
-			});
+		userTo.save(function() {
+		  userFrom.save(function() {
+		  	reference = new Reference({
+		  		reference: 'Reference Contents',
+		  		userFrom: userFrom,
+		  		userTo: userTo
+		  	});
 
-			done();
-		});
+		  	done();
+		  });
+	  });
 	});
 
 	describe('Method Save', function() {
@@ -45,8 +56,8 @@ describe('Reference Model Unit Tests:', function() {
 			});
 		});
 
-		it('should be able to show an error when try to save without name', function(done) { 
-			reference.name = '';
+		it('should be able to show an error when try to save without reference contents', function(done) {
+			reference.reference = '';
 
 			return reference.save(function(err) {
 				should.exist(err);
@@ -55,9 +66,10 @@ describe('Reference Model Unit Tests:', function() {
 		});
 	});
 
-	afterEach(function(done) { 
-		Reference.remove().exec();
-		User.remove().exec();
+	afterEach(function(done) {
+		reference.remove().exec();
+		userTo.remove().exec();
+		userFrom.remove().exec();
 
 		done();
 	});

@@ -18,10 +18,12 @@
               From <a href="#">City, Country</a>
             </p>
 
+            <!--
             <p>
               <h4>Last seen</h4>
               <time>time</time>
             </p>
+            -->
 
             <p>
               <h4>Languages</h4>
@@ -51,16 +53,24 @@
             </div>
 
               <!-- When looking at own profile -->
-              <div class="col-md-6 text-right" data-ng-show="user._id === profile._id">
-                <small class="text-muted">This is your profile as others see it.</small> <a ui-sref="profile-edit" class="btn btn-primary">Edit your profile</a>
+              <div class="col-md-6 text-right" data-ng-show="user._id === profile.id">
+                <small class="text-muted">This is your profile as others see it.</small>
+                &nbsp;
+                <a ui-sref="profile-edit" class="btn btn-primary">Edit your profile</a>
               </div>
 
               <!-- When looking at somebody else's profile -->
-              <div class="col-md-6" data-ng-hide="user._id === profile._id">
+              <div class="col-md-6" data-ng-hide="user._id === profile.id">
                 <ul class="nav nav-pills nav-narrow text-right" id="profile-actions" role="navigation">
                   <li><a ui-sref="listMessages({userId: profile._id})"><i class="fa fa-comment-o"></i> Send message</a></li>
-                  <li><a href="#" data-toggle="modal" data-target="#profile-reference-new"><i class="fa fa-check-circle"></i> Write a reference</a></li>
-                  <li><a href="#"><i class="fa fa-plus-circle"></i> Add contact</a></li>
+                  <li>
+                    <a ng-hide="profile.reference" class="cursor-pointer" ng-click="referenceModal(profile);"><i class="fa fa-heart-o"></i> Write a reference</a>
+                    <a ng-show="profile.reference" class="cursor-pointer" ng-click="referenceModal(profile);"><i class="fa fa-heart-o"></i> Update reference</a>
+                  </li>
+                  <li>
+                    <a ng-hide="profile.contact" class="cursor-pointer"><i class="fa fa-plus-square-o"></i> Add contact</a>
+                    <a ng-show="profile.contact" class="cursor-pointer"><i class="fa fa-minus-square-o"></i> Remove contact</a>
+                  </li>
                 </ul>
               </div>
 

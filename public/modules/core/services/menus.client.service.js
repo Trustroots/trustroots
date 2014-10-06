@@ -10,7 +10,7 @@ angular.module('core').service('Menus', [
 		// Define the menus object
 		this.menus = {};
 
-		// A private function for rendering decision 
+		// A private function for rendering decision
 		var shouldRender = function(user) {
 			if (user) {
 				if (!!~this.roles.indexOf('*')) {
@@ -79,7 +79,7 @@ angular.module('core').service('Menus', [
 		};
 
 		// Add menu item object
-		this.addMenuItem = function(menuId, menuItemTitle, menuItemURL, menuItemType, menuItemUIRoute, isPublic, roles, position) {
+		this.addMenuItem = function(menuId, menuItemTitle, menuItemURL, menuItemType, menuItemUIRoute, isPublic, roles, position, icon) {
 			// Validate that the menu exists
 			this.validateMenuExistance(menuId);
 
@@ -93,6 +93,7 @@ angular.module('core').service('Menus', [
 				isPublic: ((isPublic === null || typeof isPublic === 'undefined') ? this.menus[menuId].isPublic : isPublic),
 				roles: ((roles === null || typeof roles === 'undefined') ? this.menus[menuId].roles : roles),
 				position: position || 0,
+				icon: icon || false,
 				items: [],
 				shouldRender: shouldRender
 			});
@@ -101,8 +102,31 @@ angular.module('core').service('Menus', [
 			return this.menus[menuId];
 		};
 
+		// Add submenu divider object
+		this.addSubMenuDivider = function(menuId, rootMenuItemURL, position, roles) {
+			// Validate that the menu exists
+			this.validateMenuExistance(menuId);
+
+			// Search for menu item
+			for (var itemIndex in this.menus[menuId].items) {
+				if (this.menus[menuId].items[itemIndex].link === rootMenuItemURL) {
+					// Push new submenu divider
+					this.menus[menuId].items[itemIndex].items.push({
+						position: position || 0,
+						uiRoute: '/',// + rootMenuItemURL,
+						isDivider: true,
+						roles: ((roles === null || typeof roles === 'undefined') ? this.menus[menuId].items[itemIndex].roles : roles),
+						shouldRender: shouldRender
+					});
+				}
+			}
+
+			// Return the menu object
+			return this.menus[menuId];
+		};
+
 		// Add submenu item object
-		this.addSubMenuItem = function(menuId, rootMenuItemURL, menuItemTitle, menuItemURL, menuItemUIRoute, isPublic, roles, position) {
+		this.addSubMenuItem = function(menuId, rootMenuItemURL, menuItemTitle, menuItemURL, menuItemUIRoute, isPublic, roles, position, icon) {
 			// Validate that the menu exists
 			this.validateMenuExistance(menuId);
 
@@ -117,6 +141,7 @@ angular.module('core').service('Menus', [
 						isPublic: ((isPublic === null || typeof isPublic === 'undefined') ? this.menus[menuId].items[itemIndex].isPublic : isPublic),
 						roles: ((roles === null || typeof roles === 'undefined') ? this.menus[menuId].items[itemIndex].roles : roles),
 						position: position || 0,
+						icon: icon || false,
 						shouldRender: shouldRender
 					});
 				}
@@ -160,7 +185,11 @@ angular.module('core').service('Menus', [
 			return this.menus[menuId];
 		};
 
-		//Adding the topbar menu
+
+		//Adding the general topbar menu
 		this.addMenu('topbar');
+
+		//Adding the user's topbar menu
+		this.addMenu('topuserbar');
 	}
 ]);

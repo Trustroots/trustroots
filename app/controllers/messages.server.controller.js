@@ -56,13 +56,13 @@ exports.inbox = function(req, res) {
         var threadsCleaned = [];
         threads.forEach(function(thread) {
 
-            // Threads need just excerpt
-            thread.message.excerpt = sanitizeHtml(thread.message.content, {allowedTags: []}); // Clean message content from html
-            thread.message.excerpt = thread.message.excerpt.replace(/\s/g, ' '); // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
-            thread.message.excerpt = thread.message.excerpt.substring(0,100) + ' ...'; // Shorten
+          // Threads need just excerpt
+          thread.message.excerpt = sanitizeHtml(thread.message.content, {allowedTags: []}); // Clean message content from html
+          thread.message.excerpt = thread.message.excerpt.replace(/\s/g, ' '); // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
+          thread.message.excerpt = thread.message.excerpt.substring(0,100) + ' ...'; // Shorten
 
-            delete thread.message.content;
-            threadsCleaned.push(thread);
+          delete thread.message.content;
+          threadsCleaned.push(thread);
         });
 
         res.jsonp(threadsCleaned);
@@ -79,12 +79,6 @@ exports.send = function(req, res) {
 
   // take out socket instance from the app container, we'll need it later
   var socketio = req.app.get('socketio');
-
-  var userByID = function(id) {
-    User.findById(id).exec(function(err, user) {
-      return (err || !user) ? false : user;
-    });
-  };
 
   var message = new Message(req.body);
   message.userFrom = req.user;
@@ -277,5 +271,3 @@ exports.delete = function(req, res) {
   });
 };
 */
-
-

@@ -6,14 +6,17 @@ module.exports = function(app) {
 
 	// References Routes
 	app.route('/references')
-		.get(references.list)
 		.post(users.requiresLogin, references.create);
 
+	app.route('/references/by/:userId')
+		.get(users.requiresLogin, references.list);
+
 	app.route('/references/:referenceId')
-		.get(references.read)
+		.get(users.requiresLogin, references.read)
 		.put(users.requiresLogin, references.hasAuthorization, references.update)
 		.delete(users.requiresLogin, references.hasAuthorization, references.delete);
 
 	// Finish by binding the Reference middleware
+	app.param('userId', references.referencesByUser);
 	app.param('referenceId', references.referenceByID);
 };

@@ -37,6 +37,10 @@
   .profile-firstname,
   .profile-lastname,
   .profile-tagline {
+    // Make it clear we are editing these fields by coloring it when selected
+    &:focus {
+      background: fade(@brand-primary, 10%);
+    }
     &.medium-editor-placeholder {
         display: inline;
         &:after {

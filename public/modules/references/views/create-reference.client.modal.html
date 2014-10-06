@@ -1,0 +1,38 @@
+<form data-ng-controller="ReferencesController" class="form-horizontal" data-ng-submit="create()" novalidate>
+
+  <div class="modal-content reference-new">
+    <div class="modal-header">
+      <button type="button" class="close" aria-hidden="true" ng-click="cancel()">&times;</button>
+      <h4 class="modal-title" id="profile-reference-new-label">{{ (profile.reference) ? 'Update reference' : 'Leave a reference' }}
+        {{profile.username }}
+      </h4>
+    </div>
+
+    <div class="modal-body" data-ng-show="error">
+        <div class="text-danger">
+          <strong data-ng-bind="error"></strong>
+        </div>
+          <!--
+          <div id="reference-new-reputation">
+            <label>Choose two most descriptive</label><br>
+            <div class="col-xs-4">[reputation_likeminded]</div>
+            <div class="col-xs-4">[reputation_honest]</div>
+            <div class="col-xs-4">[reputation_trustworthy]</div>
+            <div class="col-xs-4">[reputation_precise]</div>
+            <div class="col-xs-4">[reputation_outgoing]</div>
+          </div>
+        -->
+    </div><!-- /.modal-body -->
+
+    <div class="reference-new-body">
+      <label class="sr-only" for="reference">Reference</label>
+      <textarea data-ng-model="reference" id="reference" class="form-control" placeholder="Write a reference..." required>{{ profile.reference.reference }}</textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-link" type="clear" ng-click="cancel()">Cancel</button>
+      <button class="btn btn-primary" type="submit">Leave a reference</button>
+    </div>
+  </div>
+
+</form>

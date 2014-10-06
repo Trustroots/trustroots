@@ -12,8 +12,8 @@ module.exports = function(app) {
 	// Setting up the users profile api
 
 	app.route('/users')
-	    .put(users.update)
-		.get(users.requiresLogin, users.getUser);
+	    .put(users.update);
+		  //.get(users.requiresLogin, users.getUser);
 
 	app.route('/users/mini/:userId')
 	    .get(users.requiresLogin, users.getMiniUser);

@@ -8,7 +8,9 @@ var _ = require('lodash'),
 	mongoose = require('mongoose'),
 	passport = require('passport'),
 	sanitizeHtml = require('sanitize-html'),
-	User = mongoose.model('User');
+	User = mongoose.model('User'),
+//Contact = mongoose.model('Contact'),
+	Reference = mongoose.model('Reference');
 
 
 /**
@@ -82,6 +84,7 @@ exports.me = function(req, res) {
  * Show the profile of the user
  */
 exports.getUser = function(req, res) {
+	console.log(req.user);
 	res.jsonp(req.user || null);
 };
 
@@ -118,8 +121,33 @@ exports.userByID = function(req, res, next, id) {
 		if (err) return next(err);
 		if (!user) return next(new Error('Failed to load user ' + id));
 
+	  // Make sure we're not sending unsequre content (eg. passwords)
+		// Pick here fields to send
+		user = _.pick(user, 'id',
+												'displayName',
+												'username',
+												'gender',
+												'tagline',
+												'description',
+												'locationFrom',
+												'locationLiving',
+												'birthdate',
+												'seen',
+												'created',
+												'updated'
+											);
+
 		// Sanitize output
-		user.description = sanitizeHtml(user.description, userSanitizeOptions);
+		if(user.description) user.description = sanitizeHtml(user.description, userSanitizeOptions);
+
+		// Check if logged in user has left reference for this profile
+		console.log('->userByID, check if user ' + req.user._id + ' has written reference for ' + user._id);
+		Reference.findOne({
+				userTo: user._id,
+				userFrom: req.user._id
+		}).exec(function(err, reference) {
+			user.reference = reference;
+		});
 
 		req.user = user;
 		next();
@@ -133,11 +161,39 @@ exports.userByUsername = function(req, res, next, username) {
 		if (err) return next(err);
 		if (!user) return next(new Error('Failed to load user ' + username));
 
+		// Make sure we're not sending unsequre content (eg. passwords)
+		// Pick here fields to send
+		user = _.pick(user, 'id',
+												'displayName',
+												'username',
+												'gender',
+												'tagline',
+												'description',
+												'locationFrom',
+												'locationLiving',
+												'birthdate',
+												'seen',
+												'created',
+												'updated'
+											);
+
 		// Sanitize output
-		user.description = sanitizeHtml(user.description, userSanitizeOptions);
-		
-		req.user = user;
-		next();
+		if(user.description) user.description = sanitizeHtml(user.description, userSanitizeOptions);
+
+	  // Check if logged in user has left reference for this profile
+		console.log('->userByUsername, check if user ' + req.user._id + ' has written reference for ' + user._id);
+		Reference.findOne({
+			  userTo: user._id,
+				userFrom: req.user._id
+		}).exec(function(err, reference) {
+
+			// Attach reference to profile
+			user.reference = reference;
+
+			req.user = user;
+			next();
+		});
+
 	});
 
 };

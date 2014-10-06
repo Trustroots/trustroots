@@ -14,7 +14,8 @@ angular.module('core').controller('HeaderController', ['$scope', '$log', 'Authen
 		$scope.authentication = Authentication;
 		$scope.isCollapsed = false;
 		$scope.isHidden = false;
-		$scope.menu = Menus.getMenu('topbar');
+		$scope.commonMenu = Menus.getMenu('topbar');
+		$scope.userMenu = Menus.getMenu('topuserbar');
 
 		$scope.toggleCollapsibleMenu = function() {
 			$scope.isCollapsed = !$scope.isCollapsed;

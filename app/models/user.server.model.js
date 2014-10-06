@@ -129,6 +129,9 @@ var UserSchema = new Schema({
 		}],
 		default: ['user']
 	},
+	seen: {
+		type: Date
+	},
 	updated: {
 		type: Date
 	},

@@ -1,31 +1,51 @@
 'use strict';
 
 // References controller
-angular.module('references').controller('ReferencesController', ['$scope', '$stateParams', '$location', 'Authentication', 'References',
-	function($scope, $stateParams, $location, Authentication, References ) {
+angular.module('references').controller('ReferencesController', ['$scope', '$log', '$state', '$stateParams', '$location', '$modal', 'Authentication', 'ReferencesBy', 'References',
+	function($scope, $log, $state, $stateParams, $location, $modal, Authentication, ReferencesBy, References ) {
 		$scope.authentication = Authentication;
 
 		// Create new Reference
 		$scope.create = function() {
+
+			$log.log('Reference to: ' + $scope.userTo);
+
 			// Create new Reference object
 			var reference = new References ({
-				name: this.name
+				reference: this.reference,
+				userTo: $scope.userTo
 			});
 
 			// Redirect after save
 			reference.$save(function(response) {
-				$location.path('references/' + response._id);
+
+
+				//if(modalInstance) {
+				//	$log.log('Close modal');
+				//	modalInstance.dismiss('cancel');
+				//}
+
+				$log.log('->Success');
+				$log.log(response);
+
+				$state.go('profile-reference', {'username': response.userTo.username, 'referenceId': response._id});
 
 				// Clear form fields
-				$scope.name = '';
+				//$scope.reference = '';
 			}, function(errorResponse) {
 				$scope.error = errorResponse.data.message;
 			});
 		};
 
 		// Remove existing Reference
-		$scope.remove = function( reference ) {
-			if ( reference ) { reference.$remove();
+		$scope.remove = function( reference, profile ) {
+		$log.log('->remove');
+		$log.log($stateParams);
+		$log.log(reference);
+
+			if ( reference ) {
+
+				reference.$remove();
 
 				for (var i in $scope.references ) {
 					if ($scope.references [i] === reference ) {
@@ -34,25 +54,32 @@ angular.module('references').controller('ReferencesController', ['$scope', '$sta
 				}
 			} else {
 				$scope.reference.$remove(function() {
-					$location.path('references');
+					//$location.path('references');
+					$state.go('profile-tab', {'username': profile.username, 'tab': 'references'});
 				});
 			}
 		};
 
 		// Update existing Reference
-		$scope.update = function() {
-			var reference = $scope.reference ;
-
+		$scope.update = function(profile) {
+			var reference = $scope.reference;
+			$log.log('->update');
+			$log.log($stateParams);
+			$log.log(reference);
 			reference.$update(function() {
-				$location.path('references/' + reference._id);
+				//$location.path('references/' + reference._id);
+				$state.go('profile-tab', {'username': profile.username, 'tab': 'references'});
 			}, function(errorResponse) {
 				$scope.error = errorResponse.data.message;
 			});
 		};
 
 		// Find a list of References
-		$scope.find = function() {
-			$scope.references = References.query();
+		$scope.list = function(profile) {
+			$log.log('list references: ' + profile.id);
+			$scope.references = ReferencesBy.query({
+				userId: profile.id || profile._id
+			});
 		};
 
 		// Find existing Reference
@@ -61,5 +88,6 @@ angular.module('references').controller('ReferencesController', ['$scope', '$sta
 				referenceId: $stateParams.referenceId
 			});
 		};
+
 	}
 ]);

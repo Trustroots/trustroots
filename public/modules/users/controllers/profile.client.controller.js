@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('users').controller('ProfileController', ['$scope', '$stateParams', '$location', '$log', 'Users', 'UserProfiles', 'Authentication',
-	function($scope, $stateParams, $location, $log, Users, UserProfiles, Authentication) {
+angular.module('users').controller('ProfileController', ['$scope', '$stateParams', '$state', '$location', '$log', '$modal', 'Users', 'UserProfiles', 'Authentication',
+	function($scope, $stateParams, $state, $location, $log, $modal, Users, UserProfiles, Authentication) {
 
 		$scope.user = Authentication.user; // Currently logged in user
 		$scope.profile = false; // Profile to show
@@ -18,14 +18,14 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
     // Fetch profile to show (note: not the currently logged in user's profile)
 		$scope.findProfile = function() {
 		    if(!$stateParams.username) {
-		        $log.log('No username set, showing your own profile');
-                $scope.profile = $scope.user;
+		      // No username set, direct to your own profile
+					$state.go('profile', {username: $scope.user.username});
 		    }
 		    else {
-		        $log.log('Get profile for '+ $stateParams.username);
-                $scope.profile = UserProfiles.get({
-                    username: $stateParams.username
-                });
+		      // Get profile for $stateParams.username
+          $scope.profile = UserProfiles.get({
+              username: $stateParams.username
+          });
 		    }
 		};
 
@@ -34,7 +34,6 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 			for (var i in $scope.profile.additionalProvidersData) {
 				return true;
 			}
-
 			return false;
 		};
 
@@ -42,7 +41,6 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 		$scope.isConnectedSocialAccount = function(provider) {
 			return $scope.profile.provider === provider || ($scope.profile.additionalProvidersData && $scope.profile.additionalProvidersData[provider]);
 		};
-
 
   	$scope.tabs = [
 			{
@@ -54,7 +52,7 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
     	{
 				path: 'references',
 				title: 'References',
-				content: '/modules/users/views/profile/tab-profile-references.client.view.html',
+				content: '/modules/references/views/list-references.client.view.html',
 				active: $stateParams.tab && $stateParams.tab === 'references'
 			},
     	{
@@ -71,6 +69,7 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 			// @todo: change path here?
 		};
 
+	  // Birthday input field
 	  // @link http://angular-ui.github.io/bootstrap/#/datepicker
 		$scope.birthdateFormat = 'dd-MMMM-yyyy';
 		$scope.birthdateMin = new Date(99,0,0);
@@ -88,6 +87,23 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
   	};
 
 
+		/**
+		* Open write/update reference -modal
+		*/
+		$scope.referenceModal = function (userTo, $event) {
+
+			if($event) $event.preventDefault();
+
+			var modalInstance = $modal.open({
+				templateUrl: '/modules/references/views/create-reference.client.modal.html',
+				controller: function ($scope, $modalInstance) {
+					$scope.profile = profile;
+					$scope.cancel = function () {
+						$modalInstance.dismiss('cancel');
+					};
+				}
+			});
+		};
 
 	}
 ]);

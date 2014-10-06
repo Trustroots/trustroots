@@ -10,17 +10,25 @@ var mongoose = require('mongoose'),
  * Reference Schema
  */
 var ReferenceSchema = new Schema({
-	name: {
+	reference: {
 		type: String,
 		default: '',
-		required: 'Please fill Reference name',
+		required: 'Please fill reference',
 		trim: true
 	},
 	created: {
 		type: Date,
 		default: Date.now
 	},
-	user: {
+	updated: {
+		type: Date,
+		default: Date.now
+	},
+	userFrom: {
+		type: Schema.ObjectId,
+		ref: 'User'
+	},
+	userTo: {
 		type: Schema.ObjectId,
 		ref: 'User'
 	}

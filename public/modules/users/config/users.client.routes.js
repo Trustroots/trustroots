@@ -9,6 +9,10 @@ angular.module('users').config(['$stateProvider',
 			url: '/welcome',
 			templateUrl: 'modules/users/views/authentication/welcome.client.view.html'
 		}).
+		state('profile-edit', {
+			url: '/profile-edit',
+			templateUrl: 'modules/users/views/profile/edit-profile.client.view.html'
+		}).
 		state('profile-settings', {
 			url: '/profile-settings',
 			templateUrl: 'modules/users/views/profile/edit-settings.client.view.html'
@@ -25,9 +29,9 @@ angular.module('users').config(['$stateProvider',
 			url: '/profile/:username/:tab',
 			templateUrl: 'modules/users/views/profile/view-profile.client.view.html'
 		}).
-		state('profile-edit', {
-			url: '/settings/profile',
-			templateUrl: 'modules/users/views/profile/edit-profile.client.view.html'
+		state('profile-reference', {
+			url: '/profile/:username/references/:referenceId',
+			templateUrl: 'modules/users/views/profile/view-profile.client.view.html'
 		}).
 		state('password', {
 			url: '/settings/password',
