@@ -76,4 +76,3 @@ module.exports.getCSSAssets = function() {
 	//return output;
 	return ['/dist/application.min.css'];
 };
-

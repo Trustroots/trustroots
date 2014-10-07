@@ -146,7 +146,7 @@ exports.userByID = function(req, res, next, id) {
 
 		// Check if logged in user has left reference for this profile
 		//console.log('->userByID, check if user ' + req.user._id + ' has written reference for ' + user._id);
-		
+
 		Reference.findOne({
 				userTo: user._id,
 				userFrom: req.user._id

@@ -2,12 +2,11 @@
 
 // Init the application configuration module for AngularJS application
 var ApplicationConfiguration = (function() {
+
 	// Init module configuration options
 	var applicationModuleName = 'trust-roots';
 	var applicationModuleVendorDependencies = [
-	                                            'btford.socket-io',
 	                                            'ngResource',
-	                                            'ngCookies',
 	                                            'ngAnimate',
 	                                            'ngTouch',
 	                                            'ngSanitize',
@@ -15,6 +14,7 @@ var ApplicationConfiguration = (function() {
 	                                            'ui.bootstrap',
 	                                            'ui.utils',
 	                                            'ui.select',
+																						  'btford.socket-io',
 	                                            'angularMoment',
 	                                            'angular-medium-editor',
 	                                            'perfect_scrollbar'

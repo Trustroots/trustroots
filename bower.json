@@ -1,10 +1,9 @@
 {
   "name": "trust-roots",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Travellers network",
   "dependencies": {
     "bootstrap": "~3",
-    "fontawesome": "~4",
     "angular": "~1.2",
     "angular-resource": "~1.2",
     "angular-mocks": "~1.2",
@@ -20,6 +19,7 @@
     "angular-socket-io": "~0.6.0",
     "angular-perfect-scrollbar": "*",
     "angular-ui-select": "~0.8.0",
+    "fontawesome": "~4",
     "select2": "~3.4.5",
     "selectize": "~0.8.5"
   }

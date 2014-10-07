@@ -14,10 +14,10 @@ module.exports = {
 	assets: {
 		lib: {
 		    //less: [
-			//	'public/lib/bootstrap/less/bootstrap.less',
-			//	'public/lib/fontawesome/less/font-awesome.less',
-			//	'public/modules/variables.less',
-			//	'public/modules/app.less'
+			  //  'public/lib/bootstrap/less/bootstrap.less',
+			  //  'public/lib/fontawesome/less/font-awesome.less',
+			  //  'public/modules/variables.less',
+			  //  'public/modules/app.less'
 		    //],
 			css: [
 			    'public/lib/medium-editor/dist/css/medium-editor.css',
@@ -29,7 +29,6 @@ module.exports = {
 				'public/lib/jquery/dist/jquery.js',
 				'public/lib/angular/angular.js',
 				'public/lib/angular-resource/angular-resource.js',
-				'public/lib/angular-cookies/angular-cookies.js',
 				'public/lib/angular-animate/angular-animate.js',
 				'public/lib/angular-touch/angular-touch.js',
 				'public/lib/angular-sanitize/angular-sanitize.js',
@@ -53,6 +52,7 @@ module.exports = {
         ],
         css: [
             // nada
+						//'public/modules/**/css/*.css'
         ],
 		js: [
 			'public/config.js',
