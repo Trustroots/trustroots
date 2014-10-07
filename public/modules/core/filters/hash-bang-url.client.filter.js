@@ -1,6 +1,8 @@
 'use strict';
 
-// Add hashbang to urls that don't start with '/'
+/**
+ * Add hashbang to urls that don't start with '/'
+ */
 angular.module('core').filter('hashbangurl', [
 	function() {
 		return function(url) {
