@@ -87,7 +87,32 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
 
     };
 
-    $scope.languages = ['lt', 'en'];
+    //$scope.languages = Languages.get();
+    $scope.languages = [{
+        "name": "Liberian English",
+        "iso_639_3": "lir",
+        "common": false,
+        "type": "living",
+        "scope": "individual"
+      },
+      {
+        "name": "Lisu",
+        "iso_639_3": "lis",
+        "common": false,
+        "type": "living",
+        "scope": "individual"
+      },
+      {
+        "name": "Lithuanian",
+        "iso_639_1": "lt",
+        "iso_639_3": "lit",
+        "iso_639_2b": "lit",
+        "iso_639_2t": "lit",
+        "common": true,
+        "type": "living",
+        "scope": "individual"
+      }
+    ]
 
   }
 ]);

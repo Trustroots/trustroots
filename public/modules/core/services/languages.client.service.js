@@ -1,16 +1,19 @@
 'use strict';
 
 // Users service used for communicating with the users REST endpoint
-angular.module('core').factory('Languages', ['$http',
-    function($http) {
-        var $service = {}
+angular.module('core').factory('Languages', ['$http', '$q',
+    function($http, $q) {
+        var service = {}
+        var deffered = $q.defer()
 
-        $service.get = function () {
+        service.get = function () {
             $http.get('/modules/core/languages/languages.json').success(function(data){
-                return $service.languages = data;
+                deffered.resolve(data);
             })
+
+            return deffered.promise;
         }
 
-        return $service;
+        return service;
     }
 ]);

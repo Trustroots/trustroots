@@ -80,10 +80,10 @@
                     {{language}}
                   </div>
                   <div>
-                    <ui-select multiple ng-model="user.languages" theme="select2" ng-disabled="disabled">
-                      <ui-select-match placeholder="Type in languages...">{{$item}}</ui-select-match>
+                    <ui-select multiple ng-model="user.languages">
+                      <ui-select-match placeholder="Type in languages...">{{$item.name}}</ui-select-match>
                       <ui-select-choices repeat="language in languages | filter:$select.search">
-                        {{language}}
+                        {{language.name}}
                       </ui-select-choices>
                     </ui-select>
                   </div>
