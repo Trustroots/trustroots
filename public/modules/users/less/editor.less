@@ -135,13 +135,11 @@
 
 /* Choose avatar -modal */
 #profile-avatar-choises {
-  .avatar-source-init-upload {
+  // When avatar image works as a link
+  .avatar-source-link {
     display: block;
     position: relative;
     .square(144px);
-    label {
-      margin: 10px 0;
-    }
     img {
       position: absolute;
       top: 0;
@@ -167,6 +165,12 @@
       span {
         background: rgba(0,0,0,0.1);
       }
+    }
+  }
+  .avatar-source-label {
+    margin: 10px 0 15px 0;
+    input {
+      margin-right: 5px;
     }
   }
 }
