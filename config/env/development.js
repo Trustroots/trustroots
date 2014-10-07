@@ -4,7 +4,18 @@ module.exports = {
 	db: 'mongodb://localhost/trust-roots-dev',
 	app: {
 		title: 'Trust Roots - Development Environment',
-		miniUserProfileFields: ['id', 'displayName', 'username', 'avatarSource', 'emailHash']
+		miniUserProfileFields: ['id', 'displayName', 'username', 'avatarSource', 'emailHash'],
+
+		// These will be pushed PUBLICLY to html as json:
+		settings: {
+			mapbox: {
+				user: 'bikeshed',
+				map: 'hn2ghak7'
+			},
+			osm: {
+				email: ['maps','@','trustroots','.org'].join('') // spam bot prevention...
+			}
+		}
 	},
 	facebook: {
 		clientID: process.env.FACEBOOK_ID || 'APP_ID',
