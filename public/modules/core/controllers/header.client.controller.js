@@ -3,13 +3,14 @@
 angular.module('core').controller('HeaderController', ['$scope', '$log', 'Authentication', 'Menus', 'Socket',
 	function($scope, $log, Authentication, Menus, Socket) {
 
-        Socket.on('reconnect', function () {
-          $log.log('Reconnected to the server');
-        });
+		// @todo: show info popup when this happens
+    Socket.on('reconnect', function () {
+      $log.log('Reconnected to the server');
+    });
 
-        Socket.on('reconnecting', function () {
-          $log.log('Attempting to re-connect to the server');
-        });
+    Socket.on('reconnecting', function () {
+      $log.log('Attempting to re-connect to the server');
+    });
 
 		$scope.authentication = Authentication;
 		$scope.isCollapsed = false;

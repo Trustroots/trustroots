@@ -21,13 +21,13 @@
 				</a>
 				<ul ng-switch-when="dropdown" class="dropdown-menu">
 					<li data-ng-repeat="subitem in item.items | orderBy: 'position'" data-ng-if="subitem.shouldRender(authentication.user);" ui-route="{{subitem.uiRoute}}" ng-class="{active: $uiRoute, divider: subitem.isDivider}">
-						<a href="/#!/{{subitem.link}}" ng-hide="subitem.isDivider">
+						<a href="{{ subitem.link | hashbangurl }}" ng-hide="subitem.isDivider">
 						  <i class="fa fa-fw fa-{{subitem.icon}}" ng-if="subitem.icon"></i>
 							{{subitem.title}}
 						</a>
 					</li>
 				</ul>
-				<a ng-switch-default href="/#!/{{item.link}}">
+				<a ng-switch-default href="{{ item.link | hashbangurl }}">
 					<i class="fa fa-fw fa-{{item.icon}}" ng-if="item.icon"></i>
 					{{item.title}}
 				</a>
@@ -37,11 +37,11 @@
 		<!-- Menu for non logged users -->
 		<ul class="nav navbar-nav navbar-right" data-ng-hide="authentication.user">
 			<li ui-route="/signup" ng-class="{active: $uiRoute}">
-				<a href="/#!/signup"><i class="fa fa-arrow-circle-up"></i> Sign Up</a>
+				<a ui-sref="signup"><i class="fa fa-arrow-circle-up"></i> Sign Up</a>
 			</li>
 			<li class="divider-vertical"></li>
 			<li ui-route="/signin" ng-class="{active: $uiRoute}">
-				<a href="/#!/signin"><i class="fa fa-sign-in"></i> Login</a>
+				<a ui-sref="signin"><i class="fa fa-sign-in"></i> Login</a>
 			</li>
 		</ul>
 
@@ -56,40 +56,18 @@
 	    	</a>
 	    	<ul ng-switch-when="dropdown" class="dropdown-menu">
 	    		<li data-ng-repeat="subitem in item.items | orderBy: 'position'" data-ng-if="subitem.shouldRender(authentication.user);" ui-route="{{subitem.uiRoute}}" ng-class="{active: $uiRoute, divider: subitem.isDivider}">
-	    			<a ng-href="/#!/{{subitem.link}}" ng-hide="subitem.isDivider">
+	    			<a ng-href="{{ subitem.link | hashbangurl }}" ng-hide="subitem.isDivider">
 							<i class="fa fa-fw fa-{{subitem.icon}}" ng-if="subitem.icon"></i>
 							{{subitem.title}}
 						</a>
 	    		</li>
 	    	</ul>
-	    	<a ng-switch-default ng-href="/#!/{{item.link}}">
+	    	<a ng-switch-default ng-href="{{ item.link | hashbangurl }}">
 					<i class="fa fa-fw fa-{{item.icon}}" ng-if="item.icon"></i>
 					{{item.title}}
 				</a>
 	    </li>
 
-	<!--
-			<li class="dropdown">
-				<a href="#" class="dropdown-toggle" data-toggle="dropdown">
-					<span data-ng-bind="authentication.user.displayName"></span> <b class="caret"></b>
-				</a>
-				<ul class="dropdown-menu">
-				    <li>
-				        <a ui-sref="profile({username: authentication.user.username})"><i class="fa fa-fw fa-user"></i> My profile</a>
-				    </li>
-					<li>
-						<a ui-sref="profile-edit"><i class="fa fa-fw fa-edit"></i> Edit Profile</a>
-					</li>
-          <li>
-              <a ui-sref="contact"><i class="fa fa-fw fa-lg fa-bolt"></i> Help</a>
-          </li>
-					<li class="divider" role="presentation"></li>
-					<li>
-						<a href="/auth/signout"><i class="fa fa-fw fa-sign-out"></i> Signout</a>
-					</li>
-				</ul>
-			</li>
-		-->
 		</ul>
 	</nav>
 </div>

@@ -11,7 +11,7 @@ angular.module('users').run(['Menus', 'Authentication',
 		Menus.addSubMenuItem('topuserbar', 'profile', 'Settings', 'profile/' + Authentication.user.username + '/settings', 'profile-settings', null, null, 0, 'cog');
 		Menus.addSubMenuItem('topuserbar', 'profile', 'Help', 'contact', 'contact', null, null, 0, 'bolt');
 		Menus.addSubMenuDivider('topuserbar', 'profile');
-		Menus.addSubMenuItem('topuserbar', 'profile', 'Sign out', 'auth/signout', 'signout', null, null, 0, 'sign-out');
+		Menus.addSubMenuItem('topuserbar', 'profile', 'Sign out', '/auth/signout', '/auth/signout', null, null, 0, 'sign-out');
 	}
 ]);
 
