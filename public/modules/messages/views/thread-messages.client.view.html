@@ -21,7 +21,9 @@
               <div class="message-meta">
                 <span data-ng-show="authentication.user._id === message.userFrom._id">You</span>
                 <a ui-sref="profile({ username: message.userFrom.username })" data-ng-bind="message.userFrom.displayName" data-ng-show="authentication.user._id !== message.userFrom._id"></a>
-                — <!--<a ng-href="#message-{{ message._id }}">--><time title="{{message.created}}" am-time-ago="message.created"></time><!--</a>-->
+                — <!--<a ng-href="#message-{{ message._id }}">-->
+                  <time tooltip="{{message.created | date:'medium'}}" am-time-ago="message.created"></time>
+                <!--</a>-->
               </div>
 
               <!-- Message header - start -->

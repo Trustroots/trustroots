@@ -21,27 +21,24 @@ var validateLocalStrategyPassword = function(password) {
 	return (this.provider !== 'local' || (password && password.length >= 8));
 };
 
-
 /**
  * A Validation function for username
  * - at least 3 characters
  * - maximum 32 characters
  * - only a-z0-9_-.
  * - not in list of illegal usernames
- * - no consecutive dots, "." ok, ".." nope
+ * - no consecutive dots: "." ok, ".." nope
  */
 var validateUsername = function(username) {
     var usernameRegex = /^[a-z0-9.\-_]{3,32}$/,
         dotsRegex = /^([^.]+\.?)$/,
-        illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'password', 'username', 'user', ' demo', 'test'];
+        illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test'];
     return (this.provider !== 'local' || ( username &&
                                            usernameRegex.test(username) &&
 	                                       illegalUsernames.indexOf(username) < 0) &&
 	                                       dotsRegex.test(username) //strpos(username, '..') === false
 	                                     );
 };
-
-
 
 /**
  * User Schema
@@ -119,6 +116,9 @@ var UserSchema = new Schema({
 		default: '',
 		validate: [validateLocalStrategyPassword, 'Password should be more than 8 characters long.']
 	},
+	emailHash: {
+		type: String,
+	},
 	salt: {
 		type: String
 	},
@@ -135,6 +135,9 @@ var UserSchema = new Schema({
 		}],
 		default: ['user']
 	},
+	seen: {
+		type: Date
+	},
 	updated: {
 		type: Date
 	},
@@ -142,13 +145,20 @@ var UserSchema = new Schema({
 		type: Date,
 		default: Date.now
 	},
+	avatarSource: {
+		type: [{
+			type: String,
+			enum: ['none','gravatar','facebook','local']
+		}],
+		default: ['gravatar']
+	},
 	/* For reset password */
 	resetPasswordToken: {
 		type: String
 	},
-  	resetPasswordExpires: {
-  		type: Date
-  	}
+  resetPasswordExpires: {
+  	type: Date
+  }
 });
 
 /**
@@ -159,6 +169,9 @@ UserSchema.pre('save', function(next) {
 		this.salt = new Buffer(crypto.randomBytes(16).toString('base64'), 'base64');
 		this.password = this.hashPassword(this.password);
 	}
+
+	// Pre-cached email hash to use with Gravatar
+	this.emailHash = crypto.createHash('md5').update( this.email.trim().toLowerCase() ).digest('hex');
 
 	next();
 });

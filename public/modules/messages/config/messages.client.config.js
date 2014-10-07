@@ -4,6 +4,6 @@
 angular.module('messages').run(['Menus',
 	function(Menus) {
 		// Set top bar menu items
-		Menus.addMenuItem('topbar', 'Messages', 'messages', 'messages');
+		Menus.addMenuItem('topuserbar', 'Messages', 'messages', 'messages');
 	}
 ]);

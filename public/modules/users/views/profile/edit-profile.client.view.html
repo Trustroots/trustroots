@@ -14,8 +14,9 @@
           <div class="col-sm-3">
 
             <div class="panel panel-default" id="profile-sidebar">
-              <a href="#" class="avatar-edit">
-                <div tr-avatar data-user="profile" data-size="261" data-link="false"></div>
+              <a href="#" class="avatar-edit" ng-click="avatarModal(user, $event);">
+                <!-- 'Watch' will cause directive to rerender each time avatar source changes. -->
+                <div tr-avatar data-watch="true" data-user="user" data-size="261" data-link="false"></div>
                 <label>
                     <i class="fa fa-2x fa-camera"></i><br>
                     Change your profile photo
@@ -29,12 +30,14 @@
 
                 <div class="form-group">
                   <label for="location-living"><h4>Lives in</h4></label>
-                  <input type="text" id="location-living" name="location-living" class="form-control" data-ng-model="user.locationLiving" value="City, Countryname">
+                  <div tr-location id="location-living"></div>
+                  <!--<input type="text" id="location-living" name="location-living" class="form-control" data-ng-model="user.locationLiving" value="City, Countryname">-->
                 </div>
 
                 <div class="form-group">
                   <label for="location-from"><h4>From</h4></label>
-                  <input type="text" id="location-from" name="location-from" class="form-control" data-ng-model="user.locationFrom" value="City, Countryname">
+                  <!--<input type="text" id="location-from" name="location-from" class="form-control" data-ng-model="user.locationFrom" value="City, Countryname">-->
+                  <div tr-location id="location-from"></div>
                 </div>
 
                 <div class="form-group">
@@ -138,7 +141,7 @@
 
           </div>
           <div class="col-md-6 text-right">
-            <a ui-sref="profile" type="cancel" class="btn btn-link">Cancel</a>
+            <a ui-sref="profile({username: user.username})" type="cancel" class="btn btn-link">Cancel</a>
             <button type="submit" class="btn btn-primary">Save profile</button>
           </div>
         </div>
@@ -194,6 +197,62 @@
           </div><!-- /.col -->
 
         </div><!-- /.row -->
+
+        <script type="text/ng-template" id="avatar.client.modal.html">
+          <div class="modal-body" id="profile-avatar-choises">
+
+            <div class="row text-center">
+              <div class="col-xs-5 col-xs-offset-1">
+                <label for="avatar-source-none">
+                  <div tr-avatar data-size="144" data-link="false" data-source="none"></div>
+                  <br>No profile photo<br>
+                  <input type="radio" ng-model="user.avatarSource" id="avatar-source-none" value="none">
+                </label>
+              </div>
+              <div class="col-xs-5">
+                <label for="avatar-source-gravatar">
+                  <div tr-avatar data-user="user" data-size="144" data-link="false" data-source="gravatar"></div>
+                  <br>Gravatar<br>
+                  <input type="radio" ng-model="user.avatarSource" id="avatar-source-gravatar" value="gravatar">
+                </label>
+              </div>
+            </div>
+            <div class="row text-center">
+              <div class="col-xs-5 col-xs-offset-1">
+
+                <!-- When connected to FB-->
+                <label for="avatar-source-facebook" ng-if="isConnectedSocialAccount('facebook')">
+                    <div tr-avatar data-user="user" data-size="144" data-link="false" data-source="facebook"></div>
+                    Facebook<br>
+                    <input type="radio" ng-model="user.avatarSource" id="avatar-source-facebook" value="facebook">
+                </label>
+
+                <!-- When NOT connected to FB-->
+                <label for="avatar-source-facebook" ng-if="!isConnectedSocialAccount('facebook')">
+                    <a href="/auth/facebook" class="avatar-source-init-upload">
+                      <div tr-avatar data-size="144" data-link="false" data-source="none"></div>
+                      <span>Connect first</span>
+                    </a>
+                    Facebook<br>
+                </label>
+              </div>
+              <div class="col-xs-5">
+                <label for="avatar-source-upload">
+                  <a href="#" class="avatar-source-init-upload">
+                    <div tr-avatar data-user="user" data-size="144" data-link="false" data-source="local"></div>
+                    <span>Upload</span>
+                  </a>
+                  My own<br>
+                  <input type="radio" disabled ng-model="user.avatarSource" id="avatar-source-upload" value="upload">
+                </label>
+              </div>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+              <button class="btn btn-primary" ng-click="close()">Done</button>
+          </div>
+        </script>
 
       </form>
 

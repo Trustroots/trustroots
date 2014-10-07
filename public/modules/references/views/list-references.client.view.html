@@ -1,19 +1,76 @@
-<section data-ng-controller="ReferencesController" data-ng-init="find()">
-    <div class="page-header">
-        <h1>References</h1>
+<section data-ng-controller="ReferencesController" data-ng-init="list(profile)">
+
+  <small data-ng-if="!references.$resolved" class="row text-muted text-center">Wait a moment...</small>
+
+  <ul class="reference-list" data-ng-if="references.$resolved">
+
+    <li data-ng-repeat="reference in references | orderBy:'-created'" id="reference-{{ reference._id }}">
+      <div class="row">
+        <div class="col-xs-12 col-sm-10">
+          <div class="panel panel-default reference reference-positive"><!-- reference-positive/negative -->
+            <div class="panel-body">
+              <span data-ng-bind="reference.reference"></span>
+              <!--
+              <div class="reference-reply reference-reply-negative">
+                <h4><a href="#" class="title-link">Firstname</a> commented back</h4>
+                <small class="text-muted"><span title="24.2.2013">2 months ago.</span> — <span class="experience-negative">Negative</span></small><br>
+                Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet.
+              </div>
+               -->
+              <div class="reference-meta">
+                <!--
+                <div class="reference-reputation">
+                  [Reputation]
+                </div>
+              -->
+
+                <span data-ng-show="authentication.user._id === reference.userFrom._id">
+                  <a class="cursor-pointer" ui-sref="editReference({'referenceId': reference._id})">edit</a>
+                  ・
+                  <a class="cursor-pointer" data-ng-click="remove(reference, profile);">delete</a>
+                  ・
+                </span>
+
+                <a ui-sref="profile-reference({username: reference.userTo.username, referenceId: reference._id})">
+                  <time ng-hide="reference.updated" tooltip="{{reference.created | date:'medium'}}" am-time-ago="reference.created"></time>
+
+                  <!-- ...or reference was updated: -->
+                  <span ng-show="reference.updated">Updated </span>
+                  <time ng-show="reference.updated" tooltip="{{reference.updated | date:'medium'}}" am-time-ago="reference.updated"></time>
+                </a>
+
+              </div>
+            </div>
+          </div><!-- /.panel -->
+        </div>
+        <div class="col-xs-12 col-sm-2 reference-author">
+          <div tr-avatar data-user="reference.userFrom" data-size="36"></div><br>
+          {{ reference.userFrom.displayName }}
+        </div>
+      </div><!-- /.row -->
+    </li><!-- /.reference -->
+
+  </ul>
+  <!-- /.reference-list -->
+
+  <!-- No references -->
+  <div class="row content-empty" data-ng-if="references.$resolved && !references.length">
+    <div class="col-md-12">
+      <i class="fa fa-3x fa-heart-o"></i>
+      <h4>No references yet</h4>
+
+      <!-- User's own profile -->
+      <p data-ng-show="user._id === profile.id">
+        <em>You could ask your friends to write about you.</em>
+      </p>
+
+      <!-- Other profiles -->
+      <p data-ng-hide="user._id === profile.id">
+        <em><a ng-click="leaveReference(profile);" class="cursor-pointer">Leave a reference</a></em>
+      </p>
+
     </div>
-    <div class="list-group">
-        <a data-ng-repeat="reference in references" data-ng-href="#!/references/{{reference._id}}" class="list-group-item">
-			<small class="list-group-item-text">
-				Posted on
-				<span data-ng-bind="reference.created | date:'medium'"></span>
-				by
-				<span data-ng-bind="reference.user.displayName"></span>
-			</small>
-			<h4 class="list-group-item-heading" data-ng-bind="reference.name"></h4>
-        </a>
-    </div>
-    <div class="alert alert-warning text-center" data-ng-hide="!references.$resolved || references.length">
-    	No References yet, why don't you <a href="/#!/references/create">create one</a>?
-    </div>
+  </div>
+  <!-- /No references -->
+
 </section>

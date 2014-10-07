@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('users').controller('SettingsController', ['$scope', '$http', '$stateParams', '$state', '$location', 'Users', 'Authentication',
-	function($scope, $http, $stateParams, $state, $location, Users, Authentication) {
+angular.module('users').controller('SettingsController', ['$scope', '$modal', '$http', '$stateParams', '$state', '$location', 'Users', 'Authentication',
+	function($scope, $modal, $http, $stateParams, $state, $location, Users, Authentication) {
 		$scope.user = Authentication.user;
 		$scope.profile = false;
 
@@ -71,14 +71,58 @@ angular.module('users').controller('SettingsController', ['$scope', '$http', '$s
 		};
 
 		$scope.findProfile = function() {
-		    if(!$stateParams.username) {
-                $scope.profile = $scope.user;
-		    }
-		    else {
-                $scope.profile = Users.get({
-                    username: $stateParams.username
-                });
-		    }
+		  if(!$stateParams.username) {
+        $scope.profile = $scope.user;
+		  }
+		  else {
+        $scope.profile = Users.get({
+          username: $stateParams.username
+        });
+		  }
+		};
+
+		/**
+		* Open avatar -modal
+		*/
+		$scope.avatarModal = function (user, $event) {
+
+			if($event) $event.preventDefault();
+
+			var modalInstance = $modal.open({
+				templateUrl: 'avatar.client.modal.html', //inline at template
+				controller: function ($scope, $modalInstance) {
+					$scope.user = user;
+					$scope.close = function () {
+						$modalInstance.dismiss('close');
+					};
+				}
+			});
+
+		};
+
+
+		// Remove user permanently
+		$scope.removalConfirm = false;
+		$scope.removeUser = function() {
+			$scope.success = $scope.error = null;
+
+			if($scope.removalConfirm === true) {
+
+			  var duhhAreYouSureYouWantToRemoveYourself = confirm('Are you sure you want to remove your account? This cannot be undone.');
+
+			  if(duhhAreYouSureYouWantToRemoveYourself) {
+			    $http.post('/users/remove').success(function(response) {
+			    		// Do something!
+			    }).error(function(response) {
+			    	$scope.error = response.message;
+			    });
+		    }//yup, user is sure
+
+		  } // Require checkbox
+			else {
+				alert('Choose "I understand this cannot be undone"');
+			}
+
 		};
 
 	}
