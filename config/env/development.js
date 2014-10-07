@@ -3,7 +3,8 @@
 module.exports = {
 	db: 'mongodb://localhost/trust-roots-dev',
 	app: {
-		title: 'Trust Roots - Development Environment'
+		title: 'Trust Roots - Development Environment',
+		miniUserProfileFields: ['id', 'displayName', 'username', 'avatarSource', 'emailHash']
 	},
 	facebook: {
 		clientID: process.env.FACEBOOK_ID || 'APP_ID',

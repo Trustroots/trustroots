@@ -5,8 +5,12 @@
  */
 var mongoose = require('mongoose'),
 	errorHandler = require('./errors'),
+	config = require('../../config/config'),
 	Reference = mongoose.model('Reference'),
 	_ = require('lodash');
+
+// Populate users with these fields
+var userPopulateFields = config.app.miniUserProfileFields.join(' ');
 
 /**
  * Create a Reference
@@ -58,7 +62,7 @@ exports.update = function(req, res) {
 		  reference
 		  	.populate({
 		  		path: 'userTo',
-		  		select: 'displayName username'
+		  		select: userPopulateFields
 		  	}, function(err, reference) {
 		  		if (err) {
 		  			return res.status(400).send({
@@ -136,8 +140,8 @@ exports.referencesByUser = function(req, res, next, userId) {
 				{ userTo: userId }
 			]
 		})
-	  .populate('userFrom', 'displayName username')
-	  .populate('userTo', 'displayName username')
+	  .populate('userFrom', userPopulateFields)
+	  .populate('userTo', userPopulateFields)
 	  .exec(function(err, references) {
 	    if (err) return next(err);
 	    if (! references) return next(new Error('Failed to load References for user ' + userId));

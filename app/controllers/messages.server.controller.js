@@ -5,6 +5,7 @@
  */
 var mongoose = require('mongoose'),
   errorHandler = require('./errors'),
+  config = require('../../config/config'),
   sanitizeHtml = require('sanitize-html'),
   Message = mongoose.model('Message'),
   Thread = mongoose.model('Thread'),
@@ -27,6 +28,8 @@ var messageSanitizeOptions = {
     allowedSchemes: [ 'http', 'https', 'ftp', 'mailto', 'tel' ]
   };
 
+// Populate users with these fields
+var userPopulateFields = config.app.miniUserProfileFields.join(' ');
 
 /**
  * List of threads aka inbox
@@ -42,8 +45,8 @@ exports.inbox = function(req, res) {
       }
     )
     .sort('updated')
-    .populate('userFrom', 'displayName username')
-    .populate('userTo', 'displayName username')
+    .populate('userFrom', userPopulateFields)
+    .populate('userTo', userPopulateFields)
     .populate('message', 'content')
     .exec(function(err, threads) {
       if (err) {
@@ -139,10 +142,10 @@ exports.send = function(req, res) {
 
       // We'll need some info about related users, populate some fields
       message
-        .populate('userFrom', 'displayName username')
+        .populate('userFrom', userPopulateFields)
         .populate({
           path: 'userTo',
-          select: 'displayName username'
+          select: userPopulateFields
         }, function(err, message) {
           if (err) {
             return res.status(400).send({
@@ -175,6 +178,7 @@ exports.thread = function(req, res) {
  * Thread middleware
  */
 exports.threadByUser = function(req, res, next, userId) {
+
   Message.find(
       {
         $or: [
@@ -184,8 +188,8 @@ exports.threadByUser = function(req, res, next, userId) {
       }
     )
     .sort('-created')
-    .populate('userFrom', 'displayName username')
-    .populate('userTo', 'displayName username')
+    .populate('userFrom', userPopulateFields)
+    .populate('userTo', userPopulateFields)
     .exec(function(err, messages) {
       if (err) return next(err);
       if (!messages) return next(new Error('Failed to load messages.'));

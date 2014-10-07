@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('users').controller('SettingsController', ['$scope', '$http', '$stateParams', '$state', '$location', 'Users', 'Authentication',
-	function($scope, $http, $stateParams, $state, $location, Users, Authentication) {
+angular.module('users').controller('SettingsController', ['$scope', '$modal', '$http', '$stateParams', '$state', '$location', 'Users', 'Authentication',
+	function($scope, $modal, $http, $stateParams, $state, $location, Users, Authentication) {
 		$scope.user = Authentication.user;
 		$scope.profile = false;
 
@@ -79,6 +79,25 @@ angular.module('users').controller('SettingsController', ['$scope', '$http', '$s
           username: $stateParams.username
         });
 		  }
+		};
+
+		/**
+		* Open avatar -modal
+		*/
+		$scope.avatarModal = function (user, $event) {
+
+			if($event) $event.preventDefault();
+
+			var modalInstance = $modal.open({
+				templateUrl: 'avatar.client.modal.html', //inline at template
+				controller: function ($scope, $modalInstance) {
+					$scope.user = user;
+					$scope.close = function () {
+						$modalInstance.dismiss('close');
+					};
+				}
+			});
+
 		};
 
 
