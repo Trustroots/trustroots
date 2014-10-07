@@ -9,13 +9,14 @@
  * user (User model)
  *
  * Optional parameters:
- * size (default 32)
+ * size (default 256)
  * source (overwrite user's source selection)
  * link (will not wrap <img> into link)
  * watch (will start watching user.avatarSource and refresh each time that changes)
  */
 angular.module('users').directive('trAvatar', [
   function() {
+    var defaultSize = 256;
     return {
         //templateUrl: '/modules/users/views/directives/tr-avatar.client.view.html',
         template: '<img ng-src="{{avatar}}" class="avatar" width="{{size}}" height="{{size}}" alt="">',
@@ -49,7 +50,7 @@ angular.module('users').directive('trAvatar', [
             if($scope.source === 'facebook' ) {
               if($scope.user && $scope.user.email) {
                 var fb_id = '#';
-                $scope.avatar = '//graph.facebook.com/' + fb_id + '/picture/?width=' + $scope.size + '&height=' + $scope.size;
+                $scope.avatar = 'http://graph.facebook.com/' + fb_id + '/picture/?width=' +($scope.size || defaultSize) + '&height=' + ($scope.size || defaultSize);
               }
               else {
                 $scope.avatar = $scope.defaultAvatar;
@@ -63,7 +64,7 @@ angular.module('users').directive('trAvatar', [
              */
             else if($scope.source === 'gravatar') {
               if($scope.user.emailHash) {
-                $scope.avatar = '//gravatar.com/avatar/' + $scope.user.emailHash + '?s=' + $scope.size;
+                $scope.avatar = 'http://gravatar.com/avatar/' + $scope.user.emailHash + '?s=' + ($scope.size || defaultSize);
 
                 // Gravatar fallback is required to be online. It's defined at settings.json
                 // If public default avatar is set, send it to Gravatar as failback
@@ -101,21 +102,26 @@ angular.module('users').directive('trAvatar', [
             });
           };
 
+          $scope.$watch('size',function(newVal, oldVal) {
+            $scope.determineSource();
+          });
+
         }],
         link: function (scope, element, attr, ctrl) {
 
           // Options
-          scope.size = attr.size || 32;
+          scope.size = attr.size || defaultSize;
 
           // Wrap it to link by default
-          if(!attr.link && scope.user) {
-            angular.element(element).wrap('<a href="#!/profile/'+scope.user.username+'"></a>');
+          if(!attr.link && attr.user) {
+            angular.element(element).wrap('<a ng-href="#!/profile/{{user.username}}"></a>');
           }
 
           if(attr.watch) scope.startWatching();
 
           // Make sure source won't change dynamicly when user changes
           if(attr.source) {
+            scope.source = attr.source;
             scope.fixedSource = attr.source;
           }
 
