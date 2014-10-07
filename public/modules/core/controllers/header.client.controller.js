@@ -29,5 +29,18 @@ angular.module('core').controller('HeaderController', ['$scope', '$log', 'Authen
 		    $scope.isHidden = (['home', 'signup', 'signin'].indexOf(toState.name) > -1) ? true : false;
 		});
 
+    // Create header menu for User when she/he logins
+    $scope.$watch('authentication.user', function() {
+			if(Authentication.user) {
+				Menus.addMenuItem('topuserbar', Authentication.user.displayName, 'profile', 'dropdown', '/profile');
+				Menus.addSubMenuItem('topuserbar', 'profile', 'My profile', 'profile/' + Authentication.user.username, 'profile', null, null, 0, 'user');
+				Menus.addSubMenuItem('topuserbar', 'profile', 'Edit profile', 'profile/' + Authentication.user.username + '/edit', 'profile-edit', null, null, 0, 'edit');
+				Menus.addSubMenuItem('topuserbar', 'profile', 'Settings', 'profile/' + Authentication.user.username + '/settings', 'profile-settings', null, null, 0, 'cog');
+				Menus.addSubMenuItem('topuserbar', 'profile', 'Help', 'contact', 'contact', null, null, 0, 'bolt');
+				Menus.addSubMenuDivider('topuserbar', 'profile');
+				Menus.addSubMenuItem('topuserbar', 'profile', 'Sign out', '/auth/signout', '/auth/signout', null, null, 0, 'sign-out');
+		  }
+    });
+
 	}
 ]);

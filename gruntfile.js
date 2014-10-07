@@ -65,40 +65,40 @@ module.exports = function(grunt) {
 				}
 			}
 		},
-        less: {
-            development: {
-                options: {
-                  paths: ['/'],
-                  compress: false
-                },
-                files: {
-                    //'public/dist/application.css': '<%= applicationLESSFiles %>'
-                    'public/dist/application.css': 'public/less/application.less'
-                }
-            },
-            production: {
-                options: {
-                  paths: ['/'],
-                  compress: true
-                },
-                files: {
-                    //'public/dist/application.css': '<%= applicationLESSFiles %>'
-                    'public/dist/application.css': 'public/less/application.less'
-                }
-            }
+    less: {
+      development: {
+        options: {
+          paths: ['/'],
+          compress: false
         },
-        concat: {
-        	css: {
-        		src: watchFiles.clientCSS.concat([
-        		    // @todo: should be '<%= applicationCSSFiles %>' instead!
-			        		'public/lib/medium-editor/dist/css/medium-editor.css',
-                  'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
-                  'public/lib/angular-ui-select/dist/select.css',
-                  'public/lib/select2/select2.css'
-                ]),
-        		dest: 'public/dist/application.min.css',
-        	}
+        files: {
+          //'public/dist/application.css': '<%= applicationLESSFiles %>'
+          'public/dist/application.css': 'public/less/application.less'
+        }
+      },
+      production: {
+        options: {
+          paths: ['/'],
+          compress: true
         },
+        files: {
+          //'public/dist/application.css': '<%= applicationLESSFiles %>'
+          'public/dist/application.css': 'public/less/application.less'
+        }
+      }
+    },
+    concat: {
+    	css: {
+    		src: watchFiles.clientCSS.concat([
+    		    // @todo: should be '<%= applicationCSSFiles %>' instead!
+            'public/lib/medium-editor/dist/css/medium-editor.css',
+            'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
+            'public/lib/select2/select2.css',
+            'public/lib/angular-ui-select/dist/select.css'
+            ]),
+    		dest: 'public/dist/application.min.css',
+    	}
+    },
 		csslint: {
 			options: {
 				csslintrc: '.csslintrc',
@@ -140,18 +140,19 @@ module.exports = function(grunt) {
 				}
 			}
 		},
-        ngmin: {
-            production: {
-                files: {
-                    'public/dist/application.js': '<%= applicationJavaScriptFiles %>'
-                }
-            }
-        },
+    ngAnnotate: {
+      production: {
+        files: {
+          'public/dist/application.js': '<%= applicationJavaScriptFiles %>'
+        }
+      }
+    },
 		concurrent: {
 			default: ['nodemon', 'watch'],
 			debug: ['nodemon', 'watch', 'node-inspector'],
 			options: {
-				logConcurrentOutput: true
+				logConcurrentOutput: true,
+				limit: 10
 			}
 		},
 		env: {
@@ -199,7 +200,7 @@ module.exports = function(grunt) {
 	grunt.registerTask('lint', ['jshint', 'csslint']);
 
 	// Build task(s).
-	grunt.registerTask('build', ['loadConfig', 'less', 'concat:css', 'lint', 'ngmin', 'uglify']);
+	grunt.registerTask('build', ['lint', 'loadConfig', 'less', 'concat:css', 'ngAnnotate', 'uglify']);
 
 	// Test task.
 	grunt.registerTask('test', ['env:test', 'mochaTest', 'karma:unit']);

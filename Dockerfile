@@ -12,7 +12,7 @@ RUN npm install -g bower
 ADD package.json /home/trustroots/package.json
 RUN npm install
 
-# Manually trigger bower. Why doesnt this work via npm install?
+# Manually trigger bower. Why doesn't this work via npm install?
 ADD .bowerrc /home/trustroots/.bowerrc
 ADD bower.json /home/trustroots/bower.json
 RUN bower install --config.interactive=false --allow-root
@@ -26,4 +26,5 @@ ENV NODE_ENV development
 # Port 3000 for server
 # Port 35729 for livereload
 EXPOSE 3000 35729
+
 CMD ["grunt"]
