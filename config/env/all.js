@@ -22,6 +22,7 @@ module.exports = {
 			css: [
 			    'public/lib/medium-editor/dist/css/medium-editor.css',
 			    'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
+					'public/lib/select2/select2.css',
 					'public/lib/angular-ui-select/dist/select.css'
 			],
 			js: [
