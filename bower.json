@@ -18,6 +18,9 @@
     "angular-moment": "~0.8.2",
     "angular-medium-editor": "*",
     "angular-socket-io": "~0.6.0",
-    "angular-perfect-scrollbar": "*"
+    "angular-perfect-scrollbar": "*",
+    "angular-ui-select": "~0.8.0",
+    "select2": "~3.4.5",
+    "selectize": "~0.8.5"
   }
 }

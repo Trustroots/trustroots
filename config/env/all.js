@@ -21,6 +21,7 @@ module.exports = {
 			css: [
 			    'public/lib/medium-editor/dist/css/medium-editor.css',
 			    'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
+					'public/lib/angular-ui-select/dist/select.css'
 			],
 			js: [
 				'public/lib/jquery/dist/jquery.js',
@@ -32,6 +33,8 @@ module.exports = {
 				'public/lib/angular-sanitize/angular-sanitize.js',
 				'public/lib/angular-ui-router/release/angular-ui-router.js',
 				'public/lib/angular-ui-utils/ui-utils.js',
+				'public/lib/angular-ui-select/dist/select.js',
+				'public/lib/select2/select2.js',
 				'public/lib/angular-bootstrap/ui-bootstrap-tpls.js',
 				'public/lib/moment/moment.js',
 				'public/lib/angular-moment/angular-moment.js',

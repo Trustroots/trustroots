@@ -14,6 +14,7 @@ var ApplicationConfiguration = (function() {
 	                                            'ui.router',
 	                                            'ui.bootstrap',
 	                                            'ui.utils',
+	                                            'ui.select',
 	                                            'angularMoment',
 	                                            'angular-medium-editor',
 	                                            'perfect_scrollbar'

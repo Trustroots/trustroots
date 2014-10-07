@@ -92,6 +92,12 @@ var UserSchema = new Schema({
 		}],
 		default: ['']
 	},
+	languages: {
+		type: [{
+			type: String,
+		}],
+		default: ['']
+	},
 	locationLiving: {
 		type: Schema.ObjectId,
 		ref: 'Geo'
