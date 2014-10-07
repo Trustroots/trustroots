@@ -76,6 +76,9 @@
 
                 <div class="form-group">
                   <label for="languages"><h4>Languages</h4></label>
+                  <div repeat="language in languages">
+                    {{language}}
+                  </div>
                   <div>
                     <ui-select multiple ng-model="user.languages" theme="select2" ng-disabled="disabled">
                       <ui-select-match placeholder="Type in languages...">{{$item}}</ui-select-match>

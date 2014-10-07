@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', '$location', 'Users', 'Authentication',
-  function($scope, $modal, $http, $stateParams, $state, $location, Users, Authentication) {
+angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', '$location', 'Languages', 'Users', 'Authentication',
+  function($scope, $modal, $http, $stateParams, $state, $location, Languages, Users, Authentication) {
     $scope.user = Authentication.user;
     $scope.profile = false;
 
@@ -87,8 +87,7 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
 
     };
 
-    $http.get('js/data.json').success (function(data){
-            $scope.guitarVariable = data;
+    $scope.languages = ['lt', 'en'];
 
   }
 ]);
