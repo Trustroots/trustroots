@@ -5,7 +5,8 @@
       <div class="col-sm-3">
 
         <div class="panel panel-default" id="profile-sidebar">
-          <div tr-avatar data-user="profile" data-size="261" data-link="false"></div>
+          <!-- 'Watch' will cause directive to rerender each time avatar source changes. -->
+          <div tr-avatar data-watch="true" data-user="profile" data-size="261" data-link="false"></div>
           <div class="panel-body">
 
             <p>Member since <span data-ng-bind="profile.created | date:'mediumDate'"></span></p>
