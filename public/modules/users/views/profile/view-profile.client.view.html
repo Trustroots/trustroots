@@ -28,7 +28,7 @@
 
             <p>
               <h4>Languages</h4>
-              ...
+              <div ng-repeat="code in user.languages">{{languages[code]}}</div>
             </p>
 
             <p data-ng-show="hasConnectedAdditionalSocialAccounts()">

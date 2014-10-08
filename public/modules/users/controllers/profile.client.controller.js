@@ -1,10 +1,11 @@
 'use strict';
 
-angular.module('users').controller('ProfileController', ['$scope', '$stateParams', '$state', '$location', '$log', '$modal', 'Users', 'UserProfiles', 'Authentication',
-	function($scope, $stateParams, $state, $location, $log, $modal, Users, UserProfiles, Authentication) {
+angular.module('users').controller('ProfileController', ['$scope', '$stateParams', '$state', '$location', '$log', '$modal', 'Languages', 'Users', 'UserProfiles', 'Authentication',
+	function($scope, $stateParams, $state, $location, $log, $modal, Languages, Users, UserProfiles, Authentication) {
 
 		$scope.user = Authentication.user; // Currently logged in user
 		$scope.profile = false; // Profile to show
+    $scope.languages = Languages.get('object');
 
 	  // We landed here from profile editor, show success message
 		// @todo: nice notifications https://github.com/Trustroots/trustroots/issues/24

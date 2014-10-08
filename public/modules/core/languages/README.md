@@ -5,13 +5,14 @@ Ruby commands to make the new file out of the original:
 
 ```
 langs = File.read("languages_orig.json")
-langs_json = JSON.parse(langs)
-langs_iso2 = langs_json.select { |lang| lang.has_key?('iso_639_2b')}
-langs = langs_iso2.collect {|l| {'key' => l['iso_639_2b'], 'name' => l['name']} }
+langs = JSON.parse(langs)
+langs = langs.select { |lang| lang.has_key?('iso_639_2b')}
+langs = langs.collect {|lang| { lang['iso_639_2b'] => lang['name'] } }
+langs = langs.reduce(Hash.new, :merge)
 File.open('languages.json', 'w') { |f| f.write(langs.to_json)}
 ```
 
 One liner:
 `
-File.open('languages.json', 'w') { |f| f.write(JSON.parse(File.read("languages_orig.json")).select { |lang| lang.has_key?('iso_639_2b')}.collect {|l| {'key' => l['iso_639_2b'], 'name' => l['name']} }.to_json)}
+File.open('languages.json', 'w') { |f| f.write(JSON.parse(File.read("languages_orig.json")).select { |lang| lang.has_key?('iso_639_2b')}.collect {|l| {l['iso_639_2b'] => l['name']} }.reduce(Hash.new, :merge).to_json)}
 `
