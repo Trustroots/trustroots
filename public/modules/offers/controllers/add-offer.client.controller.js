@@ -97,7 +97,11 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$http', '$
 		$scope.searchQuery = '';
 		$scope.searchQuerySearching = false;
 		$scope.enterSearchAddress = function (event) {
-			if (event.which === 13) $scope.searchAddress();
+			// On 'enter'
+			if (event.which === 13) {
+				$scope.searchAddress();
+				event.preventDefault();
+			}
 		};
 		$scope.searchAddress = function () {
 			if($scope.searchQuery !== '') {
