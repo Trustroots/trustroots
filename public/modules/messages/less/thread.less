@@ -129,6 +129,12 @@
   bottom: @padding-base-horizontal;
   width: 800px;
 
+  // No color glow on hover with this Medium editor
+  .angular-medium-editor {
+    &:hover {
+      background: transparent;
+    }
+  }
   .message-reply-title {
     margin: 0;
     float: left;

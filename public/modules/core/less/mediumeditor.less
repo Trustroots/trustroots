@@ -9,6 +9,31 @@
 @medium_editor_button_size:   60px;
 @medium_editor_link_color:    #fff;
 
+
+.angular-medium-editor {
+  //display: inline;
+  border: 0;
+  background: transparent;
+  .box-shadow(none);
+  height: auto;
+  resize: none;
+  margin: 0;
+  padding: 0;
+  &:hover {
+    background: fade(@brand-primary, 10%);
+  }
+  &:focus {
+    background: transparent;
+    outline: none;
+    border: 0;
+  }
+  &.medium-editor-placeholder:after {
+    color: @input-color-placeholder;
+    cursor: text;
+  }
+}
+
+
 .medium-toolbar-arrow-under:after {
     top: @medium_editor_button_size;
     border-color: @medium_editor_bgcolor transparent transparent transparent;
