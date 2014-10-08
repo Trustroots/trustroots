@@ -12,30 +12,29 @@
   border-radius: @border-radius-small;
 }
 
-
 /**
  * Marker cluster
  */
 .marker-cluster-small {
-  background-color: rgba(181, 226, 140, 0.6);
-}
-.marker-cluster-small div {
-  background-color: rgba(110, 204, 57, 0.6);
+  background-color: rgba(red(lighten(@marker-cluster-small, @marker-cluster-border-contrast)), green(lighten(@marker-cluster-small, @marker-cluster-border-contrast)), blue(lighten(@marker-cluster-small, @marker-cluster-border-contrast)), @marker-cluster-transparency);
+  div {
+    background-color: rgba(red(@marker-cluster-small), green(@marker-cluster-small), blue(@marker-cluster-small), @marker-cluster-transparency);
+  }
 }
 
 .marker-cluster-medium {
-  background-color: rgba(241, 211, 87, 0.6);
+  background-color: rgba(red(lighten(@marker-cluster-medium, @marker-cluster-border-contrast)), green(lighten(@marker-cluster-medium, @marker-cluster-border-contrast)), blue(lighten(@marker-cluster-medium, @marker-cluster-border-contrast)), @marker-cluster-transparency);
+  div {
+    background-color: rgba(red(@marker-cluster-medium), green(@marker-cluster-medium), blue(@marker-cluster-medium), @marker-cluster-transparency);
   }
-.marker-cluster-medium div {
-  background-color: rgba(240, 194, 12, 0.6);
-  }
+}
 
 .marker-cluster-large {
-  background-color: rgba(253, 156, 115, 0.6);
+  background-color: rgba(red(lighten(@marker-cluster-large, @marker-cluster-border-contrast)), green(lighten(@marker-cluster-large, @marker-cluster-border-contrast)), blue(lighten(@marker-cluster-large, @marker-cluster-border-contrast)), @marker-cluster-transparency);
+  div {
+    background-color: rgba(red(@marker-cluster-large), green(@marker-cluster-large), blue(@marker-cluster-large), @marker-cluster-transparency);
   }
-.marker-cluster-large div {
-  background-color: rgba(241, 128, 23, 0.6);
-  }
+}
 
   /* IE 6-8 fallback colors */
 .leaflet-oldie .marker-cluster-small {
