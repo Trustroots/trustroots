@@ -17,7 +17,8 @@ var ApplicationConfiguration = (function() {
 																						  'btford.socket-io',
 	                                            'angularMoment',
 	                                            'angular-medium-editor',
-	                                            'perfect_scrollbar'
+	                                            'perfect_scrollbar',
+																							'leaflet-directive'
 	                                          ];
 
 	// Add a new vertical module

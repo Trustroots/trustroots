@@ -4,8 +4,7 @@ module.exports = {
 	app: {
 		title: 'Trust Roots',
 		description: 'Travellers network',
-		keywords: 'traveling,hospitality exchange,nomadism',
-		miniUserProfileFields: ['id', 'displayName', 'username', 'avatarSource', 'emailHash']
+		keywords: 'traveling,hospitality exchange,nomadism'
 	},
 	port: process.env.PORT || 3000,
 	templateEngine: 'swig',
@@ -23,7 +22,9 @@ module.exports = {
 			    'public/lib/medium-editor/dist/css/medium-editor.css',
 			    'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
 					'public/lib/select2/select2.css',
-					'public/lib/angular-ui-select/dist/select.css'
+					'public/lib/angular-ui-select/dist/select.css',
+					'public/lib/leaflet/dist/leaflet.css',
+					'public/lib/leaflet.markercluster/dist/MarkerCluster.css'
 			],
 			js: [
 				'public/lib/jquery/dist/jquery.js',
@@ -45,15 +46,18 @@ module.exports = {
 				'public/lib/perfect-scrollbar/src/jquery.mousewheel.js', // @todo: is this really needed?
 				'public/lib/perfect-scrollbar/src/perfect-scrollbar.js',
 				'public/lib/angular-perfect-scrollbar/src/angular-perfect-scrollbar.js',
+				'public/lib/leaflet/dist/leaflet-src.js',
+				'public/lib/leaflet.markercluster/dist/leaflet.markercluster.js',
+				'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.js',
 			]
 		},
-        less: [
-        	'public/modules/**/less/*.less'
-        ],
-        css: [
-            // nada
-						//'public/modules/**/css/*.css'
-        ],
+    less: [
+    	'public/modules/**/less/*.less'
+    ],
+    css: [
+        // nada
+				//'public/modules/**/css/*.css'
+    ],
 		js: [
 			'public/config.js',
 			'public/application.js',

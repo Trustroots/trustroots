@@ -1,5 +1,17 @@
 <section data-ng-controller="SearchController">
 
-    <div id="search-map-canvas"></div>
+  <div class="form-group map-location-search">
+  	<div class="input-group">
+		<input type="text" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" class="form-control input-sm" placeholder="Search location" ng-keypress="enterSearchAddress($event)" />
+  		<span class="input-group-btn">
+  			<button type="button" class="btn btn-sm btn-inverse" ng-click="searchAddress()" ng-disabled="searchQuerySearching">
+  				<i class="fa fa-search" ng-show="searchQuerySearching === false"></i>
+          <i class="fa fa-refresh" ng-show="searchQuerySearching === true"></i>
+  			</button>
+  		</span>
+  	</div>
+  </div>
+
+  <leaflet center="center" markers="markers" layers="layers" bounds="bounds" id="search-map-canvas"></leaflet>
 
 </section>
