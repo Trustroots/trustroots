@@ -182,8 +182,8 @@ exports.threadByUser = function(req, res, next, userId) {
   Message.find(
       {
         $or: [
-        { userFrom: req.user._id, userTo: userId },
-        { userTo: req.user._id, userFrom: userId }
+          { userFrom: req.user._id, userTo: userId },
+          { userTo: req.user._id, userFrom: userId }
         ]
       }
     )
@@ -197,8 +197,8 @@ exports.threadByUser = function(req, res, next, userId) {
       // Sanitize each outgoing message's contents
       var messagesCleaned = [];
       messages.forEach(function(message) {
-          message.content = sanitizeHtml(message.content, messageSanitizeOptions);
-          messagesCleaned.push(message);
+        message.content = sanitizeHtml(message.content, messageSanitizeOptions);
+        messagesCleaned.push(message);
       });
 
       req.messages = messagesCleaned;
