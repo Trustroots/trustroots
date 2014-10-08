@@ -35,26 +35,20 @@
 
 			<div class="panel panel-default" ng-show="offer.status === 'no'">
 				<div class="panel-heading">
-					<h4>Tell others why you can't host... <small class="text-muted">(optional)</small></h4>
+					<h4>Tell others why you can't host... <small class="text-muted pull-right">(optional)</small></h4>
 				</div>
 				<div class="panel-body">
-					<div class="offer-nodescription" ng-model="offer.noOfferDescription" medium-editor options="{'placeholder': '...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
-				</div>
-				<div class="panel-footer" ng-show="offer.noOfferDescription">
-					<small class="text-muted">Change styles by highlighting text.</small>
+					<div class="offer-nodescription" ng-class="{'is-not-empty': offer.noOfferDescription}" ng-model="offer.noOfferDescription" medium-editor options="{'placeholder': '...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
 				</div>
 			</div>
 
 			<div class="panel panel-default">
 				<!--<label for="description" class="panel-heading">Description</label>-->
 				<div class="panel-body">
-					<p class="text-muted" ng-show="offer.description && offer.status === 'no'">
-					  <em>This description will be held here but won't be public until you can host again.</em>
-					</p>
 					<div class="offer-description" ng-class="{'is-not-empty': offer.description}" ng-hide="!offer" ng-model="offer.description" medium-editor options="{'placeholder': 'Tell about your couch...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
 				</div>
-  			<div class="panel-footer" ng-show="offer.description && !offer.noOfferDescription">
-					<small class="text-muted">Change styles by highlighting text.</small>
+  			<div class="panel-footer text-muted" ng-show="offer.description && offer.status === 'no'">
+					<small>This description will be held here but won't be public until you can host again.</small>
 				</div>
 			</div>
 

@@ -49,12 +49,13 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$http', '$
 				userId: Authentication.user._id
 			}, function(offer){
 		  	$scope.isLoading = false;
+				// Offer with location, must be real thing!
 				if(offer.location) {
 				  $scope.center.lat = $scope.offer.location[0];
 				  $scope.center.lng = $scope.offer.location[1];
 				  $scope.center.zoom = 8;
 			  }
-				// Push some defaults to offer
+				// Push some defaults to offer if we didn't get proper answer...
 				else {
 					$scope.offer.maxGuests = 1;
 					$scope.offer.status = 'yes';
@@ -110,7 +111,7 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$http', '$
 					.get('http://nominatim.openstreetmap.org/search?q=' + $scope.searchQuery.replace(/ /g, '+') + '&format=json&limit=1&email=' + settings.osm.email)
 					.success(function (data) {
 						$scope.searchQuerySearching = false;
-						if (data[0] && parseFloat(data[0].importance) > 0.5) {
+						if (data[0] && parseFloat(data[0].importance) > 0.2) {
 
 							var lon = parseFloat(data[0].lon);
 							var lat = parseFloat(data[0].lat);
