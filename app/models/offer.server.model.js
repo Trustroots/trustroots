@@ -31,7 +31,10 @@ var OfferSchema = new Schema({
 		max: 99,
 		default: Date.now
 	},
-	location: {
+  location: {
+    type: []
+  },
+	locationFuzzy: {
 		type: []
 	},
 	updated: {
@@ -46,5 +49,6 @@ var OfferSchema = new Schema({
 
 // Geospatial index (lat,lon)
 OfferSchema.index({ location: '2d' });
+OfferSchema.index({ locationFuzzy: '2d' });
 
 mongoose.model('Offer', OfferSchema);
