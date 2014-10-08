@@ -43,7 +43,8 @@
 	<!-- Embedding The User and Settings Objects -->
 	<script type="text/javascript">
 		var user = {{ user | json | safe }},
-		    settings = {{ appSettings | json | safe }};
+		    settings = {{ appSettings | json | safe }},
+        languages = {{ languages | json | safe }};
 	</script>
 
 	<!-- Socket.io -->

@@ -79,10 +79,10 @@
                   <div repeat="language in languages">
                     {{language}}
                   </div>
-                  <div>
+                  <div ng-click="loadLanguages()">
                     <ui-select multiple ng-model="user.languages">
                       <ui-select-match placeholder="Type in languages...">{{$item.name}}</ui-select-match>
-                      <ui-select-choices repeat="language in languages | filter:$select.search">
+                      <ui-select-choices repeat="language.key as language in languages | filter:$select.search">
                         {{language.name}}
                       </ui-select-choices>
                     </ui-select>

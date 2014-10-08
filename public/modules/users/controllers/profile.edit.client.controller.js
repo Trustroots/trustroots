@@ -1,9 +1,10 @@
 'use strict';
 
-angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', '$location', 'Languages', 'Users', 'Authentication',
-  function($scope, $modal, $http, $stateParams, $state, $location, Languages, Users, Authentication) {
+angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', '$location', 'Users', 'Authentication',
+  function($scope, $modal, $http, $stateParams, $state, $location, Users, Authentication) {
     $scope.user = Authentication.user;
     $scope.profile = false;
+    $scope.languages = window.languages;
 
     // If user is not signed in then redirect back home
     if (!$scope.user) $location.path('/');
@@ -86,33 +87,6 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
       });
 
     };
-
-    //$scope.languages = Languages.get();
-    $scope.languages = [{
-        "name": "Liberian English",
-        "iso_639_3": "lir",
-        "common": false,
-        "type": "living",
-        "scope": "individual"
-      },
-      {
-        "name": "Lisu",
-        "iso_639_3": "lis",
-        "common": false,
-        "type": "living",
-        "scope": "individual"
-      },
-      {
-        "name": "Lithuanian",
-        "iso_639_1": "lt",
-        "iso_639_3": "lit",
-        "iso_639_2b": "lit",
-        "iso_639_2t": "lit",
-        "common": true,
-        "type": "living",
-        "scope": "individual"
-      }
-    ]
 
   }
 ]);
