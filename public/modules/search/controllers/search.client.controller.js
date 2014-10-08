@@ -105,24 +105,30 @@ angular.module('search').controller('SearchController', ['$scope', '$http',
     });
 
 		// Map address search
+		$scope.searchQuery = '';
+		$scope.searchQuerySearching = false;
     $scope.enterSearchAddress = function (event) {
-      if (event.which === 13) $scope.searchaddress();
+      if (event.which === 13) $scope.searchAddress();
     };
     $scope.searchAddress = function () {
-      $http
-        .get('http://nominatim.openstreetmap.org/search?q=' + $scope.event.location_name.replace(/ /g, '+') + '&format=json&limit=1&email=' + settings.osm.email)
-        .success(function (data) {
-          if (data[0] && parseFloat(data[0].importance) > 0.5) {
+			if($scope.searchQuery !== '') {
+				$scope.searchQuerySearching = true;
+        $http
+          .get('http://nominatim.openstreetmap.org/search?q=' + $scope.searchQuery.replace(/ /g, '+') + '&format=json&limit=1&email=' + settings.osm.email)
+          .success(function (data) {
+						$scope.searchQuerySearching = false;
+            if (data[0] && parseFloat(data[0].importance) > 0.5) {
 
-            var lon = parseFloat(data[0].lon);
-            var lat = parseFloat(data[0].lat);
+              var lon = parseFloat(data[0].lon);
+              var lat = parseFloat(data[0].lat);
 
-            $scope.bounds.southWest.lat = parseFloat(data[0].boundingbox[0]);
-            $scope.bounds.northEast.lat = parseFloat(data[0].boundingbox[1]);
-            $scope.bounds.southWest.lng = parseFloat(data[0].boundingbox[2]);
-            $scope.bounds.northEast.lng = parseFloat(data[0].boundingbox[3]);
-          }
-        });
+              $scope.bounds.southWest.lat = parseFloat(data[0].boundingbox[0]);
+              $scope.bounds.northEast.lat = parseFloat(data[0].boundingbox[1]);
+              $scope.bounds.southWest.lng = parseFloat(data[0].boundingbox[2]);
+              $scope.bounds.northEast.lng = parseFloat(data[0].boundingbox[3]);
+            }
+          });
+			}
     };
 
 	}

@@ -104,3 +104,34 @@
     }
   }
 }
+
+.map-location-search {
+  position: absolute;
+  width: 300px;
+  z-index: 1000;
+  top: (@navbar-height + @padding-base-horizontal);
+  right: 70px;
+  .input-group {
+    box-shadow: 0 1px 5px rgba(0,0,0,0.35);
+  }
+  input.form-control {
+    border: 0;
+    box-shadow: none;
+    .border-left-radius(4px);
+  }
+  .btn {
+    .border-right-radius(4px);
+  }
+  .btn,
+  input.form-control {
+    &:disabled {
+      background: #fff;
+      opacity: 0.8;
+    }
+    &:active,
+    &:focus {
+      outline: none;
+      box-shadow: none;
+    }
+  }
+}
