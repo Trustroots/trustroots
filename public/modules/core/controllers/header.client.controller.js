@@ -42,8 +42,9 @@ angular.module('core').controller('HeaderController', ['$scope', '$log', '$filte
 				Menus.addSubMenuItem('topuserbar', 'profile', 'My profile', 'profile/' + Authentication.user.username, 'profile', null, null, 0, 'user');
 				Menus.addSubMenuItem('topuserbar', 'profile', 'Edit profile', 'profile/' + Authentication.user.username + '/edit', 'profile-edit', null, null, 0, 'edit');
 				Menus.addSubMenuItem('topuserbar', 'profile', 'Settings', 'profile/' + Authentication.user.username + '/settings', 'profile-settings', null, null, 0, 'cog');
-				Menus.addSubMenuItem('topuserbar', 'profile', 'Help', 'contact', 'contact', null, null, 0, 'bolt');
+				Menus.addSubMenuItem('topuserbar', 'profile', 'Hosting', 'offer', 'offer', null, null, 0, 'home');
 				Menus.addSubMenuDivider('topuserbar', 'profile');
+				Menus.addSubMenuItem('topuserbar', 'profile', 'Help', 'contact', 'contact', null, null, 0, 'bolt');
 				Menus.addSubMenuItem('topuserbar', 'profile', 'Sign out', '/auth/signout', '/auth/signout', null, null, 0, 'sign-out');
 
 				userMenuAdded = true;
