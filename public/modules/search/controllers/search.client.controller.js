@@ -17,42 +17,42 @@ angular.module('search').controller('SearchController', ['$scope', '$http',
       },
       markers: {
         taipei: {
-            layer: 'northTaiwan',
+            layer: 'hosts',
             lat: 25.0391667,
             lng: 121.525,
         },
         yangmei: {
-            layer: 'northTaiwan',
+            layer: 'hosts',
             lat: 24.9166667,
             lng: 121.1333333
         },
         hsinchu: {
-            layer: 'northTaiwan',
+            layer: 'hosts',
             lat: 24.8047222,
             lng: 120.9713889
         },
         miaoli: {
-            layer: 'northTaiwan',
+            layer: 'hosts',
             lat: 24.5588889,
             lng: 120.8219444
         },
         tainan: {
-            layer: 'southTaiwan',
+            layer: 'hosts',
             lat: 22.9933333,
             lng: 120.2036111
         },
         puzi: {
-            layer: 'southTaiwan',
+            layer: 'hosts',
             lat: 23.4611,
             lng: 120.242
         },
         kaohsiung: {
-            layer: 'southTaiwan',
+            layer: 'hosts',
             lat: 22.6252777778,
             lng: 120.3088888889
         },
         taitun: {
-            layer: 'southTaiwan',
+            layer: 'hosts',
             lat: 22.75,
             lng: 121.15
         }
@@ -74,7 +74,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http',
             url: 'http://otile{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',
             layerOptions: {
               subdomains: ['1', '2', '3', '4'],
-              attribution: 'contributors - &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+              attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OSM</a>',
               continuousWorld: true
             }
           },
@@ -84,19 +84,22 @@ angular.module('search').controller('SearchController', ['$scope', '$http',
             url: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             layerOptions: {
               subdomains: ['a', 'b', 'c'],
-              attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+              attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OSM</a>',
               continuousWorld: true
+            }
+          },
+          opencyclemap: {
+						name: 'OpenCycleMap',
+						type: 'xyz',
+            url: 'http://{s}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png',
+            options: {
+              attribution: '&copy; <a href="http://www.opencyclemap.org">OpenCycleMap</a> &amp; <a href="http://www.openstreetmap.org">OSM</a>'
             }
           }
         },
         overlays: {
-          northTaiwan: {
-            name: 'North cities',
-            type: 'markercluster',
-            visible: true
-          },
-          southTaiwan: {
-            name: 'South cities',
+          hosts: {
+            name: 'Hosts',
             type: 'markercluster',
             visible: true
           }

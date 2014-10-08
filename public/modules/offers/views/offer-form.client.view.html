@@ -1,0 +1,110 @@
+<section class="container container-spacer offer-add" data-ng-controller="AddOfferController" data-ng-init="findOffer()">
+
+	<form name="offerForm" data-ng-submit="addOffer()" novalidate autocomplete="off">
+
+	<div class="row">
+
+		<div class="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8 col-lg-offset-3 col-lg-6">
+
+			<div class="offer-symbol-sofa center-block"></div>
+			<div class="page-header">
+				<h2>Host a traveller</h2>
+			</div>
+			<p class="lead text-center">
+				<em>Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.</em>
+			</p>
+
+			<div class="panel panel-default">
+				<div class="panel-body">
+					<div class="row">
+						<div class="col-xs-6">
+					    <h4>Can you host?</h4>
+              <div class="btn-group">
+                  <label class="btn btn-lg btn-hosting btn-hosting-yes" ng-model="offer.status" btn-radio="'yes'"><span>Yes</span></label>
+                  <label class="btn btn-lg btn-hosting btn-hosting-maybe" ng-model="offer.status" btn-radio="'maybe'"><span>Maybe</span></label>
+					    		<label class="btn btn-lg btn-hosting btn-hosting-no" ng-model="offer.status" btn-radio="'no'"><span>No</span></label>
+              </div>
+				    </div>
+						<div class="col-xs-6">
+							<h4>Max number of guests</h4>
+							<input type="number" ng-disabled="!offer" ng-model="offer.maxGuests" class="form-control input-lg offer-maxguests" maxlength="2" min="1" max="99" size="2" step="1" pattern="[0-9]{2}">
+						</div>
+			    </div><!-- /.row -->
+				</div>
+			</div>
+
+			<div class="panel panel-default" ng-show="offer.status === 'no'">
+				<div class="panel-heading">
+					<h4>Tell others why you can't host... <small class="text-muted">(optional)</small></h4>
+				</div>
+				<div class="panel-body">
+					<div class="offer-nodescription" ng-model="offer.noOfferDescription" medium-editor options="{'placeholder': '...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+				</div>
+				<div class="panel-footer" ng-show="offer.noOfferDescription">
+					<small class="text-muted">Change styles by highlighting text.</small>
+				</div>
+			</div>
+
+			<div class="panel panel-default">
+				<!--<label for="description" class="panel-heading">Description</label>-->
+				<div class="panel-body">
+					<p class="text-muted" ng-show="offer.description && offer.status === 'no'">
+					  <em>This description will be held here but won't be public until you can host again.</em>
+					</p>
+					<div class="offer-description" ng-class="{'is-not-empty': offer.description}" ng-hide="!offer" ng-model="offer.description" medium-editor options="{'placeholder': 'Tell about your couch...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+				</div>
+  			<div class="panel-footer" ng-show="offer.description && !offer.noOfferDescription">
+					<small class="text-muted">Change styles by highlighting text.</small>
+				</div>
+			</div>
+
+		  <!-- Location -->
+		  <div class="panel panel-default">
+
+		  	<div class="panel-body">
+					<p>
+						We are not going to show your exact location to others, only the district. You can also point some nearby meeting point, such as metro station or bus stop.
+					</p>
+		  	</div>
+
+				<div class="offer-map">
+				  <leaflet center="center" layers="layers" bounds="bounds" id="offer-add-location-canvas"></leaflet>
+				  <div class="offer-location-vignetting"></div>
+			  </div>
+
+				<div class="panel-body">
+					<div class="form-group offer-map-location-search">
+						<div class="input-group">
+							<input type="text" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" class="form-control" placeholder="Search location" ng-keypress="enterSearchAddress($event)" />
+							<span class="input-group-btn">
+								<button type="button" class="btn btn-inverse" ng-click="searchAddress()" ng-disabled="searchQuerySearching">
+									<i class="fa fa-search" ng-show="searchQuerySearching === false"></i>
+									<i class="fa fa-refresh" ng-show="searchQuerySearching === true"></i>
+								</button>
+							</span>
+						</div>
+					</div>
+				</div>
+
+		  </div>
+			<!-- /Location -->
+
+	    <p data-ng-show="error" class="text-center text-danger">
+	      <strong data-ng-bind="error"></strong>
+	    </p>
+			<p class="text-center" ng-show="offer">
+				<button type="submit" class="btn btn-lg btn-primary" ng-disabled="isLoading">
+					<span ng-show="offer.status == 'yes' || offer.status == 'maybe'">Start hosting</span>
+					<span ng-show="offer.status == 'no'">Stop hosting</span>
+		  	</button>
+				<br><br>
+				<a ui-sref="profile" class="text-muted">Cancel</a>
+			</p>
+
+		</div><!-- /.col-* -->
+
+	</div><!-- /.row -->
+
+  </form>
+
+</section>

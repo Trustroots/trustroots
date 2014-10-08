@@ -1,0 +1,79 @@
+.offer-symbol-sofa {
+  display: block;
+  background-repeat: no-repeat;
+  .size(109px; 56px);
+  .img-retina("/modules/offers/img/sofa.png", "/modules/offers/img/sofa@2x.png", 109px, 56px);
+}
+
+@offer-map-height: 400px;
+
+/**
+ * Add offer
+ */
+.offer-add {
+  .page-header {
+    margin-top: 10px;
+  }
+  .offer-map {
+    position: relative;
+    height: @offer-map-height;
+  }
+  #offer-add-location-canvas {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .offer-location-vignetting {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: inset 0 0 (@offer-map-height*0.75) rgba(0,0,0,0.75);
+    z-index: 100;
+    pointer-events: none; // Allows dragging the map trough element
+    .img-retina("/modules/core/img/map/marker-locator.png", "/modules/core/img/map/marker-locator@2x.png", 56px, 41px);
+    // Position icon to half the container minus half the icon height to get bottom of the icon to point to the center
+    background-position: 50% ( (@offer-map-height / 2) - 20px );
+    background-repeat: no-repeat;
+  }
+  .offer-map-location-search {
+    margin-bottom: 0;
+  }
+  .offer-maxguests {
+    max-width: 80px;
+  }
+  .offer-description {
+    font-size: @font-size-large;
+  }
+  .btn-group > .btn-hosting {
+  &, &:hover {
+    border-color: transparent;
+  }
+    span {
+      border-bottom: 2px solid transparent;
+    }
+    &.active {
+      span {
+        border-color: #fff;
+      }
+    }
+  }
+  
+  // Hacky solution to hide placeholder when medium-editor's model changes.
+  // @todo Get rid of this when it's fixed from their end.
+  // @link https://github.com/thijsw/angular-medium-editor/issues/18
+  .angular-medium-editor.medium-editor-placeholder.is-not-empty:after {
+    color: transparent;
+  }
+}
+
+/**
+ * View offer
+ */
+.offer-view {
+  .offer-location {
+    width: 100%;
+    height: 300px;
+  }
+}
