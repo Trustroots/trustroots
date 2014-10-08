@@ -78,7 +78,7 @@ angular.module('references').controller('ReferencesController', ['$scope', '$log
 		$scope.list = function(profile) {
 			$log.log('list references: ' + profile.id);
 			$scope.references = ReferencesBy.query({
-				userId: profile.id || profile._id
+				userId: profile.id
 			});
 		};
 

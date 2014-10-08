@@ -5,7 +5,7 @@
 angular.module('references').factory('References', ['$resource',
 	function($resource) {
 		return $resource('references/:referenceId', {
-			referenceId: '@_id'
+			referenceId: '@id'
 		}, {
 			update: {
 				method: 'PUT'

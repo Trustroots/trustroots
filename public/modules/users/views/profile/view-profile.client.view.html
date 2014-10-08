@@ -63,7 +63,7 @@
               <!-- When looking at somebody else's profile -->
               <div class="col-md-6" data-ng-hide="user._id === profile.id">
                 <ul class="nav nav-pills nav-narrow text-right" id="profile-actions" role="navigation">
-                  <li><a ui-sref="listMessages({userId: profile._id})"><i class="fa fa-comment-o"></i> Send message</a></li>
+                  <li><a ui-sref="listMessages({userId: profile.id})"><i class="fa fa-comment-o"></i> Send message</a></li>
                   <li>
                     <a ng-hide="profile.reference" class="cursor-pointer" ng-click="referenceModal(profile);"><i class="fa fa-heart-o"></i> Write a reference</a>
                     <a ng-show="profile.reference" class="cursor-pointer" ng-click="referenceModal(profile);"><i class="fa fa-heart-o"></i> Update reference</a>
