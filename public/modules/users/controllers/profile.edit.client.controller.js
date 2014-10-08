@@ -1,9 +1,10 @@
 'use strict';
 
-angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', '$location', 'Languages', 'Users', 'Authentication',
-  function($scope, $modal, $http, $stateParams, $state, $location, Languages, Users, Authentication) {
+angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', '$location', 'Users', 'Authentication',
+  function($scope, $modal, $http, $stateParams, $state, $location, Users, Authentication) {
     $scope.user = Authentication.user;
     $scope.profile = false;
+    $scope.languages = window.languages;
 
     // If user is not signed in then redirect back home
     if (!$scope.user) $location.path('/');
@@ -86,8 +87,6 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
       });
 
     };
-
-    $scope.languages = ['lt', 'en'];
 
   }
 ]);

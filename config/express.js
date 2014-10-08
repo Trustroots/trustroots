@@ -39,6 +39,7 @@ module.exports = function(db) {
 	app.locals.jsFiles = config.getJavaScriptAssets();
 	app.locals.cssFiles = config.getCSSAssets();
   app.locals.appSettings = config.app.settings;
+  app.locals.languages = require('../public/modules/core/languages/languages.json');
 
 	// Passing the request url to environment locals
 	app.use(function(req, res, next) {
