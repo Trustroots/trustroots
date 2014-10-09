@@ -123,7 +123,7 @@ exports.userByID = function(req, res, next, id) {
 		if (err) return next(err);
 		if (!user) return next(new Error('Failed to load user ' + id));
 
-	  // Make sure we're not sending unsequre content (eg. passwords)
+	  // Make sure we're not sending unsecure content (eg. passwords)
 		// Pick here fields to send
 		user = _.pick(user, 'id',
 												'displayName',
@@ -133,6 +133,7 @@ exports.userByID = function(req, res, next, id) {
 												'description',
 												'locationFrom',
 												'locationLiving',
+												'languages',
 												'birthdate',
 												'seen',
 												'created',
@@ -176,6 +177,7 @@ exports.userByUsername = function(req, res, next, username) {
 												'description',
 												'locationFrom',
 												'locationLiving',
+												'languages',
 												'birthdate',
 												'seen',
 												'created',

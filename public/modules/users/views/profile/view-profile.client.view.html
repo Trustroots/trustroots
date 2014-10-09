@@ -9,36 +9,37 @@
           <div tr-avatar data-watch="true" data-user="profile" data-size="261" data-link="false"></div>
           <div class="panel-body">
 
-            <p>Member since <span data-ng-bind="profile.created | date:'mediumDate'"></span></p>
+            <div>Member since <span data-ng-bind="profile.created | date:'mediumDate'"></span></div>
 
-            <p>
+            <div>
               Lives in <a href="#">City, Country</a>
-            </p>
+            </div>
 
-            <p>
+            <div>
               From <a href="#">City, Country</a>
-            </p>
+            </div>
 
             <!--
-            <p>
+            <div>
               <h4>Last seen</h4>
               <time>time</time>
-            </p>
+            </div>
             -->
-
-            <p>
+            <div ng-show="profile.languages.length">
               <h4>Languages</h4>
-              <div ng-repeat="code in user.languages">{{languages[code]}}</div>
-            </p>
+              <ul class="list-unstyled">
+                <li ng-repeat="code in profile.languages">{{languages[code]}}</li>
+              </ul>
+            </div>
 
-            <p data-ng-show="hasConnectedAdditionalSocialAccounts()">
+            <div data-ng-show="hasConnectedAdditionalSocialAccounts()">
               <h4>Other networks</h4>
               <ul class="fa-ul authentication-social">
                 <li data-ng-repeat="(providerName, providerData) in user.additionalProvidersData">
                   <i class="fa fa-li fa-lg" ng-class="fa-{{providerName}}-square"></i> {{providerName}}
                 </li>
               </ul>
-            </p>
+            </div>
 
           </div>
         </div>
