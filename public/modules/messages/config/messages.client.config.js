@@ -4,6 +4,7 @@
 angular.module('messages').run(['Menus',
 	function(Menus) {
 		// Set top bar menu items
-		Menus.addMenuItem('topuserbar', 'Messages', 'messages', 'messages');
+		// This menu has only icon and no text label
+		Menus.addMenuItem('topuserbar', '', 'messages', 'messages', 'messages', null, null, 0, 'comments fa-lg');
 	}
 ]);
