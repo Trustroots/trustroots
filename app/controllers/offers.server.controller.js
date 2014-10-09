@@ -25,6 +25,33 @@ var offerSanitizeOptions = {
     allowedSchemes: [ 'http', 'https', 'ftp', 'mailto', 'tel' ]
   };
 
+/**
+ * Crate fuzzy location
+ */
+function fuzzyLocation(location) {
+
+  // Offsets in meters, random between 50-100
+  var dn = Math.floor((Math.random() * 50) + 50);
+  var de = dn;
+
+  // Position, decimal degrees
+  var lat = location[0];
+  var lng = location[1];
+
+  // Earth’s radius, sphere
+  var Radius = 6378137;
+
+  // Coordinate offsets in radians
+  var dLat = dn/Radius;
+  var dLng = de/(Radius*Math.cos(Math.PI*lat/180));
+
+  // OffsetPosition, decimal degrees
+  var latO = lat + dLat * 180/Math.PI;
+  var lngO = lng + dLng * 180/Math.PI;
+
+  return [latO, lngO];
+}
+
 
 /**
  * Create a Offer
@@ -34,6 +61,9 @@ exports.create = function(req, res) {
 
   var offer = new Offer(req.body);
   offer.user = req.user;
+
+  // Save Fuzzy location
+  offer.locationFuzzy = fuzzyLocation(offer.location);
 
   // Sanitize offer contents
   offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
@@ -115,6 +145,14 @@ exports.offerByUserID = function(req, res, next, userId) {
         // Sanitize each outgoing offer's contents
         offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
         offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
+
+        // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
+        if(userId !== req.user.id) {
+          console.log('Return fuzzy');
+          offer.location = offer.locationFuzzy;
+        }
+        delete offer.locationFuzzy;
+
         req.offer = offer;
       }
       else {

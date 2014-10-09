@@ -33,8 +33,8 @@
     z-index: 100;
     pointer-events: none; // Allows dragging the map trough element
     .img-retina("/modules/core/img/map/marker-locator.png", "/modules/core/img/map/marker-locator@2x.png", 56px, 41px);
-    // Position icon to half the container minus half the icon height to get bottom of the icon to point to the center
-    background-position: 50% ( (@offer-map-height / 2) - 20px );
+    // Position icon to half the container minus distance to the icon's pointer
+    background-position: 50% ( (@offer-map-height / 2) - 38px );
     background-repeat: no-repeat;
   }
   .offer-map-location-search {
@@ -59,7 +59,7 @@
       }
     }
   }
-  
+
   // Hacky solution to hide placeholder when medium-editor's model changes.
   // @todo Get rid of this when it's fixed from their end.
   // @link https://github.com/thijsw/angular-medium-editor/issues/18
@@ -75,5 +75,10 @@
   .offer-location {
     width: 100%;
     height: 300px;
+  }
+  .offer-restrictions {
+    border-top: 1px solid @gray-lighter;
+    padding-top: 10px;
+    margin-top: 10px;
   }
 }

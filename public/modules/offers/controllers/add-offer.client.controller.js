@@ -5,8 +5,8 @@
 /*global jQuery:false */
 
 
-angular.module('offers').controller('AddOfferController', ['$scope', '$http', '$state', '$stateParams', 'Offers', 'Authentication',
-	function($scope, $http, $state, $stateParams, Offers, Authentication) {
+angular.module('offers').controller('AddOfferController', ['$scope', '$http', '$timeout', '$state', '$stateParams', 'Offers', 'Authentication',
+	function($scope, $http, $timeout, $state, $stateParams, Offers, Authentication) {
 
 		$scope.authentication = Authentication;
 
@@ -20,7 +20,7 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$http', '$
 				// Default to Europe
 				lat: $scope.offer ? $scope.offer.location[0] : 48.6908333333,
 				lng: $scope.offer ? $scope.offer.location[1] : 9.14055555556,
-				zoom: $scope.offer ? 8 : 4
+				zoom: $scope.offer ? 16 : 4
 			},
 			layers: {
 				baselayers: {
@@ -45,27 +45,36 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$http', '$
 
 			$scope.isLoading = true;
 
-			$scope.offer = Offers.get({
+			Offers.get({
 				userId: Authentication.user._id
 			}, function(offer){
-		  	$scope.isLoading = false;
-				// Offer with location, must be real thing!
-				if(offer.location) {
-				  $scope.center.lat = $scope.offer.location[0];
-				  $scope.center.lng = $scope.offer.location[1];
-				  $scope.center.zoom = 8;
-			  }
-				// Push some defaults to offer if we didn't get proper answer...
-				else {
-					$scope.offer.maxGuests = 1;
-					$scope.offer.status = 'yes';
-				}
 
-				// Determine new status from URL, overrides previous status
-				if($stateParams.status && jQuery.inArray( $stateParams.status, ['yes', 'maybe', 'no'] ) ) {
-					$scope.offer.status = $stateParams.status;
-				}
+				// Make sure $scope.$apply() updates results
+				// @link http://jimhoskins.com/2012/12/17/angularjs-and-apply.html
+				$timeout(function() {
 
+					$scope.isLoading = false;
+
+				  // Offer with location, must be real thing!
+				  if(offer.location) {
+				    $scope.center.lat = parseFloat(offer.location[0]);
+				    $scope.center.lng = parseFloat(offer.location[1]);
+				    $scope.center.zoom = 16;
+			    }
+				  // Push some defaults to offer if we didn't get proper answer...
+				  else {
+				  	offer.maxGuests = 1;
+				  	offer.status = 'yes';
+				  }
+
+				  // Determine new status from URL, overrides previous status
+				  if($stateParams.status && jQuery.inArray( $stateParams.status, ['yes', 'maybe', 'no'] ) ) {
+				  	offer.status = $stateParams.status;
+				  }
+
+					$scope.offer = offer;
+
+				});
 			});
 
 		};
