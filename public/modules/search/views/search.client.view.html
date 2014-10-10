@@ -12,6 +12,98 @@
   	</div>
   </div>
 
-  <leaflet center="center" markers="markers" layers="layers" bounds="bounds" id="search-map-canvas"></leaflet>
+  <leaflet center="center" markers="markers" layers="layers" bounds="bounds" event-broadcast="events" id="search-map-canvas"></leaflet>
+
+  <div class="search-map-sidebar" ng-show="sidebarOpen">
+
+    <div class="search-list">
+
+      <div class="search-result panel panel-default panel-loading">
+        <div class="panel-body">
+          <div class="search-result-actions">
+            <a href="#" class="btn btn-link btn-sm" tooltip-placement="left" tooltip="Bookmark"><i class="fa fa-lg fa-bookmark"></i></a>
+          </div>
+          <div tr-avatar data-size="32" data-link="false" data-source="none"></div>
+          <h4>██████████ ██████████</h4>
+          <div class="search-result-meta">
+            ██ years, █████.
+          </div>
+          <div class="search-result-tagline">
+            ██████████ ██████████ ██████████
+          </div>
+          <div class="search-result-hosting">
+            <span class="search-result-label">Hosting:</span>
+            <span class="label label-default" ng-class="{'hosting-yes': offer.status === 'yes', 'hosting-maybe': offer.status === 'maybe', 'hosting-no': offer.status === 'no'}" ng-bind="offer.status">█████</span>
+          </div>
+          <!--
+          <div class="search-result-lastseen">
+            <span class="search-result-label">Last seen:</span>
+            Less than week ago.
+          </div>
+          -->
+        </div>
+      </div>
+
+
+    <!--
+
+        <!-- Search filters --
+        <div class="search-filters panel panel-default">
+            <div class="panel-body" role="form">
+
+                <h3 class="sr-only">Filters</h3>
+
+                <div class="form-group">
+                    <label class="control-label" for="search-term">Search term</label>
+                    <input type="text" class="form-control" id="search-term">
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label" for="common-friends">Common friends</label>
+                    <input type="range" name="common-friends" min="0" max="5">
+                    <small class="help-block pull-left">Less</small>
+                    <small class="help-block pull-right">More</small>
+                </div>
+
+            </div>
+        </div>
+        !-- /Search filters -->
+
+        <!-- Search results --
+        <div class="search-result panel panel-default">
+          <div class="panel-body">
+            <div class="search-result-actions">
+              <a href="#" class="btn btn-link btn-sm" data-toggle="tooltip" data-placement="right" title="Bookmark"><i class="fa fa-bookmark"></i></a>
+            </div>
+            <img src="/images/avatar.png" alt="" class="avatar">
+            <h4>Firstname Lastname</h4>
+            <div class="search-result-meta">
+              32 years, female.
+            </div>
+            <div class="search-result-tagline">
+              Lorem ipsum dolor sit amet
+            </div>
+            <div class="search-result-lastseen">
+              <span class="search-result-label">Last seen:</span>
+              Less than week ago.
+            </div>
+          </div>
+        </div>
+        !-- /Search results -->
+
+        <!-- No search results --
+        <div class="panel panel-default content-empty">
+            <div class="panel-body">
+                <h3>Whoopsie, nobody!</h3>
+                <p>Try to widen your search criteria and area.</p>
+            </div>
+        </div>
+        !-- /No search results -->
+
+      </div>
+      <!-- /.search-list -->
+
+  </div>
+  <!-- /.search-map-sidebar -->
 
 </section>

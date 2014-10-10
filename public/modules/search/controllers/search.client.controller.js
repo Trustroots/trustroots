@@ -3,60 +3,36 @@
 /* This declares to JSHint that 'settings' is a global variable: */
 /*global settings:false */
 
-angular.module('search').controller('SearchController', ['$scope', '$http',
-	function($scope, $http) {
+angular.module('search').controller('SearchController', ['$scope', '$http', '$geolocation', 'Offers', 'leafletBoundsHelpers', 'Users', 'Authentication',
+	function($scope, $http, $geolocation, Offers, leafletBoundsHelpers, Users, Authentication) {
 
 	  // @todo: how to change this setting?
 		//L.Icon.Default.imagePath = '/modules/core/img/map';
 
+		// Start fetching user's location
+		$scope.position = $geolocation.getCurrentPosition({
+			timeout: 60000 // 1min
+		});
+
+		$scope.sidebarOpen = false;
+
+		$scope.users = [];
+
+		/**
+		 * Center map to user's location
+		 */
     angular.extend($scope, {
       center: {
-        lat: 24.0391667,
-        lng: 121.525,
-        zoom: 6
+				// Default to Europe
+				lat: 48.6908333333,
+				lng: 9.14055555556,
+				zoom: 2
       },
-      markers: {
-        taipei: {
-            layer: 'hosts',
-            lat: 25.0391667,
-            lng: 121.525,
-        },
-        yangmei: {
-            layer: 'hosts',
-            lat: 24.9166667,
-            lng: 121.1333333
-        },
-        hsinchu: {
-            layer: 'hosts',
-            lat: 24.8047222,
-            lng: 120.9713889
-        },
-        miaoli: {
-            layer: 'hosts',
-            lat: 24.5588889,
-            lng: 120.8219444
-        },
-        tainan: {
-            layer: 'hosts',
-            lat: 22.9933333,
-            lng: 120.2036111
-        },
-        puzi: {
-            layer: 'hosts',
-            lat: 23.4611,
-            lng: 120.242
-        },
-        kaohsiung: {
-            layer: 'hosts',
-            lat: 22.6252777778,
-            lng: 120.3088888889
-        },
-        taitun: {
-            layer: 'hosts',
-            lat: 22.75,
-            lng: 121.15
-        }
-      },
+      markers: {},
+			bounds: leafletBoundsHelpers.createBoundsFromArray([
+				[ 51.508742458803326, -0.087890625 ],
+				[ 51.508742458803326, -0.087890625 ]
+			]),
       layers: {
         baselayers: {
           mapbox: {
@@ -104,10 +80,102 @@ angular.module('search').controller('SearchController', ['$scope', '$http',
             visible: true
           }
         }
+      },
+      events: {
+        map: {
+          enable: ['click'],
+          logic: 'emit'
+        }
       }
     });
 
-		// Map address search
+		/**
+		 * Center map to user's location
+		 */
+    $scope.position.then(function(position){
+    	if(position.coords.latitude && position.coords.longitude) {
+    		$scope.center.lat = position.coords.latitude;
+    		$scope.center.lng = position.coords.longitude;
+    		$scope.center.zoom = 7;
+    	}
+    });
+
+		/**
+		 * Catch map events:
+		 * click, dblclick, mousedown, mouseup, mouseover, mouseout, mousemove, contextmenu, focus, blur,
+		 * preclick, load, unload, viewreset, movestart, move, moveend, dragstart, drag, dragend, zoomstart,
+		 * zoomend, zoomlevelschange, resize, autopanstart, layeradd, layerremove, baselayerchange, overlayadd,
+		 * overlayremove, locationfound, locationerror, popupopen, popupclose
+		 */
+		$scope.$on('leafletDirectiveMap.click', function(event){
+				$scope.sidebarOpen = false;
+		});
+
+    $scope.$on('leafletDirectiveMarker.click', function(e, args) {
+				console.log('Open sidebar');
+        $scope.sidebarOpen = true;
+    });
+
+
+	  /**
+	   * Icons
+	   */
+	  $scope.icons = {
+			hostingYes: {
+        iconUrl: '/modules/core/img/map/marker-icon-yes.png',
+        shadowUrl: '/modules/core/img/map/marker-shadow.png',
+        iconSize:     [25, 35], // size of the icon
+        shadowSize:   [33, 33], // size of the shadow
+        iconAnchor:   [12, 35], // point of the icon which will correspond to marker's location
+        shadowAnchor: [5, 34],  // the same for the shadow
+        popupAnchor:  [-3, -17] // point from which the popup should open relative to the iconAnchor
+      },
+	  	hostingMaybe: {
+	  		iconUrl: '/modules/core/img/map/marker-icon-maybe.png',
+	  		shadowUrl: '/modules/core/img/map/marker-shadow.png',
+	  		iconSize:     [25, 35], // size of the icon
+	  		shadowSize:   [33, 33], // size of the shadow
+	  		iconAnchor:   [12, 35], // point of the icon which will correspond to marker's location
+	  		shadowAnchor: [5, 34],  // the same for the shadow
+	  		popupAnchor:  [-3, -17] // point from which the popup should open relative to the iconAnchor
+	  	}
+	  };
+
+
+		/**
+		 * Load content to map bounding box
+		 * @todo bounds change only when map dragging is finished, we could shoot a query already while dragging every n ms.
+		 */
+    $scope.$watch('bounds', function(newBounds, oldBounds) {
+
+		    $scope.markersB = Offers.query({
+		      northEastLng: newBounds.northEast.lng,
+		      northEastLat: newBounds.northEast.lat,
+		      southWestLng: newBounds.southWest.lng,
+		      southWestLat: newBounds.southWest.lat
+		    }, function(offers){
+
+					var markers = [];
+          angular.forEach(offers, function(marker) {
+            this.push({
+						  //id: marker._id,
+							lat: marker.locationFuzzy[0],
+							lng: marker.locationFuzzy[1],
+							user: marker.user,
+							icon: (marker.status === 'yes') ? $scope.icons.hostingYes : $scope.icons.hostingMaybe
+						});
+          }, markers);
+
+					angular.extend($scope.markers, markers);
+
+
+		    });
+    });
+
+
+		/**
+		 * Map address search
+		 */
 		$scope.searchQuery = '';
 		$scope.searchQuerySearching = false;
     $scope.enterSearchAddress = function (event) {

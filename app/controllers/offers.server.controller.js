@@ -54,11 +54,9 @@ function fuzzyLocation(location) {
 
 
 /**
- * Create a Offer
+ * Create (or update if exists) a Offer
  */
 exports.create = function(req, res) {
-  console.log('->offer.create');
-
   var offer = new Offer(req.body);
   offer.user = req.user;
 
@@ -99,41 +97,63 @@ exports.create = function(req, res) {
 
 
 /**
- * Update a Offer
- */
-exports.update = function(req, res) {
-  console.log('->offer.read');
-
-};
-
-/**
  * Delete an Offer
  */
 exports.delete = function(req, res) {
   console.log('->offer.delete');
-
 };
 
 /**
  * List of Offers
  */
 exports.list = function(req, res) {
-  console.log('->offer.list');
+  Offer.find( {
+        $or: [
+          { status: 'yes' },
+          { status: 'maybe' }
+        ],
+        locationFuzzy: {
+            $geoWithin: {
+                $box: [
+                        [Number(req.query.northEastLng), Number(req.query.northEastLat)],
+                        [Number(req.query.southWestLng), Number(req.query.southWestLat)]
+                      ]
+            }
+          }
+        },
+        'locationFuzzy status user'
+        )
+        .exec(function(err, offers) {
+          if (err) {
+            return res.status(400).send({
+              message: errorHandler.getErrorMessage(err)
+            });
+          } else {
+
+            /*
+             * Could return something like this here already (so no need to refactor at frontend):
+             *
+             * lat: marker.locationFuzzy[0],
+             * lng: marker.locationFuzzy[1],
+             * user: marker.user,
+             * icon: $scope.icons[marker.status]
+             */
+            res.jsonp(offers);
+          }
+        });
 };
+
 
 /**
  * Show the current Offer
  */
 exports.read = function(req, res) {
-  console.log('->offer.read');
   res.jsonp(req.offer);
 };
 
 
 // Offer reading middleware
 exports.offerByUserID = function(req, res, next, userId) {
-  console.log('->offer.offerByUserID: ' + userId);
-
   Offer.findOne({
       user: userId
     })
@@ -174,7 +194,6 @@ exports.offerByUserID = function(req, res, next, userId) {
  * Offer authorization middleware
  */
 exports.hasAuthorization = function(req, res, next) {
-  console.log('->offer.hasAuthorization');
   if (req.offer.user.id !== req.user.id) {
     return res.status(403).send('User is not authorized');
   }

@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('core').controller('HeaderController', ['$scope', '$log', '$filter', 'Authentication', 'Menus', 'Socket',
-	function($scope, $log, $filter, Authentication, Menus, Socket) {
+angular.module('core').controller('HeaderController', ['$scope', '$log', '$filter', '$geolocation', 'Authentication', 'Menus', 'Socket',
+	function($scope, $log, $filter, $geolocation, Authentication, Menus, Socket) {
 
 		// @todo: show info popup when this happens
     Socket.on('reconnect', function () {
@@ -11,6 +11,12 @@ angular.module('core').controller('HeaderController', ['$scope', '$log', '$filte
     Socket.on('reconnecting', function () {
       $log.log('Attempting to re-connect to the server');
     });
+
+		// Makes it faster for other controllers to load this if we get it already now
+		// @todo: should this be at some MainController?
+		$scope.position = $geolocation.getCurrentPosition({
+			timeout: 60000 // 1min
+		});
 
 		$scope.authentication = Authentication;
 		$scope.isCollapsed = false;

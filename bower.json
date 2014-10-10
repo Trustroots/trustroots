@@ -22,6 +22,7 @@
     "select2": "~3.4.5",
     "selectize": "~0.8.5",
     "angular-leaflet-directive": "~0.7.8",
-    "leaflet.markercluster": "~0.4.0"
+    "leaflet.markercluster": "~0.4.0",
+    "ngGeolocation": "~0.0.4"
   }
 }

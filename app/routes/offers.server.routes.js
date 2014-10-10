@@ -13,7 +13,7 @@ module.exports = function(app) {
 
 		app.route('/offers/:userId')
 			.get(users.requiresLogin, offers.read)
-			.put(users.requiresLogin, offers.hasAuthorization, offers.update)
+			//.put(users.requiresLogin, offers.hasAuthorization, offers.update)
 			.delete(users.requiresLogin, offers.hasAuthorization, offers.delete);
 
 	// Finish by binding the middleware

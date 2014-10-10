@@ -5,22 +5,26 @@
 /*global jQuery:false */
 
 
-angular.module('offers').controller('AddOfferController', ['$scope', '$http', '$timeout', '$state', '$stateParams', 'Offers', 'Authentication',
-	function($scope, $http, $timeout, $state, $stateParams, Offers, Authentication) {
+angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$geolocation', 'Offers', 'Authentication',
+	function($scope, $rootScope, $http, $timeout, $state, $stateParams, $geolocation, Offers, Authentication) {
 
 		$scope.authentication = Authentication;
 
-    $scope.isLoading = true;
+    $scope.isLoading = false;
 
 		$scope.offer = false;
+
+		$scope.position = $geolocation.getCurrentPosition({
+			timeout: 60000 // 1min
+		});
 
 		// Leaflet
 		angular.extend($scope, {
 			center: {
 				// Default to Europe
-				lat: $scope.offer ? $scope.offer.location[0] : 48.6908333333,
-				lng: $scope.offer ? $scope.offer.location[1] : 9.14055555556,
-				zoom: $scope.offer ? 16 : 4
+				lat: 48.6908333333,
+				lng: 9.14055555556,
+				zoom: 4
 			},
 			layers: {
 				baselayers: {
@@ -65,6 +69,15 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$http', '$
 				  else {
 				  	offer.maxGuests = 1;
 				  	offer.status = 'yes';
+
+						// Center map to user's location
+						$scope.position.then(function(position){
+							if(position.coords.latitude && position.coords.longitude) {
+								$scope.center.lat = position.coords.latitude;
+							  $scope.center.lng = position.coords.longitude;
+								$scope.center.zoom = 13;
+						  }
+						});
 				  }
 
 				  // Determine new status from URL, overrides previous status

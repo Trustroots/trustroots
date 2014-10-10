@@ -1,3 +1,5 @@
+@search-map-sidebar-width: 300px;
+
 .search-map {
   #search-map-canvas {
     position: fixed;
@@ -9,103 +11,6 @@
     height: auto;
     z-index: 0;
   }
-
-  #search-map-sidebar {
-    position: absolute;
-    top: @navbar-height;
-    left: 0;
-    width: 30%;
-    min-width: 300px;
-    max-width: 480px;
-    height: auto;
-    padding: 10px;
-    background: rgba(0,0,0, 0.1);
-  }
-  #search-list {
-
-    display: block;
-    float: left;
-    margin: 0;
-    padding: 0 0 @footer-height 0;
-    width: 100%;
-    height: auto;
-
-    .panel {
-      margin-bottom: 5px;
-    }
-    .search-filters {
-      label {
-        .text-muted;
-        text-transform: uppercase;
-        padding: 0;
-        margin: 0;
-        font-size: @font-size-small;
-      }
-    }
-
-    .search-result {
-      .user-select(none);
-      position: relative;
-      cursor: pointer;
-      .panel-body {
-        border-left: 3px solid #fff;
-        border-radius: @panel-border-radius;
-        .transition(all 0.1s linear);
-      }
-      h4 {
-        padding: 0;
-        margin: 0;
-      }
-      .search-result-label {
-        .text-muted;
-        font-weight: bold;
-        text-transform: uppercase;
-      }
-      .avatar {
-        width: 36px;
-        height: 36px;
-        float: left;
-        margin: 0 10px 0 0;
-      }
-      .search-result-meta {
-        font-size: @font-size-small;
-        .text-muted;
-      }
-      .search-result-tagline {
-        margin: 0;
-        padding: 5px 0;
-        font-size: 15px;
-      }
-      .search-result-lastseen {
-        font-size: @font-size-small;
-      }
-      .search-result-actions {
-        position: absolute;
-        top: 0;
-        right: 0;
-        opacity: 0;
-        .transition(opacity 0.1s linear);
-      }
-      &.active,
-      &:hover {
-        .search-result-actions {
-          opacity: 1;
-        }
-        .panel-body {
-          border-color: @brand-primary;
-        }
-      }
-      /* Notice . and : */
-      &.active,
-      &:active {
-        background: #fafafa;
-        .panel-body {
-          border-color: @brand-secondary;
-        }
-      }
-    }
-  }
-
   .map-location-search {
     position: absolute;
     width: 200px;
@@ -134,6 +39,104 @@
       &:focus {
         outline: none;
         box-shadow: none;
+      }
+    }
+  }
+}
+
+.search-map-sidebar {
+  position: absolute;
+  top: @navbar-height;
+  bottom: @footer-height;
+  right: 0;
+  width: 30%;
+  min-width: 300px;
+  max-width: 480px;
+  height: auto;
+  padding: 10px;
+  background: rgba(0,0,0, 0.1);
+  z-index: @zindex-navbar;
+}
+.search-list {
+
+  display: block;
+  float: left;
+  margin: 0;
+  padding: 0 0 @footer-height 0;
+  width: 100%;
+  height: auto;
+
+  .panel {
+    margin-bottom: 5px;
+  }
+  .search-filters {
+    label {
+      .text-muted;
+      text-transform: uppercase;
+      padding: 0;
+      margin: 0;
+      font-size: @font-size-small;
+    }
+  }
+
+  .search-result {
+    .user-select(none);
+    position: relative;
+    cursor: pointer;
+    .panel-body {
+      border-left: 3px solid #fff;
+      border-radius: @panel-border-radius;
+      .transition(all 0.1s linear);
+    }
+    h4 {
+      padding: 0;
+      margin: 0;
+    }
+    .search-result-label {
+      .text-muted;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .avatar {
+      width: 36px;
+      height: 36px;
+      float: left;
+      margin: 0 10px 0 0;
+    }
+    .search-result-meta {
+      font-size: @font-size-small;
+      .text-muted;
+    }
+    .search-result-tagline {
+      margin: 0;
+      padding: 5px 0;
+      font-size: 15px;
+    }
+    .search-result-lastseen {
+      font-size: @font-size-small;
+    }
+    .search-result-actions {
+      position: absolute;
+      top: 0;
+      right: 0;
+      opacity: 0;
+      .transition(opacity 0.1s linear);
+    }
+    &.active,
+    &:hover {
+      .search-result-actions {
+        opacity: 1;
+      }
+      .panel-body {
+        border-color: @brand-primary;
+      }
+    }
+    /* Notice . and : */
+    &.active,
+    &:active {
+      background: #fafafa;
+      .panel-body {
+        border-color: @brand-secondary;
       }
     }
   }

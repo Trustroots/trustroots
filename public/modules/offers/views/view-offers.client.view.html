@@ -25,11 +25,11 @@
     <div ng-show="offer.status !== 'no'">
       <div ng-show="offer.description" ng-bind-html="offer.description | trustedHtml"></div>
       <p class="offer-restrictions">
-        <em ng-show="offer.maxGuests > 1">At most {{offer.maxGuests}} guests</em>
-        <em ng-show="offer.maxGuests === 1">At most one guest</em>
-        <em ng-show="offer.maxGuests === 0">Zero guests</em>
+        <small ng-show="offer.description && user._id === profile.id" class="pull-right"><a ui-sref="offer" class="text-muted">edit</a></small>
+        <small ng-show="offer.maxGuests > 1">At most {{offer.maxGuests}} guests.</small>
+        <small ng-show="offer.maxGuests === 1">At most one guest.</small>
+        <small ng-show="offer.maxGuests === 0">Zero guests.</small>
       </p>
-      <small ng-show="offer.description && user._id === profile.id" class="pull-right"><a ui-sref="offer" class="text-muted">edit</a></small>
     </div>
     <!-- /Hosting: yes | maybe -->
 

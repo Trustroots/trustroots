@@ -2,19 +2,19 @@
 
 angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', '$location', 'Languages', 'Users', 'Authentication',
   function($scope, $modal, $http, $stateParams, $state, $location, Languages, Users, Authentication) {
+
+    // If user is not signed in then redirect back home
+    if (!Authentication.user) $location.path('/');
+
     $scope.user = Authentication.user;
     $scope.profile = false;
     $scope.languages = Languages.get('array');
-
-    // If user is not signed in then redirect back home
-    if (!$scope.user) $location.path('/');
 
     // Check if there are additional accounts
     $scope.hasConnectedAdditionalSocialAccounts = function(provider) {
       for (var i in $scope.user.additionalProvidersData) {
         return true;
       }
-
       return false;
     };
 

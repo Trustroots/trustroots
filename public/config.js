@@ -18,7 +18,8 @@ var ApplicationConfiguration = (function() {
 	                                            'angularMoment',
 	                                            'angular-medium-editor',
 	                                            'perfect_scrollbar',
-																							'leaflet-directive'
+																							'leaflet-directive',
+																							'ngGeolocation'
 	                                          ];
 
 	// Add a new vertical module

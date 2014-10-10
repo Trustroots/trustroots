@@ -49,6 +49,7 @@ module.exports = {
 				'public/lib/leaflet/dist/leaflet-src.js',
 				'public/lib/leaflet.markercluster/dist/leaflet.markercluster.js',
 				'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.js',
+				'public/lib/ngGeolocation/ngGeolocation.js',
 			]
 		},
     less: [
