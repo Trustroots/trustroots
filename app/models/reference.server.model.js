@@ -24,6 +24,11 @@ var ReferenceSchema = new Schema({
 		type: Date,
 		default: Date.now
 	},
+	impression: {
+		type: String,
+		enum: ['','positive','negative'],
+		default: ''
+	},
 	userFrom: {
 		type: Schema.ObjectId,
 		ref: 'User'

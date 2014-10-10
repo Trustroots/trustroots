@@ -101,23 +101,6 @@ exports.delete = function(req, res) {
 exports.list = function(req, res) {
 		console.log('->list');
 		res.jsonp(req.references);
-		/*
-		Reference.find({
-			userTo: userId
-		})
-		.sort('-created')
-		.populate('userTo', 'username displayName')
-		.populate('userFrom', 'username displayName')
-		.exec(function(err, references) {
-		if (err) {
-			return res.status(400).send({
-				message: errorHandler.getErrorMessage(err)
-			});
-		} else {
-			res.jsonp(references);
-		}
-	});
-	*/
 };
 
 /**
@@ -135,10 +118,11 @@ exports.referencesByUser = function(req, res, next, userId) {
 	console.log('->referencesByUser: ' + userId);
 	Reference
 	  .find({
-			$or: [
-				{ userFrom: userId },
-				{ userTo: userId }
-			]
+		  //$or: [
+		  //  { userFrom: userId },
+		  //  { userTo: userId }
+		  //]
+		  userTo: userId
 		})
 	  .populate('userFrom', userPopulateFields)
 	  .populate('userTo', userPopulateFields)

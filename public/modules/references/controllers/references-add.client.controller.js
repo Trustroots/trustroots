@@ -1,24 +1,29 @@
 'use strict';
 
 // References controller
-angular.module('references').controller('ReferencesController', ['$scope', '$log', '$state', '$stateParams', '$location', '$modal', 'Authentication', 'ReferencesBy', 'References',
+angular.module('references').controller('ReferencesAddController', ['$scope', '$log', '$state', '$stateParams', '$location', '$modal', 'Authentication', 'ReferencesBy', 'References',
 	function($scope, $log, $state, $stateParams, $location, $modal, Authentication, ReferencesBy, References ) {
 		$scope.authentication = Authentication;
+
+		if(!$scope.userTo) {
+			// Wait for profile from parent Controller (probably ProfileController)
+			$scope.$parent.profile.$promise.then(function() {
+				$scope.userTo = profile;
+				$log.log('Reference to: ' + $scope.userTo);
+			});
+		}
 
 		// Create new Reference
 		$scope.create = function() {
 
-			$log.log('Reference to: ' + $scope.userTo);
-
 			// Create new Reference object
 			var reference = new References ({
 				reference: this.reference,
-				userTo: $scope.userTo
+				userTo: $scope.userTo.id
 			});
 
 			// Redirect after save
 			reference.$save(function(response) {
-
 
 				//if(modalInstance) {
 				//	$log.log('Close modal');
@@ -28,7 +33,7 @@ angular.module('references').controller('ReferencesController', ['$scope', '$log
 				$log.log('->Success');
 				$log.log(response);
 
-				$state.go('profile-reference', {'username': response.userTo.username, 'referenceId': response._id});
+				$state.go('profile-reference', {'username': $scope.userTo.username, 'referenceId': response._id});
 
 				// Clear form fields
 				//$scope.reference = '';
@@ -39,9 +44,9 @@ angular.module('references').controller('ReferencesController', ['$scope', '$log
 
 		// Remove existing Reference
 		$scope.remove = function( reference, profile ) {
-		$log.log('->remove');
-		$log.log($stateParams);
-		$log.log(reference);
+		  $log.log('->remove');
+		  $log.log($stateParams);
+		  $log.log(reference);
 
 			if ( reference ) {
 
@@ -71,14 +76,6 @@ angular.module('references').controller('ReferencesController', ['$scope', '$log
 				$state.go('profile-tab', {'username': profile.username, 'tab': 'references'});
 			}, function(errorResponse) {
 				$scope.error = errorResponse.data.message;
-			});
-		};
-
-		// Find a list of References
-		$scope.list = function(profile) {
-			$log.log('list references: ' + profile.id);
-			$scope.references = ReferencesBy.query({
-				userId: profile.id
 			});
 		};
 

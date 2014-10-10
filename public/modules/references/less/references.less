@@ -4,6 +4,29 @@
   padding: 0;
   margin: 0;
   li {
+
+    .reference-from {
+      clear: both;
+      position: relative;
+      margin-top: 13px;
+      padding-top: 7px;
+      margin-left: 30px;
+      border-top: 1px solid @gray-lighter;
+      font-style: italic;
+      color: @gray-darker;
+      &:after {
+        content: '';
+        position: absolute;
+        .square(0);
+        top: 0;
+        left: 7px;
+        margin-top: -7px;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-bottom: 6px solid @gray-lighter;
+      }
+    }
+
     .reference-author {
       .text-center();
       font-size: @font-size-small;
@@ -54,7 +77,7 @@
       padding: 1px 0 0 42px;
       clear: both;
     }
-    .reference-reply {
+    .reference-from {
       clear: both;
       position: relative;
       margin-top: 13px;

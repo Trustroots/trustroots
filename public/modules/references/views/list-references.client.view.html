@@ -1,13 +1,15 @@
-<section data-ng-controller="ReferencesController" data-ng-init="list(profile)">
+<section data-ng-controller="ReferencesListController">
 
-  <small data-ng-if="!references.$resolved" class="row text-muted text-center">Wait a moment...</small>
+  <div data-ng-if="!references.$resolved" class="row content-wait">
+    <small>Wait a moment...</small>
+  </div>
 
   <ul class="reference-list" data-ng-if="references.$resolved">
 
     <li data-ng-repeat="reference in references | orderBy:'-created'" id="reference-{{ reference._id }}">
       <div class="row">
         <div class="col-xs-12 col-sm-10">
-          <div class="panel panel-default reference reference-positive"><!-- reference-positive/negative -->
+          <div class="panel panel-default reference"><!-- ng-class="{ 'reference-from': userFrom.id === profile.id, 'reference-to': userTo.id === profile.id }">--><!-- reference-positive/negative -->
             <div class="panel-body">
               <span data-ng-bind="reference.reference"></span>
               <!--
@@ -24,7 +26,7 @@
                 </div>
               -->
 
-                <span data-ng-show="authentication.user._id === reference.userFrom._id">
+                <span data-ng-show="authentication.user._id === reference.userFrom.id">
                   <a class="cursor-pointer" ui-sref="editReference({'referenceId': reference._id})">edit</a>
                   ・
                   <a class="cursor-pointer" data-ng-click="remove(reference, profile);">delete</a>
