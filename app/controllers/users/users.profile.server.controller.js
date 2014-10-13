@@ -13,6 +13,26 @@ var _ = require('lodash'),
 //Contact = mongoose.model('Contact'),
 	Reference = mongoose.model('Reference');
 
+// Fields to send publicly about any user profile
+// to make sure we're not sending unsecure content (eg. passwords)
+// Pick here fields to send
+var userProfileFields = [
+										'id',
+										'displayName',
+										'username',
+										'gender',
+										'tagline',
+										'description',
+										'locationFrom',
+										'locationLiving',
+										'languages',
+										'birthdate',
+										'seen',
+										'created',
+										'updated',
+										'avatarSource',
+										'emailHash' // MD5 hashed email to use with Gravatars
+										].join(' ');
 
 /**
 * Rules for sanitizing user description coming in and out
@@ -119,29 +139,13 @@ exports.list = function(req, res) {
  * Profile middleware
  */
 exports.userByID = function(req, res, next, id) {
-	User.findById(id).exec(function(err, user) {
+	User.findById(id, userProfileFields).exec(function(err, user) {
 		if (err) return next(err);
 		if (!user) return next(new Error('Failed to load user ' + id));
 
-	  // Make sure we're not sending unsecure content (eg. passwords)
-		// Pick here fields to send
-		user = _.pick(user, 'id',
-												'displayName',
-												'username',
-												'gender',
-												'tagline',
-												'description',
-												'locationFrom',
-												'locationLiving',
-												'languages',
-												'birthdate',
-												'seen',
-												'created',
-												'updated',
-												'avatarSource',
-												'emailHash' // MD5 hashed email to use with Gravatars
-											);
-
+		console.log('---------------------------');
+		console.log(user);
+		console.log('---------------------------');
 		// Sanitize output
 		if(user.description) user.description = sanitizeHtml(user.description, userSanitizeOptions);
 
@@ -163,28 +167,13 @@ exports.userByID = function(req, res, next, id) {
 exports.userByUsername = function(req, res, next, username) {
 	User.findOne({
     	username: username
-	}).exec(function(err, user) {
+	}, userProfileFields).exec(function(err, user) {
 		if (err) return next(err);
 		if (!user) return next(new Error('Failed to load user ' + username));
 
-		// Make sure we're not sending unsequre content (eg. passwords)
-		// Pick here fields to send
-		user = _.pick(user, 'id',
-												'displayName',
-												'username',
-												'gender',
-												'tagline',
-												'description',
-												'locationFrom',
-												'locationLiving',
-												'languages',
-												'birthdate',
-												'seen',
-												'created',
-												'updated',
-												'avatarSource',
-												'emailHash' // MD5 hashed email to use with Gravatars
-											);
+		console.log('---------------------------');
+		console.log(user);
+	  console.log('---------------------------');
 
 		// Sanitize output
 		if(user.description) user.description = sanitizeHtml(user.description, userSanitizeOptions);
