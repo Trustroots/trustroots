@@ -152,6 +152,10 @@ var UserSchema = new Schema({
 		}],
 		default: ['gravatar']
 	},
+	newsletter: {
+		type: Boolean,
+		default: false
+	},
 	/* For reset password */
 	resetPasswordToken: {
 		type: String

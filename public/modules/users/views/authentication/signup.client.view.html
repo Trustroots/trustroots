@@ -57,10 +57,18 @@
               <input type="email" id="email" name="email" class="form-control input-lg" data-ng-model="credentials.email" placeholder="Email">
             </div>
 	  			</div>
-	  			<div class="form-group">
-	  				<label for="password" class="col-sm-4 control-label">Password</label>
+          <div class="form-group">
+            <label for="password" class="col-sm-4 control-label">Password</label>
             <div class="col-sm-8">
-	  				  <input type="password" id="password" name="password" class="form-control input-lg" data-ng-model="credentials.password" placeholder="Password" popover="At least 8 characters long."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true">
+              <input type="password" id="password" name="password" class="form-control input-lg" data-ng-model="credentials.password" placeholder="Password" popover="At least 8 characters long."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true">
+            </div>
+          </div>
+	  			<div class="checkbox">
+            <div class="col-sm-offset-4 col-sm-8">
+              <label for="newsletter">
+	  				    <input type="checkbox" id="newsletter" name="newsletter" data-ng-model="credentials.newsletter">
+                Subscribe to community news
+              </label>
             </div>
 	  			</div>
 	  			<div class="text-center form-group">
