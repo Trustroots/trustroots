@@ -26,7 +26,9 @@ var offerSanitizeOptions = {
   };
 
 /**
- * Crate fuzzy location
+ * Create a fuzzy location
+ * Will create an alternative lat,lng by shifting location 50-100 meters to random direction
+ * @link http://gis.stackexchange.com/a/2980
  */
 function fuzzyLocation(location) {
 
