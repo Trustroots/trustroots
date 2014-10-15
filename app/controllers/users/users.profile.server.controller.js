@@ -83,7 +83,7 @@ exports.update = function(req, res) {
 					if (err) {
 						res.status(400).send(err);
 					} else {
-						res.jsonp(user);
+						res.json(user);
 					}
 				});
 			}
@@ -99,7 +99,7 @@ exports.update = function(req, res) {
  * Send User
  */
 exports.me = function(req, res) {
-	res.jsonp(req.user || null);
+	res.json(req.user || null);
 };
 
 
@@ -107,7 +107,7 @@ exports.me = function(req, res) {
  * Show the profile of the user
  */
 exports.getUser = function(req, res) {
-	res.jsonp(req.user || null);
+	res.json(req.user || null);
 };
 
 /**
@@ -115,7 +115,7 @@ exports.getUser = function(req, res) {
  * Pick only certain fields from whole profile @link http://underscorejs.org/#pick
  */
 exports.getMiniUser = function(req, res) {
-	res.jsonp( _.pick(req.user, userPopulateFields) || null );
+	res.json( _.pick(req.user, userPopulateFields) || null );
 };
 
 
@@ -129,7 +129,7 @@ exports.list = function(req, res) {
 				message: errorHandler.getErrorMessage(err)
 			});
 		} else {
-			res.jsonp(users);
+			res.json(users);
 		}
 	});
 };

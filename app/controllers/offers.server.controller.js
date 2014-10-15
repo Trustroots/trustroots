@@ -89,7 +89,7 @@ exports.create = function(req, res) {
         message: errorHandler.getErrorMessage(err)
       });
     } else {
-      res.jsonp(upsertData);
+      res.json(upsertData);
     }
   });
 
@@ -138,7 +138,7 @@ exports.list = function(req, res) {
              * user: marker.user,
              * icon: $scope.icons[marker.status]
              */
-            res.jsonp(offers);
+            res.json(offers);
           }
         });
 };
@@ -148,7 +148,7 @@ exports.list = function(req, res) {
  * Show the current Offer
  */
 exports.read = function(req, res) {
-  res.jsonp(req.offer);
+  res.json(req.offer);
 };
 
 
