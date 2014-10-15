@@ -1,8 +1,14 @@
 'use strict';
 
-angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$log', '$sce', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Socket', 'Authentication', 'Messages', 'UsersMini',
-	function($scope, $stateParams, $log, $sce, $state, $document, $window, $anchorScroll, $timeout, Socket, Authentication, Messages, UsersMini) {
+angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$log', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Socket', 'Authentication', 'Messages', 'UsersMini',
+	function($scope, $stateParams, $log, $state, $document, $window, $anchorScroll, $timeout, Socket, Authentication, Messages, UsersMini) {
 		$scope.authentication = Authentication;
+
+		// If user is not signed in then redirect back home
+		if (!$scope.authentication.user) $state.go('home');
+
+		// If no recepient defined, go to inbox
+		if (!$stateParams.userId) $state.go('inboxMessages');
 
     // Mini profile of receiving user for monkeybox
     $scope.userTo = UsersMini.get({ userId: $stateParams.userId });
