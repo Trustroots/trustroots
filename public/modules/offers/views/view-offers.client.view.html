@@ -3,7 +3,7 @@
   <div class="panel-heading">
     Accommodation
     <!-- Button + dropdown for user's own profile -->
-    <div ng-show="user._id === profile.id" class="pull-right btn-group" dropdown is-open="hostingDropdown">
+    <div ng-show="user._id === profile._id" class="pull-right btn-group" dropdown is-open="hostingDropdown">
       <button class="btn btn-sm dropdown-toggle btn-hosting btn-hosting-yes" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': (!offer || offer.status === 'no')}">
         {{ hostingStatusLabel() }}
         <span class="caret"></span>
@@ -15,7 +15,7 @@
       </ul>
     </div>
     <!-- Button for other profiles -->
-    <a ng-show="user._id !== profile.id" ui-sref="listMessages({userId: profile.id})" class="btn btn-sm pull-right btn-hosting btn-hosting-yes" ng-show="offer.status === 'yes'" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': (!offer || offer.status === 'no')}">
+    <a ng-show="user._id !== profile._id" ui-sref="listMessages({userId: profile._id})" class="btn btn-sm pull-right btn-hosting btn-hosting-yes" ng-show="offer.status === 'yes'" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': (!offer || offer.status === 'no')}">
       {{ hostingStatusLabel() }}
     </a>
   </div>
@@ -25,7 +25,7 @@
     <div ng-show="offer.status !== 'no'">
       <div ng-show="offer.description" ng-bind-html="offer.description | trustedHtml"></div>
       <p class="offer-restrictions">
-        <small ng-show="offer.description && user._id === profile.id" class="pull-right"><a ui-sref="offer" class="text-muted">edit</a></small>
+        <small ng-show="offer.description && user._id === profile._id" class="pull-right"><a ui-sref="offer" class="text-muted">edit</a></small>
         <small ng-show="offer.maxGuests > 1">At most {{offer.maxGuests}} guests.</small>
         <small ng-show="offer.maxGuests === 1">At most one guest.</small>
         <small ng-show="offer.maxGuests === 0">Zero guests.</small>
@@ -38,13 +38,13 @@
 
       <!-- User has written explanation -->
       <div ng-show="offer.noOfferDescription" ng-bind-html="offer.noOfferDescription | trustedHtml"></div>
-      <small ng-show="offer.noOfferDescription && user._id === profile.id" class="pull-right"><a ng-click="hostingStatus('no')" class="cursor-pointer text-muted">edit</a></small>
+      <small ng-show="offer.noOfferDescription && user._id === profile._id" class="pull-right"><a ng-click="hostingStatus('no')" class="cursor-pointer text-muted">edit</a></small>
 
       <!-- Default "sorry nope" -->
       <div ng-hide="offer.noOfferDescription" class="content-empty text-muted">
         <i class="fa fa-3x fa-home"></i>
         <h4>Sorry, user is not hosting currently.</h4>
-        <p ng-show="!offer.noOfferDescription && user._id === profile.id"><a ng-click="hostingStatus('no')" class="cursor-pointer text-muted"><small>Customize</small></a></p>
+        <p ng-show="!offer.noOfferDescription && user._id === profile._id"><a ng-click="hostingStatus('no')" class="cursor-pointer text-muted"><small>Customize</small></a></p>
       </div>
 
     </div>
@@ -53,7 +53,7 @@
   </div>
 
   <!-- When looking at your own profile -->
-  <div class="panel-footer text-center" ng-show="user._id === profile.id && (!offer || offer.status === 'no')">
+  <div class="panel-footer text-center" ng-show="user._id === profile._id && (!offer || offer.status === 'no')">
     <a ui-sref="offer" class="btn btn-sm btn-primary">Start hosting travellers</a>
   </div>
 
