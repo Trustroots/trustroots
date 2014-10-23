@@ -170,7 +170,6 @@ exports.offerByUserID = function(req, res, next, userId) {
 
         // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
         if(userId !== req.user.id) {
-          console.log('Return fuzzy');
           offer.location = offer.locationFuzzy;
         }
         delete offer.locationFuzzy;

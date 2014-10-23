@@ -29,7 +29,7 @@ var messageSanitizeOptions = {
   };
 
 // Populate users with these fields
-var userPopulateFields = config.app.miniUserProfileFields.join(' ');
+var userMiniProfileFields = config.app.userMiniProfileFields.join(' ');
 
 /**
  * List of threads aka inbox
@@ -45,8 +45,8 @@ exports.inbox = function(req, res) {
       }
     )
     .sort('updated')
-    .populate('userFrom', userPopulateFields)
-    .populate('userTo', userPopulateFields)
+    .populate('userFrom', userMiniProfileFields)
+    .populate('userTo', userMiniProfileFields)
     .populate('message', 'content')
     .exec(function(err, threads) {
       if (err) {
@@ -68,7 +68,7 @@ exports.inbox = function(req, res) {
           threadsCleaned.push(thread);
         });
 
-        res.jsonp(threadsCleaned);
+        res.json(threadsCleaned);
       }
     });
 };
@@ -142,10 +142,10 @@ exports.send = function(req, res) {
 
       // We'll need some info about related users, populate some fields
       message
-        .populate('userFrom', userPopulateFields)
+        .populate('userFrom', userMiniProfileFields)
         .populate({
           path: 'userTo',
-          select: userPopulateFields
+          select: userMiniProfileFields
         }, function(err, message) {
           if (err) {
             return res.status(400).send({
@@ -157,7 +157,7 @@ exports.send = function(req, res) {
             socketio.sockets.emit( 'message.sent', message );
 
             // Finally res
-            res.jsonp(message);
+            res.json(message);
           }
         });
 
@@ -171,7 +171,7 @@ exports.send = function(req, res) {
  * @todo: pagination
  */
 exports.thread = function(req, res) {
-  res.jsonp(req.messages);
+  res.json(req.messages);
 };
 
 /**
@@ -188,8 +188,8 @@ exports.threadByUser = function(req, res, next, userId) {
       }
     )
     .sort('-created')
-    .populate('userFrom', userPopulateFields)
-    .populate('userTo', userPopulateFields)
+    .populate('userFrom', userMiniProfileFields)
+    .populate('userTo', userMiniProfileFields)
     .exec(function(err, messages) {
       if (err) return next(err);
       if (!messages) return next(new Error('Failed to load messages.'));
@@ -214,7 +214,7 @@ exports.threadByUser = function(req, res, next, userId) {
  */
  /*
 exports.read = function(req, res) {
-  res.jsonp(req.message);
+  res.json(req.message);
 };
 */
 
@@ -251,7 +251,7 @@ exports.update = function(req, res) {
     message: errorHandler.getErrorMessage(err)
     });
   } else {
-    res.jsonp(message);
+    res.json(message);
   }
   });
 };
@@ -270,7 +270,7 @@ exports.delete = function(req, res) {
     message: errorHandler.getErrorMessage(err)
     });
   } else {
-    res.jsonp(message);
+    res.json(message);
   }
   });
 };

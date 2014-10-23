@@ -34,6 +34,10 @@ var userProfileFields = [
 										'emailHash' // MD5 hashed email to use with Gravatars
 										].join(' ');
 
+// Same as above but more restricted set when only really "miniprofile" is needed
+var userMiniProfileFields = config.app.userMiniProfileFields.join(' ');
+
+
 /**
 * Rules for sanitizing user description coming in and out
 * @link https://github.com/punkave/sanitize-html
@@ -49,9 +53,6 @@ var userSanitizeOptions = {
 		// URL schemes we permit
 		allowedSchemes: [ 'http', 'https', 'ftp', 'mailto', 'tel' ]
 	};
-
-// Populate users with these fields
-var userPopulateFields = config.app.miniUserProfileFields.join(' ');
 
 /**
  * Update user details
@@ -115,7 +116,7 @@ exports.getUser = function(req, res) {
  * Pick only certain fields from whole profile @link http://underscorejs.org/#pick
  */
 exports.getMiniUser = function(req, res) {
-	res.json( _.pick(req.user, userPopulateFields) || null );
+	res.json( req.user || null );
 };
 
 
@@ -136,28 +137,12 @@ exports.list = function(req, res) {
 
 
 /**
- * Profile middleware
+ * Mini profile middleware
  */
-exports.userByID = function(req, res, next, id) {
-	User.findById(id, userProfileFields).exec(function(err, user) {
+exports.userMiniByID = function(req, res, next, id) {
+	User.findById(id, userMiniProfileFields).exec(function(err, user) {
 		if (err) return next(err);
 		if (!user) return next(new Error('Failed to load user ' + id));
-
-		console.log('---------------------------');
-		console.log(user);
-		console.log('---------------------------');
-		// Sanitize output
-		if(user.description) user.description = sanitizeHtml(user.description, userSanitizeOptions);
-
-		// Check if logged in user has left reference for this profile
-		//console.log('->userByID, check if user ' + req.user._id + ' has written reference for ' + user._id);
-
-		Reference.findOne({
-				userTo: user._id,
-				userFrom: req.user._id
-		}).exec(function(err, reference) {
-			user.reference = reference;
-		});
 
 		req.user = user;
 		next();
@@ -170,10 +155,6 @@ exports.userByUsername = function(req, res, next, username) {
 	}, userProfileFields).exec(function(err, user) {
 		if (err) return next(err);
 		if (!user) return next(new Error('Failed to load user ' + username));
-
-		console.log('---------------------------');
-		console.log(user);
-	  console.log('---------------------------');
 
 		// Sanitize output
 		if(user.description) user.description = sanitizeHtml(user.description, userSanitizeOptions);

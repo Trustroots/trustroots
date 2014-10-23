@@ -10,7 +10,7 @@ var mongoose = require('mongoose'),
 	_ = require('lodash');
 
 // Populate users with these fields
-var userPopulateFields = config.app.miniUserProfileFields.join(' ');
+var userMiniProfileFields = config.app.userMiniProfileFields.join(' ');
 
 /**
  * Create a Reference
@@ -26,7 +26,7 @@ exports.create = function(req, res) {
 				message: errorHandler.getErrorMessage(err)
 			});
 		} else {
-			res.jsonp(reference);
+			res.json(reference);
 		}
 	});
 };
@@ -35,7 +35,7 @@ exports.create = function(req, res) {
  * Show the current Reference
  */
 exports.read = function(req, res) {
-	res.jsonp(req.reference);
+	res.json(req.reference);
 };
 
 /**
@@ -62,7 +62,7 @@ exports.update = function(req, res) {
 		  reference
 		  	.populate({
 		  		path: 'userTo',
-		  		select: userPopulateFields
+		  		select: userMiniProfileFields
 		  	}, function(err, reference) {
 		  		if (err) {
 		  			return res.status(400).send({
@@ -70,7 +70,7 @@ exports.update = function(req, res) {
 		  			});
 		  		} else {
 						// Response
-		  			res.jsonp(reference);
+		  			res.json(reference);
 		  		}
 		  	});
 
@@ -90,7 +90,7 @@ exports.delete = function(req, res) {
 				message: errorHandler.getErrorMessage(err)
 			});
 		} else {
-			res.jsonp(reference);
+			res.json(reference);
 		}
 	});
 };
@@ -100,7 +100,7 @@ exports.delete = function(req, res) {
  */
 exports.list = function(req, res) {
 		console.log('->list');
-		res.jsonp(req.references);
+		res.json(req.references);
 };
 
 /**
@@ -115,7 +115,6 @@ exports.referenceByID = function(req, res, next, id) { Reference.findById(id).po
 };
 
 exports.referencesByUser = function(req, res, next, userId) {
-	console.log('->referencesByUser: ' + userId);
 	Reference
 	  .find({
 		  //$or: [
@@ -124,8 +123,8 @@ exports.referencesByUser = function(req, res, next, userId) {
 		  //]
 		  userTo: userId
 		})
-	  .populate('userFrom', userPopulateFields)
-	  .populate('userTo', userPopulateFields)
+	  .populate('userFrom', userMiniProfileFields)
+	  .populate('userTo', userMiniProfileFields)
 	  .exec(function(err, references) {
 	    if (err) return next(err);
 	    if (! references) return next(new Error('Failed to load References for user ' + userId));

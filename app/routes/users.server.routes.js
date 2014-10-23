@@ -66,6 +66,6 @@ module.exports = function(app) {
 	app.route('/auth/github/callback').get(users.oauthCallback('github'));
 
 	// Finish by binding the user middleware
-	app.param('userId', users.userByID);
+	app.param('userId', users.userMiniByID);
 	app.param('username', users.userByUsername);
 };

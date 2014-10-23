@@ -4,7 +4,8 @@ module.exports = {
 	app: {
 		title: 'Trust Roots',
 		description: 'Travellers network',
-		keywords: 'traveling,hospitality exchange,nomadism'
+		keywords: 'traveling,hospitality exchange,nomadism',
+		userMiniProfileFields: ['id', 'displayName', 'username', 'avatarSource', 'emailHash', 'languages'],
 	},
 	port: process.env.PORT || 3000,
 	templateEngine: 'swig',

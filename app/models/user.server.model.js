@@ -83,11 +83,9 @@ var UserSchema = new Schema({
 		type: Date
 	},
 	gender: {
-		type: [{
-			type: String,
-			enum: ['','male','female','other']
-		}],
-		default: ['']
+    type: String,
+    enum: ['','male','female','other'],
+    default: ''
 	},
 	languages: {
 		type: [{
@@ -104,12 +102,12 @@ var UserSchema = new Schema({
 		ref: 'Geo'
 	},
 	username: {
-		type: String,
-		unique: 'Username already exists',
-		required: 'Please fill in a username',
-		validate: [validateUsername, 'Please fill in valid username: 3-32 characters long non banned word, characters "_-.", no consecutive dots, lowercase letters a-z and numbers 0-9.'],
-        lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
-		trim: true
+    type: String,
+    unique: 'Username already exists',
+    required: 'Please fill in a username',
+    validate: [validateUsername, 'Please fill in valid username: 3-32 characters long non banned word, characters "_-.", no consecutive dots, lowercase letters a-z and numbers 0-9.'],
+    lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
+    trim: true
 	},
 	password: {
 		type: String,
@@ -146,11 +144,9 @@ var UserSchema = new Schema({
 		default: Date.now
 	},
 	avatarSource: {
-		type: [{
-			type: String,
-			enum: ['none','gravatar','facebook','local']
-		}],
-		default: ['gravatar']
+    type: String,
+    enum: ['none','gravatar','facebook','local'],
+    default: 'gravatar'
 	},
 	newsletter: {
 		type: Boolean,

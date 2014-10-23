@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$log', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Socket', 'Authentication', 'Messages', 'UsersMini',
-	function($scope, $stateParams, $log, $state, $document, $window, $anchorScroll, $timeout, Socket, Authentication, Messages, UsersMini) {
+angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Socket', 'Authentication', 'Messages', 'UsersMini',
+	function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Socket, Authentication, Messages, UsersMini) {
 		$scope.authentication = Authentication;
 
 		// If user is not signed in then redirect back home
@@ -10,8 +10,7 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
 		// If no recepient defined, go to inbox
 		if (!$stateParams.userId) $state.go('inboxMessages');
 
-    // Mini profile of receiving user for monkeybox
-    $scope.userTo = UsersMini.get({ userId: $stateParams.userId });
+		$scope.userToId = $stateParams.userId;
 
     $scope.isThreadLoading = false;
     $scope.isSending = false;
@@ -43,7 +42,6 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
 
     // Scroll thread to bottom to show latest messages
     $scope.threadScroll = function() {
-        $log.log('->threadScroll');
         threadLayoutThread.scrollTop( threadLayoutThread[0].scrollHeight );
         threadLayoutThread.perfectScrollbar('update');
     };

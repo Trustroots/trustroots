@@ -1,5 +1,8 @@
 'use strict';
 
+/* This declares to JSHint that 'profile' is a global variable: */
+/*global profile:false */
+
 // References controller
 angular.module('references').controller('ReferencesAddController', ['$scope', '$log', '$state', '$stateParams', '$location', '$modal', 'Authentication', 'ReferencesBy', 'References',
 	function($scope, $log, $state, $stateParams, $location, $modal, Authentication, ReferencesBy, References ) {

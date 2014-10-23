@@ -16,10 +16,13 @@
  */
 angular.module('users').directive('trAvatar', [
   function() {
-    var defaultSize = 256;
+
+    // Options
+    var defaultSize = 256,
+        defaultAvatar = '/modules/users/img/avatar.png';
     return {
         //templateUrl: '/modules/users/views/directives/tr-avatar.client.view.html',
-        template: '<img ng-src="{{avatar}}" class="avatar" width="{{size}}" height="{{size}}" alt="">',
+        template: '<img ng-show="user && user.$resolved" ng-src="{{avatar}}" class="avatar" width="{{size}}" height="{{size}}" alt="">',
         restrict: 'EA',
         replace: true,
         scope: {
@@ -27,83 +30,86 @@ angular.module('users').directive('trAvatar', [
         },
         controller: ['$scope', function($scope) {
 
-          // Options
-          $scope.defaultAvatar = '/modules/users/img/avatar.png';
+          function determineSource() {
+            console.log('->determineSource');
+            // Wait for $promise first
+            //$scope.user.then(function(user){
+              //console.log('->determineSource ->scope.user.then');
+              console.log($scope.user);
 
-          $scope.determineSource = function() {
 
-            // Determine source for avatar
-            if($scope.fixedSource) {
-              $scope.source = $scope.fixedSource;
-            }
-            else if($scope.user && $scope.user.avatarSource) {
-              $scope.source = $scope.user.avatarSource.toString();
-            }
-            else {
-              $scope.source = 'none';
-            }
-
-            /**
-             * Avatar via FB
-             * @link https://developers.facebook.com/docs/graph-api/reference/user/picture/
-             */
-            if($scope.source === 'facebook' ) {
-              if($scope.user && $scope.user.email) {
-                var fb_id = '#';
-                $scope.avatar = 'http://graph.facebook.com/' + fb_id + '/picture/?width=' +($scope.size || defaultSize) + '&height=' + ($scope.size || defaultSize);
+              // Determine source for avatar
+              if($scope.fixedSource) {
+                $scope.source = $scope.fixedSource;
+              }
+              else if($scope.user && $scope.user.avatarSource) {
+                $scope.source = $scope.user.avatarSource;
               }
               else {
-                $scope.avatar = $scope.defaultAvatar;
+                $scope.source = 'none';
               }
-            }
 
-            /**
-             * Avatar via Gravatar
-             * @link https://en.gravatar.com/site/implement/images/
-             * @todo: pre-save email md5 hash to the db
-             */
-            else if($scope.source === 'gravatar') {
-              if($scope.user.emailHash) {
-                $scope.avatar = 'http://gravatar.com/avatar/' + $scope.user.emailHash + '?s=' + ($scope.size || defaultSize);
-
-                // Gravatar fallback is required to be online. It's defined at settings.json
-                // If public default avatar is set, send it to Gravatar as failback
-                // @todo: pass $scope.defaultAvatar with public domain here
-                $scope.avatar += '&d=' + encodeURIComponent('http://ideas.trustroots.org/wordpress/wp-content/uploads/2014/10/avatar.png');
+              /**
+               * Avatar via FB
+               * @link https://developers.facebook.com/docs/graph-api/reference/user/picture/
+               */
+              if($scope.source === 'facebook' ) {
+                if($scope.user && $scope.user.email) {
+                  var fb_id = '#';
+                  $scope.avatar = 'http://graph.facebook.com/' + fb_id + '/picture/?width=' +($scope.size || defaultSize) + '&height=' + ($scope.size || defaultSize);
+                }
+                else {
+                  $scope.avatar = defaultAvatar;
+                }
               }
+
+              /**
+               * Avatar via Gravatar
+               * @link https://en.gravatar.com/site/implement/images/
+               * @todo: pre-save email md5 hash to the db
+               */
+              else if($scope.source === 'gravatar') {
+                if($scope.user.emailHash) {
+                  $scope.avatar = 'http://gravatar.com/avatar/' + $scope.user.emailHash + '?s=' + ($scope.size || defaultSize);
+
+                  // Gravatar fallback is required to be online. It's defined at settings.json
+                  // If public default avatar is set, send it to Gravatar as failback
+                  // @todo: pass defaultAvatar with public domain here
+                  $scope.avatar += '&d=' + encodeURIComponent('http://ideas.trustroots.org/wordpress/wp-content/uploads/2014/10/avatar.png');
+                }
+                else {
+                  $scope.avatar = defaultAvatar;
+                }
+              }
+
+              /**
+               * Locally uploaded image
+               * @todo: implement this, duhh
+               */
+              else if($scope.source === 'locale') {
+                $scope.avatar = defaultAvatar + '?locale';
+              }
+
+              // Dummy
               else {
-                $scope.avatar = $scope.defaultAvatar;
+                $scope.avatar = defaultAvatar + '?none';
               }
-            }
-
-            /**
-             * Locally uploaded image
-             * @todo: implement this, duhh
-             */
-            else if($scope.source === 'locale') {
-              $scope.avatar = $scope.defaultAvatar + '?locale';
-            }
-
-            // Dummy
-            else {
-              $scope.avatar = $scope.defaultAvatar + '?none';
-            }
-
-          };// determineSource()
+            //});// $promise
+          }// determineSource()
 
           // Sets $scope.avatar
-          $scope.determineSource();
+          //$scope.determineSource();
 
           // If asked to, start watching user.avatarSource and refresh directive each time that changes
-          $scope.startWatching = function() {
-            $scope.$watch('user.avatarSource',function(newSource, oldSource) {
-              $scope.source = newSource;
-              $scope.determineSource();
-            });
-          };
+          //$scope.startWatching = function() {
+          //  $scope.$watch('user.avatarSource',function(newSource, oldSource) {
+          //    $scope.source = newSource;
+          //    determineSource();
+          //  });
+          //};
 
-          $scope.$watch('size',function(newVal, oldVal) {
-            $scope.determineSource();
+          $scope.$watch('user.avatarSource',function() {
+            determineSource();
           });
 
         }],
@@ -117,7 +123,7 @@ angular.module('users').directive('trAvatar', [
             angular.element(element).wrap('<a ng-href="#!/profile/{{user.username}}"></a>');
           }
 
-          if(attr.watch) scope.startWatching();
+          //if(attr.watch) scope.startWatching();
 
           // Make sure source won't change dynamicly when user changes
           if(attr.source) {

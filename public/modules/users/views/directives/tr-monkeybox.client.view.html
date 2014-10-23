@@ -1,17 +1,19 @@
-<div class="monkeybox panel panel-default">
+<div class="monkeybox panel panel-default" ng-show="user && user.$resolved">
     <div class="panel-body">
       <p>
         <div tr-avatar data-user="user" data-size="64"></div><br>
         <h3 data-ng-bind="user.displayName"></h3>
       </p>
       <!--
-      <p>
+      <div class="monkeybox-section">
         Other location
-      </p>
-      <p>
-        <h4>Languages</h4>
-        Other languages
-      </p>
+      </div>
       -->
+      <div class="monkeybox-section" ng-show="user.languages.length">
+        <h4>Languages</h4>
+        <ul class="list-unstyled">
+          <li ng-repeat="code in user.languages">{{ languages[code] }}</li>
+        </ul>
+      </div>
     </div>
 </div>
