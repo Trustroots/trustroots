@@ -192,8 +192,11 @@ module.exports = function(grunt) {
 		grunt.config.set('applicationLESSFiles', config.assets.lib.less.concat(config.assets.less) );
 	});
 
-	// Default task(s).
-	grunt.registerTask('default', ['loadConfig', 'less:development', 'concat:css', 'concurrent:default']);
+	// Default production task(s).
+	grunt.registerTask('default', ['loadConfig', 'less:production', 'concat:css', 'concurrent:default']);
+
+	// Default development task(s).
+	grunt.registerTask('development', ['loadConfig', 'less:development', 'concat:css', 'debug']);
 
 	// Debug task.
 	grunt.registerTask('debug', ['lint', 'concurrent:debug']);
@@ -202,7 +205,7 @@ module.exports = function(grunt) {
 	grunt.registerTask('lint', ['jshint', 'csslint']);
 
 	// Build task(s).
-	grunt.registerTask('build', ['lint', 'loadConfig', 'less', 'concat:css', 'ngAnnotate', 'uglify']);
+	grunt.registerTask('build', ['lint', 'loadConfig', 'less:production', 'concat:css', 'ngAnnotate', 'uglify']);
 
 	// Test task.
 	grunt.registerTask('test', ['env:test', 'mochaTest', 'karma:unit']);
