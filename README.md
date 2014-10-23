@@ -76,6 +76,7 @@ $ docker run -p 3000:3000 -p 35729:35729 -v /path/to/trustroots/public:/home/tru
 * [Github](https://github.com/Trustroots/)
 * See [Offical Documentation](http://meanjs.org/docs.html) for MEAN.js
 * [Our docs](documentation/README.md)
+* Install [EditorConfig](http://editorconfig.org/) if possible
 
 ### Understand these
 Before you begin we recommend you read about the basic building blocks that assemble a MEAN.JS application:
