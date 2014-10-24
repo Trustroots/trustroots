@@ -2,24 +2,56 @@
 
 module.exports = {
 	db: process.env.MONGOHQ_URL || process.env.MONGOLAB_URI || 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trust-roots',
-	assets: {
-		lib: {
-			css: [
-			],
-			js: [
-				'public/lib/angular/angular.min.js',
-				'public/lib/angular-resource/angular-resource.js',
-				'public/lib/angular-animate/angular-animate.js',
-				'public/lib/angular-touch/angular-touch.js',
-				'public/lib/angular-sanitize/angular-sanitize.js',
-				'public/lib/angular-ui-router/release/angular-ui-router.min.js',
-				'public/lib/angular-ui-utils/ui-utils.min.js',
-				'public/lib/angular-bootstrap/ui-bootstrap-tpls.min.js'
-			]
-		},
-		css: 'public/dist/application.min.css',
-		js: 'public/dist/application.min.js'
-	},
+  assets: {
+  	lib: {
+  		css: [
+  				'public/lib/medium-editor/dist/css/medium-editor.css',
+  				'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
+  				'public/lib/select2/select2.css',
+  				'public/lib/angular-ui-select/dist/select.css',
+  				'public/lib/leaflet/dist/leaflet.css',
+  				'public/lib/leaflet.markercluster/dist/MarkerCluster.css'
+  		],
+  		js: [
+  			'public/lib/jquery/dist/jquery.min.js',
+  			'public/lib/angular/angular.min.js',
+  			'public/lib/angular-resource/angular-resource.min.js',
+  			'public/lib/angular-animate/angular-animate.min.js',
+  			'public/lib/angular-touch/angular-touch.min.js',
+  			'public/lib/angular-sanitize/angular-sanitize.min.js',
+  			'public/lib/angular-ui-router/release/angular-ui-router.min.js',
+  			'public/lib/angular-ui-utils/ui-utils.min.js',
+  			'public/lib/angular-ui-select/dist/select.min.js',
+  			'public/lib/select2/select2.min.js',
+  			'public/lib/angular-bootstrap/ui-bootstrap-tpls.min.js',
+  			'public/lib/moment/min/moment.min.js',
+  			'public/lib/angular-moment/angular-moment.min.js',
+  			'public/lib/medium-editor/dist/js/medium-editor.min.js',
+  			'public/lib/angular-medium-editor/dist/angular-medium-editor.min.js',
+  			'public/lib/angular-socket-io/socket.min.js',
+  			'public/lib/perfect-scrollbar/min/jquery.mousewheel.min.js', // @todo: is this really needed?
+  			'public/lib/perfect-scrollbar/min/perfect-scrollbar.min.js',
+  			'public/lib/angular-perfect-scrollbar/src/angular-perfect-scrollbar.js',
+  			'public/lib/leaflet/dist/leaflet.js',
+  			'public/lib/leaflet.markercluster/dist/leaflet.markercluster.js',
+  			'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.min.js',
+  			'public/lib/ngGeolocation/ngGeolocation.min.js',
+  		]
+  	},
+  	less: [
+  		'public/modules/**/less/*.less'
+  	],
+  	css: [
+  			// nada
+  			//'public/modules/**/css/*.css'
+  	],
+  	js: [
+  		'public/config.js',
+  		'public/application.js',
+  		'public/modules/*/*.js',
+  		'public/modules/*/*[!tests]*/*.js'
+  	]
+  },
 	facebook: {
 		clientID: process.env.FACEBOOK_ID || 'APP_ID',
 		clientSecret: process.env.FACEBOOK_SECRET || 'APP_SECRET',

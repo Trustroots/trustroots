@@ -48,7 +48,7 @@ module.exports = {
 				'public/lib/perfect-scrollbar/src/perfect-scrollbar.js',
 				'public/lib/angular-perfect-scrollbar/src/angular-perfect-scrollbar.js',
 				'public/lib/leaflet/dist/leaflet-src.js',
-				'public/lib/leaflet.markercluster/dist/leaflet.markercluster.js',
+				'public/lib/leaflet.markercluster/dist/leaflet.markercluster-src.js',
 				'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.js',
 				'public/lib/ngGeolocation/ngGeolocation.js',
 			]
