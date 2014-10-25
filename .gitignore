@@ -8,4 +8,4 @@ public/dist/*
 app/tests/coverage/
 .bower-*/
 .idea/
-scripts/deploy.sh
+scripts/*
