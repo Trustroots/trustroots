@@ -22,7 +22,7 @@ angular.module('users').directive('trAvatar', [
         defaultAvatar = '/modules/users/img/avatar.png';
     return {
         //templateUrl: '/modules/users/views/directives/tr-avatar.client.view.html',
-        template: '<img ng-show="user && user.$resolved" ng-src="{{avatar}}" class="avatar" width="{{size}}" height="{{size}}" alt="">',
+        template: '<img ng-show="avatar" ng-src="{{avatar}}" class="avatar" width="{{size}}" height="{{size}}" alt="">',
         restrict: 'EA',
         replace: true,
         scope: {
