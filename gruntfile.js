@@ -95,7 +95,7 @@ module.exports = function(grunt) {
             'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
             //'public/lib/select2/select2.css',
             //'public/lib/angular-ui-select/dist/select.css',
-						'public/lib/leaflet/dist/leaflet.css',
+						//'public/lib/leaflet/dist/leaflet.css',
 						'public/lib/leaflet.markercluster/dist/MarkerCluster.css'
             ]),
     		dest: 'public/dist/application.min.css',
