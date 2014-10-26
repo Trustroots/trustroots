@@ -2,7 +2,9 @@
 
 angular.module('pages').controller('ContactController', ['$scope',
 	function($scope) {
-		// Controller Logic
-		// ...
+
+		// Redirect to WP for now
+		window.location = 'http://ideas.trustroots.org/contact/';
+
 	}
 ]);
