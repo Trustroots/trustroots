@@ -154,27 +154,16 @@ hr {
   */
 
   // Logo images: green, blue, white, dark
-  background-image: url('/modules/core/img/logo/color-blue.png');
-  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    background-image: url('/modules/core/img/logo/color-blue@2x.png');
-  }
+  .img-retina('/modules/core/img/logo/color-blue.png', '/modules/core/img/logo/color-blue@2x.png', @logo-size, @logo-size);
+
   &.logo-white {
-    background-image: url('/modules/core/img/logo/white.png');
-    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-      background-image: url('/modules/core/img/logo/white@2x.png');
-    }
+    .img-retina('/modules/core/img/logo/white.png', '/modules/core/img/logo/white@2x.png', @logo-size, @logo-size);
   }
   &.logo-dark {
-    background-image: url('/modules/core/img/logo/dark.png');
-    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-      background-image: url('/modules/core/img/logo/dark@2x.png');
-    }
+    .img-retina('/modules/core/img/logo/dark.png', '/modules/core/img/logo/dark@2x.png', @logo-size, @logo-size);
   }
   &.logo-green {
-    background-image: url('/modules/core/img/logo/color-green.png');
-    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-      background-image: url('/modules/core/img/logo/color-green@2x.png');
-    }
+    .img-retina('/modules/core/img/logo/color-green.png', '/modules/core/img/logo/color-green@2x.png', @logo-size, @logo-size);
   }
 }
 
@@ -189,13 +178,9 @@ hr {
   @logo-size-height: 31px;
 
   .size(@logo-size-width, @logo-size-height);
-  background-size: @logo-size-width @logo-size-height;
 
   // Logo images: white
-  background-image: url('/modules/core/img/logo/horizontal-white.png');
-  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    background-image: url('/modules/core/img/logo/horizontal-white@2x.png');
-  }
+  .img-retina('/modules/core/img/logo/horizontal-white.png', '/modules/core/img/logo/horizontal-white@2x.png', @logo-size-width, @logo-size-height);
 }
 
 

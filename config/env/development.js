@@ -3,7 +3,7 @@
 module.exports = {
 	db: 'mongodb://localhost/trust-roots-dev',
 	app: {
-		title: 'Trust Roots - Development Environment',
+		title: 'Trustroots - Development Environment',
 		userMiniProfileFields: ['id', 'displayName', 'username', 'avatarSource', 'emailHash', 'languages'],
 
 		// These will be pushed PUBLICLY to html as json:

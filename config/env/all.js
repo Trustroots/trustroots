@@ -2,9 +2,9 @@
 
 module.exports = {
 	app: {
-		title: 'Trust Roots',
-		description: 'Travellers network',
-		keywords: 'traveling,hospitality exchange,nomadism',
+		title: 'Trustroots',
+		description: 'Enabling the latent trust between humans. Meet and host other travellers.',
+		keywords: 'traveling,hospitality exchange,hospex,nomadism',
 		userMiniProfileFields: ['id', 'displayName', 'username', 'avatarSource', 'emailHash', 'languages'],
 	},
 	port: process.env.PORT || 3000,

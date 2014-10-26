@@ -5,33 +5,25 @@
 .carousel.fade
 {
     opacity: 1;
-
     .item
     {
-        -moz-transition: opacity ease-in-out .7s;
-        -o-transition: opacity ease-in-out .7s;
-        -webkit-transition: opacity ease-in-out .7s;
-        transition: opacity ease-in-out .7s;
+        .transition(opacity ease-in-out .7s);
         left: 0 !important;
         opacity: 0;
-        top:0;
-        position:absolute;
+        top: 0;
+        position: absolute;
         width: 100%;
-        display:block !important;
-        z-index:1;
+        display: block !important;
+        z-index: 1;
         &:first-child{
             top: auto;
             position: relative;
         }
-
         &.active
         {
             opacity: 1;
-            -moz-transition: opacity ease-in-out .7s;
-            -o-transition: opacity ease-in-out .7s;
-            -webkit-transition: opacity ease-in-out .7s;
-            transition: opacity ease-in-out .7s;
-            z-index:2;
+            .transition(opacity ease-in-out .7s);
+            z-index: 2;
         }
     }
 }
