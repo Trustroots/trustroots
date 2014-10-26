@@ -12,6 +12,9 @@ module.exports = {
 				user: 'bikeshed',
 				map: 'hn2ghak7'
 			},
+			geonames: {
+				username: 'trustroots'
+			},
 			osm: {
 				email: ['maps','@','trustroots','.org'].join('') // spam bot prevention...
 			}

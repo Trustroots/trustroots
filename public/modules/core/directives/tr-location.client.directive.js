@@ -1,5 +1,8 @@
 'use strict';
 
+/* This declares to JSHint that 'settings' is a global variable: */
+/*global settings:false */
+
 angular.module('core').directive('trLocation', [
   '$http',
 	function($http) {
@@ -19,7 +22,7 @@ angular.module('core').directive('trLocation', [
 							lang: 'en',
 							featureClass: 'P', // P for city, A for country - http://www.geonames.org/export/codes.html
 							style: 'full',
-							username: 'trustroots'
+							username: settings.geonames.username
       			}
     			}).then(function(response){
       			return response.data.geonames.map(function(place){
