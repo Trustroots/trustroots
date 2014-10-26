@@ -37,7 +37,11 @@
         background-color: @brand-secondary;
     }
 
-    // Themes
+    /*
+     * Board images
+     *
+     * When you edit these, make sure to update also photo credits at /public/modules/core/controllers/footer.client.controller.js
+     */
     &.board-couch {
         /*
          * https://www.flickr.com/
@@ -82,10 +86,15 @@
          */
         background-image: url(/modules/core/img/board/bokeh-blue.jpg);
     }
+    &.board-forestpath {
+        /* Johnson Cameraface
+         * https://www.flickr.com/photos/54459164@N00/15506455245
+         * https://creativecommons.org/licenses/by-nc-sa/2.0/
+         */
+        background-image: url(/modules/core/img/board/forestpath.jpg);
+    }
 
 }
-
-
 
 .page-header {
     display: block;
