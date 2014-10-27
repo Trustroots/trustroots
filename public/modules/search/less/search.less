@@ -98,15 +98,19 @@
       margin: 0;
     }
     .search-result-label,
-    .search-result-languages {
-      h4 {
-        .text-muted;
-        font-size: @font-size-base;
-        text-transform: uppercase;
-      }
+    .search-result-languages h4 {
+      .text-muted;
+      font-size: @font-size-base;
+      text-transform: uppercase;
+    }
+    .search-result-label {
+      padding-bottom: 5px;
     }
     .search-result-languages {
       padding: 10px 0 0 0;
+      &, h4 {
+        font-size: @font-size-small;
+      }
     }
     .avatar {
       width: 36px;
@@ -120,7 +124,7 @@
     }
     .search-result-tagline {
       margin: 0;
-      padding: 5px 0;
+      padding: 10px 0;
       font-size: 15px;
     }
     .search-result-lastseen {

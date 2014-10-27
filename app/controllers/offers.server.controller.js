@@ -163,7 +163,6 @@ exports.read = function(req, res) {
 
 // Offer reading middleware
 exports.offerByUserId = function(req, res, next, userId) {
-  console.log('->offerByUserId: '+ userId);
   Offer.findOne({
       user: userId
     })
@@ -201,10 +200,8 @@ exports.offerByUserId = function(req, res, next, userId) {
 
 // Offer reading middleware
 exports.offerById = function(req, res, next, offerId) {
-  console.log('->offerById: ' + offerId);
-  console.log('POPULATE WITH: ' + userProfileFields);
   Offer.findById(offerId)
-    .populate('user', userProfileFields)
+    .populate('user', userProfileFields + ' birthdate gender tagline')
     .exec(function(err, offer) {
       if (err) return next(err);
       //if (!offer) return next(new Error('Failed to load offers.'));

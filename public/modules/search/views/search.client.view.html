@@ -20,29 +20,31 @@
     <div class="search-list">
 
       <!-- Profile loading -->
-      <div class="search-result panel panel-default panel-loading" ng-show="offer && !offer.$resolved">
+      <div class="search-result panel panel-default panel-loading" ng-hide="offer && offer.$resolved">
         <div class="panel-body">
-          <div class="search-result-actions">
-            <a href="#" class="btn btn-link btn-sm" tooltip-placement="left" tooltip="Bookmark"><i class="fa fa-lg fa-bookmark"></i></a>
-          </div>
           <div tr-avatar data-size="32" data-link="false" data-source="none"></div>
-          <h4>██████████ ██████████</h4>
+          <h4>
+            ███ ███
+            <small class="text-muted">@███</small>
+          </h4>
           <div class="search-result-meta">
-            ██ years, █████.
+            █ ███, ███.
           </div>
           <div class="search-result-tagline">
-            ██████████ ██████████ ██████████
+            █████ █████ ████
           </div>
           <div class="search-result-hosting">
             <span class="search-result-label">Hosting:</span>
-            <span class="label label-default" ng-class="{'hosting-yes': offer.status === 'yes', 'hosting-maybe': offer.status === 'maybe', 'hosting-no': offer.status === 'no'}" ng-bind="offer.status">█████</span>
+            <span class="label">██</span>
+            <div class="search-result-description">██████ █████ █████</div>
           </div>
-          <!--
-          <div class="search-result-lastseen">
-            <span class="search-result-label">Last seen:</span>
-            Less than week ago.
+          <div class="search-result-languages">
+            <h4>Languages</h4>
+            <ul class="list-inline">
+              <li>████</li>
+              <li>████</li>
+            </ul>
           </div>
-          -->
         </div>
       </div>
       <!-- /Profile loading -->
@@ -51,23 +53,27 @@
       <div class="search-result panel panel-default" ng-show="offer && offer.$resolved">
         <div class="panel-body" ng-click="showUser(offer.user.username)">
           <div class="search-result-actions">
-            <a ui-sref="listMessages({userId: profile._id})" class="btn btn-link btn-sm" tooltip-placement="left" tooltip="Send a message"><i class="fa fa-comment"></i></a>
+            <a ui-sref="listMessages({userId: offer.user._id})" class="btn btn-link btn-sm" tooltip-placement="left" tooltip="Send a message"><i class="fa fa-comment"></i></a>
             <!--<a href="#" class="btn btn-link btn-sm" tooltip-placement="left" tooltip="Bookmark"><i class="fa fa-lg fa-bookmark"></i></a>-->
           </div>
           <div tr-avatar data-size="32" data-link="false" data-user="offer.user"></div>
-          <h4>{{offer.user.displayName}}</h4>
+          <h4>
+            {{offer.user.displayName}}
+            <small class="text-muted" data-ng-show="offer.user.username">@{{offer.user.username}}</small>
+          </h4>
           <div class="search-result-meta">
-            x years, {{offer.user.gender}}.
+            <span ng-show="offer.user.birthdate" am-time-ago="offer.user.birthdate" am-without-suffix="true"></span><span ng-show="offer.user.birthdate && offer.user.gender">, </span>
+            <span ng-show="offer.user.gender" ng-class="{ 'text-capitalize': !offer.user.birthdate }">{{offer.user.gender}}.</span>
           </div>
           <div class="search-result-tagline">
             {{offer.user.tagline}}
           </div>
           <div class="search-result-hosting">
-            <div class="search-result-description" data-ng-bind-html="offer.description | trustedHtml"></div>
-            <span class="search-result-label">
+            <div class="search-result-label">
               Hosting:
-              <span class="label" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': offer.status === 'no'}" ng-bind="offer.status">█████</span>
-            </span>
+              <span class="label" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': offer.status === 'no'}" ng-bind="offer.status"></span>
+            </div>
+            <div class="search-result-description" data-ng-bind-html="offer.description | trustedHtml"></div>
           </div>
           <div class="search-result-languages" ng-show="offer.user.languages.length">
             <h4>Languages</h4>
