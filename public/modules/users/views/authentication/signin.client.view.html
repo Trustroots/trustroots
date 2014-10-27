@@ -5,24 +5,24 @@
       <br><br>
     </div>
     <div class="col-xs-offset-2 col-xs-8 col-md-offset-5 col-md-2">
-        <form data-ng-submit="signin()" class="signin form-horizontal" autocomplete="off">
-            <fieldset>
-                <div data-ng-show="error" class="alert alert-danger">
-                    <strong data-ng-bind="error"></strong>
-                </div>
-                <div class="form-group">
-                    <label for="username" class="sr-only">Username</label>
-                    <input type="text" id="username" name="username" class="form-control input-lg" data-ng-model="credentials.username" placeholder="Username">
-                </div>
-                <div class="form-group">
-                    <label for="password" class="sr-only">Password</label>
-                    <input type="password" id="password" name="password" class="form-control input-lg" data-ng-model="credentials.password" placeholder="Password">
-                </div>
-                <div class="text-center form-group">
-                    <button type="submit" class="btn btn-inverse btn-lg">Login</button>
-                </div>
-            </fieldset>
-        </form>
+      <form data-ng-submit="signin()" class="signin form-horizontal" autocomplete="off">
+        <fieldset>
+          <div data-ng-show="error" class="alert alert-danger">
+            <strong data-ng-bind="error"></strong>
+          </div>
+          <div class="form-group">
+            <label for="username" class="sr-only">Username</label>
+            <input type="text" id="username" name="username" class="form-control input-lg" data-ng-model="credentials.username" placeholder="Username">
+          </div>
+          <div class="form-group">
+            <label for="password" class="sr-only">Password</label>
+            <input type="password" id="password" name="password" class="form-control input-lg" data-ng-model="credentials.password" placeholder="Password">
+          </div>
+          <div class="text-center form-group">
+            <button type="submit" class="btn btn-inverse btn-lg">Login</button>
+          </div>
+        </fieldset>
+      </form>
     </div>
     <div class="col-md-12 text-center text-white">
       <p>

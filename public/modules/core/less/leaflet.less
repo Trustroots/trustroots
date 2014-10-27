@@ -38,9 +38,7 @@
 .leaflet-tile,
 .leaflet-marker-icon,
 .leaflet-marker-shadow {
-  -webkit-user-select: none;
-     -moz-user-select: none;
-          user-select: none;
+  .user-select(none);
   -webkit-user-drag: none;
   }
 .leaflet-marker-icon,
@@ -216,8 +214,7 @@
 .leaflet-bar a:hover {
   background-color: #fff;
   border-bottom: 1px solid #ccc;
-  width: 26px;
-  height: 26px;
+  .square(26px);
   line-height: 26px;
   display: block;
   text-align: center;
@@ -234,12 +231,10 @@
   background-color: #f4f4f4;
   }
 .leaflet-bar a:first-child {
-  border-top-left-radius: @border-radius-small;
-  border-top-right-radius: @border-radius-small;
+  .border-top-radius(@border-radius-small);
   }
 .leaflet-bar a:last-child {
-  border-bottom-left-radius: @border-radius-small;
-  border-bottom-right-radius: @border-radius-small;
+  .border-bottom-radius(@border-radius-small);
   border-bottom: none;
   }
 .leaflet-bar a.leaflet-disabled {
@@ -249,8 +244,7 @@
   }
 
 .leaflet-touch .leaflet-bar a {
-  width: 30px;
-  height: 30px;
+  .square(30px);
   line-height: 30px;
   }
 
@@ -292,8 +286,7 @@
   background-size: 26px 26px;
   }
 .leaflet-touch .leaflet-control-layers-toggle {
-  width: 44px;
-  height: 44px;
+  .square(44px);
   }
 .leaflet-control-layers .leaflet-control-layers-list,
 .leaflet-control-layers-expanded .leaflet-control-layers-toggle {
@@ -412,8 +405,7 @@
   overflow: hidden;
   }
 .leaflet-popup-tip {
-  width: 17px;
-  height: 17px;
+  .square(17px);
   padding: 1px;
   margin: -10px auto 0;
   .rotate(45deg);
@@ -533,8 +525,7 @@
   background-clip: padding-box;
   border-radius: 20px;
   div {
-    width: 30px;
-    height: 30px;
+    .square(30px);
     margin-left: 5px;
     margin-top: 5px;
     border-radius: 15px;

@@ -1,64 +1,64 @@
 <section class="board board-primary board-bokehblue">
   <div class="container">
     <div class="row">
-	     <div class="col-md-offset-3 col-md-6 text-center lead">
+       <div class="col-md-offset-3 col-md-6 text-center lead">
          <a ui-sref="home" class="logo logo-sm logo-white center-block"></a>
          <br>
          <div ng-include src="'/modules/pages/views/manifesto-text.client.partial.html'"></div>
-	     </div>
+       </div>
     </div>
   </div>
 </section>
 <section class="container" data-ng-controller="AuthenticationController">
   <div class="row">
-	  <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-	  	<form name="userForm" data-ng-submit="signup()" class="signin form-horizontal" novalidate autocomplete="off">
-	  		<fieldset>
-	  			<div class="form-group">
-	  				<label for="firstName" class="col-sm-4 control-label">First Name</label>
-	  				<div class="col-sm-8">
+    <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
+      <form name="userForm" data-ng-submit="signup()" class="signin form-horizontal" novalidate autocomplete="off">
+        <fieldset>
+          <div class="form-group">
+            <label for="firstName" class="col-sm-4 control-label">First Name</label>
+            <div class="col-sm-8">
               <input type="text" required id="firstName" name="firstName" class="form-control input-lg" data-ng-model="credentials.firstName" placeholder="First Name">
             </div>
-	  			</div>
-	  			<div class="form-group">
-	  				<label for="lastName" class="col-sm-4 control-label">Last Name</label>
-	  				<div class="col-sm-8">
+          </div>
+          <div class="form-group">
+            <label for="lastName" class="col-sm-4 control-label">Last Name</label>
+            <div class="col-sm-8">
               <input type="text" id="lastName" name="lastName" class="form-control input-lg" data-ng-model="credentials.lastName" placeholder="Last Name" popover="You don’t necessarily have to use your real name to be here."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true">
             </div>
-	  			</div>
-	  			<div class="form-group">
-	  				<label for="username" class="col-sm-4 control-label">Username</label>
-	  				<div class="col-sm-8">
+          </div>
+          <div class="form-group">
+            <label for="username" class="col-sm-4 control-label">Username</label>
+            <div class="col-sm-8">
               <input type="text" id="username" name="username" class="form-control input-lg" data-ng-model="credentials.username" placeholder="Username" popover="Only lowercase characters a-z, ._- and numbers."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true">
             </div>
-	  			</div>
-	  			<div class="form-group">
-	  				<label for="email" class="col-sm-4 control-label">Email</label>
-	  				<div class="col-sm-8">
+          </div>
+          <div class="form-group">
+            <label for="email" class="col-sm-4 control-label">Email</label>
+            <div class="col-sm-8">
               <input type="email" id="email" name="email" class="form-control input-lg" data-ng-model="credentials.email" placeholder="Email">
             </div>
-	  			</div>
+          </div>
           <div class="form-group">
             <label for="password" class="col-sm-4 control-label">Password</label>
             <div class="col-sm-8">
               <input type="password" id="password" name="password" class="form-control input-lg" data-ng-model="credentials.password" placeholder="Password" popover="At least 8 characters long."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true">
             </div>
           </div>
-	  			<div class="checkbox">
+          <div class="checkbox">
             <div class="col-sm-offset-4 col-sm-8">
               <label for="newsletter">
-	  				    <input type="checkbox" id="newsletter" name="newsletter" data-ng-model="credentials.newsletter">
+                <input type="checkbox" id="newsletter" name="newsletter" data-ng-model="credentials.newsletter">
                 Subscribe to community news
               </label>
             </div>
-	  			</div>
-	  			<div class="text-center form-group">
-	  				<br>
+          </div>
+          <div class="text-center form-group">
+            <br>
             <button type="submit" class="btn btn-lg btn-primary">Join the community</button>
-	  			</div>
-	  			<div data-ng-show="error" class="alert alert-danger">
-	  				<strong data-ng-bind="error"></strong>
-	  			</div>
+          </div>
+          <div data-ng-show="error" class="alert alert-danger">
+            <strong data-ng-bind="error"></strong>
+          </div>
 
           <!-- Rules -->
           <div class="text-center col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8">
@@ -72,15 +72,15 @@
           </script>
           <!-- /Rules -->
 
-	  			<!--
-                  <div class="col-md-offset-3 col-md-6 text-center text-muted">
-                      If you already have an account, <a ui-sref="signin" href="/#!/signin">sign in</a>.
-                  </div>
-                  -->
+          <!--
+          <div class="col-md-offset-3 col-md-6 text-center text-muted">
+            If you already have an account, <a ui-sref="signin" href="/#!/signin">sign in</a>.
+          </div>
+          -->
 
-	  		</fieldset>
-	  	</form>
+        </fieldset>
+      </form>
 
-	  </div>
+    </div>
   </div><!-- .row-->
 </section><!-- .container -->

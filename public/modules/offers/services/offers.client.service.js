@@ -4,25 +4,25 @@
 
 // Read offers by userId
 angular.module('offers').factory('OffersBy', ['$resource',
-	function($resource) {
-		return $resource('offers-by/:userId', {
-			userId: '@id'
-		}, {
-			update: {
-				method: 'PUT'
-			}
-		});
-	}
+  function($resource) {
+    return $resource('offers-by/:userId', {
+      userId: '@id'
+    }, {
+      update: {
+        method: 'PUT'
+      }
+    });
+  }
 ]);
 
 
 // Read offer by offerId
 angular.module('offers').factory('Offers', ['$resource',
-	function($resource) {
-		return $resource('offers/:offerId', {offerId:'@id'}, {
-			get: {
-				method: 'GET'
-			}
-		});
-	}
+  function($resource) {
+    return $resource('offers/:offerId', {offerId:'@id'}, {
+      get: {
+        method: 'GET'
+      }
+    });
+  }
 ]);

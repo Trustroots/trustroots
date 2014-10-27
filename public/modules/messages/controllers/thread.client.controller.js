@@ -1,16 +1,16 @@
 'use strict';
 
 angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Socket', 'Authentication', 'Messages', 'UsersMini',
-	function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Socket, Authentication, Messages, UsersMini) {
-		$scope.authentication = Authentication;
+  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Socket, Authentication, Messages, UsersMini) {
+    $scope.authentication = Authentication;
 
-		// If user is not signed in then redirect back home
-		if (!$scope.authentication.user) $state.go('home');
+    // If user is not signed in then redirect back home
+    if (!$scope.authentication.user) $state.go('home');
 
-		// If no recepient defined, go to inbox
-		if (!$stateParams.userId) $state.go('inboxMessages');
+    // If no recepient defined, go to inbox
+    if (!$stateParams.userId) $state.go('inboxMessages');
 
-		$scope.userToId = $stateParams.userId;
+    $scope.userToId = $stateParams.userId;
 
     $scope.isThreadLoading = false;
     $scope.isSending = false;
@@ -25,34 +25,34 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
 
     // Add (or reset) timeout to not call the resizing function every pixel
     $scope.threadLayoutUpdate = function() {
-        $timeout.cancel($scope.threadLayoutUpdateTimeout);
-        $scope.threadLayoutUpdateTimeout = $timeout($scope.threadLayout, 300);
+      $timeout.cancel($scope.threadLayoutUpdateTimeout);
+      $scope.threadLayoutUpdateTimeout = $timeout($scope.threadLayout, 300);
     };
 
     $scope.threadLayout = function() {
-        $scope.replyHeight = threadLayoutReply.height() + 15 + 'px'; // container has 15px padding on both sides
-        $scope.containerWidth = threadLayoutContainer.width() - 30 + 'px'; // reply area has 15px padding at bottom
+      $scope.replyHeight = threadLayoutReply.height() + 15 + 'px'; // container has 15px padding on both sides
+      $scope.containerWidth = threadLayoutContainer.width() - 30 + 'px'; // reply area has 15px padding at bottom
     };
 
     // Add (or reset) timeout to not call the scrolling function every key stroke
     $scope.threadScrollUpdate = function() {
-        $timeout.cancel($scope.threadScrollUpdateTimeout);
-        $scope.threadScrollUpdateTimeout = $timeout($scope.threadScroll, 300);
+      $timeout.cancel($scope.threadScrollUpdateTimeout);
+      $scope.threadScrollUpdateTimeout = $timeout($scope.threadScroll, 300);
     };
 
     // Scroll thread to bottom to show latest messages
     $scope.threadScroll = function() {
-        threadLayoutThread.scrollTop( threadLayoutThread[0].scrollHeight );
-        threadLayoutThread.perfectScrollbar('update');
+      threadLayoutThread.scrollTop( threadLayoutThread[0].scrollHeight );
+      threadLayoutThread.perfectScrollbar('update');
     };
 
     // Keep layout in good order with these listeners
-		angular.element($window).on('resize', $scope.threadLayoutUpdate);
-		angular.element($window).bind('orientationchange', $scope.threadLayoutUpdate);
-		$scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+    angular.element($window).on('resize', $scope.threadLayoutUpdate);
+    angular.element($window).bind('orientationchange', $scope.threadLayoutUpdate);
+    $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
       $scope.threadLayoutUpdate();
       $timeout($scope.threadScroll, 300);
-		});
+    });
 
     // Observe for the reply area height while typing your awesome message in it
     angular.element('#message-reply-content').on('input', function() {
@@ -64,27 +64,27 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     /**
      * Send a message
      */
-		$scope.send = function() {
-		  $scope.isSending = true;
+    $scope.send = function() {
+      $scope.isSending = true;
 
-		  var message = new Messages({
-		    content: this.content,
-		    userTo: $stateParams.userId
-		  });
+      var message = new Messages({
+        content: this.content,
+        userTo: $stateParams.userId
+      });
 
-		  message.$save(function(response) {
-		  	$scope.content = '';
-		  	$scope.isSending = false;
-		  }, function(errorResponse) {
-		    $scope.isSending = false;
-		  	$scope.error = errorResponse.data.message;
-		  });
+      message.$save(function(response) {
+        $scope.content = '';
+        $scope.isSending = false;
+      }, function(errorResponse) {
+        $scope.isSending = false;
+        $scope.error = errorResponse.data.message;
+      });
 
-		};
+    };
 
-		/**
-		 * Listen to received/sent messages and add them to our model
-		 */
+    /**
+     * Listen to received/sent messages and add them to our model
+     */
     Socket.on('message.sent', function(message) {
       message.pushed = true; // flag as pushed
       $scope.messages.push(message);
@@ -95,9 +95,9 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     /**
      * Load messages for this thread
      */
-		$scope.findThread = function() {
+    $scope.findThread = function() {
 
-		  $scope.isThreadLoading = true;
+      $scope.isThreadLoading = true;
 
       $scope.messages = Messages.query({
         userId: $stateParams.userId
@@ -108,7 +108,7 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
         $scope.threadLayout();
       });
 
-		};
+    };
 
-	}
+  }
 ]);

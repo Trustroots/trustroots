@@ -1,130 +1,129 @@
-
 /**
  * Wide full width landscape box
  */
 .board {
-    clear: both;
-    overflow: hidden;
-    width: 100%;
-    margin: 0;
-    padding: 70px 0;
+  clear: both;
+  overflow: hidden;
+  width: 100%;
+  margin: 0;
+  padding: 70px 0;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  background-size: cover;
+  -moz-background-size: cover;
+  color: #fff;
+  a {
+    color: #fff;
+    text-decoration: underline;
+    &.btn {
+      text-decoration: none;
+    }
+  }
+  h2 {
+    color: #fff;
     text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
-    background-position: 50% 50%;
-    background-repeat: no-repeat;
+    font-size: 55px;
+    line-height: 55px;
+    letter-spacing: -1px;
+    margin: 0;
+    padding: 0;
+  }
+  &.board-primary {
+    background-color: @brand-primary;
+  }
+  &.board-default {
+    background-color: @brand-secondary;
+  }
+
+  /**
+   * Board images
+   *
+   * When you edit these, make sure to update also photo credits at /public/modules/core/controllers/footer.client.controller.js
+   */
+  &.board-couch {
+    /*
+     * https://www.flickr.com/
+     * https://creativecommons.org/licenses/by/2.0/
+     */
+    background-image: url(/modules/core/img/board/couch.jpg);
     background-size: cover;
     -moz-background-size: cover;
-    color: #fff;
-    a {
-        color: #fff;
-        text-decoration: underline;
-        &.btn {
-            text-decoration: none;
-        }
-    }
-    h2 {
-        color: #fff;
-        text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
-        font-size: 55px;
-        line-height: 55px;
-        letter-spacing: -1px;
-        margin: 0;
-        padding: 0;
-    }
-    &.board-primary {
-        background-color: @brand-primary;
-    }
-    &.board-default {
-        background-color: @brand-secondary;
-    }
-
+  }
+  &.board-paris {
     /*
-     * Board images
-     *
-     * When you edit these, make sure to update also photo credits at /public/modules/core/controllers/footer.client.controller.js
+     * https://www.flickr.com/
+     * https://creativecommons.org/licenses/by/2.0/
      */
-    &.board-couch {
-        /*
-         * https://www.flickr.com/
-         * https://creativecommons.org/licenses/by/2.0/
-         */
-        background-image: url(/modules/core/img/board/couch.jpg);
-        background-size: cover;
-        -moz-background-size: cover;
-    }
-    &.board-paris {
-        /*
-         * https://www.flickr.com/
-         * https://creativecommons.org/licenses/by/2.0/
-         */
-        background-image: url(/modules/core/img/board/paris.jpg);
-    }
-    &.board-sierranevada {
-        /* Simona Sadzeviciute
-         * https://creativecommons.org/licenses/by/3.0/
-         */
-        background-image: url(/modules/core/img/board/sierranevada2.jpg);
-    }
-    &.board-tentnight {
-        /* Oleh Slobodeniuk
-         * https://www.flickr.com/photos/ualucky/12306884715
-         * https://creativecommons.org/licenses/by/2.0/
-         */
-        background-image: url(/modules/core/img/board/tent-in-night.jpg);
-        background-position: 50% bottom;
-    }
-    &.board-bokeh {
-        /* Ben K Adams
-         * https://www.flickr.com/photos/schtumple/6050244728
-         * https://creativecommons.org/licenses/by-nd/2.0/
-         */
-        background-image: url(/modules/core/img/board/bokeh.jpg);
-    }
-    &.board-bokehblue {
-        /* pinkorchid_too (Sandra)
-         * https://www.flickr.com/photos/artfullife/3589991695
-         * https://creativecommons.org/licenses/by-sa/2.0/
-         */
-        background-image: url(/modules/core/img/board/bokeh-blue.jpg);
-    }
-    &.board-forestpath {
-        /* Johnson Cameraface
-         * https://www.flickr.com/photos/54459164@N00/15506455245
-         * https://creativecommons.org/licenses/by-nc-sa/2.0/
-         */
-        background-image: url(/modules/core/img/board/forestpath.jpg);
-    }
+    background-image: url(/modules/core/img/board/paris.jpg);
+  }
+  &.board-sierranevada {
+    /* Simona Sadzeviciute
+     * https://creativecommons.org/licenses/by/3.0/
+     */
+    background-image: url(/modules/core/img/board/sierranevada2.jpg);
+  }
+  &.board-tentnight {
+    /* Oleh Slobodeniuk
+     * https://www.flickr.com/photos/ualucky/12306884715
+     * https://creativecommons.org/licenses/by/2.0/
+     */
+    background-image: url(/modules/core/img/board/tent-in-night.jpg);
+    background-position: 50% bottom;
+  }
+  &.board-bokeh {
+    /* Ben K Adams
+     * https://www.flickr.com/photos/schtumple/6050244728
+     * https://creativecommons.org/licenses/by-nd/2.0/
+     */
+    background-image: url(/modules/core/img/board/bokeh.jpg);
+  }
+  &.board-bokehblue {
+    /* pinkorchid_too (Sandra)
+     * https://www.flickr.com/photos/artfullife/3589991695
+     * https://creativecommons.org/licenses/by-sa/2.0/
+     */
+    background-image: url(/modules/core/img/board/bokeh-blue.jpg);
+  }
+  &.board-forestpath {
+    /* Johnson Cameraface
+     * https://www.flickr.com/photos/54459164@N00/15506455245
+     * https://creativecommons.org/licenses/by-nc-sa/2.0/
+     */
+    background-image: url(/modules/core/img/board/forestpath.jpg);
+  }
 
 }
 
 .page-header {
+  display: block;
+  font: 48px/1 'Signika Semibold',Helvetica,Arial,sans-serif;
+  margin-bottom: 50px;
+  position: relative;
+  text-align: center;
+  text-shadow: 4px 4px 0 rgba(0,0,0,0.07);
+  text-transform: uppercase;
+  border: 0;
+  margin-bottom: 0;
+  &:before {
+    border: 1px solid @brand-secondary;
+    border-width: 1px 0;
+    content: "";
     display: block;
-    font: 48px/1 'Signika Semibold',Helvetica,Arial,sans-serif;
-    margin-bottom: 50px;
+    height: 4px;
+    left: 0;
+    margin-top: -2px;
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    z-index: 1;
+  }
+  h1,
+  h2 {
+    .bg();
+    display: inline-block;
+    padding: 0 18px;
     position: relative;
-    text-align: center;
-    text-shadow: 4px 4px 0 rgba(0,0,0,0.07);
-    text-transform: uppercase;
-    border: 0;
-    margin-bottom: 0;
-    &:before {
-        border: 1px solid @brand-secondary;
-        border-width: 1px 0;
-        content: "";
-        display: block;
-        height: 4px;
-        left: 0;
-        margin-top: -2px;
-        position: absolute;
-        top: 50%;
-        width: 100%;
-        z-index: 1;
-    }
-    h1,
-    h2 {
-        .bg();
-        display: inline-block;
-        padding: 0 18px;
-        position: relative;
-        z-index: 2;
-    }
+    z-index: 2;
+  }
 }

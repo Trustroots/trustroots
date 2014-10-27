@@ -2,30 +2,30 @@
  * Buttons
  */
 .btn {
-    &.btn-primary {
-        .box-shadow(inset 1px 1px 0 lighten(@btn-primary-bg, 7%));
-        text-shadow: 1px 1px 1px darken(@btn-primary-bg, 7%);
-        &:hover {
-            .box-shadow(inset 1px 1px 0 @btn-primary-bg);
-        }
+  &.btn-primary {
+    .box-shadow(inset 1px 1px 0 lighten(@btn-primary-bg, 7%));
+    text-shadow: 1px 1px 1px darken(@btn-primary-bg, 7%);
+    &:hover {
+      .box-shadow(inset 1px 1px 0 @btn-primary-bg);
     }
-    &.btn-default {
-        .box-shadow(inset 1px 1px 0 lighten(@btn-default-bg, 7%));
-        text-shadow: 1px 1px 1px darken(@btn-default-bg, 7%);
-        &:hover {
-            .box-shadow(inset 1px 1px 0 @btn-default-bg);
-        }
+  }
+  &.btn-default {
+      .box-shadow(inset 1px 1px 0 lighten(@btn-default-bg, 7%));
+      text-shadow: 1px 1px 1px darken(@btn-default-bg, 7%);
+      &:hover {
+          .box-shadow(inset 1px 1px 0 @btn-default-bg);
+      }
+  }
+  &.btn-inverse {
+    text-shadow: none;
+    color: @brand-primary;
+    background: #fff;
+    &:focus,
+    &:active,
+    &:hover {
+      color: brighten(@brand-primary, 10%);
     }
-    &.btn-inverse {
-        text-shadow: none;
-        color: @brand-primary;
-        background: #fff;
-        &:focus,
-        &:active,
-        &:hover {
-            color: brighten(@brand-primary, 10%);
-        }
-    }
+  }
 }
 // Fix problem with inverse button hover state covering input border
 .input-group-btn:last-child > .btn.btn-inverse {
@@ -35,11 +35,11 @@
 /*
  * Button mixings
  */
- .btn-icon() {
+.btn-icon() {
+  color: @gray-light;
+  text-decoration: none;
+  &:hover {
     color: @gray-light;
     text-decoration: none;
-    &:hover {
-        color: @gray-light;
-        text-decoration: none;
-    }
+  }
 }

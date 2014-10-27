@@ -1,4 +1,4 @@
-# Trust Roots dev docs
+# Trustroots dev docs
 
 Based on [MEAN.js](http://meanjs.org/).
 

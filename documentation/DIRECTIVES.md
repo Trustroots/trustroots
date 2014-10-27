@@ -1,4 +1,4 @@
-# Trust Roots Directives
+# Trustroots Directives
 
 Always prefix directive with "tr", eg. `/public/modules/users/directives/tr-avatar.client.directive.js`. Place directive views under module's `/views/` folder, for example `/public/modules/users/views/directives/monkeybox.client.view.html`.
 

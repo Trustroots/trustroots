@@ -1,111 +1,111 @@
 <section class="container container-spacer" id="profile" data-ng-controller="ProfileController" data-ng-init="findProfile()">
 
-    <div class="row" data-ng-show="profile">
+  <div class="row" data-ng-show="profile">
 
-      <div class="col-sm-3">
+    <div class="col-sm-3">
 
-        <div class="panel panel-default" id="profile-sidebar">
-          <!-- 'Watch' will cause directive to rerender each time avatar source changes. -->
-          <div tr-avatar data-watch="true" data-user="profile" data-size="261" data-link="false"></div>
-          <div class="panel-body">
+      <div class="panel panel-default" id="profile-sidebar">
+        <!-- 'Watch' will cause directive to rerender each time avatar source changes. -->
+        <div tr-avatar data-watch="true" data-user="profile" data-size="261" data-link="false"></div>
+        <div class="panel-body">
 
 
-            <div class="profile-sidebar-section">
-              <span am-time-ago="profile.birthdate" ng-show="profile.birthdate"></span><span ng-show="profile.birthdate && profile.gender">, </span>
-              <span class="text-capitalize" ng-show="profile.gender">{{profile.gender}}</span>
+          <div class="profile-sidebar-section">
+            <span am-time-ago="profile.birthdate" ng-show="profile.birthdate"></span><span ng-show="profile.birthdate && profile.gender">, </span>
+            <span class="text-capitalize" ng-show="profile.gender">{{profile.gender}}</span>
+          </div>
+
+          <div class="profile-sidebar-section">Member since <span data-ng-bind="profile.created | date:'mediumDate'"></span></div>
+
+          <!--
+          <div class="profile-sidebar-section">
+            <h4>Last seen</h4>
+            <time>time</time>
+          </div>
+          -->
+
+          <div class="profile-sidebar-section">
+            Lives in <a href="#">City, Country</a>
+          </div>
+
+          <div class="profile-sidebar-section">
+            From <a href="#">City, Country</a>
+          </div>
+
+          <div class="profile-sidebar-section" ng-show="profile.languages.length">
+            <h4>Languages</h4>
+            <ul class="list-unstyled">
+              <li ng-repeat="code in profile.languages">{{languages[code]}}</li>
+            </ul>
+          </div>
+
+          <div class="profile-sidebar-section" data-ng-show="hasConnectedAdditionalSocialAccounts()">
+            <h4>Other networks</h4>
+            <ul class="fa-ul authentication-social">
+              <li data-ng-repeat="(providerName, providerData) in user.additionalProvidersData">
+                <i class="fa fa-li fa-lg" ng-class="fa-{{providerName}}-square"></i> {{providerName}}
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+    <div class="col-sm-9">
+
+      <div class="row">
+          <div class="col-md-6">
+              <h2 class="profile-name" data-ng-show="profile.displayName" data-ng-bind="profile.displayName"></h2>
+              <h4 class="profile-username" data-ng-show="profile.username">@{{profile.username}}</h4>
+              <div class="profile-tagline" data-ng-show="profile.tagline" data-ng-bind="profile.tagline"></div>
+          </div>
+
+            <!-- When looking at own profile -->
+            <div class="col-md-6 text-right" data-ng-show="user._id === profile._id">
+              <small class="text-muted">This is your profile as others see it.</small>
+              &nbsp;
+              <a ui-sref="profile-edit({username: user.username})" class="btn btn-primary">Edit your profile</a>
             </div>
 
-            <div class="profile-sidebar-section">Member since <span data-ng-bind="profile.created | date:'mediumDate'"></span></div>
-
-            <!--
-            <div class="profile-sidebar-section">
-              <h4>Last seen</h4>
-              <time>time</time>
-            </div>
-            -->
-
-            <div class="profile-sidebar-section">
-              Lives in <a href="#">City, Country</a>
-            </div>
-
-            <div class="profile-sidebar-section">
-              From <a href="#">City, Country</a>
-            </div>
-
-            <div class="profile-sidebar-section" ng-show="profile.languages.length">
-              <h4>Languages</h4>
-              <ul class="list-unstyled">
-                <li ng-repeat="code in profile.languages">{{languages[code]}}</li>
-              </ul>
-            </div>
-
-            <div class="profile-sidebar-section" data-ng-show="hasConnectedAdditionalSocialAccounts()">
-              <h4>Other networks</h4>
-              <ul class="fa-ul authentication-social">
-                <li data-ng-repeat="(providerName, providerData) in user.additionalProvidersData">
-                  <i class="fa fa-li fa-lg" ng-class="fa-{{providerName}}-square"></i> {{providerName}}
+            <!-- When looking at somebody else's profile -->
+            <div class="col-md-6" data-ng-hide="user._id === profile._id">
+              <ul class="nav nav-pills nav-narrow text-right" id="profile-actions" role="navigation">
+                <li><a ui-sref="listMessages({userId: profile._id})"><i class="fa fa-comment-o"></i> Send message</a></li>
+                <li>
+                  <a ng-hide="profile.reference" class="cursor-pointer" ng-click="referenceModal(profile);"><i class="fa fa-heart-o"></i> Write a reference</a>
+                  <a ng-show="profile.reference" class="cursor-pointer" ng-click="referenceModal(profile);"><i class="fa fa-heart-o"></i> Update reference</a>
+                </li>
+                <li>
+                  <a ng-hide="profile.contact" class="cursor-pointer"><i class="fa fa-plus-square-o"></i> Add contact</a>
+                  <a ng-show="profile.contact" class="cursor-pointer"><i class="fa fa-minus-square-o"></i> Remove contact</a>
                 </li>
               </ul>
             </div>
 
-          </div>
-        </div>
-
       </div>
-      <div class="col-sm-9">
 
-        <div class="row">
-            <div class="col-md-6">
-                <h2 class="profile-name" data-ng-show="profile.displayName" data-ng-bind="profile.displayName"></h2>
-                <h4 class="profile-username" data-ng-show="profile.username">@{{profile.username}}</h4>
-                <div class="profile-tagline" data-ng-show="profile.tagline" data-ng-bind="profile.tagline"></div>
-            </div>
-
-              <!-- When looking at own profile -->
-              <div class="col-md-6 text-right" data-ng-show="user._id === profile._id">
-                <small class="text-muted">This is your profile as others see it.</small>
-                &nbsp;
-                <a ui-sref="profile-edit({username: user.username})" class="btn btn-primary">Edit your profile</a>
-              </div>
-
-              <!-- When looking at somebody else's profile -->
-              <div class="col-md-6" data-ng-hide="user._id === profile._id">
-                <ul class="nav nav-pills nav-narrow text-right" id="profile-actions" role="navigation">
-                  <li><a ui-sref="listMessages({userId: profile._id})"><i class="fa fa-comment-o"></i> Send message</a></li>
-                  <li>
-                    <a ng-hide="profile.reference" class="cursor-pointer" ng-click="referenceModal(profile);"><i class="fa fa-heart-o"></i> Write a reference</a>
-                    <a ng-show="profile.reference" class="cursor-pointer" ng-click="referenceModal(profile);"><i class="fa fa-heart-o"></i> Update reference</a>
-                  </li>
-                  <li>
-                    <a ng-hide="profile.contact" class="cursor-pointer"><i class="fa fa-plus-square-o"></i> Add contact</a>
-                    <a ng-show="profile.contact" class="cursor-pointer"><i class="fa fa-minus-square-o"></i> Remove contact</a>
-                  </li>
-                </ul>
-              </div>
-
+      <!-- Profile tabs -->
+      <div class="row">
+        <div class="col-xs-12">
+          <tabset id="profile-tabs" type="pills">
+            <tab ng-repeat="tab in tabs" heading="{{tab.title}}" active="tab.active" select="tabSelect(tab.path)">
+              <div data-ng-include src="tab.content"></div>
+            </tab>
+          </tabset>
         </div>
+      </div>
+      <!-- /Profile tabs -->
 
-        <!-- Profile tabs -->
-        <div class="row">
-          <div class="col-xs-12">
-            <tabset id="profile-tabs" type="pills">
-              <tab ng-repeat="tab in tabs" heading="{{tab.title}}" active="tab.active" select="tabSelect(tab.path)">
-                <div data-ng-include src="tab.content"></div>
-              </tab>
-            </tabset>
-          </div>
-        </div>
-        <!-- /Profile tabs -->
+    </div><!-- /.col -->
 
-      </div><!-- /.col -->
-
-    </div><!-- /.row -->
+  </div><!-- /.row -->
 
 
-    <!-- Couldn't find profile... -->
-    <div class="row" data-ng-hide="profile">
-        <div class="alert alert-warning">No such user...</div>
-    </div><!-- /.row -->
+  <!-- Couldn't find profile... -->
+  <div class="row" data-ng-hide="profile">
+    <div class="alert alert-warning">No such user...</div>
+  </div><!-- /.row -->
 
 
 </section><!-- /.container -->

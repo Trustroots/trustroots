@@ -11,7 +11,7 @@ root = true
 end_of_line = lf
 insert_final_newline = true
 
-# Standard at: https://github.com/felixge/node-style-guide 
+# Standard at: https://github.com/felixge/node-style-guide
 [**.js, **.json]
 trim_trailing_whitespace = true
 indent_style = space
@@ -29,7 +29,7 @@ spaces_in_brackets = false
 codepaint = false
 
 # No Standard.  Please document a standard if different from .js
-[**.yml, **.html, **.css]
+[**.yml, **.html, **.css, **.less]
 trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
@@ -43,7 +43,7 @@ indent_style = space
 indent_style = space
 indent_size = 4
 
-# Standard at: 
+# Standard at:
 [Makefile]
 indent_style = tab
 indent_size = 8
