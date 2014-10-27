@@ -70,24 +70,6 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
       // @todo: change path here?
     };
 
-    // Birthday input field
-    // @link http://angular-ui.github.io/bootstrap/#/datepicker
-    $scope.birthdateFormat = 'dd-MMMM-yyyy';
-    $scope.birthdateMin = new Date(99,0,0);
-    $scope.birthdateMax = new Date();
-    $scope.birthdateOpened = false;
-    $scope.birthdateOptions = {
-      formatYear: 'yy', // Format of year in year range
-      startingDay: 1, // Starting day of the week from 0-6 (0=Sunday, ..., 6=Saturday)
-      yearRange: 40 // Number of years displayed in year selection
-    };
-    $scope.birthdateOpen = function($event) {
-      $event.preventDefault();
-      $event.stopPropagation();
-      $scope.birthdateOpened = true;
-    };
-
-
     /**
     * Open write/update reference -modal
     */

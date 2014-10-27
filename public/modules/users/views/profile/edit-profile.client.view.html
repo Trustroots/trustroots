@@ -52,7 +52,7 @@
               </div>
 
               <div class="form-group">
-                <label for="birthdate"><h4>Birthdate</h4></label>
+                <label for="birthdate"><h4>Birthdate <small class="text-muted"> dd-mm-yyyy</small></h4></label>
                 <p class="input-group">
                   <input id="birthdate" type="text" class="form-control" datepicker-popup="{{birthdateFormat}}" ng-model="user.birthdate" is-open="birthdateOpened" datepicker-options="birthdateOptions" ng-required="false" close-text="Close" />
                   <span class="input-group-btn">
