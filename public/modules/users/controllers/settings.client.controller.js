@@ -1,12 +1,25 @@
 'use strict';
 
-angular.module('users').controller('SettingsController', ['$scope', '$http', '$location', 'Users', 'Authentication',
-  function($scope, $http, $location, Users, Authentication) {
+angular.module('users').controller('SettingsController', ['$scope', '$http', '$state', 'Users', 'Authentication',
+  function($scope, $http, $state, Users, Authentication) {
+
+    // If user is not signed in then redirect to login
+    if (!Authentication.user) $state.go('signin');
 
     $scope.user = Authentication.user;
 
-    // If user is not signed in then redirect back home
-    if (!$scope.user) $location.path('/');
+    // Change user email
+    $scope.updateUserEmail = function() {
+      $scope.emailSuccess = $scope.emailError = null;
+      var user = new Users($scope.user);
+
+      user.$update(function(response) {
+        $scope.emailSuccess = 'Email update. Check your inbox, you should have received an confirmation email which has a link you need to click. Email change will not be active until that.';
+        Authentication.user = response;
+      }, function(response) {
+        $scope.emailError = response.data.message;
+      });
+    };
 
     // Change user email subscriptions
     $scope.updateUserSubscriptions = function() {
