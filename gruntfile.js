@@ -187,16 +187,16 @@ module.exports = function(grunt) {
     var init = require('./config/init')();
     var config = require('./config/config');
 
-    grunt.config.set('applicationJavaScriptFiles', config.assets.js);
+    grunt.config.set('applicationJavaScriptFiles', config.assets.lib.js.concat(config.assets.js));
     grunt.config.set('applicationCSSFiles', config.assets.lib.css.concat(config.assets.css));
     grunt.config.set('applicationLESSFiles', config.assets.lib.less.concat(config.assets.less) );
   });
 
   // Default production task(s).
-  grunt.registerTask('default', ['loadConfig', 'less:production', 'concat:css', 'concurrent:default']);
+  grunt.registerTask('default', ['loadConfig', 'less:development', 'concat:css', 'debug']);
 
   // Default development task(s).
-  grunt.registerTask('development', ['loadConfig', 'less:development', 'concat:css', 'debug']);
+  grunt.registerTask('production', ['loadConfig', 'less:production', 'concat:css', 'ngAnnotate', 'uglify', 'concurrent:default']);
 
   // Debug task.
   grunt.registerTask('debug', ['lint', 'concurrent:debug']);

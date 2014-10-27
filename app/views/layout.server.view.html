@@ -48,17 +48,14 @@
     <footer data-ng-include="'/modules/core/views/footer.client.view.html'" id="tr-footer" role="contentinfo" class="hidden-print" ng-class="{ 'footer-transparent footer-sticky' : isTransparent }" ng-hide="isHidden" data-ng-controller="FooterController"></footer>
   {% endblock %}
 
-  <!-- Embedding The User and Settings Objects -->
+  {# Embedding The User and Settings Objects #}
   <script type="text/javascript">
     var user = {{ user | json | safe }},
         settings = {{ appSettings | json | safe }},
         languages = {{ languages | json | safe }};
   </script>
 
-  <!-- Socket.io -->
-  <script type="text/javascript" src="/socket.io/socket.io.js"></script>
-
-  <!-- Le JS -->
+  {# Le JS #}
   {% for jsFile in jsFiles %}<script type="text/javascript" src="{{jsFile}}"></script>
   {% endfor %}
 

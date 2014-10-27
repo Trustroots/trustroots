@@ -13,6 +13,7 @@ module.exports = {
   				'public/lib/leaflet.markercluster/dist/MarkerCluster.css'
   		],
   		js: [
+				// Minified versions
   			'public/lib/jquery/dist/jquery.min.js',
   			'public/lib/angular/angular.min.js',
   			'public/lib/angular-resource/angular-resource.min.js',

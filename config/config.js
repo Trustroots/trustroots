@@ -57,12 +57,27 @@ module.exports.getGlobbedFiles = function(globPatterns, removeRoot) {
  * Get the modules JavaScript files
  */
 module.exports.getJavaScriptAssets = function(includeTests) {
-  var output = this.getGlobbedFiles(this.assets.lib.js.concat(this.assets.js), 'public/');
 
-  // To include tests
-  if (includeTests) {
-    output = _.union(output, this.getGlobbedFiles(this.assets.tests));
+  var output;
+
+  // These scripts for production
+  if(process.env.NODE_ENV === 'production') {
+    output = ['/dist/application.min.js'];
   }
+
+  // These scripts for development
+  else {
+    output = this.getGlobbedFiles(this.assets.lib.js.concat(this.assets.js), 'public/');
+
+    // To include tests
+    if (includeTests) {
+      output = _.union(output, this.getGlobbedFiles(this.assets.tests));
+    }
+
+  }
+
+  // Add socket.io
+  output = ['/socket.io/socket.io.js'].concat(output);
 
   return output;
 };
