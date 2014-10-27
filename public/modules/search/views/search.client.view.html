@@ -2,9 +2,11 @@
 
   <div class="form-group map-location-search">
   	<div class="input-group">
-		<input type="text" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" class="form-control input-sm" placeholder="Search location" ng-keypress="enterSearchAddress($event)" />
+
+      <label for="search-query" class="sr-only">Search</label>
+	    <input type="text" id="search-query" class="form-control input-lg" placeholder="Search" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" /><!-- typeahead-loading="searchQuerySearching"-->
   		<span class="input-group-btn">
-  			<button type="button" class="btn btn-sm btn-inverse" ng-click="searchAddress()" ng-disabled="searchQuerySearching">
+  			<button type="button" class="btn btn-lg btn-inverse" ng-click="searchAddress()" ng-disabled="searchQuerySearching">
   				<i class="fa fa-search" ng-show="searchQuerySearching === false"></i>
           <i class="fa fa-refresh" ng-show="searchQuerySearching === true"></i>
   			</button>
@@ -12,13 +14,14 @@
   	</div>
   </div>
 
-  <leaflet center="center" markers="markers" layers="layers" bounds="bounds" event-broadcast="events" id="search-map-canvas"></leaflet>
+  <leaflet center="center" markers="markers" layers="layers" bounds="bounds" defaults="defaults" event-broadcast="events" id="search-map-canvas"></leaflet>
 
   <div class="search-map-sidebar" ng-show="sidebarOpen">
 
     <div class="search-list">
 
-      <div class="search-result panel panel-default panel-loading">
+      <!-- Profile loading -->
+      <div class="search-result panel panel-default panel-loading" ng-show="offer && !offer.$resolved">
         <div class="panel-body">
           <div class="search-result-actions">
             <a href="#" class="btn btn-link btn-sm" tooltip-placement="left" tooltip="Bookmark"><i class="fa fa-lg fa-bookmark"></i></a>
@@ -43,7 +46,39 @@
           -->
         </div>
       </div>
+      <!-- /Profile loading -->
 
+      <!-- Profile -->
+      <div class="search-result panel panel-default" ng-show="offer && offer.$resolved">
+        <div class="panel-body" ng-click="showUser(offer.user.username)">
+          <div class="search-result-actions">
+            <a ui-sref="listMessages({userId: profile._id})" class="btn btn-link btn-sm" tooltip-placement="left" tooltip="Send a message"><i class="fa fa-comment"></i></a>
+            <!--<a href="#" class="btn btn-link btn-sm" tooltip-placement="left" tooltip="Bookmark"><i class="fa fa-lg fa-bookmark"></i></a>-->
+          </div>
+          <div tr-avatar data-size="32" data-link="false" data-user="offer.user"></div>
+          <h4>{{offer.user.displayName}}</h4>
+          <div class="search-result-meta">
+            x years, {{offer.user.gender}}.
+          </div>
+          <div class="search-result-tagline">
+            {{offer.user.tagline}}
+          </div>
+          <div class="search-result-hosting">
+            <div class="search-result-description" data-ng-bind-html="offer.description | trustedHtml"></div>
+            <span class="search-result-label">
+              Hosting:
+              <span class="label" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': offer.status === 'no'}" ng-bind="offer.status">█████</span>
+            </span>
+          </div>
+          <div class="search-result-languages" ng-show="offer.user.languages.length">
+            <h4>Languages</h4>
+            <ul class="list-inline">
+              <li ng-repeat="code in offer.user.languages">{{languages[code]}}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <!-- /Profile -->
 
     <!--
 

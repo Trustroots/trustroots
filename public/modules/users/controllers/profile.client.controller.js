@@ -23,7 +23,7 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 					$state.go('profile', {username: $scope.user.username});
 		    }
 		    else {
-		      // Get profile for $stateParams.username
+		      // Get profile with $stateParams.username
           $scope.profile = UserProfiles.get({
               username: $stateParams.username
           });

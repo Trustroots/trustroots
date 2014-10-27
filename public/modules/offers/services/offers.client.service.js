@@ -1,13 +1,27 @@
 'use strict';
 
 //Offers service used for communicating with the offers REST endpoints
-angular.module('offers').factory('Offers', ['$resource',
+
+// Read offers by userId
+angular.module('offers').factory('OffersBy', ['$resource',
 	function($resource) {
-		return $resource('offers/:userId', {
-			userId: '@_id'
+		return $resource('offers-by/:userId', {
+			userId: '@id'
 		}, {
 			update: {
 				method: 'PUT'
+			}
+		});
+	}
+]);
+
+
+// Read offer by offerId
+angular.module('offers').factory('Offers', ['$resource',
+	function($resource) {
+		return $resource('offers/:offerId', {offerId:'@id'}, {
+			get: {
+				method: 'GET'
 			}
 		});
 	}

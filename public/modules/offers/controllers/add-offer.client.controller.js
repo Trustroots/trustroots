@@ -5,8 +5,8 @@
 /*global jQuery:false */
 
 
-angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$geolocation', 'Offers', 'Authentication',
-	function($scope, $rootScope, $http, $timeout, $state, $stateParams, $geolocation, Offers, Authentication) {
+angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$geolocation', 'leafletBoundsHelpers', 'OffersBy', 'Offers', 'Authentication',
+	function($scope, $rootScope, $http, $timeout, $state, $stateParams, $geolocation, leafletBoundsHelpers, OffersBy, Offers, Authentication) {
 
 		$scope.authentication = Authentication;
 
@@ -40,7 +40,7 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
 				}
 			},
 			defaults: {
-				scrollWheelZoom: false
+				scrollWheelZoom: true
 			}
 		});
 
@@ -49,7 +49,7 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
 
 			$scope.isLoading = true;
 
-			Offers.get({
+			OffersBy.get({
 				userId: Authentication.user._id
 			}, function(offer){
 
@@ -73,8 +73,8 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
 						// Center map to user's location
 						$scope.position.then(function(position){
 							if(position.coords.latitude && position.coords.longitude) {
-								$scope.center.lat = position.coords.latitude;
-							  $scope.center.lng = position.coords.longitude;
+								$scope.center.lat = parseFloat(position.coords.latitude);
+							  $scope.center.lng = parseFloat(position.coords.longitude);
 								$scope.center.zoom = 13;
 						  }
 						});
@@ -116,36 +116,131 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
 		};
 
 
-		// Map address search
+		/**
+		* Map address search
+		*/
 		$scope.searchQuery = '';
 		$scope.searchQuerySearching = false;
 		$scope.enterSearchAddress = function (event) {
-			// On 'enter'
 			if (event.which === 13) {
-				$scope.searchAddress();
 				event.preventDefault();
+			  $scope.searchAddress();
 			}
 		};
 		$scope.searchAddress = function () {
 			if($scope.searchQuery !== '') {
 				$scope.searchQuerySearching = true;
-				$http
-					.get('http://nominatim.openstreetmap.org/search?q=' + $scope.searchQuery.replace(/ /g, '+') + '&format=json&limit=1&email=' + settings.osm.email)
-					.success(function (data) {
-						$scope.searchQuerySearching = false;
-						if (data[0] && parseFloat(data[0].importance) > 0.2) {
 
-							var lon = parseFloat(data[0].lon);
-							var lat = parseFloat(data[0].lat);
+				$http.get('http://api.geonames.org/searchJSON?featureClass=A&featureClass=P', {
+					params: {
+						q: $scope.searchQuery,
+						maxRows: 1,
+						lang: 'en',
+						style: 'full', // 'full' since we need bbox
+						type: 'json',
+						username: settings.geonames.username
+					}
+				}).then(function(response){
 
-							$scope.bounds.southWest.lat = parseFloat(data[0].boundingbox[0]);
-							$scope.bounds.northEast.lat = parseFloat(data[0].boundingbox[1]);
-							$scope.bounds.southWest.lng = parseFloat(data[0].boundingbox[2]);
-							$scope.bounds.northEast.lng = parseFloat(data[0].boundingbox[3]);
+					$scope.searchQuerySearching = false;
+
+					if(response.status === 200 && response.data.geonames) {
+						if(response.data.geonames.length > 0) {
+
+							$scope.mapLocate(response.data.geonames[0]);
+
 						}
-					});
+						else {
+							// @Todo: nicer alert https://github.com/Trustroots/trustroots/issues/24
+							alert('Whoop! We could not find such a place...');
+						}
+					}
+				});
+
 			}
 		};
+
+
+		/*
+		* Show geonames location at map
+		* Used also when selecting search suggestions from the suggestions list
+		*/
+		$scope.mapLocate = function(place) {
+
+			// Show full place name at search  query
+			$scope.searchQuery =  $scope.placeTitle(place);
+
+			// Does the place have bounding box?
+			if(place.bbox) {
+				$scope.bounds = leafletBoundsHelpers.createBoundsFromArray([
+					[ parseFloat(place.bbox.south), parseFloat(place.bbox.east) ],
+					[ parseFloat(place.bbox.north), parseFloat(place.bbox.west) ]
+				]);
+			}
+
+			// Does it have lat/lng?
+			else if(place.lat && place.lng) {
+				$scope.center = {
+					lat: parseFloat(place.lat),
+					lng: parseFloat(place.lng),
+					zoom: 5
+				};
+			}
+
+			// @todo: then what?
+
+		};
+
+
+		/*
+		* Search field's typeahead -suggestions
+		*
+		* featureClass is twice already at URL due limitations with $http.get()
+		*
+		* @link http://www.geonames.org/export/geonames-search.html
+		*/
+		$scope.searchSuggestions = function(val) {
+
+			return $http.get('http://api.geonames.org/searchJSON?featureClass=A&featureClass=P', {
+				params: {
+					q: val,
+					maxRows: 5,
+					lang: 'en',
+					style: 'full', // 'full' since we need bbox
+					type: 'json',
+					username: settings.geonames.username
+				}
+			}).then(function(response){
+				if(response.status === 200 && response.data.geonames.length > 0) {
+					return response.data.geonames.map(function(place){
+						place.trTitle = $scope.placeTitle(place);
+						return place;
+					});
+				}
+				else return [];
+			});
+
+		};
+
+		/*
+		* Compile a nice title for the place, eg. "Jyväskylä, Finland"
+		*/
+		$scope.placeTitle = function(place) {
+			var title = '';
+
+			// Prefer toponym name like 'Jyväskylä' instead of 'Jyvaskyla'
+			if(place.toponymName) title += place.toponymName;
+			else if(place.name) title += place.name;
+
+			if(place.countryName) {
+				if(title !== '') title += ', ';
+				title += place.countryName;
+			}
+
+			return title;
+		};
+
+
 
 	}
 ]);

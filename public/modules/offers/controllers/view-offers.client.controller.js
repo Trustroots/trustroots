@@ -3,16 +3,18 @@
 /* This declares to JSHint that 'settings' is a global variable: */
 /*global settings:false */
 
-angular.module('offers').controller('ViewOffersController', ['$scope', '$state', '$timeout', 'Offers',
-	function($scope, $state, $timeout, Offers) {
+angular.module('offers').controller('ViewOffersController', ['$scope', '$state', '$timeout', 'OffersBy',
+	function($scope, $state, $timeout, OffersBy) {
+
+		$scope.offer = false;
 
 		// Leaflet
 		angular.extend($scope, {
 			center: {
-				// Default to Europe
-				lat: $scope.offer ? $scope.offer.location[0] : 48.6908333333,
-				lng: $scope.offer ? $scope.offer.location[1] : 9.14055555556,
-				zoom: $scope.offer ? 12 : 4
+				// Default to Europe, we set center to Offer once it loads
+				lat: 48.6908333333,
+				lng: 9.14055555556,
+				zoom: 0
 			},
 			layers: {
 				baselayers: {
@@ -34,6 +36,7 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
 					fillColor: '#12b591',
 					fillOpacity: 0.5,
 					latlngs: {
+						// Somehow this needs to be here although we set it later again (BTW it's, Center of Europe)
 						lat: 48.6908333333,
 						lng: 9.14055555556
 					},
@@ -50,15 +53,12 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
 		if(!$scope.offer) {
 
 			// Wait for profile from parent Controller (probably ProfileController)
-			$scope.$parent.profile.$promise.then(function() {
+			$scope.$parent.profile.$promise.then(function(profile) {
 
-			  Offers.get({
-			    userId: $scope.$parent.profile.id
+			  $scope.offer = OffersBy.get({
+			    userId: profile._id
 			  }, function(offer){
-
-			  	// Make sure $scope.$apply() updates results
-			  	// @link http://jimhoskins.com/2012/12/17/angularjs-and-apply.html
-			  	$timeout(function() {
+						// Update also the map
 			      if(offer.location) {
 			        $scope.center.lat = parseFloat(offer.location[0]);
 			        $scope.center.lng = parseFloat(offer.location[1]);
@@ -68,14 +68,13 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
 							$scope.paths.offer.latlngs.lng = parseFloat(offer.location[1]);
 
 			      }
-            $scope.offer = offer;
-          });
 
 			  });
 
 		  });
 
-	  }
+
+	  }//if !offer
 
 
 		$scope.hostingDropdown = false;

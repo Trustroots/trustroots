@@ -6,8 +6,14 @@
 var mongoose = require('mongoose'),
     errorHandler = require('./errors'),
     sanitizeHtml = require('sanitize-html'),
+    config = require('../../config/config'),
     Offer = mongoose.model('Offer'),
+    User = mongoose.model('User'),
     _ = require('lodash');
+
+
+// Fields to send publicly about any user profile together with OfferById
+var userProfileFields = config.app.userMiniProfileFields.join(' ');
 
 /**
  * Rules for sanitizing offers coming in and out
@@ -27,13 +33,13 @@ var offerSanitizeOptions = {
 
 /**
  * Create a fuzzy location
- * Will create an alternative lat,lng by shifting location 50-100 meters to random direction
+ * Will create an alternative lat,lng by shifting location 100-200 meters to random direction
  * @link http://gis.stackexchange.com/a/2980
  */
 function fuzzyLocation(location) {
 
-  // Offsets in meters, random between 50-100
-  var dn = Math.floor((Math.random() * 50) + 50);
+  // Offsets in meters, random between 100-200 meters to random direction
+  var dn = Math.floor((Math.random() * 100) + 200);
   var de = dn;
 
   // Position, decimal degrees
@@ -113,7 +119,7 @@ exports.list = function(req, res) {
         $or: [
           { status: 'yes' },
           { status: 'maybe' }
-        ],
+        ]/*,
         locationFuzzy: {
             $geoWithin: {
                 $box: [
@@ -122,6 +128,7 @@ exports.list = function(req, res) {
                       ]
             }
           }
+          */
         },
         'locationFuzzy status user'
         )
@@ -155,7 +162,8 @@ exports.read = function(req, res) {
 
 
 // Offer reading middleware
-exports.offerByUserID = function(req, res, next, userId) {
+exports.offerByUserId = function(req, res, next, userId) {
+  console.log('->offerByUserId: '+ userId);
   Offer.findOne({
       user: userId
     })
@@ -184,6 +192,40 @@ exports.offerByUserID = function(req, res, next, userId) {
             id: userId
           }
         };
+      }
+      next();
+    });
+
+};
+
+
+// Offer reading middleware
+exports.offerById = function(req, res, next, offerId) {
+  console.log('->offerById: ' + offerId);
+  console.log('POPULATE WITH: ' + userProfileFields);
+  Offer.findById(offerId)
+    .populate('user', userProfileFields)
+    .exec(function(err, offer) {
+      if (err) return next(err);
+      //if (!offer) return next(new Error('Failed to load offers.'));
+
+      if (offer) {
+        // Sanitize each outgoing offer's contents
+        offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
+        offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
+
+        // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
+        if(offer.user !== req.user.id) {
+          offer.location = offer.locationFuzzy;
+        }
+        delete offer.locationFuzzy;
+
+        req.offer = offer;
+      }
+      else {
+        return res.status(400).send({
+          message: 'Could not find offer by this id.'
+        });
       }
       next();
     });

@@ -5,11 +5,11 @@ module.exports = function(app) {
 	var references = require('../../app/controllers/references');
 
 	// References Routes
+		app.route('/references-by/:userId')
+			.get(users.requiresLogin, references.list);
+
 	app.route('/references')
 		.post(users.requiresLogin, references.create);
-
-	app.route('/references/by/:userId')
-		.get(users.requiresLogin, references.list);
 
 	app.route('/references/:referenceId')
 		.get(users.requiresLogin, references.read)

@@ -16,7 +16,7 @@ angular.module('references').factory('References', ['$resource',
 
 angular.module('references').factory('ReferencesBy', ['$resource',
 	function($resource) {
-		return $resource('references/by/:userId', {
+		return $resource('references-by/:userId', {
 			userId: '@userId'
 		});
 	}

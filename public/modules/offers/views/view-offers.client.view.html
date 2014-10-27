@@ -3,7 +3,7 @@
   <div class="panel-heading">
     Accommodation
     <!-- Button + dropdown for user's own profile -->
-    <div ng-show="user._id === profile._id" class="pull-right btn-group" dropdown is-open="hostingDropdown">
+    <div ng-show="user._id === profile._id && (offer && offer.$resolved)" class="pull-right btn-group" dropdown is-open="hostingDropdown">
       <button class="btn btn-sm dropdown-toggle btn-hosting btn-hosting-yes" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': (!offer || offer.status === 'no')}">
         {{ hostingStatusLabel() }}
         <span class="caret"></span>
@@ -15,11 +15,18 @@
       </ul>
     </div>
     <!-- Button for other profiles -->
-    <a ng-show="user._id !== profile._id" ui-sref="listMessages({userId: profile._id})" class="btn btn-sm pull-right btn-hosting btn-hosting-yes" ng-show="offer.status === 'yes'" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': (!offer || offer.status === 'no')}">
+    <a ng-show="user._id !== profile._id && (offer && offer.$resolved)" ui-sref="listMessages({userId: profile._id})" class="btn btn-sm pull-right btn-hosting btn-hosting-yes" ng-show="offer.status === 'yes'" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': (!offer || offer.status === 'no')}">
       {{ hostingStatusLabel() }}
     </a>
   </div>
-  <div class="panel-body">
+
+  <!-- Show while offer is loading -->
+  <div class="panel-body text-center text-muted" ng-show="!offer || !offer.$resolved">
+    <small>Wait a moment...</small>
+  </div>
+
+  <!-- Show once offer has loader -->
+  <div class="panel-body" ng-show="offer && offer.$resolved">
 
     <!-- Hosting: yes | maybe -->
     <div ng-show="offer.status !== 'no'">
@@ -53,11 +60,11 @@
   </div>
 
   <!-- When looking at your own profile -->
-  <div class="panel-footer text-center" ng-show="user._id === profile._id && (!offer || offer.status === 'no')">
+  <div class="panel-footer text-center" ng-show="user._id === profile._id && (offer && offer.status === 'no')">
     <a ui-sref="offer" class="btn btn-sm btn-primary">Start hosting travellers</a>
   </div>
 
-  <!--  ng-click="showOfferLocation() markers="offer.marker"" -->
-  <leaflet center="center" layers="layers" paths="paths" class="cursor-pointer offer-location" ng-hide="!offer || offer.status === 'no'" id="offer-location-canvas"></leaflet>
+  <leaflet center="center" layers="layers" paths="paths" defaults="defaults" class="cursor-pointer offer-location" ng-show="offer && offer.status !== 'no'" id="offer-location-canvas"></leaflet>
+
 </div>
 <!-- /Accommodation -->

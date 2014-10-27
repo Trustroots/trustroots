@@ -15,6 +15,7 @@ angular.module('users').factory('Users', ['$resource',
     }
 ]);
 
+// Used to show actual full profiles
 angular.module('users').factory('UserProfiles', ['$resource',
     function($resource) {
         return $resource('users/:username', {username:'@username'}, {
@@ -25,6 +26,7 @@ angular.module('users').factory('UserProfiles', ['$resource',
     }
 ]);
 
+// Used to receive basic info to show avatars etc...
 angular.module('users').factory('UsersMini', ['$resource',
     function($resource) {
         return $resource('users/mini/:userId', {userId:'@id'}, {
