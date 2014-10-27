@@ -11,8 +11,8 @@
 
 
           <div class="profile-sidebar-section">
-            <span am-time-ago="profile.birthdate" ng-show="profile.birthdate"></span><span ng-show="profile.birthdate && profile.gender">, </span>
-            <span class="text-capitalize" ng-show="profile.gender">{{profile.gender}}</span>
+            <span ng-show="profile.birthdate" am-time-ago="profile.birthdate" am-without-suffix="true"></span><span ng-show="profile.birthdate && profile.gender">, </span>
+            <span ng-show="profile.gender" ng-class="{ 'text-capitalize': !profile.birthdate }">{{profile.gender}}.</span>
           </div>
 
           <div class="profile-sidebar-section">Member since <span data-ng-bind="profile.created | date:'mediumDate'"></span></div>
