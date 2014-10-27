@@ -14,29 +14,30 @@
  * link (will not wrap <img> into link)
  * watch (will start watching user.avatarSource and refresh each time that changes)
  */
-angular.module('users').directive('trAvatar', [
-  function() {
+angular.module('users').directive('trAvatar', ['$location',
+  function($location) {
 
     // Options
     var defaultSize = 256,
         defaultAvatar = '/modules/users/img/avatar.png';
+
     return {
-        //templateUrl: '/modules/users/views/directives/tr-avatar.client.view.html',
-        template: '<img ng-show="avatar" ng-src="{{avatar}}" class="avatar" width="{{size}}" height="{{size}}" alt="">',
-        restrict: 'EA',
+        template:
+          '<div ng-switch="link">' +
+            '<img ng-switch-when="false" ng-src="{{avatar}}" class="avatar" width="{{size}}" height="{{size}}" alt="">' +
+            '<a ng-switch-when="true" ui-sref="profile({username: user.username})"><img ng-src="{{avatar}}" class="avatar" width="{{size}}" height="{{size}}" alt=""></a>' +
+          '</div>',
+        restrict: 'A',
         replace: true,
         scope: {
           user: '=user'
         },
         controller: ['$scope', function($scope) {
 
-          function determineSource() {
-            console.log('->determineSource');
-            // Wait for $promise first
-            //$scope.user.then(function(user){
-              //console.log('->determineSource ->scope.user.then');
-              console.log($scope.user);
+          $scope.avatar = defaultAvatar;
+          $scope.size = defaultSize;
 
+          function determineSource() {
 
               // Determine source for avatar
               if($scope.fixedSource) {
@@ -56,7 +57,7 @@ angular.module('users').directive('trAvatar', [
               if($scope.source === 'facebook' ) {
                 if($scope.user && $scope.user.email) {
                   var fb_id = '#';
-                  $scope.avatar = 'http://graph.facebook.com/' + fb_id + '/picture/?width=' +($scope.size || defaultSize) + '&height=' + ($scope.size || defaultSize);
+                  $scope.avatar = $location.protocol() + '://graph.facebook.com/' + fb_id + '/picture/?width=' +($scope.size || defaultSize) + '&height=' + ($scope.size || defaultSize);
                 }
                 else {
                   $scope.avatar = defaultAvatar;
@@ -66,16 +67,13 @@ angular.module('users').directive('trAvatar', [
               /**
                * Avatar via Gravatar
                * @link https://en.gravatar.com/site/implement/images/
-               * @todo: pre-save email md5 hash to the db
                */
               else if($scope.source === 'gravatar') {
                 if($scope.user.emailHash) {
-                  $scope.avatar = 'http://gravatar.com/avatar/' + $scope.user.emailHash + '?s=' + ($scope.size || defaultSize);
+                  $scope.avatar = $location.protocol() + '://gravatar.com/avatar/' + $scope.user.emailHash + '?s=' + ($scope.size || defaultSize);
 
-                  // Gravatar fallback is required to be online. It's defined at settings.json
-                  // If public default avatar is set, send it to Gravatar as failback
-                  // @todo: pass defaultAvatar with public domain here
-                  $scope.avatar += '&d=' + encodeURIComponent('http://ideas.trustroots.org/wordpress/wp-content/uploads/2014/10/avatar.png');
+                  // This fallback image won't work via localhost since Gravatar fallback is required to be online.
+                  $scope.avatar += '&d=' + encodeURIComponent( $location.protocol() + '://' + $location.host() + ':' + $location.port() + defaultAvatar );
                 }
                 else {
                   $scope.avatar = defaultAvatar;
@@ -94,19 +92,7 @@ angular.module('users').directive('trAvatar', [
               else {
                 $scope.avatar = defaultAvatar + '?none';
               }
-            //});// $promise
           }// determineSource()
-
-          // Sets $scope.avatar
-          //$scope.determineSource();
-
-          // If asked to, start watching user.avatarSource and refresh directive each time that changes
-          //$scope.startWatching = function() {
-          //  $scope.$watch('user.avatarSource',function(newSource, oldSource) {
-          //    $scope.source = newSource;
-          //    determineSource();
-          //  });
-          //};
 
           $scope.$watch('user.avatarSource',function() {
             determineSource();
@@ -115,21 +101,17 @@ angular.module('users').directive('trAvatar', [
         }],
         link: function (scope, element, attr, ctrl) {
 
-          // Options
-          scope.size = attr.size || defaultSize;
-
-          // Wrap it to link by default
-          if(!attr.link && attr.user) {
-            angular.element(element).wrap('<a ng-href="#!/profile/{{user.username}}"></a>');
-          }
-
-          //if(attr.watch) scope.startWatching();
-
           // Make sure source won't change dynamicly when user changes
           if(attr.source) {
             scope.source = attr.source;
             scope.fixedSource = attr.source;
           }
+
+          // Options
+          scope.size = attr.size || defaultSize;
+
+          // By default show the link
+          scope.link = (attr.link !== 'false') ? true : false;
 
         }
     };
