@@ -35,6 +35,9 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
             layerParams: {
               user: settings.mapbox.user,
               map: settings.mapbox.map
+            },
+            options: {
+              attribution: '<a href="http://www.openstreetmap.org">OSM</a>'
             }
           }
         }
