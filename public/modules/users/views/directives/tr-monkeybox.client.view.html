@@ -2,7 +2,7 @@
     <div class="panel-body">
       <p>
         <div tr-avatar data-user="user" data-size="64"></div><br>
-        <h3 data-ng-bind="user.displayName"></h3>
+        <a ui-sref="profile({username: user.username})"><h3 data-ng-bind="user.displayName"></h3></a>
       </p>
       <div class="monkeybox-section" ng-show="user.languages.length">
         <h4>Languages</h4>
