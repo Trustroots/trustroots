@@ -26,19 +26,12 @@
 
               <div class="form-group">
                 <label for="location-living"><h4>Lives in</h4></label>
-                <div tr-location id="location-living"></div>
-                <!--<input type="text" id="location-living" name="location-living" class="form-control" data-ng-model="user.locationLiving" value="City, Countryname">-->
+                <div tr-location id="location-living" data-location="user.locationLiving" data-placeholder="City"></div>
               </div>
 
               <div class="form-group">
                 <label for="location-from"><h4>From</h4></label>
-                <!--<input type="text" id="location-from" name="location-from" class="form-control" data-ng-model="user.locationFrom" value="City, Countryname">-->
-                <div tr-location id="location-from"></div>
-              </div>
-
-              <div class="form-group">
-                <label for="email"><h4>Email</h4></label>
-                <input type="email" id="email" name="email" class="form-control" data-ng-model="user.email" placeholder="Email">
+                <div tr-location id="location-from" data-location="user.locationFrom" data-placeholder="City"></div>
               </div>
 
               <div class="form-group">
@@ -52,14 +45,13 @@
               </div>
 
               <div class="form-group">
-                <label for="birthdate"><h4>Birthdate <small class="text-muted"> dd-mm-yyyy</small></h4></label>
+                <label for="birthdate"><h4>Birthdate <small class="text-muted text-uppercase"> {{ birthdateFormat }}</small></h4></label>
                 <p class="input-group">
-                  <input id="birthdate" type="text" class="form-control" datepicker-popup="{{birthdateFormat}}" ng-model="user.birthdate" is-open="birthdateOpened" datepicker-options="birthdateOptions" ng-required="false" close-text="Close" />
+                  <input id="birthdate" type="text" class="form-control" datepicker-popup="{{birthdateFormat}}" ng-model="user.birthdate" is-open="birthdateOpened" datepicker-options="birthdateOptions" ng-required="false" close-text="Close" current-text="Today" clear-text="Clear" />
                   <span class="input-group-btn">
                     <button type="button" class="btn btn-inverse" ng-click="birthdateOpen($event)"><i class="glyphicon glyphicon-calendar"></i></button>
                   </span>
                 </p>
-
               </div>
 
               <div class="form-group">

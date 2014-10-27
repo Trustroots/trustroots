@@ -3,6 +3,9 @@
 angular.module('users').controller('ProfileController', ['$scope', '$stateParams', '$state', '$location', '$log', '$modal', 'Languages', 'Users', 'UserProfiles', 'Authentication',
   function($scope, $stateParams, $state, $location, $log, $modal, Languages, Users, UserProfiles, Authentication) {
 
+    // If user is not signed in then redirect to login
+    if (!Authentication.user) $state.go('signin');
+
     $scope.user = Authentication.user; // Currently logged in user
     $scope.profile = false; // Profile to show
     $scope.languages = Languages.get('object');
@@ -12,9 +15,6 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
     if($stateParams.updated) {
       $log.log('Profile updated');
     }
-
-    // If user is not signed in then redirect back home
-    if (!$scope.user) $location.path('signin');
 
     // Fetch profile to show (note: not the currently logged in user's profile)
     $scope.findProfile = function() {

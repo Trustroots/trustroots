@@ -134,7 +134,7 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
       if($scope.searchQuery !== '') {
         $scope.searchQuerySearching = true;
 
-        $http.get('http://api.geonames.org/searchJSON?featureClass=A&featureClass=P', {
+        $http.get('http://api.geonames.org/searchJSON', {
           params: {
             q: $scope.searchQuery,
             maxRows: 1,
@@ -204,7 +204,7 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
     */
     $scope.searchSuggestions = function(val) {
 
-      return $http.get('http://api.geonames.org/searchJSON?featureClass=A&featureClass=P', {
+      return $http.get('http://api.geonames.org/searchJSON', {
         params: {
           q: val,
           maxRows: 5,

@@ -1,10 +1,14 @@
 'use strict';
 
-angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', '$location', 'Languages', 'Users', 'Authentication',
-  function($scope, $modal, $http, $stateParams, $state, $location, Languages, Users, Authentication) {
+/* This declares to JSHint that 'moment' and 'time' are global variables: */
+/*global moment:false */
+/*global time:false */
 
-    // If user is not signed in then redirect back home
-    if (!Authentication.user) $location.path('/');
+angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$log', '$stateParams', '$state', 'Languages', 'Users', 'Authentication',
+  function($scope, $modal, $http, $log, $stateParams, $state, Languages, Users, Authentication) {
+
+    // If user is not signed in then redirect to login
+    if (!Authentication.user) $state.go('signin');
 
     $scope.user = Authentication.user;
     $scope.profile = false;
@@ -40,16 +44,20 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
       });
     };
 
-    // Birthday input field
-    // @link http://angular-ui.github.io/bootstrap/#/datepicker
-    $scope.birthdateFormat = 'dd-MM-yyyy';
-    $scope.birthdateMin = new Date(99,0,0);
-    $scope.birthdateMax = new Date();
+    /*
+     * Birthday input field
+     * Use server 'time' instead of client time
+     * @link http://angular-ui.github.io/bootstrap/#/datepicker
+     */
+    $scope.birthdateFormat = 'yyyy-MM-dd';
     $scope.birthdateOpened = false;
     $scope.birthdateOptions = {
-      formatYear: 'yy', // Format of year in year range
+      maxDate: moment(time), //  Set an upper limit for mode.
+      minDate: moment(time).subtract(moment.duration(100, 'y')), // Set a lower limit for mode.
+      formatYear: 'yyyy', // Format of year in year range
       startingDay: 1, // Starting day of the week from 0-6 (0=Sunday, ..., 6=Saturday)
-      yearRange: 40 // Number of years displayed in year selection
+      yearRange: 30, // Number of years displayed in year selection
+      showWeeks: false, // Whether to display week numbers.
     };
     $scope.birthdateOpen = function($event) {
       $event.preventDefault();
@@ -63,7 +71,12 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
         $scope.success = $scope.error = null;
         var user = new Users($scope.user);
 
+        $log.log('->updateUserProfile');
+                $log.log(user);
         user.$update(function(response) {
+          $log.log('user.$update:');
+          $log.log(response);
+
           $scope.success = true;
           Authentication.user = response;
           $state.go('profile-updated', {username: response.username, updated: true});
@@ -75,6 +88,9 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
       }
     };
 
+    /**
+    * Fetch profile
+    */
     $scope.findProfile = function() {
       if(!$stateParams.username) {
         $scope.profile = $scope.user;

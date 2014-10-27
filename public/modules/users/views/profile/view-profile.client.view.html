@@ -1,14 +1,26 @@
 <section class="container container-spacer" id="profile" data-ng-controller="ProfileController" data-ng-init="findProfile()">
 
-  <div class="row" data-ng-show="profile">
+  <!-- Loading -->
+  <div class="row text-center text-muted" data-ng-show="profile && !profile.$resolved">
+    <small>Wait a moment...</small>
+  </div>
+
+  <!-- Couldn't find profile... -->
+  <div class="row text-center" data-ng-show="!profile && profile.$resolved">
+    <h1>Don't panic!</h1>
+    <em class="lead">User does not exist.</em>
+    <br><br>
+    <a href="/">Continue...</a>
+  </div>
+
+  <!-- Profile -->
+  <div class="row" data-ng-show="profile && profile.$resolved">
 
     <div class="col-sm-3">
 
       <div class="panel panel-default" id="profile-sidebar">
-        <!-- 'Watch' will cause directive to rerender each time avatar source changes. -->
-        <div tr-avatar data-watch="true" data-user="profile" data-size="261" data-link="false"></div>
+        <div tr-avatar data-user="profile" data-size="261" data-link="false"></div>
         <div class="panel-body">
-
 
           <div class="profile-sidebar-section">
             <span ng-show="profile.birthdate" am-time-ago="profile.birthdate" am-without-suffix="true"></span><span ng-show="profile.birthdate && profile.gender">, </span>
@@ -24,12 +36,12 @@
           </div>
           -->
 
-          <div class="profile-sidebar-section">
-            Lives in <a href="#">City, Country</a>
+          <div class="profile-sidebar-section" ng-show="profile.locationLiving">
+            <i class="fa fa-fw fa-building text-muted"></i> Lives in <a href="#">{{profile.locationLiving}}</a>
           </div>
 
-          <div class="profile-sidebar-section">
-            From <a href="#">City, Country</a>
+          <div class="profile-sidebar-section" ng-show="profile.locationFrom">
+            <i class="fa fa-fw fa-home text-muted"></i> From <a href="#">{{profile.locationFrom}}</a>
           </div>
 
           <div class="profile-sidebar-section" ng-show="profile.languages.length">
@@ -100,12 +112,5 @@
     </div><!-- /.col -->
 
   </div><!-- /.row -->
-
-
-  <!-- Couldn't find profile... -->
-  <div class="row" data-ng-hide="profile">
-    <div class="alert alert-warning">No such user...</div>
-  </div><!-- /.row -->
-
 
 </section><!-- /.container -->

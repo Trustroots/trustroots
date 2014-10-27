@@ -42,12 +42,6 @@
 	}
 }
 
-.tab-content {
-	.tab-pane {
-
-	}
-}
-
 .profile-name,
 .profile-username {
   display: inline-block;
@@ -116,5 +110,12 @@
   }
 	.profile-sidebar-section {
 		margin: 0 0 @padding-small-horizontal 0;
+		padding: 0 0 @padding-small-horizontal 0;
+		border-bottom: 1px solid @gray-lighter;
+		&:last-child { /* :not('.ng-hide') */
+			border-bottom: 0;
+			margin-bottom: 0;
+			padding-bottom: 0;
+		}
 	}
 }

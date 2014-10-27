@@ -94,12 +94,10 @@ var UserSchema = new Schema({
     default: ['']
   },
   locationLiving: {
-    type: Schema.ObjectId,
-    ref: 'Geo'
+    type: String
   },
   locationFrom: {
-    type: Schema.ObjectId,
-    ref: 'Geo'
+    type: String
   },
   username: {
     type: String,

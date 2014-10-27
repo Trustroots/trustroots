@@ -1,10 +1,10 @@
 'use strict';
 
-angular.module('users').controller('WelcomeController', ['$scope', '$location', 'Authentication',
-  function($scope, $location, Authentication) {
+angular.module('users').controller('WelcomeController', ['$scope', '$state', 'Authentication',
+  function($scope, $state, Authentication) {
 
-    // If user is not signed in then redirect back home
-    if (!Authentication.user) $location.path('/');
+    // If user is not signed in then redirect to login
+    if (!Authentication.user) $state.go('signin');
 
   }
 ]);
