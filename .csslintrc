@@ -16,5 +16,6 @@
   "unique-headings": false,
   "universal-selector": false,
   "unqualified-attributes": false,
-  "gradients": false
+  "gradients": false,
+  "ids": false
 }

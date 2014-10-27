@@ -202,7 +202,7 @@ module.exports = function(grunt) {
   grunt.registerTask('debug', ['lint', 'concurrent:debug']);
 
   // Lint task(s).
-  grunt.registerTask('lint', ['jshint', 'csslint']);
+  grunt.registerTask('lint', ['jshint']);//, 'csslint'
 
   // Build task(s).
   grunt.registerTask('build', ['lint', 'loadConfig', 'less:production', 'concat:css', 'ngAnnotate', 'uglify']);
