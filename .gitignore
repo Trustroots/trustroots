@@ -39,6 +39,7 @@ config/secret/*
 
 # Deploy & maintenance scripts
 scripts/*
+!scripts/starter.sh
 
 # Logs
 logs/*
