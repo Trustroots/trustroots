@@ -41,8 +41,8 @@ exports.inbox = function(req, res) {
       }
     )
     .sort('updated')
-    .populate('userFrom', userMiniProfileFields)
-    .populate('userTo', userMiniProfileFields)
+    .populate('userFrom', req.userMiniProfileFields)
+    .populate('userTo', req.userMiniProfileFields)
     .populate('message', 'content')
     .exec(function(err, threads) {
       if (err) {
@@ -138,10 +138,10 @@ exports.send = function(req, res) {
 
       // We'll need some info about related users, populate some fields
       message
-        .populate('userFrom', userMiniProfileFields)
+        .populate('userFrom', req.userMiniProfileFields)
         .populate({
           path: 'userTo',
-          select: userMiniProfileFields
+          select: req.userMiniProfileFields
         }, function(err, message) {
           if (err) {
             return res.status(400).send({
@@ -184,8 +184,8 @@ exports.threadByUser = function(req, res, next, userId) {
       }
     )
     .sort('-created')
-    .populate('userFrom', userMiniProfileFields)
-    .populate('userTo', userMiniProfileFields)
+    .populate('userFrom', req.userMiniProfileFields)
+    .populate('userTo', req.userMiniProfileFields)
     .exec(function(err, messages) {
       if (err) return next(err);
       if (!messages) return next(new Error('Failed to load messages.'));

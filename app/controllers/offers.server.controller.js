@@ -197,7 +197,7 @@ exports.offerByUserId = function(req, res, next, userId) {
 // Offer reading middleware
 exports.offerById = function(req, res, next, offerId) {
   Offer.findById(offerId)
-    .populate('user', userMiniProfileFields + ' birthdate gender tagline')
+    .populate('user', req.userMiniProfileFields + ' birthdate gender tagline')
     .exec(function(err, offer) {
       if (err) return next(err);
       //if (!offer) return next(new Error('Failed to load offers.'));

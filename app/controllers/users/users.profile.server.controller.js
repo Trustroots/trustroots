@@ -15,7 +15,7 @@ var _ = require('lodash'),
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
 // Pick here fields to send
-var userProfileFields = [
+exports.userProfileFields = [
                     'id',
                     'displayName',
                     'username',
@@ -33,6 +33,8 @@ var userProfileFields = [
                     'emailHash' // MD5 hashed email to use with Gravatars
                     ].join(' ');
 
+// Restricted set of profile fields when only really "miniprofile" is needed
+exports.userMiniProfileFields = 'id displayName username avatarSource emailHash languages';
 
 /**
 * Rules for sanitizing user description coming in and out
@@ -136,7 +138,7 @@ exports.list = function(req, res) {
  * Mini profile middleware
  */
 exports.userMiniByID = function(req, res, next, id) {
-  User.findById(id, userMiniProfileFields).exec(function(err, user) {
+  User.findById(id, req.userMiniProfileFields).exec(function(err, user) {
     if (err) return next(err);
     if (!user) return next(new Error('Failed to load user ' + id));
 
@@ -148,7 +150,7 @@ exports.userMiniByID = function(req, res, next, id) {
 exports.userByUsername = function(req, res, next, username) {
   User.findOne({
       username: username
-  }, userProfileFields).exec(function(err, user) {
+  }, req.userProfileFields).exec(function(err, user) {
     if (err) return next(err);
     if (!user) return next(new Error('Failed to load user ' + username));
 
