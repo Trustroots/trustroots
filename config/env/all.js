@@ -5,19 +5,17 @@ module.exports = {
 		title: 'Trustroots',
 		description: 'Enabling the latent trust between humans. Meet and host other travellers.',
 		keywords: 'traveling,hospitality exchange,hospex,nomadism',
-		userMiniProfileFields: ['id', 'displayName', 'username', 'avatarSource', 'emailHash', 'languages'],
-
 		// These will be pushed PUBLICLY to html as json:
 		settings: {
 			mapbox: {
-				user: 'bikeshed',
-				map: 'hn2ghak7'
+				user: process.env.MAPBOX_USER || 'bikeshed',
+				map: process.env.MAPBOX_MAP || 'hn2ghak7'
 			},
 			geonames: {
-				username: 'trustroots'
+				username: process.env.GEONAMES_USERNAME || 'trustroots'
 			},
 			osm: {
-				email: ['maps','@','trustroots','.org'].join('') // spam bot prevention...
+				email: process.env.OSM_EMAIL || ['maps','@','trustroots','.org'].join('') // spam bot prevention...
 			}
 		}
 	},

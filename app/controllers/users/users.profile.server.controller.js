@@ -5,7 +5,6 @@
  */
 var _ = require('lodash'),
   errorHandler = require('../errors'),
-  config = require('../../../config/config'),
   mongoose = require('mongoose'),
   passport = require('passport'),
   sanitizeHtml = require('sanitize-html'),
@@ -33,9 +32,6 @@ var userProfileFields = [
                     'avatarSource',
                     'emailHash' // MD5 hashed email to use with Gravatars
                     ].join(' ');
-
-// Same as above but more restricted set when only really "miniprofile" is needed
-var userMiniProfileFields = config.app.userMiniProfileFields.join(' ');
 
 
 /**

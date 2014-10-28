@@ -5,12 +5,8 @@
  */
 var mongoose = require('mongoose'),
   errorHandler = require('./errors'),
-  config = require('../../config/config'),
   Reference = mongoose.model('Reference'),
   _ = require('lodash');
-
-// Populate users with these fields
-var userMiniProfileFields = config.app.userMiniProfileFields.join(' ');
 
 /**
  * Create a Reference

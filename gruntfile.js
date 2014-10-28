@@ -129,6 +129,14 @@ module.exports = function(grunt) {
         }
       }
     },
+    forever: {
+      production: {
+        options: {
+          index: 'server.js',
+          logDir: 'logs'
+        }
+      }
+    },
     'node-inspector': {
       custom: {
         options: {
@@ -189,14 +197,17 @@ module.exports = function(grunt) {
 
     grunt.config.set('applicationJavaScriptFiles', config.assets.lib.js.concat(config.assets.js));
     grunt.config.set('applicationCSSFiles', config.assets.lib.css.concat(config.assets.css));
-    grunt.config.set('applicationLESSFiles', config.assets.lib.less.concat(config.assets.less) );
+    //grunt.config.set('applicationLESSFiles', config.assets.lib.less.concat(config.assets.less) );
   });
 
-  // Default production task(s).
+  // Default development task(s).
   grunt.registerTask('default', ['loadConfig', 'less:development', 'concat:css', 'debug']);
 
-  // Default development task(s).
+  // Default production task(s).
   grunt.registerTask('production', ['loadConfig', 'less:production', 'concat:css', 'ngAnnotate', 'uglify', 'concurrent:default']);
+
+  // Default production task(s) to run process at background forever.
+  grunt.registerTask('production-forever', ['loadConfig', 'less:production', 'concat:css', 'ngAnnotate', 'uglify', 'forever::start']);
 
   // Debug task.
   grunt.registerTask('debug', ['lint', 'concurrent:debug']);

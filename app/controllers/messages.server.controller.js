@@ -5,7 +5,6 @@
  */
 var mongoose = require('mongoose'),
   errorHandler = require('./errors'),
-  config = require('../../config/config'),
   sanitizeHtml = require('sanitize-html'),
   Message = mongoose.model('Message'),
   Thread = mongoose.model('Thread'),
@@ -27,9 +26,6 @@ var messageSanitizeOptions = {
     // URL schemes we permit
     allowedSchemes: [ 'http', 'https', 'ftp', 'mailto', 'tel' ]
   };
-
-// Populate users with these fields
-var userMiniProfileFields = config.app.userMiniProfileFields.join(' ');
 
 /**
  * List of threads aka inbox
