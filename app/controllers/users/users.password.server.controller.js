@@ -50,7 +50,7 @@ exports.forgot = function(req, res, next) {
         });
       } else {
         return res.status(400).send({
-          message: 'Username field must not be blank'
+          message: 'Please, we really need that username first...'
         });
       }
     },
@@ -75,7 +75,7 @@ exports.forgot = function(req, res, next) {
       smtpTransport.sendMail(mailOptions, function(err) {
         if (!err) {
           res.send({
-            message: 'An email has been sent to ' + user.email + ' with further instructions.'
+            message: 'Check your email for further instructions. Check spam folder and contact us if you did not receive email.'
           });
         }
 
