@@ -6,6 +6,7 @@
 var mongoose = require('mongoose'),
     errorHandler = require('./errors'),
     sanitizeHtml = require('sanitize-html'),
+    userHandler = require('./users'),
     Offer = mongoose.model('Offer'),
     User = mongoose.model('User'),
     _ = require('lodash');
@@ -197,7 +198,7 @@ exports.offerByUserId = function(req, res, next, userId) {
 // Offer reading middleware
 exports.offerById = function(req, res, next, offerId) {
   Offer.findById(offerId)
-    .populate('user', req.userMiniProfileFields + ' birthdate gender tagline')
+    .populate('user', userHandler.userMiniProfileFields + ' birthdate gender tagline')
     .exec(function(err, offer) {
       if (err) return next(err);
       //if (!offer) return next(new Error('Failed to load offers.'));

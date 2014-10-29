@@ -6,6 +6,7 @@
 var mongoose = require('mongoose'),
   errorHandler = require('./errors'),
   sanitizeHtml = require('sanitize-html'),
+  userHandler = require('./users'),
   Message = mongoose.model('Message'),
   Thread = mongoose.model('Thread'),
   User = mongoose.model('User');
@@ -41,8 +42,8 @@ exports.inbox = function(req, res) {
       }
     )
     .sort('updated')
-    .populate('userFrom', req.userMiniProfileFields)
-    .populate('userTo', req.userMiniProfileFields)
+    .populate('userFrom', userHandler.userMiniProfileFields)
+    .populate('userTo', userHandler.userMiniProfileFields)
     .populate('message', 'content')
     .exec(function(err, threads) {
       if (err) {
@@ -138,10 +139,10 @@ exports.send = function(req, res) {
 
       // We'll need some info about related users, populate some fields
       message
-        .populate('userFrom', req.userMiniProfileFields)
+        .populate('userFrom', userHandler.userMiniProfileFields)
         .populate({
           path: 'userTo',
-          select: req.userMiniProfileFields
+          select: userHandler.userMiniProfileFields
         }, function(err, message) {
           if (err) {
             return res.status(400).send({
@@ -184,8 +185,8 @@ exports.threadByUser = function(req, res, next, userId) {
       }
     )
     .sort('-created')
-    .populate('userFrom', req.userMiniProfileFields)
-    .populate('userTo', req.userMiniProfileFields)
+    .populate('userFrom', userHandler.userMiniProfileFields)
+    .populate('userTo', userHandler.userMiniProfileFields)
     .exec(function(err, messages) {
       if (err) return next(err);
       if (!messages) return next(new Error('Failed to load messages.'));
