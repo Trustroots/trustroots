@@ -30,14 +30,14 @@ var validateLocalStrategyPassword = function(password) {
  * - no consecutive dots: "." ok, ".." nope
  */
 var validateUsername = function(username) {
-    var usernameRegex = /^[a-z0-9.\-_]{3,32}$/,
-        dotsRegex = /^([^.]+\.?)$/,
-        illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test'];
-    return (this.provider !== 'local' || ( username &&
-                                           usernameRegex.test(username) &&
-                                         illegalUsernames.indexOf(username) < 0) &&
-                                         dotsRegex.test(username) //strpos(username, '..') === false
-                                       );
+  var usernameRegex = /^[a-z0-9.\-_]{3,32}$/,
+      dotsRegex = /^([^.]+\.?)$/,
+      illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test'];
+  return (this.provider !== 'local' || ( username &&
+                                         usernameRegex.test(username) &&
+                                       illegalUsernames.indexOf(username) < 0) &&
+                                       dotsRegex.test(username) //strpos(username, '..') === false
+                                     );
 };
 
 /**
@@ -63,11 +63,12 @@ var UserSchema = new Schema({
   email: {
     type: String,
     trim: true,
-        lowercase: true,
+    unique: 'Email already exists',
+    lowercase: true,
     default: '',
     validate: [validateLocalStrategyProperty, 'Please fill in your email'],
     match: [/.+\@.+\..+/, 'Please fill a valid email address']
-    /* this comment only fixes syntax highlight :P  */
+    /* This comment only fixes syntax highlight :P */
   },
   tagline: {
     type: String,
@@ -91,7 +92,7 @@ var UserSchema = new Schema({
     type: [{
       type: String,
     }],
-    default: ['']
+    default: []
   },
   locationLiving: {
     type: String
