@@ -1,17 +1,9 @@
-<section data-ng-controller="HomeController">
+<section id="home" class="container board board-sierranevada container-fullscreen" data-ng-controller="HomeController">
 
-  <div id="home-carousel" class="carousel fade" data-ride="carousel" data-interval="5000">
-    <div class="carousel-inner">
-      <div class="item active" style="background-image:url(/modules/core/img/cover/simona-sierranevada.jpg); background-position: 50% bottom;"></div>
-      <div class="item" style="background-image:url(/modules/core/img/cover/simona-albanian-mountains.jpg);"></div>
-      <div class="item" style="background-image:url(/modules/core/img/cover/paris.jpg);"></div>
-    </div>
-  </div>
-
-  <div id="home-content">
-    <div class="container text-center">
+  <div class="row">
+    <div class="col-xs-12">
       <div class="logo logo-white"></div>
-      <div class="btn-group" data-ng-hide="authentication.user">
+      <div class="btn-group">
         <a ui-sref="signin" class="btn btn-lg btn-home-login">Login</a>
         <a ui-sref="signup" class="btn btn-lg btn-home-signup">Become a member</a>
         <a ui-sref="about" class="btn btn-lg btn-home-readmore">Show me more</a>
@@ -25,7 +17,7 @@
           Same team brought you also <a href="http://hitchwiki.org">Hitchwiki</a>, <a href="http://trashwiki.org">Trashwiki</a>, <a href="http://nomadwiki.org">Nomadwiki</a> & more.
         </p>
       </div>
-    </div><!-- .container -->
-  </div><!-- #home-content -->
+    </div>
+  </div><!-- .row -->
 
 </section>
