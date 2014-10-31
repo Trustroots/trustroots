@@ -43,7 +43,7 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
         }
       },
       defaults: {
-        scrollWheelZoom: true
+        scrollWheelZoom: false
       }
     });
 
