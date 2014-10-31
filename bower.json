@@ -1,9 +1,9 @@
 {
-  "name": "trust-roots",
+  "name": "trustroots",
   "version": "0.1.0",
-  "description": "Travellers network",
+  "description": "Enabling the latent trust between humans.",
   "dependencies": {
-    "bootstrap": "~3",
+    "bootstrap": "~3.3.0",
     "angular": "~1.2",
     "angular-resource": "~1.2",
     "angular-mocks": "~1.2",
@@ -21,7 +21,7 @@
     "fontawesome": "~4",
     "select2": "~3.4.5",
     "selectize": "~0.8.5",
-    "angular-leaflet-directive": "~0.7.8",
+    "angular-leaflet-directive": "~0.7.9",
     "leaflet.markercluster": "~0.4.0",
     "ngGeolocation": "~0.0.4"
   }
