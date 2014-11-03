@@ -14,7 +14,7 @@
     "angular-ui-utils": "~0.1.1",
     "angular-ui-router": "~0.2.10",
     "angular-moment": "~0.8.2",
-    "angular-medium-editor": "*",
+    "angular-medium-editor": "~0.0.6",
     "angular-socket-io": "~0.6.0",
     "angular-perfect-scrollbar": "*",
     "angular-ui-select": "~0.8.0",
