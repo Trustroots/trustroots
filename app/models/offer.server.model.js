@@ -29,7 +29,7 @@ var OfferSchema = new Schema({
     type: Number,
     min: 0,
     max: 99,
-    default: Date.now
+    default: 1
   },
   location: {
     type: []
