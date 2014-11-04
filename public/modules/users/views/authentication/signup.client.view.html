@@ -10,10 +10,12 @@
   </div>
 </section>
 <section class="container container-spacer" data-ng-controller="AuthenticationController">
-  <div class="row">
-    <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-      <form name="userForm" data-ng-submit="signup()" class="signin form-horizontal" novalidate autocomplete="off">
-        <fieldset>
+  <form name="userForm" data-ng-submit="signup()" class="signin form-horizontal" novalidate autocomplete="off">
+    <fieldset>
+
+      <div class="row">
+        <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
+
           <div class="form-group">
             <label for="firstName" class="col-sm-4 control-label">First Name</label>
             <div class="col-sm-8">
@@ -60,27 +62,26 @@
             <strong data-ng-bind="error"></strong>
           </div>
 
-          <!-- Rules -->
-          <div class="text-center col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8">
-            <p>Please, abide our <a ui-sref="rules" ng-click="openRules($event);" tooltip="Read rules" tooltip-placement="bottom">rules</a> that include standards of behavior that apply to everyone.</p>
+        </div><!-- /.col -->
+      </div><!-- .row-->
+
+      <div class="row">
+
+        <!-- Rules -->
+        <div class="text-center col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8">
+          <p>Please, abide our <a ui-sref="rules" ng-click="openRules($event);" tooltip="Read rules" tooltip-placement="bottom">rules</a> that include standards of behavior that apply to everyone.</p>
+        </div>
+        <script type="text/ng-template" id="rules.client.modal.html">
+          <div class="modal-body" ng-include src="'/modules/pages/views/rules-text.client.partial.html'"></div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" ng-click="closeRules()">Got it!</button>
           </div>
-          <script type="text/ng-template" id="rules.client.modal.html">
-            <div class="modal-body" ng-include src="'/modules/pages/views/rules-text.client.partial.html'"></div>
-            <div class="modal-footer">
-              <button class="btn btn-primary" ng-click="closeRules()">Got it!</button>
-            </div>
-          </script>
-          <!-- /Rules -->
+        </script>
+        <!-- /Rules -->
 
-          <!--
-          <div class="col-md-offset-3 col-md-6 text-center text-muted">
-            If you already have an account, <a ui-sref="signin" href="/#!/signin">sign in</a>.
-          </div>
-          -->
+      </div><!-- .row-->
 
-        </fieldset>
-      </form>
+    </fieldset>
+  </form>
 
-    </div>
-  </div><!-- .row-->
 </section><!-- .container -->
