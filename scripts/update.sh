@@ -8,6 +8,7 @@ APP_DIR=$SCRIPT_DIR/..
 cd "$APP_DIR"
 
 echo "Updating assets..."
+npm update
 bower update
 grunt build
 
