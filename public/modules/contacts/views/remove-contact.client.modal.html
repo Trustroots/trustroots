@@ -1,0 +1,48 @@
+<form data-ng-controller="RemoveContactController" class="form-horizontal" data-ng-submit="create()" novalidate>
+
+  <div class="modal-content">
+    <div class="modal-header">
+      <button type="button" class="close" aria-hidden="true" ng-click="cancel()" ng-disabled="isLoading">&times;</button>
+      <h4 class="modal-title">
+        Remove contact?
+      </h4>
+    </div>
+
+    <div class="modal-body">
+
+      <div class="alert alert-danger" data-ng-show="error">
+        <strong data-ng-bind="error"></strong>
+      </div>
+
+      <div class="row">
+        <div class="col-xs-5 text-center">
+          <!-- Avatar while loading -->
+          <div tr-avatar data-source="none" data-size="128" class="center-block" ng-hide="contact && contact.$resolved"></div>
+
+          <!-- Avatar after loaded -->
+          <div tr-avatar data-user="contact[0]" data-size="128" class="center-block" ng-show="contact && contact.$resolved"></div>
+        </div>
+        <div class="col-xs-2 text-center contacts-avatar-divider">
+          <i class="fa fa-3x fa-bolt text-muted"></i>
+        </div>
+        <div class="col-xs-5 text-center">
+          <!-- Avatar while loading -->
+          <div tr-avatar data-source="none" data-size="128" class="center-block" ng-hide="contact && contact.$resolved"></div>
+
+          <!-- Avatar after loaded -->
+          <div tr-avatar data-user="contact[1]" data-size="128" class="center-block" ng-show="contact && contact.$resolved"></div>
+        </div>
+      </div><!-- /.row -->
+
+    </div><!-- /.modal-body -->
+
+    <div class="modal-footer">
+      <button class="btn btn-link" type="clear" ng-click="cancel()" ng-disabled="isLoading">Cancel</button>
+      <button class="btn btn-primary" type="submit" ng-click="removeContact(friend._id);" ng-disabled="isLoading">
+        <span ng-hide="isLoading">Yes, remove contact</span>
+        <span ng-show="isLoading">Wait a moment...</span>
+      </button>
+    </div>
+  </div>
+
+</form>

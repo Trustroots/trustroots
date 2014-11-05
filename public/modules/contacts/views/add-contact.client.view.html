@@ -1,0 +1,63 @@
+<section class="container container-spacer" data-ng-controller="AddContactController" data-ng-init="findContact()">
+
+  <form name="contactForm" data-ng-submit="addContact()" novalidate autocomplete="off">
+
+    <div class="row">
+
+      <div class="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8 col-lg-offset-3 col-lg-6">
+
+        <div class="page-header">
+          <h2>Add contact</h2>
+        </div>
+
+        <div class="panel panel-default" ng-hide="!friend">
+          <div class="panel-body">
+            <div class="row">
+              <div class="col-xs-5 text-center">
+                <div tr-avatar data-user="user" data-size="128" class="center-block"></div>
+              </div>
+              <div class="col-xs-2 text-center contacts-avatar-divider">
+                <i class="fa fa-3x fa-exchange text-muted"></i>
+              </div>
+              <div class="col-xs-5 text-center">
+                <!-- Avatar while loading -->
+                <div tr-avatar data-source="none" data-size="128" class="center-block" ng-hide="friend && friend.$resolved"></div>
+
+                <!-- Avatar after loaded -->
+                <div tr-avatar data-user="user" data-size="128" class="center-block" ng-show="friend && friend.$resolved"></div>
+              </div>
+            </div><!-- /.row -->
+          </div>
+        </div>
+
+        <div class="panel panel-default" ng-hide="isConnected || !friend">
+          <div class="panel-heading">
+            <h4>Message for {{friend.displayName}}</h4>
+          </div>
+          <div class="panel-body">
+            <div class="contact-message" ng-model="contact.message" medium-editor options="{'placeholder': 'Optional private message...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+          </div>
+        </div>
+
+        <!-- Alerts -->
+        <div data-ng-show="error" class="alert alert-danger text-center">
+          <strong data-ng-bind="error"></strong>
+        </div>
+        <!-- /Alerts -->
+
+        <p class="text-center" ng-hide="isConnected || !friend">
+          <button type="submit" class="btn btn-lg btn-primary" ng-disabled="isLoading">
+            <span ng-hide="isLoading">Add contact</span>
+            <span ng-show="isLoading">Wait a moment...</span>
+          </button>
+          <br><br>
+          <a ui-sref="profile({username: friend.username})" class="text-muted">Cancel</a>
+        </p>
+
+      </div><!-- /.col-* -->
+
+    </div><!-- /.row -->
+
+  </form>
+
+</section>

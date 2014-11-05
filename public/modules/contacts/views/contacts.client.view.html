@@ -1,0 +1,12 @@
+<!-- Contact list -->
+<div class="row_" data-ng-controller="ListContactsController">
+  <div masonry column-width="128">
+    <div class="contacts-contact panel panel-default" ng-repeat="contact in contacts">
+      <div tr-avatar data-user="contact.users[0]" data-size="128"></div>
+      <a ui-sref="profile({username: contact.users[0].username})">
+        <h4 data-ng-bind="contact.users[0].displayName"></h4>
+      </a>
+    </div>
+  </div>
+</div><!-- /.row -->
+<!-- /Contact list -->

@@ -19,7 +19,8 @@ var ApplicationConfiguration = (function() {
                                               'angular-medium-editor',
                                               'perfect_scrollbar',
                                               'leaflet-directive',
-                                              'ngGeolocation'
+                                              'ngGeolocation',
+                                              'wu.masonry'
                                             ];
 
   // Add a new vertical module

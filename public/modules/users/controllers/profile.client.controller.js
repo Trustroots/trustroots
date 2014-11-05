@@ -59,13 +59,13 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
       {
         path: 'contacts',
         title: 'Contacts',
-        content: '/modules/users/views/profile/tab-profile-contacts.client.view.html',
+        content: '/modules/contacts/views/contacts.client.view.html',
         active: $stateParams.tab && $stateParams.tab === 'contacts'
       }
     ];
 
     $scope.tabSelect = function(tabPath) {
-      $log.log(tabPath);
+      // $log.log(tabPath);
       // @link http://angular-ui.github.io/ui-router/site/#/api/ui.router.state.$state
       // @todo: change path here?
     };

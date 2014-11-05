@@ -4,13 +4,14 @@
  * Module dependencies.
  */
 var _ = require('lodash'),
-  errorHandler = require('../errors'),
-  mongoose = require('mongoose'),
-  passport = require('passport'),
-  sanitizeHtml = require('sanitize-html'),
-  User = mongoose.model('User'),
-//Contact = mongoose.model('Contact'),
-  Reference = mongoose.model('Reference');
+    errorHandler = require('../errors'),
+    mongoose = require('mongoose'),
+    passport = require('passport'),
+    sanitizeHtml = require('sanitize-html'),
+    async = require('async'),
+    User = mongoose.model('User'),
+    Contact = mongoose.model('Contact'),
+    Reference = mongoose.model('Reference');
 
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
@@ -138,7 +139,7 @@ exports.list = function(req, res) {
  * Mini profile middleware
  */
 exports.userMiniByID = function(req, res, next, id) {
-  User.findById(id, req.userMiniProfileFields).exec(function(err, user) {
+  User.findById(id, exports.userMiniProfileFields).exec(function(err, user) {
     if (err) return next(err);
     if (!user) return next(new Error('Failed to load user ' + id));
 
@@ -148,30 +149,65 @@ exports.userMiniByID = function(req, res, next, id) {
 };
 
 exports.userByUsername = function(req, res, next, username) {
-  User.findOne({
-      username: username
-  }, req.userProfileFields).exec(function(err, user) {
-    if (err) return next(err);
-    if (!user) return next(new Error('Failed to load user ' + username));
 
-    // Sanitize output
-    if(user.description) user.description = sanitizeHtml(user.description, userSanitizeOptions);
+  async.waterfall([
+
+    // Find user
+    function(done) {
+      User.findOne({
+          username: username
+      }, exports.userProfileFields).exec(function(err, user) {
+        if (!user) done(new Error('Failed to load user ' + username));
+
+        // Transform user into object so that we can add new fields to it
+        done(err, user.toObject());
+      });
+    },
 
     // Check if logged in user has left reference for this profile
-    //console.log('->userByUsername, check if user ' + req.user._id + ' has written reference for ' + user._id);
+    function(user, done) {
 
-    Reference.findOne({
-        userTo: user._id,
-        userFrom: req.user._id
-    }).exec(function(err, reference) {
+      // User's own profile?
+      if(user._id.toString() === req.user.id) {
+        user.contact = false;
+        done(null, user);
+      }
+      else {
+        Contact.findOne(
+          {
+            users: { $all: [ user._id.toString(), req.user.id ] }
+          }
+        ).exec(function(err, contact) {
+          user.contact = (contact) ? contact._id : false;
+          done(err, user);
+        });
+      }
+    },
 
-      // Attach reference to profile
-      user.reference = reference;
+    // Check if logged in user has left reference for this profile
+    function(user, done) {
+      Reference.findOne(
+        {
+          userTo: user._id,
+          userFrom: req.user._id
+        }
+      ).exec(function(err, reference) {
+        if(reference) user.reference = reference;
+        done(err, user);
+      });
+    },
+
+    // Sanitize & return user
+    function(user, done) {
+
+      if(user.description) user.description = sanitizeHtml(user.description, userSanitizeOptions);
 
       req.user = user;
       next();
-    });
+    }
 
+  ], function(err) {
+    if (err) return next(err);
   });
 
 };

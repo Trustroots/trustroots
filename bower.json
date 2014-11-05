@@ -23,6 +23,7 @@
     "selectize": "~0.8.5",
     "angular-leaflet-directive": "~0.7.9",
     "leaflet.markercluster": "~0.4.0",
-    "ngGeolocation": "~0.0.4"
+    "ngGeolocation": "~0.0.4",
+    "angular-masonry": "~0.9.1"
   }
 }
