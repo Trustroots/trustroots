@@ -1,24 +1,25 @@
 #!/bin/sh
 
-# A script that starts the app using forever (npm install -g forever)
-
+set -e
 
 case "$1" in
   start)
     echo "Starting Trustroots.org..."
     echo
-    NODE_ENV=production grunt production-forever
-    forever list
+    sudo service nginx start
+    sudo passenger-status
   ;;
 restart)
     echo "Restarting Trustroots.org..."
     echo
-    grunt forever::restart
+    sudo service nginx restart
+    sudo passenger-status
   ;;
 stop)
     echo "Stopping Trustroots.org..."
     echo
-    grunt forever::stop
+    sudo service nginx stop
+    sudo passenger-status
   ;;
 
 *)

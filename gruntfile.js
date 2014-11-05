@@ -129,14 +129,6 @@ module.exports = function(grunt) {
         }
       }
     },
-    forever: {
-      production: {
-        options: {
-          index: 'server.js',
-          logDir: 'logs'
-        }
-      }
-    },
     'node-inspector': {
       custom: {
         options: {
@@ -205,9 +197,6 @@ module.exports = function(grunt) {
 
   // Default production task(s).
   grunt.registerTask('production', ['loadConfig', 'less:production', 'concat:css', 'ngAnnotate', 'uglify', 'concurrent:default']);
-
-  // Default production task(s) to run process at background forever.
-  grunt.registerTask('production-forever', ['loadConfig', 'less:production', 'concat:css', 'ngAnnotate', 'uglify', 'forever::start']);
 
   // Debug task.
   grunt.registerTask('debug', ['lint', 'concurrent:debug']);
