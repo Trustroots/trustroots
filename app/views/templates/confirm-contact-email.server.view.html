@@ -10,7 +10,7 @@
   <p><strong>To confirm or discard this connection visit <a href="{{urlConfirm}}" target="_blank">this page</a></strong>.</p>
   {% if message %}
     <br><br>
-    {{message}}
+    {{message | safe}}
   {% endif %}
   <br><br>
   <p>— <a href="{{url}}">Trustroots</a></p>
