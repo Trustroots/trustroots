@@ -96,7 +96,6 @@ exports.delete = function(req, res) {
  * List of References
  */
 exports.list = function(req, res) {
-    console.log('->list');
     res.json(req.references);
 };
 
