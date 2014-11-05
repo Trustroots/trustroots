@@ -1,8 +1,8 @@
 'use strict';
 
-/* This declares to JSHint that 'moment' and 'time' are global variables: */
+/* This declares to JSHint that 'moment' and 'settings' are global variables: */
 /*global moment:false */
-/*global time:false */
+/*global settings:false */
 
 angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$log', '$stateParams', '$state', 'Languages', 'Users', 'Authentication',
   function($scope, $modal, $http, $log, $stateParams, $state, Languages, Users, Authentication) {
@@ -46,14 +46,14 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
 
     /*
      * Birthday input field
-     * Use server 'time' instead of client time
+     * Use server 'settings.time' instead of client time
      * @link http://angular-ui.github.io/bootstrap/#/datepicker
      */
     $scope.birthdateFormat = 'yyyy-MM-dd';
     $scope.birthdateOpened = false;
     $scope.birthdateOptions = {
-      maxDate: moment(time), //  Set an upper limit for mode.
-      minDate: moment(time).subtract(moment.duration(100, 'y')), // Set a lower limit for mode.
+      maxDate: moment(settings.time), //  Set an upper limit for mode.
+      minDate: moment(settings.time).subtract(moment.duration(100, 'y')), // Set a lower limit for mode.
       formatYear: 'yyyy', // Format of year in year range
       startingDay: 1, // Starting day of the week from 0-6 (0=Sunday, ..., 6=Saturday)
       yearRange: 30, // Number of years displayed in year selection
@@ -67,12 +67,13 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
 
     // Update a user profile
     $scope.updateUserProfile = function(isValid) {
-      if (isValid){
+      if (isValid) {
         $scope.success = $scope.error = null;
         var user = new Users($scope.user);
 
         $log.log('->updateUserProfile');
-                $log.log(user);
+        $log.log(user);
+
         user.$update(function(response) {
           $log.log('user.$update:');
           $log.log(response);

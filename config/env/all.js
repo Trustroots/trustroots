@@ -20,6 +20,7 @@ module.exports = {
 		}
 	},
 	port: process.env.PORT || 3000,
+	https: process.env.HTTPS || false,
 	templateEngine: 'swig',
 	sessionSecret: process.env.SESSION_SECRET || 'MEAN',
 	sessionCollection: 'sessions'

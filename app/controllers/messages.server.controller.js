@@ -4,19 +4,19 @@
  * Module dependencies.
  */
 var mongoose = require('mongoose'),
-  errorHandler = require('./errors'),
-  sanitizeHtml = require('sanitize-html'),
-  userHandler = require('./users'),
-  Message = mongoose.model('Message'),
-  Thread = mongoose.model('Thread'),
-  User = mongoose.model('User');
+    errorHandler = require('./errors'),
+    sanitizeHtml = require('sanitize-html'),
+    userHandler = require('./users'),
+    Message = mongoose.model('Message'),
+    Thread = mongoose.model('Thread'),
+    User = mongoose.model('User');
 
 
 /**
  * Rules for sanitizing messages coming in and out
  * @link https://github.com/punkave/sanitize-html
  */
-var messageSanitizeOptions = {
+exports.messageSanitizeOptions = {
     allowedTags: [ 'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'li', 'ul', 'ol', 'blockquote', 'code', 'pre' ],
     allowedAttributes: {
       'a': [ 'href' ],
@@ -84,7 +84,7 @@ exports.send = function(req, res) {
   message.userFrom = req.user;
 
   // Sanitize message contents
-  message.content = sanitizeHtml(message.content, messageSanitizeOptions);
+  message.content = sanitizeHtml(message.content, exports.messageSanitizeOptions);
 
   message.save(function(err) {
     if (err) {
@@ -194,7 +194,7 @@ exports.threadByUser = function(req, res, next, userId) {
       // Sanitize each outgoing message's contents
       var messagesCleaned = [];
       messages.forEach(function(message) {
-        message.content = sanitizeHtml(message.content, messageSanitizeOptions);
+        message.content = sanitizeHtml(message.content, exports.messageSanitizeOptions);
         messagesCleaned.push(message);
       });
 

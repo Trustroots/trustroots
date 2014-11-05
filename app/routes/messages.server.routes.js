@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 var users = require('../../app/controllers/users'),
-  messages = require('../../app/controllers/messages');
+    messages = require('../../app/controllers/messages');
 
 module.exports = function(app) {
   // Message Routes

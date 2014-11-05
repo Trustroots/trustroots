@@ -37,12 +37,25 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           mapbox: {
             name: 'MapBox',
             type: 'xyz',
-            url: 'http://{s}.tiles.mapbox.com/v3/{user}.{map}/{z}/{x}/{y}.png',
+            url: '//{s}.tiles.mapbox.com/v3/{user}.{map}/{z}/{x}/{y}.png' + ( settings.https ? '?secure=1' : ''),
             layerParams: {
               user: settings.mapbox.user,
               map: settings.mapbox.map
             }
           },
+
+          osm: {
+            name: 'OpenStreetMap',
+            type: 'xyz',
+            url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            layerOptions: {
+              subdomains: ['a', 'b', 'c'],
+              attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OSM</a>',
+              continuousWorld: true
+            }
+          },
+
+          // Doesn't support https
           quest: {
             name: 'OpenMapQuest',
             type: 'xyz',
@@ -53,20 +66,12 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
               continuousWorld: true
             }
           },
-          osm: {
-            name: 'OpenStreetMap',
-            type: 'xyz',
-            url: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            layerOptions: {
-              subdomains: ['a', 'b', 'c'],
-              attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OSM</a>',
-              continuousWorld: true
-            }
-          },
+
+          // Doesn't support https
           opencyclemap: {
             name: 'OpenCycleMap',
             type: 'xyz',
-            url: 'http://{s}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png',
+            url: 'https://{s}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png',
             options: {
               attribution: '&copy; <a href="http://www.opencyclemap.org">OpenCycleMap</a> &amp; <a href="http://www.openstreetmap.org">OSM</a>'
             }

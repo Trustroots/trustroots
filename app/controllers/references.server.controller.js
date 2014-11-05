@@ -4,10 +4,10 @@
  * Module dependencies.
  */
 var mongoose = require('mongoose'),
-  errorHandler = require('./errors'),
-  Reference = mongoose.model('Reference'),
-  User = mongoose.model('User'),
-  _ = require('lodash');
+    errorHandler = require('./errors'),
+    Reference = mongoose.model('Reference'),
+    User = mongoose.model('User'),
+    _ = require('lodash');
 
 /**
  * Create a Reference

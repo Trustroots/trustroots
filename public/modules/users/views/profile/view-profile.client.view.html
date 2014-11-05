@@ -22,12 +22,14 @@
         <div tr-avatar data-user="profile" data-size="261" data-link="false"></div>
         <div class="panel-body">
 
-          <div class="profile-sidebar-section">
+          <div class="profile-sidebar-section" ng-show="profile.birthdate || profile.gender">
             <span ng-show="profile.birthdate" am-time-ago="profile.birthdate" am-without-suffix="true"></span><span ng-show="profile.birthdate && profile.gender">, </span>
             <span ng-show="profile.gender" ng-class="{ 'text-capitalize': !profile.birthdate }">{{profile.gender}}.</span>
           </div>
 
-          <div class="profile-sidebar-section">Member since <span data-ng-bind="profile.created | date:'mediumDate'"></span></div>
+          <div class="profile-sidebar-section">
+            Member since <span data-ng-bind="profile.created | date:'mediumDate'"></span>
+          </div>
 
           <!--
           <div class="profile-sidebar-section">
@@ -67,11 +69,11 @@
     <div class="col-sm-9">
 
       <div class="row">
-          <div class="col-md-6">
-              <h2 class="profile-name" data-ng-show="profile.displayName" data-ng-bind="profile.displayName"></h2>
-              <h4 class="profile-username" data-ng-show="profile.username">@{{profile.username}}</h4>
-              <div class="profile-tagline" data-ng-show="profile.tagline" data-ng-bind="profile.tagline"></div>
-          </div>
+        <div class="col-md-6">
+            <h2 class="profile-name" data-ng-show="profile.displayName" data-ng-bind="profile.displayName"></h2>
+            <h4 class="profile-username" data-ng-show="profile.username">@{{profile.username}}</h4>
+            <div class="profile-tagline" data-ng-show="profile.tagline" data-ng-bind="profile.tagline"></div>
+        </div>
 
             <!-- When looking at own profile -->
             <div class="col-md-6 text-right" data-ng-show="user._id === profile._id">

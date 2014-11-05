@@ -5,10 +5,11 @@
 /*global jQuery:false */
 
 
-angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$geolocation', 'leafletBoundsHelpers', 'OffersBy', 'Offers', 'Authentication',
-  function($scope, $rootScope, $http, $timeout, $state, $stateParams, $geolocation, leafletBoundsHelpers, OffersBy, Offers, Authentication) {
+angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$location', '$geolocation', 'leafletBoundsHelpers', 'OffersBy', 'Offers', 'Authentication',
+  function($scope, $rootScope, $http, $timeout, $state, $stateParams, $location, $geolocation, leafletBoundsHelpers, OffersBy, Offers, Authentication) {
 
-    $scope.authentication = Authentication;
+    // If user is not signed in then redirect to sign in form
+    if (!Authentication.user) $location.path('signin');
 
     $scope.isLoading = false;
 
@@ -31,7 +32,7 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
           mapbox: {
             name: 'MapBox',
             type: 'xyz',
-            url: 'http://{s}.tiles.mapbox.com/v3/{user}.{map}/{z}/{x}/{y}.png',
+            url: '//{s}.tiles.mapbox.com/v3/{user}.{map}/{z}/{x}/{y}.png' + ( settings.https ? '?secure=1' : ''),
             layerParams: {
               user: settings.mapbox.user,
               map: settings.mapbox.map

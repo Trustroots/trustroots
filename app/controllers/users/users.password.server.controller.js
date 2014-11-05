@@ -4,14 +4,14 @@
  * Module dependencies.
  */
 var _ = require('lodash'),
-  errorHandler = require('../errors'),
-  mongoose = require('mongoose'),
-  passport = require('passport'),
-  User = mongoose.model('User'),
-  config = require('../../../config/config'),
-  nodemailer = require('nodemailer'),
-  async = require('async'),
-  crypto = require('crypto');
+    errorHandler = require('../errors'),
+    mongoose = require('mongoose'),
+    passport = require('passport'),
+    User = mongoose.model('User'),
+    config = require('../../../config/config'),
+    nodemailer = require('nodemailer'),
+    async = require('async'),
+    crypto = require('crypto');
 
 /**
  * Forgot for reset password (forgot POST)
@@ -58,7 +58,7 @@ exports.forgot = function(req, res, next) {
       res.render('templates/reset-password-email', {
         name: user.displayName,
         appName: config.app.title,
-        url: 'http://' + req.headers.host + '/auth/reset/' + token
+        url: (config.https ? 'https' : 'http') + '://' + req.headers.host + '/auth/reset/' + token
       }, function(err, emailHTML) {
         done(err, emailHTML, user);
       });

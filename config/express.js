@@ -38,9 +38,10 @@ module.exports = function(db) {
   app.locals.facebookAppId = config.facebook.clientID;
   app.locals.jsFiles = config.getJavaScriptAssets();
   app.locals.cssFiles = config.getCSSAssets();
-  app.locals.appSettings = config.app.settings;
   app.locals.languages = require('../public/modules/core/languages/languages.json');
-  app.locals.time = new Date().toISOString();
+  app.locals.appSettings = config.app.settings;
+  app.locals.appSettings.time = new Date().toISOString();
+  app.locals.appSettings.https = config.https;
 
   // Passing the request url to environment locals
   app.use(function(req, res, next) {

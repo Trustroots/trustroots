@@ -17,12 +17,23 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
      * Solve which of two thread participants is "the other", not logged in user
      * This is needed since thread handle has two fields for users 'userTo' and 'userFrom'
      * and either one can be 'the other', depending who replied the latest.
+     *
+     * Return either displayName or user object
      */
     $scope.otherParticipant = function(thread, value) {
 
       var other = (thread.userFrom._id === $scope.authentication.user._id) ? thread.userTo : thread.userFrom;
 
-      return (value === 'displayName') ? other.displayName : other._id;
+      if (value === 'displayName') {
+        return other.displayName;
+      }
+      else if (value === 'id') {
+        return other._id;
+      }
+      else {
+        // User object
+        return other;
+      }
 
     };
 

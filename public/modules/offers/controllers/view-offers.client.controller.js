@@ -3,8 +3,12 @@
 /* This declares to JSHint that 'settings' is a global variable: */
 /*global settings:false */
 
-angular.module('offers').controller('ViewOffersController', ['$scope', '$state', '$timeout', 'OffersBy',
-  function($scope, $state, $timeout, OffersBy) {
+
+angular.module('offers').controller('ViewOffersController', ['$scope', '$state', '$location', '$timeout', 'OffersBy', 'Authentication',
+  function($scope, $state, $location, $timeout, OffersBy, Authentication) {
+
+    // If user is not signed in then redirect to sign in form
+    if (!Authentication.user) $location.path('signin');
 
     $scope.offer = false;
 
@@ -21,7 +25,7 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
           mapbox: {
             name: 'MapBox',
             type: 'xyz',
-            url: 'http://{s}.tiles.mapbox.com/v3/{user}.{map}/{z}/{x}/{y}.png',
+            url: '//{s}.tiles.mapbox.com/v3/{user}.{map}/{z}/{x}/{y}.png' + ( settings.https ? '?secure=1' : ''),
             layerParams: {
               user: settings.mapbox.user,
               map: settings.mapbox.map
@@ -75,7 +79,6 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
         });
 
       });
-
 
     }//if !offer
 
