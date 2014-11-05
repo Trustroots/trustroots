@@ -18,7 +18,7 @@
 
             <tr class="thread" data-ng-class="{ 'thread-unread': !thread.read }" data-ng-repeat="thread in threads" data-ng-click="openThread(thread)">
               <td class="author col-md-3">
-                  <img src="/modules/core/img/avatar.png" class="avatar" width="36" height="36" alt=""> <span data-ng-bind="otherParticipant(thread, 'displayName')"></span>
+                <div tr-avatar data-user="otherParticipant(thread)" data-size="36" data-link="false" class="pull-left"></div> <span data-ng-bind="otherParticipant(thread, 'displayName')"></span>
               </td>
               <td class="summary">
                 <div data-ng-bind="thread.message.excerpt"></div>

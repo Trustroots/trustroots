@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Socket', 'Authentication', 'Messages', 'UsersMini',
-  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Socket, Authentication, Messages, UsersMini) {
+angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Socket', 'Authentication', 'Messages',
+  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Socket, Authentication, Messages) {
     $scope.authentication = Authentication;
 
     // If user is not signed in then redirect back home
