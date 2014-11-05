@@ -1,5 +1,6 @@
-<!-- Contact list -->
-<div class="row_" data-ng-controller="ListContactsController">
+<div data-ng-controller="ListContactsController">
+
+  <!-- Contact list -->
   <div masonry column-width="128">
     <div class="contacts-contact panel panel-default" ng-repeat="contact in contacts">
       <div tr-avatar data-user="contact.users[0]" data-size="128"></div>
@@ -8,5 +9,14 @@
       </a>
     </div>
   </div>
+  <!-- /Contact list -->
+
+  <!-- No contacts -->
+  <div class="row content-empty" data-ng-if="contacts.$resolved && !contacts.length">
+      <i class="fa fa-3x fa-users"></i>
+      <h4>No contacts yet.</h4>
+  </div><!-- /.row -->
+
+  <!-- /No contacts -->
+
 </div><!-- /.row -->
-<!-- /Contact list -->
