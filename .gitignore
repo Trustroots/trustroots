@@ -32,6 +32,7 @@ public/lib
 public/dist/*
 app/tests/coverage/
 .idea/
+tmp
 
 # Configs
 config/secret/*
@@ -43,5 +44,9 @@ scripts/*
 !scripts/backup-db.sh
 
 # Logs
-logs/*
+logs
+log
 *.log
+
+# Phusion Passenger
+passenger.*
