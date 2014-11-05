@@ -12,6 +12,6 @@ npm update
 bower update
 grunt build
 
-echo "Restart the server"
+echo "Restarting the server..."
 sudo service nginx restart
 sudo passenger-status
