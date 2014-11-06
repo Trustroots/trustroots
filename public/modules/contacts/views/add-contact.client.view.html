@@ -1,4 +1,4 @@
-<section class="container container-spacer" data-ng-controller="AddContactController" data-ng-init="findContact()">
+<section class="container container-spacer" data-ng-controller="AddContactController">
 
   <form name="contactForm" data-ng-submit="addContact()" novalidate autocomplete="off">
 
@@ -39,11 +39,19 @@
           </div>
         </div>
 
-        <!-- Alerts -->
+        <!-- Notifications -->
+        <div data-ng-show="success" class="alert alert-success">
+          <h4 data-ng-bind="success"></h4>
+          <p>
+            Profiles:
+            <strong><a ui-sref="profile({username: user.username})">{{ user.displayName }}</a></strong> &
+            <strong><a ui-sref="profile({username: friend.username})">{{ friend.displayName }}</a></strong>.
+          </p>
+        </div>
         <div data-ng-show="error" class="alert alert-danger text-center">
           <strong data-ng-bind="error"></strong>
         </div>
-        <!-- /Alerts -->
+        <!-- /Notifications -->
 
         <p class="text-center" ng-hide="isConnected || !friend">
           <button type="submit" class="btn btn-lg btn-primary" ng-disabled="isLoading">
