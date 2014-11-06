@@ -1,4 +1,5 @@
 # Trust Roots
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/Trustroots/trustroots?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 "Travellers network"
 
 Trust Roots is developed using MEAN.js boilerplate is based on [MongoDB](http://www.mongodb.org/), [Node.js](http://www.nodejs.org/), [Express](http://expressjs.com/), and [AngularJS](http://angularjs.org/).
