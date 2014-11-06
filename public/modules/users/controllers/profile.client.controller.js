@@ -61,12 +61,12 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
         content: '/modules/users/views/profile/tab-profile-overview.client.view.html',
         active: $stateParams.tab && $stateParams.tab === 'overview'
       },
-      {
+      /*{
         path: 'references',
         title: 'References',
         content: '/modules/references/views/list-references.client.view.html',
         active: $stateParams.tab && $stateParams.tab === 'references'
-      },
+      },*/
       {
         path: 'contacts',
         title: 'Contacts',
