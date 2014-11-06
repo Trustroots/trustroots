@@ -18,16 +18,27 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 
     // Fetch profile to show (note: not the currently logged in user's profile)
     $scope.findProfile = function() {
-        if(!$stateParams.username) {
-          // No username set, direct to your own profile
-          $state.go('profile', {username: $scope.user.username});
-        }
-        else {
-          // Get profile with $stateParams.username
-          $scope.profile = UserProfiles.get({
-              username: $stateParams.username
-          });
-        }
+      if(!$stateParams.username) {
+        // No username set, direct to your own profile
+        $state.go('profile', {username: $scope.user.username});
+      }
+      else {
+        // Get profile with $stateParams.username
+        $scope.profile = UserProfiles.get({
+          username: $stateParams.username
+        },
+        function() {},//@todo
+        function(errorResponse) {
+          $scope.profileError = true;
+          switch (errorResponse.status) {
+            case 403:
+              $scope.error = 'Profile not found.';
+              break;
+            default:
+              $scope.error = 'Something went wrong. Try again.';
+          }
+        });
+      }
     };
 
     // Check if there are additional accounts

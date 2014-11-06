@@ -6,15 +6,15 @@
   </div>
 
   <!-- Couldn't find profile... -->
-  <div class="row text-center" data-ng-show="!profile && profile.$resolved">
+  <div class="row text-center" data-ng-show="profileError">
     <h1>Don't panic!</h1>
     <em class="lead">User does not exist.</em>
     <br><br>
-    <a href="/">Continue...</a>
+    <a ui-sref="search">Continue...</a>
   </div>
 
   <!-- Profile -->
-  <div class="row" data-ng-show="profile && profile.$resolved">
+  <div class="row" data-ng-show="profile && profile.$resolved && !profileError">
 
     <div class="col-sm-3">
 
