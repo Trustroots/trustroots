@@ -7,8 +7,6 @@ module.exports = {
   		css: [
   				'public/lib/medium-editor/dist/css/medium-editor.css',
   				'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
-  				'public/lib/select2/select2.css',
-  				'public/lib/angular-ui-select/dist/select.css',
   				'public/lib/leaflet/dist/leaflet.css',
   				'public/lib/leaflet.markercluster/dist/MarkerCluster.css'
   		],
@@ -23,7 +21,6 @@ module.exports = {
   			'public/lib/angular-ui-router/release/angular-ui-router.min.js',
   			'public/lib/angular-ui-utils/ui-utils.min.js',
   			'public/lib/angular-ui-select/dist/select.min.js',
-  			'public/lib/select2/select2.min.js',
   			'public/lib/angular-bootstrap/ui-bootstrap-tpls.min.js',
   			'public/lib/moment/min/moment.min.js',
   			'public/lib/angular-moment/angular-moment.min.js',

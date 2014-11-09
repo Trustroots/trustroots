@@ -17,13 +17,14 @@
     "angular-medium-editor": "~0.0.6",
     "angular-socket-io": "~0.6.0",
     "angular-perfect-scrollbar": "*",
-    "angular-ui-select": "~0.8.0",
+    "angular-ui-select": "~0.8.3",
     "fontawesome": "~4",
-    "select2": "~3.4.5",
-    "selectize": "~0.8.5",
     "angular-leaflet-directive": "~0.7.9",
     "leaflet.markercluster": "~0.4.0",
     "ngGeolocation": "~0.0.4",
     "angular-masonry": "~0.9.1"
+  },
+  "resolutions": {
+    "angular": "1.2.26"
   }
 }
