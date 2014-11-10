@@ -68,7 +68,6 @@ var UserSchema = new Schema({
     default: '',
     validate: [validateLocalStrategyProperty, 'Please fill in your email'],
     match: [/.+\@.+\..+/, 'Please fill a valid email address']
-    /* This comment only fixes syntax highlight :P */
   },
   tagline: {
     type: String,
