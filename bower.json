@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Enabling the latent trust between humans.",
   "dependencies": {
-    "bootstrap": "~3.3.0",
+    "bootstrap": "~3.3.1",
     "angular": "~1.2",
     "angular-resource": "~1.2",
     "angular-mocks": "~1.2",
