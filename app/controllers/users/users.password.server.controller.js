@@ -82,7 +82,7 @@ exports.forgot = function(req, res, next) {
           });
 				} else {
 					res.status(400).send({
-						message: 'Failure sending email'
+						message: 'Failure while sending email. Try again later.'
 					});
 				}
 
@@ -90,12 +90,7 @@ exports.forgot = function(req, res, next) {
       });
     }
   ], function(err) {
-    if (err) {
-      next(err);
-    }
-    else {
-      next();
-    }
+    if (err) return next(err);
   });
 };
 
