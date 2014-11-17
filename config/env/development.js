@@ -112,5 +112,10 @@ module.exports = {
 				pass: process.env.MAILER_PASSWORD || 'MAILER_PASSWORD'
 			}
 		}
+	},
+	newrelic: {
+		app_name: process.env.NEWRELIC_APP || ['Trustroots'],
+		license_key: process.env.NEWRELIC_KEY || 'NEWRELIC_KEY',
+		logging_level: process.env.NEWRELIC_LOGGING_LEVEL || 'info',
 	}
 };

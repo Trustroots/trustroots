@@ -1,10 +1,15 @@
 'use strict';
+
 /**
  * Module dependencies.
  */
+if(process.env.NODE_ENV === 'production') {
+  var newrelic = require('newrelic');
+}
+
 var init = require('./config/init')(),
-  config = require('./config/config'),
-  mongoose = require('mongoose');
+    config = require('./config/config'),
+    mongoose = require('mongoose');
 
 /**
  * Main application entry file.

@@ -56,5 +56,10 @@ module.exports = {
         pass: 'MAILER_PASSWORD'
       }
     }
+  },
+  newrelic: {
+    app_name: ['Trustroots'],
+    license_key: 'NEWRELIC_KEY',
+    logging_level: 'info'
   }
 };
