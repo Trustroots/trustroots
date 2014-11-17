@@ -157,3 +157,29 @@
     }
   }
 }
+
+
+/*
+ * Critical search errors floating on top of the map
+ * Eg. show to non public users
+ */
+@search-overlay-message-width: 320px;
+.search-overlay-message {
+  position: absolute;
+  z-index: 1000;
+  height: auto;
+  padding: 40px 20px;
+  width: (@search-overlay-message-width - 40px);
+  margin-left: -(@search-overlay-message-width/2);
+  top: 40%;
+  left: 50%;
+  right: 50%;
+  color: #fff;
+  text-align: center;
+  font-size: @font-size-large;
+  background: @brand-primary;
+  background: rgba(red(@brand-primary), green(@brand-primary), blue(@brand-primary), .9);
+  box-shadow: 0 0 15px rgba(red(@brand-primary), green(@brand-primary), blue(@brand-primary), .5);
+  .user-select(none);
+  pointer-events: none; // Allows dragging the map trough element
+}

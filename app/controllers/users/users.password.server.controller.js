@@ -13,6 +13,8 @@ var _ = require('lodash'),
     async = require('async'),
     crypto = require('crypto');
 
+var smtpTransport = nodemailer.createTransport(config.mailer.options);
+
 /**
  * Forgot for reset password (forgot POST)
  */
@@ -55,17 +57,18 @@ exports.forgot = function(req, res, next) {
       }
     },
     function(token, user, done) {
-      res.render('templates/reset-password-email', {
+      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
+      res.render('email-templates/reset-password', {
         name: user.displayName,
-        appName: config.app.title,
-        url: (config.https ? 'https' : 'http') + '://' + req.headers.host + '/auth/reset/' + token
+        ourMail: config.mailer.from,
+        urlConfirm: url + '/auth/reset/' + token,
+        url: url
       }, function(err, emailHTML) {
         done(err, emailHTML, user);
       });
     },
     // If valid email, send reset email using service
     function(emailHTML, user, done) {
-      var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
         to: user.email,
         from: config.mailer.from,
@@ -77,13 +80,22 @@ exports.forgot = function(req, res, next) {
           res.send({
             message: 'Check your email for further instructions. Check spam folder and contact us if you did not receive email.'
           });
-        }
+				} else {
+					res.status(400).send({
+						message: 'Failure sending email'
+					});
+				}
 
         done(err);
       });
     }
   ], function(err) {
-    if (err) return next(err);
+    if (err) {
+      next(err);
+    }
+    else {
+      next();
+    }
   });
 };
 
@@ -158,16 +170,16 @@ exports.reset = function(req, res, next) {
       });
     },
     function(user, done) {
-      res.render('templates/reset-password-confirm-email', {
+      res.render('email-templates/reset-password-confirm', {
         name: user.displayName,
-        appName: config.app.title
+        ourMail: config.mailer.from,
+        url: (config.https ? 'https' : 'http') + '://' + req.headers.host
       }, function(err, emailHTML) {
         done(err, emailHTML, user);
       });
     },
     // If valid email, send reset email using service
     function(emailHTML, user, done) {
-      var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
         to: user.email,
         from: config.mailer.from,
@@ -176,7 +188,7 @@ exports.reset = function(req, res, next) {
       };
 
       smtpTransport.sendMail(mailOptions, function(err) {
-        done(err, 'done');
+        done(err);
       });
     }
   ], function(err) {

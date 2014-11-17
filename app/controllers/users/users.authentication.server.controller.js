@@ -7,44 +7,113 @@ var _ = require('lodash'),
     errorHandler = require('../errors'),
     mongoose = require('mongoose'),
     passport = require('passport'),
-    User = mongoose.model('User');
+    User = mongoose.model('User'),
+    config = require('../../../config/config'),
+    nodemailer = require('nodemailer'),
+    async = require('async'),
+    crypto = require('crypto');
 
 /**
  * Signup
  */
 exports.signup = function(req, res) {
-  // For security measurement we remove the roles from the req.body object
-  delete req.body.roles;
+  async.waterfall([
 
-  // Init Variables
-  var user = new User(req.body);
-  var message = null;
+    // Generate random token
+    function(done) {
+      crypto.randomBytes(20, function(err, buffer) {
+        var token = buffer.toString('hex');
+        done(err, token);
+      });
+    },
 
-  // Add missing user fields
-  user.provider = 'local';
-  user.displayName = user.firstName + ' ' + user.lastName;
+    // Save user
+    function(token, done) {
 
-  // Then save the user
-  user.save(function(err) {
+      // For security measurement we remove the roles from the req.body object
+      delete req.body.roles;
+
+      // Init Variables
+      var user = new User(req.body);
+      var message = null;
+
+      // Add missing user fields
+      user.emailToken = token;
+      user.public = false;
+      user.provider = 'local';
+      user.displayName = user.firstName + ' ' + user.lastName;
+
+      // Just to simplify email confirm process later
+      // This field is needed when changing email after the signup process
+      user.emailTemporary = user.email;
+
+      // Then save the user
+      user.save(function(err) {
+        if (!err) {
+          // Remove sensitive data before login
+          user.password = undefined;
+          user.salt = undefined;
+        }
+
+        done(err, user);
+
+      });
+
+    },
+
+    // Prepare mail
+    function(user, done) {
+      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
+      res.render('email-templates/signup', {
+        name: user.displayName,
+        email: user.email,
+        ourMail: config.mailer.from,
+        urlConfirm: url + '/#!/confirm-email/' + user.emailToken + '?signup',
+      }, function(err, emailHTML) {
+        done(err, emailHTML, user, url);
+      });
+    },
+
+    // If valid email, send confirm email using service
+    function(emailHTML, user, url, done) {
+      var smtpTransport = nodemailer.createTransport(config.mailer.options);
+      var mailOptions = {
+        to: user.email,
+        from: config.mailer.from,
+        subject: 'Confirm Email',
+        html: emailHTML,
+        // Attaching vCard makes it more certain this mail to pass spamfilters and users can add us to their trusted mails list easier.
+        attachments: [{
+          filename: 'trustroots.vcf',
+          content: 'BEGIN:VCARD\r\nN:Trustroots;Trustroots;;;\r\nEMAIL;INTERNET:' + config.mailer.from + '\r\nORG:Trustroots\r\nURL:' + url + '\r\nEND:VCARD',
+          contentType: 'text/vcard'
+        }]
+      };
+      smtpTransport.sendMail(mailOptions, function(err) {
+        done(err, user);
+      });
+    },
+
+    // Login
+    function(user, done) {
+      req.login(user, function(err) {
+        if (!err) {
+          delete user.emailToken;
+          res.json(user);
+        }
+        done(err);
+      });
+    }
+
+  ], function(err) {
     if (err) {
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
       });
-    } else {
-      // Remove sensitive data before login
-      user.password = undefined;
-      user.salt = undefined;
-
-      req.login(user, function(err) {
-        if (err) {
-          res.status(400).send(err);
-        } else {
-          res.json(user);
-        }
-      });
     }
   });
 };
+
 
 /**
  * Signin after passport authentication
@@ -203,4 +272,81 @@ exports.removeOAuthProvider = function(req, res, next) {
       }
     });
   }
+};
+
+
+/**
+ * Confirm email GET from email token
+ */
+exports.validateEmailToken = function(req, res) {
+  User.findOne({
+    emailToken: req.params.token
+  }, function(err, user) {
+    if (!user) {
+      return res.redirect('/#!/confirm-email-invalid');
+    }
+
+    res.redirect('/#!/confirm-email/' + req.params.token);
+  });
+};
+
+/**
+ * Confirm email POST from email token
+ */
+exports.confirmEmail = function(req, res, next) {
+  // Init Variables
+  var passwordDetails = req.body;
+
+  async.waterfall([
+
+    function(done) {
+      User.findOne({
+        emailToken: req.params.token
+      }, function(err, user) {
+        if (!err && user) {
+
+            // Will be the returned object when no errors
+            var result = {};
+
+            // If users profile was hidden, it means it was first confirmation email after registration.
+            result.profileMadePublic = !user.public;
+
+            // Replace old email with new one
+            user.email = user.emailTemporary;
+
+            user.emailTemporary = undefined;
+            user.emailToken = undefined;
+            user.public = true;
+
+            user.save(function(err) {
+              if (err) {
+                return res.status(400).send({
+                  message: errorHandler.getErrorMessage(err)
+                });
+              } else {
+                req.login(user, function(err) {
+                  if (!err) {
+                    // Return authenticated user
+                    result.user = user;
+                    res.json(result);
+                  }
+                  done(err);
+                });
+              }
+            });
+
+        } else {
+          return res.status(400).send({
+            message: 'Email confirm token is invalid or has expired.'
+          });
+        }
+      });
+    }
+  ], function(err) {
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
+      });
+    }
+  });
 };

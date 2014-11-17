@@ -19,10 +19,10 @@ module.exports = function(app) {
 
   app.route('/users')
       .put(users.update);
-      //.get(users.requiresLogin, users.getUser);
 
-  //app.route('/users/me')
-  //    .get(users.me);
+  // Confirm users email
+  app.route('/auth/confirm-email/:token').get(users.validateEmailToken);
+  app.route('/auth/confirm-email/:token').post(users.confirmEmail);
 
   app.route('/users/accounts')
       .delete(users.removeOAuthProvider);

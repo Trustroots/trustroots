@@ -1,6 +1,12 @@
 <section class="container container-spacer offer-add" data-ng-controller="AddOfferController" data-ng-init="findOffer()">
 
-  <form name="offerForm" data-ng-submit="addOffer()" novalidate autocomplete="off">
+  <div class="row text-center" ng-show="user.public === false">
+    <em class="lead">Sorry, you need to first activate your profile before you can start hosting.</em>
+    <br><br>
+    <a ui-sref="profile-settings">Account settings</a>
+  </div>
+
+  <form name="offerForm" data-ng-submit="addOffer()" novalidate autocomplete="off" ng-show="user.public === true">
 
   <div class="row">
 

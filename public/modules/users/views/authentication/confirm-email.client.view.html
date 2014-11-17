@@ -1,0 +1,30 @@
+<section class="container container-spacer" data-ng-controller="ConfirmEmailController">
+  <form name="confirmForm" data-ng-submit="confirmEmail()" class="form-horizontal" novalidate autocomplete="off">
+    <fieldset>
+
+      <!-- Confirm form -->
+      <div class="row">
+        <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
+
+          <div class="text-center form-group" ng-hide="success">
+
+            <p class="lead" ng-show="signup">Confirm your email and make your profile visible to others.</p>
+            <p class="lead" ng-hide="signup">Confirm your email.</p>
+
+            <button type="submit" class="btn btn-lg btn-primary" ng-disabled="isLoading || error">Confirm</button>
+          </div>
+          <div data-ng-show="error" class="alert alert-danger text-center" role="alert">
+            <strong data-ng-bind="error"></strong>
+          </div>
+          <div data-ng-show="success" class="alert alert-success text-center" role="alert">
+            <strong data-ng-bind="success"></strong>
+          </div>
+
+        </div><!-- /.col -->
+      </div><!-- .row-->
+      <!-- /Confirm form -->
+
+    </fieldset>
+  </form>
+
+</section><!-- .container -->

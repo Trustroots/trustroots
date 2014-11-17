@@ -13,6 +13,10 @@
     </div>
   </div>
 
+  <div ng-show="user && user.public === false" class="search-overlay-message">
+    Sorry, you need to first activate your profile before you can browse others.
+  </div>
+
   <leaflet center="center" markers="markers" layers="layers" bounds="bounds" defaults="defaults" event-broadcast="events" id="search-map-canvas"></leaflet>
 
   <div class="search-map-sidebar" ng-show="sidebarOpen">

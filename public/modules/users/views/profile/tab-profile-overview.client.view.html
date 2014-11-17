@@ -21,6 +21,21 @@
   </div>
 
   <!-- Offers -->
-  <div class="col-md-6" ng-include="'/modules/offers/views/view-offers.client.view.html'"></div>
+  <div class="col-md-6" ng-include="'/modules/offers/views/view-offers.client.view.html'" ng-hide="!profileError && user.public === false"></div>
+
+  <!-- Offers/user's own profile isn't public yet -->
+  <div class="col-md-6" ng-show="!profileError && user.public === false">
+    <div class="panel panel-default panel-disabled">
+      <div class="panel-heading">
+        Accommodation
+      </div>
+      <div class="panel-body">
+        <div class="content-empty">
+          <i class="fa fa-3x fa-home"></i>
+          <h4>You need to activate your profile before starting to host.</h4>
+        </div>
+      </div>
+    </div>
+  </div>
 
 </div><!-- /.row -->

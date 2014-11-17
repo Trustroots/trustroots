@@ -58,13 +58,12 @@ exports.add = function(req, res) {
 
       var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
 
-      res.render('templates/confirm-contact-email', {
+      res.render('email-templates/confirm-contact', {
         name: friend.displayName,
         message: message,
         meName: req.user.displayName,
         meURL: url + '/#!/profile/' + req.user.username,
         urlConfirm: url + '/#!/contact-confirm/' + contact._id,
-        url: url,
       }, function(err, emailHTML) {
         done(err, emailHTML, friend);
       });
@@ -234,7 +233,8 @@ exports.contactListByUser = function(req, res, next, listUserId) {
  * Contact authorization middleware
  */
 exports.hasAuthorization = function(req, res, next) {
-  if (req.contact && (req.contact.users[0].id === req.user.id || req.contact.users[1].id === req.user.id)) {
+
+  if (req.user.public === true && req.contact && (req.contact.users[0].id === req.user.id || req.contact.users[1].id === req.user.id)) {
     next();
   } else {
     return res.status(403).send('User is not authorized');

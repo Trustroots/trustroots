@@ -69,6 +69,14 @@ var UserSchema = new Schema({
     validate: [validateLocalStrategyProperty, 'Please fill in your email'],
     match: [/.+\@.+\..+/, 'Please fill a valid email address']
   },
+  // New email is stored here until they are confirmed
+  emailTemporary: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    default: '',
+    match: [/.+\@.+\..+/, 'Please fill a valid email address']
+  },
   tagline: {
     type: String,
     default: '',
@@ -147,6 +155,14 @@ var UserSchema = new Schema({
     default: 'gravatar'
   },
   newsletter: {
+    type: Boolean,
+    default: false
+  },
+  /* For email confirmations */
+  emailToken: {
+    type: String
+  },
+  public: {
     type: Boolean,
     default: false
   },

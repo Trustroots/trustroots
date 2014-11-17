@@ -21,16 +21,18 @@ angular.module('contacts').controller('ConfirmContactController', ['$scope', '$r
     // First fetch contact object, just to make it sure it exists + removing it is easier
     $scope.contact = Contact.get({
       contactId: $stateParams.contactId
-    },function(contact){
-      console.log(contact);
+    },
+    // Got contact
+    function(contact) {
       $scope.isLoading = false;
       if(!contact) $scope.error = 'There is no such contact request. Send a new contact request his/hers from profile page.';
       if(contact.confirmed === true) {
         $scope.isConnected = true;
         $scope.success = 'You two are already connected. Great!';
       }
-    }, function(errorResponse) {
-      console.log(errorResponse);
+    },
+    // Error getting contact
+    function(errorResponse) {
       switch (errorResponse.status) {
         case 403:
             $scope.isWrongCode = true;

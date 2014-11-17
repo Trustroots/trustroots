@@ -8,34 +8,47 @@
     </div>
   </div>
 
-  <!-- Profile settings -->
-  <div class="row text-center">
+  <br><br>
+  
+  <!-- Email -->
+  <div class="row">
 
-    <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-      <h3>Email</h3>
-      <form data-ng-submit="updateUserEmail()" class="form-horizontal" autocomplete="off">
+    <div class="col-xs-offset-2 col-xs-10 col-sm-offset-0 col-sm-4 col-md-3">
+      <h4>Email</h4>
+    </div>
+    <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
+      <form data-ng-submit="updateUserEmail()" autocomplete="off">
         <fieldset>
           <div class="form-group">
-            <label for="email"><h4>Email</h4></label>
+            <label for="email" class="sr-only">Email</label>
             <input type="email" id="email" name="email" class="form-control" data-ng-model="user.email" placeholder="Email">
+            <p class="help-block" ng-show="user.emailTemporary && !emailSuccess">Please check your inbox for "{{user.emailTemporary}}". We have sent a confirmation message to this email address with further instructions. <a ng-click="resendUserEmailConfirm()" class="cursor-pointer">Resend.</a></p>
           </div>
           <div class="form-group">
             <button type="submit" class="btn btn-large btn-primary">Update email</button>
           </div>
-          <div data-ng-show="emailError" class="text-center text-danger">
+          <div data-ng-show="emailError" class="text-danger">
               <strong>{{emailError}}</strong>
           </div>
-          <div data-ng-show="emailSuccess" class="text-center text-success">
+          <div data-ng-show="emailSuccess" class="text-success">
               <strong>{{emailSuccess}}</strong>
           </div>
         </fieldset>
       </form>
-      <br><br>
     </div>
+  </div>
+  <!-- /Email -->
 
-    <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-      <h3>Email subscriptions</h3>
-      <form data-ng-submit="updateUserSubscriptions()" class="form-horizontal" autocomplete="off">
+  <br><br>
+
+  <!-- Email subscriptions -->
+  <div class="row">
+    <div class="col-xs-offset-2 col-xs-10 col-sm-offset-0 col-sm-4 col-md-3">
+      <h4>Email subscriptions</h4>
+    </div>
+    <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
+
+      <form data-ng-submit="updateUserSubscriptions()" autocomplete="off">
         <fieldset>
           <div class="form-group">
             <div class="checkbox">
@@ -48,28 +61,33 @@
           <div class="form-group">
             <button type="submit" class="btn btn-large btn-primary">Update email subscriptions</button>
           </div>
-          <div data-ng-show="subscriptionsError" class="text-center text-danger">
+          <div data-ng-show="subscriptionsError" class="text-danger">
               <strong>{{subscriptionsError}}</strong>
           </div>
-          <div data-ng-show="subscriptionsSuccess" class="text-center text-success">
+          <div data-ng-show="subscriptionsSuccess" class="text-success">
               <strong>{{subscriptionsSuccess}}</strong>
           </div>
         </fieldset>
       </form>
-      <br><br>
-    </div>
 
+    </div>
   </div>
-  <!-- /Profile settings -->
+  <!-- /Email subscriptions -->
+
+  <br><br>
 
   <!-- Password -->
-  <div class="row text-center" data-ng-show="user.provider === 'local'" data-ng-controller="PasswordController">
+  <div class="row" data-ng-show="user.provider === 'local'" data-ng-controller="PasswordController">
 
-    <h3 class="col-xs-12">Change your password</h3>
-    <div class="col-xs-offset-2 col-xs-8 col-md-offset-5 col-md-2">
-      <form data-ng-submit="resetUserPassword()" class="form-horizontal" autocomplete="off">
+    <div class="col-xs-offset-2 col-xs-10 col-sm-offset-0 col-sm-4 col-md-3 col-md-3">
+      <h4>Change your password</h4>
+    </div>
+    <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
+
+      <form data-ng-submit="resetUserPassword()" autocomplete="off">
         <fieldset>
           <div class="form-group">
+            <p class="help-block">Your new password must be 8 or more characters.</p>
             <label for="newPassword" class="sr-only">New Password</label>
             <input type="password" id="newPassword" name="newPassword" class="form-control" data-ng-model="passwordDetails.newPassword" placeholder="New Password">
           </div>
@@ -77,38 +95,42 @@
             <label for="verifyPassword" class="sr-only">Verify Password</label>
             <input type="password" id="verifyPassword" name="verifyPassword" class="form-control" data-ng-model="passwordDetails.verifyPassword" placeholder="Verify Password">
           </div>
-          <div class="text-center form-group">
+          <div class="form-group">
             <button type="submit" class="btn btn-large btn-primary">Update Password</button>
           </div>
-          <div data-ng-show="passwordError" class="text-center text-danger">
+          <div data-ng-show="passwordError" class="text-danger">
             <strong>{{passwordError}}</strong>
           </div>
-          <div data-ng-show="passwordSuccess" class="text-center text-success">
+          <div data-ng-show="passwordSuccess" class="text-success">
             <strong>{{passwordSuccess}}</strong>
           </div>
         </fieldset>
       </form>
-      <br><br>
-    </div>
 
+    </div>
   </div>
   <!-- /Password -->
 
+  <br><br>
+
   <!-- Remove -->
-  <div class="row text-center">
-    <div class="col-xs-12">
-      <h3 class="text-danger">Remove your account</h3>
-      <p>
-        <label for="removal-confirm">
-          <input type="checkbox" id="removal-confirm" ng-model="removalConfirm">
-          <em>I understand this cannot be undone</em>
-        </label>
-      </p>
-      <p>
-        <button class="btn btn-danger" ng-click="removeUser();">Yes, remove my account permanently</button>
-      </p>
-      <br><br>
-    </div>
+  <div class="row">
+      <div class="col-xs-offset-2 col-xs-10 col-sm-offset-0 col-sm-4 col-md-3">
+        <h4 class="text-danger">Remove your account</h4>
+      </div>
+      <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
+
+        <div class="form-group">
+          <label for="removal-confirm">
+            <input type="checkbox" id="removal-confirm" ng-model="removalConfirm">
+            <em>I understand this cannot be undone</em>
+          </label>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-danger" ng-click="removeUser();">Yes, remove my account permanently</button>
+        </div>
+
+      </div>
   </div>
   <!-- /Remove -->
 

@@ -6,11 +6,26 @@
   </div>
 
   <!-- Couldn't find profile... -->
-  <div class="row text-center" data-ng-show="profileError">
+  <div class="row text-center" data-ng-show="profileError && user.public !== false">
     <h1>Don't panic!</h1>
     <em class="lead">User does not exist.</em>
     <br><br>
     <a ui-sref="search">Continue...</a>
+  </div>
+
+  <!-- Browsing other profiles with non-public account -->
+  <div class="row text-center" ng-show="profileError && user.public === false">
+    <h1>Don't panic!</h1>
+    <em class="lead">Sorry, you need to first activate your profile before you can browse others.</em>
+    <br><br>
+    <a ui-sref="profile-settings">Account settings</a>
+  </div>
+
+  <!-- Own profile is non-public -->
+  <div class="row text-center" ng-show="!profileError && user.public === false">
+    <em class="lead">Note that your profile will not be visible to others until you confirm your email.</em>
+    <p>If you didn't receive the message, see <a ui-sref="profile-settings">settings</a> to resend it.</p>
+    <hr>
   </div>
 
   <!-- Profile -->

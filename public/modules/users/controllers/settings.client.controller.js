@@ -21,6 +21,15 @@ angular.module('users').controller('SettingsController', ['$scope', '$http', '$s
       });
     };
 
+    // Resend confirmation email for already sent email
+    $scope.resendUserEmailConfirm = function() {
+      if($scope.user.emailTemporary) {
+        $scope.user.email = $scope.user.emailTemporary;
+        $scope.updateUserEmail();
+      }
+    };
+
+
     // Change user email subscriptions
     $scope.updateUserSubscriptions = function() {
       $scope.subscriptionsSuccess = $scope.subscriptionsError = null;
