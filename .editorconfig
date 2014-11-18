@@ -34,6 +34,11 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
+# No standard.
+[**.conf]
+insert_final_newline = false
+trim_trailing_whitespace = true
+
 # No standard.  Please document a standard if different from .js
 [**.md]
 indent_style = space

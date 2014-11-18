@@ -42,7 +42,7 @@ config/secret/*
 scripts/*
 !scripts/starter.sh
 !scripts/backup-db.sh
-!scripts/update.sh
+!scripts/deploy.sh
 
 # Logs
 logs
