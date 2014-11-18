@@ -158,6 +158,9 @@ module.exports = function(grunt) {
     env: {
       test: {
         NODE_ENV: 'test'
+      },
+      production: {
+        NODE_ENV: 'production'
       }
     },
     mochaTest: {
@@ -194,7 +197,7 @@ module.exports = function(grunt) {
   grunt.registerTask('default', ['loadConfig', 'less:development', 'concat:css', 'debug']);
 
   // Default production task(s).
-  grunt.registerTask('production', ['loadConfig', 'less:production', 'concat:css', 'ngAnnotate', 'uglify', 'concurrent:default']);
+  grunt.registerTask('production', ['env:production', 'loadConfig', 'less:production', 'concat:css', 'ngAnnotate', 'uglify', 'concurrent:default']);
 
   // Debug task.
   grunt.registerTask('debug', ['lint', 'concurrent:debug']);
