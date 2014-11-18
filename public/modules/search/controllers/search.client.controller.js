@@ -43,7 +43,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
               map: settings.mapbox.map
             }
           },
-
           osm: {
             name: 'OpenStreetMap',
             type: 'xyz',
@@ -54,7 +53,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
               continuousWorld: true
             }
           },
-
           // Doesn't support https
           quest: {
             name: 'OpenMapQuest',
@@ -64,16 +62,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
               subdomains: ['1', '2', '3', '4'],
               attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OSM</a>',
               continuousWorld: true
-            }
-          },
-
-          // Doesn't support https
-          opencyclemap: {
-            name: 'OpenCycleMap',
-            type: 'xyz',
-            url: 'https://{s}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png',
-            options: {
-              attribution: '&copy; <a href="http://www.opencyclemap.org">OpenCycleMap</a> &amp; <a href="http://www.openstreetmap.org">OSM</a>'
             }
           }
         },
