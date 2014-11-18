@@ -8,7 +8,7 @@
     </button>
     <a ui-sref="home" class="navbar-brand">
       <span class="logo-horizontal logo-horizontal-white"></span>
-      <span class="sr-only">Trust Roots</span>
+      <span class="sr-only">Trustroots</span>
     </a>
   </div>
   <nav class="collapse navbar-collapse" collapse="!isCollapsed" role="navigation">
@@ -30,6 +30,7 @@
         <a ng-switch-default href="{{ item.link | hashbangurl }}">
           <i class="fa fa-fw fa-{{item.icon}}" ng-if="item.icon"></i>
           {{item.title}}
+          <span ng-if="item.titleMobile" ng-bind="item.titleMobile" class="visible-xs-inline"></span>
         </a>
       </li>
     </ul>
@@ -65,6 +66,7 @@
         <a ng-switch-default ng-href="{{ item.link | hashbangurl }}">
           <i class="fa fa-fw fa-{{item.icon}}" ng-if="item.icon"></i>
           {{item.title}}
+          <span ng-if="item.titleMobile" ng-bind="item.titleMobile" class="visible-xs-inline"></span>
         </a>
       </li>
 
