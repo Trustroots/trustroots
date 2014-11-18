@@ -7,11 +7,9 @@ module.exports = {
 		// Settings will be pushed PUBLICLY to templates as json, no secrets:
 		settings: {
 			mapbox: {
-				user: process.env.MAPBOX_USER || 'bikeshed',
-				map: process.env.MAPBOX_MAP || 'hn2ghak7'
-			},
-			geonames: {
-				username: process.env.GEONAMES_USERNAME || 'trustroots'
+				user: process.env.MAPBOX_USERNAME || 'trustroots',
+				map: process.env.MAPBOX_MAP || 'k8mokch5',
+				access_token: process.env.MAPBOX_SECRET_KEY || 'MAPBOX_SECRET_KEY'
 			},
 			osm: {
 				email: process.env.OSM_EMAIL || ['maps','@','trustroots','.org'].join('') // spam bot prevention since this ends up to repository...

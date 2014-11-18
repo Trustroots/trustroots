@@ -10,11 +10,9 @@ module.exports = {
     // These will be pushed PUBLICLY to html as json:
     settings: {
       mapbox: {
-        user: 'USERNAME',
-        map: 'MAP_ID'
-      },
-      geonames: {
-        username: 'USERNAME'
+        user: 'trustroots',
+        map: 'k8mokch5',
+        access_token: 'MAPBOX_PUBLIC_KEY'
       },
       osm: {
         email: 'EMAIL'

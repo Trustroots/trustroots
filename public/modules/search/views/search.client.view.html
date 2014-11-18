@@ -17,6 +17,10 @@
     Sorry, you need to first activate your profile before you can browse others.
   </div>
 
+  <div ng-show="notFound" class="search-overlay-message">
+    We could not find such a place...
+  </div>
+
   <leaflet center="center" markers="markers" layers="layers" bounds="bounds" defaults="defaults" event-broadcast="events" id="search-map-canvas"></leaflet>
 
   <div class="search-map-sidebar" ng-show="sidebarOpen">

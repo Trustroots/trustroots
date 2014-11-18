@@ -34,13 +34,14 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
           mapbox: {
             name: 'MapBox',
             type: 'xyz',
-            url: '//{s}.tiles.mapbox.com/v3/{user}.{map}/{z}/{x}/{y}.png' + ( settings.https ? '?secure=1' : ''),
+            url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.access_token + ( settings.https ? '&secure=1' : ''),
             layerParams: {
               user: settings.mapbox.user,
               map: settings.mapbox.map
             },
-            options: {
-              attribution: '<a href="http://www.openstreetmap.org">OSM</a>'
+            layerOptions: {
+              attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
+              continuousWorld: true
             }
           }
         }
@@ -137,38 +138,27 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
       if($scope.searchQuery !== '') {
         $scope.searchQuerySearching = true;
 
-        $http.get('http://api.geonames.org/searchJSON', {
-          params: {
-            q: $scope.searchQuery,
-            maxRows: 1,
-            lang: 'en',
-            style: 'full', // 'full' since we need bbox
-            type: 'json',
-            username: settings.geonames.username
-          }
-        }).then(function(response){
+        $http
+          .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + $scope.searchQuery + '.json?access_token=' + settings.mapbox.access_token)
+          .then(function(response) {
 
-          $scope.searchQuerySearching = false;
+            $scope.searchQuerySearching = false;
 
-          if(response.status === 200 && response.data.geonames) {
-            if(response.data.geonames.length > 0) {
-
-              $scope.mapLocate(response.data.geonames[0]);
-
+            if(response.status === 200 && response.data.features && response.data.features.length > 0) {
+              $scope.mapLocate(response.data.features[0]);
             }
             else {
               // @Todo: nicer alert https://github.com/Trustroots/trustroots/issues/24
               alert('Whoop! We could not find such a place...');
             }
-          }
-        });
+          });
 
       }
     };
 
 
     /*
-    * Show geonames location at map
+    * Show geo location at map
     * Used also when selecting search suggestions from the suggestions list
     */
     $scope.mapLocate = function(place) {
@@ -179,21 +169,19 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
       // Does the place have bounding box?
       if(place.bbox) {
         $scope.bounds = leafletBoundsHelpers.createBoundsFromArray([
-          [ parseFloat(place.bbox.south), parseFloat(place.bbox.east) ],
-          [ parseFloat(place.bbox.north), parseFloat(place.bbox.west) ]
+          [ parseFloat(place.bbox[1]), parseFloat(place.bbox[0]) ],
+          [ parseFloat(place.bbox[3]), parseFloat(place.bbox[2]) ]
         ]);
       }
 
       // Does it have lat/lng?
-      else if(place.lat && place.lng) {
+      else if(place.center) {
         $scope.center = {
-          lat: parseFloat(place.lat),
-          lng: parseFloat(place.lng),
+          lat: parseFloat(place.center[0]),
+          lng: parseFloat(place.center[1]),
           zoom: 5
         };
       }
-
-      // @todo: then what?
 
     };
 
@@ -201,30 +189,26 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
     /*
     * Search field's typeahead -suggestions
     *
-    * featureClass is twice already at URL due limitations with $http.get()
-    *
-    * @link http://www.geonames.org/export/geonames-search.html
+    * @link https://www.mapbox.com/developers/api/geocoding/
     */
     $scope.searchSuggestions = function(val) {
 
-      return $http.get('http://api.geonames.org/searchJSON', {
-        params: {
-          q: val,
-          maxRows: 5,
-          lang: 'en',
-          style: 'full', // 'full' since we need bbox
-          type: 'json',
-          username: settings.geonames.username
-        }
-      }).then(function(response){
-        if(response.status === 200 && response.data.geonames.length > 0) {
-          return response.data.geonames.map(function(place){
-            place.trTitle = $scope.placeTitle(place);
-            return place;
-          });
-        }
-        else return [];
-      });
+     return $http
+       .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + val + '.json?access_token=' + settings.mapbox.access_token)
+       .then(function(response) {
+
+         $scope.searchQuerySearching = false;
+
+         if(response.status === 200 && response.data.features && response.data.features.length > 0) {
+
+             return response.data.features.map(function(place){
+               place.trTitle = $scope.placeTitle(place);
+               return place;
+             });
+
+         }
+         else return [];
+       });
 
     };
 
@@ -234,14 +218,8 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
     $scope.placeTitle = function(place) {
       var title = '';
 
-      // Prefer toponym name like 'Jyväskylä' instead of 'Jyvaskyla'
-      if(place.toponymName) title += place.toponymName;
-      else if(place.name) title += place.name;
-
-      if(place.countryName) {
-        if(title !== '') title += ', ';
-        title += place.countryName;
-      }
+      if(place.place_name) title += place.place_name;
+      else if(place.text) title += place.text;
 
       return title;
     };

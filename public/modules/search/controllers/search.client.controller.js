@@ -3,8 +3,8 @@
 /* This declares to JSHint that 'settings' is a global variable: */
 /*global settings:false */
 
-angular.module('search').controller('SearchController', ['$scope', '$http', '$geolocation', '$location', '$state', '$log', 'Offers', 'leafletBoundsHelpers', 'Authentication', 'Languages',
-  function($scope, $http, $geolocation, $location, $state, $log, Offers, leafletBoundsHelpers, Authentication, Languages) {
+angular.module('search').controller('SearchController', ['$scope', '$http', '$geolocation', '$location', '$state', '$timeout', '$log', 'Offers', 'leafletBoundsHelpers', 'Authentication', 'Languages',
+  function($scope, $http, $geolocation, $location, $state, $timeout, $log, Offers, leafletBoundsHelpers, Authentication, Languages) {
 
     $scope.user = Authentication.user; // Currently logged in user
 
@@ -15,6 +15,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     $scope.userReacted = false;
     $scope.languages = Languages.get('object');
     $scope.offer = false; // Offer to show
+    $scope.notFound = false;
 
 
     /**
@@ -35,12 +36,16 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       layers: {
         baselayers: {
           mapbox: {
-            name: 'MapBox',
+            name: 'Default',
             type: 'xyz',
-            url: '//{s}.tiles.mapbox.com/v3/{user}.{map}/{z}/{x}/{y}.png' + ( settings.https ? '?secure=1' : ''),
+            url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.access_token + ( settings.https ? '&secure=1' : ''),
             layerParams: {
               user: settings.mapbox.user,
               map: settings.mapbox.map
+            },
+            layerOptions: {
+              attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
+              continuousWorld: true
             }
           },
           osm: {
@@ -127,7 +132,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
 
       $scope.userReacted = true;
       $scope.sidebarOpen = true;
-      $log.log('Open sidebar');
     });
 
 
@@ -182,8 +186,8 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       southWestLng: '',
       southWestLat: ''
     }, function(offers){
-      $log.log('->offers promise success:');
-      $log.log(offers);
+      //$log.log('->offers promise success:');
+      //$log.log(offers);
 
       var markers = [];
       angular.forEach(offers, function(marker) {
@@ -252,38 +256,30 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       if($scope.searchQuery !== '') {
         $scope.searchQuerySearching = true;
 
-        $http.get('http://api.geonames.org/searchJSON?featureClass=A&featureClass=P', {
-          params: {
-            q: $scope.searchQuery,
-            maxRows: 1,
-            lang: 'en',
-            style: 'full', // 'full' since we need bbox
-            type: 'json',
-            username: settings.geonames.username
-          }
-        }).then(function(response){
+        $http
+          .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + $scope.searchQuery + '.json?access_token=' + settings.mapbox.access_token)
+          .then(function(response) {
 
-          $scope.searchQuerySearching = false;
+            $scope.searchQuerySearching = false;
 
-          if(response.status === 200 && response.data.geonames) {
-            if(response.data.geonames.length > 0) {
-
-              $scope.mapLocate(response.data.geonames[0]);
-
+            if(response.status === 200 && response.data.features && response.data.features.length > 0) {
+              $scope.mapLocate(response.data.features[0]);
             }
             else {
               // @Todo: nicer alert https://github.com/Trustroots/trustroots/issues/24
-              alert('Whoop! We could not find such a place...');
+              $scope.notFound = true;
+              $timeout(function(){
+                $scope.notFound = false;
+              }, 3000);
             }
-          }
-        });
+          });
 
       }
     };
 
 
     /*
-     * Show geonames location at map
+     * Show geo location at map
      * Used also when selecting search suggestions from the suggestions list
      */
     $scope.mapLocate = function(place) {
@@ -294,16 +290,16 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       // Does the place have bounding box?
       if(place.bbox) {
         $scope.bounds = leafletBoundsHelpers.createBoundsFromArray([
-          [ parseFloat(place.bbox.south), parseFloat(place.bbox.east) ],
-          [ parseFloat(place.bbox.north), parseFloat(place.bbox.west) ]
+          [ parseFloat(place.bbox[1]), parseFloat(place.bbox[0]) ],
+          [ parseFloat(place.bbox[3]), parseFloat(place.bbox[2]) ]
         ]);
       }
 
       // Does it have lat/lng?
-      else if(place.lat && place.lng) {
+      else if(place.center) {
         $scope.center = {
-          lat: parseFloat(place.lat),
-          lng: parseFloat(place.lng),
+          lat: parseFloat(place.center[0]),
+          lng: parseFloat(place.center[1]),
           zoom: 5
         };
       }
@@ -316,30 +312,26 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     /*
      * Search field's typeahead -suggestions
      *
-     * featureClass is twice already at URL due limitations with $http.get()
-     *
-     * @link http://www.geonames.org/export/geonames-search.html
+     * @link https://www.mapbox.com/developers/api/geocoding/
      */
     $scope.searchSuggestions = function(val) {
 
-      return $http.get('http://api.geonames.org/searchJSON?featureClass=A&featureClass=P', {
-        params: {
-          q: val,
-          maxRows: 10,
-          lang: 'en',
-          style: 'full', // 'full' since we need bbox
-          type: 'json',
-          username: settings.geonames.username
-        }
-      }).then(function(response){
-        if(response.status === 200 && response.data.geonames.length > 0) {
-          return response.data.geonames.map(function(place){
-            place.trTitle = $scope.placeTitle(place);
-            return place;
-          });
-        }
-        else return [];
-      });
+      return $http
+        .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + val + '.json?access_token=' + settings.mapbox.access_token)
+        .then(function(response) {
+
+          $scope.searchQuerySearching = false;
+
+          if(response.status === 200 && response.data.features && response.data.features.length > 0) {
+
+              return response.data.features.map(function(place){
+                place.trTitle = $scope.placeTitle(place);
+                return place;
+              });
+
+          }
+          else return [];
+        });
 
     };
 
@@ -349,14 +341,8 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     $scope.placeTitle = function(place) {
       var title = '';
 
-      // Prefer toponym name like 'Jyväskylä' instead of 'Jyvaskyla'
-      if(place.toponymName) title += place.toponymName;
-      else if(place.name) title += place.name;
-
-      if(place.countryName) {
-        if(title !== '') title += ', ';
-        title += place.countryName;
-      }
+      if(place.place_name) title += place.place_name;
+      else if(place.text) title += place.text;
 
       return title;
     };
