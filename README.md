@@ -1,9 +1,8 @@
 # Trustroots
 _Enabling the latent trust between humans._
 
-Trustroots is developed using [MEAN.js](http://meanjs.org/) boilerplate. [Read more](https://github.com/Trustroots/trustroots/wiki)
-
 [![Build Status](https://travis-ci.org/Trustroots/trustroots.svg)](https://travis-ci.org/Trustroots/trustroots)
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/Trustroots/trustroots?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ## Prerequisites
 Make sure you have installed all these prerequisites:
@@ -45,6 +44,11 @@ $ grunt
 
 Your application should run on the 3000 port in development mode, so in your browser just go to [http://localhost:3000](http://localhost:3000)
 
+## Development
+* See [Offical Documentation](http://meanjs.org/docs.html) for MEAN.js  boilerplate
+* [Our docs](https://github.com/Trustroots/trustroots/wiki)
+* Install [EditorConfig](http://editorconfig.org/) to your IDE if possible
+* [Contact us](http://ideas.trustroots.org/about/)
 
 ## Development and deployment With Docker
 
@@ -68,12 +72,6 @@ $
 ```bash
 $ docker run -p 3000:3000 -p 35729:35729 -v /path/to/trustroots/public:/home/trustroots/public -v /path/to/trustroots/app:/home/trustroots/app --link db:db_1 trustroots
 ```
-
-## Getting Started With Trustroots Development
-* [Github](https://github.com/Trustroots/)
-* See [Offical Documentation](http://meanjs.org/docs.html) for MEAN.js
-* [Our docs](https://github.com/Trustroots/trustroots/wiki)
-* Install [EditorConfig](http://editorconfig.org/) if possible
 
 ### Understand these
 Before you begin we recommend you read about the basic building blocks that assemble a MEAN.JS application:
