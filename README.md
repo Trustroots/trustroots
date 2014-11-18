@@ -1,7 +1,9 @@
-# Trust Roots
-"Travellers network"
+# Trustroots
+_Enabling the latent trust between humans._
 
-Trust Roots is developed using MEAN.js boilerplate is based on [MongoDB](http://www.mongodb.org/), [Node.js](http://www.nodejs.org/), [Express](http://expressjs.com/), and [AngularJS](http://angularjs.org/).
+Trustroots is developed using [MEAN.js](http://meanjs.org/) boilerplate. [Read more](https://github.com/Trustroots/trustroots/wiki)
+
+[![Build Status](https://travis-ci.org/Trustroots/trustroots.svg)](https://travis-ci.org/Trustroots/trustroots)
 
 ## Prerequisites
 Make sure you have installed all these prerequisites:
@@ -14,7 +16,7 @@ Make sure you have installed all these prerequisites:
 ```
 $ git clone https://github.com/Trustroots/trustroots.git trustroots
 ```
-This will clone the latest version of the Trust Roots repository to a **trustroots** folder.
+This will clone the latest version of the Trustroots repository to a **trustroots** folder.
 
 ### Downloading the repository zip file
 ```
@@ -41,12 +43,7 @@ After the install, just run grunt default task:
 $ grunt
 ```
 
-...that equals to:
-```
-$ NODE_ENV=development grunt default
-```
-
-Your application should run on the 3000 port so in your browser just go to [http://localhost:3000](http://localhost:3000)
+Your application should run on the 3000 port in development mode, so in your browser just go to [http://localhost:3000](http://localhost:3000)
 
 
 ## Development and deployment With Docker
@@ -72,10 +69,10 @@ $
 $ docker run -p 3000:3000 -p 35729:35729 -v /path/to/trustroots/public:/home/trustroots/public -v /path/to/trustroots/app:/home/trustroots/app --link db:db_1 trustroots
 ```
 
-## Getting Started With Trust Roots Development
+## Getting Started With Trustroots Development
 * [Github](https://github.com/Trustroots/)
 * See [Offical Documentation](http://meanjs.org/docs.html) for MEAN.js
-* [Our docs](documentation/README.md)
+* [Our docs](https://github.com/Trustroots/trustroots/wiki)
 * Install [EditorConfig](http://editorconfig.org/) if possible
 
 ### Understand these
@@ -85,10 +82,8 @@ Before you begin we recommend you read about the basic building blocks that asse
 * AngularJS - Angular's [Official Website](http://angularjs.org/) is a great starting point. You can also use [Thinkster Popular Guide](http://www.thinkster.io/), and the [Egghead Videos](https://egghead.io/).
 * Node.js - Start by going through [Node.js Official Website](http://nodejs.org/) and this [StackOverflow Thread](http://stackoverflow.com/questions/2353818/how-do-i-get-started-with-node-js), which should get you going with the Node.js platform in no time.
 
-
-
 ## Community
-* Join #trustroots on freenode.
+* Join [#trustroots](irc://irc.freenode.net/trustroots) on freenode.
 * Ping us on [Twitter](http://twitter.com/trustroots) and [Facebook](http://facebook.com/trustroots)
 
 ## License
