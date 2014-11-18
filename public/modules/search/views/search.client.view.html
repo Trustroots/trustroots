@@ -23,6 +23,10 @@
 
     <div class="search-list">
 
+      <div class="form-group visible-xs-block">
+        <button class="btn btn-primary btn-lg btn-block" ng-click="sidebarOpen = false">Back to map</button>
+      </div>
+
       <!-- Profile loading -->
       <div class="search-result panel panel-default panel-loading" ng-hide="offer && offer.$resolved">
         <div class="panel-body">
@@ -143,6 +147,10 @@
             </div>
         </div>
         !-- /No search results -->
+
+        <div class="form-group visible-xs-block">
+          <button class="btn btn-primary btn-lg btn-block" ng-click="sidebarOpen = false">Back to map</button>
+        </div>
 
       </div>
       <!-- /.search-list -->

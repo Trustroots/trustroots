@@ -1,14 +1,21 @@
+/*
+ * Search/map view
+ * Try to keep this "mobile first"
+ */
 
 .search-map {
   #search-map-canvas {
-    position: fixed;
-    top: @navbar-height;
-    bottom: @footer-height;
     left: 0;
     right: 0;
     width: auto;
     height: auto;
     z-index: 0;
+    position: fixed;
+    top: @navbar-height;
+    bottom: 0;
+    @media (min-width: @screen-sm-min) {
+      bottom: @footer-height;
+    }
   }
   .map-location-search {
     position: absolute;
@@ -52,17 +59,27 @@
 
 .search-map-sidebar {
   position: absolute;
+  width: auto;
   top: @navbar-height;
-  bottom: @footer-height;
+  bottom: 0;
+  left: 0;
   right: 0;
-  width: 30%;
-  min-width: 300px;
-  max-width: 480px;
   height: auto;
   padding: 10px;
   background: rgba(0,0,0, 0.1);
   z-index: @zindex-navbar;
   overflow: scroll;
+
+  @media (max-width: @screen-xs-max) {
+  }
+  @media (min-width: @screen-sm-min) {
+    min-width: 300px;
+    max-width: 480px;
+    width: 30%;
+    right: 0;
+    left: auto;
+    bottom: @footer-height;
+  }
 }
 .search-list {
   display: block;
