@@ -9,7 +9,7 @@ module.exports = {
 		settings: {
 			mapbox: {
 				user: process.env.MAPBOX_USERNAME || 'trustroots',
-				map: process.env.MAPBOX_MAP || 'k8mokch5',
+				map: process.env.MAPBOX_MAP || ['k8mokch5', 'ce8bb774'],
 				access_token: process.env.MAPBOX_SECRET_KEY || 'MAPBOX_SECRET_KEY'
 			},
 			osm: {

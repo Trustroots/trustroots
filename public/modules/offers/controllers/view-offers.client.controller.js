@@ -23,15 +23,16 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
       layers: {
         baselayers: {
           mapbox: {
-            name: 'MapBox',
+            name: 'Default',
             type: 'xyz',
-            url: '//{s}.tiles.mapbox.com/v3/{user}.{map}/{z}/{x}/{y}.png' + ( settings.https ? '?secure=1' : ''),
+            url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.access_token + ( settings.https ? '&secure=1' : ''),
             layerParams: {
               user: settings.mapbox.user,
-              map: settings.mapbox.map
+              map: settings.mapbox.map[0]
             },
             options: {
-              attribution: '<a href="http://www.openstreetmap.org">OSM</a>'
+              attribution: '<a href="http://www.openstreetmap.org">OSM</a>',
+              continuousWorld: true
             }
           }
         }

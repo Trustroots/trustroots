@@ -11,7 +11,7 @@ module.exports = {
     settings: {
       mapbox: {
         user: 'trustroots',
-        map: 'k8mokch5',
+        map: ['k8mokch5', 'ce8bb774'],
         access_token: 'MAPBOX_PUBLIC_KEY'
       },
       osm: {

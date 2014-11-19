@@ -37,7 +37,7 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
             url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.access_token + ( settings.https ? '&secure=1' : ''),
             layerParams: {
               user: settings.mapbox.user,
-              map: settings.mapbox.map
+              map: settings.mapbox.map[0]
             },
             layerOptions: {
               attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
