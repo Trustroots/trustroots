@@ -13,7 +13,7 @@ git pull origin master
 echo "Updating packages & assets..."
 npm update
 bower update
-grunt build
+NODE_ENV=production grunt build
 
 echo "Restarting the server..."
 sudo service nginx restart
