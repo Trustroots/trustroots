@@ -14,7 +14,7 @@
   <nav class="collapse navbar-collapse" collapse="!isCollapsed" role="navigation">
     <ul class="nav navbar-nav" data-ng-if="commonMenu.shouldRender(authentication.user);">
       <li data-ng-repeat="item in commonMenu.items | orderBy: 'position'" data-ng-if="item.shouldRender(authentication.user);" ng-switch="item.menuItemType" ui-route="{{item.uiRoute}}" class="{{item.menuItemClass}}" ng-class="{active: ($uiRoute)}" dropdown="item.menuItemType === 'dropdown'">
-        <a ng-switch-when="dropdown" class="dropdown-toggle cursor-pointer">
+        <a ng-switch-when="dropdown" class="dropdown-toggle cursor-pointer" dropdown-toggle>
           <i class="fa fa-fw fa-{{item.icon}}" ng-if="item.icon"></i>
           <span data-ng-bind="item.title"></span>
           <b class="caret"></b>
@@ -50,7 +50,7 @@
     <ul class="nav navbar-nav navbar-right" data-ng-if="authentication.user && userMenu.shouldRender(authentication.user);">
 
       <li data-ng-repeat="item in userMenu.items | orderBy: 'position'" data-ng-if="item.shouldRender(authentication.user);" ng-switch="item.menuItemType" ui-route="{{item.uiRoute}}" class="{{item.menuItemClass}}" ng-class="{active: ($uiRoute)}" dropdown="item.menuItemType === 'dropdown'">
-        <a ng-switch-when="dropdown" class="dropdown-toggle cursor-pointer">
+        <a ng-switch-when="dropdown" class="dropdown-toggle cursor-pointer" dropdown-toggle>
           <i class="fa fa-fw fa-{{item.icon}}" ng-if="item.icon"></i>
           <span data-ng-bind="item.title"></span>
           <b class="caret"></b>
