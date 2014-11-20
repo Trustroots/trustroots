@@ -59,5 +59,8 @@ module.exports = {
     app_name: ['Trustroots'],
     license_key: 'NEWRELIC_KEY',
     logging_level: 'info'
+  },
+  GA: {
+    code: ''
   }
 };

@@ -28,6 +28,10 @@ angular.module('pages').config(['$stateProvider', '$urlRouterProvider',
       url: '/about',
       templateUrl: 'modules/pages/views/about.client.view.html'
     }).
+    state('privacy', {
+      url: '/privacy',
+      templateUrl: 'modules/pages/views/privacy.client.view.html'
+    }).
     state('home', {
       url: '/',
       templateUrl: 'modules/pages/views/home.client.view.html'
