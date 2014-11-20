@@ -15,7 +15,7 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$http
       $http.post('/auth/signup', $scope.credentials).success(function(response) {
         // If successful we assign the response to the global user model
         $scope.authentication.user = response;
-        $scope.success = 'Go to your ' + response.email + ' email account, find the email from Trustroots, and click the confirm link.';
+        $scope.success = 'Go to your ' + response.email + ' email account, find the email from Trustroots, and click the confirm link. It might take up to 5-10 minutes for email to arrive — meanwhile you can fill in your profile!';
       }).error(function(response) {
         $scope.error = response.message;
       });
