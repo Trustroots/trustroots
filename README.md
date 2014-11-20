@@ -81,8 +81,8 @@ Before you begin we recommend you read about the basic building blocks that asse
 * Node.js - Start by going through [Node.js Official Website](http://nodejs.org/) and this [StackOverflow Thread](http://stackoverflow.com/questions/2353818/how-do-i-get-started-with-node-js), which should get you going with the Node.js platform in no time.
 
 ## Community
-* Join [#trustroots](irc://irc.freenode.net/trustroots) on freenode.
-* Ping us on [Twitter](http://twitter.com/trustroots) and [Facebook](http://facebook.com/trustroots)
+* Join [#trustroots](http://webchat.freenode.net/?channels=trustroots) on freenode.
+* Ping us on [Twitter](https://twitter.com/trustroots) and [Facebook](https://www.facebook.com/trustroots.org)
 
 ## License
 (The MIT License)
