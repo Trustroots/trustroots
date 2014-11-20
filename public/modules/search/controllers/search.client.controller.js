@@ -3,8 +3,8 @@
 /* This declares to JSHint that 'settings' is a global variable: */
 /*global settings:false */
 
-angular.module('search').controller('SearchController', ['$scope', '$http', '$geolocation', '$location', '$state', '$timeout', '$log', 'Offers', 'leafletBoundsHelpers', 'Authentication', 'Languages',
-  function($scope, $http, $geolocation, $location, $state, $timeout, $log, Offers, leafletBoundsHelpers, Authentication, Languages) {
+angular.module('search').controller('SearchController', ['$scope', '$http', '$geolocation', '$location', '$state', '$stateParams', '$timeout', '$log', 'Offers', 'leafletBoundsHelpers', 'Authentication', 'Languages',
+  function($scope, $http, $geolocation, $location, $state, $stateParams, $timeout, $log, Offers, leafletBoundsHelpers, Authentication, Languages) {
 
     $scope.user = Authentication.user; // Currently logged in user
 
@@ -16,7 +16,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     $scope.languages = Languages.get('object');
     $scope.offer = false; // Offer to show
     $scope.notFound = false;
-
 
     /**
      * Center map to user's location
@@ -358,6 +357,14 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       else if(place.text) title += place.text;
 
       return title;
+    };
+
+
+    // Init search with URL
+    if($stateParams.location && $stateParams.location !== '') {
+      $scope.userReacted = true;
+      $scope.searchQuery = $stateParams.location;
+      $scope.searchAddress();
     };
 
   }
