@@ -32,7 +32,7 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
       layers: {
         baselayers: {
           mapbox: {
-            name: 'MapBox',
+            name: 'Default',
             type: 'xyz',
             url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.access_token + ( settings.https ? '&secure=1' : ''),
             layerParams: {

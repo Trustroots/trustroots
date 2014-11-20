@@ -90,11 +90,11 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
       var status = ($scope.offer) ? $scope.offer.status : false;
         switch(status) {
           case 'yes':
-            return 'I can host';
+            return 'Can host';
           case 'maybe':
-            return 'I might be able to host';
+            return 'Might be able to host';
           default:
-            return 'I cannot host currently';
+            return 'Cannot host currently';
         }
     };
 
