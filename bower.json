@@ -25,6 +25,6 @@
     "angular-masonry": "~0.9.1"
   },
   "resolutions": {
-    "angular": "1.2.26"
+    "angular": "1.2.27"
   }
 }
