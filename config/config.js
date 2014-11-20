@@ -61,12 +61,12 @@ module.exports.getJavaScriptAssets = function(includeTests) {
 
   var output;
 
-  // These scripts for production
+  // Production
   if(process.env.NODE_ENV === 'production') {
     output = ['/dist/application.min.js'];
   }
 
-  // These scripts for development
+  // Development
   else {
     output = this.getGlobbedFiles(this.assets.lib.js.concat(this.assets.js), 'public/');
 
@@ -88,7 +88,5 @@ module.exports.getJavaScriptAssets = function(includeTests) {
  * Combine them with newly produced CSS file from LESS
  */
 module.exports.getCSSAssets = function() {
-  //var output = this.getGlobbedFiles(this.assets.lib.css.concat(this.assets.css), 'public/');
-  //return output;
   return ['/dist/application.min.css'];
 };

@@ -7,6 +7,7 @@
 
 module.exports = {
   app: {
+    title: 'Trustroots',
     // These will be pushed PUBLICLY to html as json:
     settings: {
       mapbox: {

@@ -2,6 +2,20 @@
 
 module.exports = {
 	db: process.env.MONGOHQ_URL || process.env.MONGOLAB_URI || 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trust-roots',
+	app: {
+		title: 'Trustroots',
+		// Settings will be pushed PUBLICLY to templates as json, no secrets:
+		settings: {
+			mapbox: {
+				user: process.env.MAPBOX_USERNAME || 'trustroots',
+				map: process.env.MAPBOX_MAP || ['k8mokch5', 'ce8bb774'],
+				access_token: process.env.MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g' //Public key
+			},
+			osm: {
+				email: process.env.OSM_EMAIL || ['maps','@','trustroots','.org'].join('') // spam bot prevention since this ends up to repository...
+			}
+		}
+	},
 	assets: {
   	lib: {
   		css: [
