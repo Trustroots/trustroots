@@ -8,6 +8,8 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$http
 
     $scope.authentication = Authentication;
 
+    $scope.isLoading = false;
+
     /**
      * Register
      */
@@ -24,7 +26,7 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$http
     // Make sure username is lowercase, as we require it to be at signup
     //$scope.credentials.username = $scope.credentials.username.toLowerCase();
     $scope.fixCredientals = function(credientals) {
-      credientals.username = credientals.username.toLowerCase();
+      if(credientals.username) credientals.username = credientals.username.toLowerCase();
       return credientals;
     };
 
@@ -32,14 +34,19 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$http
      * Login
      */
     $scope.signin = function() {
+      $scope.error = false;
+      $scope.isLoading = true;
 
       $http.post('/auth/signin', $scope.fixCredientals($scope.credentials)).success(function(response) {
+        $scope.isLoading = false;
+
         // If successful we assign the response to the global user model
         $scope.authentication.user = response;
 
         // And redirect to the search page
         $state.go('search');
       }).error(function(response) {
+        $scope.isLoading = false;
         $scope.error = response.message;
       });
     };
