@@ -86,9 +86,9 @@
 
                   <h5>Connected:</h5>
                   <ul class="fa-ul authentication-social">
-                    <li data-ng-repeat="(providerName, providerData) in user.additionalProvidersData" class="remove-account-container">
-                      <i class="fa fa-li fa-lg" ng-class="fa-{{providerName}}-square"></i> {{providerName}}
-                      <a class="pull-right" data-ng-click="removeUserSocialAccount(providerName)">Disconnect</a>
+                    <li data-ng-repeat="(providerName, providerData) in user.additionalProvidersData" class="remove-account-container text-capitalize">
+                      <i class="fa fa-li fa-lg fa-{{providerName}}-square"></i> {{providerName}}
+                      <small><a class="pull-right cursor-pointer" data-ng-click="removeUserSocialAccount(providerName)">Disconnect</a></small>
                     </li>
                   </ul>
                 </div>
