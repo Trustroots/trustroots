@@ -365,7 +365,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       $scope.userReacted = true;
       $scope.searchQuery = $stateParams.location;
       $scope.searchAddress();
-    };
+    }
 
   }
 ]);
