@@ -20,7 +20,9 @@
           <div tr-avatar data-source="none" data-size="128" class="center-block" ng-hide="contact && contact.$resolved"></div>
 
           <!-- Avatar after loaded -->
-          <div tr-avatar data-user="contact[0]" data-size="128" class="center-block" ng-show="contact && contact.$resolved"></div>
+          <div tr-avatar data-user="contact.users[0]" data-size="128" class="center-block" ng-show="contact && contact.$resolved"></div>
+
+          <h4 class="contacts-name" ng-bind="contact.users[0].displayName"></span>
         </div>
         <div class="col-xs-2 text-center contacts-avatar-divider">
           <i class="fa fa-3x fa-bolt text-muted"></i>
@@ -30,7 +32,18 @@
           <div tr-avatar data-source="none" data-size="128" class="center-block" ng-hide="contact && contact.$resolved"></div>
 
           <!-- Avatar after loaded -->
-          <div tr-avatar data-user="contact[1]" data-size="128" class="center-block" ng-show="contact && contact.$resolved"></div>
+          <div tr-avatar data-user="contact.users[1]" data-size="128" class="center-block" ng-show="contact && contact.$resolved"></div>
+
+          <h4 class="contacts-name" ng-bind="contact.users[1].displayName"></h4>
+
+        </div>
+      </div><!-- /.row -->
+      <div class="row">
+        <div class="col-xs-12 text-center text-muted">
+          <p>
+            <br>
+            <small>Connected since {{ contact.created | date:'mediumDate' }}</small>
+          </p>
         </div>
       </div><!-- /.row -->
 

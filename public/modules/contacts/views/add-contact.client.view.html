@@ -15,6 +15,8 @@
             <div class="row">
               <div class="col-xs-5 text-center">
                 <div tr-avatar data-user="user" data-size="128" class="center-block"></div>
+
+                <h4 class="contacts-name" ng-bind="user.displayName"></h4>
               </div>
               <div class="col-xs-2 text-center contacts-avatar-divider">
                 <i class="fa fa-3x fa-exchange text-muted"></i>
@@ -25,6 +27,8 @@
 
                 <!-- Avatar after loaded -->
                 <div tr-avatar data-user="friend" data-size="128" class="center-block" ng-show="friend && friend.$resolved"></div>
+
+                <h4 class="contacts-name" ng-bind="friend.displayName"></h4>
               </div>
             </div><!-- /.row -->
           </div>

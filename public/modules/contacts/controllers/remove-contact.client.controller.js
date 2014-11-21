@@ -19,12 +19,15 @@ angular.module('contacts').controller('RemoveContactController', ['$scope', '$st
           $scope.isLoading = true;
 
           // First fetch contact object, just to make it sure it exists + removing it is easier
-          $scope.contact = Contact.get({
+          $scope.$parent.contact = Contact.get({
             contactId: contactId
           },function(contact){
+            console.log(contact);
             $scope.isLoading = false;
             if(!contact) $scope.error = 'You two are not connected yet.';
           }, function(errorResponse) {
+            console.log('err');
+            console.log(errorResponse);
             switch (errorResponse.status) {
               case 403:
                   $scope.error = 'No confirmation like this found.';
