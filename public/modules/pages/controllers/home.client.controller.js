@@ -9,5 +9,12 @@ angular.module('pages').controller('HomeController', ['$scope', '$state', '$time
       $state.go('search');
     }
 
+    // List of background classes
+    // See /public/modules/core/less/board.less for more
+    $scope.bgs = [
+      'board-sierranevada',
+      'board-hitchroad',
+    ];
+
   }
 ]);
