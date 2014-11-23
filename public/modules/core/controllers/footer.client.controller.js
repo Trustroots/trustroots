@@ -27,19 +27,13 @@ angular.module('core').controller('FooterController', ['$scope', 'Authentication
       'hitchroad': {
         'name': 'Andrew W Bugelli',
         'url': 'http://www.containstraces.blogspot.com/'
-      }/*,
-      'albanianmountains': {
-        'name': 'Simona',
-        'url': 'http://www.wanderlust.lt',
-        'license': 'CC',
-        'license_url': 'http://creativecommons.org/licenses/by-nc-nd/4.0/'
       },
       'forestpath': {
         'name': 'Johnson',
         'url': 'https://www.flickr.com/photos/54459164@N00/15506455245',
         'license': 'CC',
         'license_url': 'https://creativecommons.org/licenses/by-nc-sa/2.0/'
-      }*/
+      }
 
     };
 
@@ -54,8 +48,11 @@ angular.module('core').controller('FooterController', ['$scope', 'Authentication
       if( ['home'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.sierranevada, photos.hitchroad ];
       }
-      else if( ['forgot', 'signin', 'signup', 'welcome', 'about'].indexOf(toState.name) > -1 ) {
+      else if( ['forgot', 'signin', 'signup', 'welcome'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.bokehblue ];
+      }
+      else if( ['about'].indexOf(toState.name) > -1 ) {
+        $scope.photo_credits = [ photos.bokehblue, photos.forestpath ];
       }
       else {
         $scope.photo_credits = [];
