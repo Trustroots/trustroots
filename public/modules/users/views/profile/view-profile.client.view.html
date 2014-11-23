@@ -29,6 +29,14 @@
   </div>
 
   <!-- Profile -->
+  <div class="row">
+    <div class="col-xs-12 text-center visible-xs-block">
+        <h2 class="profile-name" data-ng-show="profile.displayName" data-ng-bind="profile.displayName"></h2><br>
+        <h4 class="profile-username" data-ng-show="profile.username">@{{profile.username}}</h4><br>
+        <p class="profile-tagline" data-ng-show="profile.tagline" data-ng-bind="profile.tagline"></p>
+    </div>
+  </div>
+
   <div class="row" data-ng-show="profile && profile.$resolved && !profileError">
 
     <div class="col-sm-3">
@@ -83,7 +91,7 @@
     </div>
     <div class="col-sm-9">
 
-      <div class="row">
+      <div class="row hidden-xs">
         <div class="col-md-6">
             <h2 class="profile-name" data-ng-show="profile.displayName" data-ng-bind="profile.displayName"></h2>
             <h4 class="profile-username" data-ng-show="profile.username">@{{profile.username}}</h4>

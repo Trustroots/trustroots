@@ -1,45 +1,23 @@
-
-/* original from MEAN.JS */
-@media (min-width: 992px) {
-	.nav-users {
-		position: fixed;
-	}
-}
-
-.remove-account-container {
-	display: inline-block;
-	position: relative;
-}
-
-.btn-remove-account {
-	top: 10px;
-	right: 10px;
-	position: absolute;
-}
-/* end of original from MEAN.JS */
-
-
-
 #profile {
   padding-top: 0;
   padding-bottom: 0;
 }
 
 #profile-tabs {
-	margin-top: @padding-base-horizontal;
-	.nav {
-	  .panel;
-	  .panel-default;
-		.nav-pills;
-		.nav-narrow;
-		.nav-underline;
-		a {
-			.cursor-pointer;
-		}
-		.disabled a {
-			cursor: default;
-		}
-	}
+  margin-top: @padding-base-horizontal;
+  .nav {
+    .panel;
+    .panel-default;
+    .nav-pills;
+    .nav-narrow;
+    .nav-underline;
+    a {
+      .cursor-pointer;
+    }
+    .disabled a {
+      cursor: default;
+    }
+  }
 }
 
 .profile-name,
@@ -68,16 +46,16 @@
 }
 
 .profile-quote {
-    display: block;
-    .center-block();
-    width: 80%;
-    .text-muted();
-    text-align: center;
-    font-family: @font-family-serif;
-    font-style: italic;
-    font-size: 18px;
-    padding: 0;
-    border: 0;
+  display: block;
+  .center-block();
+  width: 80%;
+  .text-muted();
+  text-align: center;
+  font-family: @font-family-serif;
+  font-style: italic;
+  font-size: 18px;
+  padding: 0;
+  border: 0;
 }
 
 #profile-actions {
@@ -108,14 +86,19 @@
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
   }
-	.profile-sidebar-section {
-		margin: 0 0 @padding-small-horizontal 0;
-		padding: 0 0 @padding-small-horizontal 0;
-		border-bottom: 1px solid @gray-lighter;
-		&:last-child { /* :not('.ng-hide') */
-			border-bottom: 0;
-			margin-bottom: 0;
-			padding-bottom: 0;
-		}
-	}
+  .profile-sidebar-section {
+    margin: 0 0 @padding-small-horizontal 0;
+    padding: 0 0 @padding-small-horizontal 0;
+    border-bottom: 1px solid @gray-lighter;
+    &:last-child { /* :not('.ng-hide') */
+      border-bottom: 0;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+  }
+  @media (max-width: @screen-xs-max) {
+    max-width: 261px; /* Same as avatar size */
+    margin-right: auto;
+    margin-left: auto;
+  }
 }
