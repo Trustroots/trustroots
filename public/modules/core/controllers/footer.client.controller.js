@@ -23,6 +23,10 @@ angular.module('core').controller('FooterController', ['$scope', 'Authentication
         'url': 'http://www.wanderlust.lt',
         'license': 'CC',
         'license_url': 'http://creativecommons.org/licenses/by-nc-nd/4.0/'
+      },
+      'hitchroad': {
+        'name': 'Andrew W Bugelli',
+        'url': 'http://www.containstraces.blogspot.com/'
       }/*,
       'albanianmountains': {
         'name': 'Simona',
@@ -48,9 +52,9 @@ angular.module('core').controller('FooterController', ['$scope', 'Authentication
 
       // Set photo credits for this page
       if( ['home'].indexOf(toState.name) > -1 ) {
-        $scope.photo_credits = [ photos.sierranevada ];//, photos.albanianmountains
+        $scope.photo_credits = [ photos.sierranevada, photos.hitchroad ];
       }
-      else if( ['forgot', 'signin', 'signup', 'welcome'].indexOf(toState.name) > -1 ) {
+      else if( ['forgot', 'signin', 'signup', 'welcome', 'about'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.bokehblue ];
       }
       else {
