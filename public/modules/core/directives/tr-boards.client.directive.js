@@ -16,7 +16,7 @@ angular.module('core').directive('trBoards', [
       restrict: 'A',
       replace: false,
       scope: {
-          trBoards: "="
+          trBoards: '='
       },
       link: function (scope, elem, attr) {
 
