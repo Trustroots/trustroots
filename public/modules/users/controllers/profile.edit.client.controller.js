@@ -4,8 +4,8 @@
 /*global moment:false */
 /*global settings:false */
 
-angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$log', '$stateParams', '$state', 'Languages', 'Users', 'Authentication',
-  function($scope, $modal, $http, $log, $stateParams, $state, Languages, Users, Authentication) {
+angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', 'Languages', 'Users', 'Authentication',
+  function($scope, $modal, $http, $stateParams, $state, Languages, Users, Authentication) {
 
     // If user is not signed in then redirect to login
     if (!Authentication.user) $state.go('signin');
@@ -70,14 +70,9 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
       if (isValid) {
         $scope.success = $scope.error = null;
         var user = new Users($scope.user);
-
-        $log.log('->updateUserProfile');
-        $log.log(user);
-
         user.$update(function(response) {
-          $log.log('user.$update:');
-          $log.log(response);
-
+          console.log('response');
+          console.log(response);
           $scope.success = true;
           Authentication.user = response;
           $state.go('profile-updated', {username: response.username, updated: true});
