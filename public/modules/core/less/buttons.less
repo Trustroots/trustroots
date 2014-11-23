@@ -2,19 +2,20 @@
  * Buttons
  */
 .btn {
+  border: 0;
   &.btn-primary {
-    .box-shadow(inset 1px 1px 0 lighten(@btn-primary-bg, 7%));
+    .box-shadow(none);
     text-shadow: 1px 1px 1px darken(@btn-primary-bg, 7%);
     &:hover {
-      .box-shadow(inset 1px 1px 0 @btn-primary-bg);
+      .box-shadow(none);
     }
   }
   &.btn-default {
-      .box-shadow(inset 1px 1px 0 lighten(@btn-default-bg, 7%));
-      text-shadow: 1px 1px 1px darken(@btn-default-bg, 7%);
-      &:hover {
-          .box-shadow(inset 1px 1px 0 @btn-default-bg);
-      }
+    .box-shadow(none);
+    text-shadow: 1px 1px 1px darken(@btn-default-bg, 7%);
+    &:hover {
+        .box-shadow(none);
+    }
   }
   &.btn-inverse {
     text-shadow: none;
@@ -41,5 +42,30 @@
   &:hover {
     color: @gray-light;
     text-decoration: none;
+  }
+}
+
+/*
+ * Hosting buttons
+ */
+
+.btn-hosting-yes {
+  .button-variant(#fff; @hosting-yes; @hosting-yes);
+}
+.btn-hosting-maybe {
+  .button-variant(#fff; @hosting-maybe; @hosting-maybe);
+}
+.btn-hosting-no {
+  .button-variant(#fff; @hosting-no; @hosting-no);
+}
+.btn-hosting-traveling {
+  .button-variant(#fff; @hosting-traveling; @hosting-traveling);
+}
+.btn-hosting {
+  .hosting-status {
+    color: #fff;
+  }
+  .caret {
+    border-top-color: #fff;
   }
 }
