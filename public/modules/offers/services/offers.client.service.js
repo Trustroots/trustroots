@@ -19,7 +19,9 @@ angular.module('offers').factory('OffersBy', ['$resource',
 // Read offer by offerId
 angular.module('offers').factory('Offers', ['$resource',
   function($resource) {
-    return $resource('offers/:offerId', {offerId:'@id'}, {
+    return $resource('offers/:offerId', {
+      offerId:'@id'
+    }, {
       get: {
         method: 'GET'
       }
