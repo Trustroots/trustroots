@@ -196,42 +196,17 @@ hr {
       text-shadow: none;
     }
   }
-  // Make Bootstrap dropdowns open at hover
-  .dropdown:hover .dropdown-menu {
-    display: block;
+
+  /* Make Bootstrap dropdowns open at hover */
+  @media (min-width: @grid-float-breakpoint) {
+    .dropdown:hover .dropdown-menu {
+      display: block;
+    }
   }
 
   /* Mobile navbar */
   .navbar-collapse {
     background: @brand-primary;
-  }
-
-  /* Profile dropdown */
-  #header-profile {
-    /* Avatar */
-    img {
-      .square(24px);
-      border-radius: @border-radius-base;
-
-      /* Or else our avatar would make header higher,
-       * since avatar won't fit into line-height anyway.
-       * Let this happen only when nav isn't collapsed.
-       */
-      @media (min-width: @grid-float-breakpoint) {
-        position: absolute;
-        margin-left: 5px;
-        top: 10px;
-        right: 12px;
-      }
-      /* Move that avatar to left side on collapsed navi */
-      @media (max-width: @grid-float-breakpoint-max) {
-        float: left;
-        margin-right: 5px;
-      }
-    }
-    @media (min-width: @grid-float-breakpoint) {
-      padding-right: 44px;
-    }
   }
 }
 
