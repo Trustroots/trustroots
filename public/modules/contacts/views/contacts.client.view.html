@@ -1,8 +1,8 @@
 <div data-ng-controller="ListContactsController">
 
   <!-- Contact list -->
-  <div masonry column-width="128">
-    <div class="contacts-contact panel panel-default" ng-repeat="contact in contacts">
+  <div masonry column-width="138" preserve-order reload-on-show ng-show="contactsVisible">
+    <div class="masonry-brick contacts-contact panel panel-default" ng-repeat="contact in contacts">
       <div tr-avatar data-user="contact.users[0]" data-size="128"></div>
       <a ui-sref="profile({username: contact.users[0].username})">
         <h4 data-ng-bind="contact.users[0].displayName"></h4>

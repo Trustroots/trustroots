@@ -54,6 +54,7 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
       return $scope.profile.provider === provider || ($scope.profile.additionalProvidersData && $scope.profile.additionalProvidersData[provider]);
     };
 
+    $scope.tabSelected = 'overview';
     $scope.tabs = [
       {
         path: 'overview',
@@ -79,6 +80,8 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
       // $log.log(tabPath);
       // @link http://angular-ui.github.io/ui-router/site/#/api/ui.router.state.$state
       // @todo: change path here?
+
+      $scope.tabSelected = tabPath;
     };
 
     /**
