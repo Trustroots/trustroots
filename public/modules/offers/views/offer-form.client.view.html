@@ -76,8 +76,8 @@
         <div class="panel-body">
           <div class="form-group offer-map-location-search">
             <div class="input-group">
-              <label for="search-query" class="sr-only">Search</label>
-              <input type="text" id="search-query" class="form-control" placeholder="Search" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" />
+              <label for="search-query" class="sr-only">Search places to map</label>
+              <input type="text" id="search-query" class="form-control" placeholder="Search places to map" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" />
               <span class="input-group-btn">
                 <button type="button" class="btn btn-inverse" ng-click="searchAddress()" ng-disabled="searchQuerySearching">
                   <i class="fa fa-search" ng-show="searchQuerySearching === false"></i>
