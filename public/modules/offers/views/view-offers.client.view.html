@@ -4,7 +4,7 @@
     Accommodation
     <!-- Button + dropdown for user's own profile -->
     <div ng-show="user._id === profile._id && (offer && offer.$resolved)" class="pull-right btn-group" dropdown is-open="hostingDropdown">
-      <button class="btn btn-sm dropdown-toggle btn-hosting btn-hosting-yes" dropdown-toggle ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': (!offer || offer.status === 'no')}">
+      <button class="btn btn-sm dropdown-toggle btn-hosting" tooltip="Change" tooltip-placement="left" dropdown-toggle ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': (!offer || offer.status === 'no')}">
         {{ hostingStatusLabel() }}
         <span class="caret"></span>
       </button>
