@@ -54,8 +54,9 @@ module.exports = {
 				'public/lib/leaflet.markercluster/dist/leaflet.markercluster-src.js',
 				'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.js',
 				'public/lib/ngGeolocation/ngGeolocation.js',
-				'public/lib/angular-masonry/angular-masonry.js',
 				'public/lib/masonry/dist/masonry.pkgd.js',
+				'public/lib/angular-masonry/angular-masonry.js',
+				'public/lib/angular-waypoints/dist/angular-waypoints.all.js',
 			]
 		},
 		less: [

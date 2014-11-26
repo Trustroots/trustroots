@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Socket', 'Authentication', 'Messages',
-  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Socket, Authentication, Messages) {
+angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Socket', 'Authentication', 'Messages', 'MessagesRead',
+  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Socket, Authentication, Messages, MessagesRead) {
     $scope.authentication = Authentication;
 
     // If user is not signed in then redirect back home
@@ -15,9 +15,8 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     $scope.isThreadLoading = false;
     $scope.isSending = false;
 
-
     /**
-     * Calculate thread etc locations with this massive pile of helpers
+     * Calculate thread etc layout locations with this massive pile of helpers
      */
     var threadLayoutContainer = angular.element('#thread-container'),
         threadLayoutThread = angular.element('#messages-thread'),
@@ -60,6 +59,66 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
       $scope.threadScrollUpdate();
     });
 
+    /*
+     * "perfect-scrollbar" directive somehow eats all native scroll events,
+     * so that "zum-waypoint" directive can't see them anymore and won't update
+     * read status of messages. Shooting resize() into html element solves this.
+     * onScroll() is bind to perfect-scrollbar's event.
+     * There's a small buffer so that resize() would not be shot on each scroll event.
+     *
+     * ...so yeah, this is hacky. ;-)
+     */
+    var html = angular.element('html');
+    $scope.onScroll = function(scrollTop, scrollHeight) {
+      $timeout.cancel($scope.onScrollTimeout);
+      $scope.onScrollTimeout = $timeout(function(){ html.resize(); }, 300);
+    };
+
+
+    // Temporary storage for messages marked as read at frontend, to be sent to the backend
+    $scope.flaggedAsRead = [];
+
+    /**
+     * Send messages marked as read (at frontend) to the backend
+     * Has 1s timeout to slow down continuous pinging of the API
+     */
+    $scope.activateSyncRead = function() {
+
+      $timeout.cancel($scope.syncReadTimer);
+
+      if($scope.flaggedAsRead.length > 0) {
+        $scope.syncReadTimer = $timeout($scope.syncRead, 1000);
+      }
+
+    };
+    $scope.syncRead = function() {
+      MessagesRead.query({
+        messageIds: $scope.flaggedAsRead
+      }, function(response){
+        $scope.flaggedAsRead = [];
+      });
+    };
+
+
+    /**
+     * Mark message read at the frontend
+     * This function inits each time message div passes viewport
+     * Read message id is stored at array which will be sent to backend and emptied
+     *
+     * @todo: kill observer after message is marked read
+     */
+    $scope.messageRead = function(message, scrollingUp, scrollingDown) {
+        var read = (scrollingUp === true || scrollingDown === true);
+
+        if(message.userFrom._id !== Authentication.user._id && !message.read && read) {
+          message.read = true;
+          $scope.flaggedAsRead.push(message._id);
+          $scope.activateSyncRead();
+        }
+
+        return read;
+    };
+
 
     /**
      * Send a message
@@ -69,7 +128,8 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
 
       var message = new Messages({
         content: this.content,
-        userTo: $stateParams.userId
+        userTo: $stateParams.userId,
+        read: false
       });
 
       message.$save(function(response) {

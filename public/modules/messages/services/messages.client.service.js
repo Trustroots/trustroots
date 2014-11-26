@@ -12,3 +12,17 @@ angular.module('messages').factory('Messages', ['$resource',
     });
   }
 ]);
+
+angular.module('messages').factory('MessagesRead', ['$resource',
+  function($resource) {
+    return $resource('messages-read', {
+      messageIds: '@messageIds'
+    }, {
+      query: {
+        method: 'POST',
+        isArray: false,
+        cache: false
+      }
+    });
+  }
+]);

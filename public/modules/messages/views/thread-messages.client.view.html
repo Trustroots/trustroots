@@ -4,15 +4,22 @@
     <div class="col-sm-9" id="thread-container">
 
       <!-- Thread -->
-      <div perfect-scrollbar id="messages-thread" wheel-propagation="true" wheel-speed="50" suppress-scroll-x="true" ng-style="{width: containerWidth, bottom: replyHeight}"><!-- refresh-on-change="messages"-->
+      <div perfect-scrollbar id="messages-thread" wheel-propagation="true" wheel-speed="50" suppress-scroll-x="true" on-scroll="onScroll(scrollTop, scrollHeight)" refresh-on-change="messages" ng-style="{width: containerWidth, bottom: replyHeight}">
 
         <div class="row text-muted text-center" ng-show="isThreadLoading"><small>Wait a moment...</small></div>
 
         <!-- Messages -->
-        <div class="message" data-ng-repeat="message in messages | orderBy:'-created':true" id="message-{{ message._id }}" ng-class="{ 'message-pushed' : message.pushed }">
+        <div class="message"
+             id="message-{{ message._id }}"
+             data-ng-repeat="message in messages | orderBy:'-created':true"
+             zum-waypoint="waypoints"
+             offset="90%"
+             up="scroll.up"
+             down="scroll.down"
+             ng-class="{ 'message-unread': !messageRead(message, waypoints.scroll.up, waypoints.scroll.down), 'message-pushed' : message.pushed }">
 
           <!-- Dividers -->
-          <div ng-show="$first" class="divider divider-first col-xs-12">Conversation started {{ message.created | date:'mediumDate' }}</div>
+          <div ng-if="$first" class="divider divider-first col-xs-12">Conversation started {{ message.created | date:'mediumDate' }}</div>
 
           <div class="col-xs-12 col-sm-11">
 
@@ -21,9 +28,7 @@
               <div class="message-meta">
                 <span data-ng-show="authentication.user._id === message.userFrom._id">You</span>
                 <a ui-sref="profile({ username: message.userFrom.username })" data-ng-bind="message.userFrom.displayName" data-ng-show="authentication.user._id !== message.userFrom._id"></a>
-                — <!--<a ng-href="#message-{{ message._id }}">-->
-                  <time tooltip="{{message.created | date:'medium'}}" am-time-ago="message.created"></time>
-                <!--</a>-->
+                — <time am-time-ago="message.created" tooltip="{{message.created | date:'medium'}}" tooltip-placement="bottom"></time>
               </div>
 
               <!-- Message header - start -->
@@ -50,7 +55,7 @@
               <!-- message header - end -->
             </div>
 
-            <div class="panel panel-default" ui-scrollfix="+0">
+            <div class="panel panel-default">
               <div class="panel-body" data-ng-bind-html="message.content | trustedHtml"></div>
             </div>
           </div>

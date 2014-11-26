@@ -20,7 +20,8 @@ var ApplicationConfiguration = (function() {
                                               'perfect_scrollbar',
                                               'leaflet-directive',
                                               'ngGeolocation',
-                                              'wu.masonry'
+                                              'wu.masonry',
+                                              'zumba.angular-waypoints'
                                             ];
 
   // Add a new vertical module

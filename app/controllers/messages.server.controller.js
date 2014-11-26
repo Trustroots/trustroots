@@ -204,6 +204,55 @@ exports.threadByUser = function(req, res, next, userId) {
 };
 
 
+/**
+ * Mark set of messages as read
+ * Works only for currently logged in user's messages
+ *
+ * @todo: when array has only one id, as a small
+ * optimization could be wise to use findByIdAndUpdate() 
+ * @link http://mongoosejs.com/docs/api.html#model_Model.findByIdAndUpdate
+ */
+exports.markRead = function(req, res) {
+
+  // Only logged in user can update his/her own messages
+  if(!req.user) {
+    return res.status(400).send({
+      message: 'You must be logged in first.'
+    });
+  }
+
+  var messages = [];
+
+  // Produce an array of messages to be updated
+  req.body.messageIds.forEach(function(messageId) {
+    messages.push({
+      _id: messageId,
+      userTo: req.user.id,
+      read: false
+    });
+  });
+
+  // Mark messages read
+  Message.update({
+    $or: messages
+  }, {
+    read: true
+  }, {
+    multi: true
+  }, function (err) {
+
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
+      });
+    }
+    else {
+      res.status(200).send();
+    }
+
+  });
+
+};
 
 
 /**

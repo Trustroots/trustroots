@@ -22,7 +22,8 @@
     "angular-leaflet-directive": "~0.7.9",
     "leaflet.markercluster": "~0.4.0",
     "ngGeolocation": "~0.0.4",
-    "angular-masonry": "~0.9.1"
+    "angular-masonry": "~0.9.1",
+    "angular-waypoints": "~1.0.1"
   },
   "resolutions": {
     "angular": "1.2.27"

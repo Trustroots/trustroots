@@ -26,17 +26,20 @@
   .panel {
     .panel-triangle-right();
   }
+  // Message came via SocketIO
   &.message-pushed {
-      .panel {
-        .transition("ease-in-out linear 1s");
-        border-left-color: @brand-primary;
-        border-left-width: 2px;
-        &.ui-scrollfix,
-        &.ui-fixed {
-            border-left-width: 1px;
-            border-left-color: @panel-default-border; // back to normal when user has seen object
-        }
-      }
+    .panel {
+      background: lighten(@brand-primary, 50%);
+    }
+  }
+  &.message-unread {
+    .panel {
+      border-left-color: @brand-primary;
+      border-left-width: 2px;
+      // Pause for 1s before making 2s linear animation for any CSS change
+      // @link http://www.w3schools.com/css/css3_transitions.asp
+      .transition("all 2s linear 5s");
+    }
   }
   .divider {
     .text-muted;
@@ -54,17 +57,6 @@
       margin: 25px auto @padding-small-vertical auto;
     }
     .text-center;
-    /*
-    font-size: @font-size-small;
-    a {
-      &,
-      &:hover,
-      &:hover {
-          .text-muted();
-          text-decoration: none;
-      }
-    }
-    */
   }
   .message-meta {
     display: inline-block;

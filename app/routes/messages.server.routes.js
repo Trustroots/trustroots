@@ -17,6 +17,10 @@ module.exports = function(app) {
     //.put(users.requiresLogin, messages.hasAuthorization, messages.update)
     //.delete(users.requiresLogin, messages.hasAuthorization, messages.delete);
 
+app.route('/messages-read')
+  .post(users.requiresLogin, messages.markRead);
+
+
   // Finish by binding the message middleware
   app.param('userId', messages.threadByUser);
 };
