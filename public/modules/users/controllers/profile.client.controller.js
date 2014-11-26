@@ -54,7 +54,8 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
       return $scope.profile.provider === provider || ($scope.profile.additionalProvidersData && $scope.profile.additionalProvidersData[provider]);
     };
 
-    $scope.tabSelected = 'overview';
+    $scope.tabSelected = ($stateParams.tab && ['overview', 'references', 'contacts'].indexOf($stateParams.tab) > -1) ? $stateParams.tab : 'overview';
+
     $scope.tabs = [
       {
         path: 'overview',
@@ -77,11 +78,18 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
     ];
 
     $scope.tabSelect = function(tabPath) {
-      // $log.log(tabPath);
-      // @link http://angular-ui.github.io/ui-router/site/#/api/ui.router.state.$state
-      // @todo: change path here?
 
       $scope.tabSelected = tabPath;
+
+      //// @link http://angular-ui.github.io/ui-router/site/#/api/ui.router.state.$state
+
+      //if(tabPath === 'overview') {
+      //  $state.go('profile', {username: ($stateParams.username || $scope.user.username)});
+      //}
+      //else {
+      //  $state.go('profile', {username: ($stateParams.username || $scope.user.username), tab: tabPath});
+      //}
+
     };
 
     /**

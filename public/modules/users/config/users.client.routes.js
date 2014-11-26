@@ -18,7 +18,7 @@ angular.module('users').config(['$stateProvider',
       templateUrl: 'modules/users/views/profile/edit-settings.client.view.html'
     }).
     state('profile', {
-      url: '/profile/:username',
+      url: '/profile/:username?tab',
       templateUrl: 'modules/users/views/profile/view-profile.client.view.html'
     }).
     state('profile-updated', {

@@ -13,7 +13,5 @@ angular.module('contacts').controller('ListContactsController', ['$scope', '$sta
       });
     });
 
-    $scope.contactsVisible = $scope.$parent.tabSelected;
-
   }
 ]);
