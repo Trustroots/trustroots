@@ -11,23 +11,35 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     // If user is not signed in then redirect back home
     if (!$scope.user) $location.path('signin');
 
+    // Default to Europe for now
+    var defaultLocation = {
+      lat: 48.6908333333,
+      lng: 9.14055555556,
+      zoom: 5
+    };
+
     $scope.sidebarOpen = false;
     $scope.userReacted = false;
     $scope.languages = Languages.get('object');
     $scope.offer = false; // Offer to show
     $scope.notFound = false;
+    $scope.currentSelection = {
+      weight: 2,
+      color: '#12b591',
+      fillColor: '#12b591',
+      fillOpacity: 0.5,
+      latlngs: defaultLocation,
+      radius: 500,
+      type: 'circle',
+      layer: 'selected'
+    };
 
     /**
      * Center map to user's location
      */
     angular.extend($scope, {
-      center: {
-        // Default to Europe
-        lat: 48.6908333333,
-        lng: 9.14055555556,
-        zoom: 5
-      },
-      markers: {},
+      center: defaultLocation,
+      markers: [],
       bounds: leafletBoundsHelpers.createBoundsFromArray([
         [ 51.508742458803326, -0.087890625 ],
         [ 51.508742458803326, -0.087890625 ]
@@ -87,8 +99,16 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
             name: 'Hosts',
             type: 'markercluster',
             visible: true
+          },
+          selected: {
+            name: 'Selected hosts',
+            type: 'group',
+            visible: false
           }
         }
+      },
+      paths: {
+        selected: $scope.currentSelection
       },
       events: {
         map: {
@@ -134,6 +154,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     $scope.$on('leafletDirectiveMap.click', function(event){
       $scope.sidebarOpen = false;
       $scope.offer = false;
+      $scope.layers.overlays.selected.visible = false;
     });
     $scope.$on('leafletDirectiveMarker.click', function(e, args) {
 
@@ -141,6 +162,10 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       $scope.offer = Offers.get({
           offerId: args.leafletEvent.target.options.userId
       });
+
+      // Show cirlce around the marker
+      $scope.currentSelection.latlngs = args.leafletEvent.target._latlng;
+      $scope.layers.overlays.selected.visible = true;
 
       $scope.userReacted = true;
       $scope.sidebarOpen = true;
