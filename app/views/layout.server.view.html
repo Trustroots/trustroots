@@ -14,21 +14,30 @@
   <meta property="og:title" content="{{title}}">
   <meta property="og:description" content="{{description}}">
   <meta property="og:url" content="{{url}}">
-  <meta property="og:image" content="/modules/core/img/og_image.jpg">
+  <meta property="og:image" content="{{url}}modules/core/img/og_image.jpg">
   <meta property="og:type" content="website">
   <meta name="twitter:title" content="{{title}}">
   <meta name="twitter:description" content="{{description}}">
   <meta name="twitter:url" content="{{url}}">
-  <meta name="twitter:image" content="/modules/core/img/og_image.jpg">
-  <link href="/modules/core/img/favicon.png" rel="shortcut icon" type="image/png" />
-  <link href="/modules/core/img/favicon.png" rel="bookmark icon" type="image/png" />
+  <meta name="twitter:image" content="{{url}}modules/core/img/og_image.jpg">
+  <link href="{{url}}modules/core/img/favicon.png" rel="shortcut icon" type="image/png" />
+  <link href="{{url}}modules/core/img/favicon.png" rel="bookmark icon" type="image/png" />
+  <link rel="apple-touch-icon-precomposed" sizes="152x152" href="{{url}}modules/core/img/icons/apple-touch-icon-152x152-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="120x120" href="{{url}}modules/core/img/icons/apple-touch-icon-120x120-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="76x76" ref="{{url}}modules/core/img/icons/apple-touch-icon-76x76-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="60x60" ref="{{url}}modules/core/img/icons/apple-touch-icon-60x60-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="{{url}}modules/core/img/icons/apple-touch-icon-144x144-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="{{url}}modules/core/img/icons/apple-touch-icon-114x114-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="{{url}}modules/core/img/icons/apple-touch-icon-72x72-precomposed.png">
+  <link rel="apple-touch-icon" sizes="57x57" href="{{url}}modules/core/img/icons/apple-touch-icon-57x57.png">
+
   {% for cssFile in cssFiles %}<link rel="stylesheet" href="{{cssFile}}">{% endfor %}
+  {# Open Sans - https://www.google.com/fonts#UsePlace:use/Collection:Open+Sans #}
+  <link href='//fonts.googleapis.com/css?family=Open+Sans&subset=latin-ext,latin,cyrillic,greek' rel='stylesheet' type='text/css'>
   <!--[if lt IE 9]>
         <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
         <script src="//oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
   <![endif]-->
-  {# Open Sans - https://www.google.com/fonts#UsePlace:use/Collection:Open+Sans #}
-  <link href='//fonts.googleapis.com/css?family=Open+Sans&subset=latin-ext,latin,cyrillic,greek' rel='stylesheet' type='text/css'>
 </head>
 
 <body class="ng-cloak">
@@ -77,7 +86,7 @@
 
   </script>
   {% endif %}
-  
+
   {# NewRelic #}
   {% if process.env.NODE_ENV === 'production' %}
   <script type="text/javascript">
