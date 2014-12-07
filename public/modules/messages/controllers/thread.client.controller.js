@@ -151,6 +151,11 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
       $timeout($scope.threadScroll, 300);
     });
 
+    // Remove the event listener when the controller instance is destroyed
+    $scope.$on('$destroy', function() {
+      Socket.removeListener('message.sent');
+    });
+
 
     /**
      * Load messages for this thread
