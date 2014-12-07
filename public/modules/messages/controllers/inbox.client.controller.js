@@ -2,7 +2,7 @@
 
 angular.module('messages').controller('MessagesInboxController', ['$scope', '$state', '$log', 'Socket', 'Authentication', 'Messages',
   function($scope, $state, $log, Socket, Authentication, Messages) {
-    $scope.authentication = Authentication;
+    $scope.user = Authentication.user;
 
     Socket.on('message.thread', function(thread) {
         $log.log('->refresh inbox');
@@ -11,6 +11,7 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
 
     $scope.findInbox = function() {
       $scope.threads = Messages.query();
+      console.log($scope.threads);
     };
 
     /**
@@ -22,7 +23,8 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
      */
     $scope.otherParticipant = function(thread, value) {
 
-      var other = (thread.userFrom._id === $scope.authentication.user._id) ? thread.userTo : thread.userFrom;
+      // $scope.user holds currently authenticated user
+      var other = (thread.userFrom._id === $scope.user._id) ? thread.userTo : thread.userFrom;
 
       if (value === 'displayName') {
         return other.displayName;
