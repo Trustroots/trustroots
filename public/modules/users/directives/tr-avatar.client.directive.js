@@ -28,7 +28,7 @@ angular.module('users').directive('trAvatar', ['$location',
             '<a ng-switch-when="true" ui-sref="profile({username: user.username})"><img ng-src="{{avatar}}" class="avatar" width="{{size}}" height="{{size}}" alt=""></a>' +
           '</div>',
         restrict: 'A',
-        replace: true,
+        //replace: true,
         scope: {
           user: '=user'
         },
