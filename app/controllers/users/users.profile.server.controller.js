@@ -38,7 +38,7 @@ exports.userProfileFields = [
                     ].join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed
-exports.userMiniProfileFields = 'id displayName username avatarSource emailHash languages';
+exports.userMiniProfileFields = 'id displayName username avatarSource emailHash';
 
 /**
 * Rules for sanitizing user description coming in and out
@@ -272,7 +272,7 @@ exports.list = function(req, res) {
  */
 exports.userMiniByID = function(req, res, next, id) {
 
-  User.findById(id, exports.userMiniProfileFields + ' public').exec(function(err, user) {
+  User.findById(id, exports.userMiniProfileFields + ' languages public').exec(function(err, user) {
 
     // Something went wrong
     if (err) {
