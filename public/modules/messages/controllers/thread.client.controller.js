@@ -29,8 +29,8 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     };
 
     $scope.threadLayout = function() {
-      $scope.replyHeight = threadLayoutReply.height() + 15 + 'px'; // container has 15px padding on both sides
-      $scope.containerWidth = threadLayoutContainer.width() - 30 + 'px'; // reply area has 15px padding at bottom
+      $scope.replyHeight = threadLayoutReply.height() + 15 + 'px'; // reply area has 15px padding at bottom
+      $scope.containerWidth = threadLayoutContainer.width() - 30 + 'px'; // container has 15px padding on both sides
     };
 
     // Add (or reset) timeout to not call the scrolling function every key stroke

@@ -9,7 +9,6 @@
   padding-top: @grid-gutter-width;
   //padding-right: (@grid-gutter-width / 2); // Leave some space for the scrollbar
   overflow: hidden; // We'll do scrollbars with angular-perfect-scrollbar
-
   .content-empty {
     position: absolute;
     bottom: 0;
@@ -23,8 +22,10 @@
 .message {
   clear: both;
   margin-left: -(@grid-gutter-width / 2);
-  .panel {
-    .panel-triangle-right();
+  @media (min-width: @screen-sm-min) {
+    .panel {
+      .panel-triangle-right();
+    }
   }
   // Message came via SocketIO
   /*
@@ -77,6 +78,7 @@
     .link-badge {
       margin-bottom: 0;
     }
+    /*
     .message-request {
       clear: both;
       overflow: hidden;
@@ -109,6 +111,7 @@
         }
       }
     }
+    */
   }
 }
 
@@ -130,6 +133,7 @@
     font-size: 13px;
     line-height: 13px;
   }
+  /*
   .message-request-meta {
     float: right;
     text-align: right;
@@ -140,6 +144,7 @@
       text-align: left;
     }
   }
+  */
   .panel {
     margin-bottom: @padding-xs-horizontal;
     .panel-body {
@@ -169,6 +174,7 @@
       }
     }
   }
+  /*
   .message-request-status {
     clear: both;
     overflow: hidden;
@@ -208,6 +214,7 @@
       }
     }
   }
+  */
   .message-reply-btn {
     float: right;
   }
