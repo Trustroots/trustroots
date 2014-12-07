@@ -12,7 +12,6 @@
  * size (default 256)
  * source (overwrite user's source selection)
  * link (will not wrap <img> into link)
- * watch (will start watching user.avatarSource and refresh each time that changes)
  */
 angular.module('users').directive('trAvatar', ['$location',
   function($location) {

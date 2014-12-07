@@ -11,8 +11,7 @@
 
           <div class="panel panel-default" id="profile-sidebar">
             <a href="#" class="avatar-edit" ng-click="avatarModal(user, $event);">
-              <!-- 'Watch' will cause directive to rerender each time avatar source changes. -->
-              <div tr-avatar data-watch="true" data-user="user" data-size="261" data-link="false"></div>
+              <div tr-avatar data-user="user" data-size="261" data-link="false"></div>
               <label>
                   <i class="fa fa-2x fa-camera"></i><br>
                   Change your profile photo
@@ -53,16 +52,6 @@
                   </span>
                 </p>
               </div>
-
-              <!--
-              <div class="form-group">
-                <h4>Last seen</h4>
-                <div>
-                  <time class="profile-edit-inactive">last-seen-time</time>
-                  <label for="lastseen-hide"><input id="lastseen-hide" type="checkbox"> Hide</label>
-                </div>
-              </div>
-              -->
 
               <div class="form-group">
                 <label for="languages"><h4>Languages</h4></label>
@@ -122,25 +111,24 @@
         </div>
         <div class="col-sm-9">
 
-      <div class="row">
-        <div class="col-md-6">
+          <div class="row">
+            <div class="col-md-6">
 
-          <span class="profile-firstname" data-ng-model="user.firstName" medium-editor options="{'placeholder': 'First name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
-          <span class="profile-lastname" data-ng-model="user.lastName" medium-editor options="{'placeholder': 'Last name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
+              <span class="profile-firstname" data-ng-model="user.firstName" medium-editor options="{'placeholder': 'First name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
+              <span class="profile-lastname" data-ng-model="user.lastName" medium-editor options="{'placeholder': 'Last name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
 
-          <h4 class="profile-username" tooltip="You cannot change your username" tooltip-placement="right">@{{user.username}}</h4>
+              <h4 class="profile-username" tooltip="You cannot change your username" tooltip-placement="right">@{{user.username}}</h4>
 
-          <div class="profile-tagline">
-            <div class="profile-tagline" data-ng-model="user.tagline" medium-editor options="{'placeholder': 'Short tagline...', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></div>
+              <div class="profile-tagline">
+                <div class="profile-tagline" data-ng-model="user.tagline" medium-editor options="{'placeholder': 'Short tagline...', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></div>
+              </div>
+
+            </div>
+            <div class="col-md-6 text-right">
+              <a ui-sref="profile({username: user.username})" type="cancel" class="btn btn-link">Cancel</a>
+              <button type="submit" class="btn btn-primary">Save profile</button>
+            </div>
           </div>
-
-        </div>
-        <div class="col-md-6 text-right">
-          <a ui-sref="profile({username: user.username})" type="cancel" class="btn btn-link">Cancel</a>
-          <button type="submit" class="btn btn-primary">Save profile</button>
-        </div>
-      </div>
-
 
           <!-- Profile tabs -->
           <div class="row">
