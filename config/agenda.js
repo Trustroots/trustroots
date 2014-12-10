@@ -6,7 +6,7 @@ exports.setupJobs = function() {
   var messagesUnreadJob = require('../app/jobs/message-unread.server.job');
 
   // Setup agenda
-  var Agenda = require('Agenda');
+  var Agenda = require('agenda');
   var agenda = new Agenda({db: { address: process.env.MONGOHQ_URL || process.env.MONGOLAB_URI || 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/agenda'}});
 
   // Schedule jobs
