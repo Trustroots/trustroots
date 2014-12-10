@@ -98,7 +98,13 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           hosts: {
             name: 'Hosts',
             type: 'markercluster',
-            visible: true
+            visible: true,
+            layerOptions: {
+              // The maximum radius that a cluster will cover from the central marker (in pixels).
+              // Default 80. Decreasing will make more smaller clusters. You could also use a function
+              // that accepts the current map zoom and returns the maximum cluster radius in pixels.
+              maxClusterRadius: 10
+            }
           },
           selected: {
             name: 'Selected hosts',
