@@ -69,7 +69,7 @@ var UserSchema = new Schema({
     validate: [validateLocalStrategyProperty, 'Please fill in your email'],
     match: [/.+\@.+\..+/, 'Please fill a valid email address']
   },
-  // New email is stored here until they are confirmed
+  // New email is stored here until it is confirmed
   emailTemporary: {
     type: String,
     trim: true,

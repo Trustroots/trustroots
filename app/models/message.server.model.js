@@ -31,6 +31,10 @@ var MessageSchema = new Schema({
   read: {
     type: Boolean,
     default: false
+  },
+  notified: {
+    type: Boolean,
+    default: false
   }
 });
 

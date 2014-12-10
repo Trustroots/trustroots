@@ -16,6 +16,7 @@ module.exports = {
       }
     }
   },
+  domain: process.env.DOMAIN || 'localhost:3000',
   assets: {
     lib: {
         //less: [

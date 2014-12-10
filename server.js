@@ -39,5 +39,9 @@ app.get('server').listen(config.port);
 // Expose app
 exports = module.exports = app;
 
+// Setup Agenda
+var jobSchedule = require('./config/agenda');
+jobSchedule.setupJobs();
+
 // Logging initialization
 console.log('MEAN.JS application started on port ' + config.port);

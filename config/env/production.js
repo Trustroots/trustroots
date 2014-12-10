@@ -16,6 +16,7 @@ module.exports = {
       }
     }
   },
+  domain: process.env.DOMAIN || 'www.trustroots.org',
   assets: {
     lib: {
       css: [

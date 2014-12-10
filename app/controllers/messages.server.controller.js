@@ -4,6 +4,7 @@
  * Module dependencies.
  */
 var mongoose = require('mongoose'),
+    async = require('async'),
     errorHandler = require('./errors'),
     sanitizeHtml = require('sanitize-html'),
     userHandler = require('./users'),
@@ -33,6 +34,7 @@ exports.messageSanitizeOptions = {
  * @todo: pagination
  */
 exports.inbox = function(req, res) {
+
   Thread.find(
       {
         $or: [
@@ -57,11 +59,14 @@ exports.inbox = function(req, res) {
         threads.forEach(function(thread) {
 
           // Threads need just excerpt
+          thread = thread.toObject();
           thread.message.excerpt = sanitizeHtml(thread.message.content, {allowedTags: []}); // Clean message content from html
           thread.message.excerpt = thread.message.excerpt.replace(/\s/g, ' '); // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
+          thread.message.excerpt = thread.message.excerpt.replace(/\&nbsp\;/g, ' '); // Above didn't clean these buggers.
           thread.message.excerpt = thread.message.excerpt.substring(0,100) + ' ...'; // Shorten
 
           delete thread.message.content;
+
           threadsCleaned.push(thread);
         });
 
@@ -82,6 +87,8 @@ exports.send = function(req, res) {
 
   var message = new Message(req.body);
   message.userFrom = req.user;
+  message.read = false;
+  message.notified = false;
 
   // Sanitize message contents
   message.content = sanitizeHtml(message.content, exports.messageSanitizeOptions);
@@ -99,6 +106,7 @@ exports.send = function(req, res) {
       thread.userFrom = message.userFrom;
       thread.userTo = message.userTo;
       thread.message = message;
+      thread.read = false;
 
       // Convert the Model instance to a simple object using Model's 'toObject' function
       // to prevent weirdness like infinite looping...
@@ -176,20 +184,31 @@ exports.thread = function(req, res) {
  */
 exports.threadByUser = function(req, res, next, userId) {
 
-  Message.find(
-      {
+  async.waterfall([
+
+    // Find messages
+    function(done) {
+
+      if(!userId) done(new Error('No user ID.'));
+
+      Message.find({
         $or: [
-          { userFrom: req.user._id, userTo: userId },
-          { userTo: req.user._id, userFrom: userId }
+        { userFrom: req.user._id, userTo: userId },
+        { userTo: req.user._id, userFrom: userId }
         ]
-      }
-    )
-    .sort('-created')
-    .populate('userFrom', userHandler.userMiniProfileFields)
-    .populate('userTo', userHandler.userMiniProfileFields)
-    .exec(function(err, messages) {
-      if (err) return next(err);
-      if (!messages) return next(new Error('Failed to load messages.'));
+      })
+      .sort('-created')
+      .populate('userFrom', userHandler.userMiniProfileFields)
+      .populate('userTo', userHandler.userMiniProfileFields)
+      .exec(function(err, messages) {
+        if (!messages) err = new Error('Failed to load messages.');
+
+        done(err, messages);
+      });
+    },
+
+    // Sanitize messages and return them for the API
+    function(messages, done) {
 
       // Sanitize each outgoing message's contents
       var messagesCleaned = [];
@@ -199,8 +218,41 @@ exports.threadByUser = function(req, res, next, userId) {
       });
 
       req.messages = messagesCleaned;
+
+      done(null);
+    },
+
+    /* Mark the thread read
+     *
+     * @todo: mark it read:true only when it was read:false,
+     * now it performs write each time thread is opened
+     */
+    function(done) {
+
+      Thread.update(
+        {
+          // User id's can be either way around in old thread handle, so we gotta test for both situations
+          $or: [
+            { userFrom: req.user._id, userTo: userId },
+            { userTo: req.user._id, userFrom: userId }
+          ]
+        },
+        { read: true },
+        {},
+        function(err){
+          done(err);
+        }
+      );
+
+    }
+
+  ], function(err) {
+      if (err) {
+        return next(err);
+      }
       next();
-    });
+  });
+
 };
 
 
@@ -209,7 +261,7 @@ exports.threadByUser = function(req, res, next, userId) {
  * Works only for currently logged in user's messages
  *
  * @todo: when array has only one id, as a small
- * optimization could be wise to use findByIdAndUpdate() 
+ * optimization could be wise to use findByIdAndUpdate()
  * @link http://mongoosejs.com/docs/api.html#model_Model.findByIdAndUpdate
  */
 exports.markRead = function(req, res) {
@@ -227,15 +279,19 @@ exports.markRead = function(req, res) {
   req.body.messageIds.forEach(function(messageId) {
     messages.push({
       _id: messageId,
-      userTo: req.user.id,
-      read: false
+      //read: false,
+
+      // Although this isn't in index, but it ensures
+      // user has access to update only his/hers own messages
+      userTo: req.user.id
     });
   });
 
   // Mark messages read
   Message.update({
     $or: messages
-  }, {
+  },
+  {
     read: true
   }, {
     multi: true
