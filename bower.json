@@ -21,7 +21,7 @@
     "fontawesome": "~4",
     "angular-leaflet-directive": "~0.7.9",
     "leaflet.markercluster": "~0.4.0",
-    "ngGeolocation": "~0.0.5",
+    "ngGeolocation": "~0.0.6",
     "angular-masonry": "~0.9.1",
     "angular-waypoints": "~1.0.1"
   },
