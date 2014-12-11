@@ -189,22 +189,28 @@ exports.threadByUser = function(req, res, next, userId) {
     // Find messages
     function(done) {
 
-      if(!userId) done(new Error('No user ID.'));
+      if(userId && req.user) {
 
-      Message.find({
-        $or: [
-        { userFrom: req.user._id, userTo: userId },
-        { userTo: req.user._id, userFrom: userId }
-        ]
-      })
-      .sort('-created')
-      .populate('userFrom', userHandler.userMiniProfileFields)
-      .populate('userTo', userHandler.userMiniProfileFields)
-      .exec(function(err, messages) {
-        if (!messages) err = new Error('Failed to load messages.');
+        Message.find({
+          $or: [
+          { userFrom: req.user._id, userTo: userId },
+          { userTo: req.user._id, userFrom: userId }
+          ]
+        })
+        .sort('-created')
+        .populate('userFrom', userHandler.userMiniProfileFields)
+        .populate('userTo', userHandler.userMiniProfileFields)
+        .exec(function(err, messages) {
+          if (!messages) err = new Error('Failed to load messages.');
 
-        done(err, messages);
-      });
+          done(err, messages);
+        });
+
+      }
+      else {
+        done(new Error('No user.'));
+      }
+
     },
 
     // Sanitize messages and return them for the API
@@ -250,7 +256,7 @@ exports.threadByUser = function(req, res, next, userId) {
       if (err) {
         return next(err);
       }
-      next();
+      else return next();
   });
 
 };

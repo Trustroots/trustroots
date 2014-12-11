@@ -26,8 +26,8 @@
             <div class="message-meta">
 
               <div class="message-meta">
-                <span data-ng-show="authentication.user._id === message.userFrom._id">You</span>
-                <a ui-sref="profile({ username: message.userFrom.username })" data-ng-bind="message.userFrom.displayName" data-ng-show="authentication.user._id !== message.userFrom._id"></a>
+                <span data-ng-show="user._id === message.userFrom._id">You</span>
+                <a ui-sref="profile({ username: message.userFrom.username })" data-ng-bind="message.userFrom.displayName" data-ng-show="user._id !== message.userFrom._id"></a>
                 — <time am-time-ago="message.created" tooltip="{{message.created | date:'medium'}}" tooltip-placement="bottom"></time>
               </div>
 

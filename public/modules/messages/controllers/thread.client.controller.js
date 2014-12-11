@@ -2,16 +2,15 @@
 
 angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Socket', 'Authentication', 'Messages', 'MessagesRead',
   function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Socket, Authentication, Messages, MessagesRead) {
-    $scope.authentication = Authentication;
 
     // If user is not signed in then redirect back home
-    if (!$scope.authentication.user) $state.go('home');
+    if (!Authentication.user) $state.go('home');
 
     // If no recepient defined, go to inbox
     if (!$stateParams.userId) $state.go('inboxMessages');
 
+    $scope.user = Authentication.user;
     $scope.userToId = $stateParams.userId;
-
     $scope.isThreadLoading = false;
     $scope.isSending = false;
 
