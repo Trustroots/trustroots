@@ -133,28 +133,40 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
       });
 
       message.$save(function(response) {
+
         $scope.content = '';
         $scope.isSending = false;
+
+        // Emit a 'chatMessage' message event
+        //Socket.emit('message.sent', message);
+
+        // Remove this when socket is back!
+        $scope.messages.unshift(response);
+        $timeout($scope.threadScroll, 300);
+
       }, function(errorResponse) {
         $scope.isSending = false;
         $scope.error = errorResponse.data.message;
       });
+
 
     };
 
     /**
      * Listen to received/sent messages and add them to our model
      */
+     /*
     Socket.on('message.sent', function(message) {
       message.pushed = true; // flag as pushed
-      $scope.messages.push(message);
+      //$scope.messages.push(message);
+      $scope.messages.unshift(message);
       $timeout($scope.threadScroll, 300);
     });
-
     // Remove the event listener when the controller instance is destroyed
     $scope.$on('$destroy', function() {
       Socket.removeListener('message.sent');
     });
+    */
 
 
     /**

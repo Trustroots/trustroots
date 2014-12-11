@@ -83,7 +83,7 @@ exports.inbox = function(req, res) {
 exports.send = function(req, res) {
 
   // take out socket instance from the app container, we'll need it later
-  var socketio = req.app.get('socketio');
+  //var socketio = req.app.get('socketio');
 
   var message = new Message(req.body);
   message.userFrom = req.user;
@@ -159,7 +159,7 @@ exports.send = function(req, res) {
           } else {
 
             // Emit an event for all connected clients about new message
-            socketio.sockets.emit( 'message.sent', message );
+            //socketio.sockets.emit( 'message.sent', message );
 
             // Finally res
             res.json(message);
