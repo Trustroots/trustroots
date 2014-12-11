@@ -31,7 +31,7 @@
   <link rel="apple-touch-icon-precomposed" sizes="72x72" href="{{url}}modules/core/img/icons/apple-touch-icon-72x72-precomposed.png">
   <link rel="apple-touch-icon" sizes="57x57" href="{{url}}modules/core/img/icons/apple-touch-icon-57x57.png">
 
-  {% for cssFile in cssFiles %}<link rel="stylesheet" href="{{cssFile}}">{% endfor %}
+  {% for cssFile in cssFiles %}<link rel="stylesheet" href="{{cssFile}}?c={{cacheBuster}}">{% endfor %}
   {# Open Sans - https://www.google.com/fonts#UsePlace:use/Collection:Open+Sans #}
   <link href='//fonts.googleapis.com/css?family=Open+Sans&subset=latin-ext,latin,cyrillic,greek' rel='stylesheet' type='text/css'>
   <!--[if lt IE 9]>
@@ -44,7 +44,7 @@
   <div id="tr-wrap">
 
     {% block header %}
-      <header data-ng-include="'/modules/core/views/header.client.view.html'" id="tr-header" role="banner" class="navbar navbar-default navbar-fixed-top hidden-print" ng-hide="isHidden" data-ng-controller="HeaderController"></header>
+      <header data-ng-include="'/modules/core/views/header.client.view.html?c={{cacheBuster}}'" id="tr-header" role="banner" class="navbar navbar-default navbar-fixed-top hidden-print" ng-hide="isHidden" data-ng-controller="HeaderController"></header>
     {% endblock %}
 
     <section class="content" id="tr-main" role="main">
@@ -54,7 +54,7 @@
   </div>
 
   {% block footer %}
-    <footer data-ng-include="'/modules/core/views/footer.client.view.html'" id="tr-footer" role="contentinfo" class="hidden-print" ng-class="{ 'footer-transparent footer-sticky' : isTransparent }" ng-hide="isHidden" data-ng-controller="FooterController"></footer>
+    <footer data-ng-include="'/modules/core/views/footer.client.view.html?c={{cacheBuster}}'" id="tr-footer" role="contentinfo" class="hidden-print" ng-class="{ 'footer-transparent footer-sticky' : isTransparent }" ng-hide="isHidden" data-ng-controller="FooterController"></footer>
   {% endblock %}
 
   {# Embedding The User and Settings Objects #}
@@ -65,7 +65,7 @@
   </script>
 
   {# Le JS #}
-  {% for jsFile in jsFiles %}<script type="text/javascript" src="{{jsFile}}"></script>
+  {% for jsFile in jsFiles %}<script type="text/javascript" src="{{jsFile}}?c={{cacheBuster}}"></script>
   {% endfor %}
 
   {% if process.env.NODE_ENV === 'development' %}

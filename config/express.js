@@ -40,6 +40,7 @@ module.exports = function(db) {
   app.locals.jsFiles = config.getJavaScriptAssets();
   app.locals.cssFiles = config.getCSSAssets();
   app.locals.languages = require('../public/modules/core/languages/languages.json');
+  app.locals.cacheBuster = config.cacheBuster;
   app.locals.appSettings = config.app.settings;
   app.locals.appSettings.time = new Date().toISOString();
   app.locals.appSettings.https = config.https;
