@@ -15,9 +15,6 @@ angular.module('contacts').controller('ConfirmContactController', ['$scope', '$r
     $scope.isConnected = false;
     $scope.isLoading = true;
 
-    console.log('logged in: ' + Authentication.user._id);
-    console.log($stateParams.contactId);
-
     // First fetch contact object, just to make it sure it exists + removing it is easier
     $scope.contact = Contact.get({
       contactId: $stateParams.contactId
