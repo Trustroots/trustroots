@@ -34,7 +34,8 @@ exports.userProfileFields = [
                     'created',
                     'updated',
                     'avatarSource',
-                    'emailHash' // MD5 hashed email to use with Gravatars
+                    'emailHash', // MD5 hashed email to use with Gravatars
+                    'additionalProvidersData.facebook.id' // For FB avatars
                     ].join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed
