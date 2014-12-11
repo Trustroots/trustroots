@@ -54,9 +54,11 @@ angular.module('users').directive('trAvatar', ['$location',
                * @link https://developers.facebook.com/docs/graph-api/reference/user/picture/
                */
               if($scope.source === 'facebook' ) {
-                if($scope.user && $scope.user.email) {
-                  var fb_id = '#';
-                  $scope.avatar = $location.protocol() + '://graph.facebook.com/' + fb_id + '/picture/?width=' +($scope.size || defaultSize) + '&height=' + ($scope.size || defaultSize);
+                if($scope.user &&
+                   $scope.user.additionalProvidersData &&
+                   $scope.user.additionalProvidersData.facebook &&
+                   $scope.user.additionalProvidersData.facebook.id) {
+                     $scope.avatar = $location.protocol() + '://graph.facebook.com/' + $scope.user.additionalProvidersData.facebook.id + '/picture/?width=' +($scope.size || defaultSize) + '&height=' + ($scope.size || defaultSize);
                 }
                 else {
                   $scope.avatar = defaultAvatar;

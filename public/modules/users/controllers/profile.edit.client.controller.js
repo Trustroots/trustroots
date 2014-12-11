@@ -109,6 +109,10 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
         templateUrl: 'avatar.client.modal.html', //inline at template
         controller: function ($scope, $modalInstance) {
           $scope.user = user;
+          // Check if provider is already in use with current user
+          $scope.isConnectedSocialAccount = function(provider) {
+            return $scope.user.provider === provider || ($scope.user.additionalProvidersData && $scope.user.additionalProvidersData[provider]);
+          };
           $scope.close = function () {
             $modalInstance.dismiss('close');
           };

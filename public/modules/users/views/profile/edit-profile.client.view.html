@@ -211,12 +211,11 @@
           </div>
         </div>
 
-        <!--
         <div class="row text-center">
 
           <div class="col-xs-5 col-xs-offset-1">
 
-            !-- When connected to FB--
+            <!-- When connected to FB-->
             <label for="avatar-source-facebook" ng-if="isConnectedSocialAccount('facebook')">
                 <div tr-avatar data-user="user" data-size="144" data-link="false" data-source="facebook"></div>
                 <div class="avatar-source-label">
@@ -225,7 +224,7 @@
                 </div>
             </label>
 
-            !-- When NOT connected to FB--
+            <!-- When NOT connected to FB-->
             <label for="avatar-source-facebook" ng-if="!isConnectedSocialAccount('facebook')">
                 <a href="/auth/facebook" class="avatar-source-link">
                   <div tr-avatar data-size="144" data-link="false" data-source="none"></div>
@@ -238,6 +237,7 @@
             </label>
           </div>
 
+          <!--
           <div class="col-xs-5">
             <label for="avatar-source-upload">
               <a href="#" class="avatar-source-link">
