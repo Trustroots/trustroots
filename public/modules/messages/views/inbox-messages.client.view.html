@@ -16,7 +16,7 @@
         <table class="table table-condensed table-hover table-threadlist table-threadlist-threads" data-ng-if="threads.$resolved && threads.length">
           <tbody>
 
-            <tr class="thread" data-ng-class="{ 'thread-unread': !thread.read }" data-ng-repeat="thread in threads" data-ng-click="openThread(thread)">
+            <tr class="thread" data-ng-class="{ 'thread-unread': !thread.read }" data-ng-repeat="thread in threads | orderBy:updated:reverse" data-ng-click="openThread(thread)">
               <td class="author col-xs-3 col-md-2">
                 <div tr-avatar data-user="otherParticipant(thread)" data-size="36" data-link="false" class="pull-left"></div> <span data-ng-bind="otherParticipant(thread, 'displayName')"></span>
               </td>

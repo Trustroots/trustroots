@@ -11,7 +11,6 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
 
     $scope.findInbox = function() {
       $scope.threads = Messages.query();
-      console.log($scope.threads);
     };
 
     /**
