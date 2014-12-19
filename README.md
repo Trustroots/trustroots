@@ -1,5 +1,7 @@
 # Trustroots
-_Enabling the latent trust between humans._
+_Hospitality exchange community for hitchhikers and other travellers._
+
+[Trustroots.org](https://www.trustroots.org)
 
 ## Prerequisites
 Make sure you have installed all these prerequisites:
