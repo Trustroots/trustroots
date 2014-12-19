@@ -79,8 +79,8 @@
           <div class="profile-sidebar-section" data-ng-show="hasConnectedAdditionalSocialAccounts()">
             <h4>Other networks</h4>
             <ul class="fa-ul authentication-social">
-              <li data-ng-repeat="(providerName, providerData) in user.additionalProvidersData">
-                <i class="fa fa-li fa-lg" ng-class="fa-{{providerName}}-square"></i> {{providerName}}
+              <li data-ng-repeat="(providerName, providerData) in user.additionalProvidersData" class="text-capitalize">
+                <i class="fa fa-li fa-lg fa-{{providerName}}-square"></i> {{providerName}}
               </li>
             </ul>
           </div>
