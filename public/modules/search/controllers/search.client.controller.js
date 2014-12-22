@@ -129,6 +129,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
      * Center map to user's location, received from Geolocation
      * Cancel setting this if user reacted to map in any way (searching, dragging etc)
      */
+     /*
     $scope.position = $geolocation.getCurrentPosition({
       timeout: 60000 // 1min
     });
@@ -139,6 +140,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
         $scope.center.zoom = 5;
       }
     });
+    */
 
 
     /**

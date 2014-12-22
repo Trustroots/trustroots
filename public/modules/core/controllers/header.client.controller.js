@@ -12,12 +12,6 @@ angular.module('core').controller('HeaderController', ['$scope', '$log', '$filte
       $log.log('Attempting to re-connect to the server');
     });
 
-    // Makes it faster for other controllers to load this if we get it already now
-    // @todo: should this be at some MainController?
-    $scope.position = $geolocation.getCurrentPosition({
-      timeout: 60000 // 1min
-    });
-
     $scope.authentication = Authentication;
     $scope.isCollapsed = false;
     $scope.isHidden = false;
