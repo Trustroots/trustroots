@@ -43,6 +43,7 @@ scripts/*
 !scripts/starter.sh
 !scripts/backup-db.sh
 !scripts/deploy.sh
+!scripts/s3backup.sh
 
 # Logs
 logs
