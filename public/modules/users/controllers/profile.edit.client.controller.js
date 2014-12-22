@@ -75,8 +75,6 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
         user.tagline = user.tagline.replace('<br>','');
 
         user.$update(function(response) {
-          console.log('response');
-          console.log(response);
           $scope.success = true;
           Authentication.user = response;
           $state.go('profile-updated', {username: response.username, updated: true});
