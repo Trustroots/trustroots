@@ -150,11 +150,10 @@ exports.checkUnreadMessages = function(agenda) {
       }
 
     ], function(err) {
-      //if (err) {
-      //  // @todo
-      //}
-      console.log('Error while checking for unread messages:');
-      console.log(err);
+      if (err) {
+        console.log('Error while checking for unread messages:');
+        console.log(err);
+      }
     });
 
   }); //agenda.define
