@@ -79,8 +79,15 @@
           <div class="profile-sidebar-section" data-ng-show="hasConnectedAdditionalSocialAccounts()">
             <h4>Other networks</h4>
             <ul class="fa-ul authentication-social">
-              <li data-ng-repeat="(providerName, providerData) in user.additionalProvidersData" class="text-capitalize">
-                <i class="fa fa-li fa-lg fa-{{providerName}}-square"></i> {{providerName}}
+              <li data-ng-repeat="(providerName, providerData) in profile.additionalProvidersData" class="text-capitalize">
+                <i class="fa fa-li fa-lg fa-{{providerName}}-square"></i>
+
+                <!-- Show if can be linked -->
+                <a ng-href="{{socialAccountLink(providerName, providerData)}}" target="_blank">{{providerName}}</a>
+
+                <!-- Otherwice just show label --
+                <span ng-if="!socialAccountLink(providerName)">{{providerName}}</span>
+              -->
               </li>
             </ul>
           </div>

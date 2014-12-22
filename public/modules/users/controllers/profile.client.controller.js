@@ -54,6 +54,20 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
       return $scope.profile.provider === provider || ($scope.profile.additionalProvidersData && $scope.profile.additionalProvidersData[provider]);
     };
 
+    /*
+     * Return an URL for user's social media profiles
+     * Ensure these fields are set at profile server controller.
+     */
+    $scope.socialAccountLink = function(provider, data) {
+      if(provider === 'facebook' && data.link) {
+        return data.link;
+      }
+      else if(provider === 'twitter' && data.screen_name) {
+        return 'https://twitter.com/' + data.screen_name;
+      }
+      else return '#';
+    };
+
     $scope.tabSelected = ($stateParams.tab && ['overview', 'references', 'contacts'].indexOf($stateParams.tab) > -1) ? $stateParams.tab : 'overview';
 
     $scope.tabs = [
