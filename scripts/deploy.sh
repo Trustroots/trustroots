@@ -15,8 +15,9 @@ npm update
 bower update
 NODE_ENV=production grunt build
 
-echo "Restarting the server..."
-sudo service nginx restart
+echo "Redeploying the application..."
+touch tmp/restart.txt
+
 sudo passenger-status
 
 # Deployment notifications
