@@ -71,6 +71,9 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
         $scope.success = $scope.error = null;
         var user = new Users($scope.user);
 
+        // Fixes #66 - <br> appearing to tagline with Firefox
+        user.tagline = user.tagline.replace('<br>','');
+        
         user.$update(function(response) {
           $scope.success = true;
           Authentication.user = response;
