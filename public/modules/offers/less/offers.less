@@ -46,6 +46,9 @@
   .offer-description {
     font-size: @font-size-large;
   }
+  .offer-description:after {
+    position: relative;
+  }
   .btn-group > .btn-hosting {
   &, &:hover {
     border-color: transparent;
@@ -58,13 +61,6 @@
         border-color: #fff;
       }
     }
-  }
-
-  // Hacky solution to hide placeholder when medium-editor's model changes.
-  // @todo Get rid of this when it's fixed from their end.
-  // @link https://github.com/thijsw/angular-medium-editor/issues/18
-  .angular-medium-editor.medium-editor-placeholder.is-not-empty:after {
-    color: transparent;
   }
 }
 
