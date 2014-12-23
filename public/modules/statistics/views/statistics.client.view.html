@@ -1,0 +1,26 @@
+<section class="container container-spacer" data-ng-controller="StatisticsController">
+
+  <div class="row">
+    <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3">
+
+      <div class="page-header">
+        <h2>Statistics</h2>
+      </div>
+
+      <div class="statistics">
+
+        <section class="statistics-total">
+          <h3>Members</h3>
+          <span class="statistics-count">{{statistics.total}}</span>
+        </section>
+
+        <section class="statistics-launch">
+          <h3>Enabling the latent trust between humans since</h3>
+          <span class="lead">{{launchDate | date:mediumDate}}</span>
+        </section>
+
+      </div>
+
+    </div>
+  </div><!-- /.row -->
+</section>
