@@ -1,3 +1,6 @@
+**Check https://github.com/Trustroots/trustroots/wiki/Volunteering**
+
+
 ### Git workflow for contributors
 
 * Clone this repo (see [README.md](https://github.com/Trustroots/trustroots/blob/master/README.md) how to install)
