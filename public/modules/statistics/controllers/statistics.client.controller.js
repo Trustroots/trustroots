@@ -4,7 +4,7 @@ angular.module('statistics').controller('StatisticsController', ['$scope', 'Stat
   function($scope, Statistics) {
 
     // Yay!
-    $scope.launchDate = new Date(2014, 12, 22);
+    $scope.launchDate = new Date(2014, 12, 23);
 
     $scope.statistics = Statistics.get();
 
