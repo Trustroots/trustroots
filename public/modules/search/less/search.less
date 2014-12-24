@@ -24,6 +24,10 @@
     top: (@navbar-height + @padding-base-horizontal);
     right: 50%;
     margin-right: -150px;
+    @media (max-width: @screen-xs-max) {
+      width: 250px;
+      margin-right: -125px;
+    }
     .input-group {
       box-shadow: 0 1px 5px rgba(0,0,0,0.35);
     }
@@ -93,6 +97,9 @@
     text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.4);
     padding: 10px;
     background: rgba(0, 0, 0, 0.2);
+    @media (max-width: @screen-xs-max) {
+      display: none;
+    }
   }
 
   .panel {
