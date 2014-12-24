@@ -46,26 +46,13 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       ]),
       layers: {
         baselayers: {
-          mapbox: {
+          default: {
             name: 'Default',
             type: 'xyz',
             url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.access_token + ( settings.https ? '&secure=1' : ''),
             layerParams: {
               user: settings.mapbox.user,
               map: settings.mapbox.map[0]
-            },
-            layerOptions: {
-              attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
-              continuousWorld: true
-            }
-          },
-          hitchmap: {
-            name: 'Hitchmap',
-            type: 'xyz',
-            url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.access_token + ( settings.https ? '&secure=1' : ''),
-            layerParams: {
-              user: settings.mapbox.user,
-              map: settings.mapbox.map[1]
             },
             layerOptions: {
               attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
@@ -123,6 +110,44 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
         }
       }
     });
+
+    /**
+     * Add additional layers if they're configured
+     */
+    // Add Satellite
+    if(settings.mapbox.map[2]) {
+      $log.log('Enable satellite map');
+      $scope.layers.baselayers.satellite = {
+        name: 'Satellite',
+        type: 'xyz',
+        url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.access_token + ( settings.https ? '&secure=1' : ''),
+        layerParams: {
+          user: settings.mapbox.user,
+          map: settings.mapbox.map[2]
+        },
+        layerOptions: {
+          attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
+          continuousWorld: true
+        }
+      };
+    }
+    // Add experimental Hitchmap
+    if(settings.mapbox.map[1]) {
+      $log.log('Enable hitchmap map');
+      $scope.layers.baselayers.hitchmap = {
+        name: 'Hitchmap',
+        type: 'xyz',
+        url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.access_token + ( settings.https ? '&secure=1' : ''),
+        layerParams: {
+          user: settings.mapbox.user,
+          map: settings.mapbox.map[1]
+        },
+        layerOptions: {
+          attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
+          continuousWorld: true
+        }
+      };
+    }
 
 
     /**

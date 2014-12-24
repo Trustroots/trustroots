@@ -8,7 +8,7 @@ module.exports = {
     settings: {
       mapbox: {
         user: process.env.MAPBOX_USERNAME || 'trustroots',
-        map: process.env.MAPBOX_MAP || ['k8mokch5', 'ce8bb774'],
+        map: process.env.MAPBOX_MAP || ['k8mokch5', 'ce8bb774', 'kil7hee6'], // default, hitchmap, satellite
         access_token: process.env.MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g' //Public key
       },
       osm: {

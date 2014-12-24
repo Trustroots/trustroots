@@ -31,8 +31,8 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
       },
       layers: {
         baselayers: {
-          mapbox: {
-            name: 'Default',
+          default: {
+            name: 'Streets',
             type: 'xyz',
             url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.access_token + ( settings.https ? '&secure=1' : ''),
             layerParams: {
@@ -50,6 +50,23 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
         scrollWheelZoom: false
       }
     });
+
+    // Add Satellite layer to the map
+    if(settings.mapbox.map[2]) {
+      $scope.layers.baselayers.satellite = {
+        name: 'Satellite',
+        type: 'xyz',
+        url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.access_token + ( settings.https ? '&secure=1' : ''),
+        layerParams: {
+          user: settings.mapbox.user,
+          map: settings.mapbox.map[2]
+        },
+        layerOptions: {
+          attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
+          continuousWorld: true
+        }
+      };
+    }
 
     // Check if user already has previous offer
     $scope.findOffer = function() {
