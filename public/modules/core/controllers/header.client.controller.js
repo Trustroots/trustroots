@@ -1,5 +1,8 @@
 'use strict';
 
+/* This declares to JSHint that 'ga' is a global variable: */
+/*global ga:false */
+
 angular.module('core').controller('HeaderController', ['$scope', '$log', '$filter', '$geolocation', 'Authentication', 'Menus', 'Socket',
   function($scope, $log, $filter, $geolocation, Authentication, Menus, Socket) {
 
@@ -22,11 +25,23 @@ angular.module('core').controller('HeaderController', ['$scope', '$log', '$filte
       $scope.isCollapsed = !$scope.isCollapsed;
     };
 
-    // Collapsing the menu after navigation
-    // Hide it at certain pages
+    // Perform actions at page change
     $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+
+      // Collapsing the menu after navigation
       $scope.isCollapsed = false;
-        $scope.isHidden = (['home', 'signup', 'signin'].indexOf(toState.name) > -1) ? true : false;
+
+      // Hide header at certain pages
+      $scope.isHidden = (['home', 'signup', 'signin'].indexOf(toState.name) > -1) ? true : false;
+
+      // Analytics
+      if (ga) {
+        ga('send', 'pageview', {
+          'page': '/#!' + toState.url,
+          //'title': ''
+        });
+      }
+
     });
 
     // Create header menu for User when she/he logins
