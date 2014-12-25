@@ -20,7 +20,7 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$http
         $scope.isLoading = false;
         // If successful we assign the response to the global user model
         $scope.authentication.user = response;
-        $scope.success = 'Go to your ' + response.email + ' email account, find the email from Trustroots, and click the confirm link. It might take up to 5-10 minutes for email to arrive — meanwhile you can fill in your profile!';
+        $scope.success = 'Go to your ' + response.email + ' email account, find the email from Trustroots and click the confirm link. It might take up to 5-10 minutes for email to arrive and in rare occasions it might end up to spam folder — meanwhile you can fill in your profile!';
       }).error(function(response) {
         $scope.isLoading = false;
         $scope.error = response.message;
