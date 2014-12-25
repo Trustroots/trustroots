@@ -1,17 +1,13 @@
-<section class="board board-primary board-bokehblue">
-  <div class="container">
-    <div class="row">
-       <div class="col-md-offset-3 col-md-6 text-center lead">
-         <a ui-sref="home" class="logo logo-sm logo-white center-block"></a>
-         <br>
-         <div ng-include src="'/modules/pages/views/manifesto-text.client.partial.html'"></div>
-       </div>
-    </div>
-  </div>
-</section>
 <section class="container container-spacer" data-ng-controller="AuthenticationController">
   <form name="userForm" data-ng-submit="signup()" class="signin form-horizontal" novalidate autocomplete="off">
     <fieldset>
+
+      <div class="row">
+        <div class="col-xs-12">
+          <a ui-sref="home" class="logo logo-sm logo-blue center-block"></a>
+          <br><br>
+        </div>
+      </div>
 
       <!-- Signup form -->
       <div class="row" ng-hide="success">
@@ -26,7 +22,7 @@
           <div class="form-group">
             <label for="lastName" class="col-sm-4 control-label">Last Name</label>
             <div class="col-sm-8">
-              <input type="text" id="lastName" name="lastName" class="form-control input-lg" data-ng-model="credentials.lastName" placeholder="Last Name" popover="You don’t necessarily have to use your real name here."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true">
+              <input type="text" id="lastName" name="lastName" class="form-control input-lg" data-ng-model="credentials.lastName" placeholder="Last Name" popover="You don’t necessarily have to use your real name here."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="isLoading">
             </div>
           </div>
           <div class="form-group">
@@ -80,9 +76,9 @@
       <!-- Success -->
 
       <!-- Rules -->
-      <div class="row">
+      <div class="row" data-ng-hide="success">
         <div class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-          <p>Please, abide our <a ui-sref="rules" ng-click="openRules($event);" tooltip="Read rules" tooltip-placement="bottom">rules</a> that include standards of behavior that apply to everyone.</p>
+          <p>Please, abide to our <a ui-sref="rules" ng-click="openRules($event);" tooltip="Read rules" tooltip-placement="bottom">rules</a> that include standards of behavior that apply to everyone.</p>
         </div>
         <script type="text/ng-template" id="rules.client.modal.html">
           <div class="modal-body" ng-include src="'/modules/pages/views/rules-text.client.partial.html'"></div>
@@ -93,10 +89,10 @@
       </div><!-- .row-->
       <!-- /Rules -->
 
-      <div class="row">
+      <div class="row" data-ng-hide="success">
         <div class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
           <br><br>
-          <small><a ui-sref="signin">Login</a></small>
+          <a ui-sref="signin" class="btn btn-sm btn-link">Login</a>
           <br><br>
         </div>
       </div>
