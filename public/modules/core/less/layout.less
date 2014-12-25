@@ -272,33 +272,35 @@ hr {
     right: 0;
   }
   /* Used at home -view... */
-  &.footer-transparent {
-    z-index: 999;
+  @media (min-width: @screen-sm-min) {
+    &.footer-transparent {
+      z-index: 999;
 
-    /* http://www.colorzilla.com/gradient-editor/#000000+0,000000+100&0+0,0.65+100;Custom */
-    background: -moz-linear-gradient(top,  rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%); /* FF3.6+ */
-    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(0,0,0,0)), color-stop(100%,rgba(0,0,0,0.65))); /* Chrome,Safari4+ */
-    background: -webkit-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* Chrome10+,Safari5.1+ */
-    background: -o-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* Opera 11.10+ */
-    background: -ms-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* IE10+ */
-    background: linear-gradient(to bottom,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* W3C */
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00000000', endColorstr='#a6000000',GradientType=0 ); /* IE6-9 */
-    border: 0;
-    color: #fff;
-    a {
+      /* http://www.colorzilla.com/gradient-editor/#000000+0,000000+100&0+0,0.65+100;Custom */
+      background: -moz-linear-gradient(top,  rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%); /* FF3.6+ */
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(0,0,0,0)), color-stop(100%,rgba(0,0,0,0.65))); /* Chrome,Safari4+ */
+      background: -webkit-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* Chrome10+,Safari5.1+ */
+      background: -o-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* Opera 11.10+ */
+      background: -ms-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* IE10+ */
+      background: linear-gradient(to bottom,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* W3C */
+      filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00000000', endColorstr='#a6000000',GradientType=0 ); /* IE6-9 */
+      border: 0;
       color: #fff;
-    }
-    .copyright {
-      color: darken(#fff, 10%);
       a {
-        color: darken(#fff, 10%);
+        color: #fff;
       }
-    }
-    hr {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      .copyright {
+        color: darken(#fff, 10%);
+        a {
+          color: darken(#fff, 10%);
+        }
+      }
+      hr {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
     }
   }
   @media (max-width: @screen-xs-max) {
@@ -363,6 +365,9 @@ hr {
     }
     a:hover {
       text-decoration: underline;
+    }
+    @media (max-width: @screen-xs-max) {
+      display: none;
     }
   }
 }
