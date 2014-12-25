@@ -13,11 +13,11 @@ module.exports = {
     settings: {
       mapbox: {
         user: 'trustroots',
-        map: ['k8mokch5', 'ce8bb774'],
-        access_token: 'MAPBOX_PUBLIC_KEY'
+        map: ['k8mokch5', 'ce8bb774', 'kil7hee6'], // default, hitchmap, satellite
+        access_token: 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g' //Public key
       },
       osm: {
-        email: 'EMAIL'
+        email: ['maps','@','trustroots','.org'].join('') // spam bot prevention since this ends up to repository...
       }
     }
   },
