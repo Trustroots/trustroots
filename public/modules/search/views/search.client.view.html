@@ -17,6 +17,10 @@
     Sorry, you need to first activate your profile before you can browse others.
   </div>
 
+  <div ng-show="center.zoom < 6 && user.public !== false" class="text-uppercase search-overlay-message">
+    Zoom closer to see people
+  </div>
+
   <div ng-show="notFound" class="search-overlay-message">
     We could not find such a place...
   </div>

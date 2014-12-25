@@ -193,23 +193,45 @@
  * Critical search errors floating on top of the map
  * Eg. show to non public users
  */
-@search-overlay-message-width: 320px;
+
+
+
+
 .search-overlay-message {
   position: absolute;
   z-index: 1000;
   height: auto;
   padding: 40px 20px;
-  width: (@search-overlay-message-width - 40px);
-  margin-left: -(@search-overlay-message-width/2);
   top: 40%;
   left: 50%;
   right: 50%;
-  color: #fff;
+  color: white;
+  stext-align: center;
+  text-shadow: 0 1px 10px rgba(0,0,0,0.8);
+  font-size: 36px;
+  font-weight: bold;
   text-align: center;
-  font-size: @font-size-large;
-  background: @brand-primary;
-  background: rgba(red(@brand-primary), green(@brand-primary), blue(@brand-primary), .9);
-  box-shadow: 0 0 15px rgba(red(@brand-primary), green(@brand-primary), blue(@brand-primary), .5);
+  letter-spacing: -1px;
+  background: transparent;
+  //box-shadow: 0 0 15px rgba(red(@brand-primary), green(@brand-primary), blue(@brand-primary), .5);
   .user-select(none);
   pointer-events: none; // Allows dragging the map trough element
+}
+
+@media (min-width: @screen-sm-min) {
+  @search-overlay-message-width: 650px;
+  .search-overlay-message {
+  width: (@search-overlay-message-width - 40px);
+  margin-left: -(@search-overlay-message-width/2);
+    font-size: 30px;
+  }
+}
+
+@media (max-width: @screen-xs-max) {
+  @search-overlay-message-width: 450px;
+  .search-overlay-message {
+    width: (@search-overlay-message-width - 40px);
+    margin-left: -(@search-overlay-message-width/2);
+    font-size: 24px;
+  }
 }
