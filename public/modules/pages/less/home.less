@@ -13,7 +13,7 @@
       margin: 0;
       &, a {
         font-size: @font-size-base;
-        color: rgba(255, 255, 255, 0.9);
+        color: rgba(255, 255, 255, 0.95);
         text-decoration: none;
       }
       a:hover {
@@ -31,6 +31,12 @@
       line-height: 35px;
       margin: 30px 0;
       padding: 0;
+    }
+    @media (max-width: @screen-xs-max) {
+      h3 {
+        line-height: 30px;
+      }
+      margin-bottom: @footer-height;
     }
   }
   .btn-group {
