@@ -119,7 +119,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
      */
     // Add Satellite
     if(settings.mapbox.map[2]) {
-      $log.log('Enable satellite map');
       $scope.layers.baselayers.satellite = {
         name: 'Satellite',
         type: 'xyz',
@@ -136,7 +135,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     }
     // Add experimental Hitchmap
     if(settings.mapbox.map[1]) {
-      $log.log('Enable hitchmap map');
       $scope.layers.baselayers.hitchmap = {
         name: 'Hitchmap',
         type: 'xyz',
