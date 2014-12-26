@@ -266,7 +266,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           northEastLat: $scope.bounds.northEast.lat +boundingDelta,
           southWestLng: $scope.bounds.southWest.lng -boundingDelta,
           southWestLat: $scope.bounds.southWest.lat -boundingDelta
-        }
+        };
         $scope.lastZoom = $scope.center.zoom;
         //API Call
         Offers.query({
@@ -312,7 +312,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
 
     //Function to filter markers with a bounding box
     $scope.filterBounding = function (markers, boudingBox) {
-      var timeA = performance.now();
       var filteredMarkers = [];
       if(markers.length > 10) {
         for(var i = 0; i < markers.length; i++) {
@@ -346,7 +345,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           if(angular.isDefined($scope.bounds.northEast)) {
             $scope.getMarkers();
           }
-        }
+        };
         $timeout(loadMarkers);
       }
     });
