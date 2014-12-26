@@ -124,41 +124,42 @@ exports.list = function(req, res) {
     return res.status(400).send('No access.');
   }
 
-  Offer.find( {
-        $or: [
-          { status: 'yes' },
-          { status: 'maybe' }
-        ]/*,
-        locationFuzzy: {
-            $geoWithin: {
-                $box: [
-                        [Number(req.query.northEastLng), Number(req.query.northEastLat)],
-                        [Number(req.query.southWestLng), Number(req.query.southWestLat)]
-                      ]
-            }
-          }
-          */
-        },
-        'locationFuzzy status user'
-        )
-        .exec(function(err, offers) {
-          if (err) {
-            return res.status(400).send({
-              message: errorHandler.getErrorMessage(err)
-            });
-          } else {
+  Offer.find(
+    {
+      $or: [
+        { status: 'yes' },
+        { status: 'maybe' }
+      ],
+      //http://docs.mongodb.org/manual/reference/operator/query/box -> It's latitude first as in the database, not longitude first as in the documentation
+      locationFuzzy: {
+        $geoWithin: {
+          $box: [
+            [Number(req.query.southWestLat), Number(req.query.southWestLng)],
+            [Number(req.query.northEastLat), Number(req.query.northEastLng)]
+          ]
+        }
+      }
+    },
+    'locationFuzzy status user'
+  )
+  .exec(function(err, offers) {
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
+      });
+    } else {
 
-            /*
-             * Could return something like this here already (so no need to refactor at frontend):
-             *
-             * lat: marker.locationFuzzy[0],
-             * lng: marker.locationFuzzy[1],
-             * user: marker.user,
-             * icon: $scope.icons[marker.status]
-             */
-            res.json(offers);
-          }
-        });
+      /*
+      * Could return something like this here already (so no need to refactor at frontend):
+      *
+      * lat: marker.locationFuzzy[0],
+      * lng: marker.locationFuzzy[1],
+      * user: marker.user,
+      * icon: $scope.icons[marker.status]
+      */
+      res.json(offers);
+    }
+  });
 };
 
 

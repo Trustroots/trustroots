@@ -40,10 +40,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     angular.extend($scope, {
       center: defaultLocation,
       markers: [],
-      bounds: leafletBoundsHelpers.createBoundsFromArray([
-        [ 51.508742458803326, -0.087890625 ],
-        [ 51.508742458803326, -0.087890625 ]
-      ]),
+      bounds: {},
       layers: {
         baselayers: {
           default: {
@@ -105,9 +102,15 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       },
       events: {
         map: {
-          enable: ['click','mousedown'],
+          enable: ['click','mousedown', 'moveend', 'load'],
           logic: 'emit'
         }
+      },
+      lastbounds : {
+        northEastLng: 0,
+        northEastLat: 0,
+        southWestLng: 0,
+        southWestLat: 0
       }
     });
 
@@ -246,70 +249,120 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       }*/
     };
 
-    /*
-     * Load all map markers at init
-     * @todo: move towards gradual bounding box loading in future
-     */
-    Offers.query({
-      northEastLng: '',
-      northEastLat: '',
-      southWestLng: '',
-      southWestLat: ''
-    }, function(offers){
-      //$log.log('->offers promise success:');
-      //$log.log(offers);
-
-      var markers = [];
-      angular.forEach(offers, function(marker) {
-        this.push({
-          //id: marker._id,
-          lat: marker.locationFuzzy[0],
-          lng: marker.locationFuzzy[1],
-          userId: marker._id,
-          icon: (marker.status === 'yes') ? $scope.icons.hostingYes : $scope.icons.hostingMaybe,
-          layer: 'hosts'
-        });
-      }, markers);
-
-      angular.extend($scope.markers, markers);
-
-    });
     /**
      * Load content to map bounding box
-     * @todo bounds change only when map dragging is finished, we could shoot a query already while dragging every n ms.
      */
-    /*
-    $scope.$watch('bounds', function(newBounds, oldBounds) {
-        $log.log('->bounds');
-        Offers.query({
-          northEastLng: newBounds.northEast.lng,
-          northEastLat: newBounds.northEast.lat,
-          southWestLng: newBounds.southWest.lng,
-          southWestLat: newBounds.southWest.lat
-        }, function(offers){
-          $log.log('->offers promise success:');
-          $log.log(offers);
 
+    //To set how bigger we make the bounding box for fetching the marker
+    var boundingDelta = 1;
+
+    //The big function that will get the markers for you, and check if we can filter the stored markers or fetch new markers
+    $scope.getMarkers = function () {
+      //If we get out of the boundig box of the last api query we have to call the API for the new markers
+      if($scope.bounds.northEast.lng > $scope.lastbounds.northEastLng || $scope.bounds.northEast.lat > $scope.lastbounds.northEastLat || $scope.bounds.southWest.lng < $scope.lastbounds.southWestLng || $scope.bounds.southWest.lat < $scope.lastbounds.southWestLat) {
+        //Saving the current bounding box amd zoom
+        $scope.lastbounds = {
+          northEastLng: $scope.bounds.northEast.lng +boundingDelta,
+          northEastLat: $scope.bounds.northEast.lat +boundingDelta,
+          southWestLng: $scope.bounds.southWest.lng -boundingDelta,
+          southWestLat: $scope.bounds.southWest.lat -boundingDelta
+        }
+        $scope.lastZoom = $scope.center.zoom;
+        //API Call
+        Offers.query({
+          northEastLng: $scope.lastbounds.northEastLng,
+          northEastLat: $scope.lastbounds.northEastLat,
+          southWestLng: $scope.lastbounds.southWestLng,
+          southWestLat: $scope.lastbounds.southWestLat
+        }, function(offers){
           var markers = [];
           angular.forEach(offers, function(marker) {
             this.push({
               //id: marker._id,
               lat: marker.locationFuzzy[0],
               lng: marker.locationFuzzy[1],
-              user: marker.user,
-              icon: (marker.status === 'yes') ? $scope.icons.hostingYes : $scope.icons.hostingMaybe
+              userId: marker._id,
+              icon: (marker.status === 'yes') ? $scope.icons.hostingYes : $scope.icons.hostingMaybe,
+              layer: 'hosts'
             });
           }, markers);
-
+          //Empty last markers
+          $scope.markers = [];
+          //Fill with new markers
           angular.extend($scope.markers, markers);
-
-
+          //Store marker for further filtering.
+          $scope.storedMarkers = $scope.markers;
         });
+      }
+      //If we zoom in the last bounding box we just just filter the stored markers
+      //And if we move out of the bounding box of the filtered marker we can filter again from the stored marker
+      else if(($scope.center.zoom > $scope.lastZoom && $scope.bounds.northEast.lng < $scope.lastbounds.northEastLng && $scope.bounds.northEast.lat < $scope.lastbounds.northEastLat && $scope.bounds.southWest.lng > $scope.lastbounds.southWestLng && $scope.bounds.southWest.lat > $scope.lastbounds.southWestLat) || (angular.isDefined($scope.lastInnerBounds) && ($scope.bounds.northEast.lng > $scope.lastInnerBounds.northEastLng || $scope.bounds.northEast.lat > $scope.lastInnerBounds.northEastLat || $scope.bounds.southWest.lng < $scope.lastInnerBounds.southWestLng || $scope.bounds.southWest.lat < $scope.lastInnerBounds.southWestLat))) {
+        //Saving the current bounding box amd zoom
+        $scope.lastInnerBounds = {
+          northEastLng: $scope.bounds.northEast.lng +boundingDelta,
+          northEastLat: $scope.bounds.northEast.lat +boundingDelta,
+          southWestLng: $scope.bounds.southWest.lng -boundingDelta,
+          southWestLat: $scope.bounds.southWest.lat -boundingDelta
+        };
+        $scope.lastZoom = $scope.center.zoom;
+        //Get the filtered markers
+        $scope.markers = $scope.filterBounding($scope.storedMarkers, $scope.lastInnerBounds);
+      }
+    };
 
+    //Function to filter markers with a bounding box
+    $scope.filterBounding = function (markers, boudingBox) {
+      var timeA = performance.now();
+      var filteredMarkers = [];
+      if(markers.length > 10) {
+        for(var i = 0; i < markers.length; i++) {
+          if(markers[i].lat < boudingBox.northEastLat && markers[i].lat > boudingBox.southWestLat && markers[i].lng < boudingBox.northEastLng && markers[i].lng > boudingBox.southWestLng) {
+            filteredMarkers.push(markers[i]);
+          }
+        }
+      }
+      else {
+        //Not so many markers so we are too lazy to filter them
+        filteredMarkers = markers;
+      }
+      return filteredMarkers;
+    };
+
+    //Function to hide markers
+    $scope.hideOverlay = function(overlayName) {
+      $scope.layers.overlays[overlayName].visible = false;
+    };
+
+    //Function to show markers
+    $scope.showOverlay = function(overlayName) {
+      $scope.layers.overlays[overlayName].visible = true;
+    };
+
+    //Set event for map load
+    $scope.$on('leafletDirectiveMap.load', function(event){
+      //If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
+      if($scope.center.zoom > 5) {
+        var loadMarkers = function() {
+          if(angular.isDefined($scope.bounds.northEast)) {
+            $scope.getMarkers();
+          }
+        }
+        $timeout(loadMarkers);
+      }
     });
-    */
 
-
+    //Set event that fires everytime we finish to move the map
+    $scope.$on('leafletDirectiveMap.moveend', function(event){
+      //Get markers if zoom is big enough
+      if($scope.center.zoom > 5) {
+        $scope.showOverlay('hosts');
+        $scope.getMarkers();
+      }
+      //Otherwise hide the markers
+      else {
+        $scope.hideOverlay('hosts');
+      }
+    });
 
     /**
      * Map address search
