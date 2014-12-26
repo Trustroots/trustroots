@@ -294,31 +294,40 @@ exports.validateEmailToken = function(req, res) {
  * Confirm email POST from email token
  */
 exports.confirmEmail = function(req, res, next) {
-  // Init Variables
-  var passwordDetails = req.body;
 
   async.waterfall([
 
     function(done) {
+
+      // Check if user exists with this token
       User.findOne({
         emailToken: req.params.token
       }, function(err, user) {
         if (!err && user) {
 
-            // Will be the returned object when no errors
-            var result = {};
+          // Will be the returned object when no errors
+          var result = {};
 
-            // If users profile was hidden, it means it was first confirmation email after registration.
-            result.profileMadePublic = !user.public;
+          // If users profile was hidden, it means it was first confirmation email after registration.
+          result.profileMadePublic = !user.public;
 
-            // Replace old email with new one
-            user.email = user.emailTemporary;
-
-            user.emailTemporary = undefined;
-            user.emailToken = undefined;
-            user.public = true;
-
-            user.save(function(err) {
+          // We can't do this here because we've got user document with password and we'd just override it:
+          //user.save(function(err) {
+          // Instead we'll do normal mongoose update with previously fetched user id
+          User.findByIdAndUpdate(
+            user._id,
+            {
+              $unset: {
+                emailTemporary: 1,
+                emailToken: 1
+              },
+              $set: {
+                public: true,
+                // Replace old email with new one
+                email: user.emailTemporary
+              }
+            },
+            function (err, user) {
               if (err) {
                 return res.status(400).send({
                   message: errorHandler.getErrorMessage(err)
