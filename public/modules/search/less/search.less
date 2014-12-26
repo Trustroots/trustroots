@@ -208,24 +208,27 @@
   font-weight: bold;
   text-align: center;
   background: transparent;
+  opacity: 1;
+
+  // Allows dragging the map trough the element
+  pointer-events: none;
   .user-select(none);
-  pointer-events: none; // Allows dragging the map trough the element
-}
 
-@media (min-width: @screen-sm-min) {
-  @search-overlay-message-width: 650px;
-  .search-overlay-message {
-    width: (@search-overlay-message-width - 40px);
-    margin-left: -(@search-overlay-message-width/2);
-    font-size: 30px;
+  // Animate show-hide toggle
+  .transition(all linear 0.2s);
+  &.ng-hide {
+    opacity: 0;
   }
-}
 
-@media (max-width: @screen-xs-max) {
+  // Make notification responsive
   @search-overlay-message-width: 300px;
-  .search-overlay-message {
+  width: (@search-overlay-message-width - 40px);
+  margin-left: -(@search-overlay-message-width/2);
+  font-size: 24px;
+  @media (min-width: @screen-sm-min) {
+    @search-overlay-message-width: 650px;
     width: (@search-overlay-message-width - 40px);
     margin-left: -(@search-overlay-message-width/2);
-    font-size: 24px;
+    font-size: 28px;
   }
 }
