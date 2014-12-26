@@ -190,13 +190,10 @@
 
 
 /*
- * Critical search errors floating on top of the map
- * Eg. show to non public users
+ * Critical search errors floating on top of the map, at least:
+ * - show to non public users
+ * - when zoom level is too high
  */
-
-
-
-
 .search-overlay-message {
   position: absolute;
   z-index: 1000;
@@ -206,29 +203,26 @@
   left: 50%;
   right: 50%;
   color: white;
-  stext-align: center;
-  text-shadow: 0 1px 10px rgba(0,0,0,0.8);
+  text-shadow: 0 2px 6px rgba(0,0,0,0.7);
   font-size: 36px;
   font-weight: bold;
   text-align: center;
-  letter-spacing: -1px;
   background: transparent;
-  //box-shadow: 0 0 15px rgba(red(@brand-primary), green(@brand-primary), blue(@brand-primary), .5);
   .user-select(none);
-  pointer-events: none; // Allows dragging the map trough element
+  pointer-events: none; // Allows dragging the map trough the element
 }
 
 @media (min-width: @screen-sm-min) {
   @search-overlay-message-width: 650px;
   .search-overlay-message {
-  width: (@search-overlay-message-width - 40px);
-  margin-left: -(@search-overlay-message-width/2);
+    width: (@search-overlay-message-width - 40px);
+    margin-left: -(@search-overlay-message-width/2);
     font-size: 30px;
   }
 }
 
 @media (max-width: @screen-xs-max) {
-  @search-overlay-message-width: 450px;
+  @search-overlay-message-width: 300px;
   .search-overlay-message {
     width: (@search-overlay-message-width - 40px);
     margin-left: -(@search-overlay-message-width/2);
