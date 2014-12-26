@@ -1,0 +1,17 @@
+{% extends 'email.server.view.html' %}
+
+{% block content %}
+Hey {{name}}!
+
+{{meName}} would like to connect with you on Trustroots.
+
+{% if message %}
+  {{message}}
+{% endif %}
+
+To confirm or discard this connection, please click the link below.
+
+<{{urlConfirm}}>
+
+{{meName}}: {{meURL}}
+{% endblock %}

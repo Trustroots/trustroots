@@ -6,6 +6,7 @@
 var mongoose = require('mongoose'),
     errorHandler = require('./errors'),
     sanitizeHtml = require('sanitize-html'),
+    htmlToText = require('html-to-text'),
     nodemailer = require('nodemailer'),
     userHandler = require('./users'),
     messageHandler = require('./messages'),
@@ -24,8 +25,14 @@ exports.add = function(req, res) {
 
     // Sanitize contact
     function(done) {
+
       // Catch message separately
-      var message = (req.body.message && req.body.message !== '') ? sanitizeHtml(req.body.message, messageHandler.messageSanitizeOptions) : false;
+      var messageHTML = false;
+      var messagePlain = false;
+      if(req.body.message && req.body.message !== '') {
+        messageHTML = sanitizeHtml(req.body.message, messageHandler.messageSanitizeOptions);
+        messagePlain = htmlToText.fromString(req.body.message, {wordwrap: 80});
+      }
       delete req.body.message;
 
       var contact = new Contact(req.body);
@@ -34,49 +41,66 @@ exports.add = function(req, res) {
       contact.users.push(req.body.friendUserId);
       contact.users.push(req.user._id);
 
-      done(null, contact, message);
+      done(null, contact, messageHTML, messagePlain);
     },
 
     // Find friend
-    function(contact, message, done) {
+    function(contact, messageHTML, messagePlain, done) {
       User.findById(req.body.friendUserId, 'email').exec(function(err, friend) {
         if (!friend) done(new Error('Failed to load user ' + req.body.friendUserId));
 
-        done(err, contact, message, friend);
+        done(err, contact, messageHTML, messagePlain, friend);
       });
     },
 
     // Save contact
-    function(contact, message, friend, done) {
+    function(contact, messageHTML, messagePlain, friend, done) {
       contact.save(function(err) {
-        done(err, contact, message, friend);
+        done(err, contact, messageHTML, messagePlain, friend);
       });
     },
 
-    // Prepare email for friend
-    function(contact, message, friend, done) {
+    // Prepare HTML email for friend
+    function(contact, messageHTML, messagePlain, friend, done) {
 
       var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
 
       res.render('email-templates/confirm-contact', {
         name: friend.displayName,
-        message: message,
+        message: messageHTML,
         meName: req.user.displayName,
         meURL: url + '/#!/profile/' + req.user.username,
         urlConfirm: url + '/#!/contact-confirm/' + contact._id,
       }, function(err, emailHTML) {
-        done(err, emailHTML, friend);
+        done(err, contact, emailHTML, messagePlain, friend);
+      });
+    },
+
+    // Prepare TEXT email for friend
+    function(contact, emailHTML, messagePlain, friend, done) {
+
+      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
+
+      res.render('email-templates-text/confirm-contact', {
+        name: friend.displayName,
+        message: messagePlain,
+        meName: req.user.displayName,
+        meURL: url + '/#!/profile/' + req.user.username,
+        urlConfirm: url + '/#!/contact-confirm/' + contact._id,
+      }, function(err, emailPlain) {
+        done(err, emailHTML, emailPlain, friend);
       });
     },
 
     // If valid email, send reset email using service
-    function(emailHTML, friend, done) {
+    function(emailHTML, emailPlain, friend, done) {
 
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
         to: friend.email,
         from: config.mailer.from,
         subject: 'Confirm contact',
+        text: emailPlain,
         html: emailHTML
       };
       smtpTransport.sendMail(mailOptions, function(err) {
