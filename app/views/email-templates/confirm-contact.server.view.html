@@ -65,6 +65,6 @@
 
   {% include 'partials/button.server.view.html' with {'buttonUrl': urlConfirm, 'buttonTitle': 'See connection'} %}
 
-  {% include 'partials/button.server.view.html' with {'message': message|safe } %}
-
+  {% include 'partials/copypasteurl.server.view.html' with {'url': urlConfirm} %}
+  
 {% endblock %}
