@@ -98,8 +98,8 @@
     </div>
     <div class="col-sm-9">
 
-      <div class="row hidden-xs">
-        <div class="col-md-6">
+      <div class="row">
+        <div class="col-md-6 hidden-xs">
             <h2 class="profile-name" data-ng-show="profile.displayName" data-ng-bind="profile.displayName"></h2>
             <h4 class="profile-username" data-ng-show="profile.username">@{{profile.username}}</h4>
             <div class="profile-tagline" data-ng-show="profile.tagline" data-ng-bind="profile.tagline"></div>
@@ -107,7 +107,7 @@
 
         <!-- When looking at own profile -->
         <div class="col-md-6 text-right" data-ng-show="user._id === profile._id">
-          <small class="text-muted">This is your profile as others see it.</small>
+          <small class="text-muted hidden-xs">This is your profile as others see it.</small>
           &nbsp;
           <a ui-sref="profile-edit({username: user.username})" class="btn btn-primary">Edit your profile</a>
         </div>
