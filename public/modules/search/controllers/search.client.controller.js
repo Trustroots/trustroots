@@ -15,7 +15,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     var defaultLocation = {
       lat: 48.6908333333,
       lng: 9.14055555556,
-      zoom: 5
+      zoom: 6
     };
 
     $scope.sidebarOpen = false;
