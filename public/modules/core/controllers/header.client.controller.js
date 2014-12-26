@@ -35,7 +35,7 @@ angular.module('core').controller('HeaderController', ['$scope', '$log', '$filte
       $scope.isHidden = (['home', 'signup', 'signin'].indexOf(toState.name) > -1) ? true : false;
 
       // Analytics
-      if (ga) {
+      if (typeof(ga) === 'function') {
         ga('send', 'pageview', {
           'page': '/#!' + toState.url,
           //'title': ''
