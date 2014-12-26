@@ -48,7 +48,7 @@ angular.module('core').controller('FooterController', ['$scope', 'Authentication
       if( ['home'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.sierranevada, photos.hitchroad ];
       }
-      else if( ['forgot', 'signin', 'welcome'].indexOf(toState.name) > -1 ) {
+      else if( ['forgot', 'signin', 'welcome', 'statistics'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.bokehblue ];
       }
       else if( ['about'].indexOf(toState.name) > -1 ) {
