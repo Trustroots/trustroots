@@ -324,7 +324,8 @@ exports.confirmEmail = function(req, res, next) {
               $set: {
                 public: true,
                 // Replace old email with new one
-                email: user.emailTemporary
+                email: user.emailTemporary,
+                emailHash: crypto.createHash('md5').update( user.emailTemporary.trim().toLowerCase() ).digest('hex')
               }
             },
             function (err, user) {
