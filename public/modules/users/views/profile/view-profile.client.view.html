@@ -46,7 +46,7 @@
         <div class="panel-body">
 
           <div class="profile-sidebar-section" ng-show="profile.birthdate || profile.gender">
-            <span ng-show="profile.birthdate" am-time-ago="profile.birthdate" am-without-suffix="true"></span><span ng-show="profile.birthdate && profile.gender">, </span>
+            <span ng-show="profile.birthdate" ng-bind="profile.birthdate | ageyears"></span><span ng-show="profile.birthdate && profile.gender">, </span>
             <span ng-show="profile.gender" ng-class="{ 'text-capitalize': !profile.birthdate }">{{profile.gender}}.</span>
           </div>
 
