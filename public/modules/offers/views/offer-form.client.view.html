@@ -87,7 +87,7 @@
 
         <div class="offer-map">
           <leaflet center="center" layers="layers" bounds="bounds" defaults="defaults" id="offer-add-location-canvas"></leaflet>
-          <div class="offer-location-vignetting"></div>
+          <div class="offer-location-overlay" ng-class="{'hosting-yes': offer.status === 'yes', 'hosting-maybe': offer.status === 'maybe'}"></div>
         </div>
 
       </div>
