@@ -28,8 +28,7 @@ module.exports = {
       css: [
           'public/lib/medium-editor/dist/css/medium-editor.css',
           'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
-          'public/lib/leaflet/dist/leaflet.css',
-          'public/lib/leaflet.markercluster/dist/MarkerCluster.css'
+          'public/lib/leaflet/dist/leaflet.css'
       ],
       js: [
         // Non minified  versions
@@ -52,7 +51,7 @@ module.exports = {
         'public/lib/perfect-scrollbar/src/perfect-scrollbar.js',
         'public/lib/angular-perfect-scrollbar/src/angular-perfect-scrollbar.js',
         'public/lib/leaflet/dist/leaflet-src.js',
-        'public/lib/leaflet.markercluster/dist/leaflet.markercluster-src.js',
+        'public/lib/PruneCluster/dist/PruneCluster.js',
         'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.js',
         'public/lib/ngGeolocation/ngGeolocation.js',
         'public/lib/masonry/dist/masonry.pkgd.js',

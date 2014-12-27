@@ -3,8 +3,8 @@
 /* This declares to JSHint that 'settings' is a global variable: */
 /*global settings:false */
 
-angular.module('search').controller('SearchController', ['$scope', '$http', '$geolocation', '$location', '$state', '$stateParams', '$timeout', '$log', 'Offers', 'leafletBoundsHelpers', 'Authentication', 'Languages',
-  function($scope, $http, $geolocation, $location, $state, $stateParams, $timeout, $log, Offers, leafletBoundsHelpers, Authentication, Languages) {
+angular.module('search').controller('SearchController', ['$scope', '$http', '$geolocation', '$location', '$state', '$stateParams', '$timeout', '$log', 'Offers', 'leafletBoundsHelpers', 'Authentication', 'Languages', 'leafletData',
+  function($scope, $http, $geolocation, $location, $state, $stateParams, $timeout, $log, Offers, leafletBoundsHelpers, Authentication, Languages, leafletData) {
 
     $scope.user = Authentication.user; // Currently logged in user
 
@@ -36,7 +36,8 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       clickable: false
     };
 
-      $scope.minimumZoom = 5;
+      $scope.minimumZoom = 3;
+
 
     /**
      * Center map to user's location
@@ -54,7 +55,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
         }
       },
       center: defaultLocation,
-      markers: [],
       bounds: {},
       layers: {
         baselayers: {
@@ -97,17 +97,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           }
         },
         overlays: {
-          hosts: {
-            name: 'Hosts',
-            type: 'markercluster',
-            visible: true,
-            layerOptions: {
-              // The maximum radius that a cluster will cover from the central marker (in pixels).
-              // Default 80. Decreasing will make more smaller clusters. You could also use a function
-              // that accepts the current map zoom and returns the maximum cluster radius in pixels.
-              maxClusterRadius: 10
-            }
-          },
           selected: {
             name: 'Selected hosts',
             type: 'group',
@@ -195,6 +184,29 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       $scope.layerStyle = (layer.leafletEvent.layer.options.style) ? $scope.layerStyle = layer.leafletEvent.layer.options.style : 'street';
     });
 
+    //Setting up the cluster
+    var pruneCluster = new PruneClusterForLeaflet(60, 60);
+
+    //Setting up the marker and click event
+    pruneCluster.PrepareLeafletMarker = function (leafletMarker, data) {
+      leafletMarker.on('click', function (e) {
+        console.log(e);
+        // Open offer card
+        $scope.offer = Offers.get({
+          offerId: data.userId
+        });
+
+        // Show cirlce around the marker
+        $scope.currentSelection.latlngs = e.latlng;
+        $scope.layers.overlays.selected.visible = true;
+
+        $scope.userReacted = true;
+        $scope.sidebarOpen = true;
+
+      });
+      leafletMarker.setIcon(data.icon);
+    };
+
     // Sidebar & markers react to these events
     $scope.$on('leafletDirectiveMap.click', function(event){
       $scope.sidebarOpen = false;
@@ -203,17 +215,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     });
     $scope.$on('leafletDirectiveMarker.click', function(e, args) {
 
-      // Open offer card
-      $scope.offer = Offers.get({
-          offerId: args.leafletEvent.target.options.userId
-      });
 
-      // Show cirlce around the marker
-      $scope.currentSelection.latlngs = args.leafletEvent.target._latlng;
-      $scope.layers.overlays.selected.visible = true;
-
-      $scope.userReacted = true;
-      $scope.sidebarOpen = true;
     });
 
 
@@ -224,46 +226,13 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       $state.go('profile', {username: username});
     };
 
-
-    /**
-     * Icons
-     */
-    $scope.icons = {
-      hostingYes: {
-        iconUrl: '/modules/core/img/map/marker-icon-yes.svg',
-        iconSize:     [20, 20], // size of the icon
-        //shadowSize:   [33, 33], // size of the shadow
-        iconAnchor:   [10, 10], // point of the icon which will correspond to marker's location
-        //shadowAnchor: [5, 34],  // the same for the shadow
-        //popupAnchor:  [-3, -17] // point from which the popup should open relative to the iconAnchor
-      },
-      hostingMaybe: {
-        iconUrl: '/modules/core/img/map/marker-icon-maybe.svg',
-        iconSize:     [20, 20], // size of the icon
-        //shadowSize:   [33, 33], // size of the shadow
-        iconAnchor:   [10, 10], // point of the icon which will correspond to marker's location
-        //shadowAnchor: [5, 34],  // the same for the shadow
-        //popupAnchor:  [-3, -17] // point from which the popup should open relative to the iconAnchor
-      }/*,
-      hostingNo: {
-        iconUrl: '/modules/core/img/map/marker-icon-no.png',
-        shadowUrl: '/modules/core/img/map/marker-shadow.png',
-        iconSize:     [25, 35], // size of the icon
-        shadowSize:   [33, 33], // size of the shadow
-        iconAnchor:   [12, 35], // point of the icon which will correspond to marker's location
-        shadowAnchor: [5, 34],  // the same for the shadow
-        popupAnchor:  [-3, -17] // point from which the popup should open relative to the iconAnchor
-      }*/
-    };
-
     /**
      * Load content to map bounding box
      */
 
-    //The big function that will get the markers in a the current bounding box
+   //The big function that will get the markers in a the current bounding box
     $scope.getMarkers = function () {
       //If we get out of the boundig box of the last api query we have to call the API for the new markers
-      if(!$scope.bounds.northEast) return;
       if($scope.bounds.northEast.lng > $scope.lastbounds.northEastLng || $scope.bounds.northEast.lat > $scope.lastbounds.northEastLat || $scope.bounds.southWest.lng < $scope.lastbounds.southWestLng || $scope.bounds.southWest.lat < $scope.lastbounds.southWestLat) {
         //We add a margin to the boundings depending on the zoom level
         var boundingDelta = 10/$scope.center.zoom;
@@ -282,62 +251,80 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           southWestLng: $scope.lastbounds.southWestLng,
           southWestLat: $scope.lastbounds.southWestLat
         }, function(offers){
+          //Remove last markers
+          pruneCluster.RemoveMarkers();
           //Let's go through those markers
-          var markers = [];
           for (var i = -1, len = offers.length; ++i < len;) {
-            markers[i] = {
+            var marker = new PruneCluster.Marker(
+              offers[i].locationFuzzy[0],
+              offers[i].locationFuzzy[1]);
+            marker.data.icon = (offers[i].status === 'yes') ? $scope.icons.hostingYes : $scope.icons.hostingMaybe;
+            marker.data.userId = offers[i]._id;
+            /*markers[i] = {
               lat: offers[i].locationFuzzy[0],
               lng: offers[i].locationFuzzy[1],
               userId: offers[i]._id,
               icon: (offers[i].status === 'yes') ? $scope.icons.hostingYes : $scope.icons.hostingMaybe,
               layer: 'hosts'
-            };
+            };*/
+            //Register markers
+            pruneCluster.RegisterMarker(marker);
           }
-          $scope.markers = [];
-          //Let's tell angular we got new markers
-          $timeout(function () {
-              $scope.markers = markers;
-          });
+          //Update markers
+          pruneCluster.ProcessView();
         });
       }
     };
 
-    //Function to hide markers
-    $scope.hideOverlay = function(overlayName) {
-      $scope.layers.overlays[overlayName].visible = false;
-    };
-
-    //Function to show markers
-    $scope.showOverlay = function(overlayName) {
-      $scope.layers.overlays[overlayName].visible = true;
-    };
-
-    //Set event for map load
+   //Set event for map load
     $scope.$on('leafletDirectiveMap.load', function(event){
       //If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
-      if($scope.center.zoom > $scope.minimumZoom) {
-        var loadMarkers = function() {
-          if(angular.isDefined($scope.bounds.northEast)) {
-            $scope.getMarkers();
-          }
-          else {
-            $timeout(loadMarkers, 10);
-          }
+
+      leafletData.getMap().then(function(map) {
+
+        //Add the cluster to the map
+        map.addLayer(pruneCluster);
+
+        //Set up icons
+        $scope.icons= {
+          hostingYes: L.icon({
+            iconUrl: '/modules/core/img/map/marker-icon-yes.svg',
+            iconSize:     [20, 20], // size of the icon
+            iconAnchor:   [10, 10] // point of the icon which will correspond to marker's location
+          }),
+          hostingMaybe: L.icon({
+            iconUrl: '/modules/core/img/map/marker-icon-maybe.svg',
+            iconSize:     [20, 20], // size of the icon
+            iconAnchor:   [10, 10] // point of the icon which will correspond to marker's location
+          })
         };
-        $timeout(loadMarkers, 10);
-      }
+
+        if($scope.center.zoom > $scope.minimumZoom) {
+          var loadMarkers = function() {
+            if(angular.isDefined($scope.bounds.northEast)) {
+              $scope.getMarkers();
+            }
+            else {
+              $timeout(loadMarkers, 10);
+            }
+          };
+          $timeout(loadMarkers, 10);
+        }
+
+      });
     });
 
     //Set event that fires everytime we finish to move the map
     $scope.$on('leafletDirectiveMap.moveend', function(event){
       //Get markers if zoom is big enough
       if($scope.center.zoom > $scope.minimumZoom) {
-        $scope.showOverlay('hosts');
+        //$scope.showOverlay('hosts');
         $scope.getMarkers();
       }
       //Otherwise hide the markers
       else {
-        $scope.hideOverlay('hosts');
+        pruneCluster.RemoveMarkers();
+        //$scope.hideOverlay('hosts');
       }
     });
 

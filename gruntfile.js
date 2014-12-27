@@ -93,8 +93,7 @@ module.exports = function(grunt) {
             // @todo: should be '<%= applicationCSSFiles %>' instead!
             'public/lib/medium-editor/dist/css/medium-editor.css',
             'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
-            //'public/lib/leaflet/dist/leaflet.css',
-            'public/lib/leaflet.markercluster/dist/MarkerCluster.css'
+            //'public/lib/leaflet/dist/leaflet.css'
             ]),
         dest: 'public/dist/application.min.css',
       }

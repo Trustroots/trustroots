@@ -1,0 +1,36 @@
+.leaflet-marker-icon:not(.no-anim),
+.leaflet-marker-shadow:not(.no-anim),
+.leaflet-markercluster-icon:not(.no-anim) {
+	transition: all 0.3s linear;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated.leaflet-marker-icon:not(.no-anim),
+.leaflet-zoom-anim .leaflet-zoom-animated.leaflet-marker-shadow:not(.no-anim),
+.leaflet-zoom-anim .leaflet-zoom-animated.leaflet-markercluster-icon:not(.no-anim) {
+    transition: transform 0.25s cubic-bezier(0,0,0.25,1);
+}
+.prunecluster  {
+  width: 38px;
+  height: 38px;
+  text-align: center;
+  margin-left: 4px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background-color: lighten(@brand-primary, 5%);
+  font-family: 'Open Sans';
+  font-size: 12px;
+  border-radius: 20px;
+  transition: all 0.3s linear;
+  div {
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    margin-left: 4px;
+    margin-top: 4px;
+    border-radius: 50%;
+    background-color: @brand-primary;
+  }
+}
+.prunecluster div span {
+	line-height: 30px;
+}
