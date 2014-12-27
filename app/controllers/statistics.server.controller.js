@@ -6,6 +6,7 @@
 var mongoose = require('mongoose'),
     errorHandler = require('./errors'),
     async = require('async'),
+    git = require('git-rev'),
     Offer = mongoose.model('Offer'),
     User = mongoose.model('User');
 
@@ -33,9 +34,19 @@ exports.get = function(req, res) {
           { status: 'yes' },
           { status: 'maybe' }
         ]
-      }, function(err, count) {
+      },
+      function(err, count) {
         req.statistics.hosting = count;
         done(err);
+      });
+    },
+
+    // Returns: 'git rev-parse HEAD'
+    // @link https://www.npmjs.com/package/git-rev
+    function(done) {
+      git.long(function (hash) {
+        req.statistics.commit = hash;
+        done(null);
       });
     },
 
