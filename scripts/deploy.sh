@@ -16,11 +16,13 @@ bower update
 NODE_ENV=production grunt build
 
 echo "Redeploying the application..."
+# https://www.phusionpassenger.com/documentation/Users%20guide%20Nginx.html#_redeploying_restarting_the_rack_application
 touch tmp/restart.txt
 
 sudo passenger-status
 
-# Deployment notifications
+# Deployment notifications to New Relic
+# http://newrelic.com/
 NEW_RELIC_CONF="./config/secret/newrelic.conf"
 if [ ! -f "$NEW_RELIC_CONF" ]; then
   echo "Add New Relic API key to $NEW_RELIC_CONF and this script will notify New Relic each time you deploy."
