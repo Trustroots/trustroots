@@ -4,23 +4,24 @@
  * Module dependencies.
  */
 var express = require('express'),
-  http = require('http'),
-  socketio = require('socket.io'),
-  morgan = require('morgan'),
-  bodyParser = require('body-parser'),
-  session = require('express-session'),
-  compress = require('compression'),
-  methodOverride = require('method-override'),
-  cookieParser = require('cookie-parser'),
-  helmet = require('helmet'),
-  passport = require('passport'),
-  mongoStore = require('connect-mongo')({
-    session: session
-  }),
-  flash = require('connect-flash'),
-  config = require('./config'),
-  consolidate = require('consolidate'),
-  path = require('path');
+    http = require('http'),
+    socketio = require('socket.io'),
+    morgan = require('morgan'),
+    bodyParser = require('body-parser'),
+    session = require('express-session'),
+    compress = require('compression'),
+    methodOverride = require('method-override'),
+    cookieParser = require('cookie-parser'),
+    helmet = require('helmet'),
+    passport = require('passport'),
+    mongoStore = require('connect-mongo')({
+      session: session
+    }),
+    flash = require('connect-flash'),
+    config = require('./config'),
+    consolidate = require('consolidate'),
+    path = require('path'),
+    git = require('git-rev');
 
 module.exports = function(db) {
   // Initialize express app
@@ -40,14 +41,19 @@ module.exports = function(db) {
   app.locals.jsFiles = config.getJavaScriptAssets();
   app.locals.cssFiles = config.getCSSAssets();
   app.locals.languages = require('../public/modules/core/languages/languages.json');
-  app.locals.cacheBuster = config.cacheBuster;
   app.locals.appSettings = config.app.settings;
   app.locals.appSettings.time = new Date().toISOString();
   app.locals.appSettings.https = config.https;
 
+  // Get 'git rev-parse --short HEAD' (the latest git commit hash) to use as a cache buster
+  // @link https://www.npmjs.com/package/git-rev
+  git.short(function (str) {
+    app.locals.appSettings.commit = str;
+  });
+
   // Passing the request url to environment locals
   app.use(function(req, res, next) {
-    res.locals.url = '//' + req.headers.host + '/';// + req.url;
+    res.locals.url = '//' + req.headers.host + '/';
     next();
   });
 

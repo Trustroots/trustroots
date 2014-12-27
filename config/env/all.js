@@ -17,7 +17,6 @@ module.exports = {
 			}
 		}
 	},
-	cacheBuster: '2014-12-27',
 	port: process.env.PORT || 3000,
 	https: process.env.HTTPS || false,
 	templateEngine: 'swig',
