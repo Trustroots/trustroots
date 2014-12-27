@@ -46,6 +46,7 @@ var addUsers = function (index, max) {
   user.lastName = faker.name.lastName();
   user.displayName = user.firstName + ' ' + user.lastName;
   user.provider = 'local';
+  user.public = true;
   user.email = index+faker.internet.email();
   user.password = faker.internet.password();
   user.username = index+user.firstName.toLowerCase()
