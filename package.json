@@ -73,7 +73,8 @@
     "karma-phantomjs-launcher": "~0.1.2",
     "load-grunt-tasks": "~1.0.0",
     "should": "~4.1.0",
-    "supertest": "~0.14.0"
+    "supertest": "~0.14.0",
+    "faker": "~2.1.1"
   },
   "bugs": {
     "url": "https://github.com/Trustroots/trustroots/issues"

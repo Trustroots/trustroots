@@ -44,6 +44,8 @@ scripts/*
 !scripts/backup-db.sh
 !scripts/deploy.sh
 !scripts/s3backup.sh
+!scripts/fillTestData.js
+!scripts/cities.json
 
 # Logs
 logs
