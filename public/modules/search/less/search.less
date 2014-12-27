@@ -13,9 +13,6 @@
     position: fixed;
     top: @navbar-height;
     bottom: 0;
-    @media (min-width: @screen-sm-min) {
-      bottom: @footer-height;
-    }
   }
   .map-location-search {
     position: absolute;
@@ -79,14 +76,14 @@
     width: 30%;
     right: 0;
     left: auto;
-    bottom: @footer-height;
+    bottom: 0;
   }
 }
 .search-list {
   display: block;
   float: left;
   margin: 0;
-  padding: 0 0 @footer-height 0;
+  padding: 0;
   width: 100%;
   height: auto;
 

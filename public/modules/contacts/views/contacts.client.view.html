@@ -1,7 +1,11 @@
 <div data-ng-controller="ListContactsController">
 
+  <div data-ng-if="!contacts || !contacts.$resolved" class="content-wait">
+    <small>Wait a moment...</small>
+  </div>
+
   <!-- Contact list -->
-  <div masonry column-width="138" preserve-order reload-on-show ng-show="$parent.tabSelected === 'contacts'">
+  <div masonry column-width="138" preserve-order reload-on-show ng-show="$parent.tabSelected === 'contacts' && contacts.$resolved">
     <div class="masonry-brick contacts-contact panel panel-default" ng-repeat="contact in contacts">
       <div tr-avatar data-user="contact.users[0]" data-size="128"></div>
       <a ui-sref="profile({username: contact.users[0].username})">
@@ -16,7 +20,6 @@
       <i class="fa fa-3x fa-users"></i>
       <h4>No contacts yet.</h4>
   </div><!-- /.row -->
-
   <!-- /No contacts -->
 
 </div><!-- /.row -->

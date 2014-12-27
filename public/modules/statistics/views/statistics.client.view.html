@@ -1,26 +1,33 @@
 <section class="container container-spacer" data-ng-controller="StatisticsController">
 
+<section class="container board board-bokehblue container-fullscreen" data-ng-controller="StatisticsController">
   <div class="row">
-    <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3">
-
-      <div class="page-header">
-        <h2>Statistics</h2>
-      </div>
-
-      <div class="statistics">
-
-        <section class="statistics-total">
-          <h3>Members</h3>
-          <span class="statistics-count">{{statistics.total}}</span>
-        </section>
-
-        <section class="statistics-launch">
-          <h3>Enabling the latent trust between humans since</h3>
-          <span class="lead">{{launchDate | date:mediumDate}}</span>
-        </section>
-
-      </div>
-
+    <div class="col-xs-12">
+      <a ui-sref="home" class="logo logo-sm logo-blue center-block"></a>
+      <br><br>
     </div>
-  </div><!-- /.row -->
-</section>
+    <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 statistics">
+
+      <div data-ng-if="!statistics.$resolved" class="content-wait">
+        <small>Wait a moment...</small>
+      </div>
+
+      <section ng-show="statistics.$resolved">
+        <h3 class="statistics-count">{{statistics.total}} members</h3>
+
+        <h3 class="statistics-count">{{statistics.hosting}} hosting</h3>
+
+        <hr>
+
+        <h3>Enabling the latent trust between humans since</h3>
+        <p class="lead">{{launchDate | date:mediumDate}}</p>
+      </section>
+
+      <p>
+        <br>
+        <a ui-sref="home" class="btn btn-inverse">Home</a>
+      </p>
+      
+    </div>
+  </div><!-- .row-->
+</section><!-- .container -->

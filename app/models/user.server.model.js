@@ -185,7 +185,9 @@ UserSchema.pre('save', function(next) {
   }
 
   // Pre-cached email hash to use with Gravatar
-  this.emailHash = crypto.createHash('md5').update( this.email.trim().toLowerCase() ).digest('hex');
+  if(this.email && this.email !== '') {
+    this.emailHash = crypto.createHash('md5').update( this.email.trim().toLowerCase() ).digest('hex');
+  }
 
   next();
 });

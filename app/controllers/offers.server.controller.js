@@ -129,7 +129,7 @@ exports.list = function(req, res) {
       $or: [
         { status: 'yes' },
         { status: 'maybe' }
-      ],
+      ]/*,
       //http://docs.mongodb.org/manual/reference/operator/query/box -> It's latitude first as in the database, not longitude first as in the documentation
       locationFuzzy: {
         $geoWithin: {
@@ -139,6 +139,7 @@ exports.list = function(req, res) {
           ]
         }
       }
+      */
     },
     'locationFuzzy status user'
   )

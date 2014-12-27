@@ -43,6 +43,7 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
           color: '#12b591',
           fillColor: '#12b591',
           fillOpacity: 0.5,
+          clickable: false,
           latlngs: {
             // Somehow this needs to be here although we set it later again (BTW it's, Center of Europe)
             lat: 48.6908333333,

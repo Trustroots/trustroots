@@ -50,6 +50,7 @@ module.exports = {
         'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.min.js',
         'public/lib/ngGeolocation/ngGeolocation.min.js',
         'public/lib/masonry/dist/masonry.pkgd.min.js',
+        'public/lib/imagesloaded/imagesloaded.pkgd.min.js',
         'public/lib/angular-masonry/angular-masonry.js',
         'public/lib/angular-waypoints/dist/angular-waypoints.all.min.js',
       ]

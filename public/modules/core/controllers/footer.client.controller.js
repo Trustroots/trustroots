@@ -42,13 +42,13 @@ angular.module('core').controller('FooterController', ['$scope', 'Authentication
     // Changing footer styles/contents after navigation
     $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams){
       $scope.isTransparent = (['home', 'forgot', 'signin', 'welcome'].indexOf(toState.name) > -1) ? true : false;
-      $scope.isHidden = (['listMessages'].indexOf(toState.name) > -1) ? true : false;
+      $scope.isHidden = (['listMessages', 'search'].indexOf(toState.name) > -1) ? true : false;
 
       // Set photo credits for this page
       if( ['home'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.sierranevada, photos.hitchroad ];
       }
-      else if( ['forgot', 'signin', 'welcome'].indexOf(toState.name) > -1 ) {
+      else if( ['forgot', 'signin', 'welcome', 'statistics'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.bokehblue ];
       }
       else if( ['about'].indexOf(toState.name) > -1 ) {
