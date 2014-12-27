@@ -193,7 +193,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     //Setting up the marker and click event
     pruneCluster.PrepareLeafletMarker = function (leafletMarker, data) {
       leafletMarker.on('click', function (e) {
-        console.log(e);
         // Open offer card
         $scope.offer = Offers.get({
           offerId: data.userId
@@ -235,6 +234,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
 
    //The big function that will get the markers in a the current bounding box
     $scope.getMarkers = function () {
+      if(!$scope.bounds.northEast) return;
       //If we get out of the boundig box of the last api query we have to call the API for the new markers
       if($scope.bounds.northEast.lng > $scope.lastbounds.northEastLng || $scope.bounds.northEast.lat > $scope.lastbounds.northEastLat || $scope.bounds.southWest.lng < $scope.lastbounds.southWestLng || $scope.bounds.southWest.lat < $scope.lastbounds.southWestLat) {
         //We add a margin to the boundings depending on the zoom level
