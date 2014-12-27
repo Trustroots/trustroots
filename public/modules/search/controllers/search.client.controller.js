@@ -34,6 +34,8 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       layer: 'selected',
       clickable: false
     };
+      
+      $scope.minimumZoom = 5;
 
     /**
      * Center map to user's location
@@ -151,25 +153,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       };
     }
 
-
-    /**
-     * Center map to user's location, received from Geolocation
-     * Cancel setting this if user reacted to map in any way (searching, dragging etc)
-     */
-     /*
-    $scope.position = $geolocation.getCurrentPosition({
-      timeout: 60000 // 1min
-    });
-    $scope.position.then(function(position){
-      if(position.coords.latitude && position.coords.longitude && !$scope.userReacted) {
-        $scope.center.lat = position.coords.latitude;
-        $scope.center.lng = position.coords.longitude;
-        $scope.center.zoom = 5;
-      }
-    });
-    */
-
-
     /**
      * Catch map events:
      * click, dblclick, mousedown, mouseup, mouseover, mouseout, mousemove, contextmenu, focus, blur,
@@ -253,6 +236,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     //The big function that will get the markers in a the current bounding box
     $scope.getMarkers = function () {
       //If we get out of the boundig box of the last api query we have to call the API for the new markers
+      if(!$scope.bounds.northEast) return;
       if($scope.bounds.northEast.lng > $scope.lastbounds.northEastLng || $scope.bounds.northEast.lat > $scope.lastbounds.northEastLat || $scope.bounds.southWest.lng < $scope.lastbounds.southWestLng || $scope.bounds.southWest.lat < $scope.lastbounds.southWestLat) {
         //We add a margin to the boundings depending on the zoom level
         var boundingDelta = 10/$scope.center.zoom;
@@ -284,11 +268,9 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           }
           $scope.markers = [];
           //Let's tell angular we got new markers
-          setTimeout(function () {
-            $scope.$apply(function () {
+          $timeout(function () {
               $scope.markers = markers;
-            });
-          }, 0);
+          });
         });
       }
     };
@@ -306,7 +288,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     //Set event for map load
     $scope.$on('leafletDirectiveMap.load', function(event){
       //If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
-      if($scope.center.zoom > 5) {
+      if($scope.center.zoom > $scope.minimumZoom) {
         var loadMarkers = function() {
           if(angular.isDefined($scope.bounds.northEast)) {
             $scope.getMarkers();
@@ -322,7 +304,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     //Set event that fires everytime we finish to move the map
     $scope.$on('leafletDirectiveMap.moveend', function(event){
       //Get markers if zoom is big enough
-      if($scope.center.zoom > 5) {
+      if($scope.center.zoom > $scope.minimumZoom) {
         $scope.showOverlay('hosts');
         $scope.getMarkers();
       }
