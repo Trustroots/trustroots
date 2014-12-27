@@ -25,13 +25,14 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     $scope.notFound = false;
     $scope.currentSelection = {
       weight: 2,
-      color: '#12b591',
-      fillColor: '#12b591',
+      color: '#989898',
+      fillColor: '#b1b1b1',
       fillOpacity: 0.5,
       latlngs: defaultLocation,
       radius: 500,
       type: 'circle',
-      layer: 'selected'
+      layer: 'selected',
+      clickable: false
     };
 
     /**
@@ -219,22 +220,20 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
      */
     $scope.icons = {
       hostingYes: {
-        iconUrl: '/modules/core/img/map/marker-icon-yes.png',
-        shadowUrl: '/modules/core/img/map/marker-shadow.png',
-        iconSize:     [25, 35], // size of the icon
-        shadowSize:   [33, 33], // size of the shadow
-        iconAnchor:   [12, 35], // point of the icon which will correspond to marker's location
-        shadowAnchor: [5, 34],  // the same for the shadow
-        popupAnchor:  [-3, -17] // point from which the popup should open relative to the iconAnchor
+        iconUrl: '/modules/core/img/map/marker-icon-yes.svg',
+        iconSize:     [20, 20], // size of the icon
+        //shadowSize:   [33, 33], // size of the shadow
+        iconAnchor:   [10, 10], // point of the icon which will correspond to marker's location
+        //shadowAnchor: [5, 34],  // the same for the shadow
+        //popupAnchor:  [-3, -17] // point from which the popup should open relative to the iconAnchor
       },
       hostingMaybe: {
-        iconUrl: '/modules/core/img/map/marker-icon-maybe.png',
-        shadowUrl: '/modules/core/img/map/marker-shadow.png',
-        iconSize:     [25, 35], // size of the icon
-        shadowSize:   [33, 33], // size of the shadow
-        iconAnchor:   [12, 35], // point of the icon which will correspond to marker's location
-        shadowAnchor: [5, 34],  // the same for the shadow
-        popupAnchor:  [-3, -17] // point from which the popup should open relative to the iconAnchor
+        iconUrl: '/modules/core/img/map/marker-icon-maybe.svg',
+        iconSize:     [20, 20], // size of the icon
+        //shadowSize:   [33, 33], // size of the shadow
+        iconAnchor:   [10, 10], // point of the icon which will correspond to marker's location
+        //shadowAnchor: [5, 34],  // the same for the shadow
+        //popupAnchor:  [-3, -17] // point from which the popup should open relative to the iconAnchor
       }/*,
       hostingNo: {
         iconUrl: '/modules/core/img/map/marker-icon-no.png',
@@ -251,13 +250,12 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
      * Load content to map bounding box
      */
 
-    //To set how bigger we make the bounding box for fetching the marker
-    var boundingDelta = 1;
-
-    //The big function that will get the markers for you, and check if we can filter the stored markers or fetch new markers
+    //The big function that will get the markers in a the current bounding box
     $scope.getMarkers = function () {
       //If we get out of the boundig box of the last api query we have to call the API for the new markers
       if($scope.bounds.northEast.lng > $scope.lastbounds.northEastLng || $scope.bounds.northEast.lat > $scope.lastbounds.northEastLat || $scope.bounds.southWest.lng < $scope.lastbounds.southWestLng || $scope.bounds.southWest.lat < $scope.lastbounds.southWestLat) {
+        //We add a margin to the boundings depending on the zoom level
+        var boundingDelta = 10/$scope.center.zoom;
         //Saving the current bounding box amd zoom
         $scope.lastbounds = {
           northEastLng: $scope.bounds.northEast.lng +boundingDelta,
@@ -273,56 +271,26 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           southWestLng: $scope.lastbounds.southWestLng,
           southWestLat: $scope.lastbounds.southWestLat
         }, function(offers){
+          //Let's go through those markers
           var markers = [];
-          angular.forEach(offers, function(marker) {
-            this.push({
-              //id: marker._id,
-              lat: marker.locationFuzzy[0],
-              lng: marker.locationFuzzy[1],
-              userId: marker._id,
-              icon: (marker.status === 'yes') ? $scope.icons.hostingYes : $scope.icons.hostingMaybe,
+          for (var i = -1, len = offers.length; ++i < len;) {
+            markers[i] = {
+              lat: offers[i].locationFuzzy[0],
+              lng: offers[i].locationFuzzy[1],
+              userId: offers[i]._id,
+              icon: (offers[i].status === 'yes') ? $scope.icons.hostingYes : $scope.icons.hostingMaybe,
               layer: 'hosts'
-            });
-          }, markers);
-          //Empty last markers
+            };
+          }
           $scope.markers = [];
-          //Fill with new markers
-          angular.extend($scope.markers, markers);
-          //Store marker for further filtering.
-          $scope.storedMarkers = $scope.markers;
+          //Let's tell angular we got new markers
+          setTimeout(function () {
+            $scope.$apply(function () {
+              $scope.markers = markers;
+            });
+          }, 0);
         });
       }
-      //If we zoom in the last bounding box we just just filter the stored markers
-      //And if we move out of the bounding box of the filtered marker we can filter again from the stored marker
-      else if(($scope.center.zoom > $scope.lastZoom && $scope.bounds.northEast.lng < $scope.lastbounds.northEastLng && $scope.bounds.northEast.lat < $scope.lastbounds.northEastLat && $scope.bounds.southWest.lng > $scope.lastbounds.southWestLng && $scope.bounds.southWest.lat > $scope.lastbounds.southWestLat) || (angular.isDefined($scope.lastInnerBounds) && ($scope.bounds.northEast.lng > $scope.lastInnerBounds.northEastLng || $scope.bounds.northEast.lat > $scope.lastInnerBounds.northEastLat || $scope.bounds.southWest.lng < $scope.lastInnerBounds.southWestLng || $scope.bounds.southWest.lat < $scope.lastInnerBounds.southWestLat))) {
-        //Saving the current bounding box amd zoom
-        $scope.lastInnerBounds = {
-          northEastLng: $scope.bounds.northEast.lng +boundingDelta,
-          northEastLat: $scope.bounds.northEast.lat +boundingDelta,
-          southWestLng: $scope.bounds.southWest.lng -boundingDelta,
-          southWestLat: $scope.bounds.southWest.lat -boundingDelta
-        };
-        $scope.lastZoom = $scope.center.zoom;
-        //Get the filtered markers
-        $scope.markers = $scope.filterBounding($scope.storedMarkers, $scope.lastInnerBounds);
-      }
-    };
-
-    //Function to filter markers with a bounding box
-    $scope.filterBounding = function (markers, boudingBox) {
-      var filteredMarkers = [];
-      if(markers.length > 10) {
-        for(var i = 0; i < markers.length; i++) {
-          if(markers[i].lat < boudingBox.northEastLat && markers[i].lat > boudingBox.southWestLat && markers[i].lng < boudingBox.northEastLng && markers[i].lng > boudingBox.southWestLng) {
-            filteredMarkers.push(markers[i]);
-          }
-        }
-      }
-      else {
-        //Not so many markers so we are too lazy to filter them
-        filteredMarkers = markers;
-      }
-      return filteredMarkers;
     };
 
     //Function to hide markers
@@ -343,8 +311,11 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           if(angular.isDefined($scope.bounds.northEast)) {
             $scope.getMarkers();
           }
+          else {
+            $timeout(loadMarkers, 10);
+          }
         };
-        $timeout(loadMarkers);
+        $timeout(loadMarkers, 10);
       }
     });
 
