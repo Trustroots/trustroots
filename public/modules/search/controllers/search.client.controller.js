@@ -1,7 +1,10 @@
 'use strict';
 
-/* This declares to JSHint that 'settings' is a global variable: */
+/* This declares to JSHint that several variables are global: */
 /*global settings:false */
+/*global PruneClusterForLeaflet:false */
+/*global PruneCluster:false */
+/*global L:false */
 
 angular.module('search').controller('SearchController', ['$scope', '$http', '$geolocation', '$location', '$state', '$stateParams', '$timeout', '$log', 'Offers', 'leafletBoundsHelpers', 'Authentication', 'Languages', 'leafletData',
   function($scope, $http, $geolocation, $location, $state, $stateParams, $timeout, $log, Offers, leafletBoundsHelpers, Authentication, Languages, leafletData) {
