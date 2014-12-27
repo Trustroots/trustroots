@@ -22,8 +22,9 @@
     right: 50%;
     margin-right: -150px;
     @media (max-width: @screen-xs-max) {
-      top: auto;
-      bottom: @padding-base-horizontal;
+      right: @padding-base-vertical;
+      margin-right: 0;
+      width: 250px;
     }
     .input-group {
       box-shadow: 0 1px 5px rgba(0,0,0,0.35);
@@ -67,10 +68,11 @@
   right: 0;
   height: auto;
   padding: 10px;
-  background: rgba(0,0,0, 0.1);
   z-index: @zindex-navbar;
   overflow: scroll;
+  background: #eee;
   @media (min-width: @screen-sm-min) {
+    background: rgba(0,0,0, 0.1);
     min-width: 300px;
     max-width: 480px;
     width: 30%;

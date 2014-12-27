@@ -18,6 +18,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       zoom: 6
     };
 
+    $scope.layerStyle = 'street';
     $scope.sidebarOpen = false;
     $scope.userReacted = false;
     $scope.languages = Languages.get('object');
@@ -34,13 +35,24 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       layer: 'selected',
       clickable: false
     };
-      
+
       $scope.minimumZoom = 5;
 
     /**
      * Center map to user's location
      */
     angular.extend($scope, {
+      defaults: {
+        attributionControl: false,
+        keyboard: true,
+        controls: {
+          layers: {
+            visible: true,
+            position: 'bottomleft',
+            collapsed: true
+          }
+        }
+      },
       center: defaultLocation,
       markers: [],
       bounds: {},
@@ -56,7 +68,8 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
             },
             layerOptions: {
               attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
-              continuousWorld: true
+              continuousWorld: true,
+              style: 'street'
             }
           },
           osm: {
@@ -66,7 +79,8 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
             layerOptions: {
               subdomains: ['a', 'b', 'c'],
               attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OSM</a>',
-              continuousWorld: true
+              continuousWorld: true,
+              style: 'street'
             }
           },
           // Doesn't support https
@@ -77,7 +91,8 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
             layerOptions: {
               subdomains: ['1', '2', '3', '4'],
               attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OSM</a>',
-              continuousWorld: true
+              continuousWorld: true,
+              style: 'street'
             }
           }
         },
@@ -105,7 +120,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       },
       events: {
         map: {
-          enable: ['click','mousedown', 'moveend', 'load'],
+          enable: ['click','mousedown', 'moveend', 'load', 'baselayerchange'],
           logic: 'emit'
         }
       },
@@ -132,7 +147,8 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
         },
         layerOptions: {
           attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
-          continuousWorld: true
+          continuousWorld: true,
+          style: 'satellite'
         }
       };
     }
@@ -148,7 +164,8 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
         },
         layerOptions: {
           attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
-          continuousWorld: true
+          continuousWorld: true,
+          style: 'street'
         }
       };
     }
@@ -166,6 +183,16 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       $scope.userReacted = true;
       // Deregister this listener, @link http://stackoverflow.com/a/14898795
       mouseDownListener();
+    });
+
+    /*
+     * Determine currently selected baselayer style
+     * 'style' has to be set when defining layers.
+     * Possible values are: streets, satellite, terrain
+     * Defaults to street
+     */
+    $scope.$on('leafletDirectiveMap.baselayerchange', function(event, layer) {
+      $scope.layerStyle = (layer.leafletEvent.layer.options.style) ? $scope.layerStyle = layer.leafletEvent.layer.options.style : 'street';
     });
 
     // Sidebar & markers react to these events

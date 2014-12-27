@@ -3,7 +3,7 @@
   <div class="form-group map-location-search">
     <div class="input-group">
       <label for="search-query" class="sr-only">Search places</label>
-      <input type="text" id="search-query" class="form-control input-lg" placeholder="Search places" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" /><!-- typeahead-loading="searchQuerySearching"-->
+      <input type="text" id="search-query" class="form-control input-lg" placeholder="Search places {{layerStyle}}" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" /><!-- typeahead-loading="searchQuerySearching"-->
       <span class="input-group-btn">
         <button type="button" class="btn btn-lg btn-inverse" ng-click="searchAddress()" ng-disabled="searchQuerySearching">
           <i class="fa fa-search" ng-show="searchQuerySearching === false"></i>
@@ -24,7 +24,9 @@
     We could not find such a place...
   </div>
 
-  <leaflet center="center" markers="markers" layers="layers" bounds="bounds" paths="paths" defaults="defaults" event-broadcast="events" id="search-map-canvas"></leaflet>
+  <div ng-class="{'leaflet-layerstyle-satellite': (layerStyle === 'satellite')}">
+    <leaflet center="center" markers="markers" layers="layers" bounds="bounds" paths="paths" defaults="defaults" event-broadcast="events" id="search-map-canvas"></leaflet>
+  </div>
 
   <div class="search-map-sidebar" ng-show="sidebarOpen">
 
