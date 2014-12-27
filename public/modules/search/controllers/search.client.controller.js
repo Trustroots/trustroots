@@ -38,9 +38,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       layer: 'selected',
       clickable: false
     };
-
-      $scope.minimumZoom = 3;
-
+    $scope.minimumZoom = 3;
 
     /**
      * Center map to user's location
@@ -263,13 +261,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
               offers[i].locationFuzzy[1]);
             marker.data.icon = (offers[i].status === 'yes') ? $scope.icons.hostingYes : $scope.icons.hostingMaybe;
             marker.data.userId = offers[i]._id;
-            /*markers[i] = {
-              lat: offers[i].locationFuzzy[0],
-              lng: offers[i].locationFuzzy[1],
-              userId: offers[i]._id,
-              icon: (offers[i].status === 'yes') ? $scope.icons.hostingYes : $scope.icons.hostingMaybe,
-              layer: 'hosts'
-            };*/
             //Register markers
             pruneCluster.RegisterMarker(marker);
           }
