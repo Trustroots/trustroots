@@ -29,10 +29,10 @@ Your application should run on the 3000 port in development mode, so in your bro
 * [Contact us](http://ideas.trustroots.org/contact/)
 
 ### Fill database with test users and offers
-1. Make sure the tables offers and users are empty, in order to avoid duplicate values.
-2. Run `node .scripts/filltestData.js 1000` (for 1000 users and offers).
+1. Make sure the collections offers and users are empty, in order to avoid duplicate values.
+2. Run `node scripts/filltestData.js 1000` (for 1000 users and offers).
 3. The script will create the users and the offers. It can take some time, it will tell you when it's finished.
-4. To see the result run `grunt` and log in trustroots with user:trout and password:password.
+4. To see the result run `grunt` and log in trustroots with user: trout and password: password.
 
 ## Community
 * Join [#trustroots](http://webchat.freenode.net/?channels=trustroots) on freenode
