@@ -10,25 +10,25 @@
     transition: transform 0.25s cubic-bezier(0,0,0.25,1);
 }
 .prunecluster  {
-  width: 38px;
-  height: 38px;
+	.square(38px);
+	margin-left: 4px;
+	margin-top: 4px;
+	border-radius: 50%;
+	background-clip: padding-box;
   text-align: center;
-  margin-left: 4px;
-  margin-top: 4px;
-  border-radius: 50%;
-  background-color: lighten(@brand-primary, 5%);
-  font-family: 'Open Sans';
-  font-size: 12px;
-  border-radius: 20px;
+  font-family: @font-family-base;
+	color: @gray;
+  font-size: 16px;
+	font-weight: bold;
   transition: all 0.3s linear;
-  div {
-    width: 30px;
-    height: 30px;
+	background-color: rgba(red(lighten(@prunecluster-color, @prunecluster-border-contrast)), green(lighten(@prunecluster-color, @prunecluster-border-contrast)), blue(lighten(@prunecluster-color, @prunecluster-border-contrast)), @prunecluster-transparency);
+	div {
+		.square(30px);
+		margin-left: 4px;
+		margin-top: 4px;
     text-align: center;
-    margin-left: 4px;
-    margin-top: 4px;
-    border-radius: 50%;
-    background-color: @brand-primary;
+		border-radius: 50%;
+    background-color: rgba(red(@prunecluster-color), green(@prunecluster-color), blue(@prunecluster-color), @prunecluster-transparency);
   }
 }
 .prunecluster div span {
