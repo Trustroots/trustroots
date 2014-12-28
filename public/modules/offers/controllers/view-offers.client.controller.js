@@ -32,6 +32,16 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
         lng: 9.14055555556,
         zoom: 13
       },
+      defaults: {
+        scrollWheelZoom: false,
+        attributionControl: false,
+        keyboard: false,
+        controls: {
+          layers: {
+            visible: false
+          }
+        }
+      },
       markers: [],
       layers: {
         baselayers: {
@@ -64,9 +74,6 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
       },
       paths: {
         selected: $scope.currentSelection
-      },
-      defaults: {
-        scrollWheelZoom: false
       },
       events: {
         map: {
