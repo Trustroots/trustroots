@@ -1,6 +1,6 @@
 <section class="container container-spacer" data-ng-controller="StatisticsController">
 
-<section class="container board board-bokehblue container-fullscreen" data-ng-controller="StatisticsController">
+<section class="container board board-bokehblue container-fullscreen">
   <div class="row">
     <div class="col-xs-12">
       <a ui-sref="home" class="logo logo-sm logo-blue center-block"></a>
@@ -15,7 +15,7 @@
       <section ng-show="statistics.$resolved">
         <h3 class="statistics-count">{{statistics.total}} members in total.</h3>
 
-        <h3 class="statistics-count">{{statistics.hosting}}, that is {{ (statistics.hosting/statistics.total)*100 | number:1 }}%, are hosting.</h3>
+        <h3 class="statistics-count">{{statistics.hosting}} ({{ (statistics.hosting/statistics.total)*100 | number:1 }}%) are hosting.</h3>
 
         <hr>
 
