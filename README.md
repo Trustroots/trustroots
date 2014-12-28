@@ -9,9 +9,9 @@ You don't have the be a coder to participate. Check [this page](https://github.c
 ## Prerequisites
 Make sure you have installed all these prerequisites:
 * [Node.js](http://www.nodejs.org/download/) and the npm package manager.
-* [MongoDB](http://www.mongodb.org/downloads).
-* [Bower](http://bower.io/)
-* [Grunt](http://gruntjs.com/)
+* [MongoDB](http://www.mongodb.org/downloads), version 2.6 (2.2 is too old)
+* [Bower](http://bower.io/)      `npm -g install bower`
+* [Grunt](http://gruntjs.com/)   `npm -g install grunt-cli`
 
 ### Getting started
 1. Clone the repository: `git clone https://github.com/Trustroots/trustroots.git trustroots`
