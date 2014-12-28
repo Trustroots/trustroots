@@ -436,7 +436,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     // Init search with URL
     if($stateParams.location && $stateParams.location !== '') {
       $scope.userReacted = true;
-      $scope.searchQuery = $stateParams.location;
+      $scope.searchQuery = $stateParams.location.replace('_',' ');
       $scope.searchAddress();
     }
 
