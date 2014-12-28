@@ -107,7 +107,7 @@ else {
   user.email = 'admin@email.com';
   user.password = 'password';
   user.username = 'trout';
-  user.public = 'true';
+  user.public = true;
 
   user.save(function(err) {
     if(!err) {
