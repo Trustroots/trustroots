@@ -13,9 +13,9 @@
       </div>
 
       <section ng-show="statistics.$resolved">
-        <h3 class="statistics-count">{{statistics.total}} members</h3>
+        <h3 class="statistics-count">{{statistics.total}} members in total.</h3>
 
-        <h3 class="statistics-count">{{statistics.hosting}} hosting</h3>
+        <h3 class="statistics-count">{{statistics.hosting}}, that is {{ (statistics.hosting/statistics.total)*100 | number:1 }}%, are hosting.</h3>
 
         <hr>
 
