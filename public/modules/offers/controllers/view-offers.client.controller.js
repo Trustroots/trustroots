@@ -4,13 +4,25 @@
 /*global settings:false */
 
 
-angular.module('offers').controller('ViewOffersController', ['$scope', '$state', '$location', '$timeout', 'OffersBy', 'Authentication',
-  function($scope, $state, $location, $timeout, OffersBy, Authentication) {
+angular.module('offers').controller('ViewOffersController', ['$scope', '$state', '$location', '$timeout', 'OffersBy', 'Authentication', 'leafletData',
+  function($scope, $state, $location, $timeout, OffersBy, Authentication, leafletData) {
 
     // If user is not signed in then redirect to sign in form
     if (!Authentication.user) $location.path('signin');
 
     $scope.offer = false;
+    $scope.hostLocation = {};
+    $scope.currentSelection = {
+      weight: 2,
+      color: '#989898',
+      fillColor: '#b1b1b1',
+      fillOpacity: 0.5,
+      latlngs: $scope.hostLocation,
+      radius: 500,
+      type: 'circle',
+      layer: 'selectedPath',
+      clickable: false
+    };
 
     // Leaflet
     angular.extend($scope, {
@@ -18,8 +30,9 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
         // Default to Europe, we set center to Offer once it loads
         lat: 48.6908333333,
         lng: 9.14055555556,
-        zoom: 0
+        zoom: 13
       },
+      markers: [],
       layers: {
         baselayers: {
           default: {
@@ -35,27 +48,47 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
               continuousWorld: true
             }
           }
+        },
+        overlays: {
+          selectedPath: {
+            name: 'Selected hosts Marker',
+            type: 'group',
+            visible: true
+          },
+          selectedMarker: {
+            name: 'Selected hosts Marker',
+            type: 'group',
+            visible: false
+          }
         }
       },
       paths: {
-        offer: {
-          weight: 2,
-          color: '#12b591',
-          fillColor: '#12b591',
-          fillOpacity: 0.5,
-          clickable: false,
-          latlngs: {
-            // Somehow this needs to be here although we set it later again (BTW it's, Center of Europe)
-            lat: 48.6908333333,
-            lng: 9.14055555556
-          },
-          radius: 500,
-          type: 'circle'
-        }
+        selected: $scope.currentSelection
       },
       defaults: {
         scrollWheelZoom: false
+      },
+      events: {
+        map: {
+          enable: ['zoomend'],
+          logic: 'emit'
+        }
       }
+    });
+
+    //Check zoom when it changes and toggle marker or circle
+    $scope.$on('leafletDirectiveMap.zoomend', function(event){
+      leafletData.getMap().then(function(map) {
+        $scope.zoom = map.getZoom();
+        if($scope.zoom >= 12 && $scope.layers.overlays.selectedPath.visible === false) {
+          $scope.layers.overlays.selectedPath.visible = true;
+          $scope.layers.overlays.selectedMarker.visible = false;
+        }
+        else if($scope.zoom < 12 && $scope.layers.overlays.selectedMarker.visible === false){
+          $scope.layers.overlays.selectedPath.visible = false;
+          $scope.layers.overlays.selectedMarker.visible = true;
+        }
+      });
     });
 
     // Fetch that offer for us...
@@ -71,19 +104,35 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
             if(offer.location) {
               $scope.center.lat = parseFloat(offer.location[0]);
               $scope.center.lng = parseFloat(offer.location[1]);
-              $scope.center.zoom = 12;
 
-              $scope.paths.offer.latlngs.lat = parseFloat(offer.location[0]);
-              $scope.paths.offer.latlngs.lng = parseFloat(offer.location[1]);
+              $scope.markers.push({
+                lat: $scope.center.lat,
+                lng: $scope.center.lng,
+                icon: (offer.status === 'yes') ? $scope.icons.hostingYes : $scope.icons.hostingMaybe,
+                layer: 'selectedMarker'
+              });
 
+              $scope.hostLocation.lat = $scope.center.lat;
+              $scope.hostLocation.lng = $scope.center.lng;
             }
-
         });
 
       });
 
     }//if !offer
 
+    $scope.icons = {
+      hostingYes: {
+        iconUrl: '/modules/core/img/map/marker-icon-yes.svg',
+        iconSize: [20, 20], // size of the icon
+        iconAnchor: [10, 10] // point of the icon which will correspond to marker's location
+      },
+      hostingMaybe: {
+        iconUrl: '/modules/core/img/map/marker-icon-maybe.svg',
+        iconSize: [20, 20], // size of the icon
+        iconAnchor: [10, 10] // point of the icon which will correspond to marker's location
+      }
+    };
 
     $scope.hostingDropdown = false;
 
