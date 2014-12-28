@@ -181,6 +181,8 @@ exports.offerByUserId = function(req, res, next, userId) {
       //if (!offer) return next(new Error('Failed to load offers.'));
 
       if (offer) {
+        offer = offer.toObject();
+
         // Sanitize each outgoing offer's contents
         offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
         offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
