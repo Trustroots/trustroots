@@ -337,12 +337,8 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       if($scope.searchQuery !== '') {
         $scope.searchQuerySearching = true;
 
-        /*
-         * Note that "replace('_', ' ')" is there to make search queries that are coming in from Hitchwiki/Nomadwiki/Trashwiki work.
-         * @link https://github.com/Hitchwiki/hitchwiki/issues/61
-         */
         $http
-          .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + $scope.searchQuery.replace('_', ' ') + '.json?access_token=' + settings.mapbox.access_token)
+          .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + $scope.searchQuery + '.json?access_token=' + settings.mapbox.access_token)
           .then(function(response) {
 
             $scope.searchQuerySearching = false;
@@ -433,10 +429,16 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     };
 
 
-    // Init search with URL
+    /*
+     * Init search from the URL
+     *
+     * Note that "replace('_', ' ')" is there to make search queries that are coming in from Hitchwiki/Nomadwiki/Trashwiki work.
+     * @link https://github.com/Hitchwiki/hitchwiki/issues/61
+     * @link https://github.com/Trustroots/trustroots/issues/113
+     */
     if($stateParams.location && $stateParams.location !== '') {
       $scope.userReacted = true;
-      $scope.searchQuery = $stateParams.location.replace('_',' ');
+      $scope.searchQuery = $stateParams.location.replace('_', ' ');
       $scope.searchAddress();
     }
 
