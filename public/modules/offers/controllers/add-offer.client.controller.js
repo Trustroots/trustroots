@@ -5,8 +5,8 @@
 /*global jQuery:false */
 
 
-angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$location', '$geolocation', 'leafletBoundsHelpers', 'OffersBy', 'Offers', 'Authentication',
-  function($scope, $rootScope, $http, $timeout, $state, $stateParams, $location, $geolocation, leafletBoundsHelpers, OffersBy, Offers, Authentication) {
+angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$location', 'leafletBoundsHelpers', 'OffersBy', 'Offers', 'Authentication',
+  function($scope, $rootScope, $http, $timeout, $state, $stateParams, $location, leafletBoundsHelpers, OffersBy, Offers, Authentication) {
 
     // If user is not signed in then redirect to sign in form
     if (!Authentication.user) $location.path('signin');
@@ -16,10 +16,6 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
     $scope.isLoading = false;
 
     $scope.offer = false;
-
-    $scope.position = $geolocation.getCurrentPosition({
-      timeout: 60000 // 1min
-    });
 
     // Leaflet
     angular.extend($scope, {
@@ -93,15 +89,6 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
           else {
             offer.maxGuests = 1;
             offer.status = 'yes';
-
-            // Center map to user's location
-            $scope.position.then(function(position){
-              if(position.coords.latitude && position.coords.longitude) {
-                $scope.center.lat = parseFloat(position.coords.latitude);
-                $scope.center.lng = parseFloat(position.coords.longitude);
-                $scope.center.zoom = 13;
-              }
-            });
           }
 
           // Determine new status from URL, overrides previous status
