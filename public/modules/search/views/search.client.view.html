@@ -20,8 +20,11 @@
   <div ng-show="center.zoom <= minimumZoom && user.public && !notFound" class="text-uppercase search-overlay-message">
     Zoom in closer to see everyone
   </div>
-  <div ng-show="notFound" class="search-overlay-message">
+  <div ng-show="locationNotFound" class="search-overlay-message">
     We could not find such a place...
+  </div>
+  <div ng-show="offerNotFound" class="search-overlay-message">
+    We could not find such an offer...
   </div>
 
   <div ng-class="{'leaflet-layerstyle-satellite': (layerStyle === 'satellite')}">

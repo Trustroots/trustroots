@@ -23,7 +23,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
 
     $scope.layerStyle = 'street';
     $scope.sidebarOpen = false;
-    $scope.userReacted = false;
     $scope.languages = Languages.get('object');
     $scope.offer = false; // Offer to show
     $scope.notFound = false;
@@ -55,7 +54,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           }
         }
       },
-      center: defaultLocation,
+      center: {},
       bounds: {},
       layers: {
         baselayers: {
@@ -170,7 +169,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
 
     // Catch the first user interraction => stops moving to recognized browser's geolocation
     var mouseDownListener = $scope.$on('leafletDirectiveMap.mousedown', function() {
-      $scope.userReacted = true;
       // Deregister this listener, @link http://stackoverflow.com/a/14898795
       mouseDownListener();
     });
@@ -200,7 +198,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
         $scope.currentSelection.latlngs = e.latlng;
         $scope.layers.overlays.selected.visible = true;
 
-        $scope.userReacted = true;
         $scope.sidebarOpen = true;
 
       });
@@ -258,7 +255,8 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           for (var i = -1, len = offers.length; ++i < len;) {
             var marker = new PruneCluster.Marker(
               offers[i].locationFuzzy[0],
-              offers[i].locationFuzzy[1]);
+              offers[i].locationFuzzy[1]
+            );
             marker.data.icon = (offers[i].status === 'yes') ? $scope.icons.hostingYes : $scope.icons.hostingMaybe;
             marker.data.userId = offers[i]._id;
             //Register markers
@@ -348,9 +346,12 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
             }
             else {
               // @Todo: nicer alert https://github.com/Trustroots/trustroots/issues/24
-              $scope.notFound = true;
+              if($scope.center.lat === 0 && $scope.center.zoom === 1) {
+                $scope.center = defaultLocation;
+              }
+              $scope.locationNotFound = true;
               $timeout(function(){
-                $scope.notFound = false;
+                $scope.locationNotFound = false;
               }, 3000);
             }
           });
@@ -436,11 +437,37 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
      * @link https://github.com/Hitchwiki/hitchwiki/issues/61
      * @link https://github.com/Trustroots/trustroots/issues/113
      */
+
     if($stateParams.location && $stateParams.location !== '') {
-      $scope.userReacted = true;
       $scope.searchQuery = $stateParams.location.replace('_', ' ');
       $scope.searchAddress();
     }
+    else if($stateParams.offer && $stateParams.offer !== '') {
+      Offers.get({
+        offerId: $stateParams.offer
+      }, function(offer){
+        $scope.offer = offer;
 
+        $scope.currentSelection.latlngs = $scope.offer.locationFuzzy;
+        $scope.layers.overlays.selected.visible = true;
+        $scope.sidebarOpen = true;
+
+        $scope.center = {
+          lat: $scope.offer.locationFuzzy[0],
+          lng: $scope.offer.locationFuzzy[1],
+          zoom: 13
+        };
+
+      },function (error) {
+        $scope.center = defaultLocation;
+        $scope.offerNotFound = true;
+        $timeout(function(){
+          $scope.offerNotFound = false;
+        }, 3000);
+      });
+    }
+    else {
+      $scope.center = defaultLocation;
+    }
   }
 ]);
