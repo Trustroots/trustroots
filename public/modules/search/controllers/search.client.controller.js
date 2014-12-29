@@ -40,6 +40,20 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     };
     $scope.minimumZoom = 3;
 
+    //Set up icons
+    var icons = {
+      hostingYes: L.icon({
+        iconUrl: '/modules/core/img/map/marker-icon-yes.svg',
+        iconSize:     [20, 20], // size of the icon
+        iconAnchor:   [10, 10] // point of the icon which will correspond to marker's location
+      }),
+      hostingMaybe: L.icon({
+        iconUrl: '/modules/core/img/map/marker-icon-maybe.svg',
+        iconSize:     [20, 20], // size of the icon
+        iconAnchor:   [10, 10] // point of the icon which will correspond to marker's location
+      })
+    };
+
     /**
      * The Variables passed to leaflet directive at init
      */
@@ -255,7 +269,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
               offers[i].locationFuzzy[0],
               offers[i].locationFuzzy[1]
             );
-            marker.data.icon = (offers[i].status === 'yes') ? $scope.icons.hostingYes : $scope.icons.hostingMaybe;
+            marker.data.icon = (offers[i].status === 'yes') ? icons.hostingYes : icons.hostingMaybe;
             marker.data.userId = offers[i]._id;
             //Register markers
             pruneCluster.RegisterMarker(marker);
@@ -276,20 +290,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
 
         //Add the cluster to the map
         map.addLayer(pruneCluster);
-
-        //Set up icons
-        $scope.icons = {
-          hostingYes: L.icon({
-            iconUrl: '/modules/core/img/map/marker-icon-yes.svg',
-            iconSize:     [20, 20], // size of the icon
-            iconAnchor:   [10, 10] // point of the icon which will correspond to marker's location
-          }),
-          hostingMaybe: L.icon({
-            iconUrl: '/modules/core/img/map/marker-icon-maybe.svg',
-            iconSize:     [20, 20], // size of the icon
-            iconAnchor:   [10, 10] // point of the icon which will correspond to marker's location
-          })
-        };
 
         if($scope.center.zoom > $scope.minimumZoom) {
           var loadMarkers = function() {
