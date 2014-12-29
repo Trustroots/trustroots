@@ -9,7 +9,8 @@
 angular.module('search').controller('SearchController', ['$scope', '$http', '$geolocation', '$location', '$state', '$stateParams', '$timeout', '$log', 'Offers', 'leafletBoundsHelpers', 'Authentication', 'Languages', 'leafletData',
   function($scope, $http, $geolocation, $location, $state, $stateParams, $timeout, $log, Offers, leafletBoundsHelpers, Authentication, Languages, leafletData) {
 
-    $scope.user = Authentication.user; // Currently logged in user
+    // Currently signed in user
+    $scope.user = Authentication.user;
 
     // If user is not signed in then redirect back home
     if (!$scope.user) $location.path('signin');
@@ -34,13 +35,13 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       latlngs: defaultLocation,
       radius: 500,
       type: 'circle',
-      layer: 'selected',
+      layer: 'selectedOffers',
       clickable: false
     };
     $scope.minimumZoom = 3;
 
     /**
-     * Center map to user's location
+     * The Variables passed to leaflet directive at init
      */
     angular.extend($scope, {
       defaults: {
@@ -69,7 +70,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
             layerOptions: {
               attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
               continuousWorld: true,
-              style: 'street'
+              TRStyle: 'street'//Not native Leaflet, required by layer switch
             }
           },
           osm: {
@@ -80,7 +81,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
               subdomains: ['a', 'b', 'c'],
               attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OSM</a>',
               continuousWorld: true,
-              style: 'street'
+              TRStyle: 'street'//Not native Leaflet, required by layer switch
             }
           },
           // Doesn't support https
@@ -92,12 +93,12 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
               subdomains: ['1', '2', '3', '4'],
               attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OSM</a>',
               continuousWorld: true,
-              style: 'street'
+              TRStyle: 'street'//Not native Leaflet, required by layer switch
             }
           }
         },
         overlays: {
-          selected: {
+          selectedOffers: {
             name: 'Selected hosts',
             type: 'group',
             visible: false
@@ -107,6 +108,13 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       paths: {
         selected: $scope.currentSelection
       },
+      /**
+       * Catch map events:
+       * click, dblclick, mousedown, mouseup, mouseover, mouseout, mousemove, contextmenu, focus, blur,
+       * preclick, load, unload, viewreset, movestart, move, moveend, dragstart, drag, dragend, zoomstart,
+       * zoomend, zoomlevelschange, resize, autopanstart, layeradd, layerremove, baselayerchange, overlayadd,
+       * overlayremove, locationfound, locationerror, popupopen, popupclose
+       */
       events: {
         map: {
           enable: ['click','mousedown', 'moveend', 'load', 'baselayerchange'],
@@ -137,7 +145,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
         layerOptions: {
           attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
           continuousWorld: true,
-          style: 'satellite'
+          TRStyle: 'satellite'//Not native Leaflet, required by layer switch
         }
       };
     }
@@ -154,41 +162,28 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
         layerOptions: {
           attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
           continuousWorld: true,
-          style: 'street'
+          TRStyle: 'street'//Not native Leaflet, required by layer switch
         }
       };
     }
 
-    /**
-     * Catch map events:
-     * click, dblclick, mousedown, mouseup, mouseover, mouseout, mousemove, contextmenu, focus, blur,
-     * preclick, load, unload, viewreset, movestart, move, moveend, dragstart, drag, dragend, zoomstart,
-     * zoomend, zoomlevelschange, resize, autopanstart, layeradd, layerremove, baselayerchange, overlayadd,
-     * overlayremove, locationfound, locationerror, popupopen, popupclose
-     */
-
-    // Catch the first user interraction => stops moving to recognized browser's geolocation
-    var mouseDownListener = $scope.$on('leafletDirectiveMap.mousedown', function() {
-      // Deregister this listener, @link http://stackoverflow.com/a/14898795
-      mouseDownListener();
-    });
-
     /*
      * Determine currently selected baselayer style
-     * 'style' has to be set when defining layers.
-     * Possible values are: streets, satellite, terrain
+     * 'TRStyle' has to be set when defining layers.
+     * Possible values are: street, satellite
      * Defaults to street
      */
     $scope.$on('leafletDirectiveMap.baselayerchange', function(event, layer) {
-      $scope.layerStyle = (layer.leafletEvent.layer.options.style) ? $scope.layerStyle = layer.leafletEvent.layer.options.style : 'street';
+      $scope.layerStyle = (layer.leafletEvent.layer.options.TRStyle) ? $scope.layerStyle = layer.leafletEvent.layer.options.TRStyle : 'street';
     });
 
     //Setting up the cluster
     var pruneCluster = new PruneClusterForLeaflet(60, 60);
 
     //Setting up the marker and click event
-    pruneCluster.PrepareLeafletMarker = function (leafletMarker, data) {
-      leafletMarker.on('click', function (e) {
+    pruneCluster.PrepareLeafletMarker = function(leafletMarker, data) {
+      leafletMarker.on('click', function(e) {
+
         // Open offer card
         $scope.offer = Offers.get({
           offerId: data.userId
@@ -196,7 +191,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
 
         // Show cirlce around the marker
         $scope.currentSelection.latlngs = e.latlng;
-        $scope.layers.overlays.selected.visible = true;
+        $scope.layers.overlays.selectedOffers.visible = true;
 
         $scope.sidebarOpen = true;
 
@@ -208,12 +203,13 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     $scope.$on('leafletDirectiveMap.click', function(event){
       $scope.sidebarOpen = false;
       $scope.offer = false;
-      $scope.layers.overlays.selected.visible = false;
+      $scope.layers.overlays.selectedOffers.visible = false;
     });
+    /*
     $scope.$on('leafletDirectiveMarker.click', function(e, args) {
 
-
     });
+    */
 
 
     /**
@@ -224,12 +220,13 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     };
 
     /**
-     * Load content to map bounding box
+     * Load markers to the current bounding box
      */
-
-   //The big function that will get the markers in a the current bounding box
     $scope.getMarkers = function () {
+
+      // Check if map has bounds set (typically at init these might be missing)
       if(!$scope.bounds.northEast) return;
+
       //If we get out of the boundig box of the last api query we have to call the API for the new markers
       if($scope.bounds.northEast.lng > $scope.lastbounds.northEastLng || $scope.bounds.northEast.lat > $scope.lastbounds.northEastLat || $scope.bounds.southWest.lng < $scope.lastbounds.southWestLng || $scope.bounds.southWest.lat < $scope.lastbounds.southWestLat) {
         //We add a margin to the boundings depending on the zoom level
@@ -251,7 +248,8 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
         }, function(offers){
           //Remove last markers
           pruneCluster.RemoveMarkers();
-          //Let's go through those markers
+          // Let's go through those markers
+          // This loop might look weird but it's actually speed optimized :P
           for (var i = -1, len = offers.length; ++i < len;) {
             var marker = new PruneCluster.Marker(
               offers[i].locationFuzzy[0],
@@ -268,17 +266,19 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
       }
     };
 
-   //Set event for map load
+    /**
+     * Event when the map has finished loading
+     */
     $scope.$on('leafletDirectiveMap.load', function(event){
-      //If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
 
+      //If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
       leafletData.getMap().then(function(map) {
 
         //Add the cluster to the map
         map.addLayer(pruneCluster);
 
         //Set up icons
-        $scope.icons= {
+        $scope.icons = {
           hostingYes: L.icon({
             iconUrl: '/modules/core/img/map/marker-icon-yes.svg',
             iconSize:     [20, 20], // size of the icon
@@ -297,9 +297,11 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
               $scope.getMarkers();
             }
             else {
+              // $timeout does $apply for us
               $timeout(loadMarkers, 10);
             }
           };
+          // $timeout does $apply for us
           $timeout(loadMarkers, 10);
         }
 
@@ -441,11 +443,13 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
      * @link https://github.com/Hitchwiki/hitchwiki/issues/61
      * @link https://github.com/Trustroots/trustroots/issues/113
      */
-
     if($stateParams.location && $stateParams.location !== '') {
       $scope.searchQuery = $stateParams.location.replace('_', ' ');
       $scope.searchAddress();
     }
+    /*
+     * Init opening offer from the URL
+     */
     else if($stateParams.offer && $stateParams.offer !== '') {
       Offers.get({
         offerId: $stateParams.offer
@@ -453,7 +457,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
         $scope.offer = offer;
 
         $scope.currentSelection.latlngs = $scope.offer.locationFuzzy;
-        $scope.layers.overlays.selected.visible = true;
+        $scope.layers.overlays.selectedOffers.visible = true;
         $scope.sidebarOpen = true;
 
         $scope.center = {
@@ -470,8 +474,10 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
         }, 3000);
       });
     }
+    // Nothing to init from URL
     else {
       $scope.center = defaultLocation;
     }
+
   }
 ]);
