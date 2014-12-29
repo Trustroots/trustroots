@@ -310,13 +310,17 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     $scope.$on('leafletDirectiveMap.moveend', function(event){
       //Get markers if zoom is big enough
       if($scope.center.zoom > $scope.minimumZoom) {
-        //$scope.showOverlay('hosts');
         $scope.getMarkers();
       }
       //Otherwise hide the markers
       else {
         pruneCluster.RemoveMarkers();
-        //$scope.hideOverlay('hosts');
+        $scope.lastbounds = {
+          northEastLng: 0,
+          northEastLat: 0,
+          southWestLng: 0,
+          southWestLat: 0
+        };
       }
     });
 
