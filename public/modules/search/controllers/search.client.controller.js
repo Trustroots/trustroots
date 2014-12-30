@@ -382,7 +382,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           $scope.bounds = leafletBoundsHelpers.createBoundsFromArray([
             [ parseFloat(place.bbox[1]), parseFloat(place.bbox[0]) ],
             [ parseFloat(place.bbox[3]), parseFloat(place.bbox[2]) ]
-          ])
+          ]);
         });
       }
       // Does it have lat/lng?
