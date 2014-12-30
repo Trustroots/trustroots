@@ -446,7 +446,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
      * @link https://github.com/Trustroots/trustroots/issues/113
      */
     if($stateParams.location && $stateParams.location !== '') {
-      $scope.searchQuery = $stateParams.location.replace('_', ' ');
+      $scope.searchQuery = $stateParams.location.replace('_', ' ', 'g');
       $scope.searchAddress();
     }
     /*
