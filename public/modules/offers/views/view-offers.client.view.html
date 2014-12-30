@@ -63,8 +63,8 @@
   <div leaflet center="center" markers="markers" layers="layers" paths="paths" defaults="defaults" class="offer-location" ng-if="offer && offer.$resolved && offer.status !== 'no'" id="offer-location-canvas"></div>
 
   <div class="panel-footer text-center" >
-    <a ng-show="user._id === profile._id && (offer && offer.status === 'no')" ui-sref="offer" class="btn btn-sm btn-primary">Start hosting travellers</a>
-    <a ng-show="offer && offer.status !== 'no'" ui-sref="search({offer: offerId})" class="btn btn-sm btn-primary">Open the big map</a>
+    <a ng-show="user._id === profile._id && (offer && offer.status === 'no')" ui-sref="offer" class="btn btn-xs btn-primary">Start hosting travellers</a>
+    <a ng-show="offer && offer.status !== 'no'" ui-sref="search({offer: offerId})" class="btn btn-xs btn-link"><span class="text-muted">Bigger map</span></a>
   </div>
 
 
