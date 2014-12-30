@@ -1,7 +1,7 @@
 # Trustroots
 _Hospitality exchange community for hitchhikers and other travellers._
 
-[Trustroots.org](https://www.trustroots.org)
+[Trustroots.org](https://www.trustroots.org/)
 
 ![Trustroots logo](https://raw.githubusercontent.com/Trustroots/trustroots/master/public/modules/core/img/logo/color-green.png)
 
