@@ -346,6 +346,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           .then(function(response) {
 
             $scope.searchQuerySearching = false;
+            $scope.center = defaultLocation;
 
             if(response.status === 200 && response.data.features && response.data.features.length > 0) {
               $scope.mapLocate(response.data.features[0]);
@@ -374,20 +375,21 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
 
       // Show full place name at search  query
       $scope.searchQuery =  $scope.placeTitle(place);
-
       // Does the place have bounding box?
       if(place.bbox) {
-        $scope.bounds = leafletBoundsHelpers.createBoundsFromArray([
-          [ parseFloat(place.bbox[1]), parseFloat(place.bbox[0]) ],
-          [ parseFloat(place.bbox[3]), parseFloat(place.bbox[2]) ]
-        ]);
+        //Set a timeout here otherwise the markers will not load.
+        $timeout( function () {
+          $scope.bounds = leafletBoundsHelpers.createBoundsFromArray([
+            [ parseFloat(place.bbox[1]), parseFloat(place.bbox[0]) ],
+            [ parseFloat(place.bbox[3]), parseFloat(place.bbox[2]) ]
+          ])
+        });
       }
-
       // Does it have lat/lng?
       else if(place.center) {
         $scope.center = {
-          lat: parseFloat(place.center[0]),
-          lng: parseFloat(place.center[1]),
+          lat: parseFloat(place.center[1]),
+          lng: parseFloat(place.center[0]),
           zoom: 5
         };
       }
