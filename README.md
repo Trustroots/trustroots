@@ -3,6 +3,8 @@ _Hospitality exchange community for hitchhikers and other travellers._
 
 [Trustroots.org](https://www.trustroots.org)
 
+![Trustroots logo](https://raw.githubusercontent.com/Trustroots/trustroots/master/public/modules/core/img/logo/color-green.png)
+
 ## Volunteering
 * You don't have the be a coder to participate. Check [volunteers page](https://github.com/Trustroots/trustroots/wiki/Volunteering) for more info.
 * [Drop us a message](http://ideas.trustroots.org/contact/)
