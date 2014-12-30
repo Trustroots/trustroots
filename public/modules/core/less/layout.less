@@ -28,7 +28,7 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  padding-bottom: 100px;
+  padding-bottom: 130px;
   &.container-spacer {
     top: @navbar-height;
     margin-top: 0;
@@ -170,8 +170,12 @@ hr {
 
   .size(@logo-size-width, @logo-size-height);
 
-  // Logo images: white
+  // Logo images: white (default), blue
   .img-retina('/modules/core/img/logo/horizontal-white.png', '/modules/core/img/logo/horizontal-white@2x.png', @logo-size-width, @logo-size-height);
+
+  &.logo-horizontal-blue {
+    .img-retina('/modules/core/img/logo/horizontal-blue.png', '/modules/core/img/logo/horizontal-blue@2x.png', @logo-size-width, @logo-size-height);
+  }
 }
 
 
