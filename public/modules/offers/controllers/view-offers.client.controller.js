@@ -85,7 +85,7 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
 
     //Check zoom when it changes and toggle marker or circle
     $scope.$on('leafletDirectiveMap.zoomend', function(event){
-      leafletData.getMap().then(function(map) {
+      leafletData.getMap('offer-location-canvas').then(function(map) {
         $scope.zoom = map.getZoom();
         if($scope.zoom >= 12 && $scope.layers.overlays.selectedPath.visible === false) {
           $scope.layers.overlays.selectedPath.visible = true;
