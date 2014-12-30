@@ -98,6 +98,8 @@ exports.update = function(req, res) {
     delete req.body.username;
     delete req.body.emailToken;
     delete req.body.emailTemporary;
+    delete req.body.salt;
+    delete req.body.password;
     delete req.body.resetPasswordToken;
     delete req.body.resetPasswordExpires;
 

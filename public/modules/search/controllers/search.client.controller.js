@@ -49,7 +49,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
         iconSize:   [20, 20], // size of the icon
         iconAnchor: [10, 10] // point of the icon which will correspond to marker's location
       });
-    }
+    };
 
     /**
      * The Variables passed to leaflet directive at init
