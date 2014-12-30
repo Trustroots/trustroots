@@ -192,10 +192,10 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     });
 
     //Setting up the cluster
-    var pruneCluster = new PruneClusterForLeaflet(60, 60);
+    $scope.pruneCluster = new PruneClusterForLeaflet(60, 60);
 
     //Setting up the marker and click event
-    pruneCluster.PrepareLeafletMarker = function(leafletMarker, data) {
+    $scope.pruneCluster.PrepareLeafletMarker = function(leafletMarker, data) {
       leafletMarker.on('click', function(e) {
 
         // Open offer card
@@ -261,7 +261,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
           southWestLat: $scope.lastbounds.southWestLat
         }, function(offers){
           //Remove last markers
-          pruneCluster.RemoveMarkers();
+          $scope.pruneCluster.RemoveMarkers();
           // Let's go through those markers
           // This loop might look weird but it's actually speed optimized :P
           for (var i = -1, len = offers.length; ++i < len;) {
@@ -272,10 +272,10 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
             marker.data.icon = (offers[i].status === 'yes') ? icons.hostingYes : icons.hostingMaybe;
             marker.data.userId = offers[i]._id;
             //Register markers
-            pruneCluster.RegisterMarker(marker);
+            $scope.pruneCluster.RegisterMarker(marker);
           }
           //Update markers
-          pruneCluster.ProcessView();
+          $scope.pruneCluster.ProcessView();
         });
       }
     };
@@ -285,38 +285,36 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
      */
     $scope.$on('leafletDirectiveMap.load', function(event){
 
-      //If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
-      leafletData.getMap().then(function(map) {
-
-        //Add the cluster to the map
-        map.addLayer(pruneCluster);
-
-        if($scope.center.zoom > $scope.minimumZoom) {
-          var loadMarkers = function() {
-            if(angular.isDefined($scope.bounds.northEast)) {
-              $scope.getMarkers();
-            }
-            else {
-              // $timeout does $apply for us
-              $timeout(loadMarkers, 10);
-            }
-          };
-          // $timeout does $apply for us
-          $timeout(loadMarkers, 10);
-        }
-
+      leafletData.getMap('search-map-canvas').then(function(map) {
+        map.addLayer($scope.pruneCluster);
       });
+
+      //If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
+      if($scope.center.zoom > $scope.minimumZoom) {
+        var loadMarkers = function() {
+          if(angular.isDefined($scope.bounds.northEast)) {
+            $scope.getMarkers();
+          }
+          else {
+            // $timeout does $apply for us
+            $timeout(loadMarkers, 10);
+          }
+        };
+        // $timeout does $apply for us
+        $timeout(loadMarkers, 10);
+      }
     });
 
     //Set event that fires everytime we finish to move the map
     $scope.$on('leafletDirectiveMap.moveend', function(event){
+
       //Get markers if zoom is big enough
       if($scope.center.zoom > $scope.minimumZoom) {
-        $scope.getMarkers();
+            $scope.getMarkers();
       }
       //Otherwise hide the markers
       else {
-        pruneCluster.RemoveMarkers();
+        $scope.pruneCluster.RemoveMarkers();
         $scope.lastbounds = {
           northEastLng: 0,
           northEastLat: 0,
