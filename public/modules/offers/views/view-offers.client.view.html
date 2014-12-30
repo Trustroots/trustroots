@@ -60,11 +60,14 @@
   </div>
 
   <!-- When looking at your own profile -->
-  <div class="panel-footer text-center" ng-show="user._id === profile._id && (offer && offer.status === 'no')">
-    <a ui-sref="offer" class="btn btn-sm btn-primary">Start hosting travellers</a>
+  <div leaflet center="center" markers="markers" layers="layers" paths="paths" defaults="defaults" class="offer-location" ng-if="offer && offer.$resolved && offer.status !== 'no'" id="offer-location-canvas"></div>
+
+  <div class="panel-footer text-center" >
+    <a ng-show="user._id === profile._id && (offer && offer.status === 'no')" ui-sref="offer" class="btn btn-sm btn-primary">Start hosting travellers</a>
+    <a ng-show="offer && offer.status !== 'no'" ui-sref="search({offer: offerId})" class="btn btn-sm btn-primary">Open the big map</a>
   </div>
 
-  <div leaflet center="center" markers="markers" layers="layers" paths="paths" defaults="defaults" class="offer-location" ng-if="offer && offer.$resolved && offer.status !== 'no'" id="offer-location-canvas"></div>
+
 
 </div>
 <!-- /Accommodation -->

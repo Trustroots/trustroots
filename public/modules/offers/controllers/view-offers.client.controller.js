@@ -119,6 +119,8 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
                 layer: 'selectedMarker'
               });
 
+              $scope.offerId = offer._id;
+
               $scope.hostLocation.lat = $scope.center.lat;
               $scope.hostLocation.lng = $scope.center.lng;
             }
