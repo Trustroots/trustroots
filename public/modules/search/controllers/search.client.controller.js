@@ -40,19 +40,16 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
     };
     $scope.minimumZoom = 3;
 
-    //Set up icons
-    var icons = {
-      hostingYes: L.icon({
-        iconUrl: '/modules/core/img/map/marker-icon-yes.svg',
-        iconSize:     [20, 20], // size of the icon
-        iconAnchor:   [10, 10] // point of the icon which will correspond to marker's location
-      }),
-      hostingMaybe: L.icon({
-        iconUrl: '/modules/core/img/map/marker-icon-maybe.svg',
-        iconSize:     [20, 20], // size of the icon
-        iconAnchor:   [10, 10] // point of the icon which will correspond to marker's location
-      })
-    };
+    // Return constructed icon
+    // @link http://leafletjs.com/reference.html#icon
+    var icon = function(status) {
+      status = (status === 'yes') ? 'yes' : 'maybe';
+      return L.icon({
+        iconUrl:    '/modules/core/img/map/marker-icon-' + status + '.svg',
+        iconSize:   [20, 20], // size of the icon
+        iconAnchor: [10, 10] // point of the icon which will correspond to marker's location
+      });
+    }
 
     /**
      * The Variables passed to leaflet directive at init
@@ -269,7 +266,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$ge
               offers[i].locationFuzzy[0],
               offers[i].locationFuzzy[1]
             );
-            marker.data.icon = (offers[i].status === 'yes') ? icons.hostingYes : icons.hostingMaybe;
+            marker.data.icon = icon(offers[i].status);
             marker.data.userId = offers[i]._id;
             //Register markers
             $scope.pruneCluster.RegisterMarker(marker);
