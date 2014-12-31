@@ -31,7 +31,7 @@ exports.forgot = function(req, res, next) {
     function(token, done) {
       if (req.body.username) {
         User.findOne({
-          username: req.body.username
+          username: req.body.username.toString().toLowerCase()
         }, '-salt -password', function(err, user) {
           if (!user) {
             return res.status(400).send({
@@ -43,7 +43,7 @@ exports.forgot = function(req, res, next) {
             });
           } else {
             user.resetPasswordToken = token;
-            user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+            user.resetPasswordExpires = Date.now() + (24 * 3600000); // 24 hours
 
             user.save(function(err) {
               done(err, token, user);
