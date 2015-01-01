@@ -44,9 +44,9 @@ exports.userProfileFields = [
 exports.userMiniProfileFields = 'id displayName username avatarSource emailHash additionalProvidersData.facebook.id';
 
 /**
-* Rules for sanitizing user description coming in and out
-* @link https://github.com/punkave/sanitize-html
-*/
+ * Rules for sanitizing user description coming in and out
+ * @link https://github.com/punkave/sanitize-html
+ */
 var userSanitizeOptions = {
     allowedTags: [ 'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'li', 'ul', 'ol', 'blockquote', 'code', 'pre' ],
     allowedAttributes: {
@@ -61,8 +61,8 @@ var userSanitizeOptions = {
 
 
 /**
-* Update
-*/
+ * Update
+ */
 exports.update = function(req, res) {
   async.waterfall([
 
@@ -179,60 +179,6 @@ exports.update = function(req, res) {
     }
   });
 };
-
-
-
-
-/**
- * Update user details
- */
- /*
-exports.update = function(req, res) {
-  // Init Variables
-  var user = req.user;
-  var message = null;
-
-  // For security measurement remove these from the req.body object
-  delete req.body.seen;
-  delete req.body.roles;
-  delete req.body.email;
-  delete req.body.public;
-  delete req.body.created;
-  delete req.body.emailToken;
-  delete req.body.resetPasswordToken;
-  delete req.body.resetPasswordExpires;
-
-  if (user) {
-    // Merge existing user
-    user = _.extend(user, req.body);
-    user.updated = Date.now();
-    user.displayName = user.firstName + ' ' + user.lastName;
-
-    // Sanitize user description
-    user.description = sanitizeHtml(user.description, userSanitizeOptions);
-
-    user.save(function(err) {
-      if (err) {
-        return res.status(400).send({
-          message: errorHandler.getErrorMessage(err)
-        });
-      } else {
-        req.login(user, function(err) {
-          if (err) {
-            res.status(400).send(err);
-          } else {
-            res.json(user);
-          }
-        });
-      }
-    });
-  } else {
-    res.status(400).send({
-      message: 'User is not signed in'
-    });
-  }
-};
-*/
 
 /**
  * Show the profile of the user
