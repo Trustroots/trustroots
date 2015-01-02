@@ -25,14 +25,6 @@ angular.module('core').controller('HeaderController', ['$scope', '$filter', 'Aut
       // Hide header at certain pages
       $scope.isHidden = (['home', 'signup', 'signin'].indexOf(toState.name) > -1) ? true : false;
 
-      // Analytics
-      if (typeof(ga) === 'function') {
-        ga('send', 'pageview', {
-          'page': '/#!' + toState.url,
-          //'title': ''
-        });
-      }
-
     });
 
     // Create header menu for User when she/he logins
