@@ -13,7 +13,7 @@ angular.module('contacts').controller('AddContactController', ['$scope', '$rootS
     $scope.isConnected = false;
     $scope.isLoading = false;
     $scope.contact = {
-      message: '<p>Hi!</p><p>I would like to add you as a contact.</p><p>— ' + Authentication.user.displayName + '</p>'
+      message: '<p>Hi!</p><p>I would like to add you as a contact.</p><p>- ' + Authentication.user.displayName + '</p>'
     };
 
     if($stateParams.userId === $scope.user._id) {

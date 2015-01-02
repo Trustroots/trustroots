@@ -1,0 +1,12 @@
+{% extends 'email.server.view.html' %}
+
+{% block content %}
+Hey {{name}}!
+
+Thanks for signing up for an account on Trustroots!
+
+To make sure you're a human, please click the confirmation link below to confirm your email address: {{email}}
+
+<{{urlConfirm}}>
+
+{% endblock %}

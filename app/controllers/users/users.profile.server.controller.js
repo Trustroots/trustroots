@@ -138,36 +138,62 @@ exports.update = function(req, res) {
 
   },
 
-  // Prepare mail
+  // Prepare TEXT mail
   function(token, user, done) {
+
+    // If no token, user didn't change email = pass this phase
     if(token) {
+
       var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
-      res.render('email-templates/email-confirmation', {
+      var renderVars = {
+        url: url,
         name: user.displayName,
         email: user.emailTemporary,
-        urlConfirm: url + '/#!/confirm-email/' + token,
-      }, function(err, emailHTML) {
-        done(err, emailHTML, user, url);
+        urlConfirm: url + '/#!/confirm-email/' + token
+      };
+
+      res.render('email-templates-text/email-confirmation', renderVars, function(err, emailPlain) {
+        done(err, emailPlain, user, renderVars);
       });
     }
     else {
-      done(null, false);
+      done(null, false, false, false);
+    }
+  },
+
+  // Prepare HTML mail
+  function(emailPlain, user, renderVars, done) {
+
+    // If no emailPlain, user didn't change email = pass this phase
+    if(emailPlain) {
+      res.render('email-templates/email-confirmation', renderVars, function(err, emailHTML) {
+        done(err, emailHTML, emailPlain, user);
+      });
+    }
+    else {
+      done(null, false, false, false);
     }
   },
 
   // If valid email, send confirm email using service
-  function(emailHTML, user, url, done) {
+  function(emailHTML, emailPlain, user, done) {
+
+    // If no emailHTML, user didn't change email = pass this phase
     if(emailHTML) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
-        to: user.emailTemporary,
+        to: user.displayName + ' <' + user.emailTemporary + '>',
         from: config.mailer.from,
         subject: 'Confirm email change',
+        text: emailPlain,
         html: emailHTML
       };
       smtpTransport.sendMail(mailOptions, function(err) {
         done(err);
       });
+    }
+    else {
+      done(null);
     }
   },
 
