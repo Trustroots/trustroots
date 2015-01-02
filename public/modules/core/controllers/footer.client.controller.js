@@ -33,11 +33,13 @@ angular.module('core').controller('FooterController', ['$scope', 'Authentication
         'url': 'https://www.flickr.com/photos/54459164@N00/15506455245',
         'license': 'CC',
         'license_url': 'https://creativecommons.org/licenses/by-nc-sa/2.0/'
+      },
+      'horizonballoon': {
+        'name': 'Wesley Stanford',
+        'url': 'http://www.dualhorizons.blogspot.co.uk/'
       }
 
     };
-
-
 
     // Changing footer styles/contents after navigation
     $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams){
@@ -53,6 +55,9 @@ angular.module('core').controller('FooterController', ['$scope', 'Authentication
       }
       else if( ['about'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.bokehblue, photos.forestpath ];
+      }
+      else if( ['faq'].indexOf(toState.name) > -1 ) {
+        $scope.photo_credits = [ photos.horizonballoon ];
       }
       else {
         $scope.photo_credits = [];
