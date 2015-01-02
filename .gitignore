@@ -40,6 +40,7 @@ config/secret/*
 
 # Deploy & maintenance scripts
 scripts/*
+!scripts/update.sh
 !scripts/starter.sh
 !scripts/backup-db.sh
 !scripts/deploy.sh
