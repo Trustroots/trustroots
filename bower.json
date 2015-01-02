@@ -24,7 +24,8 @@
     "fontawesome": "~4",
     "imagesloaded": "~3.1.8",
     "PruneCluster": "~1.0.0",
-    "message-center": "~1.0.3"
+    "message-center": "~1.0.3",
+    "angular-deckgrid": "~0.5.0"
   },
   "resolutions": {
     "angular": "~1.3",

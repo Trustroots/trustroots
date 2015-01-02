@@ -20,7 +20,7 @@ var ApplicationConfiguration = (function() {
                                               'angular-medium-editor',
                                               'perfect_scrollbar',
                                               'leaflet-directive',
-                                              'wu.masonry',
+                                              'akoenig.deckgrid',
                                               'zumba.angular-waypoints',
                                               'MessageCenterModule'
                                             ];
