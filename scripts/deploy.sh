@@ -11,7 +11,7 @@ echo "Fetch latest master..."
 git pull origin master
 
 echo "Updating packages & assets..."
-npm update
+npm update --production
 bower update
 NODE_ENV=production grunt build
 
