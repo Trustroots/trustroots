@@ -1,9 +1,9 @@
 <section class="search-map" data-ng-controller="SearchController">
 
-  <div class="form-group map-location-search">
+  <div class="form-group map-location-search" ng-class="{'active': searchQuery !== '' || searchActive }">
     <div class="input-group">
       <label for="search-query" class="sr-only">Search places</label>
-      <input type="text" id="search-query" class="form-control input-lg" placeholder="Search places" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" /><!-- typeahead-loading="searchQuerySearching"-->
+      <input type="text" id="search-query" ng-focus="searchActive = true" ng-blur="searchActive = false" class="form-control input-lg" placeholder="Search places" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" /><!-- typeahead-loading="searchQuerySearching"-->
       <span class="input-group-btn">
         <button type="button" class="btn btn-lg btn-inverse" ng-click="searchAddress()" ng-disabled="searchQuerySearching">
           <i class="fa fa-search" ng-show="searchQuerySearching === false"></i>
@@ -14,13 +14,13 @@
   </div>
 
   <!-- Map overlay messages -->
-  <div ng-show="user && !user.public && !notFound" class="search-overlay-message">
+  <div ng-show="user && !user.public && !locationNotFound && !offerNotFound" class="search-overlay-message">
     Sorry, you need to first activate your profile before you can browse others.
   </div>
-  <div ng-show="center.zoom <= minimumZoom && user.public && !notFound" class="text-uppercase search-overlay-message">
+  <div ng-show="center.zoom <= minimumZoom && user.public && !locationNotFound && !offerNotFound" class="text-uppercase search-overlay-message">
     Zoom in closer to see everyone
   </div>
-  <div ng-show="locationNotFound" class="search-overlay-message">
+  <div ng-show="locationNotFound && !offerNotFound" class="search-overlay-message">
     We could not find such a place...
   </div>
   <div ng-show="offerNotFound" class="search-overlay-message">

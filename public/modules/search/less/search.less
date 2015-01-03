@@ -21,6 +21,34 @@
     top: (@navbar-height + @padding-base-horizontal);
     right: 50%;
     margin-right: -150px;
+
+    /*
+     * Search bar opacity trick
+     */
+    .btn,
+    #search-query {
+      opacity: 0.8;
+      .transition(opacity linear 0.2s);
+    }
+    /* Notice . and : */
+    &.active,
+    &:active,
+    &:hover {
+      .btn,
+      #search-query {
+        opacity: 1;
+      }
+    }
+    .btn,
+    #search-query {
+      &:focus,
+      &:active,
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+
     @media (max-width: @screen-xs-max) {
       right: @padding-base-vertical;
       margin-right: 0;
@@ -88,7 +116,6 @@
   padding: 0;
   width: 100%;
   height: auto;
-
   .search-list-instructions {
     color: #fff;
     text-align: center;
@@ -100,7 +127,6 @@
       display: none;
     }
   }
-
   .panel {
     margin-bottom: 5px;
   }
@@ -192,6 +218,7 @@
  * Critical search errors floating on top of the map, at least:
  * - show to non public users
  * - when zoom level is too high
+ * - when couldn't find search results
  */
 .search-overlay-message {
   position: absolute;
