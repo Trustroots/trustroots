@@ -56,7 +56,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
      */
     angular.extend($scope, {
       defaults: {
-        attributionControl: false,
+        attributionControl: true,
         keyboard: true,
         controls: {
           layers: {
@@ -79,7 +79,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
               map: settings.mapbox.map[0]
             },
             layerOptions: {
-              attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
+              attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map[0] + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
               continuousWorld: true,
               TRStyle: 'street'//Not native Leaflet, required by layer switch
             }
@@ -90,7 +90,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
             url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             layerOptions: {
               subdomains: ['a', 'b', 'c'],
-              attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OSM</a>',
+              attribution: '<strong><a href="https://www.openstreetmap.org/login#map=' + defaultLocation.zoom + '/' + defaultLocation.lat + '/' + defaultLocation.lng + '">Improve this map</a></strong>',
               continuousWorld: true,
               TRStyle: 'street'//Not native Leaflet, required by layer switch
             }
@@ -102,7 +102,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
             url: 'http://otile{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',
             layerOptions: {
               subdomains: ['1', '2', '3', '4'],
-              attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OSM</a>',
+              attribution:  '<strong><a href="https://www.openstreetmap.org/login#map=' + defaultLocation.zoom + '/' + defaultLocation.lat + '/' + defaultLocation.lng + '">Improve this map</a></strong>',
               continuousWorld: true,
               TRStyle: 'street'//Not native Leaflet, required by layer switch
             }
@@ -154,7 +154,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
           map: settings.mapbox.map[2]
         },
         layerOptions: {
-          attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
+          attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map[2] + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
           continuousWorld: true,
           TRStyle: 'satellite'//Not native Leaflet, required by layer switch
         }
@@ -171,7 +171,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
           map: settings.mapbox.map[1]
         },
         layerOptions: {
-          attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
+          attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map[1] + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
           continuousWorld: true,
           TRStyle: 'street'//Not native Leaflet, required by layer switch
         }
