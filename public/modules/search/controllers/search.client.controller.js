@@ -58,6 +58,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       defaults: {
         attributionControl: true,
         keyboard: true,
+        worldCopyJump: true,
         controls: {
           layers: {
             visible: true,
