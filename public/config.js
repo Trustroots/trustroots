@@ -1,10 +1,11 @@
 'use strict';
 
+
 // Init the application configuration module for AngularJS application
 var ApplicationConfiguration = (function() {
 
   // Init module configuration options
-  var applicationModuleName = 'trust-roots';
+  var applicationModuleName = 'trustroots';
   var applicationModuleVendorDependencies = [
                                               'ngResource',
                                               'ngAnimate',
@@ -14,15 +15,15 @@ var ApplicationConfiguration = (function() {
                                               'ui.bootstrap',
                                               'ui.utils',
                                               'ui.select',
-                                              'btford.socket-io',
+                                              //'btford.socket-io',
                                               'angularMoment',
                                               'angular-medium-editor',
                                               'perfect_scrollbar',
                                               'leaflet-directive',
-                                              'ngGeolocation',
-                                              'wu.masonry',
+                                              'angularFileUpload',
+                                              'akoenig.deckgrid',
                                               'zumba.angular-waypoints',
-                                              'angularFileUpload'
+                                              'MessageCenterModule'
                                             ];
 
   // Add a new vertical module

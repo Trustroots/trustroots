@@ -40,19 +40,17 @@ module.exports = {
         'public/lib/angular-moment/angular-moment.min.js',
         'public/lib/medium-editor/dist/js/medium-editor.min.js',
         'public/lib/angular-medium-editor/dist/angular-medium-editor.min.js',
-        'public/lib/angular-socket-io/socket.min.js',
+        //'public/lib/angular-socket-io/socket.min.js',
         'public/lib/perfect-scrollbar/min/jquery.mousewheel.min.js', // @todo: is this really needed?
         'public/lib/perfect-scrollbar/min/perfect-scrollbar.min.js',
         'public/lib/angular-perfect-scrollbar/src/angular-perfect-scrollbar.js',
         'public/lib/leaflet/dist/leaflet.js',
         'public/lib/PruneCluster/dist/PruneCluster.min.js',
         'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.min.js',
-        'public/lib/ngGeolocation/ngGeolocation.min.js',
-        'public/lib/masonry/dist/masonry.pkgd.min.js',
-        'public/lib/imagesloaded/imagesloaded.pkgd.min.js',
-        'public/lib/angular-masonry/angular-masonry.js',
+        'public/lib/angular-deckgrid/angular-deckgrid.js',
         'public/lib/angular-waypoints/dist/angular-waypoints.all.min.js',
-        'public/lib/ng-file-upload/angular-file-upload.min.js'
+        'public/lib/ng-file-upload/angular-file-upload.min.js',
+        'public/lib/message-center/message-center.js',
       ]
     },
     less: [

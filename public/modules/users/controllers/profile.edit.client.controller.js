@@ -1,11 +1,12 @@
 'use strict';
 
-/* This declares to JSHint that 'moment' and 'settings' are global variables: */
+/* This declares to JSHint that these are global variables: */
 /*global moment:false */
 /*global settings:false */
+/*global flashTimeout:false */
 
-angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', 'Languages', 'Users', 'Authentication', '$upload',
-  function($scope, $modal, $http, $stateParams, $state, Languages, Users, Authentication, $upload) {
+angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', 'Languages', 'Users', 'Authentication', 'messageCenterService', '$upload',
+  function($scope, $modal, $http, $stateParams, $state, Languages, Users, Authentication, messageCenterService, $upload) {
 
     // If user is not signed in then redirect to login
     if (!Authentication.user) $state.go('signin');
@@ -72,8 +73,7 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
         var user = new Users($scope.user);
 
         // Fixes #66 - <br> appearing to tagline with Firefox
-        user.tagline = user.tagline.replace('<br>','');
-
+        user.tagline = user.tagline.replace('<br>', '', 'g');
         user.$update(function(response) {
           $scope.success = true;
           Authentication.user = response;

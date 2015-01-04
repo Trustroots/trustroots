@@ -4,30 +4,31 @@
   "description": "Enabling the latent trust between humans.",
   "dependencies": {
     "bootstrap": "~3.3.1",
-    "angular": "~1.2",
-    "angular-resource": "~1.2",
-    "angular-mocks": "~1.2",
-    "angular-animate": "~1.2",
-    "angular-touch": "~1.2",
-    "angular-sanitize": "~1.2",
+    "angular": "~1.3",
+    "angular-resource": "~1.3",
+    "angular-mocks": "~1.3",
+    "angular-animate": "~1.3",
+    "angular-touch": "~1.3",
+    "angular-sanitize": "~1.3",
     "angular-bootstrap": "~0.12.0",
-    "angular-ui-utils": "~0.1.1",
+    "angular-ui-utils": "~0.2.0",
     "angular-ui-router": "~0.2.13",
     "angular-moment": "~0.8.3",
     "angular-medium-editor": "~0.0.6",
     "angular-socket-io": "~0.7.0",
     "angular-perfect-scrollbar": "0.0.3",
-    "angular-ui-select": "~0.9.4",
-    "fontawesome": "~4",
+    "angular-ui-select": "~0.9.5",
     "angular-leaflet-directive": "~0.7.10",
-    "ngGeolocation": "~0.0.6",
-    "imagesloaded": "~3.1.8",
-    "angular-masonry": "~0.9.1",
     "angular-waypoints": "~1.0.1",
     "PruneCluster": "~1.0.0",
-    "ng-file-upload": "~2.0.5"
+    "ng-file-upload": "~2.0.5",
+    "fontawesome": "~4",
+    "imagesloaded": "~3.1.8",
+    "message-center": "~1.0.3",
+    "angular-deckgrid": "~0.5.0"
   },
   "resolutions": {
-    "angular": "1.2.28"
+    "angular": "~1.3",
+    "angular-mocks": "~1.3"
   }
 }
