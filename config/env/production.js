@@ -40,7 +40,7 @@ module.exports = {
         'public/lib/angular-moment/angular-moment.min.js',
         'public/lib/medium-editor/dist/js/medium-editor.min.js',
         'public/lib/angular-medium-editor/dist/angular-medium-editor.min.js',
-        'public/lib/angular-socket-io/socket.min.js',
+        //'public/lib/angular-socket-io/socket.min.js',
         'public/lib/perfect-scrollbar/min/jquery.mousewheel.min.js', // @todo: is this really needed?
         'public/lib/perfect-scrollbar/min/perfect-scrollbar.min.js',
         'public/lib/angular-perfect-scrollbar/src/angular-perfect-scrollbar.js',
