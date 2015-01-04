@@ -86,7 +86,7 @@ angular.module('users').directive('trAvatar', ['$location',
                * @todo: implement this, duhh
                */
               else if($scope.source === 'locale') {
-                $scope.avatar = defaultAvatar + '?locale';
+                $scope.avatar = '/modules/users/img/profile/uploads/'+$scope.user._id+'/avatar/256.jpg';
               }
 
               // Dummy

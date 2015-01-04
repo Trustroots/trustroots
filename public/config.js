@@ -21,7 +21,8 @@ var ApplicationConfiguration = (function() {
                                               'leaflet-directive',
                                               'ngGeolocation',
                                               'wu.masonry',
-                                              'zumba.angular-waypoints'
+                                              'zumba.angular-waypoints',
+                                              'angularFileUpload'
                                             ];
 
   // Add a new vertical module

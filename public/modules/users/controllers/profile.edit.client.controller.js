@@ -4,8 +4,8 @@
 /*global moment:false */
 /*global settings:false */
 
-angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', 'Languages', 'Users', 'Authentication',
-  function($scope, $modal, $http, $stateParams, $state, Languages, Users, Authentication) {
+angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', 'Languages', 'Users', 'Authentication', '$upload',
+  function($scope, $modal, $http, $stateParams, $state, Languages, Users, Authentication, $upload) {
 
     // If user is not signed in then redirect to login
     if (!Authentication.user) $state.go('signin');
@@ -73,7 +73,7 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
 
         // Fixes #66 - <br> appearing to tagline with Firefox
         user.tagline = user.tagline.replace('<br>','');
-        
+
         user.$update(function(response) {
           $scope.success = true;
           Authentication.user = response;
@@ -108,9 +108,10 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
       if($event) $event.preventDefault();
 
       var modalInstance = $modal.open({
-        templateUrl: 'avatar.client.modal.html', //inline at template
-        controller: function ($scope, $modalInstance) {
+        templateUrl: 'modules/users/views/profile/avatar.client.modal.html', //inline at template
+        controller: function ($scope, $modalInstance, $upload) {
           $scope.user = user;
+
           // Check if provider is already in use with current user
           $scope.isConnectedSocialAccount = function(provider) {
             return $scope.user.provider === provider || ($scope.user.additionalProvidersData && $scope.user.additionalProvidersData[provider]);
@@ -118,10 +119,21 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
           $scope.close = function () {
             $modalInstance.dismiss('close');
           };
+          $scope.file = {};
+          $scope.fileSelected = function () {
+            $scope.upload = $upload.upload({
+              url: '/avatar/upload',
+              method: 'POST',
+              file: $scope.file,
+            }).success(function(data, status, headers, config) {
+                //Success
+          });
+          };
         }
       });
 
     };
+
 
   }
 ]);

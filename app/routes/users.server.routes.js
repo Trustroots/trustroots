@@ -20,6 +20,9 @@ module.exports = function(app) {
   app.route('/users')
       .put(users.update);
 
+  app.route('/avatar/upload')
+      .post(users.requiresLogin, users.upload);
+
   // Confirm users email
   app.route('/auth/confirm-email/:token').get(users.validateEmailToken);
   app.route('/auth/confirm-email/:token').post(users.confirmEmail);

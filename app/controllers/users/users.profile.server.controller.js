@@ -14,7 +14,11 @@ var _ = require('lodash'),
     crypto = require('crypto'),
     User = mongoose.model('User'),
     Contact = mongoose.model('Contact'),
-    Reference = mongoose.model('Reference');
+    Reference = mongoose.model('Reference'),
+    lwip = require('lwip'),
+    mkdirp = require('mkdirp'),
+    fs = require('fs');
+
 
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
@@ -58,6 +62,63 @@ var userSanitizeOptions = {
     // URL schemes we permit
     allowedSchemes: [ 'http', 'https', 'ftp', 'mailto', 'tel' ]
   };
+
+
+/**
+ * Upload user avatar
+ */
+
+exports.upload = function (req, res) {
+  var userId = req.user._id;
+  var options = {
+      tmpDir:  __dirname + '/../../../public/modules/users/img/profile/uploads/'+userId+'/tmp/',
+      uploadDir: __dirname + '/../../../public/modules/users/img/profile/uploads/'+userId+'/avatar/',
+      uploadUrl: '/modules/users/img/profile/uploads/'+userId+'/avatar/',
+      minFileSize:  1,
+      maxFileSize:  10000000, //10MB
+      storage: {
+          type: 'local'
+      }
+  };
+
+  //Create the directories
+  mkdirp(options.tmpDir, function (err) {
+       if(!err) mkdirp(options.uploadDir, function (err) {
+        if(!err) {
+          //Upload
+          var uploader = require('blueimp-file-upload-expressjs')(options);
+          uploader.post(req, res, function (obj) {
+            res.send(JSON.stringify(obj));
+            lwip.open(options.uploadDir + '/' + obj.files[0].name, function(err, image){
+              if(!err) {
+                image.batch()
+                .writeFile(options.uploadDir + 'original.jpg', 'jpg', {quality: 90}, function(err, image){
+                  fs.unlink(options.uploadDir + '/' + obj.files[0].name, function (err) {
+                  });
+                  var sizes = [512, 256, 128, 64, 32];
+                  var sizesLenght = sizes.length;
+                  for(var i = 0; i < sizesLenght; i++) {
+                    lwip.open(options.uploadDir + 'original.jpg', function(err, image, i){
+                      var size = sizes.pop();
+                      if(!err) {
+                        var square = Math.min(image.width(), image.height());
+                        image.batch()
+                        .crop(square, square)
+                        .resize(size, size)
+                        .writeFile(options.uploadDir + size +'.jpg', 'jpg', {quality: 90}, function(err, image){
+                        });
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          });
+        }
+      });
+  });
+};
+
 
 
 /**

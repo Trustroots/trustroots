@@ -58,6 +58,7 @@ module.exports = {
         'public/lib/imagesloaded/imagesloaded.pkgd.js',
         'public/lib/angular-masonry/angular-masonry.js',
         'public/lib/angular-waypoints/dist/angular-waypoints.all.js',
+        'public/lib/ng-file-upload/angular-file-upload.js'
       ]
     },
     less: [

@@ -54,3 +54,6 @@ log
 
 # Phusion Passenger
 passenger.*
+
+# User Upload
+/public/modules/users/img/profile/uploads/
