@@ -236,8 +236,10 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
      */
     $scope.getMarkers = function () {
 
-      // Check if map has bounds set (typically at init these might be missing)
-      if(!$scope.bounds.northEast) return;
+      // Don't proceed if:
+      // - Map does not have bounds set (typically at map init these might be missing for some milliseconds)
+      // - If user isn't public(confirmed) yet - no need to hit API just to get 401
+      if(!$scope.bounds.northEast || !$scope.user.public) return;
 
       //If we get out of the boundig box of the last api query we have to call the API for the new markers
       if($scope.bounds.northEast.lng > $scope.lastbounds.northEastLng || $scope.bounds.northEast.lat > $scope.lastbounds.northEastLat || $scope.bounds.southWest.lng < $scope.lastbounds.southWestLng || $scope.bounds.southWest.lat < $scope.lastbounds.southWestLat) {
