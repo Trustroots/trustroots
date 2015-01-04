@@ -21,10 +21,12 @@ exports.get = function(req, res) {
 
     // Total users
     function(done) {
-      User.count(function(err, count) {
-        req.statistics.total = count;
-        done(err);
-      });
+      User
+        .find({public:true})
+        .count(function(err, count) {
+          req.statistics.total = count;
+          done(err);
+        });
     },
 
     // Hosting stats

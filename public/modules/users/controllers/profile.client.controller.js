@@ -1,7 +1,10 @@
 'use strict';
 
-angular.module('users').controller('ProfileController', ['$scope', '$stateParams', '$state', '$location', '$log', '$modal', 'Languages', 'Users', 'UserProfiles', 'Authentication',
-  function($scope, $stateParams, $state, $location, $log, $modal, Languages, Users, UserProfiles, Authentication) {
+/* This declares to JSHint that 'flashTimeout' is a global variable: */
+/*global flashTimeout:false */
+
+angular.module('users').controller('ProfileController', ['$scope', '$stateParams', '$state', '$location', '$log', '$modal', 'Languages', 'Users', 'UserProfiles', 'Authentication', '$timeout', 'messageCenterService',
+  function($scope, $stateParams, $state, $location, $log, $modal, Languages, Users, UserProfiles, Authentication, $timeout, messageCenterService) {
 
     // If user is not signed in then redirect to login
     if (!Authentication.user) $state.go('signin');
@@ -11,9 +14,11 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
     $scope.languages = Languages.get('object');
 
     // We landed here from profile editor, show success message
-    // @todo: nice notifications https://github.com/Trustroots/trustroots/issues/24
     if($stateParams.updated) {
-      $log.log('Profile updated');
+      // Timeout is here due Angula overwriting message at $state change otherwise
+      $timeout(function(){
+        messageCenterService.add('success', 'Profile updated', { timeout: flashTimeout });
+      });
     }
 
     // Fetch profile to show (note: not the currently logged in user's profile)

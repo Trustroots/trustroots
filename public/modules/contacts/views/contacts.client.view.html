@@ -5,11 +5,11 @@
   </div>
 
   <!-- Contact list -->
-  <div masonry column-width="138" preserve-order reload-on-show ng-show="$parent.tabSelected === 'contacts' && contacts.$resolved">
-    <div class="masonry-brick contacts-contact panel panel-default" ng-repeat="contact in contacts">
-      <div tr-avatar data-user="contact.users[0]" data-size="128"></div>
-      <a ui-sref="profile({username: contact.users[0].username})">
-        <h4 data-ng-bind="contact.users[0].displayName"></h4>
+  <div deckgrid source="contacts" class="deckgrid" ng-show="$parent.tabSelected === 'contacts' && contacts.$resolved">
+    <div class="deckgrid-card contacts-contact panel panel-default">
+      <div tr-avatar data-user="card.users[0]" data-size="128"></div>
+      <a ui-sref="profile({username: card.users[0].username})">
+        <h4 data-ng-bind="card.users[0].displayName"></h4>
       </a>
     </div>
   </div>

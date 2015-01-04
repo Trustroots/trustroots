@@ -11,14 +11,11 @@ module.exports = function(app) {
 
   // Setting up the users profile api
 
-  app.route('/users/mini/:userId')
-      .get(users.requiresLogin, users.getMiniUser);
+  app.route('/users/mini/:userId').get(users.requiresLogin, users.getMiniUser);
 
-  app.route('/users/:username')
-      .get(users.requiresLogin, users.getUser);
+  app.route('/users/:username').get(users.requiresLogin, users.getUser);
 
-  app.route('/users')
-      .put(users.update);
+  app.route('/users').put(users.requiresLogin, users.update);
 
   app.route('/avatar/upload')
       .post(users.requiresLogin, users.upload);
@@ -27,11 +24,10 @@ module.exports = function(app) {
   app.route('/auth/confirm-email/:token').get(users.validateEmailToken);
   app.route('/auth/confirm-email/:token').post(users.confirmEmail);
 
-  app.route('/users/accounts')
-      .delete(users.removeOAuthProvider);
+  app.route('/users/accounts').delete(users.removeOAuthProvider);
 
   // Setting up the users password api
-  app.route('/users/password').post(users.changePassword);
+  app.route('/users/password').post(users.requiresLogin, users.changePassword);
   app.route('/auth/forgot').post(users.forgot);
   app.route('/auth/reset/:token').get(users.validateResetToken);
   app.route('/auth/reset/:token').post(users.reset);

@@ -61,27 +61,39 @@ exports.signup = function(req, res) {
 
     },
 
-    // Prepare mail
+    // Prepare HTML email
     function(user, done) {
+
       var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
-      res.render('email-templates/signup', {
+      var renderVars = {
         name: user.displayName,
         email: user.email,
         ourMail: config.mailer.from,
+        url: url,
         urlConfirm: url + '/#!/confirm-email/' + user.emailToken + '?signup',
-      }, function(err, emailHTML) {
-        done(err, emailHTML, user, url);
+      };
+
+      res.render('email-templates/signup', renderVars, function(err, emailHTML) {
+        done(err, emailHTML, user, renderVars, url);
+      });
+    },
+
+    // Prepare TEXT email
+    function(emailHTML, user, renderVars, url, done) {
+      res.render('email-templates-text/signup', renderVars, function(err, emailPlain) {
+        done(err, emailHTML, emailPlain, user, url);
       });
     },
 
     // If valid email, send confirm email using service
-    function(emailHTML, user, url, done) {
+    function(emailHTML, emailPlain, user, url, done) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
-        to: user.email,
+        to: user.displayName + ' <' + user.email + '>',
         from: config.mailer.from,
         subject: 'Confirm Email',
         html: emailHTML,
+        text: emailPlain,
         // Attaching vCard makes it more certain this mail to pass spamfilters and users can add us to their trusted mails list easier.
         attachments: [{
           filename: 'trustroots.vcf',

@@ -9,38 +9,37 @@ module.exports = {
   assets: {
   	lib: {
   		css: [
-  				'public/lib/medium-editor/dist/css/medium-editor.css',
-  				'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
-  				'public/lib/leaflet/dist/leaflet.css',
-  				'public/lib/leaflet.markercluster/dist/MarkerCluster.css'
+  		  'public/lib/medium-editor/dist/css/medium-editor.css',
+  		  'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
+  		  'public/lib/leaflet/dist/leaflet.css',
+  		  'public/lib/leaflet.markercluster/dist/MarkerCluster.css'
   		],
   		js: [
-  			// Minified versions
-  			'public/lib/jquery/dist/jquery.min.js',
-  			'public/lib/angular/angular.min.js',
-  			'public/lib/angular-resource/angular-resource.min.js',
-  			'public/lib/angular-animate/angular-animate.min.js',
-  			'public/lib/angular-touch/angular-touch.min.js',
-  			'public/lib/angular-sanitize/angular-sanitize.min.js',
-  			'public/lib/angular-ui-router/release/angular-ui-router.min.js',
-  			'public/lib/angular-ui-utils/ui-utils.min.js',
-  			'public/lib/angular-ui-select/dist/select.min.js',
-  			'public/lib/angular-bootstrap/ui-bootstrap-tpls.min.js',
-  			'public/lib/moment/min/moment.min.js',
-  			'public/lib/angular-moment/angular-moment.min.js',
-  			'public/lib/medium-editor/dist/js/medium-editor.min.js',
-  			'public/lib/angular-medium-editor/dist/angular-medium-editor.min.js',
-  			'public/lib/angular-socket-io/socket.min.js',
-  			'public/lib/perfect-scrollbar/min/jquery.mousewheel.min.js', // @todo: is this really needed?
-  			'public/lib/perfect-scrollbar/min/perfect-scrollbar.min.js',
-  			'public/lib/angular-perfect-scrollbar/src/angular-perfect-scrollbar.js',
-  			'public/lib/leaflet/dist/leaflet.js',
-  			'public/lib/leaflet.markercluster/dist/leaflet.markercluster.js',
-  			'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.min.js',
-  			'public/lib/ngGeolocation/ngGeolocation.min.js',
-				'public/lib/masonry/dist/masonry.pkgd.min.js',
-  			'public/lib/angular-masonry/angular-masonry.js',
-				'public/lib/angular-waypoints/dist/angular-waypoints.all.min.js',
+			  // Non minified  versions
+			  'public/lib/jquery/dist/jquery.js',
+			  'public/lib/angular/angular.js',
+			  'public/lib/angular-resource/angular-resource.js',
+			  'public/lib/angular-animate/angular-animate.js',
+			  'public/lib/angular-touch/angular-touch.js',
+			  'public/lib/angular-sanitize/angular-sanitize.js',
+			  'public/lib/angular-ui-router/release/angular-ui-router.js',
+			  'public/lib/angular-ui-utils/ui-utils.js',
+			  'public/lib/angular-ui-select/dist/select.js',
+			  'public/lib/angular-bootstrap/ui-bootstrap-tpls.js',
+			  'public/lib/moment/moment.js',
+			  'public/lib/angular-moment/angular-moment.js',
+			  'public/lib/medium-editor/dist/js/medium-editor.js',
+			  'public/lib/angular-medium-editor/dist/angular-medium-editor.js',
+			  //'public/lib/angular-socket-io/socket.js',
+			  'public/lib/perfect-scrollbar/src/jquery.mousewheel.js', // @todo: is this really needed?
+			  'public/lib/perfect-scrollbar/src/perfect-scrollbar.js',
+			  'public/lib/angular-perfect-scrollbar/src/angular-perfect-scrollbar.js',
+			  'public/lib/leaflet/dist/leaflet-src.js',
+			  'public/lib/PruneCluster/dist/PruneCluster.js',
+			  'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.js',
+			  'public/lib/angular-deckgrid/angular-deckgrid.js',
+			  'public/lib/angular-waypoints/dist/angular-waypoints.all.js',
+			  'public/lib/message-center/message-center.js',
   		]
   	},
   	less: [

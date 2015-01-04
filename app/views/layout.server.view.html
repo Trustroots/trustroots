@@ -48,12 +48,15 @@
   {% endif %}
 </head>
 
-<body class="ng-cloak">
+<body class="ng-cloak" data-ng-controller="MainController">
   <div id="tr-wrap">
 
     {% block header %}
       <header data-ng-include="'/modules/core/views/header.client.view.html?c={{appSettings.commit}}'" id="tr-header" role="banner" class="navbar navbar-default navbar-fixed-top hidden-print" ng-hide="isHidden" data-ng-controller="HeaderController"></header>
     {% endblock %}
+
+    <!-- Flash messages -->
+    <mc-messages></mc-messages>
 
     <section class="content" id="tr-main" role="main">
       {% block content %}{% endblock %}

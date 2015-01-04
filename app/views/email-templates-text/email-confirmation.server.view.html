@@ -1,0 +1,12 @@
+{% extends 'email.server.view.html' %}
+
+{% block content %}
+Hey {{name}}!
+
+You initiated an email change at Trustroots. Please click the confirmation link below to confirm your new email address: {{email}}
+
+If you didn't make this request, you can ignore this email.
+
+<{{urlConfirm}}>
+
+{% endblock %}

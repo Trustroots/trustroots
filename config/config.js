@@ -78,7 +78,7 @@ module.exports.getJavaScriptAssets = function(includeTests) {
   }
 
   // Add socket.io
-  output = ['/socket.io/socket.io.js'].concat(output);
+  //output = ['/socket.io/socket.io.js'].concat(output);
 
   return output;
 };

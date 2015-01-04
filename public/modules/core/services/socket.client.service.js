@@ -5,6 +5,7 @@
 /*global settings:false */
 
 // Socket factory that provides the socket service
+/*
 angular.module('core').factory('Socket', ['socketFactory', '$location',
   function(socketFactory, $location) {
     return socketFactory({
@@ -13,3 +14,4 @@ angular.module('core').factory('Socket', ['socketFactory', '$location',
     });
   }
 ]);
+*/

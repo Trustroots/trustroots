@@ -3,17 +3,8 @@
 /* This declares to JSHint that 'ga' is a global variable: */
 /*global ga:false */
 
-angular.module('core').controller('HeaderController', ['$scope', '$log', '$filter', '$geolocation', 'Authentication', 'Menus', 'Socket',
-  function($scope, $log, $filter, $geolocation, Authentication, Menus, Socket) {
-
-    // @todo: show info popup when this happens
-    Socket.on('reconnect', function () {
-      $log.log('Reconnected to the server');
-    });
-
-    Socket.on('reconnecting', function () {
-      $log.log('Attempting to re-connect to the server');
-    });
+angular.module('core').controller('HeaderController', ['$scope', '$filter', 'Authentication', 'Menus',
+  function($scope, $filter, Authentication, Menus) {
 
     $scope.authentication = Authentication;
     $scope.isCollapsed = false;
@@ -33,14 +24,6 @@ angular.module('core').controller('HeaderController', ['$scope', '$log', '$filte
 
       // Hide header at certain pages
       $scope.isHidden = (['home', 'signup', 'signin'].indexOf(toState.name) > -1) ? true : false;
-
-      // Analytics
-      if (typeof(ga) === 'function') {
-        ga('send', 'pageview', {
-          'page': '/#!' + toState.url,
-          //'title': ''
-        });
-      }
 
     });
 
