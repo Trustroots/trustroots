@@ -106,7 +106,7 @@ exports.add = function(req, res) {
             message: 'An email was sent to your contact.'
           });
         }
-
+        smtpTransport.close(); // close the connection pool
         done(err);
       });
     }

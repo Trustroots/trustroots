@@ -189,6 +189,7 @@ exports.update = function(req, res) {
         html: emailHTML
       };
       smtpTransport.sendMail(mailOptions, function(err) {
+        smtpTransport.close(); // close the connection pool
         done(err);
       });
     }

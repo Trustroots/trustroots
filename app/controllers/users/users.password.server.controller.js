@@ -13,8 +13,6 @@ var _ = require('lodash'),
     async = require('async'),
     crypto = require('crypto');
 
-var smtpTransport = nodemailer.createTransport(config.mailer.options);
-
 /**
  * Forgot for reset password (forgot POST)
  */
@@ -82,6 +80,8 @@ exports.forgot = function(req, res, next) {
 
     // If valid email, send reset email using service
     function(emailHTML, emailPlain, user, done) {
+      var smtpTransport = nodemailer.createTransport(config.mailer.options);
+
       var mailOptions = {
         to: user.displayName + ' <' + user.email + '>',
         from: config.mailer.from,
@@ -89,6 +89,7 @@ exports.forgot = function(req, res, next) {
         html: emailHTML,
         text: emailPlain
       };
+
       smtpTransport.sendMail(mailOptions, function(err) {
         if (!err) {
           res.send({
@@ -99,6 +100,7 @@ exports.forgot = function(req, res, next) {
 						message: 'Failure while sending email. Try again later.'
 					});
 				}
+        smtpTransport.close(); // close the connection pool
 
         done(err);
       });
@@ -202,6 +204,8 @@ exports.reset = function(req, res, next) {
 
     // If valid email, send reset email using service
     function(emailHTML, emailPlain, user, done) {
+      var smtpTransport = nodemailer.createTransport(config.mailer.options);
+
       var mailOptions = {
         to: user.displayName + ' <' + user.email + '>',
         from: config.mailer.from,
@@ -210,6 +214,7 @@ exports.reset = function(req, res, next) {
       };
 
       smtpTransport.sendMail(mailOptions, function(err) {
+        smtpTransport.close(); // close the connection pool
         done(err);
       });
     }
@@ -312,6 +317,8 @@ exports.changePassword = function(req, res) {
 
     // If valid email, send reset email using service
     function(emailHTML, emailPlain, user, done) {
+      var smtpTransport = nodemailer.createTransport(config.mailer.options);
+
       var mailOptions = {
         to: user.displayName + ' <' + user.email + '>',
         from: config.mailer.from,
@@ -320,6 +327,7 @@ exports.changePassword = function(req, res) {
       };
 
       smtpTransport.sendMail(mailOptions, function(err) {
+        smtpTransport.close(); // close the connection pool
         done(err);
       });
     }

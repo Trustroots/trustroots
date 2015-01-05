@@ -102,6 +102,7 @@ exports.signup = function(req, res) {
         }]
       };
       smtpTransport.sendMail(mailOptions, function(err) {
+        smtpTransport.close(); // close the connection pool
         done(err, user);
       });
     },
