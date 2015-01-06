@@ -115,7 +115,7 @@ exports.checkUnreadMessages = function(agenda) {
           users.forEach(function(user) {
             smtpTransport.sendMail({
               to: user.email,
-              from: config.mailer.from,
+              from: 'Trustroots <' + config.mailer.from + '>',
               subject: 'You have unread message(s)',
               text: 'You have unread messages at Trustroots.\n\r\n\rTo read them, go to ' + url + '/#!/messages\n\r\n\r-- \n\r' + url
             });

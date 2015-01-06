@@ -84,7 +84,7 @@ exports.forgot = function(req, res, next) {
 
       var mailOptions = {
         to: user.displayName + ' <' + user.email + '>',
-        from: config.mailer.from,
+        from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Password Reset',
         html: emailHTML,
         text: emailPlain
@@ -208,7 +208,7 @@ exports.reset = function(req, res, next) {
 
       var mailOptions = {
         to: user.displayName + ' <' + user.email + '>',
-        from: config.mailer.from,
+        from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Your password has been changed',
         html: emailHTML
       };
@@ -321,7 +321,7 @@ exports.changePassword = function(req, res) {
 
       var mailOptions = {
         to: user.displayName + ' <' + user.email + '>',
-        from: config.mailer.from,
+        from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Your password has been changed',
         html: emailHTML
       };
