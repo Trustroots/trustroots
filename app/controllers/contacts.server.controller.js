@@ -95,7 +95,7 @@ exports.add = function(req, res) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
         to: friend.displayName + ' <' + friend.email + '>',
-        from: config.mailer.from,
+        from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Confirm contact',
         text: emailPlain,
         html: emailHTML
@@ -106,7 +106,7 @@ exports.add = function(req, res) {
             message: 'An email was sent to your contact.'
           });
         }
-
+        smtpTransport.close(); // close the connection pool
         done(err);
       });
     }

@@ -244,12 +244,13 @@ exports.update = function(req, res) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
         to: user.displayName + ' <' + user.emailTemporary + '>',
-        from: config.mailer.from,
+        from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Confirm email change',
         text: emailPlain,
         html: emailHTML
       };
       smtpTransport.sendMail(mailOptions, function(err) {
+        smtpTransport.close(); // close the connection pool
         done(err);
       });
     }

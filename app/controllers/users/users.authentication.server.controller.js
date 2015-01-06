@@ -90,7 +90,7 @@ exports.signup = function(req, res) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
         to: user.displayName + ' <' + user.email + '>',
-        from: config.mailer.from,
+        from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Confirm Email',
         html: emailHTML,
         text: emailPlain,
@@ -102,6 +102,7 @@ exports.signup = function(req, res) {
         }]
       };
       smtpTransport.sendMail(mailOptions, function(err) {
+        smtpTransport.close(); // close the connection pool
         done(err, user);
       });
     },

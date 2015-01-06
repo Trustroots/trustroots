@@ -25,8 +25,6 @@ var mongoose = require('mongoose'),
     Message = mongoose.model('Message'),
     User = mongoose.model('User');
 
-var smtpTransport = nodemailer.createTransport(config.mailer.options);
-
 exports.checkUnreadMessages = function(agenda) {
   agenda.define('check unread messages', function(job, agendaDone) {
 
@@ -108,17 +106,29 @@ exports.checkUnreadMessages = function(agenda) {
       // Send emails
       function(users, timeAgo, done) {
 
-        var url = (config.https ? 'https' : 'http') + '://' + config.domain;
-        users.forEach(function(user) {
-          smtpTransport.sendMail({
-            to: user.email,
-            from: config.mailer.from,
-            subject: 'You have unread message(s)',
-            text: 'You have unread messages at Trustroots.\n\r\n\rTo read them, go to ' + url + '/#!/messages\n\r\n\r-- \n\r' + url
-          });
-        });
+        if(users.length > 0) {
 
-        done(null, timeAgo);
+          var smtpTransport = nodemailer.createTransport(config.mailer.options);
+          var url = (config.https ? 'https' : 'http') + '://' + config.domain;
+
+          // Loop users
+          users.forEach(function(user) {
+            smtpTransport.sendMail({
+              to: user.email,
+              from: 'Trustroots <' + config.mailer.from + '>',
+              subject: 'You have unread message(s)',
+              text: 'You have unread messages at Trustroots.\n\r\n\rTo read them, go to ' + url + '/#!/messages\n\r\n\r-- \n\r' + url
+            });
+          });
+
+          smtpTransport.close(); // close the connection pool
+          done(null, timeAgo);
+
+        }
+        // No users to send emails to
+        else {
+          done(null, timeAgo);
+        }
 
       },
 
