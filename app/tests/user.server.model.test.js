@@ -22,7 +22,7 @@ describe('User Model Unit Tests:', function() {
 			lastName: 'Name',
 			displayName: 'Full Name',
 			email: 'test@test.com',
-			username: 'username',
+			username: 'user1',
 			password: 'password',
 			provider: 'local'
 		});
@@ -31,7 +31,7 @@ describe('User Model Unit Tests:', function() {
 			lastName: 'Name',
 			displayName: 'Full Name',
 			email: 'test@test.com',
-			username: 'username',
+			username: 'user1',
 			password: 'password',
 			provider: 'local'
 		});
