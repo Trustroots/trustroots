@@ -89,81 +89,77 @@ exports.upload = function (req, res) {
     useSSL: config.https
   };
   var uploader = require('blueimp-file-upload-expressjs')(options);
+  // Make tmp directory
+  mkdirp(options.tmpDir, function (err) {
+    // Make upload directory
+    mkdirp(options.uploadDir, function (err) {
+      //Make the upload
+      uploader.post(req, res, function (obj) {
 
-  uploader.post(req, res, function (obj) {
-
-    if(obj.files[0].error) {
-      console.log(obj.files[0].error);
-      res.status(400).send(obj.files[0].error);
-    }
-    else {
-      async.waterfall([
-        // Make tmp directory
-        function(done) {
-          mkdirp(options.tmpDir, function (err) {
-            done(err, obj);
-          });
-        },
-        // Make upload directory
-        function(obj, done) {
-          mkdirp(options.uploadDir, function (err) {
-            done(err, obj);
-          });
-        },
-        //Open the image
-        function(obj, done) {
-          lwip.open(options.uploadDir + '/' + obj.files[0].name, function(err, image){
-            done(err, image, obj);
-          });
-        },
-        //Create orginal jpg file
-        function(image, obj, done) {
-          image.batch()
-          .writeFile(options.uploadDir + 'original.jpg', 'jpg', {quality: 90}, function(err, image, res){
-            done(err, image, obj);
-          });
-        },
-        //Delete the uploaded file
-        function(image, obj, done) {
-          fs.unlink(options.uploadDir + '/' + obj.files[0].name, function (err) {
-            done(err, image, obj);
-          });
-        },
-        //Make the thumbnails
-        function(image, obj, done) {
-          var sizes = [512, 256, 128, 64, 32];
-          var sizesLenght = sizes.length;
-          var processed = 0;
-          for(var i = 0; i < sizesLenght; i++) {
-            lwip.open(options.uploadDir + 'original.jpg', function(err, image){
-              var size = sizes.pop();
-              if(!err) {
-                var square = Math.min(image.width(), image.height());
-                image.batch()
-                .crop(square, square)
-                .resize(size, size)
-                .writeFile(options.uploadDir + size +'.jpg', 'jpg', {quality: 90}, function(err, image){
-                  processed++;
-                  if (processed === sizesLenght) {
-                    done(err, obj);
+        if(obj.files[0].error) {
+          console.log(obj.files[0].error);
+          res.status(400).send(obj.files[0].error);
+        }
+        else {
+          //Process images
+          async.waterfall([
+            //Open the image
+            function(done) {
+              lwip.open(options.uploadDir + '/' + obj.files[0].name, function(err, image){
+                done(err, image);
+              });
+            },
+            //Create orginal jpg file
+            function(image, done) {
+              image.batch()
+              .writeFile(options.uploadDir + 'original.jpg', 'jpg', {quality: 90}, function(err, image, res){
+                done(err, image);
+              });
+            },
+            //Delete the uploaded file
+            function(image, done) {
+              fs.unlink(options.uploadDir + '/' + obj.files[0].name, function (err) {
+                done(err, image);
+              });
+            },
+            //Make the thumbnails
+            function(image, done) {
+              var sizes = [512, 256, 128, 64, 32];
+              var sizesLenght = sizes.length;
+              var processed = 0;
+              for(var i = 0; i < sizesLenght; i++) {
+                lwip.open(options.uploadDir + 'original.jpg', function(err, image){
+                  var size = sizes.pop();
+                  if(!err) {
+                    var square = Math.min(image.width(), image.height());
+                    image.batch()
+                    .crop(square, square)
+                    .resize(size, size)
+                    .writeFile(options.uploadDir + size +'.jpg', 'jpg', {quality: 90}, function(err, image){
+                      processed++;
+                      if (processed === sizesLenght) {
+                        done(err);
+                      }
+                    });
                   }
                 });
               }
-            });
-          }
-        },
-        //Send response
-        function(obj, done) {
-          res.send(JSON.stringify(obj));
-        }
-      ], function(err) {
-        if (err) {
-          return res.status(400).send({
-            message: errorHandler.getErrorMessage(err)
+            },
+            //Send response
+            function(done) {
+              res.send(JSON.stringify(obj));
+            }
+          ], function(err) {
+            if (err) {
+              return res.status(400).send({
+                message: errorHandler.getErrorMessage(err)
+              });
+            }
           });
         }
       });
-    }
+
+    });
   });
 };
 
