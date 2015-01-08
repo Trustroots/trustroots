@@ -128,9 +128,12 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
                 url: '/avatar/upload',
                 method: 'POST',
                 file: $scope.fileAvatar,
-              }).success(function() {
+              }).success(function(data, status, headers, config) {
                 $scope.avatarUploading = false;
                 $modalInstance.close($scope.user);
+              }).error(function(data, status, headers, config) {
+                $scope.avatarUploading = false;
+                $modalInstance.dismiss('close');
               });
             }
             else if($scope.lastSource !== $scope.user.avatarSource){
@@ -143,8 +146,17 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
           $scope.avatarPreview = false;
           $scope.fileAvatar = {};
           $scope.fileSelected = function (file) {
-            $scope.avatarUploading = true;
-            if(angular.isDefined(file)) {
+            if(angular.isUndefined(file)) {
+               messageCenterService.add('danger', 'Something went wrong with this file', { timeout: flashTimeout });
+            }
+            else if(file.type.indexOf('jpeg') === -1 && file.type.indexOf('gif') === -1 && file.type.indexOf('png') === -1) {
+               messageCenterService.add('danger', 'Please use a .jpg, .gif, or .png image', { timeout: flashTimeout });
+            }
+            else if(file.size > 10000000) {
+               messageCenterService.add('danger', 'This file is too big', { timeout: flashTimeout });
+            }
+            else {
+              $scope.avatarUploading = true;
               //Here we show the local file as a preview
               var fileReader = new FileReader();
               fileReader.readAsDataURL(file);

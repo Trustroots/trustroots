@@ -20,6 +20,10 @@ var _ = require('lodash'),
     fs = require('fs');
 
 
+/* This declares to JSHint that 'settings' is a global variable: */
+/* global settings:false */
+
+
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
 // Pick here fields to send
@@ -74,81 +78,92 @@ exports.upload = function (req, res) {
     tmpDir:  __dirname + '/../../../public/modules/users/img/profile/uploads/'+userId+'/tmp/',
     uploadDir: __dirname + '/../../../public/modules/users/img/profile/uploads/'+userId+'/avatar/',
     uploadUrl: '/modules/users/img/profile/uploads/'+userId+'/avatar/',
+    acceptFileTypes:  /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
+    inlineFileTypes:  /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
+    imageTypes:  /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
     minFileSize:  1,
     maxFileSize:  10000000, //10MB
     storage: {
       type: 'local'
-    }
+    },
+    useSSL: config.https
   };
   var uploader = require('blueimp-file-upload-expressjs')(options);
-  uploader.post(req, res, function (obj, redirect, err) {
 
-    async.waterfall([
-      // Make tmp directory
-      function(done) {
-        mkdirp(options.tmpDir, function (err) {
-          done(err, obj);
-        });
-      },
-      // Make upload directory
-      function(obj, done) {
-        mkdirp(options.uploadDir, function (err) {
-          done(err, obj);
-        });
-      },
-      //Open the image
-      function(obj, done) {
-        lwip.open(options.uploadDir + '/' + obj.files[0].name, function(err, image){
-          done(err, image, obj);
-        });
-      },
-      //Create orginal jpg file
-      function(image, obj, done) {
-        image.batch()
-        .writeFile(options.uploadDir + 'original.jpg', 'jpg', {quality: 90}, function(err, image, res){
-          done(err, image, obj);
-        });
-      },
-      //Delete the uploaded file
-      function(image, obj, done) {
-        fs.unlink(options.uploadDir + '/' + obj.files[0].name, function (err) {
-          done(err, image, obj);
-        });
-      },
-      //Make the thumbnails
-      function(image, obj, done) {
-        var sizes = [512, 256, 128, 64, 32];
-        var sizesLenght = sizes.length;
-        var processed = 0;
-        for(var i = 0; i < sizesLenght; i++) {
-          lwip.open(options.uploadDir + 'original.jpg', function(err, image){
-            var size = sizes.pop();
-            if(!err) {
-              var square = Math.min(image.width(), image.height());
-              image.batch()
-              .crop(square, square)
-              .resize(size, size)
-              .writeFile(options.uploadDir + size +'.jpg', 'jpg', {quality: 90}, function(err, image){
-                processed++;
-                if (processed === sizesLenght) {
-                  done(err, obj);
-                }
-              });
-            }
+  uploader.post(req, res, function (obj) {
+
+    if(obj.files[0].error) {
+      console.log(obj.files[0].error);
+      res.status(400).send(obj.files[0].error);
+    }
+    else {
+      async.waterfall([
+        // Make tmp directory
+        function(done) {
+          mkdirp(options.tmpDir, function (err) {
+            done(err, obj);
+          });
+        },
+        // Make upload directory
+        function(obj, done) {
+          mkdirp(options.uploadDir, function (err) {
+            done(err, obj);
+          });
+        },
+        //Open the image
+        function(obj, done) {
+          lwip.open(options.uploadDir + '/' + obj.files[0].name, function(err, image){
+            done(err, image, obj);
+          });
+        },
+        //Create orginal jpg file
+        function(image, obj, done) {
+          image.batch()
+          .writeFile(options.uploadDir + 'original.jpg', 'jpg', {quality: 90}, function(err, image, res){
+            done(err, image, obj);
+          });
+        },
+        //Delete the uploaded file
+        function(image, obj, done) {
+          fs.unlink(options.uploadDir + '/' + obj.files[0].name, function (err) {
+            done(err, image, obj);
+          });
+        },
+        //Make the thumbnails
+        function(image, obj, done) {
+          var sizes = [512, 256, 128, 64, 32];
+          var sizesLenght = sizes.length;
+          var processed = 0;
+          for(var i = 0; i < sizesLenght; i++) {
+            lwip.open(options.uploadDir + 'original.jpg', function(err, image){
+              var size = sizes.pop();
+              if(!err) {
+                var square = Math.min(image.width(), image.height());
+                image.batch()
+                .crop(square, square)
+                .resize(size, size)
+                .writeFile(options.uploadDir + size +'.jpg', 'jpg', {quality: 90}, function(err, image){
+                  processed++;
+                  if (processed === sizesLenght) {
+                    done(err, obj);
+                  }
+                });
+              }
+            });
+          }
+        },
+        //Send response
+        function(obj, done) {
+          res.send(JSON.stringify(obj));
+        }
+      ], function(err) {
+        if (err) {
+          return res.status(400).send({
+            message: errorHandler.getErrorMessage(err)
           });
         }
-      },
-      //Send response
-      function(obj, done) {
-        res.send(JSON.stringify(obj));
-      }
-    ], function(err) {
-      if (err) {
-        return res.status(400).send({
-          message: errorHandler.getErrorMessage(err)
-        });
-      }
-    });
+      });
+    }
   });
 };
 
