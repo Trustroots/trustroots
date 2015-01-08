@@ -154,7 +154,7 @@ var UserSchema = new Schema({
     enum: ['none','gravatar','facebook','locale'],
     default: 'gravatar'
   },
-  avatarUploaded : {
+  avatarUploaded: {
     type: Boolean,
     default: false
   },
