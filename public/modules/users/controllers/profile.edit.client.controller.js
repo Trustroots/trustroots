@@ -109,8 +109,9 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
 
       var modalInstance = $modal.open({
         templateUrl: 'modules/users/views/profile/avatar.client.modal.html', //inline at template
-        controller: function ($scope, $modalInstance, $upload) {
+        controller: function ($scope, $modalInstance, $upload, Users) {
           $scope.user = user;
+          $scope.lastSource = user.avatarSource;
 
           // Check if provider is already in use with current user
           $scope.isConnectedSocialAccount = function(provider) {
@@ -119,19 +120,56 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
           $scope.close = function () {
             $modalInstance.dismiss('close');
           };
-          $scope.file = {};
-          $scope.fileSelected = function () {
-            $scope.upload = $upload.upload({
-              url: '/avatar/upload',
-              method: 'POST',
-              file: $scope.file,
-            }).success(function(data, status, headers, config) {
-                //Success
-          });
+          $scope.save = function () {
+            if($scope.user.avatarSource === 'locale' && $scope.avatarPreview === true) {
+              //Let's upload the new file !
+              $scope.avatarUploading = true;
+              $scope.upload = $upload.upload({
+                url: '/avatar/upload',
+                method: 'POST',
+                file: $scope.fileAvatar,
+              }).success(function() {
+                $scope.avatarUploading = false;
+                $modalInstance.close($scope.user);
+              });
+            }
+            else if($scope.lastSource !== $scope.user.avatarSource){
+              $modalInstance.close($scope.user);
+            }
+            else {
+              $modalInstance.dismiss('close');
+            }
+          };
+          $scope.avatarPreview = false;
+          $scope.fileAvatar = {};
+          $scope.fileSelected = function (file) {
+            $scope.avatarUploading = true;
+            if(angular.isDefined(file)) {
+              //Here we show the local file as a preview
+              var fileReader = new FileReader();
+              fileReader.readAsDataURL(file);
+              fileReader.onloadend = function () {
+                $scope.avatarPreview = true;
+                $scope.$apply(function () {
+                  $scope.previewStyle = fileReader.result;
+                  $scope.avatarUploading = false;
+                });
+              };
+            }
           };
         }
       });
 
+      //Save the change made to the avatar
+      modalInstance.result.then(function (user) {
+        $scope.user.updated = new Date();
+        user = new Users($scope.user);
+        user.$update(function(response) {
+          $scope.user = response;
+        }, function(response) {
+          $scope.error = response.data.message;
+        });
+      });
     };
 
 

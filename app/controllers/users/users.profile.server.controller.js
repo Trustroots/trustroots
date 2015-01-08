@@ -71,51 +71,84 @@ var userSanitizeOptions = {
 exports.upload = function (req, res) {
   var userId = req.user._id;
   var options = {
-      tmpDir:  __dirname + '/../../../public/modules/users/img/profile/uploads/'+userId+'/tmp/',
-      uploadDir: __dirname + '/../../../public/modules/users/img/profile/uploads/'+userId+'/avatar/',
-      uploadUrl: '/modules/users/img/profile/uploads/'+userId+'/avatar/',
-      minFileSize:  1,
-      maxFileSize:  10000000, //10MB
-      storage: {
-          type: 'local'
-      }
+    tmpDir:  __dirname + '/../../../public/modules/users/img/profile/uploads/'+userId+'/tmp/',
+    uploadDir: __dirname + '/../../../public/modules/users/img/profile/uploads/'+userId+'/avatar/',
+    uploadUrl: '/modules/users/img/profile/uploads/'+userId+'/avatar/',
+    minFileSize:  1,
+    maxFileSize:  10000000, //10MB
+    storage: {
+      type: 'local'
+    }
   };
+  var uploader = require('blueimp-file-upload-expressjs')(options);
+  uploader.post(req, res, function (obj, redirect, err) {
 
-  //Create the directories
-  mkdirp(options.tmpDir, function (err) {
-       if(!err) mkdirp(options.uploadDir, function (err) {
-        if(!err) {
-          //Upload
-          var uploader = require('blueimp-file-upload-expressjs')(options);
-          uploader.post(req, res, function (obj) {
-            res.send(JSON.stringify(obj));
-            lwip.open(options.uploadDir + '/' + obj.files[0].name, function(err, image){
-              if(!err) {
-                image.batch()
-                .writeFile(options.uploadDir + 'original.jpg', 'jpg', {quality: 90}, function(err, image){
-                  fs.unlink(options.uploadDir + '/' + obj.files[0].name, function (err) {
-                  });
-                  var sizes = [512, 256, 128, 64, 32];
-                  var sizesLenght = sizes.length;
-                  for(var i = 0; i < sizesLenght; i++) {
-                    lwip.open(options.uploadDir + 'original.jpg', function(err, image, i){
-                      var size = sizes.pop();
-                      if(!err) {
-                        var square = Math.min(image.width(), image.height());
-                        image.batch()
-                        .crop(square, square)
-                        .resize(size, size)
-                        .writeFile(options.uploadDir + size +'.jpg', 'jpg', {quality: 90}, function(err, image){
-                        });
-                      }
-                    });
-                  }
-                });
-              }
-            });
+    async.waterfall([
+      // Make tmp directory
+      function(done) {
+        mkdirp(options.tmpDir, function (err) {
+          done(err, obj);
+        });
+      },
+      // Make upload directory
+      function(obj, done) {
+        mkdirp(options.uploadDir, function (err) {
+          done(err, obj);
+        });
+      },
+      //Open the image
+      function(obj, done) {
+        lwip.open(options.uploadDir + '/' + obj.files[0].name, function(err, image){
+          done(err, image, obj);
+        });
+      },
+      //Create orginal jpg file
+      function(image, obj, done) {
+        image.batch()
+        .writeFile(options.uploadDir + 'original.jpg', 'jpg', {quality: 90}, function(err, image, res){
+          done(err, image, obj);
+        });
+      },
+      //Delete the uploaded file
+      function(image, obj, done) {
+        fs.unlink(options.uploadDir + '/' + obj.files[0].name, function (err) {
+          done(err, image, obj);
+        });
+      },
+      //Make the thumbnails
+      function(image, obj, done) {
+        var sizes = [512, 256, 128, 64, 32];
+        var sizesLenght = sizes.length;
+        var processed = 0;
+        for(var i = 0; i < sizesLenght; i++) {
+          lwip.open(options.uploadDir + 'original.jpg', function(err, image){
+            var size = sizes.pop();
+            if(!err) {
+              var square = Math.min(image.width(), image.height());
+              image.batch()
+              .crop(square, square)
+              .resize(size, size)
+              .writeFile(options.uploadDir + size +'.jpg', 'jpg', {quality: 90}, function(err, image){
+                processed++;
+                if (processed === sizesLenght) {
+                  done(err, obj);
+                }
+              });
+            }
           });
         }
-      });
+      },
+      //Send response
+      function(obj, done) {
+        res.send(JSON.stringify(obj));
+      }
+    ], function(err) {
+      if (err) {
+        return res.status(400).send({
+          message: errorHandler.getErrorMessage(err)
+        });
+      }
+    });
   });
 };
 

@@ -49,8 +49,8 @@
     display: block;
     position: relative;
     width: 100%;
-    max-width: 261px;
-    min-height: 261px;
+    max-width: 256px;
+    min-height: 256px;
     background: #000;
     &:hover,
     &:active {
@@ -106,7 +106,7 @@
   .avatar-source-link {
     display: block;
     position: relative;
-    .square(144px);
+    .square(128px);
     img {
       position: absolute;
       top: 0;
@@ -119,7 +119,7 @@
       bottom: 0;
       left: 0;
       right: 0;
-      line-height: 144px;
+      line-height: 128px;
       text-align: center;
       color: #fff;
       text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
@@ -142,6 +142,17 @@
   }
   .avatar-source-upload {
     cursor: pointer;
+  }
+  .avatar-preview {
+    height: 128px;
+    width: 128px;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+    background-color: transparent;
+  }
+  .fa-spin{
+    font-size: 30px;
   }
 }
 
