@@ -86,8 +86,13 @@ angular.module('users').directive('trAvatar', ['$location',
                * @todo: implement this, duhh
                */
               else if($scope.source === 'locale') {
-                var timestamp = new Date($scope.user.updated).getTime();
-                $scope.avatar = '/modules/users/img/profile/uploads/'+$scope.user._id+'/avatar/'+$scope.size+'.jpg?'+timestamp;
+                if($scope.user.avatarUploaded) {
+                  var timestamp = new Date($scope.user.updated).getTime();
+                  $scope.avatar = '/modules/users/img/profile/uploads/'+$scope.user._id+'/avatar/'+$scope.size+'.jpg?'+timestamp;
+                }
+                else {
+                  $scope.avatar = defaultAvatar;
+                }
               }
 
               // Dummy

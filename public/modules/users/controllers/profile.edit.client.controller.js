@@ -175,6 +175,9 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
       //Save the change made to the avatar
       modalInstance.result.then(function (user) {
         $scope.user.updated = new Date();
+        if(!$scope.user.avatarUploaded) {
+          $scope.user.avatarUploaded = true;
+        }
         user = new Users($scope.user);
         user.$update(function(response) {
           $scope.user = response;
