@@ -32,6 +32,8 @@ Make sure you have installed all these prerequisites:
 
 Application should run on the 3000 port in development mode. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+See [troubleshooting](https://github.com/Trustroots/trustroots/wiki/Troubleshooting) if you encounter errors.
+
 ### Fill database with test users and offers
 1. Make sure the collections offers and users are empty, in order to avoid duplicate values.
 2. Run `node scripts/filltestData.js 1000` (for 1000 users and offers).
