@@ -19,4 +19,8 @@ echo "Updating Bower modules..."
 bower update
 
 echo ""
+echo "Migrating database..."
+migrate
+
+echo ""
 echo "That's all!"

@@ -53,6 +53,9 @@ logs
 log
 *.log
 
+# DB migrations
+migrations/.migrate
+
 # Phusion Passenger
 passenger.*
 
