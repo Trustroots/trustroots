@@ -19,12 +19,13 @@
     "angular-perfect-scrollbar": "0.0.3",
     "angular-ui-select": "~0.9.5",
     "angular-leaflet-directive": "~0.7.10",
-    "angular-masonry": "~0.9.1",
     "angular-waypoints": "~1.0.1",
+    "PruneCluster": "~1.0.0",
+    "ng-file-upload": "~2.0.5",
     "fontawesome": "~4",
     "imagesloaded": "~3.1.8",
-    "PruneCluster": "~1.0.0",
-    "message-center": "~1.0.3"
+    "message-center": "~1.0.3",
+    "angular-deckgrid": "~0.5.0"
   },
   "resolutions": {
     "angular": "~1.3",

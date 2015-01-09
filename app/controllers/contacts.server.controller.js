@@ -46,7 +46,7 @@ exports.add = function(req, res) {
 
     // Find friend
     function(contact, messageHTML, messagePlain, done) {
-      User.findById(req.body.friendUserId, 'email').exec(function(err, friend) {
+      User.findById(req.body.friendUserId, 'email displayName').exec(function(err, friend) {
         if (!friend) done(new Error('Failed to load user ' + req.body.friendUserId));
 
         done(err, contact, messageHTML, messagePlain, friend);
@@ -64,30 +64,27 @@ exports.add = function(req, res) {
     function(contact, messageHTML, messagePlain, friend, done) {
 
       var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
-
-      res.render('email-templates/confirm-contact', {
+      var renderVars = {
         name: friend.displayName,
         message: messageHTML,
         meName: req.user.displayName,
+        url: url,
         meURL: url + '/#!/profile/' + req.user.username,
         urlConfirm: url + '/#!/contact-confirm/' + contact._id,
-      }, function(err, emailHTML) {
-        done(err, contact, emailHTML, messagePlain, friend);
+      };
+
+      res.render('email-templates/confirm-contact', renderVars, function(err, emailHTML) {
+        done(err, contact, emailHTML, messagePlain, friend, renderVars);
       });
     },
 
     // Prepare TEXT email for friend
-    function(contact, emailHTML, messagePlain, friend, done) {
+    function(contact, emailHTML, messagePlain, friend, renderVars, done) {
 
-      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
+      // Replace html version of attached message with text version
+      renderVars.message = messagePlain;
 
-      res.render('email-templates-text/confirm-contact', {
-        name: friend.displayName,
-        message: messagePlain,
-        meName: req.user.displayName,
-        meURL: url + '/#!/profile/' + req.user.username,
-        urlConfirm: url + '/#!/contact-confirm/' + contact._id,
-      }, function(err, emailPlain) {
+      res.render('email-templates-text/confirm-contact', renderVars, function(err, emailPlain) {
         done(err, emailHTML, emailPlain, friend);
       });
     },
@@ -97,8 +94,8 @@ exports.add = function(req, res) {
 
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
-        to: friend.email,
-        from: config.mailer.from,
+        to: friend.displayName + ' <' + friend.email + '>',
+        from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Confirm contact',
         text: emailPlain,
         html: emailHTML
@@ -109,7 +106,7 @@ exports.add = function(req, res) {
             message: 'An email was sent to your contact.'
           });
         }
-
+        smtpTransport.close(); // close the connection pool
         done(err);
       });
     }

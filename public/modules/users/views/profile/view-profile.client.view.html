@@ -24,7 +24,7 @@
   <!-- Own profile is non-public -->
   <div class="row text-center" ng-show="!profileError && user.public === false">
     <em class="lead">Note that your profile will not be visible to others until you confirm your email.</em>
-    <p>If you didn't receive the message, see <a ui-sref="profile-settings">settings</a> to resend it.</p>
+    <p>If you didn't receive the message, check your spam folder or resend it via <a ui-sref="profile-settings">email settings</a>.</p>
     <hr>
   </div>
 
@@ -42,7 +42,7 @@
     <div class="col-sm-3">
 
       <div class="panel panel-default" id="profile-sidebar">
-        <div tr-avatar data-user="profile" data-size="261" data-link="false"></div>
+        <div tr-avatar data-user="profile" data-size="256" data-link="false"></div>
         <div class="panel-body">
 
           <div class="profile-sidebar-section" ng-show="profile.birthdate || profile.gender">

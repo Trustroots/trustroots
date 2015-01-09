@@ -25,14 +25,6 @@ angular.module('core').controller('HeaderController', ['$scope', '$filter', 'Aut
       // Hide header at certain pages
       $scope.isHidden = (['home', 'signup', 'signin'].indexOf(toState.name) > -1) ? true : false;
 
-      // Analytics
-      if (typeof(ga) === 'function') {
-        ga('send', 'pageview', {
-          'page': '/#!' + toState.url,
-          //'title': ''
-        });
-      }
-
     });
 
     // Create header menu for User when she/he logins
@@ -50,7 +42,7 @@ angular.module('core').controller('HeaderController', ['$scope', '$filter', 'Aut
         Menus.addSubMenuItem('topuserbar', 'profile', 'Settings', 'profile/' + Authentication.user.username + '/settings', 'profile-settings', null, null, 0, 'cog');
         Menus.addSubMenuItem('topuserbar', 'profile', 'Hosting', 'offer', 'offer', null, null, 0, 'home');
         Menus.addSubMenuDivider('topuserbar', 'profile');
-        Menus.addSubMenuItem('topuserbar', 'profile', 'Help', 'contact', 'contact', null, null, 0, 'bolt');
+        Menus.addSubMenuItem('topuserbar', 'profile', 'Support', 'contact', 'contact', null, null, 0, 'bolt');
         Menus.addSubMenuItem('topuserbar', 'profile', 'Sign out', '/auth/signout', '/auth/signout', null, null, 0, 'sign-out');
 
         userMenuAdded = true;

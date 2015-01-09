@@ -15,12 +15,13 @@ var ApplicationConfiguration = (function() {
                                               'ui.bootstrap',
                                               'ui.utils',
                                               'ui.select',
-                                              'btford.socket-io',
+                                              //'btford.socket-io',
                                               'angularMoment',
                                               'angular-medium-editor',
                                               'perfect_scrollbar',
                                               'leaflet-directive',
-                                              'wu.masonry',
+                                              'angularFileUpload',
+                                              'akoenig.deckgrid',
                                               'zumba.angular-waypoints',
                                               'MessageCenterModule'
                                             ];

@@ -61,12 +61,6 @@
           <div class="form-group">
             <button type="submit" class="btn btn-large btn-primary">Update email subscriptions</button>
           </div>
-          <div data-ng-show="subscriptionsError" class="text-danger">
-              <strong>{{subscriptionsError}}</strong>
-          </div>
-          <div data-ng-show="subscriptionsSuccess" class="text-success">
-              <strong>{{subscriptionsSuccess}}</strong>
-          </div>
         </fieldset>
       </form>
 
@@ -77,26 +71,32 @@
   <br><br>
 
   <!-- Password -->
-  <div class="row" data-ng-show="user.provider === 'local'" data-ng-controller="PasswordController">
+  <div class="row" data-ng-show="user.provider === 'local'">
 
     <div class="col-xs-offset-2 col-xs-10 col-sm-offset-0 col-sm-4 col-md-3 col-md-3">
       <h4>Change your password</h4>
     </div>
     <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
 
-      <form data-ng-submit="resetUserPassword()" autocomplete="off">
+      <form data-ng-submit="changeUserPassword()" autocomplete="off">
         <fieldset>
           <div class="form-group">
-            <p class="help-block">Your new password must be 8 or more characters.</p>
+            <label for="currentPassword" class="sr-only">Your current password</label>
+            <input type="password" id="currentPassword" name="currentPassword" class="form-control" data-ng-model="currentPassword" placeholder="Your current password" ng-disabled="changeUserPasswordLoading">
+          </div>
+          <div class="form-group">
             <label for="newPassword" class="sr-only">New Password</label>
-            <input type="password" id="newPassword" name="newPassword" class="form-control" data-ng-model="passwordDetails.newPassword" placeholder="New Password">
+            <input type="password" id="newPassword" name="newPassword" class="form-control" data-ng-model="newPassword" placeholder="New Password" popover="New password must be 8 or more characters."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="changeUserPasswordLoading">
           </div>
           <div class="form-group">
             <label for="verifyPassword" class="sr-only">Verify Password</label>
-            <input type="password" id="verifyPassword" name="verifyPassword" class="form-control" data-ng-model="passwordDetails.verifyPassword" placeholder="Verify Password">
+            <input type="password" id="verifyPassword" name="verifyPassword" class="form-control" data-ng-model="verifyPassword" placeholder="Verify Password" ng-disabled="changeUserPasswordLoading">
           </div>
           <div class="form-group">
-            <button type="submit" class="btn btn-large btn-primary">Update Password</button>
+            <button type="submit" class="btn btn-large btn-primary" ng-disabled="changeUserPasswordLoading">
+              <span ng-hide="changeUserPasswordLoading">Update Password</span>
+              <span ng-show="changeUserPasswordLoading">Wait a moment...</span>
+            </button>
           </div>
           <div data-ng-show="passwordError" class="text-danger">
             <strong>{{passwordError}}</strong>

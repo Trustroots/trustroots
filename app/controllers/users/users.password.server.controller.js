@@ -13,8 +13,6 @@ var _ = require('lodash'),
     async = require('async'),
     crypto = require('crypto');
 
-var smtpTransport = nodemailer.createTransport(config.mailer.options);
-
 /**
  * Forgot for reset password (forgot POST)
  */
@@ -56,25 +54,42 @@ exports.forgot = function(req, res, next) {
         });
       }
     },
+
+    // Prepare HTML email
     function(token, user, done) {
+
       var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
-      res.render('email-templates/reset-password', {
+      var renderVars = {
         name: user.displayName,
         ourMail: config.mailer.from,
         urlConfirm: url + '/auth/reset/' + token,
         url: url
-      }, function(err, emailHTML) {
-        done(err, emailHTML, user);
+      };
+
+      res.render('email-templates/reset-password', renderVars, function(err, emailHTML) {
+        done(err, emailHTML, user, renderVars);
       });
     },
+
+    // Prepare TEXT email
+    function(emailHTML, user, renderVars, done) {
+      res.render('email-templates-text/reset-password', renderVars, function(err, emailPlain) {
+        done(err, emailHTML, emailPlain, user);
+      });
+    },
+
     // If valid email, send reset email using service
-    function(emailHTML, user, done) {
+    function(emailHTML, emailPlain, user, done) {
+      var smtpTransport = nodemailer.createTransport(config.mailer.options);
+
       var mailOptions = {
-        to: user.email,
-        from: config.mailer.from,
+        to: user.displayName + ' <' + user.email + '>',
+        from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Password Reset',
-        html: emailHTML
+        html: emailHTML,
+        text: emailPlain
       };
+
       smtpTransport.sendMail(mailOptions, function(err) {
         if (!err) {
           res.send({
@@ -85,6 +100,7 @@ exports.forgot = function(req, res, next) {
 						message: 'Failure while sending email. Try again later.'
 					});
 				}
+        smtpTransport.close(); // close the connection pool
 
         done(err);
       });
@@ -164,25 +180,41 @@ exports.reset = function(req, res, next) {
         }
       });
     },
+
+    // Prepare HTML email
     function(user, done) {
-      res.render('email-templates/reset-password-confirm', {
+
+      var renderVars = {
         name: user.displayName,
         ourMail: config.mailer.from,
         url: (config.https ? 'https' : 'http') + '://' + req.headers.host
-      }, function(err, emailHTML) {
-        done(err, emailHTML, user);
+      };
+
+      res.render('email-templates/reset-password-confirm', renderVars, function(err, emailHTML) {
+        done(err, emailHTML, user, renderVars);
       });
     },
+
+    // Prepare TEXT email
+    function(emailHTML, user, renderVars, done) {
+      res.render('email-templates-text/reset-password-confirm', renderVars, function(err, emailPlain) {
+        done(err, emailHTML, emailPlain, user);
+      });
+    },
+
     // If valid email, send reset email using service
-    function(emailHTML, user, done) {
+    function(emailHTML, emailPlain, user, done) {
+      var smtpTransport = nodemailer.createTransport(config.mailer.options);
+
       var mailOptions = {
-        to: user.email,
-        from: config.mailer.from,
+        to: user.displayName + ' <' + user.email + '>',
+        from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Your password has been changed',
         html: emailHTML
       };
 
       smtpTransport.sendMail(mailOptions, function(err) {
+        smtpTransport.close(); // close the connection pool
         done(err);
       });
     }
@@ -195,58 +227,117 @@ exports.reset = function(req, res, next) {
  * Change Password
  */
 exports.changePassword = function(req, res) {
-  // Init Variables
-  var passwordDetails = req.body;
 
-  if (req.user) {
-    if (passwordDetails.newPassword) {
+  async.waterfall([
+
+    // Some simple validations before proceeding
+    function(done) {
+
+      // Return error if no user
+      if(!req.user) {
+        done(new Error('User is not signed in.'));
+      }
+
+      // Check if we have new password coming up
+      if (!req.body.newPassword) {
+        done(new Error('Please provide a new password.'));
+      }
+
+      // Check if new password matches verification
+      if (req.body.newPassword !== req.body.verifyPassword) {
+        done(new Error('Passwords do not match.'));
+      }
+
+      done(null);
+
+    },
+
+    // Find currently logged in user
+    function(done) {
       User.findById(req.user.id, function(err, user) {
-        if (!err && user) {
-          if (user.authenticate(passwordDetails.currentPassword)) {
-            if (passwordDetails.newPassword === passwordDetails.verifyPassword) {
-              user.password = passwordDetails.newPassword;
+        done(err, user);
+      });
+    },
 
-              user.save(function(err) {
-                if (err) {
-                  return res.status(400).send({
-                    message: errorHandler.getErrorMessage(err)
-                  });
-                } else {
-                  req.login(user, function(err) {
-                    if (err) {
-                      res.status(400).send(err);
-                    } else {
-                      res.send({
-                        message: 'Password changed successfully'
-                      });
-                    }
-                  });
-                }
-              });
-            } else {
-              res.status(400).send({
-                message: 'Passwords do not match'
-              });
-            }
-          } else {
-            res.status(400).send({
-              message: 'Current password is incorrect'
-            });
-          }
-        } else {
-          res.status(400).send({
-            message: 'User is not found'
+    // Authenticate with old password to check if it was correct
+    function(user, done) {
+      if (user.authenticate(req.body.currentPassword)) {
+        done(null, user);
+      } else {
+        done(new Error('Current password is incorrect.'));
+      }
+    },
+
+    // Save user with new password
+    function(user, done) {
+
+      user.password = req.body.newPassword;
+
+      user.save(function(err) {
+        done(err, user);
+      });
+
+    },
+
+    // Login again and return new user
+    function(user, done) {
+
+      req.login(user, function(err) {
+        if (!err) {
+          res.send({
+            user: user,
+            message: 'Password changed successfully!'
           });
         }
+        done(err, user);
       });
-    } else {
-      res.status(400).send({
-        message: 'Please provide a new password'
+
+    },
+
+    // Prepare HTML email
+    function(user, done) {
+
+      var renderVars = {
+        name: user.displayName,
+        ourMail: config.mailer.from,
+        url: (config.https ? 'https' : 'http') + '://' + req.headers.host
+      };
+
+      res.render('email-templates/reset-password-confirm', renderVars, function(err, emailHTML) {
+        done(err, emailHTML, user, renderVars);
+      });
+    },
+
+    // Prepare TEXT email
+    function(emailHTML, user, renderVars, done) {
+      res.render('email-templates-text/reset-password-confirm', renderVars, function(err, emailPlain) {
+        done(err, emailHTML, emailPlain, user);
+      });
+    },
+
+    // If valid email, send reset email using service
+    function(emailHTML, emailPlain, user, done) {
+      var smtpTransport = nodemailer.createTransport(config.mailer.options);
+
+      var mailOptions = {
+        to: user.displayName + ' <' + user.email + '>',
+        from: 'Trustroots <' + config.mailer.from + '>',
+        subject: 'Your password has been changed',
+        html: emailHTML
+      };
+
+      smtpTransport.sendMail(mailOptions, function(err) {
+        smtpTransport.close(); // close the connection pool
+        done(err);
       });
     }
-  } else {
-    res.status(400).send({
-      message: 'User is not signed in'
-    });
-  }
+
+  ], function(err) {
+    if (err) {
+      res.status(400).send({
+        message: err.message//errorHandler.getErrorMessage(err)
+      });
+    }
+  });
+
 };

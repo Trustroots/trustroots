@@ -40,6 +40,7 @@ config/secret/*
 
 # Deploy & maintenance scripts
 scripts/*
+!scripts/update.sh
 !scripts/starter.sh
 !scripts/backup-db.sh
 !scripts/deploy.sh
@@ -52,5 +53,11 @@ logs
 log
 *.log
 
+# DB migrations
+migrations/.migrate
+
 # Phusion Passenger
 passenger.*
+
+# User Upload
+/public/modules/users/img/profile/uploads/

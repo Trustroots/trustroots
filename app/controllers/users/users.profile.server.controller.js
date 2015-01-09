@@ -14,7 +14,15 @@ var _ = require('lodash'),
     crypto = require('crypto'),
     User = mongoose.model('User'),
     Contact = mongoose.model('Contact'),
-    Reference = mongoose.model('Reference');
+    Reference = mongoose.model('Reference'),
+    lwip = require('lwip'),
+    mkdirp = require('mkdirp'),
+    fs = require('fs');
+
+
+/* This declares to JSHint that 'settings' is a global variable: */
+/* global settings:false */
+
 
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
@@ -34,6 +42,7 @@ exports.userProfileFields = [
                     'created',
                     'updated',
                     'avatarSource',
+                    'avatarUploaded',
                     'emailHash', // MD5 hashed email to use with Gravatars
                     'additionalProvidersData.facebook.id', // For FB avatars
                     'additionalProvidersData.facebook.link', // For FB profile links
@@ -41,7 +50,7 @@ exports.userProfileFields = [
                     ].join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed
-exports.userMiniProfileFields = 'id displayName username avatarSource emailHash additionalProvidersData.facebook.id';
+exports.userMiniProfileFields = 'id displayName username avatarSource avatarUploaded emailHash additionalProvidersData.facebook.id';
 
 /**
  * Rules for sanitizing user description coming in and out
@@ -61,8 +70,105 @@ var userSanitizeOptions = {
 
 
 /**
- * Update
+ * Upload user avatar
  */
+
+exports.upload = function (req, res) {
+  var userId = req.user._id;
+  var options = {
+    tmpDir:  __dirname + '/../../../public/modules/users/img/profile/uploads/'+userId+'/tmp/',
+    uploadDir: __dirname + '/../../../public/modules/users/img/profile/uploads/'+userId+'/avatar/',
+    uploadUrl: '/modules/users/img/profile/uploads/'+userId+'/avatar/',
+    acceptFileTypes:  /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
+    inlineFileTypes:  /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
+    imageTypes:  /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
+    minFileSize:  1,
+    maxFileSize:  10000000, //10MB
+    storage: {
+      type: 'local'
+    },
+    useSSL: config.https
+  };
+  var uploader = require('blueimp-file-upload-expressjs')(options);
+  // Make tmp directory
+  mkdirp(options.tmpDir, function (err) {
+    // Make upload directory
+    mkdirp(options.uploadDir, function (err) {
+      //Make the upload
+      uploader.post(req, res, function (obj) {
+
+        if(obj.files[0].error) {
+          console.log(obj.files[0].error);
+          res.status(400).send(obj.files[0].error);
+        }
+        else {
+          //Process images
+          async.waterfall([
+            //Open the image
+            function(done) {
+              lwip.open(options.uploadDir + '/' + obj.files[0].name, function(err, image){
+                done(err, image);
+              });
+            },
+            //Create orginal jpg file
+            function(image, done) {
+              image.batch()
+              .writeFile(options.uploadDir + 'original.jpg', 'jpg', {quality: 90}, function(err, image, res){
+                done(err, image);
+              });
+            },
+            //Delete the uploaded file
+            function(image, done) {
+              fs.unlink(options.uploadDir + '/' + obj.files[0].name, function (err) {
+                done(err, image);
+              });
+            },
+            //Make the thumbnails
+            function(image, done) {
+              var sizes = [512, 256, 128, 64, 32];
+              var sizesLenght = sizes.length;
+              var processed = 0;
+              for(var i = 0; i < sizesLenght; i++) {
+                lwip.open(options.uploadDir + 'original.jpg', function(err, image){
+                  var size = sizes.pop();
+                  if(!err) {
+                    var square = Math.min(image.width(), image.height());
+                    image.batch()
+                    .crop(square, square)
+                    .resize(size, size)
+                    .writeFile(options.uploadDir + size +'.jpg', 'jpg', {quality: 90}, function(err, image){
+                      processed++;
+                      if (processed === sizesLenght) {
+                        done(err);
+                      }
+                    });
+                  }
+                });
+              }
+            },
+            //Send response
+            function(done) {
+              res.send(JSON.stringify(obj));
+            }
+          ], function(err) {
+            if (err) {
+              return res.status(400).send({
+                message: errorHandler.getErrorMessage(err)
+              });
+            }
+          });
+        }
+      });
+
+    });
+  });
+};
+
+
+
+/**
+* Update
+*/
 exports.update = function(req, res) {
   async.waterfall([
 
@@ -138,36 +244,63 @@ exports.update = function(req, res) {
 
   },
 
-  // Prepare mail
+  // Prepare TEXT mail
   function(token, user, done) {
+
+    // If no token, user didn't change email = pass this phase
     if(token) {
+
       var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
-      res.render('email-templates/email-confirmation', {
+      var renderVars = {
+        url: url,
         name: user.displayName,
         email: user.emailTemporary,
-        urlConfirm: url + '/#!/confirm-email/' + token,
-      }, function(err, emailHTML) {
-        done(err, emailHTML, user, url);
+        urlConfirm: url + '/#!/confirm-email/' + token
+      };
+
+      res.render('email-templates-text/email-confirmation', renderVars, function(err, emailPlain) {
+        done(err, emailPlain, user, renderVars);
       });
     }
     else {
-      done(null, false);
+      done(null, false, false, false);
+    }
+  },
+
+  // Prepare HTML mail
+  function(emailPlain, user, renderVars, done) {
+
+    // If no emailPlain, user didn't change email = pass this phase
+    if(emailPlain) {
+      res.render('email-templates/email-confirmation', renderVars, function(err, emailHTML) {
+        done(err, emailHTML, emailPlain, user);
+      });
+    }
+    else {
+      done(null, false, false, false);
     }
   },
 
   // If valid email, send confirm email using service
-  function(emailHTML, user, url, done) {
+  function(emailHTML, emailPlain, user, done) {
+
+    // If no emailHTML, user didn't change email = pass this phase
     if(emailHTML) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
-        to: user.emailTemporary,
-        from: config.mailer.from,
+        to: user.displayName + ' <' + user.emailTemporary + '>',
+        from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Confirm email change',
+        text: emailPlain,
         html: emailHTML
       };
       smtpTransport.sendMail(mailOptions, function(err) {
+        smtpTransport.close(); // close the connection pool
         done(err);
       });
+    }
+    else {
+      done(null);
     }
   },
 

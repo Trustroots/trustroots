@@ -56,8 +56,9 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
      */
     angular.extend($scope, {
       defaults: {
-        attributionControl: false,
+        attributionControl: true,
         keyboard: true,
+        worldCopyJump: true,
         controls: {
           layers: {
             visible: true,
@@ -79,7 +80,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
               map: settings.mapbox.map[0]
             },
             layerOptions: {
-              attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
+              attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map[0] + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
               continuousWorld: true,
               TRStyle: 'street'//Not native Leaflet, required by layer switch
             }
@@ -90,7 +91,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
             url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             layerOptions: {
               subdomains: ['a', 'b', 'c'],
-              attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OSM</a>',
+              attribution: '<strong><a href="https://www.openstreetmap.org/login#map=' + defaultLocation.zoom + '/' + defaultLocation.lat + '/' + defaultLocation.lng + '">Improve this map</a></strong>',
               continuousWorld: true,
               TRStyle: 'street'//Not native Leaflet, required by layer switch
             }
@@ -102,7 +103,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
             url: 'http://otile{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',
             layerOptions: {
               subdomains: ['1', '2', '3', '4'],
-              attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OSM</a>',
+              attribution:  '<strong><a href="https://www.openstreetmap.org/login#map=' + defaultLocation.zoom + '/' + defaultLocation.lat + '/' + defaultLocation.lng + '">Improve this map</a></strong>',
               continuousWorld: true,
               TRStyle: 'street'//Not native Leaflet, required by layer switch
             }
@@ -154,7 +155,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
           map: settings.mapbox.map[2]
         },
         layerOptions: {
-          attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
+          attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map[2] + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
           continuousWorld: true,
           TRStyle: 'satellite'//Not native Leaflet, required by layer switch
         }
@@ -171,7 +172,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
           map: settings.mapbox.map[1]
         },
         layerOptions: {
-          attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
+          attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map[1] + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
           continuousWorld: true,
           TRStyle: 'street'//Not native Leaflet, required by layer switch
         }
@@ -235,8 +236,10 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
      */
     $scope.getMarkers = function () {
 
-      // Check if map has bounds set (typically at init these might be missing)
-      if(!$scope.bounds.northEast) return;
+      // Don't proceed if:
+      // - Map does not have bounds set (typically at map init these might be missing for some milliseconds)
+      // - If user isn't public(confirmed) yet - no need to hit API just to get 401
+      if(!$scope.bounds.northEast || !$scope.user.public) return;
 
       //If we get out of the boundig box of the last api query we have to call the API for the new markers
       if($scope.bounds.northEast.lng > $scope.lastbounds.northEastLng || $scope.bounds.northEast.lat > $scope.lastbounds.northEastLat || $scope.bounds.southWest.lng < $scope.lastbounds.southWestLng || $scope.bounds.southWest.lat < $scope.lastbounds.southWestLat) {

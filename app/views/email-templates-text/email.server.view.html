@@ -1,38 +1,19 @@
 {#<!--
- # Mail base template
+ # Text mail base template
  #
- # Based on:
- # @link https://raw.githubusercontent.com/TomFrankly/mailchimp-responsive-template/master/Responsive%20Basic%20Chopped%20and%20Screwed.html
- # License: @link http://creativecommons.org/licenses/by-sa/3.0/
+ # This template is optimized for text clients.
  #
- #
- #
- #
- # This email is optimized for mobile email clients, and even
- #      works relatively well in the Android Gmail App, which does
- #      not support Media Queries, but does have limited mobile-
- #      friendly functionality.
- #
- # While this coding method is very flexible, it can be more
- #      brittle than traditionally-coded emails, particularly in
- #      Microsoft Outlook 2007-2010. Outlook-specific conditional
- #      CSS is included to counteract the inconsistencies that
- #      crop up.
  #-->
  #}
-{% if mailTitle %}{{ mailTitle }}
-{% else %}{{title}}
-{% endif %}
+{% if mailTitle %}{{ mailTitle }}{% else %}{{title}}{% endif %}
 ----------------------------------------------------------------------
 
 {% block content %}{% endblock %}
 
---
+-- {# These two dashes should have space after them and this line stops .editorconfig stripping it out. #}
 Trustroots
 {% if url %}{{url}}{% endif %}
 
-Remember, I'm just a little mail robot so don't reply this email. Contact us if you want to talk to a human: {{url}}/#!/contact
-{% if ourMail %}
+Remember, I'm just a little mail robot so don't reply this email. Contact us if you want to talk to a human{% if url %}: <{{url}}/#!/contact>{% else%}.{% endif %}
 
-Please add '{{ourMail}}' to your contact list to avoid our mails going to spam folder.
-{% endif %}
+{% if ourMail %}Please add '{{ourMail}}' to your contact list to avoid our mails going to spam folder.{% endif %}

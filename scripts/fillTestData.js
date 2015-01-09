@@ -47,6 +47,7 @@ var addUsers = function (index, max) {
   user.displayName = user.firstName + ' ' + user.lastName;
   user.provider = 'local';
   user.public = true;
+  user.avatarUploaded = false;
   user.avatarSource = 'none';
   user.email = index+faker.internet.email();
   user.password = faker.internet.password();
@@ -110,6 +111,7 @@ else {
   user.username = 'trout';
   user.avatarSource = 'none';
   user.public = true;
+  user.avatarUploaded = false;
 
   user.save(function(err) {
     if(!err) {
