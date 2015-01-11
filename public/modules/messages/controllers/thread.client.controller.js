@@ -138,7 +138,7 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     $scope.send = function() {
       $scope.isSending = true;
 
-      if(this.content === '<p><br></p>' || this.content.trim() == '') {
+      if(this.content === '<p><br></p>' || this.content.trim() === '') {
         $scope.isSending = false;
         messageCenterService.add('warning', 'Write a message first...', { timeout: flashTimeout });
         return;
