@@ -1,7 +1,10 @@
 'use strict';
 
-angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Authentication', 'Messages', 'MessagesRead', //'Socket',
-  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead) {//, Socket
+/* This declares to JSHint that these are global variables: */
+/*global flashTimeout:false */
+
+angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Authentication', 'Messages', 'MessagesRead', 'messageCenterService', //'Socket',
+  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService) {//, Socket
 
     // If user is not signed in then redirect back home
     if (!Authentication.user) $state.go('home');
@@ -135,6 +138,12 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     $scope.send = function() {
       $scope.isSending = true;
 
+      if(this.content === '<p><br></p>' || this.content.trim() == '') {
+        $scope.isSending = false;
+        messageCenterService.add('warning', 'Write a message first...', { timeout: flashTimeout });
+        return;
+      }
+
       var message = new Messages({
         content: this.content,
         userTo: $stateParams.userId,
@@ -155,7 +164,7 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
 
       }, function(errorResponse) {
         $scope.isSending = false;
-        $scope.error = errorResponse.data.message;
+        messageCenterService.add('danger', errorResponse.data.message, { timeout: flashTimeout });
       });
 
 
