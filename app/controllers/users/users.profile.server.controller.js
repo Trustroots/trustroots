@@ -125,26 +125,33 @@ exports.upload = function (req, res) {
             },
             //Make the thumbnails
             function(image, done) {
-              var sizes = [512, 256, 128, 64, 32];
-              var sizesLenght = sizes.length;
-              var processed = 0;
-              for(var i = 0; i < sizesLenght; i++) {
+
+              // Note that each spawns these functions in order but they are processed asynchronously
+              _.each([512, 256, 128, 64, 32], function(size, index, list) {
+
                 lwip.open(options.uploadDir + 'original.jpg', function(err, image){
-                  var size = sizes.pop();
                   if(!err) {
                     var square = Math.min(image.width(), image.height());
                     image.batch()
                     .crop(square, square)
                     .resize(size, size)
                     .writeFile(options.uploadDir + size +'.jpg', 'jpg', {quality: 90}, function(err, image){
-                      processed++;
-                      if (processed === sizesLenght) {
+
+                      // Shorten list so we can keep track on processed count (doesn't keep track on WHICH sizes has been processed)
+                      list.pop();
+
+                      // Finish on errors & when list is empty (=all sizes done)
+                      if(err || list.length === 0) {
                         done(err);
                       }
                     });
                   }
+                  else {
+                    done(err);
+                  }
                 });
-              }
+              });
+
             },
             //Send response
             function(done) {
