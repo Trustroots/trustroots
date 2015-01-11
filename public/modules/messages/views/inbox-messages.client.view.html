@@ -21,7 +21,7 @@
                 <div tr-avatar data-user="otherParticipant(thread)" data-size="36" data-link="false" class="pull-left"></div> <span data-ng-bind="otherParticipant(thread, 'displayName')"></span>
               </td>
               <td class="summary">
-                <span data-ng-bind="thread.message.excerpt"></span>
+                <span data-ng-bind-html="thread.message.excerpt"></span>
                 <small class="indicators pull-right">
                   <i class="fa fa-fw fa-reply text-muted" ng-show="thread.userFrom._id === user._id" tooltip="You replied" tooltip-placement="right"></i>
                 </small>

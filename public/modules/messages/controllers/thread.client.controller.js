@@ -11,8 +11,18 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
 
     $scope.user = Authentication.user;
     $scope.userToId = $stateParams.userId;
-    $scope.isThreadLoading = false;
+
+    // No sending messages to yourself
+    if ($scope.user._id === $scope.userToId) $state.go('inboxMessages');
+
     $scope.isSending = false;
+
+    $scope.messages = Messages.query({
+      userId: $stateParams.userId
+    }, function(){
+      // Keep layout in good order
+      $scope.threadLayout();
+    });
 
     /**
      * Calculate thread etc layout locations with this massive pile of helpers
@@ -166,25 +176,6 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
       Socket.removeListener('message.sent');
     });
     */
-
-
-    /**
-     * Load messages for this thread
-     */
-    $scope.findThread = function() {
-
-      $scope.isThreadLoading = true;
-
-      $scope.messages = Messages.query({
-        userId: $stateParams.userId
-      }, function(){
-        $scope.isThreadLoading = false;
-
-        // Keep layout in good order
-        $scope.threadLayout();
-      });
-
-    };
 
   }
 ]);

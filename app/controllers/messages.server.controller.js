@@ -5,6 +5,7 @@
  */
 var mongoose = require('mongoose'),
     async = require('async'),
+    _ = require('lodash'),
     errorHandler = require('./errors'),
     sanitizeHtml = require('sanitize-html'),
     userHandler = require('./users'),
@@ -66,6 +67,12 @@ exports.inbox = function(req, res) {
           thread.message.excerpt = thread.message.excerpt.substring(0,100) + ' ...'; // Shorten
 
           delete thread.message.content;
+
+          // If latest message in the thread was from current user, mark it read
+          // Writer obviously read his/her own message
+          if(thread.userFrom._id.toString() === req.user._id.toString()) {
+            thread.read = true;
+          }
 
           threadsCleaned.push(thread);
         });
@@ -193,8 +200,8 @@ exports.threadByUser = function(req, res, next, userId) {
 
         Message.find({
           $or: [
-          { userFrom: req.user._id, userTo: userId },
-          { userTo: req.user._id, userFrom: userId }
+            { userFrom: req.user._id, userTo: userId },
+            { userTo: req.user._id, userFrom: userId }
           ]
         })
         .sort('-created')
@@ -235,20 +242,31 @@ exports.threadByUser = function(req, res, next, userId) {
      */
     function(done) {
 
-      Thread.update(
-        {
-          // User id's can be either way around in old thread handle, so we gotta test for both situations
-          $or: [
-            { userFrom: req.user._id, userTo: userId },
-            { userTo: req.user._id, userFrom: userId }
-          ]
-        },
-        { read: true },
-        {},
-        function(err){
-          done(err);
-        }
-      );
+      var recentMessage = _.first(req.messages);
+
+      // If latest message in the thread was to current user, mark thread read
+      if(recentMessage.userTo._id.toString() === req.user._id.toString()) {
+
+        Thread.update(
+          {
+            userTo: req.user._id,
+            userFrom: userId
+          },
+          {
+            read: true
+          },
+          // Options:
+          {
+            multi: false
+          },
+          function(err){
+            done(err);
+          }
+        );
+
+      } else {
+        done(null);
+      }
 
     }
 
@@ -315,71 +333,3 @@ exports.markRead = function(req, res) {
   });
 
 };
-
-
-/**
- * Show the current message
- */
- /*
-exports.read = function(req, res) {
-  res.json(req.message);
-};
-*/
-
-/**
- * Message middleware
- */
-/*
-exports.messageByID = function(req, res, next, id) {
-  Message.findById(id)
-    .populate('userFrom', 'displayName')
-    .populate('userTo', 'displayName')
-    .exec(function(err, message) {
-    if (err) return next(err);
-    if (!message) return next(new Error('Failed to load message ' + id));
-    req.message = message;
-    next();
-    });
-};
-*/
-
-
-/**
- * Update a message
- */
-/*
-exports.update = function(req, res) {
-  var message = req.message;
-
-  message = _.extend(message, req.body);
-
-  message.save(function(err) {
-  if (err) {
-    return res.status(400).send({
-    message: errorHandler.getErrorMessage(err)
-    });
-  } else {
-    res.json(message);
-  }
-  });
-};
-*/
-
-/**
- * Delete an message
- */
-/*
-exports.delete = function(req, res) {
-  var message = req.message;
-
-  message.remove(function(err) {
-  if (err) {
-    return res.status(400).send({
-    message: errorHandler.getErrorMessage(err)
-    });
-  } else {
-    res.json(message);
-  }
-  });
-};
-*/

@@ -1,12 +1,12 @@
-<section class="container container-spacer" data-ng-controller="MessagesThreadController" data-ng-init="findThread()">
+<section class="container container-spacer" data-ng-controller="MessagesThreadController">
 
   <div class="row">
     <div class="col-sm-9" id="thread-container">
 
+      <div class="row text-muted text-center" ng-show="!messages.$resolved"><small>Wait a moment...</small></div>
+      
       <!-- Thread -->
       <div perfect-scrollbar id="messages-thread" wheel-propagation="true" wheel-speed="50" suppress-scroll-x="true" on-scroll="onScroll(scrollTop, scrollHeight)" refresh-on-change="messages" ng-style="{width: containerWidth, bottom: replyHeight}">
-
-        <div class="row text-muted text-center" ng-show="isThreadLoading"><small>Wait a moment...</small></div>
 
         <!-- Messages -->
         <div class="message"
@@ -136,7 +136,7 @@
         <div class="row">
           <div class="col-xs-12">
             <small class="text-muted">Change styles by highlighting text.</small>
-            <input type="submit" class="btn btn-sm btn-primary message-reply-btn" id="messageReplySubmit" ng-disabled="!content || isSending === true || isThreadLoading === true" value="{{ (messages.$resolved && !messages.length) ? 'Start conversation' : 'Reply' }}">
+            <input type="submit" class="btn btn-sm btn-primary message-reply-btn" id="messageReplySubmit" ng-disabled="!content || isSending || messages.$resolved" value="{{ (messages.$resolved && !messages.length) ? 'Start conversation' : 'Reply' }}">
           </div>
         </div><!-- /.row -->
       </form>
