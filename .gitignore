@@ -60,4 +60,4 @@ migrations/.migrate
 passenger.*
 
 # User Upload
-/public/modules/users/img/profile/uploads/
+public/modules/users/img/profile/uploads/
