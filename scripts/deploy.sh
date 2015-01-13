@@ -13,6 +13,10 @@ npm update --production
 bower update
 NODE_ENV=production grunt build
 
+echo ""
+echo "Migrating database..."
+migrate
+
 echo "Redeploying the application..."
 # https://www.phusionpassenger.com/documentation/Users%20guide%20Nginx.html#_redeploying_restarting_the_rack_application
 touch tmp/restart.txt

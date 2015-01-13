@@ -55,6 +55,7 @@ module.exports = {
         'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.js',
         'public/lib/angular-deckgrid/angular-deckgrid.js',
         'public/lib/angular-waypoints/dist/angular-waypoints.all.js',
+        'public/lib/ng-file-upload/angular-file-upload.js',
         'public/lib/message-center/message-center.js',
       ]
     },

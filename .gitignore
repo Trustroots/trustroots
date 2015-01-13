@@ -53,5 +53,11 @@ logs
 log
 *.log
 
+# DB migrations
+migrations/.migrate
+
 # Phusion Passenger
 passenger.*
+
+# User Upload
+public/modules/users/img/profile/uploads/

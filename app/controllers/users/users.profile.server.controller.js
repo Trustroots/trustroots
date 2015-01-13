@@ -14,7 +14,15 @@ var _ = require('lodash'),
     crypto = require('crypto'),
     User = mongoose.model('User'),
     Contact = mongoose.model('Contact'),
-    Reference = mongoose.model('Reference');
+    Reference = mongoose.model('Reference'),
+    lwip = require('lwip'),
+    mkdirp = require('mkdirp'),
+    fs = require('fs');
+
+
+/* This declares to JSHint that 'settings' is a global variable: */
+/* global settings:false */
+
 
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
@@ -34,6 +42,7 @@ exports.userProfileFields = [
                     'created',
                     'updated',
                     'avatarSource',
+                    'avatarUploaded',
                     'emailHash', // MD5 hashed email to use with Gravatars
                     'additionalProvidersData.facebook.id', // For FB avatars
                     'additionalProvidersData.facebook.link', // For FB profile links
@@ -41,7 +50,7 @@ exports.userProfileFields = [
                     ].join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed
-exports.userMiniProfileFields = 'id displayName username avatarSource emailHash additionalProvidersData.facebook.id';
+exports.userMiniProfileFields = 'id displayName username avatarSource avatarUploaded emailHash additionalProvidersData.facebook.id';
 
 /**
  * Rules for sanitizing user description coming in and out
@@ -61,8 +70,112 @@ var userSanitizeOptions = {
 
 
 /**
- * Update
+ * Upload user avatar
  */
+
+exports.upload = function (req, res) {
+  var userId = req.user._id;
+  var options = {
+    tmpDir:  __dirname + '/../../../public/modules/users/img/profile/uploads/'+userId+'/tmp/',
+    uploadDir: __dirname + '/../../../public/modules/users/img/profile/uploads/'+userId+'/avatar/',
+    uploadUrl: '/modules/users/img/profile/uploads/'+userId+'/avatar/',
+    acceptFileTypes:  /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
+    inlineFileTypes:  /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
+    imageTypes:  /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
+    minFileSize:  1,
+    maxFileSize:  10000000, //10MB
+    storage: {
+      type: 'local'
+    },
+    useSSL: config.https
+  };
+  var uploader = require('blueimp-file-upload-expressjs')(options);
+  // Make tmp directory
+  mkdirp(options.tmpDir, function (err) {
+    // Make upload directory
+    mkdirp(options.uploadDir, function (err) {
+      //Make the upload
+      uploader.post(req, res, function (obj) {
+
+        if(obj.files[0].error) {
+          console.log(obj.files[0].error);
+          res.status(400).send(obj.files[0].error);
+        }
+        else {
+          //Process images
+          async.waterfall([
+            //Open the image
+            function(done) {
+              lwip.open(options.uploadDir + '/' + obj.files[0].name, function(err, image){
+                done(err, image);
+              });
+            },
+            //Create orginal jpg file
+            function(image, done) {
+              image.batch()
+              .writeFile(options.uploadDir + 'original.jpg', 'jpg', {quality: 90}, function(err, image, res){
+                done(err, image);
+              });
+            },
+            //Delete the uploaded file
+            function(image, done) {
+              fs.unlink(options.uploadDir + '/' + obj.files[0].name, function (err) {
+                done(err, image);
+              });
+            },
+            //Make the thumbnails
+            function(image, done) {
+
+              // Note that each spawns these functions in order but they are processed asynchronously
+              _.each([512, 256, 128, 64, 32], function(size, index, list) {
+
+                lwip.open(options.uploadDir + 'original.jpg', function(err, image){
+                  if(!err) {
+                    var square = Math.min(image.width(), image.height());
+                    image.batch()
+                    .crop(square, square)
+                    .resize(size, size)
+                    .writeFile(options.uploadDir + size +'.jpg', 'jpg', {quality: 90}, function(err, image){
+
+                      // Shorten list so we can keep track on processed count (doesn't keep track on WHICH sizes has been processed)
+                      list.pop();
+
+                      // Finish on errors & when list is empty (=all sizes done)
+                      if(err || list.length === 0) {
+                        done(err);
+                      }
+                    });
+                  }
+                  else {
+                    done(err);
+                  }
+                });
+              });
+
+            },
+            //Send response
+            function(done) {
+              res.send(JSON.stringify(obj));
+            }
+          ], function(err) {
+            if (err) {
+              return res.status(400).send({
+                message: errorHandler.getErrorMessage(err)
+              });
+            }
+          });
+        }
+      });
+
+    });
+  });
+};
+
+
+
+/**
+* Update
+*/
 exports.update = function(req, res) {
   async.waterfall([
 
