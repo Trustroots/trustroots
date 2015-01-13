@@ -20,7 +20,7 @@ echo "Done: $KEY_FILE"
 openssl req -new -key "$KEY_FILE" -out "$CSR_FILE"
 openssl x509 -req -days 9999 -in "$CSR_FILE" -signkey "$KEY_FILE" -out "$CER_FILE"
 echo "Done: $CER_FILE"
-rm "$CERT_PATH/$CSR_FILE"
+rm "$CSR_FILE"
 chmod 600 "$KEY_FILE" "$CER_FILE"
 
 echo ""
