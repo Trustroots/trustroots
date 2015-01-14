@@ -37,6 +37,7 @@ module.exports = function(db) {
   app.locals.description = config.app.description;
   app.locals.keywords = config.app.keywords;
   app.locals.facebookAppId = config.facebook.clientID;
+  app.locals.newrelic = config.newrelic.enabled;
   app.locals.GAcode = config.GA.code;
   app.locals.jsFiles = config.getJavaScriptAssets();
   app.locals.cssFiles = config.getCSSAssets();

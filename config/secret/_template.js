@@ -58,6 +58,7 @@ module.exports = {
     }
   },
   newrelic: {
+    enabled: false,
     app_name: ['Trustroots'],
     license_key: 'NEWRELIC_KEY',
     logging_level: 'info'

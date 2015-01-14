@@ -3,13 +3,16 @@
 /**
  * Module dependencies.
  */
-if(process.env.NODE_ENV === 'production') {
-  var newrelic = require('newrelic');
-}
-
 var init = require('./config/init')(),
     config = require('./config/config'),
     mongoose = require('mongoose');
+
+/* NewRelic monitoring
+ * @link http://newrelic.com/
+ */
+if(process.env.NODE_ENV === 'production' && config.newrelic.enabled === true) {
+  var newrelic = require('newrelic');
+}
 
 /**
  * Main application entry file.
@@ -44,4 +47,4 @@ var jobSchedule = require('./config/agenda');
 jobSchedule.setupJobs();
 
 // Logging initialization
-console.log('MEAN.JS application started on port ' + config.port);
+console.log('Trustroots started on port ' + config.port);
