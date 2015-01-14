@@ -3,10 +3,11 @@
 /* This declares to JSHint that 'settings' and 'jQuery' are global variables: */
 /*global settings:false */
 /*global jQuery:false */
+/*global flashTimeout:false */
 
 
-angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$location', 'leafletBoundsHelpers', 'OffersBy', 'Offers', 'Authentication',
-  function($scope, $rootScope, $http, $timeout, $state, $stateParams, $location, leafletBoundsHelpers, OffersBy, Offers, Authentication) {
+angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$location', 'leafletBoundsHelpers', 'OffersBy', 'Offers', 'Authentication', 'messageCenterService',
+  function($scope, $rootScope, $http, $timeout, $state, $stateParams, $location, leafletBoundsHelpers, OffersBy, Offers, Authentication, messageCenterService) {
 
     // If user is not signed in then redirect to sign in form
     if (!Authentication.user) $location.path('signin');
@@ -112,16 +113,17 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
         description: this.offer.description,
         noOfferDescription: this.offer.noOfferDescription,
         location: [ parseFloat($scope.center.lat), parseFloat($scope.center.lng) ],
-        maxGuests: this.offer.maxGuests,
+        maxGuests: parseInt(this.offer.maxGuests),
       });
 
       offer.$save(function(response) {
         // Done!
         $scope.isLoading = false;
         $state.go('profile');
-      }, function(errorResponse) {
+      }, function(err) {
         $scope.isLoading = false;
-        $scope.error = errorResponse.data.message;
+        var errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
+        messageCenterService.add('danger', errorMessage, { timeout: flashTimeout });
       });
 
     };
