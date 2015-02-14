@@ -1,5 +1,6 @@
 **Check https://github.com/Trustroots/trustroots/wiki/Volunteering**
 
+Trustroots is implemented in [MEAN](http://mean.io/#!/), Mongo, Express, Angular, Node.
 
 ### Git workflow for contributors
 
