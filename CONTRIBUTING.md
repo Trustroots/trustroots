@@ -31,7 +31,8 @@ Project has [.editorconfig](https://github.com/Trustroots/trustroots/blob/master
 - Use camelCase for identifiers. Functions and variable names should be named like `doAThing`, not `do_a_thing`.
 
 ### JS
-- _**TODO**_
+- See [Angular style guide](https://github.com/mgechev/angularjs-style-guide)
+- Somewhat along the lines of [Google JavaScript style guide](http://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml)
 
 ### CSS/LESS
 - Use [LESS CSS](http://lesscss.org/) for CSS.
