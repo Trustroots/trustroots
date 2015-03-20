@@ -1,44 +1,31 @@
-# Trustroots
+# [Trustroots.org](https://www.trustroots.org/)
 _Hospitality exchange community for hitchhikers and other travellers._
-
-[Trustroots.org](https://www.trustroots.org/)
 
 ![Trustroots logo](https://raw.githubusercontent.com/Trustroots/trustroots/master/public/modules/core/img/logo/color-green.png)
 
 ## Volunteering
-* You don't have the be a coder to participate. Check [volunteers page](https://github.com/Trustroots/trustroots/wiki/Volunteering) for more info.
-* [Drop us a message](http://ideas.trustroots.org/contact/)
-* Join [#trustroots](http://webchat.freenode.net/?channels=trustroots) on Freenode chat
-* Follow us on [Twitter](https://twitter.com/trustroots) and [Facebook](https://www.facebook.com/trustroots.org)
+* You don't have the be a programmer to participate. Check [volunteers page](https://github.com/Trustroots/trustroots/wiki/Volunteering) for more info.
 
 ## Development
-* [Check our docs](https://github.com/Trustroots/trustroots/wiki)
-* See [documentation](http://meanjs.org/docs.html) for MEAN.js boilerplate
-* Install [EditorConfig](http://editorconfig.org/) to your IDE if possible
+Check [development page](https://github.com/Trustroots/trustroots/wiki/Development) to get started.
 
-### Prerequisites
-Make sure you have installed all these prerequisites:
-* [Node.js](http://www.nodejs.org/download/) and the npm package manager.
-* [MongoDB](http://www.mongodb.org/downloads), version 2.6 (2.2 is too old)
-* [Bower](http://bower.io/)      `npm -g install bower`
-* [Grunt](http://gruntjs.com/)   `npm -g install grunt-cli`
-
-### Installation
-1. Clone the repository: `git clone https://github.com/Trustroots/trustroots.git trustroots`
-2. Install dependencies by running this inside **trustroots** folder: `npm install`. Note that if you run npm with sudo, it might skip installing frontend assets. You can run it manually: `bower install`.
-3. Make sure MongoDb is running on the default port (27017)
-4. Copy config _template to develpment: `cp ./config/secret/_template.js ./config/secret/development.js` — add any configurations you want to keep out of version control here. Many features rely on sending emails, so add settings to the `mailer` section. See [nodemailer smtp usage](https://github.com/andris9/nodemailer-smtp-transport#usage) and note that it has pre filled settings for [some services](https://github.com/andris9/nodemailer-smtp-transport#using-well-known-services).
-5. Finally run grunt default task: `grunt`
-
-Application should run on the 3000 port in development mode. Open [http://localhost:3000](http://localhost:3000) in your browser.
+## Installing
+We have two major ways of running the software: trough Vagrant box (less work but runs slower) or by installing locally (more work but runs faster).
 
 See [troubleshooting](https://github.com/Trustroots/trustroots/wiki/Troubleshooting) if you encounter errors.
 
+### Installing with Vagrant
+Easiest and quickest way to get started is with Vagrant. See [INSTALL-VAGRANT.md](INSTALL-VAGRANT.md) for further details. Since it's wrapped in a virtual container, it obviously runs slower.
+
+### Installing locally
+Installing the stack on your localhost and serving it with NodeJS. More config, but runs super fast. See [INSTALL.md](INSTALL.md) for details.
+
 ### Fill database with test users and offers
 1. Make sure the collections offers and users are empty, in order to avoid duplicate values.
-2. Run `node scripts/fillTestData.js 1000` (for 1000 users and offers).
-3. The script will create the users and the offers. It can take some time, it will tell you when it's finished.
-4. To see the result run `grunt` and log in trustroots with user: trout and password: password.
+2. (If you develop with Vagrant, login to your box by `vagrant ssh` first.)
+3. Run `node scripts/fillTestData.js 1000` (for 1000 users and offers).
+4. The script will create the users and the offers. It can take some time, it will tell you when it's finished.
+5. To see the result, log in with user `trout` and password `password`.
 
 ## License
 [The MIT License](LICENSE.md)

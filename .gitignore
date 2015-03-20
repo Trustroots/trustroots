@@ -26,6 +26,7 @@ npm-debug.log
 node_modules/
 .bower-*/
 .grunt
+.vagrant
 
 # App
 public/lib
@@ -48,6 +49,8 @@ scripts/*
 !scripts/generate-ssl-certs.sh
 !scripts/fillTestData.js
 !scripts/cities.json
+!scripts/setup-vagrant.sh
+!scripts/vagrantup
 
 # Logs
 logs
