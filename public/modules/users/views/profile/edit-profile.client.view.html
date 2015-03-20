@@ -158,7 +158,14 @@
                 <label for="description" class="panel-heading">About me</label>
                 <div class="panel-body profile-description">
                   <div class="form-group">
-                    <div id="description" ng-model="user.description" medium-editor options='{"placeholder": "Description", "buttons": ["bold", "italic", "underline", "anchor", "quote", "unorderedlist"]}'></div>
+                    <div id="description" aria-describedby="descriptionHelp" ng-model="user.description" medium-editor options='{"placeholder": "Description", "buttons": ["bold", "italic", "underline", "anchor", "quote", "unorderedlist"]}'></div>
+                  </div>
+                </div>
+                <div class="panel-footer">
+                  <div id="descriptionHelp" class="help-block">
+                    Help other people get to know you by telling about your life and things you like.
+                    <br><br>
+                    <small>Highlight text to add links or change its appearance.</small>
                   </div>
                 </div>
               </div>
