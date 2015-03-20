@@ -1,13 +1,15 @@
-# humanstxt.org/
-# The humans responsible
+# humanstxt.org
+# https://www.trustroots.org/#!/team
 
-# CORE TEAM
+# THE CORE TEAM
 
     Mikael -- mikaelkorpela.fi
     Callum -- callum-macdonald.com
     Kasper -- kaspe.re
+    Natalia
+    Carlos
 
-# THANKS
+# KUDOS!
 
     Rémi
     Aurimas
