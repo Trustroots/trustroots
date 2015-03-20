@@ -11,16 +11,17 @@
 1. Clone the repository: `git clone https://github.com/Trustroots/trustroots.git trustroots && cd trustroots`
 2. Type `bash scripts/setup-vagrant.sh`.
 3. Install will ask for your password to add "trustroots.dev" to your hosts file.
-To skip this and use [http://192.168.33.10/](http://192.168.33.10/) instead,
-set `config.hostmanager.enabled = false` at [Vagrant file](Vagrantfile) and change domain also to `scripts/vagrantup/nginx_trustroots_dev.conf`.
-You can [modify your sudoers file](https://github.com/smdahlen/vagrant-hostmanager#passwordless-sudo)
-to stop Vagrant asking for password each time.
 4. Open [http://trustroots.dev/](http://trustroots.dev/) in your browser.
 
 You can login with username `trout` and password `password`.
 
 After setup your virtual machine is running. Suspend the virtual machine by typing `vagrant suspend`.
 When you're ready to begin working again, just run `vagrant up`.
+
+To use [http://192.168.33.10/](http://192.168.33.10/) instead of "trustroots.dev" hostname,
+set `config.hostmanager.enabled = false` at [Vagrant file](Vagrantfile) and change domain also to `scripts/vagrantup/nginx_trustroots_dev.conf`.
+You can [modify your sudoers file](https://github.com/smdahlen/vagrant-hostmanager#passwordless-sudo)
+to stop Vagrant asking for password each time.
 
 ### Vagrant box
 We're using [Phusion open](https://github.com/phusion/open-vagrant-boxes) Ubuntu 14.04 basebox.
