@@ -225,7 +225,7 @@ exports.threadByUser = function(req, res, next, userId) {
 
       var messagesCleaned = [];
 
-      if(req.messages && req.messages.length > 0) {
+      if(messages && messages.length > 0) {
         // Sanitize each outgoing message's contents
         messages.forEach(function(message) {
           message.content = sanitizeHtml(message.content, exports.messageSanitizeOptions);
