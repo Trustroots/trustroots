@@ -18,6 +18,8 @@ You can login with username `trout` and password `password`.
 After setup your virtual machine is running. Suspend the virtual machine by typing `vagrant suspend`.
 When you're ready to begin working again, just run `vagrant up`.
 
+To compile+watch assets, run `grunt watch` (or `grunt build` to compile once) right after running `vagrant up`.
+
 To use [http://192.168.33.10/](http://192.168.33.10/) instead of "trustroots.dev" hostname,
 set `config.hostmanager.enabled = false` at [Vagrant file](Vagrantfile) and change domain also to `scripts/vagrantup/nginx_trustroots_dev.conf`.
 You can [modify your sudoers file](https://github.com/smdahlen/vagrant-hostmanager#passwordless-sudo)
