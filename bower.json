@@ -16,7 +16,7 @@
     "angular-moment": "~0.8.3",
     "angular-medium-editor": "~0.0.6",
     "angular-socket-io": "~0.7.0",
-    "angular-perfect-scrollbar": "0.0.3",
+    "angular-perfect-scrollbar": "https://github.com/lfarran/angular-perfect-scrollbar/archive/master.zip",
     "angular-ui-select": "~0.9.5",
     "angular-leaflet-directive": "~0.7.10",
     "angular-waypoints": "~1.0.1",

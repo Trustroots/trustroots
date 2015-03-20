@@ -21,7 +21,6 @@ module.exports = {
     lib: {
       css: [
           'public/lib/medium-editor/dist/css/medium-editor.css',
-          'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
           'public/lib/leaflet/dist/leaflet.css'
       ],
       js: [
@@ -41,8 +40,7 @@ module.exports = {
         'public/lib/medium-editor/dist/js/medium-editor.min.js',
         'public/lib/angular-medium-editor/dist/angular-medium-editor.min.js',
         //'public/lib/angular-socket-io/socket.min.js',
-        'public/lib/perfect-scrollbar/min/jquery.mousewheel.min.js', // @todo: is this really needed?
-        'public/lib/perfect-scrollbar/min/perfect-scrollbar.min.js',
+        'public/lib/perfect-scrollbar/js/min/perfect-scrollbar.jquery.min.js',
         'public/lib/angular-perfect-scrollbar/src/angular-perfect-scrollbar.js',
         'public/lib/leaflet/dist/leaflet.js',
         'public/lib/PruneCluster/dist/PruneCluster.min.js',
