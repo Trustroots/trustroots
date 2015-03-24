@@ -7,8 +7,8 @@ angular.module('core').factory('Languages', ['$window',
     service.get = function (type) {
       if (type === 'array'){
         var langs_arr = [];
-        for (var code in $window.languages) {
-          langs_arr[langs_arr.length] = {key: code, name: $window.languages[code]};
+        for (var key in $window.languages) {
+          langs_arr[langs_arr.length] = {key: key, name: $window.languages[key]};
         }
         return langs_arr;
       } else if (type === 'object'){
