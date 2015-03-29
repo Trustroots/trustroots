@@ -5,15 +5,44 @@
 /*global settings:false */
 /*global flashTimeout:false */
 
-angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', 'Languages', 'Users', 'Authentication', 'messageCenterService', '$upload',
-  function($scope, $modal, $http, $stateParams, $state, Languages, Users, Authentication, messageCenterService, $upload) {
+angular.module('users').controller('EditProfileController', ['$scope', '$modal', '$http', '$stateParams', '$state', 'Languages', 'Users', 'Authentication', 'messageCenterService', '$upload', '$window',
+  function($scope, $modal, $http, $stateParams, $state, Languages, Users, Authentication, messageCenterService, $upload, $window) {
 
     // If user is not signed in then redirect to login
     if (!Authentication.user) $state.go('signin');
 
     $scope.user = Authentication.user;
     $scope.profile = false;
+
+    /*
+     * Language selector
+     * Selectors expects language list to be in format:
+     *   [{ "key": "fre", "name": "French" }, { "key": "ger", "name": "German" }]
+     * but user.languages contains just codes:
+     *   ['fre', 'ger']
+     *
+     * decodeUserLanguages() formats array for Chosen selector
+     * encodeUserLanguages() formats array back to user.languages format
+     */
     $scope.languages = Languages.get('array');
+    $scope.userLanguages = [];
+    $scope.decodeUserLanguages = function() {
+      var langs_arr = [];
+      $scope.user.languages.forEach(function(key) {
+        langs_arr[langs_arr.length] = {key: key, name: $window.languages[key]};
+      });
+      $scope.userLanguages = langs_arr;
+    };
+    $scope.encodeUserLanguages = function() {
+      var langs_arr = [];
+      $scope.userLanguages.forEach(function(lang) {
+        langs_arr[langs_arr.length] = lang.key;
+      });
+      $scope.user.languages = langs_arr;
+    };
+
+    // Format user language list for Chosen selector
+    $scope.decodeUserLanguages();
 
     // Check if there are additional accounts
     $scope.hasConnectedAdditionalSocialAccounts = function(provider) {
@@ -68,6 +97,7 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
 
     // Update a user profile
     $scope.updateUserProfile = function(isValid) {
+      $scope.encodeUserLanguages();
       if (isValid) {
         $scope.success = $scope.error = null;
         var user = new Users($scope.user);

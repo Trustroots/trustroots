@@ -55,17 +55,14 @@
 
               <div class="form-group">
                 <label for="languages"><h4>Languages</h4></label>
-                <div repeat="language in languages">
-                  {{language}}
-                </div>
-                <div>
-                  <ui-select multiple ng-model="user.languages" reset-search-input="true">
-                    <ui-select-match placeholder="Type in languages...">{{$item.name}}</ui-select-match>
-                    <ui-select-choices repeat="language.key as language in languages | filter:$select.search">
-                      {{language.name}}
-                    </ui-select-choices>
-                  </ui-select>
-                </div>
+                <select multiple chosen
+                  id="languages"
+                  class="form-control"
+                  data-placeholder="Start typing..."
+                  no-results-text="'Not found: '"
+                  ng-model="userLanguages"
+                  ng-options="language.name for language in languages track by language.key">
+                </select>
               </div>
 
               <div class="form-group">
