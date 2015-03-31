@@ -17,6 +17,11 @@ echo ""
 echo "-------------------------------------------------------------------------"
 echo ""
 
+if [ -d "node_modules" ]; then
+    echo 'You probably want to rm -rf node_modules'
+    exit
+fi
+
 # Let's roll...
 vagrant plugin install vagrant-hostmanager
 
