@@ -9,7 +9,7 @@
 
 ## Install
 1. Clone the repository: `git clone https://github.com/Trustroots/trustroots.git trustroots && cd trustroots`
-2. Type `bash scripts/setup-vagrant.sh`.
+2. Type `bash scripts/vagrant-setup.sh`.
 3. Install will ask for your password to add "trustroots.dev" to your hosts file.
 4. Open [http://trustroots.dev/](http://trustroots.dev/) in your browser.
 
