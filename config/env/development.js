@@ -27,7 +27,9 @@ module.exports = {
         //],
       css: [
           'public/lib/medium-editor/dist/css/medium-editor.css',
-          'public/lib/leaflet/dist/leaflet.css'
+          'public/lib/leaflet/dist/leaflet.css',
+          //'public/lib/chosen/chosen.css',
+          'public/lib/angular-chosen-localytics/chosen-spinner.css'
       ],
       js: [
         // Non minified  versions
@@ -39,7 +41,6 @@ module.exports = {
         'public/lib/angular-sanitize/angular-sanitize.js',
         'public/lib/angular-ui-router/release/angular-ui-router.js',
         'public/lib/angular-ui-utils/ui-utils.js',
-        'public/lib/angular-ui-select/dist/select.js',
         'public/lib/angular-bootstrap/ui-bootstrap-tpls.js',
         'public/lib/moment/moment.js',
         'public/lib/angular-moment/angular-moment.js',
@@ -55,6 +56,8 @@ module.exports = {
         'public/lib/angular-waypoints/dist/angular-waypoints.all.js',
         'public/lib/ng-file-upload/angular-file-upload.js',
         'public/lib/message-center/message-center.js',
+        'public/lib/chosen/chosen.jquery.js',
+        'public/lib/angular-chosen-localytics/chosen.js',
       ]
     },
     less: [
