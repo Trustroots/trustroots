@@ -48,6 +48,8 @@ module.exports = {
         'public/lib/angular-waypoints/dist/angular-waypoints.all.min.js',
         'public/lib/ng-file-upload/angular-file-upload.min.js',
         'public/lib/message-center/message-center.js',
+        'public/lib/chosen/chosen.jquery.js',
+        'public/lib/angular-chosen-localytics/chosen.js'
       ]
     },
     less: [
