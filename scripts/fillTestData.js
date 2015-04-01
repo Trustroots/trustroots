@@ -51,7 +51,7 @@ var addUsers = function (index, max) {
   user.avatarSource = 'none';
   user.email = index+faker.internet.email();
   user.password = faker.internet.password();
-  user.username = index+user.firstName.toLowerCase()
+  user.username = index+user.firstName.toLowerCase().replace('\'', '');
 
   user.save(function(err) {
     if(err != null) console.log(err);
