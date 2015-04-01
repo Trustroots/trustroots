@@ -9,13 +9,13 @@ var init = require('../config/init')(),
     User = mongoose.model('User'),
     Offer = mongoose.model('Offer'),
     faker = require('faker'),
-    fs = require('fs');
+    fs = require('fs'),
+    cities = JSON.parse(fs.readFileSync('scripts/cities.json', 'utf8')),
+    status = ["yes", "maybe"];
 
 var random = function (max) {
   return Math.floor(Math.random() * max);
 };
-
-var status = ["yes", "maybe"];
 
 var randomizeLoaction = function () {
   var random =  Math.random();
@@ -35,9 +35,6 @@ var db = mongoose.connect(config.db, function(err) {
     console.log(err);
   }
 });
-
-var fs = require('fs');
-var cities = JSON.parse(fs.readFileSync('scripts/cities.json', 'utf8'));
 
 var addUsers = function (index, max) {
   var user = new User();
@@ -85,9 +82,14 @@ var addOffer = function (id, index, max) {
     if(err != null) console.log(err);
     else {
       saved++;
+      var percentage = Math.floor(((saved/max)*100));
       if(saved >= max) {
-        console.log("Finished! Log in with trout/password");
+        console.log('Finished with ' + max + ' rows! Log in with trout/password');
         process.exit(0);
+      }
+      // Print out every 10th percentage
+      else if( percentage % 10 === 0) {
+        console.log(percentage + ' done...')
       }
     }
   });
@@ -106,7 +108,7 @@ else {
   user.lastName = faker.name.lastName();
   user.displayName = user.firstName + ' ' + user.lastName;
   user.provider = 'local';
-  user.email = 'admin@email.com';
+  user.email = 'admin@example.tld';
   user.password = 'password';
   user.username = 'trout';
   user.avatarSource = 'none';
