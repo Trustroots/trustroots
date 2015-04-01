@@ -10,6 +10,7 @@
 echo ""
 echo "---------------------------------------------------------------------"
 echo "Setting up prerequisites..."
+echo "---------------------------------------------------------------------"
 echo ""
 # Somehow LC_ALL is missing from locale...
 # http://stackoverflow.com/questions/10134901/why-sudo-cat-gives-a-permission-denied-but-sudo-vim-works-fine#comment12992710_10134932
@@ -24,6 +25,7 @@ sudo apt-get install -q -y git build-essential
 echo ""
 echo "---------------------------------------------------------------------"
 echo "Installing NodeJS & NPM..."
+echo "---------------------------------------------------------------------"
 echo ""
 sudo apt-get install -q -y nodejs npm
 sudo ln -fs /usr/bin/nodejs /usr/local/bin/node
@@ -33,6 +35,7 @@ sudo ln -fs /usr/bin/nodejs /usr/local/bin/node
 echo ""
 echo "---------------------------------------------------------------------"
 echo "Installing Nginx..."
+echo "---------------------------------------------------------------------"
 echo ""
 sudo apt-get install -q -y nginx
 sudo mkdir -p /srv/logs/nginx
@@ -44,6 +47,7 @@ sudo ln -s /srv/trustroots/scripts/vagrantup/nginx_trustroots_dev.conf /etc/ngin
 echo ""
 echo "---------------------------------------------------------------------"
 echo "Installing MongoDB..."
+echo "---------------------------------------------------------------------"
 echo ""
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
 echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
@@ -56,6 +60,7 @@ sudo apt-get install -q -y mongodb-org
 echo ""
 echo "---------------------------------------------------------------------"
 echo "Installing Phusion Passenger..."
+echo "---------------------------------------------------------------------"
 echo ""
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 561F9B9CAC40B2F7
 sudo apt-get install apt-transport-https ca-certificates
@@ -75,6 +80,7 @@ sudo perl -pi -e 's/passenger_ruby \/usr\/bin\/ruby;/passenger_nodejs \/usr\/loc
 echo ""
 echo "---------------------------------------------------------------------"
 echo "Installing NodeJS tools..."
+echo "---------------------------------------------------------------------"
 echo ""
 npm install -g bower grunt-cli gulp yo generator-meanjs node-gyp bson
 
@@ -83,6 +89,7 @@ npm install -g bower grunt-cli gulp yo generator-meanjs node-gyp bson
 echo ""
 echo "---------------------------------------------------------------------"
 echo "Installing Node modules & generating assets..."
+echo "---------------------------------------------------------------------"
 echo ""
 cd /srv/trustroots/
 npm install
@@ -99,6 +106,7 @@ sudo cp /srv/trustroots/config/secret/_template.js /srv/trustroots/config/secret
 echo ""
 echo "---------------------------------------------------------------------"
 echo "Generating test content, this might take a while..."
+echo "---------------------------------------------------------------------"
 echo ""
 cd /srv/trustroots/
 NODE_ENV=development node scripts/fillTestData.js 10000
