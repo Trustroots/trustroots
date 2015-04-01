@@ -14,7 +14,7 @@
   "scripts": {
     "start": "grunt",
     "test": "grunt test",
-    "postinstall": "bower install --config.interactive=false"
+    "postinstall": "bower install --allow-root --config.interactive=false"
   },
   "dependencies": {
     "agenda": "^0.6.28",
