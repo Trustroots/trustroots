@@ -11,7 +11,10 @@ var init = require('../config/init')(),
     faker = require('faker'),
     fs = require('fs'),
     cities = JSON.parse(fs.readFileSync('scripts/cities.json', 'utf8')),
-    status = ["yes", "maybe"];
+    status = ["yes", "maybe"],
+    savedCounter = 0;
+
+console.log('Filling test data...');
 
 var random = function (max) {
   return Math.floor(Math.random() * max);
@@ -77,54 +80,66 @@ var addOffer = function (id, index, max) {
   offer.location = location;
   offer.locationFuzzy = location;
 
-
   offer.save(function(err) {
     if(err != null) console.log(err);
     else {
-      saved++;
-      var percentage = Math.floor(((saved/max)*100));
-      if(saved >= max) {
-        console.log('Finished with ' + max + ' rows! Log in with trout/password');
+      savedCounter++;
+      if(savedCounter >= max) {
+        console.log('Done with ' + max + ' dummy users!');
         process.exit(0);
-      }
-      // Print out every 10th percentage
-      else if( percentage % 10 === 0) {
-        console.log(percentage + ' done...')
       }
     }
   });
 }
 
-var saved = 0;
+// Create optional admin user
+var adminUsername = (process.argv[3] == null) ? false : process.argv[3];
 
+// Number of users is required
 if(process.argv[2] == null) {
   console.log("Please give a number of users to add");
 }
 else {
+  var numberOfUsers = process.argv[2];
 
-  var user = new User();
+  // Create admin user + regular users
+  if(adminUsername !== false) {
+    var adminUser = new User();
 
-  user.firstName = faker.name.firstName();
-  user.lastName = faker.name.lastName();
-  user.displayName = user.firstName + ' ' + user.lastName;
-  user.provider = 'local';
-  user.email = 'admin@example.tld';
-  user.password = 'password';
-  user.username = 'trout';
-  user.avatarSource = 'none';
-  user.public = true;
-  user.avatarUploaded = false;
+    adminUser.firstName = faker.name.firstName();
+    adminUser.lastName = faker.name.lastName();
+    adminUser.displayName = adminUser.firstName + ' ' + adminUser.lastName;
+    adminUser.provider = 'local';
+    adminUser.email = 'admin+' + adminUsername + '@example.tld';
+    adminUser.password = 'password';
+    adminUser.username = adminUsername;
+    adminUser.avatarSource = 'none';
+    adminUser.public = true;
+    adminUser.avatarUploaded = false;
 
-  user.save(function(err) {
-    if(!err) {
-      var numberOfUsers = process.argv[2];
-      var i = 1;
-      console.log("Let's go!");
-      console.log("Don't be in a hurry. Trust the trout.");
-      addUsers(i, numberOfUsers);
+    adminUser.save(function(err) {
+      if(!err) {
+        console.log('Created admin user. Login with: ' + adminUsername + ' / password');
+      } else {
+        console.log('Could not add admin user ' + adminUsername)
+        console.log(err);
+      }
+
+      // Add regular users
+      console.log('Generating ' + numberOfUsers + ' users...');
+      if(numberOfUsers > 2000) {
+        console.log('...this might really take a while... go grab some coffee!');
+      }
+      addUsers(1, numberOfUsers);
+    });
+  }
+  else {
+    // Add regular users
+    console.log('Generating ' + numberOfUsers + ' users...');
+    if(numberOfUsers > 2000) {
+      console.log('...this might really take a while... go grab some coffee!');
     }
-    else {
-      console.log(err);
-    }
-  });
+    addUsers(0, numberOfUsers);
+  }
+
 }

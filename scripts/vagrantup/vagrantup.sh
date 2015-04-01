@@ -109,7 +109,7 @@ echo "Generating test content, this might take a while..."
 echo "---------------------------------------------------------------------"
 echo ""
 cd /srv/trustroots/
-NODE_ENV=development node scripts/fillTestData.js 10000
+NODE_ENV=development node scripts/fillTestData.js 5000 trout
 
 # Final restart
 sudo service nginx restart

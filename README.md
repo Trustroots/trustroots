@@ -22,10 +22,9 @@ Installing the stack on your localhost and serving it with NodeJS. More config, 
 
 ### Fill database with test users and offers
 1. Make sure the collections offers and users are empty, in order to avoid duplicate values.
-2. (If you develop with Vagrant, login to your box by `vagrant ssh` first.)
-3. Run `node scripts/fillTestData.js 1000` (for 1000 users and offers).
-4. The script will create the users and the offers. It can take some time, it will tell you when it's finished.
-5. To see the result, log in with user `trout` and password `password`.
+2. Run `node scripts/fillTestData.js 1000 username` _or_ if you use vagrant box, run: `vagrant ssh -c "node /srv/trustroots/scripts/fillTestData.js 1000 username"`. That will create 1000 users and hosting offers. Username is optional (a-z0-9) and will create user with that username as an admin.
+3. It'll run a while. Mongoose might complain about duplicates - just ignore.
+4. To see the result, log in with chosen username and password `password`.
 
 ## License
 [The MIT License](LICENSE.md)
