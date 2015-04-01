@@ -17,8 +17,9 @@ echo ""
 echo "-------------------------------------------------------------------------"
 echo ""
 
+# These files could be compiled for wrong OS
 if [ -d "node_modules" ]; then
-    echo 'You probably want to rm -rf node_modules'
+    echo "Error: You probably want to 'rm -rf node_modules' first"
     exit
 fi
 

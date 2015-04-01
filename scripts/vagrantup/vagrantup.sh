@@ -103,6 +103,9 @@ echo ""
 cd /srv/trustroots/
 NODE_ENV=development node scripts/fillTestData.js 1000
 
+# Final restart
+sudo service nginx restart
+
 # And we're done!
 echo ""
 echo ""
