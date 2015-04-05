@@ -51,7 +51,7 @@
       <div class="panel panel-default">
         <!--<label for="description" class="panel-heading">Description</label>-->
         <div class="panel-body">
-          <div class="offer-description" ng-class="{'is-not-empty': offer.description}" ng-hide="!offer" ng-model="offer.description" medium-editor options="{'placeholder': 'Tell about your couch...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+          <div class="offer-description" ng-class="{'is-not-empty': offer.description}" ng-hide="!offer" ng-model="offer.description" medium-editor options="{'placeholder': 'Tell us about your couch...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
         </div>
         <div class="panel-footer text-muted" ng-show="offer.description && offer.status === 'no'">
           <small>This description will be held here but won't be public until you can host again.</small>
@@ -71,8 +71,8 @@
           <!-- Search location -->
             <div class="form-group offer-map-location-search">
               <div class="input-group">
-                <label for="search-query" class="sr-only">Search places to map</label>
-                <input type="text" id="search-query" class="form-control" placeholder="Search places to map" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" />
+                <label for="search-query" class="sr-only">Search for places on the map</label>
+                <input type="text" id="search-query" class="form-control" placeholder="Search for places on the map" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" />
                 <span class="input-group-btn">
                   <button type="button" class="btn btn-inverse" ng-click="searchAddress()" ng-disabled="searchQuerySearching">
                     <i class="fa fa-search" ng-show="searchQuerySearching === false"></i>
