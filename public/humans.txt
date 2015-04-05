@@ -4,7 +4,7 @@
 # THE CORE TEAM
 
     Mikael -- mikaelkorpela.fi
-    Callum -- callum-macdonald.com
+    Callum -- www.callum-macdonald.com
     Kasper -- kasper.re
     Natalia
     Carlos
