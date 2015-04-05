@@ -30,10 +30,10 @@ Install the stack on your localhost and run NodeJS. This approach takes a little
 
 There's a script that can generate mock user data. It's highly recommended you run this script after installation, that way you'll have something to look at.
 
-1. Make sure the collections offers and users are empty, in order to avoid duplicate values.
-2. Run `node scripts/fillTestData.js 1000 username` _or_ if you use vagrant box, run: `vagrant ssh -c "node /srv/trustroots/scripts/fillTestData.js 1000 username"`. That will create 1000 users and hosting offers. Username is optional (a-z0-9) and will create user with that username as an admin.
-3. It'll run a while. Mongoose might complain about duplicates - just ignore.
-4. To see the result, log in with chosen username and password `password`.
+1. Make sure the collections offers and users are empty, in order to avoid duplicate values. This is the default on a new install.
+2. Run `node scripts/fillTestData.js 1000 username` _or_ if you use vagrant box, run: `vagrant ssh -c "node /srv/trustroots/scripts/fillTestData.js 1000 username"`. That will create 1000 users and hosting offers. Username is optional (a-z0-9) and will create a user with that username as an admin.
+3. It can take up to 5 minutes. Mongoose might complain about duplicates - just ignore these errors.
+4. To see the result, log in with your chosen username and password `password`.
 
 ## License
 
