@@ -9,10 +9,9 @@ module.exports = {
   assets: {
   	lib: {
   		css: [
-  		  'public/lib/medium-editor/dist/css/medium-editor.css',
-  		  'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
-  		  'public/lib/leaflet/dist/leaflet.css',
-  		  'public/lib/leaflet.markercluster/dist/MarkerCluster.css'
+          	'public/lib/medium-editor/dist/css/medium-editor.css',
+          	'public/lib/leaflet/dist/leaflet.css',
+          	'public/lib/angular-chosen-localytics/chosen-spinner.css'
   		],
   		js: [
         	// Non minified  versions
