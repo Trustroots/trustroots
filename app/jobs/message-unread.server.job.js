@@ -111,13 +111,15 @@ exports.checkUnreadMessages = function(agenda) {
           var smtpTransport = nodemailer.createTransport(config.mailer.options);
           var url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
+          var emailSignature = '--\n\rTrustroots\n\r' + url + '\n\rSupport form: http://ideas.trustroots.org/contact/\n\rSupport email: hello@trustroots.org\n\r';
+
           // Loop users
           users.forEach(function(user) {
             smtpTransport.sendMail({
               to: user.email,
               from: 'Trustroots <' + config.mailer.from + '>',
               subject: 'You have unread message(s)',
-              text: 'You have unread messages at Trustroots.\n\r\n\rTo read them, go to ' + url + '/#!/messages\n\r\n\r-- \n\r' + url
+              text: 'You have unread messages at Trustroots.\n\r\n\rTo read them, go to ' + url + '/#!/messages\n\r\n\r' + emailSignature
             });
           });
 
