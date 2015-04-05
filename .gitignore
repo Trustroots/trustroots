@@ -50,7 +50,7 @@ scripts/*
 !scripts/generate-ssl-certs.sh
 !scripts/fillTestData.js
 !scripts/cities.json
-!scripts/setup-vagrant.sh
+!scripts/vagrant-setup.sh
 !scripts/vagrantup
 
 # Logs
