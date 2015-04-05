@@ -49,11 +49,17 @@ module.exports = {
   			//'public/modules/**/css/*.css'
   	],
   	js: [
-  		'public/config.js',
-  		'public/application.js',
-  		'public/modules/*/*.js',
-  		'public/modules/*/*[!tests]*/*.js'
-  	]
+			'public/config.js',
+			'public/application.js',
+			'public/modules/*/*.module.js',
+			'public/modules/*/services/*.js',
+			'public/modules/*/*.js',
+			'public/modules/*/*[!tests]*/*.js'
+  	],
+		tests: [
+			'public/lib/angular-mocks/angular-mocks.js',
+			'public/modules/*/tests/*.js'
+		]
   },
 	facebook: {
 		clientID: process.env.FACEBOOK_ID || 'APP_ID',
