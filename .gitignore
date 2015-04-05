@@ -38,6 +38,7 @@ tmp
 # Configs
 config/secret/*
 !config/secret/_template.js
+!config/secret/test.js
 
 # Deploy & maintenance scripts
 scripts/*
