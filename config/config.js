@@ -9,7 +9,7 @@ var _ = require('lodash'),
 /**
  * Load app configurations
  */
-module.exports = _.extend(
+module.exports = _.merge(
   require('./env/all'),
   require('./env/' + process.env.NODE_ENV),
   require('./secret/' + process.env.NODE_ENV) || {}
