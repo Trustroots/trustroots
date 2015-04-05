@@ -207,6 +207,8 @@ module.exports = function(grunt) {
   // Build task(s).
   grunt.registerTask('build', ['lint', 'loadConfig', 'less:production', 'concat:css', 'ngAnnotate', 'uglify']);
 
-  // Test task.
+  // Test tasks.
   grunt.registerTask('test', ['env:test', 'mochaTest', 'karma:unit']);
+  grunt.registerTask('test.mocha', ['env:test', 'mochaTest']);
+  grunt.registerTask('test.karma', ['env:test', 'karma:unit']);
 };
