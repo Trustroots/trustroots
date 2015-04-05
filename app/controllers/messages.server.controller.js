@@ -6,6 +6,7 @@
 var mongoose = require('mongoose'),
     async = require('async'),
     _ = require('lodash'),
+    config = require('../../config/config'),
     errorHandler = require('./errors'),
     sanitizeHtml = require('sanitize-html'),
     userHandler = require('./users'),
@@ -103,7 +104,7 @@ exports.send = function(req, res) {
     } else {
 
       // If the sender has an empty description (<140) return an error
-      if (sender.description.length < 140) {
+      if (sender.description.length < config.profileMinimumLength) {
         return res.status(400).send({
           message: 'Please fill out your profile before you send messages.'
         });
