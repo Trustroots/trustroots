@@ -56,6 +56,7 @@ var UserSchema = new Schema({
     default: '',
     validate: [validateLocalStrategyProperty, 'Please fill in your last name']
   },
+  /* This is (currently) generated in users.porfile.server.controller.js */
   displayName: {
     type: String,
     trim: true
@@ -66,16 +67,16 @@ var UserSchema = new Schema({
     unique: 'Email already exists',
     lowercase: true,
     default: '',
-    validate: [validateLocalStrategyProperty, 'Please fill in your email'],
-    match: [/.+\@.+\..+/, 'Please fill a valid email address']
+    validate: [validateLocalStrategyProperty, 'Please enter your email'],
+    match: [/.+\@.+\..+/, 'Please enter a valid email address']
   },
-  // New email is stored here until it is confirmed
+  /* New email is stored here until it is confirmed */
   emailTemporary: {
     type: String,
     trim: true,
     lowercase: true,
     default: '',
-    match: [/.+\@.+\..+/, 'Please fill a valid email address']
+    match: [/.+\@.+\..+/, 'Please enter a valid email address']
   },
   tagline: {
     type: String,
@@ -126,6 +127,8 @@ var UserSchema = new Schema({
   salt: {
     type: String
   },
+  /* All this provider stuff relates to oauth logins, will always be local for
+     Trustroots, comes from boilerplate */
   provider: {
     type: String,
     required: 'Provider is required'
@@ -139,6 +142,7 @@ var UserSchema = new Schema({
     }],
     default: ['user']
   },
+  /* The last time the user was logged in (uncertain if its live right now 5 Apr 2015) */
   seen: {
     type: Date
   },
@@ -166,6 +170,9 @@ var UserSchema = new Schema({
   emailToken: {
     type: String
   },
+  /* New users are public=false until they validate their email. If public=false,
+     users can't email other users, can't be seen by other users. They are
+     effectively black holed... */
   public: {
     type: Boolean,
     default: false
