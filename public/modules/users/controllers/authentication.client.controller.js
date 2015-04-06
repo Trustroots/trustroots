@@ -31,9 +31,9 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$http
 
     // Make sure username is lowercase, as we require it to be at signup
     //$scope.credentials.username = $scope.credentials.username.toLowerCase();
-    $scope.fixCredientals = function(credientals) {
-      if(credientals.username) credientals.username = credientals.username.toLowerCase();
-      return credientals;
+    $scope.fixCredentials = function(credentials) {
+      if(credentials.username) credentials.username = credentials.username.toLowerCase();
+      return credentials;
     };
 
     /**
@@ -42,7 +42,7 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$http
     $scope.signin = function() {
       $scope.isLoading = true;
 
-      $http.post('/auth/signin', $scope.fixCredientals($scope.credentials)).success(function(response) {
+      $http.post('/auth/signin', $scope.fixCredentials($scope.credentials)).success(function(response) {
         $scope.isLoading = false;
 
         // If successful we assign the response to the global user model
