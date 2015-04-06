@@ -27,6 +27,7 @@ node_modules/
 .bower-*/
 .grunt
 .vagrant
+*.coffee.js
 
 # App
 public/lib
