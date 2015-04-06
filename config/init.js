@@ -34,7 +34,11 @@ module.exports = function() {
   /**
    * Add our server node extensions
    */
+  require.extensions['.coffee.js'] = require.extensions['.js'];
   require.extensions['.server.controller.js'] = require.extensions['.js'];
+  require.extensions['.server.controller.coffee.js'] = require.extensions['.js'];
   require.extensions['.server.model.js'] = require.extensions['.js'];
+  require.extensions['.server.model..coffee.js'] = require.extensions['.js'];
   require.extensions['.server.routes.js'] = require.extensions['.js'];
+  require.extensions['.server.routes.coffee.js'] = require.extensions['.js'];
 };
