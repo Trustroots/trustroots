@@ -20,6 +20,7 @@ var OfferSchema = new Schema({
     default: '',
     trim: true
   },
+  // This is shown on profiles when users say they are not hosting
   noOfferDescription: {
     type: String,
     default: '',
