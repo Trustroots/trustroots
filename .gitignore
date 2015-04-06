@@ -39,7 +39,6 @@ tmp
 config/secret/*
 !config/secret/_template.js
 
-
 # Logs
 logs
 log
