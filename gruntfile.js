@@ -4,7 +4,8 @@ module.exports = function(grunt) {
   // Unified Watch Object
   var watchFiles = {
     serverViews: ['app/views/**/*.*'],
-    serverJS: ['gruntfile.js', 'server.js', 'config/**/*.js', 'app/**/*.js'],
+    serverJS: ['gruntfile.js', 'server.js', 'config/**/*.js', 'app/**/*[!.coffee].js'],
+    serverCoffee: ['app/**/*.coffee'],
     clientViews: ['public/modules/**/views/**/*.html'],
     clientJS: ['public/js/*.js', 'public/modules/**/*.js'],
     clientCSS: ['public/dist/application.css'],
@@ -28,6 +29,10 @@ module.exports = function(grunt) {
         options: {
           livereload: true
         }
+      },
+      serverCoffee: {
+        files: watchFiles.serverCoffee,
+        tasks: ['coffee:compile']
       },
       clientViews: {
         files: watchFiles.clientViews,
@@ -63,6 +68,15 @@ module.exports = function(grunt) {
         options: {
           jshintrc: true
         }
+      }
+    },
+    coffee: {
+      compile: {
+        files: grunt.file.expandMapping('app/**/*.coffee', '', {
+          rename: function(destBase, destPath, options) {
+            return destBase + destPath.replace(/\.coffee$/, '.coffee.js');
+          }
+        })
       }
     },
     less: {
@@ -122,7 +136,7 @@ module.exports = function(grunt) {
         options: {
           nodeArgs: ['--debug'],
           ext: 'js,html',
-          watch: watchFiles.serverViews.concat(watchFiles.serverJS)
+          watch: watchFiles.serverViews.concat(watchFiles.serverJS, watchFiles.serverCoffee)
         }
       }
     },
@@ -193,7 +207,7 @@ module.exports = function(grunt) {
   });
 
   // Default development task(s).
-  grunt.registerTask('default', ['loadConfig', 'less:development', 'concat:css', 'debug']);
+  grunt.registerTask('default', ['loadConfig', 'coffee', 'less:development', 'concat:css', 'debug']);
 
   // Default production task(s).
   grunt.registerTask('production', ['env:production', 'loadConfig', 'less:production', 'concat:css', 'ngAnnotate', 'uglify', 'concurrent:default']);
