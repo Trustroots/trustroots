@@ -39,19 +39,6 @@ tmp
 config/secret/*
 !config/secret/_template.js
 
-# Deploy & maintenance scripts
-scripts/*
-!scripts/update.sh
-!scripts/starter.sh
-!scripts/backup-db.sh
-!scripts/deploy.sh
-!scripts/s3backup.sh
-!scripts/generate-ssl-certs.sh
-!scripts/fillTestData.js
-!scripts/cities.json
-!scripts/vagrant-setup.sh
-!scripts/vagrantup
-
 # Logs
 logs
 log
