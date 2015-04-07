@@ -15,8 +15,8 @@ import re
 import signal
 
 #test_url = 'http://dev.trustroots.org/'
-#test_url = 'http://localhost:3000/'
-test_url = 'http://trustroots.dev/'
+test_url = 'http://localhost:3000/'
+# test_url = 'http://trustroots.dev/'
 
     
 
@@ -107,14 +107,14 @@ class TestSuite:
         self._wait_and_click(self.driver.find_element_by_id, 'signup-edit')
 
     def test_logout_signin(self):
-        self.driver.get(self.url + '/auth/signout')
+        self.driver.get(self.url + 'auth/signout')
         self._wait_and_click(self.driver.find_element_by_css_selector, 'a.btn-home-login')
         self.driver.find_element_by_id('username').send_keys(self.username)
         self.driver.find_element_by_id('password').send_keys(self.password)
         self._wait_and_click(self.driver.find_element_by_css_selector, 'button[type="submit"]')
 
     def test_logout_signin_email(self):
-        self.driver.get(self.url + '/auth/signout')
+        self.driver.get(self.url + 'auth/signout')
         self._wait_and_click(self.driver.find_element_by_css_selector, 'a.btn-home-login')
         self.driver.find_element_by_id('username').send_keys(self.email)
         self.driver.find_element_by_id('password').send_keys(self.password)
