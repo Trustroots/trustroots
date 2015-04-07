@@ -11,6 +11,7 @@ $RECYCLE.BIN/
 ._*
 *~
 
+
 # Icon must end with two \r.
 Icon
 
@@ -27,6 +28,7 @@ node_modules/
 .bower-*/
 .grunt
 .vagrant
+*.pyc
 
 # App
 public/lib
