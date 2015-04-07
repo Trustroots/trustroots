@@ -12,11 +12,15 @@ from selenium.common.exceptions import TimeoutException
 import time
 import sys
 import re
+import signal
 
-
-test_url = 'https://dev.trustroots.org/'
+#test_url = 'http://dev.trustroots.org/'
 #test_url = 'http://localhost:3000/'
-#test_url = 'http://trustroots.dev/'
+test_url = 'http://trustroots.dev/'
+
+    
+
+
 
 class Main:
   def __init__(self):
@@ -25,7 +29,6 @@ class Main:
         no_browserstack = 0
     except ImportError:
         no_browserstack = 1
-    no_browserstack = 1
 
     for cap in browsers:
         if cap['env'] == 'remote' and no_browserstack:
@@ -44,7 +47,7 @@ class Main:
             try:
                 self.t = TestSuite(driver, cap, test_url)
             except:
-                print sys.exc_info
+                print sys.exc_info()
             finally:
                 if cap['env'] == 'remote':
                     driver.quit()
@@ -56,13 +59,31 @@ class TestSuite:
         self.driver = driver
         self.cap = cap
         self.url = url
+
+        def signal_handler(signal, frame):
+            print('Handling Ctrl+C!')
+            if hasattr(self, 'driver') and self.driver:
+                print 'Trying driver.quit()'
+                self.driver.quit()
+            sys.exit(0)
+            
+        signal.signal(signal.SIGINT, signal_handler)
+
+
         try:
             self.run_tests()
         except Exception, e:
             print cap, e
+
+
         
     def run_tests(self):
+        self.username = 'tester' + str(time.time())[5:10]
         self.driver.get(self.url)
+        self.test_signup()
+        self.test_home_map()
+
+    def test_signup(self):
         if not "Trustroots" in self.driver.title:
             raise Exception("Unable to load page!")
         self._wait_and_click(self.driver.find_element_by_css_selector, 'a.btn-home-signup')
@@ -70,28 +91,17 @@ class TestSuite:
             raise Exception("Unable to load page!")
 
         self._wait_and_click(self.driver.find_element_by_id, 'firstName')
-        num = str(time.time())[5:10]
-        unique = 'trustroots-test-' + num + '@example.com' 
-        self.username = 'tester' + num
-        self.driver.find_element_by_id('email').send_keys(unique)
+        self.driver.find_element_by_id('email').send_keys(self.username + '@example.tld')
         self.driver.find_element_by_id('firstName').send_keys('Tester')
         self.driver.find_element_by_id('lastName').send_keys('Tester')
         self.driver.find_element_by_id('username').send_keys(self.username)
-        self.driver.find_element_by_id('password').send_keys('Tester' + num)
-        self._wait_and_click(self.driver.find_element_by_css_selector, 'button.btn-primary span')
-
+        self.driver.find_element_by_id('password').send_keys('Tester123')
+        self._wait_and_click(self.driver.find_element_by_css_selector, 'button[type="submit"]')
         self._wait_and_click(self.driver.find_element_by_id, 'signup-edit')
 
-
-        # what is wrong with these?
-        #self._assert_contains_regexp('find the email from Trustroots')
-        #self._assert_contains_regexp('Een uitdaging is gezelliger')
-        #self._wait_and_click(self.driver.find_element_by_id, 'delenVerstuur')
-
+    def test_home_map(self):
         self._wait_and_click(self.driver.find_element_by_css_selector, 'a.navbar-brand')
         self.driver.find_element_by_id('search-query').send_keys('Berlin' + Keys.RETURN)
-        # profile stuff
-        # self.driver.find_element_by_css_selector("a[href='/#!/profile//edit']").click()
         
     def _assert_contains_regexp(self, regexp):
         text_found = re.search(regexp, self.driver.page_source)
