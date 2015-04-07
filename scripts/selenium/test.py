@@ -29,6 +29,7 @@ class Main:
         no_browserstack = 0
     except ImportError:
         no_browserstack = 1
+    no_browserstack = 1
 
     for cap in browsers:
         if cap['env'] == 'remote' and no_browserstack:
@@ -72,16 +73,22 @@ class TestSuite:
 
         try:
             self.run_tests()
-        except Exception, e:
-            print cap, e
+        except:
+            print cap
+            print sys.exc_info()
+
 
 
         
     def run_tests(self):
         self.username = 'tester' + str(time.time())[5:10]
+        self.email = self.username + '@example.tld'
+        self.password = 'Tester123'
         self.driver.get(self.url)
         self.test_signup()
         self.test_home_map()
+        self.test_logout_signin()
+        self.test_logout_signin_email()
 
     def test_signup(self):
         if not "Trustroots" in self.driver.title:
@@ -91,13 +98,27 @@ class TestSuite:
             raise Exception("Unable to load page!")
 
         self._wait_and_click(self.driver.find_element_by_id, 'firstName')
-        self.driver.find_element_by_id('email').send_keys(self.username + '@example.tld')
         self.driver.find_element_by_id('firstName').send_keys('Tester')
         self.driver.find_element_by_id('lastName').send_keys('Tester')
         self.driver.find_element_by_id('username').send_keys(self.username)
-        self.driver.find_element_by_id('password').send_keys('Tester123')
+        self.driver.find_element_by_id('email').send_keys(self.email)
+        self.driver.find_element_by_id('password').send_keys(self.password)
         self._wait_and_click(self.driver.find_element_by_css_selector, 'button[type="submit"]')
         self._wait_and_click(self.driver.find_element_by_id, 'signup-edit')
+
+    def test_logout_signin(self):
+        self.driver.get(self.url + '/auth/signout')
+        self._wait_and_click(self.driver.find_element_by_css_selector, 'a.btn-home-login')
+        self.driver.find_element_by_id('username').send_keys(self.username)
+        self.driver.find_element_by_id('password').send_keys(self.password)
+        self._wait_and_click(self.driver.find_element_by_css_selector, 'button[type="submit"]')
+
+    def test_logout_signin_email(self):
+        self.driver.get(self.url + '/auth/signout')
+        self._wait_and_click(self.driver.find_element_by_css_selector, 'a.btn-home-login')
+        self.driver.find_element_by_id('username').send_keys(self.email)
+        self.driver.find_element_by_id('password').send_keys(self.password)
+        self._wait_and_click(self.driver.find_element_by_css_selector, 'button[type="submit"]')
 
     def test_home_map(self):
         self._wait_and_click(self.driver.find_element_by_css_selector, 'a.navbar-brand')
