@@ -21,5 +21,6 @@ module.exports = {
 	https: process.env.HTTPS || false,
 	templateEngine: 'swig',
 	sessionSecret: process.env.SESSION_SECRET || 'MEAN',
-	sessionCollection: 'sessions'
+	sessionCollection: 'sessions',
+	profileMinimumLength: 140 // Require User.profile.description to be >140 chars to send messages
 };

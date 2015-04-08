@@ -6,6 +6,7 @@
 var mongoose = require('mongoose'),
     async = require('async'),
     _ = require('lodash'),
+    config = require('../../config/config'),
     errorHandler = require('./errors'),
     sanitizeHtml = require('sanitize-html'),
     userHandler = require('./users'),
@@ -92,89 +93,110 @@ exports.send = function(req, res) {
   // take out socket instance from the app container, we'll need it later
   //var socketio = req.app.get('socketio');
 
-  var message = new Message(req.body);
-  message.userFrom = req.user;
-  message.read = false;
-  message.notified = false;
-
-  // Sanitize message contents
-  message.content = sanitizeHtml(message.content, exports.messageSanitizeOptions);
-
-  message.save(function(err) {
+  // If the sending user has an empty profile, reject the message
+  User.findById(req.user, 'description').exec(function(err, sender) {
+    // If we were unable to find the sender, return the error and stop here
     if (err) {
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
       });
+    // Otherwise, we found the sender
     } else {
 
-      // Create/upgrade Thread handle between these two users
-      var thread = new Thread();
-      thread.updated = Date.now();
-      thread.userFrom = message.userFrom;
-      thread.userTo = message.userTo;
-      thread.message = message;
-      thread.read = false;
+      // If the sender has an empty description (<140) return an error
+      if (sender.description.length < config.profileMinimumLength) {
+        return res.status(400).send({
+          message: 'Please fill out your profile before you send messages.'
+        });
+      }
 
-      // Convert the Model instance to a simple object using Model's 'toObject' function
-      // to prevent weirdness like infinite looping...
-      var upsertData = thread.toObject();
+      var message = new Message(req.body);
+      message.userFrom = req.user;
+      message.read = false;
+      message.notified = false;
 
-      // Delete the _id property, otherwise Mongo will return a "Mod on _id not allowed" error
-      delete upsertData._id;
+      // Sanitize message contents
+      message.content = sanitizeHtml(message.content, exports.messageSanitizeOptions);
 
-      // Do the upsert, which works like this: If no Thread document exists with
-      // _id = thread.id, then create a new doc using upsertData.
-      // Otherwise, update the existing doc with upsertData
-      // @link http://stackoverflow.com/a/7855281
-      Thread.update({
-        // User id's can be either way around in old thread handle, so we gotta test for both situations
-        $or: [
-          {
-            userTo: upsertData.userTo,
-            userFrom: upsertData.userFrom
-          },
-          {
-            userTo: upsertData.userFrom,
-            userFrom: upsertData.userTo
-          }
-        ]
-      },
-      upsertData,
-      { upsert: true },
-      function(err) {
+      message.save(function(err) {
         if (err) {
           return res.status(400).send({
             message: errorHandler.getErrorMessage(err)
           });
-        } /*else {
-          // Emit an event for all connected clients about new thread
-          socketio.sockets.emit('message.thread', thread);
-        }*/
+        } else {
+
+          // Create/upgrade Thread handle between these two users
+          var thread = new Thread();
+          thread.updated = Date.now();
+          thread.userFrom = message.userFrom;
+          thread.userTo = message.userTo;
+          thread.message = message;
+          thread.read = false;
+
+          // Convert the Model instance to a simple object using Model's 'toObject' function
+          // to prevent weirdness like infinite looping...
+          var upsertData = thread.toObject();
+
+          // Delete the _id property, otherwise Mongo will return a "Mod on _id not allowed" error
+          delete upsertData._id;
+
+          // Do the upsert, which works like this: If no Thread document exists with
+          // _id = thread.id, then create a new doc using upsertData.
+          // Otherwise, update the existing doc with upsertData
+          // @link http://stackoverflow.com/a/7855281
+          Thread.update({
+            // User id's can be either way around in old thread handle, so we gotta test for both situations
+            $or: [
+              {
+                userTo: upsertData.userTo,
+                userFrom: upsertData.userFrom
+              },
+              {
+                userTo: upsertData.userFrom,
+                userFrom: upsertData.userTo
+              }
+            ]
+          },
+          upsertData,
+          { upsert: true },
+          function(err) {
+            if (err) {
+              return res.status(400).send({
+                message: errorHandler.getErrorMessage(err)
+              });
+            } /*else {
+              // Emit an event for all connected clients about new thread
+              socketio.sockets.emit('message.thread', thread);
+            }*/
+          });
+
+          // We'll need some info about related users, populate some fields
+          message
+            .populate('userFrom', userHandler.userMiniProfileFields)
+            .populate({
+              path: 'userTo',
+              select: userHandler.userMiniProfileFields
+            }, function(err, message) {
+              if (err) {
+                return res.status(400).send({
+                  message: errorHandler.getErrorMessage(err)
+                });
+              } else {
+
+                // Emit an event for all connected clients about new message
+                //socketio.sockets.emit( 'message.sent', message );
+
+                // Finally res
+                res.json(message);
+              }
+            });
+
+        }
       });
 
-      // We'll need some info about related users, populate some fields
-      message
-        .populate('userFrom', userHandler.userMiniProfileFields)
-        .populate({
-          path: 'userTo',
-          select: userHandler.userMiniProfileFields
-        }, function(err, message) {
-          if (err) {
-            return res.status(400).send({
-              message: errorHandler.getErrorMessage(err)
-            });
-          } else {
-
-            // Emit an event for all connected clients about new message
-            //socketio.sockets.emit( 'message.sent', message );
-
-            // Finally res
-            res.json(message);
-          }
-        });
-
-    }
+    } // if User.findById else
   });
+
 };
 
 
