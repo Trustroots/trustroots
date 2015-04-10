@@ -1,10 +1,11 @@
 'use strict';
 
-angular.module('pages').controller('ContactController', ['$scope',
-  function($scope) {
+angular.module('pages').controller('ContactController', ['$scope', '$window',
+  function($scope, $window) {
 
     // Redirect to WP for now
-    window.location = 'http://ideas.trustroots.org/contact/';
+    // https://github.com/Trustroots/trustroots/issues/106
+    $window.location = 'http://ideas.trustroots.org/contact/';
 
   }
 ]);

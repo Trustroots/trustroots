@@ -40,6 +40,10 @@ angular.module('pages').config(['$stateProvider', '$urlRouterProvider',
       url: '/faq',
       templateUrl: 'modules/pages/views/faq.client.view.html'
     }).
+    state('foundation', {
+      url: '/foundation',
+      templateUrl: 'modules/pages/views/foundation.client.view.html'
+    }).
     state('media', {
       url: '/media',
       templateUrl: 'modules/pages/views/media.client.view.html'

@@ -6,3 +6,23 @@
     padding-bottom: 200px;
   }
 }
+
+.faq-question {
+  background-color: transparent;
+  &.faq-question-flash {
+    .animation-name(faqFlash);
+    .animation-duration(1000ms);
+    .animation-iteration-count(1);
+    .animation-timing-function(ease-in-out);
+  }
+}
+
+/* Chrome, Safari, Opera */
+@keyframes faqFlash {
+  from {background-color: lighten(@brand-secondary, 20%); }
+  to { background-color: transparent; }
+}
+@-webkit-keyframes faqFlash {
+  from {background-color: lighten(@brand-secondary, 20%); }
+  to { background-color: transparent; }
+}

@@ -9,93 +9,195 @@
   </div>
 </section>
 
-<section class="container container-spacer">
+<section class="container container-spacer" ng-controller="FaqController">
 
   <div class="row">
 
-    <div class="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
+    <div class="col-xs-12 col-sm-8 col-md-8">
 
-      <h3 id="is-trustroots-exclusively-for-hitchhikers">Is Trustroots exclusively for hitchhikers?</h3>
+      <div class="page-header page-header-first">
+        <h2>Site & community</h2>
+      </div>
+
+      <h3 class="faq-question" id="is-trustroots-exclusively-for-hitchhikers">Is Trustroots exclusively for hitchhikers?</h3>
       You're welcome to sign up if you've never hitchhiked; we don't exclusively focus on hitchhikers. In the initial phase we're focusing on getting especially hitchhikers on board and making the site ideal for that. Many people who hitchhike have a specific way of traveling that is not always well served by some websites. Hitchhikers are also traveling a lot more than the average Joe, which is a good way to spread the idea further. Our background is within Hitchhikers community and in <a href="http://hitchwiki.org/">Hitchwiki</a>. The site will obviously remain rather alternative and true to its roots, even when we introduce it to new communities.
       <br>
       We want to maintain the feeling of a small community and we have some technical ideas for doing this with the site. We'll soon add functionality that will make it convenient for people who prefer to host people from within their own communities (e.g. vegans, musicians), but it will always be possible to open your home to anyone on the site if you prefer.
 
       <br><br>
 
-      <h3 id="why-the-name-trustroots">Why the name Trustroots?</h3>
-      Back to the roots. Earthy. The art of asking — and trusting — is something we often experience while traveling. We also have some innovative ideas that can help building trust among people. Once the network is big enough we'd love to work with scientists to build something that can really make a difference through trust metrics.
-
-      <br><br>
-
-      <h3 id="what-is-your-legal-status">What's your legal status?</h3>
-      Good question. We're looking to set up a non profit in the European Union soon. <a ui-sref="contact">Contact us</a> if you have experience with this and you want to help.
-
-      <br><br>
-
-      <h3 id="are-you-going-to-sell-out">Are you going to sell out?</h3>
-      NO! We think it's a shame that former non profits have been sold to venture capital. We have high ideals and we've been running other big freegan projects for years. This is not a startup.
-
-      <br><br>
-
-      <h3 id="is-trustroots-alternative">Is Trustroots an alternative for CouchSurfing or BeWelcome?</h3>
-      Trustroots isn't on purpose an alternative to anything specifically. There are many people to whom Facebook, CouchSurfing or other tools aren't suitable for multitude of reasons. We encourage using any tools you wish in parallel. We are trying to make it easy to gather your contents from these sites also to Trustroots.
-
-      <br><br>
-
-      <h3 id="how-do-you-want-to-make-the-project-financially-sustainable">How do you want to make the project financially sustainable?</h3>
-      Donations and grants are the most likely ways. There are many inspiring organisations out there serving as great examples: <a href="https://www.warmshowers.org/">Warmshowers Foundation</a>, <a href="http://www.abgefahren-ev.de/">Abgefahren e.V.</a> (Hitchwiki), <a href="http://www.bevolunteer.net/">BeVolunteer</a>, <a href="http://www.servas.org/">Servas</a>, <a href="http://www.wwoof.net/">WWOOF</a> and many more. Again, if you have experience with this it would be great if you <a ui-sref="contact">contact us</a>.
-
-      <br><br>
-
-      <h3 id="who-decides-what-gets-done">Who decides what gets done?</h3>
-      Anyone can join us as a <a href="https://github.com/Trustroots/trustroots/wiki/Volunteering">volunteer</a>. We're huge fans of do-cracy and getting things done attitude. We have <a ui-sref="team">a core team</a> which is formed from the most active volunteers. There isn't voting or other buraucratic processes involved, but you get more responsibility by simply becoming active contributor and showing your communication skills. Great community values simple translation jobs just as much as highly skilled development. We'll aim to keep the entry level for volunteers as low as possible. No bureaucracy. Pragmatic approach. Trust.
-      <br>
-      That said, any well organized project needs efficient teams working on specific issues (such as <i>safety</i> or site's <i>features/UX</i>). Rather than building complicated voting mechanisms or other structures, we'll try to concentrate in fostering volunteers into responsible, skilled teams. It's also important to make sure everyone has the same goal and vision.
-
-      <br><br>
-
-      <h3 id="why-is-there-no-forum">Why is there no forum?</h3>
-      The practical answer: it takes time to set up a forum and even more time to keep it spam-free. The less practical answer: In our long-term and short-term experience forum activity is not necessarily the best way to get to more real life interactions (or in other less nice words: there's a lot of pointless bickering out there). In the long term we do want to provide a way to communicate on the site, but this will probably look more like the quick and easy way you can interact on Facebook or Diaspora than a full fledged forum. There are already plenty of ways to contact us and have discussions among members.
-
-      <br><br>
-
-      <h3 id="why-is-there-facebook-connection">Why is there Facebook connection?</h3>
-      So that people who have their data, photos and connections on Facebook can release their information to Trustroots. Using Facebook from Trustroots is optional. <a href="http://ideas.trustroots.org/2014/12/29/life-outside-big-blue-box/">Read our blog post</a> about this.
-
-      <br><br>
-
-      <h3 id="are-you-planning-to-do-x-feature">Are you planning to do X feature?</h3>
-      See our <a ui-sref="todo">to-do</a> for major directions and <a href="https://github.com/Trustroots/trustroots/issues">GitHub</a> for the rest. Feel free to <a ui-sref="contact">tell us</a> about your ideas! The current version of Trustroots is the most limited software you can imagine that still works for hospitality. We simply haven't had time to build most of the features yet. Please be patient.
-
-      <br><br>
-
-      <h3 id="decentralize-it">Decentralize it?</h3>
-      Yes please! If you can make a working decentralized prototype we'll happily decentralize the whole thing. Decentralization is technically very challenging and is not the team's priority. But we will soon add a quick and easy way to export your profile data, oAuth and document our API.
-
-      <br><br>
-
-      <h3 id="how-is-this-connected-to-hitchwiki-nomadwiki-or-trashwiki">How is this connected to Hitchwiki, Nomadwiki or Trashwiki?</h3>
-      The team creating Trustroots also created these projects. We will want to integrate them to some degree into Trustroots since they share pretty much the same vision and user base.
-
-      <br><br>
-
-      <h3 id="what-is-your-long-term-vision">What is your long term vision?</h3>
+      <h3 class="faq-question" id="what-is-your-long-term-vision">What is your long term vision?</h3>
       <em>"We want a world that encourages trust, adventure and intercultural connections."</em> See <a ui-sref="about">about</a> for more.
 
       <br><br>
 
-      <h3 id="how-can-i-contact-you">How can can I contact you?</h3>
-      In plenty of public and private ways: <a href="http://ideas.trustroots.org/">our blog</a>, <a ui-sref="contact">contact form</a>, <a href="https://github.com/Trustroots/trustroots/issues">GitHub</a>, <a href="https://twitter.com/trustroots">Twitter</a>, <a href="http://webchat.freenode.net/?channels=trustroots">IRC</a> and for private contacts, see <a ui-sref="team">the team</a> page.
+      <h3 class="faq-question" id="is-trustroots-alternative">Is Trustroots an alternative for CouchSurfing or BeWelcome?</h3>
+      Trustroots isn't on purpose an alternative to anything specifically. There are many people to whom Facebook, CouchSurfing or other tools aren't suitable for multitude of reasons. We encourage using any tools you wish in parallel. We are trying to make it easy to gather your contents from these sites also to Trustroots.
 
       <br><br>
 
+      <h3 class="faq-question" id="how-is-this-connected-to-hitchwiki-nomadwiki-or-trashwiki">How is this connected to Hitchwiki, Nomadwiki or Trashwiki?</h3>
+      The team creating Trustroots also created these projects. We will want to integrate them to some degree into Trustroots since they share pretty much the same vision and user base.
+
+      <br><br>
+
+      <h3 class="faq-question" id="why-the-name-trustroots">Why the name Trustroots?</h3>
+      Back to the roots. Earthy. The art of asking — and trusting — is something we often experience while traveling. We also have some innovative ideas that can help building trust among people. Once the network is big enough we'd love to work with scientists to build something that can really make a difference through trust metrics.
+
+      <br><br>
+
+      <h3 class="faq-question" id="why-is-there-facebook-connection">Why is there Facebook connection?</h3>
+      So that people who have their data, photos and connections on Facebook can release their information to Trustroots. Using Facebook from Trustroots is optional. <a href="http://ideas.trustroots.org/2014/12/29/life-outside-big-blue-box/">Read our blog post</a> about this.
+
+      <br><br>
+
+      <h3 class="faq-question" id="why-is-there-no-forum">Why is there no forum?</h3>
+      The practical answer: it takes time to set up a forum and even more time to keep it spam-free. The less practical answer: In our long-term and short-term experience forum activity is not necessarily the best way to get to more real life interactions. In the long term we do want to provide a way to communicate on the site, but this will probably look more like the quick and easy way you can interact on Facebook or Diaspora than a full fledged forum.
+
+      <br><br>
+
+      <h3 class="faq-question" id="how-can-i-contact-you">How can can I contact you?</h3>
+      In plenty of public and private ways: <a ui-sref="contact">drop us a message</a>, <a href="http://ideas.trustroots.org/">our blog</a>, <a href="https://github.com/Trustroots/trustroots/issues">GitHub</a>, <a href="https://twitter.com/trustroots">Twitter</a>, <a href="http://webchat.freenode.net/?channels=trustroots">IRC</a> and for private contacts, see <a ui-sref="team">the team</a> page.
+
+      <br><br>
+
+
+      <div class="page-header">
+        <h2>Organisation</h2>
+      </div>
+
+      <h3 class="faq-question" id="what-is-your-legal-status">What's your legal status?</h3>
+      The website is owned and operated by Trustroots Foundation, a non-profit Limited by Guarantee (LBG) under section 60 exemption, registered in the United Kingdom in March 2015.
+
+      <br><br>
+
+      <a href="http://ideas.trustroots.org/wordpress/wp-content/uploads/2015/03/Trustroots-Articles-2015.pdf">Trustroots Foundation’s Articles (pdf)</a>
+
+      <br><br>
+
+      <h3 class="faq-question" id="why-limited-by-guarantee">Why Limited by Guarantee under section 60 exemption?</h3>
+      <ul>
+        <li>It’s fast and relatively affordable to set up.</li>
+        <li>It’s possible to apply for CIC status, which is a special form recently created for social enterprises<del></del>.</li>
+        <li>It is very flexible, this is why many NGOs and charities choose the LBG form.</li>
+        <li>Additionally, section 60 exemption from the obligation to have name ending with “limited” <a href="http://www.legislation.gov.uk/ukpga/2006/46/section/62">requires</a> that:
+          <ul>
+            <li>The company purposes are for the public benefit.</li>
+            <li>It is a non for profit.</li>
+            <li>Assets are to be specially protected on winding up.</li>
+          </ul>
+        </li>
+        <li>Using the word Foundation in the name also requires that any profits should be used to further the objects of the company and not paid to the members as dividends.</li>
+      </ul>
+
+      Some typical LBGs in the UK would be clubs and membership organisations such as workers’ co-operatives, non-governmental organizations (NGOs) and charities. For example the <a href="http://www.osmfoundation.org/">OpenStreetMap Foundation</a>, the <a href="https://okfn.org/">Open Knowledge Foundation</a> and the <a href="http://www.hackspace.org.uk/">UK Hackspace Foundation</a> are LGBs.
+
+      <h4>More reading:</h4>
+      <ul>
+        <li><a href="http://www.companylawclub.co.uk/topics/companies_limited_by_guarantee.shtml">CompanyLawClub.co.uk: limited by guarantee</a></li>
+        <li><a href="https://en.wikipedia.org/wiki/Community_interest_company">CIC on Wikipedia</a></li>
+        <li><a href="www.theguardian.com/social-enterprise-network/graphic/2013/aug/14/summary-of-common-forms-for-social-enterprises">The Guardian: Do you know your CICs from your CIOs?</a></li>
+        <li><a title="Section 60 exemption requirements" href="http://www.legislation.gov.uk/ukpga/2006/46/section/62">Section 60 exemption requirements</a></li>
+        <li><a href="https://www.gov.uk/government/uploads/system/uploads/attachment_data/file/400693/GP1_Incorporation_Feb_2015.pdf">UK Companies House: incorporation and names (pdf)</a></li>
+      </ul>
+
+      <br><br>
+
+      <h3 class="faq-question" id="are-you-going-to-sell-out">Could Trustroots assets be sold?</h3>
+      The guarantee of LBG under section 60 requires a clause where in case of Trustroots Foundation ceasing to exist, assets could be moved only to another non-profit entity where transferring assets is limited in the same way. CIC status would make this even more specific, but isn’t required for this.
+      <br><br>
+      Additionally our by-laws (articles of association) specifically prohibit selling the users database and specify that the company code will be licensed under an <a href="https://github.com/trustroots/trustroots/#license">open source license</a>.
+
+      <br><br>
+
+      <h3 class="faq-question" id="who-are-the-board">Who are the board?</h3>
+      <a ui-sref="team">We</a>: Mikael, Kasper, Carlos, Natalia and Callum.
+
+      <br><br>
+
+      <h3 class="faq-question" id="how-do-you-want-to-make-the-project-financially-sustainable">How do you want to make the project financially sustainable?</h3>
+      <a ui-sref="donate">Donations</a> and grants are the most likely ways. There are many inspiring organisations out there serving as great examples: <a href="https://www.warmshowers.org/">Warmshowers Foundation</a>, <a href="http://www.abgefahren-ev.de/">Abgefahren e.V.</a> (Hitchwiki), <a href="http://www.bevolunteer.net/">BeVolunteer</a>, <a href="http://www.servas.org/">Servas</a>, <a href="http://www.wwoof.net/">WWOOF</a> and many more. Again, if you have experience with this it would be great if you <a ui-sref="contact">contact us</a>.
+
+      <br><br>
+
+      <h3 class="faq-question" id="who-decides-what-gets-done">Who decides what gets done?</h3>
+      Anyone can join us as a <a href="https://github.com/Trustroots/trustroots/wiki/Volunteering">volunteer</a>. We're huge fans of do-cracy and getting things done attitude. We have <a ui-sref="team">a core team</a> which is formed from the most active volunteers. There isn't voting or other buraucratic processes involved, but you get more responsibility by simply becoming active contributor and showing your communication skills. Great community values simple translation jobs just as much as highly skilled development. We'll aim to keep the entry level for volunteers as low as possible. No bureaucracy. Pragmatic approach. Trust.
+      <br><br>
+      That said, any well organized project needs efficient teams working on specific issues (such as <i>safety</i> or site's <i>features/UX</i>). Rather than building complicated voting mechanisms or other structures, we'll try to concentrate in fostering volunteers into responsible, skilled teams. It's also important to make sure everyone has the same goal and vision.
+
+      <br><br>
+
+
+      <div class="page-header">
+        <h2>Technology</h2>
+      </div>
+
+      <h3 class="faq-question" id="im-a-developer">I'm a developer and I want to help!</h3>
+      Great! Read about <a href="https://github.com/Trustroots/trustroots/wiki/Development">development</a>.
+
+      <br><br>
+
+      <h3 class="faq-question" id="are-you-planning-to-do-x-feature">Are you planning to do X feature?</h3>
+      See our <a ui-sref="todo">to-do</a> for major directions and <a href="https://github.com/Trustroots/trustroots/issues">GitHub</a> for the rest. Feel free to <a ui-sref="contact">tell us</a> about your ideas! The current version of Trustroots is the most limited software you can imagine that still works for hospitality. We simply haven't had time to build most of the features yet. Please be patient.
+
+      <br><br>
+
+      <h3 class="faq-question" id="decentralize-it">Decentralize it?</h3>
+      Yes please! If you can make a working decentralized prototype we'll happily decentralize the whole thing. Decentralization is technically very challenging and is not the team's priority. But we will soon add a quick and easy way to export your profile data, oAuth and document our API.
+
+      <br><br>
+
+
       <hr>
 
-      <p class="lead text-center">
+      <p class="lead text-center" id="more-questions">
         More questions? <a ui-sref="contact">Ask us!</a>
         <br><br>
         See also our <a href="http://ideas.trustroots.org">blog</a> and <a ui-sref="about">about</a> page.
       </p>
+
+    </div>
+    <div class="hidden-xs col-sm-4 col-md-4">
+
+      <div id="faq-sidebar" class="sidebar" zum-waypoint="waypoints" down="flags.on" up="flags.off" ng-class="{'sidebar-sticky': waypoints.flags.on}">
+
+        <accordion close-others="sidebar.closeOthers">
+
+          <accordion-group heading="Site & community" is-open="sidebar.isCommunityOpen">
+            <div class="list-group">
+              <a ng-click="readFAQ('is-trustroots-exclusively-for-hitchhikers')" class="list-group-item">Is Trustroots exclusively for     hitchhikers?</a>
+              <a ng-click="readFAQ('what-is-your-long-term-vision')" class="list-group-item">What is your long term vision?</a>
+              <a ng-click="readFAQ('is-trustroots-alternative')" class="list-group-item">Is Trustroots an alternative for CouchSurfing or     BeWelcome?</a>
+              <a ng-click="readFAQ('how-is-this-connected-to-hitchwiki-nomadwiki-or-trashwiki')" class="list-group-item">How is this connected to     Hitchwiki, Nomadwiki or Trashwiki?</a>
+              <a ng-click="readFAQ('why-the-name-trustroots')" class="list-group-item">Why the name Trustroots?</a>
+              <a ng-click="readFAQ('why-is-there-facebook-connection')" class="list-group-item">Why is there Facebook connection?</a>
+              <a ng-click="readFAQ('why-is-there-no-forum')" class="list-group-item">Why is there no forum?</a>
+              <a ng-click="readFAQ('how-can-i-contact-you')" class="list-group-item">How can can I contact you?</a>
+            </div>
+          </accordion-group>
+
+          <accordion-group heading="Organisation" is-open="sidebar.isOrganisationOpen">
+            <div class="list-group">
+              <a ng-click="readFAQ('what-is-your-legal-status')" class="list-group-item">What's your legal status?</a>
+              <a ng-click="readFAQ('why-limited-by-guarantee')" class="list-group-item">Why Limited by Guarantee under section 60 exemption?</a>
+              <a ng-click="readFAQ('are-you-going-to-sell-out')" class="list-group-item">Could Trustroots assets be sold?</a>
+              <a ng-click="readFAQ('who-are-the-board')" class="list-group-item">Who are the board?</a>
+              <a ng-click="readFAQ('how-do-you-want-to-make-the-project-financially-sustainable')" class="list-group-item">How do you want to make the project financially sustainable?</a>
+              <a ng-click="readFAQ('who-decides-what-gets-done')" class="list-group-item">Who decides what gets done?</a>
+            </div>
+          </accordion-group>
+
+          <accordion-group heading="Technology" is-open="sidebar.isTechnologyOpen">
+            <div class="list-group">
+              <a ng-click="readFAQ('im-a-developer')" class="list-group-item">I'm a developer and I want to help!</a>
+              <a ng-click="readFAQ('are-you-planning-to-do-x-feature')" class="list-group-item">Are you planning to do X feature?</a>
+              <a ng-click="readFAQ('decentralize-it')" class="list-group-item">Decentralize it?</a>
+            </div>
+          </accordion-group>
+
+        </accordion>
+
+      </div><!-- .sidebar -->
 
     </div>
 
