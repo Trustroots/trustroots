@@ -4,6 +4,7 @@ module.exports = {
   db: 'mongodb://localhost/trust-roots-dev',
   app: {
     title: 'Trustroots - Development Environment',
+    description: 'This is a test version, please go to Trustroots.org for the real one.',
     // Settings will be pushed PUBLICLY to templates as json, no secrets:
     settings: {
       mapbox: {
