@@ -10,7 +10,7 @@ var init = require('../config/init')(),
     Offer = mongoose.model('Offer'),
     faker = require('faker'),
     fs = require('fs'),
-    cities = JSON.parse(fs.readFileSync('scripts/cities.json', 'utf8')),
+    cities = JSON.parse(fs.readFileSync('scripts/fillTestDataCities.json', 'utf8')),
     status = ["yes", "maybe"],
     savedCounter = 0;
 
