@@ -14,7 +14,6 @@ var _ = require('lodash'),
     crypto = require('crypto'),
     User = mongoose.model('User'),
     Contact = mongoose.model('Contact'),
-    Reference = mongoose.model('Reference'),
     lwip = require('lwip'),
     mkdirp = require('mkdirp'),
     fs = require('fs');
@@ -432,7 +431,7 @@ exports.userByUsername = function(req, res, next, username) {
       });
     },
 
-    // Check if logged in user has left reference for this profile
+    // Check if logged in user has left contact request for this profile
     function(user, done) {
 
       // User's own profile?
@@ -450,19 +449,6 @@ exports.userByUsername = function(req, res, next, username) {
           done(err, user);
         });
       }
-    },
-
-    // Check if logged in user has left reference for this profile
-    function(user, done) {
-      Reference.findOne(
-        {
-          userTo: user._id,
-          userFrom: req.user._id
-        }
-      ).exec(function(err, reference) {
-        if(reference) user.reference = reference;
-        done(err, user);
-      });
     },
 
     // Sanitize & return user

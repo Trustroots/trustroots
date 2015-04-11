@@ -4,8 +4,8 @@ angular.module('contacts').controller('RemoveContactController', ['$scope', '$st
   function($scope, $state, $stateParams, $modal, Contact, Authentication) {
 
     /**
-    * Open write/update reference -modal
-    */
+     * Open remove contact -modal
+     */
     $scope.RemoveContactModal = function (contactId, $event) {
       if($event) $event.preventDefault();
 

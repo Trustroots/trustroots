@@ -29,10 +29,6 @@ angular.module('users').config(['$stateProvider',
       url: '/profile/:username/:tab',
       templateUrl: 'modules/users/views/profile/view-profile.client.view.html'
     }).
-    state('profile-reference', {
-      url: '/profile/:username/references/:referenceId',
-      templateUrl: 'modules/users/views/profile/view-profile.client.view.html'
-    }).
     state('signup', {
       url: '/signup',
       templateUrl: 'modules/users/views/authentication/signup.client.view.html'

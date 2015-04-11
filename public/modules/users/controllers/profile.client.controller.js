@@ -15,7 +15,7 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 
     // We landed here from profile editor, show success message
     if($stateParams.updated) {
-      // Timeout is here due Angula overwriting message at $state change otherwise
+      // Timeout is here due Angular overwriting message at $state change otherwise
       $timeout(function(){
         messageCenterService.add('success', 'Profile updated', { timeout: flashTimeout });
       });
@@ -73,7 +73,7 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
       else return '#';
     };
 
-    $scope.tabSelected = ($stateParams.tab && ['overview', 'references', 'contacts'].indexOf($stateParams.tab) > -1) ? $stateParams.tab : 'overview';
+    $scope.tabSelected = ($stateParams.tab && ['overview', 'contacts'].indexOf($stateParams.tab) > -1) ? $stateParams.tab : 'overview';
 
     $scope.tabs = [
       {
@@ -82,12 +82,6 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
         content: '/modules/users/views/profile/tab-profile-overview.client.view.html',
         active: $stateParams.tab && $stateParams.tab === 'overview'
       },
-      /*{
-        path: 'references',
-        title: 'References',
-        content: '/modules/references/views/list-references.client.view.html',
-        active: $stateParams.tab && $stateParams.tab === 'references'
-      },*/
       {
         path: 'contacts',
         title: 'Contacts',
@@ -109,24 +103,6 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
       //  $state.go('profile', {username: ($stateParams.username || $scope.user.username), tab: tabPath});
       //}
 
-    };
-
-    /**
-    * Open write/update reference -modal
-    */
-    $scope.referenceModal = function (profile, $event) {
-
-      if($event) $event.preventDefault();
-
-      var modalInstance = $modal.open({
-        templateUrl: '/modules/references/views/create-reference.client.modal.html',
-        controller: function ($scope, $modalInstance) {
-          $scope.profile = profile;
-          $scope.cancel = function () {
-            $modalInstance.dismiss('cancel');
-          };
-        }
-      });
     };
 
   }
