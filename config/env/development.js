@@ -56,7 +56,7 @@ module.exports = {
         'public/lib/ng-file-upload/angular-file-upload.js',
         'public/lib/message-center/message-center.js',
         'public/lib/chosen/chosen.jquery.js',
-        'public/lib/angular-chosen-localytics/chosen.js',
+        'public/lib/angular-chosen-localytics/chosen.js'
       ]
     },
     less: [
