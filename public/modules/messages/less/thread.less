@@ -169,10 +169,16 @@
         margin: 0;
       }
       @media (max-width: @screen-xs-max) {
-        padding-top: 6px;
-        margin-bottom: 6px;
-        min-height: 20px;
+        padding-top: 8px;
+        margin-bottom: 8px;
+        min-height: 25px;
+        border-radius: 0;
       }
+    }
+    @media (max-width: @screen-xs-max) {
+      margin-bottom: -1px;
+      margin-left: -15px;
+      margin-right: 0px;
     }
   }
   .message-reply-btn {
@@ -180,9 +186,15 @@
     // Fix button to the bottom of the screen so that it
     // won't escape upwards when textarea next to it grows
     @media (max-width: @screen-xs-max) {
-      height: 35px;
-      bottom: 20px;
+      height: 45px;
+      width: 45px;
+      bottom: 0;
+      right: 0;
       position: fixed;
+      border-radius: 0;
     }
+  }
+  @media (max-width: @screen-xs-max) {
+    bottom: 0;
   }
 }

@@ -49,10 +49,9 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     // Mostly this is needed due growing text field
     function threadLayout() {
 
-      // reply area has 15px padding at bottom
-      $scope.replyHeight = threadLayoutReply.height() + 15 + 'px';
+      $scope.replyHeight = threadLayoutReply.height() + 'px';
 
-      // container has 15px padding on both sides when bigger than screen-sm-max (768px)
+      // container has 15px padding on both sides when window is bigger than screen-sm-max (768px)
       var containerPadding = ($window.innerWidth < 768) ? -15 : 30;
       $scope.containerWidth = threadLayoutContainer.width() - containerPadding + 'px';
       $scope.replyWidth = threadLayoutContainer.width() - 30 + 'px';
