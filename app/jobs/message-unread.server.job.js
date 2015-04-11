@@ -111,7 +111,7 @@ exports.checkUnreadMessages = function(agenda) {
           var smtpTransport = nodemailer.createTransport(config.mailer.options);
           var url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
-          var emailSignature = '--\n\rTrustroots\n\r' + url + '\n\rSupport form: http://ideas.trustroots.org/contact/\n\rSupport email: hello@trustroots.org\n\r';
+          var emailSignature = '-- \n\rTrustroots\n\r' + url + '\n\rSupport: ' + url + '/#!/contact/\n\rSupport email: hello@trustroots.org\n\r';
 
           // Loop users
           users.forEach(function(user) {
