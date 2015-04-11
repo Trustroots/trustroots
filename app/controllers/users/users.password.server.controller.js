@@ -28,16 +28,20 @@ exports.forgot = function(req, res, next) {
     // Lookup user by username
     function(token, done) {
       if (req.body.username) {
+        var username = req.body.username.toString().toLowerCase();
         User.findOne({
-          username: req.body.username.toString().toLowerCase()
+          $or: [
+            { username: username },
+            { email: username }
+          ]
         }, '-salt -password', function(err, user) {
           if (!user) {
             return res.status(400).send({
-              message: 'No account with that username has been found'
+              message: 'No account with that username or email.'
             });
           } else if (user.provider !== 'local') {
             return res.status(400).send({
-              message: 'It seems like you signed up using your ' + user.provider + ' account'
+              message: 'It seems like you signed up using your ' + user.provider + ' account.'
             });
           } else {
             user.resetPasswordToken = token;
@@ -50,7 +54,7 @@ exports.forgot = function(req, res, next) {
         });
       } else {
         return res.status(400).send({
-          message: 'Please, we really need that username first...'
+          message: 'Please, we really need that username or email first...'
         });
       }
     },
