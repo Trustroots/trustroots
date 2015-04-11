@@ -11,7 +11,8 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
     // If user is not signed in then redirect to login
     if (!Authentication.user) $state.go('signin');
 
-    $scope.user = Authentication.user;
+    //copy tue user to make a temporary buffer for changes (fix #214)
+    $scope.user = new Users(Authentication.user);
     $scope.profile = false;
 
     /*
