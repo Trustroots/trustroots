@@ -5,10 +5,11 @@
 #messages-thread {
   position: fixed;
   bottom: 250px;
+  width: 100%;
   top: @navbar-height;
   padding-top: @grid-gutter-width;
-  //padding-right: (@grid-gutter-width / 2); // Leave some space for the scrollbar
-  overflow: hidden; // We'll do scrollbars with angular-perfect-scrollbar
+  padding-right: (@grid-gutter-width / 2); // Leave some space for the scrollbar
+  overflow: auto;
   .content-empty {
     position: absolute;
     bottom: 0;
@@ -133,18 +134,6 @@
     font-size: 13px;
     line-height: 13px;
   }
-  /*
-  .message-request-meta {
-    float: right;
-    text-align: right;
-    @media (max-width: @screen-xs-max) {
-      display: block;
-      clear: both;
-      float: none;
-      text-align: left;
-    }
-  }
-  */
   .panel {
     margin-bottom: @padding-xs-horizontal;
     .panel-body {
@@ -153,7 +142,6 @@
     }
     #message-reply-content {
       .transition(~"border-color ease-in-out .15s, box-shadow ease-in-out .15s");
-      //.box-shadow(none);//Needed when this is textarea
       font-size: @font-size-base;
       line-height: @line-height-base;
       padding: @padding-base-vertical @padding-base-horizontal;
@@ -162,6 +150,8 @@
       padding-top: 16px;
       margin-bottom: 16px;
       min-height: 53px;
+      max-height: 250px;
+      overflow: auto;
       resize: none;
       &:focus {
         outline: none;
@@ -169,53 +159,30 @@
         border-color: @brand-primary;
       }
       &:after {
-          top: 16px;
-          left: 12px;
+        top: 16px;
+        left: 12px;
+        @media (max-width: @screen-xs-max) {
+          top: 6px;
+        }
+      }
+      p {
+        margin: 0;
+      }
+      @media (max-width: @screen-xs-max) {
+        padding-top: 6px;
+        margin-bottom: 6px;
+        min-height: 20px;
       }
     }
   }
-  /*
-  .message-request-status {
-    clear: both;
-    overflow: hidden;
-    label {
-      display: inline-block;
-      padding: @padding-base-vertical @padding-base-horizontal;
-      margin: 0;
-      float: right;
-      &:hover {
-        background: lighten(@gray-lighter, 3%);
-      }
-      &.active,
-      &:active {
-        background: @gray-lighter;
-      }
-    }
-  }
-  .message-request-contact {
-    font-size: @font-size-small;
-    background: @gray-lighter;
-    overflow: hidden;
-    float: right;
-    width: 70%;
-    padding: @padding-base-vertical @padding-base-horizontal;
-    .edit {
-      .text-muted;
-      .pull-right;
-      font-size: @font-size-small;
-    }
-    @media (max-width: @screen-xs-max) {
-      float: none;
-      width: 100%;
-      .edit {
-        font-size: @font-size-base;
-        display: inline-block;
-        padding: 5px;
-      }
-    }
-  }
-  */
   .message-reply-btn {
     float: right;
+    // Fix button to the bottom of the screen so that it
+    // won't escape upwards when textarea next to it grows
+    @media (max-width: @screen-xs-max) {
+      height: 35px;
+      bottom: 20px;
+      position: fixed;
+    }
   }
 }

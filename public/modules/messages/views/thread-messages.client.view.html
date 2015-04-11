@@ -1,17 +1,18 @@
-<section class="container container-spacer" data-ng-controller="MessagesThreadController">
+<section class="container container-spacer" ng-controller="MessagesThreadController"><!-- as messagesCtrl-->
 
   <div class="row">
     <div class="col-sm-9" id="thread-container">
 
       <div class="row text-muted text-center" ng-show="!messages.$resolved"><small>Wait a moment...</small></div>
 
+
       <!-- Thread -->
-      <div perfect-scrollbar id="messages-thread" wheel-propagation="true" wheel-speed="50" suppress-scroll-x="true" on-scroll="onScroll(scrollTop, scrollHeight)" refresh-on-change="messages" ng-style="{width: containerWidth, bottom: replyHeight}">
+      <div id="messages-thread" ng-style="{width: containerWidth, bottom: replyHeight}">
 
         <!-- Messages -->
         <div class="message"
              id="message-{{ message._id }}"
-             data-ng-repeat="message in messages | orderBy:'-created':true"
+             ng-repeat="message in messages | orderBy:'-created':true"
              zum-waypoint="waypoints"
              offset="90%"
              up="scroll.up"
@@ -26,37 +27,15 @@
             <div class="message-meta">
 
               <div class="message-meta">
-                <span data-ng-show="user._id === message.userFrom._id">You</span>
-                <a ui-sref="profile({ username: message.userFrom.username })" data-ng-bind="message.userFrom.displayName" data-ng-show="user._id !== message.userFrom._id"></a>
+                <span ng-show="user._id === message.userFrom._id">You</span>
+                <a ui-sref="profile({ username: message.userFrom.username })" ng-bind="message.userFrom.displayName" ng-show="user._id !== message.userFrom._id"></a>
                 — <time am-time-ago="message.created" tooltip="{{message.created | date:'medium'}}" tooltip-placement="bottom"></time>
               </div>
 
-              <!-- Message header - start -->
-              <!-- This might in future be couch request -->
-              <!--
-              <div class="message-request">
-                <strong class="message-request-status">Hospitality Request pending</strong>
-              -->
-                <!--
-                <strong class="message-request-status hosting-yes">Hospitality Request accepted</strong>
-                <strong class="message-request-status hosting-no">Hospitality Request declined</strong>
-                -->
-              <!--
-                <span class="message-request-meta hidden-xs hidden-sm">
-                  from <strong>20 Jan</strong>
-                  to <strong>22 Jan 2014</strong>,
-                  <strong>1 people</strong>
-                </span>
-                <span class="message-request-meta visible-xs visible-sm">
-                  20 Jan 22 Jan, 1 <i class="fa fa-user"></i>
-                </span>
-              </div>
-              -->
-              <!-- message header - end -->
             </div>
 
             <div class="panel panel-default">
-              <div class="panel-body" data-ng-bind-html="message.content | trustedHtml"></div>
+              <div class="panel-body" ng-bind-html="message.content | trustedHtml"></div>
             </div>
           </div>
 
@@ -68,7 +47,7 @@
         <!-- /Messages -->
 
         <!-- No messages -->
-        <div class="row content-empty" data-ng-if="messages.$resolved && !messages.length">
+        <div class="row content-empty" ng-if="messages.$resolved && !messages.length">
             <i class="fa fa-3x fa-comments-o"></i>
             <h4>You haven't been talking yet.</h4>
             <p>Start conversation below.</p>
@@ -78,65 +57,25 @@
       <!-- /Thread -->
 
       <!-- Reply -->
-      <form id="message-reply" name="messageForm" class="form-horizontal" data-ng-submit="send()" novalidate ng-style="{width: containerWidth}">
+      <form id="message-reply" name="messageForm" class="form-horizontal" ng-submit="send()" novalidate ng-style="{width: replyWidth}">
         <div class="row">
-          <div class="col-xs-12">
+          <div class="col-xs-10 col-sm-12">
 
             <div class="panel panel-default">
-              <div class="panel-body">
-                <h4 class="message-reply-title" data-ng-if="messages.$resolved && !messages.length">Write a message...</h4>
-                <h4 class="message-reply-title" data-ng-if="messages.$resolved && messages.length">Write reply...</h4>
-                <!-- This might in future be couch request -->
-                <!--
-                <h4 class="message-reply-title">Hospitality Request pending</h4>
-                <h4 class="message-reply-title">Hospitality Request accepted</h4>
-                <h4 class="message-reply-title">Hospitality Request declined</h4>
-                -->
-                <!--
-                <span class="message-request-meta hidden-xs hidden-sm">
-                  from <strong>20 Jan</strong>
-                  to <strong>22 Jan 2014</strong>,
-                  <strong>
-                    one person
-                  </strong>
-                </span>
-                <span class="message-request-meta visible-xs visible-sm">
-                  20 Jan 22 Jan, 1 <i class="fa fa-user"></i>
-                </span>
-                -->
+              <!--
+              <div class="panel-body hidden-xs">
+                <h4 class="message-reply-title" ng-if="messages.$resolved && !messages.length">Write a message...</h4>
+                <h4 class="message-reply-title" ng-if="messages.$resolved && messages.length">Write reply...</h4>
               </div>
-              <div id="message-reply-content" ng-model="content" medium-editor options='{"placeholder": "...", "buttons": ["bold", "italic", "underline", "anchor", "quote", "unorderedlist"]}'></div>
+              -->
+              <div id="message-reply-content" ng-model="content" medium-editor options='{"placeholder": "Write a message", "buttons": ["bold", "italic", "underline", "anchor", "quote", "unorderedlist"]}'></div>
 
             </div><!-- /.panel -->
-
-            <!-- This might in future be couch request -->
-            <!--
-            <div class="message-request-status">
-              <label for="request-status-decline">
-                <input type="radio" name="request-status" id="request-status-decline" value="declined">
-                Decline
-              </label>
-              <label for="request-status-accept" class="active">
-                <input type="radio" name="request-status" id="request-status-accept" value="accepted" checked="checked">
-                Accept
-              </label>
-            </div>
-            <div class="message-request-contact">
-              <p>By replying and accepting the request you are also sending your address and phone number to %to%:</p>
-              <p>
-                <i class="fa fa-fw fa-map-marker"></i> Rua de Escolas Gerais 3. Alfama, Lisbon<br>
-                <i class="fa fa-fw fa-mobile-phone"></i> +351 123 123 123
-                <a href="#" class="edit">Edit</a>
-              </p>
-            </div>
-            -->
-
           </div>
-        </div><!-- /.row -->
-        <div class="row">
-          <div class="col-xs-12">
-            <small class="text-muted">Highlight text to add links or change its appearance.</small>
-            <input type="submit" class="btn btn-sm btn-primary message-reply-btn" id="messageReplySubmit" ng-disabled="!content || isSending === true || !messages.$resolved" value="{{ (messages.$resolved && !messages.length) ? 'Start conversation' : 'Reply' }}">
+
+          <div class="col-xs-2 col-sm-12">
+            <small class="text-muted hidden-xs">Highlight text to add links or change its appearance.</small>
+            <input type="submit" class="btn btn-md btn-primary message-reply-btn" id="messageReplySubmit" ng-disabled="!content || isSending === true || !messages.$resolved" value="{{ (messages.$resolved && !messages.length) ? 'Start conversation' : 'Reply' }}">
           </div>
         </div><!-- /.row -->
       </form>

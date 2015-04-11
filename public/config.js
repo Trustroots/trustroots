@@ -17,7 +17,6 @@ var ApplicationConfiguration = (function() {
                                               //'btford.socket-io',
                                               'angularMoment',
                                               'angular-medium-editor',
-                                              'perfect_scrollbar',
                                               'leaflet-directive',
                                               'angularFileUpload',
                                               'akoenig.deckgrid',

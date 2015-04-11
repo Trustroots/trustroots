@@ -48,8 +48,6 @@ module.exports = {
         'public/lib/medium-editor/dist/js/medium-editor.js',
         'public/lib/angular-medium-editor/dist/angular-medium-editor.js',
         //'public/lib/angular-socket-io/socket.js',
-        'public/lib/perfect-scrollbar/js/perfect-scrollbar.jquery.js',
-        'public/lib/angular-perfect-scrollbar/src/angular-perfect-scrollbar.js',
         'public/lib/leaflet/dist/leaflet-src.js',
         'public/lib/PruneCluster/dist/PruneCluster.js',
         'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.js',

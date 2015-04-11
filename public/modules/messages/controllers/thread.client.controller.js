@@ -12,20 +12,23 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     // If no recepient defined, go to inbox
     if (!$stateParams.userId) $state.go('inboxMessages');
 
+    // Vars
     $scope.user = Authentication.user;
     $scope.userToId = $stateParams.userId;
+    $scope.isSending = false;
+    var flaggedAsRead = [];
 
     // No sending messages to yourself
     if ($scope.user._id === $scope.userToId) $state.go('inboxMessages');
 
-    $scope.isSending = false;
-
+    // Fetch messages for this thread
     $scope.messages = Messages.query({
       userId: $stateParams.userId
     }, function(){
       // Keep layout in good order
-      $scope.threadLayout();
+      threadLayout();
     });
+
 
     /**
      * Calculate thread etc layout locations with this massive pile of helpers
@@ -35,81 +38,86 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
         threadLayoutReply = angular.element('#message-reply');
 
     // Add (or reset) timeout to not call the resizing function every pixel
-    $scope.threadLayoutUpdate = function() {
-      $timeout.cancel($scope.threadLayoutUpdateTimeout);
-      $scope.threadLayoutUpdateTimeout = $timeout($scope.threadLayout, 300);
-    };
+    var threadLayoutUpdateTimeout;
+    function threadLayoutUpdate() {
+      $timeout.cancel(threadLayoutUpdateTimeout);
+      threadLayoutUpdateTimeout = $timeout(threadLayout, 300);
+    }
 
-    $scope.threadLayout = function() {
-      $scope.replyHeight = threadLayoutReply.height() + 15 + 'px'; // reply area has 15px padding at bottom
-      $scope.containerWidth = threadLayoutContainer.width() - 30 + 'px'; // container has 15px padding on both sides
-    };
+    // Keep thread in good condition when screen resizes/orientation changes/message textrea grows
+    // This sorta should be at .less files, but the message thread is such an complicated peace of UI...
+    // Mostly this is needed due growing text field
+    function threadLayout() {
+
+      // reply area has 15px padding at bottom
+      $scope.replyHeight = threadLayoutReply.height() + 15 + 'px';
+
+      // container has 15px padding on both sides when bigger than screen-sm-max (768px)
+      var containerPadding = ($window.innerWidth < 768) ? -15 : 30;
+      $scope.containerWidth = threadLayoutContainer.width() - containerPadding + 'px';
+      $scope.replyWidth = threadLayoutContainer.width() - 30 + 'px';
+    }
 
     // Add (or reset) timeout to not call the scrolling function every key stroke
-    $scope.threadScrollUpdate = function() {
-      $timeout.cancel($scope.threadScrollUpdateTimeout);
-      $scope.threadScrollUpdateTimeout = $timeout($scope.threadScroll, 300);
-    };
+    var threadScrollUpdateTimeout;
+    function threadScrollUpdate() {
+      $timeout.cancel(threadScrollUpdateTimeout);
+      threadScrollUpdateTimeout = $timeout(threadScrollBottom, 300);
+    }
 
     // Scroll thread to bottom to show latest messages
-    $scope.threadScroll = function() {
-      threadLayoutThread.scrollTop( threadLayoutThread[0].scrollHeight );
-      threadLayoutThread.perfectScrollbar('update');
-    };
+    function threadScrollBottom() {
+      threadLayoutThread.scrollTop(threadLayoutThread[0].scrollHeight);
+    }
 
     // Keep layout in good order with these listeners
-    angular.element($window).on('resize', $scope.threadLayoutUpdate);
-    angular.element($window).bind('orientationchange', $scope.threadLayoutUpdate);
+    angular.element($window).on('resize', threadLayoutUpdate);
+    angular.element($window).bind('orientationchange', threadLayoutUpdate);
+    angular.element($window).bind('orientationchange', threadScrollBottom);
+
+    // Fire html.resize() so that jQuery-Waypoints can check what's visible on the screen and mark visible messages read.
+    var onScrollTimeout,
+        html = angular.element('html');
+    threadLayoutThread.bind('scroll', function() {
+        if(onScrollTimeout) $timeout.cancel(onScrollTimeout);
+        onScrollTimeout = $timeout(function(){ html.resize(); }, 300);
+    });
+
     $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
-      $scope.threadLayoutUpdate();
-      $timeout($scope.threadScroll, 300);
+      threadLayoutUpdate();
+      $timeout(threadScrollBottom, 500);
+      $timeout(threadScrollBottom, 1500);
+      $timeout(threadScrollBottom, 2500);
     });
 
     // Observe for the reply area height while typing your awesome message in it
     angular.element('#message-reply-content').on('input', function() {
       $scope.replyHeight = threadLayoutReply.height() + 15 + 'px';
-      $scope.threadScrollUpdate();
+      threadScrollUpdate();
     });
 
-    /*
-     * "perfect-scrollbar" directive somehow eats all native scroll events,
-     * so that "zum-waypoint" directive can't see them anymore and won't update
-     * read status of messages. Shooting resize() into html element solves this.
-     * onScroll() is bind to perfect-scrollbar's event.
-     * There's a small buffer so that resize() would not be shot on each scroll event.
-     *
-     * ...so yeah, this is hacky. ;-)
-     */
-    var html = angular.element('html');
-    $scope.onScroll = function(scrollTop, scrollHeight) {
-      $timeout.cancel($scope.onScrollTimeout);
-      $scope.onScrollTimeout = $timeout(function(){ html.resize(); }, 300);
-    };
-
-
-    // Temporary storage for messages marked as read at frontend, to be sent to the backend
-    $scope.flaggedAsRead = [];
 
     /**
      * Send messages marked as read (at frontend) to the backend
      * Has 1s timeout to slow down continuous pinging of the API
      */
-    $scope.activateSyncRead = function() {
-
-      $timeout.cancel($scope.syncReadTimer);
-
-      if($scope.flaggedAsRead.length > 0) {
-        $scope.syncReadTimer = $timeout($scope.syncRead, 1000);
+    var syncReadTimer;
+    function activateSyncRead() {
+      // Cancel previously set timer
+      if(syncReadTimer) $timeout.cancel(syncReadTimer);
+      // syncRead happens with 1s delay
+      // (and gets postponed by 1s if new activateSyncRead() happens)
+      if(flaggedAsRead.length > 0) {
+        syncReadTimer = $timeout(syncRead, 1000);
       }
-
-    };
-    $scope.syncRead = function() {
+    }
+    function syncRead() {
       MessagesRead.query({
-        messageIds: $scope.flaggedAsRead
+        messageIds: flaggedAsRead
       }, function(response){
-        $scope.flaggedAsRead = [];
+        flaggedAsRead = [];
       });
-    };
+    }
 
 
     /**
@@ -120,15 +128,17 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
      * @todo: kill observer after message is marked read
      */
     $scope.messageRead = function(message, scrollingUp, scrollingDown) {
-        var read = (scrollingUp === true || scrollingDown === true);
+      if(message.read === true) return true;
 
-        if(message.userFrom._id !== Authentication.user._id && !message.read && read) {
-          message.read = true;
-          $scope.flaggedAsRead.push(message._id);
-          $scope.activateSyncRead();
-        }
+      var read = (scrollingUp === true || scrollingDown === true);
 
-        return read;
+      if(message.userFrom._id !== Authentication.user._id && !message.read && read) {
+        message.read = true;
+        flaggedAsRead.push(message._id);
+        activateSyncRead();
+      }
+
+      return read;
     };
 
 
@@ -160,15 +170,16 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
 
         // Remove this when socket is back!
         $scope.messages.unshift(response);
-        $timeout($scope.threadScroll, 300);
+        $timeout(threadScrollBottom, 300);
 
       }, function(errorResponse) {
         $scope.isSending = false;
+        // Show alert
         messageCenterService.add('danger', errorResponse.data.message, { timeout: flashTimeout });
       });
 
-
     };
+
 
     /**
      * Listen to received/sent messages and add them to our model
@@ -178,7 +189,7 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
       message.pushed = true; // flag as pushed
       //$scope.messages.push(message);
       $scope.messages.unshift(message);
-      $timeout($scope.threadScroll, 300);
+      $timeout(threadScrollBottom, 300);
     });
     // Remove the event listener when the controller instance is destroyed
     $scope.$on('$destroy', function() {
