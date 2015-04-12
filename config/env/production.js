@@ -4,6 +4,8 @@ module.exports = {
   db: process.env.MONGOHQ_URL || process.env.MONGOLAB_URI || 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trust-roots',
   app: {
     title: 'Trustroots',
+    description: 'Hospitality exchange community for hitchhikers and other travellers. We want a world that encourages trust, adventure and intercultural connections.',
+    tagline: 'Trustroots development version.',
     // Settings will be pushed PUBLICLY to templates as json, no secrets:
     settings: {
       mapbox: {
@@ -72,6 +74,7 @@ module.exports = {
     callbackURL: '/auth/facebook/callback'
   },
   twitter: {
+    username: process.env.TWITTER_USERNAME || 'USERNAME',
     clientID: process.env.TWITTER_KEY || 'CONSUMER_KEY',
     clientSecret: process.env.TWITTER_SECRET || 'CONSUMER_SECRET',
     callbackURL: '/auth/twitter/callback'

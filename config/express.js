@@ -34,15 +34,16 @@ module.exports = function(db) {
 
   // Setting application local variables
   app.locals.title = config.app.title;
-  app.locals.keywords = config.app.keywords;
+  app.locals.description = config.app.description;
   app.locals.facebookAppId = config.facebook.clientID;
+  app.locals.twitterUsername = config.twitter.username;
   app.locals.newrelic = config.newrelic.enabled;
   app.locals.GAcode = config.GA.code;
   app.locals.jsFiles = config.getJavaScriptAssets();
   app.locals.cssFiles = config.getCSSAssets();
   app.locals.languages = require('../public/modules/core/languages/languages.json');
   app.locals.appSettings = config.app.settings;
-  app.locals.appSettings.description = config.app.description;
+  app.locals.appSettings.tagline = config.app.tagline;
   app.locals.appSettings.time = new Date().toISOString();
   app.locals.appSettings.https = config.https;
 

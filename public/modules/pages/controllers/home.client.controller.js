@@ -16,7 +16,7 @@ angular.module('pages').controller('HomeController', ['$scope', '$state', '$wind
     ];
 
     // This comes from configs
-    $scope.description = $window.settings.description;
+    $scope.tagline = $window.settings.tagline;
 
   }
 ]);

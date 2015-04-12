@@ -3,8 +3,9 @@
 module.exports = {
   db: 'mongodb://localhost/trust-roots-dev',
   app: {
-    title: 'Trustroots - Development Environment',
-    description: 'This is a test version, please go to Trustroots.org for the real one.',
+    title: 'Trustroots - Development version',
+    description: 'Hospitality exchange community for hitchhikers and other travellers. We want a world that encourages trust, adventure and intercultural connections.',
+    tagline: 'Trustroots development version.',
     // Settings will be pushed PUBLICLY to templates as json, no secrets:
     settings: {
       mapbox: {
@@ -85,6 +86,7 @@ module.exports = {
     callbackURL: '/auth/facebook/callback'
   },
   twitter: {
+    username: process.env.TWITTER_USERNAME || 'USERNAME',
     clientID: process.env.TWITTER_KEY || 'CONSUMER_KEY',
     clientSecret: process.env.TWITTER_SECRET || 'CONSUMER_SECRET',
     callbackURL: '/auth/twitter/callback'

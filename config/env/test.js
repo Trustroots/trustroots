@@ -4,7 +4,9 @@ module.exports = {
   db: 'mongodb://localhost/trust-roots-test',
   port: 3001,
   app: {
-    title: 'Trustroots - Test Environment'
+    title: 'Trustroots - Test Environment',
+    description: 'Trustroots test environment.',
+    tagline: 'Trustroots test environment.'
   },
   assets: {
     lib: {
@@ -66,6 +68,7 @@ module.exports = {
     callbackURL: '/auth/facebook/callback'
   },
   twitter: {
+    username: process.env.TWITTER_USERNAME || 'USERNAME',
     clientID: process.env.TWITTER_KEY || 'CONSUMER_KEY',
     clientSecret: process.env.TWITTER_SECRET || 'CONSUMER_SECRET',
     callbackURL: '/auth/twitter/callback'

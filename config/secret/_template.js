@@ -8,7 +8,8 @@
 module.exports = {
   app: {
     title: 'Trustroots',
-    description: 'Hospitality exchange community for hitchhikers and other travellers.',
+    description: 'Hospitality exchange community for hitchhikers and other travellers. We want a world that encourages trust, adventure and intercultural connections.',
+    tagline: 'Hospitality exchange community for hitchhikers and other travellers.',
     // These will be pushed PUBLICLY to html as json:
     settings: {
       mapbox: {
@@ -28,6 +29,7 @@ module.exports = {
     callbackURL: '/auth/facebook/callback'
   },
   twitter: {
+    username: 'USERNAME',
     clientID: 'APP_ID',
     clientSecret: 'APP_SECRET',
     callbackURL: '/auth/twitter/callback'

@@ -4,7 +4,7 @@ module.exports = {
   app: {
     title: 'Trustroots',
     description: 'Hospitality exchange community for hitchhikers and other travellers. We want a world that encourages trust, adventure and intercultural connections.',
-    keywords: 'traveling,hospitality exchange,hospex,nomadism',
+    tagline: 'Hospitality exchange community for hitchhikers and other travellers.',
     // These will be pushed PUBLICLY to html as json:
     settings: {
       mapbox: {
