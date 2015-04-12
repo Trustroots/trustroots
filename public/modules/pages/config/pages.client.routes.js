@@ -36,6 +36,14 @@ angular.module('pages').config(['$stateProvider', '$urlRouterProvider',
       url: '/donate',
       templateUrl: 'modules/pages/views/donate.client.view.html'
     }).
+    state('donate-help', {
+      url: '/donate/help',
+      templateUrl: 'modules/pages/views/donate-help.client.view.html'
+    }).
+    state('donate-policy', {
+      url: '/donate/policy',
+      templateUrl: 'modules/pages/views/donate-policy.client.view.html'
+    }).
     state('faq', {
       url: '/faq',
       templateUrl: 'modules/pages/views/faq.client.view.html'

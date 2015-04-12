@@ -56,7 +56,7 @@ angular.module('core').controller('FooterController', ['$scope', 'Authentication
       else if( ['about'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.bokehblue, photos.forestpath ];
       }
-      else if( ['foundation', 'donate'].indexOf(toState.name) > -1 ) {
+      else if( ['foundation', 'donate', 'donate-help', 'donate-policy'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.forestpath ];
       }
       else if( ['faq'].indexOf(toState.name) > -1 ) {
