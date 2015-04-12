@@ -173,63 +173,21 @@ exports.oauthCallback = function(strategy) {
           return res.redirect('/#!/signin');
         }
 
-        return res.redirect(redirectURL || '/');
+        return res.redirect(redirectURL || '/#!/profile/');
       });
     })(req, res, next);
   };
 };
 
 /**
- * Helper function to save or update a OAuth user profile
+ * Helper function to update a OAuth user profile
+ * Doesn't let users sign up using providers;
+ * - They'll first sign up using local.js strategy
+ * - Then they can connect their profiles to other networks using other strategies (eg. Twitter)
  */
 exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
   if (!req.user) {
-    // Define a search query fields
-    var searchMainProviderIdentifierField = 'providerData.' + providerUserProfile.providerIdentifierField;
-    var searchAdditionalProviderIdentifierField = 'additionalProvidersData.' + providerUserProfile.provider + '.' + providerUserProfile.providerIdentifierField;
-
-    // Define main provider search query
-    var mainProviderSearchQuery = {};
-    mainProviderSearchQuery.provider = providerUserProfile.provider;
-    mainProviderSearchQuery[searchMainProviderIdentifierField] = providerUserProfile.providerData[providerUserProfile.providerIdentifierField];
-
-    // Define additional provider search query
-    var additionalProviderSearchQuery = {};
-    additionalProviderSearchQuery[searchAdditionalProviderIdentifierField] = providerUserProfile.providerData[providerUserProfile.providerIdentifierField];
-
-    // Define a search query to find existing user with current provider profile
-    var searchQuery = {
-      $or: [mainProviderSearchQuery, additionalProviderSearchQuery]
-    };
-
-    User.findOne(searchQuery, function(err, user) {
-      if (err) {
-        return done(err);
-      } else {
-        if (!user) {
-          var possibleUsername = providerUserProfile.username || ((providerUserProfile.email) ? providerUserProfile.email.split('@')[0] : '');
-
-          User.findUniqueUsername(possibleUsername, null, function(availableUsername) {
-            user = new User({
-              firstName: providerUserProfile.firstName,
-              lastName: providerUserProfile.lastName,
-              username: availableUsername,
-              displayName: providerUserProfile.displayName,
-              email: providerUserProfile.email,
-              provider: providerUserProfile.provider,
-              providerData: providerUserProfile.providerData
-            });
-
-            // And save the user
-            user.save(function(err) {
-              return done(err, user);
-            });
-          });
-        } else {
-          return done(err, user);
-        }
-      }
-    });
+    return done(new Error('You must be logged in to connect to other networks.'), null);
   } else {
     // User is already logged in, join the provider data to the existing user
     var user = req.user;
@@ -245,10 +203,10 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
 
       // And save the user
       user.save(function(err) {
-        return done(err, user, '/#!/settings/accounts');
+        return done(err, user, '/#!/profile/');
       });
     } else {
-      return done(new Error('User is already connected using this provider'), user);
+      return done(new Error('You are already connected using this network.'), user);
     }
   }
 };
