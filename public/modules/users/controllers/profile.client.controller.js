@@ -61,7 +61,7 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 
     /*
      * Return an URL for user's social media profiles
-     * Ensure these fields are set at profile server controller.
+     * Ensure these fields are set at users.profile.server.controller.js
      */
     $scope.socialAccountLink = function(provider, data) {
       if(provider === 'facebook' && data.link) {
@@ -69,6 +69,9 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
       }
       else if(provider === 'twitter' && data.screen_name) {
         return 'https://twitter.com/' + data.screen_name;
+      }
+      else if(provider === 'github' && data.login) {
+        return 'https://github.com/' + data.login;
       }
       else return '#';
     };
