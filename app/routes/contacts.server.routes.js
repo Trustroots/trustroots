@@ -14,7 +14,7 @@ module.exports = function(app) {
 
   app.route('/contact/:contactId')
     .get(users.requiresLogin, contacts.hasAuthorization, contacts.get)
-    .put(users.requiresLogin, contacts.hasAuthorization, contacts.confirm)
+    .put(users.requiresLogin, contacts.receiverHasAuthorization, contacts.confirm)
     .delete(users.requiresLogin, contacts.hasAuthorization, contacts.remove);
 
   // Contact list

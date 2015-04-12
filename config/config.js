@@ -11,9 +11,21 @@ var _ = require('lodash'),
  */
 module.exports = _.extend(
   require('./env/all'),
-  require('./env/' + process.env.NODE_ENV),
-  require('./secret/' + process.env.NODE_ENV) || {}
+  require('./env/' + process.env.NODE_ENV) || {}
 );
+
+/**
+ * Load secret config (if it exists)
+ */
+try {
+  var secret = require('./secret/' + process.env.NODE_ENV);
+  var config = _.extend(
+    module.exports,
+    secret
+  );
+  module.exports = config;
+}
+catch (error) {}
 
 /**
  * Get files by glob patterns

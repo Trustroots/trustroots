@@ -85,9 +85,6 @@
                 <!-- Show if can be linked -->
                 <a ng-href="{{socialAccountLink(providerName, providerData)}}" target="_blank">{{providerName}}</a>
 
-                <!-- Otherwice just show label --
-                <span ng-if="!socialAccountLink(providerName)">{{providerName}}</span>
-              -->
               </li>
             </ul>
           </div>
@@ -116,15 +113,6 @@
         <div class="col-md-6" data-ng-hide="user._id === profile._id">
           <ul class="nav nav-pills nav-narrow text-right" id="profile-actions" role="navigation">
             <li><a ui-sref="listMessages({userId: profile._id})"><i class="fa fa-comment-o"></i> Send message</a></li>
-            <!--
-            <li>
-              <a class="cursor-pointer" ng-click="referenceModal(profile);">
-                <i class="fa fa-heart-o"></i>
-                <span ng-hide="profile.reference">Write a reference</span>
-                <span ng-show="profile.reference">Update reference</span>
-              </a>
-            </li>
-            -->
             <li data-ng-controller="RemoveContactController">
               <a ui-sref="contactAdd({userId: profile._id})" ng-hide="profile.contact" class="cursor-pointer"><i class="fa fa-plus-square-o"></i> Add contact</a>
               <a ng-click="RemoveContactModal(profile.contact, $event)" ng-show="profile.contact" class="cursor-pointer"><i class="fa fa-minus-square-o"></i> Remove contact</a>

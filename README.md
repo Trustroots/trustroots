@@ -1,44 +1,40 @@
-# Trustroots
-_Hospitality exchange community for hitchhikers and other travellers._
+# [Trustroots.org](https://www.trustroots.org/)
 
-[Trustroots.org](https://www.trustroots.org/)
+_Hospitality exchange community for hitchhikers and other travellers._
 
 ![Trustroots logo](https://raw.githubusercontent.com/Trustroots/trustroots/master/public/modules/core/img/logo/color-green.png)
 
 ## Volunteering
-* You don't have the be a coder to participate. Check [volunteers page](https://github.com/Trustroots/trustroots/wiki/Volunteering) for more info.
-* [Drop us a message](http://ideas.trustroots.org/contact/)
-* Join [#trustroots](http://webchat.freenode.net/?channels=trustroots) on Freenode chat
-* Follow us on [Twitter](https://twitter.com/trustroots) and [Facebook](https://www.facebook.com/trustroots.org)
+
+* You don't have the be a programmer to participate. Check [volunteers page](https://github.com/Trustroots/trustroots/wiki/Volunteering) for more info.
 
 ## Development
-* [Check our docs](https://github.com/Trustroots/trustroots/wiki)
-* See [documentation](http://meanjs.org/docs.html) for MEAN.js boilerplate
-* Install [EditorConfig](http://editorconfig.org/) to your IDE if possible
 
-### Prerequisites
-Make sure you have installed all these prerequisites:
-* [Node.js](http://www.nodejs.org/download/) and the npm package manager.
-* [MongoDB](http://www.mongodb.org/downloads), version 2.6 (2.2 is too old)
-* [Bower](http://bower.io/)      `npm -g install bower`
-* [Grunt](http://gruntjs.com/)   `npm -g install grunt-cli`
+Check [development page](https://github.com/Trustroots/trustroots/wiki/Development) to get started.
 
-### Installation
-1. Clone the repository: `git clone https://github.com/Trustroots/trustroots.git trustroots`
-2. Install dependencies by running this inside **trustroots** folder: `npm install`. Note that if you run npm with sudo, it might skip installing frontend assets. You can run it manually: `bower install`.
-3. Make sure MongoDb is running on the default port (27017)
-4. Copy config _template to develpment: `cp ./config/secret/_template.js ./config/secret/development.js` — add any configurations you want to keep out of version control here. Many features rely on sending emails, so add settings to the `mailer` section. See [nodemailer smtp usage](https://github.com/andris9/nodemailer-smtp-transport#usage) and note that it has pre filled settings for [some services](https://github.com/andris9/nodemailer-smtp-transport#using-well-known-services).
-5. Finally run grunt default task: `grunt`
+## Installing
 
-Application should run on the 3000 port in development mode. Open [http://localhost:3000](http://localhost:3000) in your browser.
+We have two major ways of running the software: trough Vagrant box (less work but runs slower) or by installing locally (more work but runs faster).
 
 See [troubleshooting](https://github.com/Trustroots/trustroots/wiki/Troubleshooting) if you encounter errors.
 
-### Fill database with test users and offers
-1. Make sure the collections offers and users are empty, in order to avoid duplicate values.
-2. Run `node scripts/filltestData.js 1000` (for 1000 users and offers).
-3. The script will create the users and the offers. It can take some time, it will tell you when it's finished.
-4. To see the result run `grunt` and log in trustroots with user: trout and password: password.
+### Vagrant
+
+The easiest and quickest way to get started is with Vagrant. See [INSTALL-VAGRANT.md](INSTALL-VAGRANT.md) for further details. Running through Vagrant can be a little bit slower, but it's a very quick and easy way to get started. Depending on the specifics of your own development setup, you might prefer to run the code locally if you're going to do a lot of development.
+
+### Installing locally
+
+Install the stack on your localhost and run NodeJS. This approach takes a little more time to setup, and bit more manual configuration, but is super fast, and can be easier to work with. All the code runs in your usual development environment, so it might be easier to use the tools you're familiar with in this setup. See [INSTALL.md](INSTALL.md) for details.
+
+### Mock data
+
+There's a script that can generate mock user data. It's highly recommended you run this script after installation, that way you'll have something to look at.
+
+1. Make sure the collections offers and users are empty, in order to avoid duplicate values. This is the default on a new install.
+2. Run `node scripts/fillTestData.js 1000 username` _or_ if you use vagrant box, run: `vagrant ssh -c "node /srv/trustroots/scripts/fillTestData.js 1000 username"`. That will create 1000 users and hosting offers. Username is optional (a-z0-9) and will create a user with that username as an admin.
+3. It can take up to 5 minutes. Mongoose might complain about duplicates - just ignore these errors.
+4. To see the result, log in with your chosen username and password `password`.
 
 ## License
+
 [The MIT License](LICENSE.md)

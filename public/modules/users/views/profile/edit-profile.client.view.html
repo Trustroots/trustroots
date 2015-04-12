@@ -34,9 +34,9 @@
               </div>
 
               <div class="form-group">
-                <label for="gender"><h4>Sex</h4></label>
+                <label for="gender"><h4>Gender</h4></label>
                 <select id="gender" name="gender" class="form-control" data-ng-model="user.gender">
-                  <option value="">I'd rather not tell</option>
+                  <option value="">Unspecified</option>
                   <option value="female">Female</option>
                   <option value="male">Male</option>
                   <option value="other">Other</option>
@@ -55,17 +55,14 @@
 
               <div class="form-group">
                 <label for="languages"><h4>Languages</h4></label>
-                <div repeat="language in languages">
-                  {{language}}
-                </div>
-                <div>
-                  <ui-select multiple ng-model="user.languages" reset-search-input="true">
-                    <ui-select-match placeholder="Type in languages...">{{$item.name}}</ui-select-match>
-                    <ui-select-choices repeat="language.key as language in languages | filter:$select.search">
-                      {{language.name}}
-                    </ui-select-choices>
-                  </ui-select>
-                </div>
+                <select multiple chosen
+                  id="languages"
+                  class="form-control"
+                  data-placeholder="Start typing..."
+                  no-results-text="'Not found: '"
+                  ng-model="userLanguages"
+                  ng-options="language.name for language in languages track by language.key">
+                </select>
               </div>
 
               <div class="form-group">
@@ -87,11 +84,14 @@
 
                 <h5>Connect to:</h5>
                 <ul class="fa-ul authentication-social">
-                    <li><a href="/auth/facebook" data-ng-hide="isConnectedSocialAccount('facebook')">
+                    <li><a href="/auth/facebook" target="_blank" data-ng-hide="isConnectedSocialAccount('facebook')">
                       <i class="fa fa-li fa-lg fa-facebook-square"></i> Facebook
                     </a></li>
-                    <li><a href="/auth/twitter" data-ng-hide="isConnectedSocialAccount('twitter')">
+                    <li><a href="/auth/twitter" target="_blank" data-ng-hide="isConnectedSocialAccount('twitter')">
                       <i class="fa fa-li fa-lg fa-twitter-square"></i> Twitter
+                    </a></li>
+                    <li><a href="/auth/github" data-ng-hide="isConnectedSocialAccount('github')">
+                      <i class="fa fa-li fa-lg fa-github-square"></i> Github
                     </a></li>
                     <!--
                     <li><a href="/auth/google" data-ng-hide="isConnectedSocialAccount('google')">
@@ -99,9 +99,6 @@
                     </a></li>
                     <li><a href="/auth/linkedin" data-ng-hide="isConnectedSocialAccount('linkedin')">
                       <i class="fa fa-li fa-lg fa-linkedin-square"></i> LinkedIn
-                    </a></li>
-                    <li><a href="/auth/github" data-ng-hide="isConnectedSocialAccount('github')">
-                      <i class="fa fa-li fa-lg fa-github-square"></i> Github
                     </a></li>
                     -->
                 </ul>
@@ -137,13 +134,7 @@
           <div class="row">
             <div class="col-xs-12"  id="profile-tabs">
               <ul class="nav nav nav-pills">
-                <!--
-                <li class="disabled" data-ng-repeat="tab in tabs">
-                  <a>{{tab.title}}</a>
-                </li>
-              -->
                 <li class="disabled"><a>Overview</a></li>
-                <li class="disabled"><a>References</a></li>
                 <li class="disabled"><a>Contacts</a></li>
               </ul>
             </div>
@@ -158,7 +149,14 @@
                 <label for="description" class="panel-heading">About me</label>
                 <div class="panel-body profile-description">
                   <div class="form-group">
-                    <div id="description" ng-model="user.description" medium-editor options='{"placeholder": "Description", "buttons": ["bold", "italic", "underline", "anchor", "quote", "unorderedlist"]}'></div>
+                    <div id="description" aria-describedby="descriptionHelp" ng-model="user.description" medium-editor options='{"placeholder": "Description", "buttons": ["bold", "italic", "underline", "anchor", "quote", "unorderedlist"]}'></div>
+                  </div>
+                </div>
+                <div class="panel-footer">
+                  <div id="descriptionHelp" class="help-block">
+                    Help other people get to know you by telling them about your life and the things you like.
+                    <br><br>
+                    <small>Highlight text to add links or change its appearance.</small>
                   </div>
                 </div>
               </div>

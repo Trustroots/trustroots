@@ -32,10 +32,17 @@
 @prunecluster-transparency:    0.4;
 @prunecluster-border-contrast: 10%;
 
-@medium_editor_bgcolor:       @brand-primary;
-@medium_editor_border_color:  #fff;
-@medium_editor_button_size:   60px;
-@medium_editor_link_color:    #fff;
+// Medium editor
+// https://raw.githubusercontent.com/daviferreira/medium-editor/master/src/sass/themes/bootstrap.scss
+// See ./public/modules/core/less/mediumeditor.less
+@medium_editor_bgcolor:                  @brand-primary;
+@medium_editor_border_color:             @medium_editor_bgcolor;
+@medium_editor_border_radius:            0;
+@medium_editor_button_size:              55px;
+@medium_editor_link_color:               #fff;
+@medium_editor_button_active_text_color: #fff;
+@medium_editor_placeholder_color:        @gray-light;
+@medium_editor_hover_color:              lighten(@medium_editor_bgcolor, 5%);
 
 // Navbar
 // -------------------------

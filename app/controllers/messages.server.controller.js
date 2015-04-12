@@ -223,12 +223,15 @@ exports.threadByUser = function(req, res, next, userId) {
     // Sanitize messages and return them for the API
     function(messages, done) {
 
-      // Sanitize each outgoing message's contents
       var messagesCleaned = [];
-      messages.forEach(function(message) {
-        message.content = sanitizeHtml(message.content, exports.messageSanitizeOptions);
-        messagesCleaned.push(message);
-      });
+
+      if(messages && messages.length > 0) {
+        // Sanitize each outgoing message's contents
+        messages.forEach(function(message) {
+          message.content = sanitizeHtml(message.content, exports.messageSanitizeOptions);
+          messagesCleaned.push(message);
+        });
+      }
 
       req.messages = messagesCleaned;
 
@@ -242,27 +245,33 @@ exports.threadByUser = function(req, res, next, userId) {
      */
     function(done) {
 
-      var recentMessage = _.first(req.messages);
+      if(req.messages && req.messages.length > 0) {
 
-      // If latest message in the thread was to current user, mark thread read
-      if(recentMessage.userTo._id.toString() === req.user._id.toString()) {
+        var recentMessage = _.first(req.messages);
 
-        Thread.update(
-          {
-            userTo: req.user._id,
-            userFrom: userId
-          },
-          {
-            read: true
-          },
-          // Options:
-          {
-            multi: false
-          },
-          function(err){
-            done(err);
-          }
-        );
+        // If latest message in the thread was to current user, mark thread read
+        if(recentMessage.userTo._id.toString() === req.user._id.toString()) {
+
+          Thread.update(
+            {
+              userTo: req.user._id,
+              userFrom: userId
+            },
+            {
+              read: true
+            },
+            // Options:
+            {
+              multi: false
+            },
+            function(err){
+              done(err);
+            }
+          );
+
+        } else {
+          done(null);
+        }
 
       } else {
         done(null);

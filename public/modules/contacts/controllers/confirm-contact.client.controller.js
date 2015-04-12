@@ -27,6 +27,9 @@ angular.module('contacts').controller('ConfirmContactController', ['$scope', '$r
         $scope.isConnected = true;
         $scope.success = 'You two are already connected. Great!';
       }
+      else if (contact.users[0]._id !== Authentication.user._id) {
+        $scope.error = 'You must wait until he/she confirms your connection.';
+      }
     },
     // Error getting contact
     function(errorResponse) {

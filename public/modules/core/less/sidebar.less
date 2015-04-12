@@ -1,132 +1,34 @@
-/*
- * Side navigation
- *
- * Scrollspy and affixed enhanced navigation to highlight
- * sections and secondary sections of page content.
- * Borrowed from Bootstrap3 documentation
+/**
+ * Sidebar navigation
  */
 
-
-/*
- * Side navigation
- *
- * Scrollspy and affixed enhanced navigation to highlight sections and secondary
- * sections of docs content.
- */
-
-/* By default it's not affixed in mobile views, so undo that */
-.bikeshed-sidebar.affix {
-  position: static;
-}
-@media (min-width: 768px) {
-  .bikeshed-sidebar {
-    padding-left: 20px;
+.sidebar {
+  // Using https://github.com/zumba/angular-waypoints
+  &.sidebar-sticky {
+    position: fixed;
+    top: (@navbar-height + @padding-large-horizontal);
   }
-}
 
-/* First level of nav */
-.bs-docs-sidenav {
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
-
-/* All levels of nav */
-.bikeshed-sidebar .nav > li > a {
-  display: block;
-  padding: 4px 20px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #999;
-}
-.bikeshed-sidebar .nav > li > a:hover,
-.bikeshed-sidebar .nav > li > a:focus {
-  padding-left: 19px;
-  color: @brand-secondary;
-  text-decoration: none;
-  background-color: transparent;
-  border-left: 1px solid @brand-secondary;
-}
-.bikeshed-sidebar .nav > .active > a,
-.bikeshed-sidebar .nav > .active:hover > a,
-.bikeshed-sidebar .nav > .active:focus > a {
-  padding-left: 18px;
-  font-weight: bold;
-  color: @brand-secondary;
-  background-color: transparent;
-  border-left: 2px solid @brand-secondary;
-}
-
-/* Nav: second level (shown on .active) */
-.bikeshed-sidebar .nav .nav {
-  display: none; /* Hide by default, but at >768px, show it */
-  padding-bottom: 10px;
-}
-.bikeshed-sidebar .nav .nav > li > a {
-  padding-top:    1px;
-  padding-bottom: 1px;
-  padding-left: 30px;
-  font-size: 12px;
-  font-weight: normal;
-}
-.bikeshed-sidebar .nav .nav > li > a:hover,
-.bikeshed-sidebar .nav .nav > li > a:focus {
-  padding-left: 29px;
-}
-.bikeshed-sidebar .nav .nav > .active > a,
-.bikeshed-sidebar .nav .nav > .active:hover > a,
-.bikeshed-sidebar .nav .nav > .active:focus > a {
-  padding-left: 28px;
-  font-weight: 500;
-}
-
-/* Back to top (hidden on mobile) */
-.back-to-top {
-  display: none;
-  padding: 4px 10px;
-  margin-top: 10px;
-  margin-left: 10px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #999;
-}
-.back-to-top:hover {
-  color: @brand-secondary;
-  text-decoration: none;
-}
-
-@media (min-width: 768px) {
-  .back-to-top {
-    display: block;
-  }
-}
-
-/* Show and affix the side nav when space allows it */
-@media (min-width: 992px) {
-  .bikeshed-sidebar .nav > .active > ul {
-    display: block;
-  }
-  /* Widen the fixed sidebar */
-  .bikeshed-sidebar.affix,
-  .bikeshed-sidebar.affix-bottom {
-    width: 213px;
-  }
-  .bikeshed-sidebar.affix {
-    position: fixed; /* Undo the static from mobile first approach */
-    top: 80px;
-  }
-  .bikeshed-sidebar.affix-bottom {
-    position: absolute; /* Undo the static from mobile first approach */
-  }
-  .bikeshed-sidebar.affix-bottom .bs-docs-sidenav,
-  .bikeshed-sidebar.affix .bs-docs-sidenav {
-    margin-top: 0;
+  // Accordion directive + .list-group inside .sidebar
+  // https://angular-ui.github.io/bootstrap/#/accordion
+  // http://getbootstrap.com/components/#list-group
+  .panel .panel-heading {
+    border-bottom: 0;
     margin-bottom: 0;
   }
-}
-@media (min-width: 1200px) {
-  /* Widen the fixed sidebar again */
-  .bikeshed-sidebar.affix-bottom,
-  .bikeshed-sidebar.affix {
-    width: 263px;
+  .panel-body {
+    padding: 0;
+  }
+  .accordion-toggle {
+    text-decoration: none;
+  }
+  .panel-title {
+    font-size: 20px;
+  }
+  .list-group {
+    margin-bottom: 0;
+  }
+  .list-group-item {
+    border: 0;
   }
 }

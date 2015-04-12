@@ -72,10 +72,6 @@
       <!-- Profile -->
       <div class="search-result panel panel-default" ng-show="offer && offer.$resolved">
         <div class="panel-body" ng-click="showUser(offer.user.username)">
-          <div class="search-result-actions">
-            <a ui-sref="listMessages({userId: offer.user._id})" class="btn btn-link btn-sm" tooltip-placement="left" tooltip="Send a message"><i class="fa fa-comment"></i></a>
-            <!--<a href="#" class="btn btn-link btn-sm" tooltip-placement="left" tooltip="Bookmark"><i class="fa fa-lg fa-bookmark"></i></a>-->
-          </div>
           <div tr-avatar data-size="32" data-link="false" data-user="offer.user"></div>
           <h4>
             {{offer.user.displayName}}

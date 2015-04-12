@@ -14,16 +14,15 @@ var ApplicationConfiguration = (function() {
                                               'ui.router',
                                               'ui.bootstrap',
                                               'ui.utils',
-                                              'ui.select',
                                               //'btford.socket-io',
                                               'angularMoment',
                                               'angular-medium-editor',
-                                              'perfect_scrollbar',
                                               'leaflet-directive',
                                               'angularFileUpload',
                                               'akoenig.deckgrid',
                                               'zumba.angular-waypoints',
-                                              'MessageCenterModule'
+                                              'MessageCenterModule',
+                                              'localytics.directives'
                                             ];
 
   // Add a new vertical module

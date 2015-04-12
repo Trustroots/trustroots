@@ -50,11 +50,14 @@ angular.module('core').controller('FooterController', ['$scope', 'Authentication
       if( ['home'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.sierranevada, photos.hitchroad ];
       }
-      else if( ['forgot', 'signin', 'welcome', 'statistics'].indexOf(toState.name) > -1 ) {
+      else if( ['forgot', 'signin', 'welcome', 'statistics', 'media'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.bokehblue ];
       }
       else if( ['about'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.bokehblue, photos.forestpath ];
+      }
+      else if( ['foundation', 'donate', 'donate-help', 'donate-policy'].indexOf(toState.name) > -1 ) {
+        $scope.photo_credits = [ photos.forestpath ];
       }
       else if( ['faq'].indexOf(toState.name) > -1 ) {
         $scope.photo_credits = [ photos.horizonballoon ];

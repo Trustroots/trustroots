@@ -1,8 +1,7 @@
 'use strict';
 
-
-angular.module('pages').controller('HomeController', ['$scope', '$state', '$timeout', 'Authentication',
-  function($scope, $state, $timeout, Authentication) {
+angular.module('pages').controller('HomeController', ['$scope', '$state', '$window', 'Authentication',
+  function($scope, $state, $window, Authentication) {
 
     // Redirect logged-in users out from front page
     if( Authentication.user ) {
@@ -15,6 +14,9 @@ angular.module('pages').controller('HomeController', ['$scope', '$state', '$time
       'board-sierranevada',
       'board-hitchroad',
     ];
+
+    // This comes from configs
+    $scope.tagline = $window.settings.tagline;
 
   }
 ]);

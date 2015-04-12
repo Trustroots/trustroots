@@ -40,6 +40,9 @@ exports.add = function(req, res) {
       contact.users = [];
       contact.users.push(req.body.friendUserId);
       contact.users.push(req.user._id);
+      // Now:
+      // - contact.useres[0] is receiving person
+      // - contact.useres[1] is initiating person
 
       done(null, contact, messageHTML, messagePlain);
     },
@@ -221,7 +224,7 @@ exports.contactListByUser = function(req, res, next, listUserId) {
 
   // Add 'confirmed' field only if showing currently logged in user's listing
   var contactFields = 'users created';
-  if(listUserId === req.user._id) {
+  if(req.user && req.user._id === listUserId) {
     contactFields += ' confirmed';
   }
 
@@ -254,8 +257,21 @@ exports.contactListByUser = function(req, res, next, listUserId) {
  * Contact authorization middleware
  */
 exports.hasAuthorization = function(req, res, next) {
+  if ((req.user && req.user.public === true) && req.contact && (req.contact.users[0].id === req.user.id || req.contact.users[1].id === req.user.id)) {
+    next();
+  } else {
+    return res.status(403).send('User is not authorized');
+  }
+};
 
-  if (req.user.public === true && req.contact && (req.contact.users[0].id === req.user.id || req.contact.users[1].id === req.user.id)) {
+/**
+ * Contact authorization middleware
+ *
+ * Used when confirming contact, so that initiator
+ * cannot confirm on receivers behalf.
+ */
+exports.receiverHasAuthorization = function(req, res, next) {
+  if (req.user.public === true && req.contact && req.contact.users[0].id === req.user.id) {
     next();
   } else {
     return res.status(403).send('User is not authorized');

@@ -32,9 +32,29 @@ angular.module('pages').config(['$stateProvider', '$urlRouterProvider',
       url: '/privacy',
       templateUrl: 'modules/pages/views/privacy.client.view.html'
     }).
+    state('donate', {
+      url: '/donate',
+      templateUrl: 'modules/pages/views/donate.client.view.html'
+    }).
+    state('donate-help', {
+      url: '/donate/help',
+      templateUrl: 'modules/pages/views/donate-help.client.view.html'
+    }).
+    state('donate-policy', {
+      url: '/donate/policy',
+      templateUrl: 'modules/pages/views/donate-policy.client.view.html'
+    }).
     state('faq', {
       url: '/faq',
       templateUrl: 'modules/pages/views/faq.client.view.html'
+    }).
+    state('foundation', {
+      url: '/foundation',
+      templateUrl: 'modules/pages/views/foundation.client.view.html'
+    }).
+    state('media', {
+      url: '/media',
+      templateUrl: 'modules/pages/views/media.client.view.html'
     }).
     state('home', {
       url: '/',

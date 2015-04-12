@@ -1,9 +1,17 @@
 'use strict';
 
 module.exports = {
-  db: process.env.MONGOHQ_URL || process.env.MONGOLAB_URI || 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trust-roots',
+  db: {
+    uri: process.env.MONGOHQ_URL || process.env.MONGOLAB_URI || 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trust-roots',
+    options: {
+      user: '',
+      pass: ''
+    }
+  },
   app: {
     title: 'Trustroots',
+    description: 'Hospitality exchange community for hitchhikers and other travellers. We want a world that encourages trust, adventure and intercultural connections.',
+    tagline: 'Trustroots development version.',
     // Settings will be pushed PUBLICLY to templates as json, no secrets:
     settings: {
       mapbox: {
@@ -21,7 +29,6 @@ module.exports = {
     lib: {
       css: [
           'public/lib/medium-editor/dist/css/medium-editor.css',
-          'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
           'public/lib/leaflet/dist/leaflet.css'
       ],
       js: [
@@ -34,16 +41,12 @@ module.exports = {
         'public/lib/angular-sanitize/angular-sanitize.min.js',
         'public/lib/angular-ui-router/release/angular-ui-router.min.js',
         'public/lib/angular-ui-utils/ui-utils.min.js',
-        'public/lib/angular-ui-select/dist/select.min.js',
         'public/lib/angular-bootstrap/ui-bootstrap-tpls.min.js',
         'public/lib/moment/min/moment.min.js',
         'public/lib/angular-moment/angular-moment.min.js',
         'public/lib/medium-editor/dist/js/medium-editor.min.js',
         'public/lib/angular-medium-editor/dist/angular-medium-editor.min.js',
         //'public/lib/angular-socket-io/socket.min.js',
-        'public/lib/perfect-scrollbar/min/jquery.mousewheel.min.js', // @todo: is this really needed?
-        'public/lib/perfect-scrollbar/min/perfect-scrollbar.min.js',
-        'public/lib/angular-perfect-scrollbar/src/angular-perfect-scrollbar.js',
         'public/lib/leaflet/dist/leaflet.js',
         'public/lib/PruneCluster/dist/PruneCluster.min.js',
         'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.min.js',
@@ -51,6 +54,8 @@ module.exports = {
         'public/lib/angular-waypoints/dist/angular-waypoints.all.min.js',
         'public/lib/ng-file-upload/angular-file-upload.min.js',
         'public/lib/message-center/message-center.js',
+        'public/lib/chosen/chosen.jquery.js',
+        'public/lib/angular-chosen-localytics/chosen.js'
       ]
     },
     less: [
@@ -75,6 +80,7 @@ module.exports = {
     callbackURL: '/auth/facebook/callback'
   },
   twitter: {
+    username: process.env.TWITTER_USERNAME || 'USERNAME',
     clientID: process.env.TWITTER_KEY || 'CONSUMER_KEY',
     clientSecret: process.env.TWITTER_SECRET || 'CONSUMER_SECRET',
     callbackURL: '/auth/twitter/callback'
@@ -105,6 +111,7 @@ module.exports = {
     }
   },
   newrelic: {
+    enabled: process.env.NEWRELIC_ENABLED || false,
     app_name: process.env.NEWRELIC_APP || ['Trustroots'],
     license_key: process.env.NEWRELIC_KEY || 'NEWRELIC_KEY',
     logging_level: process.env.NEWRELIC_LOGGING_LEVEL || 'info',

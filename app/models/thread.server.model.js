@@ -22,6 +22,7 @@ var ThreadSchema = new Schema({
     type: Schema.ObjectId,
     ref: 'User'
   },
+  // This points to the latest message inn this thread
   message: {
     type: Schema.ObjectId,
     ref: 'Message'

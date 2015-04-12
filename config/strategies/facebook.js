@@ -6,16 +6,17 @@
 var passport = require('passport'),
   url = require('url'),
   FacebookStrategy = require('passport-facebook').Strategy,
-  config = require('../config'),
   users = require('../../app/controllers/users');
 
-module.exports = function() {
+module.exports = function(config) {
   // Use facebook strategy
   passport.use(new FacebookStrategy({
       clientID: config.facebook.clientID,
       clientSecret: config.facebook.clientSecret,
       callbackURL: config.facebook.callbackURL,
-      passReqToCallback: true
+			profileFields: ['id', 'name', 'displayName', 'emails', 'photos'],
+      passReqToCallback: true,
+      enableProof: false
     },
     function(req, accessToken, refreshToken, profile, done) {
       // Set the provider data and include tokens
@@ -29,7 +30,6 @@ module.exports = function() {
         lastName: profile.name.familyName,
         displayName: profile.displayName,
         email: profile.emails[0].value,
-        username: profile.username,
         provider: 'facebook',
         providerIdentifierField: 'id',
         providerData: providerData

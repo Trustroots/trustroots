@@ -350,17 +350,20 @@
   background: #fff;
   background: rgba(255, 255, 255, 0.7);
   margin: 0;
+  opacity: 0.5;
+  border-top-left-radius: @border-radius-small;
+  &:hover {
+    opacity: 1;
   }
+}
 .leaflet-control-attribution,
 .leaflet-control-scale-line {
   padding: 0 5px;
   color: #333;
   }
 .leaflet-control-attribution a {
+  color: #333;
   text-decoration: none;
-  }
-.leaflet-control-attribution a:hover {
-  text-decoration: underline;
   }
 .leaflet-container .leaflet-control-attribution,
 .leaflet-container .leaflet-control-scale {

@@ -11,6 +11,7 @@ $RECYCLE.BIN/
 ._*
 *~
 
+
 # Icon must end with two \r.
 Icon
 
@@ -26,6 +27,8 @@ npm-debug.log
 node_modules/
 .bower-*/
 .grunt
+.vagrant
+*.pyc
 
 # App
 public/lib
@@ -37,16 +40,6 @@ tmp
 # Configs
 config/secret/*
 !config/secret/_template.js
-
-# Deploy & maintenance scripts
-scripts/*
-!scripts/update.sh
-!scripts/starter.sh
-!scripts/backup-db.sh
-!scripts/deploy.sh
-!scripts/s3backup.sh
-!scripts/fillTestData.js
-!scripts/cities.json
 
 # Logs
 logs

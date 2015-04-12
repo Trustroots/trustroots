@@ -10,6 +10,7 @@
 
 BUCKET="trustroots-backups"
 BACKUPSDIR=/srv/backups
+AVATAR_BACKUPSDIR=/srv/trustroots/public/modules/users/img/profile/uploads
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOGSPATH="/srv/logs/aws/"
 LOGFILE=$LOGSPATH/$TIMESTAMP.log
@@ -23,15 +24,22 @@ if [ ! -d "$LOGSPATH" ]; then
   mkdir -p $LOGSPATH
 fi
 
-echo "Backup sync at $TIMESTAMP" >> $LOGFILE
+echo "Backup S3 sync at $TIMESTAMP" >> $LOGFILE
 
 # Delete older logfiles
-echo "Delete old logs..." >> $LOGFILE
+echo "Delete old AWS logs..." >> $LOGFILE
 find $LOGSPATH -name "*.log" -type f -mtime +7 -print -delete >> $LOGFILE
 
 # Backup
-echo "S3 sync..." >> $LOGFILE
-/usr/local/bin/aws s3 sync $BACKUPSDIR s3://$BUCKET >> $LOGFILE
+# Files that exist in the destination but not in the source are deleted during sync.
+
+# MongoDBs
+echo "Sync MongoDB backups..." >> $LOGFILE
+/usr/local/bin/aws s3 sync $BACKUPSDIR s3://$BUCKET --delete >> $LOGFILE
+
+# User uploads
+echo "Sync user uploads..." >> $LOGFILE
+/usr/local/bin/aws s3 sync $AVATAR_BACKUPSDIR s3://$BUCKET/users-uploads --delete >> $LOGFILE
+
 
 echo "Finished at $(date +%Y%m%d_%H%M%S)" >> $LOGFILE
-
