@@ -30,8 +30,8 @@ echo "Delete old logs..." >> $LOGFILE
 find $LOGSPATH -name "*.log" -type f -mtime +7 -print -delete >> $LOGFILE
 
 # Backup
+# Files that exist in the destination but not in the source are deleted during sync.
 echo "S3 sync..." >> $LOGFILE
-/usr/local/bin/aws s3 sync $BACKUPSDIR s3://$BUCKET >> $LOGFILE
+/usr/local/bin/aws s3 sync $BACKUPSDIR s3://$BUCKET --delete >> $LOGFILE
 
 echo "Finished at $(date +%Y%m%d_%H%M%S)" >> $LOGFILE
-
