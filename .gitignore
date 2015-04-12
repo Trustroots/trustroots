@@ -28,6 +28,7 @@ node_modules/
 .bower-*/
 .grunt
 .vagrant
+*.coffee.js
 *.pyc
 
 # App

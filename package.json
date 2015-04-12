@@ -56,8 +56,11 @@
     "swig": "~1.4.2"
   },
   "devDependencies": {
+    "coffeelint": "^1.9.3",
     "faker": "~2.1.1",
+    "grunt-coffeelint": "0.0.13",
     "grunt-concurrent": "~1.0.0",
+    "grunt-contrib-coffee": "^0.13.0",
     "grunt-contrib-concat": "^0.5.1",
     "grunt-contrib-csslint": "^0.4.0",
     "grunt-contrib-cssmin": "~0.12.2",
