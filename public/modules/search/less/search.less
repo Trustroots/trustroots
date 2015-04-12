@@ -186,18 +186,8 @@
     .search-result-lastseen {
       font-size: @font-size-small;
     }
-    .search-result-actions {
-      position: absolute;
-      top: 0;
-      right: 0;
-      opacity: 0;
-      .transition(opacity 0.1s linear);
-    }
     &.active,
     &:hover {
-      .search-result-actions {
-        opacity: 1;
-      }
       .panel-body {
         border-color: @brand-primary;
       }
