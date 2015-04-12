@@ -1,7 +1,13 @@
 'use strict';
 
 module.exports = {
-  db: process.env.MONGOHQ_URL || process.env.MONGOLAB_URI || 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trust-roots',
+  db: {
+    uri: process.env.MONGOHQ_URL || process.env.MONGOLAB_URI || 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trust-roots',
+    options: {
+      user: '',
+      pass: ''
+    }
+  },
   app: {
     title: 'Trustroots',
     description: 'Hospitality exchange community for hitchhikers and other travellers. We want a world that encourages trust, adventure and intercultural connections.',

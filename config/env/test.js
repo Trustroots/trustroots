@@ -1,7 +1,13 @@
 'use strict';
 
 module.exports = {
-  db: 'mongodb://localhost/trust-roots-test',
+  db: {
+    uri: 'mongodb://localhost/trust-roots-test',
+    options: {
+      user: '',
+      pass: ''
+    }
+  },
   port: 3001,
   app: {
     title: 'Trustroots - Test Environment',

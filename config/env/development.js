@@ -1,7 +1,13 @@
 'use strict';
 
 module.exports = {
-  db: 'mongodb://localhost/trust-roots-dev',
+  db: {
+    uri: 'mongodb://localhost/trust-roots-dev',
+    options: {
+      user: '',
+      pass: ''
+    }
+  },
   app: {
     title: 'Trustroots - Development version',
     description: 'Hospitality exchange community for hitchhikers and other travellers. We want a world that encourages trust, adventure and intercultural connections.',

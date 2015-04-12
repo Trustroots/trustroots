@@ -2,7 +2,7 @@
   "name": "trustroots",
   "description": "Hospitality exchange community for hitchhikers and other travellers.",
   "version": "0.1.0",
-  "author": "https://www.trustroots.org/#!/team",
+  "author": "https://www.trustroots.org/#!/foundation",
   "repository": {
     "type": "git",
     "url": "https://github.com/Trustroots/trustroots"
@@ -17,14 +17,14 @@
     "postinstall": "bower install --allow-root --config.interactive=false"
   },
   "dependencies": {
-    "agenda": "^0.6.28",
+    "agenda": "~0.6.28",
     "async": "~0.9.0",
     "blueimp-file-upload-expressjs": "~0.3.2",
     "body-parser": "~1.12.2",
     "bower": "~1.4",
     "compression": "~1.4.3",
     "connect-flash": "~0.1.1",
-    "connect-mongo": "~0.7.0",
+    "connect-mongo": "~0.8.0",
     "consolidate": "~0.10.0",
     "cookie-parser": "~1.3.4",
     "express": "~4.12.3",
@@ -58,8 +58,8 @@
   "devDependencies": {
     "faker": "~2.1.1",
     "grunt-concurrent": "~1.0.0",
-    "grunt-contrib-concat": "^0.5.1",
-    "grunt-contrib-csslint": "^0.4.0",
+    "grunt-contrib-concat": "~0.5.1",
+    "grunt-contrib-csslint": "~0.4.0",
     "grunt-contrib-cssmin": "~0.12.2",
     "grunt-contrib-jshint": "~0.11.1",
     "grunt-contrib-less": "~1.0.0",
