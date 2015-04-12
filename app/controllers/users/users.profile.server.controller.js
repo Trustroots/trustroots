@@ -374,7 +374,7 @@ exports.userMiniByID = function(req, res, next, id) {
       return next(new Error('Failed to load user ' + id));
     }
     // User's own profile
-    else if(user._id.toString() === req.user._id.toString()) {
+    else if( (user && req.user) && (user._id.toString() === req.user._id.toString())) {
       req.user = user;
       next();
     }
@@ -414,11 +414,11 @@ exports.userByUsername = function(req, res, next, username) {
           done(new Error('Failed to load user ' + username));
         }
         // User's own profile
-        else if(user._id.toString() === req.user._id.toString()) {
+        else if( (user && req.user) && (user._id.toString() === req.user._id.toString()) ) {
           done(err, user.toObject());
         }
         // If user to be loaded is hidden OR user who is loading is hidden, don't show anything
-        else if(user.public === false || req.user.public === false) {
+        else if( (user && user.public === false) || (req.user && req.user.public === false) ) {
           done(new Error('Failed to load user ' + username));
         }
         else {
@@ -435,11 +435,16 @@ exports.userByUsername = function(req, res, next, username) {
     // Check if logged in user has left contact request for this profile
     function(user, done) {
 
+      // User isn't currently logged in?
+      if(!req.user) {
+        done(null, user);
+      }
       // User's own profile?
-      if(user._id.toString() === req.user.id) {
+      else if(user._id.toString() === req.user.id) {
         user.contact = false;
         done(null, user);
       }
+      // Check for connection
       else {
         Contact.findOne(
           {
