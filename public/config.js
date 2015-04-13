@@ -19,7 +19,6 @@ var ApplicationConfiguration = (function() {
                                               'angular-medium-editor',
                                               'leaflet-directive',
                                               'angularFileUpload',
-                                              'akoenig.deckgrid',
                                               'zumba.angular-waypoints',
                                               'MessageCenterModule',
                                               'localytics.directives'

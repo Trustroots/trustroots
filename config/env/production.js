@@ -50,7 +50,6 @@ module.exports = {
         'public/lib/leaflet/dist/leaflet.js',
         'public/lib/PruneCluster/dist/PruneCluster.min.js',
         'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.min.js',
-        'public/lib/angular-deckgrid/angular-deckgrid.js',
         'public/lib/angular-waypoints/dist/angular-waypoints.all.min.js',
         'public/lib/ng-file-upload/angular-file-upload.min.js',
         'public/lib/message-center/message-center.js',
