@@ -3,7 +3,7 @@
 module.exports = {
   app: {
     title: 'Trustroots',
-    description: 'Hospitality exchange community for hitchhikers and other travellers. We want a world that encourages trust, adventure and intercultural connections.',
+    description: 'Travellers community for sharing, hosting and getting people together. Built with hitchhikers in mind. A world that encourages trust and adventure.',
     tagline: 'Hospitality exchange community for hitchhikers and other travellers.',
     // These will be pushed PUBLICLY to html as json:
     settings: {
