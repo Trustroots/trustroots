@@ -91,12 +91,12 @@
             </div>
 
             <!-- Short descriptions -->
-            <div class="search-result-description" ng-show="offer.description && offer.description.length < 1100" ng-bind-html="profile.description | trustedHtml"></div>
+            <div class="search-result-description" ng-show="offer.description && offer.description.length < 1000" ng-bind-html="profile.description | trustedHtml"></div>
 
             <!-- Long descriptions -->
-            <div class="search-result-description" ng-show="offer.description && offer.description.length >= 1100">
+            <div class="search-result-description" ng-show="offer.description && offer.description.length >= 1000">
               <div class="panel-more-wrap">
-                <div ng-bind-html="offer.description | limitTo:1100 | trustedHtml" class="panel-more-excerpt"></div>
+                <div ng-bind-html="offer.description | limitTo:1000 | trustedHtml" class="panel-more-excerpt"></div>
                 <div class="panel-more-fade">Show more...</div>
               </div>
             </div>

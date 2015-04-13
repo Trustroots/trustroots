@@ -32,10 +32,10 @@
     <div ng-show="offer.status !== 'no'">
 
       <!-- Short descriptions -->
-      <div ng-show="offer.description && offer.description.length < 2100" ng-bind-html="profile.description | trustedHtml"></div>
+      <div ng-show="offer.description && offer.description.length < 2000" ng-bind-html="profile.description | trustedHtml"></div>
 
       <!-- Long descriptions -->
-      <div ng-show="offer.description && offer.description.length >= 2100">
+      <div ng-show="offer.description && offer.description.length >= 2000">
         <div class="panel-more-wrap" ng-hide="offerDescriptionToggle">
           <div ng-bind-html="offer.description | limitTo:2000 | trustedHtml" class="panel-more-excerpt" ng-click="offerDescriptionToggle=true"></div>
           <div class="panel-more-fade" ng-click="offerDescriptionToggle=true">Show more...</div>

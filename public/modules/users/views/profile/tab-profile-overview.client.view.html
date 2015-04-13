@@ -10,10 +10,10 @@
       <div class="panel-body">
 
         <!-- Short descriptions -->
-        <div ng-show="profile.description.length < 2500" ng-bind-html="profile.description | trustedHtml"></div>
+        <div ng-show="profile.description.length < 2400" ng-bind-html="profile.description | trustedHtml"></div>
 
         <!-- Long descriptions -->
-        <div ng-show="profile.description.length >= 2500">
+        <div ng-show="profile.description.length >= 2400">
           <div class="panel-more-wrap" ng-hide="profileDescriptionToggle">
             <div ng-bind-html="profile.description | limitTo:2400 | trustedHtml" class="panel-more-excerpt" ng-click="profileDescriptionToggle=true"></div>
             <div class="panel-more-fade" ng-click="profileDescriptionToggle=true">Show more...</div>
