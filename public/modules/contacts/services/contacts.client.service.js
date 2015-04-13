@@ -11,9 +11,7 @@ angular.module('contacts').factory('ContactList', ['$resource',
   }
 ]);
 
-
 // Read contact by userId
-/*
 angular.module('contacts').factory('ContactBy', ['$resource',
   function($resource) {
     return $resource('contact-by/:userId', {
@@ -21,14 +19,10 @@ angular.module('contacts').factory('ContactBy', ['$resource',
     }, {
       get: {
         method: 'GET'
-      },
-      update: {
-        method: 'PUT'
       }
     });
   }
 ]);
-*/
 
 // Read contact by contactId
 angular.module('contacts').factory('Contact', ['$resource',

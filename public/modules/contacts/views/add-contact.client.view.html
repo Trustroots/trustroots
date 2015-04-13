@@ -23,10 +23,10 @@
               </div>
               <div class="col-xs-5 text-center">
                 <!-- Avatar while loading -->
-                <div tr-avatar data-source="none" data-size="128" class="center-block" ng-hide="friend && friend.$resolved"></div>
+                <div tr-avatar data-source="none" data-size="128" class="center-block" ng-hide="friend.$resolved"></div>
 
                 <!-- Avatar after loaded -->
-                <div tr-avatar data-user="friend" data-size="128" class="center-block" ng-show="friend && friend.$resolved"></div>
+                <div tr-avatar data-user="friend" data-size="128" class="center-block" ng-show="friend.$resolved && friend"></div>
 
                 <h4 class="contacts-name" ng-bind="friend.displayName"></h4>
               </div>
@@ -47,7 +47,6 @@
         <div data-ng-show="success" class="alert alert-success">
           <h4 data-ng-bind="success"></h4>
           <p>
-            Profiles:
             <strong><a ui-sref="profile({username: user.username})">{{ user.displayName }}</a></strong> &
             <strong><a ui-sref="profile({username: friend.username})">{{ friend.displayName }}</a></strong>.
           </p>

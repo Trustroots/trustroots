@@ -12,6 +12,9 @@ module.exports = function(app) {
   app.route('/contact')
     .post(users.requiresLogin, contacts.add);
 
+  app.route('/contact-by/:userId')
+    .get(users.requiresLogin, contacts.hasAuthorization, contacts.get);
+
   app.route('/contact/:contactId')
     .get(users.requiresLogin, contacts.hasAuthorization, contacts.get)
     .put(users.requiresLogin, contacts.receiverHasAuthorization, contacts.confirm)
@@ -24,4 +27,5 @@ module.exports = function(app) {
   // Finish by binding middlewares
   app.param('listUserId', contacts.contactListByUser);
   app.param('contactId', contacts.contactById);
+  app.param('userId', contacts.contactByUserId);
 };

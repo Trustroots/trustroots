@@ -180,25 +180,21 @@ exports.get = function(req, res) {
  * Single contact by user middleware
  *
  * - Find contact record where logged in user is a friend of given userId
- *
-exports.contactByUser = function(req, res, next, userId) {
-  Contact.findOne(
-      {
-        users: { $all: [ userId, req.user._id ] }
-        // @todo: Show confirmed ones only to user him/herself
-        //confirmed: true
-      }
-    )
+ */
+exports.contactByUserId = function(req, res, next, userId) {
+  Contact.findOne({
+      users: { $all: [ userId, req.user._id ] }
+    })
     .populate('users', userHandler.userMiniProfileFields)
     .exec(function(err, contact) {
       if (err) return next(err);
-      if (!contact) return next(new Error('Failed to load contact.'));
-
-      req.contact = contact;
+      if(contact) {
+        req.contact = contact;
+      }
       next();
     });
 };
-*/
+
 
 /**
  * Single contact contact by id middleware
@@ -257,7 +253,18 @@ exports.contactListByUser = function(req, res, next, listUserId) {
  * Contact authorization middleware
  */
 exports.hasAuthorization = function(req, res, next) {
-  if ((req.user && req.user.public === true) && req.contact && (req.contact.users[0].id === req.user.id || req.contact.users[1].id === req.user.id)) {
+  if (
+    // Contact to check against
+    req.contact &&
+    // User is registered and public
+    (req.user && req.user.public === true) &&
+    // User is participant in connection
+    (
+      // This is double since in some cases user field is populated, thus we'll get "_id" instead of "id"
+      (req.contact.users[0]._id === req.user._id || req.contact.users[1]._id === req.user.id) ||
+      (req.contact.users[0].id === req.user.id || req.contact.users[1].id === req.user.id)
+    )
+  ) {
     next();
   } else {
     return res.status(403).send('User is not authorized');
