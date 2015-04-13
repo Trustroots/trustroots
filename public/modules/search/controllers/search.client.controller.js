@@ -223,14 +223,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
     });
     */
 
-
-    /**
-     * Open user's profile when clicking from search list
-     */
-    $scope.showUser = function(username) {
-      $state.go('profile', {username: username});
-    };
-
     /**
      * Load markers to the current bounding box
      */
