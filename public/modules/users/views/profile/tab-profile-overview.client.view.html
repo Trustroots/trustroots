@@ -8,10 +8,21 @@
         About me
       </div>
       <div class="panel-body">
-        <div data-ng-bind-html="profile.description | trustedHtml"></div>
 
-        <!-- If no description, then deep thoughts... -->
-        <blockquote data-ng-hide="profile.description" class="profile-quote">
+        <!-- Short descriptions -->
+        <div ng-show="profile.description.length < 2500" ng-bind-html="profile.description | trustedHtml"></div>
+
+        <!-- Long descriptions -->
+        <div ng-show="profile.description.length >= 2500">
+          <div class="panel-more-wrap" ng-hide="profileDescriptionToggle">
+            <div ng-bind-html="profile.description | limitTo:2400 | trustedHtml" class="panel-more-excerpt" ng-click="profileDescriptionToggle=true"></div>
+            <div class="panel-more-fade" ng-click="profileDescriptionToggle=true">Show more...</div>
+          </div>
+          <div ng-bind-html="profile.description | trustedHtml" ng-show="profileDescriptionToggle"></div>
+        </div>
+
+        <!-- If no description, show deep thoughts... -->
+        <blockquote ng-hide="profile.description" class="profile-quote">
           “Everyone is necessarily the hero of his own life story.”
         </blockquote>
       </div>
