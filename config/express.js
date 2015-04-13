@@ -95,14 +95,31 @@ module.exports = function(db) {
   app.use(bodyParser.json());
   app.use(methodOverride());
 
+  // Trust proxy (e.g. Nginx/Phusion Passenger)
+  // If you have your node.js behind a proxy and are using secure:
+  // true with session cookies, you need to set "trust proxy".
+  if(config.https) {
+    app.set('trust proxy', 1); // trust first proxy
+  }
+
   // CookieParser should be above session
   app.use(cookieParser());
 
   // Express MongoDB session storage
+  // https://www.npmjs.com/package/express-session
   app.use(session({
     saveUninitialized: true,
     resave: true,
     secret: config.sessionSecret,
+    cookie: {
+      // If secure is true, and you access your site over HTTP, the cookie will not be set.
+      secure: config.https,
+
+      // By default cookie.maxAge is null, meaning no "expires" parameter is
+      // set so the cookie becomes a browser-session cookie. When the user
+      // closes the browser the cookie (and session) will be removed.
+      maxAge: 2419200000
+    },
     store: new mongoStore({
       mongooseConnection: db.connection,
       collection: config.sessionCollection
