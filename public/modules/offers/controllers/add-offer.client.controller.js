@@ -9,9 +9,6 @@
 angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$location', 'leafletBoundsHelpers', 'OffersBy', 'Offers', 'Authentication', 'messageCenterService',
   function($scope, $rootScope, $http, $timeout, $state, $stateParams, $location, leafletBoundsHelpers, OffersBy, Offers, Authentication, messageCenterService) {
 
-    // If user is not signed in then redirect to sign in form
-    if (!Authentication.user) $location.path('signin');
-
     $scope.user = Authentication.user;
 
     $scope.isLoading = false;

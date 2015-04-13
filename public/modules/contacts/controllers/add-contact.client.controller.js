@@ -3,9 +3,6 @@
 angular.module('contacts').controller('AddContactController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$location', 'Contact', 'ContactBy', 'UsersMini', 'Authentication',
   function($scope, $rootScope, $http, $timeout, $state, $stateParams, $location, Contact, ContactBy, UsersMini, Authentication) {
 
-    // If user is not signed in then redirect to sign in form
-    if (!Authentication.user) $location.path('signin');
-
     // If no friend ID defined, go to elsewhere
     if (!$stateParams.userId) $state.go('profile');
 

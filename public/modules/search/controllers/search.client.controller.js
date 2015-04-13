@@ -12,9 +12,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
     // Currently signed in user
     $scope.user = Authentication.user;
 
-    // If user is not signed in then redirect back home
-    if (!$scope.user) $location.path('signin');
-
     // Default to Europe for now
     var defaultLocation = {
       lat: 48.6908333333,

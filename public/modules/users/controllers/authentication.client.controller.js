@@ -3,14 +3,14 @@
 /* This declares to JSHint that these are global variables: */
 /*global flashTimeout:false */
 
-angular.module('users').controller('AuthenticationController', ['$scope', '$http', '$state', '$modal', 'Authentication', 'messageCenterService',
-  function($scope, $http, $state, $modal, Authentication, messageCenterService) {
+angular.module('users').controller('AuthenticationController', ['$scope', '$rootScope', '$http', '$state', '$stateParams', '$modal', 'Authentication', 'messageCenterService',
+  function($scope, $rootScope, $http, $state, $stateParams, $modal, Authentication, messageCenterService) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) $state.go('search');
 
     $scope.authentication = Authentication;
-
+    $scope.continue = ($stateParams.continue);
     $scope.isLoading = false;
 
     /**
@@ -49,7 +49,12 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$http
         $scope.authentication.user = response;
 
         // And redirect to the search page
-        $state.go('search');
+        if($scope.continue) {
+          $state.go($rootScope.signinState || 'search', $rootScope.signinStateParams || {});
+        }
+        else {
+          $state.go('search');
+        }
       }).error(function(response) {
         $scope.isLoading = false;
         messageCenterService.add('danger', response.message, { timeout: flashTimeout });
