@@ -69,7 +69,7 @@
       font-weight: bold;
 
       // Vertical gradient, from top to bottom
-      #gradient.vertical(transparent; rgba(red(@panel-bg), green(@panel-bg), blue(@panel-bg), 0.96); 0%; 80%);
+      #gradient.vertical(rgba(red(@panel-bg), green(@panel-bg), blue(@panel-bg), 0); rgba(red(@panel-bg), green(@panel-bg), blue(@panel-bg), 0.96); 0%; 80%);
       &:hover {
         .transition(color 0.4s);
         color: lighten(@text-color, 40%);
