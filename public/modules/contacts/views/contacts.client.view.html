@@ -13,11 +13,12 @@
       <br>
     </div>
 
-    <div class="col-xs-6" ng-repeat="contact in contacts">
+    <div class="col-xs-12 col-sm-6" ng-repeat="contact in contacts">
       <a ui-sref="profile({username: contact.users[0].username})" class="contacts-contact panel panel-default">
         <div tr-avatar data-user="contact.users[0]" data-size="128"></div>
         <h4 ng-bind="contact.users[0].displayName"></h4>
-        <small class="text-muted">Since <time ng-bind="contact.created | date:'mediumDate'"></time></small>
+        <small class="text-muted">Since <time ng-bind="contact.created | date:'mediumDate'"></time></small><br>
+        <small class="text-warning" ng-show="contact.confirmed === false">Contact request sent and pending.</small><br>
       </a>
     </div>
 
