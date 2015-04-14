@@ -48,10 +48,18 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$root
         // If successful we assign the response to the global user model
         $scope.authentication.user = response;
 
-        // And redirect to the search page
+        // Redirect to where we were left off before sign-in page
+        // See public/modules/core/controllers/main.client.controller.js
         if($scope.continue) {
-          $state.go($rootScope.signinState || 'search', $rootScope.signinStateParams || {});
+          var stateTo = $rootScope.signinState || 'search',
+              stateToParams = $rootScope.signinStateParams || {};
+          delete $rootScope.signinState;
+          delete $rootScope.signinStateParams;
+          $state.go(stateTo, stateToParams);
+
+          //$state.go($rootScope.signinState || 'search', $rootScope.signinStateParams || {});
         }
+        // Redirect to the search page
         else {
           $state.go('search');
         }
