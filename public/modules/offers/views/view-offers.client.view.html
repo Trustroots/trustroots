@@ -32,7 +32,7 @@
     <div ng-show="offer.status !== 'no'">
 
       <!-- Short descriptions -->
-      <div ng-show="offer.description && offer.description.length < 2000" ng-bind-html="profile.description | trustedHtml"></div>
+      <div ng-show="offer.description && offer.description.length < 2000" ng-bind-html="offer.description | trustedHtml"></div>
 
       <!-- Long descriptions -->
       <div ng-show="offer.description && offer.description.length >= 2000">

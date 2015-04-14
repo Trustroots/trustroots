@@ -22,12 +22,11 @@ angular.module('users').directive('trAvatar', ['$location',
 
     return {
         template:
-          '<div ng-switch="link">' +
-            '<img ng-switch-when="false" ng-src="{{avatar}}" class="avatar" width="{{size}}" height="{{size}}" alt="">' +
-            '<a ng-switch-when="true" ui-sref="profile({username: user.username})"><img ng-src="{{avatar}}" class="avatar" width="{{size}}" height="{{size}}" alt=""></a>' +
+          '<div ng-switch="link" ng-cloak>' +
+            '<img class="avatar avatar-{{ size }}" alt="" ng-switch-when="false" ng-src="{{avatar}}">' +
+            '<a ng-switch-when="true" ui-sref="profile({username: user.username})"><img class="avatar avatar-{{ size }}" alt="" ng-class="avatar-{{ size }}" ng-src="{{avatar}}"></a>' +
           '</div>',
         restrict: 'A',
-        //replace: true,
         scope: {
           user: '=user'
         },
@@ -58,7 +57,7 @@ angular.module('users').directive('trAvatar', ['$location',
                    $scope.user.additionalProvidersData &&
                    $scope.user.additionalProvidersData.facebook &&
                    $scope.user.additionalProvidersData.facebook.id) {
-                     $scope.avatar = $location.protocol() + '://graph.facebook.com/' + $scope.user.additionalProvidersData.facebook.id + '/picture/?width=' +($scope.size || defaultSize) + '&height=' + ($scope.size || defaultSize);
+                     $scope.avatar = $location.protocol() + '://graph.facebook.com/' + $scope.user.additionalProvidersData.facebook.id + '/picture/?width=' + ($scope.size || defaultSize) + '&height=' + ($scope.size || defaultSize);
                 }
                 else {
                   $scope.avatar = defaultAvatar;
@@ -88,7 +87,7 @@ angular.module('users').directive('trAvatar', ['$location',
               else if($scope.source === 'locale') {
                 if($scope.user.avatarUploaded) {
                   var timestamp = new Date($scope.user.updated).getTime();
-                  $scope.avatar = '/modules/users/img/profile/uploads/'+$scope.user._id+'/avatar/'+$scope.size+'.jpg?'+timestamp;
+                  $scope.avatar = '/modules/users/img/profile/uploads/' + $scope.user._id + '/avatar/' + $scope.size + '.jpg?' + timestamp;
                 }
                 else {
                   $scope.avatar = defaultAvatar;
@@ -106,7 +105,7 @@ angular.module('users').directive('trAvatar', ['$location',
           });
 
           $scope.$watch('user.updated',function() {
-              determineSource();
+            determineSource();
           });
 
         }],

@@ -1,4 +1,18 @@
 #!/bin/bash
+
+#
+# MONGODB BACKUP
+#
+# Export the db and tar.gz them into a folder.
+
+
+# Note that backups are non-blocking
+# http://stackoverflow.com/questions/14825557/does-mongodump-lock-the-database
+# To lock/unlock, you could use https://gist.github.com/mushfiq/6186677 and https://gist.github.com/mushfiq/6186681
+# See http://mushfiq.me/2013/08/08/mongodb-backup-script/ for more.
+
+
+# SETTINGS
 MONGODBNAME="trust-roots" # MongoDB to backup
 
 DUMPPATH="/srv/backups/db-dumps"
