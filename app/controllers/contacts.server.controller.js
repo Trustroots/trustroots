@@ -182,17 +182,27 @@ exports.get = function(req, res) {
  * - Find contact record where logged in user is a friend of given userId
  */
 exports.contactByUserId = function(req, res, next, userId) {
-  Contact.findOne({
-      users: { $all: [ userId, req.user._id ] }
-    })
-    .populate('users', userHandler.userMiniProfileFields)
-    .exec(function(err, contact) {
-      if (err) return next(err);
-      if(contact) {
-        req.contact = contact;
-      }
-      next();
+
+  // User's own profile, don't bother hitting the DB
+  if(req.user && req.user._id === userId) {
+    next();
+  }
+  else if(req.user) {
+    Contact.findOne({
+        users: { $all: [ userId, req.user._id ] }
+      })
+      .populate('users', userHandler.userMiniProfileFields)
+      .exec(function(err, contact) {
+        if (err) return next(err);
+        if(contact) {
+          req.contact = contact;
+        }
+        next();
     });
+  }
+  else {
+    next();
+  }
 };
 
 
