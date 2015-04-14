@@ -71,7 +71,7 @@
 
       <!-- Profile -->
       <div class="search-result panel panel-default" ng-show="offer && offer.$resolved">
-        <div class="panel-body" ng-click="showUser(offer.user.username)">
+        <a class="panel-body" ui-sref="profile({username:offer.user.username})">
           <div tr-avatar data-size="32" data-link="false" data-user="offer.user"></div>
           <h4>
             {{offer.user.displayName}}
@@ -89,7 +89,18 @@
               Hosting:
               <span class="label" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': offer.status === 'no'}" ng-bind="offer.status"></span>
             </div>
-            <div class="search-result-description" data-ng-bind-html="offer.description | trustedHtml"></div>
+
+            <!-- Short descriptions -->
+            <div class="search-result-description" ng-show="offer.description && offer.description.length < 1000" ng-bind-html="profile.description | trustedHtml"></div>
+
+            <!-- Long descriptions -->
+            <div class="search-result-description" ng-show="offer.description && offer.description.length >= 1000">
+              <div class="panel-more-wrap">
+                <div ng-bind-html="offer.description | limitTo:1000 | trustedHtml" class="panel-more-excerpt"></div>
+                <div class="panel-more-fade">Show more...</div>
+              </div>
+            </div>
+
           </div>
           <div class="search-result-languages" ng-show="offer.user.languages.length">
             <h4>Languages</h4>
@@ -97,7 +108,7 @@
               <li ng-repeat="code in offer.user.languages">{{languages[code]}}</li>
             </ul>
           </div>
-        </div>
+        </a>
       </div>
       <!-- /Profile -->
 

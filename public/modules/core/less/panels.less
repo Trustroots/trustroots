@@ -20,8 +20,8 @@
     display: block;
     background-color: @panel-heading-bg;
     margin: 0 0 10px 0;
-    margin-left: 20px;
-    margin-right: 20px;
+    margin-left: 15px;
+    margin-right: 15px;
     font-size: 22px;
     line-height: 24px;
     background: transparent;
@@ -51,4 +51,30 @@
       color: lighten(@gray-lighter, 2%) !important;
     }
   }
+
+  // Use this to wrap long texts into shorter box with "show more" link at the bottom
+  .panel-more-wrap {
+    position: relative;
+    .panel-more-excerpt {
+      //position: absolute;
+    }
+    .panel-more-fade {
+      position: absolute;
+      bottom: 0;
+      display: block;
+      width: 100%;
+      text-align: center;
+      cursor: pointer;
+      padding: 120px 0 5px 0;
+      font-weight: bold;
+
+      // Vertical gradient, from top to bottom
+      #gradient.vertical(transparent; rgba(red(@panel-bg), green(@panel-bg), blue(@panel-bg), 0.96); 0%; 80%);
+      &:hover {
+        .transition(color 0.4s);
+        color: lighten(@text-color, 40%);
+      }
+    }
+  }
+
 }

@@ -37,6 +37,10 @@ angular.module('users').config(['$stateProvider',
       url: '/signin',
       templateUrl: 'modules/users/views/authentication/signin.client.view.html'
     }).
+    state('signin-continue', {
+      url: '/signin/?continue',
+      templateUrl: 'modules/users/views/authentication/signin.client.view.html'
+    }).
     state('confirm-email', {
       url: '/confirm-email/:token?signup',
       templateUrl: 'modules/users/views/authentication/confirm-email.client.view.html'

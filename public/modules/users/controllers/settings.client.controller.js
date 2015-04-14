@@ -6,9 +6,6 @@
 angular.module('users').controller('SettingsController', ['$scope', '$http', '$state', 'Users', 'Authentication', 'messageCenterService',
   function($scope, $http, $state, Users, Authentication, messageCenterService) {
 
-    // If user is not signed in then redirect to login
-    if (!Authentication.user) $state.go('signin');
-
     $scope.user = Authentication.user;
 
     /**

@@ -1,17 +1,26 @@
-<div data-ng-controller="ListContactsController">
+<div data-ng-controller="ListContactsController" ng-show="$parent.tabSelected === 'contacts'">
 
-  <div data-ng-if="!contacts || !contacts.$resolved" class="content-wait">
+  <div ng-hide="contacts.$resolved" class="content-wait">
     <small>Wait a moment...</small>
   </div>
 
   <!-- Contact list -->
-  <div deckgrid source="contacts" class="deckgrid" ng-show="$parent.tabSelected === 'contacts' && contacts.$resolved">
-    <div class="deckgrid-card contacts-contact panel panel-default">
-      <div tr-avatar data-user="card.users[0]" data-size="128"></div>
-      <a ui-sref="profile({username: card.users[0].username})">
-        <h4 data-ng-bind="card.users[0].displayName"></h4>
+  <div class="contacts-list row" data-ng-if="contacts.$resolved && contacts.length > 0">
+
+    <div class="col-xs-12 text-center">
+      <h4 class="text-muted" ng-show="contacts.length === 1">One contact</h4>
+      <h4 class="text-muted" ng-show="contacts.length > 1">{{contacts.length}} contacts</h4>
+      <br>
+    </div>
+
+    <div class="col-xs-6" ng-repeat="contact in contacts">
+      <a ui-sref="profile({username: contact.users[0].username})" class="contacts-contact panel panel-default">
+        <div tr-avatar data-user="contact.users[0]" data-size="128"></div>
+        <h4 ng-bind="contact.users[0].displayName"></h4>
+        <small class="text-muted">Since <time ng-bind="contact.created | date:'mediumDate'"></time></small>
       </a>
     </div>
+
   </div>
   <!-- /Contact list -->
 

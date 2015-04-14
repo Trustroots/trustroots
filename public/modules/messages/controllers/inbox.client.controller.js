@@ -3,9 +3,6 @@
 angular.module('messages').controller('MessagesInboxController', ['$scope', '$state', '$log', 'Authentication', 'Messages',//, 'Socket'
   function($scope, $state, $log, Authentication, Messages) {//, Socket
 
-    // If user is not signed in then redirect back home
-    if (!Authentication.user) $state.go('home');
-
     $scope.user = Authentication.user;
 
     /*

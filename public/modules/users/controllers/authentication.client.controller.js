@@ -3,14 +3,14 @@
 /* This declares to JSHint that these are global variables: */
 /*global flashTimeout:false */
 
-angular.module('users').controller('AuthenticationController', ['$scope', '$http', '$state', '$modal', 'Authentication', 'messageCenterService',
-  function($scope, $http, $state, $modal, Authentication, messageCenterService) {
+angular.module('users').controller('AuthenticationController', ['$scope', '$rootScope', '$http', '$state', '$stateParams', '$modal', 'Authentication', 'messageCenterService',
+  function($scope, $rootScope, $http, $state, $stateParams, $modal, Authentication, messageCenterService) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) $state.go('search');
 
     $scope.authentication = Authentication;
-
+    $scope.continue = ($stateParams.continue);
     $scope.isLoading = false;
 
     /**
@@ -48,8 +48,21 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$http
         // If successful we assign the response to the global user model
         $scope.authentication.user = response;
 
-        // And redirect to the search page
-        $state.go('search');
+        // Redirect to where we were left off before sign-in page
+        // See public/modules/core/controllers/main.client.controller.js
+        if($scope.continue) {
+          var stateTo = $rootScope.signinState || 'search',
+              stateToParams = $rootScope.signinStateParams || {};
+          delete $rootScope.signinState;
+          delete $rootScope.signinStateParams;
+          $state.go(stateTo, stateToParams);
+
+          //$state.go($rootScope.signinState || 'search', $rootScope.signinStateParams || {});
+        }
+        // Redirect to the search page
+        else {
+          $state.go('search');
+        }
       }).error(function(response) {
         $scope.isLoading = false;
         messageCenterService.add('danger', response.message, { timeout: flashTimeout });

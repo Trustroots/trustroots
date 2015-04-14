@@ -1,6 +1,32 @@
 /**
  * Angular medium editor
- *
+ */
+
+// Our own customizations
+.angular-medium-editor {
+  border: 0;
+  background: transparent;
+  .box-shadow(none);
+  height: auto;
+  resize: none;
+  margin: 0;
+  padding: 0;
+  &:hover {
+    background: fade(@brand-primary, 10%);
+  }
+  &:focus {
+    background: transparent;
+    outline: none;
+    border: 0;
+  }
+  &.medium-editor-placeholder:after {
+    color: @input-color-placeholder;
+    cursor: text;
+  }
+}
+
+
+/*
  * Bootstrap theme for Medium-editor
  * Adapted from https://raw.githubusercontent.com/daviferreira/medium-editor/master/src/sass/themes/bootstrap.scss
  *
@@ -74,20 +100,20 @@
     color: @medium_editor_link_color;
 
     &::-webkit-input-placeholder {
-      color: @medium_editor_placeholder_color;
-      color: rgba(red(@medium_editor_placeholder_color), green(@medium_editor_placeholder_color), blue(@medium_editor_placeholder_color), .8);
+      color: @medium_editor_link_color;
+      color: rgba(red(@medium_editor_link_color), green(@medium_editor_link_color), blue(@medium_editor_link_color), .8);
     }
     &:-moz-placeholder { /* Firefox 18- */
       color: @medium_editor_placeholder_color;
-      color: rgba(red(@medium_editor_placeholder_color), green(@medium_editor_placeholder_color), blue(@medium_editor_placeholder_color), .8);
+      color: rgba(red(@medium_editor_link_color), green(@medium_editor_link_color), blue(@medium_editor_link_color), .8);
     }
     &::-moz-placeholder {  /* Firefox 19+ */
       color: @medium_editor_placeholder_color;
-      color: rgba(red(@medium_editor_placeholder_color), green(@medium_editor_placeholder_color), blue(@medium_editor_placeholder_color), .8);
+      color: rgba(red(@medium_editor_link_color), green(@medium_editor_link_color), blue(@medium_editor_link_color), .8);
     }
     &:-ms-input-placeholder {
       color: @medium_editor_placeholder_color;
-      color: rgba(red(@medium_editor_placeholder_color), green(@medium_editor_placeholder_color), blue(@medium_editor_placeholder_color), .8);
+      color: rgba(red(@medium_editor_link_color), green(@medium_editor_link_color), blue(@medium_editor_link_color), .8);
     }
   }
 

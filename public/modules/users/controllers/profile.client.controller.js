@@ -6,9 +6,6 @@
 angular.module('users').controller('ProfileController', ['$scope', '$stateParams', '$state', '$location', '$log', '$modal', 'Languages', 'Users', 'UserProfiles', 'Authentication', '$timeout', 'messageCenterService',
   function($scope, $stateParams, $state, $location, $log, $modal, Languages, Users, UserProfiles, Authentication, $timeout, messageCenterService) {
 
-    // If user is not signed in then redirect to login
-    if (!Authentication.user) $state.go('signin');
-
     $scope.user = Authentication.user; // Currently logged in user
     $scope.profile = false; // Profile to show
     $scope.languages = Languages.get('object');

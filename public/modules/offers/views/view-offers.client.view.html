@@ -30,7 +30,19 @@
 
     <!-- Hosting: yes | maybe -->
     <div ng-show="offer.status !== 'no'">
-      <div ng-show="offer.description" ng-bind-html="offer.description | trustedHtml"></div>
+
+      <!-- Short descriptions -->
+      <div ng-show="offer.description && offer.description.length < 2000" ng-bind-html="profile.description | trustedHtml"></div>
+
+      <!-- Long descriptions -->
+      <div ng-show="offer.description && offer.description.length >= 2000">
+        <div class="panel-more-wrap" ng-hide="offerDescriptionToggle">
+          <div ng-bind-html="offer.description | limitTo:2000 | trustedHtml" class="panel-more-excerpt" ng-click="offerDescriptionToggle=true"></div>
+          <div class="panel-more-fade" ng-click="offerDescriptionToggle=true">Show more...</div>
+        </div>
+        <div ng-bind-html="offer.description | trustedHtml" ng-show="offerDescriptionToggle"></div>
+      </div>
+
       <p class="offer-restrictions">
         <small ng-show="offer.description && user._id === profile._id" class="pull-right"><a ui-sref="offer" class="text-muted">edit</a></small>
         <small ng-show="offer.maxGuests > 1">At most {{offer.maxGuests}} guests.</small>

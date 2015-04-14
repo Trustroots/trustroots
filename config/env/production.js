@@ -10,7 +10,7 @@ module.exports = {
   },
   app: {
     title: 'Trustroots',
-    description: 'Hospitality exchange community for hitchhikers and other travellers. We want a world that encourages trust, adventure and intercultural connections.',
+    description: 'Travellers community for sharing, hosting and getting people together. Built with hitchhikers in mind. A world that encourages trust and adventure.',
     tagline: 'Trustroots development version.',
     // Settings will be pushed PUBLICLY to templates as json, no secrets:
     settings: {
@@ -50,7 +50,6 @@ module.exports = {
         'public/lib/leaflet/dist/leaflet.js',
         'public/lib/PruneCluster/dist/PruneCluster.min.js',
         'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.min.js',
-        'public/lib/angular-deckgrid/angular-deckgrid.js',
         'public/lib/angular-waypoints/dist/angular-waypoints.all.min.js',
         'public/lib/ng-file-upload/angular-file-upload.min.js',
         'public/lib/message-center/message-center.js',

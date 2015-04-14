@@ -3,9 +3,6 @@
 angular.module('contacts').controller('ConfirmContactController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$location', 'Contact', 'Authentication',
   function($scope, $rootScope, $http, $timeout, $state, $stateParams, $location, Contact, Authentication) {
 
-    // If user is not signed in then redirect to sign in form
-    if (!Authentication.user) $location.path('signin');
-
     // If no friend ID defined, go to elsewhere
     if (!$stateParams.contactId) {
       $scope.error = 'Missing confirmation code.';

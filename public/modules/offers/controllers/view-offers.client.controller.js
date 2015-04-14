@@ -7,9 +7,6 @@
 angular.module('offers').controller('ViewOffersController', ['$scope', '$state', '$location', '$timeout', 'OffersBy', 'Authentication', 'leafletData',
   function($scope, $state, $location, $timeout, OffersBy, Authentication, leafletData) {
 
-    // If user is not signed in then redirect to sign in form
-    if (!Authentication.user) $location.path('signin');
-
     $scope.offer = false;
     $scope.hostLocation = {};
     $scope.currentSelection = {
