@@ -16,6 +16,10 @@ angular.module('core').controller('MainController', ['$scope', '$rootScope', '$w
     });
     */
 
+    // This is used as a cache buster with ng-include
+    // Includes a hash of latest git commit
+    $scope.cacheBust = $window.settings.commit || '';
+
     // These pages require authenticated user
     var authRequiredPages = ['welcome',
                              'profile-edit',

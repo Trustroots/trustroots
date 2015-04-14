@@ -32,7 +32,7 @@
   </div>
 
   <!-- Offers -->
-  <div class="col-md-6" ng-include="'/modules/offers/views/view-offers.client.view.html'" ng-hide="!profileError && user.public === false"></div>
+  <div class="col-md-6" ng-include="'/modules/offers/views/view-offers.client.view.html?v={{cacheBust}}'" ng-hide="!profileError && user.public === false"></div>
 
   <!-- Offers/user's own profile isn't public yet -->
   <div class="col-md-6" ng-show="!profileError && user.public === false">
