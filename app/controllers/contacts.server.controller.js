@@ -220,18 +220,14 @@ exports.contactListByUser = function(req, res, next, listUserId) {
 
   // Add 'confirmed' field only if showing currently logged in user's listing
   var contactFields = 'users created';
-  if(req.user && req.user._id === listUserId) {
+  var contactQuery = { users: listUserId, confirmed: true };
+
+  if(req.user && req.user.id === listUserId) {
     contactFields += ' confirmed';
+    delete contactQuery.confirmed;
   }
 
-  Contact.find(
-      {
-        users: listUserId,
-        // @todo: Show confirmed ones only to user him/herself
-        confirmed: true
-      },
-      contactFields
-    )
+  Contact.find(contactQuery, contactFields)
     .sort('-created')
     // Populate users, except don't populate user's own info... we don't need it dozen times there
     .populate({
@@ -253,17 +249,28 @@ exports.contactListByUser = function(req, res, next, listUserId) {
  * Contact authorization middleware
  */
 exports.hasAuthorization = function(req, res, next) {
+
+  if(!req.contact) {
+    return res.status(404).send('Contact not found.');
+  }
+
+  // This is double since in some cases user field is populated, thus we'll get "_id" instead of "id"
+  // - contact.useres[0] is receiving person
+  // - contact.useres[1] is initiating person
+  var userTo, userFrom;
+
+  if(req.contact.users[0]._id) userTo = req.contact.users[0]._id;
+  else if(req.contact.users[0].id) userTo = req.contact.users[0].id;
+
+  if(req.contact.users[1]._id) userFrom = req.contact.users[1]._id;
+  else if(req.contact.users[1].id) userFrom = req.contact.users[1].id;
+
   if (
-    // Contact to check against
-    req.contact &&
     // User is registered and public
     (req.user && req.user.public === true) &&
     // User is participant in connection
-    (
-      // This is double since in some cases user field is populated, thus we'll get "_id" instead of "id"
-      (req.contact.users[0]._id === req.user._id || req.contact.users[1]._id === req.user.id) ||
-      (req.contact.users[0].id === req.user.id || req.contact.users[1].id === req.user.id)
-    )
+    (userFrom && userTo) &&
+    (userFrom.toString() === req.user.id.toString() || userTo.toString() === req.user.id.toString())
   ) {
     next();
   } else {
