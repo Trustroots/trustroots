@@ -26,7 +26,7 @@ exports.userByID = function(req, res, next, id) {
  */
 exports.userByUsername = function(req, res, next, username) {
   User.findOne({
-    username: username
+    username: username.toLowerCase()
   }).exec(function(err, user) {
     if (err) return next(err);
     if (!user) return next(new Error('Failed to load User ' + username));

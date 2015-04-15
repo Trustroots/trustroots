@@ -56,7 +56,7 @@ var UserSchema = new Schema({
     default: '',
     validate: [validateLocalStrategyProperty, 'Please fill in your last name']
   },
-  /* This is (currently) generated in users.porfile.server.controller.js */
+  /* This is (currently) generated in users.profile.server.controller.js */
   displayName: {
     type: String,
     trim: true
@@ -108,6 +108,7 @@ var UserSchema = new Schema({
   locationFrom: {
     type: String
   },
+  // Lowercase enforced username
   username: {
     type: String,
     unique: 'Username already exists',
@@ -115,6 +116,11 @@ var UserSchema = new Schema({
     validate: [validateUsername, 'Please fill in valid username: 3-32 characters long non banned word, characters "_-.", no consecutive dots, lowercase letters a-z and numbers 0-9.'],
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
     trim: true
+  },
+  // Stores unaltered original username
+  displayUsername:{
+    type: String,
+    default: ''
   },
   password: {
     type: String,

@@ -118,7 +118,7 @@
               <span class="profile-firstname" data-ng-model="user.firstName" medium-editor options="{'placeholder': 'First name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
               <span class="profile-lastname" data-ng-model="user.lastName" medium-editor options="{'placeholder': 'Last name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
 
-              <h4 class="profile-username" tooltip="You cannot change your username" tooltip-placement="right">@{{user.username}}</h4>
+              <h4 class="profile-username" tooltip="You cannot change your username" tooltip-placement="right">@{{user.displayUsername || user.username}}</h4>
 
               <div class="profile-tagline">
                 <div data-ng-model="user.tagline" medium-editor options="{'placeholder': 'Short tagline...', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></div>
