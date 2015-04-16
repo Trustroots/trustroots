@@ -98,7 +98,7 @@ var UserSchema = new Schema({
   },
   languages: {
     type: [{
-      type: String,
+      type: String
     }],
     default: []
   },
@@ -120,7 +120,8 @@ var UserSchema = new Schema({
   // Stores unaltered original username
   displayUsername:{
     type: String,
-    default: ''
+    default: '',
+    trim: true
   },
   password: {
     type: String,
@@ -128,7 +129,7 @@ var UserSchema = new Schema({
     validate: [validateLocalStrategyPassword, 'Password should be more than 8 characters long.']
   },
   emailHash: {
-    type: String,
+    type: String
   },
   salt: {
     type: String
