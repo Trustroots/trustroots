@@ -64,7 +64,7 @@ var UserSchema = new Schema({
   email: {
     type: String,
     trim: true,
-    unique: 'Email already exists',
+    unique: true,
     lowercase: true,
     default: '',
     validate: [validateLocalStrategyProperty, 'Please enter your email'],
@@ -111,7 +111,7 @@ var UserSchema = new Schema({
   // Lowercase enforced username
   username: {
     type: String,
-    unique: 'Username already exists',
+    unique: true,
     required: 'Please fill in a username',
     validate: [validateUsername, 'Please fill in valid username: 3-32 characters long non banned word, characters "_-.", no consecutive dots, lowercase letters a-z and numbers 0-9.'],
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147

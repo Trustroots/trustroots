@@ -2,6 +2,7 @@
 
 /**
  * Get unique error field name
+ * @todo: once https://github.com/Automattic/mongoose/issues/2284 gets done, we can have prettier errors for this.
  */
 var getUniqueErrorMessage = function(err) {
   var output;
