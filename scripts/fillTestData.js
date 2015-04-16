@@ -32,7 +32,7 @@ var randomizeLoaction = function () {
 };
 
 // Bootstrap db connection
-var db = mongoose.connect(config.db, function(err) {
+var db = mongoose.connect(config.db.uri, function(err) {
   if (err) {
     console.error('\x1b[31m', 'Could not connect to MongoDB!');
     console.log(err);
@@ -63,7 +63,7 @@ var addUsers = function (index, max) {
     addUsers(index, max);
   }
 
-}
+};
 
 var addOffer = function (id, index, max) {
   var offer = new Offer();

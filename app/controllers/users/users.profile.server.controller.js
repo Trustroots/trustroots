@@ -30,6 +30,7 @@ exports.userProfileFields = [
                     'id',
                     'displayName',
                     'username',
+                    'displayUsername',
                     'gender',
                     'tagline',
                     'description',
@@ -50,7 +51,7 @@ exports.userProfileFields = [
                     ].join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed
-exports.userMiniProfileFields = 'id displayName username avatarSource avatarUploaded emailHash additionalProvidersData.facebook.id';
+exports.userMiniProfileFields = 'id displayName username displayUsername avatarSource avatarUploaded emailHash additionalProvidersData.facebook.id';
 
 /**
  * Rules for sanitizing user description coming in and out
@@ -403,7 +404,7 @@ exports.userByUsername = function(req, res, next, username) {
     // Find user
     function(done) {
       User.findOne({
-          username: username
+          username: username.toLowerCase()
       }, exports.userProfileFields + ' public').exec(function(err, user) {
 
         // Something went wrong or no such user
