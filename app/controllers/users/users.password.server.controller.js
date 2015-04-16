@@ -31,8 +31,8 @@ exports.forgot = function(req, res, next) {
         var username = req.body.username.toString().toLowerCase();
         User.findOne({
           $or: [
-            { username: username },
-            { email: username }
+            { username: username.toLowerCase() },
+            { email: username.toLowerCase() }
           ]
         }, '-salt -password', function(err, user) {
           if (!user) {
