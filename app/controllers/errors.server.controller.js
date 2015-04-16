@@ -30,7 +30,7 @@ exports.getErrorMessage = function(err) {
         message = getUniqueErrorMessage(err);
         break;
       default:
-        message = 'Something went wrong';
+        message = 'Snap! Something went wrong. If this keeps happening, please contact us.';
     }
   } else {
     for (var errName in err.errors) {
