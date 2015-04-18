@@ -67,5 +67,10 @@ module.exports = {
   },
   GA: {
     code: ''
+  },
+  piwik: {
+    enabled: false,
+    url: 'PIWIK_URL',
+    siteId: 'PIWIK_ID'
   }
 };
