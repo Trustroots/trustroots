@@ -86,8 +86,8 @@
   <script type="text/javascript" src="http://{{request.hostname}}:35729/livereload.js"></script>
   {% endif %}
 
-  {# Piwik Analytics process.env.NODE_ENV === 'production' && #}
-  {% if piwik.enabled === true %}
+  {# Piwik Analytics #}
+  {% if process.env.NODE_ENV === 'production' && piwik.enabled === true %}
   <!-- https://www.trustroots.org/#!/privacy -->
   <script type="text/javascript">
     var _paq = _paq || [];
@@ -101,7 +101,7 @@
       g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
     })();
   </script>
-  <noscript><p><img src="//{{piwik.url}}/piwik.php?idsite={{piwik.siteId}}" style="border:0;" alt="" /></p></noscript>
+  <noscript><img src="//{{piwik.url}}/piwik.php?idsite={{piwik.siteId}}" style="border:0;" alt="" /></noscript>
   {% endif %}
 
   {# NewRelic #}
