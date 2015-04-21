@@ -32,7 +32,7 @@ var validateLocalStrategyPassword = function(password) {
 var validateUsername = function(username) {
   var usernameRegex = /^[a-z0-9.\-_]{3,32}$/,
       dotsRegex = /^([^.]+\.?)$/,
-      illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test'];
+      illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'profile', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test'];
   return (this.provider !== 'local' || ( username &&
                                          usernameRegex.test(username) &&
                                        illegalUsernames.indexOf(username) < 0) &&
