@@ -162,7 +162,7 @@ var UserSchema = new Schema({
   },
   avatarSource: {
     type: String,
-    enum: ['none','gravatar','facebook','locale'],
+    enum: ['none','gravatar','facebook','local'],
     default: 'gravatar'
   },
   avatarUploaded: {
