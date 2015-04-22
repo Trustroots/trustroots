@@ -1,0 +1,91 @@
+/**
+ * Trustroots LESS CSS
+ * ---------------------------------------
+ */
+
+@app-modules: "../../../../";
+@app-lib: "@{app-modules}../public/lib/";
+
+// Import Bootstrap core variables and mixin
+// ---------------------------------------
+@import "@{app-lib}bootstrap/less/variables";
+@import "@{app-lib}bootstrap/less/mixins";
+
+
+// Trustroots variables (and overrides to Bootstrap)
+// ---------------------------------------
+@import "variables";
+
+
+// Let CSSLint ignore libraries
+ /* csslint ignore:start */
+
+// Import Bootstrap
+// ---------------------------------------
+
+// Bootstrap icon font
+@icon-font-path: "/lib/bootstrap/fonts/";
+
+// Reset and dependencies
+@import "@{app-lib}bootstrap/less/normalize";
+@import "@{app-lib}bootstrap/less/print";
+@import "@{app-lib}bootstrap/less/glyphicons";
+
+// Core CSS
+@import "@{app-lib}bootstrap/less/scaffolding";
+@import "@{app-lib}bootstrap/less/type";
+@import "@{app-lib}bootstrap/less/code";
+@import "@{app-lib}bootstrap/less/grid";
+@import "@{app-lib}bootstrap/less/tables";
+@import "@{app-lib}bootstrap/less/forms";
+@import "@{app-lib}bootstrap/less/buttons";
+
+// Components
+@import "@{app-lib}bootstrap/less/component-animations";
+@import "@{app-lib}bootstrap/less/dropdowns";
+@import "@{app-lib}bootstrap/less/button-groups";
+@import "@{app-lib}bootstrap/less/input-groups";
+@import "@{app-lib}bootstrap/less/navs";
+@import "@{app-lib}bootstrap/less/navbar";
+//@import "@{app-lib}bootstrap/less/breadcrumbs";
+//@import "@{app-lib}bootstrap/less/pagination";
+//@import "@{app-lib}bootstrap/less/pager";
+@import "@{app-lib}bootstrap/less/labels";
+@import "@{app-lib}bootstrap/less/badges";
+@import "@{app-lib}bootstrap/less/jumbotron";
+@import "@{app-lib}bootstrap/less/thumbnails";
+@import "@{app-lib}bootstrap/less/alerts";
+@import "@{app-lib}bootstrap/less/progress-bars";
+@import "@{app-lib}bootstrap/less/media";
+@import "@{app-lib}bootstrap/less/list-group";
+@import "@{app-lib}bootstrap/less/panels";
+@import "@{app-lib}bootstrap/less/responsive-embed";
+//@import "@{app-lib}bootstrap/less/wells";
+@import "@{app-lib}bootstrap/less/close";
+
+// Components w/ JavaScript
+@import "@{app-lib}bootstrap/less/modals";
+@import "@{app-lib}bootstrap/less/tooltip";
+@import "@{app-lib}bootstrap/less/popovers";
+@import "@{app-lib}bootstrap/less/carousel";
+
+// Utility classes
+@import "@{app-lib}bootstrap/less/utilities";
+@import "@{app-lib}bootstrap/less/responsive-utilities";
+
+// Font Awesome (icons)
+@import "@{app-lib}fontawesome/less/font-awesome";
+@fa-font-path: "/lib/fontawesome/fonts";
+
+/* csslint ignore:stop */
+
+// Trustroots modules
+// ---------------------------------------
+@import "@{app-modules}/core/client/less/core";
+@import "@{app-modules}/pages/client/less/pages";
+@import "@{app-modules}/search/client/less/search";
+@import "@{app-modules}/contacts/client/less/contacts";
+@import "@{app-modules}/offers/client/less/offers";
+@import "@{app-modules}/users/client/less/users";
+@import "@{app-modules}/messages/client/less/messages";
+@import "@{app-modules}/statistics/client/less/statistics";

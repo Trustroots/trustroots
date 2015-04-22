@@ -1,118 +1,66 @@
 'use strict';
 
-module.exports = function(grunt) {
-  // Unified Watch Object
-  var watchFiles = {
-    serverViews: ['app/views/**/*.*'],
-    serverJS: ['gruntfile.js', 'server.js', 'config/**/*.js', 'app/**/*.js'],
-    clientViews: ['public/modules/**/views/**/*.html'],
-    clientJS: ['public/js/*.js', 'public/modules/**/*.js'],
-    clientCSS: ['public/dist/application.css'],
-    clientLESS: ['public/less/*.less', 'public/modules/**/less/*.less'],
-    mochaTests: ['app/tests/**/*.js']
-  };
+/**
+ * Module dependencies.
+ */
+var _ = require('lodash'),
+    defaultAssets = require('./config/assets/default'),
+    testAssets = require('./config/assets/test');
 
+module.exports = function (grunt) {
   // Project Configuration
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    env: {
+      test: {
+        NODE_ENV: 'test'
+      },
+      dev: {
+        NODE_ENV: 'development'
+      },
+      prod: {
+        NODE_ENV: 'production'
+      }
+    },
     watch: {
       serverViews: {
-        files: watchFiles.serverViews,
+        files: defaultAssets.server.views,
         options: {
           livereload: true
         }
       },
       serverJS: {
-        files: watchFiles.serverJS,
+        files: defaultAssets.server.allJS,
         tasks: ['jshint'],
         options: {
           livereload: true
         }
       },
       clientViews: {
-        files: watchFiles.clientViews,
+        files: defaultAssets.client.views,
         options: {
-          livereload: true,
+          livereload: true
         }
       },
       clientJS: {
-        files: watchFiles.clientJS,
+        files: defaultAssets.client.js,
         tasks: ['jshint'],
         options: {
           livereload: true
         }
       },
-      clientLESS: {
-        files: watchFiles.clientLESS,
-        tasks: ['loadConfig', 'less:development', 'concat:css'],
-        options: {
-          livereload: true
-        }
-      }/*,
       clientCSS: {
-        files: watchFiles.clientCSS,
-        tasks: ['csslint'],
+        files: defaultAssets.client.css,
+        tasks: [], //'csslint'
         options: {
           livereload: true
         }
-      }*/
-    },
-    jshint: {
-      all: {
-        src: watchFiles.clientJS.concat(watchFiles.serverJS),
-        options: {
-          jshintrc: true
-        }
-      }
-    },
-    less: {
-      development: {
-        options: {
-          paths: ['/'],
-          compress: false
-        },
-        files: {
-          //'public/dist/application.css': '<%= applicationLESSFiles %>'
-          'public/dist/application.css': 'public/less/application.less'
-        }
       },
-      production: {
+      clientLESS: {
+        files: defaultAssets.client.less,
+        tasks: ['less'],//'csslint'
         options: {
-          paths: ['/'],
-          compress: true
-        },
-        files: {
-          //'public/dist/application.css': '<%= applicationLESSFiles %>'
-          'public/dist/application.css': 'public/less/application.less'
-        }
-      }
-    },
-    concat: {
-      css: {
-        src: watchFiles.clientCSS.concat([
-            // @todo: should be '<%= applicationCSSFiles %>' instead!
-            'public/lib/medium-editor/dist/css/medium-editor.css',
-            'public/lib/perfect-scrollbar/src/perfect-scrollbar.css',
-            //'public/lib/leaflet/dist/leaflet.css'
-            ]),
-        dest: 'public/dist/application.min.css',
-      }
-    },
-    csslint: {
-      options: {
-        csslintrc: '.csslintrc',
-      },
-      all: {
-        src: 'public/dist/application.min.css'
-      }
-    },
-    uglify: {
-      production: {
-        options: {
-          mangle: false // Angular doesn't like mangle
-        },
-        files: {
-          'public/dist/application.min.js': 'public/dist/application.js'
+          livereload: true
         }
       }
     },
@@ -122,8 +70,70 @@ module.exports = function(grunt) {
         options: {
           nodeArgs: ['--debug'],
           ext: 'js,html',
-          watch: watchFiles.serverViews.concat(watchFiles.serverJS)
+          watch: _.union(defaultAssets.server.views, defaultAssets.server.allJS, defaultAssets.server.config)
         }
+      }
+    },
+    concurrent: {
+      default: ['nodemon', 'watch'],
+      debug: ['nodemon', 'watch', 'node-inspector'],
+      options: {
+        logConcurrentOutput: true
+      }
+    },
+    jshint: {
+      all: {
+        src: _.union(defaultAssets.server.allJS, defaultAssets.client.js, testAssets.tests.server, testAssets.tests.client, testAssets.tests.e2e),
+        options: {
+          jshintrc: true,
+          node: true,
+          mocha: true,
+          jasmine: true
+        }
+      }
+    },
+    csslint: {
+      options: {
+        csslintrc: '.csslintrc'
+      },
+      all: {
+        src: defaultAssets.client.css
+      }
+    },
+    ngAnnotate: {
+      production: {
+        files: {
+          'public/dist/application.js': defaultAssets.client.js
+        }
+      }
+    },
+    uglify: {
+      production: {
+        options: {
+          mangle: false
+        },
+        files: {
+          'public/dist/application.min.js': 'public/dist/application.js'
+        }
+      }
+    },
+    cssmin: {
+      combine: {
+        files: {
+          'public/dist/application.min.css': defaultAssets.client.css
+        }
+      }
+    },
+    less: {
+      dist: {
+        files: [{
+          expand: true,
+          src: defaultAssets.client.lessSrc,
+          ext: '.css',
+          rename: function(base, src) {
+            return  src.replace('/less/', '/css/');
+          }
+        }]
       }
     },
     'node-inspector': {
@@ -139,34 +149,10 @@ module.exports = function(grunt) {
         }
       }
     },
-    ngAnnotate: {
-      production: {
-        files: {
-          'public/dist/application.js': '<%= applicationJavaScriptFiles %>'
-        }
-      }
-    },
-    concurrent: {
-      default: ['nodemon', 'watch'],
-      debug: ['nodemon', 'watch', 'node-inspector'],
-      options: {
-        logConcurrentOutput: true,
-        limit: 10
-      }
-    },
-    env: {
-      test: {
-        NODE_ENV: 'test'
-      },
-      production: {
-        NODE_ENV: 'production'
-      }
-    },
     mochaTest: {
-      src: watchFiles.mochaTests,
+      src: testAssets.tests.server,
       options: {
-        reporter: 'spec',
-        require: 'server.js'
+        reporter: 'spec'
       }
     },
     karma: {
@@ -182,33 +168,38 @@ module.exports = function(grunt) {
   // Making grunt default to force in order not to break the project.
   grunt.option('force', true);
 
-  // A Task for loading the configuration object
-  grunt.task.registerTask('loadConfig', 'Task that loads the config into a grunt option.', function() {
-    var init = require('./config/init')();
-    var config = require('./config/config');
+  // Connect to the MongoDB instance and load the models
+  grunt.task.registerTask('mongoose', 'Task that connects to the MongoDB instance and loads the application models.', function() {
+    // Get the callback
+    var done = this.async();
 
-    grunt.config.set('applicationJavaScriptFiles', config.assets.lib.js.concat(config.assets.js));
-    grunt.config.set('applicationCSSFiles', config.assets.lib.css.concat(config.assets.css));
-    //grunt.config.set('applicationLESSFiles', config.assets.lib.less.concat(config.assets.less) );
+    // Use mongoose configuration
+    var mongoose = require('./config/lib/mongoose.js');
+
+    // Connect to database
+    mongoose.connect(function(db) {
+      done();
+    });
   });
 
-  // Default development task(s).
-  grunt.registerTask('default', ['loadConfig', 'less:development', 'concat:css', 'debug']);
+  // Lint CSS and JavaScript files.
+  // @todo: Until ignoring bootstrap works in CSSLint, you gotta do that manually
+  grunt.registerTask('lint', ['less', 'jshint']); //'csslint'
 
-  // Default production task(s).
-  grunt.registerTask('production', ['env:production', 'loadConfig', 'less:production', 'concat:css', 'ngAnnotate', 'uglify', 'concurrent:default']);
+  // Lint project files and minify them into two production files.
+  grunt.registerTask('build', ['env:dev', 'lint', 'ngAnnotate', 'uglify', 'cssmin']);
 
-  // Debug task.
-  grunt.registerTask('debug', ['lint', 'concurrent:debug']);
+  // Run the project tests
+  grunt.registerTask('test', ['env:test', 'mongoose', 'mochaTest', 'karma:unit']);
+  grunt.registerTask('test.mocha', ['env:test', 'mongoose', 'mochaTest']);
+  grunt.registerTask('test.karma', ['env:test', 'mongoose', 'karma:unit']);
 
-  // Lint task(s).
-  grunt.registerTask('lint', ['jshint']);//, 'csslint'
+  // Run the project in development mode
+  grunt.registerTask('default', ['env:dev', 'lint', 'concurrent:default']);
 
-  // Build task(s).
-  grunt.registerTask('build', ['lint', 'loadConfig', 'less:production', 'concat:css', 'ngAnnotate', 'uglify']);
+  // Run the project in debug mode
+  grunt.registerTask('debug', ['env:dev', 'lint', 'concurrent:debug']);
 
-  // Test tasks.
-  grunt.registerTask('test', ['env:test', 'mochaTest', 'karma:unit']);
-  grunt.registerTask('test.mocha', ['env:test', 'mochaTest']);
-  grunt.registerTask('test.karma', ['env:test', 'karma:unit']);
+  // Run the project in production mode
+  grunt.registerTask('prod', ['build', 'env:prod', 'concurrent:default']);
 };

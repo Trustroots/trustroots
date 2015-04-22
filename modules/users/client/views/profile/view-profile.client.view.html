@@ -1,0 +1,140 @@
+<section class="container container-spacer" id="profile" ng-controller="ProfileController" ng-init="findProfile()">
+
+  <!-- Loading -->
+  <div class="row text-center text-muted" ng-show="profile && !profile.$resolved">
+    <small>Wait a moment...</small>
+  </div>
+
+  <!-- Couldn't find profile... -->
+  <div class="row text-center" ng-show="profileError && user.public !== false">
+    <h1>Don't panic!</h1>
+    <em class="lead">User does not exist.</em>
+    <br><br>
+    <a ui-sref="search">Continue...</a>
+  </div>
+
+  <!-- Browsing other profiles with non-public account -->
+  <div class="row text-center" ng-show="profileError && user.public === false">
+    <h1>Don't panic!</h1>
+    <em class="lead">Sorry, you need to first activate your profile before you can browse others.</em>
+    <br><br>
+    <a ui-sref="profile-settings">Account settings</a>
+  </div>
+
+  <!-- Own profile is non-public -->
+  <div class="row text-center" ng-show="!profileError && user.public === false">
+    <em class="lead">Note that your profile will not be visible to others until you confirm your email.</em>
+    <p>If you didn't receive the message, check your spam folder or resend it via <a ui-sref="profile-settings">email settings</a>.</p>
+    <hr>
+  </div>
+
+  <!-- Profile -->
+  <div class="row">
+    <div class="col-xs-12 text-center visible-xs-block">
+        <h2 class="profile-name" ng-show="profile.displayName" ng-bind="profile.displayName"></h2><br>
+        <h4 class="profile-username" ng-show="profile.username">@{{profile.displayUsername || profile.username}}</h4><br>
+        <p class="profile-tagline" ng-show="profile.tagline" ng-bind="profile.tagline"></p>
+    </div>
+  </div>
+
+  <div class="row" ng-show="profile && profile.$resolved && !profileError">
+
+    <div class="col-sm-3">
+
+      <div class="panel panel-default" id="profile-sidebar">
+        <div tr-avatar data-user="profile" data-size="256" data-link="false"></div>
+        <div class="panel-body">
+
+          <div class="profile-sidebar-section" ng-show="profile.birthdate || profile.gender">
+            <span ng-show="profile.birthdate" ng-bind="profile.birthdate | ageyears"></span><span ng-show="profile.birthdate && profile.gender">, </span>
+            <span ng-show="profile.gender" ng-class="{ 'text-capitalize': !profile.birthdate }">{{profile.gender}}.</span>
+          </div>
+
+          <div class="profile-sidebar-section">
+            Member since <time ng-bind="profile.created | date:'mediumDate'"></time>
+          </div>
+
+          <!--
+          <div class="profile-sidebar-section">
+            <h4>Last seen</h4>
+            <time>time</time>
+          </div>
+          -->
+
+          <div class="profile-sidebar-section" ng-show="profile.locationLiving">
+            <i class="fa fa-fw fa-building text-muted"></i> Lives in <a ui-sref="search({location:profile.locationLiving})">{{profile.locationLiving}}</a>
+          </div>
+
+          <div class="profile-sidebar-section" ng-show="profile.locationFrom">
+            <i class="fa fa-fw fa-home text-muted"></i> From <a ui-sref="search({location:profile.locationFrom})">{{profile.locationFrom}}</a>
+          </div>
+
+          <div class="profile-sidebar-section" ng-show="profile.languages.length">
+            <h4>Languages</h4>
+            <ul class="list-unstyled">
+              <li ng-repeat="code in profile.languages">{{languages[code]}}</li>
+            </ul>
+          </div>
+
+          <div class="profile-sidebar-section" ng-show="hasConnectedAdditionalSocialAccounts()">
+            <h4>Other networks</h4>
+            <ul class="fa-ul authentication-social">
+              <li ng-repeat="(providerName, providerData) in profile.additionalProvidersData" class="text-capitalize">
+                <i class="fa fa-li fa-lg fa-{{providerName}}-square"></i>
+
+                <!-- Show if can be linked -->
+                <a ng-href="{{socialAccountLink(providerName, providerData)}}" target="_blank">{{providerName}}</a>
+
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+    <div class="col-sm-9">
+
+      <div class="row">
+        <div class="col-md-6 hidden-xs">
+            <h2 class="profile-name" ng-show="profile.displayName" ng-bind="profile.displayName"></h2>
+            <h4 class="profile-username" ng-show="profile.username">@{{profile.displayUsername || profile.username}}</h4>
+            <div class="profile-tagline" ng-show="profile.tagline" ng-bind="profile.tagline"></div>
+        </div>
+
+        <!-- When looking at own profile -->
+        <div class="col-md-6 text-right" ng-show="user._id === profile._id">
+          <small class="text-muted hidden-xs">This is your profile as others see it.</small>
+          &nbsp;
+          <a ui-sref="profile-edit({username: user.username})" class="btn btn-primary">Edit your profile</a>
+        </div>
+
+        <!-- When looking at somebody else's profile -->
+        <div class="col-md-6" ng-hide="user._id === profile._id">
+          <ul class="nav nav-pills nav-narrow text-right" id="profile-actions" role="navigation">
+            <li><a ui-sref="listMessages({userId: profile._id})"><i class="fa fa-comment-o"></i> Send message</a></li>
+            <li ng-controller="RemoveContactController">
+              <a ui-sref="contactAdd({userId: profile._id})" ng-hide="profile.contact" class="cursor-pointer"><i class="fa fa-plus-square-o"></i> Add contact</a>
+              <a ng-click="RemoveContactModal(profile.contact, $event)" ng-show="profile.contact" class="cursor-pointer"><i class="fa fa-minus-square-o"></i> Remove contact</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Profile tabs -->
+      <div class="row">
+        <div class="col-xs-12">
+          <tabset id="profile-tabs" type="pills">
+            <tab ng-repeat="tab in tabs" heading="{{tab.title}}" active="tab.active" select="tabSelect(tab.path)">
+              <div ng-include src="tab.content"></div>
+            </tab>
+          </tabset>
+        </div>
+      </div>
+      <!-- /Profile tabs -->
+
+    </div><!-- /.col -->
+
+  </div><!-- /.row -->
+
+</section><!-- /.container -->

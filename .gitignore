@@ -22,24 +22,23 @@ Icon
 
 # Env/development
 .nodemonignore
-.sass-cache/
 npm-debug.log
 node_modules/
 .bower-*/
-.grunt
 .vagrant
 *.pyc
+passenger.*
 
 # App
 public/lib
 public/dist/*
-app/tests/coverage/
+modules/core/client/app/css
 .idea/
 tmp
 
-# Configs
-config/secret/*
-!config/secret/_template.js
+# Private configs
+config/private/*
+!config/private/_template.js
 
 # Logs
 logs
@@ -49,8 +48,6 @@ log
 # DB migrations
 migrations/.migrate
 
-# Phusion Passenger
-passenger.*
-
-# User Upload
-public/modules/users/img/profile/uploads/
+# User uploads
+uploads
+modules/users/client/img/profile/uploads

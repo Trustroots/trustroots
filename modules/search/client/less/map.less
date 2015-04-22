@@ -1,0 +1,88 @@
+/*
+ * Search/map view
+ * Try to keep this "mobile first"
+ */
+
+.search-map {
+  #search-map-canvas {
+    left: 0;
+    right: 0;
+    width: auto;
+    height: auto;
+    z-index: 0;
+    position: fixed;
+    top: @navbar-height;
+    bottom: 0;
+  }
+  .map-location-search {
+    position: absolute;
+    width: 300px;
+    z-index: @zindex-navbar;
+    top: (@navbar-height + @padding-base-horizontal);
+    right: 50%;
+    margin-right: -150px;
+
+    /*
+     * Search bar opacity trick
+     */
+    .btn,
+    #search-query {
+      opacity: 0.95;
+      .transition(opacity linear 0.2s);
+    }
+    /* Notice . and : */
+    &.active,
+    &:active,
+    &:hover {
+      .btn,
+      #search-query {
+        opacity: 1;
+      }
+    }
+    .btn,
+    #search-query {
+      &:focus,
+      &:active,
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+
+    @media (max-width: @screen-xs-max) {
+      right: @padding-base-vertical;
+      margin-right: 0;
+      width: 250px;
+    }
+    .input-group {
+      box-shadow: 0 1px 5px rgba(0,0,0,0.35);
+    }
+    #search-query {
+      box-shadow: none;
+      border-color: #fff;
+      border-radius: 0;
+      border-right: 0;
+      .border-left-radius(@border-radius-base);
+    }
+    .btn {
+      border-radius: 0;
+      border-left: 0;
+      .border-right-radius(@border-radius-base);
+      &.btn-lg {
+        height: 46px; // @todo: fixing different size btn and input, but why this occurs?
+      }
+    }
+    .btn,
+    #search-query {
+      &:disabled {
+        background: #fff;
+        opacity: 0.8;
+      }
+      &:active,
+      &:focus {
+        outline: none;
+        box-shadow: none;
+      }
+    }
+  }
+}

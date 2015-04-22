@@ -1,48 +1,35 @@
 'use strict';
-
 /**
- * Module dependencies.
+ * Trustroots
+ *
+ * App's main entry file
  */
-var init = require('./config/init')(),
-    config = require('./config/config'),
-    mongoose = require('mongoose'),
+
+// Dependencies
+var config = require('./config/config'),
+    mongoose = require('./config/lib/mongoose'),
+    express = require('./config/lib/express'),
+    agenda = require('./config/lib/agenda'),
     chalk = require('chalk');
 
-/**
- * Main application entry file.
- * Please note that the order of loading is important.
- */
+// Initialize mongoose
+mongoose.connect(function(db) {
 
-// NewRelic monitoring
-// @link http://newrelic.com/
-if(process.env.NODE_ENV === 'production' && config.newrelic.enabled === true) {
-  var newrelic = require('newrelic');
-  console.log('Started monitoring with NewRelic');
-}
-
-// Bootstrap db connection
-var db = mongoose.connect(config.db.uri, config.db.options, function(err) {
-
-  if (err) {
-    console.error(chalk.red('Could not connect to MongoDB!'));
-    console.log(chalk.red(err));
+  // NewRelic monitoring
+  // @link http://newrelic.com/
+  if(process.env.NODE_ENV === 'production' && config.newrelic.enabled === true) {
+    var newrelic = require('./config/lib/newrelic');
+    console.log(chalk.green('Started monitoring with NewRelic'));
   }
 
-  // Init the express application
-  var app = require('./config/express')(db);
+	// Initialize express
+	var app = express.init(db);
 
-  // Bootstrap passport config
-  require('./config/passport')();
+	// Start the app by listening on <port>
+	app.listen(config.port);
 
-  // Start the app by listening on <port>
-  app.listen(config.port);
-
-  // Expose app
-  exports = module.exports = app;
-
-  // Setup Agenda
-  var jobSchedule = require('./config/agenda');
-  jobSchedule.setupJobs();
+  // Setup Agenda ("cron" jobs)
+  agenda.setupJobs();
 
   // Logging initialization
   console.log('--');
@@ -50,14 +37,8 @@ var db = mongoose.connect(config.db.uri, config.db.options, function(err) {
   console.log(chalk.green('Environment:\t\t\t' + process.env.NODE_ENV));
   console.log(chalk.green('Port:\t\t\t\t' + config.port));
   console.log(chalk.green('Database:\t\t\t' + config.db.uri));
-  if (process.env.NODE_ENV === 'secure') {
-    console.log(chalk.green('HTTPs:\t\t\t\ton'));
-  }
-  console.log('--');
+
+  // Reset console color
+  console.log(chalk.white('--'));
 
 });
-mongoose.connection.on('error', function(err) {
-    console.error(chalk.red('MongoDB connection error: ' + err));
-    process.exit(-1);
-  }
-);

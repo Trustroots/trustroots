@@ -1,20 +1,25 @@
 'use strict';
 
-var init = require('../config/init')(),
-    config = require('../config/config'),
-    _ = require('lodash'),
-    mongoose = require('mongoose'),
-    models = require('../app/models/user'),
-    models = require('../app/models/offer'),
-    User = mongoose.model('User'),
-    Offer = mongoose.model('Offer'),
+var _ = require('lodash'),
+    path = require('path'),
+    config = require(path.resolve('./config/config')),
+    configMongoose = require(path.resolve('./config/lib/mongoose')),
+    configExpress = require(path.resolve('./config/lib/express')),
+    chalk = require('chalk'),
     faker = require('faker'),
     fs = require('fs'),
-    cities = JSON.parse(fs.readFileSync('scripts/fillTestDataCities.json', 'utf8')),
+    mongoose = require('mongoose'),
+    userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
+    offerModels = require(path.resolve('./modules/offers/server/models/offer.server.model')),
+    User = mongoose.model('User'),
+    Offer = mongoose.model('Offer'),
+    cities = JSON.parse(fs.readFileSync(path.resolve('./scripts/fillTestDataCities.json'), 'utf8')),
     status = ["yes", "maybe"],
     savedCounter = 0;
 
-console.log('Filling test data...');
+console.log(chalk.white('--'));
+console.log(chalk.green('Trustroots test data'));
+console.log(chalk.white('--'));
 
 var random = function (max) {
   return Math.floor(Math.random() * max);
@@ -34,7 +39,7 @@ var randomizeLoaction = function () {
 // Bootstrap db connection
 var db = mongoose.connect(config.db.uri, function(err) {
   if (err) {
-    console.error('\x1b[31m', 'Could not connect to MongoDB!');
+    console.error(chalk.red('Could not connect to MongoDB!'));
     console.log(err);
   }
 });
@@ -85,7 +90,8 @@ var addOffer = function (id, index, max) {
     else {
       savedCounter++;
       if(savedCounter >= max) {
-        console.log('Done with ' + max + ' dummy users!');
+        console.log(chalk.green('Done with ' + max + ' test users!'));
+        console.log(chalk.white(''));// Reset to white
         process.exit(0);
       }
     }
@@ -97,7 +103,7 @@ var adminUsername = (process.argv[3] == null) ? false : process.argv[3];
 
 // Number of users is required
 if(process.argv[2] == null) {
-  console.log("Please give a number of users to add");
+  console.log(chalk.red('Please give a number of users to add.'));
 }
 else {
   var numberOfUsers = process.argv[2];
@@ -121,7 +127,7 @@ else {
       if(!err) {
         console.log('Created admin user. Login with: ' + adminUsername + ' / password');
       } else {
-        console.log('Could not add admin user ' + adminUsername)
+        console.log(chalk.red('Could not add admin user ' + adminUsername));
         console.log(err);
       }
 
