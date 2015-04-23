@@ -24,14 +24,16 @@ var validateLocalStrategyPassword = function(password) {
 /**
  * A Validation function for username
  * - at least 3 characters
- * - maximum 32 characters
  * - only a-z0-9_-.
+ * - contain at least one alphanumeric character
  * - not in list of illegal usernames
  * - no consecutive dots: "." ok, ".." nope
+ * - not begin or end with "."
  */
+
 var validateUsername = function(username) {
-  var usernameRegex = /^[a-z0-9.\-_]{3,32}$/,
-      dotsRegex = /^([^.]+\.?)$/,
+  var usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,}/,
+      dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/,
       illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test'];
   return (this.provider !== 'local' || ( username &&
                                          usernameRegex.test(username) &&
@@ -113,7 +115,7 @@ var UserSchema = new Schema({
     type: String,
     unique: 'Username already exists',
     required: 'Please fill in a username',
-    validate: [validateUsername, 'Please fill in valid username: 3-32 characters long non banned word, characters "_-.", no consecutive dots, lowercase letters a-z and numbers 0-9.'],
+    validate: [validateUsername, 'Please fill in valid username: 3+ characters long, non banned word, characters "_-.", no consecutive dots, does not begin or end with dots, letters a-z and numbers 0-9.'],
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
     trim: true
   },
