@@ -4,8 +4,7 @@
  * Module dependencies.
  */
 
-var _ = require('lodash'),
-    path = require('path'),
+var path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     config = require(path.resolve('./config/config')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
