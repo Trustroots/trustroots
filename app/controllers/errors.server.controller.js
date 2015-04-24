@@ -2,6 +2,7 @@
 
 /**
  * Get unique error field name
+ * @todo: once https://github.com/Automattic/mongoose/issues/2284 gets done, we can have prettier errors for this.
  */
 var getUniqueErrorMessage = function(err) {
   var output;
@@ -30,7 +31,7 @@ exports.getErrorMessage = function(err) {
         message = getUniqueErrorMessage(err);
         break;
       default:
-        message = 'Something went wrong';
+        message = 'Snap! Something went wrong. If this keeps happening, please contact us.';
     }
   } else {
     for (var errName in err.errors) {

@@ -32,7 +32,7 @@ var validateLocalStrategyPassword = function(password) {
 var validateUsername = function(username) {
   var usernameRegex = /^[a-z0-9.\-_]{3,32}$/,
       dotsRegex = /^([^.]+\.?)$/,
-      illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test'];
+      illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'profile', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test'];
   return (this.provider !== 'local' || ( username &&
                                          usernameRegex.test(username) &&
                                        illegalUsernames.indexOf(username) < 0) &&
@@ -56,7 +56,7 @@ var UserSchema = new Schema({
     default: '',
     validate: [validateLocalStrategyProperty, 'Please fill in your last name']
   },
-  /* This is (currently) generated in users.porfile.server.controller.js */
+  /* This is (currently) generated in users.profile.server.controller.js */
   displayName: {
     type: String,
     trim: true
@@ -64,7 +64,7 @@ var UserSchema = new Schema({
   email: {
     type: String,
     trim: true,
-    unique: 'Email already exists',
+    unique: true,
     lowercase: true,
     default: '',
     validate: [validateLocalStrategyProperty, 'Please enter your email'],
@@ -98,7 +98,7 @@ var UserSchema = new Schema({
   },
   languages: {
     type: [{
-      type: String,
+      type: String
     }],
     default: []
   },
@@ -108,12 +108,19 @@ var UserSchema = new Schema({
   locationFrom: {
     type: String
   },
+  // Lowercase enforced username
   username: {
     type: String,
-    unique: 'Username already exists',
+    unique: true,
     required: 'Please fill in a username',
     validate: [validateUsername, 'Please fill in valid username: 3-32 characters long non banned word, characters "_-.", no consecutive dots, lowercase letters a-z and numbers 0-9.'],
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
+    trim: true
+  },
+  // Stores unaltered original username
+  displayUsername:{
+    type: String,
+    default: '',
     trim: true
   },
   password: {
@@ -122,7 +129,7 @@ var UserSchema = new Schema({
     validate: [validateLocalStrategyPassword, 'Password should be more than 8 characters long.']
   },
   emailHash: {
-    type: String,
+    type: String
   },
   salt: {
     type: String
@@ -155,7 +162,7 @@ var UserSchema = new Schema({
   },
   avatarSource: {
     type: String,
-    enum: ['none','gravatar','facebook','locale'],
+    enum: ['none','gravatar','facebook','local'],
     default: 'gravatar'
   },
   avatarUploaded: {
@@ -219,28 +226,6 @@ UserSchema.methods.hashPassword = function(password) {
  */
 UserSchema.methods.authenticate = function(password) {
   return this.password === this.hashPassword(password);
-};
-
-/**
- * Find possible not used username
- */
-UserSchema.statics.findUniqueUsername = function(username, suffix, callback) {
-  var _this = this;
-  var possibleUsername = username + (suffix || '');
-
-  _this.findOne({
-    username: possibleUsername
-  }, function(err, user) {
-    if (!err) {
-      if (!user) {
-        callback(possibleUsername);
-      } else {
-        return _this.findUniqueUsername(username, (suffix || 0) + 1, callback);
-      }
-    } else {
-      callback(null);
-    }
-  });
 };
 
 mongoose.model('User', UserSchema);

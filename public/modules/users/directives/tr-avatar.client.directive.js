@@ -1,17 +1,28 @@
 'use strict';
 
 /**
- * Produce user's avatar
+ * @ngdoc directive
  *
- * Basic usage:
- * <div tr-avatar data-user="user"></div>
+ * @name trustroots:trAvatar
  *
- * user (User model)
+ * @param {object} user User object
+ * @param {int} size Size of the image <img>. Supported values are 512, 256, 128, 64, 36, 32, 24 and 16. See avatar.less for details. Defaults to 256.
+ * @param {string} source Leave empty to use user's selected source. Values "none", "facebook", "local", "gravatar".
+ * @param {boolean} link Link to user's profile. Defaults to true.
  *
- * Optional parameters:
- * size (default 256)
- * source (overwrite user's source selection)
- * link (will not wrap <img> into link)
+ * @description
+ *
+ * Use this directive to produce user's avatar
+ *
+ * @example
+ *
+ * <pre>
+ * Basic:
+ * <div tr-avatar data-user="user" size="36"></div>
+ *
+ * Advanced:
+ * <div tr-avatar data-user="user" link="false" source="local" size="36"></div>
+ * </pre>
  */
 angular.module('users').directive('trAvatar', ['$location',
   function($location) {
@@ -84,7 +95,7 @@ angular.module('users').directive('trAvatar', ['$location',
                * Locally uploaded image
                * @todo: implement this, duhh
                */
-              else if($scope.source === 'locale') {
+              else if($scope.source === 'local') {
                 if($scope.user.avatarUploaded) {
                   var timestamp = new Date($scope.user.updated).getTime();
                   $scope.avatar = '/modules/users/img/profile/uploads/' + $scope.user._id + '/avatar/' + $scope.size + '.jpg?' + timestamp;

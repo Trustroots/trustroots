@@ -29,20 +29,13 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$root
       });
     };
 
-    // Make sure username is lowercase, as we require it to be at signup
-    //$scope.credentials.username = $scope.credentials.username.toLowerCase();
-    $scope.fixCredentials = function(credentials) {
-      if(credentials.username) credentials.username = credentials.username.toLowerCase();
-      return credentials;
-    };
-
     /**
      * Login
      */
     $scope.signin = function() {
       $scope.isLoading = true;
 
-      $http.post('/auth/signin', $scope.fixCredentials($scope.credentials)).success(function(response) {
+      $http.post('/auth/signin', $scope.credentials).success(function(response) {
         $scope.isLoading = false;
 
         // If successful we assign the response to the global user model
@@ -57,7 +50,6 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$root
           delete $rootScope.signinStateParams;
           $state.go(stateTo, stateToParams);
 
-          //$state.go($rootScope.signinState || 'search', $rootScope.signinStateParams || {});
         }
         // Redirect to the search page
         else {

@@ -129,5 +129,10 @@ module.exports = {
   },
   GA: {
     code: process.env.GA_CODE || ''
+  },
+  piwik: {
+    enabled: process.env.PIWIK_ENABLED || false,
+    url: process.env.PIWIK_URL || '',
+    siteId: process.env.PIWIK_ID || ''
   }
 };

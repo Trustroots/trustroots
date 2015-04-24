@@ -151,7 +151,7 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
             $modalInstance.dismiss('close');
           };
           $scope.save = function () {
-            if($scope.user.avatarSource === 'locale' && $scope.avatarPreview === true) {
+            if($scope.user.avatarSource === 'local' && $scope.avatarPreview === true) {
               //Let's upload the new file !
               $scope.avatarUploading = true;
               $scope.upload = $upload.upload({

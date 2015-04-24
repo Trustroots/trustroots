@@ -39,6 +39,7 @@ module.exports = function(db) {
   app.locals.twitterUsername = config.twitter.username;
   app.locals.newrelic = config.newrelic.enabled;
   app.locals.GAcode = config.GA.code;
+  app.locals.piwik = config.piwik;
   app.locals.jsFiles = config.getJavaScriptAssets();
   app.locals.cssFiles = config.getCSSAssets();
   app.locals.languages = require('../public/modules/core/languages/languages.json');
