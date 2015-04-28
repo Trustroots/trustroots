@@ -3,3 +3,5 @@
 User-agent: *
 Disallow: /#!/profile/
 Disallow: /profile/
+Disallow: /modules/users/client/img/profile/uploads/
+Disallow: /api/
