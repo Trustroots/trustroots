@@ -38,7 +38,7 @@ exports.checkUnreadMessages = function(agenda) {
 
         // Ignore very recent messages and look for only older than 15 minutes
         var timeAgo = new Date();
-        timeAgo.setMinutes(timeAgo.getMinutes() - 1);
+        timeAgo.setMinutes(timeAgo.getMinutes() - 10);
 
         Message.aggregate([
           {
