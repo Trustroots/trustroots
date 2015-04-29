@@ -1,5 +1,6 @@
 'use strict';
 
+var config = require('./config');
 exports.setupJobs = function() {
 
   // Load jobs
@@ -7,7 +8,7 @@ exports.setupJobs = function() {
 
   // Setup agenda
   var Agenda = require('agenda');
-  var agenda = new Agenda({db: { address: process.env.MONGOHQ_URL || process.env.MONGOLAB_URI || 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/agenda'}});
+  var agenda = new Agenda({db: { address: config.db.uri, collection: 'agendaJobs' } });
 
   // Schedule jobs
   messagesUnreadJob.checkUnreadMessages(agenda);
