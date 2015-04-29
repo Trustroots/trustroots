@@ -140,7 +140,12 @@ var initGlobalConfig = function() {
   var environmentConfig = require(path.join(process.cwd(), 'config/env/', process.env.NODE_ENV)) || {};
 
   // Override the current config with private values if they exist
-  var privateEnvironmentConfig = require(path.join(process.cwd(), 'config/private/', process.env.NODE_ENV)) || {};
+  var privateEnvironmentConfig;
+  try {
+    privateEnvironmentConfig = require(path.join(process.cwd(), 'config/private/', process.env.NODE_ENV));
+  } catch(err) {
+    privateEnvironmentConfig = {};
+  }
 
   // Merge config files
   var config = _.extend(defaultConfig, environmentConfig, privateEnvironmentConfig);
