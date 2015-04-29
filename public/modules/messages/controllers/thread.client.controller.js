@@ -124,10 +124,15 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
      * @todo: kill observer after message is marked read
      */
     $scope.messageRead = function(message, scrollingUp, scrollingDown) {
+
+      // It was read earlier
       if(message.read === true) return true;
 
-      var read = (scrollingUp === true || scrollingDown === true);
+      // Own messages are always read
+      if(message.userFrom._id === $scope.user._id) return true;
 
+      // It got marked read just now
+      var read = (scrollingUp === true || scrollingDown === true);
       if(message.userFrom._id !== Authentication.user._id && !message.read && read) {
         message.read = true;
         flaggedAsRead.push(message._id);
