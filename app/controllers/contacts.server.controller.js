@@ -97,7 +97,10 @@ exports.add = function(req, res) {
 
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
-        to: friend.displayName + ' <' + friend.email + '>',
+        to: {
+          name: friend.displayName,
+          address: friend.email
+        },
         from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Confirm contact',
         text: emailPlain,

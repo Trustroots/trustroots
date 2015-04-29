@@ -296,7 +296,10 @@ exports.update = function(req, res) {
     if(emailHTML) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
-        to: user.displayName + ' <' + user.emailTemporary + '>',
+        to: {
+          name: user.displayName,
+          address: user.emailTemporary
+        },
         from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Confirm email change',
         text: emailPlain,

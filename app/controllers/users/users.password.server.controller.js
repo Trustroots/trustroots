@@ -87,7 +87,10 @@ exports.forgot = function(req, res, next) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
 
       var mailOptions = {
-        to: user.displayName + ' <' + user.email + '>',
+        to: {
+          name: user.displayName,
+          address: user.email
+        },
         from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Password Reset',
         html: emailHTML,
@@ -211,7 +214,10 @@ exports.reset = function(req, res, next) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
 
       var mailOptions = {
-        to: user.displayName + ' <' + user.email + '>',
+        to: {
+          name: user.displayName,
+          address: user.email
+        },
         from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Your password has been changed',
         html: emailHTML
@@ -324,7 +330,10 @@ exports.changePassword = function(req, res) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
 
       var mailOptions = {
-        to: user.displayName + ' <' + user.email + '>',
+        to: {
+          name: user.displayName,
+          address: user.email
+        },
         from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Your password has been changed',
         html: emailHTML

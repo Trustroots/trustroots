@@ -90,7 +90,10 @@ exports.signup = function(req, res) {
     function(emailHTML, emailPlain, user, url, done) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
-        to: user.displayName + ' <' + user.email + '>',
+        to: {
+          name: user.displayName,
+          address: user.email
+        },
         from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Confirm Email',
         html: emailHTML,
