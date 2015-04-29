@@ -17,7 +17,10 @@ exports.setupJobs = function() {
 
   // Schedule jobs
   messagesUnreadJob.checkUnreadMessages(agenda);
+
   agenda.every('5 minutes', 'check unread messages');
+
+  // Error reporting
   agenda.on('fail', function(err, job) {
     console.error('Agenda job failed with error: %s', err.message);
     if(newrelic) newrelic.noticeError(err);

@@ -17,16 +17,19 @@
 /**
 * Module dependencies.
 */
-var mongoose = require('mongoose'),
+var _ = require('lodash'),
+    config = require('../../config/config'),
     nodemailer = require('nodemailer'),
     async = require('async'),
     //swig = require('swig'),
-    config = require('../../config/config'),
+    htmlToText = require('html-to-text'),
+    mongoose = require('mongoose'),
     Message = mongoose.model('Message'),
     User = mongoose.model('User');
 
 exports.checkUnreadMessages = function(agenda) {
-  agenda.define('check unread messages', function(job, agendaDone) {
+  agenda.define('check unread messages', {lockLifetime: 10000}, function(job, agendaDone) {
+
 
     async.waterfall([
 
@@ -35,7 +38,7 @@ exports.checkUnreadMessages = function(agenda) {
 
         // Ignore very recent messages and look for only older than 15 minutes
         var timeAgo = new Date();
-        timeAgo.setMinutes(timeAgo.getMinutes() - 15);
+        timeAgo.setMinutes(timeAgo.getMinutes() - 1);
 
         Message.aggregate([
           {
@@ -51,108 +54,149 @@ exports.checkUnreadMessages = function(agenda) {
               // Whom we'll send notification emails
               _id: '$userTo',
 
-              // This could be useful info at emails sent to users
-              //total: { $sum: 1 }
+              // Collect unread messages count
+              //total: { $sum: 1 },
 
-              // Collect message ids for marking them notified
-              //messages: { $push: '$_id' }
+              // Collect message contents
+              messages: { $push: { id: '$_id', content: '$content', userFrom: '$userFrom' } }
             }
           }
-        ], function(err, toBeNotified) {
-          done(err, toBeNotified, timeAgo);
+        ], function(err, notifications) {
+          done(err, notifications, timeAgo);
         });
 
       },
 
-      // Fetch user emails
-      function(toBeNotified, timeAgo, done) {
+      // Fetch userTo and userFrom  email + displayName
+      function(notifications, timeAgo, done) {
 
-        // Construct separate simple array for user-ids
         var userIds = [];
 
-        // Collect user ids
-        toBeNotified.forEach(function(notification) {
+        notifications.forEach(function(notification) {
+          // Collect receiver ids
           userIds.push(notification._id);
+
+          // Look trough messages and their sender ids
+          notification.messages.forEach(function(message) {
+            userIds.push(message.userFrom);
+          });
         });
 
-        // Fetch email addresses for those users
-        User
-        .find({ '_id': { $in: userIds } }, 'email')
-        .exec(function(err, users) {
-          done(err, users, timeAgo);
-        });
+        // Make sure we don't have huge list of dublicate user ids
+        userIds = _.unique(userIds);
 
+        // Fetch email + displayName for all users involved
+        // Remember to add these values also userNotFound object (see below)
+        if(userIds.length > 0) {
+          User
+            .find({ '_id': { $in: userIds } }, 'email displayName')
+            .exec(function(err, users) {
+
+              // Reorganise users into more handy array
+              var usersArr = [];
+              if(users) {
+                users.forEach(function(user) {
+                  usersArr[user._id] = user;
+                });
+              }
+
+              done(err, usersArr, notifications, timeAgo);
+            });
+        } else {
+          done(null, [], notifications, timeAgo);
+        }
       },
-
-
-      /*
-       * Skipping this for now and using text-only emails instead.
-       * We'll first need to re-render our html templates from
-       * header+content+footer parts and then use that file for this.
-       *
-       */
-      // Prepare mail
-      /*
-      function(users, emailTemplate, done) {
-        swig.render('./app/views/email-templates/messages-unread.server.view.html', {
-          ourMail: config.mailer.from,
-          urlInbox: (config.https ? 'https' : 'http') + '://' + config.domain + '/#!/messages',
-        }, function(err, emailHTML) {
-          done(err, emailHTML, users);
-        });
-      },
-      */
 
       // Send emails
-      function(users, timeAgo, done) {
+      function(users, notifications, timeAgo, done) {
 
-        if(users.length > 0) {
+        if(notifications.length > 0) {
 
-          var smtpTransport = nodemailer.createTransport(config.mailer.options);
-          var url = (config.https ? 'https' : 'http') + '://' + config.domain;
+          var smtpTransport = nodemailer.createTransport(config.mailer.options),
+              url = (config.https ? 'https' : 'http') + '://' + config.domain,
+              userNotFound = {displayName: 'Anonymous', email: config.mailer.from};
 
-          var emailSignature = '-- \n\rTrustroots\n\r' + url + '\n\rSupport: ' + url + '/#!/contact/\n\rSupport email: hello@trustroots.org\n\r';
+          // Loop notifications trough and send them
+          notifications.forEach(function(notification) {
 
-          // Loop users
-          users.forEach(function(user) {
-            smtpTransport.sendMail({
-              to: user.email,
-              from: 'Trustroots <' + config.mailer.from + '>',
-              subject: 'You have unread message(s)',
-              text: 'You have unread messages at Trustroots.\n\r\n\rTo read them, go to ' + url + '/#!/messages\n\r\n\r' + emailSignature
+            var userTo = users[notification._id],
+                total = notification.messages.length;
+
+            // Compile messages into one feed
+            // @todo: move this to a Twig template (text + html)
+            var messageFeed = '----------------------------------------------------------------------\n\r\n\r';
+            notification.messages.forEach(function(message) {
+
+              // Get user's info from user array. Handles deleted users.
+              var userFrom = (users[message.userFrom]) ? users[message.userFrom] : userNotFound;
+
+              messageFeed += userFrom.displayName + ' writes:\n\r\n\r';
+              messageFeed += htmlToText.fromString(message.content, {wordwrap: 80});
+              messageFeed += '\n\r\n\r----------------------------------------------------------------------\n\r\n\r';
             });
-          });
 
-          smtpTransport.close(); // close the connection pool
-          done(null, timeAgo);
+            var mailTitle = (total > 1) ? 'You have ' + total + ' unread messages at Trustroots' : 'You have one unread message at Trustroots';
+
+            var mailBody = mailTitle + '.\n\r\n\r' +
+                           'To reply, go to ' + url + '/#!/messages\n\r\n\r' +
+                           messageFeed +
+                           '-- \n\rTrustroots\n\r' + url + '\n\r' +
+                           'Support: ' + url + '/#!/contact/\n\rSupport email: ' + config.mailer.from + '\n\r';
+
+            smtpTransport.sendMail({
+                to: {
+                  name: userTo.displayName,
+                  address: userTo.email
+                },
+                from: 'Trustroots <' + config.mailer.from + '>',
+                subject: mailTitle,
+                text: mailBody
+              }, function(smtpErr, info) {
+
+                // Sending email to this user failed
+                // Raise warnings and continue with the next one.
+                if(smtpErr) {
+                  console.error('Sending message notification mail failed! ' + userTo.displayName);
+                  console.error(smtpErr);
+                  console.error(notification);
+                  return;
+                }
+            });
+
+            // close the connection pool
+            smtpTransport.close();
+            done(null, notifications, timeAgo);
+          });
 
         }
         // No users to send emails to
         else {
-          done(null, timeAgo);
+          done(null, [], false);
         }
 
       },
 
       // Mark messages notified
-      function(timeAgo, done) {
+      function(notifications, timeAgo, done) {
 
-        // timeAgo will be the same when aggregating posts
-        // @todo: any more optimised way of doing it?
-        Message.update(
-          {
-            //$match: {
+        if(timeAgo && notifications.length > 0) {
+          // timeAgo will be the same when aggregating posts
+          Message.update(
+            {
               read: false,
               notified: false,
               created: { $lt: timeAgo }
-            //}
-          },
-          { $set: { notified: true } },
-          { multi: true },
-          function(err, num, raw) {
-            done(err);
-          }
-        );
+            },
+            { $set: { notified: true } },
+            { multi: true },
+            function(err, num, raw) {
+              done(err);
+            }
+          );
+        }
+        else {
+          done(null);
+        }
 
       },
 
@@ -163,9 +207,10 @@ exports.checkUnreadMessages = function(agenda) {
 
     ], function(err) {
       if (err) {
-        console.log('Error while checking for unread messages:');
-        console.log(err);
+        job.fail(err);
+        job.save();
       }
+      agendaDone();
     });
 
   }); //agenda.define
