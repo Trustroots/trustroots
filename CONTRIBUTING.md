@@ -17,11 +17,6 @@ Our code of conduct might be described as follows.
 * [We believe](https://www.trustroots.org/#!/about) in beauty, simplicity and transparency. 
 * We emphasize community. 
 
-
-## Real life interaction
-
-We highly value real life interaction. Both within the network as well as among technical contributors. If possible, try to meet up with other Trustroots contributors in real life. You can connect your Trustroots profile to your GitHub account to facilitate such connections.
-
 ## Not a discussion forum
 
 GitHub issues are not a discussion forum. This is a forum for technical discussion about how to implement features, questions of a technical nature, reporting bugs, and so on.
@@ -29,6 +24,11 @@ GitHub issues are not a discussion forum. This is a forum for technical discussi
 It is not a place for policy discussion. Personal opinion about which features are important, which features should or should not be implemented, and so on, does not belong here.
 
 We operate a 3 strike policy. 1st warning, 2nd warning, blocked.
+
+## Real life interaction
+
+We highly value real life interaction. Both within the network as well as among technical contributors. If possible, try to meet up with other Trustroots contributors in real life. You can connect your Trustroots profile to your GitHub account to facilitate such connections.
+
 
 # Contributing
 
