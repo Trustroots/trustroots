@@ -14,6 +14,8 @@ Our code of conduct might be described as follows.
 * Show respect for those who do the work. 
 * When in doubt, defer to those with more experience, who have contributed for longer, and support their decisions.
 
+We highly value real life interaction. Both within the network as well as among technical contributors. If possible, try to meet up with other Trustroots contributors in real life.
+
 GitHub issues are not a discussion forum. This is a forum for technical discussion about how to implement features, questions of a technical nature, reporting bugs, and so on.
 
 It is not a place for policy discussion. Personal opinion about which features are important, which features should or should not be implemented, and so on, does not belong here.
