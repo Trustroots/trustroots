@@ -24,6 +24,7 @@ module.exports = {
   },
   sessionSecret: 'MEAN',
   facebook: {
+    page: 'PAGE',
     clientID: 'APP_ID',
     clientSecret: 'APP_SECRET',
     callbackURL: '/auth/facebook/callback'
@@ -35,6 +36,7 @@ module.exports = {
     callbackURL: '/auth/twitter/callback'
   },
   google: {
+    page: 'PAGE',
     clientID: 'APP_ID',
     clientSecret: 'APP_SECRET',
     callbackURL: '/auth/google/callback'

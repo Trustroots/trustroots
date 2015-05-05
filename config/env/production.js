@@ -74,6 +74,7 @@ module.exports = {
     ]
   },
   facebook: {
+    page: process.env.FACEBOOK_PAGE || 'PAGE',
     clientID: process.env.FACEBOOK_ID || 'APP_ID',
     clientSecret: process.env.FACEBOOK_SECRET || 'APP_SECRET',
     callbackURL: '/auth/facebook/callback'
@@ -85,6 +86,7 @@ module.exports = {
     callbackURL: '/auth/twitter/callback'
   },
   google: {
+    page: process.env.GOOGLE_PAGE || 'PAGE',
     clientID: process.env.GOOGLE_ID || 'APP_ID',
     clientSecret: process.env.GOOGLE_SECRET || 'APP_SECRET',
     callbackURL: '/auth/google/callback'
