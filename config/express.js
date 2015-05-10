@@ -21,7 +21,8 @@ var express = require('express'),
     config = require('./config'),
     consolidate = require('consolidate'),
     path = require('path'),
-    git = require('git-rev');
+    git = require('git-rev'),
+    paginate = require('express-paginate');
 
 module.exports = function(db) {
   // Initialize express app
@@ -139,6 +140,9 @@ module.exports = function(db) {
   app.use(helmet.nosniff());
   app.use(helmet.ienoopen());
   app.disable('x-powered-by');
+
+  // Set Pagination default values (limit, max limit)
+  app.use(paginate.middleware(20, 50));
 
   // Setting the app router and static folder
   app.use(express.static(path.resolve('./public')));

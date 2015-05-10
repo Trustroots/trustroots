@@ -4,6 +4,7 @@
  * Module dependencies.
  */
 var mongoose = require('mongoose'),
+    mongoosePaginate = require('mongoose-paginate'),
     Schema = mongoose.Schema;
 
 /**
@@ -37,5 +38,7 @@ var MessageSchema = new Schema({
     default: false
   }
 });
+
+MessageSchema.plugin(mongoosePaginate);
 
 mongoose.model('Message', MessageSchema);

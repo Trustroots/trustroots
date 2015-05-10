@@ -3,8 +3,8 @@
 /* This declares to JSHint that these are global variables: */
 /*global flashTimeout:false */
 
-angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Authentication', 'Messages', 'MessagesRead', 'messageCenterService', //'Socket',
-  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService) {//, Socket
+angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Authentication', 'Messages', 'MessagesRead', 'messageCenterService', '$q', //'Socket',
+  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, $q) {//, Socket
 
     // If no recepient defined, go to inbox
     if (!$stateParams.userId) $state.go('inboxMessages');
@@ -13,19 +13,84 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     $scope.user = Authentication.user;
     $scope.userToId = $stateParams.userId;
     $scope.isSending = false;
+    $scope.messages = [];
     var flaggedAsRead = [];
+    var previousPage = '';
+    //Variable for flow control
+    var paginationTimer;
 
     // No sending messages to yourself
     if ($scope.user._id === $scope.userToId) $state.go('inboxMessages');
 
-    // Fetch messages for this thread
-    $scope.messages = Messages.query({
-      userId: $stateParams.userId
-    }, function(){
-      // Keep layout in good order
-      threadLayout();
-    });
+    //Parse link header for pagination parameters.
+    function parseHeaders(header){
+      if(header){
+        return {
+          page: /<.*\/[^<>]*\?.*page=(\d*).*>;.*/.exec(header)[1],
+          limit: /<.*\/[^<>]*\?.*limit=(\d*).*>;.*/.exec(header)[1]
+        };
+      }
+      else {return header;}
+    }
 
+    /**
+     * Fetches messages and sets up pagination environment
+     * Takes additional query params passed in as key , value pairs
+     */
+    $scope.fetchMessages = function(param){
+      var deferred = $q.defer();
+      var query = {userId: $stateParams.userId};
+      if (param) {angular.extend(query,param);}
+
+      Messages.query(
+        query,
+        //Successful call
+        function(results,headers){
+          angular.forEach(results, function(data){$scope.messages.unshift(data);});
+          $scope.nextPage = parseHeaders(headers().link);
+          $scope.fetchMessages.resolved = true;
+          paginationTimer = false;
+
+          // Keep layout in good order
+          threadLayout();
+          deferred.resolve();
+        },
+        //Rejected call
+        function(){
+          $scope.fetchMessages.resolved = 'reject';
+          paginationTimer = false;
+          deferred.reject();
+        }
+      );
+      return deferred.promise;
+    };
+
+    /**
+     * Fetches next page of messages
+     * Activates when the first (top most) message element hits the top view port
+     */
+    $scope.moreMessages = function(waypoint){
+      if($scope.nextPage !== previousPage && waypoint && !paginationTimer){
+          var oldHeight = threadLayoutThread[0].scrollHeight;
+
+          //Calls for next page and sets scroll position when results return
+          paginationTimer = $scope.fetchMessages($scope.nextPage)
+            .then(function(){
+                setScrollPosition(oldHeight);
+            });
+      }
+    };
+
+    /**
+     * Restores scroll position after pagination
+     * Timeout is in place to force function to execute after digest cycle to properly calculate scroll height.
+     */
+    function setScrollPosition(oldHeight) {
+      $timeout(function () {
+        var newHeight = threadLayoutThread[0].scrollHeight;
+        angular.element(threadLayoutThread.scrollTop(newHeight - oldHeight));
+      });
+    }
 
     /**
      * Calculate thread etc layout locations with this massive pile of helpers

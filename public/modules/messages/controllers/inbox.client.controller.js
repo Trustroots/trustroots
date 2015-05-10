@@ -1,9 +1,16 @@
 'use strict';
 
-angular.module('messages').controller('MessagesInboxController', ['$scope', '$state', '$log', 'Authentication', 'Messages',//, 'Socket'
-  function($scope, $state, $log, Authentication, Messages) {//, Socket
+angular.module('messages').controller('MessagesInboxController', ['$scope', '$state', '$log', 'Authentication', 'Messages', '$q',//, 'Socket'
+  function($scope, $state, $log, Authentication, Messages, $q) {//, Socket
 
     $scope.user = Authentication.user;
+
+    //Pagination vars
+    var previousPage;
+    $scope.nextPage ='';
+    $scope.threads =[];
+    //variable for flow control
+    var paginationTimer;
 
     /*
     Socket.on('message.thread', function(thread) {
@@ -12,8 +19,54 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
     });
     */
 
-    $scope.findInbox = function() {
-      $scope.threads = Messages.query();
+    //Parses link header for pagination parameters.
+    function parseHeaders(header){
+      if(header){
+        return {
+          page: /<.*\/[^<>]*\?.*page=(\d*).*>;.*/.exec(header)[1],
+          limit: /<.*\/[^<>]*\?.*limit=(\d*).*>;.*/.exec(header)[1]
+        };
+      }
+      else {return header;}
+    }
+
+    /**
+     * Fetches threads and sets up pagination environment
+     * Takes additional query params passed in as key , value pairs
+     */
+    $scope.fetchThreads = function(param){
+      var deferred = $q.defer();
+      if (param) { var query = param; }
+
+      Messages.query(
+        query,
+        //Successful call
+        function(results,headers){
+          angular.forEach(results, function(data){$scope.threads.push(data);});
+          $scope.nextPage = parseHeaders(headers().link);
+          $scope.fetchThreads.resolved = true;
+
+          paginationTimer = false;
+          deferred.resolve();
+        },
+        //Rejected call
+        function(){
+          $scope.fetchThreads.resolved = 'reject';
+          paginationTimer = false;
+          deferred.reject();
+        }
+      );
+      return deferred.promise;
+    };
+
+    /*
+    * Fetches next page of threads
+    * Activates when the last thread element hits the bottom view port
+    */
+    $scope.moreMessages = function(waypoint){
+      if($scope.nextPage !== previousPage && waypoint && !paginationTimer){
+        paginationTimer = $scope.fetchThreads($scope.nextPage)
+      }
     };
 
     /**

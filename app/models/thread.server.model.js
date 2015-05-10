@@ -4,6 +4,7 @@
  * Module dependencies.
  */
 var mongoose = require('mongoose'),
+    mongoosePaginate = require('mongoose-paginate'),
     Schema = mongoose.Schema;
 
 /**
@@ -32,5 +33,7 @@ var ThreadSchema = new Schema({
       default: false
   }
 });
+
+ThreadSchema.plugin(mongoosePaginate);
 
 mongoose.model('Thread', ThreadSchema);

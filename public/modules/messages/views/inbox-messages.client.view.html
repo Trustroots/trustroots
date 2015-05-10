@@ -1,4 +1,4 @@
-<section class="container container-spacer" data-ng-controller="MessagesInboxController" data-ng-init="findInbox()">
+<section class="container container-spacer" data-ng-controller="MessagesInboxController" data-ng-init="fetchThreads()">
 
   <div class="row">
     <div class="col-xs-12">
@@ -13,7 +13,7 @@
       <div class="panel panel-default panel-threadlist panel-threadlist-threads panel-xs-no_margin">
 
         <!-- Threads -->
-        <table class="table table-condensed table-hover table-threadlist table-threadlist-threads" data-ng-if="threads.$resolved && threads.length">
+        <table class="table table-condensed table-hover table-threadlist table-threadlist-threads" data-ng-if="fetchThreads.resolved && threads.length">
           <tbody>
 
             <tr class="thread" data-ng-class="{ 'thread-unread': !thread.read }" data-ng-repeat="thread in threads | orderBy:'updated':true" data-ng-click="openThread(thread)">
@@ -34,7 +34,7 @@
         <!-- /Threads -->
 
         <!-- No threads -->
-        <div class="content-empty" data-ng-if="threads.$resolved && !threads.length">
+        <div class="content-empty" data-ng-if="threads.resolved && !threads.length">
           <i class="fa fa-3x fa-comments-o"></i>
           <h4>No conversations yet.</h4>
         </div>
@@ -43,5 +43,21 @@
       </div><!-- /.panel -->
     </div><!-- /.col-* -->
   </div><!-- /.row -->
+
+  <!-- pagination waypoint -->
+  <div zum-waypoint="waypoints"
+   offset="0%"
+   up="scroll.up"
+   down="scroll.down"
+   class="text-center text-muted"
+   ng-if="nextPage && fetchThreads.resolved != 'reject'">
+   Loading more messages...{{moreMessages(waypoints.scroll.down)}}
+  </div>
+
+  <!-- Pagination error -->
+  <div ng-if="fetchThreads.resolved === 'reject'" class="text-center">
+    <div class="thread-error">Something went wrong :(</div>
+    <button type="button" class="btn btn-default" ng-click="moreMessages(true)">Retry</button>
+  </div>
 
 </section><!-- /.container -->
