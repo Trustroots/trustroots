@@ -1,4 +1,4 @@
-<section class="container container-spacer" ng-controller="MessagesThreadController" ng-init="fetchMessages()" ><!-- as messagesCtrl-->
+<section class="container container-spacer" ng-controller="MessagesThreadController"><!-- as messagesCtrl-->
 
   <div class="row">
     <div class="col-sm-9" id="thread-container">
@@ -7,7 +7,7 @@
 
 
       <!-- Thread -->
-      <div id="messages-thread" ng-style="{width: containerWidth, bottom: replyHeight}">
+      <threads id="messages-thread" ng-style="{width: containerWidth, bottom: replyHeight}" moremessages="moreMessages()">
 
         <!-- Messages -->
         <div class="message"
@@ -20,19 +20,14 @@
              ng-class="{ 'message-unread': !messageRead(message, waypoints.scroll.up, waypoints.scroll.down), 'message-pushed' : message.pushed }">
 
           <!-- Pagination waypoint -->
-          <div ng-if="$first && fetchMessages.resolved != 'reject' && nextPage"
-               class="divider divider-first col-xs-12 text-center"
-               zum-waypoint="waypoints"
-               offset="-5%"
-               up="page.up"
-               down="page.down">
-               Loading more messages...{{moreMessages(waypoints.page.up)}}
+          <div ng-if="$first && fetchMessages.resolved != 'reject' && nextPage" class="divider divider-first col-xs-12 text-center">
+               Loading more messages...
           </div>
 
           <!-- Pagination error -->
           <div ng-if="$first && fetchMessages.resolved === 'reject'" class="text-center">
-              <div class="message-error"> Something went wrong :( </div>
-              <button type="button" class="btn btn-default" ng-click="moreMessages(true)">Retry</button>
+              <div class="text-danger h4"> Something went wrong :( </div>
+              <button type="button" class="btn btn-primary" ng-click="moreMessages(true)">Retry</button>
           </div>
 
           <!-- Dividers -->
@@ -70,7 +65,7 @@
             <p>Start conversation below.</p>
         </div><!-- /.row -->
 
-      </div>
+      </threads>
       <!-- /Thread -->
 
       <!-- Reply -->

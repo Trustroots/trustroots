@@ -64,7 +64,7 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
     * Activates when the last thread element hits the bottom view port
     */
     $scope.moreMessages = function(waypoint){
-      if($scope.nextPage !== previousPage && waypoint && !paginationTimer){
+      if($scope.nextPage && $scope.nextPage !== previousPage && waypoint && !paginationTimer){
         paginationTimer = $scope.fetchThreads($scope.nextPage)
       }
     };

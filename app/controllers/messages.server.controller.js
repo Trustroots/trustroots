@@ -45,7 +45,7 @@ exports.messageSanitizeOptions = {
  */
 exports.inbox = function(req, res) {
   //Set pagination limit for inbox
-  req.query.limit = 30;
+  req.query.limit = 20;
 
   Thread.paginate(
     {

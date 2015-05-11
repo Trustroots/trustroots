@@ -69,8 +69,8 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
      * Fetches next page of messages
      * Activates when the first (top most) message element hits the top view port
      */
-    $scope.moreMessages = function(waypoint){
-      if($scope.nextPage !== previousPage && waypoint && !paginationTimer){
+    $scope.moreMessages = function(){
+      if($scope.nextPage !== previousPage && $scope.nextPage && !paginationTimer){
           var oldHeight = threadLayoutThread[0].scrollHeight;
 
           //Calls for next page and sets scroll position when results return
@@ -146,9 +146,12 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
 
     $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
       threadLayoutUpdate();
-      $timeout(threadScrollBottom, 500);
-      $timeout(threadScrollBottom, 1500);
-      $timeout(threadScrollBottom, 2500);
+      $scope.fetchMessages()
+        .then(function(){
+          $timeout(threadScrollBottom);
+        });
+      //$timeout(threadScrollBottom, 1500);
+      //$timeout(threadScrollBottom, 2500);
     });
 
     // Observe for the reply area height while typing your awesome message in it
