@@ -9,7 +9,6 @@ module.exports = {
       ],
       js: [
         // Non minified  versions
-
         'public/lib/jquery/dist/jquery.js',
         'public/lib/angular/angular.js',
         'public/lib/angular-resource/angular-resource.js',

@@ -60,7 +60,7 @@ module.exports = function (grunt) {
         files: defaultAssets.client.less,
         tasks: ['less'],//'csslint'
         options: {
-          livereload: true
+          livereload: false
         }
       }
     },
@@ -183,11 +183,11 @@ module.exports = function (grunt) {
   });
 
   // Lint CSS and JavaScript files.
-  // @todo: Until ignoring bootstrap works in CSSLint, you gotta do that manually
-  grunt.registerTask('lint', ['less', 'jshint']); //'csslint'
+  // @todo: Until ignoring bootstrap works in CSSLint, you gotta do lintin css manually
+  grunt.registerTask('lint', ['jshint']); //'less', 'csslint'
 
   // Lint project files and minify them into two production files.
-  grunt.registerTask('build', ['env:dev', 'lint', 'ngAnnotate', 'uglify', 'cssmin']);
+  grunt.registerTask('build', ['ngAnnotate', 'uglify', 'less', 'cssmin']);
 
   // Run the project tests
   grunt.registerTask('test', ['env:test', 'mongoose', 'mochaTest', 'karma:unit']);
@@ -195,11 +195,11 @@ module.exports = function (grunt) {
   grunt.registerTask('test.karma', ['env:test', 'mongoose', 'karma:unit']);
 
   // Run the project in development mode
-  grunt.registerTask('default', ['env:dev', 'lint', 'concurrent:default']);
+  grunt.registerTask('default', ['env:dev', 'lint', 'less', 'concurrent:default']);
 
   // Run the project in debug mode
-  grunt.registerTask('debug', ['env:dev', 'lint', 'concurrent:debug']);
+  grunt.registerTask('debug', ['env:dev', 'lint', 'less', 'concurrent:debug']);
 
   // Run the project in production mode
-  grunt.registerTask('prod', ['build', 'env:prod', 'concurrent:default']);
+  grunt.registerTask('prod', ['env:prod', 'lint', 'build', 'concurrent:default']);
 };

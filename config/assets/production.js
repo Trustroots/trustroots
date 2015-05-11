@@ -3,6 +3,10 @@
 module.exports = {
   client: {
     lib: {
+      css: [
+        'public/lib/medium-editor/dist/css/medium-editor.css',
+        'public/lib/leaflet/dist/leaflet.css'
+      ],
       js: [
         // Minified versions
         'public/lib/jquery/dist/jquery.min.js',
