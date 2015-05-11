@@ -25,6 +25,10 @@ It is not a place for policy discussion. Personal opinion about which features a
 
 We operate a 3 strike policy. 1st warning, 2nd warning, blocked.
 
+## Be pragmatic
+
+We value getting things done attitude. Arguments about minor issues shouldn't get in the way of getting work done and achieving more important results. Use the tools and methods which help getting the job done. Let decisions be taken by people who do the work.
+
 ## Real life interaction
 
 We highly value real life interaction. Both within the network as well as among technical contributors. If possible, try to meet up with other Trustroots contributors in real life. You can connect your Trustroots profile to your GitHub account to facilitate such connections.
