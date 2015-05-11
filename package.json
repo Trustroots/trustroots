@@ -3,6 +3,7 @@
   "description": "Hospitality exchange community for hitchhikers and other travellers.",
   "version": "0.2.0",
   "author": "https://www.trustroots.org/#!/foundation",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "https://github.com/Trustroots/trustroots"
