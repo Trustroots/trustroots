@@ -5,6 +5,8 @@
  */
 var _ = require('lodash'),
     defaultAssets = require('./config/assets/default'),
+    productionAssets = require('./config/assets/production'),
+  //  config = require('./config/config'),
     testAssets = require('./config/assets/test');
 
 module.exports = function (grunt) {
@@ -101,27 +103,45 @@ module.exports = function (grunt) {
       }
     },
     ngAnnotate: {
-      production: {
+      dist: {
+        options: {
+          singleQuotes: true,
+          add: false,
+          //separator: ';'
+        },
         files: {
-          'public/dist/application.js': defaultAssets.client.js
+          'public/dist/application.js': defaultAssets.client.js //to:from
         }
       }
     },
     uglify: {
-      production: {
+      annotated: {
         options: {
+          separator: '\n',
           mangle: false
         },
         files: {
-          'public/dist/application.min.js': 'public/dist/application.js'
+          'public/dist/application.js': 'public/dist/application.js' //to:from
+        }
+      },
+      bundle: {
+        options: {
+          separator: '\n',
+          mangle: false
+        },
+        files: {
+          'public/dist/application.min.js': 'public/dist/application.min.js' //to:from
         }
       }
     },
-    cssmin: {
-      combine: {
-        files: {
-          'public/dist/application.min.css': defaultAssets.client.css
-        }
+    concat: {
+      options: {
+        separator: '\n',
+        stripBanners: true
+      },
+      libs: {
+        src: _.union(productionAssets.client.lib.js, ['public/dist/application.js']),//config.files.client.lib.js
+        dest: 'public/dist/application.min.js'
       }
     },
     less: {
@@ -134,6 +154,13 @@ module.exports = function (grunt) {
             return  src.replace('/less/', '/css/');
           }
         }]
+      }
+    },
+    cssmin: {
+      dist: {
+        files: {
+          'public/dist/application.min.css': _.union(defaultAssets.client.css, productionAssets.client.lib.css)
+        }
       }
     },
     'node-inspector': {
@@ -187,7 +214,8 @@ module.exports = function (grunt) {
   grunt.registerTask('lint', ['jshint']); //'less', 'csslint'
 
   // Lint project files and minify them into two production files.
-  grunt.registerTask('build', ['ngAnnotate', 'uglify', 'less', 'cssmin']);
+  //grunt.registerTask('build', ['ngAnnotate', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'cssmin']);
+  grunt.registerTask('build', ['ngAnnotate', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'cssmin']);
 
   // Run the project tests
   grunt.registerTask('test', ['env:test', 'mongoose', 'mochaTest', 'karma:unit']);
