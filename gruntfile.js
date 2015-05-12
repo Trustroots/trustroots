@@ -157,6 +157,9 @@ module.exports = function (grunt) {
       }
     },
     cssmin: {
+      options: {
+        keepSpecialComments: 0
+      },
       dist: {
         files: {
           'public/dist/application.min.css': _.union(defaultAssets.client.css, productionAssets.client.lib.css)
