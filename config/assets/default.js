@@ -4,8 +4,7 @@ module.exports = {
   client: {
     lib: {
       css: [
-        'public/lib/medium-editor/dist/css/medium-editor.css',
-        'public/lib/leaflet/dist/leaflet.css'
+        'public/lib/medium-editor/dist/css/medium-editor.css'
       ],
       js: [
         // Non minified  versions

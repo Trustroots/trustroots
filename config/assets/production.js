@@ -4,8 +4,7 @@ module.exports = {
   client: {
     lib: {
       css: [
-        'public/lib/medium-editor/dist/css/medium-editor.css',
-        'public/lib/leaflet/dist/leaflet.css'
+        'public/lib/medium-editor/dist/css/medium-editor.css'
       ],
       js: [
         // Minified versions
@@ -18,7 +17,7 @@ module.exports = {
         'public/lib/angular-ui-router/release/angular-ui-router.min.js',
         'public/lib/angular-ui-utils/ui-utils.min.js',
         'public/lib/angular-bootstrap/ui-bootstrap-tpls.min.js',
-        'public/lib/moment/moment.min.js',
+        'public/lib/moment/min/moment.min.js',
         'public/lib/angular-moment/angular-moment.min.js',
         'public/lib/medium-editor/dist/js/medium-editor.min.js',
         'public/lib/angular-medium-editor/dist/angular-medium-editor.min.js',
