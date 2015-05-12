@@ -1,8 +1,5 @@
 'use strict';
 
-/* This declares to JSHint that 'ga' is a global variable: */
-/*global ga:false */
-
 angular.module('core').controller('MainController', ['$scope', '$rootScope', '$window', '$state', '$location', 'Authentication', 'messageCenterService', //'Socket',
   function($scope, $rootScope, $window, $state, $location, Authentication, messageCenterService) { //Socket
 

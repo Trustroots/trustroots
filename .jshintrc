@@ -27,7 +27,8 @@
     "PruneClusterForLeaflet": true,
     "L": true, // Leaflet
     "moment": true,
-    "ApplicationConfiguration": true
+    "ApplicationConfiguration": true,
+    "ga": true // Google Analytics
   },
   "predef": [ // Extra globals.
     "inject",
