@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('core').controller('FooterController', ['$scope', 'Authentication', 'Menus',
-  function($scope, Authentication, Menus) {
+angular.module('core').controller('FooterController', ['$scope', 'Authentication',
+  function($scope, Authentication) {
 
     $scope.isTransparent = false;
     $scope.isHidden = false;

@@ -6,11 +6,98 @@
       <span class="icon-bar"></span>
       <span class="icon-bar"></span>
     </button>
-    <a ui-sref="home" class="navbar-brand">
+    <a ng-click="goHome()" class="navbar-brand">
       <span class="logo-horizontal logo-horizontal-white"></span>
       <span class="sr-only">Trustroots</span>
     </a>
   </div>
+
+  <nav class="collapse navbar-collapse" collapse="!isCollapsed" role="navigation">
+
+    <ul class="nav navbar-nav" ng-show="user">
+      <li ui-route="search" ng-class="{active: ($uiRoute)}">
+        <a ui-sref="search">
+          <i class="fa fa-fw fa-lg fa-search"></i> Map
+        </a>
+      </li>
+    </ul>
+
+    <!-- Menu for non logged users -->
+    <ul class="nav navbar-nav navbar-right" ng-if="!user">
+      <li ui-route="signup" ng-class="{active: $uiRoute}">
+        <a ui-sref="signup">
+          <i class="fa fa-arrow-circle-up"></i> Sign Up
+        </a>
+      </li>
+      <li class="divider-vertical"></li>
+      <li ui-route="signin" ng-class="{active: $uiRoute}">
+        <a ui-sref="signin">
+          <i class="fa fa-sign-in"></i> Login
+        </a>
+      </li>
+    </ul>
+
+
+    <!-- Menu for logged in users-->
+    <ul class="nav navbar-nav navbar-right" ng-if="user">
+      <li ui-route="messages" ng-class="{active: $uiRoute}">
+        <a ui-sref="inboxMessages">
+          <i class="fa fa-fw fa-lg fa-comments"></i> <span class="visible-xs-inline">Messages</span>
+        </a>
+      </li>
+      <li class="dropdown" ng-class="{active: ($uiRoute)}" dropdown="true">
+        <a class="dropdown-toggle cursor-pointer" dropdown-toggle>
+          {{user.displayName}}
+          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li ui-route="profile" ng-class="{active: $uiRoute}">
+            <a ui-sref="profile({username: user.username})">
+              <i class="fa fa-fw fa-user"></i>
+              My profile
+            </a>
+          </li>
+          <li ui-route="profile-edit" ng-class="{active: $uiRoute}">
+            <a ui-sref="profile-edit({username: user.username})">
+              <i class="fa fa-fw fa-edit"></i>
+              Edit profile
+            </a>
+          </li>
+          <li ui-route="profile-settings" ng-class="{active: $uiRoute}">
+            <a ui-sref="profile-settings({username: user.username})">
+              <i class="fa fa-fw fa-cog"></i>
+              Settings
+            </a>
+          </li><li ui-route="offer" ng-class="{active: $uiRoute}">
+            <a ui-sref="offer">
+              <i class="fa fa-fw fa-home"></i>
+              Hosting
+            </a>
+          </li>
+          <li class="divider"></li>
+          <li ui-route="contact" ng-class="{active: $uiRoute}">
+            <a ui-sref="contact">
+              <i class="fa fa-fw fa-bolt"></i>
+              Support
+            </a>
+          </li>
+          <li>
+            <a href="/api/auth/signout" target="_top">
+              <i class="fa fa-fw fa-sign-out"></i>
+              Sign out
+            </a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+
+  </nav>
+
+  <!--
+  state('profile-edit', {
+  state('profile-settings', {
+    url: '/profile/:username?tab',
+
   <nav class="collapse navbar-collapse" collapse="!isCollapsed" role="navigation">
     <ul class="nav navbar-nav" data-ng-if="commonMenu.shouldRender(authentication.user);">
       <li data-ng-repeat="item in commonMenu.items | orderBy: 'position'" data-ng-if="item.shouldRender(authentication.user);" ng-switch="item.menuItemType" ui-route="{{item.uiRoute}}" class="{{item.menuItemClass}}" ng-class="{active: ($uiRoute)}" dropdown="item.menuItemType === 'dropdown'">
@@ -20,9 +107,9 @@
           <b class="caret"></b>
         </a>
         <ul ng-switch-when="dropdown" class="dropdown-menu">
-          <li data-ng-repeat="subitem in item.items | orderBy: 'position'" data-ng-if="subitem.shouldRender(authentication.user);" ui-route="{{subitem.uiRoute}}" ng-class="{active: $uiRoute, divider: subitem.isDivider}">
+          <li ui-route="{{subitem.uiRoute}}" ng-class="{active: $uiRoute}">
             <a href="{{ subitem.link | hashbangurl }}" ng-hide="subitem.isDivider">
-              <i class="fa fa-fw fa-{{subitem.icon}}" ng-if="subitem.icon"></i>
+              <i class="fa fa-fw fa-{{subitem.icon}}"></i>
               {{subitem.title}}
             </a>
           </li>
@@ -35,7 +122,7 @@
       </li>
     </ul>
 
-    <!-- Menu for non logged users -->
+    !-- Menu for non logged users --
     <ul class="nav navbar-nav navbar-right" data-ng-hide="authentication.user">
       <li ui-route="/signup" ng-class="{active: $uiRoute}">
         <a ui-sref="signup"><i class="fa fa-arrow-circle-up"></i> Sign Up</a>
@@ -46,7 +133,7 @@
       </li>
     </ul>
 
-    <!-- Menu for logged in users-->
+    !-- Menu for logged in users--
     <ul class="nav navbar-nav navbar-right" data-ng-if="authentication.user && userMenu.shouldRender(authentication.user);">
 
       <li data-ng-repeat="item in userMenu.items | orderBy: 'position'" data-ng-if="item.shouldRender(authentication.user);" ng-switch="item.menuItemType" ui-route="{{item.uiRoute}}" class="{{item.menuItemClass}}" ng-class="{active: ($uiRoute)}" dropdown="item.menuItemType === 'dropdown'">
@@ -56,14 +143,14 @@
           <b class="caret"></b>
         </a>
         <ul ng-switch-when="dropdown" class="dropdown-menu">
-          <li data-ng-repeat="subitem in item.items | orderBy: 'position'" data-ng-if="subitem.shouldRender(authentication.user);" ui-route="{{subitem.uiRoute}}" ng-class="{active: $uiRoute, divider: subitem.isDivider}">
-            <a ng-href="{{ subitem.link | hashbangurl }}" ng-hide="subitem.isDivider">
-              <i class="fa fa-fw fa-{{subitem.icon}}" ng-if="subitem.icon"></i>
+          <li ui-route="{{subitem.uiRoute}}" ng-class="{active: $uiRoute}">
+            <a ui-sref="{{ subitem.link | hashbangurl }}" ng-hide="subitem.isDivider">
+              <i class="fa fa-fw fa-{{subitem.icon}}"></i>
               {{subitem.title}}
             </a>
           </li>
         </ul>
-        <a ng-switch-default ng-href="{{ item.link | hashbangurl }}">
+        <a ng-switch-default ui-sref="{{ item.link | hashbangurl }}">
           <i class="fa fa-fw fa-{{item.icon}}" ng-if="item.icon"></i>
           {{item.title}}
           <span ng-if="item.titleMobile" ng-bind="item.titleMobile" class="visible-xs-inline"></span>
@@ -72,4 +159,6 @@
 
     </ul>
   </nav>
+  -->
+
 </div>
