@@ -1,9 +1,13 @@
 'use strict';
 
 /*
- * Please don't make your own config changes to ./env/* files!
- * Copy ./private/_template.js to ./private/{development|production|test}.js
- * and make your changes there. Thanks.
+ * Please don't make your own config changes to this file!
+ * Copy local.sample.js to local.js and make your changes there. Thanks.
+ *
+ * Load order:
+ * - default.js
+ * - {development|production|test}.js
+ * - local.js
  */
 
 module.exports = {

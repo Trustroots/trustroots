@@ -181,7 +181,7 @@ module.exports = function (grunt) {
     },
     copy: {
       localConfig: {
-        src: 'config/env/development.js',
+        src: 'config/env/local.sample.js',
         dest: 'config/env/local.js',
         filter: function() {
           return !fs.existsSync('config/env/local.js');
