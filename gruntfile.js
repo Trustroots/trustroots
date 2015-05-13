@@ -4,9 +4,9 @@
  * Module dependencies.
  */
 var _ = require('lodash'),
+    fs = require('fs'),
     defaultAssets = require('./config/assets/default'),
     productionAssets = require('./config/assets/production'),
-  //  config = require('./config/config'),
     testAssets = require('./config/assets/test');
 
 module.exports = function (grunt) {
@@ -179,6 +179,15 @@ module.exports = function (grunt) {
         }
       }
     },
+    copy: {
+      localConfig: {
+        src: 'config/env/development.js',
+        dest: 'config/env/local.js',
+        filter: function() {
+          return !fs.existsSync('config/env/local.js');
+        }
+      }
+    },
     mochaTest: {
       src: testAssets.tests.server,
       options: {
@@ -218,18 +227,18 @@ module.exports = function (grunt) {
 
   // Lint project files and minify them into two production files.
   //grunt.registerTask('build', ['ngAnnotate', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'cssmin']);
-  grunt.registerTask('build', ['ngAnnotate', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'cssmin']);
+  grunt.registerTask('build', ['copy:localConfig', 'ngAnnotate', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'cssmin']);
 
   // Run the project tests
-  grunt.registerTask('test', ['env:test', 'mongoose', 'mochaTest', 'karma:unit']);
-  grunt.registerTask('test.mocha', ['env:test', 'mongoose', 'mochaTest']);
-  grunt.registerTask('test.karma', ['env:test', 'mongoose', 'karma:unit']);
+  grunt.registerTask('test', ['env:test', 'copy:localConfig', 'mongoose', 'mochaTest', 'karma:unit']);
+  grunt.registerTask('test.mocha', ['env:test', 'copy:localConfig', 'mongoose', 'mochaTest']);
+  grunt.registerTask('test.karma', ['env:test', 'copy:localConfig', 'mongoose', 'karma:unit']);
 
   // Run the project in development mode
-  grunt.registerTask('default', ['env:dev', 'lint', 'less', 'concurrent:default']);
+  grunt.registerTask('default', ['env:dev', 'copy:localConfig', 'lint', 'less', 'concurrent:default']);
 
   // Run the project in debug mode
-  grunt.registerTask('debug', ['env:dev', 'lint', 'less', 'concurrent:debug']);
+  grunt.registerTask('debug', ['env:dev', 'copy:localConfig', 'lint', 'less', 'concurrent:debug']);
 
   // Run the project in production mode
   grunt.registerTask('prod', ['env:prod', 'lint', 'build', 'concurrent:default']);

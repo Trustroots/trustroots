@@ -11,7 +11,6 @@ $RECYCLE.BIN/
 ._*
 *~
 
-
 # Icon must end with two \r.
 Icon
 
@@ -22,7 +21,6 @@ Icon
 
 # Env/development
 .nodemonignore
-npm-debug.log
 node_modules/
 .bower-*/
 .vagrant
@@ -31,14 +29,13 @@ passenger.*
 
 # App
 public/lib
-public/dist/*
+public/dist
 modules/core/client/app/css
-.idea/
+.idea
 tmp
 
-# Private configs
-config/private/*
-!config/private/_template.js
+# Configs
+config/env/local.js
 
 # Logs
 logs

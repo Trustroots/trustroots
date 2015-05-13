@@ -93,14 +93,10 @@ echo "---------------------------------------------------------------------"
 echo ""
 cd /srv/trustroots/
 npm install
+# Bower should run after npm install already, but in case it fails, re-run:
 bower install --allow-root --config.interactive=false
 NODE_ENV=development grunt build
 
-
-# Add configs
-sudo cp /srv/trustroots/config/secret/_template.js /srv/trustroots/config/secret/development.js
-sudo cp /srv/trustroots/config/secret/_template.js /srv/trustroots/config/secret/production.js
-sudo cp /srv/trustroots/config/secret/_template.js /srv/trustroots/config/secret/test.js
 
 # Generate test content
 echo ""

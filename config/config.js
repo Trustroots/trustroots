@@ -4,6 +4,7 @@
  * Module dependencies.
  */
 var _ = require('lodash'),
+    fs = require('fs'),
     chalk = require('chalk'),
     glob = require('glob'),
     path = require('path');
@@ -152,13 +153,8 @@ var initGlobalConfig = function() {
   // Get the current config
   var environmentConfig = require(path.join(process.cwd(), 'config/env/', process.env.NODE_ENV)) || {};
 
-  // Override the current config with private values if they exist
-  var privateEnvironmentConfig;
-  try {
-    privateEnvironmentConfig = require(path.join(process.cwd(), 'config/private/', process.env.NODE_ENV));
-  } catch(err) {
-    privateEnvironmentConfig = {};
-  }
+  // Override the current config with local values if they exist
+  var privateEnvironmentConfig = (fs.existsSync('./config/env/local.js') && require('./env/local.js')) || {};
 
   // Merge config files
   var config = _.extend(defaultConfig, environmentConfig, privateEnvironmentConfig);

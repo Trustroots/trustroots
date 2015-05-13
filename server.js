@@ -31,6 +31,11 @@ mongoose.connect(function(db) {
   // Setup Agenda ("cron" jobs)
   agenda.setupJobs();
 
+  // Check in case mailer config is still set to default values (a common problem)
+  if(config.mailer.service && config.mailer.service === 'MAILER_SERVICE_PROVIDER') {
+    console.warn(chalk.red('Remember to setup mailer from ./config/env/local.js - some features won\'t work without it.'));
+  }
+
   // Logging initialization
   console.log('--');
   console.log(chalk.green('Trustroots started'));
