@@ -7,15 +7,15 @@
  */
 
 module.exports = {
-	app: {
-		title: 'Trustroots',
+  app: {
+    title: 'Trustroots',
     description: 'Travellers community for sharing, hosting and getting people together. Built with hitchhikers in mind. A world that encourages trust and adventure.',
     tagline: 'Hospitality exchange community for hitchhikers and other travellers.'
-	},
-	port: process.env.PORT || 3000,
+  },
+  port: process.env.PORT || 3000,
   https: process.env.HTTPS || false,
-	sessionSecret: 'MEAN',
-	sessionCollection: 'sessions',
+  sessionSecret: 'MEAN',
+  sessionCollection: 'sessions',
   domain: process.env.DOMAIN || 'localhost:3000',
   mailer: {
     from: process.env.MAILER_FROM || 'MAILER_FROM',
@@ -27,16 +27,16 @@ module.exports = {
       }
     }
   },
-	mapbox: {
-		// Mapbox is publicly exposed to the frontend
-		user: process.env.MAPBOX_USERNAME || 'trustroots',
-		map: {
-			default: process.env.MAPBOX_MAP_DEFAULT || 'k8mokch5',
-			satellite: process.env.MAPBOX_MAP_SATELLITE || 'kil7hee6',
-			hitchmap: process.env.MAPBOX_MAP_HITCHMAP || 'ce8bb774'
-		},
-		publicKey: process.env.MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
-	},
+  mapbox: {
+    // Mapbox is publicly exposed to the frontend
+    user: process.env.MAPBOX_USERNAME || 'trustroots',
+    map: {
+      default: process.env.MAPBOX_MAP_DEFAULT || 'k8mokch5',
+      satellite: process.env.MAPBOX_MAP_SATELLITE || 'kil7hee6',
+      hitchmap: process.env.MAPBOX_MAP_HITCHMAP || 'ce8bb774'
+    },
+    publicKey: process.env.MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
+  },
   facebook: {
     clientID: process.env.FACEBOOK_ID || 'APP_ID',
     clientSecret: process.env.FACEBOOK_SECRET || 'APP_SECRET',

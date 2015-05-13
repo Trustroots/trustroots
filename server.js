@@ -22,11 +22,11 @@ mongoose.connect(function(db) {
     console.log(chalk.green('Started monitoring with NewRelic'));
   }
 
-	// Initialize express
-	var app = express.init(db);
+  // Initialize express
+  var app = express.init(db);
 
-	// Start the app by listening on <port>
-	app.listen(config.port);
+  // Start the app by listening on <port>
+  app.listen(config.port);
 
   // Setup Agenda ("cron" jobs)
   agenda.setupJobs();
