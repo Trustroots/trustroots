@@ -1,9 +1,10 @@
 'use strict';
 
-/*
- * Copy this file to local.js and put your local changes there
- * Env settings will be overwritten by settings in this file.
- * 
+/**
+ * Rename this file to local.js for having local configuration variables that
+ * will not get commited and pushed to remote repositories.
+ * Use it for your API keys, passwords, etc.
+ *
  * Load order:
  * - default.js
  * - {development|production|test}.js
@@ -23,6 +24,17 @@ module.exports = {
         user: 'gmail.user@gmail.com',
         pass: 'userpass'
       }
+    }
+  }
+  */
+
+  // Uncomment if you want to have Mapbox maps at development environment
+  /*
+  mapbox: {
+    map: {
+      default: 'k8mokch5',
+      satellite: 'kil7hee6',
+      hitchmap: 'ce8bb774'
     }
   }
   */

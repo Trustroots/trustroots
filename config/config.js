@@ -147,17 +147,16 @@ var initGlobalConfig = function() {
   // Merge assets
   var assets = _.extend(defaultAssets, environmentAssets);
 
-  // Get the default config
-  var defaultConfig = require(path.join(process.cwd(), 'config/env/default'));
-
-  // Get the current config
-  var environmentConfig = require(path.join(process.cwd(), 'config/env/', process.env.NODE_ENV)) || {};
-
-  // Override the current config with local values if they exist
-  var privateEnvironmentConfig = (fs.existsSync('./config/env/local.js') && require('./env/local.js')) || {};
-
-  // Merge config files
-  var config = _.extend(defaultConfig, environmentConfig, privateEnvironmentConfig);
+  /**
+   * Resolve environment configuration by extending each env configuration file,
+   * and lastly merge/override that with any local repository configuration that exists
+   * in local.js
+   */
+  var config = _.extend(
+    require(path.join(process.cwd(), 'config/env/default')),
+    require(path.join(process.cwd(), 'config/env/', process.env.NODE_ENV)) || {}
+  );
+  config = _.merge(config, (fs.existsSync('./config/env/local.js') && require('./env/local.js')) || {});
 
   // Initialize global globbed files
   initGlobalConfigFiles(config, assets);
