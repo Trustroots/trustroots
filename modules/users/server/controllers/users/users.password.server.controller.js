@@ -70,14 +70,14 @@ exports.forgot = function(req, res, next) {
         url: url
       };
 
-      res.render('email-templates/reset-password', renderVars, function(err, emailHTML) {
+      res.render(path.resolve('./modules/core/server/views/email-templates/reset-password'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, user, renderVars);
       });
     },
 
     // Prepare TEXT email
     function(emailHTML, user, renderVars, done) {
-      res.render('email-templates-text/reset-password', renderVars, function(err, emailPlain) {
+      res.render(path.resolve('./modules/core/server/views/email-templates-text/reset-password'), renderVars, function(err, emailPlain) {
         done(err, emailHTML, emailPlain, user);
       });
     },
@@ -194,14 +194,14 @@ exports.reset = function(req, res, next) {
         url: (config.https ? 'https' : 'http') + '://' + req.headers.host
       };
 
-      res.render('email-templates/reset-password-confirm', renderVars, function(err, emailHTML) {
+      res.render(path.resolve('./modules/core/server/views/email-templates/reset-password-confirm'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, user, renderVars);
       });
     },
 
     // Prepare TEXT email
     function(emailHTML, user, renderVars, done) {
-      res.render('email-templates-text/reset-password-confirm', renderVars, function(err, emailPlain) {
+      res.render(path.resolve('./modules/core/server/views/email-templates-text/reset-password-confirm'), renderVars, function(err, emailPlain) {
         done(err, emailHTML, emailPlain, user);
       });
     },
@@ -307,14 +307,14 @@ exports.changePassword = function(req, res) {
         url: (config.https ? 'https' : 'http') + '://' + req.headers.host
       };
 
-      res.render('email-templates/reset-password-confirm', renderVars, function(err, emailHTML) {
+      res.render(path.resolve('./modules/core/server/views/email-templates/reset-password-confirm'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, user, renderVars);
       });
     },
 
     // Prepare TEXT email
     function(emailHTML, user, renderVars, done) {
-      res.render('email-templates-text/reset-password-confirm', renderVars, function(err, emailPlain) {
+      res.render(path.resolve('./modules/core/server/views/email-templates-text/reset-password-confirm'), renderVars, function(err, emailPlain) {
         done(err, emailHTML, emailPlain, user);
       });
     },

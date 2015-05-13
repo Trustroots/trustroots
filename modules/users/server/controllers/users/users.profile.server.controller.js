@@ -265,7 +265,7 @@ exports.update = function(req, res) {
         urlConfirm: url + '/confirm-email/' + token
       };
 
-      res.render('email-templates-text/email-confirmation', renderVars, function(err, emailPlain) {
+      res.render(path.resolve('./modules/core/server/views/email-templates-text/email-confirmation'), renderVars, function(err, emailPlain) {
         done(err, emailPlain, user, renderVars);
       });
     }
@@ -279,7 +279,7 @@ exports.update = function(req, res) {
 
     // If no emailPlain, user didn't change email = pass this phase
     if(emailPlain) {
-      res.render('email-templates/email-confirmation', renderVars, function(err, emailHTML) {
+      res.render(path.resolve('./modules/core/server/views/email-templates/email-confirmation'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, emailPlain, user);
       });
     }

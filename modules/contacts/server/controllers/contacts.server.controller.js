@@ -78,7 +78,7 @@ exports.add = function(req, res) {
         urlConfirm: url + '/contact-confirm/' + contact._id,
       };
 
-      res.render('email-templates/confirm-contact', renderVars, function(err, emailHTML) {
+      res.render(path.resolve('./modules/core/server/views/email-templates/confirm-contact'), renderVars, function(err, emailHTML) {
         done(err, contact, emailHTML, messagePlain, friend, renderVars);
       });
     },
@@ -89,14 +89,13 @@ exports.add = function(req, res) {
       // Replace html version of attached message with text version
       renderVars.message = messagePlain;
 
-      res.render('email-templates-text/confirm-contact', renderVars, function(err, emailPlain) {
+      res.render(path.resolve('./modules/core/server/views/email-templates-text/confirm-contact'), renderVars, function(err, emailPlain) {
         done(err, emailHTML, emailPlain, friend);
       });
     },
 
     // If valid email, send reset email using service
     function(emailHTML, emailPlain, friend, done) {
-
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
         to: friend.displayName + ' <' + friend.email + '>',
@@ -118,6 +117,8 @@ exports.add = function(req, res) {
 
   ], function(err) {
     if (err) {
+      console.log('Error: Contacts controller -> add');
+      console.log(err);
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
       });
@@ -135,6 +136,8 @@ exports.remove = function(req, res) {
 
 	contact.remove(function(err) {
 		if (err) {
+      console.log('Error: Contacts controller -> remove');
+      console.log(err);
 			return res.status(400).send({
 				message: errorHandler.getErrorMessage(err)
 			});
@@ -155,6 +158,8 @@ exports.confirm = function(req, res) {
 
 	contact.save(function(err) {
 		if (err) {
+      console.log('Error: Contacts controller -> confirm');
+      console.log(err);
 			return res.status(400).send({
 				message: errorHandler.getErrorMessage(err)
 			});

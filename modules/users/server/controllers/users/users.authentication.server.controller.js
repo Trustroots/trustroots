@@ -74,14 +74,14 @@ exports.signup = function(req, res) {
         urlConfirm: url + '/confirm-email/' + user.emailToken + '?signup',
       };
 
-      res.render('email-templates/signup', renderVars, function(err, emailHTML) {
+      res.render(path.resolve('./modules/core/server/views/email-templates/signup'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, user, renderVars, url);
       });
     },
 
     // Prepare TEXT email
     function(emailHTML, user, renderVars, url, done) {
-      res.render('email-templates-text/signup', renderVars, function(err, emailPlain) {
+      res.render(path.resolve('./modules/core/server/views/email-templates-text/signup'), renderVars, function(err, emailPlain) {
         done(err, emailHTML, emailPlain, user, url);
       });
     },
