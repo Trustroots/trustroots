@@ -17,19 +17,19 @@
           <div class="form-group">
             <label for="firstName" class="col-sm-4 control-label">First Name</label>
             <div class="col-sm-8">
-              <input type="text" required id="firstName" name="firstName" class="form-control input-lg" data-ng-model="credentials.firstName" placeholder="First Name" ng-disabled="isLoading">
+              <input type="text" required id="firstName" name="firstName" class="form-control input-lg" data-ng-model="credentials.firstName" placeholder="First Name" popover="This is shown to other members." ng-disabled="isLoading">
             </div>
           </div>
           <div class="form-group">
             <label for="lastName" class="col-sm-4 control-label">Last Name</label>
             <div class="col-sm-8">
-              <input type="text" id="lastName" name="lastName" class="form-control input-lg" data-ng-model="credentials.lastName" placeholder="Last Name" popover="You don’t necessarily have to use your real name here."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="isLoading">
+              <input type="text" id="lastName" name="lastName" class="form-control input-lg" data-ng-model="credentials.lastName" placeholder="Last Name" popover="This is shown to other members."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="isLoading">
             </div>
           </div>
           <div class="form-group">
             <label for="username" class="col-sm-4 control-label">Username</label>
             <div class="col-sm-8">
-              <input type="text" id="username" name="username" class="form-control input-lg" data-ng-model="credentials.username" placeholder="Username" popover="Only characters a-z, ._- and numbers allowed."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="isLoading">
+              <input type="text" id="username" name="username" class="form-control input-lg" data-ng-model="credentials.username" placeholder="Username" popover="Only characters a-z, ._- and numbers allowed. This is shown to other members."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="isLoading">
             </div>
           </div>
           <div class="form-group">
