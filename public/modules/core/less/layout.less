@@ -334,7 +334,10 @@ hr {
     }
   }
   .container {
-    padding-top: 15px;
+    padding-top: 8px;
+    @media (min-width: @screen-md-min) {
+      padding-top: 15px;
+    }
   }
   nav {
     font-size: @font-size-small;
@@ -353,11 +356,14 @@ hr {
       left: 50%;
       li {
         padding: 0;
-        margin: 0 10px;
+        margin: 0 10px 10px 10px;
         float: left;
         position: relative;
         display: block;
         right: 50%;
+        @media (min-width: @screen-sm-min) {
+          margin: 0 10px;
+        }
       }
     }
   }
@@ -616,29 +622,6 @@ input[type="color"] {
   border-color: lighten(@brand-primary, 20%);
   .box-shadow(0 0 5px lighten(@brand-primary, 35%));
 }
-
-/* Shown to users with old IE */
-/*
-#warning-IE {
-  clear: both;
-  margin: -30px 0 30px 0;
-}
-
-#flashMessages {
-  position: fixed;
-  z-index: 1000;
-  top: @navbar-height;
-  right: 0;
-  left: 0;
-  .alert {
-    margin-bottom: 0;
-    border-top: 0;
-    border-right: 0;
-    border-left: 0;
-    border-radius: 0;
-  }
-}
-*/
 
 .cursor-pointer {
   cursor: pointer;
