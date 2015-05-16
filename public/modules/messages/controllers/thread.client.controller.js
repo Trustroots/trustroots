@@ -13,71 +13,40 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     $scope.user = Authentication.user;
     $scope.userToId = $stateParams.userId;
     $scope.isSending = false;
-    $scope.messages = [];
     var flaggedAsRead = [];
-    var previousPage = '';
-    //Variable for flow control
-    var paginationTimer;
+
+    $scope.messages = [];
+    $scope.messageHandler = new Messages;
+    // Attach userID for backend calls
+    var fetchMessages = function(){ return( $scope.messageHandler.fetchMessages({userId: $stateParams.userId}) ) };
 
     // No sending messages to yourself
     if ($scope.user._id === $scope.userToId) $state.go('inboxMessages');
 
-    //Parse link header for pagination parameters.
-    function parseHeaders(header){
-      if(header){
-        return {
-          page: /<.*\/[^<>]*\?.*page=(\d*).*>;.*/.exec(header)[1],
-          limit: /<.*\/[^<>]*\?.*limit=(\d*).*>;.*/.exec(header)[1]
-        };
-      }
-      else {return header;}
+    // Appends returned messages to model
+    function addMessages(data){
+      angular.forEach(data, function(msg){
+        $scope.messages.push(msg);
+      });
+      threadLayoutUpdate();
     }
 
-    /**
-     * Fetches messages and sets up pagination environment
-     * Takes additional query params passed in as key , value pairs
-     */
-    $scope.fetchMessages = function(param){
-      var deferred = $q.defer();
-      var query = {userId: $stateParams.userId};
-      if (param) {angular.extend(query,param);}
-
-      Messages.query(
-        query,
-        //Successful call
-        function(results,headers){
-          angular.forEach(results, function(data){$scope.messages.unshift(data);});
-          $scope.nextPage = parseHeaders(headers().link);
-          $scope.fetchMessages.resolved = true;
-          paginationTimer = false;
-
-          // Keep layout in good order
-          threadLayout();
-          deferred.resolve();
-        },
-        //Rejected call
-        function(){
-          $scope.fetchMessages.resolved = 'reject';
-          paginationTimer = false;
-          deferred.reject();
-        }
-      );
-      return deferred.promise;
-    };
-
-    /**
-     * Fetches next page of messages
-     * Activates when the first (top most) message element hits the top view port
+    /*
+     * Gets next page of messages
+     * Activates when the first(top most) message hits the top viewport
      */
     $scope.moreMessages = function(){
-      if($scope.nextPage !== previousPage && $scope.nextPage && !paginationTimer){
-          var oldHeight = threadLayoutThread[0].scrollHeight;
+      if($scope.messageHandler.nextPage) {
+        var oldHeight = threadLayoutThread[0].scrollHeight;
 
-          //Calls for next page and sets scroll position when results return
-          paginationTimer = $scope.fetchMessages($scope.nextPage)
-            .then(function(){
-                setScrollPosition(oldHeight);
-            });
+        fetchMessages().$promise.then( function(data) {
+          setScrollPosition(oldHeight);
+          addMessages(data);
+        },
+        //Flashes error message if it failed to get messages
+        function(){
+          messageCenterService.add('danger', 'Something went wrong :(', { timeout: flashTimeout });
+        });
       }
     };
 
@@ -145,13 +114,11 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     });
 
     $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
-      threadLayoutUpdate();
-      $scope.fetchMessages()
-        .then(function(){
-          $timeout(threadScrollBottom);
-        });
-      //$timeout(threadScrollBottom, 1500);
-      //$timeout(threadScrollBottom, 2500);
+      // Fetches first page of messages
+      fetchMessages().$promise.then( function(data){
+        addMessages(data);
+        $timeout(threadScrollBottom,500);
+      });
     });
 
     // Observe for the reply area height while typing your awesome message in it
@@ -218,7 +185,7 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
         return;
       }
 
-      var message = new Messages({
+      var message = new $scope.messageHandler.ajaxCall({
         content: this.content,
         userTo: $stateParams.userId,
         read: false

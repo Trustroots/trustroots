@@ -1,16 +1,12 @@
 'use strict';
 
-angular.module('messages').controller('MessagesInboxController', ['$scope', '$state', '$log', 'Authentication', 'Messages', '$q',//, 'Socket'
-  function($scope, $state, $log, Authentication, Messages, $q) {//, Socket
+angular.module('messages').controller('MessagesInboxController', ['$scope', '$state', '$log', 'Authentication', 'Messages', 'messageCenterService', //, 'Socket'
+  function($scope, $state, $log, Authentication, Messages, messageCenterService) {//, Socket
 
     $scope.user = Authentication.user;
 
-    //Pagination vars
-    var previousPage;
-    $scope.nextPage ='';
     $scope.threads =[];
-    //variable for flow control
-    var paginationTimer;
+    $scope.messageHandler = new Messages;
 
     /*
     Socket.on('message.thread', function(thread) {
@@ -19,53 +15,32 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
     });
     */
 
-    //Parses link header for pagination parameters.
-    function parseHeaders(header){
-      if(header){
-        return {
-          page: /<.*\/[^<>]*\?.*page=(\d*).*>;.*/.exec(header)[1],
-          limit: /<.*\/[^<>]*\?.*limit=(\d*).*>;.*/.exec(header)[1]
-        };
-      }
-      else {return header;}
+    // Appends returned messages to model
+    function addMessages(data){
+      angular.forEach(data, function(msg){
+        $scope.threads.unshift(msg);
+      })
     }
 
+    // Fetches first page of messages
+    $scope.messageHandler.fetchMessages().$promise.then(function(data){
+      addMessages(data);
+    });
+
     /**
-     * Fetches threads and sets up pagination environment
-     * Takes additional query params passed in as key , value pairs
+     * Gets next page of messages
+     * Activates when the last thread element hits the bottom view port
      */
-    $scope.fetchThreads = function(param){
-      var deferred = $q.defer();
-      if (param) { var query = param; }
-
-      Messages.query(
-        query,
-        //Successful call
-        function(results,headers){
-          angular.forEach(results, function(data){$scope.threads.push(data);});
-          $scope.nextPage = parseHeaders(headers().link);
-          $scope.fetchThreads.resolved = true;
-
-          paginationTimer = false;
-          deferred.resolve();
+    $scope.moreMessages = function(waypoints){
+      if($scope.messageHandler.nextPage && waypoints) {
+        $scope.messageHandler.fetchMessages().$promise.then( function (data) {
+          addMessages(data);
         },
-        //Rejected call
-        function(){
-          $scope.fetchThreads.resolved = 'reject';
-          paginationTimer = false;
-          deferred.reject();
+        //Flashes error message if it failed to get messages
+        function(err){
+          messageCenterService.add('danger', 'Something went wrong :(', {timeout: flashTimeout});
         }
-      );
-      return deferred.promise;
-    };
-
-    /*
-    * Fetches next page of threads
-    * Activates when the last thread element hits the bottom view port
-    */
-    $scope.moreMessages = function(waypoint){
-      if($scope.nextPage && $scope.nextPage !== previousPage && waypoint && !paginationTimer){
-        paginationTimer = $scope.fetchThreads($scope.nextPage)
+        );
       }
     };
 

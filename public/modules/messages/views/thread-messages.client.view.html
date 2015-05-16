@@ -3,12 +3,11 @@
   <div class="row">
     <div class="col-sm-9" id="thread-container">
 
-      <div class="row text-muted text-center" ng-if="fetchMessages.resolved != 'reject' && !fetchMessages.resolved"><small>Wait a moment...</small></div>
+      <div class="row text-muted text-center" ng-if=" messageHandler.nextPage && messageHandler.resolved === '' "><small>Wait a moment...</small></div>
 
 
       <!-- Thread -->
       <threads id="messages-thread" ng-style="{width: containerWidth, bottom: replyHeight}" moremessages="moreMessages()">
-
         <!-- Messages -->
         <div class="message"
              id="message-{{ message._id }}"
@@ -20,18 +19,12 @@
              ng-class="{ 'message-unread': !messageRead(message, waypoints.scroll.up, waypoints.scroll.down), 'message-pushed' : message.pushed }">
 
           <!-- Pagination waypoint -->
-          <div ng-if="$first && fetchMessages.resolved != 'reject' && nextPage" class="divider divider-first col-xs-12 text-center">
+          <div ng-if="$first && messageHandler.resolved !== false && messageHandler.nextPage" class="divider divider-first col-xs-12 text-center">
                Loading more messages...
           </div>
 
-          <!-- Pagination error -->
-          <div ng-if="$first && fetchMessages.resolved === 'reject'" class="text-center">
-              <div class="text-danger h4"> Something went wrong :( </div>
-              <button type="button" class="btn btn-primary" ng-click="moreMessages(true)">Retry</button>
-          </div>
-
           <!-- Dividers -->
-          <div ng-if="$first" ng-hide="nextPage" class="divider divider-first col-xs-12"> Conversation started {{ message.created | date:'mediumDate' }}
+          <div ng-if="$first" ng-hide="messageHandler.nextPage" class="divider divider-first col-xs-12"> Conversation started {{ message.created | date:'mediumDate' }}
           </div>
 
           <div class="col-xs-12 col-sm-11">
@@ -59,7 +52,7 @@
         <!-- /Messages -->
 
         <!-- No messages -->
-        <div class="content-empty" ng-if="fetchMessages.resolved && !messages.length">
+        <div class="content-empty" ng-if="messageHandler.resolved && !messages.length">
             <i class="fa fa-3x fa-comments-o"></i>
             <h4>You haven't been talking yet.</h4>
             <p>Start conversation below.</p>
@@ -87,7 +80,7 @@
 
           <div class="col-xs-2 col-sm-12">
             <small class="text-muted hidden-xs">Highlight text to add links or change its appearance.</small>
-            <button type="submit" class="btn btn-md btn-primary message-reply-btn" id="messageReplySubmit" ng-disabled="!content || isSending === true || !fetchMessages.resolved"><i class="fa fa-send"></i><span class="hidden-xs"> Send</span></button>
+            <button type="submit" class="btn btn-md btn-primary message-reply-btn" id="messageReplySubmit" ng-disabled="!content || isSending === true || !messageHandler.resolved"><i class="fa fa-send"></i><span class="hidden-xs"> Send</span></button>
           </div>
         </div><!-- /.row -->
       </form>
