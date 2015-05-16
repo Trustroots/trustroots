@@ -6,7 +6,7 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
     $scope.user = Authentication.user;
 
     $scope.threads =[];
-    $scope.messageHandler = new Messages;
+    $scope.messageHandler = new Messages();
 
     /*
     Socket.on('message.thread', function(thread) {
@@ -19,7 +19,7 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
     function addMessages(data){
       angular.forEach(data, function(msg){
         $scope.threads.unshift(msg);
-      })
+      });
     }
 
     // Fetches first page of messages
@@ -35,12 +35,7 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
       if($scope.messageHandler.nextPage && waypoints) {
         $scope.messageHandler.fetchMessages().$promise.then( function (data) {
           addMessages(data);
-        },
-        //Flashes error message if it failed to get messages
-        function(err){
-          messageCenterService.add('danger', 'Something went wrong :(', {timeout: flashTimeout});
-        }
-        );
+        });
       }
     };
 
@@ -69,7 +64,7 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
 
     };
 
-    /**
+    /*
      * Open thread
      */
     $scope.openThread = function(thread) {

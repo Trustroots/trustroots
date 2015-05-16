@@ -4,8 +4,6 @@
     <div class="col-sm-9" id="thread-container">
 
       <div class="row text-muted text-center" ng-if=" messageHandler.nextPage && messageHandler.resolved === '' "><small>Wait a moment...</small></div>
-
-
       <!-- Thread -->
       <threads id="messages-thread" ng-style="{width: containerWidth, bottom: replyHeight}" moremessages="moreMessages()">
         <!-- Messages -->
@@ -18,14 +16,45 @@
              down="scroll.down"
              ng-class="{ 'message-unread': !messageRead(message, waypoints.scroll.up, waypoints.scroll.down), 'message-pushed' : message.pushed }">
 
-          <!-- Pagination waypoint -->
-          <div ng-if="$first && messageHandler.resolved !== false && messageHandler.nextPage" class="divider divider-first col-xs-12 text-center">
-               Loading more messages...
+          <!-- Pagination -->
+          <div class="pagination">
+
+          <!-- Error -->
+          <div class="pagination vcenter">
+          <div ng-if="$first && messageHandler.resolved === false && messageHandler.nextPage" class="col-xs-12 col-sm-11">
+            <div class="panel panel-default">
+              <div class="error-message text-muted">
+                Something went wrong :(
+              </div>
+
+              <!-- Retry button -->
+              <button ng-click="moreMessages()" class="btn btn-warning btn-md">
+                <span class="glyphicon glyphicon-flash"></span>
+                Retry
+              </button>
+
+            </div>
           </div>
+
+            <!-- Error Portrait -->
+            <div ng-if="$first && messageHandler.resolved === false && messageHandler.nextPage" class="col-sm-1 hidden-xs">
+              <span class="glyphicon glyphicon-user message-author avatar"></span>
+            </div>
+          </div>
+          <!-- /Error -->
+
+          <!-- Loading icon -->
+          <div ng-if="$first && messageHandler.nextPage && messageHandler.resolved !== false" class="h3 text-muted text-center col-xs-12 col-sm-12">
+            <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+          </div>
+
+          </div>
+          <!-- /Pagination -->
 
           <!-- Dividers -->
           <div ng-if="$first" ng-hide="messageHandler.nextPage" class="divider divider-first col-xs-12"> Conversation started {{ message.created | date:'mediumDate' }}
           </div>
+
 
           <div class="col-xs-12 col-sm-11">
 

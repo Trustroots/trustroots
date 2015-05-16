@@ -9,7 +9,7 @@ angular.module('messages').directive('threads', function () {
 		if (element.scrollTop <= 0) {
 		  scope.$apply(attr.moremessages);
 		}
-	  })
+	  });
 	}
-  }
+  };
 });

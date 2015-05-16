@@ -3,8 +3,8 @@
 /* This declares to JSHint that these are global variables: */
 /*global flashTimeout:false */
 
-angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Authentication', 'Messages', 'MessagesRead', 'messageCenterService', '$q', //'Socket',
-  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, $q) {//, Socket
+angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Authentication', 'Messages', 'MessagesRead', 'messageCenterService', //'Socket',
+  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService) {//, Socket
 
     // If no recepient defined, go to inbox
     if (!$stateParams.userId) $state.go('inboxMessages');
@@ -16,9 +16,9 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     var flaggedAsRead = [];
 
     $scope.messages = [];
-    $scope.messageHandler = new Messages;
+    $scope.messageHandler = new Messages();
     // Attach userID for backend calls
-    var fetchMessages = function(){ return( $scope.messageHandler.fetchMessages({userId: $stateParams.userId}) ) };
+    var fetchMessages = function(){return( $scope.messageHandler.fetchMessages({userId: $stateParams.userId}) ); };
 
     // No sending messages to yourself
     if ($scope.user._id === $scope.userToId) $state.go('inboxMessages');
@@ -42,10 +42,6 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
         fetchMessages().$promise.then( function(data) {
           setScrollPosition(oldHeight);
           addMessages(data);
-        },
-        //Flashes error message if it failed to get messages
-        function(){
-          messageCenterService.add('danger', 'Something went wrong :(', { timeout: flashTimeout });
         });
       }
     };

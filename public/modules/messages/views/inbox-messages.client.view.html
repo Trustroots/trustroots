@@ -29,6 +29,21 @@
               <td class="ago col-xs-3 col-md-2" am-time-ago="thread.updated" title="{{thread.updated}}"></td>
             </tr>
 
+            <!-- Pagination Error -->
+            <tr ng-if="messageHandler.resolved === false && messageHandler.nextPage" class="pagination">
+            <td class="text-center" colspan="3">
+              <div class="error-message text-muted">
+                Something went wrong :(
+              </div>
+              <!-- Retry button -->
+                <button ng-click="moreMessages()" class="btn btn-warning btn-md">
+                  <span class="glyphicon glyphicon-flash"></span>
+                  Retry
+                </button>
+            </td>
+            </tr>
+            <!-- /Pagination Error -->
+
           </tbody>
         </table>
         <!-- /Threads -->
@@ -49,9 +64,12 @@
    offset="0%"
    up="scroll.up"
    down="scroll.down"
-   class="text-center text-muted"
+   class="h3 text-muted pagination"
    ng-if="messageHandler.nextPage && messageHandler.resolved && !messageHandler.paginationTimeout">
-   Loading more messages...{{moreMessages(waypoints.scroll.down)}}
+    <!-- Loading icon -->
+    <span class="pagination glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+    {{moreMessages(waypoints.scroll.down)}}
   </div>
+
 
 </section><!-- /.container -->
