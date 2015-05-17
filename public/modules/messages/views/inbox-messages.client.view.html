@@ -32,7 +32,7 @@
             <!-- Pagination Error -->
             <tr ng-if="messageHandler.resolved === false && messageHandler.nextPage" class="pagination">
             <td class="text-center" colspan="3">
-              <div class="error-message text-muted">
+              <div class="text-danger">
                 Something went wrong :(
               </div>
               <!-- Retry button -->
@@ -64,10 +64,10 @@
    offset="0%"
    up="scroll.up"
    down="scroll.down"
-   class="h3 text-muted pagination"
+   class="h3 text-muted"
    ng-if="messageHandler.nextPage && messageHandler.resolved && !messageHandler.paginationTimeout">
     <!-- Loading icon -->
-    <span class="pagination glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+    <span class="fa fa-2x fa-circle-o-notch fa-spin"></span>
     {{moreMessages(waypoints.scroll.down)}}
   </div>
 

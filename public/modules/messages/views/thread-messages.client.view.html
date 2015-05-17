@@ -3,9 +3,13 @@
   <div class="row">
     <div class="col-sm-9" id="thread-container">
 
-      <div class="row text-muted text-center" ng-if=" messageHandler.nextPage && messageHandler.resolved === '' "><small>Wait a moment...</small></div>
+      <div class="row text-muted text-center" ng-if=" messageHandler.nextPage && messageHandler.resolved === '' ">
+        <small>Wait a moment...</small>
+      </div>
+
       <!-- Thread -->
       <threads id="messages-thread" ng-style="{width: containerWidth, bottom: replyHeight}" moremessages="moreMessages()">
+
         <!-- Messages -->
         <div class="message"
              id="message-{{ message._id }}"
@@ -14,45 +18,48 @@
              offset="90%"
              up="scroll.up"
              down="scroll.down"
-             ng-class="{ 'message-unread': !messageRead(message, waypoints.scroll.up, waypoints.scroll.down), 'message-pushed' : message.pushed }">
+             ng-class="{ 'message-unread': !messageRead(message, waypoints.scroll.up, waypoints.scroll.down),
+                         'message-pushed' : message.pushed
+                       }">
 
           <!-- Pagination -->
-          <div class="pagination">
+          <div class="pagination text-center">
 
-          <!-- Error -->
-          <div class="pagination vcenter">
-          <div ng-if="$first && messageHandler.resolved === false && messageHandler.nextPage" class="col-xs-12 col-sm-11">
-            <div class="panel panel-default">
-              <div class="error-message text-muted">
-                Something went wrong :(
+            <!-- Error -->
+            <div class="pagination">
+              <div ng-if="$first && messageHandler.resolved === false && messageHandler.nextPage" class="col-xs-12 col-sm-11">
+                <div class="panel panel-danger">
+                  <div class="panel-body">
+                    <div class="text-danger">
+                      Something went wrong :(
+                    </div>
+                    <button class="btn btn-warning btn-md" ng-click="moreMessages()">
+                      <span class="fa fa-lg fa-bolt"></span>
+                      Retry
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <!-- Retry button -->
-              <button ng-click="moreMessages()" class="btn btn-warning btn-md">
-                <span class="glyphicon glyphicon-flash"></span>
-                Retry
-              </button>
+              <!-- Error profile picture -->
+              <div ng-if="$first && messageHandler.resolved === false && messageHandler.nextPage" class="col-sm-1 hidden-xs">
+                <span class="fa fa-2x fa-user message-author avatar"></span>
+              </div>
 
             </div>
-          </div>
+            <!-- /Error -->
 
-            <!-- Error Portrait -->
-            <div ng-if="$first && messageHandler.resolved === false && messageHandler.nextPage" class="col-sm-1 hidden-xs">
-              <span class="glyphicon glyphicon-user message-author avatar"></span>
+            <!-- Loading icon -->
+            <div ng-if="$first && messageHandler.nextPage && messageHandler.resolved !== false" class="text-muted col-xs-12">
+              <i class="fa fa-2x fa-circle-o-notch fa-spin"></i>
             </div>
-          </div>
-          <!-- /Error -->
-
-          <!-- Loading icon -->
-          <div ng-if="$first && messageHandler.nextPage && messageHandler.resolved !== false" class="h3 text-muted text-center col-xs-12 col-sm-12">
-            <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
-          </div>
 
           </div>
           <!-- /Pagination -->
 
           <!-- Dividers -->
-          <div ng-if="$first" ng-hide="messageHandler.nextPage" class="divider divider-first col-xs-12"> Conversation started {{ message.created | date:'mediumDate' }}
+          <div ng-if="$first" ng-hide="messageHandler.nextPage" class="divider divider-first col-xs-12">
+            Conversation started {{ message.created | date:'mediumDate' }}
           </div>
 
 
