@@ -36,7 +36,7 @@
                 Something went wrong :(
               </div>
               <!-- Retry button -->
-                <button ng-click="moreMessages()" class="btn btn-warning btn-md">
+                <button ng-click="moreMessages(true)" class="btn btn-warning btn-md">
                   <span class="glyphicon glyphicon-flash"></span>
                   Retry
                 </button>
@@ -61,10 +61,10 @@
 
   <!-- pagination waypoint -->
   <div zum-waypoint="waypoints"
-   offset="0%"
+   offset="50%"
    up="scroll.up"
    down="scroll.down"
-   class="h3 text-muted"
+   class="text-center"
    ng-if="messageHandler.nextPage && messageHandler.resolved && !messageHandler.paginationTimeout">
     <!-- Loading icon -->
     <span class="fa fa-2x fa-circle-o-notch fa-spin"></span>
