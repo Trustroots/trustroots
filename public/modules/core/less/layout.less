@@ -1,8 +1,5 @@
 /**
- * TrustRoots core styles
- *
- * @todo: seperate Theme and structure so it would be easier to replace themes?
- *
+ * TrustRoots core layout styles
  */
 
 /* Required by body and .page-header */
@@ -43,78 +40,41 @@ body {
   }
 }
 
+// Horizontal divider with "rainbow" color reel
+ hr {
+   position: relative;
+   height: .15em;
+   margin: 40px 0;
+   padding: 0;
+   border: 0;
+   overflow: hidden;
+   @color-reel-1: #ca7900;
+   @color-reel-2: #e18700;
+   @color-reel-3: #e49a00;
+   @color-reel-4: #e0b521;
+   background: @color-reel-3;
+   &:before {
+     content: '';
+     display: block;
+     position: absolute;
+     top: 0;
+     left: 0;
+     height: .15em;
+     width: 10em;
+     background: @brand-primary;
 
-/**
- * Typography
- */
-@font-face {
-  font-family: 'Open Sans';
-  src: url('/modules/core/fonts/OpenSans-Regular-webfont.eot');
-  src: url('/modules/core/fonts/OpenSans-Regular-webfont.eot?#iefix') format('embedded-opentype'),
-       url('/modules/core/fonts/OpenSans-Regular-webfont.woff') format('woff'),
-       url('/modules/core/fonts/OpenSans-Regular-webfont.ttf') format('truetype'),
-       url('/modules/core/fonts/OpenSans-Regular-webfont.svg#open_sansregular') format('svg');
-  font-weight: 400;
-  font-style: normal;
-}
-
-* {
-  font-family: @font-family-brand;
-}
-
-h1, h2, h3, h4 {
-  font-weight: normal;
-  font-style: normal;
-}
-
-hr {
-  position: relative;
-  height: .15em;
-  margin: 40px 0;
-  padding: 0;
-  border: 0;
-  overflow: hidden;
-  @color-reel-1: #ca7900;
-  @color-reel-2: #e18700;
-  @color-reel-3: #e49a00;
-  @color-reel-4: #e0b521;
-  background: @color-reel-3;
-  &:before {
-    content: '';
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: .15em;
-    width: 10em;
-    background: @brand-primary;
-
-    // Rainbow style hr
-    box-shadow:
-      10em 0 0 0 darken(@brand-primary, 5%),
-      20em 0 0 0 @color-reel-1,
-      30em 0 0 0 @color-reel-2,
-      40em 0 0 0 @color-reel-3,
-      50em 0 0 0 @color-reel-4,
-      60em 0 0 0 @color-reel-3,
-      70em 0 0 0 @color-reel-2,
-      80em 0 0 0 @color-reel-1;
-  }
-}
-
-.undecorated-link:hover {
-  text-decoration: none;
-}
-.text-color-links {
-  a {
-    color: @text-color;
-    text-decoration: none;
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-}
-
+     // Rainbow style hr
+     box-shadow:
+       10em 0 0 0 darken(@brand-primary, 5%),
+       20em 0 0 0 @color-reel-1,
+       30em 0 0 0 @color-reel-2,
+       40em 0 0 0 @color-reel-3,
+       50em 0 0 0 @color-reel-4,
+       60em 0 0 0 @color-reel-3,
+       70em 0 0 0 @color-reel-2,
+       80em 0 0 0 @color-reel-1;
+   }
+ }
 
 /**
  * Logo
@@ -512,21 +472,6 @@ hr {
 }
 
 
-/**
- * Hosting status
- */
-.hosting-yes {
-  color: @hosting-yes;
-}
-.hosting-maybe {
-  color: @hosting-maybe;
-}
-.hosting-no {
-  color: @hosting-no;
-}
-.hosting-traveling {
-  color: @hosting-traveling;
-}
 
 
 .dropdown-menu {
@@ -621,14 +566,4 @@ input[type="color"] {
 .panel.is-highlighted {
   border-color: lighten(@brand-primary, 20%);
   .box-shadow(0 0 5px lighten(@brand-primary, 35%));
-}
-
-.cursor-pointer {
-  cursor: pointer;
-}
-.helper {
-  cursor: help;
-}
-.browsehappy {
-  display: block;
 }
