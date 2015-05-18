@@ -47,22 +47,22 @@ body {
 /**
  * Typography
  */
- /*
 @font-face {
-  font-family: 'Signika';
-  src: url('/modules/core/fonts/signika-regular.eot');
-  src: url('/modules/core/fonts/signika-regular.eot?#iefix') format('embedded-opentype'),
-     url('/modules/core/fonts/signika-regular.woff') format('woff'),
-     url('/modules/core/fonts/signika-regular.ttf') format('truetype'),
-     url('/modules/core/fonts/signika-regular.svg#signikaregular') format('svg');
-  font-weight: normal;
+  font-family: 'Open Sans';
+  src: url('/modules/core/fonts/OpenSans-Regular-webfont.eot');
+  src: url('/modules/core/fonts/OpenSans-Regular-webfont.eot?#iefix') format('embedded-opentype'),
+       url('/modules/core/fonts/OpenSans-Regular-webfont.woff') format('woff'),
+       url('/modules/core/fonts/OpenSans-Regular-webfont.ttf') format('truetype'),
+       url('/modules/core/fonts/OpenSans-Regular-webfont.svg#open_sansregular') format('svg');
+  font-weight: 400;
   font-style: normal;
 }
-*/
 
-/* Some elements should have brand font (only for some safe languages?) It won't work nicely with Lithuanian for example. */
-h1, h2, h3, h4 {
+* {
   font-family: @font-family-brand;
+}
+
+h1, h2, h3, h4 {
   font-weight: normal;
   font-style: normal;
 }
@@ -385,7 +385,7 @@ hr {
 
 .page-header {
   display: block;
-  font: 48px/1 'Signika Semibold',Helvetica,Arial,sans-serif;
+  font: 48px/1 'Open Sans', Helvetica, Arial, sans-serif;
   margin-bottom: 50px;
   position: relative;
   text-align: center;
