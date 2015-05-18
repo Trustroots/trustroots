@@ -1,7 +1,7 @@
 /**
  * TrustRoots core typography styles
  */
- 
+
  @font-face {
    font-family: 'Open Sans';
    src: url('/modules/core/fonts/OpenSans-Regular-webfont.eot');
@@ -13,12 +13,9 @@
    font-style: normal;
  }
 
- * {
-   font-family: @font-family-brand;
- }
-
  h1, h2, h3, h4 {
-   font-weight: normal;
+   font-family: @font-family-brand;
+   font-weight: 400;
    font-style: normal;
  }
 
@@ -34,3 +31,19 @@
      }
    }
  }
+
+/**
+ * Hosting status colors
+ */
+.hosting-yes {
+  color: @hosting-yes;
+}
+.hosting-maybe {
+  color: @hosting-maybe;
+}
+.hosting-no {
+  color: @hosting-no;
+}
+.hosting-traveling {
+  color: @hosting-traveling;
+}

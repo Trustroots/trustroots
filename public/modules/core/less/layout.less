@@ -146,6 +146,9 @@ body {
   width: 100%;
   height: @navbar-height;
   clear: both;
+  font-family: @font-family-brand;
+  font-weight: 400;
+  font-style: normal;
   .navbar {
     .box-shadow(0 0 8px rgba(0,0,0,0.1));
   }
@@ -220,6 +223,7 @@ body {
   margin-top: -@footer-height;
   height: @footer-height;
   background: @gray-dark url(/modules/core/img/footer.jpg) 50% 0 repeat-x;
+  font-family: @font-family-brand;
   font-size: @font-size-small;
   color: lighten(#000, 70%);
   text-shadow: 1px 1px 1px rgba(0,0,0,.5);
@@ -345,7 +349,7 @@ body {
 
 .page-header {
   display: block;
-  font: 48px/1 'Open Sans', Helvetica, Arial, sans-serif;
+  font: 48px/1 @font-family-brand;
   margin-bottom: 50px;
   position: relative;
   text-align: center;
