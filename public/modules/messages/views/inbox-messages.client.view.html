@@ -1,4 +1,4 @@
-<section class="container container-spacer" data-ng-controller="MessagesInboxController" data-ng-init="findInbox()">
+<section class="container container-spacer" data-ng-controller="MessagesInboxController">
 
   <div class="row">
     <div class="col-xs-12">
@@ -13,7 +13,7 @@
       <div class="panel panel-default panel-threadlist panel-threadlist-threads panel-xs-no_margin">
 
         <!-- Threads -->
-        <table class="table table-condensed table-hover table-threadlist table-threadlist-threads" data-ng-if="threads.$resolved && threads.length">
+        <table class="table table-condensed table-hover table-threadlist table-threadlist-threads" data-ng-if="threads.length">
           <tbody>
 
             <tr class="thread" data-ng-class="{ 'thread-unread': !thread.read }" data-ng-repeat="thread in threads | orderBy:'updated':true" data-ng-click="openThread(thread)">
@@ -29,12 +29,27 @@
               <td class="ago col-xs-3 col-md-2" am-time-ago="thread.updated" title="{{thread.updated}}"></td>
             </tr>
 
+            <!-- Pagination Error -->
+            <tr ng-if="messageHandler.resolved === false && messageHandler.nextPage" class="pagination">
+            <td class="text-center" colspan="3">
+              <div class="text-danger">
+                Something went wrong :(
+              </div>
+              <!-- Retry button -->
+                <button ng-click="moreMessages(true)" class="btn btn-warning btn-md">
+                  <span class="glyphicon glyphicon-flash"></span>
+                  Retry
+                </button>
+            </td>
+            </tr>
+            <!-- /Pagination Error -->
+
           </tbody>
         </table>
         <!-- /Threads -->
 
         <!-- No threads -->
-        <div class="content-empty" data-ng-if="threads.$resolved && !threads.length">
+        <div class="content-empty" data-ng-if="messageHandler.resolved && !threads.length">
           <i class="fa fa-3x fa-comments-o"></i>
           <h4>No conversations yet.</h4>
         </div>
@@ -43,5 +58,18 @@
       </div><!-- /.panel -->
     </div><!-- /.col-* -->
   </div><!-- /.row -->
+
+  <!-- pagination waypoint -->
+  <div zum-waypoint="waypoints"
+   offset="50%"
+   up="scroll.up"
+   down="scroll.down"
+   class="text-center"
+   ng-if="messageHandler.nextPage && messageHandler.resolved && !messageHandler.paginationTimeout">
+    <!-- Loading icon -->
+    <span class="fa fa-2x fa-circle-o-notch fa-spin"></span>
+    {{moreMessages(waypoints.scroll.down)}}
+  </div>
+
 
 </section><!-- /.container -->

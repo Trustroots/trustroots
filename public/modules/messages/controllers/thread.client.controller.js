@@ -15,17 +15,47 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     $scope.isSending = false;
     var flaggedAsRead = [];
 
+    $scope.messages = [];
+    $scope.messageHandler = new Messages();
+    // Attach userID for backend calls
+    var fetchMessages = function(){return( $scope.messageHandler.fetchMessages({userId: $stateParams.userId}) ); };
+
     // No sending messages to yourself
     if ($scope.user._id === $scope.userToId) $state.go('inboxMessages');
 
-    // Fetch messages for this thread
-    $scope.messages = Messages.query({
-      userId: $stateParams.userId
-    }, function(){
-      // Keep layout in good order
-      threadLayout();
-    });
+    // Appends returned messages to model
+    function addMessages(data){
+      angular.forEach(data, function(msg){
+        $scope.messages.push(msg);
+      });
+      threadLayoutUpdate();
+    }
 
+    /*
+     * Gets next page of messages
+     * Activates when the first(top most) message hits the top viewport
+     */
+    $scope.moreMessages = function(){
+      if($scope.messageHandler.nextPage) {
+        var oldHeight = threadLayoutThread[0].scrollHeight;
+
+        fetchMessages().$promise.then( function(data) {
+          setScrollPosition(oldHeight);
+          addMessages(data);
+        });
+      }
+    };
+
+    /**
+     * Restores scroll position after pagination
+     * Timeout is in place to force function to execute after digest cycle to properly calculate scroll height.
+     */
+    function setScrollPosition(oldHeight) {
+      $timeout(function () {
+        var newHeight = threadLayoutThread[0].scrollHeight;
+        angular.element(threadLayoutThread.scrollTop(newHeight - oldHeight));
+      });
+    }
 
     /**
      * Calculate thread etc layout locations with this massive pile of helpers
@@ -80,10 +110,11 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     });
 
     $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
-      threadLayoutUpdate();
-      $timeout(threadScrollBottom, 500);
-      $timeout(threadScrollBottom, 1500);
-      $timeout(threadScrollBottom, 2500);
+      // Fetches first page of messages
+      fetchMessages().$promise.then( function(data){
+        addMessages(data);
+        $timeout(threadScrollBottom,500);
+      });
     });
 
     // Observe for the reply area height while typing your awesome message in it
@@ -155,7 +186,7 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
         return;
       }
 
-      var message = new Messages({
+      var message = new $scope.messageHandler.ajaxCall({
         content: this.content,
         userTo: $stateParams.userId,
         read: false

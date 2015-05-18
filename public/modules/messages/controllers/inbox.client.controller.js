@@ -1,9 +1,12 @@
 'use strict';
 
-angular.module('messages').controller('MessagesInboxController', ['$scope', '$state', '$log', 'Authentication', 'Messages',//, 'Socket'
-  function($scope, $state, $log, Authentication, Messages) {//, Socket
+angular.module('messages').controller('MessagesInboxController', ['$scope', '$state', '$log', 'Authentication', 'Messages', 'messageCenterService', //, 'Socket'
+  function($scope, $state, $log, Authentication, Messages, messageCenterService) {//, Socket
 
     $scope.user = Authentication.user;
+
+    $scope.threads =[];
+    $scope.messageHandler = new Messages();
 
     /*
     Socket.on('message.thread', function(thread) {
@@ -12,8 +15,28 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
     });
     */
 
-    $scope.findInbox = function() {
-      $scope.threads = Messages.query();
+    // Appends returned messages to model
+    function addMessages(data){
+      angular.forEach(data, function(msg){
+        $scope.threads.unshift(msg);
+      });
+    }
+
+    // Fetches first page of messages
+    $scope.messageHandler.fetchMessages().$promise.then(function(data){
+      addMessages(data);
+    });
+
+    /**
+     * Gets next page of messages
+     * Activates when the last thread element hits the bottom view port
+     */
+    $scope.moreMessages = function(waypoints){
+      if($scope.messageHandler.nextPage && waypoints) {
+        $scope.messageHandler.fetchMessages().$promise.then( function (data) {
+          addMessages(data);
+        });
+      }
     };
 
     /**
@@ -41,7 +64,7 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
 
     };
 
-    /**
+    /*
      * Open thread
      */
     $scope.openThread = function(thread) {

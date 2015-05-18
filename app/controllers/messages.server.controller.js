@@ -9,10 +9,20 @@ var mongoose = require('mongoose'),
     errorHandler = require('./errors'),
     sanitizeHtml = require('sanitize-html'),
     userHandler = require('./users'),
+    paginate = require('express-paginate'),
     Message = mongoose.model('Message'),
     Thread = mongoose.model('Thread'),
     User = mongoose.model('User');
 
+
+// Constructs link headers for pagination
+var setLinkHeader = function(req, res, pageCount){
+  if (paginate.hasNextPages(req)(pageCount)){
+    var nextPage = {page: req.query.page + 1};
+    var linkHead = '<' + req.protocol + ':' + res.locals.url.slice(0,-1) + res.locals.paginate.href(nextPage) + '>; rel="next"';
+    res.set('Link',linkHead);
+  }
+};
 
 /**
  * Rules for sanitizing messages coming in and out
@@ -32,54 +42,61 @@ exports.messageSanitizeOptions = {
 
 /**
  * List of threads aka inbox
- * @todo: pagination
  */
 exports.inbox = function(req, res) {
+  //Set pagination limit for inbox
 
-  Thread.find(
-      {
-        $or: [
-          { userFrom: req.user },
-          { userTo: req.user }
-        ]
+  Thread.paginate(
+    {
+      $or: [
+        { userFrom: req.user },
+        { userTo: req.user }
+      ]
+    },
+    req.query.page,
+    req.query.limit,
+    function(err, pageCount, threads) {
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
+      });
+    } else {
+
+      // Sanitize each outgoing thread
+      var threadsCleaned = [];
+      threads.forEach(function(thread) {
+
+        // Threads need just excerpt
+        thread = thread.toObject();
+        thread.message.excerpt = sanitizeHtml(thread.message.content, {allowedTags: []}); // Clean message content from html
+        thread.message.excerpt = thread.message.excerpt.replace(/\s/g, ' '); // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
+        thread.message.excerpt = thread.message.excerpt.replace(/\&nbsp\;/g, ' '); // Above didn't clean these buggers.
+        thread.message.excerpt = thread.message.excerpt.substring(0,100) + ' ...'; // Shorten
+
+        delete thread.message.content;
+
+        // If latest message in the thread was from current user, mark it read
+        // Writer obviously read his/her own message
+        if(thread.userFrom._id.toString() === req.user._id.toString()) {
+          thread.read = true;
+        }
+
+        threadsCleaned.push(thread);
+      });
+
+      //Pass pagination data to construct link header
+      setLinkHeader(req, res, pageCount);
+
+      res.json(threadsCleaned);
+    }},
+    {
+      sortBy:'-updated',
+      populate:{
+        path: 'userFrom userTo message',
+        select: 'content ' + userHandler.userMiniProfileFields
       }
-    )
-    .sort('updated')
-    .populate('userFrom', userHandler.userMiniProfileFields)
-    .populate('userTo', userHandler.userMiniProfileFields)
-    .populate('message', 'content')
-    .exec(function(err, threads) {
-      if (err) {
-        return res.status(400).send({
-          message: errorHandler.getErrorMessage(err)
-        });
-      } else {
-
-        // Sanitize each outgoing thread
-        var threadsCleaned = [];
-        threads.forEach(function(thread) {
-
-          // Threads need just excerpt
-          thread = thread.toObject();
-          thread.message.excerpt = sanitizeHtml(thread.message.content, {allowedTags: []}); // Clean message content from html
-          thread.message.excerpt = thread.message.excerpt.replace(/\s/g, ' '); // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
-          thread.message.excerpt = thread.message.excerpt.replace(/\&nbsp\;/g, ' '); // Above didn't clean these buggers.
-          thread.message.excerpt = thread.message.excerpt.substring(0,100) + ' ...'; // Shorten
-
-          delete thread.message.content;
-
-          // If latest message in the thread was from current user, mark it read
-          // Writer obviously read his/her own message
-          if(thread.userFrom._id.toString() === req.user._id.toString()) {
-            thread.read = true;
-          }
-
-          threadsCleaned.push(thread);
-        });
-
-        res.json(threadsCleaned);
-      }
-    });
+    }
+  );
 };
 
 
@@ -198,21 +215,31 @@ exports.threadByUser = function(req, res, next, userId) {
 
       if(userId && req.user) {
 
-        Message.find({
-          $or: [
-            { userFrom: req.user._id, userTo: userId },
-            { userTo: req.user._id, userFrom: userId }
-          ]
-        })
-        .sort('-created')
-        .populate('userFrom', userHandler.userMiniProfileFields)
-        .populate('userTo', userHandler.userMiniProfileFields)
-        .exec(function(err, messages) {
-          if (!messages) err = new Error('Failed to load messages.');
+        Message.paginate(
+          {
+            $or: [
+              { userFrom: req.user._id, userTo: userId },
+              { userTo: req.user._id, userFrom: userId }
+            ]
+          },
+          req.query.page,
+          req.query.limit,
+          function(err, pageCount, messages) {
+            if (!messages) err = new Error('Failed to load messages.');
 
-          done(err, messages);
-        });
+            //Pass pagination data to construct link header
+            setLinkHeader(req,res,pageCount);
 
+            done(err, messages);
+          },
+          {
+            sortBy:'-created',
+            populate: {
+              path:'userFrom userTo',
+              select: userHandler.userMiniProfileFields
+            }
+          }
+        );
       }
       else {
         done(new Error('No user.'));
