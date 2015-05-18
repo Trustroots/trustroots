@@ -19,12 +19,12 @@
 // ---------------------------------------
 
 // Bootstrap icon font
-@icon-font-path: "/lib/bootstrap/fonts/";
+//@icon-font-path: "/lib/bootstrap/fonts/";
 
 // Reset and dependencies
 @import "../lib/bootstrap/less/normalize.less";
 @import "../lib/bootstrap/less/print.less";
-@import "../lib/bootstrap/less/glyphicons.less";
+//@import "../lib/bootstrap/less/glyphicons.less";
 
 // Core CSS
 @import "../lib/bootstrap/less/scaffolding.less";
@@ -86,7 +86,21 @@
 
 // Create new alias for Google icon
 .@{fa-css-prefix}-google-square:before {
-    content: @fa-var-google-plus-square;
+  content: @fa-var-google-plus-square;
+}
+
+// Angular-UI Bootstrap Datepicker has hardcoded "glyphicon",
+// but we don't have glyphicons included. Proxying them here.
+// https://angular-ui.github.io/bootstrap/#/datepicker
+.glyphicon-chevron-left,
+.glyphicon-chevron-right {
+  .fa();
+}
+.glyphicon-chevron-left:before {
+  content: @fa-var-chevron-left;
+}
+.glyphicon-chevron-right:before {
+  content: @fa-var-chevron-right;
 }
 
 // Trustroots modules
