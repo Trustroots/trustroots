@@ -3,7 +3,9 @@
 /**
  * Module dependencies.
  */
-var applicationConfiguration = require('./config/config');
+var _ = require('lodash'),
+    defaultAssets = require('./config/assets/default'),
+    testAssets = require('./config/assets/test');
 
 // Karma configuration
 module.exports = function(config) {
@@ -12,7 +14,7 @@ module.exports = function(config) {
     frameworks: ['jasmine'],
 
     // List of files / patterns to load in the browser
-    files: applicationConfiguration.assets.lib.js.concat(applicationConfiguration.assets.js, applicationConfiguration.assets.tests),
+    files: _.union(defaultAssets.client.lib.js, defaultAssets.client.lib.tests, defaultAssets.client.js, testAssets.tests.client),
 
     // Test results reporter to use
     // Possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'

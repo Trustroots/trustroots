@@ -1,5 +1,15 @@
 'use strict';
 
+/*
+ * Please don't make your own config changes to this file!
+ * Copy local.sample.js to local.js and make your changes there. Thanks.
+ *
+ * Load order:
+ * - default.js
+ * - {development|production|test}.js
+ * - local.js
+ */
+
 module.exports = {
   db: {
     uri: 'mongodb://localhost/trust-roots-dev',
@@ -9,6 +19,7 @@ module.exports = {
     }
   },
   app: {
+<<<<<<< HEAD
     title: 'Trustroots - Development version',
     description: 'Travellers community for sharing, hosting and getting people together. Built with hitchhikers in mind. A world that encourages trust and adventure.',
     tagline: 'Trustroots development version.',
@@ -112,7 +123,14 @@ module.exports = {
     clientID: process.env.GITHUB_ID || 'APP_ID',
     clientSecret: process.env.GITHUB_SECRET || 'APP_SECRET',
     callbackURL: '/auth/github/callback'
+=======
+    title: 'Trustroots Development version',
+    description: 'Trustroots development version.',
+    tagline: 'This is a test version, please go to Trustroots.org for the real one.'
+>>>>>>> origin/vertical-modules
   },
+  // See https://github.com/andris9/Nodemailer#tldr-usage-example how to configure mailer
+  // In production we're using Mandrill https://mandrillapp.com
   mailer: {
     from: process.env.MAILER_FROM || 'MAILER_FROM',
     options: {
@@ -123,6 +141,7 @@ module.exports = {
       }
     }
   },
+<<<<<<< HEAD
   newrelic: {
     enabled: process.env.NEWRELIC_ENABLED || false,
     app_name: process.env.NEWRELIC_APP || ['Trustroots'],
@@ -136,5 +155,17 @@ module.exports = {
     enabled: process.env.PIWIK_ENABLED || false,
     url: process.env.PIWIK_URL || '',
     siteId: process.env.PIWIK_ID || ''
+=======
+  // Mapbox is publicly exposed to the frontend
+  // To use MapBox maps, copy map values from production.js
+  mapbox: {
+    user: process.env.MAPBOX_USERNAME || 'trustroots',
+    map: {
+      default: process.env.MAPBOX_MAP_DEFAULT || false,
+      satellite: process.env.MAPBOX_MAP_SATELLITE || false,
+      hitchmap: process.env.MAPBOX_MAP_HITCHMAP || false
+    },
+    publicKey: process.env.MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
+>>>>>>> origin/vertical-modules
   }
 };

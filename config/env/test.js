@@ -1,5 +1,15 @@
 'use strict';
 
+/*
+ * Please don't make your own config changes to this file!
+ * Copy local.sample.js to local.js and make your changes there. Thanks.
+ *
+ * Load order:
+ * - default.js
+ * - {development|production|test}.js
+ * - local.js
+ */
+
 module.exports = {
   db: {
     uri: 'mongodb://localhost/trust-roots-test',
@@ -10,43 +20,19 @@ module.exports = {
   },
   port: 3001,
   app: {
-    title: 'Trustroots - Test Environment',
+    title: 'Trustroots test environment.',
     description: 'Trustroots test environment.',
     tagline: 'Trustroots test environment.'
   },
-  assets: {
-    lib: {
-      css: [
-            'public/lib/medium-editor/dist/css/medium-editor.css',
-            'public/lib/leaflet/dist/leaflet.css',
-            'public/lib/angular-chosen-localytics/chosen-spinner.css'
-      ],
-      js: [
-        // Non minified  versions
-        'public/lib/jquery/dist/jquery.js',
-        'public/lib/angular/angular.js',
-        'public/lib/angular-resource/angular-resource.js',
-        'public/lib/angular-animate/angular-animate.js',
-        'public/lib/angular-touch/angular-touch.js',
-        'public/lib/angular-sanitize/angular-sanitize.js',
-        'public/lib/angular-ui-router/release/angular-ui-router.js',
-        'public/lib/angular-ui-utils/ui-utils.js',
-        'public/lib/angular-bootstrap/ui-bootstrap-tpls.js',
-        'public/lib/moment/moment.js',
-        'public/lib/angular-moment/angular-moment.js',
-        'public/lib/medium-editor/dist/js/medium-editor.js',
-        'public/lib/angular-medium-editor/dist/angular-medium-editor.js',
-        //'public/lib/angular-socket-io/socket.js',
-        'public/lib/leaflet/dist/leaflet-src.js',
-        'public/lib/PruneCluster/dist/PruneCluster.js',
-        'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.js',
-        'public/lib/angular-waypoints/dist/angular-waypoints.all.js',
-        'public/lib/ng-file-upload/angular-file-upload.js',
-        'public/lib/message-center/message-center.js',
-        'public/lib/chosen/chosen.jquery.js',
-        'public/lib/angular-chosen-localytics/chosen.js'
-      ]
+  mapbox: {
+    // Mapbox is publicly exposed to the frontend
+    user: process.env.MAPBOX_USERNAME || 'trustroots',
+    map: {
+      default: process.env.MAPBOX_MAP_DEFAULT || false,
+      satellite: process.env.MAPBOX_MAP_SATELLITE || false,
+      hitchmap: process.env.MAPBOX_MAP_HITCHMAP || false
     },
+<<<<<<< HEAD
     less: [
       'public/modules/**/less/*.less'
     ],
@@ -118,5 +104,8 @@ module.exports = {
     enabled: process.env.PIWIK_ENABLED || false,
     url: process.env.PIWIK_URL || '',
     siteId: process.env.PIWIK_ID || ''
+=======
+    publicKey: process.env.MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
+>>>>>>> origin/vertical-modules
   }
 };

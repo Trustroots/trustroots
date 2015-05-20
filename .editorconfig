@@ -1,8 +1,5 @@
 # EditorConfig is awesome: http://EditorConfig.org
 
-# Howto with your editor:
-#   Sublime: https://github.com/sindresorhus/editorconfig-sublime
-
 # top-most EditorConfig file
 root = true
 
@@ -28,27 +25,22 @@ spaces_in_brackets = false
 [node_modules/**.js]
 codepaint = false
 
-# No Standard.  Please document a standard if different from .js
 [**.yml, **.html, **.css, **.less]
 trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
-# No standard.
 [**.conf]
 insert_final_newline = false
 trim_trailing_whitespace = true
 
-# No standard.  Please document a standard if different from .js
 [**.md]
 indent_style = space
 
-# Standard at:
 [**.py]
 indent_style = space
 indent_size = 4
 
-# Standard at:
 [Makefile]
 indent_style = tab
 indent_size = 8

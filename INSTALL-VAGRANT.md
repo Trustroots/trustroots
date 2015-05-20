@@ -1,5 +1,12 @@
 # Running Trustroots with Vagrant
 
+This Vagrant box is excellent for testing your code in environment that's very similar to our production server.
+
+## Note about Vagrant:
+There seem to be a few issues with Vagrant setup:
+- Phusion Passenger/Nginx keeps stuff in cache, so sometimes if you change files (even backend), you won't see your changes.
+- Livereload.js doesn't work
+
 ## Prerequisites
 * A GNU/Linux or OS X machine.
 * Install [VirtualBox](https://www.virtualbox.org/) ([...because](http://docs.vagrantup.com/v2/virtualbox))
@@ -61,3 +68,6 @@ It will tell you if you are running the latest version or not of the box. If it 
 ```bash
 vagrant box update
 ```
+
+### Problems
+Check [troubleshooting](https://github.com/Trustroots/trustroots/wiki/Troubleshooting).

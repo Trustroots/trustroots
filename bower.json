@@ -1,6 +1,6 @@
 {
   "name": "trustroots",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Hospitality exchange community for hitchhikers and other travellers.",
   "dependencies": {
     "bootstrap": "~3.3.4",
@@ -16,7 +16,11 @@
     "angular-moment": "~0.10.0",
     "angular-medium-editor": "~0.1.0",
     "angular-socket-io": "~0.7.0",
+<<<<<<< HEAD
     "angular-leaflet-directive": "~0.8.0",
+=======
+    "angular-leaflet-directive": "~0.7.13",
+>>>>>>> origin/vertical-modules
     "angular-waypoints": "~1.0.1",
     "PruneCluster": "~1.1.0",
     "ng-file-upload": "~2.0.5",
