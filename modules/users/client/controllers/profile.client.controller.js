@@ -60,8 +60,8 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
      * Ensure these fields are set at users.profile.server.controller.js
      */
     $scope.socialAccountLink = function(provider, data) {
-      if(provider === 'facebook' && data.link) {
-        return data.link;
+      if(provider === 'facebook' && data.id) {
+        return 'https://www.facebook.com/app_scoped_user_id/' + data.id;
       }
       else if(provider === 'twitter' && data.screen_name) {
         return 'https://twitter.com/' + data.screen_name;

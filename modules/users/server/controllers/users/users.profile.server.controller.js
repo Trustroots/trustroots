@@ -39,8 +39,7 @@ exports.userProfileFields = [
                     'avatarSource',
                     'avatarUploaded',
                     'emailHash', // MD5 hashed email to use with Gravatars
-                    'additionalProvidersData.facebook.id', // For FB avatars
-                    'additionalProvidersData.facebook.link', // For FB profile links
+                    'additionalProvidersData.facebook.id', // For FB avatars and profile links
                     'additionalProvidersData.twitter.screen_name', // For Twitter profile links
                     'additionalProvidersData.github.login' // For GitHub profile links
                     ].join(' ');
