@@ -76,9 +76,13 @@
       <!-- Rules -->
       <div class="row" data-ng-hide="success">
         <div class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-          <p>Please, abide to our <a ui-sref="rules" ng-click="openRules($event);" tooltip="Read rules" tooltip-placement="bottom">rules</a> that include standards of behavior that apply to everyone.</p>
+          <p class="text-muted">Please, abide to our <a ui-sref="rules" ng-click="openRules($event);" tooltip="Read rules" tooltip-placement="bottom">rules</a> that include standards of behavior that apply to everyone.</p>
         </div>
         <script type="text/ng-template" id="rules.client.modal.html">
+          <div class="modal-header">
+            <button type="button" class="close" aria-label="Close" ng-click="closeRules()"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Rules</h4>
+          </div>
           <div class="modal-body" ng-include="'/modules/pages/views/rules-text.client.partial.html?v={{cacheBust}}'"></div>
           <div class="modal-footer">
             <button class="btn btn-primary" ng-click="closeRules()">Got it!</button>
