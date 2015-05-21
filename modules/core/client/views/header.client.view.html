@@ -17,7 +17,7 @@
     <ul class="nav navbar-nav" ng-show="user">
       <li ui-route="search" ng-class="{active: ($uiRoute)}">
         <a ui-sref="search">
-          <i class="fa fa-fw fa-lg fa-search"></i> Map
+          <i class="icon-search icon-fw icon-lg"></i> Map
         </a>
       </li>
     </ul>
@@ -26,13 +26,13 @@
     <ul class="nav navbar-nav navbar-right" ng-if="!user">
       <li ui-route="signup" ng-class="{active: $uiRoute}">
         <a ui-sref="signup">
-          <i class="fa fa-arrow-circle-up"></i> Sign Up
+          <i class="icon-sign-up"></i> Sign Up
         </a>
       </li>
       <li class="divider-vertical"></li>
       <li ui-route="signin" ng-class="{active: $uiRoute}">
         <a ui-sref="signin">
-          <i class="fa fa-sign-in"></i> Login
+          <i class="icon-sign-in"></i> Login
         </a>
       </li>
     </ul>
@@ -42,7 +42,7 @@
     <ul class="nav navbar-nav navbar-right" ng-if="user">
       <li ui-route="messages" ng-class="{active: $uiRoute}">
         <a ui-sref="inboxMessages">
-          <i class="fa fa-fw fa-lg fa-comments"></i> <span class="visible-xs-inline">Messages</span>
+          <i class="icon-messages icon-fw icon-lg"></i> <span class="visible-xs-inline">Messages</span>
         </a>
       </li>
       <li class="dropdown" ng-class="{active: ($uiRoute)}" dropdown="true">
@@ -53,37 +53,40 @@
         <ul class="dropdown-menu">
           <li ui-route="profile" ng-class="{active: $uiRoute}">
             <a ui-sref="profile({username: user.username})">
-              <i class="fa fa-fw fa-user"></i>
+              <i class="icon-user icon-fw"></i>
               My profile
             </a>
           </li>
           <li ui-route="profile-edit" ng-class="{active: $uiRoute}">
             <a ui-sref="profile-edit({username: user.username})">
-              <i class="fa fa-fw fa-edit"></i>
+              <i class="icon-edit icon-fw"></i>
               Edit profile
             </a>
           </li>
           <li ui-route="profile-settings" ng-class="{active: $uiRoute}">
             <a ui-sref="profile-settings({username: user.username})">
-              <i class="fa fa-fw fa-cog"></i>
+              <i class="icon-user-settings icon-fw"></i>
               Settings
             </a>
-          </li><li ui-route="offer" ng-class="{active: $uiRoute}">
+          </li>
+          <li ui-route="offer" ng-class="{active: $uiRoute}">
             <a ui-sref="offer">
-              <i class="fa fa-fw fa-home"></i>
+              <i class="icon-home icon-fw"></i>
               Hosting
             </a>
           </li>
+
           <li class="divider"></li>
+
           <li ui-route="contact" ng-class="{active: $uiRoute}">
             <a ui-sref="contact">
-              <i class="fa fa-fw fa-bolt"></i>
+              <i class="icon-bolt icon-fw"></i>
               Support
             </a>
           </li>
           <li>
             <a href="/api/auth/signout" target="_top">
-              <i class="fa fa-fw fa-sign-out"></i>
+              <i class="icon-sign-out icon-fw"></i>
               Sign out
             </a>
           </li>

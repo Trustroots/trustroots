@@ -62,11 +62,11 @@
           -->
 
           <div class="profile-sidebar-section" ng-show="profile.locationLiving">
-            <i class="fa fa-fw fa-building text-muted"></i> Lives in <a ui-sref="search({location:profile.locationLiving})">{{profile.locationLiving}}</a>
+            <i class="icon-fw icon-building text-muted"></i> Lives in <a ui-sref="search({location:profile.locationLiving})">{{profile.locationLiving}}</a>
           </div>
 
           <div class="profile-sidebar-section" ng-show="profile.locationFrom">
-            <i class="fa fa-fw fa-home text-muted"></i> From <a ui-sref="search({location:profile.locationFrom})">{{profile.locationFrom}}</a>
+            <i class="icon-fw icon-home text-muted"></i> From <a ui-sref="search({location:profile.locationFrom})">{{profile.locationFrom}}</a>
           </div>
 
           <div class="profile-sidebar-section" ng-show="profile.languages.length">
@@ -78,9 +78,9 @@
 
           <div class="profile-sidebar-section" ng-show="hasConnectedAdditionalSocialAccounts()">
             <h4>Other networks</h4>
-            <ul class="fa-ul authentication-social">
+            <ul class="icon-ul authentication-social">
               <li ng-repeat="(providerName, providerData) in profile.additionalProvidersData" class="text-capitalize">
-                <i class="fa fa-li fa-lg fa-{{providerName}}-square"></i>
+                <i class="icon-li icon-lg icon-{{providerName}}"></i>
 
                 <!-- Show if can be linked -->
                 <a ng-href="{{socialAccountLink(providerName, providerData)}}" target="_blank">{{providerName}}</a>
@@ -112,10 +112,10 @@
         <!-- When looking at somebody else's profile -->
         <div class="col-md-6" ng-hide="user._id === profile._id">
           <ul class="nav nav-pills nav-narrow text-right" id="profile-actions" role="navigation">
-            <li><a ui-sref="listMessages({userId: profile._id})"><i class="fa fa-comment-o"></i> Send message</a></li>
+            <li><a ui-sref="listMessages({userId: profile._id})"><i class="fa icon-message-alt"></i> Send message</a></li>
             <li ng-controller="RemoveContactController">
-              <a ui-sref="contactAdd({userId: profile._id})" ng-hide="profile.contact" class="cursor-pointer"><i class="fa fa-plus-square-o"></i> Add contact</a>
-              <a ng-click="RemoveContactModal(profile.contact, $event)" ng-show="profile.contact" class="cursor-pointer"><i class="fa fa-minus-square-o"></i> Remove contact</a>
+              <a ui-sref="contactAdd({userId: profile._id})" ng-hide="profile.contact" class="cursor-pointer"><i class="icon-plus-squared-alt"></i> Add contact</a>
+              <a ng-click="RemoveContactModal(profile.contact, $event)" ng-show="profile.contact" class="cursor-pointer"><i class="icon-minus-squared-alt"></i> Remove contact</a>
             </li>
           </ul>
         </div>

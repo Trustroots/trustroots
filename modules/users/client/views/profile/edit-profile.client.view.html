@@ -13,8 +13,8 @@
             <a href="#" class="avatar-edit" ng-click="avatarModal(user, $event);">
               <div tr-avatar data-user="user" data-size="256" data-link="false"></div>
               <label>
-                  <i class="fa fa-2x fa-camera"></i><br>
-                  Change your profile photo
+                <i class="icon-2x icon-camera"></i><br>
+                Change your profile photo
               </label>
             </a>
             <div class="panel-body">
@@ -48,7 +48,7 @@
                 <p class="input-group">
                   <input id="birthdate" type="text" class="form-control" datepicker-popup="{{birthdateFormat}}" ng-model="user.birthdate" is-open="birthdateOpened" datepicker-options="birthdateOptions" ng-required="false" close-text="Close" current-text="Today" clear-text="Clear" />
                   <span class="input-group-btn">
-                    <button type="button" class="btn btn-inverse" ng-click="birthdateOpen($event)"><i class="fa fa-calendar"></i></button>
+                    <button type="button" class="btn btn-inverse" ng-click="birthdateOpen($event)"><i class="icon-calendar"></i></button>
                   </span>
                 </p>
               </div>
@@ -75,33 +75,25 @@
                 <div ng-show="hasConnectedAdditionalSocialAccounts()">
 
                   <h5>Connected:</h5>
-                  <ul class="fa-ul authentication-social">
+                  <ul class="icon-ul authentication-social">
                     <li ng-repeat="(providerName, providerData) in user.additionalProvidersData" class="remove-account-container text-capitalize">
-                      <i class="fa fa-li fa-lg fa-{{providerName}}-square"></i> {{providerName}}
+                      <i class="icon-li icon-lg icon-{{providerName}}"></i> {{providerName}}
                       <small><a class="pull-right cursor-pointer" ng-click="removeUserSocialAccount(providerName)">Disconnect</a></small>
                     </li>
                   </ul>
                 </div>
 
                 <h5>Connect to:</h5>
-                <ul class="fa-ul authentication-social">
+                <ul class="icon-ul authentication-social">
                     <li><a href="/auth/facebook" target="_blank" ng-hide="isConnectedSocialAccount('facebook')">
-                      <i class="fa fa-li fa-lg fa-facebook-square"></i> Facebook
+                      <i class="icon-li icon-lg icon-facebook"></i> Facebook
                     </a></li>
                     <li><a href="/auth/twitter" target="_blank" ng-hide="isConnectedSocialAccount('twitter')">
-                      <i class="fa fa-li fa-lg fa-twitter-square"></i> Twitter
+                      <i class="icon-li icon-lg icon-twitter"></i> Twitter
                     </a></li>
                     <li><a href="/auth/github" ng-hide="isConnectedSocialAccount('github')">
-                      <i class="fa fa-li fa-lg fa-github-square"></i> Github
+                      <i class="icon-li icon-lg icon-github"></i> GitHub
                     </a></li>
-                    <!--
-                    <li><a href="/auth/google" ng-hide="isConnectedSocialAccount('google')">
-                      <i class="fa fa-li fa-lg fa-google-square"></i> Google+
-                    </a></li>
-                    <li><a href="/auth/linkedin" ng-hide="isConnectedSocialAccount('linkedin')">
-                      <i class="fa fa-li fa-lg fa-linkedin-square"></i> LinkedIn
-                    </a></li>
-                    -->
                 </ul>
 
               </div>
@@ -172,7 +164,8 @@
                 </div>
                 <div class="panel-body">
                   <div class="content-empty">
-                    <i class="fa fa-3x fa-home"></i>
+                    <div class="offer-symbol-sofa center-block"></div>
+                    <br>
                     <h4>Save your profile first to edit hosting status.</h4>
                   </div>
                 </div>

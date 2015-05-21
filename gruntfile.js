@@ -66,6 +66,17 @@ module.exports = function (grunt) {
         }
       }
     },
+    fontello: {
+      build: {
+        options: {
+          config: 'fontello.conf.json',
+          fonts: 'public/lib/fontello/fonts',
+          styles: 'public/lib/fontello/css',
+          scss: false,
+          force: true
+        }
+      }
+    },
     nodemon: {
       dev: {
         script: 'server.js',

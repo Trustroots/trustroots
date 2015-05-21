@@ -57,13 +57,13 @@
 
       <!-- User has written explanation -->
       <div ng-show="offer.noOfferDescription" ng-bind-html="offer.noOfferDescription | trustedHtml"></div>
-      <small ng-show="offer.noOfferDescription && user._id === profile._id" class="pull-right"><a ng-click="hostingStatus('no')" class="cursor-pointer text-muted">edit</a></small>
+      <small ng-show="offer.noOfferDescription && user._id === profile._id" class="pull-right"><a ng-click="hostingStatus('no')" class="text-muted">edit</a></small>
 
       <!-- Default "sorry nope" -->
       <div ng-hide="offer.noOfferDescription" class="content-empty text-muted">
-        <i class="fa fa-3x fa-home"></i>
+        <div class="offer-symbol-sofa center-block"></div>
         <h4>Sorry, user is not hosting currently.</h4>
-        <p ng-show="!offer.noOfferDescription && user._id === profile._id"><a ng-click="hostingStatus('no')" class="cursor-pointer text-muted"><small>Customize</small></a></p>
+        <p ng-show="!offer.noOfferDescription && user._id === profile._id"><a ng-click="hostingStatus('no')" class="text-muted"><small>Customize</small></a></p>
       </div>
 
     </div>

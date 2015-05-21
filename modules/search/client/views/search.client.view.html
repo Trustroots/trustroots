@@ -6,8 +6,8 @@
       <input type="text" id="search-query" ng-focus="searchActive = true" ng-blur="searchActive = false" class="form-control input-lg" placeholder="Search places" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" /><!-- typeahead-loading="searchQuerySearching"-->
       <span class="input-group-btn">
         <button type="button" class="btn btn-lg btn-inverse" ng-click="searchAddress()" ng-disabled="searchQuerySearching">
-          <i class="fa fa-search" ng-show="searchQuerySearching === false"></i>
-          <i class="fa fa-refresh" ng-show="searchQuerySearching === true"></i>
+          <i class="icon-search" ng-show="searchQuerySearching === false"></i>
+          <i class="icon-refresh" ng-show="searchQuerySearching === true"></i>
         </button>
       </span>
     </div>
@@ -116,67 +116,12 @@
         Note that locations on the map are not precise.
       </div>
 
-    <!--
-
-        <!-- Search filters --
-        <div class="search-filters panel panel-default">
-            <div class="panel-body" role="form">
-
-              <h3 class="sr-only">Filters</h3>
-
-              <div class="form-group">
-                <label class="control-label" for="search-term">Search term</label>
-                <input type="text" class="form-control" id="search-term">
-              </div>
-
-              <div class="form-group">
-                <label class="control-label" for="common-friends">Common friends</label>
-                <input type="range" name="common-friends" min="0" max="5">
-                <small class="help-block pull-left">Less</small>
-                <small class="help-block pull-right">More</small>
-              </div>
-
-            </div>
-        </div>
-        !-- /Search filters -->
-
-        <!-- Search results --
-        <div class="search-result panel panel-default">
-          <div class="panel-body">
-            <div class="search-result-actions">
-              <a href="#" class="btn btn-link btn-sm" data-toggle="tooltip" data-placement="right" title="Bookmark"><i class="fa fa-bookmark"></i></a>
-            </div>
-            <img src="/images/avatar.png" alt="" class="avatar">
-            <h4>Firstname Lastname</h4>
-            <div class="search-result-meta">
-              32 years, female.
-            </div>
-            <div class="search-result-tagline">
-              Lorem ipsum dolor sit amet
-            </div>
-            <div class="search-result-lastseen">
-              <span class="search-result-label">Last seen:</span>
-              Less than week ago.
-            </div>
-          </div>
-        </div>
-        !-- /Search results -->
-
-        <!-- No search results --
-        <div class="panel panel-default content-empty">
-            <div class="panel-body">
-                <h3>Whoopsie, nobody!</h3>
-                <p>Try to widen your search criteria and area.</p>
-            </div>
-        </div>
-        !-- /No search results -->
-
-        <div class="form-group visible-xs-block">
-          <button class="btn btn-primary btn-lg btn-block" ng-click="sidebarOpen = false">Back to map</button>
-        </div>
-
+      <div class="form-group visible-xs-block">
+        <button class="btn btn-primary btn-lg btn-block" ng-click="sidebarOpen = false">Back to map</button>
       </div>
-      <!-- /.search-list -->
+
+    </div>
+    <!-- /.search-list -->
 
   </div>
   <!-- /.search-map-sidebar -->

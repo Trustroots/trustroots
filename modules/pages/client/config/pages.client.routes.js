@@ -6,10 +6,6 @@ angular.module('pages').config(['$stateProvider',
 
     // Home state routing
     $stateProvider.
-    state('todo', {
-      url: '/todo',
-      templateUrl: 'modules/pages/views/todo.client.view.html'
-    }).
     state('rules', {
       url: '/rules',
       templateUrl: 'modules/pages/views/rules.client.view.html'

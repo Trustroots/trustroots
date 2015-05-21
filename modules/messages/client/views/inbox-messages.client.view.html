@@ -23,7 +23,7 @@
               <td class="summary">
                 <span data-ng-bind-html="thread.message.excerpt"></span>
                 <small class="indicators pull-right">
-                  <i class="fa fa-fw fa-reply text-muted" ng-show="thread.userFrom._id === user._id" tooltip="You replied" tooltip-placement="right"></i>
+                  <i class="icon-reply icon-fw text-muted" ng-show="thread.userFrom._id === user._id" tooltip="You replied" tooltip-placement="right"></i>
                 </small>
               </td>
               <td class="ago col-xs-3 col-md-2" am-time-ago="thread.updated" tooltip="{{thread.updated | date:'medium'}}" tooltip-placement="left"></td>
@@ -50,7 +50,7 @@
 
         <!-- No threads -->
         <div class="content-empty" data-ng-if="messageHandler.resolved && !threads.length">
-          <i class="fa fa-3x fa-comments-o"></i>
+          <i class="icon-3x icon-messages-alt"></i>
           <h4>No conversations yet.</h4>
         </div>
         <!-- /No threads -->
@@ -67,7 +67,7 @@
    class="text-center"
    ng-if="messageHandler.nextPage && messageHandler.resolved && !messageHandler.paginationTimeout">
     <!-- Loading icon -->
-    <span class="fa fa-2x fa-circle-o-notch fa-spin"></span>
+    <span class="icon-progress icon-2x animate-spin"></span>
     {{moreMessages(waypoints.scroll.down)}}
   </div>
 
