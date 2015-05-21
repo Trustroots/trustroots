@@ -47,8 +47,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
     /**
      * The Variables passed to leaflet directive at init
      */
-    angular.extend($scope, {
-      defaults: {
+    $scope.defaults = {
         attributionControl: true,
         keyboard: true,
         worldCopyJump: true,
@@ -59,95 +58,101 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
             collapsed: true
           }
         }
-      },
-      center: {},
-      bounds: {},
-      layers: {
-        baselayers: {},
-        overlays: {
-          selectedOffers: {
-            name: 'Selected hosts',
-            type: 'group',
-            visible: false
-          }
+    };
+    $scope.center = {};
+    $scope.bounds = {};
+    $scope.layers = {
+      baselayers: {},
+      overlays: {
+        selectedOffers: {
+          name: 'Selected hosts',
+          type: 'group',
+          visible: false
         }
-      },
-      paths: {
-        selected: $scope.currentSelection
-      },
-      /**
-       * Catch map events:
-       * click, dblclick, mousedown, mouseup, mouseover, mouseout, mousemove, contextmenu, focus, blur,
-       * preclick, load, unload, viewreset, movestart, move, moveend, dragstart, drag, dragend, zoomstart,
-       * zoomend, zoomlevelschange, resize, autopanstart, layeradd, layerremove, baselayerchange, overlayadd,
-       * overlayremove, locationfound, locationerror, popupopen, popupclose
-       */
-      events: {
-        map: {
-          enable: ['click','mousedown', 'moveend', 'load', 'baselayerchange'],
-          logic: 'emit'
-        }
-      },
-      lastbounds : {
-        northEastLng: 0,
-        northEastLat: 0,
-        southWestLng: 0,
-        southWestLat: 0
       }
-    });
+    };
+    $scope.paths = {
+      selected: $scope.currentSelection
+    };
+    /**
+     * Catch map events:
+     * click, dblclick, mousedown, mouseup, mouseover, mouseout, mousemove, contextmenu, focus, blur,
+     * preclick, load, unload, viewreset, movestart, move, moveend, dragstart, drag, dragend, zoomstart,
+     * zoomend, zoomlevelschange, resize, autopanstart, layeradd, layerremove, baselayerchange, overlayadd,
+     * overlayremove, locationfound, locationerror, popupopen, popupclose
+     */
+    $scope.events = {
+      map: {
+        enable: ['click','mousedown', 'moveend', 'load', 'baselayerchange'],
+        logic: 'emit'
+      }
+    };
+    $scope.lastbounds = {
+      northEastLng: 0,
+      northEastLat: 0,
+      southWestLng: 0,
+      southWestLat: 0
+    };
+
 
     /**
      * Add additional layers if they're configured
      */
-     if(settings.mapbox.map.default) {
-       $scope.layers.baselayers.default = {
-         name: 'Default',
-         type: 'xyz',
-         url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
-         layerParams: {
-           user: settings.mapbox.user,
-           map: settings.mapbox.map.default
-         },
-         layerOptions: {
-           attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map.default + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
-           continuousWorld: true,
-           TRStyle: 'street'//Not native Leaflet key, required by our layer switch
-         }
-       };
+    if(settings.mapbox.map.default) {
+      $timeout(function() {
+        $scope.layers.baselayers.default = {
+          name: 'Default',
+          type: 'xyz',
+          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
+          layerParams: {
+            user: settings.mapbox.user,
+            map: settings.mapbox.map.default
+          },
+          layerOptions: {
+            attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map.default + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
+            continuousWorld: true,
+            TRStyle: 'street'//Not native Leaflet key, required by our layer switch
+          }
+        };
+      });
     }
     // Add Satellite
     if(settings.mapbox.map.satellite) {
-      $scope.layers.baselayers.satellite = {
-        name: 'Satellite',
-        type: 'xyz',
-        url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
-        layerParams: {
-          user: settings.mapbox.user,
-          map: settings.mapbox.map.satellite
-        },
-        layerOptions: {
-          attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map.satellite + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
-          continuousWorld: true,
-          TRStyle: 'satellite' //Not native Leaflet key, required by our layer switch
-        }
-      };
+      $timeout(function() {
+        $scope.layers.baselayers.satellite = {
+          name: 'Satellite',
+          type: 'xyz',
+          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
+          layerParams: {
+            user: settings.mapbox.user,
+            map: settings.mapbox.map.satellite
+          },
+          layerOptions: {
+            attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map.satellite + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
+            continuousWorld: true,
+            TRStyle: 'satellite' //Not native Leaflet key, required by our layer switch
+          }
+        };
+      });
     }
     // Add experimental Hitchmap
     if(settings.mapbox.map.hitchmap) {
-      $scope.layers.baselayers.hitchmap = {
-        name: 'Hitchmap',
-        type: 'xyz',
-        url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
-        layerParams: {
-          user: settings.mapbox.user,
-          map: settings.mapbox.map.hitchmap
-        },
-        layerOptions: {
-          attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map.hitchmap + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
-          continuousWorld: true,
-          TRStyle: 'street'//Not native Leaflet, required by layer switch
-        }
-      };
+      $timeout(function() {
+        $scope.layers.baselayers.hitchmap = {
+          name: 'Hitchmap',
+          type: 'xyz',
+          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
+          layerParams: {
+            user: settings.mapbox.user,
+            map: settings.mapbox.map.hitchmap
+          },
+          layerOptions: {
+            attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map.hitchmap + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
+            continuousWorld: true,
+            TRStyle: 'street'//Not native Leaflet, required by layer switch
+          }
+        };
+      });
     }
 
     // Other secondary map layers
