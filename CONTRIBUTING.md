@@ -11,11 +11,11 @@ Refer to the [Ubuntu Code of Conduct](http://www.ubuntu.com/about/about-ubuntu/c
 Our code of conduct might be described as follows.
 
 * Be pragmatic.
-* Be nice to people. 
-* Show respect for those who do the work. 
+* Be nice to people.
+* Show respect for those who do the work.
 * When in doubt, defer to those with more experience, who have contributed for longer, and support their decisions.
-* [We believe](https://www.trustroots.org/#!/about) in beauty, simplicity and transparency. 
-* We emphasize community. 
+* [We believe](https://www.trustroots.org/about) in beauty, simplicity and transparency. 
+* We emphasize community.
 
 ## Not a discussion forum
 

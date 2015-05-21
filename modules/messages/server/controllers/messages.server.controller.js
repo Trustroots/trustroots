@@ -9,12 +9,8 @@ var _ = require('lodash'),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
     async = require('async'),
     sanitizeHtml = require('sanitize-html'),
-<<<<<<< HEAD:app/controllers/messages.server.controller.js
-    userHandler = require('./users'),
     paginate = require('express-paginate'),
-=======
     mongoose = require('mongoose'),
->>>>>>> origin/vertical-modules:modules/messages/server/controllers/messages.server.controller.js
     Message = mongoose.model('Message'),
     Thread = mongoose.model('Thread'),
     User = mongoose.model('User');

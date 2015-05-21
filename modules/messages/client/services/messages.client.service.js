@@ -3,9 +3,8 @@
 //Messages service used for communicating with the messages REST endpoints
 angular.module('messages').factory('Messages', ['$resource',
   function($resource) {
-<<<<<<< HEAD:public/modules/messages/services/messages.client.service.js
 
-    function MessageHandler(){
+    function MessageHandler() {
       // Control flow variable; Prevents multiple identical ajax calls
       this.paginationTimeout = false;
       // Used in views for show/hide information
@@ -13,25 +12,27 @@ angular.module('messages').factory('Messages', ['$resource',
       this.nextPage = '';
     }
 
-    MessageHandler.prototype ={
+    MessageHandler.prototype = {
       parseHeaders: function (header){
-        if(header){
+        if(header) {
           return {
             page: /<.*\/[^<>]*\?.*page=(\d*).*>;.*/.exec(header)[1],
             limit: /<.*\/[^<>]*\?.*limit=(\d*).*>;.*/.exec(header)[1]
           };
         }
-        else {return header;}
+        else {
+          return header;
+        }
       },
       /**
       * Fetches messages and sets up pagination environment
       * Takes additional query params passed in as key , value pairs
       */
-      fetchMessages: function(param){
+      fetchMessages: function(param) {
         var that = this;
         var query = (this.nextPage) ? angular.extend(this.nextPage, param): param;
 
-        if(!this.paginationTimeout){
+        if(!this.paginationTimeout) {
           this.paginationTimeout = true;
 
           return(this.ajaxCall.query(
@@ -50,21 +51,12 @@ angular.module('messages').factory('Messages', ['$resource',
           ));
         }
       },
-      ajaxCall: $resource('messages/:userId',
+      ajaxCall: $resource('/api/messages/:userId',
         { userId: '@_id' },
         { update: { method: 'PUT' } }
       )
     };
     return MessageHandler;
-=======
-    return $resource('/api/messages/:userId', {
-      userId: '@_id'
-    }, {
-      update: {
-        method: 'PUT'
-      }
-    });
->>>>>>> origin/vertical-modules:modules/messages/client/services/messages.client.service.js
   }
 ]);
 

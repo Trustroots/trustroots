@@ -15,7 +15,7 @@
              id="message-{{ message._id }}"
              ng-repeat="message in messages | orderBy:'-created':true"
              zum-waypoint="waypoints"
-             offset="90%"
+             offset="50%"
              up="scroll.up"
              down="scroll.down"
              ng-class="{ 'message-unread': !messageRead(message, waypoints.scroll.up, waypoints.scroll.down),

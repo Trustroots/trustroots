@@ -1,43 +1,35 @@
 'use strict';
 
-/*
-* Task that checks for unread messages from the DB and sends
-* notification emails for users who have unread messages.
-*
-* Won't notify for very fresh (15min) messages, or else
-* people would get email for each line of chat message somebody writes.
-*
-* Also if people are reading their messages (and thus messages get marked read),
-* notifications aren't sent.
-*
-* This whole task might be a bit memory intensive (aggregate specificly).
-*/
+/**
+ * Task that checks for unread messages from the DB and sends
+ * notification emails for users who have unread messages.
+ *
+ * Won't notify for very fresh (10min) messages, or else
+ * people would get email for each line of chat message somebody writes.
+ *
+ * Also if people are reading their messages (and thus messages get marked read),
+ * notifications aren't sent.
+ *
+ * This whole task might be a bit memory intensive (aggregate specificly).
+ */
 
 
 /**
-* Module dependencies.
-*/
+ * Module dependencies.
+ */
 var _ = require('lodash'),
-<<<<<<< HEAD:app/jobs/message-unread.server.job.js
-    config = require('../../config/config'),
-    nodemailer = require('nodemailer'),
-    async = require('async'),
-    //swig = require('swig'),
-    htmlToText = require('html-to-text'),
-=======
     path = require('path'),
     config = require(path.resolve('./config/config')),
     nodemailer = require('nodemailer'),
     async = require('async'),
     //swig = require('swig'),
->>>>>>> origin/vertical-modules:modules/messages/server/jobs/message-unread.server.job.js
+    htmlToText = require('html-to-text'),
     mongoose = require('mongoose'),
     Message = mongoose.model('Message'),
     User = mongoose.model('User');
 
 exports.checkUnreadMessages = function(agenda) {
   agenda.define('check unread messages', {lockLifetime: 10000}, function(job, agendaDone) {
-
 
     async.waterfall([
 
@@ -118,27 +110,7 @@ exports.checkUnreadMessages = function(agenda) {
       // Send emails
       function(users, notifications, timeAgo, done) {
 
-<<<<<<< HEAD:app/jobs/message-unread.server.job.js
         if(notifications.length > 0) {
-=======
-      /*
-       * Skipping this for now and using text-only emails instead.
-       * We'll first need to re-render our html templates from
-       * header+content+footer parts and then use that file for this.
-       *
-       */
-      // Prepare mail
-      /*
-      function(users, emailTemplate, done) {
-        swig.render('./app/views/email-templates/messages-unread.server.view.html', {
-          ourMail: config.mailer.from,
-          urlInbox: (config.https ? 'https' : 'http') + '://' + config.domain + '/messages',
-        }, function(err, emailHTML) {
-          done(err, emailHTML, users);
-        });
-      },
-      */
->>>>>>> origin/vertical-modules:modules/messages/server/jobs/message-unread.server.job.js
 
           var smtpTransport = nodemailer.createTransport(config.mailer.options),
               url = (config.https ? 'https' : 'http') + '://' + config.domain,
@@ -155,7 +127,6 @@ exports.checkUnreadMessages = function(agenda) {
             var messageFeed = '----------------------------------------------------------------------\n\r\n\r';
             notification.messages.forEach(function(message) {
 
-<<<<<<< HEAD:app/jobs/message-unread.server.job.js
               // Get user's info from user array. Handles deleted users.
               var userFrom = (users[message.userFrom]) ? users[message.userFrom] : userNotFound;
 
@@ -167,16 +138,12 @@ exports.checkUnreadMessages = function(agenda) {
             var mailTitle = (total > 1) ? 'You have ' + total + ' unread messages at Trustroots' : 'You have one unread message at Trustroots';
 
             var mailBody = mailTitle + '.\n\r\n\r' +
-                           'To reply, go to ' + url + '/#!/messages\n\r\n\r' +
+                           'To reply, go to ' + url + '/messages\n\r\n\r' +
                            messageFeed +
                            '-- \n\rTrustroots\n\r' + url + '\n\r' +
-                           'Support: ' + url + '/#!/contact/\n\rSupport email: ' + config.mailer.from + '\n\r';
-=======
-          var emailSignature = '-- \n\rTrustroots\n\r' + url + '\n\rSupport: ' + url + '/contact/\n\rSupport email: hello@trustroots.org\n\r';
->>>>>>> origin/vertical-modules:modules/messages/server/jobs/message-unread.server.job.js
+                           'Support: ' + url + '/contact/\n\rSupport email: ' + config.mailer.from + '\n\r';
 
             smtpTransport.sendMail({
-<<<<<<< HEAD:app/jobs/message-unread.server.job.js
                 to: {
                   name: userTo.displayName,
                   address: userTo.email
@@ -194,12 +161,6 @@ exports.checkUnreadMessages = function(agenda) {
                   console.error(notification);
                   return;
                 }
-=======
-              to: user.email,
-              from: 'Trustroots <' + config.mailer.from + '>',
-              subject: 'You have unread message(s)',
-              text: 'You have unread messages at Trustroots.\n\r\n\rTo read them, go to ' + url + '/messages\n\r\n\r' + emailSignature
->>>>>>> origin/vertical-modules:modules/messages/server/jobs/message-unread.server.job.js
             });
 
             // close the connection pool
@@ -246,13 +207,8 @@ exports.checkUnreadMessages = function(agenda) {
 
     ], function(err) {
       if (err) {
-<<<<<<< HEAD:app/jobs/message-unread.server.job.js
         job.fail(err);
         job.save();
-=======
-        console.log('[agenda] Error while checking for unread messages:');
-        console.log(err);
->>>>>>> origin/vertical-modules:modules/messages/server/jobs/message-unread.server.job.js
       }
       agendaDone();
     });

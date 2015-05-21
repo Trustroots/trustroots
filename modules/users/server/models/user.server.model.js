@@ -32,13 +32,8 @@ var validateLocalStrategyPassword = function(password) {
  */
 
 var validateUsername = function(username) {
-<<<<<<< HEAD:app/models/user.server.model.js
   var usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,}$/,
       dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/,
-=======
-  var usernameRegex = /^[a-z0-9.\-_]{3,32}$/,
-      dotsRegex = /^([^.]+\.?)$/,
->>>>>>> origin/vertical-modules:modules/users/server/models/user.server.model.js
       illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'profile', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test'];
   return (this.provider !== 'local' || ( username &&
                                          usernameRegex.test(username) &&

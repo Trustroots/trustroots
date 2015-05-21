@@ -18,7 +18,7 @@
 
             <tr class="thread" data-ng-class="{ 'thread-unread': !thread.read }" data-ng-repeat="thread in threads | orderBy:'updated':true" data-ng-click="openThread(thread)">
               <td class="author col-xs-3 col-md-2">
-                <div tr-avatar data-user="otherParticipant(thread)" data-size="36" data-link="false" class="pull-left"></div> <span data-ng-bind="otherParticipant(thread, 'displayName')"></span>
+                <div tr-avatar data-user="otherParticipant(thread)" data-size="36" data-link="false" class="pull-left hidden-xs"></div> <span data-ng-bind="otherParticipant(thread, 'displayName')"></span>
               </td>
               <td class="summary">
                 <span data-ng-bind-html="thread.message.excerpt"></span>
@@ -26,7 +26,7 @@
                   <i class="fa fa-fw fa-reply text-muted" ng-show="thread.userFrom._id === user._id" tooltip="You replied" tooltip-placement="right"></i>
                 </small>
               </td>
-              <td class="ago col-xs-3 col-md-2" am-time-ago="thread.updated" title="{{thread.updated}}"></td>
+              <td class="ago col-xs-3 col-md-2" am-time-ago="thread.updated" tooltip="{{thread.updated | date:'medium'}}" tooltip-placement="left"></td>
             </tr>
 
             <!-- Pagination Error -->
