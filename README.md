@@ -2,7 +2,7 @@
 
 _Hospitality exchange community for hitchhikers and other travellers._
 
-![Trustroots logo](https://raw.githubusercontent.com/Trustroots/trustroots/tree/vertical-modules/modules/core/client/img/logo/color-blue.png)
+![Trustroots logo](https://raw.githubusercontent.com/Trustroots/trustroots/master/modules/core/client/img/logo/color-blue.png)
 
 ## Volunteering
 
