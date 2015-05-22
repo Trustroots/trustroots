@@ -12,7 +12,8 @@ angular.module('pages').controller('HomeController', ['$scope', '$state', '$wind
     $scope.tagline = settings.tagline;
 
     // List of background classes
-    // See /public/modules/core/less/board.less for more
+    // See /modules/core/client/less/board.less for more
+    // Needs to support container-full and board-blur classes.
     $scope.bgs = [
       'board-sierranevada',
       'board-hitchroad',
