@@ -45,7 +45,17 @@ exports.userProfileFields = [
                     ].join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed
-exports.userMiniProfileFields = 'id displayName username displayUsername avatarSource avatarUploaded emailHash additionalProvidersData.facebook.id';
+exports.userMiniProfileFields = [
+                    'id',
+                    'updated', // Used as local-avatar cache buster
+                    'displayName',
+                    'username',
+                    'displayUsername',
+                    'avatarSource',
+                    'avatarUploaded',
+                    'emailHash',
+                    'additionalProvidersData.facebook.id' // For FB avatars
+                    ].join(' ');
 
 /**
  * Rules for sanitizing user description coming in and out
