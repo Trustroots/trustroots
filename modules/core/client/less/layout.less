@@ -164,10 +164,20 @@ body {
     }
   }
 
-  /* Make Bootstrap dropdowns open at hover */
   @media (min-width: @grid-float-breakpoint) {
+    /* Make Bootstrap dropdowns open at hover */
     .dropdown:hover .dropdown-menu {
       display: block;
+    }
+    /* Make sure avatar works as a dropdown handle */
+    .dropdown-user {
+      .dropdown-toggle {
+        width: 73px;
+        .avatar {
+          float: left;
+          margin-right: 8px;
+        }
+      }
     }
   }
 

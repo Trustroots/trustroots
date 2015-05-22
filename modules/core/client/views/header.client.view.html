@@ -24,6 +24,11 @@
 
     <!-- Menu for non logged users -->
     <ul class="nav navbar-nav navbar-right" ng-if="!user">
+      <li ui-route="contact" ng-class="{active: $uiRoute}">
+        <a ui-sref="contact">
+          Help
+        </a>
+      </li>
       <li ui-route="signup" ng-class="{active: $uiRoute}">
         <a ui-sref="signup">
           <i class="icon-sign-up"></i> Sign Up
@@ -40,53 +45,53 @@
 
     <!-- Menu for logged in users-->
     <ul class="nav navbar-nav navbar-right" ng-if="user">
+      <li ui-route="contact" ng-class="{active: $uiRoute}">
+        <a ui-sref="contact">
+          <i class="icon-bolt icon-fw icon-lg visible-xs-inline"></i>
+          Help
+        </a>
+      </li>
       <li ui-route="messages" ng-class="{active: $uiRoute}">
         <a ui-sref="inboxMessages">
           <i class="icon-messages icon-fw icon-lg"></i> <span class="visible-xs-inline">Messages</span>
         </a>
       </li>
-      <li class="dropdown" ng-class="{active: ($uiRoute)}" dropdown="true">
+      <li class="dropdown dropdown-user" ng-class="{active: ($uiRoute)}" dropdown="true">
         <a class="dropdown-toggle cursor-pointer" dropdown-toggle>
-          {{user.displayName}}
+          <div tr-avatar data-user="user" link="false" size="24" class="hidden-xs"></div>
+          <span class="visible-xs-inline">
+            <i class="icon-user icon-fw icon-lg"></i>
+            {{user.displayName}}
+          </span>
           <b class="caret"></b>
         </a>
         <ul class="dropdown-menu">
+          <li role="presentation" class="dropdown-header hidden-xs">{{user.displayName}}</li>
+          <li role="presentation" class="divider hidden-xs"></li>
+
           <li ui-route="profile" ng-class="{active: $uiRoute}">
             <a ui-sref="profile({username: user.username})">
-              <i class="icon-user icon-fw"></i>
               My profile
             </a>
           </li>
           <li ui-route="profile-edit" ng-class="{active: $uiRoute}">
             <a ui-sref="profile-edit({username: user.username})">
-              <i class="icon-edit icon-fw"></i>
               Edit profile
             </a>
           </li>
           <li ui-route="profile-settings" ng-class="{active: $uiRoute}">
             <a ui-sref="profile-settings({username: user.username})">
-              <i class="icon-user-settings icon-fw"></i>
               Settings
             </a>
           </li>
           <li ui-route="offer" ng-class="{active: $uiRoute}">
             <a ui-sref="offer">
-              <i class="icon-home icon-fw"></i>
               Hosting
             </a>
           </li>
 
-          <li class="divider"></li>
-
-          <li ui-route="contact" ng-class="{active: $uiRoute}">
-            <a ui-sref="contact">
-              <i class="icon-bolt icon-fw"></i>
-              Support
-            </a>
-          </li>
           <li>
             <a href="/api/auth/signout" target="_top">
-              <i class="icon-sign-out icon-fw"></i>
               Sign out
             </a>
           </li>
