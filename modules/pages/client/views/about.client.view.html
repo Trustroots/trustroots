@@ -1,3 +1,5 @@
+<div ng-controller="AboutController">
+
 <section class="board board-primary board-bokehblue">
   <div class="container">
     <div class="row">
@@ -5,6 +7,10 @@
         <a ui-sref="home" class="logo logo-sm logo-blue center-block"></a>
         <br>
         <div ng-include="'/modules/pages/views/manifesto-text.client.partial.html?v={{cacheBust}}'"></div>
+        <div ng-if="!user">
+          <br><br>
+          <a ui-sref="signup" class="btn btn-lg btn-inverse">Become a member</a>
+        </div>
       </div>
     </div>
   </div>
@@ -135,7 +141,7 @@
 
     </div><!-- /.row -->
 
-    <div class="row">
+    <div class="row" ng-if="!user">
       <div class="col-xs-12 text-center">
         <br><br>
         <a ui-sref="signup" class="btn btn-lg btn-inverse">Become a member</a>
@@ -146,3 +152,5 @@
   </div><!-- /.container -->
 
 </section>
+
+</div>
