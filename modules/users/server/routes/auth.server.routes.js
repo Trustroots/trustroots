@@ -33,19 +33,6 @@ module.exports = function(app) {
   app.route('/api/auth/twitter').get(passport.authenticate('twitter'));
   app.route('/api/auth/twitter/callback').get(users.oauthCallback('twitter'));
 
-  // Setting the google oauth routes
-  app.route('/api/auth/google').get(passport.authenticate('google', {
-    scope: [
-      'https://www.googleapis.com/auth/userinfo.profile',
-      'https://www.googleapis.com/auth/userinfo.email'
-    ]
-  }));
-  app.route('/api/auth/google/callback').get(users.oauthCallback('google'));
-
-  // Setting the linkedin oauth routes
-  app.route('/api/auth/linkedin').get(passport.authenticate('linkedin'));
-  app.route('/api/auth/linkedin/callback').get(users.oauthCallback('linkedin'));
-
   // Setting the github oauth routes
   app.route('/api/auth/github').get(passport.authenticate('github'));
   app.route('/api/auth/github/callback').get(users.oauthCallback('github'));
