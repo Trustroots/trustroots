@@ -26,6 +26,7 @@ node_modules/
 .vagrant
 *.pyc
 passenger.*
+*.pid
 
 # App
 public/lib
