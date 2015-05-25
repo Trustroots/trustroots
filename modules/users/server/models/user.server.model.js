@@ -114,7 +114,7 @@ var UserSchema = new Schema({
   username: {
     type: String,
     unique: true,
-    required: 'Please fill in a username',
+    required: true,
     validate: [validateUsername, 'Please fill in valid username: 3+ characters long, non banned word, characters "_-.", no consecutive dots, does not begin or end with dots, letters a-z and numbers 0-9.'],
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
     trim: true
@@ -140,7 +140,7 @@ var UserSchema = new Schema({
      Trustroots, comes from boilerplate */
   provider: {
     type: String,
-    required: 'Provider is required'
+    required: true
   },
   providerData: {},
   additionalProvidersData: {},
