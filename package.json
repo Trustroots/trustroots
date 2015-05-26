@@ -74,6 +74,7 @@
     "grunt-ng-annotate": "~0.10.0",
     "grunt-node-inspector": "~0.2.0",
     "grunt-nodemon": "~0.4.0",
+    "grunt-shell": "~1.1.2",
     "karma": "~0.12.31",
     "karma-chrome-launcher": "~0.1.7",
     "karma-coverage": "~0.3.1",

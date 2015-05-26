@@ -1,0 +1,794 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Trustroots API",
+        "description": "Trustroots.org API",
+        "version": "0.2.0",
+        "contact": {
+            "name": "Trustroots",
+            "url": "https://www.trustroots.org/#!/contact"
+        }
+    },
+    "host": "localhost:3000",
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "basePath": "/api",
+    "produces": [
+        "application/json"
+    ],
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Auth operations"
+        },
+        {
+            "name": "Users",
+            "description": "Users operations"
+        },
+        {
+            "name": "Statistics",
+            "description": "Statistics operations"
+        },
+        {
+            "name": "Offers",
+            "description": "Offers operations"
+        },
+        {
+            "name": "Messages",
+            "description": "Messages operations"
+        },
+        {
+            "name": "Contacts",
+            "description": "Contacts operations"
+        }
+    ],
+    "paths": {
+        "/auth/signin": {
+            "post": {
+                "summary": "Authenticate user.",
+                "description": "Authenticate user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users",
+                    "Auth"
+                ],
+                "parameters": [
+                    {
+                        "name": "credentials",
+                        "description": "User credentials.",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Credentials"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Logged in user.",
+                        "schema": {
+                            "$ref": "#/definitions/User"
+                        }
+                    },
+                    "400": {
+                        "description": "Unknown user or invalid password."
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "put": {
+                "summary": "Update user profile.",
+                "description": "Update user profile of currently logged in user.",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "description": "User profile object.",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/User"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Return updated user object.",
+                        "schema": {
+                            "$ref": "#/definitions/User"
+                        }
+                    },
+                    "403": {
+                        "description": "Not allowed."
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{username}": {
+            "get": {
+                "summary": "User by username.",
+                "description": "Return user by username.",
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "description": "Username",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Return user object.",
+                        "schema": {
+                            "$ref": "#/definitions/User"
+                        }
+                    },
+                    "403": {
+                        "description": "Not allowed."
+                    },
+                    "404": {
+                        "description": "Not found."
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/messages": {
+            "get": {
+                "summary": "Inbox.",
+                "description": "List of threads in the currenlty logged in user's inbox.\n",
+                "tags": [
+                    "Messages"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of message threads.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Thread"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not allowed."
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/{userId}": {
+            "get": {
+                "summary": "Message thread.",
+                "description": "Message thread between currently logged in user and {userId}\n",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "Unique user id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of messages.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Message"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not allowed."
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/offers": {
+            "get": {
+                "summary": "List hosting offers.",
+                "description": "Returns list of hosting offers inside bounding box.\n",
+                "parameters": [
+                    {
+                        "name": "northEastLat",
+                        "in": "query",
+                        "description": "North-East latitude of the bounding box.",
+                        "required": true,
+                        "type": "number",
+                        "format": "double"
+                    },
+                    {
+                        "name": "northEastLng",
+                        "in": "query",
+                        "description": "North-East longitude of the bounding box.",
+                        "required": true,
+                        "type": "number",
+                        "format": "double"
+                    },
+                    {
+                        "name": "southWestLat",
+                        "in": "query",
+                        "description": "South-West latitude of the bounding box.",
+                        "required": true,
+                        "type": "number",
+                        "format": "double"
+                    },
+                    {
+                        "name": "southWestLng",
+                        "in": "query",
+                        "description": "South-West longitude of the bounding box.",
+                        "required": true,
+                        "type": "number",
+                        "format": "double"
+                    }
+                ],
+                "tags": [
+                    "Offers"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of hosting offers inside bounding box.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Offer"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not allowed."
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "summary": "Add or update offer.",
+                "description": "Add new offer or update existing one.",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "description": "Offer object.",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Offer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Offers"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Return new or updated offer object.",
+                        "schema": {
+                            "$ref": "#/definitions/Offer"
+                        }
+                    },
+                    "403": {
+                        "description": "Not allowed."
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/offers-by/{userId}": {
+            "get": {
+                "summary": "Hosting offer.",
+                "description": "Hosting offer by unique user id.",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "Unique user id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Offers"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Hosting offer.",
+                        "schema": {
+                            "$ref": "#/definitions/Offer"
+                        }
+                    },
+                    "403": {
+                        "description": "Not allowed."
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/contacts/{userId}": {
+            "get": {
+                "summary": "Contacts for user.",
+                "description": "Contacts list for user.",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "Unique user id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contacts list.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Contact"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not allowed."
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/offers/{offerId}": {
+            "get": {
+                "summary": "Get hosting offerd.",
+                "description": "Get hosting offer by unique id.",
+                "parameters": [
+                    {
+                        "name": "offerId",
+                        "in": "path",
+                        "description": "Unique offer id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Offers"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Hosting offer by unique id.",
+                        "schema": {
+                            "$ref": "#/definitions/Offer"
+                        }
+                    },
+                    "403": {
+                        "description": "Not allowed."
+                    },
+                    "404": {
+                        "description": "Not found."
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/statistics": {
+            "get": {
+                "summary": "Site statistics",
+                "description": "Return various statistics about Trustroots.",
+                "tags": [
+                    "Statistics"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Return various statistics about Trustroots.",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/Statistics"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "User": {
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "salt": {
+                    "type": "string"
+                },
+                "resetPasswordToken": {
+                    "type": "string",
+                    "description": "For reset password"
+                },
+                "resetPasswordExpires": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "For reset password"
+                },
+                "emailHash": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "emailToken": {
+                    "type": "string",
+                    "description": "For email confirmations"
+                },
+                "emailTemporary": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "New email is stored here until it is confirmed"
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "This is (currently) generated in users.profile.server.controller.js"
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Lowercase enforced username"
+                },
+                "displayUsername": {
+                    "type": "string",
+                    "description": "Unaltered original username"
+                },
+                "updated": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "birthdate": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "locationFrom": {
+                    "type": "string"
+                },
+                "locationLiving": {
+                    "type": "string"
+                },
+                "newsletter": {
+                    "type": "boolean"
+                },
+                "public": {
+                    "type": "boolean",
+                    "description": "New users are public=false until they validate their email. If public=false, users can't email other users, can't be seen by other users. They are effectively black holed...\n"
+                },
+                "avatarUploaded": {
+                    "type": "boolean"
+                },
+                "avatarSource": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "roles": {
+                    "type": "array",
+                    "default": "user",
+                    "items": [
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "enum": [
+                        "user",
+                        "admin"
+                    ]
+                },
+                "languages": {
+                    "type": "array",
+                    "items": [
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
+                "gender": {
+                    "type": "string",
+                    "default": "",
+                    "enum": [
+                        "",
+                        "male",
+                        "female",
+                        "other"
+                    ]
+                },
+                "description": {
+                    "type": "string"
+                },
+                "tagline": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "additionalProvidersData": {
+                    "type": "object"
+                },
+                "providerData": {
+                    "type": "object"
+                },
+                "provider": {
+                    "type": "string",
+                    "description": "Internal. Relates to oauth logins. Currently only accepted auth provider is 'local'."
+                },
+                "seen": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The last time the user was logged in (uncertain if its live right now 5 Apr 2015)"
+                }
+            },
+            "required": [
+                "email",
+                "username",
+                "provider"
+            ]
+        },
+        "Contact": {
+            "properties": {
+                "_id": {
+                    "type": "string",
+                    "description": "Unique identifier representing a specific connection between two users."
+                },
+                "created": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Time when connection was initiated."
+                },
+                "confirmed": {
+                    "type": "boolean",
+                    "description": "If receiving party confirmed connection."
+                },
+                "users": {
+                    "type": "array",
+                    "description": "List of users for this connection. First [0] user object in array is receiving user and second [1] is initiating user.",
+                    "items": {
+                        "$ref": "#/definitions/User"
+                    }
+                }
+            }
+        },
+        "Thread": {
+            "properties": {
+                "_id": {
+                    "type": "string",
+                    "description": "Unique identifier representing the thread between two users."
+                },
+                "message": {
+                    "description": "Representation of latest message in the thread.",
+                    "$ref": "#/definitions/Message"
+                },
+                "updated": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Date of the latest message in the thread."
+                },
+                "read": {
+                    "type": "boolean",
+                    "description": "If userTo opened the thread."
+                },
+                "userTo": {
+                    "description": "User to whom latest message in the thread was sent to.",
+                    "$ref": "#/definitions/User"
+                },
+                "userFrom": {
+                    "description": "User who sent the latest message in the thread.",
+                    "$ref": "#/definitions/User"
+                }
+            }
+        },
+        "Message": {
+            "properties": {
+                "_id": {
+                    "type": "string",
+                    "description": "Unique identifier of the message."
+                },
+                "content": {
+                    "type": "string",
+                    "description": "Message content."
+                },
+                "created": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Date when message was sent."
+                },
+                "read": {
+                    "type": "boolean",
+                    "description": "If userTo opened the thread."
+                },
+                "notified": {
+                    "type": "boolean",
+                    "description": "If userTo was notified via email about this message."
+                },
+                "userTo": {
+                    "description": "User to whom latest message in the thread was sent to.",
+                    "$ref": "#/definitions/User"
+                },
+                "userFrom": {
+                    "description": "User who sent the latest message in the thread.",
+                    "$ref": "#/definitions/User"
+                }
+            }
+        },
+        "Offer": {
+            "properties": {
+                "_id": {
+                    "type": "string",
+                    "description": "Unique identifier representing a specific offer."
+                },
+                "location": {
+                    "type": "array",
+                    "description": "Latitude/longitude coordinates of the offer.",
+                    "items": [
+                        {
+                            "type": "number",
+                            "format": "double"
+                        },
+                        {
+                            "type": "number",
+                            "format": "double"
+                        }
+                    ]
+                },
+                "locationFuzzy": {
+                    "type": "array",
+                    "description": "Latitude/longitude coordinates of the offer. Generated from",
+                    "items": [
+                        {
+                            "type": "number",
+                            "format": "double"
+                        },
+                        {
+                            "type": "number",
+                            "format": "double location."
+                        }
+                    ]
+                },
+                "status": {
+                    "type": "string",
+                    "description": "Display name of product."
+                },
+                "user": {
+                    "type": "string",
+                    "description": "Unique identifier for the user offering hosting."
+                }
+            },
+            "required": [
+                "user",
+                "status",
+                "location"
+            ]
+        },
+        "Statistics": {
+            "readOnly": true,
+            "example": "https://dev.trustroots.org/statistics",
+            "properties": {
+                "commit": {
+                    "type": "string",
+                    "description": "Hashtag pointing to the currently deployed commit at https://github.com/Trustroots/trustroots/HASHTAG"
+                },
+                "hosting": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "Count of hosts marked as \"yes\" or \"maybe\"."
+                },
+                "total": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "Count of confirmed members."
+                }
+            }
+        },
+        "Credentials": {
+            "properties": {
+                "username": {
+                    "description": "Username or email.",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "Password",
+                    "type": "string",
+                    "format": "password"
+                }
+            },
+            "required": [
+                "username",
+                "password"
+            ]
+        },
+        "Error": {
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

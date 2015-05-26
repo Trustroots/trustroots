@@ -43,6 +43,9 @@ logs
 log
 *.log
 
+# Docs
+public/developers/api
+
 # DB migrations
 migrations/.migrate
 

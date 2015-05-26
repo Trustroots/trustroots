@@ -35,6 +35,11 @@ There's a script that can generate mock user data. It's highly recommended you r
 3. It can take up to 5 minutes. Mongoose might complain about duplicates - just ignore these errors.
 4. To see the result, log in with your chosen username and password `password`.
 
+### Documentation
+Produce documentation by running `grunt docs`
+
+Then run the application (just `grunt`) and open [http://localhost:3000/developers/](http://localhost:3000/developers/).
+
 ## License
 
 [The MIT License](LICENSE.md)

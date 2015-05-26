@@ -209,6 +209,18 @@ module.exports = function (grunt) {
       unit: {
         configFile: 'karma.conf.js'
       }
+    },
+    shell: {
+      'swagger-ui': {
+        command: [
+          'mkdir tmp',
+          'wget -nv -O ./tmp/swagger-ui.zip  https://github.com/swagger-api/swagger-ui/archive/master.zip',
+          'unzip ./tmp/swagger-ui.zip -d ./tmp',
+          'mkdir -p ./public/developers/api',
+          'mv ./tmp/swagger-ui-master/dist/* ./public/developers/api',
+          'rm -r tmp'
+        ].join('&&')
+      }
     }
   });
 
@@ -244,6 +256,9 @@ module.exports = function (grunt) {
   grunt.registerTask('test', ['env:test', 'copy:localConfig', 'mongoose', 'mochaTest', 'karma:unit']);
   grunt.registerTask('test.mocha', ['env:test', 'copy:localConfig', 'mongoose', 'mochaTest']);
   grunt.registerTask('test.karma', ['env:test', 'copy:localConfig', 'mongoose', 'karma:unit']);
+
+  // Produce documentation
+  grunt.registerTask('docs', ['shell:swagger-ui']);
 
   // Run the project in development mode
   grunt.registerTask('default', ['env:dev', 'copy:localConfig', 'lint', 'less', 'concurrent:default']);
