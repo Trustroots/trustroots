@@ -6,7 +6,7 @@
         "version": "0.2.0",
         "contact": {
             "name": "Trustroots",
-            "url": "https://www.trustroots.org/#!/contact"
+            "url": "https://www.trustroots.org/developers/"
         }
     },
     "host": "localhost:3000",
