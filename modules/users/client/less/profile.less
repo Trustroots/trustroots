@@ -20,6 +20,25 @@
   }
 }
 
+// Edit/save/send messages etc buttons
+.profile-action-buttons {
+  text-align: right;
+  @media (max-width: @screen-xs-max) {
+    .navbar();
+    .navbar-default();
+    .navbar-fixed-bottom();
+    .btn {
+      margin-top: 4px;
+    }
+    .profile-editor-cancel {
+      float: right;
+    }
+    .profile-editor-save {
+      float: left;
+    }
+  }
+}
+
 .profile-name,
 .profile-username {
   display: inline-block;
@@ -61,22 +80,18 @@
   border: 0;
 }
 
-#profile-actions {
-  .pull-right();
-  margin-right: 0;
-}
-
 #profile-sidebar {
-  max-width: 256px;
+  @media (min-width: @screen-sm-min) {
+    max-width: 256px;
+  }
   h4,
   /* Labels occur when editing profile... */
-  .control-label{
+  .control-label {
     .text-muted();
     text-transform: uppercase;
     margin: 3px 0 0 0;
   }
-  &,
-  h4,
+  &, h4,
   /* Labels occur when editing profile... */
   .control-label {
     font-size: 13px;
@@ -98,14 +113,25 @@
     margin: 0 0 @padding-small-horizontal 0;
     padding: 0 0 @padding-small-horizontal 0;
     border-bottom: 1px solid @gray-lighter;
-    &:last-child { /* :not('.ng-hide') */
+    &:last-child {
       border-bottom: 0;
       margin-bottom: 0;
       padding-bottom: 0;
     }
   }
-  @media (max-width: @screen-xs-max) {
-    margin-right: auto;
-    margin-left: auto;
+  // List of social accounts
+  .social-profiles {
+    margin-top: 5px;
+    margin-bottom: 10px;
+    .btn-link {
+      padding-left: 0;
+      color: @brand-primary;
+      &:focus,
+      &:active,
+      &:hover {
+        text-decoration: none;
+        color: darken(@brand-primary, 10%);
+      }
+    }
   }
 }

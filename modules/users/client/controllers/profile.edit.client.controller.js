@@ -56,19 +56,17 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
 
     // Remove a user social account
     $scope.removeUserSocialAccount = function(provider) {
-      $scope.success = $scope.error = null;
-
-      $http.delete('/api/users/accounts', {
-        params: {
-          provider: provider
-        }
-      }).success(function(response) {
-        // If successful show success message and clear form
-        $scope.success = true;
-        $scope.user = Authentication.user = response;
-      }).error(function(response) {
-        $scope.error = response.message;
-      });
+      if (confirm('Are you sure you want to disconnect this profile?') === true) {
+        $http.delete('/api/users/accounts', {
+          params: {
+            provider: provider
+          }
+        }).success(function(response) {
+          $scope.user = Authentication.user = response;
+        }).error(function(response) {
+          messageCenterService.add('danger', response.message || 'Something went wrong. Try again or contact us to disconnect your profile.' , { timeout: 10000 });
+        });
+      }
     };
 
     /*

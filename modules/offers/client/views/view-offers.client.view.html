@@ -1,9 +1,9 @@
-<!-- Accommodation -->
-<div class="panel panel-default offer-view" data-ng-controller="ViewOffersController">
+<div class="panel panel-default offer-view" ng-controller="ViewOffersController" ng-class="{'panel-disabled': user.public === false}">
+
   <div class="panel-heading">
     Accommodation
     <!-- Button + dropdown for user's own profile -->
-    <div ng-show="user._id === profile._id && (offer && offer.$resolved)" class="pull-right btn-group" dropdown is-open="hostingDropdown">
+    <div ng-if="user._id === profile._id && (offer && offer.$resolved && user.public !== false)" class="pull-right btn-group" dropdown is-open="hostingDropdown">
       <button class="btn btn-sm dropdown-toggle btn-hosting" tooltip="Change" tooltip-placement="left" dropdown-toggle ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': (!offer || offer.status === 'no')}">
         {{ hostingStatusLabel() }}
         <span class="caret"></span>
@@ -15,18 +15,26 @@
       </ul>
     </div>
     <!-- Button for other profiles -->
-    <a ng-show="user._id !== profile._id && (offer && offer.$resolved)" ui-sref="listMessages({userId: profile._id})" class="btn btn-sm pull-right btn-hosting btn-hosting-yes" ng-show="offer.status === 'yes'" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': (!offer || offer.status === 'no')}">
+    <a ng-if="user._id !== profile._id && (offer && offer.$resolved && user.public !== false)" ui-sref="listMessages({userId: profile._id})" class="btn btn-sm pull-right btn-hosting btn-hosting-yes" ng-show="offer.status === 'yes'" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': (!offer || offer.status === 'no')}">
       {{ hostingStatusLabel() }}
     </a>
   </div>
 
   <!-- Show while offer is loading -->
-  <div class="panel-body text-center text-muted" ng-show="!offer || !offer.$resolved">
+  <div class="panel-body text-center text-muted" ng-if="!offer || !offer.$resolved">
     <small>Wait a moment...</small>
   </div>
 
+  <!-- Offers/user's own profile isn't public yet -->
+  <div class="panel-body" ng-if="user.public === false">
+    <div class="content-empty">
+      <div class="offer-symbol-sofa center-block"></div>
+      <h4>You need to activate your profile before starting to host.</h4>
+    </div>
+  </div>
+
   <!-- Show once offer has loader -->
-  <div class="panel-body" ng-show="offer && offer.$resolved">
+  <div class="panel-body" ng-if="offer && offer.$resolved && user.public !== false">
 
     <!-- Hosting: yes | maybe -->
     <div ng-show="offer.status !== 'no'">
@@ -53,17 +61,17 @@
     <!-- /Hosting: yes | maybe -->
 
     <!-- Hosting: no -->
-    <div ng-show="!offer || offer.status === 'no'">
+    <div ng-if="!offer || offer.status === 'no' && user.public !== false">
 
       <!-- User has written explanation -->
-      <div ng-show="offer.noOfferDescription" ng-bind-html="offer.noOfferDescription | trustedHtml"></div>
-      <small ng-show="offer.noOfferDescription && user._id === profile._id" class="pull-right"><a ng-click="hostingStatus('no')" class="text-muted">edit</a></small>
+      <div ng-if="offer.noOfferDescription" ng-bind-html="offer.noOfferDescription | trustedHtml"></div>
+      <small ng-if="offer.noOfferDescription && user._id === profile._id" class="pull-right"><a ng-click="hostingStatus('no')" class="text-muted">edit</a></small>
 
       <!-- Default "sorry nope" -->
-      <div ng-hide="offer.noOfferDescription" class="content-empty text-muted">
+      <div ng-if="!offer.noOfferDescription" class="content-empty text-muted">
         <div class="offer-symbol-sofa center-block"></div>
         <h4>Sorry, user is not hosting currently.</h4>
-        <p ng-show="!offer.noOfferDescription && user._id === profile._id"><a ng-click="hostingStatus('no')" class="text-muted"><small>Customize</small></a></p>
+        <p ng-if="!offer.noOfferDescription && user._id === profile._id"><a ng-click="hostingStatus('no')" class="text-muted"><small>Customize</small></a></p>
       </div>
 
     </div>
@@ -72,14 +80,11 @@
   </div>
 
   <!-- When looking at your own profile -->
-  <div leaflet center="center" markers="markers" layers="layers" paths="paths" defaults="defaults" class="offer-location" ng-if="offer && offer.$resolved && offer.status !== 'no'" id="offer-location-canvas"></div>
+  <div leaflet center="center" markers="markers" layers="layers" paths="paths" defaults="defaults" class="offer-location" ng-if="offer && offer.$resolved && offer.status !== 'no' && user.public !== false" id="offer-location-canvas"></div>
 
-  <div class="panel-footer text-center" >
-    <a ng-show="user._id === profile._id && (offer && offer.status === 'no')" ui-sref="offer" class="btn btn-xs btn-primary">Start hosting travellers</a>
-    <a ng-show="offer && offer.status !== 'no'" ui-sref="search({offer: offerId})" class="btn btn-xs btn-link"><span class="text-muted">Bigger map</span></a>
+  <div class="panel-footer text-center" ng-if="user.public !== false">
+    <a ng-if="user._id === profile._id && (offer && offer.status === 'no')" ui-sref="offer" class="btn btn-xs btn-primary">Start hosting travellers</a>
+    <a ng-if="offer && offer.status !== 'no'" ui-sref="search({offer: offerId})" class="btn btn-xs btn-link"><span class="text-muted">Bigger map</span></a>
   </div>
 
-
-
 </div>
-<!-- /Accommodation -->

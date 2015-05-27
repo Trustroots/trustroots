@@ -3,24 +3,16 @@
 /* This declares to JSHint that 'ga' is a global variable: */
 /*global ga:false */
 
-angular.module('core').controller('HeaderController', ['$scope', '$filter', '$state', 'Authentication',
-  function($scope, $filter, $state, Authentication) {
+angular.module('core').controller('HeaderController', ['$scope', '$filter', '$state', 'Authentication', 'SettingsFactory',
+  function($scope, $filter, $state, Authentication, SettingsFactory) {
 
     $scope.user = Authentication.user;
+    $scope.appSettings = SettingsFactory.get();
     $scope.isCollapsed = false;
     $scope.isHidden = false;
 
     $scope.toggleCollapsibleMenu = function() {
       $scope.isCollapsed = !$scope.isCollapsed;
-    };
-
-    $scope.goHome = function() {
-      if(Authentication.user) {
-        $state.go('search');
-      }
-      else {
-        $state.go('home');
-      }
     };
 
     // Perform actions at page change

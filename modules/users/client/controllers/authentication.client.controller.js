@@ -41,7 +41,7 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$root
         $scope.authentication.user = response;
 
         // Redirect to where we were left off before sign-in page
-        // See public/modules/core/controllers/main.client.controller.js
+        // See modules/core/client/controllers/main.client.controller.js
         if($scope.continue) {
           var stateTo = $rootScope.signinState || 'search',
               stateToParams = $rootScope.signinStateParams || {};

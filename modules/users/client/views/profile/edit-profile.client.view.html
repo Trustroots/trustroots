@@ -68,33 +68,41 @@
 
               <div class="form-group">
                 <h4>
-                  Other networks
-                  <small class="pull-right helper" popover-placement="right" popover-append-to-body="true" popover-trigger="mouseenter" popover="Connecting to these is absolutely optional. Other members in Trustroots will be able to see a link to your other profile and some basic info about you and content you like there. You will be able to use eg. your contact list here in Trustroots. Other networks will then obviously know that you have connected to Trustroots, but we will never send any of your profile data to them.">About the feature</small>
+                  Profiles
+                  <span class="icon-help helper text-muted pull-right" popover-placement="right" popover-append-to-body="true" popover-trigger="mouseenter" popover="Connecting to these is absolutely optional. Other members in Trustroots will be able to see a link to your other profile and some basic info about you and content you like there. You will be able to use eg. your contact list here in Trustroots. Other networks will then obviously know that you have connected to Trustroots, but we will never send any of your profile data to them."></span>
                 </h4>
 
-                <div ng-show="hasConnectedAdditionalSocialAccounts()">
-
-                  <h5>Connected:</h5>
-                  <ul class="icon-ul authentication-social">
+                <div ng-if="hasConnectedAdditionalSocialAccounts()">
+                  <ul class="social-profiles list-unstyled text-capitalize">
                     <li ng-repeat="(providerName, providerData) in user.additionalProvidersData" class="remove-account-container text-capitalize">
-                      <i class="icon-li icon-lg icon-{{providerName}}"></i> {{providerName}}
-                      <small><a class="pull-right cursor-pointer" ng-click="removeUserSocialAccount(providerName)">Disconnect</a></small>
+                      <a ng-click="removeUserSocialAccount(providerName)" class="btn btn-link">
+                        <i class="icon-fw icon-lg icon-{{providerName}}"></i> {{providerName}}
+                        <small>(disconnect)</small>
+                      </a>
                     </li>
                   </ul>
                 </div>
 
-                <h5>Connect to:</h5>
-                <ul class="icon-ul authentication-social">
-                    <li><a href="/auth/facebook" target="_blank" ng-hide="isConnectedSocialAccount('facebook')">
-                      <i class="icon-li icon-lg icon-facebook"></i> Facebook
-                    </a></li>
-                    <li><a href="/auth/twitter" target="_blank" ng-hide="isConnectedSocialAccount('twitter')">
-                      <i class="icon-li icon-lg icon-twitter"></i> Twitter
-                    </a></li>
-                    <li><a href="/auth/github" ng-hide="isConnectedSocialAccount('github')">
-                      <i class="icon-li icon-lg icon-github"></i> GitHub
-                    </a></li>
-                </ul>
+                <div ng-hide="isConnectedSocialAccount('facebook') && isConnectedSocialAccount('twitter') && isConnectedSocialAccount('github')">
+                  <h5>Connect to:</h5>
+                  <ul class="social-profiles list-unstyled">
+                    <li ng-hide="isConnectedSocialAccount('facebook')">
+                      <a href="/auth/facebook" target="_blank" class="btn btn-link">
+                        <i class="icon-fw icon-lg icon-facebook"></i> Facebook
+                      </a>
+                    </li>
+                    <li ng-hide="isConnectedSocialAccount('twitter')">
+                      <a href="/auth/twitter" target="_blank" class="btn btn-link">
+                        <i class="icon-fw icon-lg icon-twitter"></i> Twitter
+                      </a>
+                    </li>
+                    <li ng-hide="isConnectedSocialAccount('github')">
+                      <a href="/auth/github" class="btn btn-link">
+                        <i class="icon-fw icon-lg icon-github"></i> GitHub
+                      </a>
+                    </li>
+                  </ul>
+                </div>
 
               </div>
 
@@ -117,14 +125,14 @@
               </div>
 
             </div>
-            <div class="col-md-6 text-right">
-              <a ui-sref="profile({username: user.username})" type="cancel" class="btn btn-link">Cancel</a>
-              <button type="submit" class="btn btn-primary">Save profile</button>
+            <div class="col-md-6 profile-action-buttons">
+              <a ui-sref="profile({username: user.username})" type="cancel" class="btn btn-link profile-editor-cancel">Cancel</a>
+              <button type="submit" class="btn btn-primary profile-editor-save">Save profile</button>
             </div>
           </div>
 
           <!-- Profile tabs -->
-          <div class="row">
+          <div class="row hidden-xs">
             <div class="col-xs-12"  id="profile-tabs">
               <ul class="nav nav nav-pills">
                 <li class="disabled"><a>Overview</a></li>
@@ -155,7 +163,7 @@
               </div>
 
             </div><!-- /.col- -->
-            <div class="col-md-6">
+            <div class="col-md-6 hidden-xs">
 
               <!-- Accommodation -->
               <div class="panel panel-default panel-disabled">

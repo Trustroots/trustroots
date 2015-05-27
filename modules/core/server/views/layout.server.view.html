@@ -76,7 +76,7 @@
   </div>
 
   {% block footer %}
-    <footer ng-include="'/modules/core/views/footer.client.view.html?c={{appSettings.commit}}'" id="tr-footer" role="contentinfo" class="hidden-print" ng-class="{ 'footer-transparent footer-sticky' : isTransparent }" ng-hide="isHidden" ng-controller="FooterController"></footer>
+    <footer ng-include="'/modules/core/views/footer.client.view.html?c={{appSettings.commit}}'" id="tr-footer" role="contentinfo" class="hidden-print hidden-xs" ng-class="{ 'footer-transparent footer-sticky' : isTransparent }" ng-hide="isHidden" ng-controller="FooterController"></footer>
   {% endblock %}
 
   {# Embedding The User and Settings Objects #}

@@ -3,7 +3,7 @@
 angular.module('users').controller('ProfileController', ['$scope', '$stateParams', '$state', '$location', '$log', '$modal', 'Languages', 'Users', 'UserProfiles', 'Authentication', '$timeout', 'messageCenterService', 'SettingsFactory',
   function($scope, $stateParams, $state, $location, $log, $modal, Languages, Users, UserProfiles, Authentication, $timeout, messageCenterService, SettingsFactory) {
 
-    var settings = SettingsFactory.get();
+    var appSettings = SettingsFactory.get();
 
     $scope.user = Authentication.user; // Currently logged in user
     $scope.profile = false; // Profile to show
@@ -13,7 +13,7 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
     if($stateParams.updated) {
       // Timeout is here due Angular overwriting message at $state change otherwise
       $timeout(function(){
-        messageCenterService.add('success', 'Profile updated', { timeout: settings.flashTimeout });
+        messageCenterService.add('success', 'Profile updated', { timeout: appSettings.flashTimeout });
       });
     }
 
@@ -76,15 +76,29 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
 
     $scope.tabs = [
       {
+        path: 'about',
+        title: 'About',
+        content: '/modules/users/views/profile/view-profile-about.client.view.html?c=' + appSettings.commit,
+        active: $stateParams.tab && $stateParams.tab === 'about'
+      },
+      {
         path: 'overview',
         title: 'Overview',
-        content: '/modules/users/views/profile/tab-profile-overview.client.view.html',
-        active: $stateParams.tab && $stateParams.tab === 'overview'
+        content: '/modules/users/views/profile/view-profile-sidebar.client.view.html?c=' + appSettings.commit,
+        active: $stateParams.tab && $stateParams.tab === 'overview',
+        onlySmallScreen: true
+      },
+      {
+        path: 'accommodation',
+        title: 'Accommodation',
+        content: '/modules/offers/views/view-offers.client.view.html?c=' + appSettings.commit,
+        active: $stateParams.tab && $stateParams.tab === 'accommodation',
+        onlySmallScreen: true
       },
       {
         path: 'contacts',
         title: 'Contacts',
-        content: '/modules/contacts/views/contacts.client.view.html',
+        content: '/modules/contacts/views/contacts.client.view.html?c=' + appSettings.commit,
         active: $stateParams.tab && $stateParams.tab === 'contacts'
       }
     ];

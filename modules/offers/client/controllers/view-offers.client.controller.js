@@ -14,7 +14,7 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
       fillColor: '#b1b1b1',
       fillOpacity: 0.5,
       latlngs: $scope.hostLocation,
-      radius: 500,
+      radius: 500, // Meters
       type: 'circle',
       layer: 'selectedPath',
       clickable: false

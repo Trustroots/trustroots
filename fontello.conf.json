@@ -145,6 +145,12 @@
       "src": "fontawesome"
     },
     {
+      "uid": "ebffa4e734c8379ffee4fbfe49264d94",
+      "css": "lifebuoy",
+      "code": 59400,
+      "src": "fontawesome"
+    },
+    {
       "uid": "4743b088aa95d6f3b6b990e770d3b647",
       "css": "facebook",
       "code": 59405,
@@ -190,6 +196,12 @@
       "uid": "85017ab6ca074831a8de771b40e9640c",
       "css": "camera",
       "code": 59427,
+      "src": "entypo"
+    },
+    {
+      "uid": "de9a631a7d18106aea1c89ba51b1990a",
+      "css": "help",
+      "code": 59423,
       "src": "entypo"
     },
     {

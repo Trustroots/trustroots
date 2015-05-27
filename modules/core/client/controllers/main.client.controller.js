@@ -13,6 +13,16 @@ angular.module('core').controller('MainController', ['$scope', '$rootScope', '$w
     });
     */
 
+
+    $scope.goHome = function() {
+      if(Authentication.user) {
+        $state.go('search');
+      }
+      else {
+        $state.go('home');
+      }
+    };
+
     // This is used as a cache buster with ng-include
     // Includes a hash of latest git commit
     $scope.cacheBust = $window.settings.commit || '';

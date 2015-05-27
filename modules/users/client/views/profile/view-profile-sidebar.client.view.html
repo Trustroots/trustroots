@@ -1,0 +1,49 @@
+<div class="panel panel-default" id="profile-sidebar">
+  <div tr-avatar data-user="profile" data-size="256" data-link="false" class="hidden-xs"></div>
+  <div class="panel-body">
+
+    <div class="profile-sidebar-section" ng-if="profile.birthdate || profile.gender">
+      <span ng-if="profile.birthdate" ng-bind="profile.birthdate | ageyears"></span><span ng-if="profile.birthdate && profile.gender">, </span>
+      <span ng-if="profile.gender" ng-class="{ 'text-capitalize': !profile.birthdate }">{{profile.gender}}.</span>
+    </div>
+
+    <div class="profile-sidebar-section">
+      Member since <time ng-bind="profile.created | date:'mediumDate'"></time>
+    </div>
+
+    <!--
+    <div class="profile-sidebar-section">
+      <h4>Last seen</h4>
+      <time>time</time>
+    </div>
+    -->
+
+    <div class="profile-sidebar-section" ng-if="profile.locationLiving">
+      <i class="icon-fw icon-building text-muted"></i> Lives in <a ui-sref="search({location:profile.locationLiving})">{{profile.locationLiving}}</a>
+    </div>
+
+    <div class="profile-sidebar-section" ng-if="profile.locationFrom">
+      <i class="icon-fw icon-home text-muted"></i> From <a ui-sref="search({location:profile.locationFrom})">{{profile.locationFrom}}</a>
+    </div>
+
+    <div class="profile-sidebar-section" ng-if="profile.languages.length">
+      <h4>Languages</h4>
+      <ul class="list-unstyled">
+        <li ng-repeat="code in profile.languages">{{languages[code]}}</li>
+      </ul>
+    </div>
+
+    <div class="profile-sidebar-section" ng-if="hasConnectedAdditionalSocialAccounts()">
+      <h4>Profiles</h4>
+      <ul class="social-profiles list-unstyled text-capitalize">
+        <li ng-repeat="(providerName, providerData) in profile.additionalProvidersData">
+          <a ng-href="{{socialAccountLink(providerName, providerData)}}" class="btn btn-link">
+            <i class="icon-fw icon-lg icon-{{providerName}}"></i>
+            {{providerName}}
+          </a>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+</div>

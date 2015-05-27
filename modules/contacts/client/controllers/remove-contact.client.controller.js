@@ -6,7 +6,7 @@ angular.module('contacts').controller('RemoveContactController', ['$scope', '$st
     /**
      * Open remove contact -modal
      */
-    $scope.RemoveContactModal = function (contactId, $event) {
+    $scope.removeContactModal = function (contactId, $event) {
       if($event) $event.preventDefault();
 
       // If user is not signed in then redirect to sign in form

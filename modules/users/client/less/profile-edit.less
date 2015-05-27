@@ -27,14 +27,14 @@
       background: fade(@brand-primary, 10%);
     }
     &.medium-editor-placeholder {
+      display: inline;
+      &:after {
+        font-style: normal;
         display: inline;
-        &:after {
-          font-style: normal;
-          display: inline;
-          color: @input-color-placeholder;
-          position: inherit;
-          outline: none;
-        }
+        color: @input-color-placeholder;
+        position: inherit;
+        outline: none;
+      }
     }
   }
   .profile-tagline {
@@ -151,10 +151,4 @@
     background-position: 50% 50%;
     background-color: transparent;
   }
-}
-
-/* Location edit -modal */
-.edit-map {
-  width: 100%;
-  min-height: 400px;
 }

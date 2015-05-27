@@ -20,8 +20,8 @@
       <form ng-submit="updateUserEmail()" autocomplete="off">
         <fieldset>
           <div class="form-group">
-            <label for="email" class="sr-only">Email</label>
-            <input type="email" id="email" name="email" class="form-control" ng-model="user.email" placeholder="Email">
+            <label for="email" class="sr-only">Email (required)</label>
+            <input type="email" id="email" name="email" class="form-control" ng-model="user.email" placeholder="Email (required)">
             <p class="help-block" ng-show="user.emailTemporary && !emailSuccess">Please check your inbox for "{{user.emailTemporary}}". We have sent a confirmation message to this email address with further instructions. <a ng-click="resendUserEmailConfirm()" class="cursor-pointer">Resend.</a></p>
           </div>
           <div class="form-group">

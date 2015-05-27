@@ -1,8 +1,9 @@
 'use strict';
 
-angular.module('core').controller('FooterController', ['$scope', 'Authentication',
-  function($scope, Authentication) {
+angular.module('core').controller('FooterController', ['$scope', 'SettingsFactory',
+  function($scope, SettingsFactory) {
 
+    $scope.appSettings = SettingsFactory.get();
     $scope.isTransparent = false;
     $scope.isHidden = false;
     $scope.photo_credits = [];

@@ -26,7 +26,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       fillColor: '#b1b1b1',
       fillOpacity: 0.5,
       latlngs: defaultLocation,
-      radius: 500,
+      radius: 500, // Meters
       type: 'circle',
       layer: 'selectedOffers',
       clickable: false
