@@ -42,7 +42,7 @@
     left: -9999px;
     z-index: 1010;
     width: 100%;
-    border: 1px solid #aaa;
+    border: 1px solid @input-border;
     border-top: 0;
     background: #fff;
     box-shadow: 0 4px 5px rgba(0, 0, 0, .15);
@@ -54,7 +54,7 @@
     cursor: pointer;
   }
   .search-choice, .chosen-single {
-    .group-name{
+    .group-name {
       margin-right: 4px;
       overflow: hidden;
       white-space: nowrap;
@@ -79,12 +79,12 @@
     overflow: hidden;
     padding: 0 0 0 8px;
     height: 25px;
-    border: 1px solid #aaa;
+    border: 1px solid @input-border;
     border-radius: 5px;
     background-color: #fff;
     background-clip: padding-box;
     box-shadow: 0 0 3px #fff inset, 0 1px 1px rgba(0, 0, 0, .1);
-    color: #444;
+    color: @input-color;
     text-decoration: none;
     white-space: nowrap;
     line-height: 24px;
@@ -144,7 +144,7 @@
       width: 100%;
       height: auto;
       outline: 0;
-      border: 1px solid #aaa;
+      border: 1px solid @input-border;
       background: #fff url(@chosen-sprite) no-repeat 100% -20px;
       font-size: 1em;
       font-family: sans-serif;
@@ -166,7 +166,7 @@
 
 /* @group Results */
 .chosen-container .chosen-results {
-  color: #444;
+  color: @input-color;
   position: relative;
   overflow-x: hidden;
   overflow-y: auto;
@@ -217,7 +217,7 @@
 /* @end */
 
 /* @group Multi Chosen */
-.chosen-container-multi{
+.chosen-container-multi {
   .chosen-choices {
     position: relative;
     overflow: hidden;
@@ -226,7 +226,8 @@
     width: 100%;
     height: auto !important;
     height: 1%;
-    border: 1px solid #aaa;
+    border: 1px solid @input-border;
+    border-radius: @input-border-radius;
     background-color: #fff;
     cursor: text;
   }
@@ -256,7 +257,7 @@
       position: relative;
       margin: 3px 5px 3px 0;
       padding: 3px 20px 3px 5px;
-      border: 1px solid darken(#eee, 5%);
+      border: 0;
       max-width: 100%;
       border-radius: 3px;
       background-color: #eee;
@@ -285,7 +286,6 @@
     }
     &.search-choice-disabled {
       padding-right: 5px;
-      border: 1px solid #ccc;
       background-color: #e4e4e4;
       color: #666;
     }
@@ -312,12 +312,12 @@
 /* @todo Use .form-control-focus(); here instead? */
 .chosen-container-active{
   .chosen-single {
-    border: 1px solid @brand-primary;
+    border: 1px solid @input-border-focus;
     box-shadow: 0 0 5px rgba(0, 0, 0, .3);
   }
   &.chosen-with-drop{
     .chosen-single {
-      border: 1px solid #aaa;
+      border: 1px solid @input-border;
       -moz-border-radius-bottomright: 0;
       border-bottom-right-radius: 0;
       -moz-border-radius-bottomleft: 0;
@@ -333,10 +333,9 @@
     }
   }
   .chosen-choices {
-    border: 1px solid @brand-primary;
-    box-shadow: 0 0 5px rgba(0, 0, 0, .3);
+    border: 1px solid @input-border-focus;
     li.search-field input[type="text"] {
-      color: #222 !important;
+      color: @input-color !important;
     }
   }
 }
