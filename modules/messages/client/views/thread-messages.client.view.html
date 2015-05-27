@@ -18,9 +18,7 @@
              offset="50%"
              up="scroll.up"
              down="scroll.down"
-             ng-class="{ 'message-unread': !messageRead(message, waypoints.scroll.up, waypoints.scroll.down),
-                         'message-pushed' : message.pushed
-                       }">
+             ng-class="{ 'message-unread': !messageRead(message, waypoints.scroll.up, waypoints.scroll.down) }">
 
           <!-- Pagination -->
           <div class="pagination text-center">
@@ -62,22 +60,19 @@
             Conversation started {{ message.created | date:'mediumDate' }}
           </div>
 
-
           <div class="col-xs-12 col-sm-11">
 
             <div class="message-meta">
-
-              <div class="message-meta">
-                <span ng-show="user._id === message.userFrom._id">You</span>
-                <a ui-sref="profile({ username: message.userFrom.username })" ng-bind="message.userFrom.displayName" ng-show="user._id !== message.userFrom._id"></a>
-                — <time am-time-ago="message.created" tooltip="{{message.created | date:'medium'}}" tooltip-placement="bottom"></time>
-              </div>
-
+              <span ng-if="user._id === message.userFrom._id">You</span>
+              <a ng-if="user._id !== message.userFrom._id" ui-sref="profile({ username: message.userFrom.username })" ng-bind="message.userFrom.displayName"></a>
+              — <time am-time-ago="message.created" tooltip="{{message.created | date:'medium'}}" tooltip-placement="bottom"></time>
             </div>
 
-            <div class="panel panel-default">
-              <div class="panel-body" ng-bind-html="message.content | trustedHtml" zum-waypoint="wp" offset="15%" up="nex">{{}}</div>
+            <div class="message-content panel panel-default" zum-waypoint="wp" offset="15%" up="nex">
+              <div tr-avatar data-user="message.userFrom" data-size="24"></div>
+              <div class="panel-body" ng-bind-html="message.content | trustedHtml">{{}}</div>
             </div>
+
           </div>
 
           <div class="col-sm-1 hidden-xs message-author">

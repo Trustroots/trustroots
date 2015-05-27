@@ -10,6 +10,10 @@
   padding-top: @grid-gutter-width;
   padding-right: (@grid-gutter-width / 2); // Leave some space for the scrollbar
   overflow: auto;
+  @media (max-width: @screen-xs-max) {
+    padding-right: 0;
+  }
+
   .content-empty {
     position: absolute;
     bottom: 0;
@@ -17,11 +21,25 @@
     right: 0;
   }
 
+  // Message panel
+  .panel.message-content {
+    .avatar {
+      display: none;
+    }
+    @media (max-width: @screen-xs-max) {
+      .panel-body {
+        padding: 8px 15px 0 40px;
+      }
+      // Avatar next to message content at small screen-xs-max
+      .avatar {
+        display: inline-block;
+        float: left;
+        margin: 5px 0 0 5px;
+      }
+    }
+  }
 
-  /**
-   * Scrollbars
-   */
-  // For Chrome/Safari
+  // Scrollbars for Chrome/Safari
   &::-webkit-scrollbar {
     width: 15px;
     height: 20px;
@@ -45,7 +63,7 @@
   &::-webkit-scrollbar-track {
     background: transparent;
   }
-  // For IE
+  // Scrollbars for IE
   // @todo: test
   //scrollbar-face-color: #eee;
   //scrollbar-track-color: transparent;
@@ -63,14 +81,6 @@
       .panel-triangle-right();
     }
   }
-  // Message came via SocketIO
-  /*
-  &.message-pushed {
-    .panel {
-      background: lighten(@brand-primary, 50%);
-    }
-  }
-  */
   &.message-unread {
     .panel {
       border-left-color: @brand-primary;
@@ -114,40 +124,6 @@
     .link-badge {
       margin-bottom: 0;
     }
-    /*
-    .message-request {
-      clear: both;
-      overflow: hidden;
-      margin: @padding-small-vertical 0 0 0;
-      background: @gray-lighter;
-      padding: @padding-small-vertical @padding-small-horizontal;
-      font-size: @font-size-small;
-      line-height: @font-size-small;
-      @media (max-width: @screen-xs-max) {
-        line-height: @line-height-base;
-      }
-      .message-request-status {
-        float: left;
-        font-weight: bold;
-        @media (max-width: @screen-xs-max) {
-          font-size: @font-size-base;
-        }
-      }
-      .message-request-meta {
-        float: right;
-        text-align: right;
-        &.visible-sm {
-          font-weight: bold;
-        }
-        @media (max-width: @screen-xs-max) {
-          display: block;
-          clear: both;
-          float: none;
-          text-align: left;
-        }
-      }
-    }
-    */
   }
 }
 
