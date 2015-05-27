@@ -9,7 +9,6 @@
             "url": "https://www.trustroots.org/developers/"
         }
     },
-    "host": "localhost:3000",
     "schemes": [
         "http",
         "https"
