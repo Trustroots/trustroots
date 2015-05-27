@@ -1,6 +1,6 @@
-<section class="container container-spacer" data-ng-controller="AddContactController">
+<section class="container container-spacer" ng-controller="AddContactController">
 
-  <form name="contactForm" data-ng-submit="addContact()" novalidate autocomplete="off">
+  <form name="contactForm" ng-submit="addContact()" novalidate autocomplete="off">
 
     <div class="row">
 
@@ -23,10 +23,10 @@
               </div>
               <div class="col-xs-5 text-center">
                 <!-- Avatar while loading -->
-                <div tr-avatar data-source="none" data-size="128" class="center-block" ng-hide="friend.$resolved"></div>
+                <div tr-avatar data-source="none" data-size="128" class="center-block" ng-if="!friend.$resolved"></div>
 
                 <!-- Avatar after loaded -->
-                <div tr-avatar data-user="friend" data-size="128" class="center-block" ng-show="friend.$resolved && friend"></div>
+                <div tr-avatar data-user="friend" data-size="128" class="center-block" ng-if="friend.$resolved && friend"></div>
 
                 <h4 class="contacts-name" ng-bind="friend.displayName"></h4>
               </div>
@@ -44,15 +44,15 @@
         </div>
 
         <!-- Notifications -->
-        <div data-ng-show="success" class="alert alert-success">
-          <h4 data-ng-bind="success"></h4>
+        <div ng-if="success" class="alert alert-success">
+          <h4 ng-bind="success"></h4>
           <p>
             <strong><a ui-sref="profile({username: user.username})">{{ user.displayName }}</a></strong> &
             <strong><a ui-sref="profile({username: friend.username})">{{ friend.displayName }}</a></strong>.
           </p>
         </div>
-        <div data-ng-show="error" class="alert alert-danger text-center">
-          <strong data-ng-bind="error"></strong>
+        <div ng-if="error" class="alert alert-danger text-center">
+          <strong ng-bind="error"></strong>
         </div>
         <!-- /Notifications -->
 

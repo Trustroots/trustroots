@@ -1,27 +1,23 @@
-<section class="container container-spacer" data-ng-controller="MessagesInboxController">
+<section class="container container-spacer" ng-controller="MessagesInboxController">
 
   <div class="row">
     <div class="col-xs-12">
 
       <!-- Other threads -->
-      <h4>Conversations
-        <!-- Unread message count:
-        <small class="text-muted">(2)</small>
-        -->
-      </h4>
+      <h4>Conversations</h4>
 
       <div class="panel panel-default panel-threadlist panel-threadlist-threads panel-xs-no_margin">
 
         <!-- Threads -->
-        <table class="table table-condensed table-hover table-threadlist table-threadlist-threads" data-ng-if="threads.length">
+        <table class="table table-condensed table-hover table-threadlist table-threadlist-threads" ng-if="threads.length">
           <tbody>
 
-            <tr class="thread" data-ng-class="{ 'thread-unread': !thread.read }" data-ng-repeat="thread in threads | orderBy:'updated':true" data-ng-click="openThread(thread)">
+            <tr class="thread" ng-class="{ 'thread-unread': !thread.read }" ng-repeat="thread in threads | orderBy:'updated':true" ng-click="openThread(thread)">
               <td class="author col-xs-3 col-md-2">
-                <div tr-avatar data-user="otherParticipant(thread)" data-size="36" data-link="false" class="pull-left hidden-xs"></div> <span data-ng-bind="otherParticipant(thread, 'displayName')"></span>
+                <div tr-avatar data-user="otherParticipant(thread)" data-size="36" data-link="false" class="pull-left hidden-xs"></div> <span ng-bind="otherParticipant(thread, 'displayName')"></span>
               </td>
               <td class="summary">
-                <span data-ng-bind-html="thread.message.excerpt"></span>
+                <span ng-bind-html="thread.message.excerpt"></span>
                 <small class="indicators pull-right">
                   <i class="icon-reply icon-fw text-muted" ng-show="thread.userFrom._id === user._id" tooltip="You replied" tooltip-placement="right"></i>
                 </small>
@@ -37,7 +33,7 @@
               </div>
               <!-- Retry button -->
                 <button ng-click="moreMessages(true)" class="btn btn-warning btn-md">
-                  <span class="glyphicon glyphicon-flash"></span>
+                  <span class="icon-refresh"></span>
                   Retry
                 </button>
             </td>
@@ -49,7 +45,7 @@
         <!-- /Threads -->
 
         <!-- No threads -->
-        <div class="content-empty" data-ng-if="messageHandler.resolved && !threads.length">
+        <div class="content-empty" ng-if="messageHandler.resolved && !threads.length">
           <i class="icon-3x icon-messages-alt"></i>
           <h4>No conversations yet.</h4>
         </div>

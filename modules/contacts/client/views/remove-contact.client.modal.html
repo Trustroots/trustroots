@@ -1,4 +1,4 @@
-<form data-ng-controller="RemoveContactController" class="form-horizontal" data-ng-submit="create()" novalidate>
+<form ng-controller="RemoveContactController" class="form-horizontal" ng-submit="create()" novalidate>
 
   <div class="modal-content">
     <div class="modal-header">
@@ -10,8 +10,8 @@
 
     <div class="modal-body">
 
-      <div class="alert alert-danger" data-ng-show="error">
-        <strong data-ng-bind="error"></strong>
+      <div class="alert alert-danger" ng-if="error">
+        <strong ng-bind="error"></strong>
       </div>
 
       <div class="row">
@@ -29,10 +29,10 @@
         </div>
         <div class="col-xs-5 text-center">
           <!-- Avatar while loading -->
-          <div tr-avatar data-source="none" data-size="128" class="center-block" ng-hide="contact && contact.$resolved"></div>
+          <div tr-avatar data-source="none" data-size="128" class="center-block" ng-if="!contact || !contact.$resolved"></div>
 
           <!-- Avatar after loaded -->
-          <div tr-avatar data-user="contact.users[1]" data-size="128" class="center-block" ng-show="contact && contact.$resolved"></div>
+          <div tr-avatar data-user="contact.users[1]" data-size="128" class="center-block" ng-if="contact && contact.$resolved"></div>
 
           <h4 class="contacts-name" ng-bind="contact.users[1].displayName"></h4>
 

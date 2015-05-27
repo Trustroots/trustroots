@@ -1,5 +1,5 @@
-<section class="container container-spacer" data-ng-controller="ConfirmEmailController">
-  <form name="confirmForm" data-ng-submit="confirmEmail()" class="form-horizontal" novalidate autocomplete="off">
+<section class="container container-spacer" ng-controller="ConfirmEmailController">
+  <form name="confirmForm" ng-submit="confirmEmail()" class="form-horizontal" novalidate autocomplete="off">
     <fieldset>
 
       <div class="row">
@@ -21,11 +21,11 @@
 
             <button type="submit" class="btn btn-lg btn-primary" ng-disabled="isLoading || error">Confirm</button>
           </div>
-          <div data-ng-show="error" class="alert alert-danger text-center" role="alert">
-            <strong data-ng-bind="error"></strong>
+          <div ng-show="error" class="alert alert-danger text-center" role="alert">
+            <strong ng-bind="error"></strong>
           </div>
-          <div data-ng-show="success" class="alert alert-success text-center" role="alert">
-            <strong data-ng-bind="success"></strong>
+          <div ng-show="success" class="alert alert-success text-center" role="alert">
+            <strong ng-bind="success"></strong>
           </div>
 
         </div><!-- /.col -->

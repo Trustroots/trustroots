@@ -1,4 +1,4 @@
-<section class="container container-spacer" data-ng-controller="StatisticsController">
+<section class="container container-spacer" ng-controller="StatisticsController">
 
 <section class="container board board-bokehblue container-fullscreen">
   <div class="row">
@@ -8,11 +8,11 @@
     </div>
     <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 statistics">
 
-      <div data-ng-if="!statistics.$resolved" class="content-wait">
+      <div ng-if="!statistics.$resolved" class="content-wait">
         <small>Wait a moment...</small>
       </div>
 
-      <section ng-show="statistics.$resolved">
+      <section ng-if="statistics.$resolved">
         <h3 class="statistics-count">{{statistics.total}} members in total.</h3>
 
         <h3 class="statistics-count">{{statistics.hosting}} ({{ (statistics.hosting/statistics.total)*100 | number:1 }}%) are hosting.</h3>
@@ -26,7 +26,7 @@
 
       <p>
         <br>
-        <a ui-sref="home" class="btn btn-inverse">Home</a>
+        <a ng-click="goHome()" class="btn btn-inverse">Home</a>
         <br><br>
         <br><br>
         <a class="statistics-commit" ng-href="https://github.com/Trustroots/trustroots/commit/{{statistics.commit}}">Currently deployed code at Github</a>

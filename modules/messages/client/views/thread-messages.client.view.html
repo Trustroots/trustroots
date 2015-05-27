@@ -84,9 +84,9 @@
 
         <!-- No messages -->
         <div class="content-empty" ng-if="messageHandler.resolved && !messages.length">
-            <i class="icon-3x icon-messages-alt"></i>
-            <h4>You haven't been talking yet.</h4>
-            <p>Start conversation below.</p>
+          <i class="icon-3x icon-messages-alt"></i>
+          <h4>You haven't been talking yet.</h4>
+          <p>Start conversation below.</p>
         </div><!-- /.row -->
 
       </threads>
@@ -98,14 +98,7 @@
           <div class="col-xs-12">
 
             <div class="panel panel-default">
-              <!--
-              <div class="panel-body hidden-xs">
-                <h4 class="message-reply-title" ng-if="messages.$resolved && !messages.length">Write a message...</h4>
-                <h4 class="message-reply-title" ng-if="messages.$resolved && messages.length">Write reply...</h4>
-              </div>
-              -->
               <div id="message-reply-content" ng-model="content" medium-editor options='{"placeholder": "Write a message", "buttons": ["bold", "italic", "underline", "anchor", "quote", "unorderedlist"]}'></div>
-
             </div><!-- /.panel -->
           </div>
 

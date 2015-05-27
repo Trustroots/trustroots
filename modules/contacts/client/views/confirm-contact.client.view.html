@@ -1,6 +1,6 @@
-<section class="container container-spacer" data-ng-controller="ConfirmContactController" data-ng-init="findContact()">
+<section class="container container-spacer" ng-controller="ConfirmContactController" ng-init="findContact()">
 
-  <form name="ConfirmContactForm" data-ng-submit="confirmContact()" novalidate autocomplete="off">
+  <form name="ConfirmContactForm" ng-submit="confirmContact()" novalidate autocomplete="off">
 
     <div class="row">
 
@@ -29,15 +29,15 @@
         </div>
 
         <!-- Notifications -->
-        <div data-ng-show="success" class="alert alert-success">
-          <h4 data-ng-bind="success"></h4>
+        <div ng-if="success" class="alert alert-success">
+          <h4 ng-bind="success"></h4>
           <p>
             <strong><a ui-sref="profile({username: contact.users[0].username})">{{ contact.users[0].displayName }}</a></strong> &
             <strong><a ui-sref="profile({username: contact.users[1].username})">{{ contact.users[1].displayName }}</a></strong>.
           </p>
         </div>
-        <div data-ng-show="error" class="alert alert-danger text-center">
-          <strong data-ng-bind="error"></strong>
+        <div ng-if="error" class="alert alert-danger text-center">
+          <strong ng-bind="error"></strong>
         </div>
         <!-- /Notifications -->
 

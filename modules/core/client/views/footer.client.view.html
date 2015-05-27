@@ -7,11 +7,11 @@
       </nav>
     </div>
     <div class="col-sm-pull-9 col-sm-3">
-      <span data-ng-show="photo_credits.length > 0" class="photo-credits">
+      <span ng-show="photo_credits.length > 0" class="photo-credits">
         <span ng-show="photo_credits.length === 1">Photo by</span>
         <span ng-show="photo_credits.length > 1">Photos by</span>
         <span ng-repeat="credit in photo_credits">
-          <a ng-href="{{credit.url}}">{{credit.name}}</a> <span ng-show="credit.license">(<a ng-href="{{credit.license_url}}" data-ng-bind-html="credit.license" tooltip="License" rel="license"></a>)</span><span ng-show="($first && photo_credits.length > 1) || $middle">, </span></span>
+          <a ng-href="{{credit.url}}">{{credit.name}}</a> <span ng-show="credit.license">(<a ng-href="{{credit.license_url}}" ng-bind-html="credit.license" tooltip="License" rel="license"></a>)</span><span ng-show="($first && photo_credits.length > 1) || $middle">, </span></span>
         </span>
       </span>
     </div>

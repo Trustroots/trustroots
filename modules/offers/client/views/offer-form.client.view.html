@@ -1,12 +1,12 @@
-<section class="container container-spacer offer-add" data-ng-controller="AddOfferController" data-ng-init="findOffer()">
+<section class="container container-spacer offer-add" ng-controller="AddOfferController" ng-init="findOffer()">
 
-  <div class="row text-center" ng-show="user.public === false">
+  <div class="row text-center" ng-if="user.public === false">
     <em class="lead">Sorry, you need to first activate your profile before you can start hosting.</em>
     <br><br>
     <a ui-sref="profile-settings">Account settings</a>
   </div>
 
-  <form name="offerForm" data-ng-submit="addOffer()" novalidate autocomplete="off" ng-show="user.public === true">
+  <form name="offerForm" ng-submit="addOffer()" novalidate autocomplete="off" ng-if="user.public === true">
 
   <div class="row">
 
@@ -39,7 +39,7 @@
         </div>
       </div>
 
-      <div class="panel panel-default" ng-show="offer.status === 'no'">
+      <div class="panel panel-default" ng-if="offer.status === 'no'">
         <div class="panel-heading">
           <h4>Tell others why you can't host... <small class="text-muted pull-right">(optional)</small></h4>
         </div>
@@ -72,7 +72,7 @@
             <div class="form-group offer-map-location-search">
               <div class="input-group">
                 <label for="search-query" class="sr-only">Search for places on the map</label>
-                <input type="text" id="search-query" class="form-control" placeholder="Search for places on the map" ng-disabled="searchQuerySearching" data-ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" />
+                <input type="text" id="search-query" class="form-control" placeholder="Search for places on the map" ng-disabled="searchQuerySearching" ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" />
                 <span class="input-group-btn">
                   <button type="button" class="btn btn-inverse" ng-click="searchAddress()" ng-disabled="searchQuerySearching">
                     <i class="icon-search" ng-show="searchQuerySearching === false"></i>
@@ -93,7 +93,7 @@
       </div>
       <!-- /Location -->
 
-      <p class="text-center" ng-show="offer">
+      <p class="text-center" ng-if="offer">
         <button type="submit" class="btn btn-lg btn-primary" ng-disabled="isLoading">
           <span ng-show="offer.status == 'yes' || offer.status == 'maybe'">Start hosting</span>
           <span ng-show="offer.status == 'no'">Stop hosting</span>

@@ -1,6 +1,6 @@
 <section class="container container-spacer" id="profile-editor" ng-controller="EditProfileController">
 
-  <div ng-show="error" class="text-center text-danger">
+  <div ng-if="error" class="text-center text-danger">
     <strong ng-bind="error"></strong>
   </div>
 

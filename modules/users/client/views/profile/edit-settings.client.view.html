@@ -22,7 +22,7 @@
           <div class="form-group">
             <label for="email" class="sr-only">Email (required)</label>
             <input type="email" id="email" name="email" class="form-control" ng-model="user.email" placeholder="Email (required)">
-            <p class="help-block" ng-show="user.emailTemporary && !emailSuccess">Please check your inbox for "{{user.emailTemporary}}". We have sent a confirmation message to this email address with further instructions. <a ng-click="resendUserEmailConfirm()" class="cursor-pointer">Resend.</a></p>
+            <p class="help-block" ng-if="user.emailTemporary && !emailSuccess">Please check your inbox for "{{user.emailTemporary}}". We have sent a confirmation message to this email address with further instructions. <a ng-click="resendUserEmailConfirm()" class="cursor-pointer">Resend.</a></p>
           </div>
           <div class="form-group">
             <button type="submit" class="btn btn-large btn-primary">Update email</button>
@@ -71,7 +71,7 @@
   <br><br>
 
   <!-- Password -->
-  <div class="row" ng-show="user.provider === 'local'">
+  <div class="row">
 
     <div class="col-xs-offset-2 col-xs-10 col-sm-offset-0 col-sm-4 col-md-3 col-md-3">
       <h4>Change your password</h4>
