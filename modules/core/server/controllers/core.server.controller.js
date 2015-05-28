@@ -10,11 +10,20 @@ exports.renderIndex = function(req, res) {
 };
 
 /**
- * Render the server error page
+ * Render the server error response
+ * Performs content-negotiation on the Accept HTTP header
  */
 exports.renderServerError = function(req, res) {
-  res.status(500).render('modules/core/server/views/500', {
-    error: 'Oops! Something went wrong...'
+  res.status(500).format({
+    'text/html': function(){
+      res.render('modules/core/server/views/500');
+    },
+    'application/json': function(){
+      res.json({ message: 'Oops! Something went wrong...' });
+    },
+    'default': function(){
+      res.send('Oops! Something went wrong...');
+    }
   });
 };
 
@@ -28,10 +37,10 @@ exports.renderNotFound = function(req, res) {
       res.render('modules/core/server/views/404');
     },
     'application/json': function(){
-      res.json({ error: 'Path not found' });
+      res.json({ message: 'Not found.' });
     },
     'default': function(){
-      res.send('Path not found');
+      res.send('Not found.');
     }
   });
 };
