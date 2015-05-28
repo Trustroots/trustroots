@@ -163,6 +163,44 @@
                 }
             }
         },
+        "/users/avatar": {
+            "post": {
+                "summary": "Upload profile image.",
+                "description": "Upload profile image for currently authenticated user.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "parameters": [
+                    {
+                        "name": "file",
+                        "in": "formData",
+                        "description": "File object.",
+                        "required": true,
+                        "type": "file"
+                    }
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success. Returns image object."
+                    },
+                    "403": {
+                        "description": "Not allowed."
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity. Image is unable to be processed."
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
         "/messages": {
             "get": {
                 "summary": "Inbox.",
