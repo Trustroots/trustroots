@@ -7,7 +7,8 @@ angular.module('search').config(['$stateProvider',
     $stateProvider.
     state('search', {
       url: '/search?location?offer',
-      templateUrl: 'modules/search/views/search.client.view.html'
+      templateUrl: 'modules/search/views/search.client.view.html',
+      requiresAuth: true
     });
   }
 ]);

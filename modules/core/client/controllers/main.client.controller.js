@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('core').controller('MainController', ['$scope', '$rootScope', '$window', '$state', '$location', 'Authentication', 'messageCenterService', //'Socket',
-  function($scope, $rootScope, $window, $state, $location, Authentication, messageCenterService) { //Socket
+angular.module('core').controller('MainController', ['$scope', '$rootScope', '$window', '$state', '$location', 'Authentication', 'messageCenterService', 'SettingsFactory', //'Socket',
+  function($scope, $rootScope, $window, $state, $location, Authentication, messageCenterService, SettingsFactory) { //Socket
 
     /*
     Socket.on('reconnect', function () {
@@ -13,6 +13,11 @@ angular.module('core').controller('MainController', ['$scope', '$rootScope', '$w
     });
     */
 
+    $scope.appSettings = SettingsFactory.get();
+
+    // This is used as a cache buster with ng-include
+    // Includes a hash of latest git commit
+    $scope.cacheBust = $scope.appSettings.commit || '';
 
     $scope.goHome = function() {
       if(Authentication.user) {
@@ -23,31 +28,11 @@ angular.module('core').controller('MainController', ['$scope', '$rootScope', '$w
       }
     };
 
-    // This is used as a cache buster with ng-include
-    // Includes a hash of latest git commit
-    $scope.cacheBust = $window.settings.commit || '';
-
-    // These pages require authenticated user
-    var authRequiredPages = ['welcome',
-                             'profile-edit',
-                             'profile-settings',
-                             'confirm-email',
-                             'profile-tab',
-                             'profile-updated',
-                             'search',
-                             'contactAdd',
-                             'contactConfirm',
-                             'offer',
-                             'offer-status',
-                             'listMessages',
-                             'inboxMessages',
-                            ];
-
     // Perform actions at page change
-    $rootScope.$on('$stateChangeStart', function(event, toState, toParams, fromState, fromParams){
+    $rootScope.$on('$stateChangeStart', function(event, toState, toParams, fromState, fromParams) {
 
       // Redirect to login page if no user
-      if (authRequiredPages.indexOf(toState.name) > -1 && !Authentication.user) {
+      if (toState.requiresAuth && !Authentication.user) {
         // Cancel stateChange
         event.preventDefault();
 

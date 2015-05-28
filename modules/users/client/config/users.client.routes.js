@@ -7,28 +7,36 @@ angular.module('users').config(['$stateProvider',
     $stateProvider.
     state('welcome', {
       url: '/welcome',
-      templateUrl: 'modules/users/views/authentication/welcome.client.view.html'
+      templateUrl: 'modules/users/views/authentication/welcome.client.view.html',
+      requiresAuth: true
     }).
     state('profile-edit', {
       url: '/profile/:username/edit',
-      templateUrl: 'modules/users/views/profile/edit-profile.client.view.html'
+      templateUrl: 'modules/users/views/profile/edit-profile.client.view.html',
+      requiresAuth: true
     }).
     state('profile-settings', {
       url: '/profile/:username/settings',
-      templateUrl: 'modules/users/views/profile/edit-settings.client.view.html'
+      templateUrl: 'modules/users/views/profile/edit-settings.client.view.html',
+      requiresAuth: true
     }).
     state('profile', {
       url: '/profile/:username?tab',
-      templateUrl: 'modules/users/views/profile/view-profile.client.view.html'
+      templateUrl: 'modules/users/views/profile/view-profile.client.view.html',
+      requiresAuth: true
     }).
     state('profile-updated', {
       url: '/profile/:username/?updated',
-      templateUrl: 'modules/users/views/profile/view-profile.client.view.html'
+      templateUrl: 'modules/users/views/profile/view-profile.client.view.html',
+      requiresAuth: true
     }).
     state('profile-tab', {
       url: '/profile/:username/:tab',
-      templateUrl: 'modules/users/views/profile/view-profile.client.view.html'
+      templateUrl: 'modules/users/views/profile/view-profile.client.view.html',
+      requiresAuth: true
     }).
+
+    // Sign in
     state('signup', {
       url: '/signup',
       templateUrl: 'modules/users/views/authentication/signup.client.view.html'

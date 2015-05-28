@@ -7,11 +7,13 @@ angular.module('offers').config(['$stateProvider',
     $stateProvider.
     state('offer-status', {
       url: '/offer/?status',
-      templateUrl: 'modules/offers/views/offer-form.client.view.html'
+      templateUrl: 'modules/offers/views/offer-form.client.view.html',
+      requiresAuth: true
     }).
     state('offer', {
       url: '/offer',
-      templateUrl: 'modules/offers/views/offer-form.client.view.html'
+      templateUrl: 'modules/offers/views/offer-form.client.view.html',
+      requiresAuth: true
     });
   }
 ]);

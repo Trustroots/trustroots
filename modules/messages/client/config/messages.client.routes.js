@@ -7,11 +7,13 @@ angular.module('messages').config(['$stateProvider',
     $stateProvider.
     state('inboxMessages', {
       url: '/messages',
-      templateUrl: 'modules/messages/views/inbox-messages.client.view.html'
+      templateUrl: 'modules/messages/views/inbox-messages.client.view.html',
+      requiresAuth: true
     }).
     state('listMessages', {
       url: '/messages/:userId',
-      templateUrl: 'modules/messages/views/thread-messages.client.view.html'
+      templateUrl: 'modules/messages/views/thread-messages.client.view.html',
+      requiresAuth: true
     });
   }
 ]);
