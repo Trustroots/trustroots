@@ -45,7 +45,7 @@
 
               <div class="form-group">
                 <label for="birthdate"><h4>Birthdate <small class="text-muted text-uppercase"> {{ birthdateFormat }}</small></h4></label>
-                <p class="input-group">
+                <p class="input-group profile-editor-birthdate">
                   <input id="birthdate" type="text" class="form-control" datepicker-popup="{{birthdateFormat}}" ng-model="user.birthdate" is-open="birthdateOpened" datepicker-options="birthdateOptions" ng-required="false" close-text="Close" current-text="Today" clear-text="Clear" />
                   <span class="input-group-btn">
                     <button type="button" class="btn btn-inverse" ng-click="birthdateOpen($event)"><i class="icon-calendar"></i></button>

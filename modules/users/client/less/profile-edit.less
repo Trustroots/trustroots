@@ -45,6 +45,24 @@
     }
   }
 
+  // By default this is pretty uggly, making it pretty.
+  .profile-editor-birthdate {
+    .dropdown-menu {
+      .btn-default {
+        .button-variant(@text-color; transparent; transparent);
+        text-shadow: none;
+        &.active {
+          color: @brand-primary;
+          background: @gray-lighter;
+          font-weight: bold;
+        }
+      }
+      .btn-success {
+        background: @brand-primary;
+      }
+    }
+  }
+
   .avatar-edit {
     display: block;
     position: relative;
