@@ -129,3 +129,31 @@
   font-weight: bold;
   color: @experience-negative;
 }
+
+/*
+ * Middle helper
+ *
+ * Usage:
+ * <div class="middle">
+ *   <div class="middle-wrapper">...</div>
+ * </div>
+ *
+ * Or also horizontal:
+ * <div class="middle middle-horizontal">
+ *   <div class="middle-wrapper">...</div>
+ * </div>
+ *
+ * See https://github.com/kg782/angular-middle if you need this as an Angular directive.
+ */
+.middle {
+  display: table;
+  width: 100%;
+  height: 100%;
+  .middle-wrapper {
+    display: table-cell;
+    vertical-align: middle;
+  }
+  &.middle-horizontal .middle-wrapper > * {
+    margin: auto;
+  }
+}

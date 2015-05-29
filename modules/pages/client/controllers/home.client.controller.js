@@ -14,10 +14,8 @@ angular.module('pages').controller('HomeController', ['$scope', '$state', '$wind
     // List of background classes
     // See /modules/core/client/less/board.less for more
     // Needs to support container-full and board-blur classes.
-    $scope.bgs = [
-      'board-sierranevada',
-      'board-hitchroad',
-    ];
-
+    // First array has background(s) for small screens, the second for bigger screens
+    // Small = (@screen-xs-max - 1px)
+    $scope.bgs = ($window.innerWidth < 767) ? ['board-forestpath'] : ['board-sierranevada', 'board-hitchroad'];
   }
 ]);
