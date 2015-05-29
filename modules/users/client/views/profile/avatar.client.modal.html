@@ -1,7 +1,8 @@
 <div class="modal-body" id="profile-avatar-choises">
 
   <div class="row text-center">
-    <div class="col-xs-5 col-xs-offset-1">
+    <div class="col-xs-6 col-sm-5 col-sm-offset-1">
+
       <label for="avatar-source-none">
         <div tr-avatar data-size="128" data-link="false" data-source="none"></div>
         <div class="avatar-source-label">
@@ -9,8 +10,10 @@
           No profile photo
         </div>
       </label>
+
     </div>
-    <div class="col-xs-5">
+    <div class="col-xs-6 col-sm-5">
+
       <label for="avatar-source-gravatar">
         <a href="https://en.gravatar.com/" target="_blank" class="avatar-source-link" tooltip="You can change your gravatar at Gravatar.com" tooltip-placement="bottom">
           <div tr-avatar data-user="user" data-size="128" data-link="false" data-source="gravatar"></div>
@@ -21,12 +24,11 @@
           Gravatar
         </div>
       </label>
+
     </div>
-  </div>
-
+  </div><!-- /row -->
   <div class="row text-center">
-
-    <div class="col-xs-5 col-xs-offset-1">
+    <div class="col-xs-6 col-sm-5 col-sm-offset-1">
 
       <!-- When connected to FB-->
       <label for="avatar-source-facebook" ng-if="isConnectedSocialAccount('facebook')">
@@ -48,9 +50,10 @@
             Facebook
           </div>
       </label>
-    </div>
 
-    <div class="col-xs-5">
+    </div>
+    <div class="col-xs-6 col-sm-5">
+
       <label for="avatar-source-upload">
         <div ng-show="!avatarUploading" ng-file-select ng-model="fileAvatar" ng-file-change="fileSelected(fileAvatar[0], $file)" ng-multiple="false" accept="image/*" class="avatar-source-link avatar-source-upload">
           <div ng-show="!avatarPreview" tr-avatar data-user="user" data-size="128" data-link="false" data-source="local"></div>
@@ -71,9 +74,9 @@
           My own
         </div>
       </label>
-    </div>
 
-  </div>
+    </div>
+  </div><!-- /row -->
 
 </div>
 <div class="modal-footer">

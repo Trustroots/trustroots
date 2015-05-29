@@ -103,20 +103,5 @@ angular.module('users').controller('ProfileController', ['$scope', '$stateParams
       }
     ];
 
-    $scope.tabSelect = function(tabPath) {
-
-      $scope.tabSelected = tabPath;
-
-      //// @link http://angular-ui.github.io/ui-router/site/#/api/ui.router.state.$state
-
-      //if(tabPath === 'overview') {
-      //  $state.go('profile', {username: ($stateParams.username || $scope.user.username)});
-      //}
-      //else {
-      //  $state.go('profile', {username: ($stateParams.username || $scope.user.username), tab: tabPath});
-      //}
-
-    };
-
   }
 ]);

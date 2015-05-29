@@ -75,7 +75,7 @@
         <div class="col-xs-12">
           <tabset id="profile-tabs" type="pills">
             <!-- Note that using ng-class causes error here -->
-            <tab ng-repeat="tab in tabs" class="{{ tab.onlySmallScreen === true ? 'visible-xs-block' : '' }}" heading="{{tab.title}}" active="tab.active" select="tabSelect(tab.path)">
+            <tab ng-repeat="tab in tabs" class="{{ tab.onlySmallScreen === true ? 'visible-xs-block' : '' }}" heading="{{tab.title}}" active="tab.active" select="tabSelected = tab.path">
               <div ng-include="tab.content"></div>
             </tab>
           </tabset>
