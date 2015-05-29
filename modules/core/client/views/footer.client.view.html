@@ -1,19 +1,23 @@
 <hr>
 <div class="container">
   <div class="row">
-    <div class="col-xs-12 col-sm-push-3 col-sm-9 text-center">
-      <nav id="footer-primary" role="navigation">
-        <ul ng-include="'/modules/core/views/about-links.client.view.html?c={{appSettings.commit}}'"></ul>
-      </nav>
-    </div>
-    <div class="col-sm-pull-9 col-sm-3">
-      <span ng-show="photo_credits.length > 0" class="photo-credits">
-        <span ng-show="photo_credits.length === 1">Photo by</span>
-        <span ng-show="photo_credits.length > 1">Photos by</span>
-        <span ng-repeat="credit in photo_credits">
-          <a ng-href="{{credit.url}}">{{credit.name}}</a> <span ng-show="credit.license">(<a ng-href="{{credit.license_url}}" ng-bind-html="credit.license" tooltip="License" rel="license"></a>)</span><span ng-show="($first && photo_credits.length > 1) || $middle">, </span></span>
-        </span>
-      </span>
-    </div>
+    <nav class="col-xs-8">
+      <ul class="list-inline" ng-include="'/modules/core/views/about-links.client.view.html?c={{appSettings.commit}}'"></ul>
+    </nav>
+    <nav class="col-xs-4 text-right" role="navigation">
+      <ul class="list-inline">
+        <li ng-if="photoCredits.length > 0" class="photo-credits">
+          <span ng-if="photoCredits.length === 1">Photo by</span>
+          <span ng-if="photoCredits.length > 1">Photos by</span>
+          <span ng-repeat="credit in photoCredits">
+            <a ng-href="{{credit.url}}">{{credit.name}}</a> <span ng-if="credit.license">(<a ng-href="{{credit.licenseUrl}}" ng-bind-html="credit.license" title="License" rel="license"></a>)</span><span ng-if="($first && photoCredits.length > 1) || $middle">, </span></span>
+          </span>
+        </li>
+        <li><a href="https://www.facebook.com/trustroots.org" tooltip="Facebook"><i class="icon-facebook icon-lg"></i></a></li>
+        <li><a href="https://twitter.com/trustroots" tooltip="Twitter"><i class="icon-twitter icon-lg"></i></a></li>
+        <li><a href="https://plus.google.com/+TrustrootsOrg" tooltip="+Google"><i class="icon-google icon-lg"></i></a></li>
+        <li><a href="https://github.com/trustroots/trustroots" tooltip="GitHub"><i class="icon-github icon-lg"></i></a></li>
+      </ul>
+    </nav>
   </div><!-- /.row -->
 </div><!-- /.container -->

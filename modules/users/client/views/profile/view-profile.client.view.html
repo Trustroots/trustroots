@@ -1,7 +1,7 @@
 <section class="container container-spacer" id="profile" ng-controller="ProfileController" ng-init="findProfile()">
 
   <!-- Loading -->
-  <div class="row text-center text-muted" ng-if="profile && !profile.$resolved">
+  <div class="row content-wait" ng-if="profile && !profile.$resolved">
     <small>Wait a moment...</small>
   </div>
 

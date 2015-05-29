@@ -6,7 +6,7 @@ angular.module('core').controller('FooterController', ['$scope', 'SettingsFactor
     $scope.appSettings = SettingsFactory.get();
     $scope.isTransparent = false;
     $scope.isHidden = false;
-    $scope.photo_credits = [];
+    $scope.photoCredits = [];
 
     /*
      * Please try to keep this updated while you add/change/remove images from different pages
@@ -53,22 +53,22 @@ angular.module('core').controller('FooterController', ['$scope', 'SettingsFactor
 
       // Set photo credits for these pages
       if( ['home'].indexOf(toState.name) > -1 ) {
-        $scope.photo_credits = [ photos.sierranevada, photos.hitchroad ];
+        $scope.photoCredits = [ photos.sierranevada, photos.hitchroad ];
       }
       else if( ['forgot', 'signin', 'welcome', 'statistics', 'media'].indexOf(toState.name) > -1 ) {
-        $scope.photo_credits = [ photos.bokehblue ];
+        $scope.photoCredits = [ photos.bokehblue ];
       }
       else if( ['about'].indexOf(toState.name) > -1 ) {
-        $scope.photo_credits = [ photos.bokehblue, photos.forestpath ];
+        $scope.photoCredits = [ photos.bokehblue, photos.forestpath ];
       }
       else if( ['foundation', 'donate', 'donate-help', 'donate-policy'].indexOf(toState.name) > -1 ) {
-        $scope.photo_credits = [ photos.forestpath ];
+        $scope.photoCredits = [ photos.forestpath ];
       }
       else if( ['faq'].indexOf(toState.name) > -1 ) {
-        $scope.photo_credits = [ photos.horizonballoon ];
+        $scope.photoCredits = [ photos.horizonballoon ];
       }
       else {
-        $scope.photo_credits = [];
+        $scope.photoCredits = [];
       }
 
     });

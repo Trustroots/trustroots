@@ -85,19 +85,47 @@
 }
 
 
-/**
- * Simple helpders
- */
 .cursor-pointer {
   cursor: pointer;
 }
 
 // For help-icons/buttons
-.helper {
+.cursor-help {
   cursor: help;
 }
 
 // For old IE
 .browsehappy {
   display: block;
+}
+
+// No messages / no contacts etc -type messages
+.content-empty {
+  text-align: center;
+  &, i {
+    .text-muted;
+  }
+}
+
+.content-wait {
+  text-align: center;
+  font-style: italic;
+  .text-muted;
+  margin: 50px 0;
+}
+
+/**
+ * Connection experience
+ */
+.experience-positive {
+  font-weight: bold;
+  color: @experience-positive;
+}
+.experience-neutral {
+  font-weight: bold;
+  color: @experience-neutral;
+}
+.experience-negative {
+  font-weight: bold;
+  color: @experience-negative;
 }
