@@ -3,25 +3,27 @@
 /**
  * Monkeybox directive to show simple info box about profile
  */
-angular.module('users').directive('trMonkeybox', [
-  function() {
+angular.module('users').directive('trMonkeybox', ['SettingsFactory',
+  function(SettingsFactory) {
+    var appSettings = SettingsFactory.get();
+
     return {
-      templateUrl: '/modules/users/views/directives/tr-monkeybox.client.view.html',
-      restrict: 'A', //only matches attribute name
+      templateUrl: '/modules/users/views/directives/tr-monkeybox.client.view.html?c=' + appSettings.commit,
+      restrict: 'A',
       replace: true,
       scope: {
-        userid: '=userid'
+        userId: '=userid'
       },
-      controller: ['$scope', 'UsersMini', function($scope, UsersMini) {
+      controller: ['$scope', 'UsersMini', 'Languages', function($scope, UsersMini, Languages) {
 
-        $scope.languages = window.languages;
+        $scope.languages = Languages.get('object');
 
-        // Miniprofile of the user
-        if($scope.userid) {
-          $scope.user = UsersMini.get({
-            userId: $scope.userid
+        if($scope.userId) {
+          $scope.profile = UsersMini.get({
+            userId: $scope.userId
           });
         }
+
       }]
     };
   }
