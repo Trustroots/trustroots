@@ -38,7 +38,7 @@ exports.messageSanitizeOptions = {
     },
     selfClosing: [ 'img', 'br' ],
     // URL schemes we permit
-    allowedSchemes: [ 'http', 'https', 'ftp', 'mailto', 'tel' ]
+    allowedSchemes: [ 'http', 'https', 'ftp', 'mailto', 'tel', 'irc' ]
   };
 
 /**
