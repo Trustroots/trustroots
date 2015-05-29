@@ -6,7 +6,7 @@ _Hospitality exchange community for hitchhikers and other travellers._
 
 ## Volunteering
 
-* You don't have the be a programmer to participate. Check [volunteers page](https://github.com/Trustroots/trustroots/wiki/Volunteering) for more info.
+You don't have the be a programmer to participate. Check [volunteers page](https://github.com/Trustroots/trustroots/wiki/Volunteering) for more info.
 
 ## Development
 
@@ -14,17 +14,17 @@ Check [development page](https://github.com/Trustroots/trustroots/wiki/Developme
 
 ## Installing
 
-We have two major ways of running the software: trough Vagrant box (less work but runs slower) or by installing locally (more work but runs faster).
+We have two major ways of running the software: trough Vagrant box (less work but runs slower) or by installing locally (recommended, more work but runs faster).
 
 See [troubleshooting](https://github.com/Trustroots/trustroots/wiki/Troubleshooting) if you encounter errors.
+
+### Installing locally
+
+Install the stack on your localhost and run NodeJS. This approach takes a little more time to setup, and bit more manual configuration, but is super fast, and can be easier to work with. See [INSTALL.md](INSTALL.md) for details.
 
 ### Vagrant
 
 The easiest and quickest way to get started is with Vagrant. See [INSTALL-VAGRANT.md](INSTALL-VAGRANT.md) for further details. Running through Vagrant can be a little bit slower, but it's a very quick and easy way to get started. Depending on the specifics of your own development setup, you might prefer to run the code locally if you're going to do a lot of development.
-
-### Installing locally
-
-Install the stack on your localhost and run NodeJS. This approach takes a little more time to setup, and bit more manual configuration, but is super fast, and can be easier to work with. All the code runs in your usual development environment, so it might be easier to use the tools you're familiar with in this setup. See [INSTALL.md](INSTALL.md) for details.
 
 ### Mock data
 
@@ -36,6 +36,7 @@ There's a script that can generate mock user data. It's highly recommended you r
 4. To see the result, log in with your chosen username and password `password`.
 
 ### Documentation
+
 Produce documentation by running `grunt docs`
 
 Then run the application (just `grunt`) and open [http://localhost:3000/developers/](http://localhost:3000/developers/).
