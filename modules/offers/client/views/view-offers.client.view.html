@@ -79,7 +79,8 @@
 
   </div>
 
-  <div id="offer-location-canvas" leaflet center="center" markers="markers" layers="layers" paths="paths" defaults="defaults" class="offer-location" ng-show="offer && offer.$resolved && offer.status !== 'no' && user.public !== false"></div>
+  <!-- When looking at your own profile -->
+  <div leaflet center="center" markers="markers" layers="layers" paths="paths" defaults="defaults" class="offer-location" ng-if="offer && offer.$resolved && offer.status !== 'no' && user.public !== false" id="offer-location-canvas"></div>
 
   <div class="panel-footer text-center" ng-if="user.public !== false">
     <a ng-if="user._id === profile._id && (offer && offer.status === 'no')" ui-sref="offer" class="btn btn-xs btn-primary">Start hosting travellers</a>
