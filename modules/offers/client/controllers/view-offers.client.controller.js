@@ -1,10 +1,17 @@
 'use strict';
 
 
-angular.module('offers').controller('ViewOffersController', ['$scope', '$state', '$location', '$timeout', 'OffersBy', 'Authentication', 'leafletData', 'SettingsFactory',
-  function($scope, $state, $location, $timeout, OffersBy, Authentication, leafletData, SettingsFactory) {
+angular.module('offers').controller('ViewOffersController', ['$scope', '$state', '$location', '$timeout', 'OffersBy', 'Authentication', 'leafletData', 'SettingsFactory', 'MapLayersFactory',
+  function($scope, $state, $location, $timeout, OffersBy, Authentication, leafletData, SettingsFactory, MapLayersFactory) {
 
     var settings = SettingsFactory.get();
+
+    var defaultLocation = {
+      // Default to Europe, we set center to Offer once it loads
+      lat: 48.6908333333,
+      lng: 9.14055555556,
+      zoom: 13
+    };
 
     $scope.offer = false;
     $scope.hostLocation = {};
@@ -22,12 +29,7 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
 
     // Leaflet
     angular.extend($scope, {
-      center: {
-        // Default to Europe, we set center to Offer once it loads
-        lat: 48.6908333333,
-        lng: 9.14055555556,
-        zoom: 13
-      },
+      center: defaultLocation,
       defaults: {
         scrollWheelZoom: false,
         attributionControl: false,
@@ -40,7 +42,9 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
       },
       markers: [],
       layers: {
-        baselayers: {},
+        baselayers: {
+          streets: MapLayersFactory.streets(defaultLocation)
+        },
         overlays: {
           selectedPath: {
             name: 'Selected hosts Marker',
@@ -64,39 +68,6 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
         }
       }
     });
-
-
-    // Add street layer to the map
-    if(settings.mapbox.map.default && settings.mapbox.user && settings.mapbox.publicKey) {
-      $scope.layers.baselayers.streets = {
-        name: 'Streets',
-        type: 'xyz',
-        url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
-        layerParams: {
-          user: settings.mapbox.user,
-          map: settings.mapbox.map.default
-        },
-        layerOptions: {
-          attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
-          continuousWorld: true,
-          TRStyle: 'street' // Not native Leaflet key, required by our layer switch
-        }
-      };
-    }
-    else {
-      // If no default or satellite map by mapbox, default to OSM
-      $scope.layers.baselayers.streets = {
-        name: 'Streets',
-        type: 'xyz',
-        url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        layerOptions: {
-          subdomains: ['a', 'b', 'c'],
-          attribution: '<a href="https://www.openstreetmap.org/">OSM</a>',
-          continuousWorld: true,
-          TRStyle: 'street' // Not native Leaflet key, required by our layer switch
-        }
-      };
-    }
 
     //Check zoom when it changes and toggle marker or circle
     $scope.$on('leafletDirectiveMap.zoomend', function(event){

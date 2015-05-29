@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('search').controller('SearchController', ['$scope', '$http', '$location', '$state', '$stateParams', '$timeout', 'Offers', 'leafletBoundsHelpers', 'Authentication', 'Languages', 'leafletData', 'SettingsFactory', 'messageCenterService',
-  function($scope, $http, $location, $state, $stateParams, $timeout, Offers, leafletBoundsHelpers, Authentication, Languages, leafletData, SettingsFactory, messageCenterService) {
+angular.module('search').controller('SearchController', ['$scope', '$http', '$location', '$state', '$stateParams', '$timeout', 'Offers', 'leafletBoundsHelpers', 'Authentication', 'Languages', 'leafletData', 'SettingsFactory', 'messageCenterService', 'MapLayersFactory',
+  function($scope, $http, $location, $state, $stateParams, $timeout, Offers, leafletBoundsHelpers, Authentication, Languages, leafletData, SettingsFactory, messageCenterService, MapLayersFactory) {
 
     var appSettings = SettingsFactory.get();
 
@@ -44,9 +44,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       });
     };
 
-    /**
-     * The Variables passed to leaflet directive at init
-     */
+    // Variables passed to leaflet directive at init
     $scope.mapDefaults = {
       attributionControl: true,
       keyboard: true,
@@ -71,6 +69,14 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
         }
       }
     };
+    $timeout(function(){
+      $scope.mapLayers.baselayers.streets = MapLayersFactory.streets(defaultLocation);
+      $scope.mapLayers.baselayers.satellite = MapLayersFactory.satellite(defaultLocation);
+
+      // Other() returns an object consisting possibly multiple layers
+      angular.extend($scope.mapLayers.baselayers, MapLayersFactory.other(defaultLocation));
+    });
+
     $scope.mapPaths = {
       selected: $scope.currentSelection
     };
@@ -94,104 +100,6 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       southWestLat: 0
     };
 
-
-    /**
-     * Add map layers
-     * - Streets from Mapbox (fallback from OSM)
-     * - Satellite from Mapbox (fallback from MapQuest)
-     * - Hitchmap from Mapbox (no fallback)
-     */
-    // Streets/Mapbox
-    if(appSettings.mapbox.map.default && appSettings.mapbox.user && appSettings.mapbox.publicKey) {
-      $timeout(function() {
-        $scope.mapLayers.baselayers.streets = {
-          name: 'Streets',
-          type: 'xyz',
-          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + appSettings.mapbox.publicKey + ( appSettings.https ? '&secure=1' : ''),
-          layerParams: {
-            user: appSettings.mapbox.user,
-            map: appSettings.mapbox.map.default
-          },
-          layerOptions: {
-            attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.default + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
-            continuousWorld: true,
-            TRStyle: 'street' // Not native Leaflet key, required by our layer switch
-          }
-        };
-      });
-    }
-    // Streets/OpenStreetMap as a fallback
-    else {
-      $timeout(function() {
-        $scope.mapLayers.baselayers.streets = {
-          name: 'Streets',
-          type: 'xyz',
-          url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          layerOptions: {
-            subdomains: ['a', 'b', 'c'],
-            attribution: '<strong><a href="https://www.openstreetmap.org/login#map=' + defaultLocation.zoom + '/' + defaultLocation.lat + '/' + defaultLocation.lng + '">Improve this map</a></strong>',
-            continuousWorld: true,
-            TRStyle: 'street' // Not native Leaflet key, required by our layer switch
-          }
-        };
-      });
-    }
-
-    // Satellite/Mapbox
-    if(appSettings.mapbox.map.satellite && appSettings.mapbox.user && appSettings.mapbox.publicKey) {
-      $timeout(function() {
-        $scope.mapLayers.baselayers.satellite = {
-          name: 'Satellite',
-          type: 'xyz',
-          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + appSettings.mapbox.publicKey + ( appSettings.https ? '&secure=1' : ''),
-          layerParams: {
-            user: appSettings.mapbox.user,
-            map: appSettings.mapbox.map.satellite
-          },
-          layerOptions: {
-            attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.satellite + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
-            continuousWorld: true,
-            TRStyle: 'satellite' // Not native Leaflet key, required by our layer switch
-          }
-        };
-      });
-    }
-    // Satellite/MapQuest as a fallback
-    else {
-      $timeout(function() {
-        $scope.mapLayers.baselayers.satellite = {
-          name: 'Satellite',
-          type: 'xyz',
-          url: '//otile{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
-          layerOptions: {
-            subdomains: ['1', '2', '3', '4'],
-            attribution: 'Tiles by <a href="http://www.mapquest.com/">MapQuest</a>',
-            continuousWorld: true,
-            TRStyle: 'satellite' // Not native Leaflet key, required by our layer switch
-          }
-        };
-      });
-    }
-
-    // Hitchmap/Mapbox (experimental, no fallback)
-    if(appSettings.mapbox.map.hitchmap && appSettings.mapbox.user && appSettings.mapbox.publicKey) {
-      $timeout(function() {
-        $scope.mapLayers.baselayers.hitchmap = {
-          name: 'Hitchmap',
-          type: 'xyz',
-          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + appSettings.mapbox.publicKey + ( appSettings.https ? '&secure=1' : ''),
-          layerParams: {
-            user: appSettings.mapbox.user,
-            map: appSettings.mapbox.map.hitchmap
-          },
-          layerOptions: {
-            attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.hitchmap + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
-            continuousWorld: true,
-            TRStyle: 'street' // Not native Leaflet, required by layer switch
-          }
-        };
-      });
-    }
 
     /*
      * Determine currently selected baselayer style

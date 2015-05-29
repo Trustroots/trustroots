@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$location', 'leafletBoundsHelpers', 'OffersBy', 'Offers', 'Authentication', 'messageCenterService', 'SettingsFactory',
-  function($scope, $rootScope, $http, $timeout, $state, $stateParams, $location, leafletBoundsHelpers, OffersBy, Offers, Authentication, messageCenterService, SettingsFactory) {
+angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$location', 'leafletBoundsHelpers', 'OffersBy', 'Offers', 'Authentication', 'messageCenterService', 'SettingsFactory', 'MapLayersFactory',
+  function($scope, $rootScope, $http, $timeout, $state, $stateParams, $location, leafletBoundsHelpers, OffersBy, Offers, Authentication, messageCenterService, SettingsFactory, MapLayersFactory) {
 
     var settings = SettingsFactory.get();
 
@@ -11,88 +11,39 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
 
     $scope.offer = false;
 
+    var defaultLocation = {
+      // Default to Europe
+      lat: 48.6908333333,
+      lng: 9.14055555556,
+      zoom: 4
+    };
+
     // Leaflet
     angular.extend($scope, {
-      center: {
-        // Default to Europe
-        lat: 48.6908333333,
-        lng: 9.14055555556,
-        zoom: 4
-      },
-      layers: {
+      mapCenter: defaultLocation,
+      mapLayers: {
         baselayers: {}
       },
-      defaults: {
-        scrollWheelZoom: false
+      // Variables passed to leaflet directive at init
+      mapDefaults: {
+        scrollWheelZoom: false,
+        attributionControl: true,
+        keyboard: true,
+        worldCopyJump: true,
+        controls: {
+          layers: {
+            visible: true,
+            position: 'bottomleft',
+            collapsed: true
+          }
+        }
       }
     });
 
-    // Add street layer to the map
-    if(settings.mapbox.map.default && settings.mapbox.user && settings.mapbox.publicKey) {
-      $scope.layers.baselayers.streets = {
-        name: 'Streets',
-        type: 'xyz',
-        url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
-        layerParams: {
-          user: settings.mapbox.user,
-          map: settings.mapbox.map.default
-        },
-        layerOptions: {
-          attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
-          continuousWorld: true,
-          TRStyle: 'street'//Not native Leaflet key, required by our layer switch
-        }
-      };
-    }
-    else {
-      // If no default or satellite map by mapbox, default to OSM
-      $scope.layers.baselayers.streets = {
-        name: 'Streets',
-        type: 'xyz',
-        url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        layerOptions: {
-          subdomains: ['a', 'b', 'c'],
-          attribution: '<a href="https://www.openstreetmap.org/">OSM</a>',
-          continuousWorld: true,
-          TRStyle: 'street'//Not native Leaflet key, required by our layer switch
-        }
-      };
-    }
-
-    // Add Satellite layer to the map
-    if(settings.mapbox.map.satellite && settings.mapbox.user && settings.mapbox.publicKey) {
-      $scope.layers.baselayers.satellite = {
-        name: 'Satellite',
-        type: 'xyz',
-        url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
-        layerParams: {
-          user: settings.mapbox.user,
-          map: settings.mapbox.map.satellite
-        },
-        layerOptions: {
-          attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
-          continuousWorld: true,
-          TRStyle: 'satellite'//Not native Leaflet key, required by our layer switch
-        }
-      };
-    }
-    // MapQuest as a fallback Satellite
-    else {
-      $timeout(function() {
-        $scope.layers.baselayers.satellite = {
-          name: 'Satellite',
-          type: 'xyz',
-          url: '//otile{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
-          layerOptions: {
-            subdomains: ['1', '2', '3', '4'],
-            attribution: 'Tiles by <a href="http://www.mapquest.com/">MapQuest</a>',
-            continuousWorld: true,
-            TRStyle: 'satellite' // Not native Leaflet key, required by our layer switch
-          }
-        };
-      });
-    }
-
+    $timeout(function(){
+      $scope.mapLayers.baselayers.streets = MapLayersFactory.streets(defaultLocation);
+      $scope.mapLayers.baselayers.satellite = MapLayersFactory.satellite(defaultLocation);
+    });
 
     // Check if user already has previous offer
     $scope.findOffer = function() {
@@ -111,9 +62,9 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
 
           // Offer with location, must be real thing!
           if(offer.location) {
-            $scope.center.lat = parseFloat(offer.location[0]);
-            $scope.center.lng = parseFloat(offer.location[1]);
-            $scope.center.zoom = 16;
+            $scope.mapCenter.lat = parseFloat(offer.location[0]);
+            $scope.mapCenter.lng = parseFloat(offer.location[1]);
+            $scope.mapCenter.zoom = 16;
           }
           // Push some defaults to offer if we didn't get proper answer...
           else {
@@ -141,14 +92,14 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
         status: this.offer.status,
         description: this.offer.description,
         noOfferDescription: this.offer.noOfferDescription,
-        location: [ parseFloat($scope.center.lat), parseFloat($scope.center.lng) ],
+        location: [ parseFloat($scope.mapCenter.lat), parseFloat($scope.mapCenter.lng) ],
         maxGuests: parseInt(this.offer.maxGuests),
       });
 
       offer.$save(function(response) {
         // Done!
         $scope.isLoading = false;
-        $state.go('profile');
+        $state.go('profile', {username: $scope.user.username});
       }, function(err) {
         $scope.isLoading = false;
         var errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
@@ -183,8 +134,7 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
               $scope.mapLocate(response.data.features[0]);
             }
             else {
-              // @Todo: nicer alert https://github.com/Trustroots/trustroots/issues/24
-              alert('Whoop! We could not find such a place...');
+              messageCenterService.add('danger', 'Cannot find that place.', { timeout: settings.flashTimeout });
             }
           });
 
@@ -211,7 +161,7 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
 
       // Does it have lat/lng?
       else if(place.center) {
-        $scope.center = {
+        $scope.mapCenter = {
           lat: parseFloat(place.center[0]),
           lng: parseFloat(place.center[1]),
           zoom: 5
