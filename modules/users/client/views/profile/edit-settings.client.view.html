@@ -53,13 +53,10 @@
           <div class="form-group">
             <div class="checkbox">
               <label for="newsletter">
-                <input type="checkbox" id="newsletter" name="newsletter" ng-model="user.newsletter">
+                <input type="checkbox" id="newsletter" name="newsletter" ng-model="user.newsletter" ng-change="updateUserSubscriptions()">
                 Subscribe to community news
               </label>
             </div>
-          </div>
-          <div class="form-group">
-            <button type="submit" class="btn btn-large btn-primary">Update email subscriptions</button>
           </div>
         </fieldset>
       </form>
@@ -94,7 +91,7 @@
           </div>
           <div class="form-group">
             <button type="submit" class="btn btn-large btn-primary" ng-disabled="changeUserPasswordLoading">
-              <span ng-hide="changeUserPasswordLoading">Update Password</span>
+              <span ng-hide="changeUserPasswordLoading">Change Password</span>
               <span ng-show="changeUserPasswordLoading">Wait a moment...</span>
             </button>
           </div>
