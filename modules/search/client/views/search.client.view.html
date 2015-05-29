@@ -17,7 +17,7 @@
   <div ng-show="user && !user.public && !locationNotFound && !offerNotFound" class="search-overlay-message">
     Sorry, you need to first activate your profile before you can browse others.
   </div>
-  <div ng-show="center.zoom <= minimumZoom && user.public && !locationNotFound && !offerNotFound" class="text-uppercase search-overlay-message">
+  <div ng-show="mapCenter.zoom <= mapMinimumZoom && user.public && !locationNotFound && !offerNotFound" class="text-uppercase search-overlay-message">
     Zoom in closer to see everyone
   </div>
   <div ng-show="locationNotFound && !offerNotFound" class="search-overlay-message">
@@ -27,8 +27,8 @@
     We could not find such an offer...
   </div>
 
-  <div ng-class="{'leaflet-layerstyle-satellite': (layerStyle === 'satellite')}">
-    <leaflet center="center" markers="markers" layers="layers" bounds="bounds" paths="paths" defaults="defaults" event-broadcast="events" id="search-map-canvas"></leaflet>
+  <div ng-class="{'leaflet-layerstyle-satellite': (mapLayerstyle === 'satellite')}">
+    <leaflet id="search-map-canvas" center="mapCenter" markers="mapMarkers" layers="mapLayers" bounds="mapBounds" paths="mapPaths" defaults="mapDefaults" event-broadcast="mapEvents"></leaflet>
   </div>
 
   <div class="search-map-sidebar" ng-show="sidebarOpen">
@@ -70,16 +70,16 @@
       <!-- /Profile loading -->
 
       <!-- Profile -->
-      <div class="search-result panel panel-default" ng-show="offer && offer.$resolved">
+      <div class="search-result panel panel-default" ng-if="offer && offer.$resolved">
         <a class="panel-body" ui-sref="profile({username: offer.user.username})">
           <div tr-avatar data-size="32" data-link="false" data-user="offer.user"></div>
           <h4>
             {{offer.user.displayName}}
-            <small class="text-muted" ng-show="offer.user.username">@{{offer.user.displayUsername || offer.user.username}}</small>
+            <small class="text-muted">@{{offer.user.displayUsername || offer.user.username}}</small>
           </h4>
           <div class="search-result-meta">
-            <span ng-show="offer.user.birthdate" am-time-ago="offer.user.birthdate" am-without-suffix="true"></span><span ng-show="offer.user.birthdate && offer.user.gender">, </span>
-            <span ng-show="offer.user.gender" ng-class="{ 'text-capitalize': !offer.user.birthdate }">{{offer.user.gender}}.</span>
+            <span ng-if="offer.user.birthdate" am-time-ago="offer.user.birthdate" am-without-suffix="true"></span><span ng-show="offer.user.birthdate && offer.user.gender">, </span>
+            <span ng-if="offer.user.gender" ng-class="{ 'text-capitalize': !offer.user.birthdate }">{{offer.user.gender}}.</span>
           </div>
           <div class="search-result-tagline">
             {{offer.user.tagline}}
@@ -91,10 +91,10 @@
             </div>
 
             <!-- Short descriptions -->
-            <div class="search-result-description" ng-show="offer.description && offer.description.length < 1000" ng-bind-html="offer.description | trustedHtml"></div>
+            <div class="search-result-description" ng-if="offer.description && offer.description.length < 1000" ng-bind-html="offer.description | trustedHtml"></div>
 
             <!-- Long descriptions -->
-            <div class="search-result-description" ng-show="offer.description && offer.description.length >= 1000">
+            <div class="search-result-description" ng-if="offer.description && offer.description.length >= 1000">
               <div class="panel-more-wrap">
                 <div ng-bind-html="offer.description | limitTo:1000 | trustedHtml" class="panel-more-excerpt"></div>
                 <div class="panel-more-fade">Show more...</div>
@@ -102,7 +102,7 @@
             </div>
 
           </div>
-          <div class="search-result-languages" ng-show="offer.user.languages.length">
+          <div class="search-result-languages" ng-if="offer.user.languages.length">
             <h4>Languages</h4>
             <ul class="list-inline">
               <li ng-repeat="code in offer.user.languages">{{languages[code]}}</li>

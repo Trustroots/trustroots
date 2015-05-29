@@ -1,9 +1,9 @@
 'use strict';
 
-angular.module('search').controller('SearchController', ['$scope', '$http', '$location', '$state', '$stateParams', '$timeout', '$log', 'Offers', 'leafletBoundsHelpers', 'Authentication', 'Languages', 'leafletData', 'SettingsFactory',
-  function($scope, $http, $location, $state, $stateParams, $timeout, $log, Offers, leafletBoundsHelpers, Authentication, Languages, leafletData, SettingsFactory) {
+angular.module('search').controller('SearchController', ['$scope', '$http', '$location', '$state', '$stateParams', '$timeout', 'Offers', 'leafletBoundsHelpers', 'Authentication', 'Languages', 'leafletData', 'SettingsFactory', 'messageCenterService',
+  function($scope, $http, $location, $state, $stateParams, $timeout, Offers, leafletBoundsHelpers, Authentication, Languages, leafletData, SettingsFactory, messageCenterService) {
 
-    var settings = SettingsFactory.get();
+    var appSettings = SettingsFactory.get();
 
     // Currently signed in user
     $scope.user = Authentication.user;
@@ -15,7 +15,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       zoom: 6
     };
 
-    $scope.layerStyle = 'street';
+    $scope.mapLayerstyle = 'street';
     $scope.sidebarOpen = false;
     $scope.languages = Languages.get('object');
     $scope.offer = false; // Offer to show
@@ -31,7 +31,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       layer: 'selectedOffers',
       clickable: false
     };
-    $scope.minimumZoom = 3;
+    $scope.mapMinimumZoom = 4;
 
     // Return constructed icon
     // @link http://leafletjs.com/reference.html#icon
@@ -47,21 +47,21 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
     /**
      * The Variables passed to leaflet directive at init
      */
-    $scope.defaults = {
-        attributionControl: true,
-        keyboard: true,
-        worldCopyJump: true,
-        controls: {
-          layers: {
-            visible: true,
-            position: 'bottomleft',
-            collapsed: true
-          }
+    $scope.mapDefaults = {
+      attributionControl: true,
+      keyboard: true,
+      worldCopyJump: true,
+      controls: {
+        layers: {
+          visible: true,
+          position: 'bottomleft',
+          collapsed: true
         }
+      }
     };
-    $scope.center = {};
-    $scope.bounds = {};
-    $scope.layers = {
+    $scope.mapCenter = {};
+    $scope.mapBounds = {};
+    $scope.mapLayers = {
       baselayers: {},
       overlays: {
         selectedOffers: {
@@ -71,7 +71,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
         }
       }
     };
-    $scope.paths = {
+    $scope.mapPaths = {
       selected: $scope.currentSelection
     };
     /**
@@ -81,13 +81,13 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
      * zoomend, zoomlevelschange, resize, autopanstart, layeradd, layerremove, baselayerchange, overlayadd,
      * overlayremove, locationfound, locationerror, popupopen, popupclose
      */
-    $scope.events = {
+    $scope.mapEvents = {
       map: {
         enable: ['click','mousedown', 'moveend', 'load', 'baselayerchange'],
         logic: 'emit'
       }
     };
-    $scope.lastbounds = {
+    $scope.mapLastBounds = {
       northEastLng: 0,
       northEastLat: 0,
       southWestLng: 0,
@@ -96,92 +96,102 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
 
 
     /**
-     * Add additional layers if they're configured
+     * Add map layers
+     * - Streets from Mapbox (fallback from OSM)
+     * - Satellite from Mapbox (fallback from MapQuest)
+     * - Hitchmap from Mapbox (no fallback)
      */
-    if(settings.mapbox.map.default) {
+    // Streets/Mapbox
+    if(appSettings.mapbox.map.default && appSettings.mapbox.user && appSettings.mapbox.publicKey) {
       $timeout(function() {
-        $scope.layers.baselayers.default = {
-          name: 'Default',
+        $scope.mapLayers.baselayers.streets = {
+          name: 'Streets',
           type: 'xyz',
-          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
+          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + appSettings.mapbox.publicKey + ( appSettings.https ? '&secure=1' : ''),
           layerParams: {
-            user: settings.mapbox.user,
-            map: settings.mapbox.map.default
+            user: appSettings.mapbox.user,
+            map: appSettings.mapbox.map.default
           },
           layerOptions: {
-            attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map.default + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
+            attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.default + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
             continuousWorld: true,
-            TRStyle: 'street'//Not native Leaflet key, required by our layer switch
+            TRStyle: 'street' // Not native Leaflet key, required by our layer switch
           }
         };
       });
     }
-    // Add Satellite
-    if(settings.mapbox.map.satellite) {
+    // Streets/OpenStreetMap as a fallback
+    else {
       $timeout(function() {
-        $scope.layers.baselayers.satellite = {
+        $scope.mapLayers.baselayers.streets = {
+          name: 'Streets',
+          type: 'xyz',
+          url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          layerOptions: {
+            subdomains: ['a', 'b', 'c'],
+            attribution: '<strong><a href="https://www.openstreetmap.org/login#map=' + defaultLocation.zoom + '/' + defaultLocation.lat + '/' + defaultLocation.lng + '">Improve this map</a></strong>',
+            continuousWorld: true,
+            TRStyle: 'street' // Not native Leaflet key, required by our layer switch
+          }
+        };
+      });
+    }
+
+    // Satellite/Mapbox
+    if(appSettings.mapbox.map.satellite && appSettings.mapbox.user && appSettings.mapbox.publicKey) {
+      $timeout(function() {
+        $scope.mapLayers.baselayers.satellite = {
           name: 'Satellite',
           type: 'xyz',
-          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
+          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + appSettings.mapbox.publicKey + ( appSettings.https ? '&secure=1' : ''),
           layerParams: {
-            user: settings.mapbox.user,
-            map: settings.mapbox.map.satellite
+            user: appSettings.mapbox.user,
+            map: appSettings.mapbox.map.satellite
           },
           layerOptions: {
-            attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map.satellite + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
+            attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.satellite + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
             continuousWorld: true,
-            TRStyle: 'satellite' //Not native Leaflet key, required by our layer switch
+            TRStyle: 'satellite' // Not native Leaflet key, required by our layer switch
           }
         };
       });
     }
-    // Add experimental Hitchmap
-    if(settings.mapbox.map.hitchmap) {
+    // Satellite/MapQuest as a fallback
+    else {
       $timeout(function() {
-        $scope.layers.baselayers.hitchmap = {
+        $scope.mapLayers.baselayers.satellite = {
+          name: 'Satellite',
+          type: 'xyz',
+          url: '//otile{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
+          layerOptions: {
+            subdomains: ['1', '2', '3', '4'],
+            attribution: 'Tiles by <a href="http://www.mapquest.com/">MapQuest</a>',
+            continuousWorld: true,
+            TRStyle: 'satellite' // Not native Leaflet key, required by our layer switch
+          }
+        };
+      });
+    }
+
+    // Hitchmap/Mapbox (experimental, no fallback)
+    if(appSettings.mapbox.map.hitchmap && appSettings.mapbox.user && appSettings.mapbox.publicKey) {
+      $timeout(function() {
+        $scope.mapLayers.baselayers.hitchmap = {
           name: 'Hitchmap',
           type: 'xyz',
-          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
+          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + appSettings.mapbox.publicKey + ( appSettings.https ? '&secure=1' : ''),
           layerParams: {
-            user: settings.mapbox.user,
-            map: settings.mapbox.map.hitchmap
+            user: appSettings.mapbox.user,
+            map: appSettings.mapbox.map.hitchmap
           },
           layerOptions: {
-            attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + settings.mapbox.user + '.' + settings.mapbox.map.hitchmap + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
+            attribution: '<strong><a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.hitchmap + '/' + defaultLocation.lng + '/' + defaultLocation.lat + '/' + defaultLocation.zoom + '">Improve this map</a></strong>',
             continuousWorld: true,
-            TRStyle: 'street'//Not native Leaflet, required by layer switch
+            TRStyle: 'street' // Not native Leaflet, required by layer switch
           }
         };
       });
     }
-
-    // Other secondary map layers
-
-    // OpenStreetMap
-    $scope.layers.baselayers.osm = {
-      name: 'OpenStreetMap',
-      type: 'xyz',
-      url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      layerOptions: {
-        subdomains: ['a', 'b', 'c'],
-        attribution: '<strong><a href="https://www.openstreetmap.org/login#map=' + defaultLocation.zoom + '/' + defaultLocation.lat + '/' + defaultLocation.lng + '">Improve this map</a></strong>',
-        continuousWorld: true,
-        TRStyle: 'street'//Not native Leaflet key, required by our layer switch
-      }
-    };
-    // OpenMapQuest (doesn't support https)
-    $scope.layers.baselayers.quest = {
-      name: 'OpenMapQuest',
-      type: 'xyz',
-      url: 'http://otile{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',
-      layerOptions: {
-        subdomains: ['1', '2', '3', '4'],
-        attribution:  '<strong><a href="https://www.openstreetmap.org/login#map=' + defaultLocation.zoom + '/' + defaultLocation.lat + '/' + defaultLocation.lng + '">Improve this map</a></strong>',
-        continuousWorld: true,
-        TRStyle: 'street'//Not native Leaflet, required by layer switch
-      }
-    };
-
 
     /*
      * Determine currently selected baselayer style
@@ -190,13 +200,15 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
      * Defaults to street
      */
     $scope.$on('leafletDirectiveMap.baselayerchange', function(event, layer) {
-      $scope.layerStyle = (layer.leafletEvent.layer.options.TRStyle) ? $scope.layerStyle = layer.leafletEvent.layer.options.TRStyle : 'street';
+      $timeout(function() {
+        $scope.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? $scope.mapLayerstyle = layer.leafletEvent.layer.options.TRStyle : 'street';
+      });
     });
 
-    //Setting up the cluster
+    // Setting up the cluster
     $scope.pruneCluster = new PruneClusterForLeaflet(60, 60);
 
-    //Setting up the marker and click event
+    // Setting up the marker and click event
     $scope.pruneCluster.PrepareLeafletMarker = function(leafletMarker, data) {
       leafletMarker.on('click', function(e) {
 
@@ -207,7 +219,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
 
         // Show cirlce around the marker
         $scope.currentSelection.latlngs = e.latlng;
-        $scope.layers.overlays.selectedOffers.visible = true;
+        $scope.mapLayers.overlays.selectedOffers.visible = true;
 
         $scope.sidebarOpen = true;
 
@@ -219,7 +231,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
     $scope.$on('leafletDirectiveMap.click', function(event){
       $scope.sidebarOpen = false;
       $scope.offer = false;
-      $scope.layers.overlays.selectedOffers.visible = false;
+      $scope.mapLayers.overlays.selectedOffers.visible = false;
     });
     /*
     $scope.$on('leafletDirectiveMarker.click', function(e, args) {
@@ -235,28 +247,28 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       // Don't proceed if:
       // - Map does not have bounds set (typically at map init these might be missing for some milliseconds)
       // - If user isn't public(confirmed) yet - no need to hit API just to get 401
-      if(!$scope.bounds.northEast || !$scope.user.public) return;
+      if(!$scope.mapBounds.northEast || !$scope.user.public) return;
 
-      //If we get out of the boundig box of the last api query we have to call the API for the new markers
-      if($scope.bounds.northEast.lng > $scope.lastbounds.northEastLng || $scope.bounds.northEast.lat > $scope.lastbounds.northEastLat || $scope.bounds.southWest.lng < $scope.lastbounds.southWestLng || $scope.bounds.southWest.lat < $scope.lastbounds.southWestLat) {
-        //We add a margin to the boundings depending on the zoom level
-        var boundingDelta = 10/$scope.center.zoom;
-        //Saving the current bounding box amd zoom
-        $scope.lastbounds = {
-          northEastLng: $scope.bounds.northEast.lng +boundingDelta,
-          northEastLat: $scope.bounds.northEast.lat +boundingDelta,
-          southWestLng: $scope.bounds.southWest.lng -boundingDelta,
-          southWestLat: $scope.bounds.southWest.lat -boundingDelta
+      // If we get out of the boundig box of the last api query we have to call the API for the new markers
+      if($scope.mapBounds.northEast.lng > $scope.mapLastBounds.northEastLng || $scope.mapBounds.northEast.lat > $scope.mapLastBounds.northEastLat || $scope.mapBounds.southWest.lng < $scope.mapLastBounds.southWestLng || $scope.mapBounds.southWest.lat < $scope.mapLastBounds.southWestLat) {
+        // We add a margin to the boundings depending on the zoom level
+        var boundingDelta = 10/$scope.mapCenter.zoom;
+        // Saving the current bounding box amd zoom
+        $scope.mapLastBounds = {
+          northEastLng: $scope.mapBounds.northEast.lng + boundingDelta,
+          northEastLat: $scope.mapBounds.northEast.lat + boundingDelta,
+          southWestLng: $scope.mapBounds.southWest.lng - boundingDelta,
+          southWestLat: $scope.mapBounds.southWest.lat - boundingDelta
         };
-        $scope.lastZoom = $scope.center.zoom;
-        //API Call
+        $scope.lastZoom = $scope.mapCenter.zoom;
+        // API Call
         Offers.query({
-          northEastLng: $scope.lastbounds.northEastLng,
-          northEastLat: $scope.lastbounds.northEastLat,
-          southWestLng: $scope.lastbounds.southWestLng,
-          southWestLat: $scope.lastbounds.southWestLat
+          northEastLng: $scope.mapLastBounds.northEastLng,
+          northEastLat: $scope.mapLastBounds.northEastLat,
+          southWestLng: $scope.mapLastBounds.southWestLng,
+          southWestLat: $scope.mapLastBounds.southWestLat
         }, function(offers){
-          //Remove last markers
+          // Remove last markers
           $scope.pruneCluster.RemoveMarkers();
           // Let's go through those markers
           // This loop might look weird but it's actually speed optimized :P
@@ -267,10 +279,10 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
             );
             marker.data.icon = icon(offers[i].status);
             marker.data.userId = offers[i]._id;
-            //Register markers
+            // Register markers
             $scope.pruneCluster.RegisterMarker(marker);
           }
-          //Update markers
+          // Update markers
           $scope.pruneCluster.ProcessView();
         });
       }
@@ -286,9 +298,9 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       });
 
       //If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
-      if($scope.center.zoom > $scope.minimumZoom) {
+      if($scope.mapCenter.zoom > $scope.mapMinimumZoom) {
         var loadMarkers = function() {
-          if(angular.isDefined($scope.bounds.northEast)) {
+          if(angular.isDefined($scope.mapBounds.northEast)) {
             $scope.getMarkers();
           }
           else {
@@ -301,17 +313,17 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       }
     });
 
-    //Set event that fires everytime we finish to move the map
+    // Set event that fires everytime we finish to move the map
     $scope.$on('leafletDirectiveMap.moveend', function(event){
 
-      //Get markers if zoom is big enough
-      if($scope.center.zoom > $scope.minimumZoom) {
-            $scope.getMarkers();
+      if($scope.mapCenter.zoom > $scope.mapMinimumZoom) {
+        $scope.getMarkers();
       }
-      //Otherwise hide the markers
+      // Otherwise hide the markers
       else {
         $scope.pruneCluster.RemoveMarkers();
-        $scope.lastbounds = {
+        $scope.pruneCluster.ProcessView();
+        $scope.mapLastBounds = {
           northEastLng: 0,
           northEastLat: 0,
           southWestLng: 0,
@@ -336,24 +348,21 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
         $scope.searchQuerySearching = true;
 
         $http
-          .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + $scope.searchQuery + '.json?access_token=' + settings.mapbox.publicKey)
+          .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + $scope.searchQuery + '.json?access_token=' + appSettings.mapbox.publicKey)
           .then(function(response) {
 
             $scope.searchQuerySearching = false;
-            $scope.center = defaultLocation;
+            $scope.mapCenter = defaultLocation;
 
             if(response.status === 200 && response.data.features && response.data.features.length > 0) {
               $scope.mapLocate(response.data.features[0]);
             }
             else {
-              // @Todo: nicer alert https://github.com/Trustroots/trustroots/issues/24
-              if($scope.center.lat === 0 && $scope.center.zoom === 1) {
-                $scope.center = defaultLocation;
+              // @todo: nicer alert https://github.com/Trustroots/trustroots/wiki/Angular-Directives#flash-messages
+              if($scope.mapCenter.lat === 0 && $scope.mapCenter.zoom === 1) {
+                $scope.mapCenter = defaultLocation;
               }
-              $scope.locationNotFound = true;
-              $timeout(function(){
-                $scope.locationNotFound = false;
-              }, 3000);
+              messageCenterService.add('warning', 'We could not find such a place...', { timeout: appSettings.flashTimeout });
             }
           });
 
@@ -373,7 +382,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       if(place.bbox) {
         //Set a timeout here otherwise the markers will not load.
         $timeout( function () {
-          $scope.bounds = leafletBoundsHelpers.createBoundsFromArray([
+          $scope.mapBounds = leafletBoundsHelpers.createBoundsFromArray([
             [ parseFloat(place.bbox[1]), parseFloat(place.bbox[0]) ],
             [ parseFloat(place.bbox[3]), parseFloat(place.bbox[2]) ]
           ]);
@@ -381,7 +390,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       }
       // Does it have lat/lng?
       else if(place.center) {
-        $scope.center = {
+        $scope.mapCenter = {
           lat: parseFloat(place.center[1]),
           lng: parseFloat(place.center[0]),
           zoom: 5
@@ -401,7 +410,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
     $scope.searchSuggestions = function(val) {
 
       return $http
-        .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + val + '.json?access_token=' + settings.mapbox.publicKey)
+        .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + val + '.json?access_token=' + appSettings.mapbox.publicKey)
         .then(function(response) {
 
           $scope.searchQuerySearching = false;
@@ -453,17 +462,17 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
         $scope.offer = offer;
 
         $scope.currentSelection.latlngs = $scope.offer.locationFuzzy;
-        $scope.layers.overlays.selectedOffers.visible = true;
+        $scope.mapLayers.overlays.selectedOffers.visible = true;
         $scope.sidebarOpen = true;
 
-        $scope.center = {
+        $scope.mapCenter = {
           lat: $scope.offer.locationFuzzy[0],
           lng: $scope.offer.locationFuzzy[1],
           zoom: 13
         };
 
       },function (error) {
-        $scope.center = defaultLocation;
+        $scope.mapCenter = defaultLocation;
         $scope.offerNotFound = true;
         $timeout(function(){
           $scope.offerNotFound = false;
@@ -472,7 +481,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
     }
     // Nothing to init from URL
     else {
-      $scope.center = defaultLocation;
+      $scope.mapCenter = defaultLocation;
     }
 
   }

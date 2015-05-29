@@ -67,8 +67,8 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
 
 
     // Add street layer to the map
-    if(settings.mapbox.map.default) {
-      $scope.layers.baselayers.default = {
+    if(settings.mapbox.map.default && settings.mapbox.user && settings.mapbox.publicKey) {
+      $scope.layers.baselayers.streets = {
         name: 'Streets',
         type: 'xyz',
         url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
@@ -79,21 +79,21 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
         layerOptions: {
           attribution: '<a href="http://www.openstreetmap.org/">OSM</a>',
           continuousWorld: true,
-          TRStyle: 'street'//Not native Leaflet key, required by our layer switch
+          TRStyle: 'street' // Not native Leaflet key, required by our layer switch
         }
       };
     }
     else {
       // If no default or satellite map by mapbox, default to OSM
-      $scope.layers.baselayers.default = {
-        name: 'OpenStreetMap',
+      $scope.layers.baselayers.streets = {
+        name: 'Streets',
         type: 'xyz',
         url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         layerOptions: {
           subdomains: ['a', 'b', 'c'],
           attribution: '<a href="https://www.openstreetmap.org/">OSM</a>',
           continuousWorld: true,
-          TRStyle: 'street'//Not native Leaflet key, required by our layer switch
+          TRStyle: 'street' // Not native Leaflet key, required by our layer switch
         }
       };
     }

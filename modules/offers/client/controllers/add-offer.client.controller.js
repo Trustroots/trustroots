@@ -28,8 +28,8 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
     });
 
     // Add street layer to the map
-    if(settings.mapbox.map.default) {
-      $scope.layers.baselayers.default = {
+    if(settings.mapbox.map.default && settings.mapbox.user && settings.mapbox.publicKey) {
+      $scope.layers.baselayers.streets = {
         name: 'Streets',
         type: 'xyz',
         url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + settings.mapbox.publicKey + ( settings.https ? '&secure=1' : ''),
@@ -46,8 +46,8 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
     }
     else {
       // If no default or satellite map by mapbox, default to OSM
-      $scope.layers.baselayers.default = {
-        name: 'OpenStreetMap',
+      $scope.layers.baselayers.streets = {
+        name: 'Streets',
         type: 'xyz',
         url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         layerOptions: {
@@ -60,7 +60,7 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
     }
 
     // Add Satellite layer to the map
-    if(settings.mapbox.map.satellite) {
+    if(settings.mapbox.map.satellite && settings.mapbox.user && settings.mapbox.publicKey) {
       $scope.layers.baselayers.satellite = {
         name: 'Satellite',
         type: 'xyz',
@@ -75,6 +75,22 @@ angular.module('offers').controller('AddOfferController', ['$scope', '$rootScope
           TRStyle: 'satellite'//Not native Leaflet key, required by our layer switch
         }
       };
+    }
+    // MapQuest as a fallback Satellite
+    else {
+      $timeout(function() {
+        $scope.layers.baselayers.satellite = {
+          name: 'Satellite',
+          type: 'xyz',
+          url: '//otile{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
+          layerOptions: {
+            subdomains: ['1', '2', '3', '4'],
+            attribution: 'Tiles by <a href="http://www.mapquest.com/">MapQuest</a>',
+            continuousWorld: true,
+            TRStyle: 'satellite' // Not native Leaflet key, required by our layer switch
+          }
+        };
+      });
     }
 
 

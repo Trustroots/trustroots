@@ -85,4 +85,13 @@
       }
     }
   }
+
+  // Hide overlays list from the layer controller
+  // @todo: This should be done at JS but isn't possible with Angular-Leaflet
+  .leaflet-control-layers {
+    .leaflet-control-layers-overlays,
+    .leaflet-control-layers-separator {
+      display: none;
+    }
+  }
 }
