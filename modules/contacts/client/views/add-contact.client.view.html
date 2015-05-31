@@ -10,25 +10,25 @@
           <h2>Add contact</h2>
         </div>
 
-        <div class="panel panel-default" ng-hide="!friend">
+        <div class="panel panel-default contacts-connection" ng-hide="!friend">
           <div class="panel-body">
             <div class="row">
-              <div class="col-xs-5 text-center">
+              <div class="col-xs-12 col-sm-5 contacts-connection-profile">
                 <div tr-avatar data-user="user" data-size="128" class="center-block"></div>
 
-                <h4 class="contacts-name" ng-bind="user.displayName"></h4>
+                <h4 class="contacts-connection-name" ng-bind="user.displayName"></h4>
               </div>
-              <div class="col-xs-2 text-center contacts-avatar-divider">
-                <i class="icon-exchange icon-3x text-muted"></i>
+              <div class="hidden-xs col-sm-2">
+                <i class="icon-exchange icon-3x text-muted contacts-connection-divider"></i>
               </div>
-              <div class="col-xs-5 text-center">
+              <div class="col-xs-12 col-sm-5 contacts-connection-profile">
                 <!-- Avatar while loading -->
                 <div tr-avatar data-source="none" data-size="128" class="center-block" ng-if="!friend.$resolved"></div>
 
                 <!-- Avatar after loaded -->
                 <div tr-avatar data-user="friend" data-size="128" class="center-block" ng-if="friend.$resolved && friend"></div>
 
-                <h4 class="contacts-name" ng-bind="friend.displayName"></h4>
+                <h4 class="contacts-connection-name" ng-bind="friend.displayName"></h4>
               </div>
             </div><!-- /.row -->
           </div>

@@ -1,8 +1,25 @@
 /*
- * Add/remove contact
+ * Adding/removing/accepting contact
  */
-.contacts-avatar-divider {
-  .fa {
+.contacts-connection {
+  .contacts-connection-profile {
+    text-align: center;
+    @media (max-width: @screen-xs-max) {
+      text-align: left;
+      .avatar {
+        float: left;
+        margin: 0 10px 0 0;
+        width: 64px;
+        height: 64px;
+      }
+      .contacts-connection-name {
+        line-height: 64px;
+        padding: 0;
+        margin: 0;
+      }
+    }
+  }
+  .contacts-connection-divider {
     line-height: 128px;
   }
 }

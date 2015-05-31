@@ -14,27 +14,27 @@
         <strong ng-bind="error"></strong>
       </div>
 
-      <div class="row">
-        <div class="col-xs-5 text-center">
+      <div class="row contacts-connection">
+        <div class="col-xs-12 col-sm-5 contacts-connection-profile">
           <!-- Avatar while loading -->
           <div tr-avatar data-source="none" data-size="128" class="center-block" ng-hide="contact && contact.$resolved"></div>
 
           <!-- Avatar after loaded -->
           <div tr-avatar data-user="contact.users[0]" data-size="128" class="center-block" ng-show="contact && contact.$resolved"></div>
 
-          <h4 class="contacts-name" ng-bind="contact.users[0].displayName"></span>
+          <h4 class="contacts-connection-name" ng-bind="contact.users[0].displayName"></span>
         </div>
-        <div class="col-xs-2 text-center contacts-avatar-divider">
-          <i class="icon-3x icon-bolt text-muted"></i>
+        <div class="hidden-xs col-sm-2">
+          <i class="icon-exchange icon-3x text-muted contacts-connection-divider"></i>
         </div>
-        <div class="col-xs-5 text-center">
+        <div class="col-xs-12 col-sm-5 contacts-connection-profile">
           <!-- Avatar while loading -->
           <div tr-avatar data-source="none" data-size="128" class="center-block" ng-if="!contact || !contact.$resolved"></div>
 
           <!-- Avatar after loaded -->
           <div tr-avatar data-user="contact.users[1]" data-size="128" class="center-block" ng-if="contact && contact.$resolved"></div>
 
-          <h4 class="contacts-name" ng-bind="contact.users[1].displayName"></h4>
+          <h4 class="contacts-connection-name" ng-bind="contact.users[1].displayName"></h4>
 
         </div>
       </div><!-- /.row -->
