@@ -17,18 +17,12 @@
     .box-shadow(none);
     text-shadow: 1px 1px 1px darken(@btn-default-bg, 7%);
     &:hover {
-        .box-shadow(none);
+      .box-shadow(none);
     }
   }
   &.btn-inverse {
+    .button-variant(@brand-primary; #fff; #fff);
     text-shadow: none;
-    color: @brand-primary;
-    background: #fff;
-    &:focus,
-    &:active,
-    &:hover {
-      color: brighten(@brand-primary, 10%);
-    }
   }
 }
 // Fix problem with inverse button hover state covering input border
