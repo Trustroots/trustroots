@@ -47,6 +47,14 @@ During the first up `scripts/vagrantup/vagrantup.sh` installs these:
 - Yeoman
 - Generator-meanjs
 
+#### Development with Passenger
+Note that because of Passenger running inside the box, you might experience quite sticky cache and Passenger spawning multiple processes.
+
+You can go around this by letting Passenger to [restart application on every request](https://github.com/phusion/passenger/wiki/Phusion-Passenger%3A-Node.js-tutorial#restarting-your-application-on-every-request):
+>To activate this mechanism, create the file tmp/always_restart.txt. As long as the file exists, Passenger will restart your application on every request.
+
+To manually restart Passenger, run `sudo passenger-config restart-app` inside the Vagrant box. Also restarting Nginx works (`sudo service nginx restart`).
+
 #### SSH into Vagrant
 ```bash
 vagrant ssh
