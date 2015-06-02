@@ -1,0 +1,37 @@
+<section class="container container-spacer" ng-controller="StatisticsController">
+
+<section class="container board board-bokehblue container-fullscreen">
+  <div class="row">
+    <div class="col-xs-12">
+      <a ui-sref="home" class="logo logo-sm logo-blue center-block"></a>
+      <br><br>
+    </div>
+    <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 statistics">
+
+      <div ng-if="!statistics.$resolved" class="content-wait">
+        <small>Wait a moment...</small>
+      </div>
+
+      <section ng-if="statistics.$resolved">
+        <h3 class="statistics-count">{{statistics.total}} members in total.</h3>
+
+        <h3 class="statistics-count">{{statistics.hosting}} ({{ (statistics.hosting/statistics.total)*100 | number:1 }}%) are hosting.</h3>
+
+        <hr>
+
+        <h3>Enabling the latent trust between humans since</h3>
+        <p class="lead">{{launchDate | date:mediumDate}}</p>
+
+      </section>
+
+      <p>
+        <br>
+        <a ng-click="goHome()" class="btn btn-inverse">Home</a>
+        <br><br>
+        <br><br>
+        <a class="statistics-commit" ng-href="https://github.com/Trustroots/trustroots/commit/{{statistics.commit}}">Currently deployed code at Github</a>
+      </p>
+
+    </div>
+  </div><!-- .row-->
+</section><!-- .container -->

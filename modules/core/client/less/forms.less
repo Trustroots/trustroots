@@ -1,0 +1,24 @@
+/**
+ * Forms
+ */
+textarea,
+input[type="text"],
+input[type="password"],
+input[type="datetime"],
+input[type="datetime-local"],
+input[type="date"],
+input[type="month"],
+input[type="time"],
+input[type="week"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+input[type="tel"],
+input[type="color"] {
+  // Focus state
+  &:focus {
+  border-color: lighten(@brand-primary, 20%);
+    .box-shadow(0 0 3px lighten(@brand-primary, 50%));
+  }
+}

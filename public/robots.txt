@@ -1,5 +1,7 @@
 # robotstxt.org/
 
 User-agent: *
-Disallow: /#!/profile/
+Disallow: /?_escaped_fragment_=/profile/
 Disallow: /profile/
+Disallow: /modules/users/client/img/profile/uploads/
+Disallow: /api/

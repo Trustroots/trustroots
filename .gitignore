@@ -11,7 +11,6 @@ $RECYCLE.BIN/
 ._*
 *~
 
-
 # Icon must end with two \r.
 Icon
 
@@ -22,35 +21,34 @@ Icon
 
 # Env/development
 .nodemonignore
-.sass-cache/
-npm-debug.log
 node_modules/
 .bower-*/
-.grunt
 .vagrant
 *.pyc
+passenger.*
+*.pid
 
 # App
 public/lib
-public/dist/*
-app/tests/coverage/
-.idea/
+public/dist
+modules/core/client/app/css
+.idea
 tmp
 
 # Configs
-config/secret/*
-!config/secret/_template.js
+config/env/local.js
 
 # Logs
 logs
 log
 *.log
 
+# Docs
+public/developers/api
+
 # DB migrations
 migrations/.migrate
 
-# Phusion Passenger
-passenger.*
-
-# User Upload
-public/modules/users/img/profile/uploads/
+# User uploads
+uploads
+modules/users/client/img/profile/uploads

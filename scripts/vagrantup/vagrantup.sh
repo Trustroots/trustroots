@@ -64,7 +64,7 @@ echo "---------------------------------------------------------------------"
 echo ""
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 561F9B9CAC40B2F7
 sudo apt-get install apt-transport-https ca-certificates
-echo 'echo "deb https://oss-binaries.phusionpassenger.com/apt/passenger/4 trusty main" >> /etc/apt/sources.list.d/passenger.list' | sudo -s
+echo 'echo "deb https://oss-binaries.phusionpassenger.com/apt/passenger trusty main" >> /etc/apt/sources.list.d/passenger.list' | sudo -s
 sudo chown root: /etc/apt/sources.list.d/passenger.list
 sudo chmod 600 /etc/apt/sources.list.d/passenger.list
 sudo apt-get update -qq
@@ -93,14 +93,10 @@ echo "---------------------------------------------------------------------"
 echo ""
 cd /srv/trustroots/
 npm install
+# Bower should run after npm install already, but in case it fails, re-run:
 bower install --allow-root --config.interactive=false
 NODE_ENV=development grunt build
 
-
-# Add configs
-sudo cp /srv/trustroots/config/secret/_template.js /srv/trustroots/config/secret/development.js
-sudo cp /srv/trustroots/config/secret/_template.js /srv/trustroots/config/secret/production.js
-sudo cp /srv/trustroots/config/secret/_template.js /srv/trustroots/config/secret/test.js
 
 # Generate test content
 echo ""

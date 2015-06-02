@@ -1,0 +1,38 @@
+/**
+ * TrustRoots core typography styles
+ */
+
+ h1, h2, h3, h4 {
+   font-family: @font-family-brand;
+   font-weight: 400;
+   font-style: normal;
+ }
+
+ .undecorated-link:hover {
+   text-decoration: none;
+ }
+ .text-color-links {
+   a {
+     color: @text-color;
+     text-decoration: none;
+     &:hover {
+       text-decoration: underline;
+     }
+   }
+ }
+
+/**
+ * Hosting status colors
+ */
+.hosting-yes {
+  color: @hosting-yes;
+}
+.hosting-maybe {
+  color: @hosting-maybe;
+}
+.hosting-no {
+  color: @hosting-no;
+}
+.hosting-traveling {
+  color: @hosting-traveling;
+}

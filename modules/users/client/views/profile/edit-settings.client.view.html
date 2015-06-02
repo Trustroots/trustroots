@@ -1,0 +1,157 @@
+<section class="container container-spacer" ng-controller="SettingsController">
+
+  <div class="row">
+    <div class="col-xs-12">
+      <div class="page-header">
+        <h2>Account Settings</h2>
+      </div>
+    </div>
+  </div>
+
+  <br><br>
+
+  <!-- Email -->
+  <div class="row">
+
+    <div class="col-xs-offset-2 col-xs-10 col-sm-offset-0 col-sm-4 col-md-3">
+      <h4>Email</h4>
+    </div>
+    <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
+      <form ng-submit="updateUserEmail()" autocomplete="off">
+        <fieldset>
+          <div class="form-group">
+            <label for="email" class="sr-only">Email (required)</label>
+            <input type="email" id="email" name="email" class="form-control" ng-model="user.email" placeholder="Email (required)">
+            <p class="help-block" ng-if="user.emailTemporary && !emailSuccess">Please check your inbox for "{{user.emailTemporary}}". We have sent a confirmation message to this email address with further instructions. <a ng-click="resendUserEmailConfirm()" class="cursor-pointer">Resend.</a></p>
+          </div>
+          <div class="form-group">
+            <button type="submit" class="btn btn-large btn-primary">Update email</button>
+          </div>
+          <div ng-show="emailError" class="text-danger">
+              <strong>{{emailError}}</strong>
+          </div>
+          <div ng-show="emailSuccess" class="text-success">
+              <strong>{{emailSuccess}}</strong>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+  </div>
+  <!-- /Email -->
+
+  <br><br>
+
+  <!-- Email subscriptions -->
+  <div class="row">
+    <div class="col-xs-offset-2 col-xs-10 col-sm-offset-0 col-sm-4 col-md-3">
+      <h4>Email subscriptions</h4>
+    </div>
+    <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
+
+      <form ng-submit="updateUserSubscriptions()" autocomplete="off">
+        <fieldset>
+          <div class="form-group">
+            <div class="checkbox">
+              <label for="newsletter">
+                <input type="checkbox" id="newsletter" name="newsletter" ng-model="user.newsletter" ng-change="updateUserSubscriptions()">
+                Subscribe to community news
+              </label>
+            </div>
+          </div>
+        </fieldset>
+      </form>
+
+    </div>
+  </div>
+  <!-- /Email subscriptions -->
+
+  <br><br>
+
+  <!-- Password -->
+  <div class="row">
+
+    <div class="col-xs-offset-2 col-xs-10 col-sm-offset-0 col-sm-4 col-md-3 col-md-3">
+      <h4>Change your password</h4>
+    </div>
+    <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
+
+      <form ng-submit="changeUserPassword()" autocomplete="off">
+        <fieldset>
+          <div class="form-group">
+            <label for="currentPassword" class="sr-only">Your current password</label>
+            <input type="password" id="currentPassword" name="currentPassword" class="form-control" ng-model="currentPassword" placeholder="Your current password" ng-disabled="changeUserPasswordLoading">
+          </div>
+          <div class="form-group">
+            <label for="newPassword" class="sr-only">New Password</label>
+            <input type="password" id="newPassword" name="newPassword" class="form-control" ng-model="newPassword" placeholder="New Password" popover="New password must be 8 or more characters."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="changeUserPasswordLoading">
+          </div>
+          <div class="form-group">
+            <label for="verifyPassword" class="sr-only">Verify Password</label>
+            <input type="password" id="verifyPassword" name="verifyPassword" class="form-control" ng-model="verifyPassword" placeholder="Verify Password" ng-disabled="changeUserPasswordLoading">
+          </div>
+          <div class="form-group">
+            <button type="submit" class="btn btn-large btn-primary" ng-disabled="changeUserPasswordLoading">
+              <span ng-hide="changeUserPasswordLoading">Change Password</span>
+              <span ng-show="changeUserPasswordLoading">Wait a moment...</span>
+            </button>
+          </div>
+          <div ng-show="passwordError" class="text-danger">
+            <strong>{{passwordError}}</strong>
+          </div>
+          <div ng-show="passwordSuccess" class="text-success">
+            <strong>{{passwordSuccess}}</strong>
+          </div>
+        </fieldset>
+      </form>
+
+    </div>
+  </div>
+  <!-- /Password -->
+
+  <br><br>
+
+  <!-- Data liberation -->
+  <div class="row">
+    <div class="col-xs-offset-2 col-xs-10 col-sm-offset-0 col-sm-4 col-md-3">
+      <h4>Download your data</h4>
+      <p class="text-muted">
+        Your data is <em>Yours</em>. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.
+      </p>
+    </div>
+    <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
+      <ul class="list-unstyled">
+        <li><a class="btn btn-link btn-sm" href="/api/users/{{user.username}}" target="_top" type="application/json" download="profile.json">Profile</a> <small class="text-muted">(json)</small></li>
+        <li><a class="btn btn-link btn-sm" href="/api/contacts/{{user._id}}" target="_top" type="application/json" download="contacts.json">Contacts</a> <small class="text-muted">(json)</small></li>
+        <li><a class="btn btn-link btn-sm" href="/api/offers-by/{{user._id}}" target="_top" type="application/json" download="offers.json">Hosting offer</a> <small class="text-muted">(json)</small></li>
+      </ul>
+    </div>
+  </div>
+  <!-- /Data liberation -->
+
+  <br><br>
+
+  <!-- Remove -->
+  <div class="row">
+    <div class="col-xs-offset-2 col-xs-10 col-sm-offset-0 col-sm-4 col-md-3">
+      <h4 class="text-danger">Remove your account</h4>
+    </div>
+    <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
+      <div class="form-group">
+        <em>Feature coming up. <a ui-sref="contact">Contact us</a> if you need your account to be removed.</em>
+      </div>
+      <!--
+      <div class="form-group">
+        <label for="removal-confirm">
+          <input type="checkbox" id="removal-confirm" ng-model="removalConfirm">
+          <em>I understand this cannot be undone</em>
+        </label>
+      </div>
+      <div class="form-group">
+        <button class="btn btn-danger" ng-click="removeUser();">Yes, remove my account permanently</button>
+      </div>
+      -->
+    </div>
+  </div>
+  <!-- /Remove -->
+
+</section>

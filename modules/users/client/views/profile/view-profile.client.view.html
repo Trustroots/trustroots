@@ -1,0 +1,90 @@
+<section class="container container-spacer" id="profile" ng-controller="ProfileController" ng-init="findProfile()">
+
+  <!-- Loading -->
+  <div class="row content-wait" ng-if="profile && !profile.$resolved">
+    <small>Wait a moment...</small>
+  </div>
+
+  <!-- Couldn't find profile... -->
+  <div class="row text-center" ng-if="profileError && user.public !== false">
+    <h1>Don't panic!</h1>
+    <em class="lead">User does not exist.</em>
+    <br><br>
+    <a ui-sref="search">Continue...</a>
+  </div>
+
+  <!-- Browsing other profiles with non-public account -->
+  <div class="row text-center" ng-if="profileError && user.public === false">
+    <h1>Don't panic!</h1>
+    <em class="lead">Sorry, you need to first activate your profile before you can browse others.</em>
+    <br><br>
+    <a ui-sref="profile-settings">Account settings</a>
+  </div>
+
+  <!-- Own profile is non-public -->
+  <div class="row text-center" ng-if="!profileError && user.public === false">
+    <em class="lead">Note that your profile will not be visible to others until you confirm your email.</em>
+    <p>If you didn't receive the message, check your spam folder or resend it via <a ui-sref="profile-settings">email settings</a>.</p>
+    <hr>
+  </div>
+
+  <!-- Profile -->
+  <div class="row">
+    <div class="col-xs-12 text-center visible-xs-block">
+      <div tr-avatar data-user="profile" data-size="64" data-link="false" class="visible-xs-block avatar-circle"></div>
+      <h2 class="profile-name" ng-show="profile.displayName" ng-bind="profile.displayName"></h2><br>
+      <h4 class="profile-username" ng-show="profile.username">@{{profile.displayUsername || profile.username}}</h4><br>
+      <p class="profile-tagline" ng-show="profile.tagline" ng-bind="profile.tagline"></p>
+    </div>
+  </div>
+
+  <div class="row" ng-if="profile && profile.$resolved && !profileError">
+
+    <div class="col-sm-3 hidden-xs" ng-include="'/modules/users/views/profile/view-profile-sidebar.client.view.html?c={{appSettings.commit}}'"></div>
+
+    <div class="col-sm-9">
+
+      <div class="row">
+        <div class="col-md-6 hidden-xs">
+            <h2 class="profile-name" ng-if="profile.displayName" ng-bind="profile.displayName"></h2>
+            <h4 class="profile-username" ng-if="profile.username">@{{profile.displayUsername || profile.username}}</h4>
+            <div class="profile-tagline" ng-if="profile.tagline" ng-bind="profile.tagline"></div>
+        </div>
+
+        <!-- When looking at own profile -->
+        <div class="col-md-6 profile-action-buttons" ng-if="user._id === profile._id">
+          <small class="text-muted hidden-xs">This is your profile as others see it.</small>
+          &nbsp;
+          <a ui-sref="profile-edit({username: user.username})" class="btn btn-primary">Edit your profile</a>
+        </div>
+
+        <!-- When looking at somebody else's profile -->
+        <div class="col-md-6 profile-action-buttons" ng-if="user._id !== profile._id">
+          <ul class="nav nav-pills nav-narrow text-right pull-right" role="navigation">
+            <li><a ui-sref="listMessages({userId: profile._id})" class="btn btn-link"><i class="fa icon-message-alt"></i> Send message</a></li>
+            <li ng-controller="RemoveContactController">
+              <a ui-sref="contactAdd({userId: profile._id})" ng-hide="profile.contact" class="btn btn-link"><i class="icon-plus-squared-alt"></i> Add contact</a>
+              <a ng-click="removeContactModal(profile.contact, $event)" ng-show="profile.contact" class="btn btn-link"><i class="icon-minus-squared-alt"></i> Remove contact</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Profile tabs -->
+      <div class="row">
+        <div class="col-xs-12">
+          <tabset id="profile-tabs" type="pills">
+            <!-- Note that using ng-class causes error here -->
+            <tab ng-repeat="tab in tabs" class="{{ tab.onlySmallScreen === true ? 'visible-xs-block' : '' }}" heading="{{tab.title}}" active="tab.active" select="tabSelected = tab.path">
+              <div ng-include="tab.content"></div>
+            </tab>
+          </tabset>
+        </div>
+      </div>
+      <!-- /Profile tabs -->
+
+    </div><!-- /.col -->
+
+  </div><!-- /.row -->
+
+</section><!-- /.container -->

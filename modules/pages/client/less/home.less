@@ -1,0 +1,107 @@
+/**
+ * Home page
+ */
+@home-page-gaps: 25px;
+
+.home {
+  text-align: center;
+
+  .logo,
+  .logo-horizontal,
+  .home-tagline,
+  .home-extra,
+  .btn-group {
+    margin: @home-page-gaps auto;
+  }
+
+  // Note "max-height" here
+  @media screen and (max-height: 700px) {
+    padding-top: 0;
+    .logo,
+    .logo-horizontal,
+    .home-tagline,
+    .home-extra,
+    .btn-group {
+      margin: round(@home-page-gaps/2) auto;
+    }
+  }
+
+  .home-tagline,
+  .home-extra {
+    text-shadow: 1px 1px 6px rgba(0, 0, 0, .6);
+  }
+  .home-tagline {
+    color: #fff;
+    font-family: @font-family-brand;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 30px;
+    line-height: 35px;
+    padding: 0;
+  }
+  .home-extra {
+    &, a {
+      font-size: @font-size-base;
+      color: rgba(255, 255, 255, .95);
+      text-decoration: none;
+    }
+    a:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+  }
+  // Home page buttons
+  .btn-group {
+    .box-shadow(0 0 8px rgba(0, 0, 0, .3));
+  }
+  .btn-home-readmore,
+  .btn-home-login,
+  .btn-home-signup {
+    color: #fff;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, .3);
+    border: 0;
+    .transition(background-color 0.2s);
+  }
+  .btn-home-login {
+    background-color: @brand-primary;
+    &:hover {
+      background-color: lighten(@brand-primary, 3%);
+      border: 0;
+    }
+  }
+  .btn-home-signup {
+    background-color: @brand-secondary;
+    &:hover {
+      background-color: lighten(@brand-secondary, 3%);
+      border: 0;
+    }
+  }
+  .btn-home-readmore {
+    background-color: #e79800;
+    &:hover {
+      background-color: lighten(#e79800, 3%);
+      border: 0;
+    }
+  }
+  @media (max-width: @screen-xs-max) {
+    .home-tagline {
+      font-size: 18px;
+      line-height: 25px;
+    }
+    .btn-group {
+      border-radius: @border-radius-base;
+      overflow: hidden;
+      .btn {
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+        &:first-child {
+          .border-top-radius(@border-radius-base);
+        }
+        &:last-child {
+          .border-bottom-radius(@border-radius-base);
+        }
+      }
+    }
+  }
+}

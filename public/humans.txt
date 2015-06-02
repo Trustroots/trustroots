@@ -1,5 +1,6 @@
 # humanstxt.org
-# https://www.trustroots.org/#!/team
+# https://www.trustroots.org/team
+# https://www.trustroots.org/foundation
 
 # THE CORE TEAM
 
@@ -11,6 +12,8 @@
 
 # KUDOS!
 
+    John Wu
     Rémi
     Aurimas
     BeWelcome Welen -project dudes
+    Original MEAN.js contributors

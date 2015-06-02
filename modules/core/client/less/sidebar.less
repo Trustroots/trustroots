@@ -1,0 +1,40 @@
+/**
+ * Sidebar navigation
+ *
+ * Used for instance at FAQ page
+ */
+
+.sidebar {
+  font-family: @font-family-brand;
+  font-weight: 400;
+  font-style: normal;
+
+  // Using https://github.com/zumba/angular-waypoints
+  &.sidebar-sticky {
+    position: fixed;
+    top: (@navbar-height + @padding-large-horizontal);
+  }
+
+  // Accordion directive + .list-group inside .sidebar
+  // https://angular-ui.github.io/bootstrap/#/accordion
+  // http://getbootstrap.com/components/#list-group
+  .panel .panel-heading {
+    border-bottom: 0;
+    margin-bottom: 0;
+  }
+  .panel-body {
+    padding: 0;
+  }
+  .accordion-toggle {
+    text-decoration: none;
+  }
+  .panel-title {
+    font-size: 20px;
+  }
+  .list-group {
+    margin-bottom: 0;
+  }
+  .list-group-item {
+    border: 0;
+  }
+}

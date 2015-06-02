@@ -1,0 +1,156 @@
+<div ng-controller="AboutController">
+
+<section class="board board-primary board-bokehblue">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-offset-3 col-md-6 text-center lead">
+        <a ui-sref="home" class="logo logo-sm logo-blue center-block"></a>
+        <br>
+        <div ng-include="'/modules/pages/views/manifesto-text.client.partial.html?v={{cacheBust}}'"></div>
+        <div ng-if="!user">
+          <br><br>
+          <a ui-sref="signup" class="btn btn-lg btn-inverse">Become a member</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container">
+
+    <div class="row">
+
+      <div class="col-xs-12">
+          <br><br>
+          <div class="offer-symbol-sofa center-block"></div>
+      </div>
+      <div class="col-xs-12 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6">
+
+        <p class="lead text-center">
+          <br>
+          This is an early prototype of a travellers' community for sharing, hosting and getting people together. Built with hitchhikers in mind.
+          <br><br>
+          Travel anywhere and easily find great people who want to meet you as well. See where other travellers are and help each other out, whether through welcoming them to your home, sharing your stories or becoming friends.
+          <br><br>
+        </p>
+
+      </div>
+
+    </div><!-- /.row -->
+
+</section>
+
+<section class="board board-map" ng-hide="tour">
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12 text-center">
+        <h3 class="board-highlight board-highlight-primary">Browse everyone on a map</h3>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container">
+
+  <div class="page-header">
+    <h2 id="core-ideas">Ideas</h2>
+  </div>
+
+  <div class="row">
+
+    <div class="col-xs-12 col-sm-6 col-md-4">
+
+      <h3>Free and open source forever</h3>
+      <p>You can trust us. We think it's a shame that former non profits have been sold to venture capital. We've been running other free and open projects for a decade now and we hope our deeds so far speak for us. This is not a startup.</p>
+
+      <h3>Trustroots Foundation</h3>
+      <p>Trustroots is owned and operated by Trustroots Foundation, a non-profit Limited by Guarantee (LBG) under section 60 exemption, registered in the United Kingdom since March 2015.</p>
+      <p><a ui-sref="foundation">Read more</a></p>
+
+    </div>
+    <div class="col-xs-12 col-sm-6 col-md-4">
+
+      <h3>The core team</h3>
+      <p>Trustroots is being built by <a ui-sref="team">a small team</a> of open-source developers and free economy activists who felt that the world of sharing is being taken over by corporations trying to monetize people's willingness to help each other. We are long time hospitality exchange enthusiasts with backgrounds in some other notable projects.</p>
+
+      <h3>Volunteering</h3>
+      <p>We appreciate a hard working, <em>getting things done</em> attitude. We'll aim to keep the entry level for volunteers as low as possible. No bureaucracy. Pragmatic approach. Trust.</p>
+      <p><a href="https://github.com/Trustroots/trustroots/wiki/Volunteering">Read more</a></p>
+
+    </div>
+    <div class="col-xs-12 col-sm-6 col-md-4">
+
+      <h3>Other social networks</h3>
+      <p>By optional connection to other social networks (e.g. Facebook), you can see where all your friends are on the map, what you have in common and show others who you are even without filling your profile.</p>
+
+      <h3>Communities</h3>
+      <p>Trustroots is being built at first with hitchhikers in mind but we will expand later for other target groups.</p>
+      <p>We're building tools to let you find like minded people from your communities and the other way around; let only people from your communities to find you.
+      <p>When travelling by hitchhiking, searching for a host in the hitching community makes sense.</p>
+
+      <p><em>These are features still in planning.</em></p>
+
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-xs-12 col-sm-4 col-sm-offset-4 text-center text-muted lead">
+      <hr>
+      <a ui-sref="faq">FAQ</a> — <a ui-sref="foundation">Foundation</a> — <a ui-sref="team">Team</a>
+    </div>
+  </div>
+
+  <br><br>
+
+</section>
+
+<section class="board board-forestpath about-footer">
+  <div class="container">
+
+    <div class="row about-footer-content">
+
+      <div class="col-xs-12 text-center hidden-xs">
+
+          <h2 id="mission-vission-values">Vision, Mission & Values</h2>
+
+          <br><br>
+      </div>
+
+      <div class="col-sm-4 text-center">
+
+        <h3 id="vision">Vision</h3>
+        <p class="lead"><em>“A world that encourages trust and adventure.”</em></p>
+
+      </div>
+      <div class="col-sm-4 text-center">
+
+        <h3 id="mission">Mission</h3>
+        <p class="lead">Trustroots seeks to be a platform for sharing and getting people together. We aim to connect likeminded people together. We encourage trust, adventure and intercultural connections.</p>
+
+      </div>
+      <div class="col-sm-4 text-center">
+
+        <h3 id="values">Values</h3>
+        <ul class="list-unstyled lead">
+          <li>Trust</li>
+          <li>Adventure</li>
+          <li>Transparency</li>
+          <li>Freedom</li>
+        </ul>
+
+      </div>
+
+    </div><!-- /.row -->
+
+    <div class="row" ng-if="!user">
+      <div class="col-xs-12 text-center">
+        <br><br>
+        <a ui-sref="signup" class="btn btn-lg btn-inverse">Become a member</a>
+        <br><br>
+      </div>
+    </div><!-- /.row -->
+
+  </div><!-- /.container -->
+
+</section>
+
+</div>

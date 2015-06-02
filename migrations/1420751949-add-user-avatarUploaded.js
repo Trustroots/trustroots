@@ -5,12 +5,14 @@
  * Determines if avatars exist at users upload folder
  */
 
-var init = require('../config/init')(),
-    config = require('../config/config'),
-    mongoose = require('mongoose'),
-    chalk = require('chalk'),
-    userModel = require('../app/models/user'),
-    User = mongoose.model('User');
+ var config = require(path.resolve('./config/config')),
+     configMongoose = require(path.resolve('./config/lib/mongoose')),
+     configExpress = require(path.resolve('./config/lib/express')),
+     path = require('path'),
+     chalk = require('chalk'),
+     mongoose = require('mongoose'),
+     userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
+     User = mongoose.model('User');
 
 exports.up = function(next) {
   mongoose.connect(config.db.uri, config.db.options, function(err) {

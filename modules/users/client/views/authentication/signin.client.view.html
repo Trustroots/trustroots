@@ -1,0 +1,42 @@
+<section class="container board board-bokehblue container-fullscreen" ng-controller="AuthenticationController">
+  <div class="row">
+    <div class="col-xs-12 text-center">
+      <a ui-sref="home" class="logo logo-sm logo-blue center-block hidden-xs"></a>
+      <a ui-sref="home" class="logo-horizontal logo-horizontal-blue center-block visible-xs-block"></a>
+      <br><br>
+      <p class="lead" ng-show="continue">Sign in to continue.</p>
+    </div>
+    <div class="col-xs-offset-2 col-xs-8 col-sm-offset-4 col-sm-4 col-lg-offset-5 col-lg-2">
+      <form ng-submit="signin()" class="signin form-horizontal" autocomplete="off">
+        <fieldset>
+          <div ng-show="error" class="alert alert-danger" role="alert">
+            <strong ng-bind="error"></strong>
+          </div>
+          <div class="form-group">
+            <label for="username" class="sr-only">Email or username</label>
+            <input type="text" ng-disabled="isLoading" id="username" name="username" class="form-control input-lg" ng-model="credentials.username" placeholder="Email or username">
+          </div>
+          <div class="form-group">
+            <label for="password" class="sr-only">Password</label>
+            <input type="password" ng-disabled="isLoading" id="password" name="password" class="form-control input-lg" ng-model="credentials.password" placeholder="Password">
+          </div>
+          <div class="text-center form-group">
+            <button type="submit" class="btn btn-inverse btn-lg" ng-disabled="isLoading">
+              <span ng-hide="isLoading">Login</span>
+              <span ng-show="isLoading">Wait...</span>
+            </button>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+  </div><!-- .row-->
+  <div class="row">
+    <div class="col-xs-12 text-center text-white">
+      <p>
+        <br>
+        <a ui-sref="forgot" class="btn btn-link btn-sm">Forgot your password?</a><br>
+        <a ui-sref="signup" class="btn btn-link btn-sm">Become a member</a>
+      </p>
+    </div>
+  </div><!-- .row-->
+</section><!-- .container -->

@@ -1,0 +1,133 @@
+#profile {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+#profile-tabs {
+  margin-top: @padding-base-horizontal;
+  .nav {
+    .panel;
+    .panel-default;
+    .nav-pills;
+    .nav-narrow;
+    .nav-underline;
+    a {
+      .cursor-pointer;
+    }
+    .disabled a {
+      cursor: default;
+    }
+  }
+}
+
+// Edit/save/send messages etc buttons
+.profile-action-buttons {
+  text-align: right;
+  @media (max-width: @screen-xs-max) {
+    .navbar();
+    .navbar-default();
+    .navbar-fixed-bottom();
+    .btn {
+      margin-top: 4px;
+    }
+    .profile-editor-cancel {
+      float: right;
+    }
+    .profile-editor-save {
+      float: left;
+    }
+  }
+}
+
+.profile-name,
+.profile-username {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+  word-wrap: break-word;
+}
+
+.profile-name {
+  @media (min-width: @screen-sm-min) {
+    margin: 0 10px 5px 0;
+  }
+}
+
+.profile-username {
+  .text-muted();
+}
+
+.profile-tagline {
+  font-size: 17px;
+  font-weight: 200;
+  line-height: 1.4;
+  word-wrap: break-word;
+  @media (min-width: @screen-sm-min) {
+    font-size: 17px;
+  }
+}
+
+.profile-quote {
+  display: block;
+  .center-block();
+  width: 80%;
+  .text-muted();
+  text-align: center;
+  font-family: @font-family-serif;
+  font-style: italic;
+  font-size: 18px;
+  padding: 0;
+  border: 0;
+}
+
+#profile-sidebar {
+  @media (min-width: @screen-sm-min) {
+    max-width: 256px;
+  }
+  h4,
+  /* Labels occur when editing profile... */
+  .control-label {
+    .text-muted();
+    text-transform: uppercase;
+    margin: 3px 0 0 0;
+  }
+  &, h4,
+  /* Labels occur when editing profile... */
+  .control-label {
+    font-size: 13px;
+    line-height: 20px;
+    font-weight: normal;
+  }
+  .avatar {
+    .img-responsive;
+    border-top-left-radius: @panel-border-radius;
+    border-top-right-radius: @panel-border-radius;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  .profile-sidebar-section {
+    margin: 0 0 @padding-small-horizontal 0;
+    padding: 0 0 @padding-small-horizontal 0;
+    border-bottom: 1px solid @gray-lighter;
+    &:last-child {
+      border-bottom: 0;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+  }
+  // List of social accounts
+  .social-profiles {
+    margin-top: 5px;
+    margin-bottom: 10px;
+    .btn-link {
+      padding-left: 0;
+      color: @brand-primary;
+      &:focus,
+      &:active,
+      &:hover {
+        text-decoration: none;
+        color: darken(@brand-primary, 10%);
+      }
+    }
+  }
+}

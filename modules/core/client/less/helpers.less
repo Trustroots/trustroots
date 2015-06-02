@@ -1,0 +1,159 @@
+/**
+ * Triangle helper
+ *
+ * .triangle(@direction, @size, @color)
+ * .triangle(@direction, @width, @height, @color)
+ *
+ * @direction defines the direction: up, down, left or right.
+ * @size defines the size of triangle
+ * @width defines the width of triangle
+ * @height defines the height of triangle
+ * @color defines the color
+ *
+ * Example: .triangle(down, 3em, 5px, #fff);
+ *
+ * @link https://github.com/stijnj/less-triangle
+ */
+.triangle-base() {
+  content: '';
+  display: block;
+  width: 0;
+  height: 0;
+}
+.triangle(@direction, @size, @color) {
+  .triangle(@direction, @size * 2, @size, @color);
+}
+.triangle(@direction, @width, @height, @color) when (@direction = up) {
+  .triangle-base();
+  border-left: (@width / 2)solid transparent;
+  border-right: (@width / 2)solid transparent;
+  border-bottom: @height solid @color;
+}
+.triangle(@direction, @width, @height, @color) when (@direction = down) {
+  .triangle-base();
+  border-left: (@width / 2) solid transparent;
+  border-right: (@width / 2) solid transparent;
+  border-top: @height solid @color;
+}
+.triangle(@direction, @width, @height, @color) when (@direction = left) {
+  .triangle-base();
+  border-top: (@width / 2) solid transparent;
+  border-bottom: (@width / 2) solid transparent;
+  border-right: @height solid @color;
+}
+.triangle(@direction, @width, @height, @color) when (@direction = right) {
+  .triangle-base();
+  border-top: (@width / 2) solid transparent;
+  border-bottom: (@width / 2) solid transparent;
+  border-left: @height solid @color;
+}
+
+
+/**
+ * Build triangle for panels
+ */
+@panel-triangle-size: 8px;
+.panel-triangle-base() {
+  position: relative;
+  &:before,
+  &:after {
+    position: absolute;
+    top: (2 * @panel-triangle-size);
+  }
+}
+.panel-triangle-right() {
+  .panel-triangle-base();
+  &:before {
+      .triangle(right, @panel-triangle-size, @panel-border);
+      right: -(@panel-triangle-size + 1);
+  }
+  &:after {
+    .triangle(right, @panel-triangle-size, @panel-bg);
+    right: -@panel-triangle-size;
+  }
+}
+.panel-triangle-left() {
+  .panel-triangle-base();
+  &:before {
+    .triangle(left, @panel-triangle-size, @panel-border);
+    left: -(@panel-triangle-size + 1);
+  }
+  &:after {
+      .triangle(left, @panel-triangle-size, @panel-bg);
+      left: -@panel-triangle-size;
+  }
+}
+
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+// For help-icons/buttons
+.cursor-help {
+  cursor: help;
+}
+
+// For old IE
+.browsehappy {
+  display: block;
+}
+
+// No messages / no contacts etc -type messages
+.content-empty {
+  text-align: center;
+  &, i {
+    .text-muted;
+  }
+}
+
+.content-wait {
+  text-align: center;
+  font-style: italic;
+  .text-muted;
+  margin: 50px 0;
+}
+
+/**
+ * Connection experience
+ */
+.experience-positive {
+  font-weight: bold;
+  color: @experience-positive;
+}
+.experience-neutral {
+  font-weight: bold;
+  color: @experience-neutral;
+}
+.experience-negative {
+  font-weight: bold;
+  color: @experience-negative;
+}
+
+/*
+ * Middle helper
+ *
+ * Usage:
+ * <div class="middle">
+ *   <div class="middle-wrapper">...</div>
+ * </div>
+ *
+ * Or also horizontal:
+ * <div class="middle middle-horizontal">
+ *   <div class="middle-wrapper">...</div>
+ * </div>
+ *
+ * See https://github.com/kg782/angular-middle if you need this as an Angular directive.
+ */
+.middle {
+  display: table;
+  width: 100%;
+  height: 100%;
+  .middle-wrapper {
+    display: table-cell;
+    vertical-align: middle;
+  }
+  &.middle-horizontal .middle-wrapper > * {
+    margin: auto;
+  }
+}

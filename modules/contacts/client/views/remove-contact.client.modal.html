@@ -1,0 +1,61 @@
+<form ng-controller="RemoveContactController" class="form-horizontal" ng-submit="create()" novalidate>
+
+  <div class="modal-content">
+    <div class="modal-header">
+      <button type="button" class="close" aria-hidden="true" ng-click="cancel()" ng-disabled="isLoading">&times;</button>
+      <h4 class="modal-title">
+        Remove contact?
+      </h4>
+    </div>
+
+    <div class="modal-body">
+
+      <div class="alert alert-danger" ng-if="error">
+        <strong ng-bind="error"></strong>
+      </div>
+
+      <div class="row contacts-connection">
+        <div class="col-xs-12 col-sm-5 contacts-connection-profile">
+          <!-- Avatar while loading -->
+          <div tr-avatar data-source="none" data-size="128" class="center-block" ng-hide="contact && contact.$resolved"></div>
+
+          <!-- Avatar after loaded -->
+          <div tr-avatar data-user="contact.users[0]" data-size="128" class="center-block" ng-show="contact && contact.$resolved"></div>
+
+          <h4 class="contacts-connection-name" ng-bind="contact.users[0].displayName"></span>
+        </div>
+        <div class="hidden-xs col-sm-2">
+          <i class="icon-exchange icon-3x text-muted contacts-connection-divider"></i>
+        </div>
+        <div class="col-xs-12 col-sm-5 contacts-connection-profile">
+          <!-- Avatar while loading -->
+          <div tr-avatar data-source="none" data-size="128" class="center-block" ng-if="!contact || !contact.$resolved"></div>
+
+          <!-- Avatar after loaded -->
+          <div tr-avatar data-user="contact.users[1]" data-size="128" class="center-block" ng-if="contact && contact.$resolved"></div>
+
+          <h4 class="contacts-connection-name" ng-bind="contact.users[1].displayName"></h4>
+
+        </div>
+      </div><!-- /.row -->
+      <div class="row">
+        <div class="col-xs-12 text-center text-muted">
+          <p>
+            <br>
+            <small>Connected since {{ contact.created | date:'mediumDate' }}</small>
+          </p>
+        </div>
+      </div><!-- /.row -->
+
+    </div><!-- /.modal-body -->
+
+    <div class="modal-footer">
+      <button class="btn btn-link" type="clear" ng-click="cancel()" ng-disabled="isLoading">Cancel</button>
+      <button class="btn btn-primary" type="submit" ng-click="removeContact(friend._id);" ng-disabled="isLoading">
+        <span ng-hide="isLoading">Yes, remove contact</span>
+        <span ng-show="isLoading">Wait a moment...</span>
+      </button>
+    </div>
+  </div>
+
+</form>

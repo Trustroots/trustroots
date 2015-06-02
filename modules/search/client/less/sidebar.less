@@ -1,0 +1,118 @@
+.search-map-sidebar {
+  position: absolute;
+  width: auto;
+  top: @navbar-height;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: auto;
+  padding: 10px;
+  z-index: @zindex-navbar;
+  overflow: auto;
+  background: #eee;
+  @media (min-width: @screen-sm-min) {
+    background: rgba(0,0,0, 0.1);
+    min-width: 300px;
+    max-width: 480px;
+    width: 30%;
+    right: 0;
+    left: auto;
+    bottom: 0;
+  }
+}
+.search-list {
+  display: block;
+  float: left;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: auto;
+  .search-list-instructions {
+    color: #fff;
+    text-align: center;
+    font-size: 12px;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.4);
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    @media (max-width: @screen-xs-max) {
+      display: none;
+    }
+  }
+  .panel {
+    margin-bottom: 5px;
+  }
+  .search-filters {
+    label {
+      .text-muted;
+      text-transform: uppercase;
+      padding: 0;
+      margin: 0;
+      font-size: @font-size-small;
+    }
+  }
+
+  .search-result {
+    .user-select(none);
+    position: relative;
+    cursor: pointer;
+    .panel-body {
+      display: block;
+      border-left: 3px solid #fff;
+      border-radius: @panel-border-radius;
+      .transition(all 0.1s linear);
+      text-decoration: none;
+      color: @text-color;
+    }
+    h4 {
+      padding: 0;
+      margin: 0;
+    }
+    .search-result-label,
+    .search-result-languages h4 {
+      .text-muted;
+      font-size: @font-size-base;
+      text-transform: uppercase;
+    }
+    .search-result-label {
+      padding-bottom: 5px;
+    }
+    .search-result-languages {
+      padding: 10px 0 0 0;
+      &, h4 {
+        font-size: @font-size-small;
+      }
+    }
+    .avatar {
+      width: 36px;
+      height: 36px;
+      float: left;
+      margin: 0 10px 0 0;
+    }
+    .search-result-meta {
+      font-size: @font-size-small;
+      .text-muted;
+    }
+    .search-result-tagline {
+      margin: 0;
+      padding: 10px 0;
+      font-size: 15px;
+    }
+    .search-result-lastseen {
+      font-size: @font-size-small;
+    }
+    &.active,
+    &:hover {
+      .panel-body {
+        border-color: @brand-primary;
+      }
+    }
+    /* Notice . and : */
+    &.active,
+    &:active {
+      background: #fafafa;
+      .panel-body {
+        border-color: @brand-secondary;
+      }
+    }
+  }
+}

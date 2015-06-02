@@ -1,0 +1,321 @@
+{#<!--
+ # Mail base template
+ #
+ # Based on:
+ # @link https://raw.githubusercontent.com/TomFrankly/mailchimp-responsive-template/master/Responsive%20Basic%20Chopped%20and%20Screwed.html
+ # License: @link http://creativecommons.org/licenses/by-sa/3.0/
+ #
+ #
+ #
+ #
+ # This email is optimized for mobile email clients, and even
+ #      works relatively well in the Android Gmail App, which does
+ #      not support Media Queries, but does have limited mobile-
+ #      friendly functionality.
+ #
+ # While this coding method is very flexible, it can be more
+ #      brittle than traditionally-coded emails, particularly in
+ #      Microsoft Outlook 2007-2010. Outlook-specific conditional
+ #      CSS is included to counteract the inconsistencies that
+ #      crop up.
+ #-->
+ #}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width"/>
+    {% if mailTitle %}
+      <title>{{ mailTitle }}</title>
+    {% else %}
+      <title>{{title}}</title>
+    {% endif %}
+
+    <style type="text/css">
+      /*////// RESET STYLES //////*/
+      body, #bodyTable, #bodyCell, #footerTable, #footerCell, #headerTable, #headerCell{height:100% !important; margin:0; padding:0; width:100% !important;}
+      table{border-collapse:collapse;}
+      img, a img{border:0; outline:none; text-decoration:none;}
+      h1, h2, h3, h4, h5, h6{margin:0; padding:0;}
+      p{margin: 1em 0;}
+
+      /*////// CLIENT-SPECIFIC STYLES //////*/
+      .ReadMsgBody{width:100%;} .ExternalClass{width:100%;} /* Force Hotmail/Outlook.com to display emails at full width. */
+      .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div{line-height:100%;} /* Force Hotmail/Outlook.com to display line heights normally. */
+      table, td{mso-table-lspace:0pt; mso-table-rspace:0pt;} /* Remove spacing between tables in Outlook 2007 and up. */
+      #outlook a{padding:0;} /* Force Outlook 2007 and up to provide a "view in browser" message. */
+      img{-ms-interpolation-mode: bicubic;} /* Force IE to smoothly render resized images. */
+      body, table, td, p, a, li, blockquote{-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%;} /* Prevent Windows- and Webkit-based mobile platforms from changing declared text sizes. */
+
+      /*////// FRAMEWORK STYLES //////*/
+      .flexibleContainerCell{padding-top:20px; padding-Right:20px; padding-Left:20px;}
+      .bottomShim{padding-bottom:20px;}
+      .nestedContainerCell{padding-top:20px; padding-Right:20px; padding-Left:20px;}
+
+      /*////// GENERAL STYLES //////*/
+      body, #bodyTable, #footerTable, #headerTable{background-color:#F5F5F5;}
+      #bodyCell{padding-top:10px; padding-bottom:10px;}
+      #footerCell{padding-top:0; padding-bottom:40px;}
+      #headerCell{padding-top:10px; padding-bottom:0;}
+      #emailBody{background-color:#FFFFFF; border:1px solid #DDDDDD; border-collapse:separate; border-radius:4px;}
+      #emailFooter, #emailHeader{background-color:transparent; border:0;}
+      h1, h2, h3, h4, h5, h6{color:#202020; font-family:Helvetica; font-size:20px; line-height:125%; text-align:Left;}
+      .textContent, .textContentLast{color:#404040; font-family:Helvetica; font-size:16px; line-height:125%; text-align:Left; padding-bottom:20px;}
+      .textContent a, .textContentLast a{color:#12b591; text-decoration:underline;}
+      .footerContent {font-family:Helvetica;line-height:125%; color:#555555;font-size:12px; text-align:center;padding-bottom:20px;}
+      .footerContent a {color:#555555;text-decoration:underline;}
+      .nestedContainer{background-color:#E5E5E5; border:1px solid #CCCCCC;}
+      .emailButton{background-color:#12b591; border-collapse:separate; border-radius:4px;}
+      .buttonContent{color:#FFFFFF; font-family:Helvetica; font-size:18px; font-weight:bold; line-height:100%; padding:15px; text-align:center;}
+      .buttonContent a{color:#FFFFFF; display:block; text-decoration:none;}
+      .logo-link{text-decoration:none;text-align:center;color:#555;}
+      .logo-text{margin:5px 0 10px 0;padding:0;text-align:center;font-size:15px;line-height:17px;color:#555;}
+      .message {padding:10px;margin:10px 0;background-color:#f7f7f7;}
+      /*////// MOBILE STYLES //////*/
+      @media only screen and (max-width: 480px){
+        /*////// CLIENT-SPECIFIC STYLES //////*/
+        body{width:100% !important; min-width:100% !important;} {#/* Force iOS Mail to render the email at full width. */#}
+
+        {#/*////// FRAMEWORK STYLES //////*/
+        /*
+          CSS selectors are written in attribute
+          selector format to prevent Yahoo Mail
+          from rendering media query styles on
+          desktop.
+        */#}
+        table[id="emailBody"], table[id="emailFooter"], table[class="flexibleContainer"]{width:100% !important;}
+
+        {#/*
+          Make buttons in the email span the
+          full width of their container, allowing
+          for left- or right-handed ease of use.
+        */#}
+        table[class="emailButton"]{width:100% !important;}
+        td[class="buttonContent"]{padding:0 !important;}
+        td[class="buttonContent"] a{padding:15px !important;}
+
+        td[class="textContentLast"], td[class="imageContentLast"]{padding-top:20px !important;}
+
+        /*////// GENERAL STYLES //////*/
+        td[id="bodyCell"], td[id="footerCell"], td[id="headerCell"]{padding-top:10px !important; padding-Right:10px !important; padding-Left:10px !important;}
+
+      }
+    </style>
+        {#<!--
+          Outlook Conditional CSS
+
+            These two style blocks target Outlook 2007 & 2010 specifically, forcing
+            columns into a single vertical stack as on mobile clients. This is
+            primarily done to avoid the 'page break bug' and is optional.
+
+            More information here:
+            http://templates.mailchimp.com/development/css/outlook-conditional-css
+        -->#}
+        <!--[if mso 12]>
+            <style type="text/css">
+              .flexibleContainer{display:block !important; width:100% !important;}
+            </style>
+        <![endif]-->
+        <!--[if mso 14]>
+            <style type="text/css">
+              .flexibleContainer{display:block !important; width:100% !important;}
+            </style>
+        <![endif]-->
+    </head>
+    <body>
+      <center>
+
+          {% block header %}
+          <!-- EMAIL HEADER -->
+          <table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="headerTable">
+              <tr>
+                  <td align="center" valign="top" id="headerCell">
+                      <!-- HEADER CONTAINER // -->
+                        {#<!--
+                          The table "footerTable" is the footer's container.
+                            Its width can be set to 100% for a color band
+                            that spans the width of the page.
+                        -->#}
+                      <table border="0" cellpadding="0" cellspacing="0" width="600" id="emailHeader">
+
+
+
+                          <!-- MODULE ROW // -->
+                          <tr>
+                            <td align="center" valign="top">
+                                <!-- CENTERING TABLE // -->
+                                  <!--
+                                    The centering table keeps the content
+                                      tables centered in the emailBody table,
+                                      in case its width is set to 100%.
+                                  -->
+                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                    <tr>
+                                        <td align="center" valign="top">
+                                            <!-- FLEXIBLE CONTAINER // -->
+                                              <!--
+                                                The flexible container has a set width
+                                                  that gets overridden by the media query.
+                                                  Most content tables within can then be
+                                                  given 100% widths.
+                                              -->
+                                            <table border="0" cellpadding="0" cellspacing="0" width="600" class="flexibleContainer">
+                                                <tr>
+                                                    <td align="center" valign="top" width="600" class="flexibleContainerCell">
+
+                                                          <!-- CONTENT TABLE // -->
+                                                          <!--
+                                                            The content table is the first element
+                                                              that's entirely separate from the structural
+                                                              framework of the email.
+                                                          -->
+                                                          <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                              <tr>
+                                                                  <td valign="middle" align="center" style="text-align:center">
+                                                                    <center>
+                                                                      {% if url %}<a href="{{url}}" target="_blank" class="logo-link">{% endif %}
+                                                                          <h2 class="logo-text">TRUSTROOTS</h2>
+                                                                      {% if url %}</a>{% endif %}
+                                                                    </center>
+                                                                  </td>
+                                                              </tr>
+                                                          </table>
+                                                          <!-- // CONTENT TABLE -->
+
+
+                                                      </td>
+                                                  </tr>
+                                              </table>
+                                              <!-- // FLEXIBLE CONTAINER -->
+                                          </td>
+                                      </tr>
+                                  </table>
+                                  <!-- // CENTERING TABLE -->
+                              </td>
+                          </tr>
+                          <!-- // MODULE ROW -->
+
+
+                      </table>
+                    <!-- // FOOTER CONTAINER -->
+                  </td>
+              </tr>
+          </table>
+          <!-- // EMAIL HEADER -->
+          {% endblock %}
+
+
+        <!-- EMAIL CONTENT -->
+          <table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="bodyTable">
+              <tr>
+                  <td align="center" valign="top" id="bodyCell">
+                      <!-- EMAIL CONTAINER // -->
+                        {#<!--
+                          The table "emailBody" is the email's container.
+                            Its width can be set to 100% for a color band
+                            that spans the width of the page.
+                        -->#}
+                      <table border="0" cellpadding="0" cellspacing="0" width="600" id="emailBody">
+
+                        {% block content %}{% endblock %}
+
+                      </table>
+                    <!-- // EMAIL CONTAINER -->
+                  </td>
+              </tr>
+          </table>
+          <!-- // EMAIL CONTENT -->
+
+
+          {% block footer %}
+          <!-- EMAIL FOOTER -->
+          <table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="footerTable">
+              <tr>
+                  <td align="center" valign="top" id="footerCell">
+                      <!-- FOOTER CONTAINER // -->
+                        {#<!--
+                          The table "footerTable" is the footer's container.
+                            Its width can be set to 100% for a color band
+                            that spans the width of the page.
+                        -->#}
+                      <table border="0" cellpadding="0" cellspacing="0" width="600" id="emailFooter">
+
+
+
+                          <!-- MODULE ROW // -->
+                          <tr>
+                            <td align="center" valign="top">
+                                <!-- CENTERING TABLE // -->
+                                  <!--
+                                    The centering table keeps the content
+                                      tables centered in the emailBody table,
+                                      in case its width is set to 100%.
+                                  -->
+                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                    <tr>
+                                        <td align="center" valign="top">
+                                            <!-- FLEXIBLE CONTAINER // -->
+                                              <!--
+                                                The flexible container has a set width
+                                                  that gets overridden by the media query.
+                                                  Most content tables within can then be
+                                                  given 100% widths.
+                                              -->
+                                            <table border="0" cellpadding="0" cellspacing="0" width="600" class="flexibleContainer">
+                                                <tr>
+                                                    <td align="center" valign="top" width="600" class="flexibleContainerCell">
+
+
+                                                          <!-- CONTENT TABLE // -->
+                                                          <!--
+                                                            The content table is the first element
+                                                              that's entirely separate from the structural
+                                                              framework of the email.
+                                                          -->
+                                                          <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                              <tr>
+                                                                  <td valign="top" class="footerContent">
+
+                                                                      Remember, I'm just a little mail robot so don't reply this email. <a href="{{url}}/contact">Contact us</a> if you want to talk to a human.
+
+                                                                      {% if ourMail %}
+                                                                        <br><br>
+                                                                        Please add '{{ourMail}}' to your contact list to avoid our mails going to spam folder.
+                                                                      {% endif %}
+
+                                                                      <br/><br/>
+
+                                                                      {% if url %}<a href="{{url}}">{% endif %}
+                                                                          Trustroots
+                                                                      {% if url %}</a>{% endif %}
+
+                                                                  </td>
+                                                              </tr>
+                                                          </table>
+                                                          <!-- // CONTENT TABLE -->
+
+
+                                                      </td>
+                                                  </tr>
+                                              </table>
+                                              <!-- // FLEXIBLE CONTAINER -->
+                                          </td>
+                                      </tr>
+                                  </table>
+                                  <!-- // CENTERING TABLE -->
+                              </td>
+                          </tr>
+                          <!-- // MODULE ROW -->
+
+
+                      </table>
+                    <!-- // FOOTER CONTAINER -->
+                  </td>
+              </tr>
+          </table>
+          <!-- // EMAIL FOOTER -->
+          {% endblock %}
+
+      </center>
+    </body>
+</html>

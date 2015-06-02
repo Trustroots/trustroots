@@ -1,0 +1,232 @@
+/**
+ * TrustRoots core layout styles
+ */
+
+/* Required by body and .page-header */
+.bg() {
+  background: @body-bg url(/modules/core/img/bg.png);
+}
+
+html,
+body {
+  height: 100%;
+}
+body {
+  .bg();
+}
+
+.container-spacer {
+  margin-top: (@navbar-height + @grid-gutter-width);
+}
+
+.container-fullscreen {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding-bottom: 130px;
+  &.container-spacer {
+    top: @navbar-height;
+    margin-top: 0;
+  }
+}
+.container-error {
+  @media (min-width: @screen-sm-min) {
+    padding-top: 200px;
+  }
+  @media (min-width: @screen-md-min) {
+    padding-top: 300px;
+  }
+}
+
+// Horizontal divider with "rainbow" color reel
+ hr {
+   position: relative;
+   height: .15em;
+   margin: 40px 0;
+   padding: 0;
+   border: 0;
+   overflow: hidden;
+   @color-reel-1: #ca7900;
+   @color-reel-2: #e18700;
+   @color-reel-3: #e49a00;
+   @color-reel-4: #e0b521;
+   background: @color-reel-3;
+   &:before {
+     content: '';
+     display: block;
+     position: absolute;
+     top: 0;
+     left: 0;
+     height: .15em;
+     width: 10em;
+     background: @brand-primary;
+
+     // Rainbow style hr
+     box-shadow:
+       10em 0 0 0 darken(@brand-primary, 5%),
+       20em 0 0 0 @color-reel-1,
+       30em 0 0 0 @color-reel-2,
+       40em 0 0 0 @color-reel-3,
+       50em 0 0 0 @color-reel-4,
+       60em 0 0 0 @color-reel-3,
+       70em 0 0 0 @color-reel-2,
+       80em 0 0 0 @color-reel-1;
+   }
+ }
+
+
+
+/**
+ * Header
+ */
+#tr-header {
+  width: 100%;
+  height: @navbar-height;
+  clear: both;
+  font-family: @font-family-brand;
+  font-weight: 400;
+  font-style: normal;
+  .navbar {
+    .box-shadow(0 0 8px rgba(0,0,0,0.1));
+  }
+  .navbar-brand {
+    padding-top: 6px;
+  }
+  a {
+    text-shadow: 1px 1px 1px rgba(0,0,0,.3);
+  }
+  .dropdown-menu {
+    a {
+      text-shadow: none;
+    }
+  }
+
+  @media (min-width: @grid-float-breakpoint) {
+    /* Make Bootstrap dropdowns open at hover */
+    .dropdown:hover .dropdown-menu {
+      display: block;
+    }
+    /* Make sure avatar works as a dropdown handle */
+    .dropdown-user {
+      .dropdown-toggle {
+        width: 73px;
+        .avatar {
+          float: left;
+          margin-right: 8px;
+        }
+      }
+    }
+  }
+
+  /* Mobile navbar */
+  .navbar-collapse {
+    background: @brand-primary;
+  }
+
+  /* This is where header breaks due the logo width => Show only the "tree" part. */
+  @media (max-width: 266px) {
+    .logo-horizontal {
+      width: 30px;
+      background-position-x: 0;
+    }
+  }
+}
+
+
+/**
+ * Main content area. Everything else except header and footer.
+ */
+#tr-main {
+  clear: both;
+  overflow: auto;
+  padding-bottom: (@footer-height + 30px);
+  @media (max-width: @screen-xs-max) {
+    padding-bottom: 30px;
+  }
+}
+
+/**
+ * Everything else, except footer, is wrapped inside this
+ */
+#tr-wrap {
+  min-height: 100%;
+}
+
+/**
+ * Sticky footer
+ */
+#tr-footer {
+  position: relative;
+  overflow: visible;
+  clear: both;
+  background: @gray-dark url(/modules/core/img/footer.jpg) 50% 0 repeat-x;
+  font-family: @font-family-brand;
+  font-size: @font-size-small;
+  color: lighten(#000, 70%);
+  text-shadow: 1px 1px 1px rgba(0,0,0,.5);
+
+  @media (max-width: @screen-sm-max) {
+    margin-top: -(@footer-height + 10);
+    height: (@footer-height + 10);
+  }
+  /* Color-reel line */
+  hr {
+    margin: 0;
+    width: 100%;
+  }
+  /* Used e.g. at map search -view... */
+  &.footer-sticky {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+  /* Used e.g. at home -view... */
+  &.footer-transparent {
+    z-index: 999;
+    /* http://www.colorzilla.com/gradient-editor/#000000+0,000000+100&0+0,0.65+100;Custom */
+    background: -moz-linear-gradient(top,  rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(0,0,0,0)), color-stop(100%,rgba(0,0,0,0.65))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00000000', endColorstr='#a6000000',GradientType=0 ); /* IE6-9 */
+    border: 0;
+    &, a {
+      color: #fff;
+    }
+    hr {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+  }
+  a {
+    color: lighten(#000, 70%);
+    text-decoration: none;
+    &:hover,
+    &:active {
+      text-decoration: underline;
+    }
+  }
+  .container {
+    padding-top: 8px;
+    @media (min-width: @screen-md-min) {
+      padding-top: 15px;
+    }
+  }
+  .photo-credits {
+    &, a {
+      font-size: 10px;
+      color: rgba(255,255,255,0.6);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  }
+}
