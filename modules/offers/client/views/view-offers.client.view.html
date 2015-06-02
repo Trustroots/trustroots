@@ -9,9 +9,9 @@
         <span class="caret"></span>
       </button>
       <ul class="dropdown-menu" role="menu">
-        <li><a ng-click="hostingStatus('yes')" class="cursor-pointer hosting-yes">I can host</a></li>
-        <li><a ng-click="hostingStatus('maybe')" class="cursor-pointer hosting-maybe">I might be able to host</a></li>
-        <li><a ng-click="hostingStatus('no')" class="cursor-pointer hosting-no">I can't host currently</a></li>
+        <li><a ui-sref="offer-status({'status': 'yes'})" class="cursor-pointer hosting-yes">I can host</a></li>
+        <li><a ui-sref="offer-status({'status': 'maybe'})" class="cursor-pointer hosting-maybe">I might be able to host</a></li>
+        <li><a ui-sref="offer-status({'status': 'no'})" class="cursor-pointer hosting-no">I can't host currently</a></li>
       </ul>
     </div>
     <!-- Button for other profiles -->
@@ -65,13 +65,13 @@
 
       <!-- User has written explanation -->
       <div ng-if="offer.noOfferDescription" ng-bind-html="offer.noOfferDescription | trustedHtml"></div>
-      <small ng-if="offer.noOfferDescription && user._id === profile._id" class="pull-right"><a ng-click="hostingStatus('no')" class="text-muted">edit</a></small>
+      <small ng-if="offer.noOfferDescription && user._id === profile._id" class="pull-right"><a ui-sref="offer-status({'status': 'no'})" class="text-muted">edit</a></small>
 
       <!-- Default "sorry nope" -->
       <div ng-if="!offer.noOfferDescription" class="content-empty text-muted">
         <div class="offer-symbol-sofa center-block"></div>
         <h4>Sorry, user is not hosting currently.</h4>
-        <p ng-if="!offer.noOfferDescription && user._id === profile._id"><a ng-click="hostingStatus('no')" class="text-muted"><small>Customize</small></a></p>
+        <p ng-if="!offer.noOfferDescription && user._id === profile._id"><a ui-sref="offer-status({'status': 'no'})" class="text-muted"><small>Customize</small></a></p>
       </div>
 
     </div>

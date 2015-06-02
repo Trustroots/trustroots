@@ -143,11 +143,5 @@ angular.module('offers').controller('ViewOffersController', ['$scope', '$state',
         }
     };
 
-    $scope.hostingStatus = function(status) {
-      $scope.offer.status = status;
-      $scope.hostingDropdown = false;
-      $state.go('offer-status', {'status': status});
-    };
-
   }
 ]);
