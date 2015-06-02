@@ -5,10 +5,10 @@
  * Determines if avatars exist at users upload folder
  */
 
- var config = require(path.resolve('./config/config')),
+ var path = require('path'),
+     config = require(path.resolve('./config/config')),
      configMongoose = require(path.resolve('./config/lib/mongoose')),
      configExpress = require(path.resolve('./config/lib/express')),
-     path = require('path'),
      chalk = require('chalk'),
      mongoose = require('mongoose'),
      userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
