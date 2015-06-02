@@ -45,13 +45,13 @@ module.exports = {
     page: process.env.FACEBOOK_PAGE || 'PAGE',
     clientID: process.env.FACEBOOK_ID || 'APP_ID',
     clientSecret: process.env.FACEBOOK_SECRET || 'APP_SECRET',
-    callbackURL: '/auth/facebook/callback'
+    callbackURL: '/api/auth/facebook/callback'
   },
   twitter: {
     username: process.env.TWITTER_USERNAME || 'USERNAME',
     clientID: process.env.TWITTER_KEY || 'CONSUMER_KEY',
     clientSecret: process.env.TWITTER_SECRET || 'CONSUMER_SECRET',
-    callbackURL: '/auth/twitter/callback'
+    callbackURL: '/api/auth/twitter/callback'
   },
   google: {
     page: process.env.GOOGLE_PAGE || 'PAGE',
@@ -59,12 +59,12 @@ module.exports = {
   linkedin: {
     clientID: process.env.LINKEDIN_ID || 'APP_ID',
     clientSecret: process.env.LINKEDIN_SECRET || 'APP_SECRET',
-    callbackURL: '/auth/linkedin/callback'
+    callbackURL: '/api/auth/linkedin/callback'
   },
   github: {
     clientID: process.env.GITHUB_ID || 'APP_ID',
     clientSecret: process.env.GITHUB_SECRET || 'APP_SECRET',
-    callbackURL: '/auth/github/callback'
+    callbackURL: '/api/auth/github/callback'
   },
   newrelic: {
     enabled: process.env.NEWRELIC_ENABLED || false,
