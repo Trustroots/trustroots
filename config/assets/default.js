@@ -5,7 +5,7 @@ module.exports = {
     lib: {
       css: [
         'public/lib/fontello/css/animation.css',
-        'public/lib/fontello/css/tr-icons-codes.css',
+        'public/lib/fontello/css/tricons-codes.css',
         'public/lib/medium-editor/dist/css/medium-editor.css'
       ],
       js: [
