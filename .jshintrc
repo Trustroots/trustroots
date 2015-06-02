@@ -28,7 +28,8 @@
     "L": true, // Leaflet
     "moment": true,
     "ApplicationConfiguration": true,
-    "ga": true // Google Analytics
+    "ga": true, // Google Analytics
+    "PhusionPassenger": true
   },
   "predef": [ // Extra globals.
     "inject",
