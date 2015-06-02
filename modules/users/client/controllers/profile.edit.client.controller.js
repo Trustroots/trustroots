@@ -62,6 +62,7 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
             provider: provider
           }
         }).success(function(response) {
+          messageCenterService.add('success', 'Profile succesfully disconnected.' , { timeout: settings.flashTimeout });
           $scope.user = Authentication.user = response;
         }).error(function(response) {
           messageCenterService.add('danger', response.message || 'Something went wrong. Try again or contact us to disconnect your profile.' , { timeout: 10000 });

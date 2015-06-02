@@ -177,7 +177,7 @@ exports.oauthCallback = function(strategy) {
           return res.redirect('/signin');
         }
 
-        return res.redirect(redirectURL || '/profile/');
+        return res.redirect(redirectURL || '/profile/' + user.username + '/edit');
       });
     })(req, res, next);
   };
