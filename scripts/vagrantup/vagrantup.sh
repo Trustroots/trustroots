@@ -73,7 +73,7 @@ sudo service nginx restart
 # Uncomment passenger variables from Nginx config:
 sudo perl -pi -e 's/# passenger_/passenger_/g' /etc/nginx/nginx.conf
 # We don't need passenger-ruby, but node
-sudo perl -pi -e 's/passenger_ruby \/usr\/bin\/ruby;/passenger_nodejs \/usr\/local\/bin\/node;/g' /etc/nginx/nginx.conf
+sudo perl -pi -e 's/passenger_ruby \/usr\/bin\/passenger_free_ruby;/passenger_nodejs \/usr\/local\/bin\/node;/g' /etc/nginx/nginx.conf
 
 
 # Install NodeJS tools
@@ -127,4 +127,7 @@ echo "When you're ready to begin working again, just run 'vagrant up'."
 echo "To access box, type 'vagrant ssh'."
 echo ""
 echo "Read more from https://github.com/trustroots/trustroots/wiki"
+echo ""
+echo "---------------------------------------------------------------------"
+echo ""
 echo ""
