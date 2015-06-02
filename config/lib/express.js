@@ -53,9 +53,15 @@ module.exports.initLocalVariables = function (app) {
 
   // Passing the request url to environment locals
   app.use(function (req, res, next) {
-    res.locals.hostPort = req.protocol + '://' + req.get('host');
-    res.locals.host = req.protocol + '://' + req.hostname;
-    res.locals.url = req.protocol + '://' + req.headers.host + req.originalUrl;
+
+    // Determine if to use https. When proxying (e.g. with Nginx) to localhost
+    // from https front, req.protocol would end up being http when it should be https.
+    // @todo: sniff if behind proxy and otherwise rely req.protocol.
+    var protocol = (config.https === true || req.protocol === 'https') ? 'https' : 'http';
+
+    res.locals.hostPort = protocol + '://' + req.get('host');
+    res.locals.host = protocol + '://' + req.hostname;
+    res.locals.url = protocol + '://' + req.headers.host + req.originalUrl;
     next();
   });
 };
