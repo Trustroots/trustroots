@@ -45,7 +45,10 @@ exports.signup = function(req, res) {
       user.displayUsername = req.body.username;
 
       // Just to simplify email confirm process later
-      // This field is needed when changing email after the signup process
+      // This field is normally needed when changing email after the signup process
+      // Since we set user public=false and require initial email confirmation,
+      // we'll have to have the email also at emailTemporary field
+      // (from where it's then again moved to email field)
       user.emailTemporary = user.email;
 
       // Then save the user
@@ -220,7 +223,7 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
  */
 exports.removeOAuthProvider = function(req, res, next) {
   var user = req.user;
-  var provider = req.param('provider');
+  var provider = req.params.provider;
 
   if (user && provider) {
     // Delete the additional provider
@@ -249,7 +252,6 @@ exports.removeOAuthProvider = function(req, res, next) {
   }
 };
 
-
 /**
  * Confirm email GET from email token
  */
@@ -260,7 +262,6 @@ exports.validateEmailToken = function(req, res) {
     if (!user) {
       return res.redirect('/confirm-email-invalid');
     }
-
     res.redirect('/confirm-email/' + req.params.token);
   });
 };
