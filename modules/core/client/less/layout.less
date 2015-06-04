@@ -125,8 +125,8 @@ body {
     background: @brand-primary;
   }
 
-  /* This is where header breaks due the logo width => Show only the "tree" part. */
-  @media (max-width: 266px) {
+  /* Header breaks due the logo width => Show only the "tree" part for very narrow screens. */
+  @media (max-width: 280px) {
     .logo-horizontal {
       width: 30px;
       background-position-x: 0;
