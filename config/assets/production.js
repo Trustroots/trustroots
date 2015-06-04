@@ -17,7 +17,6 @@ module.exports = {
         'public/lib/angular-touch/angular-touch.min.js',
         'public/lib/angular-sanitize/angular-sanitize.min.js',
         'public/lib/angular-ui-router/release/angular-ui-router.min.js',
-        'public/lib/angular-ui-utils/ui-utils.min.js',
         'public/lib/angular-bootstrap/ui-bootstrap-tpls.min.js',
         'public/lib/moment/min/moment.min.js',
         'public/lib/angular-moment/angular-moment.min.js',

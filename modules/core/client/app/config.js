@@ -11,8 +11,6 @@ var ApplicationConfiguration = (function() {
                                               'ngSanitize',
                                               'ui.router',
                                               'ui.bootstrap',
-                                              'ui.utils',
-                                              //'btford.socket-io',
                                               'angularMoment',
                                               'angular-medium-editor',
                                               'leaflet-directive',
