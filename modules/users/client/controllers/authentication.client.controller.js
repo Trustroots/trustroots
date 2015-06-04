@@ -20,8 +20,10 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$root
       $http.post('/api/auth/signup', $scope.credentials).success(function(response) {
         $scope.isLoading = false;
         // If successful we assign the response to the global user model
+        Authentication.user = response;
         $scope.authentication.user = response;
         $scope.success = 'Go to your ' + response.email + ' email account, find the email from Trustroots and click the confirm link. It might take up to 5-10 minutes for email to arrive and in rare occasions it might end up to spam folder — meanwhile you can fill in your profile!';
+        $scope.$emit('userUpdated');
       }).error(function(response) {
         $scope.isLoading = false;
         messageCenterService.add('danger', response.message, { timeout: settings.flashTimeout });
@@ -38,7 +40,9 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$root
         $scope.isLoading = false;
 
         // If successful we assign the response to the global user model
+        Authentication.user = response;
         $scope.authentication.user = response;
+        $scope.$emit('userUpdated');
 
         // Redirect to where we were left off before sign-in page
         // See modules/core/client/controllers/main.client.controller.js
