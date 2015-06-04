@@ -8,7 +8,8 @@ angular.module('search').config(['$stateProvider',
     state('search', {
       url: '/search?location?offer',
       templateUrl: 'modules/search/views/search.client.view.html',
-      requiresAuth: true
+      requiresAuth: true,
+      footerHidden: true
     });
   }
 ]);

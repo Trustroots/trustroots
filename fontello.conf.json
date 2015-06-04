@@ -85,6 +85,12 @@
       "src": "fontawesome"
     },
     {
+      "uid": "0d20938846444af8deb1920dc85a29fb",
+      "css": "sign-out",
+      "code": 59409,
+      "src": "fontawesome"
+    },
+    {
       "uid": "128d63150a41800e0beff55235269542",
       "css": "sign-up",
       "code": 59399,

@@ -13,7 +13,8 @@ angular.module('messages').config(['$stateProvider',
     state('listMessages', {
       url: '/messages/:userId',
       templateUrl: 'modules/messages/views/thread-messages.client.view.html',
-      requiresAuth: true
+      requiresAuth: true,
+      footerHidden: true
     });
   }
 ]);

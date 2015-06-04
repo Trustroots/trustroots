@@ -1,4 +1,4 @@
-<footer id="tr-footer" role="contentinfo" class="hidden-print hidden-xs" ng-class="{ 'footer-transparent footer-sticky' : isTransparent }" ng-hide="isHidden" ng-controller="FooterController">
+<footer id="tr-footer" role="contentinfo" class="hidden-print hidden-xs" ng-class="{ 'footer-transparent footer-sticky' : footer.isTransparent }" ng-hide="footer.isHidden" ng-controller="FooterController as footer">
   <hr>
   <div class="container">
     <div class="row">
@@ -9,11 +9,11 @@
       </nav>
       <nav class="col-xs-4 text-right" role="navigation">
         <ul class="list-inline">
-          <li ng-if="photoCredits.length > 0" class="photo-credits">
-            <span ng-if="photoCredits.length === 1">Photo by</span>
-            <span ng-if="photoCredits.length > 1">Photos by</span>
-            <span ng-repeat="credit in photoCredits">
-              <a ng-href="{% raw %}{{ credit.url }}{% endraw %}" ng-bind="credit.name"></a> <span ng-if="credit.license">(<a ng-href="{% raw %}{{ credit.licenseUrl }}{% endraw %}" ng-bind-html="credit.license" title="License" rel="license"></a>)</span><span ng-if="($first && photoCredits.length > 1) || $middle">, </span></span>
+          <li class="photo-credits" ng-if="footer.photoCredits.length > 0">
+            <span ng-if="footer.photoCredits.length === 1">Photo by</span>
+            <span ng-if="footer.photoCredits.length > 1">Photos by</span>
+            <span ng-repeat="credit in footer.photoCredits">
+              <a ng-href="{% raw %}{{ credit.url }}{% endraw %}" ng-bind="credit.name"></a> <span ng-if="credit.license">(<a ng-href="{% raw %}{{ credit.licenseUrl }}{% endraw %}" ng-bind-html="credit.license" title="License" rel="license"></a>)</span><span ng-if="($first && footer.photoCredits.length > 1) || $middle">, </span></span>
             </span>
           </li>
           <li><a href="https://www.facebook.com/trustroots.org" tooltip="Facebook"><i class="icon-facebook icon-lg"></i></a></li>

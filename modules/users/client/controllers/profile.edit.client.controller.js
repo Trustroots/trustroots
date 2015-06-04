@@ -103,6 +103,7 @@ angular.module('users').controller('EditProfileController', ['$scope', '$modal',
         user.$update(function(response) {
           $scope.success = true;
           Authentication.user = response;
+          $scope.$emit('userUpdated');
           $state.go('profile-updated', {username: response.username, updated: true});
         }, function(response) {
           $scope.error = response.data.message;

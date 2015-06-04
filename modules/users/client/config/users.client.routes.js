@@ -8,7 +8,8 @@ angular.module('users').config(['$stateProvider',
     state('welcome', {
       url: '/welcome',
       templateUrl: 'modules/users/views/authentication/welcome.client.view.html',
-      requiresAuth: true
+      requiresAuth: true,
+      footerTransparent: true
     }).
     state('profile-edit', {
       url: '/profile/:username/edit',
@@ -39,37 +40,48 @@ angular.module('users').config(['$stateProvider',
     // Sign in
     state('signup', {
       url: '/signup',
-      templateUrl: 'modules/users/views/authentication/signup.client.view.html'
+      templateUrl: 'modules/users/views/authentication/signup.client.view.html',
+      footerTransparent: true,
+      headerHidden: true
     }).
     state('signin', {
       url: '/signin',
-      templateUrl: 'modules/users/views/authentication/signin.client.view.html'
+      templateUrl: 'modules/users/views/authentication/signin.client.view.html',
+      footerTransparent: true,
+      headerHidden: true
     }).
     state('signin-continue', {
       url: '/signin/?continue',
-      templateUrl: 'modules/users/views/authentication/signin.client.view.html'
+      templateUrl: 'modules/users/views/authentication/signin.client.view.html',
+      footerTransparent: true,
+      headerHidden: true
     }).
     state('confirm-email', {
       url: '/confirm-email/:token?signup',
-      templateUrl: 'modules/users/views/authentication/confirm-email.client.view.html'
+      templateUrl: 'modules/users/views/authentication/confirm-email.client.view.html',
+      footerTransparent: true
     }).
 
     // Password reset
     state('forgot', {
       url: '/password/forgot',
-      templateUrl: 'modules/users/views/password/forgot-password.client.view.html'
+      templateUrl: 'modules/users/views/password/forgot-password.client.view.html',
+      footerTransparent: true
     }).
     state('reset-invalid', {
       url: '/password/reset/invalid',
-      templateUrl: 'modules/users/views/password/reset-password-invalid.client.view.html'
+      templateUrl: 'modules/users/views/password/reset-password-invalid.client.view.html',
+      footerTransparent: true
     }).
     state('reset-success', {
       url: '/password/reset/success',
-      templateUrl: 'modules/users/views/password/reset-password-success.client.view.html'
+      templateUrl: 'modules/users/views/password/reset-password-success.client.view.html',
+      footerTransparent: true
     }).
     state('reset', {
       url: '/password/reset/:token',
-      templateUrl: 'modules/users/views/password/reset-password.client.view.html'
+      templateUrl: 'modules/users/views/password/reset-password.client.view.html',
+      footerTransparent: true
     });
 
   }

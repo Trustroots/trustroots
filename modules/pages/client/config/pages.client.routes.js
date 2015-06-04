@@ -52,7 +52,9 @@ angular.module('pages').config(['$stateProvider',
     }).
     state('home', {
       url: '/',
-      templateUrl: 'modules/pages/views/home.client.view.html'
+      templateUrl: 'modules/pages/views/home.client.view.html',
+      footerTransparent: true,
+      headerHidden: true
     });
   }
 ]);

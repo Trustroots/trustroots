@@ -11,7 +11,9 @@ angular.module('core').config(['$stateProvider', '$urlRouterProvider',
     $stateProvider.
       state('not-found', {
         url: '/not-found',
-        templateUrl: 'modules/core/views/404.client.view.html'
+        templateUrl: 'modules/core/views/404.client.view.html',
+        footerHidden: true,
+        headerHidden: true
       });
   }
 ]);
