@@ -72,7 +72,8 @@ module.exports = {
     license_key: process.env.NEWRELIC_KEY || 'NEWRELIC_KEY',
     logging_level: process.env.NEWRELIC_LOGGING_LEVEL || 'info',
   },
-  GA: {
+  googleAnalytics: {
+    enabled: process.env.GA_ENABLED || false,
     code: process.env.GA_CODE || ''
   },
   piwik: {
