@@ -67,35 +67,51 @@
     display: block;
     position: relative;
     width: 100%;
+    margin: 0 auto;
     max-width: 256px;
-    min-height: 256px;
-    background: #000;
+    //min-height: 256px;
     &:hover,
     &:active {
       label {
         background: rgba(0,0,0,0.4);
       }
     }
-    .avatar,
     label {
       position: absolute;
-      top: 0;
+      display: block;
       cursor: pointer;
-    }
-    label {
-      left: 0;
+      top: 0;
       right: 0;
       bottom: 0;
+      left: 0;
       background: rgba(0,0,0,0.2);
-      display: block;
-      padding-top: 80%;
-      margin-bottom: 0;
       color: #fff;
       text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
       text-align: center;
-      font-size: 14px;
-      line-height: 14px;
+      font-size: 15px;
+      line-height: 18px;
       .transition(background 0.2s);
+      margin: 0;
+      padding: 60% 10px 0 10px;
+      i {
+        margin-bottom: 5px;
+      }
+      // Very small screens
+      @media (max-width: 240px) {
+        padding-top: 30%;
+        font-size: 15px;
+        i {
+          display: none;
+        }
+      }
+      // In between the image is small
+      @media (min-width: @screen-sm-min) and (max-width: @screen-sm-max) {
+        padding-top: 30%;
+        font-size: 15px;
+        i {
+          display: none;
+        }
+      }
     }
   }//avatar-edit
 
