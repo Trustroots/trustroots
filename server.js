@@ -41,7 +41,7 @@ mongoose.connect(function(db) {
   console.log(chalk.green('Trustroots started'));
   console.log(chalk.green('Environment:\t\t\t' + process.env.NODE_ENV));
   console.log(chalk.green('Database:\t\t\t' + config.db.uri));
-  console.log(chalk.green('HTTPS:\t\t\t' + config.https));
+  console.log(chalk.green('HTTPS:\t\t\t\t' + config.https));
   console.log(chalk.green('Port:\t\t\t\t' + config.port));
 
   if(typeof(PhusionPassenger) !== 'undefined') {

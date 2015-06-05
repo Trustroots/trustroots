@@ -18,6 +18,7 @@
     "postinstall": "bower install --allow-root --config.interactive=false; grunt fontello;"
   },
   "dependencies": {
+    "acl": "~0.4.7",
     "agenda": "~0.6.28",
     "async": "~1.0.0",
     "blueimp-file-upload-expressjs": "~0.3.2",

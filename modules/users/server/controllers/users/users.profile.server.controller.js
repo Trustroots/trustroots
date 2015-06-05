@@ -76,8 +76,8 @@ var userSanitizeOptions = {
 
 /**
  * Upload user avatar
+ * @todo async.waterfall()
  */
-
 exports.upload = function (req, res) {
 
   var userId = req.user._id;
@@ -106,9 +106,12 @@ exports.upload = function (req, res) {
       //Make the upload
       uploader.post(req, res, function (obj) {
 
-        if(obj.files[0].error) {
-          console.log(obj.files[0].error);
-          res.status(400).send(obj.files[0].error);
+  console.error(obj.files);
+
+        // Send error status 422 - Unprocessable Entity
+        if(obj.files.length === 0 || (obj.files[0] && obj.files[0].error)) {
+          console.error(obj.files);
+          res.status(422).json({'message': 'Unprocessable Entity'});
         }
         else {
           //Process images
@@ -162,9 +165,9 @@ exports.upload = function (req, res) {
               });
 
             },
-            //Send response
+            // Send response
             function(done) {
-              res.send(JSON.stringify(obj));
+              res.json(obj);
             }
           ], function(err) {
             if (err) {
@@ -175,7 +178,7 @@ exports.upload = function (req, res) {
           });
         }
       });
-
+      // @todo async.waterfall()
     });
   });
 };
@@ -183,13 +186,21 @@ exports.upload = function (req, res) {
 
 
 /**
-* Update
-*/
+ * Update
+ */
 exports.update = function(req, res) {
+
+  if(!req.user) {
+    return res.status(403).send({
+      message: 'User is not authorized'
+    });
+  }
+
   async.waterfall([
 
   // Generate random token
   function(done) {
+
     // Generate only if email changed
     if(req.body.email !== req.user.email) {
       crypto.randomBytes(20, function(err, buffer) {
@@ -206,57 +217,62 @@ exports.update = function(req, res) {
   // Update user
   function(token, email, done) {
 
-    // Init Variables
-    var user = req.user;
-    var message = null;
-
     // For security measurement remove these from the req.body object
     // Users aren't allowed to modify these directly
+    delete req.body.public;
+    delete req.body.created;
     delete req.body.seen;
     delete req.body.roles;
     delete req.body.email;
-    delete req.body.public;
-    delete req.body.created;
-    delete req.body.username;
+    delete req.body.emailHash;
     delete req.body.emailToken;
     delete req.body.emailTemporary;
+    delete req.body.provider;
+    delete req.body.username;
+    delete req.body.displayUsername;
     delete req.body.salt;
     delete req.body.password;
     delete req.body.resetPasswordToken;
     delete req.body.resetPasswordExpires;
+    delete req.body.additionalProvidersData;
 
+    // Merge existing user
+    var user = req.user;
+    user = _.extend(user, req.body);
+    user.updated = Date.now();
+    user.displayName = user.firstName + ' ' + user.lastName;
 
-    if (user) {
-      // Merge existing user
-      user = _.extend(user, req.body);
-      user.updated = Date.now();
-      user.displayName = user.firstName + ' ' + user.lastName;
-
-      // This is set only if user edited also email
-      if(token && email) {
-        user.emailToken = token;
-        user.emailTemporary = email;
-      }
-
-      // Sanitize user description
-      user.description = sanitizeHtml(user.description, userSanitizeOptions);
-
-      user.save(function(err) {
-        if (!err) {
-          req.login(user, function(err) {
-            if (err) {
-              done(err);
-            } else {
-              delete user.emailToken;
-              res.json(user);
-            }
-          });
-        }
-        done(err, token, user);
-      });
-    } else {
-      done(new Error('User is not signed in'));
+    // This is set only if user edited email
+    if(token && email) {
+      user.emailToken = token;
+      user.emailTemporary = email;
     }
+
+    // Sanitize user description
+    user.description = sanitizeHtml(user.description, userSanitizeOptions);
+
+    // This happens sometimes with wysiwyg editors
+    // SanitizeHtml() turns <br> to <br /> so that's consistent.
+    if(user.description === '<p><br /></p>') user.description = '';
+    if(user.tagline === '<p><br /></p>') user.tagline = '';
+
+    user.save(function(err) {
+      if (!err) {
+        req.login(user, function(err) {
+          if (err) {
+            done(err);
+          } else {
+            delete user.salt;
+            delete user.password;
+            delete user.resetPasswordToken;
+            delete user.resetPasswordExpires;
+            delete user.emailToken;
+            res.json(user);
+          }
+        });
+      }
+      done(err, token, user);
+    });
 
   },
 
@@ -336,7 +352,7 @@ exports.update = function(req, res) {
  * Show the profile of the user
  */
 exports.getUser = function(req, res) {
-  res.json(req.user || null);
+  res.json(req.profile || null);
 };
 
 /**
@@ -344,29 +360,7 @@ exports.getUser = function(req, res) {
  * Pick only certain fields from whole profile @link http://underscorejs.org/#pick
  */
 exports.getMiniUser = function(req, res) {
-  res.json( req.user || null );
-};
-
-
-/**
- * List of public profiles
- */
-exports.list = function(req, res) {
-
-  // If user who is loading is hidden, don't show anything
-  if(!req.user || !req.user.public) {
-    return res.status(400).send('No access.');
-  }
-
-  User.find({public: true}).sort('-created').exec(function(err, users) {
-    if (err) {
-      return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
-      });
-    } else {
-      res.json(users);
-    }
-  });
+  res.json( req.profile || null );
 };
 
 
@@ -375,30 +369,31 @@ exports.list = function(req, res) {
  */
 exports.userMiniByID = function(req, res, next, id) {
 
-  User.findById(id, exports.userMiniProfileFields + ' languages public').exec(function(err, user) {
+  User.findById(id, exports.userMiniProfileFields + ' languages public').exec(function(err, profile) {
 
     // Something went wrong
-    if (err) {
+    if(err) {
       return next(err);
     }
-    // No such user
-    else if (!user) {
-      return next(new Error('Failed to load user ' + id));
-    }
+
     // User's own profile
-    else if( (user && req.user) && (user._id.toString() === req.user._id.toString())) {
-      req.user = user;
+    else if( (profile && req.user) && (profile._id.toString() === req.user._id.toString()) ) {
+      req.profile = req.user;
       next();
     }
-    // If user to be loaded is hidden OR user who is loading is hidden, don't show anything
-    else if(!user.public || !req.user.public) {
-      return next(new Error('Failed to load user ' + id));
+
+    // No such user
+    else if(!profile || !profile.public) {
+      return res.status(404).send({
+        message: 'Not found.'
+      });
+      //return next(new Error('User not found.'));
     }
     else {
       // This isn't needed at frontend
-      delete user.public;
+      delete profile.public;
 
-      req.user = user;
+      req.profile = profile;
       next();
     }
 
@@ -409,72 +404,70 @@ exports.userMiniByID = function(req, res, next, id) {
  * Profile middleware
  */
 exports.userByUsername = function(req, res, next, username) {
-
   async.waterfall([
 
     // Find user
     function(done) {
       User.findOne({
           username: username.toLowerCase()
-      }, exports.userProfileFields + ' public').exec(function(err, user) {
+      }, exports.userProfileFields + ' public').exec(function(err, profile) {
 
         // Something went wrong or no such user
         if (err) {
           done(err);
         }
-        else if(!user) {
-          done(new Error('Failed to load user ' + username));
+        // No such user
+        else if(!profile) {
+          return res.status(404).send({
+            message: 'Not found. (by username)'
+          });
         }
         // User's own profile
-        else if( (user && req.user) && (user._id.toString() === req.user._id.toString()) ) {
-          done(err, user.toObject());
-        }
-        // If user to be loaded is hidden OR user who is loading is hidden, don't show anything
-        else if( (user && user.public === false) || (req.user && req.user.public === false) ) {
-          done(new Error('Failed to load user ' + username));
+        else if( (profile && req.user) && (profile._id.toString() === req.user._id.toString()) ) {
+          done(err, profile.toObject());
         }
         else {
           // This isn't needed at frontend
-          delete user.public;
+          delete profile.public;
 
-          // Transform user into object so that we can add new fields to it
-          done(err, user.toObject());
+          // Transform profile into object so that we can add new fields to it
+          done(err, profile.toObject());
         }
 
       });
     },
 
     // Check if logged in user has left contact request for this profile
-    function(user, done) {
+    function(profile, done) {
 
       // User isn't currently logged in?
       if(!req.user) {
-        done(null, user);
+        done(null, profile);
       }
       // User's own profile?
-      else if(user._id.toString() === req.user.id) {
-        user.contact = false;
-        done(null, user);
+      else if(profile._id.toString() === req.user.id) {
+        profile.contact = false;
+        done(null, profile);
       }
       // Check for connection
       else {
         Contact.findOne(
           {
-            users: { $all: [ user._id.toString(), req.user.id ] }
+            users: { $all: [ profile._id.toString(), req.user.id ] }
           }
         ).exec(function(err, contact) {
-          user.contact = (contact) ? contact._id : false;
-          done(err, user);
+          profile.contact = (contact) ? contact._id : false;
+          done(err, profile);
         });
       }
     },
 
-    // Sanitize & return user
-    function(user, done) {
+    // Sanitize & return profile
+    function(profile, done) {
 
-      if(user.description) user.description = sanitizeHtml(user.description, userSanitizeOptions);
+      if(profile.description) profile.description = sanitizeHtml(profile.description, userSanitizeOptions);
 
-      req.user = user;
+      req.profile = profile;
       next();
     }
 

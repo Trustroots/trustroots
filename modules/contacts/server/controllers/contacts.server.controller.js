@@ -120,8 +120,6 @@ exports.add = function(req, res) {
 
   ], function(err) {
     if (err) {
-      console.log('Error: Contacts controller -> add');
-      console.log(err);
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
       });
@@ -139,8 +137,6 @@ exports.remove = function(req, res) {
 
 	contact.remove(function(err) {
 		if (err) {
-      console.log('Error: Contacts controller -> remove');
-      console.log(err);
 			return res.status(400).send({
 				message: errorHandler.getErrorMessage(err)
 			});
@@ -161,8 +157,6 @@ exports.confirm = function(req, res) {
 
 	contact.save(function(err) {
 		if (err) {
-      console.log('Error: Contacts controller -> confirm');
-      console.log(err);
 			return res.status(400).send({
 				message: errorHandler.getErrorMessage(err)
 			});

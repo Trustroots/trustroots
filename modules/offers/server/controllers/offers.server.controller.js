@@ -63,11 +63,6 @@ function fuzzyLocation(location) {
  */
 exports.create = function(req, res) {
 
-  // If user who is creating is hidden, raise error
-  if(!req.user || !req.user.public) {
-    return res.status(400).send('No access.');
-  }
-
   var offer = new Offer(req.body);
   offer.user = req.user;
 
@@ -108,13 +103,6 @@ exports.create = function(req, res) {
 
 
 /**
- * Delete an Offer
- */
-exports.delete = function(req, res) {
-  console.log('->offer.delete');
-};
-
-/**
  * List of Offers
  */
 exports.list = function(req, res) {
@@ -130,7 +118,11 @@ exports.list = function(req, res) {
         { status: 'yes' },
         { status: 'maybe' }
       ],
-      //http://docs.mongodb.org/manual/reference/operator/query/box -> It's latitude first as in the database, not longitude first as in the documentation
+      /**
+       * Note:
+       * http://docs.mongodb.org/manual/reference/operator/query/box
+       * -> It's latitude first as in the database, not longitude first as in the documentation
+       */
       locationFuzzy: {
         $geoWithin: {
           $box: [
@@ -149,14 +141,14 @@ exports.list = function(req, res) {
       });
     } else {
 
-      /*
-      * Could return something like this here already (so no need to refactor at frontend):
-      *
-      * lat: marker.locationFuzzy[0],
-      * lng: marker.locationFuzzy[1],
-      * user: marker.user,
-      * icon: $scope.icons[marker.status]
-      */
+      /**
+       * Could return something like this here already (so no need to refactor at frontend):
+       *
+       * lat: marker.locationFuzzy[0],
+       * lng: marker.locationFuzzy[1],
+       * user: marker.user,
+       * icon: $scope.icons[marker.status]
+       */
       res.json(offers);
     }
   });

@@ -36,12 +36,8 @@ exports.forgot = function(req, res, next) {
           ]
         }, '-salt -password', function(err, user) {
           if (!user) {
-            return res.status(400).send({
+            return res.status(404).send({
               message: 'No account with that username or email.'
-            });
-          } else if (user.provider !== 'local') {
-            return res.status(400).send({
-              message: 'It seems like you signed up using your ' + user.provider + ' account.'
             });
           } else {
             user.resetPasswordToken = token;
