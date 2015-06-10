@@ -20,7 +20,8 @@
     "ng-file-upload": "~2.0.5",
     "imagesloaded": "~3.1.8",
     "message-center": "~1.1.4",
-    "angular-chosen-localytics": "~1.0.7"
+    "angular-chosen-localytics": "~1.0.7",
+    "angular-loading-bar": "~0.7.1"
   },
   "resolutions": {
     "angular": "~1.4",

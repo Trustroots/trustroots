@@ -17,7 +17,8 @@ var ApplicationConfiguration = (function() {
                                               'angularFileUpload',
                                               'zumba.angular-waypoints',
                                               'MessageCenterModule',
-                                              'localytics.directives'
+                                              'localytics.directives',
+                                              'angular-loading-bar'
                                             ];
 
   // Add a new vertical module

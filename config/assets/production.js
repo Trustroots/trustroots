@@ -6,7 +6,8 @@ module.exports = {
       css: [
         'public/lib/fontello/css/animation.css',
         'public/lib/fontello/css/tricons-codes.css',
-        'public/lib/medium-editor/dist/css/medium-editor.css'
+        'public/lib/medium-editor/dist/css/medium-editor.css',
+        'public/lib/angular-loading-bar/build/loading-bar.css'
       ],
       js: [
         // Minified versions
@@ -29,7 +30,8 @@ module.exports = {
         'public/lib/ng-file-upload/angular-file-upload.min.js',
         'public/lib/message-center/message-center.js',
         'public/lib/chosen/chosen.jquery.min.js',
-        'public/lib/angular-chosen-localytics/chosen.js'
+        'public/lib/angular-chosen-localytics/chosen.js',
+        'public/lib/angular-loading-bar/build/loading-bar.min.js'
       ]
     },
     css: 'public/dist/application.min.css',
