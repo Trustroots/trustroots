@@ -121,9 +121,15 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
       });
     });
 
-    // Observe for the reply area height while typing your awesome message in it
     var threadLayoutReplyHeight = threadLayoutReply.height();
-    angular.element('#message-reply-content').on('input', function() {
+    angular.element('#message-reply-content').on('keypress', function(evt) { // used to be 'input' event
+      
+      // Ctrl+ Enter sends the message
+      if(evt.ctrlKey && evt.charCode == 10) {
+        $scope.send();
+      }
+
+      // Observe for the reply area height while typing your awesome message in it
       // Only when textarea height actually changes:
       // - Update reply container height
       // - Scroll message area to the bottom
