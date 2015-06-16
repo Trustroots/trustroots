@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "description": "Hospitality exchange community for hitchhikers and other travellers.",
   "dependencies": {
-    "bootstrap": "~3.3.4",
+    "bootstrap": "~3.3.5",
     "angular": "~1.4",
     "angular-resource": "~1.4",
     "angular-mocks": "~1.4",
