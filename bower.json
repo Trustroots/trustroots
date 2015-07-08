@@ -1,7 +1,7 @@
 {
   "name": "trustroots",
   "version": "0.2.0",
-  "description": "Hospitality exchange community for hitchhikers and other travellers.",
+  "description": "Trustroots.org",
   "dependencies": {
     "bootstrap": "~3.3.5",
     "angular": "~1.4",

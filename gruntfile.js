@@ -46,7 +46,7 @@ module.exports = function (grunt) {
       },
       clientJS: {
         files: defaultAssets.client.js,
-        tasks: ['jshint'],
+        tasks: ['jshint', 'ngAnnotate:production'],
         options: {
           livereload: true
         }
@@ -114,10 +114,20 @@ module.exports = function (grunt) {
       }
     },
     ngAnnotate: {
-      dist: {
+      production: {
         options: {
           singleQuotes: true,
-          add: false,
+          add: true,
+          //separator: ';'
+        },
+        files: {
+          'public/dist/application.js': defaultAssets.client.js //to:from
+        }
+      },
+      development: {
+        options: {
+          singleQuotes: true,
+          add: true,
           //separator: ';'
         },
         files: {
@@ -250,7 +260,7 @@ module.exports = function (grunt) {
 
   // Lint project files and minify them into two production files.
   //grunt.registerTask('build', ['ngAnnotate', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'cssmin']);
-  grunt.registerTask('build', ['copy:localConfig', 'ngAnnotate', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'cssmin']);
+  grunt.registerTask('build', ['copy:localConfig', 'fontello', 'ngAnnotate:production', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'cssmin']);
 
   // Run the project tests
   grunt.registerTask('test', ['env:test', 'copy:localConfig', 'mongoose', 'mochaTest', 'karma:unit']);
@@ -261,10 +271,10 @@ module.exports = function (grunt) {
   grunt.registerTask('docs', ['shell:swagger-ui']);
 
   // Run the project in development mode
-  grunt.registerTask('default', ['env:dev', 'copy:localConfig', 'lint', 'less', 'concurrent:default']);
+  grunt.registerTask('default', ['env:dev', 'copy:localConfig', 'lint', 'ngAnnotate:development', 'less', 'concurrent:default']);
 
-  // Run the project in debug mode
-  grunt.registerTask('debug', ['env:dev', 'copy:localConfig', 'lint', 'less', 'concurrent:debug']);
+  // Run the project in debug mode (same as default but with node-inspector)
+  grunt.registerTask('debug', ['env:dev', 'copy:localConfig', 'lint', 'ngAnnotate:development', 'less', 'concurrent:debug']);
 
   // Run the project in production mode
   grunt.registerTask('prod', ['env:prod', 'lint', 'build', 'concurrent:default']);

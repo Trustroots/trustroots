@@ -34,7 +34,7 @@ module.exports = {
         'public/lib/angular-loading-bar/build/loading-bar.min.js'
       ]
     },
-    css: 'public/dist/application.min.css',
-    js: 'public/dist/application.min.js'
+    css: ['public/dist/application.min.css'],
+    js: ['public/dist/application.min.js']
   }
 };
