@@ -120,17 +120,17 @@ describe('User Model Unit Tests:', function() {
     });
 
     it('should save username longer than 32 characters', function(done){
-      user.username = '12345678901234567890123456789012345';
-      return user.save(function(err,success) {
-        should.exist(success);
+      user.username = '1234567890' + '1234567890' + '1234567890' + '1234a';
+      return user.save(function(err) {
+        should.not.exist(err);
         done();
       });
     });
 
     it('should save username with dot', function(done){
       user.username = 'log.in';
-      return user.save(function(err,success) {
-        should.exist(success);
+      return user.save(function(err) {
+        should.not.exist(err);
         done();
       });
     });
