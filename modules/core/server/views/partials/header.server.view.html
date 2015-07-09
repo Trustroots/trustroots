@@ -16,24 +16,23 @@
     <nav class="collapse navbar-collapse" collapse="!header.isCollapsed" role="navigation">
 
       <ul class="nav navbar-nav" ng-if="app.user">
-        <li ui-sref-active="active">
-          <a ui-sref="search">
-            <i class="icon-search icon-fw icon-lg"></i> Map
+        <li class="hidden-xs dropdown" dropdown>
+          <a class="dropdown-toggle cursor-pointer" dropdown-toggle>
+            <i class="icon-lifebuoy icon-fw icon-lg"></i>
+            Help
           </a>
+          <ul class="dropdown-menu">
+            {% include 'about-links.server.view.html' %}
+          </ul>
         </li>
       </ul>
 
       <!-- Menu for non logged users -->
       <ul class="nav navbar-nav navbar-right" ng-if="!app.user">
-        <li ui-sref-active="active" class="hidden-xs">
-          <a ui-sref="contact">
-            Help
-          </a>
-        </li>
-        <li class="dropdown visible-xs-block" dropdown="true">
+        <li class="dropdown" dropdown>
           <a class="dropdown-toggle cursor-pointer" dropdown-toggle>
-            <i class="icon-lifebuoy icon-fw icon-lg"></i>
-            Help & about
+            <i class="icon-lifebuoy icon-fw icon-lg visible-xs-inline-block"></i>
+            About
             <b class="caret"></b>
           </a>
           <ul class="dropdown-menu">
@@ -59,11 +58,16 @@
       <!-- Menu for logged in users -->
       <ul class="nav navbar-nav navbar-right" ng-if="app.user">
         <li ui-sref-active="active">
+          <a ui-sref="search">
+            <i class="icon-search icon-fw icon-lg"></i> Map
+          </a>
+        </li>
+        <li ui-sref-active="active">
           <a ui-sref="inboxMessages">
             <i class="icon-messages icon-fw icon-lg"></i> <span class="visible-xs-inline">Messages</span>
           </a>
         </li>
-        <li class="dropdown dropdown-user" dropdown="true">
+        <li class="dropdown dropdown-user" dropdown>
           <a class="dropdown-toggle cursor-pointer" dropdown-toggle>
             <div tr-avatar data-user="app.user" link="false" size="24" class="hidden-xs"></div>
             <span class="visible-xs-inline">
@@ -109,7 +113,7 @@
             Sign out
           </a>
         </li>
-        <li class="dropdown visible-xs-block" dropdown="true">
+        <li class="dropdown visible-xs-block" dropdown>
           <a class="dropdown-toggle cursor-pointer" dropdown-toggle>
             <i class="icon-lifebuoy icon-fw icon-lg"></i>
             Help & about
