@@ -1,0 +1,60 @@
+/**
+ * Header
+ */
+#tr-header {
+  width: 100%;
+  height: @navbar-height;
+  clear: both;
+  font-family: @font-family-brand;
+  font-weight: 400;
+  font-style: normal;
+  .navbar {
+    .box-shadow(0 0 8px rgba(0,0,0,0.1));
+  }
+  .navbar-brand {
+    padding-top: 6px;
+  }
+  a {
+    text-shadow: 1px 1px 1px rgba(0,0,0,.3);
+  }
+  .dropdown-menu {
+    a {
+      text-shadow: none;
+    }
+  }
+
+  @media (min-width: @grid-float-breakpoint) {
+    /* Make Bootstrap dropdowns open at hover */
+    .dropdown:hover .dropdown-menu {
+      display: block;
+    }
+    /* Make sure avatar works as a dropdown handle */
+    .dropdown-user {
+      .dropdown-toggle {
+        width: 73px;
+        .avatar {
+          float: left;
+          margin-right: 8px;
+        }
+      }
+    }
+  }
+
+  /* Mobile navbar */
+  .navbar-collapse {
+    background: @brand-primary;
+  }
+
+  .logo-tree {
+    display: none;
+  }
+  /* Header breaks due the logo width => Show only the "tree" version for very narrow screens. */
+  @media (max-width: 280px) {
+    .logo-text {
+      display: none;
+    }
+    .logo-tree {
+      display: block;
+    }
+  }
+}

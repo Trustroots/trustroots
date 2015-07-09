@@ -6,10 +6,9 @@
   background-repeat: no-repeat;
   background-position: 50% 50%;
 
-  // Logo sizes: xs, sm, md
+  // Logo sizes: xs, sm, md (default)
   @logo-size: 210px;
 
-  // md
   .square(@logo-size);
   background-size: @logo-size @logo-size;
 
@@ -21,13 +20,9 @@
     .square( (@logo-size/1.5) );
     background-size: (@logo-size/1.5) (@logo-size/1.5);
   }
-  /*
-  &.logo-lg {
-  }
-  */
 
-  // Logo images: blue, white, dark
-  .img-retina('/modules/core/img/logo/color-blue.png', '/modules/core/img/logo/color-blue@2x.png', @logo-size, @logo-size);
+  // Logo images: color, white, dark
+  .img-retina('/modules/core/img/logo/color.png', '/modules/core/img/logo/color@2x.png', @logo-size, @logo-size);
 
   &.logo-white {
     .img-retina('/modules/core/img/logo/white.png', '/modules/core/img/logo/white@2x.png', @logo-size, @logo-size);
@@ -49,10 +44,10 @@
 
   .size(@logo-size-width, @logo-size-height);
 
-  // Logo images: white (default), blue
+  // Logo images: white (default), color
   .img-retina('/modules/core/img/logo/horizontal-white.png', '/modules/core/img/logo/horizontal-white@2x.png', @logo-size-width, @logo-size-height);
 
-  &.logo-horizontal-blue {
-    .img-retina('/modules/core/img/logo/horizontal-blue.png', '/modules/core/img/logo/horizontal-blue@2x.png', @logo-size-width, @logo-size-height);
+  &.logo-horizontal-color {
+    .img-retina('/modules/core/img/logo/horizontal-color.png', '/modules/core/img/logo/horizontal-color@2x.png', @logo-size-width, @logo-size-height);
   }
 }

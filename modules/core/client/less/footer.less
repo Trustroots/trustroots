@@ -1,0 +1,78 @@
+
+/**
+ * Sticky footer
+ */
+#tr-footer {
+  position: relative;
+  overflow: visible;
+  clear: both;
+  background: @gray-dark url(/modules/core/img/footer.jpg) 50% 0 repeat-x;
+  font-family: @font-family-brand;
+  font-size: @font-size-small;
+  color: lighten(#000, 70%);
+  text-shadow: 1px 1px 1px rgba(0,0,0,.5);
+  margin-top: -@footer-height;
+  height: @footer-height;
+  @media (max-width: @screen-sm-max) {
+    margin-top: -(@footer-height + 10);
+    height: (@footer-height + 10);
+  }
+  /* Color-reel line */
+  hr {
+    margin: 0;
+    width: 100%;
+  }
+  &.footer-sticky {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+  }
+  /* Used e.g. at home -view... */
+  &.footer-transparent {
+    z-index: 999;
+    /* http://www.colorzilla.com/gradient-editor/#000000+0,000000+100&0+0,0.65+100;Custom */
+    background: -moz-linear-gradient(top,  rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(0,0,0,0)), color-stop(100%,rgba(0,0,0,0.65))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.65) 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00000000', endColorstr='#a6000000',GradientType=0 ); /* IE6-9 */
+    border: 0;
+    &, a {
+      color: #fff;
+    }
+    hr {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+  }
+  a {
+    color: lighten(#000, 70%);
+    text-decoration: none;
+    &:hover,
+    &:active {
+      text-decoration: underline;
+    }
+  }
+  .container {
+    padding-top: 8px;
+    @media (min-width: @screen-md-min) {
+      padding-top: 15px;
+    }
+  }
+  .photo-credits {
+    &, a {
+      font-size: 10px;
+      color: rgba(255,255,255,0.6);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  }
+}

@@ -8,7 +8,8 @@
         <span class="icon-bar"></span>
       </button>
       <a ng-click="app.goHome()" class="navbar-brand">
-        <span class="logo-horizontal logo-horizontal-white"></span>
+        <img class="logo-text" src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="177" height="31" />
+        <img class="logo-tree" src="/modules/core/img/tree-white.svg" alt="Trustroots" width="31" height="31" />
         <span class="sr-only">Trustroots</span>
       </a>
     </div>
@@ -18,7 +19,6 @@
       <ul class="nav navbar-nav" ng-if="app.user">
         <li class="hidden-xs dropdown" dropdown>
           <a class="dropdown-toggle cursor-pointer" dropdown-toggle>
-            <i class="icon-lifebuoy icon-fw icon-lg"></i>
             Help
           </a>
           <ul class="dropdown-menu">
@@ -86,6 +86,11 @@
               </a>
             </li>
             <li ui-sref-active="active">
+              <a ui-sref="offer">
+                Hosting status
+              </a>
+            </li>
+            <li ui-sref-active="active">
               <a ui-sref="profile-edit({username: app.user.username})">
                 Edit profile
               </a>
@@ -93,11 +98,6 @@
             <li ui-sref-active="active">
               <a ui-sref="profile-settings({username: app.user.username})">
                 Settings
-              </a>
-            </li>
-            <li ui-sref-active="active">
-              <a ui-sref="offer">
-                Hosting
               </a>
             </li>
             <li class="hidden-xs">
