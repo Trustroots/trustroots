@@ -14,14 +14,14 @@
     "angular-ui-router": "~0.2.15",
     "angular-moment": "~0.10.1",
     "angular-medium-editor": "~0.1.0",
-    "angular-leaflet-directive": "~0.8.2",
+    "angular-leaflet-directive": "~0.8.5",
     "angular-waypoints": "~1.0.1",
     "PruneCluster": "~1.1.0",
     "ng-file-upload": "~2.0.5",
     "imagesloaded": "~3.1.8",
     "message-center": "~1.1.4",
     "angular-chosen-localytics": "~1.0.7",
-    "angular-loading-bar": "~0.7.1"
+    "angular-loading-bar": "~0.8.0"
   },
   "resolutions": {
     "angular": "~1.4",
