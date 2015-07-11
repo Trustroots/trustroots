@@ -1,35 +1,31 @@
 <div ng-controller="HomeController">
-<section class="home board board-blur container container-fullscreen middle middle-horizontal" tr-boards="bgs">
+  <section class="home board container container-fullscreen" tr-boards="bgs">
+    <div class="middle-wrapper middle-wrapper-horizontal">
+      <div class="middle-content">
 
-  <div class="middle-wrapper">
+        <div class="row">
+          <div class="col-xs-12 col-sm-8 col-sm-offset-2">
+            <img class="logo hidden-xs" src="/modules/core/img/logo/white.svg" alt="Trustroots" width="210" height="210">
+            <img class="logo visible-xs-block" src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="250" height="auto">
+            <h1 class="sr-only">Trustroots</h1>
+            <h3 class="home-tagline" ng-bind="tagline"></h3>
+          </div>
+        </div><!-- .row -->
 
-    <div class="row">
-      <div class="col-xs-12 col-sm-8 col-sm-offset-2">
-        <!--
-        <div class="logo logo-white hidden-xs"></div>
-        <div class="logo-horizontal logo-horizontal-white visible-xs-block"></div>
-      -->
+        <div class="row">
+          <div class="col-xs-8 col-xs-offset-2">
+            <nav class="btn-group" role="navigation">
+              <a ui-sref="signin" class="btn btn-lg btn-home-login">Login</a>
+              <a ui-sref="signup" class="btn btn-lg btn-home-signup">Become a member</a>
+              <a ui-sref="about" class="btn btn-lg btn-home-readmore">Tell me more</a>
+            </nav>
+            <div class="home-extra hidden-xs">
+              Same team brought you also <a href="http://hitchwiki.org/">Hitchwiki</a>, <a href="http://trashwiki.org/">Trashwiki</a>, <a href="http://nomadwiki.org/">Nomadwiki</a> & more.
+            </div>
+          </div>
+        </div><!-- .row -->
 
-        <img class="logo hidden-xs" src="/modules/core/img/logo/white.svg" alt="Trustroots" width="210" height="210" />
-        <img class="logo visible-xs-block" src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="177" height="31" />
-
-        <h3 class="home-tagline" ng-bind="tagline"></h3>
       </div>
-    </div><!-- .row -->
-    <div class="row">
-      <div class="col-xs-8 col-xs-offset-2">
-        <nav class="btn-group" role="navigation">
-          <a ui-sref="signin" class="btn btn-lg btn-home-login">Login</a>
-          <a ui-sref="signup" class="btn btn-lg btn-home-signup">Become a member</a>
-          <a ui-sref="about" class="btn btn-lg btn-home-readmore">Tell me more</a>
-        </nav>
-        <div class="home-extra hidden-xs">
-          Same team brought you also <a href="http://hitchwiki.org/">Hitchwiki</a>, <a href="http://trashwiki.org/">Trashwiki</a>, <a href="http://nomadwiki.org/">Nomadwiki</a> & more.
-        </div>
-      </div>
-    </div><!-- .row -->
-
-  </div>
-
-</section>
+    </div>
+  </section>
 </div>

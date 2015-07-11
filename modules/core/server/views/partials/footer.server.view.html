@@ -2,7 +2,7 @@
   <hr>
   <div class="container">
     <div class="row">
-      <nav class="col-xs-8">
+      <nav class="col-xs-8" role="navigation">
         <ul class="list-inline">
           {% include 'about-links.server.view.html' %}
         </ul>
@@ -13,7 +13,8 @@
             <span ng-if="footer.photoCredits.length === 1">Photo by</span>
             <span ng-if="footer.photoCredits.length > 1">Photos by</span>
             <span ng-repeat="credit in footer.photoCredits">
-              <a ng-href="{% raw %}{{ credit.url }}{% endraw %}" ng-bind="credit.name"></a> <span ng-if="credit.license">(<a ng-href="{% raw %}{{ credit.licenseUrl }}{% endraw %}" ng-bind-html="credit.license" title="License" rel="license"></a>)</span><span ng-if="($first && footer.photoCredits.length > 1) || $middle">, </span></span>
+              <a ng-href="{% raw %}{{ credit.url }}{% endraw %}" ng-bind="credit.name"></a>
+              <span ng-if="credit.license">(<a ng-href="{% raw %}{{ credit.license_url }}{% endraw %}" ng-bind-html="credit.license" title="License" rel="license"></a>)</span><span ng-if="($first && footer.photoCredits.length > 1) || $middle">, </span>
             </span>
           </li>
           <li><a href="https://www.facebook.com/trustroots.org" tooltip="Facebook"><i class="icon-facebook icon-lg"></i></a></li>

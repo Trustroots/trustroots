@@ -42,7 +42,13 @@
         'horizonballoon': {
           'name': 'Wesley Stanford',
           'url': 'http://www.dualhorizons.blogspot.co.uk/'
-        }
+        },
+        'rainbowpeople': {
+          'name': 'Antonio Fulghieri',
+          'url': 'https://aaoutthere.wordpress.com/',
+          'license': 'CC',
+          'license_url': 'http://creativecommons.org/licenses/by-nc-nd/4.0/'
+        },
 
       };
 
@@ -57,7 +63,7 @@
 
         // Set photo credits for these pages
         if( ['home'].indexOf(toState.name) > -1 ) {
-          vm.photoCredits = [ photos.sierranevada, photos.hitchroad ];
+          vm.photoCredits = [ photos.rainbowpeople, photos.hitchroad ];
         }
         else if( ['forgot', 'signin', 'welcome', 'statistics', 'media'].indexOf(toState.name) > -1 ) {
           vm.photoCredits = [ photos.bokehblue ];

@@ -84,6 +84,13 @@
   }
 }
 
+// To make these <a><img></a> work
+.block-link {
+  &, &:hover {
+    text-decoration: none;
+    text-shadow: none;
+  }
+}
 
 .cursor-pointer {
   cursor: pointer;
@@ -145,15 +152,15 @@
  *
  * See https://github.com/kg782/angular-middle if you need this as an Angular directive.
  */
-.middle {
+.middle-wrapper {
   display: table;
   width: 100%;
   height: 100%;
-  .middle-wrapper {
+  .middle-content {
     display: table-cell;
     vertical-align: middle;
   }
-  &.middle-horizontal .middle-wrapper > * {
+  &.middle-wrapper-horizontal .middle-content > * {
     margin: auto;
   }
 }

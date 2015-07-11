@@ -5,6 +5,14 @@
 
 .home {
   text-align: center;
+  padding: 0;
+
+  // Contains crazy color fade thing
+  .middle-wrapper {
+    #gradient.directional(rgba(red(@brand-gradient-from), green(@brand-gradient-from), blue(@brand-gradient-from), 0.5);
+                          rgba(red(@brand-gradient-to), green(@brand-gradient-to), blue(@brand-gradient-to), 0.5);
+                          45deg);
+  }
 
   .logo,
   .home-tagline,

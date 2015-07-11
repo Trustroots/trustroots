@@ -16,6 +16,6 @@ angular.module('pages').controller('HomeController', ['$scope', '$state', '$wind
     // Needs to support container-full and board-blur classes.
     // First array has background(s) for small screens, the second for bigger screens
     // Small = (@screen-xs-max - 1px)
-    $scope.bgs = ($window.innerWidth < 767) ? ['board-forestpath'] : ['board-sierranevada', 'board-hitchroad'];
+    $scope.bgs = ($window.innerWidth < 767) ? ['board-forestpath'] : ['board-rainbowpeople', 'board-hitchroad'];
   }
 ]);
