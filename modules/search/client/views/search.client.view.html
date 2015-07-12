@@ -3,11 +3,10 @@
   <div class="form-group map-location-search" ng-class="{'active': searchQuery !== '' || searchActive }">
     <div class="input-group">
       <label for="search-query" class="sr-only">Search places</label>
-      <input type="text" id="search-query" ng-focus="searchActive = true" ng-blur="searchActive = false" class="form-control input-lg" placeholder="Search places" ng-disabled="searchQuerySearching" ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" /><!-- typeahead-loading="searchQuerySearching"-->
+      <input type="text" id="search-query" ng-focus="searchActive = true" ng-blur="searchActive = false" class="form-control input-lg" placeholder="Search places" ng-disabled="searchQuerySearching" ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue)" typeahead-on-select="mapLocate($item)">
       <span class="input-group-btn">
         <button type="button" class="btn btn-lg btn-inverse" ng-click="searchAddress()" ng-disabled="searchQuerySearching">
-          <i class="icon-search" ng-show="searchQuerySearching === false"></i>
-          <i class="icon-refresh" ng-show="searchQuerySearching === true"></i>
+          <i class="icon-search"></i>
         </button>
       </span>
     </div>
@@ -31,7 +30,7 @@
     <leaflet id="search-map-canvas" center="mapCenter" markers="mapMarkers" layers="mapLayers" bounds="mapBounds" paths="mapPaths" defaults="mapDefaults" event-broadcast="mapEvents"></leaflet>
   </div>
 
-  <div class="search-map-sidebar" ng-show="sidebarOpen">
+  <div class="search-map-sidebar" ng-if="sidebarOpen">
 
     <div class="search-list">
 
@@ -81,9 +80,7 @@
             <span ng-if="offer.user.birthdate" ng-bind="offer.user.birthdate | ageyears"></span><span ng-if="offer.user.birthdate && offer.user.gender">, </span>
             <span ng-if="offer.user.gender" ng-class="{ 'text-capitalize': !offer.user.birthdate }">{{offer.user.gender}}.</span>
           </div>
-          <div class="search-result-tagline">
-            {{offer.user.tagline}}
-          </div>
+          <div class="search-result-tagline" ng-if="offer.user.tagline" ng-bind="offer.user.tagline"></div>
           <div class="search-result-hosting">
             <div class="search-result-label">
               Hosting:

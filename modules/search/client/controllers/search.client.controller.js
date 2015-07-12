@@ -316,24 +316,18 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
      * @link https://www.mapbox.com/developers/api/geocoding/
      */
     $scope.searchSuggestions = function(val) {
-
       return $http
         .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + val + '.json?access_token=' + appSettings.mapbox.publicKey)
         .then(function(response) {
-
           $scope.searchQuerySearching = false;
-
           if(response.status === 200 && response.data.features && response.data.features.length > 0) {
-
-              return response.data.features.map(function(place){
-                place.trTitle = $scope.placeTitle(place);
-                return place;
-              });
-
+            return response.data.features.map(function(place){
+              place.trTitle = $scope.placeTitle(place);
+              return place;
+            });
           }
           else return [];
         });
-
     };
 
     /*
