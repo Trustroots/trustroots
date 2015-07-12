@@ -70,13 +70,12 @@
 
           <!-- Search location -->
             <div class="form-group offer-map-location-search">
-              <div class="input-group">
+              <div class="input-group input-location">
                 <label for="search-query" class="sr-only">Search for places on the map</label>
-                <input type="text" id="search-query" class="form-control" placeholder="Search for places on the map" ng-disabled="searchQuerySearching" ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" />
+                <input type="text" id="search-query" class="form-control" placeholder="Search for places on the map" ng-disabled="searchQuerySearching" ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue)" typeahead-on-select="mapLocate($item)" />
                 <span class="input-group-btn">
                   <button type="button" class="btn btn-inverse" ng-click="searchAddress()" ng-disabled="searchQuerySearching">
-                    <i class="icon-search" ng-show="searchQuerySearching === false"></i>
-                    <i class="icon-refresh" ng-show="searchQuerySearching === true"></i>
+                    <i class="icon-search"></i>
                   </button>
                 </span>
               </div>

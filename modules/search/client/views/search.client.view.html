@@ -1,7 +1,7 @@
 <section class="search-map" ng-controller="SearchController">
 
   <div class="form-group map-location-search" ng-class="{'active': searchQuery !== '' || searchActive }">
-    <div class="input-group">
+    <div class="input-group input-location">
       <label for="search-query" class="sr-only">Search places</label>
       <input type="text" id="search-query" ng-focus="searchActive = true" ng-blur="searchActive = false" class="form-control input-lg" placeholder="Search places" ng-disabled="searchQuerySearching" ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue)" typeahead-on-select="mapLocate($item)">
       <span class="input-group-btn">

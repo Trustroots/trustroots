@@ -6,9 +6,9 @@ angular.module('core').directive('trLocation', [
     return {
       replace: true,
       template:
-        '<div class="form-group">' +
+        '<div class="form-group input-location">' +
           '<label for="input-{{id}}" class="sr-only">{{placeholder}}</label>' +
-          '<input type="text" id="input-{{id}}" class="form-control" placeholder="{{placeholder}}" ng-model="trLocation" ng-keypress="enterLocation($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="trLocation = placeTitle($item)" />' +
+          '<input type="text" id="input-{{id}}" class="form-control" placeholder="{{placeholder}}" ng-model="trLocation" ng-keypress="enterLocation($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue)" typeahead-on-select="trLocation = placeTitle($item)" />' +
         '</div>',
       restrict: 'A',
       scope: {
