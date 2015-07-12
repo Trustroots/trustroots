@@ -1,107 +1,119 @@
-'use strict';
+(function() {
+  'use strict';
 
-angular.module('users').controller('SettingsController', ['$scope', '$http', '$state', 'Users', 'Authentication', 'messageCenterService', 'SettingsFactory',
-  function($scope, $http, $state, Users, Authentication, messageCenterService, SettingsFactory) {
+  angular
+    .module('users')
+    .controller('SettingsController', SettingsController);
 
-    var settings = SettingsFactory.get();
+  /* @ngInject */
+  function SettingsController($http, $state, Users, Authentication, messageCenterService, appSettings) {
 
-    $scope.user = Authentication.user;
+    // ViewModel
+    var vm = this;
+
+    // Exposed
+    vm.user = Authentication.user;
+    vm.updateUserEmail = updateUserEmail;
+    vm.resendUserEmailConfirm = resendUserEmailConfirm;
+    vm.updateUserSubscriptions = updateUserSubscriptions;
+    vm.changeUserPassword = changeUserPassword;
+    vm.removeUser = removeUser;
+    vm.removalConfirm = false;
+
+    // Related to password reset
+    vm.changeUserPasswordLoading = false;
+    vm.currentPassword = '';
+    vm.newPassword = '';
+    vm.verifyPassword = '';
 
     /**
      * Change user email
      */
-    $scope.updateUserEmail = function() {
-      $scope.emailSuccess = $scope.emailError = null;
-      var user = new Users($scope.user);
+    function updateUserEmail() {
+      vm.emailSuccess = vm.emailError = null;
+      var user = new Users(vm.user);
 
       user.$update(function(response) {
-        $scope.emailSuccess = 'Email update. Check your inbox, you should have received an confirmation email which has a link you need to click. Email change will not be active until that.';
-        Authentication.user = response;
+        vm.emailSuccess = 'Email update. Check your inbox, you should have received an confirmation email which has a link you need to click. Email change will not be active until that.';
+        vm.user = Authentication.user = response;
       }, function(response) {
-        $scope.emailError = response.data.message;
+        vm.emailError = response.data.message;
       });
-    };
+    }
 
     /**
      * Resend confirmation email for already sent email
      */
-    $scope.resendUserEmailConfirm = function() {
-      if($scope.user.emailTemporary) {
-        $scope.user.email = $scope.user.emailTemporary;
-        $scope.updateUserEmail();
+    function resendUserEmailConfirm() {
+      if(vm.user.emailTemporary) {
+        vm.user.email = vm.user.emailTemporary;
+        vm.updateUserEmail();
       }
-    };
+    }
 
     /**
      * Change user email subscriptions
      */
-    $scope.updateUserSubscriptions = function() {
-      var user = new Users($scope.user);
+    function updateUserSubscriptions() {
+      var user = new Users(vm.user);
       user.$update(function(response) {
-        messageCenterService.add('success', 'Subscriptions updated.', { timeout: settings.flashTimeout });
-        Authentication.user = response;
+        messageCenterService.add('success', 'Subscriptions updated.', { timeout: appSettings.flashTimeout });
+        vm.user = Authentication.user = response;
       }, function(response) {
-        messageCenterService.add('error', 'Error: ' + response.data.message, { timeout: settings.flashTimeout });
+        messageCenterService.add('error', 'Error: ' + response.data.message, { timeout: appSettings.flashTimeout });
       });
-    };
+    }
 
     /**
      * Change user password
      */
-    $scope.changeUserPasswordLoading = false;
-    $scope.currentPassword = '';
-    $scope.newPassword = '';
-    $scope.verifyPassword = '';
-    $scope.changeUserPassword = function() {
+    function changeUserPassword() {
 
-      $scope.changeUserPasswordLoading = true;
+      vm.changeUserPasswordLoading = true;
 
       $http.post('/api/users/password', {
-        currentPassword: $scope.currentPassword,
-        newPassword: $scope.newPassword,
-        verifyPassword: $scope.verifyPassword
+        currentPassword: vm.currentPassword,
+        newPassword: vm.newPassword,
+        verifyPassword: vm.verifyPassword
       }).success(function(response) {
-        $scope.currentPassword = '';
-        $scope.newPassword = '';
-        $scope.verifyPassword = '';
-        $scope.changeUserPasswordLoading = false;
-
-        $scope.user = Authentication.user = response.user;
-
-        messageCenterService.add('success', response.message, { timeout: settings.flashTimeout });
-
+        vm.currentPassword = '';
+        vm.newPassword = '';
+        vm.verifyPassword = '';
+        vm.changeUserPasswordLoading = false;
+        vm.user = Authentication.user = response.user;
+        messageCenterService.add('success', response.message, { timeout: appSettings.flashTimeout });
       }).error(function(response) {
-        $scope.changeUserPasswordLoading = false;
+        vm.changeUserPasswordLoading = false;
         messageCenterService.add('danger', ((response.message && response.message !== '') ? response.message : 'Password not changed due error, try again.'), { timeout: 10000 });
       });
 
-    };
+    }
 
     /*
      * Remove user permanently
      */
-    $scope.removalConfirm = false;
-    $scope.removeUser = function() {
-      $scope.success = $scope.error = null;
+    function removeUser() {
 
-      if($scope.removalConfirm === true) {
+      if(vm.removalConfirm === true) {
 
-        var duhhAreYouSureYouWantToRemoveYourself = confirm('Are you sure you want to remove your account? This cannot be undone.');
+        var duhhAreYouSureYouWantToRemoveYourself = confirm('We are sad to see you leave! Are you sure you want to remove your account? This whole thing cannot be undone.');
 
         if(duhhAreYouSureYouWantToRemoveYourself) {
           $http.post('/api/users/remove').success(function(response) {
-              // Do something!
+            // @todo: redirect to sad-to-see-you-leave instead
+            $state.go('home');
           }).error(function(response) {
-            $scope.error = response.message;
+            messageCenterService.add('danger', ((response.message && response.message !== '') ? response.message : 'Something went wrong. Try again.'), { timeout: 10000 });
           });
         }//yup, user is sure
 
       } // Require checkbox
       else {
-        alert('Choose "I understand this cannot be undone"');
+        messageCenterService.add('warning', 'Choose "I understand this cannot be undone"', { timeout: appSettings.flashTimeout });
       }
 
-    };
+    }
 
   }
-]);
+
+})();

@@ -39,12 +39,12 @@ mongoose.connect(function(db) {
   // Logging initialization
   console.log(chalk.white('--'));
   console.log(chalk.green(new Date()));
-  console.log(chalk.green(chalk.bold('Trustroots is rolling now!')));
+  console.log(chalk.green('Trustroots is rolling now.'));
   console.log(chalk.green('Environment:\t\t' + process.env.NODE_ENV));
-  console.log(chalk.green('Database:\t\t' + config.db.uri));
+  console.log(chalk.green('Database:\t\t\t' + config.db.uri));
   console.log(chalk.green('HTTPS:\t\t\t' + (config.https ? 'on' : 'off')));
   console.log(chalk.green('Port:\t\t\t' + config.port));
-  console.log(chalk.green('Phusion Passenger:\t' + (typeof(PhusionPassenger) !== 'undefined' ? 'on' : 'off')));
+  console.log(chalk.green('Phusion Passenger:\t\t' + (typeof(PhusionPassenger) !== 'undefined' ? 'on' : 'off')));
 
   // Reset console color
   console.log(chalk.white('--'));

@@ -17,6 +17,7 @@ module.exports = {
         'public/lib/angular-animate/angular-animate.js',
         'public/lib/angular-touch/angular-touch.js',
         'public/lib/angular-sanitize/angular-sanitize.js',
+        'public/lib/angular-message-format/angular-message-format.js',
         'public/lib/angular-ui-router/release/angular-ui-router.js',
         'public/lib/angular-bootstrap/ui-bootstrap-tpls.js',
         'public/lib/moment/moment.js',
@@ -27,7 +28,7 @@ module.exports = {
         'public/lib/PruneCluster/dist/PruneCluster.js',
         'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.js',
         'public/lib/angular-waypoints/dist/angular-waypoints.all.js',
-        'public/lib/ng-file-upload/angular-file-upload.js',
+        'public/lib/ng-file-upload/ng-file-upload.js',
         'public/lib/message-center/message-center.js',
         'public/lib/chosen/chosen.jquery.js',
         'public/lib/angular-chosen-localytics/chosen.js',
@@ -46,6 +47,7 @@ module.exports = {
       'modules/core/client/app/config.js',
       'modules/core/client/app/init.js',
       'modules/*/client/*.js',
+      'modules/*/client/controllers/*.js',
       'modules/*/client/**/*.js'
     ],
     views: ['modules/*/client/views/**/*.html']

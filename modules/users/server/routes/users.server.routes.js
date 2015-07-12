@@ -15,7 +15,7 @@ module.exports = function(app) {
   app.route('/api/users/accounts').all(usersPolicy.isAllowed)
     .delete(users.removeOAuthProvider);
 
-  app.route('/api/users/avatar').all(usersPolicy.isAllowed)
+  app.route('/api/users-avatar').all(usersPolicy.isAllowed)
     .post(users.upload);
 
   app.route('/api/users/mini/:userId').all(usersPolicy.isAllowed)

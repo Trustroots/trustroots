@@ -5,7 +5,7 @@
     <div class="monkeybox-section" ng-show="profile.languages.length && languages">
       <h4>Languages</h4>
       <ul class="list-unstyled">
-        <li ng-repeat="code in profile.languages">{{ languages[code] }}</li>
+        <li ng-repeat="code in profile.languages">{{ languages[code] || code }}</li>
       </ul>
     </div>
   </div>

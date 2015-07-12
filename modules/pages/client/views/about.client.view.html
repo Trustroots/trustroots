@@ -7,7 +7,7 @@
           <img class="visible-xs-inline-block" src="/modules/core/img/logo/color.svg" alt="Trustroots" width="110" height="110">
         </a>
         <br><br>
-        <div ng-include="'/modules/pages/views/manifesto-text.client.partial.html?v={{app.cacheBust}}'"></div>
+        <div ng-include="'/modules/pages/views/manifesto-text.client.partial.html?c=' + app.cacheBust"></div>
         <div ng-if="!app.user">
           <br><br>
           <a ui-sref="signup" class="btn btn-lg btn-inverse">Become a member</a>

@@ -1,14 +1,24 @@
-'use strict';
+(function() {
+  'use strict';
 
-angular.module('contacts').controller('ListContactsController', ['$scope', '$state', '$location', '$timeout', 'ContactList', 'Authentication',
-  function($scope, $state, $location, $timeout, ContactList, Authentication) {
+  angular
+    .module('contacts')
+    .controller('ContactsListController', ContactsListController);
 
-    // Wait for profile from parent Controller (probably ProfileController)
-    $scope.$parent.profile.$promise.then(function(profile) {
-      $scope.contacts = ContactList.query({
-        listUserId: profile._id
-      });
+  /* @ngInject */
+  function ContactsListController($scope, ContactsListService) {
+
+    // ViewModel
+    var vm = this;
+
+    /**
+     * Fetch contact list for the profile currently open in parent view
+     * @todo: move to route resolver
+     * @note: profileCtrl is a reference to parent "ControllerAs" (see users module)
+     */
+    vm.contacts = ContactsListService.query({
+      listUserId: $scope.profileCtrl.profile._id
     });
-
   }
-]);
+
+})();

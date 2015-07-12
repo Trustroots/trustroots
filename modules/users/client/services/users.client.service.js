@@ -1,8 +1,14 @@
-'use strict';
+(function() {
+  'use strict';
 
-// Users service used for communicating with the users REST endpoint
-angular.module('users').factory('Users', ['$resource',
-  function($resource) {
+  // Users service used for communicating with the users REST endpoint
+  angular
+    .module('users')
+    .factory('Users', UsersFactory);
+
+  /* @ngInject */
+  function UsersFactory($resource) {
+      console.log('UsersFactory');
     return $resource('/api/users', {}, {
       update: {
         method: 'PUT'
@@ -12,30 +18,5 @@ angular.module('users').factory('Users', ['$resource',
       }
     });
   }
-]);
 
-// Used to show actual full profiles
-angular.module('users').factory('UserProfiles', ['$resource',
-  function($resource) {
-    return $resource('/api/users/:username', {
-      username:'@username'
-    }, {
-      get: {
-        method: 'GET'
-      }
-    });
-  }
-]);
-
-// Used to receive basic info to show avatars etc...
-angular.module('users').factory('UsersMini', ['$resource',
-  function($resource) {
-    return $resource('/api/users/mini/:userId', {
-      userId:'@id'
-    }, {
-      get: {
-        method: 'GET'
-      }
-    });
-  }
-]);
+})();

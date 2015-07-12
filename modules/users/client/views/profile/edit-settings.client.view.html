@@ -1,4 +1,4 @@
-<section class="container container-spacer" ng-controller="SettingsController">
+<section class="container container-spacer">
 
   <div class="row">
     <div class="col-xs-12">
@@ -17,21 +17,21 @@
       <h4>Email</h4>
     </div>
     <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
-      <form ng-submit="updateUserEmail()" autocomplete="off">
+      <form ng-submit="settings.updateUserEmail()" autocomplete="off">
         <fieldset>
           <div class="form-group">
             <label for="email" class="sr-only">Email (required)</label>
-            <input type="email" id="email" name="email" class="form-control" ng-model="user.email" placeholder="Email (required)">
-            <p class="help-block" ng-if="user.emailTemporary && !emailSuccess">Please check your inbox for "{{user.emailTemporary}}". We have sent a confirmation message to this email address with further instructions. <a ng-click="resendUserEmailConfirm()" class="cursor-pointer">Resend.</a></p>
+            <input type="email" id="email" name="email" class="form-control" ng-model="settings.user.email" placeholder="Email (required)">
+            <p class="help-block" ng-if="settings.user.emailTemporary && !settings.emailSuccess">Please check your inbox for "{{settings.user.emailTemporary}}". We have sent a confirmation message to this email address with further instructions. <a ng-click="settings.resendUserEmailConfirm()">Resend.</a></p>
           </div>
           <div class="form-group">
             <button type="submit" class="btn btn-large btn-primary">Update email</button>
           </div>
-          <div ng-show="emailError" class="text-danger">
-              <strong>{{emailError}}</strong>
+          <div ng-show="settings.emailError" class="text-danger">
+              <strong>{{settings.emailError}}</strong>
           </div>
-          <div ng-show="emailSuccess" class="text-success">
-              <strong>{{emailSuccess}}</strong>
+          <div ng-show="settings.emailSuccess" class="text-success">
+              <strong>{{settings.emailSuccess}}</strong>
           </div>
         </fieldset>
       </form>
@@ -48,12 +48,12 @@
     </div>
     <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
 
-      <form ng-submit="updateUserSubscriptions()" autocomplete="off">
+      <form ng-submit="settings.updateUserSubscriptions()" autocomplete="off">
         <fieldset>
           <div class="form-group">
             <div class="checkbox">
               <label for="newsletter">
-                <input type="checkbox" id="newsletter" name="newsletter" ng-model="user.newsletter" ng-change="updateUserSubscriptions()">
+                <input type="checkbox" id="newsletter" name="newsletter" ng-model="settings.user.newsletter" ng-change="settings.updateUserSubscriptions()">
                 Subscribe to community news
               </label>
             </div>
@@ -75,31 +75,31 @@
     </div>
     <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
 
-      <form ng-submit="changeUserPassword()" autocomplete="off">
+      <form ng-submit="settings.changeUserPassword()" autocomplete="off">
         <fieldset>
           <div class="form-group">
             <label for="currentPassword" class="sr-only">Your current password</label>
-            <input type="password" id="currentPassword" name="currentPassword" class="form-control" ng-model="currentPassword" placeholder="Your current password" ng-disabled="changeUserPasswordLoading">
+            <input type="password" id="currentPassword" name="currentPassword" class="form-control" ng-model="settings.currentPassword" placeholder="Your current password" ng-disabled="settings.changeUserPasswordLoading">
           </div>
           <div class="form-group">
             <label for="newPassword" class="sr-only">New Password</label>
-            <input type="password" id="newPassword" name="newPassword" class="form-control" ng-model="newPassword" placeholder="New Password" popover="New password must be 8 or more characters."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="changeUserPasswordLoading">
+            <input type="password" id="newPassword" name="newPassword" class="form-control" ng-model="settings.newPassword" placeholder="New Password" popover="New password must be 8 or more characters."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="settings.changeUserPasswordLoading">
           </div>
           <div class="form-group">
             <label for="verifyPassword" class="sr-only">Verify Password</label>
-            <input type="password" id="verifyPassword" name="verifyPassword" class="form-control" ng-model="verifyPassword" placeholder="Verify Password" ng-disabled="changeUserPasswordLoading">
+            <input type="password" id="verifyPassword" name="verifyPassword" class="form-control" ng-model="settings.verifyPassword" placeholder="Verify Password" ng-disabled="settings.changeUserPasswordLoading">
           </div>
           <div class="form-group">
             <button type="submit" class="btn btn-large btn-primary" ng-disabled="changeUserPasswordLoading">
-              <span ng-hide="changeUserPasswordLoading">Change Password</span>
-              <span ng-show="changeUserPasswordLoading">Wait a moment...</span>
+              <span ng-hide="settings.changeUserPasswordLoading">Change Password</span>
+              <span ng-show="settings.changeUserPasswordLoading">Wait a moment...</span>
             </button>
           </div>
-          <div ng-show="passwordError" class="text-danger">
-            <strong>{{passwordError}}</strong>
+          <div ng-show="settings.passwordError" class="text-danger">
+            <strong>{{settings.passwordError}}</strong>
           </div>
-          <div ng-show="passwordSuccess" class="text-success">
-            <strong>{{passwordSuccess}}</strong>
+          <div ng-show="settings.passwordSuccess" class="text-success">
+            <strong>{{settings.passwordSuccess}}</strong>
           </div>
         </fieldset>
       </form>
@@ -119,10 +119,11 @@
       </p>
     </div>
     <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
+      <br><br>
       <ul class="list-unstyled">
-        <li><a class="btn btn-link btn-sm" href="/api/users/{{user.username}}" target="_top" type="application/json" download="profile.json">Profile</a> <small class="text-muted">(json)</small></li>
-        <li><a class="btn btn-link btn-sm" href="/api/contacts/{{user._id}}" target="_top" type="application/json" download="contacts.json">Contacts</a> <small class="text-muted">(json)</small></li>
-        <li><a class="btn btn-link btn-sm" href="/api/offers-by/{{user._id}}" target="_top" type="application/json" download="offers.json">Hosting offer</a> <small class="text-muted">(json)</small></li>
+        <li><a class="btn btn-link btn-sm" href="/api/users/{{app.user.username}}" target="_top" type="application/json" download="profile.json">Profile</a> <small class="text-muted">(json)</small></li>
+        <li><a class="btn btn-link btn-sm" href="/api/contacts/{{app.user._id}}" target="_top" type="application/json" download="contacts.json">Contacts</a> <small class="text-muted">(json)</small></li>
+        <li><a class="btn btn-link btn-sm" href="/api/offers-by/{{app.user._id}}" target="_top" type="application/json" download="offers.json">Hosting offer</a> <small class="text-muted">(json)</small></li>
       </ul>
     </div>
   </div>
@@ -137,17 +138,17 @@
     </div>
     <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
       <div class="form-group">
-        <em>Feature coming up. <a ui-sref="contact">Contact us</a> if you need your account to be removed.</em>
+        <em>Feature coming up. <a href="http://ideas.trustroots.org/account-removal/">Contact us</a> if you need your account to be removed.</em>
       </div>
       <!--
       <div class="form-group">
         <label for="removal-confirm">
-          <input type="checkbox" id="removal-confirm" ng-model="removalConfirm">
+          <input type="checkbox" id="removal-confirm" ng-model="settings.removalConfirm">
           <em>I understand this cannot be undone</em>
         </label>
       </div>
       <div class="form-group">
-        <button class="btn btn-danger" ng-click="removeUser();">Yes, remove my account permanently</button>
+        <button class="btn btn-danger" ng-click="settings.removeUser();">Yes, remove my account permanently</button>
       </div>
       -->
     </div>

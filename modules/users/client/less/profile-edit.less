@@ -178,11 +178,59 @@
     cursor: pointer;
   }
   .avatar-preview {
-    height: 128px;
-    width: 128px;
+    .square(128px);
     background-size: cover;
     background-repeat: no-repeat;
     background-position: 50% 50%;
     background-color: transparent;
+  }
+}
+
+/**
+ * Drag'n'drop area for avatar uploads
+ */
+.avatar-source-droparea {
+  .drop-instructions {
+    &,
+    .drop-instructions-accept,
+    .drop-instructions-reject {
+      display: none;
+    }
+    opacity: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    text-align: center;
+    color: #fff;
+    text-shadow: none;
+    cursor: default;
+  }
+  &.acceptDrop {
+    background: @filedrop-accepted;
+    .drop-instructions-accept {
+      display: block;
+    }
+  }
+  &.rejectDrop {
+    background: @filedrop-rejected;
+    .drop-instructions-reject {
+      display: block;
+      cursor: not-allowed;
+      cursor: no-drop;
+    }
+  }
+  &.rejectDrop,
+  &.acceptDrop {
+    user-select: none;
+    opacity: 1;
+    .modal-footer,
+    .modal-body {
+      opacity: 0;
+    }
+    .drop-instructions {
+      display: block;
+    }
   }
 }

@@ -1,11 +1,11 @@
-<div class="panel panel-default offer-view" ng-controller="ViewOffersController" ng-class="{'panel-disabled': user.public === false}">
+<div class="panel panel-default offer-view" ng-if="profileCtrl.profile" ng-class="{'panel-disabled': app.user.public === false}" ng-controller="ViewOffersController as viewOffers">
 
   <div class="panel-heading">
     Accommodation
     <!-- Button + dropdown for user's own profile -->
-    <div ng-if="user._id === profile._id && (offer && offer.$resolved && user.public !== false)" class="pull-right btn-group" dropdown is-open="hostingDropdown">
-      <button class="btn btn-sm dropdown-toggle btn-hosting" tooltip="Change" tooltip-placement="left" dropdown-toggle ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': (!offer || offer.status === 'no')}">
-        {{ hostingStatusLabel() }}
+    <div ng-if="app.user._id === profile._id && (viewOffers.offer && viewOffers.offer.$resolved && app.user.public !== false)" class="pull-right btn-group" dropdown is-open="hostingDropdown">
+      <button class="btn btn-sm dropdown-toggle btn-hosting" tooltip="Change" tooltip-placement="left" dropdown-toggle ng-class="{'btn-hosting-yes': viewOffers.offer.status === 'yes', 'btn-hosting-maybe': viewOffers.offer.status === 'maybe', 'btn-hosting-no': (!viewOffers.offer || viewOffers.offer.status === 'no')}">
+        {{ viewOffers.hostingStatusLabel(viewOffers.offer.status) }}
         <span class="caret"></span>
       </button>
       <ul class="dropdown-menu" role="menu">
@@ -15,18 +15,21 @@
       </ul>
     </div>
     <!-- Button for other profiles -->
-    <a ng-if="user._id !== profile._id && (offer && offer.$resolved && user.public !== false)" ui-sref="listMessages({userId: profile._id})" class="btn btn-sm pull-right btn-hosting btn-hosting-yes" ng-show="offer.status === 'yes'" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': (!offer || offer.status === 'no')}">
-      {{ hostingStatusLabel() }}
+    <a class="btn btn-sm pull-right btn-hosting btn-hosting-yes"
+       ng-if="app.user._id !== profileCtrl.profile._id && (offer && offer.$resolved && app.user.public !== false)"
+       ui-sref="listMessages({userId: profileCtrl.profile._id})"
+       ng-class="{'btn-hosting-yes': viewOffers.offer.status === 'yes', 'btn-hosting-maybe': viewOffers.offer.status === 'maybe', 'btn-hosting-no': (!viewOffers.offer || viewOffers.offer.status === 'no')}">
+      {{ viewOffers.hostingStatusLabel(viewOffers.offer.status) }}
     </a>
   </div>
 
   <!-- Show while offer is loading -->
-  <div class="panel-body text-center text-muted" ng-if="!offer || !offer.$resolved">
+  <div class="panel-body text-center text-muted" ng-if="!viewOffers.offer || !viewOffers.offer.$resolved">
     <small>Wait a moment...</small>
   </div>
 
   <!-- Offers/user's own profile isn't public yet -->
-  <div class="panel-body" ng-if="user.public === false">
+  <div class="panel-body" ng-if="app.user.public === false">
     <div class="content-empty">
       <div class="offer-symbol-sofa center-block"></div>
       <h4>You need to activate your profile before starting to host.</h4>
@@ -34,44 +37,52 @@
   </div>
 
   <!-- Show once offer has loader -->
-  <div class="panel-body" ng-if="offer && offer.$resolved && user.public !== false">
+  <div class="panel-body" ng-if="viewOffers.offer && viewOffers.offer.$resolved && app.user.public !== false">
 
     <!-- Hosting: yes | maybe -->
-    <div ng-if="offer.status !== 'no'">
+    <div ng-if="viewOffers.offer.status !== 'no'">
 
       <!-- Short descriptions -->
-      <div ng-if="offer.description && offer.description.length < 2000" ng-bind-html="offer.description | trustedHtml"></div>
+      <div ng-if="viewOffers.offer.description && viewOffers.offer.description.length < 2000" ng-bind-html="viewOffers.offer.description | trustedHtml"></div>
 
       <!-- Long descriptions -->
-      <div ng-if="offer.description && offer.description.length >= 2000">
-        <div class="panel-more-wrap" ng-hide="offerDescriptionToggle">
-          <div ng-bind-html="offer.description | limitTo:2000 | trustedHtml" class="panel-more-excerpt" ng-click="offerDescriptionToggle=true"></div>
-          <div class="panel-more-fade" ng-click="offerDescriptionToggle=true">Show more...</div>
+      <div ng-if="viewOffers.offer.description && viewOffers.offer.description.length >= 2000">
+        <div class="panel-more-wrap" ng-hide="viewOffers.offerDescriptionToggle">
+          <div ng-bind-html="viewOffers.offer.description | limitTo:2000 | trustedHtml" class="panel-more-excerpt" ng-click="viewOffers.offerDescriptionToggle=true"></div>
+          <div class="panel-more-fade" ng-click="viewOffers.offerDescriptionToggle=true">Show more...</div>
         </div>
-        <div ng-bind-html="offer.description | trustedHtml" ng-show="offerDescriptionToggle"></div>
+        <div ng-bind-html="viewOffers.offer.description | trustedHtml" ng-show="viewOffers.offerDescriptionToggle"></div>
       </div>
 
       <p class="offer-restrictions">
-        <small ng-show="offer.description && user._id === profile._id" class="pull-right"><a ui-sref="offer" class="text-muted">edit</a></small>
-        <small ng-show="offer.maxGuests > 1">At most {{offer.maxGuests}} guests.</small>
-        <small ng-show="offer.maxGuests === 1">At most one guest.</small>
-        <small ng-show="offer.maxGuests === 0">Zero guests.</small>
+        <small class="pull-right" ng-show="viewOffers.offer.description && app.user._id === profileCtrl.profile._id"><a ui-sref="offer" class="text-muted">edit</a></small>
+        <!--
+        <small ng-show="viewOffers.offer.maxGuests > 1">At most {{viewOffers.offer.maxGuests}} guests.</small>
+        <small ng-show="viewOffers.offer.maxGuests === 1">At most one guest.</small>
+        <small ng-show="viewOffers.offer.maxGuests === 0">Zero guests.</small>
+      -->
+        {{viewOffers.offer.maxGuests, plural, offset:1
+            =0    {No guests.}
+            =1    {At most 1 guest.}
+            one   {At most one guest.}
+            other {At most {{ viewOffers.offer.maxGuests }} guests.}
+        }}
       </p>
     </div>
     <!-- /Hosting: yes | maybe -->
 
     <!-- Hosting: no -->
-    <div ng-if="!offer || offer.status === 'no' && user.public !== false">
+    <div ng-if="!viewOffers.offer || viewOffers.offer.status === 'no' && app.user.public !== false">
 
       <!-- User has written explanation -->
-      <div ng-if="offer.noOfferDescription" ng-bind-html="offer.noOfferDescription | trustedHtml"></div>
-      <small ng-if="offer.noOfferDescription && user._id === profile._id" class="pull-right"><a ui-sref="offer-status({'status': 'no'})" class="text-muted">edit</a></small>
+      <div ng-if="viewOffers.offer.noOfferDescription" ng-bind-html="viewOffers.offer.noOfferDescription | trustedHtml"></div>
+      <small class="pull-right" ng-if="viewOffers.offer.noOfferDescription && app.user._id === profileCtrl.profile._id"><a ui-sref="offer-status({'status': 'no'})" class="text-muted">edit</a></small>
 
       <!-- Default "sorry nope" -->
-      <div ng-if="!offer.noOfferDescription" class="content-empty text-muted">
+      <div class="content-empty text-muted" ng-if="!viewOffers.offer.noOfferDescription">
         <div class="offer-symbol-sofa center-block"></div>
         <h4>Sorry, user is not hosting currently.</h4>
-        <p ng-if="!offer.noOfferDescription && user._id === profile._id"><a ui-sref="offer-status({'status': 'no'})" class="text-muted"><small>Customize</small></a></p>
+        <p ng-if="!viewOffers.offer.noOfferDescription && app.user._id === profile._id"><a ui-sref="offer-status({'status': 'no'})" class="text-muted"><small>Customize</small></a></p>
       </div>
 
     </div>
@@ -80,11 +91,11 @@
   </div>
 
   <!-- When looking at your own profile -->
-  <div leaflet center="center" markers="markers" layers="layers" paths="paths" defaults="defaults" class="offer-location" ng-if="offer && offer.$resolved && offer.status !== 'no' && user.public !== false" id="offer-location-canvas"></div>
+  <div leaflet id="offer-location-canvas" center="viewOffers.mapCenter" markers="viewOffers.mapMarkers" layers="viewOffers.mapLayers" paths="viewOffers.mapPaths" defaults="viewOffers.mapDefaults" class="offer-location" ng-if="viewOffers.offer && viewOffers.offer.$resolved && viewOffers.offer.status !== 'no' && app.user.public !== false"></div>
 
-  <div class="panel-footer text-center" ng-if="user.public !== false">
-    <a ng-if="user._id === profile._id && (offer && offer.status === 'no')" ui-sref="offer" class="btn btn-xs btn-primary">Start hosting travellers</a>
-    <a ng-if="offer && offer.status !== 'no'" ui-sref="search({offer: offerId})" class="btn btn-xs btn-link"><span class="text-muted">Bigger map</span></a>
+  <div class="panel-footer text-center" ng-if="app.user.public !== false">
+    <a ng-if="app.user._id === profileCtrl.profile._id && (viewOffers.offer && viewOffers.offer.status === 'no')" ui-sref="offer" class="btn btn-xs btn-primary">Start hosting travellers</a>
+    <a ng-if="viewOffers.offer && viewOffers.offer.status !== 'no'" ui-sref="search({offer: viewOffers.offer._id})" class="btn btn-xs btn-link"><span class="text-muted">Bigger map</span></a>
   </div>
 
 </div>

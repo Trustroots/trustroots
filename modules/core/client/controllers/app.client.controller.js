@@ -4,15 +4,16 @@
   /*
    * Application wide view controller
    */
-  angular.module('core').controller('AppController', ['$scope', '$rootScope', '$window', '$state', 'Authentication', 'messageCenterService', 'SettingsFactory',
-    function($scope, $rootScope, $window, $state, Authentication, messageCenterService, SettingsFactory) {
+  angular.module('core').controller('AppController', ['$scope', '$rootScope', '$window', '$state', 'Authentication', 'SettingsFactory', 'Languages',
+    function($scope, $rootScope, $window, $state, Authentication, SettingsFactory, Languages) {
 
       // ViewModel
       var vm = this;
 
-      // Exposed
+      // Exposed to the view
       vm.user = Authentication.user;
       vm.appSettings = SettingsFactory.get();
+      vm.languageNames = Languages.get('object');
       vm.goHome = goHome;
 
       // Used as a cache buster with ng-include
@@ -46,7 +47,7 @@
         }
 
         // Redirect to login page if no user
-        if (toState.requiresAuth && !Authentication.user) {
+        if(toState.requiresAuth && !Authentication.user) {
           // Cancel stateChange
           event.preventDefault();
 

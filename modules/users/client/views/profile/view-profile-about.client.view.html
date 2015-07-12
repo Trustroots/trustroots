@@ -10,19 +10,19 @@
       <div class="panel-body">
 
         <!-- Short descriptions -->
-        <div ng-if="profile.description.length < 2400" ng-bind-html="profile.description | trustedHtml"></div>
+        <div ng-if="profileCtrl.profile.description.length < 2400" ng-bind-html="profileCtrl.profile.description | trustedHtml"></div>
 
         <!-- Long descriptions -->
-        <div ng-if="profile.description.length >= 2400">
-          <div class="panel-more-wrap" ng-hide="profileDescriptionToggle">
-            <div ng-bind-html="profile.description | limitTo:2400 | trustedHtml" class="panel-more-excerpt" ng-click="profileDescriptionToggle=true"></div>
-            <div class="panel-more-fade" ng-click="profileDescriptionToggle=true">Show more...</div>
+        <div ng-if="profileCtrl.profile.description.length >= 2400">
+          <div class="panel-more-wrap" ng-hide="profileCtrl.profileDescriptionToggle">
+            <div class="panel-more-excerpt" ng-bind-html="profileCtrl.profile.description | limitTo:2400 | trustedHtml" ng-click="profileCtrl.profileDescriptionToggle=true"></div>
+            <div class="panel-more-fade" ng-click="profileCtrl.profileDescriptionToggle=true">Show more...</div>
           </div>
-          <div ng-if="profileDescriptionToggle" ng-bind-html="profile.description | trustedHtml"></div>
+          <div ng-if="profileCtrl.profileDescriptionToggle" ng-bind-html="profileCtrl.profile.description | trustedHtml"></div>
         </div>
 
         <!-- If no description, show deep thoughts... -->
-        <blockquote ng-if="!profile.description || profile.description === ''" class="profile-quote">
+        <blockquote class="profile-quote" ng-if="!profileCtrl.profile.description || profileCtrl.profile.description === ''">
           “Everyone is necessarily the hero of his own life story.”
         </blockquote>
       </div>
@@ -32,6 +32,6 @@
   </div>
 
   <!-- Offers -->
-  <div class="col-md-6 hidden-xs" ng-if="!profileError" ng-include="'/modules/offers/views/view-offers.client.view.html?c={{appSettings.commit}}'"></div>
+  <div class="col-md-6 hidden-xs" ng-if="profileCtrl.profile" ng-include="'/modules/offers/views/view-offers.client.view.html?c=' + app.cacheBust"></div>
 
 </div><!-- /.row -->

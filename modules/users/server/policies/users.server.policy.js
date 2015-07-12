@@ -45,7 +45,7 @@ exports.invokeRolesPolicies = function() {
       resources: '/api/users/accounts',
       permissions: ['delete']
     }, {
-      resources: '/api/users/avatar',
+      resources: '/api/users-avatar',
       permissions: ['post']
     }, {
       resources: '/api/users/mini/:userId',

@@ -1,5 +1,8 @@
 <section class="container container-spacer" ng-controller="MessagesThreadController"><!-- as messagesCtrl-->
 
+  <!-- Browsing with non-public account -->
+  <div ng-if="app.user.public === false" ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
+
   <div class="row">
     <div class="col-sm-9" id="thread-container">
 

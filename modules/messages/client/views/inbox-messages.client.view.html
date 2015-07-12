@@ -1,6 +1,9 @@
 <section class="container container-spacer" ng-controller="MessagesInboxController">
 
-  <div class="row">
+  <!-- Browsing with non-public account -->
+  <div ng-if="app.user.public === false" ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
+
+  <div class="row" ng-if="app.user.public === true">
     <div class="col-xs-12">
 
       <!-- Other threads -->
@@ -66,6 +69,5 @@
     <span class="icon-progress icon-2x animate-spin"></span>
     {{moreMessages(waypoints.scroll.down)}}
   </div>
-
 
 </section><!-- /.container -->
