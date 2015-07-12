@@ -62,7 +62,6 @@ function fuzzyLocation(location) {
  * Create (or update if exists) a Offer
  */
 exports.create = function(req, res) {
-
   var offer = new Offer(req.body);
   offer.user = req.user;
 
@@ -106,11 +105,6 @@ exports.create = function(req, res) {
  * List of Offers
  */
 exports.list = function(req, res) {
-
-  // If user who is loading is hidden, don't show anything
-  if(!req.user || !req.user.public) {
-    return res.status(400).send('No access.');
-  }
 
   Offer.find(
     {
@@ -231,15 +225,4 @@ exports.offerById = function(req, res, next, offerId) {
       next();
     });
 
-};
-
-
-/**
- * Offer authorization middleware
- */
-exports.hasAuthorization = function(req, res, next) {
-  if (req.user.public === true && req.offer.user.id !== req.user.id) {
-    return res.status(403).send('User is not authorized');
-  }
-  next();
 };

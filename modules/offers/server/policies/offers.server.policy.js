@@ -28,7 +28,7 @@ exports.invokeRolesPolicies = function() {
     roles: ['user'],
     allows: [{
       resources: '/api/offers',
-      permissions: ['get']
+      permissions: ['get', 'post']
     }, {
       resources: '/api/offers-by/:userId',
       permissions: ['get']
@@ -46,14 +46,14 @@ exports.invokeRolesPolicies = function() {
 exports.isAllowed = function(req, res, next) {
 
   // No offers for un-published users
-  if(req.user && req.user.public !== true) {
+  if(req.user && !req.user.public) {
     return res.status(403).json({
       message: 'User is not authorized'
     });
   }
 
   // If an offer is being processed and the current user owns it, then allow any manipulation
-  if(req.offer && req.user && req.offer.user.id === req.user.id) {
+  if(req.offer && req.user && req.offer.user === req.user._id) {
     return next();
   }
 
