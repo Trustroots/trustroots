@@ -78,7 +78,7 @@
             <small class="text-muted">@{{offer.user.displayUsername || offer.user.username}}</small>
           </h4>
           <div class="search-result-meta">
-            <span ng-if="offer.user.birthdate" am-time-ago="offer.user.birthdate" am-without-suffix="true"></span><span ng-show="offer.user.birthdate && offer.user.gender">, </span>
+            <span ng-if="offer.user.birthdate" ng-bind="offer.user.birthdate | ageyears"></span><span ng-if="offer.user.birthdate && offer.user.gender">, </span>
             <span ng-if="offer.user.gender" ng-class="{ 'text-capitalize': !offer.user.birthdate }">{{offer.user.gender}}.</span>
           </div>
           <div class="search-result-tagline">
