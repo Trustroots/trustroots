@@ -1,36 +1,54 @@
-'use strict';
+(function() {
+  'use strict';
 
-angular.module('pages').controller('FaqController', ['$scope', '$timeout', '$window',
-  function($scope, $timeout, $window) {
+  angular
+    .module('pages')
+    .controller('FaqController', FaqController);
 
-    // Toggles for accordion
-    $scope.sidebar = {
+  /* @ngInject */
+  function FaqController($timeout, $window) {
 
+    var $body = angular.element('body');
+
+    // ViewModel
+    var vm = this;
+
+    // Exposed to the view
+    vm.read = read;
+
+    // Toggles for the accordion
+    vm.sidebar = {
       // Toggles for each invidual panel
       isCommunityOpen: true,
       isOrganisationOpen: true,
       isTechnologyOpen: true,
-
       // Close other panels if one is open?
       closeOthers: false
     };
 
-    // Determine if sidebar should be scrolling or not
-    $timeout(function(){
-      if($window.innerHeight <= angular.element('#faq-sidebar').height()) {
-        $scope.sidebar.isCommunityOpen = false;
-        $scope.sidebar.isOrganisationOpen = false;
-        $scope.sidebar.isTechnologyOpen = false;
-        $scope.sidebar.closeOthers = true;
-      }
-    });
-    // Determine fixed width for the sidebar so it doesn't overflow when it gets fixed position
-    angular.element('#faq-sidebar').css({ 'max-width': angular.element('#faq-sidebar').width() });
+    /*
+     * Init
+     * @todo move to a directive
+     */
+    (function() {
+      // Determine if sidebar should be scrolling or not
+      $timeout(function(){
+        if($window.innerHeight <= angular.element('#faq-sidebar').height()) {
+          vm.sidebar.isCommunityOpen = false;
+          vm.sidebar.isOrganisationOpen = false;
+          vm.sidebar.isTechnologyOpen = false;
+          vm.sidebar.closeOthers = true;
+        }
+      });
+      // Determine fixed width for the sidebar so it doesn't overflow when it gets fixed position
+      angular.element('#faq-sidebar').css({ 'max-width': angular.element('#faq-sidebar').width() });
+    })();
 
-
-    // Scroll/highlight FAQ question when clicking question at sidebar
-    var $body = angular.element('body');
-    $scope.readFAQ = function(id) {
+    /**
+     * Scroll+highlight a FAQ question when clicking title at sidebar
+     * @todo move to a directive
+     */
+    function read(id) {
       var $el = angular.element('#' + id);
 
       // Scroll to element
@@ -42,7 +60,7 @@ angular.module('pages').controller('FaqController', ['$scope', '$timeout', '$win
       $timeout(function(){
         $el.removeClass('faq-question-flash');
       }, 1010);
-    };
+    }
 
   }
-]);
+})();

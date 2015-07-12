@@ -16,7 +16,9 @@ angular.module('pages').config(['$stateProvider',
     }).
     state('contact', {
       url: '/contact',
-      templateUrl: 'modules/pages/views/contact.client.view.html'
+      templateUrl: 'modules/pages/views/contact.client.view.html',
+      controller: 'ContactController',
+      controllerAs: 'contact'
     }).
     state('about', {
       url: '/about',
@@ -40,7 +42,9 @@ angular.module('pages').config(['$stateProvider',
     }).
     state('faq', {
       url: '/faq',
-      templateUrl: 'modules/pages/views/faq.client.view.html'
+      templateUrl: 'modules/pages/views/faq.client.view.html',
+      controller: 'FaqController',
+      controllerAs: 'faq',
     }).
     state('foundation', {
       url: '/foundation',
@@ -53,6 +57,8 @@ angular.module('pages').config(['$stateProvider',
     state('home', {
       url: '/',
       templateUrl: 'modules/pages/views/home.client.view.html',
+      controller: 'HomeController',
+      controllerAs: 'home',
       footerTransparent: true,
       headerHidden: true
     });
