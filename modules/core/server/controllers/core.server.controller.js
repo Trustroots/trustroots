@@ -4,8 +4,18 @@
  * Render the main applicaion page
  */
 exports.renderIndex = function(req, res) {
+
+  var currentUser = null;
+
+  // Expose user
+  if(req.user) {
+    currentUser = req.user;
+    // Don't just expose everything to the view...
+    delete currentUser.emailToken;
+  }
+
   res.render('modules/core/server/views/index', {
-    user: req.user || null
+    user: currentUser
   });
 };
 
