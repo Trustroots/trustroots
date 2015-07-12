@@ -123,9 +123,9 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
 
     var threadLayoutReplyHeight = threadLayoutReply.height();
     angular.element('#message-reply-content').on('keypress', function(evt) { // used to be 'input' event
-      
-      // Ctrl+ Enter sends the message
-      if(evt.ctrlKey && evt.charCode == 10) {
+
+      // Ctrl+Enter sends the message
+      if(evt.ctrlKey && evt.charCode === 10) {
         $scope.send();
       }
 
