@@ -8,7 +8,6 @@
 
   /* @ngInject */
   function UsersMiniFactory($resource) {
-      console.log('UsersMiniFactory');
     return $resource('/api/users/mini/:userId', {
       userId:'@id'
     }, {

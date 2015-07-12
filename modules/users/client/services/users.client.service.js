@@ -8,7 +8,6 @@
 
   /* @ngInject */
   function UsersFactory($resource) {
-      console.log('UsersFactory');
     return $resource('/api/users', {}, {
       update: {
         method: 'PUT'

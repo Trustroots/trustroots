@@ -7,7 +7,6 @@
 
   /* @ngInject */
   function UsersRoutes($stateProvider) {
-      console.log('UsersRoutes');
 
     $stateProvider.
       // Users state routing
