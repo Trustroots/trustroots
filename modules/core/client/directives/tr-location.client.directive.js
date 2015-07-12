@@ -1,8 +1,12 @@
-'use strict';
+(function(){
+  'use strict';
 
-angular.module('core').directive('trLocation', [
-  '$http',
-  function($http) {
+  angular
+    .module('core')
+    .directive('trLocation', trLocationDirective);
+
+  /* @ngInject */
+  function trLocationDirective($http) {
     return {
       replace: true,
       template:
@@ -72,4 +76,5 @@ angular.module('core').directive('trLocation', [
       }
     };
   }
-]);
+
+})();

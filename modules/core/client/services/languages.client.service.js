@@ -1,21 +1,34 @@
-'use strict';
+(function() {
+  'use strict';
 
-angular.module('core').factory('Languages', ['$window',
-  function($window) {
-    var service = {};
+  angular
+    .module('core')
+    .factory('Languages', LanguagesFactory);
 
-    service.get = function (type) {
-      if (type === 'array'){
-        var langs_arr = [];
-        for (var key in $window.languages) {
-          langs_arr[langs_arr.length] = {key: key, name: $window.languages[key]};
-        }
-        return langs_arr;
-      } else if (type === 'object'){
-        return $window.languages;
-      }
+  /* @ngInject */
+  function LanguagesFactory($window) {
+
+    var service = {
+      get: get
     };
 
     return service;
+
+    function get(type) {
+      if (type === 'array') {
+        var langsArr = [];
+        for (var key in $window.languages) {
+          langsArr[langsArr.length] = {key: key, name: $window.languages[key]};
+        }
+        return langsArr;
+      }
+
+      // type === 'object':
+      return $window.languages;
+    }
+
+    return service;
+
   }
-]);
+
+})();

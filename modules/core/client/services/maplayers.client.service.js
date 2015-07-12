@@ -1,14 +1,19 @@
-'use strict';
+(function() {
+  'use strict';
 
-/**
- * Service for map layers
- * - Streets from Mapbox (fallback from OSM)
- * - Satellite from Mapbox (fallback from MapQuest)
- * - Other maps:
- *    - Hitchmap from Mapbox (no fallback)
- */
-angular.module('core').factory('MapLayersFactory', ['SettingsFactory',
-  function(SettingsFactory) {
+  /**
+   * Service for map layers
+   * - Streets from Mapbox (fallback from OSM)
+   * - Satellite from Mapbox (fallback from MapQuest)
+   * - Other maps:
+   *    - Hitchmap from Mapbox (no fallback)
+   */
+  angular
+    .module('core')
+    .factory('MapLayersFactory', MapLayersFactory);
+
+  /* @ngInject */
+  function MapLayersFactory(SettingsFactory) {
 
     var appSettings = SettingsFactory.get();
 
@@ -127,4 +132,5 @@ angular.module('core').factory('MapLayersFactory', ['SettingsFactory',
 
     return service;
   }
-]);
+
+})();

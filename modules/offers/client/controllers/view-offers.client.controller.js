@@ -6,7 +6,7 @@
     .controller('ViewOffersController', ViewOffersController);
 
   /* @ngInject */
-  function ViewOffersController($scope, $state, $location, $timeout, OffersBy, Authentication, leafletData, MapLayersFactory) {
+  function ViewOffersController($scope, $state, $location, OffersBy, Authentication, leafletData, MapLayersFactory) {
 
     // ViewModel
     var vm = this;
@@ -114,8 +114,6 @@
       userId: $scope.profileCtrl.profile._id
     }, function(offer){
       if(offer && offer.location) {
-        console.log('offer location');
-        console.log(offer);
         var offerLocation = {
           lat: parseFloat(offer.location[0]),
           lng: parseFloat(offer.location[1])
