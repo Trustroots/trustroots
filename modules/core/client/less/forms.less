@@ -18,7 +18,26 @@ input[type="tel"],
 input[type="color"] {
   // Focus state
   &:focus {
-  border-color: lighten(@brand-primary, 20%);
+    border-color: lighten(@brand-primary, 50%);
     .box-shadow(0 0 3px lighten(@brand-primary, 50%));
   }
+}
+
+label {
+  color: @gray-light;
+  font-family: @font-family-brand;
+}
+.checkbox label {
+  color: @text-color;
+}
+
+/**
+ * Angular validator classes
+ * @link https://docs.angularjs.org/guide/forms#using-css-classes
+ */
+.has-error .form-control,
+.has-error .form-control:focus,
+.form-control.ng-dirty.ng-invalid {
+  border-color: @brand-danger;
+  .box-shadow(0 0 3px lighten(@brand-danger, 50%));
 }

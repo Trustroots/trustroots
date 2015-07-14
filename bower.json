@@ -22,7 +22,8 @@
     "imagesloaded": "~3.1.8",
     "message-center": "~1.1.4",
     "angular-chosen-localytics": "~1.0.7",
-    "angular-loading-bar": "~0.8.0"
+    "angular-loading-bar": "~0.8.0",
+    "angular-trustpass": "~0.1.2"
   },
   "resolutions": {
     "angular": "~1.4",

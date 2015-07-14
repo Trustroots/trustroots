@@ -70,7 +70,7 @@
       state('signup', {
         url: '/signup',
         templateUrl: 'modules/users/views/authentication/signup.client.view.html',
-        footerTransparent: true,
+        footerTransparent: false,
         headerHidden: true
       }).
       state('signin', {

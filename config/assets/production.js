@@ -32,7 +32,8 @@ module.exports = {
         'public/lib/message-center/message-center.js',
         'public/lib/chosen/chosen.jquery.min.js',
         'public/lib/angular-chosen-localytics/chosen.js',
-        'public/lib/angular-loading-bar/build/loading-bar.min.js'
+        'public/lib/angular-loading-bar/build/loading-bar.min.js',
+        'public/lib/angular-trustpass/dist/tr-trustpass.min.js'
       ]
     },
     css: ['public/dist/application.min.css'],

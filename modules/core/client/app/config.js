@@ -19,7 +19,8 @@ var ApplicationConfiguration = (function() {
                                               'zumba.angular-waypoints',
                                               'MessageCenterModule',
                                               'localytics.directives',
-                                              'angular-loading-bar'
+                                              'angular-loading-bar',
+                                              'trTrustpass'
                                             ];
 
   // Add a new vertical module

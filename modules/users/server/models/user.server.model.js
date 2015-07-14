@@ -7,6 +7,8 @@ var crypto = require('crypto'),
     mongoose = require('mongoose'),
     Schema = mongoose.Schema;
 
+var passwordMinLength = 8;
+
 /**
  * A Validation function for local strategy properties
  */
@@ -18,7 +20,7 @@ var validateLocalStrategyProperty = function(property) {
  * A Validation function for local strategy password
  */
 var validateLocalStrategyPassword = function(password) {
-  return (this.provider !== 'local' || (password && password.length >= 8));
+  return (this.provider !== 'local' || (password && password.length >= passwordMinLength));
 };
 
 /**
@@ -32,7 +34,7 @@ var validateLocalStrategyPassword = function(password) {
  */
 
 var validateUsername = function(username) {
-  var usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,}$/,
+  var usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/,
       dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/,
       illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'profile', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test'];
   return (this.provider !== 'local' || ( username &&
