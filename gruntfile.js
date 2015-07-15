@@ -177,6 +177,19 @@ module.exports = function (grunt) {
         }]
       }
     },
+    postcss: {
+      options: {
+        map: true,
+        processors: [
+          require('autoprefixer-core')({
+            browsers: ['last 2 versions']
+          })
+        ]
+      },
+      dist: {
+        src: defaultAssets.client.css
+      }
+    },
     cssmin: {
       options: {
         keepSpecialComments: 0
@@ -259,8 +272,7 @@ module.exports = function (grunt) {
   grunt.registerTask('lint', ['jshint']); //'less', 'csslint'
 
   // Lint project files and minify them into two production files.
-  //grunt.registerTask('build', ['ngAnnotate', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'cssmin']);
-  grunt.registerTask('build', ['copy:localConfig', 'fontello', 'ngAnnotate:production', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'cssmin']);
+  grunt.registerTask('build', ['copy:localConfig', 'fontello', 'ngAnnotate:production', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'postcss', 'cssmin']);
 
   // Run the project tests
   grunt.registerTask('test', ['env:test', 'copy:localConfig', 'mongoose', 'mochaTest', 'karma:unit']);
@@ -271,7 +283,7 @@ module.exports = function (grunt) {
   grunt.registerTask('docs', ['shell:swagger-ui']);
 
   // Run the project in development mode
-  grunt.registerTask('default', ['env:dev', 'copy:localConfig', 'lint', 'ngAnnotate:development', 'less', 'concurrent:default']);
+  grunt.registerTask('default', ['env:dev', 'copy:localConfig', 'lint', 'ngAnnotate:development', 'less', 'postcss', 'concurrent:default']);
 
   // Run the project in debug mode (same as default but with node-inspector)
   grunt.registerTask('debug', ['env:dev', 'copy:localConfig', 'lint', 'ngAnnotate:development', 'less', 'concurrent:debug']);

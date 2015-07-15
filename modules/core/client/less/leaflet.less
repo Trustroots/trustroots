@@ -37,7 +37,7 @@
 .leaflet-tile,
 .leaflet-marker-icon,
 .leaflet-marker-shadow {
-  .user-select(none);
+  user-select: none;
   -webkit-user-drag: none;
   }
 .leaflet-marker-icon,
@@ -137,7 +137,7 @@
 .leaflet-fade-anim .leaflet-tile,
 .leaflet-fade-anim .leaflet-popup {
   opacity: 0;
-  .transition(opacity 0.2s linear);
+  transition: opacity .2s;
   }
 .leaflet-fade-anim .leaflet-tile-loaded,
 .leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
@@ -150,7 +150,7 @@
 .leaflet-zoom-anim .leaflet-tile,
 .leaflet-pan-anim .leaflet-tile,
 .leaflet-touching .leaflet-zoom-animated {
-  .transition(none);
+  transition: none;
   }
 
 .leaflet-zoom-anim .leaflet-zoom-hide {
@@ -208,7 +208,7 @@
 .leaflet-bar {
   box-shadow: 0 1px 5px rgba(0,0,0,0.65);
   border-radius: @border-radius-small;
-  .user-select(none);
+  user-select: none;
   a {
     &,
     &:hover {

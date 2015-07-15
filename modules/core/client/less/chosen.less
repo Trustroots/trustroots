@@ -32,7 +32,7 @@
   font-size: 13px;
   zoom: 1;
   *display: inline;
-  .user-select(none);
+  user-select: none;
   * {
     .box-sizing(border-box);
   }
@@ -318,9 +318,7 @@
   &.chosen-with-drop{
     .chosen-single {
       border: 1px solid @input-border;
-      -moz-border-radius-bottomright: 0;
       border-bottom-right-radius: 0;
-      -moz-border-radius-bottomleft: 0;
       border-bottom-left-radius: 0;
       box-shadow: 0 1px 0 #fff inset;
     }

@@ -58,6 +58,7 @@
     "swig": "~1.4.2"
   },
   "devDependencies": {
+    "autoprefixer-core": "~5.2.1",
     "faker": "~2.1.4",
     "grunt-concurrent": "~2.0.0",
     "grunt-contrib-concat": "~0.5.1",
@@ -75,6 +76,7 @@
     "grunt-ng-annotate": "~1.0.1",
     "grunt-node-inspector": "~0.2.0",
     "grunt-nodemon": "~0.4.0",
+    "grunt-postcss": "~0.5.5",
     "grunt-shell": "~1.1.2",
     "karma": "~0.12.37",
     "karma-chrome-launcher": "~0.2.0",
