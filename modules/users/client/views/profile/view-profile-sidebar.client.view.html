@@ -1,5 +1,5 @@
 <div class="panel panel-default" id="profile-sidebar">
-  <div tr-avatar data-user="profileCtrl.profile" data-size="256" data-link="false" class="hidden-xs"></div>
+  <a tr-avatar data-user="profileCtrl.profile" data-size="256" data-link="false" class="hidden-xs" ng-click="profileCtrl.toggleAvatarModal()"></a>
   <div class="panel-body">
 
     <div class="profile-sidebar-section" ng-if="profileCtrl.profile.birthdate || profileCtrl.profile.gender">

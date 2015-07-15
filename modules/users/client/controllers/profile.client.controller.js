@@ -22,6 +22,7 @@
     vm.isConnectedSocialAccount = isConnectedSocialAccount;
     vm.socialAccountLink = socialAccountLink;
     vm.tabSelected = tabSelected;
+    vm.toggleAvatarModal = toggleAvatarModal;
     vm.tabs = [
       {
         path: 'about',
@@ -52,6 +53,30 @@
       // $timeout due Angular overwriting message at $state change otherwise
       $timeout(function(){
         messageCenterService.add('success', 'Profile updated', { timeout: appSettings.flashTimeout });
+      });
+    }
+
+    /**
+     * Open avatar modal (bigger photo)
+     */
+    function toggleAvatarModal() {
+      $modal.open({
+        template: '<a tr-avatar data-user="avatarModal.profile" data-size="512" data-link="false" ng-click="avatarModal.close()"></a>',
+        controller: function($scope, $modalInstance, profile) {
+          var vm = this;
+          vm.profile = profile;
+          vm.close = function() {
+            $modalInstance.dismiss('cancel');
+          };
+        },
+        controllerAs: 'avatarModal',
+        animation: false, // This can be enabled (just remove the whole flag) once this is fixed: https://github.com/angular-ui/bootstrap/issues/3896
+        windowClass: 'modal-avatar',
+        resolve: {
+          profile: function() {
+            return vm.profile;
+          }
+        }
       });
     }
 

@@ -134,6 +134,7 @@
         templateUrl: '/modules/users/views/profile/avatar-editor.client.modal.html',
         controller: 'AvatarEditorController',
         controllerAs: 'avatarEditor',
+        animation: false, // This can be enabled (just remove the whole flag) once this is fixed: https://github.com/angular-ui/bootstrap/issues/3896
         resolve: {
           user: function () {
             return vm.user;

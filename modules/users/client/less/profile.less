@@ -48,6 +48,7 @@
 }
 
 .profile-name {
+  margin-top: 20px;
   @media (min-width: @screen-sm-min) {
     margin: 0 10px 5px 0;
   }
@@ -78,6 +79,29 @@
   font-size: 18px;
   padding: 0;
   border: 0;
+}
+
+// Toggling avatar bigger at mobile screens
+@media (max-width: @screen-xs-max) {
+  .avatar {
+    max-width: 256px;
+    max-height: 256px;
+  }
+  .profile-avatar-lg .avatar {
+    width: 100%;
+    height: auto;
+    max-width: none;
+    max-height: none;
+  }
+}
+
+// Big avatar opened in a modal
+// Content tends to be 598px, so when it's shrinked to 512px,
+// 86px is left out. Move modal to the left half of that (43px).
+.modal-avatar .modal-content {
+  max-width: 512px;
+  max-height: 512px;
+  margin-left: 43px;
 }
 
 #profile-sidebar {
