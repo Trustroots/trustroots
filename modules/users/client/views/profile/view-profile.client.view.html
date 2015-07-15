@@ -1,13 +1,12 @@
 <section class="container container-spacer" id="profile">
 
-  <!-- Loading --
-  <div class="row content-wait" ng-if="profileCtrl.profile && !profile.$resolved">
+  <!-- Loading -->
+  <div class="row content-wait" ng-if="profileCtrl.profile && !profileCtrl.profile.$resolved">
     <small>Wait a moment...</small>
   </div>
-  -->
 
   <!-- Couldn't find profile... -->
-  <div class="row text-center" ng-if="!profileCtrl.profile.username && app.user.public !== false">
+  <div class="row text-center" ng-if="!profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public !== false">
     <h1>Don't panic!</h1>
     <em class="lead">User does not exist.</em>
     <br><br>
@@ -15,17 +14,17 @@
   </div>
 
   <!-- Browsing with non-public account -->
-  <div ng-if="app.user.username !== profileCtrl.profile.username && app.user.public === false" ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
+  <div ng-if="app.user.username !== profileCtrl.profile.username && app.user.public === false && profileCtrl.profile.$resolved" ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
 
   <!-- Own profile is non-public -->
-  <div class="row text-center" ng-if="app.user.username === profileCtrl.profile.username && app.user.public === false">
+  <div class="row text-center" ng-if="app.user.username === profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public === false">
     <em class="lead">Note that your profile will not be visible to others until you confirm your email.</em>
     <p>If you didn't receive the message, check your spam folder or resend it via <a ui-sref="profile-settings">email settings</a>.</p>
     <hr>
   </div>
 
   <!-- Profile -->
-  <div ng-if="profileCtrl.profile.username && app.user.public !== false">
+  <div ng-if="profileCtrl.profile.username && app.user.public !== false && profileCtrl.profile.$resolved">
     <div class="row">
       <div class="col-xs-12 text-center visible-xs-block">
         <div tr-avatar data-user="profileCtrl.profile" data-size="64" data-link="false" class="visible-xs-block avatar-circle"></div>
