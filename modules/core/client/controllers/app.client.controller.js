@@ -19,6 +19,7 @@
     vm.appSettings = SettingsFactory.get();
     vm.languageNames = Languages.get('object');
     vm.goHome = goHome;
+    vm.photoCredits = [];
 
     // Used as a cache buster with ng-include
     // Includes a hash of latest git commit
@@ -73,6 +74,10 @@
      */
     $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
 
+      // Reset photo copyrights on each page change
+      // trBoards directive hits in after this and we'll fill this with potential photo credits
+      vm.photoCredits = [];
+
       // Reset page scroll on page change
       $window.scrollTo(0,0);
 
@@ -84,6 +89,13 @@
         });
       }
 
+    });
+
+    /**
+     * Sniff and apply photo credit changes
+     */
+    $scope.$on('photoCreditsUpdated', function(scope, photo) {
+      vm.photoCredits.push(photo);
     });
 
   }

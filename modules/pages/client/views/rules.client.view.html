@@ -1,24 +1,20 @@
-<section>
-
-  <div class="container container-spacer">
-
+<section class="board" tr-boards="'forestpath'">
+  <div class="container">
     <div class="row">
-
-      <div class="col-xs-12 col-sm-8 col-md-9">
-
-        <div class="page-header">
-          <h2>Rules Of Trustroots</h2>
-        </div>
-        <div ng-include="'/modules/pages/views/rules-text.client.partial.html'"></div>
-
-        <p>See also our page about <a ui-sref="privacy">privacy</a>.</p>
-
-        <p class="lead"><em>Thank you!</em></p>
-
+      <div class="col-xs-12 text-center">
+        <br><br>
+        <h2>Rules Of Trustroots</h2>
       </div>
-
-    </div><!-- /.row -->
-
-  </div><!-- /.container -->
-
+    </div>
+  </div>
 </section>
+
+  <section class="container container-spacer">
+    <div class="row">
+      <div class="col-xs-12 col-sm-8 col-md-9">
+        <div ng-include="'/modules/pages/views/rules-text.client.partial.html'"></div>
+        <p>See also our page about <a ui-sref="privacy">privacy</a>.</p>
+        <p class="lead"><em>Thank you!</em></p>
+      </div>
+    </div><!-- /.row -->
+  </section><!-- /.container -->

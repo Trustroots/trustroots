@@ -9,10 +9,10 @@
       </nav>
       <nav class="col-xs-4 text-right" role="navigation">
         <ul class="list-inline">
-          <li class="photo-credits" ng-if="footer.photoCredits.length > 0">
-            <span ng-if="footer.photoCredits.length === 1">Photo by</span>
-            <span ng-if="footer.photoCredits.length > 1">Photos by</span>
-            <span ng-repeat="credit in footer.photoCredits">
+          <li class="photo-credits" ng-if="app.photoCredits.length > 0">
+            <span ng-if="app.photoCredits.length === 1">Photo by</span>
+            <span ng-if="app.photoCredits.length > 1">Photos by</span>
+            <span ng-repeat="credit in app.photoCredits">
               <a ng-href="{% raw %}{{ credit.url }}{% endraw %}" ng-bind="credit.name"></a>
               <span ng-if="credit.license">(<a ng-href="{% raw %}{{ credit.license_url }}{% endraw %}" ng-bind-html="credit.license" title="License" rel="license"></a>)</span><span ng-if="($first && footer.photoCredits.length > 1) || $middle">, </span>
             </span>

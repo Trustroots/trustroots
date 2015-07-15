@@ -57,8 +57,6 @@ angular.module('pages').config(['$stateProvider',
     state('home', {
       url: '/',
       templateUrl: 'modules/pages/views/home.client.view.html',
-      controller: 'HomeController',
-      controllerAs: 'home',
       footerTransparent: true,
       headerHidden: true
     });
