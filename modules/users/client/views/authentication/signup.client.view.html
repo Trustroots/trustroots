@@ -25,10 +25,7 @@
                      placeholder="First Name"
                      ng-model="credentials.firstName"
                      ng-disabled="isLoading"
-                     popover="Visible to other members."
-                     popover-trigger="focus"
-                     popover-placement="top"
-                     popover-append-to-body="true">
+                     tr-focustip="'Visible to other members.'">
             </div>
           </div>
           <div class="form-group" ng-class="{'has-error': userForm.lastName.$invalid && userForm.lastName.$dirty}">
@@ -42,10 +39,7 @@
                      placeholder="Last Name"
                      ng-model="credentials.lastName"
                      ng-disabled="isLoading"
-                     popover="Visible to other members."
-                     popover-trigger="focus"
-                     popover-placement="top"
-                     popover-append-to-body="true">
+                     tr-focustip="'Visible to other members.'">
             </div>
           </div>
           <div class="form-group" ng-class="{'has-error': userForm.username.$invalid && userForm.username.$dirty}">
@@ -62,10 +56,7 @@
                      ng-disabled="isLoading"
                      ng-minlength="3"
                      ng-maxlength="34"
-                     popover="Visible to other members."
-                     popover-trigger="focus"
-                     popover-placement="top"
-                     popover-append-to-body="true"
+                     tr-focustip="'No spaces. Only letters a-z, numbers and .-_ characters. Visible to other members.'"
                      tooltip="{{
                        ((userForm.username.$error.minlength && userForm.username.$dirty) ? 'At least 3 characters long. ' : '') +
                        ((userForm.username.$error.maxlength && userForm.username.$dirty) ? 'Maximum 34 characters long. ' : '') +
@@ -90,7 +81,8 @@
                      tooltip="{{ (userForm.email.$error.email && userForm.email.$dirty) ? 'Please give a valid email.' : ''}}"
                      tooltip-trigger="blur"
                      tooltip-placement="top"
-                     tooltip-append-to-body="true">
+                     tooltip-append-to-body="true"
+                     tr-focustip="'We will not reveal this to anyone.'">
             </div>
           </div>
           <div class="form-group" ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}">

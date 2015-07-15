@@ -1,0 +1,22 @@
+/**
+ * trFocustip directive
+ */
+.focustip {
+  display: block;
+  opacity: 1;
+  padding: 5px 0;
+  margin: 0;
+  font-family: @font-family-brand;
+  color: @gray-light;
+  &.ng-hide-add.ng-hide-add-active,
+  &.ng-hide-remove.ng-hide-remove-active {
+    .transition-property(all);
+    .transition-timing-function(cubic-bezier(0.1, 0.57, 0.1, 1));
+    .transition-duration(300ms);
+  }
+  &.ng-hide {
+    line-height: 0;
+    opacity: 0;
+    padding: 0;
+  }
+}
