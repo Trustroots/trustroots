@@ -15,7 +15,7 @@ echo "Making sure $CERT_PATH exists..."
 mkdir -p "$CERT_PATH"
 
 echo "Generating self-signed certificates..."
-openssl genrsa -out "$KEY_FILE" -aes256 1024
+openssl genrsa -out "$KEY_FILE" 1024
 echo "Done: $KEY_FILE"
 openssl req -new -key "$KEY_FILE" -out "$CSR_FILE"
 openssl x509 -req -days 9999 -in "$CSR_FILE" -signkey "$KEY_FILE" -out "$CER_FILE"
