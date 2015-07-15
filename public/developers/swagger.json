@@ -15,7 +15,9 @@
     ],
     "basePath": "/api",
     "produces": [
-        "application/json"
+        "application/json",
+        "text/html",
+        "text/plain"
     ],
     "tags": [
         {
