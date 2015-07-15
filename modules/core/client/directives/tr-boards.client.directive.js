@@ -95,6 +95,13 @@
             'name': 'Agnietė Melisa',
             'url': 'https://www.facebook.com/pages/My-Road-Tales/844001355694245',
             'file': 'am-desertgirl.jpg'
+          },
+          'wavewatching': {
+            // https://www.facebook.com/gala.hyde
+            // Permission granted for Trustroots (asked by Mikael Korpela)
+            'name': 'Andrea Nieblas',
+            'url': 'https://www.flickr.com/photos/andreanieblas/',
+            'file': 'an-wavewatching.jpg'
           }
         };
 
