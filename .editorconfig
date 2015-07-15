@@ -30,7 +30,7 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
-[**.conf]
+[**.conf, **.json]
 insert_final_newline = false
 trim_trailing_whitespace = true
 
