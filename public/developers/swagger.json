@@ -115,8 +115,11 @@
                             "$ref": "#/definitions/User"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request."
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden."
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -150,8 +153,11 @@
                             "$ref": "#/definitions/User"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request."
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden."
                     },
                     "404": {
                         "description": "Not found."
@@ -188,8 +194,11 @@
                     "200": {
                         "description": "Success. Returns image object."
                     },
+                    "400": {
+                        "description": "Bad Request."
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden."
                     },
                     "422": {
                         "description": "Unprocessable Entity. Image is unable to be processed."
@@ -220,8 +229,11 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Bad Request."
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden."
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -258,8 +270,14 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Bad Request."
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden."
+                    },
+                    "404": {
+                        "description": "Not found."
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -321,8 +339,11 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Bad Request."
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden."
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -356,8 +377,11 @@
                             "$ref": "#/definitions/Offer"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request."
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden."
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -391,8 +415,14 @@
                             "$ref": "#/definitions/Offer"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request."
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden."
+                    },
+                    "404": {
+                        "description": "Not found."
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -429,8 +459,14 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Bad Request."
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden."
+                    },
+                    "404": {
+                        "description": "Not found."
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -464,8 +500,11 @@
                             "$ref": "#/definitions/Offer"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request."
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden."
                     },
                     "404": {
                         "description": "Not found."
