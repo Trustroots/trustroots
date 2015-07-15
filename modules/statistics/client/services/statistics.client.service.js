@@ -1,9 +1,15 @@
-'use strict';
+(function() {
+  'use strict';
 
-// statistics service used for communicating with the statistics REST endpoints
+  // Statistics service used for communicating with the statistics REST endpoints
 
-angular.module('statistics').factory('Statistics', ['$resource',
-  function($resource) {
+  angular
+    .module('statistics')
+    .factory('Statistics', StatisticsService);
+
+  /* @ngInject */
+  function StatisticsService($resource) {
     return $resource('/api/statistics');
   }
-]);
+
+})();
