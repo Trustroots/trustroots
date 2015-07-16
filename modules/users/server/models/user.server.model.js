@@ -5,6 +5,7 @@
  */
 var crypto = require('crypto'),
     mongoose = require('mongoose'),
+    uniqueValidation = require('mongoose-beautiful-unique-validation'),
     Schema = mongoose.Schema;
 
 var passwordMinLength = 8;
@@ -68,7 +69,7 @@ var UserSchema = new Schema({
   email: {
     type: String,
     trim: true,
-    unique: true,
+    unique: 'Email exists already.',
     lowercase: true,
     required: true,
     validate: [validateLocalStrategyProperty, 'Please enter your email'],
@@ -115,7 +116,7 @@ var UserSchema = new Schema({
   // Lowercase enforced username
   username: {
     type: String,
-    unique: true,
+    unique: 'Username exists already.',
     required: true,
     validate: [validateUsername, 'Please fill in valid username: 3+ characters long, non banned word, characters "_-.", no consecutive dots, does not begin or end with dots, letters a-z and numbers 0-9.'],
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
@@ -231,5 +232,11 @@ UserSchema.methods.hashPassword = function(password) {
 UserSchema.methods.authenticate = function(password) {
   return this.password === this.hashPassword(password);
 };
+
+/**
+ * Make sure unique fields yeld verbal errors
+ * @link https://www.npmjs.com/package/mongoose-beautiful-unique-validation
+ */
+UserSchema.plugin(uniqueValidation);
 
 mongoose.model('User', UserSchema);
