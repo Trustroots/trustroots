@@ -56,7 +56,8 @@
     "passport-twitter": "~1.0.3",
     "sanitize-html": "~1.7.0",
     "serve-favicon": "~2.3.0",
-    "swig": "~1.4.2"
+    "swig": "~1.4.2",
+    "validator": "~3.41.2"
   },
   "devDependencies": {
     "autoprefixer-core": "~5.2.1",

@@ -6,6 +6,7 @@
 var crypto = require('crypto'),
     mongoose = require('mongoose'),
     uniqueValidation = require('mongoose-beautiful-unique-validation'),
+    validator = require('validator'),
     Schema = mongoose.Schema;
 
 var passwordMinLength = 8;
@@ -18,10 +19,17 @@ var validateLocalStrategyProperty = function(property) {
 };
 
 /**
- * A Validation function for local strategy password
+ * A Validation function for local strategy email
  */
-var validateLocalStrategyPassword = function(password) {
-  return (this.provider !== 'local' || (password && password.length >= passwordMinLength));
+var validateLocalStrategyEmail = function(email) {
+  return ((this.provider !== 'local' && !this.updated) || validator.isEmail(email));
+};
+
+/**
+ * A Validation function for password
+ */
+var validatePassword = function(password) {
+  return password && validator.isLength(password, passwordMinLength);
 };
 
 /**
@@ -72,8 +80,7 @@ var UserSchema = new Schema({
     unique: 'Email exists already.',
     lowercase: true,
     required: true,
-    validate: [validateLocalStrategyProperty, 'Please enter your email'],
-    match: [/.+\@.+\..+/, 'Please enter a valid email address']
+    validate: [validateLocalStrategyEmail, 'Please fill a valid email address']
   },
   /* New email is stored here until it is confirmed */
   emailTemporary: {
@@ -131,7 +138,7 @@ var UserSchema = new Schema({
   password: {
     type: String,
     default: '',
-    validate: [validateLocalStrategyPassword, 'Password should be more than 8 characters long.']
+    validate: [validatePassword, 'Password should be more than ' + passwordMinLength + ' characters long.']
   },
   emailHash: {
     type: String
@@ -140,11 +147,12 @@ var UserSchema = new Schema({
     type: String
   },
   /* All this provider stuff relates to oauth logins, will always be local for
-     Trustroots, comes from boilerplate */
+     Trustroots, comes from boilerplate. Will be removed one day. */
   provider: {
     type: String,
     required: true
   },
+  /* Facebook, Twitter etc data is stored here. */
   providerData: {},
   additionalProvidersData: {},
   roles: {
@@ -202,13 +210,13 @@ var UserSchema = new Schema({
  * Hook a pre save method to hash the password
  */
 UserSchema.pre('save', function(next) {
-  if (this.password && this.password.length > 6) {
+  if(this.password && this.isModified('password') && this.password.length >= passwordMinLength) {
     this.salt = crypto.randomBytes(16).toString('base64');
     this.password = this.hashPassword(this.password);
   }
 
   // Pre-cached email hash to use with Gravatar
-  if(this.email && this.email !== '') {
+  if(this.email && this.isModified('email') && this.email !== '') {
     this.emailHash = crypto.createHash('md5').update( this.email.trim().toLowerCase() ).digest('hex');
   }
 
