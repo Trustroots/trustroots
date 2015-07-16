@@ -33,7 +33,8 @@ module.exports = {
         'public/lib/chosen/chosen.jquery.js',
         'public/lib/angular-chosen-localytics/chosen.js',
         'public/lib/angular-loading-bar/build/loading-bar.js',
-        'public/lib/angular-trustpass/dist/tr-trustpass.js'
+        'public/lib/angular-trustpass/dist/tr-trustpass.js',
+        'public/lib/mailcheck/src/mailcheck.js'
       ],
       tests: ['public/lib/angular-mocks/angular-mocks.js']
     },
@@ -42,6 +43,7 @@ module.exports = {
       'modules/core/client/app/less/application.less'
     ],
     less: [
+      'modules/core/client/app/less/**/*.less',
       'modules/core/client/app/less/*.less',
       'modules/*/client/less/*.less'
     ],

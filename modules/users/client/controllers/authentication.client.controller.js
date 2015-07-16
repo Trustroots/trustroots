@@ -22,7 +22,8 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$root
         // If successful we assign the response to the global user model
         Authentication.user = response;
         $scope.authentication.user = response;
-        $scope.success = 'Go to your ' + response.email + ' email account, find the email from Trustroots and click the confirm link. It might take up to 5-10 minutes for email to arrive and in rare occasions it might end up to spam folder — meanwhile you can fill in your profile!';
+        $scope.success = 'We sent you and email to ' + response.email + ' with further instructions. ' +
+                          'If you don\'t see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".';
         $scope.$emit('userUpdated');
       }).error(function(response) {
         $scope.isLoading = false;

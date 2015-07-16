@@ -34,7 +34,9 @@
       var user = new Users(vm.user);
 
       user.$update(function(response) {
-        vm.emailSuccess = 'Email update. Check your inbox, you should have received an confirmation email which has a link you need to click. Email change will not be active until that.';
+        vm.emailSuccess = 'We sent you and email to ' + response.emailTemporary + ' with further instructions. ' +
+                          'Email change will not be active until that. ' +
+                          'If you don\'t see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".';
         vm.user = Authentication.user = response;
       }, function(response) {
         vm.emailError = response.data.message;
@@ -44,7 +46,8 @@
     /**
      * Resend confirmation email for already sent email
      */
-    function resendUserEmailConfirm() {
+    function resendUserEmailConfirm($event) {
+      if($event) $event.preventDefault();
       if(vm.user.emailTemporary) {
         vm.user.email = vm.user.emailTemporary;
         vm.updateUserEmail();

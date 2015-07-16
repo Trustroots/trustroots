@@ -17,21 +17,27 @@
       <h4>Email</h4>
     </div>
     <div class="col-xs-offset-2 col-xs-8 col-sm-offset-0 col-sm-6 col-md-4 col-lg-3">
-      <form ng-submit="settings.updateUserEmail()" autocomplete="off">
+      <form ng-submit="settings.updateUserEmail()" autocomplete="off" name="settingsEmail">
         <fieldset>
-          <div class="form-group">
-            <label for="email" class="sr-only">Email (required)</label>
-            <input type="email" id="email" name="email" class="form-control" ng-model="settings.user.email" placeholder="Email (required)">
-            <p class="help-block" ng-if="settings.user.emailTemporary && !settings.emailSuccess">Please check your inbox for "{{settings.user.emailTemporary}}". We have sent a confirmation message to this email address with further instructions. <a ng-click="settings.resendUserEmailConfirm()">Resend.</a></p>
+          <div class="form-group" ng-class="{'has-error': (settingsEmail.email.$invalid && settingsEmail.email.$dirty) || settings.emailError}">
+            <label for="email" class="sr-only">Email</label>
+            <input type="email"
+                   id="email"
+                   name="email"
+                   class="form-control"
+                   ng-model="settings.user.email"
+                   placeholder="Email"
+                   tr-mailcheck>
+            <p class="help-block" ng-show="settings.user.emailTemporary && !settings.emailSuccess">
+              We sent you and email to "<strong>{{settings.user.emailTemporary}}</strong>" with further instructions.
+              If you don't see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".
+            </p>
+            <p class="help-block" ng-show="settings.emailError" ng-bind="settings.emailError"></p>
+            <p class="help-block" ng-show="settings.emailSuccess" ng-bind="settings.emailSuccess"></p>
           </div>
           <div class="form-group">
-            <button type="submit" class="btn btn-large btn-primary">Update email</button>
-          </div>
-          <div ng-show="settings.emailError" class="text-danger">
-              <strong>{{settings.emailError}}</strong>
-          </div>
-          <div ng-show="settings.emailSuccess" class="text-success">
-              <strong>{{settings.emailSuccess}}</strong>
+            <button type="submit" class="btn btn-primary" ng-disabled="settingsEmail.email.$invalid && settingsEmail.email.$dirty">Change email</button>
+            <button class="btn btn-inverse" ng-if="settings.user.emailTemporary && !settings.emailSuccess" ng-click="settings.resendUserEmailConfirm($event)">Resend confirmation</button>
           </div>
         </fieldset>
       </form>
