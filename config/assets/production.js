@@ -34,7 +34,8 @@ module.exports = {
         'public/lib/angular-chosen-localytics/chosen.js',
         'public/lib/angular-loading-bar/build/loading-bar.min.js',
         'public/lib/angular-trustpass/dist/tr-trustpass.min.js',
-        'public/lib/mailcheck/src/mailcheck.min.js'
+        'public/lib/mailcheck/src/mailcheck.min.js',
+        'public/lib/angular-mailcheck/angular-mailcheck.min.js'
       ]
     },
     css: ['public/dist/application.min.css'],

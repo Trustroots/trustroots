@@ -34,7 +34,8 @@ module.exports = {
         'public/lib/angular-chosen-localytics/chosen.js',
         'public/lib/angular-loading-bar/build/loading-bar.js',
         'public/lib/angular-trustpass/dist/tr-trustpass.js',
-        'public/lib/mailcheck/src/mailcheck.js'
+        'public/lib/mailcheck/src/mailcheck.js',
+        'public/lib/angular-mailcheck/angular-mailcheck.js'
       ],
       tests: ['public/lib/angular-mocks/angular-mocks.js']
     },

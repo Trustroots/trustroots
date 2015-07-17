@@ -20,7 +20,8 @@ var ApplicationConfiguration = (function() {
                                               'MessageCenterModule',
                                               'localytics.directives',
                                               'angular-loading-bar',
-                                              'trTrustpass'
+                                              'trTrustpass',
+                                              'angular-mailcheck'
                                             ];
 
   // Add a new vertical module
