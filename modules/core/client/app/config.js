@@ -21,7 +21,8 @@ var ApplicationConfiguration = (function() {
                                               'localytics.directives',
                                               'angular-loading-bar',
                                               'trTrustpass',
-                                              'angular-mailcheck'
+                                              'angular-mailcheck',
+                                              'LocalStorageModule'
                                             ];
 
   // Add a new vertical module

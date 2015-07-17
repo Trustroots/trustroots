@@ -35,7 +35,8 @@ module.exports = {
         'public/lib/angular-loading-bar/build/loading-bar.js',
         'public/lib/angular-trustpass/dist/tr-trustpass.js',
         'public/lib/mailcheck/src/mailcheck.js',
-        'public/lib/angular-mailcheck/angular-mailcheck.js'
+        'public/lib/angular-mailcheck/angular-mailcheck.js',
+        'public/lib/angular-local-storage/dist/angular-local-storage.js'
       ],
       tests: ['public/lib/angular-mocks/angular-mocks.js']
     },

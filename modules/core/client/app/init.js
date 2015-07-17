@@ -10,6 +10,17 @@ angular.module(ApplicationConfiguration.applicationModuleName).config(['$locatio
   }
 ]);
 
+// Configure local storage module
+// Not using localStorage here, but sessionStorage instead. It'll get wiped out when closing the browser.
+// @link https://github.com/grevory/angular-local-storage#configuration
+angular.module(ApplicationConfiguration.applicationModuleName).config(['localStorageServiceProvider',
+  function(localStorageServiceProvider) {
+    localStorageServiceProvider
+      .setPrefix(ApplicationConfiguration.applicationModuleName)
+      .setStorageType('sessionStorage');
+  }
+]);
+
 //Then define the init function for starting up the application
 angular.element(document).ready(function() {
   //Fixing facebook bug with redirect

@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Authentication', 'Messages', 'MessagesRead', 'messageCenterService', 'SettingsFactory', //'Socket',
-  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, SettingsFactory) {//, Socket
+angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Authentication', 'Messages', 'MessagesRead', 'messageCenterService', 'SettingsFactory', 'localStorageService', //'Socket',
+  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, SettingsFactory, localStorageService) {//, Socket
 
     // If no recepient defined, go to inbox
     if (!$stateParams.userId) $state.go('inboxMessages');
@@ -14,6 +14,9 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     $scope.isSending = false;
     $scope.messages = [];
     $scope.messageHandler = new Messages();
+
+    // Get cached message
+    $scope.content = localStorageService.get('thread-' + $scope.userToId) || '';
 
     // Attach userID for backend calls
     var fetchMessages = function() {
@@ -124,6 +127,10 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
     var threadLayoutReplyHeight = threadLayoutReply.height();
     angular.element('#message-reply-content').on('keypress', function(evt) { // used to be 'input' event
 
+      // Cache message to the browser
+      localStorageService.set('thread-' + $scope.userToId, $scope.content);
+
+
       // Ctrl+Enter sends the message
       if(evt.ctrlKey && evt.charCode === 10) {
         $scope.send();
@@ -220,6 +227,9 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
         // Remove this when socket is back!
         $scope.messages.unshift(response);
         $timeout(threadScrollBottom, 300);
+
+        // Remove cached message
+        localStorageService.remove('thread-' + $scope.userToId);
 
       }, function(errorResponse) {
         $scope.isSending = false;

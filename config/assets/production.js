@@ -35,7 +35,8 @@ module.exports = {
         'public/lib/angular-loading-bar/build/loading-bar.min.js',
         'public/lib/angular-trustpass/dist/tr-trustpass.min.js',
         'public/lib/mailcheck/src/mailcheck.min.js',
-        'public/lib/angular-mailcheck/angular-mailcheck.min.js'
+        'public/lib/angular-mailcheck/angular-mailcheck.min.js',
+        'public/lib/angular-local-storage/dist/angular-local-storage.js'
       ]
     },
     css: ['public/dist/application.min.css'],
