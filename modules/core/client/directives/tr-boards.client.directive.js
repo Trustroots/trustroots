@@ -102,6 +102,13 @@
             'name': 'Andrea Nieblas',
             'url': 'https://www.flickr.com/photos/andreanieblas/',
             'file': 'an-wavewatching.jpg'
+          },
+          'hitchgirl': {
+            // https://www.facebook.com/just.kozmic.blues
+            // Permission granted for Trustroots (asked by Mikael Korpela)
+            'name': 'Gytė',
+            'url': 'https://www.facebook.com/upe.pati.teka',
+            'file': 'gh-hitchgirl.jpg'
           }
         };
 
