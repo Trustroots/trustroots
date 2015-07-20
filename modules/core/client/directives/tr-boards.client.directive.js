@@ -103,12 +103,19 @@
             'url': 'https://www.flickr.com/photos/andreanieblas/',
             'file': 'an-wavewatching.jpg'
           },
-          'hitchgirl': {
+          'hitchgirl1': {
             // https://www.facebook.com/just.kozmic.blues
             // Permission granted for Trustroots (asked by Mikael Korpela)
             'name': 'Gytė',
             'url': 'https://www.facebook.com/upe.pati.teka',
-            'file': 'gh-hitchgirl.jpg'
+            'file': 'gh-hitchgirl1.jpg'
+          },
+          'hitchgirl2': {
+            // https://www.facebook.com/matasirastrauskas
+            // Permission granted for Trustroots (asked by Mikael Korpela)
+            'name': 'Matas Astrauskas',
+            'url': 'http://www.matasphoto.com/',
+            'file': 'mr-hitchgirl2.jpg'
           }
         };
 
