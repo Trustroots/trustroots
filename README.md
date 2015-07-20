@@ -22,6 +22,12 @@ See [troubleshooting](https://github.com/Trustroots/trustroots/wiki/Troubleshoot
 
 Install the stack on your localhost and run NodeJS. This approach takes a little more time to setup, and bit more manual configuration, but is super fast, and can be easier to work with. See [INSTALL.md](INSTALL.md) for details.
 
+#### Quick start
+* Install dependencies: `npm install && bower install`
+* Run in development mode: `grunt`
+* Run in production mode: `grunt prod`
+* Run tests: `test`, (server & client) or `test:server` or `test:client` for only either one.
+
 ### Vagrant
 
 The easiest and quickest way to get started is with Vagrant. See [INSTALL-VAGRANT.md](INSTALL-VAGRANT.md) for further details. Running through Vagrant can be a little bit slower, but it's a very quick and easy way to get started. Depending on the specifics of your own development setup, you might prefer to run the code locally if you're going to do a lot of development.

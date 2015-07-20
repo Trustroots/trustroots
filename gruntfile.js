@@ -275,9 +275,9 @@ module.exports = function (grunt) {
   grunt.registerTask('build', ['copy:localConfig', 'fontello', 'ngAnnotate:production', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'postcss', 'cssmin']);
 
   // Run the project tests
-  grunt.registerTask('test', ['env:test', 'copy:localConfig', 'mongoose', 'mochaTest', 'karma:unit']);
-  grunt.registerTask('test.mocha', ['env:test', 'copy:localConfig', 'mongoose', 'mochaTest']);
-  grunt.registerTask('test.karma', ['env:test', 'copy:localConfig', 'mongoose', 'karma:unit']);
+  grunt.registerTask('test', ['env:test', 'copy:localConfig', 'lint', 'mongoose', 'mochaTest', 'karma:unit']);
+  grunt.registerTask('test:server', ['env:test', 'copy:localConfig', 'lint', 'mongoose', 'mochaTest']);
+  grunt.registerTask('test:client', ['env:test', 'copy:localConfig', 'lint', 'mongoose', 'karma:unit']);
 
   // Produce documentation
   grunt.registerTask('docs', ['shell:swagger-ui']);
