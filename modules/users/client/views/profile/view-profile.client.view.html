@@ -24,7 +24,7 @@
   </div>
 
   <!-- Profile -->
-  <div ng-if="profileCtrl.profile.username && app.user.public !== false && profileCtrl.profile.$resolved">
+  <div ng-if="profileCtrl.profile.username && profileCtrl.profile.$resolved">
     <div class="row">
       <div class="col-xs-12 text-center visible-xs-block">
         <a tr-avatar data-user="profileCtrl.profile" data-size="512" data-link="false" class="visible-xs-block avatar-circle" ng-click="profileCtrl.biggerAvatar = !profileCtrl.biggerAvatar" ng-class="{'profile-avatar-lg': profileCtrl.biggerAvatar}"></a>

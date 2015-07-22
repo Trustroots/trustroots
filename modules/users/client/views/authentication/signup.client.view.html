@@ -1,5 +1,5 @@
-<section class="container container-spacer" ng-controller="AuthenticationController">
-  <form name="userForm" ng-submit="signup()" class="signin form-horizontal" novalidate autocomplete="off">
+<section class="container container-spacer">
+  <form name="userForm" ng-submit="signup.submitSignup()" class="signin form-horizontal" novalidate autocomplete="off">
     <fieldset>
 
       <div class="row">
@@ -11,10 +11,10 @@
       </div>
 
       <!-- Signup form -->
-      <div class="row" ng-if="!success">
+      <div class="row" ng-if="!signup.success">
         <div class="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6 col-lg-offset-4 col-lg-4">
 
-          <div class="form-group" ng-class="{'has-error': userForm.firstName.$invalid && userForm.firstName.$dirty}">
+          <div class="form-group" ng-class="{'has-error': signup.firstName.$invalid && signup.firstName.$dirty}">
             <label for="firstName" class="col-sm-4 control-label">First Name</label>
             <div class="col-sm-8">
               <input type="text"
@@ -23,8 +23,8 @@
                      name="firstName"
                      class="form-control input-lg"
                      placeholder="First Name"
-                     ng-model="credentials.firstName"
-                     ng-disabled="isLoading"
+                     ng-model="signup.credentials.firstName"
+                     ng-disabled="signup.isLoading"
                      tr-focustip="'Visible to other members.'">
             </div>
           </div>
@@ -37,8 +37,8 @@
                      name="lastName"
                      class="form-control input-lg"
                      placeholder="Last Name"
-                     ng-model="credentials.lastName"
-                     ng-disabled="isLoading"
+                     ng-model="signup.credentials.lastName"
+                     ng-disabled="signup.isLoading"
                      tr-focustip="'Visible to other members.'">
             </div>
           </div>
@@ -51,9 +51,9 @@
                      name="username"
                      class="form-control input-lg"
                      placeholder="Username"
-                     ng-model="credentials.username"
+                     ng-model="signup.credentials.username"
                      ng-pattern="/^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/"
-                     ng-disabled="isLoading"
+                     ng-disabled="signup.isLoading"
                      ng-minlength="3"
                      ng-maxlength="34"
                      tr-focustip="'No spaces. Only letters a-z, numbers and .-_ characters. Visible to other members.'"
@@ -72,18 +72,18 @@
             <div class="col-sm-8">
               <input type="email"
                      required
+                     mailcheck
                      id="email"
                      name="email"
                      placeholder="Email"
                      class="form-control input-lg"
-                     ng-model="credentials.email"
-                     ng-disabled="isLoading"
+                     ng-model="signup.credentials.email"
+                     ng-disabled="signup.isLoading"
                      tooltip="{{ (userForm.email.$error.email && userForm.email.$dirty) ? 'Please give a valid email.' : ''}}"
                      tooltip-trigger="blur"
                      tooltip-placement="top"
                      tooltip-append-to-body="true"
-                     tr-focustip="'We will not reveal this to anyone.'"
-                     tr-mailcheck>
+                     tr-focustip="'We will not reveal this to anyone.'">
             </div>
           </div>
           <div class="form-group" ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}">
@@ -95,25 +95,25 @@
                      name="password"
                      class="form-control input-lg"
                      placeholder="Password"
-                     ng-model="credentials.password"
+                     ng-model="signup.credentials.password"
                      ng-minlength="8"
                      tr-trustpass="{ special: false, number: false, lowercase: false, uppercase: false, messageDone: 'Your password is secure and you are good to go!' }"
-                     ng-disabled="isLoading">
+                     ng-disabled="signup.isLoading">
             </div>
           </div>
           <div class="checkbox">
             <div class="col-sm-offset-4 col-sm-8">
               <label for="newsletter">
-                <input type="checkbox" id="newsletter" name="newsletter" ng-model="credentials.newsletter" ng-disabled="isLoading">
+                <input type="checkbox" id="newsletter" name="newsletter" ng-model="signup.credentials.newsletter" ng-disabled="signup.isLoading">
                 Subscribe to community news
               </label>
             </div>
           </div>
           <div class="text-center form-group">
             <br><br>
-            <button type="submit" class="btn btn-lg btn-primary" ng-disabled="isLoading || userForm.$invalid">
-              <span ng-if="!isLoading && !userForm.$invalid">Join the community</span>
-              <span ng-if="isLoading && !userForm.$invalid">Wait a moment...</span>
+            <button type="submit" class="btn btn-lg btn-primary" ng-disabled="signup.isLoading || userForm.$invalid">
+              <span ng-if="!signup.isLoading && !userForm.$invalid">Join the community</span>
+              <span ng-if="signup.isLoading && !userForm.$invalid">Wait a moment...</span>
               <span ng-if="userForm.$invalid">Please fill in the form</span>
             </button>
             <br><br>
@@ -124,25 +124,25 @@
       <!-- /Signup form -->
 
       <!-- Success -->
-      <div class="row" ng-show="success">
+      <div class="row" ng-if="signup.success">
         <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-          <p class="lead" ng-bind="success"></p>
-          <p><a ui-sref="profile-edit" class="btn btn-primary" id="signup-edit">Edit your profile</a></p>
+          <p class="lead" ng-bind="signup.success"></p>
+          <p><a ui-sref="profile-edit({username: app.user.username})" class="btn btn-primary" id="signup-edit">Edit your profile</a></p>
         </div>
       </div>
       <!-- Success -->
 
       <!-- Rules -->
-      <div class="row" ng-if="!success">
+      <div class="row" ng-if="!signup.success">
         <div class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-          <p class="text-muted">Please, abide to our <a ui-sref="rules" ng-click="openRules($event);" tooltip="Read rules" tooltip-placement="bottom">rules</a> that include standards of behavior that apply to everyone.</p>
+          <p class="text-muted">Please, abide to our <a ui-sref="rules" ng-click="signup.openRules($event);" tooltip="Read rules" tooltip-placement="bottom">rules</a> that include standards of behavior that apply to everyone.</p>
         </div>
         <script type="text/ng-template" id="rules.client.modal.html">
           <div class="modal-header">
             <button type="button" class="close" aria-label="Close" ng-click="closeRules()"><span aria-hidden="true">&times;</span></button>
             <h4 class="modal-title">Rules</h4>
           </div>
-          <div class="modal-body" ng-include="'/modules/pages/views/rules-text.client.partial.html?v={{cacheBust}}'"></div>
+          <div class="modal-body" ng-include="'/modules/pages/views/rules-text.client.partial.html?c=' + app.cacheBust"></div>
           <div class="modal-footer">
             <button class="btn btn-primary" ng-click="closeRules()">Got it!</button>
           </div>
@@ -150,7 +150,7 @@
       </div><!-- .row-->
       <!-- /Rules -->
 
-      <div class="row" ng-if="!success">
+      <div class="row" ng-if="!signup.success">
         <div class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
           <br><br>
           <a ui-sref="signin" class="btn btn-sm btn-link">Login</a>

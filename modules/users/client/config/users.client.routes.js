@@ -71,7 +71,17 @@
         url: '/signup',
         templateUrl: 'modules/users/views/authentication/signup.client.view.html',
         footerTransparent: false,
-        headerHidden: true
+        headerHidden: true,
+        controller: 'SignupController',
+        controllerAs: 'signup',
+        resolve: {
+          // A string value resolves to a service
+          SettingsService: 'SettingsService',
+
+          appSettings: function(SettingsService) {
+            return SettingsService.get();
+          }
+        }
       }).
       state('signin', {
         url: '/signin',

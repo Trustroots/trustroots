@@ -79,7 +79,7 @@ describe('User Model Unit Tests:', function() {
   });
 
   describe('Username Validation',function(){
-    it('should show error to save username beginning with .', function(done){
+    it('should show error to save username beginning with .', function(done) {
       user.username = '.login';
       return user.save(function(err) {
         should.exist(err);
@@ -87,7 +87,7 @@ describe('User Model Unit Tests:', function() {
       });
     });
 
-    it('should show error to save username end with .', function(done){
+    it('should show error to save username end with .', function(done) {
       user.username = 'login.';
       return user.save(function(err) {
         should.exist(err);
@@ -95,7 +95,7 @@ describe('User Model Unit Tests:', function() {
       });
     });
 
-    it('should show error to save username  with ..', function(done){
+    it('should show error to save username  with ..', function(done) {
       user.username = 'log..in';
       return user.save(function(err) {
         should.exist(err);
@@ -103,7 +103,7 @@ describe('User Model Unit Tests:', function() {
       });
     });
 
-    it('should show error to save username shorter than 3 character', function(done){
+    it('should show error to save username shorter than 3 character', function(done) {
       user.username = 'lo';
       return user.save(function(err) {
         should.exist(err);
@@ -111,7 +111,7 @@ describe('User Model Unit Tests:', function() {
       });
     });
 
-    it('should show error saving a username without at least one alphanumeric character', function(done){
+    it('should show error saving a username without at least one alphanumeric character', function(done) {
       user.username = '-_-';
       return user.save(function(err) {
         should.exist(err);
@@ -119,7 +119,7 @@ describe('User Model Unit Tests:', function() {
       });
     });
 
-    it('should save username longer than 32 characters', function(done){
+    it('should save username longer than 32 characters', function(done) {
       user.username = '1234567890' + '1234567890' + '1234567890' + '1234a';
       return user.save(function(err) {
         should.not.exist(err);
@@ -133,6 +133,16 @@ describe('User Model Unit Tests:', function() {
         should.not.exist(err);
         done();
       });
+    });
+  });
+
+  it('should confirm that saving user model doesnt change the password', function(done) {
+    user.firstName = 'test';
+    var passwordBefore = user.password;
+    return user.save(function(err) {
+      var passwordAfter = user.password;
+      passwordBefore.should.equal(passwordAfter);
+      done();
     });
   });
 

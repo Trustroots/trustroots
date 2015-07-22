@@ -174,7 +174,7 @@ exports.reset = function(req, res, next) {
             });
           } else {
             return res.status(400).send({
-              message: 'Passwords do not match'
+              message: 'Passwords do not match.'
             });
           }
         } else {
@@ -242,7 +242,7 @@ exports.changePassword = function(req, res) {
 
       // Return error if no user
       if(!req.user) {
-        done(new Error('User is not signed in.'));
+        done(errorHandler.getNewError('forbidden', 403));
       }
 
       // Check if we have new password coming up
@@ -344,8 +344,8 @@ exports.changePassword = function(req, res) {
 
   ], function(err) {
     if (err) {
-      res.status(400).send({
-        message: err.message//errorHandler.getErrorMessage(err)
+      res.status(err.status || 400).send({
+        message: err.message || errorHandler.getErrorMessageByKey('default')
       });
     }
   });

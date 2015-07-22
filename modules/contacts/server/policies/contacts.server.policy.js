@@ -19,13 +19,13 @@ exports.invokeRolesPolicies = function() {
       permissions: []
     }, {
       resources: '/api/contact-by/:userId',
-      permissions: []
+      permissions: ['get']
     }, {
       resources: '/api/contact/:contactId',
-      permissions: []
+      permissions: ['get']
     }, {
       resources: '/api/contacts/:listUserId',
-      permissions: []
+      permissions: ['get']
     }]
   }, {
     roles: ['user'],

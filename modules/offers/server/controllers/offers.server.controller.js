@@ -159,37 +159,32 @@ exports.read = function(req, res) {
 
 // Offer reading middleware
 exports.offerByUserId = function(req, res, next, userId) {
+
+  // Not a valid ObjectId
+  if(!mongoose.Types.ObjectId.isValid(userId)) {
+    return next(errorHandler.getNewError('invalid-id', 400));
+  }
+
   Offer.findOne({
       user: userId
     })
     .exec(function(err, offer) {
-      if (err) return next(err);
-      //if (!offer) return next(new Error('Failed to load offers.'));
+      // Errors
+      if(err) return next(err);
+      if(!offer) return next(errorHandler.getNewError('not-found', 404));
 
-      if (offer) {
-        offer = offer.toObject();
+      offer = offer.toObject();
 
-        // Sanitize each outgoing offer's contents
-        offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
-        offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
+      // Sanitize each outgoing offer's contents
+      offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
+      offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
 
-        // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
-        if(userId !== req.user.id) {
-          offer.location = offer.locationFuzzy;
-        }
-        delete offer.locationFuzzy;
-
-        req.offer = offer;
+      // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
+      if(userId !== req.user.id) {
+        offer.location = offer.locationFuzzy;
       }
-      else {
-        // Return default offer
-        req.offer = {
-          status: 'no',
-          user: {
-            id: userId
-          }
-        };
-      }
+      delete offer.locationFuzzy;
+      req.offer = offer;
       next();
     });
 
@@ -198,30 +193,38 @@ exports.offerByUserId = function(req, res, next, userId) {
 
 // Offer reading middleware
 exports.offerById = function(req, res, next, offerId) {
+
+  // Not a valid ObjectId
+  if(!mongoose.Types.ObjectId.isValid(offerId)) {
+    return next(errorHandler.getNewError('invalid-id', 400));
+  }
+
+  // Require user
+  if(!req.user) {
+
+    return next(errorHandler.getNewError('forbidden', 403));
+  }
+
   Offer.findById(offerId)
-    .populate('user', userHandler.userMiniProfileFields + ' birthdate gender tagline')
+    .populate('user', userHandler.userListingProfileFields)
     .exec(function(err, offer) {
-      if (err) return next(err);
-      //if (!offer) return next(new Error('Failed to load offers.'));
 
-      if (offer) {
-        // Sanitize each outgoing offer's contents
-        offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
-        offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
+      if(err) return next(err);
+      if(!offer) return next(errorHandler.getNewError('not-found', 404));
 
-        // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
-        if(offer.user !== req.user.id) {
-          offer.location = offer.locationFuzzy;
-        }
-        delete offer.locationFuzzy;
+      offer = offer.toObject();
 
-        req.offer = offer;
+      // Sanitize each outgoing offer's contents
+      offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
+      offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
+
+      // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
+      if(req.user && offer.user !== req.user.id) {
+        offer.location = offer.locationFuzzy;
       }
-      else {
-        return res.status(400).send({
-          message: 'Could not find offer by this id.'
-        });
-      }
+      delete offer.locationFuzzy;
+
+      req.offer = offer;
       next();
     });
 

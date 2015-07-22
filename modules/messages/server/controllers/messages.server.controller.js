@@ -43,7 +43,6 @@ exports.messageSanitizeOptions = {
 
 /**
  * List of threads aka inbox
- * @todo: async waterfal
  */
 exports.inbox = function(req, res) {
 
@@ -210,13 +209,12 @@ exports.threadByUser = function(req, res, next, userId) {
     function(done) {
 
       if(!req.user) {
-        return res.status(403).send({
-          message: 'User is not authorized'
-        });
+        return next(errorHandler.getNewError('invalid-id', 403));
       }
 
-      if(!userId) {
-        done(new Error('No user.'));
+      // Not user id or its not a valid ObjectId
+      if(!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+        return next(errorHandler.getNewError('invalid-id', 400));
       }
 
       Message.paginate(
@@ -325,13 +323,6 @@ exports.threadByUser = function(req, res, next, userId) {
  * @link http://mongoosejs.com/docs/api.html#model_Model.findByIdAndUpdate
  */
 exports.markRead = function(req, res) {
-
-  // Only logged in user can update his/her own messages
-  if(!req.user) {
-    return res.status(400).send({
-      message: 'You must be logged in first.'
-    });
-  }
 
   var messages = [];
 

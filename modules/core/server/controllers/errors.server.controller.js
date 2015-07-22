@@ -1,43 +1,91 @@
 'use strict';
 
+// The default error message to return when now knowing what to do.
+var defaultErrorMessage = 'Snap! Something went wrong. If this keeps happening, please contact us.';
+
+
 /**
- * Get unique error field name
- * @todo: once https://github.com/Automattic/mongoose/issues/2284 gets done, we can have prettier errors for this.
+ * Get the error by key
+ * This is to keep error messages consistent.
+ *
+ * @param key String Message key
+ * @return String Error message
  */
-var getUniqueErrorMessage = function(err) {
-  var output;
+exports.getErrorMessageByKey = function(key) {
 
-  try {
-    var fieldName = err.err.substring(err.err.lastIndexOf('.$') + 2, err.err.lastIndexOf('_1'));
-    output = fieldName.charAt(0).toUpperCase() + fieldName.slice(1) + ' already exists';
+  var errorMessages = {
+    'not-found':      'Not found.',
+    'invalid-id':     'Cannot interpret id.',
+    'forbidden':      'Forbidden.',
+    'default':        defaultErrorMessage
+  };
 
-  } catch(ex) {
-    output = 'Unique field already exists';
-  }
+  return (key && errorMessages[key]) ? errorMessages[key] : defaultErrorMessage;
+};
 
-  return output;
+/**
+ * Generate JS Error object with a message and status code
+ *
+ * @param key String Key matching messages at getErrorMessageByKey()
+ * @param status Int Valid HTTP status code
+ * @return Error
+ */
+exports.getNewError = function(key, status) {
+  var message = this.getErrorMessageByKey(key),
+      err = new Error(message);
+
+  if(status) err.status = status;
+
+  return err;
 };
 
 /**
  * Get the error message from error object
+ * @param err Error
+ * @return String Error message
  */
 exports.getErrorMessage = function(err) {
-  var message = '';
+  var message = false;
 
-  if (err.code) {
-    switch (err.code) {
-      case 11000:
-      case 11001:
-        message = getUniqueErrorMessage(err);
-        break;
-      default:
-        message = 'Snap! Something went wrong. If this keeps happening, please contact us.';
-    }
-  } else {
-    for (var errName in err.errors) {
-      if (err.errors[errName].message) message = err.errors[errName].message;
-    }
+  for (var errName in err.errors) {
+    if (err.errors[errName].message) message = err.errors[errName].message;
   }
 
-  return message;
+  return message || defaultErrorMessage;
+};
+
+/**
+ * Error responses middleware
+ */
+exports.errorResponse = function(err, req, res, next) {
+
+  // If the error object doesn't exists
+  if (!err) return next();
+
+  // Log errors
+  console.error(err.stack);
+
+  // Construct error response
+  var errorResponse = {
+    message: err.message || defaultErrorMessage
+  };
+
+  // In development mode, pass the error with the response
+  if (process.env.NODE_ENV === 'development') {
+    errorResponse.error = err;
+  }
+
+  // Do content negotiation and return a message
+  res.status(err.status || 500).format({
+    'text/html': function() {
+      res.render('modules/core/server/views/500');
+    },
+    'application/json': function() {
+      res.json(errorResponse);
+    },
+    'default': function() {
+      res.send(errorResponse.message);
+    }
+  });
+
 };

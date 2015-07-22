@@ -57,6 +57,9 @@ exports.userMiniProfileFields = [
                     'additionalProvidersData.facebook.id' // For FB avatars
                     ].join(' ');
 
+// Mini + a few fields we'll need at listings
+exports.userListingProfileFields = exports.userMiniProfileFields + ' birthdate gender tagline';
+
 /**
  * Rules for sanitizing user description coming in and out
  * @link https://github.com/punkave/sanitize-html
@@ -307,6 +310,7 @@ exports.update = function(req, res) {
           if (err) {
             done(err);
           } else {
+            user = user.toObject();
             delete user.salt;
             delete user.password;
             delete user.resetPasswordToken;
@@ -412,9 +416,14 @@ exports.getMiniUser = function(req, res) {
 /**
  * Mini profile middleware
  */
-exports.userMiniByID = function(req, res, next, id) {
+exports.userMiniByID = function(req, res, next, userId) {
 
-  User.findById(id, exports.userMiniProfileFields + ' languages public').exec(function(err, profile) {
+  // Not a valid ObjectId
+  if(!mongoose.Types.ObjectId.isValid(userId)) {
+    return next(new Error('Cannot interpret user id.'));
+  }
+
+  User.findById(userId, exports.userMiniProfileFields + ' languages public').exec(function(err, profile) {
 
     // Something went wrong
     if(err) {
@@ -423,15 +432,16 @@ exports.userMiniByID = function(req, res, next, id) {
 
     // User's own profile
     else if( (profile && req.user) && (profile._id.toString() === req.user._id.toString()) ) {
-      req.profile = req.user;
+      req.profile = profile;//req.user;
       next();
     }
 
     // No such user
     else if(!profile || !profile.public) {
-      return res.status(404).send({
-        message: 'Not found.'
-      });
+      return next(errorHandler.getNewError('not-found', 404));
+      //return res.status(404).send({
+      //  message: 'Not found.'
+      //});
       //return next(new Error('User not found.'));
     }
     else {
@@ -450,6 +460,11 @@ exports.userMiniByID = function(req, res, next, id) {
  */
 exports.userByUsername = function(req, res, next, username) {
 
+  // Require user
+  if(!req.user) {
+    return next(errorHandler.getNewError('forbidden', 403));
+  }
+
   async.waterfall([
 
     // Find user
@@ -462,15 +477,20 @@ exports.userByUsername = function(req, res, next, username) {
         if (err) {
           done(err);
         }
-        // No such user
-        else if(!profile) {
-          return res.status(404).send({
-            message: 'Not found. (by username)'
-          });
-        }
         // User's own profile
         else if( (profile && req.user) && (profile._id.toString() === req.user._id.toString()) ) {
           done(err, profile.toObject());
+        }
+        // Not own profile, but not public either
+        else if( (profile && req.user) && (profile._id.toString() !== req.user._id.toString()) ) {
+          done(err, profile.toObject());
+        }
+        // No such user
+        else if(!profile) {
+          //return res.status(404).send({
+          //  message: errorHandler.getErrorMessageByKey('not-found')
+          //});
+          return next(errorHandler.getNewError('not-found', 404));
         }
         else {
           // This isn't needed at frontend
@@ -486,12 +506,8 @@ exports.userByUsername = function(req, res, next, username) {
     // Check if logged in user has left contact request for this profile
     function(profile, done) {
 
-      // User isn't currently logged in?
-      if(!req.user) {
-        done(null, profile);
-      }
       // User's own profile?
-      else if(profile._id.toString() === req.user.id) {
+      if(profile._id.toString() === req.user.id) {
         profile.contact = false;
         done(null, profile);
       }

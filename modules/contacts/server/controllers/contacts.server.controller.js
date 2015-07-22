@@ -151,8 +151,15 @@ exports.remove = function(req, res) {
  * Confirm (i.e. update) contact
  */
 exports.confirm = function(req, res) {
-	var contact = req.contact;
 
+  // Only receiving user can confirm user connections
+  if(!req.contact || req.contact.users[0].id === req.user.id) {
+    return res.status(403).send(errorHandler.getErrorMessageByKey('forbidden'));
+    //return next(errorHandler.getNewError('forbidden', 403));
+  }
+
+  // Ta'da!
+  var contact = req.contact;
 	contact.confirmed = true;
 
 	contact.save(function(err) {
@@ -187,6 +194,11 @@ exports.get = function(req, res) {
  */
 exports.contactByUserId = function(req, res, next, userId) {
 
+  // Not a valid ObjectId
+  if(!mongoose.Types.ObjectId.isValid(userId)) {
+    return next(errorHandler.getNewError('invalid-id', 400));
+  }
+
   // User's own profile, don't bother hitting the DB
   if(req.user && req.user._id === userId) {
     next();
@@ -197,10 +209,10 @@ exports.contactByUserId = function(req, res, next, userId) {
       })
       .populate('users', userHandler.userMiniProfileFields)
       .exec(function(err, contact) {
-        if (err) return next(err);
-        if(contact) {
-          req.contact = contact;
-        }
+        if(err) return next(err);
+        if(!contact) return next(errorHandler.getErrorMessageByKey('not-found'));
+
+        req.contact = contact;
         next();
     });
   }
@@ -216,9 +228,17 @@ exports.contactByUserId = function(req, res, next, userId) {
  * - Find contact record where logged in user is a friend of given userId
  */
 exports.contactById = function(req, res, next, contactId) {
+
+  // Not a valid ObjectId
+  if(!mongoose.Types.ObjectId.isValid(contactId)) {
+    return next(errorHandler.getNewError('invalid-id', 400));
+  }
+
   Contact.findById(contactId)
     .populate('users', userHandler.userMiniProfileFields)
     .exec(function(err, contact) {
+      console.log(err);
+        console.log(contact);
       if (err) return next(err);
       if (!contact) return next(new Error('Failed to load contact.'));
 
@@ -231,6 +251,11 @@ exports.contactById = function(req, res, next, contactId) {
  * Contact list middleware
  */
 exports.contactListByUser = function(req, res, next, listUserId) {
+
+  // Not a valid ObjectId
+  if(!mongoose.Types.ObjectId.isValid(listUserId)) {
+    return next(errorHandler.getNewError('invalid-id', 400));
+  }
 
   // Add 'confirmed' field only if showing currently logged in user's listing
   var contactFields = 'users created';
@@ -250,8 +275,8 @@ exports.contactListByUser = function(req, res, next, listUserId) {
       select: userHandler.userMiniProfileFields
     })
     .exec(function(err, contacts) {
-      if (err) return next(err);
-      if (!contacts) return next(new Error('Failed to load contacts.'));
+      if(err) return next(err);
+      if(!contacts) return next(new Error('Failed to load contacts.'));
 
       req.contacts = contacts;
       next();
@@ -261,7 +286,7 @@ exports.contactListByUser = function(req, res, next, listUserId) {
 
 /**
  * Contact authorization middleware
- */
+ *
 exports.hasAuthorization = function(req, res, next) {
 
   if(!req.contact) {
@@ -291,13 +316,14 @@ exports.hasAuthorization = function(req, res, next) {
     return res.status(403).send('User is not authorized');
   }
 };
+*/
 
 /**
  * Contact authorization middleware
  *
  * Used when confirming contact, so that initiator
  * cannot confirm on receivers behalf.
- */
+ *
 exports.receiverHasAuthorization = function(req, res, next) {
   if (req.user.public === true && req.contact && req.contact.users[0].id === req.user.id) {
     next();
@@ -305,3 +331,4 @@ exports.receiverHasAuthorization = function(req, res, next) {
     return res.status(403).send('User is not authorized');
   }
 };
+*/

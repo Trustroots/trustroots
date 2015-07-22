@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('users').controller('AuthenticationController', ['$scope', '$rootScope', '$http', '$state', '$stateParams', '$modal', 'Authentication', 'messageCenterService', 'SettingsFactory',
-  function($scope, $rootScope, $http, $state, $stateParams, $modal, Authentication, messageCenterService, SettingsFactory) {
+angular.module('users').controller('AuthenticationController', ['$scope', '$rootScope', '$http', '$state', '$stateParams', 'Authentication', 'messageCenterService', 'SettingsFactory',
+  function($scope, $rootScope, $http, $state, $stateParams, Authentication, messageCenterService, SettingsFactory) {
 
     var settings = SettingsFactory.get();
 
@@ -11,25 +11,6 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$root
     $scope.authentication = Authentication;
     $scope.continue = ($stateParams.continue);
     $scope.isLoading = false;
-
-    /**
-     * Register
-     */
-    $scope.signup = function() {
-      $scope.isLoading = true;
-      $http.post('/api/auth/signup', $scope.credentials).success(function(response) {
-        $scope.isLoading = false;
-        // If successful we assign the response to the global user model
-        Authentication.user = response;
-        $scope.authentication.user = response;
-        $scope.success = 'We sent you and email to ' + response.email + ' with further instructions. ' +
-                          'If you don\'t see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".';
-        $scope.$emit('userUpdated');
-      }).error(function(response) {
-        $scope.isLoading = false;
-        messageCenterService.add('danger', response.message, { timeout: settings.flashTimeout });
-      });
-    };
 
     /**
      * Login
@@ -65,22 +46,6 @@ angular.module('users').controller('AuthenticationController', ['$scope', '$root
       });
     };
 
-    /**
-     * Open rules modal
-     */
-    $scope.openRules = function ($event) {
-
-      if($event) $event.preventDefault();
-
-      $modal.open({
-        templateUrl: 'rules.client.modal.html', //inline at signup template
-        controller: function ($scope, $modalInstance) {
-          $scope.closeRules = function () {
-            $modalInstance.dismiss('cancel');
-          };
-        }
-      });
-    };
 
   }
 ]);

@@ -1,4 +1,20 @@
-<div class="panel panel-default offer-view" ng-if="profileCtrl.profile" ng-class="{'panel-disabled': app.user.public === false}" ng-controller="ViewOffersController as viewOffers">
+
+<!-- Show for non-publish profiles -->
+<div class="panel panel-default panel-disabled offer-view" ng-if="profileCtrl.profile && profileCtrl.profile.$resolved && app.user.username === profileCtrl.profile.username && !app.user.public">
+  <div class="panel-heading">
+    Accommodation
+  </div>
+  <div class="panel-body">
+    <div class="content-empty">
+      <div class="offer-symbol-sofa center-block"></div>
+      <br>
+      <h4>Confirm your profile first to start hosting.</h4>
+    </div>
+  </div>
+</div>
+
+<!-- Offer -->
+<div class="panel panel-default offer-view" ng-if="profileCtrl.profile && profileCtrl.profile.$resolved && !(app.user.username === profileCtrl.profile.username && !app.user.public)" ng-controller="ViewOffersController as viewOffers">
 
   <div class="panel-heading">
     Accommodation

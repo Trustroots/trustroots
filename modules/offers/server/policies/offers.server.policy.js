@@ -3,7 +3,9 @@
 /**
  * Module dependencies.
  */
-var acl = require('acl');
+var acl = require('acl'),
+    path = require('path'),
+    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller'));
 
 // Using the memory backend
 acl = new acl(new acl.memoryBackend());
@@ -48,7 +50,7 @@ exports.isAllowed = function(req, res, next) {
   // No offers for un-published users
   if(req.user && !req.user.public) {
     return res.status(403).json({
-      message: 'User is not authorized'
+      message: errorHandler.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -68,9 +70,11 @@ exports.isAllowed = function(req, res, next) {
         // Access granted! Invoke next middleware
         return next();
       } else {
+
         return res.status(403).json({
-          message: 'User is not authorized'
+          message: errorHandler.getErrorMessageByKey('forbidden')
         });
+        //return next(errorHandler.getNewError('forbidden', 403));
       }
     }
   });

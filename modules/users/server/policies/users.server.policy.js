@@ -82,14 +82,16 @@ exports.invokeRolesPolicies = function() {
 exports.isAllowed = function(req, res, next) {
 
   // Non-public profiles are invisible
-  if(req.profile && !req.profile.public) {
+  if(req.profile && !req.profile.public && req.user && req.profile._id.toString() !== req.user._id.toString()) {
+
     return res.status(404).json({
       message: 'Not found.'
     });
   }
 
   // No profile browsing for non-public users
-  if(req.profile && req.user && req.user.public !== true && req.profile._id !== req.user._id) {
+  if(req.profile && req.user && req.user.public !== true && req.profile._id.toString() !== req.user._id.toString()) {
+
     return res.status(403).json({
       message: 'User is not authorized'
     });
