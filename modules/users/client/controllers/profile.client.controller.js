@@ -70,7 +70,7 @@
           };
         },
         controllerAs: 'avatarModal',
-        animation: false, // This can be enabled (just remove the whole flag) once this is fixed: https://github.com/angular-ui/bootstrap/issues/3896
+        animation: true,
         windowClass: 'modal-avatar',
         resolve: {
           profile: function() {
