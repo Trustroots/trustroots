@@ -186,6 +186,56 @@
                 }
             }
         },
+        "/users/mini/{userId}": {
+            "get": {
+                "summary": "Compact user profile by id.",
+                "description": "Return compact profile by user id.",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "Unique user id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Return compact user object.",
+                        "schema": {
+                            "$ref": "#/definitions/MiniUser"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{username}": {
             "get": {
                 "summary": "User by username.",
@@ -814,6 +864,41 @@
                 "provider"
             ]
         },
+        "MiniUser": {
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "emailHash": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "This is (currently) generated in users.profile.server.controller.js"
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Lowercase enforced username"
+                },
+                "displayUsername": {
+                    "type": "string",
+                    "description": "Unaltered original username"
+                },
+                "updated": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "avatarUploaded": {
+                    "type": "boolean"
+                },
+                "avatarSource": {
+                    "type": "string"
+                },
+                "additionalProvidersData": {
+                    "type": "object"
+                }
+            }
+        },
         "Contact": {
             "properties": {
                 "_id": {
@@ -833,7 +918,7 @@
                     "type": "array",
                     "description": "List of users for this connection. First [0] user object in array is receiving user and second [1] is initiating user.",
                     "items": {
-                        "$ref": "#/definitions/User"
+                        "$ref": "#/definitions/MiniUser"
                     }
                 }
             }
@@ -859,11 +944,11 @@
                 },
                 "userTo": {
                     "description": "User to whom latest message in the thread was sent to.",
-                    "$ref": "#/definitions/User"
+                    "$ref": "#/definitions/MiniUser"
                 },
                 "userFrom": {
                     "description": "User who sent the latest message in the thread.",
-                    "$ref": "#/definitions/User"
+                    "$ref": "#/definitions/MiniUser"
                 }
             }
         },
@@ -892,11 +977,11 @@
                 },
                 "userTo": {
                     "description": "User to whom latest message in the thread was sent to.",
-                    "$ref": "#/definitions/User"
+                    "$ref": "#/definitions/MiniUser"
                 },
                 "userFrom": {
                     "description": "User who sent the latest message in the thread.",
-                    "$ref": "#/definitions/User"
+                    "$ref": "#/definitions/MiniUser"
                 }
             }
         },
