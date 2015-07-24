@@ -25,8 +25,15 @@ exports.add = function(req, res) {
 
   async.waterfall([
 
-    // Sanitize contact
+    // Validate + Sanitize contact
     function(done) {
+
+      // Not a valid ObjectId
+      if(!mongoose.Types.ObjectId.isValid(req.body.friendUserId)) {
+        return res.status(400).json({
+          message: errorHandler.getErrorMessageByKey('invalid-id')
+        });
+      }
 
       // Catch message separately
       var messageHTML = false;
@@ -108,12 +115,12 @@ exports.add = function(req, res) {
         html: emailHTML
       };
       smtpTransport.sendMail(mailOptions, function(err) {
+        smtpTransport.close(); // close the connection pool
         if (!err) {
           res.send({
             message: 'An email was sent to your contact.'
           });
         }
-        smtpTransport.close(); // close the connection pool
         done(err);
       });
     }
@@ -154,8 +161,9 @@ exports.confirm = function(req, res) {
 
   // Only receiving user can confirm user connections
   if(!req.contact || req.contact.users[0].id === req.user.id) {
-    return res.status(403).send(errorHandler.getErrorMessageByKey('forbidden'));
-    //return next(errorHandler.getNewError('forbidden', 403));
+    return res.status(403).json({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
   }
 
   // Ta'da!
@@ -196,7 +204,9 @@ exports.contactByUserId = function(req, res, next, userId) {
 
   // Not a valid ObjectId
   if(!mongoose.Types.ObjectId.isValid(userId)) {
-    return next(errorHandler.getNewError('invalid-id', 400));
+    return res.status(400).json({
+      message: errorHandler.getErrorMessageByKey('invalid-id')
+    });
   }
 
   // User's own profile, don't bother hitting the DB
@@ -210,7 +220,11 @@ exports.contactByUserId = function(req, res, next, userId) {
       .populate('users', userHandler.userMiniProfileFields)
       .exec(function(err, contact) {
         if(err) return next(err);
-        if(!contact) return next(errorHandler.getErrorMessageByKey('not-found'));
+        if(!contact) {
+          return res.status(404).json({
+            message: errorHandler.getErrorMessageByKey('not-found')
+          });
+        }
 
         req.contact = contact;
         next();
@@ -231,16 +245,20 @@ exports.contactById = function(req, res, next, contactId) {
 
   // Not a valid ObjectId
   if(!mongoose.Types.ObjectId.isValid(contactId)) {
-    return next(errorHandler.getNewError('invalid-id', 400));
+    return res.status(400).json({
+      message: errorHandler.getErrorMessageByKey('invalid-id')
+    });
   }
 
   Contact.findById(contactId)
     .populate('users', userHandler.userMiniProfileFields)
     .exec(function(err, contact) {
-      console.log(err);
-        console.log(contact);
       if (err) return next(err);
-      if (!contact) return next(new Error('Failed to load contact.'));
+      if(!contact) {
+        return res.status(404).json({
+          message: errorHandler.getErrorMessageByKey('not-found')
+        });
+      }
 
       req.contact = contact;
       next();
@@ -254,7 +272,9 @@ exports.contactListByUser = function(req, res, next, listUserId) {
 
   // Not a valid ObjectId
   if(!mongoose.Types.ObjectId.isValid(listUserId)) {
-    return next(errorHandler.getNewError('invalid-id', 400));
+    return res.status(400).json({
+      message: errorHandler.getErrorMessageByKey('invalid-id')
+    });
   }
 
   // Add 'confirmed' field only if showing currently logged in user's listing

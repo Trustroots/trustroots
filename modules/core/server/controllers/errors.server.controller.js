@@ -14,10 +14,11 @@ var defaultErrorMessage = 'Snap! Something went wrong. If this keeps happening, 
 exports.getErrorMessageByKey = function(key) {
 
   var errorMessages = {
-    'not-found':      'Not found.',
-    'invalid-id':     'Cannot interpret id.',
-    'forbidden':      'Forbidden.',
-    'default':        defaultErrorMessage
+    'not-found':            'Not found.',
+    'forbidden':            'Forbidden.',
+    'invalid-id':           'Cannot interpret id.',
+    'unprocessable-entity': 'Unprocessable Entity',
+    'default':              defaultErrorMessage
   };
 
   return (key && errorMessages[key]) ? errorMessages[key] : defaultErrorMessage;
@@ -31,6 +32,7 @@ exports.getErrorMessageByKey = function(key) {
  * @return Error
  */
 exports.getNewError = function(key, status) {
+
   var message = this.getErrorMessageByKey(key),
       err = new Error(message);
 
@@ -62,6 +64,7 @@ exports.errorResponse = function(err, req, res, next) {
   // If the error object doesn't exists
   if (!err) return next();
 
+
   // Log errors
   console.error(err.stack);
 
@@ -76,7 +79,7 @@ exports.errorResponse = function(err, req, res, next) {
   }
 
   // Do content negotiation and return a message
-  res.status(err.status || 500).format({
+  return res.status(err.status || 500).format({
     'text/html': function() {
       res.render('modules/core/server/views/500');
     },

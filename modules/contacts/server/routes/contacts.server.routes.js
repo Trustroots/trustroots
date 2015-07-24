@@ -11,7 +11,7 @@ module.exports = function(app) {
   app.route('/api/contact').all(contactsPolicy.isAllowed)
     .post(contacts.add);
 
-  app.route('/api/contact-by/:userId').all(contactsPolicy.isAllowed)
+  app.route('/api/contact-by/:contactUserId').all(contactsPolicy.isAllowed)
     .get(contacts.get); //contacts.hasAuthorization,
 
   app.route('/api/contact/:contactId').all(contactsPolicy.isAllowed)
@@ -26,5 +26,5 @@ module.exports = function(app) {
   // Finish by binding middlewares
   app.param('listUserId', contacts.contactListByUser);
   app.param('contactId', contacts.contactById);
-  app.param('userId', contacts.contactByUserId);
+  app.param('contactUserId', contacts.contactByUserId);
 };

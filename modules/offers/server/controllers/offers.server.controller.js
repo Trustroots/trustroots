@@ -153,7 +153,8 @@ exports.list = function(req, res) {
  * Show the current Offer
  */
 exports.read = function(req, res) {
-  res.json(req.offer);
+
+  res.json(req.offer || {});
 };
 
 
@@ -162,16 +163,24 @@ exports.offerByUserId = function(req, res, next, userId) {
 
   // Not a valid ObjectId
   if(!mongoose.Types.ObjectId.isValid(userId)) {
-    return next(errorHandler.getNewError('invalid-id', 400));
+    return res.status(400).send({
+      message: errorHandler.getErrorMessageByKey('invalid-id')
+    });
   }
-
   Offer.findOne({
       user: userId
+      //55420a6dab370d3f4bb398ae nope
+      // 5425379c8e3e468133926930 ok
     })
     .exec(function(err, offer) {
+
       // Errors
       if(err) return next(err);
-      if(!offer) return next(errorHandler.getNewError('not-found', 404));
+      if(!offer) {
+			  return res.status(404).send({
+			    message: errorHandler.getErrorMessageByKey('not-found')
+			  });
+      }
 
       offer = offer.toObject();
 
@@ -196,13 +205,16 @@ exports.offerById = function(req, res, next, offerId) {
 
   // Not a valid ObjectId
   if(!mongoose.Types.ObjectId.isValid(offerId)) {
-    return next(errorHandler.getNewError('invalid-id', 400));
+    return res.status(400).send({
+      message: errorHandler.getErrorMessageByKey('invalid-id')
+    });
   }
 
   // Require user
   if(!req.user) {
-
-    return next(errorHandler.getNewError('forbidden', 403));
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
   }
 
   Offer.findById(offerId)
@@ -210,8 +222,11 @@ exports.offerById = function(req, res, next, offerId) {
     .exec(function(err, offer) {
 
       if(err) return next(err);
-      if(!offer) return next(errorHandler.getNewError('not-found', 404));
-
+      if(!offer) {
+			  return res.status(404).send({
+			    message: errorHandler.getErrorMessageByKey('not-found')
+			  });
+      }
       offer = offer.toObject();
 
       // Sanitize each outgoing offer's contents

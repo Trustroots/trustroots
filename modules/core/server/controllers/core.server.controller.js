@@ -26,6 +26,7 @@ exports.renderIndex = function(req, res) {
  * Performs content-negotiation on the Accept HTTP header
  */
 exports.renderNotFound = function(req, res) {
+  console.log('->renderNotFound');
   res.status(404).format({
     'text/html': function() {
       res.render('modules/core/server/views/404');

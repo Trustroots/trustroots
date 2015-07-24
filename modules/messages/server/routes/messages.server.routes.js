@@ -12,12 +12,12 @@ module.exports = function(app) {
     .get(messages.inbox)
     .post(messages.send);
 
-  app.route('/api/messages/:userId').all(messagesPolicy.isAllowed)
+  app.route('/api/messages/:messageUserId').all(messagesPolicy.isAllowed)
     .get(messages.thread);
 
   app.route('/api/messages-read').all(messagesPolicy.isAllowed)
     .post(messages.markRead);
 
   // Finish by binding the message middleware
-  app.param('userId', messages.threadByUser);
+  app.param('messageUserId', messages.threadByUser);
 };

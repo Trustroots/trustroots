@@ -372,13 +372,13 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       }, function(offer){
         $scope.offer = offer;
 
-        $scope.currentSelection.latlngs = $scope.offer.locationFuzzy;
+        $scope.currentSelection.latlngs = $scope.offer.location;
         $scope.mapLayers.overlays.selectedOffers.visible = true;
         $scope.sidebarOpen = true;
 
         $scope.mapCenter = {
-          lat: $scope.offer.locationFuzzy[0],
-          lng: $scope.offer.locationFuzzy[1],
+          lat: $scope.offer.location[0],
+          lng: $scope.offer.location[1],
           zoom: 13
         };
 

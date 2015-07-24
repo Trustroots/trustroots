@@ -3,7 +3,9 @@
 /**
  * Module dependencies.
  */
-var acl = require('acl');
+var acl = require('acl'),
+    path = require('path'),
+    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller'));
 
 // Using the memory backend
 acl = new acl(new acl.memoryBackend());
@@ -83,17 +85,15 @@ exports.isAllowed = function(req, res, next) {
 
   // Non-public profiles are invisible
   if(req.profile && !req.profile.public && req.user && req.profile._id.toString() !== req.user._id.toString()) {
-
     return res.status(404).json({
-      message: 'Not found.'
+      message: errorHandler.getErrorMessageByKey('not-found')
     });
   }
 
   // No profile browsing for non-public users
   if(req.profile && req.user && req.user.public !== true && req.profile._id.toString() !== req.user._id.toString()) {
-
     return res.status(403).json({
-      message: 'User is not authorized'
+      message: errorHandler.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -102,14 +102,16 @@ exports.isAllowed = function(req, res, next) {
   acl.areAnyRolesAllowed(roles, req.route.path, req.method.toLowerCase(), function(err, isAllowed) {
     if (err) {
       // An authorization error occurred.
-      return res.status(500).send('Unexpected authorization error');
+      return res.status(500).json({
+        message: 'Unexpected authorization error'
+      });
     } else {
       if (isAllowed) {
         // Access granted! Invoke next middleware
         return next();
       } else {
         return res.status(403).json({
-          message: 'User is not authorized'
+          message: errorHandler.getErrorMessageByKey('forbidden')
         });
       }
     }

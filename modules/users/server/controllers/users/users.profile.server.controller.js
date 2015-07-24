@@ -85,7 +85,7 @@ exports.upload = function (req, res) {
 
   if(!req.user) {
     return res.status(403).send({
-      message: 'User is not authorized'
+      message: errorHandler.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -155,9 +155,9 @@ exports.upload = function (req, res) {
 
         // Send error status 422 - Unprocessable Entity
         if(err || obj.files.length === 0 || (obj.files[0] && obj.files[0].error)) {
-          console.error('Error - Profile controller/upload - 422/Unprocessable Entity');
-          console.error(obj.files);
-          return res.status(422).json({'message': 'Unprocessable Entity'});
+          return res.status(422).send({
+            message: errorHandler.getErrorMessageByKey('unprocessable-entity')
+          });
         }
 
         done(err, obj);
@@ -222,8 +222,6 @@ exports.upload = function (req, res) {
   // Catch errors
   ], function(err) {
     if(err) {
-      console.error('Error - Profile controller/upload');
-      console.error(err);
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
       });
@@ -241,7 +239,7 @@ exports.update = function(req, res) {
 
   if(!req.user) {
     return res.status(403).send({
-      message: 'User is not authorized'
+      message: errorHandler.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -420,7 +418,9 @@ exports.userMiniByID = function(req, res, next, userId) {
 
   // Not a valid ObjectId
   if(!mongoose.Types.ObjectId.isValid(userId)) {
-    return next(new Error('Cannot interpret user id.'));
+    return res.status(400).send({
+      message: errorHandler.getErrorMessageByKey('invalid-id')
+    });
   }
 
   User.findById(userId, exports.userMiniProfileFields + ' public').exec(function(err, profile) {
@@ -430,27 +430,20 @@ exports.userMiniByID = function(req, res, next, userId) {
       return next(err);
     }
 
-    // User's own profile
-    else if( (profile && req.user) && (profile._id.toString() === req.user._id.toString()) ) {
-      req.profile = profile;//req.user;
-      next();
-    }
-
     // No such user
-    else if(!profile || !profile.public) {
-      return next(errorHandler.getNewError('not-found', 404));
-      //return res.status(404).send({
-      //  message: 'Not found.'
-      //});
-      //return next(new Error('User not found.'));
+    if(!profile || !profile.public) {
+      return res.status(404).send({
+        message: errorHandler.getErrorMessageByKey('not-found')
+      });
     }
-    else {
-      // This isn't needed at frontend
-      delete profile.public;
 
-      req.profile = profile;
-      next();
-    }
+    profile = profile.toObject();
+
+    // This isn't needed at frontend
+    delete profile.public;
+
+    req.profile = profile;
+    next();
 
   });
 };
@@ -462,7 +455,9 @@ exports.userByUsername = function(req, res, next, username) {
 
   // Require user
   if(!req.user) {
-    return next(errorHandler.getNewError('forbidden', 403));
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
   }
 
   async.waterfall([
@@ -487,10 +482,9 @@ exports.userByUsername = function(req, res, next, username) {
         }
         // No such user
         else if(!profile) {
-          //return res.status(404).send({
-          //  message: errorHandler.getErrorMessageByKey('not-found')
-          //});
-          return next(errorHandler.getNewError('not-found', 404));
+          return res.status(404).send({
+            message: errorHandler.getErrorMessageByKey('not-found')
+          });
         }
         else {
           // This isn't needed at frontend

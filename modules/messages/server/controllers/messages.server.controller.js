@@ -209,12 +209,16 @@ exports.threadByUser = function(req, res, next, userId) {
     function(done) {
 
       if(!req.user) {
-        return next(errorHandler.getNewError('invalid-id', 403));
+        return res.status(400).send({
+          message: errorHandler.getErrorMessageByKey('forbidden')
+        });
       }
 
       // Not user id or its not a valid ObjectId
       if(!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-        return next(errorHandler.getNewError('invalid-id', 400));
+        return res.status(400).send({
+          message: errorHandler.getErrorMessageByKey('invalid-id')
+        });
       }
 
       Message.paginate(
