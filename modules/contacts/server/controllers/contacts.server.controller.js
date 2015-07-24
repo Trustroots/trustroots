@@ -177,14 +177,14 @@ exports.confirm = function(req, res) {
  * Contacts list
  */
 exports.list = function(req, res) {
-  res.json(req.contacts || null);
+  res.json(req.contacts || {});
 };
 
 /**
  * Single contact
  */
 exports.get = function(req, res) {
- res.json(req.contact || null);
+ res.json(req.contact || {});
 };
 
 /**

@@ -401,15 +401,14 @@ exports.update = function(req, res) {
  * Show the profile of the user
  */
 exports.getUser = function(req, res) {
-  res.json(req.profile || null);
+  res.json(req.profile || {});
 };
 
 /**
  * Show the mini profile of the user
- * Pick only certain fields from whole profile @link http://underscorejs.org/#pick
  */
 exports.getMiniUser = function(req, res) {
-  res.json( req.profile || null );
+  res.json( req.profile || {} );
 };
 
 
