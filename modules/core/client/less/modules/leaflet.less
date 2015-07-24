@@ -316,7 +316,7 @@
   }
 .leaflet-control-layers-expanded {
   padding: 6px 10px 6px 6px;
-  color: #333;
+  color: @text-color;
   background: #fff;
   }
 .leaflet-control-layers-selector {
@@ -336,28 +336,12 @@
 
 /* attribution and scale controls */
 
-.leaflet-container .leaflet-control-attribution {
-  background: #fff;
-  background: rgba(255, 255, 255, 0.7);
-  margin: 0;
-  opacity: 0.5;
-  border-top-left-radius: @border-radius-small;
-  &:hover {
-    opacity: 1;
-  }
-}
-.leaflet-control-attribution,
 .leaflet-control-scale-line {
   padding: 0 5px;
-  color: #333;
+  color: @text-color;
   }
-.leaflet-control-attribution a {
-  color: #333;
-  text-decoration: none;
-  }
-.leaflet-container .leaflet-control-attribution,
 .leaflet-container .leaflet-control-scale {
-  font-size: 11px;
+  font-size: @font-size-small;
   }
 .leaflet-left .leaflet-control-scale {
   margin-left: 5px;
@@ -370,7 +354,7 @@
   border-top: none;
   line-height: 1.1;
   padding: 2px 5px 1px;
-  font-size: 11px;
+  font-size: @font-size-small;
   white-space: nowrap;
   overflow: hidden;
   -moz-box-sizing: content-box;
@@ -398,6 +382,55 @@
   border: 2px solid rgba(0,0,0,0.2);
   background-clip: padding-box;
   }
+
+
+/* Attribution  */
+
+@attribution-size: 26px;
+.leaflet-container .leaflet-control-attribution {
+  background: #fff;
+  border-radius: (@attribution-size/2);
+  padding: 0 31px 0 10px;
+  height: @attribution-size;
+  line-height: @attribution-size;
+  margin: 10px;
+  visibility: hidden;
+  color: @text-color;
+  font-size: @font-size-small;
+  a {
+    color: @text-color;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  .improve-map {
+    font-weight: bold;
+  }
+  &:hover {
+    visibility: visible;
+  }
+  // Icon
+  &:after {
+    // See icons.less for the rest
+    color: @text-color;
+    background-color: #fff;
+    background-color: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    position: absolute;
+    display: inline-block;
+    font-size: 18px;
+    .square(@attribution-size);
+    line-height: @attribution-size;
+    vertical-align: middle;
+    bottom: 0;
+    right: 0;
+    z-index: 1;
+    visibility: visible;
+    cursor: pointer;
+    opacity: .75;
+  }
+}
 
 
 /* popup */

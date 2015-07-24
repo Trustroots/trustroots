@@ -46,7 +46,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
 
     // Variables passed to leaflet directive at init
     $scope.mapDefaults = {
-      attributionControl: true,
+      attributionControl: false, // Adding this manually below
       keyboard: true,
       worldCopyJump: true,
       controls: {
@@ -100,6 +100,15 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       southWestLat: 0
     };
 
+    /**
+     * Add attribution controller
+     */
+    leafletData.getMap('search-map-canvas').then(function(map) {
+      map.addControl(L.control.attribution({
+        position: 'bottomright',
+        prefix: ''
+      }));
+    });
 
     /*
      * Determine currently selected baselayer style

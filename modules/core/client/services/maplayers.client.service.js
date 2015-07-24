@@ -41,7 +41,7 @@
             map: appSettings.mapbox.map.default
           },
           layerOptions: {
-            attribution: '<a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.default + '/' + location.lng + '/' + location.lat + '/' + location.zoom + '">Improve map</a>',
+            attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank">© Mapbox © OpenStreetMap</a> <a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.default + '/' + location.lng + '/' + location.lat + '/' + location.zoom + '" target="_blank" class="improve-map">Improve the underlying map</a>',
             continuousWorld: true,
             TRStyle: 'street' // Not native Leaflet key, required by our layer switch
           }
@@ -55,7 +55,7 @@
           url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
           layerOptions: {
             subdomains: ['a', 'b', 'c'],
-            attribution: '<a href="https://www.openstreetmap.org/login#map=' + location.zoom + '/' + location.lat + '/' + location.lng + '">Improve map</a>',
+            attribution: '<a href="https://www.openstreetmap.org/" target="_blank">© OpenStreetMap</a> <a href="https://www.openstreetmap.org/login#map=' + location.zoom + '/' + location.lat + '/' + location.lng + '" target="_blank" class="improve-map">Improve the underlying map</a>',
             continuousWorld: true,
             TRStyle: 'street' // Not native Leaflet key, required by our layer switch
           }
@@ -79,7 +79,7 @@
             map: appSettings.mapbox.map.satellite
           },
           layerOptions: {
-            attribution: '<a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.satellite + '/' + location.lng + '/' + location.lat + '/' + location.zoom + '">Improve map</a>',
+            attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank">© Mapbox © OpenStreetMap</a> <a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.satellite + '/' + location.lng + '/' + location.lat + '/' + location.zoom + '" target="_blank" class="improve-map">Improve the underlying map</a>',
             continuousWorld: true,
             TRStyle: 'satellite' // Not native Leaflet key, required by our layer switch
           }
@@ -93,7 +93,7 @@
           url: '//otile{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
           layerOptions: {
             subdomains: ['1', '2', '3', '4'],
-            attribution: '<a href="http://www.mapquest.com/">MapQuest</a>',
+            attribution: '<a href="http://www.mapquest.com/" target="_blank">© MapQuest</a>',
             continuousWorld: true,
             TRStyle: 'satellite' // Not native Leaflet key, required by our layer switch
           }
@@ -117,7 +117,7 @@
             map: appSettings.mapbox.map.hitchmap
           },
           layerOptions: {
-            attribution: '<a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.hitchmap + '/' + location.lng + '/' + location.lat + '/' + location.zoom + '">Improve map</a>',
+            attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank">© Mapbox © OpenStreetMap</a> <a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.hitchmap + '/' + location.lng + '/' + location.lat + '/' + location.zoom + '" target="_blank" class="improve-map">Improve the underlying map</a>',
             continuousWorld: true,
             TRStyle: 'street' // Not native Leaflet, required by layer switch
           }
