@@ -54,6 +54,7 @@ exports.userMiniProfileFields = [
                     'avatarSource',
                     'avatarUploaded',
                     'emailHash',
+                    'languages',
                     'additionalProvidersData.facebook.id' // For FB avatars
                     ].join(' ');
 
@@ -422,7 +423,7 @@ exports.userMiniByID = function(req, res, next, userId) {
     return next(new Error('Cannot interpret user id.'));
   }
 
-  User.findById(userId, exports.userMiniProfileFields + ' languages public').exec(function(err, profile) {
+  User.findById(userId, exports.userMiniProfileFields + ' public').exec(function(err, profile) {
 
     // Something went wrong
     if(err) {

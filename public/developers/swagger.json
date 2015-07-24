@@ -894,6 +894,14 @@
                 "avatarSource": {
                     "type": "string"
                 },
+                "languages": {
+                    "type": "array",
+                    "items": [
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
                 "additionalProvidersData": {
                     "type": "object"
                 }
