@@ -16,7 +16,9 @@ module.exports = {
     options: {
       user: '',
       pass: ''
-    }
+    },
+    // Enable mongoose debug mode
+    debug: process.env.MONGODB_DEBUG || false
   },
   domain: process.env.DOMAIN || 'www.trustroots.org',
   mapbox: {
