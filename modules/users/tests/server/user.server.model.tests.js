@@ -119,10 +119,10 @@ describe('User Model Unit Tests:', function() {
       });
     });
 
-    it('should save username longer than 32 characters', function(done) {
+    it('should not save username longer than 32 characters', function(done) {
       user.username = '1234567890' + '1234567890' + '1234567890' + '1234a';
       return user.save(function(err) {
-        should.not.exist(err);
+        should.exist(err);
         done();
       });
     });
@@ -134,16 +134,17 @@ describe('User Model Unit Tests:', function() {
         done();
       });
     });
-  });
 
-  it('should confirm that saving user model doesnt change the password', function(done) {
-    user.firstName = 'test';
-    var passwordBefore = user.password;
-    return user.save(function(err) {
-      var passwordAfter = user.password;
-      passwordBefore.should.equal(passwordAfter);
-      done();
+    it('should confirm that saving user model doesnt change the password', function(done) {
+      user.firstName = 'test';
+      var passwordBefore = user.password;
+      return user.save(function(err) {
+        var passwordAfter = user.password;
+        passwordBefore.should.equal(passwordAfter);
+        done();
+      });
     });
+
   });
 
   after(function(done) {
