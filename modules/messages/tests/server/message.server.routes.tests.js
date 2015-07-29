@@ -41,7 +41,8 @@ describe('Message CRUD tests', function() {
       email: 'test1@test.com',
       username: credentials.username,
       password: credentials.password,
-      provider: 'local'
+      provider: 'local',
+      public: true
     });
 
     userTo = new User({
@@ -51,7 +52,8 @@ describe('Message CRUD tests', function() {
       email: 'test2@test.com',
       username: 'username2',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
+      public: true
     });
 
     // Save users to the test db and create new message
@@ -66,14 +68,22 @@ describe('Message CRUD tests', function() {
           // Create message
           message = {
             content: 'Message content',
-            userTo: userToId,
-            read: false
+            userTo: userToId
           };
           done();
         });
 
       });
     });
+  });
+
+  it('should not be able to read inbox if not logged in', function(done) {
+    agent.get('/api/messages')
+      .expect(403)
+      .end(function(messageSaveErr, messageSaveRes) {
+        // Call the assertion callback
+        done(messageSaveErr);
+      });
   });
 
   it('should not be able to send message if not logged in', function(done) {
@@ -114,17 +124,14 @@ describe('Message CRUD tests', function() {
                 // Get messages list
                 var thread = messagesGetRes.body;
 
-                console.log('thread:');
-                console.log(thread);
-
-                if(!thread[0] || thread[0].content) {
+                if(!thread[0] || !thread[0].content) {
                   done(new Error('Missing messages from the message thread.'));
                 }
                 else {
 
                   // Set assertions
-                  (thread[0].userFrom._id).should.equal(userFromId);
-                  (thread[0].userTo._id).should.equal(userToId);
+                  (thread[0].userFrom._id.toString()).should.equal(userFromId.toString());
+                  (thread[0].userTo._id.toString()).should.equal(userToId.toString());
                   (thread[0].content).should.match('Message content');
 
                   // Call the assertion callback
