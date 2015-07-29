@@ -10,8 +10,6 @@ var acl = require('acl'),
 // Using the memory backend
 acl = new acl(new acl.memoryBackend());
 
-  console.log('->Invoke Offers Permissions');
-
 /**
  * Invoke Offers Permissions
  */
@@ -74,7 +72,6 @@ exports.isAllowed = function(req, res, next) {
         // Access granted! Invoke next middleware
         return next();
       } else {
-      console.log('->403');
         return res.status(403).json({
           message: errorHandler.getErrorMessageByKey('forbidden')
         });

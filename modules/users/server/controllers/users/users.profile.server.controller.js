@@ -407,7 +407,19 @@ exports.getUser = function(req, res) {
  * Show the mini profile of the user
  */
 exports.getMiniUser = function(req, res) {
-  res.json( req.profile || {} );
+
+  if(req.profile) {
+    // 'public' isn't needed at frontend.
+    // We had to bring it until here trough
+    // ACL policy since it's needed there.
+    var profile = req.profile.toObject();
+    delete profile.public;
+    res.json(profile);
+  }
+  else {
+    res.json({});
+  }
+
 };
 
 
@@ -436,11 +448,6 @@ exports.userMiniByID = function(req, res, next, userId) {
         message: errorHandler.getErrorMessageByKey('not-found')
       });
     }
-
-    profile = profile.toObject();
-
-    // This isn't needed at frontend
-    delete profile.public;
 
     req.profile = profile;
     next();
