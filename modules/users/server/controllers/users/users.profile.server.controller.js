@@ -81,7 +81,7 @@ var userSanitizeOptions = {
 /**
  * Upload user avatar
  */
-exports.upload = function (req, res) {
+exports.uploadAvatar = function (req, res) {
 
   if(!req.user) {
     return res.status(403).send({
