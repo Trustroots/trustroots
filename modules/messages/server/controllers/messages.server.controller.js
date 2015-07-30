@@ -109,6 +109,15 @@ exports.inbox = function(req, res) {
 exports.send = function(req, res) {
 
   var message = new Message(req.body);
+
+  // Don't allow sending messages to myself
+  if(req.user._id.toString() === message.userTo.toString()) {
+    console.log('sending to myself');
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
   message.userFrom = req.user;
   message.read = false;
   message.notified = false;
@@ -209,7 +218,7 @@ exports.threadByUser = function(req, res, next, userId) {
     function(done) {
 
       if(!req.user) {
-        return res.status(400).send({
+        return res.status(403).send({
           message: errorHandler.getErrorMessageByKey('forbidden')
         });
       }

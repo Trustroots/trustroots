@@ -143,6 +143,31 @@ describe('Message CRUD tests', function() {
       });
   });
 
+  it('should not be able to send a message to myself', function(done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) done(signinErr);
+
+        // Get user id
+        var userFromId = signinRes.body._id;
+
+        var messageToMyself = message;
+        messageToMyself.userTo = userFromId;
+
+        // Save a new message
+        agent.post('/api/messages')
+          .send(messageToMyself)
+          .expect(403)
+          .end(function(messageSaveErr, messageSaveRes) {
+            // Call the assertion callback
+            done(messageSaveErr);
+          });
+      });
+  });
+
   afterEach(function(done) {
     // Uggggly pyramid revenge!
     User.remove().exec(function() {
