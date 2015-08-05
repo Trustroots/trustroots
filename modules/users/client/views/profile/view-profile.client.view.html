@@ -48,15 +48,15 @@
           </div>
 
           <!-- When looking at own profile -->
-          <div class="col-md-6 profile-action-buttons" ng-if="app.user._id === profileCtrl.profile._id">
-            <small class="text-muted hidden-xs">This is your profile as others see it.</small>
+          <div class="col-md-6 profile-actions" ng-if="app.user._id === profileCtrl.profile._id">
+            <small class="profile-edit-help text-muted hidden-xs">This is your profile as others see it.</small>
             &nbsp;
             <a ui-sref="profile-edit({username: app.user.username})" class="btn btn-primary">Edit your profile</a>
           </div>
 
           <!-- When looking at somebody else's profile -->
-          <div class="col-md-6 profile-action-buttons" ng-if="app.user._id !== profileCtrl.profile._id">
-            <ul class="nav nav-pills nav-narrow text-right pull-right" role="navigation">
+          <div class="col-md-6 profile-actions" ng-if="app.user._id !== profileCtrl.profile._id">
+            <ul class="nav nav-pills nav-narrow" role="navigation">
               <li>
                 <a ui-sref="listMessages({userId: profile._id})" class="btn btn-link">
                   <i class="fa icon-message-alt"></i>

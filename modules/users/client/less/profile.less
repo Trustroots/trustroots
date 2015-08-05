@@ -20,9 +20,24 @@
   }
 }
 
-// Edit/save/send messages etc buttons
-.profile-action-buttons {
+// Edit/save/send messages etc buttons for own and other's profiles
+.profile-actions {
   text-align: right;
+  .profile-edit-help {
+    line-height: 32px; //About the height of the 'edit' button
+  }
+  .nav {
+    float: right;
+  }
+  @media (max-width: @screen-sm-max) {
+    text-align: left;
+    .profile-edit-help {
+      float: right;
+    }
+    .nav {
+      float: none;
+    }
+  }
   @media (max-width: @screen-xs-max) {
     .navbar();
     .navbar-default();
