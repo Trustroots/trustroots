@@ -10,19 +10,19 @@ var should = require('should'),
 /**
  * Globals
  */
-var user, user2;
+var user, user2, user3;
 
 /**
  * Unit tests
  */
 describe('User Model Unit Tests:', function() {
-  before(function(done) {
+  before(function() {
     user = new User({
       firstName: 'Full',
       lastName: 'Name',
       displayName: 'Full Name',
       email: 'test@test.com',
-      username: 'user1',
+      username: 'username123',
       password: 'password123',
       provider: 'local'
     });
@@ -31,124 +31,227 @@ describe('User Model Unit Tests:', function() {
       lastName: 'Name',
       displayName: 'Full Name',
       email: 'test@test.com',
-      username: 'user1',
+      username: 'username123',
       password: 'password123',
       provider: 'local'
     });
+    user3 = {
+      firstName: 'Different',
+      lastName: 'User',
+      displayName: 'Full Different Name',
+      email: 'test3@test.com',
+      username: 'different_username',
+      password: 'different_password',
+      provider: 'local'
+    };
 
-    done();
   });
 
   describe('Method Save', function() {
-    it('should begin with no users', function(done) {
-      User.find({}, function(err, users) {
+    it('should begin with no users', function (done) {
+      User.find({}, function (err, users) {
         users.should.have.length(0);
         done();
       });
     });
 
-    it('should be able to save without problems', function(done) {
-      user.save(done);
-    });
+    it('should be able to save without problems', function (done) {
+      var _user = new User(user);
 
-    it('should fail to save an existing user again', function(done) {
-      user.save();
-      return user2.save(function(err) {
-        should.exist(err);
-        done();
+      _user.save(function (err) {
+        should.not.exist(err);
+        _user.remove(function (err) {
+          should.not.exist(err);
+          done();
+        });
       });
     });
 
-    it('should be able to show an error when try to save without first name', function(done) {
-      user.firstName = '';
-      return user.save(function(err) {
+    it('should fail to save an existing user again', function (done) {
+      var _user = new User(user);
+      var _user2 = new User(user2);
+
+      _user.save(function () {
+        _user2.save(function (err) {
+          should.exist(err);
+          _user.remove(function (err) {
+            should.not.exist(err);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should be able to show an error when try to save without first name', function (done) {
+      var _user = new User(user);
+
+      _user.firstName = '';
+      _user.save(function (err) {
         should.exist(err);
-        user.firstName = 'Full';
         done();
       });
     });
 
     it('should be able to show an error when try to save with too short password', function(done) {
-      user.password = 'short';
-      return user.save(function(err) {
+      var _user = new User(user);
+
+      _user.password = 's1';
+      _user.save(function (err) {
         should.exist(err);
-        user.password = 'password123';
         done();
+      });
+    });
+
+    it('should confirm that saving user model doesnt change the password', function (done) {
+      var _user = new User(user);
+
+      _user.save(function (err) {
+        should.not.exist(err);
+        var passwordBefore = _user.password;
+        _user.firstName = 'test';
+        _user.save(function (err) {
+          var passwordAfter = _user.password;
+          passwordBefore.should.equal(passwordAfter);
+          _user.remove(function (err) {
+            should.not.exist(err);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should be able to save 2 different users', function(done) {
+      var _user = new User(user);
+      var _user3 = new User(user3);
+
+      _user.save(function(err) {
+        should.not.exist(err);
+        _user3.save(function(err) {
+          should.not.exist(err);
+          _user3.remove(function(err) {
+            should.not.exist(err);
+            _user.remove(function(err) {
+              should.not.exist(err);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should not be able to save different user with the same email address', function(done) {
+      var _user = new User(user);
+      var _user3 = new User(user3);
+
+      _user.remove(function(err) {
+        should.not.exist(err);
+        _user.save(function(err) {
+          var user3_email = _user3.email;
+          _user3.email = _user.email;
+          _user3.save(function(err) {
+            should.exist(err);
+            // Restoring the original email for test3 so it can be used in later tests
+            _user3.email = user3_email;
+            done();
+          });
+        });
+      });
+    });
+
+    it('should not be able to save different user with the same username', function(done) {
+      var _user = new User(user);
+      var _user3 = new User(user3);
+
+      _user.remove(function(err) {
+        should.not.exist(err);
+        _user.save(function(err) {
+          var user3_username = _user3.username;
+          _user3.username = _user.username;
+          _user3.save(function(err) {
+            should.exist(err);
+            // Restoring the original username for test3 so it can be used in later tests
+            _user3.username = user3_username;
+            done();
+          });
+        });
       });
     });
   });
 
-  describe('Username Validation',function(){
+  describe('Username Validation', function() {
     it('should show error to save username beginning with .', function(done) {
-      user.username = '.login';
-      return user.save(function(err) {
+      var _user = new User(user);
+
+      _user.username = '.login';
+      _user.save(function(err) {
         should.exist(err);
         done();
       });
     });
 
     it('should show error to save username end with .', function(done) {
-      user.username = 'login.';
-      return user.save(function(err) {
+      var _user = new User(user);
+
+      _user.username = 'login.';
+      _user.save(function(err) {
         should.exist(err);
         done();
       });
     });
 
-    it('should show error to save username  with ..', function(done) {
-      user.username = 'log..in';
-      return user.save(function(err) {
+    it('should show error to save username with ..', function(done) {
+      var _user = new User(user);
+
+      _user.username = 'log..in';
+      _user.save(function(err) {
         should.exist(err);
         done();
       });
     });
 
     it('should show error to save username shorter than 3 character', function(done) {
-      user.username = 'lo';
-      return user.save(function(err) {
+      var _user = new User(user);
+
+      _user.username = 'lo';
+      _user.save(function(err) {
         should.exist(err);
         done();
       });
     });
 
     it('should show error saving a username without at least one alphanumeric character', function(done) {
-      user.username = '-_-';
-      return user.save(function(err) {
+      var _user = new User(user);
+
+      _user.username = '-_-';
+      _user.save(function(err) {
         should.exist(err);
         done();
       });
     });
 
-    it('should not save username longer than 32 characters', function(done) {
-      user.username = '1234567890' + '1234567890' + '1234567890' + '1234a';
-      return user.save(function(err) {
+    it('should show error saving a username longer than 32 characters', function(done) {
+      var _user = new User(user);
+
+      _user.username = '1234567890' + '1234567890' + '1234567890' + '1234a';
+      _user.save(function(err) {
         should.exist(err);
         done();
       });
     });
 
-    it('should save username with dot', function(done){
-      user.username = 'log.in';
-      return user.save(function(err) {
+    it('should save username with dot', function(done) {
+      var _user = new User(user);
+
+      _user.username = 'log.in';
+      _user.save(function(err) {
         should.not.exist(err);
-        done();
-      });
-    });
-
-    it('should confirm that saving user model doesnt change the password', function(done) {
-      user.firstName = 'test';
-      var passwordBefore = user.password;
-      return user.save(function(err) {
-        var passwordAfter = user.password;
-        passwordBefore.should.equal(passwordAfter);
         done();
       });
     });
 
   });
 
-  after(function(done) {
-    User.remove().exec();
-    done();
+  afterEach(function(done) {
+    User.remove().exec(done);
   });
 });
