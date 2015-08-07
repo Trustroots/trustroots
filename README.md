@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/Trustroots/trustroots.png?label=ready&title=Ready)](https://waffle.io/Trustroots/trustroots)
 # [Trustroots.org](https://www.trustroots.org/)
 
 _Hospitality exchange community for hitchhikers and other travellers._
