@@ -1,4 +1,4 @@
-[![Stories in Ready](https://badge.waffle.io/Trustroots/trustroots.png?label=ready&title=Ready)](https://waffle.io/Trustroots/trustroots)
+
 # [Trustroots.org](https://www.trustroots.org/)
 
 _Hospitality exchange community for hitchhikers and other travellers._
@@ -11,7 +11,7 @@ You don't have the be a programmer to participate. Check [volunteers page](https
 
 ## Development
 
-Check [development page](https://github.com/Trustroots/trustroots/wiki/Development) to get started.
+Check [development page](https://github.com/Trustroots/trustroots/wiki/Development) to get started. 
 
 ## Installing
 
