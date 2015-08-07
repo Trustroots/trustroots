@@ -91,7 +91,7 @@
           <div id="avatarPreview" ng-if="avatarEditor.avatarPreview" ng-style="{ 'background-image': 'url(' + avatarEditor.previewStyle + ')' }" class="avatar avatar-preview"></div>
           <span ng-if="avatarEditor.avatarUploading">
             <span ng-if="avatarEditor.uploadProgressPercentage">{{avatarEditor.uploadProgressPercentage}}%</span>
-            <i class="icon-progress icon-2x animate-spin"></i>
+            <tr-spinner size="sm"></tr-spinner>
         </span>
         </div>
 

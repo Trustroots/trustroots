@@ -48,10 +48,6 @@ body {
    padding: 0;
    border: 0;
    overflow: hidden;
-   @color-reel-1: #ca7900;
-   @color-reel-2: #e18700;
-   @color-reel-3: #e49a00;
-   @color-reel-4: #e0b521;
    background: @color-reel-3;
    &:before {
      content: '';
@@ -65,7 +61,7 @@ body {
 
      // Rainbow style hr
      box-shadow:
-       10em 0 0 0 darken(@brand-primary, 5%),
+       10em 0 0 0 @color-reel-0,
        20em 0 0 0 @color-reel-1,
        30em 0 0 0 @color-reel-2,
        40em 0 0 0 @color-reel-3,
