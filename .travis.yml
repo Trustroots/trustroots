@@ -1,0 +1,11 @@
+language: node_js
+node_js:
+  - "0.10"
+  - "0.12"
+env:
+  - NODE_ENV=travis
+services:
+  - mongodb
+sudo: false
+before_install:
+  - gem update --system
