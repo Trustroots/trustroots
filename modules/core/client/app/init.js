@@ -6,7 +6,10 @@ angular.module(ApplicationConfiguration.applicationModuleName, ApplicationConfig
 // Setting HTML5 Location Mode
 angular.module(ApplicationConfiguration.applicationModuleName).config(['$locationProvider',
   function($locationProvider) {
-    $locationProvider.html5Mode(true).hashPrefix('!');
+    $locationProvider.html5Mode({
+      enabled: true,
+      requireBase: false // We do have <base> tag defined, but requiring it for Karma tests breaks tests... @todo
+    }).hashPrefix('!');
   }
 ]);
 
