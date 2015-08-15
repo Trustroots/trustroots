@@ -250,9 +250,6 @@ module.exports = function (grunt) {
   // Load NPM tasks
   require('load-grunt-tasks')(grunt);
 
-  // Making grunt default to force in order not to break the project.
-  grunt.option('force', true);
-
   // Connect to the MongoDB instance and load the models
   grunt.task.registerTask('mongoose', 'Task that connects to the MongoDB instance and loads the application models.', function() {
     // Get the callback
