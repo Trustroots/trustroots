@@ -1,12 +1,12 @@
-'use strict';
+(function() {
+  'use strict';
 
-angular.module('search').controller('SearchController', ['$scope', '$http', '$location', '$state', '$stateParams', '$timeout', 'Offers', 'leafletBoundsHelpers', 'Authentication', 'Languages', 'leafletData', 'SettingsFactory', 'messageCenterService', 'MapLayersFactory',
-  function($scope, $http, $location, $state, $stateParams, $timeout, Offers, leafletBoundsHelpers, Authentication, Languages, leafletData, SettingsFactory, messageCenterService, MapLayersFactory) {
+  angular
+    .module('search')
+    .controller('SearchController', SearchController);
 
-    var appSettings = SettingsFactory.get();
-
-    // Currently signed in user
-    $scope.user = Authentication.user;
+  /* @ngInject */
+  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, Offers, leafletBoundsHelpers, Authentication, Languages, leafletData, SettingsFactory, messageCenterService, MapLayersFactory, appSettings) {
 
     // Default to Europe for now
     var defaultLocation = {
@@ -15,12 +15,22 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       zoom: 6
     };
 
-    $scope.mapLayerstyle = 'street';
-    $scope.sidebarOpen = false;
-    $scope.languages = Languages.get('object');
-    $scope.offer = false; // Offer to show
-    $scope.notFound = false;
-    $scope.currentSelection = {
+    // ViewModel
+    var vm = this;
+
+    // Exposed to the view
+    vm.getMarkers = getMarkers;
+    vm.enterSearchAddress = enterSearchAddress;
+    vm.searchAddress = searchAddress;
+    vm.mapLocate = mapLocate;
+    vm.searchSuggestions = searchSuggestions;
+
+    vm.mapLayerstyle = 'street';
+    vm.sidebarOpen = false;
+    //vm.languages = Languages.get('object');
+    vm.offer = false; // Offer to show
+    vm.notFound = false;
+    vm.currentSelection = {
       weight: 2,
       color: '#989898',
       fillColor: '#b1b1b1',
@@ -31,7 +41,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       layer: 'selectedOffers',
       clickable: false
     };
-    $scope.mapMinimumZoom = 4;
+    vm.mapMinimumZoom = 4;
 
     // Return constructed icon
     // @link http://leafletjs.com/reference.html#icon
@@ -45,7 +55,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
     };
 
     // Variables passed to leaflet directive at init
-    $scope.mapDefaults = {
+    vm.mapDefaults = {
       attributionControl: false, // Adding this manually below
       keyboard: true,
       worldCopyJump: true,
@@ -57,9 +67,9 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
         }
       }
     };
-    $scope.mapCenter = {};
-    $scope.mapBounds = {};
-    $scope.mapLayers = {
+    vm.mapCenter = {};
+    vm.mapBounds = {};
+    vm.mapLayers = {
       baselayers: {},
       overlays: {
         selectedOffers: {
@@ -70,15 +80,15 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       }
     };
     $timeout(function(){
-      $scope.mapLayers.baselayers.streets = MapLayersFactory.streets(defaultLocation);
-      $scope.mapLayers.baselayers.satellite = MapLayersFactory.satellite(defaultLocation);
+      vm.mapLayers.baselayers.streets = MapLayersFactory.streets(defaultLocation);
+      vm.mapLayers.baselayers.satellite = MapLayersFactory.satellite(defaultLocation);
 
       // Other() returns an object consisting possibly multiple layers
-      angular.extend($scope.mapLayers.baselayers, MapLayersFactory.other(defaultLocation));
+      angular.extend(vm.mapLayers.baselayers, MapLayersFactory.other(defaultLocation));
     });
 
-    $scope.mapPaths = {
-      selected: $scope.currentSelection
+    vm.mapPaths = {
+      selected: vm.currentSelection
     };
     /**
      * Catch map events:
@@ -87,13 +97,13 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
      * zoomend, zoomlevelschange, resize, autopanstart, layeradd, layerremove, baselayerchange, overlayadd,
      * overlayremove, locationfound, locationerror, popupopen, popupclose
      */
-    $scope.mapEvents = {
+    vm.mapEvents = {
       map: {
         enable: ['click','mousedown', 'moveend', 'load', 'baselayerchange'],
         logic: 'emit'
       }
     };
-    $scope.mapLastBounds = {
+    vm.mapLastBounds = {
       northEastLng: 0,
       northEastLat: 0,
       southWestLng: 0,
@@ -118,27 +128,27 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
      */
     $scope.$on('leafletDirectiveMap.baselayerchange', function(event, layer) {
       $timeout(function() {
-        $scope.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? $scope.mapLayerstyle = layer.leafletEvent.layer.options.TRStyle : 'street';
+        vm.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? vm.mapLayerstyle = layer.leafletEvent.layer.options.TRStyle : 'street';
       });
     });
 
     // Setting up the cluster
-    $scope.pruneCluster = new PruneClusterForLeaflet(60, 60);
+    vm.pruneCluster = new PruneClusterForLeaflet(60, 60);
 
     // Setting up the marker and click event
-    $scope.pruneCluster.PrepareLeafletMarker = function(leafletMarker, data) {
+    vm.pruneCluster.PrepareLeafletMarker = function(leafletMarker, data) {
       leafletMarker.on('click', function(e) {
 
         // Open offer card
-        $scope.offer = Offers.get({
+        vm.offer = Offers.get({
           offerId: data.userId
         });
 
         // Show cirlce around the marker
-        $scope.currentSelection.latlngs = e.latlng;
-        $scope.mapLayers.overlays.selectedOffers.visible = true;
+        vm.currentSelection.latlngs = e.latlng;
+        vm.mapLayers.overlays.selectedOffers.visible = true;
 
-        $scope.sidebarOpen = true;
+        vm.sidebarOpen = true;
 
       });
       leafletMarker.setIcon(data.icon);
@@ -146,9 +156,9 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
 
     // Sidebar & markers react to these events
     $scope.$on('leafletDirectiveMap.click', function(event){
-      $scope.sidebarOpen = false;
-      $scope.offer = false;
-      $scope.mapLayers.overlays.selectedOffers.visible = false;
+      vm.sidebarOpen = false;
+      vm.offer = false;
+      vm.mapLayers.overlays.selectedOffers.visible = false;
     });
     /*
     $scope.$on('leafletDirectiveMarker.click', function(e, args) {
@@ -159,34 +169,34 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
     /**
      * Load markers to the current bounding box
      */
-    $scope.getMarkers = function () {
+    function getMarkers() {
 
       // Don't proceed if:
       // - Map does not have bounds set (typically at map init these might be missing for some milliseconds)
       // - If user isn't public(confirmed) yet - no need to hit API just to get 401
-      if(!$scope.mapBounds.northEast || !$scope.user.public) return;
+      if(!vm.mapBounds.northEast || !Authentication.user.public) return;
 
       // If we get out of the boundig box of the last api query we have to call the API for the new markers
-      if($scope.mapBounds.northEast.lng > $scope.mapLastBounds.northEastLng || $scope.mapBounds.northEast.lat > $scope.mapLastBounds.northEastLat || $scope.mapBounds.southWest.lng < $scope.mapLastBounds.southWestLng || $scope.mapBounds.southWest.lat < $scope.mapLastBounds.southWestLat) {
+      if(vm.mapBounds.northEast.lng > vm.mapLastBounds.northEastLng || vm.mapBounds.northEast.lat > vm.mapLastBounds.northEastLat || vm.mapBounds.southWest.lng < vm.mapLastBounds.southWestLng || vm.mapBounds.southWest.lat < vm.mapLastBounds.southWestLat) {
         // We add a margin to the boundings depending on the zoom level
-        var boundingDelta = 10/$scope.mapCenter.zoom;
+        var boundingDelta = 10/vm.mapCenter.zoom;
         // Saving the current bounding box amd zoom
-        $scope.mapLastBounds = {
-          northEastLng: $scope.mapBounds.northEast.lng + boundingDelta,
-          northEastLat: $scope.mapBounds.northEast.lat + boundingDelta,
-          southWestLng: $scope.mapBounds.southWest.lng - boundingDelta,
-          southWestLat: $scope.mapBounds.southWest.lat - boundingDelta
+        vm.mapLastBounds = {
+          northEastLng: vm.mapBounds.northEast.lng + boundingDelta,
+          northEastLat: vm.mapBounds.northEast.lat + boundingDelta,
+          southWestLng: vm.mapBounds.southWest.lng - boundingDelta,
+          southWestLat: vm.mapBounds.southWest.lat - boundingDelta
         };
-        $scope.lastZoom = $scope.mapCenter.zoom;
+        vm.lastZoom = vm.mapCenter.zoom;
         // API Call
         Offers.query({
-          northEastLng: $scope.mapLastBounds.northEastLng,
-          northEastLat: $scope.mapLastBounds.northEastLat,
-          southWestLng: $scope.mapLastBounds.southWestLng,
-          southWestLat: $scope.mapLastBounds.southWestLat
+          northEastLng: vm.mapLastBounds.northEastLng,
+          northEastLat: vm.mapLastBounds.northEastLat,
+          southWestLng: vm.mapLastBounds.southWestLng,
+          southWestLat: vm.mapLastBounds.southWestLat
         }, function(offers){
           // Remove last markers
-          $scope.pruneCluster.RemoveMarkers();
+          vm.pruneCluster.RemoveMarkers();
           // Let's go through those markers
           // This loop might look weird but it's actually speed optimized :P
           for (var i = -1, len = offers.length; ++i < len;) {
@@ -197,13 +207,13 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
             marker.data.icon = icon(offers[i].status);
             marker.data.userId = offers[i]._id;
             // Register markers
-            $scope.pruneCluster.RegisterMarker(marker);
+            vm.pruneCluster.RegisterMarker(marker);
           }
           // Update markers
-          $scope.pruneCluster.ProcessView();
+          vm.pruneCluster.ProcessView();
         });
       }
-    };
+    }
 
     /**
      * Event when the map has finished loading
@@ -211,14 +221,14 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
     $scope.$on('leafletDirectiveMap.load', function(event){
 
       leafletData.getMap('search-map-canvas').then(function(map) {
-        map.addLayer($scope.pruneCluster);
+        map.addLayer(vm.pruneCluster);
       });
 
       //If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
-      if($scope.mapCenter.zoom > $scope.mapMinimumZoom) {
+      if(vm.mapCenter.zoom > vm.mapMinimumZoom) {
         var loadMarkers = function() {
-          if(angular.isDefined($scope.mapBounds.northEast)) {
-            $scope.getMarkers();
+          if(angular.isDefined(vm.mapBounds.northEast)) {
+            getMarkers();
           }
           else {
             // $timeout does $apply for us
@@ -233,14 +243,14 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
     // Set event that fires everytime we finish to move the map
     $scope.$on('leafletDirectiveMap.moveend', function(event){
 
-      if($scope.mapCenter.zoom > $scope.mapMinimumZoom) {
-        $scope.getMarkers();
+      if(vm.mapCenter.zoom > vm.mapMinimumZoom) {
+        getMarkers();
       }
       // Otherwise hide the markers
       else {
-        $scope.pruneCluster.RemoveMarkers();
-        $scope.pruneCluster.ProcessView();
-        $scope.mapLastBounds = {
+        vm.pruneCluster.RemoveMarkers();
+        vm.pruneCluster.ProcessView();
+        vm.mapLastBounds = {
           northEastLng: 0,
           northEastLat: 0,
           southWestLng: 0,
@@ -252,54 +262,54 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
     /**
      * Map address search
      */
-    $scope.searchQuery = '';
-    $scope.searchQuerySearching = false;
-    $scope.enterSearchAddress = function (event) {
+    vm.searchQuery = '';
+    vm.searchQuerySearching = false;
+    function enterSearchAddress(event) {
       if (event.which === 13) {
         event.preventDefault();
-        $scope.searchAddress();
+        searchAddress();
       }
-    };
-    $scope.searchAddress = function () {
-      if($scope.searchQuery !== '') {
-        $scope.searchQuerySearching = true;
+    }
+    function searchAddress() {
+      if(vm.searchQuery !== '') {
+        vm.searchQuerySearching = true;
 
         $http
-          .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + $scope.searchQuery + '.json?access_token=' + appSettings.mapbox.publicKey)
+          .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + vm.searchQuery + '.json?access_token=' + appSettings.mapbox.publicKey)
           .then(function(response) {
 
-            $scope.searchQuerySearching = false;
-            $scope.mapCenter = defaultLocation;
+            vm.searchQuerySearching = false;
+            vm.mapCenter = defaultLocation;
 
             if(response.status === 200 && response.data.features && response.data.features.length > 0) {
-              $scope.mapLocate(response.data.features[0]);
+              mapLocate(response.data.features[0]);
             }
             else {
               // @todo: nicer alert https://github.com/Trustroots/trustroots/wiki/Angular-Directives#flash-messages
-              if($scope.mapCenter.lat === 0 && $scope.mapCenter.zoom === 1) {
-                $scope.mapCenter = defaultLocation;
+              if(vm.mapCenter.lat === 0 && vm.mapCenter.zoom === 1) {
+                vm.mapCenter = defaultLocation;
               }
               messageCenterService.add('warning', 'We could not find such a place...', { timeout: appSettings.flashTimeout });
             }
           });
 
       }
-    };
+    }
 
 
     /*
      * Show geo location at map
      * Used also when selecting search suggestions from the suggestions list
      */
-    $scope.mapLocate = function(place) {
+    function mapLocate(place) {
 
       // Show full place name at search  query
-      $scope.searchQuery =  $scope.placeTitle(place);
+      vm.searchQuery = placeTitle(place);
       // Does the place have bounding box?
       if(place.bbox) {
         //Set a timeout here otherwise the markers will not load.
         $timeout( function () {
-          $scope.mapBounds = leafletBoundsHelpers.createBoundsFromArray([
+          vm.mapBounds = leafletBoundsHelpers.createBoundsFromArray([
             [ parseFloat(place.bbox[1]), parseFloat(place.bbox[0]) ],
             [ parseFloat(place.bbox[3]), parseFloat(place.bbox[2]) ]
           ]);
@@ -307,7 +317,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       }
       // Does it have lat/lng?
       else if(place.center) {
-        $scope.mapCenter = {
+        vm.mapCenter = {
           lat: parseFloat(place.center[1]),
           lng: parseFloat(place.center[0]),
           zoom: 5
@@ -316,7 +326,7 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
 
       // @todo: then what?
 
-    };
+    }
 
 
     /*
@@ -324,32 +334,32 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
      *
      * @link https://www.mapbox.com/developers/api/geocoding/
      */
-    $scope.searchSuggestions = function(val) {
+    function searchSuggestions(val) {
       return $http
         .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + val + '.json?access_token=' + appSettings.mapbox.publicKey)
         .then(function(response) {
-          $scope.searchQuerySearching = false;
+          vm.searchQuerySearching = false;
           if(response.status === 200 && response.data.features && response.data.features.length > 0) {
             return response.data.features.map(function(place){
-              place.trTitle = $scope.placeTitle(place);
+              place.trTitle = placeTitle(place);
               return place;
             });
           }
           else return [];
         });
-    };
+    }
 
     /*
      * Compile a nice title for the place, eg. "Jyväskylä, Finland"
      */
-    $scope.placeTitle = function(place) {
+    function placeTitle(place) {
       var title = '';
 
       if(place.place_name) title += place.place_name;
       else if(place.text) title += place.text;
 
       return title;
-    };
+    }
 
 
     /*
@@ -360,8 +370,8 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
      * @link https://github.com/Trustroots/trustroots/issues/113
      */
     if($stateParams.location && $stateParams.location !== '') {
-      $scope.searchQuery = $stateParams.location.replace('_', ' ', 'g');
-      $scope.searchAddress();
+      vm.searchQuery = $stateParams.location.replace('_', ' ', 'g');
+      searchAddress();
     }
     /*
      * Init opening offer from the URL
@@ -370,30 +380,31 @@ angular.module('search').controller('SearchController', ['$scope', '$http', '$lo
       Offers.get({
         offerId: $stateParams.offer
       }, function(offer){
-        $scope.offer = offer;
+        vm.offer = offer;
 
-        $scope.currentSelection.latlngs = $scope.offer.location;
-        $scope.mapLayers.overlays.selectedOffers.visible = true;
-        $scope.sidebarOpen = true;
+        vm.currentSelection.latlngs = vm.offer.location;
+        vm.mapLayers.overlays.selectedOffers.visible = true;
+        vm.sidebarOpen = true;
 
-        $scope.mapCenter = {
-          lat: $scope.offer.location[0],
-          lng: $scope.offer.location[1],
+        vm.mapCenter = {
+          lat: vm.offer.location[0],
+          lng: vm.offer.location[1],
           zoom: 13
         };
 
       },function (error) {
-        $scope.mapCenter = defaultLocation;
-        $scope.offerNotFound = true;
+        vm.mapCenter = defaultLocation;
+        vm.offerNotFound = true;
         $timeout(function(){
-          $scope.offerNotFound = false;
+          vm.offerNotFound = false;
         }, 3000);
       });
     }
     // Nothing to init from URL
     else {
-      $scope.mapCenter = defaultLocation;
+      vm.mapCenter = defaultLocation;
     }
 
   }
-]);
+
+})();

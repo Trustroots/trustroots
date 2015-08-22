@@ -9,7 +9,17 @@ angular.module('search').config(['$stateProvider',
       url: '/search?location?offer',
       templateUrl: 'modules/search/views/search.client.view.html',
       requiresAuth: true,
-      footerHidden: true
+      footerHidden: true,
+      controller: 'SearchController',
+      controllerAs: 'search',
+      resolve: {
+        // A string value resolves to a service
+        SettingsService: 'SettingsService',
+
+        appSettings: function(SettingsService) {
+          return SettingsService.get();
+        }
+      }
     });
   }
 ]);
