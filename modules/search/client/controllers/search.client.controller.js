@@ -6,7 +6,7 @@
     .controller('SearchController', SearchController);
 
   /* @ngInject */
-  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, Offers, leafletBoundsHelpers, Authentication, Languages, leafletData, SettingsFactory, messageCenterService, MapLayersFactory, appSettings) {
+  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, Offers, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, localStorageService) {
 
     // Default to Europe for now
     var defaultLocation = {
@@ -128,7 +128,7 @@
      */
     $scope.$on('leafletDirectiveMap.baselayerchange', function(event, layer) {
       $timeout(function() {
-        vm.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? vm.mapLayerstyle = layer.leafletEvent.layer.options.TRStyle : 'street';
+        vm.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? layer.leafletEvent.layer.options.TRStyle : 'street';
       });
     });
 
@@ -218,7 +218,18 @@
     /**
      * Event when the map has finished loading
      */
-    $scope.$on('leafletDirectiveMap.load', function(event){
+    $scope.$on('leafletDirectiveMap.load', function(event) {
+
+      // Check for cached map state and move map to there if found
+      var cachedMapState = localStorageService.get('search-map-state');
+
+      if(cachedMapState && cachedMapState.lat && cachedMapState.lng && cachedMapState.zoom) {
+        vm.mapCenter = {
+          lat: parseFloat(cachedMapState.lat),
+          lng: parseFloat(cachedMapState.lng),
+          zoom: parseInt(cachedMapState.zoom)
+        };
+      }
 
       leafletData.getMap('search-map-canvas').then(function(map) {
         map.addLayer(vm.pruneCluster);
@@ -241,7 +252,7 @@
     });
 
     // Set event that fires everytime we finish to move the map
-    $scope.$on('leafletDirectiveMap.moveend', function(event){
+    $scope.$on('leafletDirectiveMap.moveend', function(event) {
 
       if(vm.mapCenter.zoom > vm.mapMinimumZoom) {
         getMarkers();
@@ -257,6 +268,8 @@
           southWestLat: 0
         };
       }
+
+      saveMapState();
     });
 
     /**
@@ -285,7 +298,6 @@
               mapLocate(response.data.features[0]);
             }
             else {
-              // @todo: nicer alert https://github.com/Trustroots/trustroots/wiki/Angular-Directives#flash-messages
               if(vm.mapCenter.lat === 0 && vm.mapCenter.zoom === 1) {
                 vm.mapCenter = defaultLocation;
               }
@@ -297,7 +309,7 @@
     }
 
 
-    /*
+    /**
      * Show geo location at map
      * Used also when selecting search suggestions from the suggestions list
      */
@@ -328,8 +340,18 @@
 
     }
 
+    /**
+     * Store map state with localStorageService for later use
+     */
+    function saveMapState() {
+      localStorageService.set('search-map-state', {
+        'lat': vm.mapCenter.lat,
+        'lng': vm.mapCenter.lng,
+        'zoom': vm.mapCenter.zoom
+      });
+    }
 
-    /*
+    /**
      * Search field's typeahead -suggestions
      *
      * @link https://www.mapbox.com/developers/api/geocoding/
