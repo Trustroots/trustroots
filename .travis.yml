@@ -9,3 +9,6 @@ services:
 sudo: false
 before_install:
   - gem update --system
+  - npm i nsp -g
+after_script:
+  - nsp audit-package
