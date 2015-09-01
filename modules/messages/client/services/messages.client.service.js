@@ -34,7 +34,7 @@
        * Takes additional query params passed in as key , value pairs
        */
       fetchMessages: function(param) {
-        console.log('->fetchMessages start');
+
         var that = this;
         var query = (this.nextPage) ? angular.extend(this.nextPage, param) : param;
 
@@ -45,16 +45,12 @@
             query,
             // Successful callback
             function(data, headers) {
-              console.log('->fetchMessages success');
-
               that.nextPage = that.parseHeaders(headers().link);
               that.resolved = true;
               that.paginationTimeout = false;
             },
             // Error callback
             function() {
-              console.log('->fetchMessages error');
-
               that.paginationTimeout = false;
               that.resolved = false;
             }

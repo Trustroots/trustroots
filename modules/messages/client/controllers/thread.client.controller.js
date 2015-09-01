@@ -15,7 +15,7 @@
     .controller('MessagesThreadController', MessagesThreadController);
 
   /* @ngInject */
-  function MessagesThreadController($scope, $q, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, localStorageService, appSettings, userTo) {
+  function MessagesThreadController($scope, $q, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, localStorageService, appSettings, userTo, cfpLoadingBar) {
 
     // Go back to inbox on these cases
     // - No recepient defined
@@ -29,6 +29,7 @@
     var elemThread,
         syncReadTimer,
         flaggedAsRead = [],
+        messageIdsInView = [],
         contentCacheId = 'thread-' + $stateParams.username;
 
     // View model
@@ -45,7 +46,6 @@
     vm.moreMessages = moreMessages;
     vm.messageRead = messageRead;
 
-
     /**
      * Unfinished messages are cached to SessionStorage
      * Check for a previously saved message here
@@ -55,34 +55,70 @@
      */
     vm.content = localStorageService.get(contentCacheId) || '';
 
-    initController();
+    (function() {
+      // Fetches first page of messages after receiving user has finished loading (we need the userId from there)
+      userTo.$promise.then(function() {
+
+          fetchMessages().$promise.then(function(data) {
+
+            addMessages(data);
+            vm.isInitialized = true;
+
+            // Timeout makes sure thread-dimensions-directive has finished loading
+            // and there would thus be something actually listening to these broadcasts:
+            $timeout(function() {
+              $scope.$broadcast('threadRefreshLayout');
+              if(data.length > 0) {
+                $scope.$broadcast('threadScrollToBottom');
+              }
+            });
+
+          });
+      },
+      // No user...
+      function(error) {
+        // User not found:
+        if(error.status === 404) {
+          vm.isInitialized = true;
+        }
+        // Unexpected errors:
+        else {
+          messageCenterService.add('warning', error.message || 'Cannot load messages.', { timeout: 10000 });
+        }
+      });
+    })();
 
     /**
      * Attach userID for backend calls
      */
-    var fetchMessages = function() {
+    function fetchMessages() {
       return (
         vm.messageHandler.fetchMessages({
           userId: userTo._id
         })
       );
-    };
+    }
 
     /**
      * Appends returned messages to model
      */
     function addMessages(data) {
       var messages = [];
-      angular.forEach(data, function(msg) {
-        messages.push(msg);
-      });
 
+      // Loop trough received data (for loop is the fastest)
+      for (var i = 0; i < data.length; i++) {
+
+        // Check if message by this ID doesn't exist yet
+        // messageIdsInView is used as a key storage for quick reference of messages already in view
+        if(messageIdsInView.indexOf(data[i]._id) === -1) {
+          messageIdsInView.push(data[i]._id);
+          vm.messages.push(data[i]);
+        }
+      }
+
+      // Finally refresh the layout
       $timeout(function() {
-        angular.extend(vm.messages, messages);
-        $timeout(function() {
-          vm.isInitialized = true;
-          $scope.$broadcast('threadRefreshLayout');
-        });
+        $scope.$broadcast('threadRefreshLayout');
       });
     }
 
@@ -91,15 +127,15 @@
      * Activates when the first(top most) message hits the top viewport
      */
     function moreMessages() {
-      if(vm.messageHandler.nextPage) {
+      if(vm.messageHandler.nextPage && !vm.messageHandler.paginationTimeout) {
 
         if(!elemThread) elemThread = angular.element('#messages-thread');
 
         var oldHeight = elemThread[0].scrollHeight;
 
         fetchMessages().$promise.then(function(data) {
-          setScrollPosition(oldHeight);
           addMessages(data);
+          setScrollPosition(oldHeight);
         });
       }
     }
@@ -113,31 +149,6 @@
         var newHeight = elemThread[0].scrollHeight;
         angular.element(elemThread.scrollTop(newHeight - oldHeight));
       });
-    }
-
-
-    //$scope.$on('$stateChangeSuccess', function() {
-    function initController() {
-    $timeout(function(){
-      // Fetches first page of messages
-      fetchMessages().$promise.then( function(data) {
-
-        addMessages(data);
-
-        //vm.isInitialized = true;
-
-        // Timeout makes sure thread-dimensions-directive has finished loading
-        // and there would thus be something actually listening to these:
-        $timeout(function() {
-          $scope.$broadcast('threadRefreshLayout');
-          if(data.length > 0) {
-            $scope.$broadcast('threadScrollToBottom');
-          }
-        });
-
-
-      });
-    });
     }
 
 

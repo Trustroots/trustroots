@@ -14,7 +14,8 @@
       query: {
         method: 'POST',
         isArray: false,
-        cache: false
+        cache: false,
+        ignoreLoadingBar: true
       }
     });
   }

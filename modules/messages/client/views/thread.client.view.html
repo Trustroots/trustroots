@@ -5,6 +5,8 @@
 
   <!-- Loading first init -->
   <div class="divider divider-first text-muted text-center" ng-if="app.user.public && !thread.isInitialized">
+    <tr-spinner size="xs"></tr-spinner>
+    <br><br>
     <small>Wait a moment...</small>
   </div>
 
@@ -32,7 +34,7 @@
         <!-- /Pagination Error -->
 
         <!-- Pagination Loading -->
-        <div class="divider divider-first text-muted text-center" ng-if="thread.messageHandler.nextPage && thread.messageHandler.resolved !== false">
+        <div class="text-center" ng-if="thread.messageHandler.nextPage && thread.messageHandler.resolved !== false">
           <tr-spinner size="xs"></tr-spinner>
         </div>
 
@@ -43,45 +45,48 @@
           <p>Start conversation below.</p>
         </div><!-- /.row -->
 
-        <!-- Messages -->
-        <!-- thread.messageHandler.resolved &&  -->
-        <div ng-if="thread.messageHandler.resolved">
-        <div class="message"
-             ng-if="thread.isInitialized && thread.messages.length > 0"
-             ng-repeat="message in thread.messages | orderBy:'-created':true"
-             zum-waypoint="thread.waypoints"
-             offset="50%"
-             up="scroll.up"
-             down="scroll.down"
-             ng-class="{ 'message-unread': !thread.messageRead(message, thread.waypoints.scroll.up, thread.waypoints.scroll.down),
-                         'message-sender-other': app.user._id !== message.userFrom._id
-                       }">
-
-          <div class="col-xs-12 col-sm-11">
-
-            <!-- Discussion started -->
-            <div class="divider divider-first text-muted" ng-if="$first && thread.messages.length && !thread.messageHandler.nextPage">
-              <small>Conversation started {{ ::thread.messages[0].created | date:'mediumDate' }}</small>
-            </div>
-
-            <div class="message-meta">
-              <span ng-if="app.user._id === message.userFrom._id">You</span>
-              <a ng-if="app.user._id !== message.userFrom._id" ui-sref="profile({ username: message.userFrom.username })">{{::message.userFrom.displayName}}</a>
-              — <time am-time-ago="message.created" tooltip="{{ ::message.created | date:'medium'}}" tooltip-placement="bottom"></time>
-            </div>
-
-            <div class="message-content panel panel-default" zum-waypoint="wp" offset="15%" up="next">
-              <div tr-avatar data-user="message.userFrom" data-size="24"></div>
-              <div class="panel-body" ng-bind-html="message.content | trustedHtml"></div>
-            </div>
-
-          </div>
-
-          <div class="col-sm-1 hidden-xs message-author">
-            <div tr-avatar data-user="message.userFrom" data-size="32"></div>
-          </div>
-
+        <!-- No user -->
+        <div class="content-empty" ng-if="!thread.userTo._id">
+          <i class="icon-3x icon-messages-alt"></i>
+          <h4>This user isn't a member anymore.</h4>
         </div>
+
+        <!-- Messages -->
+        <div ng-if="thread.messageHandler.resolved && thread.messages.length">
+          <div class="message"
+               ng-repeat="message in thread.messages | orderBy:'-created':true track by $index"
+               zum-waypoint="thread.waypoints"
+               offset="50%"
+               up="scroll.up"
+               down="scroll.down"
+               ng-class="{ 'message-unread': !thread.messageRead(message, thread.waypoints.scroll.up, thread.waypoints.scroll.down),
+                           'message-sender-other': app.user._id !== message.userFrom._id
+                         }">
+            <div class="col-xs-12 col-sm-11">
+
+              <!-- Discussion started -->
+              <div class="divider divider-first text-muted" ng-if="$first && !thread.messageHandler.nextPage">
+                <small>Conversation started {{ ::thread.messages[0].created | date:'mediumDate' }}</small>
+              </div>
+
+              <div class="message-meta">
+                <span ng-if="app.user._id === message.userFrom._id">You</span>
+                <a ng-if="app.user._id !== message.userFrom._id" ui-sref="profile({ username: message.userFrom.username })">{{::message.userFrom.displayName}}</a>
+                — <time am-time-ago="message.created" tooltip="{{ ::message.created | date:'medium'}}" tooltip-placement="bottom"></time>
+              </div>
+
+              <div class="message-content panel panel-default" zum-waypoint="wp" offset="15%" up="next">
+                <div tr-avatar data-user="message.userFrom" data-size="24"></div>
+                <div class="panel-body" ng-bind-html="message.content | trustedHtml"></div>
+              </div>
+
+            </div>
+
+            <div class="col-sm-1 hidden-xs message-author">
+              <div tr-avatar data-user="message.userFrom" data-size="32"></div>
+            </div>
+
+          </div>
         </div>
         <!-- /Messages -->
 
@@ -95,7 +100,7 @@
             <div class="panel panel-default">
               <div id="message-reply-content" ng-if="thread.userTo._id" ng-model="thread.content" medium-editor options='{"placeholder": "Write a message", "buttons": ["bold", "italic", "underline", "anchor", "quote", "unorderedlist"]}'></div>
               <div id="message-reply-content" class="text-muted" ng-if="!thread.userTo._id">
-                <em class="lead">This user isn't a member anymore.</em>
+                <em class="lead">Sorry, you cannot write to this thread.</em>
               </div>
             </div><!-- /.panel -->
           </div>
