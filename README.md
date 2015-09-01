@@ -41,6 +41,12 @@ There's a script that can generate mock user data. It's highly recommended you r
 3. It can take up to 5 minutes. Mongoose might complain about duplicates - just ignore these errors.
 4. To see the result, log in with your chosen username and password `password`.
 
+### Tests
+
+Run `grunt test`.
+
+See [Development/testing](https://github.com/Trustroots/trustroots/wiki/Development#Testing) for more details.
+
 ### Documentation
 
 Produce documentation by running `grunt docs`
