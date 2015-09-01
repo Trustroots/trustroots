@@ -243,6 +243,9 @@ module.exports = function (grunt) {
           'mv ./tmp/swagger-ui-master/dist/* ./public/developers/api',
           'rm -r tmp'
         ].join('&&')
+      },
+      'selenium': {
+        command: 'python ./scripts/selenium/test.py'
       }
     }
   });
@@ -275,6 +278,7 @@ module.exports = function (grunt) {
   grunt.registerTask('test', ['env:test', 'copy:localConfig', 'lint', 'mongoose', 'mochaTest', 'karma:unit']);
   grunt.registerTask('test:server', ['env:test', 'copy:localConfig', 'lint', 'mongoose', 'mochaTest']);
   grunt.registerTask('test:client', ['env:test', 'copy:localConfig', 'lint', 'mongoose', 'karma:unit']);
+  grunt.registerTask('test:selenium', ['shell:selenium']); // Not included in the main test task!
 
   // Produce documentation
   grunt.registerTask('docs', ['shell:swagger-ui']);
