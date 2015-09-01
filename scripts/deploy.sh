@@ -1,10 +1,8 @@
 #!/bin/sh
 
-# Go to project top
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-APP_DIR=$SCRIPT_DIR/..
-cd "$APP_DIR"
+echo "Deploying Trustroots"
 
+echo ""
 echo "Pull latest from the currently active branch..."
 git pull
 
