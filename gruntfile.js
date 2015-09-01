@@ -236,7 +236,7 @@ module.exports = function (grunt) {
     shell: {
       'swagger-ui': {
         command: [
-          'mkdir tmp',
+          'mkdir -p tmp',
           'wget -nv -O ./tmp/swagger-ui.zip  https://github.com/swagger-api/swagger-ui/archive/master.zip',
           'unzip ./tmp/swagger-ui.zip -d ./tmp',
           'mkdir -p ./public/developers/api',
