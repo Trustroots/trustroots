@@ -1,0 +1,119 @@
+<section class="container container-spacer">
+
+  <!-- Browsing with non-public account -->
+  <div ng-if="app.user.public === false" ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
+
+  <!-- Loading first init -->
+  <div class="divider divider-first text-muted text-center" ng-if="app.user.public && !thread.isInitialized">
+    <small>Wait a moment...</small>
+  </div>
+
+  <div class="row" ng-if="app.user.public && thread.isInitialized">
+
+    <div class="col-sm-9" id="thread-container" thread-dimensions>
+
+      <!-- Thread -->
+      <threads id="messages-thread" moremessages="thread.moreMessages()">
+
+        <!-- Pagination error -->
+        <div class="divider divider-first" ng-if="thread.messageHandler.resolved === false && thread.messageHandler.nextPage">
+          <div class="panel panel-danger">
+            <div class="panel-body">
+              <p class="text-danger">
+                Whoops! Something went wrong.
+              </p>
+              <button class="btn btn-warning btn-md" ng-click="thread.moreMessages()">
+                <span class="icon-bolt icon-lg"></span>
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- /Pagination Error -->
+
+        <!-- Pagination Loading -->
+        <div class="divider divider-first text-muted text-center" ng-if="thread.messageHandler.nextPage && thread.messageHandler.resolved !== false">
+          <tr-spinner size="xs"></tr-spinner>
+        </div>
+
+        <!-- No messages -->
+        <div class="content-empty" ng-if="thread.messageHandler.resolved && !thread.messages.length">
+          <i class="icon-3x icon-messages-alt"></i>
+          <h4>You haven't been talking yet.</h4>
+          <p>Start conversation below.</p>
+        </div><!-- /.row -->
+
+        <!-- Messages -->
+        <!-- thread.messageHandler.resolved &&  -->
+        <div ng-if="thread.messageHandler.resolved">
+        <div class="message"
+             ng-if="thread.isInitialized && thread.messages.length > 0"
+             ng-repeat="message in thread.messages | orderBy:'-created':true"
+             zum-waypoint="thread.waypoints"
+             offset="50%"
+             up="scroll.up"
+             down="scroll.down"
+             ng-class="{ 'message-unread': !thread.messageRead(message, thread.waypoints.scroll.up, thread.waypoints.scroll.down),
+                         'message-sender-other': app.user._id !== message.userFrom._id
+                       }">
+
+          <div class="col-xs-12 col-sm-11">
+
+            <!-- Discussion started -->
+            <div class="divider divider-first text-muted" ng-if="$first && thread.messages.length && !thread.messageHandler.nextPage">
+              <small>Conversation started {{ ::thread.messages[0].created | date:'mediumDate' }}</small>
+            </div>
+
+            <div class="message-meta">
+              <span ng-if="app.user._id === message.userFrom._id">You</span>
+              <a ng-if="app.user._id !== message.userFrom._id" ui-sref="profile({ username: message.userFrom.username })">{{::message.userFrom.displayName}}</a>
+              — <time am-time-ago="message.created" tooltip="{{ ::message.created | date:'medium'}}" tooltip-placement="bottom"></time>
+            </div>
+
+            <div class="message-content panel panel-default" zum-waypoint="wp" offset="15%" up="next">
+              <div tr-avatar data-user="message.userFrom" data-size="24"></div>
+              <div class="panel-body" ng-bind-html="message.content | trustedHtml"></div>
+            </div>
+
+          </div>
+
+          <div class="col-sm-1 hidden-xs message-author">
+            <div tr-avatar data-user="message.userFrom" data-size="32"></div>
+          </div>
+
+        </div>
+        </div>
+        <!-- /Messages -->
+
+      </threads>
+      <!-- /Thread -->
+
+      <!-- Reply -->
+      <form ng-submit="thread.sendMessage()" ng-disabled="!thread.userTo._id" id="message-reply" name="messageForm" class="form-horizontal" novalidate>
+        <div class="row">
+          <div class="col-xs-12">
+            <div class="panel panel-default">
+              <div id="message-reply-content" ng-if="thread.userTo._id" ng-model="thread.content" medium-editor options='{"placeholder": "Write a message", "buttons": ["bold", "italic", "underline", "anchor", "quote", "unorderedlist"]}'></div>
+              <div id="message-reply-content" class="text-muted" ng-if="!thread.userTo._id">
+                <em class="lead">This user isn't a member anymore.</em>
+              </div>
+            </div><!-- /.panel -->
+          </div>
+
+          <div class="col-xs-2 col-sm-12">
+            <small class="text-muted hidden-xs">Highlight text to add links or change its appearance. Ctrl+Enter to send.</small>
+            <button ng-disabled="!thread.content || thread.isSending === true || !thread.messageHandler.resolved || !thread.userTo._id" type="submit" class="btn btn-md btn-primary message-reply-btn" id="messageReplySubmit"><i class="icon-send"></i><span class="hidden-xs"> Send</span></button>
+          </div>
+        </div><!-- /.row -->
+      </form>
+      <!-- /Reply -->
+
+    </div><!-- /.col-* -->
+
+    <div class="col-sm-3 hidden-xs">
+      <div ng-if="thread.userTo._id" tr-monkeybox profile="thread.userTo"></div>
+    </div>
+
+  </div><!-- /.row -->
+
+</section><!-- /.container -->

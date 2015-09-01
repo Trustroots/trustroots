@@ -16,7 +16,8 @@
 
   .content-empty {
     position: absolute;
-    bottom: 0;
+    bottom: 50%;
+    margin-top: -65px;
     left: 0;
     right: 0;
   }
@@ -70,6 +71,11 @@
 
 }
 
+// This stays invisible until thread-dimensions directive first time calculates its dimensions
+#thread-container {
+  opacity: 0;
+  transition: opacity 0.3s linear;
+}
 
 // Single message in the thread
 .message {
@@ -81,31 +87,31 @@
       .panel-triangle-right();
     }
   }
-  &.message-unread {
+  &.message-sender-other.message-unread {
     .panel {
       border-left-color: @brand-primary;
       border-left-width: 2px;
       // Pause for 1s before making 2s linear animation for any CSS change
       // @link http://www.w3schools.com/css/css3_transitions.asp
-      transition: all 2s linear 5s;
+      transition: all 2s linear 1s;
     }
   }
   .divider {
-    .text-muted;
-    font-size: @font-size-small;
+    display: block;
+    clear: both;
     margin: 10px 0;
     &.divider-first {
-        margin-top: 0;
+      margin-top: 0;
     }
     &.divider-last {
-        margin-bottom: 0;
+      margin-bottom: 0;
     }
   }
   .message-author {
+    text-align: center;
     .avatar {
       margin: 25px auto @padding-small-vertical auto;
     }
-    .text-center;
   }
   .message-meta {
     display: inline-block;

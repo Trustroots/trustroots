@@ -1,20 +1,44 @@
-'use strict';
+(function() {
+  'use strict';
 
-// Setting up route
-angular.module('messages').config(['$stateProvider',
-  function($stateProvider) {
+  angular
+    .module('messages')
+    .config(MessagesRoutes);
+
+  /* @ngInject */
+  function MessagesRoutes($stateProvider) {
+
     // Messages state routing
     $stateProvider.
-    state('inboxMessages', {
-      url: '/messages',
-      templateUrl: 'modules/messages/views/inbox-messages.client.view.html',
-      requiresAuth: true
-    }).
-    state('listMessages', {
-      url: '/messages/:userId',
-      templateUrl: 'modules/messages/views/thread-messages.client.view.html',
-      requiresAuth: true,
-      footerHidden: true
-    });
+      state('inbox', {
+        url: '/messages',
+        templateUrl: 'modules/messages/views/inbox.client.view.html',
+        controller: 'InboxController',
+        controllerAs: 'inbox',
+        requiresAuth: true
+      }).
+      state('messageThread', {
+        url: '/messages/:username',
+        templateUrl: 'modules/messages/views/thread.client.view.html',
+        controller: 'MessagesThreadController',
+        controllerAs: 'thread',
+        requiresAuth: true,
+        footerHidden: true,
+        resolve: {
+          // A string value resolves to a service
+          UserProfilesService: 'UserProfilesService',
+          SettingsService: 'SettingsService',
+
+          userTo: function(UserProfilesService, $stateParams) {
+            return UserProfilesService.get({
+              username: $stateParams.username
+            });
+          },
+          appSettings: function(SettingsService) {
+            return SettingsService.get();
+          }
+        }
+      });
   }
-]);
+
+})();

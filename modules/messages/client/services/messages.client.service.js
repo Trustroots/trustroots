@@ -18,7 +18,7 @@
     }
 
     MessageHandler.prototype = {
-      parseHeaders: function (header){
+      parseHeaders: function (header) {
         if(header) {
           return {
             page: /<.*\/[^<>]*\?.*page=(\d*).*>;.*/.exec(header)[1],
@@ -34,8 +34,9 @@
        * Takes additional query params passed in as key , value pairs
        */
       fetchMessages: function(param) {
+        console.log('->fetchMessages start');
         var that = this;
-        var query = (this.nextPage) ? angular.extend(this.nextPage, param): param;
+        var query = (this.nextPage) ? angular.extend(this.nextPage, param) : param;
 
         if(!this.paginationTimeout) {
           this.paginationTimeout = true;
@@ -43,13 +44,17 @@
           return(this.ajaxCall.query(
             query,
             // Successful callback
-            function(data, headers){
+            function(data, headers) {
+              console.log('->fetchMessages success');
+
               that.nextPage = that.parseHeaders(headers().link);
               that.resolved = true;
               that.paginationTimeout = false;
             },
             // Error callback
-            function(){
+            function() {
+              console.log('->fetchMessages error');
+
               that.paginationTimeout = false;
               that.resolved = false;
             }

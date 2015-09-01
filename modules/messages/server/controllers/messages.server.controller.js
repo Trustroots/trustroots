@@ -108,11 +108,17 @@ exports.inbox = function(req, res) {
  */
 exports.send = function(req, res) {
 
+  // Not a valid ObjectId
+  if(!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
+    return res.status(400).send({
+      message: errorHandler.getErrorMessageByKey('invalid-id')
+    });
+  }
+
   var message = new Message(req.body);
 
   // Don't allow sending messages to myself
   if(req.user._id.toString() === message.userTo.toString()) {
-    console.log('sending to myself');
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });

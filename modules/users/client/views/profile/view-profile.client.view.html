@@ -58,7 +58,7 @@
           <div class="col-md-6 profile-actions" ng-if="app.user._id !== profileCtrl.profile._id">
             <ul class="nav nav-pills nav-narrow" role="navigation">
               <li>
-                <a ui-sref="listMessages({userId: profile._id})" class="btn btn-link">
+                <a ui-sref="messageThread({username: profileCtrl.profile.username})" class="btn btn-link">
                   <i class="fa icon-message-alt"></i>
                   Send message
                 </a>
