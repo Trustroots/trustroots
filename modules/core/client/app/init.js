@@ -12,7 +12,7 @@
     .config(initConfig);
 
   /* @ngInject */
-  function initConfig(localStorageServiceProvider, $locationProvider) {
+  function initConfig(localStorageServiceProvider, cfpLoadingBarProvider, $locationProvider) {
 
     // Setting HTML5 Location Mode
     $locationProvider.html5Mode({
@@ -21,6 +21,10 @@
       // @todo better solution?
       requireBase: false
     }).hashPrefix('!');
+
+    // Hide spinner from the loading interceptor
+    // @link https://github.com/chieffancypants/angular-loading-bar
+    cfpLoadingBarProvider.includeSpinner = false;
 
     // Configure local storage module
     // Not using localStorage here, but sessionStorage instead. It'll get wiped out when closing the browser.
