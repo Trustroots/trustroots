@@ -6,7 +6,7 @@
     .controller('ProfileController', ProfileController);
 
   /* @ngInject */
-  function ProfileController($scope, $stateParams, $state, $location, $log, $modal, Languages, Users, Authentication, $timeout, messageCenterService, profile, appSettings) {
+  function ProfileController($scope, $stateParams, $state, $location, $modal, Languages, Users, Authentication, $timeout, messageCenterService, profile, appSettings) {
 
     // No user defined at URL, just redirect to user's own profile
     if(!$stateParams.username) {
@@ -38,7 +38,7 @@
       {
         path: 'accommodation',
         title: 'Accommodation',
-        content: '/modules/offers/views/view-offers.client.view.html?c=' + appSettings.commit,
+        content: '/modules/offers/views/offers-view.client.view.html?c=' + appSettings.commit,
         onlySmallScreen: true
       },
       {

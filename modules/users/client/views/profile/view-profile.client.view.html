@@ -64,11 +64,11 @@
                 </a>
               </li>
               <li ng-controller="RemoveContactController as RemoveContact">
-                <a ui-sref="contactAdd({userId: profile._id})" ng-hide="profileCtrl.profile.contact" class="btn btn-link">
+                <a ui-sref="contactAdd({userId: profileCtrl.profile._id})" ng-hide="profileCtrl.profile.contact" class="btn btn-link">
                   <i class="icon-plus-squared-alt"></i>
                   Add contact
                 </a>
-                <a ng-click="RemoveContact.removeContactModal(profile.contact, $event)" ng-show="profileCtrl.profile.contact" class="btn btn-link">
+                <a ng-click="RemoveContact.removeContactModal(profileCtrl.profile.contact, $event)" ng-show="profileCtrl.profile.contact" class="btn btn-link">
                   <i class="icon-minus-squared-alt"></i>
                   Remove contact
                 </a>

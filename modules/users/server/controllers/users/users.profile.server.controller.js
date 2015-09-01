@@ -54,7 +54,6 @@ exports.userMiniProfileFields = [
                     'avatarSource',
                     'avatarUploaded',
                     'emailHash',
-                    'languages',
                     'additionalProvidersData.facebook.id' // For FB avatars
                     ].join(' ');
 
@@ -464,6 +463,13 @@ exports.userByUsername = function(req, res, next, username) {
   if(!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  // Proper 'username' value required
+  if(typeof username !== 'string' || username === '' || username.length < 3) {
+    return res.status(400).send({
+      message: 'Valid username required.'
     });
   }
 

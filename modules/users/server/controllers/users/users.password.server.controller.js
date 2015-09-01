@@ -242,7 +242,9 @@ exports.changePassword = function(req, res) {
 
       // Return error if no user
       if(!req.user) {
-        done(errorHandler.getNewError('forbidden', 403));
+        return res.status(403).send({
+          message: errorHandler.getErrorMessageByKey('forbidden')
+        });
       }
 
       // Check if we have new password coming up
