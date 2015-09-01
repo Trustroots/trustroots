@@ -66,17 +66,6 @@ module.exports = function (grunt) {
         }
       }
     },
-    fontello: {
-      build: {
-        options: {
-          config: 'fontello.conf.json',
-          fonts: 'public/lib/fontello/fonts',
-          styles: 'public/lib/fontello/css',
-          scss: false,
-          force: true
-        }
-      }
-    },
     nodemon: {
       dev: {
         script: 'server.js',
@@ -244,6 +233,9 @@ module.exports = function (grunt) {
           'rm -r tmp'
         ].join('&&')
       },
+      'fontello': {
+        command: 'fontello-cli install --config ./fontello.conf.json --css ./public/lib/fontello/css --font ./public/lib/fontello/fonts'
+      },
       'selenium': {
         command: 'python ./scripts/selenium/test.py'
       }
@@ -272,13 +264,16 @@ module.exports = function (grunt) {
   grunt.registerTask('lint', ['jshint']); //'less', 'csslint'
 
   // Lint project files and minify them into two production files.
-  grunt.registerTask('build', ['copy:localConfig', 'fontello', 'ngAnnotate:production', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'postcss', 'cssmin']);
+  grunt.registerTask('build', ['copy:localConfig', 'shell:fontello', 'ngAnnotate:production', 'uglify:annotated', 'concat:libs', 'uglify:bundle', 'less', 'postcss', 'cssmin']);
 
   // Run the project tests
   grunt.registerTask('test', ['env:test', 'copy:localConfig', 'lint', 'mongoose', 'mochaTest', 'karma:unit']);
   grunt.registerTask('test:server', ['env:test', 'copy:localConfig', 'lint', 'mongoose', 'mochaTest']);
   grunt.registerTask('test:client', ['env:test', 'copy:localConfig', 'lint', 'mongoose', 'karma:unit']);
   grunt.registerTask('test:selenium', ['shell:selenium']); // Not included in the main test task!
+
+  // Produce font icon
+  grunt.registerTask('fontello', ['shell:fontello']);
 
   // Produce documentation
   grunt.registerTask('docs', ['shell:swagger-ui']);
