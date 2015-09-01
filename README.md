@@ -10,7 +10,7 @@ You don't have the be a programmer to participate. Check [volunteers page](https
 
 ## Development
 
-Check [development page](https://github.com/Trustroots/trustroots/wiki/Development) to get started and [join us to chat](https://gitter.im/Trustroots).
+Check [development page](https://github.com/Trustroots/trustroots/wiki/Development) to get started.
 
 ## Installing
 
