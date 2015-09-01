@@ -62,12 +62,13 @@
                ng-class="{ 'message-unread': !thread.messageRead(message, thread.waypoints.scroll.up, thread.waypoints.scroll.down),
                            'message-sender-other': app.user._id !== message.userFrom._id
                          }">
-            <div class="col-xs-12 col-sm-11">
 
-              <!-- Discussion started -->
-              <div class="divider divider-first text-muted" ng-if="$first && !thread.messageHandler.nextPage">
-                <small>Conversation started {{ ::thread.messages[0].created | date:'mediumDate' }}</small>
-              </div>
+            <!-- Discussion started -->
+            <div class="col-xs-12 divider divider-first text-muted" ng-if="$first && !thread.messageHandler.nextPage">
+              <small>Conversation started {{ ::thread.messages[0].created | date:'mediumDate' }}</small>
+            </div>
+
+            <div class="col-xs-12 col-sm-11">
 
               <div class="message-meta">
                 <span ng-if="app.user._id === message.userFrom._id">You</span>
