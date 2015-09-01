@@ -1,21 +1,25 @@
-'use strict';
+(function() {
+  'use strict';
 
-//Setting up route
-angular.module('contacts').config(['$stateProvider',
-  function($stateProvider) {
-    // Contact state routing
+  angular
+    .module('contacts')
+    .config(ContactsRoutes);
+
+  /* @ngInject */
+  function ContactsRoutes($stateProvider) {
+
     $stateProvider.
-    state('contactAdd', {
-      url: '/add-contact/:userId',
-      templateUrl: 'modules/contacts/views/add-contact.client.view.html',
-      requiresAuth: true
-    }).
-    state('contactConfirm', {
-      url: '/contact-confirm/:contactId',
-      templateUrl: 'modules/contacts/views/confirm-contact.client.view.html',
-      requiresAuth: true
-    });
-
+      state('contactAdd', {
+        url: '/add-contact/:userId',
+        templateUrl: 'modules/contacts/views/add-contact.client.view.html',
+        requiresAuth: true
+      }).
+      state('contactConfirm', {
+        url: '/contact-confirm/:contactId',
+        templateUrl: 'modules/contacts/views/confirm-contact.client.view.html',
+        requiresAuth: true
+      });
 
   }
-]);
+
+})();

@@ -33,9 +33,9 @@
       state('profile-settings', {
         url: '/profile/:username/settings',
         templateUrl: 'modules/users/views/profile/edit-settings.client.view.html',
-        requiresAuth: true,
         controller: 'SettingsController',
         controllerAs: 'settings',
+        requiresAuth: true,
         resolve: {
           // A string value resolves to a service
           SettingsService: 'SettingsService',
@@ -46,8 +46,8 @@
       }).
       state('profile', {
         url: '/profile/:username?tab&updated',
-        controller: 'ProfileController',
         templateUrl: 'modules/users/views/profile/view-profile.client.view.html',
+        controller: 'ProfileController',
         controllerAs: 'profileCtrl',
         requiresAuth: true,
         resolve: {
@@ -70,10 +70,10 @@
       state('signup', {
         url: '/signup',
         templateUrl: 'modules/users/views/authentication/signup.client.view.html',
-        footerTransparent: false,
-        headerHidden: true,
         controller: 'SignupController',
         controllerAs: 'signup',
+        footerTransparent: false,
+        headerHidden: true,
         resolve: {
           // A string value resolves to a service
           SettingsService: 'SettingsService',
