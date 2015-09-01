@@ -3,10 +3,10 @@
 
   angular
     .module('offers')
-    .controller('ViewOffersController', ViewOffersController);
+    .controller('OffersViewController', OffersViewController);
 
   /* @ngInject */
-  function ViewOffersController($scope, $state, $location, OffersBy, Authentication, leafletData, MapLayersFactory) {
+  function OffersViewController($scope, $state, $location, OffersByService, Authentication, leafletData, MapLayersFactory) {
 
     // ViewModel
     var vm = this;
@@ -110,7 +110,7 @@
      * @todo: move to route resolve
      * @note: profileCtrl is a reference to parent "ControllerAs" (see users module)
      */
-    vm.offer = OffersBy.get({
+    vm.offer = OffersByService.get({
       userId: $scope.profileCtrl.profile._id
     }, function(offer){
       if(offer && offer.location) {

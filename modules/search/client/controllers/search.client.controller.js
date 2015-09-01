@@ -6,7 +6,7 @@
     .controller('SearchController', SearchController);
 
   /* @ngInject */
-  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, Offers, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, localStorageService) {
+  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, OffersService, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, localStorageService) {
 
     // Default to Europe for now
     var defaultLocation = {
@@ -140,7 +140,7 @@
       leafletMarker.on('click', function(e) {
 
         // Open offer card
-        vm.offer = Offers.get({
+        vm.offer = OffersService.get({
           offerId: data.userId
         });
 
@@ -189,7 +189,7 @@
         };
         vm.lastZoom = vm.mapCenter.zoom;
         // API Call
-        Offers.query({
+        OffersService.query({
           northEastLng: vm.mapLastBounds.northEastLng,
           northEastLat: vm.mapLastBounds.northEastLat,
           southWestLng: vm.mapLastBounds.southWestLng,
@@ -399,7 +399,7 @@
      * Init opening offer from the URL
      */
     else if($stateParams.offer && $stateParams.offer !== '') {
-      Offers.get({
+      OffersService.get({
         offerId: $stateParams.offer
       }, function(offer){
         vm.offer = offer;

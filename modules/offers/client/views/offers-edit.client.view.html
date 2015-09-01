@@ -1,0 +1,109 @@
+<section class="container container-spacer offers-edit">
+
+  <div class="row text-center" ng-if="app.user.public !== true">
+    <em class="lead">Sorry, you need to first activate your profile before you can start hosting.</em>
+    <br><br>
+    <a ui-sref="profile-settings">Account settings</a>
+  </div>
+
+  <form name="offerForm" ng-submit="offersEdit.addOffer()" novalidate autocomplete="off" ng-if="app.user.public === true && offersEdit.offer">
+
+  <div class="row">
+
+    <div class="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8 col-lg-offset-3 col-lg-6">
+
+      <div class="offer-symbol-sofa center-block"></div>
+      <div class="page-header">
+        <h2>Host a traveller</h2>
+      </div>
+      <p class="lead text-center">
+        <em>Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.</em>
+      </p>
+
+      <div class="panel panel-default">
+        <div class="panel-body">
+          <div class="row">
+            <div class="col-xs-6">
+              <h4>Can you host?</h4>
+              <div class="btn-group">
+                <label class="btn btn-lg btn-hosting btn-hosting-yes" ng-model="offersEdit.offer.status" btn-radio="'yes'"><span>Yes</span></label>
+                <label class="btn btn-lg btn-hosting btn-hosting-maybe" ng-model="offersEdit.offer.status" btn-radio="'maybe'"><span>Maybe</span></label>
+                <label class="btn btn-lg btn-hosting btn-hosting-no" ng-model="offersEdit.offer.status" btn-radio="'no'"><span>No</span></label>
+              </div>
+            </div>
+            <div class="col-xs-6">
+              <h4>How many guests at most?</h4>
+              <input type="number" ng-disabled="!offersEdit.offer" ng-model="offersEdit.offer.maxGuests" class="form-control input-lg offer-maxguests" maxlength="2" min="1" max="99" size="2" step="1" pattern="[0-9]{1,2}">
+            </div>
+          </div><!-- /.row -->
+        </div>
+      </div>
+
+      <div class="panel panel-default" ng-if="offersEdit.offer.status === 'no'">
+        <div class="panel-heading">
+          <h4>Tell others why you can't host... <small class="text-muted pull-right">(optional)</small></h4>
+        </div>
+        <div class="panel-body">
+          <div class="offer-nodescription" ng-class="{'is-not-empty': offersEdit.offer.noOfferDescription}" ng-model="offersEdit.offer.noOfferDescription" medium-editor options="{'placeholder': '...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+        </div>
+      </div>
+
+      <div class="panel panel-default">
+        <div class="panel-body">
+          <div class="offer-description" ng-class="{'is-not-empty': offer.description}" ng-hide="!offersEdit.offer" ng-model="offersEdit.offer.description" medium-editor options="{'placeholder': 'Tell us about your couch...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+        </div>
+        <div class="panel-footer text-muted" ng-show="offersEdit.offer.description && offersEdit.offer.status === 'no'">
+          <small>This description will be held here but won't be public until you can host again.</small>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="panel panel-default">
+
+        <div class="panel-body">
+
+          <p>
+            <strong>Zoom in and place the marker where you host!</strong><br>
+            Your exact location will not be shown to others.
+          </p>
+
+          <!-- Search location -->
+            <div class="form-group offer-map-location-search">
+              <div class="input-group input-location">
+                <label for="search-query" class="sr-only">Search for places on the map</label>
+                <input type="text" id="search-query" class="form-control" placeholder="Search for places on the map" ng-disabled="offersEdit.searchQuerySearching" ng-model="offersEdit.searchQuery" ng-keypress="offersEdit.enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in offersEdit.searchSuggestions($viewValue)" typeahead-on-select="offersEdit.mapLocate($item)" />
+                <span class="input-group-btn">
+                  <button type="button" class="btn btn-inverse" ng-click="offersEdit.searchAddress()" ng-disabled="offersEdit.searchQuerySearching">
+                    <i class="icon-search"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+          <!-- /Search location -->
+
+        </div>
+
+        <div class="offer-map">
+          <leaflet center="offersEdit.mapCenter" layers="offersEdit.mapLayers" bounds="offersEdit.mapBounds" defaults="offersEdit.mapDefaults" id="offer-add-location-canvas"></leaflet>
+          <div class="offer-location-overlay" ng-class="{'hosting-yes': offersEdit.offer.status === 'yes', 'hosting-maybe': offersEdit.offer.status === 'maybe'}"></div>
+        </div>
+
+      </div>
+      <!-- /Location -->
+
+      <p class="text-center" ng-if="offersEdit.offer">
+        <button type="submit" class="btn btn-lg btn-primary" ng-disabled="offersEdit.isLoading">
+          <span ng-show="offersEdit.offer.status == 'yes' || offersEdit.offer.status == 'maybe'">Start hosting</span>
+          <span ng-show="offersEdit.offer.status == 'no'">Stop hosting</span>
+        </button>
+        <br><br>
+        <a ui-sref="profile" class="text-muted">Cancel</a>
+      </p>
+
+    </div><!-- /.col-* -->
+
+  </div><!-- /.row -->
+
+  </form>
+
+</section>

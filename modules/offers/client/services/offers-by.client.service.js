@@ -5,10 +5,10 @@
   // Read offers by userId
   angular
     .module('offers')
-    .factory('OffersBy', OffersBy);
+    .factory('OffersByService', OffersByService);
 
   /* @ngInject */
-  function OffersBy($resource) {
+  function OffersByService($resource) {
     return $resource('/api/offers-by/:userId', {
       userId: '@id'
     }, {
