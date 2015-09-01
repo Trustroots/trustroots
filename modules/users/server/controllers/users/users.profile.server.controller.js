@@ -459,6 +459,8 @@ exports.userMiniByID = function(req, res, next, userId) {
  */
 exports.userByUsername = function(req, res, next, username) {
 
+  var query;
+
   // Require user
   if(!req.user) {
     return res.status(403).send({
@@ -473,13 +475,28 @@ exports.userByUsername = function(req, res, next, username) {
     });
   }
 
+  // Got userId instead? Make it work!
+  // This is here because previously some API paths used userId instead of username
+  // This ensures they work during the transition
+  if(mongoose.Types.ObjectId.isValid(username)) {
+    console.warn('userByUsername: Found user id when expecting username.');
+    query = {
+      _id: username
+    };
+  }
+  else {
+    query = {
+      username: username.toLowerCase()
+    };
+  }
+
   async.waterfall([
 
     // Find user
     function(done) {
-      User.findOne({
-          username: username.toLowerCase()
-      }, exports.userProfileFields + ' public').exec(function(err, profile) {
+      User.findOne(
+        query,
+        exports.userProfileFields + ' public').exec(function(err, profile) {
 
         // Something went wrong or no such user
         if (err) {
