@@ -1,14 +1,17 @@
 language: node_js
 node_js:
-  - "0.10"
-  - "0.12"
+- '0.10'
+- '0.12'
 env:
-  - NODE_ENV=travis
+- NODE_ENV=travis
 services:
-  - mongodb
+- mongodb
 sudo: false
 before_install:
-  - gem update --system
-  - npm i nsp -g
+- gem update --system
+- npm i nsp -g
 after_script:
-  - nsp audit-package
+- nsp audit-package
+notifications:
+  slack:
+    secure: XRMYG9Hf+bJjMSHHXN0XeGT4ZhSP+oCHBUWmjBwxO0p+VORBOEZvlh/2OvxingFuzLGOXFeOPr1g91G+OgiCGR6GxaDpf680lEjk8ESTJ4oECv0aO2NQEZWYR4peiLRtBmJZTCSsKXDY21nrDHiKOaMQyPJqbzkIrTBMnK/YJpg=
