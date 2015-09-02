@@ -38,6 +38,9 @@ exports.userProfileFields = [
                     'updated',
                     'avatarSource',
                     'avatarUploaded',
+                    'extSitesBW', // BeWelcome username
+                    'extSitesCS', // CouchSurfing username
+                    'extSitesWS', // WarmShowers username
                     'emailHash', // MD5 hashed email to use with Gravatars
                     'additionalProvidersData.facebook.id', // For FB avatars and profile links
                     'additionalProvidersData.twitter.screen_name', // For Twitter profile links

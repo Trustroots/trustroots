@@ -62,49 +62,6 @@
                 </select>
               </div>
 
-              <div class="form-group">
-                <h4>
-                  Profiles
-                  <span class="icon-help cursor-help text-muted pull-right" popover-placement="right" popover-append-to-body="true" popover-trigger="mouseenter" popover="Connecting to these is absolutely optional. Other members in Trustroots will be able to see a link to your other profile and some basic info about you and content you like there. You will be able to use eg. your contact list here in Trustroots. Other networks will then obviously know that you have connected to Trustroots, but we will never send any of your profile data to them."></span>
-                </h4>
-
-                <div ng-if="editprofile.hasConnectedAdditionalSocialAccounts()">
-                  <ul class="social-profiles list-unstyled text-capitalize">
-                    <li ng-repeat="(providerName, providerData) in editprofile.user.additionalProvidersData" class="remove-account-container text-capitalize">
-                      <a ng-click="removeUserSocialAccount(providerName)" class="btn btn-link">
-                        <i class="icon-fw icon-lg icon-{{providerName}}"></i>
-                        {{::providerName}}
-                        <small>(disconnect)</small>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-
-                <div ng-if="!editprofile.isConnectedSocialAccount('facebook') ||
-                            !editprofile.isConnectedSocialAccount('twitter') ||
-                            !editprofile.isConnectedSocialAccount('github')">
-                  <h5>Connect to:</h5>
-                  <ul class="social-profiles list-unstyled">
-                    <li ng-if="!editprofile.isConnectedSocialAccount('facebook')">
-                      <a href="/api/auth/facebook" target="_top" class="btn btn-link">
-                        <i class="icon-fw icon-lg icon-facebook"></i> Facebook
-                      </a>
-                    </li>
-                    <li ng-if="!editprofile.isConnectedSocialAccount('twitter')">
-                      <a href="/api/auth/twitter" target="_top" class="btn btn-link">
-                        <i class="icon-fw icon-lg icon-twitter"></i> Twitter
-                      </a>
-                    </li>
-                    <li ng-if="!editprofile.isConnectedSocialAccount('github')">
-                      <a href="/api/auth/github" target="_top" class="btn btn-link">
-                        <i class="icon-fw icon-lg icon-github"></i> GitHub
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-
-              </div>
-
             </div><!-- /.panel-body -->
           </div><!-- /.panel -->
 
@@ -162,21 +119,88 @@
               </div>
 
             </div><!-- /.col- -->
-            <div class="col-md-6 hidden-xs">
+            <div class="col-md-6">
 
-              <!-- Accommodation -->
-              <div class="panel panel-default panel-disabled">
+              <!-- Profiles -->
+              <div class="panel panel-default">
                 <div class="panel-heading">
-                  Accommodation
+                  Me elsewhere
+                  <span class="icon-help cursor-help text-muted pull-right" popover-placement="bottom" popover-append-to-body="true" popover-trigger="mouseenter" popover="Connecting to these is absolutely optional. Other members in Trustroots will be able to see a link to your other profile and some basic info about you and content you like there. You will be able to use eg. your contact list here in Trustroots. Other networks will then obviously know that you have connected to Trustroots, but we will never send any of your profile data to them."></span>
                 </div>
                 <div class="panel-body">
-                  <div class="content-empty">
-                    <div class="offer-symbol-sofa center-block"></div>
-                    <br>
-                    <h4>Save your profile first to edit hosting status.</h4>
+
+                  <div ng-if="editprofile.hasConnectedAdditionalSocialAccounts()">
+                    <ul class="social-profiles list-unstyled text-capitalize">
+                      <li ng-repeat="(providerName, providerData) in editprofile.user.additionalProvidersData" class="remove-account-container text-capitalize">
+                        <a ng-click="removeUserSocialAccount(providerName)" class="btn btn-link">
+                          <i class="icon-fw icon-lg icon-{{providerName}}"></i>
+                          {{::providerName}}
+                          <small>(disconnect)</small>
+                        </a>
+                      </li>
+                    </ul>
                   </div>
+
+                  <div ng-if="!editprofile.isConnectedSocialAccount('facebook') ||
+                              !editprofile.isConnectedSocialAccount('twitter') ||
+                              !editprofile.isConnectedSocialAccount('github')">
+                    <h5>Connect to:</h5>
+                    <ul class="social-profiles list-unstyled">
+                      <li ng-if="!editprofile.isConnectedSocialAccount('facebook')">
+                        <a href="/api/auth/facebook" target="_top" class="btn btn-link">
+                          <i class="icon-fw icon-lg icon-facebook"></i> Facebook
+                        </a>
+                      </li>
+                      <li ng-if="!editprofile.isConnectedSocialAccount('twitter')">
+                        <a href="/api/auth/twitter" target="_top" class="btn btn-link">
+                          <i class="icon-fw icon-lg icon-twitter"></i> Twitter
+                        </a>
+                      </li>
+                      <li ng-if="!editprofile.isConnectedSocialAccount('github')">
+                        <a href="/api/auth/github" target="_top" class="btn btn-link">
+                          <i class="icon-fw icon-lg icon-github"></i> GitHub
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <br>
+
+                  <div class="extsites">
+                    <h5>Other hospitality networks</h5>
+                    <div class="form-group">
+                      <div class="input-group">
+                        <label class="input-group-addon" for="extSitesBW">bewelcome.org/members/</label>
+                        <input id="extSitesBW" type="text" class="form-control" ng-model="editprofile.user.extSitesBW" placeholder="your-username">
+                        <span class="input-group-btn" ng-if="editprofile.user.extSitesBW.length">
+                          <a ng-href="http://www.bewelcome.org/members/{{ editprofile.user.extSitesBW }}" target="_blank" rel="nofollow" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip-append-to-body="true" tooltip="Test opening the link"><i class="icon-link-ext"></i></a>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="input-group">
+                        <label class="input-group-addon" for="extSitesCS">couchsurfing.com/people/</label>
+                        <input id="extSitesCS" type="text" class="form-control" ng-model="editprofile.user.extSitesCS" placeholder="your-username">
+                        <span class="input-group-btn" ng-if="editprofile.user.extSitesCS.length">
+                          <a ng-href="https://www.couchsurfing.com/people/{{ editprofile.user.extSitesCS }}" target="_blank" rel="nofollow" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip-append-to-body="true" tooltip="Test opening the link"><i class="icon-link-ext"></i></a>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="input-group">
+                        <label class="input-group-addon" for="extSitesWS">warmshowers.org/users/</label>
+                        <input id="extSitesWS" type="text" class="form-control" ng-model="editprofile.user.extSitesWS" placeholder="your-username">
+                        <span class="input-group-btn" ng-if="editprofile.user.extSitesWS.length">
+                          <a ng-href="https://www.warmshowers.org/users/{{ editprofile.user.extSitesWS }}" target="_blank" rel="nofollow" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip-append-to-body="true" tooltip="Test opening the link"><i class="icon-link-ext"></i></a>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
+              <!-- /Profiles -->
+
 
             </div><!-- /.col- -->
           </div><!-- /.row -->

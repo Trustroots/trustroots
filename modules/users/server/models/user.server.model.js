@@ -130,7 +130,25 @@ var UserSchema = new Schema({
     trim: true
   },
   // Stores unaltered original username
-  displayUsername:{
+  displayUsername: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  // Bewelcome.org username
+  extSitesBW: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  // Couchsurfing.com username
+  extSitesCS: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  // Warmshowers.org username
+  extSitesWS: {
     type: String,
     default: '',
     trim: true

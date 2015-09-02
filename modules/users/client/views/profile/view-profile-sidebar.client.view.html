@@ -33,15 +33,18 @@
       </ul>
     </div>
 
-    <div class="profile-sidebar-section" ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts()">
-      <h4>Profiles</h4>
-      <ul class="social-profiles list-unstyled text-capitalize">
-        <li ng-repeat="(providerName, providerData) in profileCtrl.profile.additionalProvidersData">
-          <a ng-href="{{ profileCtrl.socialAccountLink(providerName, providerData) }}" class="btn btn-link">
-            <i class="icon-fw icon-lg icon-{{ providerName }}"></i>
-            {{ providerName }}
+    <div class="profile-sidebar-section" ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts() || profileCtrl.profile.extSitesBW || profileCtrl.profile.extSitesCS || profileCtrl.profile.extSitesWS">
+      <h4>Me elsewhere</h4>
+      <ul class="social-profiles list-unstyled">
+        <li ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts()" ng-repeat="(providerName, providerData) in profileCtrl.profile.additionalProvidersData">
+          <a ng-href="{{ ::profileCtrl.socialAccountLink(providerName, providerData) }}" class="btn btn-link text-capitalize" rel="nofollow">
+            <i class="icon-fw icon-lg icon-{{ ::providerName }}"></i>
+            {{ ::providerName }}
           </a>
         </li>
+        <li ng-if="profileCtrl.profile.extSitesBW"><a ng-href="http://www.bewelcome.org/members/{{ ::profileCtrl.profile.extSitesBW }}" target="_blank" rel="nofollow">BeWelcome.org</a></li>
+        <li ng-if="profileCtrl.profile.extSitesCS"><a ng-href="https://www.couchsurfing.com/people/{{ ::profileCtrl.profile.extSitesCS }}" target="_blank" rel="nofollow">Couchsurfing.com</a></li>
+        <li ng-if="profileCtrl.profile.extSitesWS"><a ng-href="https://www.warmshowers.org/users/{{ ::profileCtrl.profile.extSitesWS }}" target="_blank" rel="nofollow">Warmshowers.org</a></li>
       </ul>
     </div>
 
