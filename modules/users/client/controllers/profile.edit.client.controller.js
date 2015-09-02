@@ -96,6 +96,17 @@
       yearRange: 30, // Number of years displayed in year selection
       showWeeks: false, // Whether to display week numbers.
     };
+
+    // A fix to stop birthdate input giving validation errors
+    // This would come from the Mongo sometimes as "1984-10-09T22:00:00.000Z"
+    // and we're just stripping it down to "1984-10-09"
+    if(vm.user.birthdate) {
+      vm.user.birthdate = vm.user.birthdate.substring(0, vm.birthdateFormat.length);
+    }
+
+    /**
+     * Open birthdate dropdown
+     */
     function birthdateOpen($event) {
       $event.preventDefault();
       $event.stopPropagation();
@@ -109,7 +120,7 @@
         var user = new Users(vm.user);
 
         // Fixes #66 - <br> appearing to tagline with Firefox
-        user.tagline = user.tagline.replace('<br>', '', 'g');
+        user.tagline = user.tagline.replace('<br>', '', 'g').replace('&nbsp;', ' ', 'g');
         user.$update(function(response) {
           Authentication.user = response;
           $scope.$emit('userUpdated');

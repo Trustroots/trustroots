@@ -40,9 +40,9 @@
               </div>
 
               <div class="form-group">
-                <label for="birthdate"><h4>Birthdate <small class="text-muted text-uppercase"> {{ editprofile.birthdateFormat }}</small></h4></label>
+                <label for="birthdate"><h4>Birthdate <small class="text-muted text-uppercase">{{ ::editprofile.birthdateFormat }}</small></h4></label>
                 <p class="input-group profile-editor-birthdate">
-                  <input id="birthdate" type="text" class="form-control" datepicker-popup="{{editprofile.birthdateFormat}}" ng-model="editprofile.user.birthdate" is-open="editprofile.birthdateOpened" datepicker-options="editprofile.birthdateOptions" ng-required="false" close-text="Close" current-text="Today" clear-text="Clear" />
+                  <input id="birthdate" type="text" class="form-control" datepicker-popup="{{ ::editprofile.birthdateFormat }}" ng-model="editprofile.user.birthdate" is-open="editprofile.birthdateOpened" datepicker-options="editprofile.birthdateOptions" ng-required="false" close-text="Close" current-text="Today" clear-text="Clear">
                   <span class="input-group-btn">
                     <button type="button" class="btn btn-inverse" ng-click="editprofile.birthdateOpen($event)"><i class="icon-calendar"></i></button>
                   </span>
