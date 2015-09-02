@@ -11,6 +11,7 @@ echo "Updating packages & assets..."
 npm update --production
 npm prune --production
 bower update --allow-root --config.interactive=false
+npm i -g fontello-cli
 grunt fontello
 NODE_ENV=production grunt build
 
