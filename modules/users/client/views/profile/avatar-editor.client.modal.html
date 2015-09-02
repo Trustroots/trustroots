@@ -77,8 +77,7 @@
              accept="image/*"
              ngf-capture="'camera'"
              ngf-accept="'image/*'"
-             ngf-max-size="{{::app.appSettings.maxUploadSize}}"
-             ngf-min-size="1024"
+             ngf-validate="{size: {min: 1024, max: app.appSettings.maxUploadSize}}"
              class="avatar-source-link avatar-source-upload">
           <div ng-if="!avatarEditor.avatarPreview" tr-avatar data-user="avatarEditor.user" data-size="128" data-link="false" data-source="local"></div>
           <div id="avatarPreview" ng-if="avatarEditor.avatarPreview" ng-style="{ 'background-image': 'url(' + avatarEditor.previewStyle + ')' }" class="avatar avatar-preview"></div>
