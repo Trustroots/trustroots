@@ -64,7 +64,7 @@
         // See modules/users/client/controllers/authentication.client.controller.js for how they're used
         $rootScope.signinState = toState.name;
         $rootScope.signinStateParams = toParams;
-        $state.go('signin-continue', {'continue': true});
+        $state.go('signin', {'continue': true});
       }
 
     });

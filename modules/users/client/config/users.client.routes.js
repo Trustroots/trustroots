@@ -84,16 +84,20 @@
         }
       }).
       state('signin', {
-        url: '/signin',
+        url: '/signin?continue',
         templateUrl: 'modules/users/views/authentication/signin.client.view.html',
+        controller: 'AuthenticationController',
+        controllerAs: 'auth',
         footerTransparent: true,
-        headerHidden: true
-      }).
-      state('signin-continue', {
-        url: '/signin/?continue',
-        templateUrl: 'modules/users/views/authentication/signin.client.view.html',
-        footerTransparent: true,
-        headerHidden: true
+        headerHidden: true,
+        resolve: {
+          // A string value resolves to a service
+          SettingsService: 'SettingsService',
+
+          appSettings: function(SettingsService) {
+            return SettingsService.get();
+          }
+        }
       }).
       state('confirm-email', {
         url: '/confirm-email/:token?signup',
