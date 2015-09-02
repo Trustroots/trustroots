@@ -23,8 +23,8 @@
      */
     function submitSignup() {
       vm.isLoading = true;
-      console.log( $scope.credentials);
-      $http.post('/api/auth/signup', $scope.credentials).success(function(newUser) {
+
+      $http.post('/api/auth/signup', vm.credentials).success(function(newUser) {
         vm.isLoading = false;
         // If successful we assign the response to the global user model
         Authentication.user = newUser;
