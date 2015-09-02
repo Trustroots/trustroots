@@ -19,7 +19,7 @@
     var vm = this;
 
     // Expoxed to the view
-    vm.offer = offer;
+    vm.offer = {};
     vm.addOffer = addOffer;
     vm.mapLocate = mapLocate;
     vm.enterSearchAddress = enterSearchAddress;
@@ -28,6 +28,7 @@
     vm.searchQuery = '';
     vm.searchQuerySearching = false;
     vm.isLoading = false;
+    vm.firstTimeAround = false;
 
     // Leaflet
     vm.mapCenter = defaultLocation;
@@ -48,31 +49,57 @@
       }
     };
 
-    // Make sure DOM has finished loading
-    $timeout(function() {
+    /**
+     * Init
+     */
+    (function() {
 
       // Setup Leaflet map layers
       vm.mapLayers.baselayers.streets = MapLayersFactory.streets(defaultLocation);
       vm.mapLayers.baselayers.satellite = MapLayersFactory.satellite(defaultLocation);
 
-      // Populate some variables if user ralready has an offer
-      if(vm.offer && vm.offer.location) {
-        vm.mapCenter.lat = parseFloat(vm.offer.location[0]);
-        vm.mapCenter.lng = parseFloat(vm.offer.location[1]);
-        vm.mapCenter.zoom = 16;
-      }
-      // Push some defaults to offer if we didn't get proper answer...
-      else {
+      // Make sure offer is there
+      offer.$promise.then(function() {
+
+        vm.offer = offer;
+
+        // Populate map if user ralready has an offer
+        if(vm.offer && vm.offer.location) {
+          vm.mapCenter.lat = parseFloat(vm.offer.location[0]);
+          vm.mapCenter.lng = parseFloat(vm.offer.location[1]);
+          vm.mapCenter.zoom = 16;
+        }
+
+        setHostingStatusByURL();
+
+      },
+      // No previous offer, fill in defaults
+      function(error) {
+
         vm.offer.maxGuests = 1;
         vm.offer.status = 'yes';
-      }
 
-      // Determine new status from URL, overrides previous status
-      if($stateParams.status && jQuery.inArray( $stateParams.status, ['yes', 'maybe', 'no'] ) ) {
+        // Show guidance
+        vm.firstTimeAround = true;
+
+        setHostingStatusByURL();
+      });
+
+    })();
+
+    /**
+     * Determine new hosting status from the URL parameter
+     * Overrides any previous status
+     */
+    function setHostingStatusByURL() {
+      if($stateParams.status && jQuery.inArray( $stateParams.status, ['yes', 'maybe', 'no'] ) > -1 ) {
         vm.offer.status = $stateParams.status;
       }
-    });
+    }
 
+    /**
+     * Add offer
+     */
     function addOffer() {
       vm.isLoading = true;
 

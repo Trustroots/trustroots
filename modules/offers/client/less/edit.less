@@ -26,7 +26,7 @@
     height: 100%;
     z-index: 100;
     // Vignetting shadow, darker from sides and bright from the middle:
-    box-shadow: inset 0 0 (@offer-map-height*0.75) rgba(0,0,0,0.75);
+    box-shadow: inset 0 0 (@offer-map-height*0.55) rgba(0,0,0,0.45);
     // Allows dragging the map trough element:
     pointer-events: none;
     // Position icon to half the container minus distance to the icon's pointer:
@@ -40,17 +40,25 @@
       .img-retina("/modules/core/img/map/marker-locator-maybe.png", "/modules/core/img/map/marker-locator-maybe@2x.png", 56px, 41px);
     }
   }
+  .offer-panel-map {
+    position: relative;
+  }
+  .offer-map-guide {
+    position: absolute;
+    top: 0;
+    z-index: @zindex-popover;
+    left: 0;
+    right: 0;
+  }
   .offer-map-location-search {
     margin-bottom: 0;
   }
   .offer-maxguests {
     max-width: 80px;
   }
+  .offer-nodescription,
   .offer-description {
     font-size: @font-size-large;
-    &:after {
-      position: relative;
-    }
   }
   .btn-group > .btn-hosting {
     &, &:hover {
@@ -63,6 +71,13 @@
       span {
         border-color: #fff;
       }
+    }
+    @media (max-width: @screen-xs) {
+      clear: both;
+      width: 100%;
+      margin-left: 0;
+      margin-right: 0;
+      border-radius: 0;
     }
   }
 }
