@@ -42,9 +42,33 @@
             {{ ::providerName }}
           </a>
         </li>
-        <li ng-if="profileCtrl.profile.extSitesBW"><a ng-href="http://www.bewelcome.org/members/{{ ::profileCtrl.profile.extSitesBW }}" target="_blank" rel="nofollow">BeWelcome.org</a></li>
-        <li ng-if="profileCtrl.profile.extSitesCS"><a ng-href="https://www.couchsurfing.com/people/{{ ::profileCtrl.profile.extSitesCS }}" target="_blank" rel="nofollow">Couchsurfing.com</a></li>
-        <li ng-if="profileCtrl.profile.extSitesWS"><a ng-href="https://www.warmshowers.org/users/{{ ::profileCtrl.profile.extSitesWS }}" target="_blank" rel="nofollow">Warmshowers.org</a></li>
+        <li ng-if="profileCtrl.profile.extSitesBW">
+          <a ng-href="http://www.bewelcome.org/members/{{ ::profileCtrl.profile.extSitesBW }}" class="btn btn-link text-capitalize" rel="nofollow"><i class="icon-fw icon-lg icon-facebook"></i>facebook</a>
+        </li>
+        <li ng-if="profileCtrl.profile.extSitesBW">
+          <a ng-href="http://www.bewelcome.org/members/{{ ::profileCtrl.profile.extSitesBW }}" class="btn btn-link text-capitalize" rel="nofollow"><i class="icon-fw icon-lg icon-github"></i>github</a>
+        </li>
+        <li ng-if="profileCtrl.profile.extSitesBW">
+          <a ng-href="http://www.bewelcome.org/members/{{ ::profileCtrl.profile.extSitesBW }}" class="btn btn-link text-capitalize" rel="nofollow"><i class="icon-fw icon-lg icon-twitter"></i>twitter</a>
+        </li>
+        <li ng-if="profileCtrl.profile.extSitesBW">
+          <a ng-href="http://www.bewelcome.org/members/{{ ::profileCtrl.profile.extSitesBW }}" class="btn btn-link" rel="nofollow">
+            <i class="icon-fw icon-lg icon-bw"></i>
+            BeWelcome
+          </a>
+        </li>
+        <li ng-if="profileCtrl.profile.extSitesCS">
+          <a ng-href="https://www.couchsurfing.com/people/{{ ::profileCtrl.profile.extSitesCS }}" class="btn btn-link" rel="nofollow">
+            <i class="icon-fw icon-lg icon-cs"></i>
+            Couchsurfing
+          </a>
+        </li>
+        <li ng-if="profileCtrl.profile.extSitesWS">
+          <a ng-href="https://www.warmshowers.org/users/{{ ::profileCtrl.profile.extSitesWS }}" class="btn btn-link" rel="nofollow">
+            <i class="icon-fw icon-lg icon-ws"></i>
+            Warmshowers
+          </a>
+        </li>
       </ul>
     </div>
 
