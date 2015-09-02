@@ -241,11 +241,24 @@
 // Usernamefields for external hospex sites (WS+BW+CS)
 .extsites {
   .input-group-addon:first-child {
-    background: transparent;
+    background: @input-bg;
     padding-right: 0;
+    color: @input-color;
   }
   input {
     border-left-color: transparent;
-    padding-left: 0;
+    padding-left: 2px;
+    border-left: 0;
+    box-shadow: none;
+    font-weight: 500;
+    &:focus {
+      border-color: @input-border;
+      box-shadow: none;
+      color: @input-color;
+    }
+  }
+  .btn {
+    padding-top: 7px;
+    padding-bottom: 7px;
   }
 }
