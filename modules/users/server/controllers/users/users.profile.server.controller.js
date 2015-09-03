@@ -300,10 +300,14 @@ exports.update = function(req, res) {
     // Sanitize user description
     user.description = sanitizeHtml(user.description, userSanitizeOptions);
 
+    // Test in case description or tagline are actually empty without html
     // This happens sometimes with wysiwyg editors
-    // SanitizeHtml() turns <br> to <br /> so that's consistent.
-    if(user.description === '<p><br /></p>') user.description = '';
-    if(user.tagline === '<p><br /></p>') user.tagline = '';
+    if(user.description && user.description.length > 0 && sanitizeHtml(user.description, {allowedTags: []}).trim() === '') {
+      user.description = '';
+    }
+    if(user.tagline && user.tagline.length > 0 && sanitizeHtml(user.tagline, {allowedTags: []}).trim() === '') {
+      user.tagline = '';
+    }
 
     user.save(function(err) {
       if (!err) {

@@ -72,6 +72,15 @@ exports.create = function(req, res) {
   offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
   offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
 
+  // Test in case they're actually empty without html
+  if(offer.description && offer.description.length > 0 && sanitizeHtml(offer.description, {allowedTags: []}).trim() === '') {
+    offer.description = '';
+  }
+  if(offer.noOfferDescription && offer.noOfferDescription.length > 0 && sanitizeHtml(offer.noOfferDescription, {allowedTags: []}).trim() === '') {
+    offer.noOfferDescription = '';
+  }
+
+
   // Convert the Model instance to a simple object using Model's 'toObject' function
   // to prevent weirdness like infinite looping...
   var upsertData = offer.toObject();
