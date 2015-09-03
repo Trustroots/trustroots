@@ -34,7 +34,7 @@
     </div>
 
     <div class="profile-sidebar-section" ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts() || profileCtrl.profile.extSitesBW || profileCtrl.profile.extSitesCS || profileCtrl.profile.extSitesWS">
-      <h4>Other profiles</h4>
+      <h4>Elsewhere</h4>
       <ul class="social-profiles list-unstyled">
         <li ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts()" ng-repeat="(providerName, providerData) in profileCtrl.profile.additionalProvidersData">
           <a ng-href="{{ ::profileCtrl.socialAccountLink(providerName, providerData) }}" class="btn btn-link text-capitalize" rel="nofollow">
