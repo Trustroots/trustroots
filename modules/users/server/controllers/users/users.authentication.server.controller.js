@@ -19,6 +19,18 @@ var path = require('path'),
 exports.signup = function(req, res) {
   async.waterfall([
 
+    // Check if we have the required data before hitting more strict validations at Mongo
+    function(done) {
+
+      if(!req.body.firstName || !req.body.lastName || !req.body.username || !req.body.password || !req.body.email) {
+        return res.status(400).send({
+          message: 'Please provide required fields.'
+        });
+      }
+
+      done();
+    },
+
     // Generate random token
     function(done) {
       crypto.randomBytes(20, function(err, buffer) {
