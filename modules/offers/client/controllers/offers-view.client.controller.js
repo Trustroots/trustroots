@@ -112,7 +112,7 @@
      */
     vm.offer = OffersByService.get({
       userId: $scope.profileCtrl.profile._id
-    }, function(offer){
+    }, function(offer) {
       if(offer && offer.location) {
         var offerLocation = {
           lat: parseFloat(offer.location[0]),
