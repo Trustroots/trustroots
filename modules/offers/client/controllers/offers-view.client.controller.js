@@ -47,12 +47,12 @@
       },
       overlays: {
         selectedPath: {
-          name: 'Selected hosts Marker',
+          name: 'path',
           type: 'group',
-          visible: true
+          visible: false
         },
         selectedMarker: {
-          name: 'Selected hosts Marker',
+          name: 'marker',
           type: 'group',
           visible: false
         }
@@ -89,44 +89,56 @@
       }
     };
 
-
-    // Check zoom when it changes and toggle marker or circle
-    $scope.$on('leafletDirectiveMap.zoomend', function(event){
-      leafletData.getMap('offer-location-canvas').then(function(map) {
-        vm.mapZoom = map.getZoom();
-        if(vm.mapZoom >= 12 && vm.mapLayers.overlays.selectedPath.visible === false) {
-          vm.mapLayers.overlays.selectedPath.visible = true;
-          vm.mapLayers.overlays.selectedMarker.visible = false;
-        }
-        else if(vm.mapZoom < 12 && vm.mapLayers.overlays.selectedMarker.visible === false){
-          vm.mapLayers.overlays.selectedPath.visible = false;
-          vm.mapLayers.overlays.selectedMarker.visible = true;
-        }
-      });
-    });
-
     /**
-     * Fetch offer
-     * @todo: move to route resolve
-     * @note: profileCtrl is a reference to parent "ControllerAs" (see users module)
+     * Init
      */
-    vm.offer = OffersByService.get({
-      userId: $scope.profileCtrl.profile._id
-    }, function(offer) {
-      if(offer && offer.location) {
-        var offerLocation = {
-          lat: parseFloat(offer.location[0]),
-          lng: parseFloat(offer.location[1])
-        };
-        vm.currentSelection.latlngs = offerLocation;
-        vm.mapCenter = angular.extend(offerLocation, {zoom: 13});
-        vm.mapMarkers.push(angular.extend(offerLocation, {
-          icon: (offer.status === 'yes') ? icons.hostingYes : icons.hostingMaybe,
-          layer: 'selectedMarker'
-        }));
-        vm.hostLocation = offerLocation;
+    (function() {
+
+      // Check zoom when it changes and toggle marker or circle
+      $scope.$on('leafletDirectiveMap.zoomend', function() {
+
+        leafletData.getMap('offer-location-canvas').then(function(map) {
+          vm.mapZoom = map.getZoom();
+          if(vm.mapZoom >= 12 && vm.mapLayers.overlays.selectedPath.visible === false) {
+            vm.mapLayers.overlays.selectedPath.visible = true;
+            vm.mapLayers.overlays.selectedMarker.visible = false;
+          }
+          else if(vm.mapZoom < 12 && vm.mapLayers.overlays.selectedMarker.visible === false){
+            vm.mapLayers.overlays.selectedPath.visible = false;
+            vm.mapLayers.overlays.selectedMarker.visible = true;
+          }
+        });
+      });
+
+      /**
+       * Fetch offer
+       * @todo: move to route resolve
+       * @note: profileCtrl is a reference to parent "ControllerAs" (see users module)
+       */
+      if($scope.profileCtrl.profile && $scope.profileCtrl.profile.$resolved && $scope.profileCtrl.profile._id) {
+        vm.offer = OffersByService.get({
+          userId: $scope.profileCtrl.profile._id
+        }, function(offer) {
+          if(offer && offer.location) {
+            var offerLocation = {
+              lat: parseFloat(offer.location[0]),
+              lng: parseFloat(offer.location[1])
+            };
+            vm.currentSelection.latlngs = offerLocation;
+            vm.mapLayers.overlays.selectedPath.visible = true;
+            vm.mapCenter = angular.extend(angular.copy(offerLocation), {zoom: 13});
+            vm.mapMarkers.push(angular.extend(offerLocation, {
+              icon: (offer.status === 'yes') ? icons.hostingYes : icons.hostingMaybe,
+              layer: 'selectedMarker',
+              clickable: false
+            }));
+            vm.hostLocation = offerLocation;
+          }
+        });
       }
-    });
+
+    })();
+
 
     /**
      * Helper for hosting label
