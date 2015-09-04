@@ -646,6 +646,202 @@
                 }
             }
         },
+        "/contact-by/{userId}": {
+            "get": {
+                "summary": "Connection between signed in user and user with given id.",
+                "description": "Connection between signed in user and user with given id.",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "Unique user id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Connection information.",
+                        "schema": {
+                            "$ref": "#/definitions/Contact"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "No connection between these two.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/contact/{contactId}": {
+            "get": {
+                "summary": "Get contact by contact id.",
+                "description": "Get contact by contact id.",
+                "parameters": [
+                    {
+                        "name": "contactId",
+                        "in": "path",
+                        "description": "Unique contact id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Connection information.",
+                        "schema": {
+                            "$ref": "#/definitions/Contact"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "summary": "Confirm contact.",
+                "description": "Confirm contact.",
+                "parameters": [
+                    {
+                        "name": "contactId",
+                        "in": "path",
+                        "description": "Unique contact id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Connection information.",
+                        "schema": {
+                            "$ref": "#/definitions/Contact"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Confirm contact.",
+                "description": "Confirm contact.",
+                "parameters": [
+                    {
+                        "name": "contactId",
+                        "in": "path",
+                        "description": "Unique contact id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Connection information.",
+                        "schema": {
+                            "$ref": "#/definitions/Contact"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
         "/offers/{offerId}": {
             "get": {
                 "summary": "Get hosting offerd.",
