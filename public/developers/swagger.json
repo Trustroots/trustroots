@@ -997,7 +997,7 @@
                 },
                 "roles": {
                     "type": "array",
-                    "default": "user",
+                    "uniqueItems": true,
                     "items": [
                         {
                             "type": "string"
@@ -1010,6 +1010,7 @@
                 },
                 "languages": {
                     "type": "array",
+                    "uniqueItems": true,
                     "items": [
                         {
                             "type": "string"
@@ -1313,10 +1314,8 @@
                 "username",
                 "password",
                 "email",
-                "password",
                 "firstName",
-                "lastName",
-                "username"
+                "lastName"
             ]
         },
         "Error": {
