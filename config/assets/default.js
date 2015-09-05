@@ -25,6 +25,7 @@ module.exports = {
         'public/lib/medium-editor/dist/js/medium-editor.js',
         'public/lib/angular-medium-editor/dist/angular-medium-editor.js',
         'public/lib/leaflet/dist/leaflet-src.js',
+        'public/lib/angular-simple-logger/dist/index.js',
         'public/lib/PruneCluster/dist/PruneCluster.js',
         'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.js',
         'public/lib/angular-waypoints/dist/angular-waypoints.all.js',
