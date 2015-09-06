@@ -246,7 +246,43 @@ exports.update = function(req, res) {
 
   async.waterfall([
 
-  // Generate random token
+  // If user is changing email, check if it's available
+  function(done) {
+
+    // Check only if email changed
+    if(req.body.email !== req.user.email) {
+      User.findOne({
+        $or: [
+          { emailTemporary: req.body.email.toLowerCase() },
+          { email: req.body.email.toLowerCase() }
+        ]
+      }, 'emailTemporary email', function(err, emailUser) {
+        // Not free
+        if(emailUser) {
+          // If the user we found with this email is currently authenticated user, let user pass to resend confirmation email
+          if(emailUser._id.equals(req.user._id)) {
+            done(null);
+          }
+          // Otherwise it was someone else's email. Block the way.
+          else {
+            return res.status(403).send({
+              message: 'This email is already in use. Please use another one.'
+            });
+          }
+        }
+        // Free, proceed generating the token
+        else {
+          done(null);
+        }
+      });
+    }
+    // Email didn't change, just continue
+    else {
+      done(null);
+    }
+  },
+
+  // Check if we should generate new email token
   function(done) {
 
     // Generate only if email changed

@@ -284,7 +284,6 @@ exports.validateEmailToken = function(req, res) {
  * Confirm email POST from email token
  */
 exports.confirmEmail = function(req, res, next) {
-
   async.waterfall([
 
     function(done) {
@@ -302,7 +301,7 @@ exports.confirmEmail = function(req, res, next) {
           result.profileMadePublic = !user.public;
 
           // We can't do this here because we've got user document with password and we'd just override it:
-          //user.save(function(err) {
+          //user.save(function(err)
           // Instead we'll do normal mongoose update with previously fetched user id
           User.findByIdAndUpdate(
             user._id,
@@ -315,6 +314,7 @@ exports.confirmEmail = function(req, res, next) {
                 public: true,
                 // Replace old email with new one
                 email: user.emailTemporary,
+                // @todo: this should be done at user.server.model.js
                 emailHash: crypto.createHash('md5').update( user.emailTemporary.trim().toLowerCase() ).digest('hex')
               }
             },
@@ -328,6 +328,11 @@ exports.confirmEmail = function(req, res, next) {
                   if (!err) {
                     // Return authenticated user
                     result.user = user;
+
+                    // Remove some fields before returning user
+                    delete result.user.resetPasswordToken;
+                    delete result.user.resetPasswordExpires;
+
                     res.json(result);
                   }
                   done(err);
