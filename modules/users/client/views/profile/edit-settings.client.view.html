@@ -59,7 +59,7 @@
           <div class="form-group">
             <div class="checkbox">
               <label for="newsletter">
-                <input type="checkbox" id="newsletter" name="newsletter" ng-model="settings.user.newsletter" ng-change="settings.updateUserSubscriptions()">
+                <input type="checkbox" id="newsletter" name="newsletter" ng-model="settings.user.newsletter" ng-disabled="settings.updatingUserSubscriptions" ng-change="settings.updateUserSubscriptions()">
                 Subscribe to community news
               </label>
             </div>

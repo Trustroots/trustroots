@@ -16,6 +16,7 @@
     vm.updateUserEmail = updateUserEmail;
     vm.resendUserEmailConfirm = resendUserEmailConfirm;
     vm.updateUserSubscriptions = updateUserSubscriptions;
+    vm.updatingUserSubscriptions = false;
     vm.changeUserPassword = changeUserPassword;
     vm.removeUser = removeUser;
     vm.removalConfirm = false;
@@ -58,11 +59,14 @@
      * Change user email subscriptions
      */
     function updateUserSubscriptions() {
+      vm.updatingUserSubscriptions = true;
       var user = new Users(vm.user);
       user.$update(function(response) {
         messageCenterService.add('success', 'Subscriptions updated.', { timeout: appSettings.flashTimeout });
         vm.user = Authentication.user = response;
+        vm.updatingUserSubscriptions = false;
       }, function(response) {
+        vm.updatingUserSubscriptions = false;
         messageCenterService.add('error', 'Error: ' + response.data.message, { timeout: appSettings.flashTimeout });
       });
     }
