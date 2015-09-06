@@ -160,7 +160,7 @@ exports.remove = function(req, res) {
 exports.confirm = function(req, res) {
 
   // Only receiving user can confirm user connections
-  if(!req.contact || req.contact.users[0].id === req.user.id) {
+  if(!req.contact || !req.contact.users[0]._id.equals(req.user._id.valueOf())) {
     return res.status(403).json({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
@@ -171,7 +171,7 @@ exports.confirm = function(req, res) {
 	contact.confirmed = true;
 
 	contact.save(function(err) {
-		if (err) {
+		if(err) {
 			return res.status(400).send({
 				message: errorHandler.getErrorMessage(err)
 			});
@@ -196,7 +196,7 @@ exports.get = function(req, res) {
 };
 
 /**
- * Single contact by user middleware
+ * Single contact by userId
  *
  * - Find contact record where logged in user is a friend of given userId
  */
@@ -211,23 +211,30 @@ exports.contactByUserId = function(req, res, next, userId) {
 
   // User's own profile, don't bother hitting the DB
   if(req.user && req.user._id === userId) {
-    next();
+    return res.status(400).json({
+      message: errorHandler.getErrorMessageByKey('invalid-id')
+    });
   }
-  else if(req.user) {
-    Contact.findOne({
-        users: { $all: [ userId, req.user._id ] }
-      })
-      .populate('users', userHandler.userMiniProfileFields)
-      .exec(function(err, contact) {
-        if(err) return next(err);
-        if(!contact) {
-          return res.status(404).json({
-            message: errorHandler.getErrorMessageByKey('not-found')
-          });
-        }
 
-        req.contact = contact;
-        next();
+  if(req.user && req.user.public) {
+    Contact.findOne({
+      $or: [
+        { users: [ userId, req.user._id ] },
+        { users: [ req.user._id, userId ] }
+      ]
+    })
+    .populate('users', userHandler.userMiniProfileFields)
+    .exec(function(err, contact) {
+
+      if(err) return next(err);
+      if(!contact) {
+        return res.status(404).json({
+          message: errorHandler.getErrorMessageByKey('not-found')
+        });
+      }
+
+      req.contact = contact;
+      next();
     });
   }
   else {
@@ -237,9 +244,7 @@ exports.contactByUserId = function(req, res, next, userId) {
 
 
 /**
- * Single contact contact by id middleware
- *
- * - Find contact record where logged in user is a friend of given userId
+ * Single contact by contactId
  */
 exports.contactById = function(req, res, next, contactId) {
 
@@ -254,7 +259,12 @@ exports.contactById = function(req, res, next, contactId) {
     .populate('users', userHandler.userMiniProfileFields)
     .exec(function(err, contact) {
       if (err) return next(err);
-      if(!contact) {
+
+      // If nothing was found or neither of the user ID's match currently authenticated user's id, return 404
+      if(!contact || (
+          !contact.users[0]._id.equals(req.user._id.valueOf()) &&
+          !contact.users[1]._id.equals(req.user._id.valueOf())
+      )) {
         return res.status(404).json({
           message: errorHandler.getErrorMessageByKey('not-found')
         });
@@ -277,21 +287,22 @@ exports.contactListByUser = function(req, res, next, listUserId) {
     });
   }
 
-  // Add 'confirmed' field only if showing currently logged in user's listing
   var contactFields = 'users created';
   var contactQuery = { users: listUserId, confirmed: true };
 
-  if(req.user && req.user.id === listUserId) {
+  // Add 'confirmed' field only if showing currently logged in user's listing
+  if(req.user && req.user._id.equals(listUserId)) {
     contactFields += ' confirmed';
     delete contactQuery.confirmed;
   }
 
   Contact.find(contactQuery, contactFields)
     .sort('-created')
-    // Populate users, except don't populate user's own info... we don't need it dozen times there
+    // Populate users
     .populate({
       path: 'users',
-      match: { _id: { $ne: listUserId } },
+      // ...except don't populate user's own info for confirmed contacts. We don't need it dozen times there:
+      //match: { _id: { $ne: listUserId } },
       select: userHandler.userMiniProfileFields
     })
     .exec(function(err, contacts) {
@@ -302,53 +313,3 @@ exports.contactListByUser = function(req, res, next, listUserId) {
       next();
     });
 };
-
-
-/**
- * Contact authorization middleware
- *
-exports.hasAuthorization = function(req, res, next) {
-
-  if(!req.contact) {
-    return res.status(404).send('Contact not found.');
-  }
-
-  // This is double since in some cases user field is populated, thus we'll get "_id" instead of "id"
-  // - contact.useres[0] is receiving person
-  // - contact.useres[1] is initiating person
-  var userTo, userFrom;
-
-  if(req.contact.users[0]._id) userTo = req.contact.users[0]._id;
-  else if(req.contact.users[0].id) userTo = req.contact.users[0].id;
-
-  if(req.contact.users[1]._id) userFrom = req.contact.users[1]._id;
-  else if(req.contact.users[1].id) userFrom = req.contact.users[1].id;
-
-  if (
-    // User is registered and public
-    (req.user && req.user.public === true) &&
-    // User is participant in connection
-    (userFrom && userTo) &&
-    (userFrom.toString() === req.user.id.toString() || userTo.toString() === req.user.id.toString())
-  ) {
-    next();
-  } else {
-    return res.status(403).send('User is not authorized');
-  }
-};
-*/
-
-/**
- * Contact authorization middleware
- *
- * Used when confirming contact, so that initiator
- * cannot confirm on receivers behalf.
- *
-exports.receiverHasAuthorization = function(req, res, next) {
-  if (req.user.public === true && req.contact && req.contact.users[0].id === req.user.id) {
-    next();
-  } else {
-    return res.status(403).send('User is not authorized');
-  }
-};
-*/

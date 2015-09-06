@@ -53,16 +53,36 @@
         resolve: {
           // A string value resolves to a service
           UserProfilesService: 'UserProfilesService',
+          ContactByService: 'ContactByService',
           SettingsService: 'SettingsService',
+
+          appSettings: function(SettingsService) {
+            return SettingsService.get();
+          },
 
           profile: function(UserProfilesService, $stateParams) {
             return UserProfilesService.get({
               username: $stateParams.username
             });
           },
-          appSettings: function(SettingsService) {
-            return SettingsService.get();
+
+          // Contact is loaded only after profile is loaded, because we need the user ID
+          contact: function(ContactByService, profile, Authentication) {
+            return profile.$promise.then(function() {
+
+              // Own profile, no need to load contact
+              if(Authentication.user && Authentication.user._id === profile._id) {
+                return false;
+              }
+              // Load contact
+              else {
+                return ContactByService.get({
+                  userId: profile._id
+                });
+              }
+            });
           }
+
         }
       }).
 

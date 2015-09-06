@@ -15,8 +15,7 @@ var _ = require('lodash'),
     mkdirp = require('mkdirp'),
     fs = require('fs'),
     mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Contact = mongoose.model('Contact');
+    User = mongoose.model('User');
 
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
@@ -532,27 +531,6 @@ exports.userByUsername = function(req, res, next, username) {
         }
 
       });
-    },
-
-    // Check if logged in user has left contact request for this profile
-    function(profile, done) {
-
-      // User's own profile?
-      if(profile._id.toString() === req.user.id) {
-        profile.contact = false;
-        done(null, profile);
-      }
-      // Check for connection
-      else {
-        Contact.findOne(
-          {
-            users: { $all: [ profile._id.toString(), req.user.id ] }
-          }
-        ).exec(function(err, contact) {
-          profile.contact = (contact) ? contact._id : false;
-          done(err, profile);
-        });
-      }
     },
 
     // Sanitize & return profile

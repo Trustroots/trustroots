@@ -6,7 +6,7 @@
     .controller('ProfileController', ProfileController);
 
   /* @ngInject */
-  function ProfileController($scope, $stateParams, $state, $location, $modal, Languages, Users, Authentication, $timeout, messageCenterService, profile, appSettings) {
+  function ProfileController($scope, $stateParams, $state, $location, $modal, Languages, Users, Contact, Authentication, $timeout, messageCenterService, profile, contact, appSettings) {
 
     // No user defined at URL, just redirect to user's own profile
     if(!$stateParams.username) {
@@ -16,6 +16,7 @@
     // ViewModel
     var vm = this;
     vm.profile = profile;
+    vm.contact = contact;
 
     // Exposed to the view
     vm.hasConnectedAdditionalSocialAccounts = hasConnectedAdditionalSocialAccounts;
@@ -44,7 +45,7 @@
       {
         path: 'contacts',
         title: 'Contacts',
-        content: '/modules/contacts/views/contacts.client.view.html?c=' + appSettings.commit
+        content: '/modules/contacts/views/list-contacts.client.view.html?c=' + appSettings.commit
       }
     ];
 
@@ -55,6 +56,14 @@
         messageCenterService.add('success', 'Profile updated', { timeout: appSettings.flashTimeout });
       });
     }
+
+    /**
+     * When contact removal modal signals that the contact was removed, remove it from this scope as well
+     * @todo: any better way to keep vm.contact $resolved but wipe out the actual content?
+     */
+    $scope.$on('contactRemoved', function() {
+      delete vm.contact._id;
+    });
 
     /**
      * Open avatar modal (bigger photo)

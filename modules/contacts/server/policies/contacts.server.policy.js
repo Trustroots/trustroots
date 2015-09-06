@@ -39,7 +39,7 @@ exports.invokeRolesPolicies = function() {
       permissions: ['get']
     }, {
       resources: '/api/contact/:contactId',
-      permissions: ['get', 'put'] //'delete'
+      permissions: ['get', 'put']
     }, {
       resources: '/api/contacts/:listUserId',
       permissions: ['get']
@@ -62,7 +62,12 @@ exports.isAllowed = function(req, res, next) {
 
   // If an contact is being processed and the current user owns it, then allow any manipulation
   // 'Delete' gets allowed here
-  if (req.contact && req.user && req.contact.users.indexOf(req.user.id) > -1) {
+  if(req.contact && req.user &&
+    (
+      req.contact.users[0]._id.equals(req.user._id.valueOf()) ||
+      req.contact.users[1]._id.equals(req.user._id.valueOf())
+    )
+  ) {
     return next();
   }
 

@@ -25,6 +25,19 @@
 
   <!-- Profile -->
   <div ng-if="profileCtrl.profile.username && profileCtrl.profile.$resolved">
+
+    <!-- Confirm contact -->
+    <div class="row" ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id && !profileCtrl.contact.confirmed && profileCtrl.contact.users[0]._id === app.user._id">
+      <div class="col-xs-12 text-center">
+        <ul class="list-inline">
+          <li><strong>{{ ::profileCtrl.profile.displayName }}</strong> sent you a contact request</li>
+          <li><a class="btn btn-sm btn-primary" ui-sref="contactConfirm({contactId: profileCtrl.contact._id})">Confirm Request</a></li>
+          <li><a class="btn btn-sm btn-inverse" tr-contact-remove="profileCtrl.contact">Delete Request</a></li>
+        </ul>
+        <hr>
+      </div>
+    </div>
+
     <div class="row">
       <div class="col-xs-12 text-center visible-xs-block">
         <a tr-avatar data-user="profileCtrl.profile" data-size="512" data-link="false" class="visible-xs-block avatar-circle" ng-click="profileCtrl.biggerAvatar = !profileCtrl.biggerAvatar" ng-class="{'profile-avatar-lg': profileCtrl.biggerAvatar}"></a>
@@ -60,17 +73,20 @@
               <li>
                 <a ui-sref="messageThread({username: profileCtrl.profile.username})" class="btn btn-link">
                   <i class="fa icon-message-alt"></i>
-                  Send message
+                  Send a message
                 </a>
               </li>
-              <li ng-controller="RemoveContactController as RemoveContact">
-                <a ui-sref="contactAdd({userId: profileCtrl.profile._id})" ng-hide="profileCtrl.profile.contact" class="btn btn-link">
+              <li>
+                <a class="btn btn-link" ui-sref="contactAdd({userId: profileCtrl.profile._id})" ng-if="profileCtrl.contact.$resolved && !profileCtrl.contact._id">
                   <i class="icon-plus-squared-alt"></i>
                   Add contact
                 </a>
-                <a ng-click="RemoveContact.removeContactModal(profileCtrl.profile.contact, $event)" ng-show="profileCtrl.profile.contact" class="btn btn-link">
+                <a class="btn btn-link"
+                   ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id"
+                   tr-contact-remove="profileCtrl.contact">
                   <i class="icon-minus-squared-alt"></i>
-                  Remove contact
+                  <span ng-if="profileCtrl.contact.confirmed" tooltip="Contacts since {{ ::profileCtrl.contact.created | date:'mediumDate' }}" tooltip-placement="bottom">Remove contact</span>
+                  <span ng-if="!profileCtrl.contact.confirmed" tooltip="Request sent {{ ::profileCtrl.contact.created | date:'mediumDate' }}" tooltip-placement="bottom">Delete contact request</span>
                 </a>
               </li>
             </ul>

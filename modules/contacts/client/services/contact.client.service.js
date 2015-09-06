@@ -5,10 +5,10 @@
   // Read contact by contactId
   angular
     .module('contacts')
-    .factory('Contact', ContactResource);
+    .factory('Contact', ContactService);
 
   /* @ngInject */
-  function ContactResource($resource) {
+  function ContactService($resource) {
     return $resource('/api/contact/:contactId', {
       contactId: '@_id'
     }, {

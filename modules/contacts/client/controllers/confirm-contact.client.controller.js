@@ -1,59 +1,60 @@
-'use strict';
+(function() {
+  'use strict';
 
-angular.module('contacts').controller('ConfirmContactController', ['$scope', '$rootScope', '$http', '$timeout', '$state', '$stateParams', '$location', 'Contact', 'Authentication',
-  function($scope, $rootScope, $http, $timeout, $state, $stateParams, $location, Contact, Authentication) {
+  angular
+    .module('contacts')
+    .controller('ContactConfirmController', ContactConfirmController);
+
+  /* @ngInject */
+  function ContactConfirmController($state, $stateParams, Authentication, Contact, contact) {
+
+    // ViewModel
+    var vm = this;
 
     // If no friend ID defined, go to elsewhere
     if (!$stateParams.contactId) {
-      $scope.error = 'Missing confirmation code.';
+      vm.error = 'Something went wrong. Try again.';
     }
 
-    $scope.user = Authentication.user;
-    $scope.isConnected = false;
-    $scope.isLoading = true;
+    vm.isConnected = false;
+    vm.isLoading = true;
+    vm.contact = contact;
+    vm.confirmContact = confirmContact;
 
-    // First fetch contact object, just to make it sure it exists + removing it is easier
-    $scope.contact = Contact.get({
-      contactId: $stateParams.contactId
-    },
-    // Got contact
-    function(contact) {
-      $scope.isLoading = false;
-      if(!contact) $scope.error = 'There is no such contact request. Send a new contact request his/hers from profile page.';
-      if(contact.confirmed === true) {
-        $scope.isConnected = true;
-        $scope.success = 'You two are already connected. Great!';
+    // First fetch contact object, just to make it sure it exists
+    vm.contact.$promise.then(
+      // Got contact
+      function(contact) {
+        vm.isLoading = false;
+        if(vm.contact.confirmed === true) {
+          vm.isConnected = true;
+          vm.success = 'You two are already connected. Great!';
+        }
+        // [0] contains contact requester's id, [1] is the receiver
+        else if (vm.contact.users[0]._id !== Authentication.user._id) {
+          vm.error = 'You must wait until he/she confirms your connection.';
+        }
+      },
+      // Error getting contact
+      function(errorResponse) {
+        vm.isWrongCode = true;
+        vm.error = errorResponse.status === 404 ? 'Could not find contact request. Check the confirmation link from email or you might be logged in with wrong user?' : 'Something went wrong. Try again.';
       }
-      else if (contact.users[0]._id !== Authentication.user._id) {
-        $scope.error = 'You must wait until he/she confirms your connection.';
-      }
-    },
-    // Error getting contact
-    function(errorResponse) {
-      switch (errorResponse.status) {
-        case 403:
-            $scope.isWrongCode = true;
-            $scope.error = 'Could not find confirmation code for you. Check the confirmation link from email or you might be logged in with wrong user?';
-          break;
-        default:
-          $scope.isWrongCode = true;
-          $scope.error = 'Something went wrong. Try again.';
-      }
-    });
+    );
 
-    $scope.confirmContact = function() {
-      $scope.isLoading = true;
-      $scope.contact.confirm = true;
-      $scope.contact.$update(function(response) {
-        $scope.isLoading = false;
-        $scope.isConnected = true;
-        $scope.success = 'You two are now connected!';
+    function confirmContact() {
+      vm.isLoading = true;
+      vm.contact.confirm = true;
+      vm.contact.$update(function(response) {
+        vm.isLoading = false;
+        vm.isConnected = true;
+        vm.success = 'You two are now connected!';
       }, function(errorResponse) {
-        $scope.isLoading = false;
-        $scope.error = errorResponse.data.message;
+        vm.isLoading = false;
+        vm.error = errorResponse.data.message;
       });
-
-    };
+    }
 
   }
-]);
+
+})();

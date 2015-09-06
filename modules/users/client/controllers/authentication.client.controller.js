@@ -19,6 +19,7 @@
     vm.continue = ($stateParams.continue);
     vm.isLoading = false;
 
+
     /**
      * Sign in
      */
@@ -40,7 +41,6 @@
           delete $rootScope.signinState;
           delete $rootScope.signinStateParams;
           $state.go(stateTo, stateToParams);
-
         }
         // Redirect to the search page
         else {
