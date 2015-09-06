@@ -35,7 +35,7 @@
       var user = new Users(vm.user);
 
       user.$update(function(response) {
-        vm.emailSuccess = 'We sent you and email to ' + response.emailTemporary + ' with further instructions. ' +
+        vm.emailSuccess = 'We sent you an email to ' + response.emailTemporary + ' with further instructions. ' +
                           'Email change will not be active until that. ' +
                           'If you don\'t see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".';
         vm.user = Authentication.user = response;

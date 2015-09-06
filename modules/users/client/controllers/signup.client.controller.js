@@ -28,7 +28,7 @@
         vm.isLoading = false;
         // If successful we assign the response to the global user model
         Authentication.user = newUser;
-        vm.success = 'We sent you and email to ' + newUser.email + ' with further instructions. ' +
+        vm.success = 'We sent you an email to ' + newUser.email + ' with further instructions. ' +
                      'If you don\'t see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".';
         $scope.$emit('userUpdated');
       }).error(function(error) {
