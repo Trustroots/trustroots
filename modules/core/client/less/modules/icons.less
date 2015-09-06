@@ -40,11 +40,11 @@
 // Proxying them here. Nasty. Get rid of this if you can.
 // https://angular-ui.github.io/bootstrap/#/datepicker
 .glyphicon:before,
-
 // Leaflet attribution control i-symbol
 // See leaflet.less for more
 .leaflet-container .leaflet-control-attribution:after,
-
+// Angular-medium-editor uses fontawesome class
+.fa:before,
 // Original Fontello CSS
 [class^="icon-"]:before, [class*=" icon-"]:before {
   font-family: "tricons";
@@ -86,13 +86,6 @@
   /* Ensures no half-pixel rendering in firefox */
   transform: translate(0, 0);
 }
-
-// Angular-UI Bootstrap Datepicker has hardcoded "glyphicon"
-.glyphicon-chevron-left:before { content: '\e81e'; }
-.glyphicon-chevron-right:before { content: '\e81d'; }
-
-// Leaflet attribution i-symbol
-.leaflet-container .leaflet-control-attribution:after { content: '\e825'; }
 
 // Icon Sizes
 // Adapted from FontAwesome - MIT licensed
@@ -145,7 +138,18 @@
   text-align: center;
 }
 
-// Colorful hospitality network icons
+
+//
+
+// Angular-UI Bootstrap Datepicker has hardcoded "glyphicon"
+.glyphicon-chevron-left:before { content: '\e81e'; }
+.glyphicon-chevron-right:before { content: '\e81d'; }
+
+// Leaflet attribution i-symbol
+.leaflet-container .leaflet-control-attribution:after { content: '\e825'; }
+
+
+// Colorful hospitality network icons (nothing to do with fonts otherwise but we use the same .icon- base class).
 .icon-bw,
 .icon-cs,
 .icon-ws {
@@ -161,3 +165,13 @@
 .icon-bw { .img-retina('/modules/core/img/external/icon-bw.png', '/modules/core/img/external/icon-bw@2x.png', 16px, 16px); }
 .icon-cs { .img-retina('/modules/core/img/external/icon-cs.png', '/modules/core/img/external/icon-cs@2x.png', 16px, 16px); }
 .icon-ws { .img-retina('/modules/core/img/external/icon-ws.png', '/modules/core/img/external/icon-ws@2x.png', 16px, 16px); }
+
+// Medium-editor uses fontawesome classes, bridge them here:
+.fa-bold:before { content: '\e824'; }
+.fa-underline:before { content: '\e827'; }
+.fa-link:before { content: '\e829'; }
+.fa-italic:before { content: '\e826'; }
+.fa-quote-right:before { content: '\e82a'; }
+.fa-list-ul:before { content: '\e828'; }
+.fa-check:before { content: '\e819'; }
+.fa-times:before { content: '\e82b'; }
