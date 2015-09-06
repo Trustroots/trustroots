@@ -1,11 +1,13 @@
 {% extends 'email.server.view.html' %}
 
 {% block content %}
-Hey {{name}}!
+{{name}},
 
-Thanks for signing up for an account on Trustroots!
+Thank you very much for signing up with us.
 
-To make sure you're a human, please click the confirmation link below to confirm your email address: {{email}}
+Confirm your email address ({{email}}) to complete your Trustroots account.
+
+It's easy — just click on the link below.
 
 <{{urlConfirm}}>
 

@@ -36,10 +36,10 @@
                                       <tr>
                                           <td valign="top" class="textContent">
 
-                                              <p>Hey {{name}}!</p>
-
-                                              <p>Thanks for signing up for an account on Trustroots!</p>
-                                              <p>To make sure you're a human, please click the confirmation link below to confirm your email address: {{email}}</p>
+                                              <p>{{name}},</p>
+                                              <p>Thank you very much for signing up with us.</p>
+                                              <p>Confirm your email address ({{email}}) to complete your Trustroots account.</p>
+                                              <p>It's easy — just click on the button below.</p>
 
                                           </td>
                                       </tr>
@@ -59,7 +59,7 @@
   </tr>
   <!-- // MODULE ROW -->
 
-  {% include 'partials/button.server.view.html' with {'buttonUrl': urlConfirm, 'buttonTitle': 'Confirm'} %}
+  {% include 'partials/button.server.view.html' with {'buttonUrl': urlConfirm, 'buttonTitle': 'Confirm now'} %}
 
   {% include 'partials/copypasteurl.server.view.html' with {'url': urlConfirm} %}
 
