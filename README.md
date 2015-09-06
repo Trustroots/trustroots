@@ -54,5 +54,6 @@ Produce documentation by running `grunt docs`
 Then run the application (just `grunt`) and open [http://localhost:3000/developers/](http://localhost:3000/developers/).
 
 ## License
-
-[The MIT License](LICENSE.md)
+* [The MIT License](LICENSE.md)
+* Photos copyright [photographers](https://github.com/Trustroots/trustroots/blob/master/modules/core/client/directives/tr-boards.client.directive.js#L30) - several of them are under Creative Commons.
+* Logos of external communities are copyrighted work and may be subject to trademark laws.
