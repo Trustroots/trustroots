@@ -6,7 +6,7 @@
     .controller('OffersViewController', OffersViewController);
 
   /* @ngInject */
-  function OffersViewController($scope, $state, $location, OffersByService, Authentication, leafletData, MapLayersFactory) {
+  function OffersViewController($scope, $state, OffersByService, Authentication, leafletData, MapLayersFactory) {
 
     // ViewModel
     var vm = this;
@@ -30,7 +30,13 @@
       lng: 9.14055555556,
       zoom: 5
     };
-    var currentSelection = {
+
+    // Exposed
+    vm.offer = false;
+    vm.hostLocation = defaultLocation;
+    vm.hostingDropdown = false;
+    vm.hostingStatusLabel = hostingStatusLabel;
+    vm.currentSelection = {
       weight: 2,
       color: '#989898',
       fillColor: '#b1b1b1',
@@ -41,24 +47,8 @@
       layer: 'selectedPath',
       clickable: false
     };
-    var mapLayers = {
-      baselayers: {
-        streets: MapLayersFactory.streets(defaultLocation)
-      },
-      overlays: {
-        selectedPath: {
-          name: 'path',
-          type: 'group',
-          visible: false
-        },
-        selectedMarker: {
-          name: 'marker',
-          type: 'group',
-          visible: false
-        }
-      }
-    };
-    var mapDefaults = {
+    vm.mapCenter = defaultLocation;
+    vm.mapDefaults = {
       scrollWheelZoom: false,
       attributionControl: false,
       keyboard: false,
@@ -68,17 +58,24 @@
         }
       }
     };
-
-    // Exposed
-    vm.offer = false;
-    vm.hostLocation = defaultLocation;
-    vm.hostingDropdown = false;
-    vm.hostingStatusLabel = hostingStatusLabel;
-    vm.currentSelection = currentSelection;
-    vm.mapCenter = defaultLocation;
-    vm.mapDefaults = mapDefaults;
     vm.mapMarkers = [];
-    vm.mapLayers = mapLayers;
+    vm.mapLayers = {
+      baselayers: {
+        streets: MapLayersFactory.streets(defaultLocation)
+      },
+      overlays: {
+        selectedPath: {
+          name: 'selectedPath',
+          type: 'featureGroup',
+          visible: false
+        },
+        selectedMarker: {
+          name: 'selectedMarker',
+          type: 'featureGroup',
+          visible: false
+        }
+      }
+    };
     vm.mapPaths = {
       selected: vm.currentSelection
     };
@@ -94,20 +91,12 @@
      */
     (function() {
 
-      // Check zoom when it changes and toggle marker or circle
-      $scope.$on('leafletDirectiveMap.zoomend', function() {
-
-        leafletData.getMap('offer-location-canvas').then(function(map) {
-          vm.mapZoom = map.getZoom();
-          if(vm.mapZoom >= 12 && vm.mapLayers.overlays.selectedPath.visible === false) {
-            vm.mapLayers.overlays.selectedPath.visible = true;
-            vm.mapLayers.overlays.selectedMarker.visible = false;
-          }
-          else if(vm.mapZoom < 12 && vm.mapLayers.overlays.selectedMarker.visible === false){
-            vm.mapLayers.overlays.selectedPath.visible = false;
-            vm.mapLayers.overlays.selectedMarker.visible = true;
-          }
-        });
+      /**
+       * Toggle marker/circle visible/hidden depending on zoom level
+       */
+      $scope.$watch('offersView.mapCenter.zoom', function(newZoomValue) {
+        vm.mapLayers.overlays.selectedPath.visible = newZoomValue >= 12;
+        vm.mapLayers.overlays.selectedMarker.visible = newZoomValue < 12;
       });
 
       /**
@@ -133,6 +122,7 @@
               clickable: false
             }));
             vm.hostLocation = offerLocation;
+
           }
         });
       }
