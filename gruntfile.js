@@ -282,7 +282,7 @@ module.exports = function (grunt) {
   grunt.registerTask('default', ['env:dev', 'copy:localConfig', 'lint', 'ngAnnotate:development', 'less', 'postcss', 'concurrent:default']);
 
   // Run the project in debug mode (same as default but with node-inspector)
-  grunt.registerTask('debug', ['env:dev', 'copy:localConfig', 'lint', 'ngAnnotate:development', 'less', 'concurrent:debug']);
+  grunt.registerTask('debug', ['env:dev', 'copy:localConfig', 'lint', 'ngAnnotate:development', 'less', 'postcss', 'concurrent:debug']);
 
   // Run the project in production mode
   grunt.registerTask('prod', ['env:prod', 'lint', 'build', 'concurrent:default']);
