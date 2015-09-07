@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('users').controller('PasswordController', ['$scope', '$stateParams', '$http', '$location', 'Authentication',
-  function($scope, $stateParams, $http, $location, Authentication) {
+angular.module('users').controller('PasswordController', ['$scope', '$stateParams', '$http', '$state', 'Authentication',
+  function($scope, $stateParams, $http, $state, Authentication) {
     $scope.authentication = Authentication;
 
     $scope.isLoading = false;
@@ -35,8 +35,11 @@ angular.module('users').controller('PasswordController', ['$scope', '$stateParam
         // Attach user profile
         Authentication.user = response;
 
+        // Notify app
+        $scope.$emit('userUpdated');
+
         // And redirect to the index page
-        $location.path('/api/password/reset/success');
+        $state.go('reset-success');
       }).error(function(response) {
         $scope.error = response.message;
         $scope.isLoading = false;

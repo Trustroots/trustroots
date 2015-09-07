@@ -63,7 +63,7 @@ exports.forgot = function(req, res, next) {
         name: user.displayName,
         email: user.email,
         ourMail: config.mailer.from,
-        urlConfirm: url + '/auth/reset/' + token,
+        urlConfirm: url + '/api/auth/reset/' + token,
         url: url
       };
 

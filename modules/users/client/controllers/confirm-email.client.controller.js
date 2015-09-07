@@ -17,6 +17,7 @@ angular.module('users').controller('ConfirmEmailController', ['$scope', '$http',
 
         // Attach user profile
         Authentication.user = response.user;
+        $scope.$emit('userUpdated');
 
         // If successful and this was user's first confirm, welcome them to the community
         if(response.profileMadePublic) {
