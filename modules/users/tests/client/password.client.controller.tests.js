@@ -57,10 +57,13 @@
           password: 'test'
         };
         beforeEach(function() {
+          // Test expected GET request
+          $httpBackend.when('GET', 'modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
           scope.credentials = credentials;
         });
 
         it('should clear scope.success and scope.error', function() {
+
           scope.success = 'test';
           scope.error = 'test';
           scope.askForPasswordReset();
@@ -72,6 +75,9 @@
         describe('POST error', function() {
           var errorMessage = 'No account with that username has been found';
           beforeEach(function() {
+
+            // Test expected GET request
+            $httpBackend.when('GET', 'modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
             $httpBackend.when('POST', '/api/auth/forgot', credentials).respond(400, {
               'message': errorMessage
             });
@@ -92,6 +98,9 @@
         describe('POST success', function() {
           var successMessage = 'An email has been sent to the provided email with further instructions.';
           beforeEach(function() {
+
+            // Test expected requests
+            $httpBackend.when('GET', 'modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
             $httpBackend.when('POST', '/api/auth/forgot', credentials).respond({
               'message': successMessage
             });
@@ -116,6 +125,10 @@
           password: 'test'
         };
         beforeEach(function() {
+
+          // Test expected GET request
+          $httpBackend.when('GET', 'modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
+
           $stateParams.token = token;
           scope.passwordDetails = passwordDetails;
         });
@@ -146,6 +159,9 @@
             username: 'test'
           };
           beforeEach(function() {
+
+            // Test expected requests
+            $httpBackend.when('GET', 'modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
             $httpBackend.when('POST', '/api/auth/reset/' + token, passwordDetails).respond(user);
 
             scope.resetUserPassword();
@@ -161,7 +177,7 @@
           });
 
           it('should redirect to password reset success view', function() {
-            expect($location.path).toHaveBeenCalledWith('/api/password/reset/success');
+            expect($location.path).toHaveBeenCalledWith('/password/reset/success');
           });
         });
       });
