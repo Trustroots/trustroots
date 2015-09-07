@@ -12,17 +12,15 @@ module.exports = function(app) {
   app.route('/api/users').all(usersPolicy.isAllowed)
     .put(users.update);
 
-  app.route('/api/users/accounts').all(usersPolicy.isAllowed)
-    .delete(users.removeOAuthProvider);
-
   app.route('/api/users-avatar').all(usersPolicy.isAllowed)
     .post(users.uploadAvatar);
 
   app.route('/api/users/mini/:userId').all(usersPolicy.isAllowed)
     .get(users.getMiniUser);
 
-  app.route('/api/users/password').all(usersPolicy.isAllowed)
-    .post(users.changePassword);
+  app.route('/api/users/accounts/:provider').delete(users.removeOAuthProvider);
+
+  app.route('/api/users/password').post(users.changePassword);
 
   app.route('/api/users/:username').all(usersPolicy.isAllowed)
     .get(users.getUser);

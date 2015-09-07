@@ -23,9 +23,6 @@ exports.invokeRolesPolicies = function() {
       resources: '/api/users/:username',
       permissions: []
     }, {
-      resources: '/api/users/accounts',
-      permissions: []
-    }, {
       resources: '/api/users/avatar',
       permissions: []
     }, {
@@ -33,6 +30,9 @@ exports.invokeRolesPolicies = function() {
       permissions: []
     }, {
       resources: '/api/users/password',
+      permissions: []
+    }, {
+      resources: '/api/auth/accounts',
       permissions: []
     }]
   }, {
@@ -44,9 +44,6 @@ exports.invokeRolesPolicies = function() {
       resources: '/api/users/:username',
       permissions: ['get']
     }, {
-      resources: '/api/users/accounts',
-      permissions: ['delete']
-    }, {
       resources: '/api/users-avatar',
       permissions: ['post']
     }, {
@@ -55,6 +52,9 @@ exports.invokeRolesPolicies = function() {
     }, {
       resources: '/api/users/password',
       permissions: ['post']
+    }, {
+      resources: '/api/auth/accounts',
+      permissions: ['get', 'post', 'delete']
     }, {
       resources: '/api/auth/twitter',
       permissions: ['get']
@@ -84,14 +84,14 @@ exports.invokeRolesPolicies = function() {
 exports.isAllowed = function(req, res, next) {
 
   // Non-public profiles are invisible
-  if(req.profile && !req.profile.public && req.user && req.profile._id.toString() !== req.user._id.toString()) {
+  if(req.profile && !req.profile.public && req.user && !req.profile._id.equals(req.user._id)) {
     return res.status(404).json({
       message: errorHandler.getErrorMessageByKey('not-found')
     });
   }
 
   // No profile browsing for non-public users
-  if(req.profile && req.user && req.user.public !== true && req.profile._id.toString() !== req.user._id.toString()) {
+  if(req.profile && req.user && !req.user.public && !req.profile._id.equals(req.user._id)) {
     return res.status(403).json({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });

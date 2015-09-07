@@ -3,7 +3,8 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     config = require(path.resolve('./config/config')),
     passport = require('passport'),
@@ -224,7 +225,7 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
 
       // And save the user
       user.save(function(err) {
-        return done(err, user, '/profile/');
+        return done(err, user, '/profile/' + user.username);
       });
     } else {
       return done(new Error('You are already connected using this network.'), user);
@@ -236,12 +237,27 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
  * Remove OAuth provider
  */
 exports.removeOAuthProvider = function(req, res, next) {
+
+  // Return error if no user
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  // Return error if no provider or wrong provider
+  if(!req.params.provider || !_.contains(['github', 'facebook', 'twitter'], req.params.provider)) {
+    return res.status(400).send({
+      message: 'No provider defined.'
+    });
+  }
+
   var user = req.user;
   var provider = req.params.provider;
 
-  if (user && provider) {
+  if(user && provider) {
     // Delete the additional provider
-    if (user.additionalProvidersData[provider]) {
+    if(user.additionalProvidersData[provider]) {
       delete user.additionalProvidersData[provider];
 
       // Then tell mongoose that we've updated the additionalProvidersData field
@@ -249,7 +265,7 @@ exports.removeOAuthProvider = function(req, res, next) {
     }
 
     user.save(function(err) {
-      if (err) {
+      if(err) {
         return res.status(400).send({
           message: errorHandler.getErrorMessage(err)
         });
@@ -273,7 +289,7 @@ exports.validateEmailToken = function(req, res) {
   User.findOne({
     emailToken: req.params.token
   }, function(err, user) {
-    if (!user) {
+    if(!user) {
       return res.redirect('/confirm-email-invalid');
     }
     res.redirect('/confirm-email/' + req.params.token);

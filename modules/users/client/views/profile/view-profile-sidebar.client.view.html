@@ -36,29 +36,23 @@
     <div class="profile-sidebar-section" ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts() || profileCtrl.profile.extSitesBW || profileCtrl.profile.extSitesCS || profileCtrl.profile.extSitesWS">
       <h4>Elsewhere</h4>
       <ul class="social-profiles list-unstyled">
-        <li ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts()" ng-repeat="(providerName, providerData) in profileCtrl.profile.additionalProvidersData">
-          <a ng-href="{{ ::profileCtrl.socialAccountLink(providerName, providerData) }}" class="btn btn-link text-capitalize" rel="nofollow">
-            <i class="icon-fw icon-lg icon-{{ ::providerName }}"></i>
-            {{ ::providerName }}
-          </a>
+        <li class="social-profile" ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts()" ng-repeat="(providerName, providerData) in profileCtrl.profile.additionalProvidersData track by providerName">
+          <i class="social-profile-icon icon-fw icon-lg icon-{{ ::providerName }}"></i>
+          <a class="social-profile-handle text-capitalize" ng-href="{{ ::profileCtrl.socialAccountLink(providerName, providerData) }}" rel="nofollow">{{ ::providerName }}</a>
         </li>
-        <li ng-if="profileCtrl.profile.extSitesBW">
-          <a ng-href="https://www.bewelcome.org/members/{{ ::profileCtrl.profile.extSitesBW }}" class="btn btn-link" rel="nofollow">
-            <i class="icon-fw icon-lg icon-bw"></i>
+        <li class="social-profile"  ng-if="profileCtrl.profile.extSitesBW">
+          <i class="social-profile-icon icon-fw icon-lg icon-bw"></i>
+          <a class="social-profile-handle" ng-href="https://www.bewelcome.org/members/{{ ::profileCtrl.profile.extSitesBW }}" rel="nofollow">
             BeWelcome
           </a>
         </li>
-        <li ng-if="profileCtrl.profile.extSitesCS">
-          <a ng-href="https://www.couchsurfing.com/people/{{ ::profileCtrl.profile.extSitesCS }}" class="btn btn-link" rel="nofollow">
-            <i class="icon-fw icon-lg icon-cs"></i>
-            Couchsurfing
-          </a>
+        <li class="social-profile"  ng-if="profileCtrl.profile.extSitesCS">
+          <i class="social-profile-icon icon-fw icon-lg icon-cs"></i>
+          <a class="social-profile-handle" ng-href="https://www.couchsurfing.com/people/{{ ::profileCtrl.profile.extSitesCS }}" rel="nofollow">Couchsurfing</a>
         </li>
-        <li ng-if="profileCtrl.profile.extSitesWS">
-          <a ng-href="https://www.warmshowers.org/users/{{ ::profileCtrl.profile.extSitesWS }}" class="btn btn-link" rel="nofollow">
-            <i class="icon-fw icon-lg icon-ws"></i>
-            Warmshowers
-          </a>
+        <li class="social-profile"  ng-if="profileCtrl.profile.extSitesWS">
+          <i class="social-profile-icon icon-fw icon-lg icon-ws"></i>
+          <a class="social-profile-handle" ng-href="https://www.warmshowers.org/users/{{ ::profileCtrl.profile.extSitesWS }}" rel="nofollow">Warmshowers</a>
         </li>
       </ul>
     </div>

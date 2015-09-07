@@ -21,6 +21,9 @@
     vm.avatarModal = avatarModal;
     vm.languages = Languages.get('array');
     vm.userLanguages = [];
+    vm.removingSocialAccount = false;
+    vm.removeUserSocialAccount = removeUserSocialAccount;
+    vm.isConnectedSocialAccount = isConnectedSocialAccount;
     vm.hasConnectedAdditionalSocialAccounts = hasConnectedAdditionalSocialAccounts;
 
     // Format user language list for Chosen selector
@@ -52,7 +55,9 @@
     }
 
 
-    // Check if there are additional accounts
+    /**
+     * Check if there are additional accounts
+     */
     function hasConnectedAdditionalSocialAccounts(provider) {
       for (var i in vm.user.additionalProvidersData) {
         return true;
@@ -60,25 +65,25 @@
       return false;
     }
 
-    // Check if provider is already in use with current user
+    /**
+     * Check if provider is already in use with current user
+     */
     function isConnectedSocialAccount(provider) {
       return vm.user.provider === provider || (vm.user.additionalProvidersData && vm.user.additionalProvidersData[provider]);
     }
 
-    // Remove a user social account
+    /**
+     * Remove a user social account
+     */
     function removeUserSocialAccount(provider) {
-      if (confirm('Are you sure you want to disconnect this profile?') === true) {
-        $http.delete('/api/users/accounts', {
-          params: {
-            provider: provider
-          }
-        }).success(function(response) {
-          messageCenterService.add('success', 'Profile succesfully disconnected.' , { timeout: appSettings.flashTimeout });
+      $http.delete('/api/users/accounts/' + provider)
+        .success(function(response) {
+          messageCenterService.add('success', 'Succesfully disconnected from ' + provider, { timeout: appSettings.flashTimeout });
           vm.user = Authentication.user = response;
+          $scope.$emit('userUpdated');
         }).error(function(response) {
           messageCenterService.add('danger', response.message || 'Something went wrong. Try again or contact us to disconnect your profile.' , { timeout: 10000 });
         });
-      }
     }
 
     /*
@@ -113,7 +118,9 @@
       vm.birthdateOpened = true;
     }
 
-    // Update a user profile
+    /**
+     * Update a user profile
+     */
     function updateUserProfile(isValid) {
       encodeUserLanguages();
       if(isValid) {

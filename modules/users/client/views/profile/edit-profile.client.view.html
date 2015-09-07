@@ -125,41 +125,45 @@
               <div class="panel panel-default">
                 <div class="panel-heading">
                   Elsewhere
-                  <span class="icon-help cursor-help text-muted pull-right" popover-placement="bottom" popover-append-to-body="true" popover-trigger="mouseenter" popover="Connecting to these is absolutely optional. Other members in Trustroots will be able to see a link to your other profile and some basic info about you and content you like there. You will be able to use eg. your contact list here in Trustroots. Other networks will then obviously know that you have connected to Trustroots, but we will never send any of your profile data to them."></span>
+                  <span class="icon-help cursor-help text-muted pull-right" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover="Connecting to these is absolutely optional. Other members in Trustroots will be able to see a link to your other profile and some basic info about you and content you like there. You will be able to use eg. your contact list here in Trustroots. Other networks will then obviously know that you have connected to Trustroots, but we will never send any of your profile data to them."></span>
                 </div>
                 <div class="panel-body">
 
-                  <div ng-if="editprofile.hasConnectedAdditionalSocialAccounts()">
-                    <ul class="social-profiles list-unstyled text-capitalize">
-                      <li ng-repeat="(providerName, providerData) in editprofile.user.additionalProvidersData" class="remove-account-container text-capitalize">
-                        <a ng-click="removeUserSocialAccount(providerName)" class="btn btn-link">
-                          <i class="icon-fw icon-lg icon-{{providerName}}"></i>
-                          {{::providerName}}
-                          <small>(disconnect)</small>
+                  <div ng-if="!editprofile.isConnectedSocialAccount('facebook') ||
+                              !editprofile.isConnectedSocialAccount('twitter') ||
+                              !editprofile.isConnectedSocialAccount('github')">
+                    <h5>Connect to</h5>
+                    <ul class="social-profiles list-unstyled">
+                      <li class="social-profile" ng-if="!editprofile.isConnectedSocialAccount(providerName)" ng-repeat="providerName in ['facebook', 'twitter', 'github'] track by providerName">
+                        <i class="social-profile-icon icon-fw icon-lg icon-{{::providerName}}"></i>
+                        <a class="social-profile-handle" ng-href="/api/auth/{{::providerName}}" target="_top" class="btn btn-link">
+                          <span class="text-capitalize">{{::providerName}}</span>
                         </a>
                       </li>
                     </ul>
                   </div>
 
-                  <div ng-if="!editprofile.isConnectedSocialAccount('facebook') ||
-                              !editprofile.isConnectedSocialAccount('twitter') ||
-                              !editprofile.isConnectedSocialAccount('github')">
-                    <h5>Connect to:</h5>
+                  <br>
+
+                  <div ng-if="editprofile.hasConnectedAdditionalSocialAccounts()">
+                    <h5>Connected</h5>
                     <ul class="social-profiles list-unstyled">
-                      <li ng-if="!editprofile.isConnectedSocialAccount('facebook')">
-                        <a href="/api/auth/facebook" target="_top" class="btn btn-link">
-                          <i class="icon-fw icon-lg icon-facebook"></i> Facebook
+                      <li class="social-profile" ng-repeat="(providerName, providerData) in editprofile.user.additionalProvidersData track by providerName" ng-class="{'social-profile-active': editprofile.removingSocialAccount === providerName}">
+                        <i class="social-profile-icon icon-fw icon-lg icon-{{::providerName}}"></i>
+
+                        <!-- Connection name -->
+                        <a class="social-profile-handle" ng-click="editprofile.removingSocialAccount = providerName" ng-if="editprofile.removingSocialAccount !== providerName">
+                          <span class="text-capitalize">{{::providerName}}</span>
+                          <small>(disconnect)</small>
                         </a>
-                      </li>
-                      <li ng-if="!editprofile.isConnectedSocialAccount('twitter')">
-                        <a href="/api/auth/twitter" target="_top" class="btn btn-link">
-                          <i class="icon-fw icon-lg icon-twitter"></i> Twitter
-                        </a>
-                      </li>
-                      <li ng-if="!editprofile.isConnectedSocialAccount('github')">
-                        <a href="/api/auth/github" target="_top" class="btn btn-link">
-                          <i class="icon-fw icon-lg icon-github"></i> GitHub
-                        </a>
+
+                        <!-- Confirm disconnecting -->
+                        <span class="social-profile-remove" ng-if="editprofile.removingSocialAccount === providerName">
+                          Disconnect from <span class="text-capitalize">{{::providerName}}</span>?
+                          <a class="btn btn-xs btn-primary" ng-click="editprofile.removeUserSocialAccount(providerName)">Yes</a>
+                          <a class="btn btn-xs btn-inverse" ng-click="editprofile.removingSocialAccount = false">Cancel</a>
+                        </span>
+
                       </li>
                     </ul>
                   </div>
