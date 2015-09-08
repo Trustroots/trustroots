@@ -45,30 +45,31 @@
     <div class="col-xs-6 col-sm-5 col-sm-offset-1">
 
       <!-- When connected to FB-->
-      <label for="avatar-source-facebook" ng-if="editprofile.isConnectedSocialAccount('facebook')">
-          <div tr-avatar data-user="avatarEditor.user" data-size="128" data-link="false" data-source="facebook"></div>
-          <div class="avatar-source-label">
-            <input type="radio" ng-model="avatarEditor.user.avatarSource" id="avatar-source-facebook" value="facebook" ng-disabled="avatarEditor.avatarUploading">
-            Facebook
-          </div>
+      <label for="avatar-source-facebook" ng-if="avatarEditor.user.additionalProvidersData.facebook">
+        <div tr-avatar data-user="avatarEditor.user" data-size="128" data-link="false" data-source="facebook"></div>
+        <div class="avatar-source-label">
+          <input type="radio" ng-model="avatarEditor.user.avatarSource" id="avatar-source-facebook" value="facebook" ng-disabled="avatarEditor.avatarUploading">
+          Facebook
+        </div>
       </label>
 
       <!-- When NOT connected to FB-->
-      <label for="avatar-source-facebook" ng-if="!editprofile.isConnectedSocialAccount('facebook')">
-          <a href="/auth/facebook" class="avatar-source-link" target="_top">
-            <div tr-avatar data-size="128" data-link="false" data-source="none"></div>
-            <span><i class="icon-facebook"></i> Connect</span>
-          </a>
-          <div class="avatar-source-label" tooltip="Connect first to Facebook" tooltip-placement="bottom">
-            <input type="radio" disabled>
-            Facebook
-          </div>
+      <label for="avatar-source-facebook" ng-if="!avatarEditor.user.additionalProvidersData.facebook">
+        <a href="/api/auth/facebook" class="avatar-source-link" target="_top">
+          <div tr-avatar data-size="128" data-link="false" data-source="none"></div>
+          <span><i class="icon-facebook"></i> Connect</span>
+        </a>
+        <div class="avatar-source-label" tooltip="Connect first to Facebook" tooltip-placement="bottom">
+          <input type="radio" disabled>
+          Facebook
+        </div>
       </label>
 
     </div>
     <div class="col-xs-6 col-sm-5">
 
       <label for="avatar-source-upload">
+
         <!-- File upload selector -->
         <div ng-if="!avatarEditor.avatarUploading"
              ngf-select
@@ -91,7 +92,7 @@
           <span ng-if="avatarEditor.avatarUploading">
             <span ng-if="avatarEditor.uploadProgressPercentage">{{avatarEditor.uploadProgressPercentage}}%</span>
             <tr-spinner size="sm"></tr-spinner>
-        </span>
+          </span>
         </div>
 
         <div class="avatar-source-label">
