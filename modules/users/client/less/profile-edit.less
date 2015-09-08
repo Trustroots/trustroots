@@ -60,6 +60,9 @@
       .btn-success {
         background: @brand-primary;
       }
+      table:focus {
+        outline: none;
+      }
     }
   }
 
@@ -67,35 +70,51 @@
     display: block;
     position: relative;
     width: 100%;
+    margin: 0 auto;
     max-width: 256px;
-    min-height: 256px;
-    background: #000;
     &:hover,
     &:active {
       label {
         background: rgba(0,0,0,0.4);
       }
     }
-    .avatar,
     label {
       position: absolute;
-      top: 0;
+      display: block;
       cursor: pointer;
-    }
-    label {
-      left: 0;
+      top: 0;
       right: 0;
       bottom: 0;
+      left: 0;
       background: rgba(0,0,0,0.2);
-      display: block;
-      padding-top: 80%;
-      margin-bottom: 0;
       color: #fff;
       text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
       text-align: center;
-      font-size: 14px;
-      line-height: 14px;
-      .transition(background 0.2s);
+      font-size: 15px;
+      line-height: 18px;
+      transition: background .2s;
+      margin: 0;
+      padding: 50% 10px 0 10px;
+      i {
+        margin-bottom: 5px;
+        display: block;
+      }
+      // Very small screens
+      @media (max-width: 240px) {
+        padding-top: 30%;
+        font-size: 15px;
+        i {
+          display: none;
+        }
+      }
+      // In between the image is small
+      @media (min-width: @screen-sm-min) and (max-width: @screen-sm-max) {
+        padding-top: 30%;
+        font-size: 15px;
+        i {
+          display: none;
+        }
+      }
     }
   }//avatar-edit
 
@@ -141,7 +160,7 @@
       text-align: center;
       color: #fff;
       text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-      .transition(background 0.2s);
+      transition: background .2s;
       background: transparent;
       font-weight: bold;
     }
@@ -162,11 +181,84 @@
     cursor: pointer;
   }
   .avatar-preview {
-    height: 128px;
-    width: 128px;
+    .square(128px);
     background-size: cover;
     background-repeat: no-repeat;
     background-position: 50% 50%;
     background-color: transparent;
+  }
+}
+
+/**
+ * Drag'n'drop area for avatar uploads
+ */
+.avatar-source-droparea {
+  .drop-instructions {
+    &,
+    .drop-instructions-accept,
+    .drop-instructions-reject {
+      display: none;
+    }
+    opacity: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    text-align: center;
+    color: #fff;
+    text-shadow: none;
+    cursor: default;
+  }
+  &.acceptDrop {
+    background: @filedrop-accepted;
+    .drop-instructions-accept {
+      display: block;
+    }
+  }
+  &.rejectDrop {
+    background: @filedrop-rejected;
+    .drop-instructions-reject {
+      display: block;
+      cursor: not-allowed;
+      cursor: no-drop;
+    }
+  }
+  &.rejectDrop,
+  &.acceptDrop {
+    user-select: none;
+    opacity: 1;
+    .modal-footer,
+    .modal-body {
+      opacity: 0;
+    }
+    .drop-instructions {
+      display: block;
+    }
+  }
+}
+
+// Usernamefields for external hospex sites (WS+BW+CS)
+.extsites {
+  .input-group-addon:first-child {
+    background: @input-bg;
+    padding-right: 0;
+    color: @input-color;
+  }
+  input {
+    border-left-color: transparent;
+    padding-left: 2px;
+    border-left: 0;
+    box-shadow: none;
+    font-weight: 500;
+    &:focus {
+      border-color: @input-border;
+      box-shadow: none;
+      color: @input-color;
+    }
+  }
+  .btn {
+    padding-top: 7px;
+    padding-bottom: 7px;
   }
 }

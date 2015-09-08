@@ -1,25 +1,24 @@
 'use strict';
 
+/**
+ * Module dependencies.
+ */
+var offersPolicy = require('../policies/offers.server.policy'),
+    offers = require('../controllers/offers.server.controller');
+
 module.exports = function(app) {
 
-  var users = require('../../../users/server/controllers/users.server.controller');
-  var offers = require('../controllers/offers.server.controller');
+  app.route('/api/offers-by/:offerUserId').all(offersPolicy.isAllowed)
+    .get(offers.read);
 
-  // Setting up the offers api
+  app.route('/api/offers').all(offersPolicy.isAllowed)
+    .get(offers.list)
+    .post(offers.create);
 
-    app.route('/api/offers-by/:userId')
-      .get(users.requiresLogin, offers.read)
-      //.put(users.requiresLogin, offers.hasAuthorization, offers.update)
-      .delete(users.requiresLogin, offers.hasAuthorization, offers.delete);
-
-    app.route('/api/offers')
-      .get(users.requiresLogin, offers.list)
-      .post(users.requiresLogin, offers.create);
-
-    app.route('/api/offers/:offerId')
-      .get(users.requiresLogin, offers.read);
+  app.route('/api/offers/:offerId').all(offersPolicy.isAllowed)
+    .get(offers.read);
 
   // Finish by binding the middleware
-  app.param('userId', offers.offerByUserId);
+  app.param('offerUserId', offers.offerByUserId);
   app.param('offerId', offers.offerById);
 };

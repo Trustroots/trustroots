@@ -1,29 +1,26 @@
-<section class="container board board-bokehblue container-fullscreen" ng-controller="AuthenticationController">
+<section class="container board container-fullscreen" tr-boards="'bokeh'">
   <div class="row">
     <div class="col-xs-12 text-center">
-      <a ui-sref="home" class="logo logo-sm logo-blue center-block hidden-xs"></a>
-      <a ui-sref="home" class="logo-horizontal logo-horizontal-blue center-block visible-xs-block"></a>
+      <img class="hidden-xs" src="/modules/core/img/tree-color.svg" alt="Trustroots" width="120" height="120" />
+      <img class="visible-xs-inline-block" src="/modules/core/img/tree-color.svg" alt="Trustroots" width="80" height="80" />
       <br><br>
-      <p class="lead" ng-show="continue">Sign in to continue.</p>
+      <p class="lead" ng-show="auth.continue">Sign in to continue.</p>
     </div>
     <div class="col-xs-offset-2 col-xs-8 col-sm-offset-4 col-sm-4 col-lg-offset-5 col-lg-2">
-      <form ng-submit="signin()" class="signin form-horizontal" autocomplete="off">
+      <form name="signinForm" ng-submit="auth.signin()" class="form-auth" autocomplete="off">
         <fieldset>
-          <div ng-show="error" class="alert alert-danger" role="alert">
-            <strong ng-bind="error"></strong>
-          </div>
           <div class="form-group">
             <label for="username" class="sr-only">Email or username</label>
-            <input type="text" ng-disabled="isLoading" id="username" name="username" class="form-control input-lg" ng-model="credentials.username" placeholder="Email or username">
+            <input type="text" autocapitalize="off" required ng-disabled="iauth.sLoading" id="username" name="username" class="form-control input-lg" ng-model="auth.credentials.username" placeholder="Email or username">
           </div>
           <div class="form-group">
             <label for="password" class="sr-only">Password</label>
-            <input type="password" ng-disabled="isLoading" id="password" name="password" class="form-control input-lg" ng-model="credentials.password" placeholder="Password">
+            <input type="password" required ng-disabled="auth.isLoading" id="password" name="password" class="form-control input-lg" ng-model="auth.credentials.password" placeholder="Password">
           </div>
           <div class="text-center form-group">
-            <button type="submit" class="btn btn-inverse btn-lg" ng-disabled="isLoading">
-              <span ng-hide="isLoading">Login</span>
-              <span ng-show="isLoading">Wait...</span>
+            <button type="submit" class="btn btn-inverse btn-lg" ng-disabled="auth.isLoading">
+              <span ng-if="!auth.isLoading">Login</span>
+              <span ng-if="auth.isLoading">Wait...</span>
             </button>
           </div>
         </fieldset>

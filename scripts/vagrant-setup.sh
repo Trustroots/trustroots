@@ -28,3 +28,6 @@ vagrant plugin install vagrant-hostmanager
 
 # This will go trough vagrantup/vagrantup.sh on first run
 vagrant up
+
+# Livereload
+vagrant ssh -c "cd /srv/trustroots && grunt watch"

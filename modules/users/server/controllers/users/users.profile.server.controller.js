@@ -15,8 +15,7 @@ var _ = require('lodash'),
     mkdirp = require('mkdirp'),
     fs = require('fs'),
     mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Contact = mongoose.model('Contact');
+    User = mongoose.model('User');
 
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
@@ -38,6 +37,9 @@ exports.userProfileFields = [
                     'updated',
                     'avatarSource',
                     'avatarUploaded',
+                    'extSitesBW', // BeWelcome username
+                    'extSitesCS', // CouchSurfing username
+                    'extSitesWS', // WarmShowers username
                     'emailHash', // MD5 hashed email to use with Gravatars
                     'additionalProvidersData.facebook.id', // For FB avatars and profile links
                     'additionalProvidersData.twitter.screen_name', // For Twitter profile links
@@ -56,6 +58,9 @@ exports.userMiniProfileFields = [
                     'emailHash',
                     'additionalProvidersData.facebook.id' // For FB avatars
                     ].join(' ');
+
+// Mini + a few fields we'll need at listings
+exports.userListingProfileFields = exports.userMiniProfileFields + ' birthdate gender tagline';
 
 /**
  * Rules for sanitizing user description coming in and out
@@ -77,119 +82,209 @@ var userSanitizeOptions = {
 /**
  * Upload user avatar
  */
+exports.uploadAvatar = function (req, res) {
 
-exports.upload = function (req, res) {
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
 
-  var userId = req.user._id;
+  var userId = req.user._id,
+      acceptedImagesRegex = /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
+      uploadsDir = '/modules/users/img/profile/uploads',
+      uploadsPath = path.resolve('./modules/users/client/img/profile/uploads'), // Returns path without trailing slash!
+      options = {
+        tmpDir:  uploadsPath + '/' + userId + '/tmp/', // tmp dir to upload files to
+        uploadDir: uploadsPath + '/' + userId + '/avatar/', // actual location of the file
+        uploadUrl: uploadsDir + '/' + userId + '/avatar/', // end point for delete route
+        acceptFileTypes: acceptedImagesRegex,
+        inlineFileTypes: acceptedImagesRegex,
+        imageTypes: acceptedImagesRegex,
+        copyImgAsThumb: false, // required
+        minFileSize: 1024, // 1kb
+        maxFileSize: config.maxUploadSize,
+        maxPostSize: config.maxUploadSize,
+        imageVersions: {
+          maxWidth: 2048,
+          maxHeight: 'auto',
+          // These could be enabled once package doesn't just resize, but also crops images
+          // Until that we're doing thumbnails manually
+          // @link https://github.com/arvindr21/blueimp-file-upload-expressjs/issues/29
+          /*
+          '512': { width : 512, height : 512 },
+          '256': { width : 256, height : 256 },
+          '128': { width : 128, height : 128 },
+          '64': { width : 64, height : 64 },
+          '32': { width : 32, height : 32 }
+          */
+        },
+        accessControl: {
+          allowOrigin: '*',
+          allowMethods: 'OPTIONS, HEAD, POST', //GET, PUT, DELETE
+          allowHeaders: 'Content-Type, Content-Range, Content-Disposition'
+        },
+        storage: {
+          type: 'local'
+        },
+        useSSL: config.https
+      },
+      uploader = require('blueimp-file-upload-expressjs')(options);
 
-  var options = {
-    tmpDir:  __dirname + '/../../../client/img/profile/uploads/' + userId + '/tmp/',
-    uploadDir: __dirname + '/../../../client/img/profile/uploads/' + userId + '/avatar/',
-    uploadUrl: '/modules/users/img/profile/uploads/' + userId + '/avatar/',
-    acceptFileTypes:  /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
-    inlineFileTypes:  /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
-    imageTypes:  /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
-    minFileSize:  1,
-    maxFileSize:  10000000, //10MB (remember to change this to Nginx configs as well)
-    storage: {
-      type: 'local'
+  /**
+   * Process uploaded file
+   */
+  async.waterfall([
+
+    // Make tmp directory
+    function(done) {
+      mkdirp(options.tmpDir, function (err) {
+        done(err);
+      });
     },
-    useSSL: config.https
-  };
 
-  var uploader = require('blueimp-file-upload-expressjs')(options);
-
-  // Make tmp directory
-  mkdirp(options.tmpDir, function (err) {
     // Make upload directory
-    mkdirp(options.uploadDir, function (err) {
-      //Make the upload
-      uploader.post(req, res, function (obj) {
+    function(done) {
+      mkdirp(options.uploadDir, function (err) {
+        done(err);
+      });
+    },
 
-        if(obj.files[0].error) {
-          console.log(obj.files[0].error);
-          res.status(400).send(obj.files[0].error);
-        }
-        else {
-          //Process images
-          async.waterfall([
-            //Open the image
-            function(done) {
-              lwip.open(options.uploadDir + '/' + obj.files[0].name, function(err, image){
-                done(err, image);
-              });
-            },
-            //Create orginal jpg file
-            function(image, done) {
-              image.batch()
-              .writeFile(options.uploadDir + 'original.jpg', 'jpg', {quality: 90}, function(err, image, res){
-                done(err, image);
-              });
-            },
-            //Delete the uploaded file
-            function(image, done) {
-              fs.unlink(options.uploadDir + '/' + obj.files[0].name, function (err) {
-                done(err, image);
-              });
-            },
-            //Make the thumbnails
-            function(image, done) {
+    // Make the upload
+    function(done) {
+      uploader.post(req, res, function (err, obj, redirect) {
 
-              // Note that each spawns these functions in order but they are processed asynchronously
-              _.each([512, 256, 128, 64, 32], function(size, index, list) {
-
-                lwip.open(options.uploadDir + 'original.jpg', function(err, image){
-                  if(!err) {
-                    var square = Math.min(image.width(), image.height());
-                    image.batch()
-                    .crop(square, square)
-                    .resize(size, size)
-                    .writeFile(options.uploadDir + size +'.jpg', 'jpg', {quality: 90}, function(err, image){
-
-                      // Shorten list so we can keep track on processed count (doesn't keep track on WHICH sizes has been processed)
-                      list.pop();
-
-                      // Finish on errors & when list is empty (=all sizes done)
-                      if(err || list.length === 0) {
-                        done(err);
-                      }
-                    });
-                  }
-                  else {
-                    done(err);
-                  }
-                });
-              });
-
-            },
-            //Send response
-            function(done) {
-              res.send(JSON.stringify(obj));
-            }
-          ], function(err) {
-            if (err) {
-              return res.status(400).send({
-                message: errorHandler.getErrorMessage(err)
-              });
-            }
+        // Send error status 422 - Unprocessable Entity
+        if(err || obj.files.length === 0 || (obj.files[0] && obj.files[0].error)) {
+          return res.status(422).send({
+            message: errorHandler.getErrorMessageByKey('unprocessable-entity')
           });
         }
-      });
 
-    });
+        done(err, obj);
+      });
+    },
+
+    // Open the image
+    function(obj, done) {
+      lwip.open(options.uploadDir + '/' + obj.files[0].name, function(err, image){
+        done(err, image, obj);
+      });
+    },
+
+    // Create orginal jpg file
+    function(image, obj, done) {
+      image.batch()
+      .writeFile(options.uploadDir + 'original.jpg', 'jpg', {quality: 90}, function(err, image, res) {
+        done(err, image, obj);
+      });
+    },
+
+    // Delete the uploaded file
+    function(image, obj, done) {
+      fs.unlink(options.uploadDir + '/' + obj.files[0].name, function (err) {
+        done(err, image, obj);
+      });
+    },
+
+    // Make the thumbnails
+    function(image, obj, done) {
+
+      // Note that each() spawns these functions in order but they are processed asynchronously
+      _.each([512, 256, 128, 64, 32], function(size, index, list) {
+        lwip.open(options.uploadDir + 'original.jpg', function(err, image) {
+          if(!err) {
+            var square = Math.min(image.width(), image.height());
+            image
+              .batch()
+              .crop(square, square)
+              .resize(size, size)
+              .writeFile(options.uploadDir + size +'.jpg', 'jpg', {quality: 90}, function(err, image) {
+                // Shorten list so we can keep track on processed count (doesn't keep track on WHICH sizes has been processed)
+                list.pop();
+                // Finish on errors & when list is empty (=all sizes done)
+                if(err || list.length === 0) {
+                  done(err, obj);
+                }
+              });
+          }
+          else {
+            done(err);
+          }
+        });
+      });
+    },
+
+    // Send response
+    function(obj, done) {
+      return res.json(obj);
+    }
+
+  // Catch errors
+  ], function(err) {
+    if(err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
+      });
+    }
   });
+
 };
 
 
 
 /**
-* Update
-*/
+ * Update
+ */
 exports.update = function(req, res) {
+
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
   async.waterfall([
 
-  // Generate random token
+  // If user is changing email, check if it's available
   function(done) {
+
+    // Check only if email changed
+    if(req.body.email !== req.user.email) {
+      User.findOne({
+        $or: [
+          { emailTemporary: req.body.email.toLowerCase() },
+          { email: req.body.email.toLowerCase() }
+        ]
+      }, 'emailTemporary email', function(err, emailUser) {
+        // Not free
+        if(emailUser) {
+          // If the user we found with this email is currently authenticated user, let user pass to resend confirmation email
+          if(emailUser._id.equals(req.user._id)) {
+            done(null);
+          }
+          // Otherwise it was someone else's email. Block the way.
+          else {
+            return res.status(403).send({
+              message: 'This email is already in use. Please use another one.'
+            });
+          }
+        }
+        // Free, proceed generating the token
+        else {
+          done(null);
+        }
+      });
+    }
+    // Email didn't change, just continue
+    else {
+      done(null);
+    }
+  },
+
+  // Check if we should generate new email token
+  function(done) {
+
     // Generate only if email changed
     if(req.body.email !== req.user.email) {
       crypto.randomBytes(20, function(err, buffer) {
@@ -206,57 +301,67 @@ exports.update = function(req, res) {
   // Update user
   function(token, email, done) {
 
-    // Init Variables
-    var user = req.user;
-    var message = null;
-
     // For security measurement remove these from the req.body object
     // Users aren't allowed to modify these directly
+    delete req.body.public;
+    delete req.body.created;
     delete req.body.seen;
     delete req.body.roles;
     delete req.body.email;
-    delete req.body.public;
-    delete req.body.created;
-    delete req.body.username;
+    delete req.body.emailHash;
     delete req.body.emailToken;
     delete req.body.emailTemporary;
+    delete req.body.provider;
+    delete req.body.username;
+    delete req.body.displayUsername;
     delete req.body.salt;
     delete req.body.password;
     delete req.body.resetPasswordToken;
     delete req.body.resetPasswordExpires;
+    delete req.body.additionalProvidersData;
 
+    // Merge existing user
+    var user = req.user;
+    user = _.extend(user, req.body);
+    user.updated = Date.now();
+    user.displayName = user.firstName + ' ' + user.lastName;
 
-    if (user) {
-      // Merge existing user
-      user = _.extend(user, req.body);
-      user.updated = Date.now();
-      user.displayName = user.firstName + ' ' + user.lastName;
-
-      // This is set only if user edited also email
-      if(token && email) {
-        user.emailToken = token;
-        user.emailTemporary = email;
-      }
-
-      // Sanitize user description
-      user.description = sanitizeHtml(user.description, userSanitizeOptions);
-
-      user.save(function(err) {
-        if (!err) {
-          req.login(user, function(err) {
-            if (err) {
-              done(err);
-            } else {
-              delete user.emailToken;
-              res.json(user);
-            }
-          });
-        }
-        done(err, token, user);
-      });
-    } else {
-      done(new Error('User is not signed in'));
+    // This is set only if user edited email
+    if(token && email) {
+      user.emailToken = token;
+      user.emailTemporary = email;
     }
+
+    // Sanitize user description
+    user.description = sanitizeHtml(user.description, userSanitizeOptions);
+
+    // Test in case description or tagline are actually empty without html
+    // This happens sometimes with wysiwyg editors
+    if(user.description && user.description.length > 0 && sanitizeHtml(user.description, {allowedTags: []}).trim() === '') {
+      user.description = '';
+    }
+    if(user.tagline && user.tagline.length > 0 && sanitizeHtml(user.tagline, {allowedTags: []}).trim() === '') {
+      user.tagline = '';
+    }
+
+    user.save(function(err) {
+      if (!err) {
+        req.login(user, function(err) {
+          if (err) {
+            done(err);
+          } else {
+            user = user.toObject();
+            delete user.salt;
+            delete user.password;
+            delete user.resetPasswordToken;
+            delete user.resetPasswordExpires;
+            delete user.emailToken;
+            res.json(user);
+          }
+        });
+      }
+      done(err, token, user);
+    });
 
   },
 
@@ -336,71 +441,57 @@ exports.update = function(req, res) {
  * Show the profile of the user
  */
 exports.getUser = function(req, res) {
-  res.json(req.user || null);
+  res.json(req.profile || {});
 };
 
 /**
  * Show the mini profile of the user
- * Pick only certain fields from whole profile @link http://underscorejs.org/#pick
  */
 exports.getMiniUser = function(req, res) {
-  res.json( req.user || null );
-};
 
-
-/**
- * List of public profiles
- */
-exports.list = function(req, res) {
-
-  // If user who is loading is hidden, don't show anything
-  if(!req.user || !req.user.public) {
-    return res.status(400).send('No access.');
+  if(req.profile) {
+    // 'public' isn't needed at frontend.
+    // We had to bring it until here trough
+    // ACL policy since it's needed there.
+    var profile = req.profile.toObject();
+    delete profile.public;
+    res.json(profile);
+  }
+  else {
+    res.json({});
   }
 
-  User.find({public: true}).sort('-created').exec(function(err, users) {
-    if (err) {
-      return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
-      });
-    } else {
-      res.json(users);
-    }
-  });
 };
 
 
 /**
  * Mini profile middleware
  */
-exports.userMiniByID = function(req, res, next, id) {
+exports.userMiniByID = function(req, res, next, userId) {
 
-  User.findById(id, exports.userMiniProfileFields + ' languages public').exec(function(err, user) {
+  // Not a valid ObjectId
+  if(!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).send({
+      message: errorHandler.getErrorMessageByKey('invalid-id')
+    });
+  }
+
+  User.findById(userId, exports.userMiniProfileFields + ' public').exec(function(err, profile) {
 
     // Something went wrong
-    if (err) {
+    if(err) {
       return next(err);
     }
-    // No such user
-    else if (!user) {
-      return next(new Error('Failed to load user ' + id));
-    }
-    // User's own profile
-    else if( (user && req.user) && (user._id.toString() === req.user._id.toString())) {
-      req.user = user;
-      next();
-    }
-    // If user to be loaded is hidden OR user who is loading is hidden, don't show anything
-    else if(!user.public || !req.user.public) {
-      return next(new Error('Failed to load user ' + id));
-    }
-    else {
-      // This isn't needed at frontend
-      delete user.public;
 
-      req.user = user;
-      next();
+    // No such user
+    if(!profile || !profile.public) {
+      return res.status(404).send({
+        message: errorHandler.getErrorMessageByKey('not-found')
+      });
     }
+
+    req.profile = profile;
+    next();
 
   });
 };
@@ -410,71 +501,80 @@ exports.userMiniByID = function(req, res, next, id) {
  */
 exports.userByUsername = function(req, res, next, username) {
 
+  var query;
+
+  // Require user
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  // Proper 'username' value required
+  if(typeof username !== 'string' || username === '' || username.length < 3) {
+    return res.status(400).send({
+      message: 'Valid username required.'
+    });
+  }
+
+  // Got userId instead? Make it work!
+  // This is here because previously some API paths used userId instead of username
+  // This ensures they work during the transition
+  if(mongoose.Types.ObjectId.isValid(username)) {
+    console.warn('userByUsername: Found user id when expecting username.');
+    query = {
+      _id: username
+    };
+  }
+  else {
+    query = {
+      username: username.toLowerCase()
+    };
+  }
+
   async.waterfall([
 
     // Find user
     function(done) {
-      User.findOne({
-          username: username.toLowerCase()
-      }, exports.userProfileFields + ' public').exec(function(err, user) {
+      User.findOne(
+        query,
+        exports.userProfileFields + ' public').exec(function(err, profile) {
 
         // Something went wrong or no such user
         if (err) {
           done(err);
         }
-        else if(!user) {
-          done(new Error('Failed to load user ' + username));
-        }
         // User's own profile
-        else if( (user && req.user) && (user._id.toString() === req.user._id.toString()) ) {
-          done(err, user.toObject());
+        else if( (profile && req.user) && (profile._id.toString() === req.user._id.toString()) ) {
+          done(err, profile.toObject());
         }
-        // If user to be loaded is hidden OR user who is loading is hidden, don't show anything
-        else if( (user && user.public === false) || (req.user && req.user.public === false) ) {
-          done(new Error('Failed to load user ' + username));
+        // Not own profile, but not public either
+        else if( (profile && req.user) && (profile._id.toString() !== req.user._id.toString()) ) {
+          done(err, profile.toObject());
+        }
+        // No such user
+        else if(!profile) {
+          return res.status(404).send({
+            message: errorHandler.getErrorMessageByKey('not-found')
+          });
         }
         else {
           // This isn't needed at frontend
-          delete user.public;
+          delete profile.public;
 
-          // Transform user into object so that we can add new fields to it
-          done(err, user.toObject());
+          // Transform profile into object so that we can add new fields to it
+          done(err, profile.toObject());
         }
 
       });
     },
 
-    // Check if logged in user has left contact request for this profile
-    function(user, done) {
+    // Sanitize & return profile
+    function(profile, done) {
 
-      // User isn't currently logged in?
-      if(!req.user) {
-        done(null, user);
-      }
-      // User's own profile?
-      else if(user._id.toString() === req.user.id) {
-        user.contact = false;
-        done(null, user);
-      }
-      // Check for connection
-      else {
-        Contact.findOne(
-          {
-            users: { $all: [ user._id.toString(), req.user.id ] }
-          }
-        ).exec(function(err, contact) {
-          user.contact = (contact) ? contact._id : false;
-          done(err, user);
-        });
-      }
-    },
+      if(profile.description) profile.description = sanitizeHtml(profile.description, userSanitizeOptions);
 
-    // Sanitize & return user
-    function(user, done) {
-
-      if(user.description) user.description = sanitizeHtml(user.description, userSanitizeOptions);
-
-      req.user = user;
+      req.profile = profile;
       next();
     }
 

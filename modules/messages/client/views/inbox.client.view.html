@@ -1,0 +1,73 @@
+<section class="container container-spacer">
+
+  <!-- Browsing with non-public account -->
+  <div ng-if="app.user.public === false" ng-include="'/modules/users/views/profile/activate.client.view.html?c=' + app.cacheBust"></div>
+
+  <div class="row" ng-if="app.user.public === true">
+    <div class="col-xs-12">
+
+      <!-- Other threads -->
+      <h4>Conversations</h4>
+
+      <div class="panel panel-default panel-threadlist panel-threadlist-threads panel-xs-no_margin">
+
+        <!-- Threads -->
+        <table class="table table-condensed table-hover table-threadlist table-threadlist-threads" ng-if="inbox.threads.length">
+          <tbody>
+
+            <tr class="thread" ng-class="{ 'thread-unread': !thread.read }" ng-repeat="thread in inbox.threads | orderBy:'updated':true" ng-click="inbox.openThread(thread)">
+              <td class="author col-xs-3 col-md-2">
+                <div tr-avatar data-user="inbox.otherParticipant(thread)" data-size="32" data-link="false" class="pull-left hidden-xs"></div> <span ng-bind="inbox.otherParticipant(thread, 'displayName')"></span>
+              </td>
+              <td class="summary">
+                <span ng-bind-html="thread.message.excerpt"></span>
+                <small class="indicators pull-right">
+                  <i class="icon-reply icon-fw text-muted" ng-show="thread.userFrom._id === app.user._id" tooltip="You replied" tooltip-placement="right"></i>
+                </small>
+              </td>
+              <td class="ago col-xs-3 col-md-2" am-time-ago="thread.updated" tooltip="{{thread.updated | date:'medium'}}" tooltip-placement="left"></td>
+            </tr>
+
+            <!-- Pagination Error -->
+            <tr class="pagination" ng-if="inbox.messageHandler.resolved === false && inbox.messageHandler.nextPage">
+            <td class="text-center" colspan="3">
+              <div class="text-danger">
+                Whoops! Something went wrong.
+              </div>
+              <!-- Retry button -->
+              <button class="btn btn-warning btn-md" ng-click="inbox.moreMessages(true)">
+                <span class="icon-refresh"></span>
+                Retry
+              </button>
+            </td>
+            </tr>
+            <!-- /Pagination Error -->
+
+          </tbody>
+        </table>
+        <!-- /Threads -->
+
+        <!-- No threads -->
+        <div class="content-empty" ng-if="inbox.messageHandler.resolved && !inbox.threads.length">
+          <i class="icon-3x icon-messages-alt"></i>
+          <h4>No conversations yet.</h4>
+        </div>
+        <!-- /No threads -->
+
+      </div><!-- /.panel -->
+    </div><!-- /.col-* -->
+  </div><!-- /.row -->
+
+  <!-- pagination waypoint -->
+  <div zum-waypoint="inbox.waypoints"
+       offset="50%"
+       up="scroll.up"
+       down="scroll.down"
+       class="text-center"
+       ng-if="inbox.messageHandler.nextPage && inbox.messageHandler.resolved && !inbox.messageHandler.paginationTimeout">
+         <!-- Loading icon -->
+         <tr-spinner size="sm"></tr-spinner>
+         {{ inbox.moreMessages(inbox.waypoints.scroll.down) }}
+  </div>
+
+</section><!-- /.container -->

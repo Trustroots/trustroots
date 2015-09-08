@@ -1,8 +1,12 @@
-'use strict';
+(function() {
+  'use strict';
 
-// Setting up route
-angular.module('core').config(['$stateProvider', '$urlRouterProvider',
-  function($stateProvider, $urlRouterProvider) {
+  angular
+    .module('core')
+    .config(CoreRoutes);
+
+  /* @ngInject */
+  function CoreRoutes($stateProvider, $urlRouterProvider) {
 
     // Redirect to 404 when route not found
     $urlRouterProvider.otherwise('not-found');
@@ -11,7 +15,10 @@ angular.module('core').config(['$stateProvider', '$urlRouterProvider',
     $stateProvider.
       state('not-found', {
         url: '/not-found',
-        templateUrl: 'modules/core/views/404.client.view.html'
+        templateUrl: 'modules/core/views/404.client.view.html',
+        footerHidden: true,
+        headerHidden: true
       });
   }
-]);
+
+})();

@@ -1,43 +1,46 @@
-'use strict';
+(function() {
+  'use strict';
 
-angular.module('messages').controller('MessagesInboxController', ['$scope', '$state', '$log', 'Authentication', 'Messages', 'messageCenterService', //, 'Socket'
-  function($scope, $state, $log, Authentication, Messages, messageCenterService) {//, Socket
+  angular
+    .module('messages')
+    .controller('InboxController', InboxController);
 
-    $scope.user = Authentication.user;
+  /* @ngInject */
+  function InboxController($state, Authentication, Messages, messageCenterService) {
 
-    $scope.threads =[];
-    $scope.messageHandler = new Messages();
+    // ViewModel
+    var vm = this;
 
-    /*
-    Socket.on('message.thread', function(thread) {
-        $log.log('->refresh inbox');
-        $scope.findInbox();
+    // Exposed to the view
+    vm.threads = [];
+    vm.messageHandler = new Messages();
+    vm.moreMessages = moreMessages;
+    vm.otherParticipant = otherParticipant;
+    vm.openThread = openThread;
+
+    // Fetches first page of messages
+    vm.messageHandler.fetchMessages().$promise.then(function(data){
+      addMessages(data);
     });
-    */
 
     // Appends returned messages to model
     function addMessages(data){
       angular.forEach(data, function(msg){
-        $scope.threads.unshift(msg);
+        vm.threads.unshift(msg);
       });
     }
-
-    // Fetches first page of messages
-    $scope.messageHandler.fetchMessages().$promise.then(function(data){
-      addMessages(data);
-    });
 
     /**
      * Gets next page of messages
      * Activates when the last thread element hits the bottom view port
      */
-    $scope.moreMessages = function(waypoints){
-      if($scope.messageHandler.nextPage && waypoints) {
-        $scope.messageHandler.fetchMessages().$promise.then( function (data) {
+    function moreMessages(waypoints) {
+      if(vm.messageHandler.nextPage && vm.waypoints) {
+        vm.messageHandler.fetchMessages().$promise.then(function(data) {
           addMessages(data);
         });
       }
-    };
+    }
 
     /**
      * Solve which of two thread participants is "the other", not logged in user
@@ -46,30 +49,28 @@ angular.module('messages').controller('MessagesInboxController', ['$scope', '$st
      *
      * Return either displayName or user object
      */
-    $scope.otherParticipant = function(thread, value) {
-
-      // $scope.user holds currently authenticated user
-      var other = (thread.userFrom._id === $scope.user._id) ? thread.userTo : thread.userFrom;
+    function otherParticipant(thread, value) {
+      var other = (thread.userFrom._id === Authentication.user._id) ? thread.userTo : thread.userFrom;
 
       if (value === 'displayName') {
         return other.displayName;
       }
-      else if (value === 'id') {
-        return other._id;
+      else if (value === 'username') {
+        return other.username;
       }
       else {
         // User object
         return other;
       }
-
-    };
+    }
 
     /*
      * Open thread
      */
-    $scope.openThread = function(thread) {
-      $state.go('listMessages', { userId: $scope.otherParticipant(thread, 'id') });
-    };
+    function openThread(thread) {
+      $state.go('messageThread', { username: otherParticipant(thread, 'username') });
+    }
 
   }
-]);
+
+})();

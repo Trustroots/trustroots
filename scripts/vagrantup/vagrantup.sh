@@ -73,7 +73,7 @@ sudo service nginx restart
 # Uncomment passenger variables from Nginx config:
 sudo perl -pi -e 's/# passenger_/passenger_/g' /etc/nginx/nginx.conf
 # We don't need passenger-ruby, but node
-sudo perl -pi -e 's/passenger_ruby \/usr\/bin\/ruby;/passenger_nodejs \/usr\/local\/bin\/node;/g' /etc/nginx/nginx.conf
+sudo perl -pi -e 's/passenger_ruby \/usr\/bin\/passenger_free_ruby;/passenger_nodejs \/usr\/local\/bin\/node;/g' /etc/nginx/nginx.conf
 
 
 # Install NodeJS tools
@@ -82,7 +82,7 @@ echo "---------------------------------------------------------------------"
 echo "Installing NodeJS tools..."
 echo "---------------------------------------------------------------------"
 echo ""
-npm install -g bower grunt-cli gulp yo generator-meanjs node-gyp bson
+npm install -g bower grunt-cli yo generator-meanjs node-gyp bson
 
 
 # Install packages & build assets
@@ -124,6 +124,10 @@ echo "You can login with user 'trout' and password 'password'."
 echo ""
 echo "Suspend the virtual machine by calling 'vagrant suspend'."
 echo "When you're ready to begin working again, just run 'vagrant up'."
+echo "To access box, type 'vagrant ssh'."
 echo ""
-echo "Read more from http://github.com/trustroots/trustroots"
+echo "Read more from https://github.com/trustroots/trustroots/wiki"
+echo ""
+echo "---------------------------------------------------------------------"
+echo ""
 echo ""

@@ -1,0 +1,97 @@
+/*
+ * Panels
+ *
+ * Extend Bootstrap Panels
+ */
+
+// Base class
+.panel {
+  margin-bottom: 20px;
+  background-color: @panel-bg;
+  border: 1px solid @panel-border;
+  border-radius: @panel-border-radius;
+  .box-shadow(0 1px 1px rgba(0,0,0,.05));
+  // https://developer.mozilla.org/en-US/docs/Web/CSS/word-wrap
+  word-wrap: break-word;
+  h3 {
+    font-size: @font-size-large;
+    line-height: @line-height-large;
+  }
+
+  // Optional heading
+  .panel-heading {
+    display: block;
+    background-color: @panel-heading-bg;
+    margin: 0 0 10px 0;
+    margin-left: 15px;
+    margin-right: 15px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid @panel-border;
+    border-radius: 0;
+    padding: 10px 0;
+    font-family: @font-family-brand;
+    font-size: 22px;
+    line-height: 24px;
+    font-weight: 400;
+    font-style: normal;
+    @media (max-width: @screen-xs-max) {
+      font-size: 19px;
+    }
+  }
+
+  // Optional footer
+  /*
+  .panel-footer {
+    margin: 15px -15px -15px;
+    padding: 10px 15px;
+    border: 1px solid @panel-bg;
+    background-color: @panel-footer-bg;
+    border-bottom-left-radius:  (@panel-border-radius - 1);
+    border-bottom-right-radius: (@panel-border-radius - 1);
+  }
+  */
+  &.panel-disabled {
+    opacity: 0.4;
+  }
+  &.panel-loading {
+    &, * {
+      color: lighten(@gray-lighter, 2%) !important;
+    }
+  }
+
+  // Use this to wrap long texts into shorter box with "show more" link at the bottom
+  .panel-more-wrap {
+    position: relative;
+    .panel-more-excerpt {
+      //position: absolute;
+    }
+    .panel-more-fade {
+      position: absolute;
+      bottom: 0;
+      display: block;
+      width: 100%;
+      text-align: center;
+      cursor: pointer;
+      padding: 120px 0 5px 0;
+      font-weight: bold;
+
+      // Vertical gradient, from top to bottom
+      #gradient.vertical(rgba(red(@panel-bg), green(@panel-bg), blue(@panel-bg), 0); rgba(red(@panel-bg), green(@panel-bg), blue(@panel-bg), 0.96); 0%; 80%);
+      &:hover {
+        transition: color .4s;
+        color: lighten(@text-color, 40%);
+      }
+    }
+  }
+
+}
+
+
+/**
+ * Extending Bootstrap panels
+ */
+.panel.is-highlighted {
+  border-color: lighten(@brand-primary, 20%);
+  .box-shadow(0 0 5px lighten(@brand-primary, 35%));
+}

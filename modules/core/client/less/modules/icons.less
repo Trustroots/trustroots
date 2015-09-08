@@ -1,0 +1,178 @@
+/**
+ * Fontello icon font
+ *
+ * Updating icons:
+ * - Drag fontello.conf.json to http://fontello.com/
+ * - Do your changes
+ * - Download
+ * - Copy config.json from zip over fontello.conf.json
+ * - Run 'grunt fontello'
+ * - Update icon version date below
+ */
+
+// Cache buster
+@icon-version: "2015-09-02";
+@icon-li-width: (30em / 14);
+
+@font-face {
+  font-family: 'tricons';
+  src: url('/lib/fontello/fonts/tricons.eot?v=@{icon-version}');
+  src: url('/lib/fontello/fonts/tricons.eot?v=@{icon-version}#iefix') format('embedded-opentype'),
+       url('/lib/fontello/fonts/tricons.woff?v=@{icon-version}') format('woff'),
+       url('/lib/fontello/fonts/tricons.ttf?v=@{icon-version}') format('truetype'),
+       url('/lib/fontello/fonts/tricons.svg?v=@{icon-version}#tricons') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+/* Chrome hack: SVG is rendered more smooth in Windozze. 100% magic, uncomment if you need it. */
+/* Note, that will break hinting! In other OS-es font will be not as sharp as it could be */
+/*
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  @font-face {
+    font-family: 'tricons';
+    src: url('/lib/fontello/font/tricons.svg#tricons') format('svg');
+  }
+}
+*/
+
+// Angular-UI Bootstrap Datepicker has hardcoded "glyphicon",
+// but we don't have Bootstrap's Glyphicons included.
+// Proxying them here. Nasty. Get rid of this if you can.
+// https://angular-ui.github.io/bootstrap/#/datepicker
+.glyphicon:before,
+// Leaflet attribution control i-symbol
+// See leaflet.less for more
+.leaflet-container .leaflet-control-attribution:after,
+// Angular-medium-editor uses fontawesome class
+.fa:before,
+// Original Fontello CSS
+[class^="icon-"]:before, [class*=" icon-"]:before {
+  font-family: "tricons";
+  font-style: normal;
+  font-weight: normal;
+  speak: none;
+
+  display: inline-block;
+  text-decoration: inherit;
+  width: 1em;
+  margin-right: .2em;
+  text-align: center;
+  /* opacity: .8; */
+
+  /* For safety - reset parent styles, that can break glyph codes*/
+  font-variant: normal;
+  text-transform: none;
+
+  /* text-rendering:optimizelegibility would throw things off */
+  text-rendering: auto;
+
+  /* fix buttons height, for twitter bootstrap */
+  line-height: 1em;
+
+  /* Animation center compensation - margins should be symmetric */
+  /* remove if not needed */
+  margin-left: .2em;
+
+  /* you can be more comfortable with increased icons size */
+  /* font-size: 120%; */
+
+  /* Font smoothing. That was taken from TWBS */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Uncomment for 3D effect */
+  /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
+
+  /* Ensures no half-pixel rendering in firefox */
+  transform: translate(0, 0);
+}
+
+// Icon Sizes
+// Adapted from FontAwesome - MIT licensed
+// @link http://opensource.org/licenses/mit-license.html
+// @link https://github.com/FortAwesome/Font-Awesome/blob/master/less/larger.less
+// -------------------------
+
+/* makes the font 33% larger relative to the icon container */
+.icon-lg {
+  font-size: (4em / 3);
+  line-height: (3em / 4);
+  vertical-align: -15%;
+}
+.icon-2x { font-size: 2em; }
+.icon-3x { font-size: 3em; }
+.icon-4x { font-size: 4em; }
+.icon-5x { font-size: 5em; }
+
+
+// List Icons
+// Adapted from FontAwesome - MIT licensed
+// @link http://opensource.org/licenses/mit-license.html
+// @link https://github.com/FortAwesome/Font-Awesome/blob/master/less/list.less
+// -------------------------
+
+.icon-ul {
+  padding-left: 0;
+  margin-left: @icon-li-width;
+  list-style-type: none;
+  > li { position: relative; }
+}
+.icon-li {
+  position: absolute;
+  left: -@icon-li-width;
+  width: @icon-li-width;
+  top: (2em / 14);
+  text-align: center;
+  &.icon-lg {
+    left: (-@icon-li-width + (4em / 14));
+  }
+}
+
+// Fixed Width Icons
+// Adapted from FontAwesome - MIT licensed
+// @link http://opensource.org/licenses/mit-license.html
+// @link https://github.com/FortAwesome/Font-Awesome/blob/master/less/fixed-width.less
+// -------------------------
+.icon-fw {
+  width: (18em / 14);
+  text-align: center;
+}
+
+
+//
+
+// Angular-UI Bootstrap Datepicker has hardcoded "glyphicon"
+.glyphicon-chevron-left:before { content: '\e81e'; }
+.glyphicon-chevron-right:before { content: '\e81d'; }
+
+// Leaflet attribution i-symbol
+.leaflet-container .leaflet-control-attribution:after { content: '\e825'; }
+
+
+// Colorful hospitality network icons (nothing to do with fonts otherwise but we use the same .icon- base class).
+.icon-bw,
+.icon-cs,
+.icon-ws {
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+  background-size: 16px 16px;
+
+  float: left;
+  display: inline-block;
+  min-height: 21px;
+  min-width: 24px;
+  margin-right: 4px;
+}
+.icon-bw { .img-retina('/modules/core/img/external/icon-bw.png', '/modules/core/img/external/icon-bw@2x.png', 16px, 16px); }
+.icon-cs { .img-retina('/modules/core/img/external/icon-cs.png', '/modules/core/img/external/icon-cs@2x.png', 16px, 16px); }
+.icon-ws { .img-retina('/modules/core/img/external/icon-ws.png', '/modules/core/img/external/icon-ws@2x.png', 16px, 16px); }
+
+// Medium-editor uses fontawesome classes, bridge them here:
+.fa-bold:before { content: '\e824'; }
+.fa-underline:before { content: '\e827'; }
+.fa-link:before { content: '\e829'; }
+.fa-italic:before { content: '\e826'; }
+.fa-quote-right:before { content: '\e82a'; }
+.fa-list-ul:before { content: '\e828'; }
+.fa-check:before { content: '\e819'; }
+.fa-times:before { content: '\e82b'; }

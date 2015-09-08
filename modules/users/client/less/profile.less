@@ -20,9 +20,24 @@
   }
 }
 
-// Edit/save/send messages etc buttons
-.profile-action-buttons {
+// Edit/save/send messages etc buttons for own and other's profiles
+.profile-actions {
   text-align: right;
+  .profile-edit-help {
+    line-height: 32px; //About the height of the 'edit' button
+  }
+  .nav {
+    float: right;
+  }
+  @media (max-width: @screen-sm-max) {
+    text-align: left;
+    .profile-edit-help {
+      float: right;
+    }
+    .nav {
+      float: none;
+    }
+  }
   @media (max-width: @screen-xs-max) {
     .navbar();
     .navbar-default();
@@ -48,6 +63,7 @@
 }
 
 .profile-name {
+  margin-top: 20px;
   @media (min-width: @screen-sm-min) {
     margin: 0 10px 5px 0;
   }
@@ -80,6 +96,32 @@
   border: 0;
 }
 
+// Toggling avatar bigger at mobile screens
+@media (max-width: @screen-xs-max) {
+  .avatar {
+    max-width: 256px;
+    max-height: 256px;
+  }
+  .profile-avatar-lg .avatar {
+    width: 100%;
+    height: auto;
+    max-width: none;
+    max-height: none;
+  }
+}
+
+// Big avatar opened in a modal
+// Content tends to be 598px, so when it's shrinked to 512px,
+// 86px is left out. Move modal to the left half of that (43px).
+.modal-avatar .modal-content {
+  max-width: 512px;
+  max-height: 512px;
+  margin-left: 43px;
+  .avatar {
+    cursor: zoom-out;
+  }
+}
+
 #profile-sidebar {
   @media (min-width: @screen-sm-min) {
     max-width: 256px;
@@ -104,6 +146,7 @@
     border-top-right-radius: @panel-border-radius;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
+    cursor: zoom-in;
   }
   .profile-sidebar-section {
     margin: 0 0 @padding-small-horizontal 0;
@@ -115,19 +158,58 @@
       padding-bottom: 0;
     }
   }
-  // List of social accounts
-  .social-profiles {
-    margin-top: 5px;
-    margin-bottom: 10px;
-    .btn-link {
-      padding-left: 0;
-      color: @brand-primary;
+}
+
+// List of social accounts
+.social-profiles {
+  margin-top: 5px;
+  margin-bottom: 10px;
+  .social-profile-icon {
+    color: @gray-light;
+    filter: grayscale(100%);
+    -webkit-filter: grayscale(100%);
+  }
+  .social-profile {
+    //padding: 4px 0;
+    //min-height: 29px;
+    padding: 0;
+    margin: 0 0 8px;
+    .clearfix();
+    &:hover,
+    &.social-profile-active {
+      .social-profile-icon {
+        color: @brand-primary;
+        filter: none;
+        -webkit-filter: none;
+        // Here's a good list of these:
+        // https://www.competethemes.com/social-media-colors/
+        &.icon-twitter { color: #00aced; }
+        &.icon-facebook { color: #3b5998; }
+        &.icon-github { color: #333; }
+      }
+    }
+  }
+  .social-profile-handle {
+    color: @brand-primary;
+    &:focus,
+    &:active,
+    &:hover {
+      text-decoration: none;
+      color: darken(@brand-primary, 10%);
+    }
+  }
+  .social-profile-remove {
+    color: @brand-danger;
+    &.social-profile-remove-success {
+      &,
       &:focus,
       &:active,
       &:hover {
-        text-decoration: none;
-        color: darken(@brand-primary, 10%);
+        color: @brand-success;
       }
+    }
+    .btn {
+      margin-left: 5px;
     }
   }
 }

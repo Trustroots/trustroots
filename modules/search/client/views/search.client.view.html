@@ -1,46 +1,62 @@
-<section class="search-map" ng-controller="SearchController">
+<section class="search-map">
 
-  <div class="form-group map-location-search" ng-class="{'active': searchQuery !== '' || searchActive }">
-    <div class="input-group">
+  <div class="form-group map-location-search" ng-class="{'active': search.searchQuery !== '' || search.searchActive }">
+    <div class="input-group input-location">
       <label for="search-query" class="sr-only">Search places</label>
-      <input type="text" id="search-query" ng-focus="searchActive = true" ng-blur="searchActive = false" class="form-control input-lg" placeholder="Search places" ng-disabled="searchQuerySearching" ng-model="searchQuery" ng-keypress="enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue) | filter:{trTitle:$viewValue}" typeahead-on-select="mapLocate($item)" /><!-- typeahead-loading="searchQuerySearching"-->
+      <input type="text"
+             id="search-query"
+             class="form-control input-lg"
+             placeholder="Search places"
+             ng-focus="search.searchActive = true"
+             ng-blur="search.searchActive = false"
+             ng-disabled="search.searchQuerySearching"
+             ng-model="search.searchQuery"
+             ng-keypress="search.enterSearchAddress($event)"
+             typeahead="trTitle as address.trTitle for address in search.searchSuggestions($viewValue)"
+             typeahead-on-select="search.mapLocate($item)">
       <span class="input-group-btn">
-        <button type="button" class="btn btn-lg btn-inverse" ng-click="searchAddress()" ng-disabled="searchQuerySearching">
-          <i class="icon-search" ng-show="searchQuerySearching === false"></i>
-          <i class="icon-refresh" ng-show="searchQuerySearching === true"></i>
+        <button type="button" class="btn btn-lg btn-inverse" ng-click="search.searchAddress()" ng-disabled="search.searchQuerySearching">
+          <i class="icon-search"></i>
         </button>
       </span>
     </div>
   </div>
 
   <!-- Map overlay messages -->
-  <div ng-show="user && !user.public && !locationNotFound && !offerNotFound" class="search-overlay-message">
+  <div ng-if="app.user && !app.user.public && !search.locationNotFound && !search.offerNotFound" class="search-overlay-message">
     Sorry, you need to first activate your profile before you can browse others.
   </div>
-  <div ng-show="mapCenter.zoom <= mapMinimumZoom && user.public && !locationNotFound && !offerNotFound" class="text-uppercase search-overlay-message">
+  <div ng-show="search.mapCenter.zoom <= search.mapMinimumZoom && app.user.public && !search.locationNotFound && !search.offerNotFound" class="text-uppercase search-overlay-message">
     Zoom in closer to see everyone
   </div>
-  <div ng-show="locationNotFound && !offerNotFound" class="search-overlay-message">
+  <div ng-show="search.locationNotFound && !search.offerNotFound" class="search-overlay-message">
     We could not find such a place...
   </div>
-  <div ng-show="offerNotFound" class="search-overlay-message">
+  <div ng-show="search.offerNotFound" class="search-overlay-message">
     We could not find such an offer...
   </div>
 
-  <div ng-class="{'leaflet-layerstyle-satellite': (mapLayerstyle === 'satellite')}">
-    <leaflet id="search-map-canvas" center="mapCenter" markers="mapMarkers" layers="mapLayers" bounds="mapBounds" paths="mapPaths" defaults="mapDefaults" event-broadcast="mapEvents"></leaflet>
+  <div ng-class="{'leaflet-layerstyle-satellite': (search.mapLayerstyle === 'satellite')}">
+    <leaflet id="search-map-canvas"
+             lf-center="search.mapCenter"
+             markers="search.mapMarkers"
+             layers="search.mapLayers"
+             bounds="search.mapBounds"
+             paths="search.mapPaths"
+             defaults="search.mapDefaults"
+             event-broadcast="search.mapEvents"></leaflet>
   </div>
 
-  <div class="search-map-sidebar" ng-show="sidebarOpen">
+  <div class="search-map-sidebar" ng-if="search.sidebarOpen">
 
     <div class="search-list">
 
       <div class="form-group visible-xs-block">
-        <button class="btn btn-primary btn-lg btn-block" ng-click="sidebarOpen = false">Back to map</button>
+        <button class="btn btn-primary btn-lg btn-block" ng-click="search.sidebarOpen = false">Back to map</button>
       </div>
 
       <!-- Profile loading -->
-      <div class="search-result panel panel-default panel-loading" ng-hide="offer && offer.$resolved">
+      <div class="search-result panel panel-default panel-loading" ng-hide="search.offer && search.offer.$resolved">
         <div class="panel-body">
           <div tr-avatar data-size="32" data-link="false" data-source="none"></div>
           <h4>
@@ -70,42 +86,40 @@
       <!-- /Profile loading -->
 
       <!-- Profile -->
-      <div class="search-result panel panel-default" ng-if="offer && offer.$resolved">
-        <a class="panel-body" ui-sref="profile({username: offer.user.username})">
-          <div tr-avatar data-size="32" data-link="false" data-user="offer.user"></div>
+      <div class="search-result panel panel-default" ng-if="search.offer && search.offer.$resolved">
+        <a class="panel-body" ui-sref="profile({username: search.offer.user.username})">
+          <div tr-avatar data-size="32" data-link="false" data-user="search.offer.user"></div>
           <h4>
-            {{offer.user.displayName}}
-            <small class="text-muted">@{{offer.user.displayUsername || offer.user.username}}</small>
+            {{ ::search.offer.user.displayName }}
+            <small class="text-muted">@{{ ::search.offer.user.displayUsername || search.offer.user.username }}</small>
           </h4>
           <div class="search-result-meta">
-            <span ng-if="offer.user.birthdate" am-time-ago="offer.user.birthdate" am-without-suffix="true"></span><span ng-show="offer.user.birthdate && offer.user.gender">, </span>
-            <span ng-if="offer.user.gender" ng-class="{ 'text-capitalize': !offer.user.birthdate }">{{offer.user.gender}}.</span>
+            <span ng-if="search.offer.user.birthdate" ng-bind="search.offer.user.birthdate | ageyears"></span><span ng-if="search.offer.user.birthdate && search.offer.user.gender">, </span>
+            <span ng-if="search.offer.user.gender" ng-class="{ 'text-capitalize': !search.offer.user.birthdate }">{{ ::search.offer.user.gender }}.</span>
           </div>
-          <div class="search-result-tagline">
-            {{offer.user.tagline}}
-          </div>
+          <div class="search-result-tagline" ng-if="search.offer.user.tagline" ng-bind="search.offer.user.tagline"></div>
           <div class="search-result-hosting">
             <div class="search-result-label">
               Hosting:
-              <span class="label" ng-class="{'btn-hosting-yes': offer.status === 'yes', 'btn-hosting-maybe': offer.status === 'maybe', 'btn-hosting-no': offer.status === 'no'}" ng-bind="offer.status"></span>
+              <span class="label" ng-class="{'btn-hosting-yes': search.offer.status === 'yes', 'btn-hosting-maybe': search.offer.status === 'maybe'}" ng-bind="search.offer.status"></span>
             </div>
 
             <!-- Short descriptions -->
-            <div class="search-result-description" ng-if="offer.description && offer.description.length < 1000" ng-bind-html="offer.description | trustedHtml"></div>
+            <div class="search-result-description" ng-if="search.offer.description && search.offer.description.length < 1000" ng-bind-html="search.offer.description | trustedHtml"></div>
 
             <!-- Long descriptions -->
-            <div class="search-result-description" ng-if="offer.description && offer.description.length >= 1000">
+            <div class="search-result-description" ng-if="search.offer.description && search.offer.description.length >= 1000">
               <div class="panel-more-wrap">
-                <div ng-bind-html="offer.description | limitTo:1000 | trustedHtml" class="panel-more-excerpt"></div>
+                <div ng-bind-html="search.offer.description | limitTo:1000 | trustedHtml" class="panel-more-excerpt"></div>
                 <div class="panel-more-fade">Show more...</div>
               </div>
             </div>
 
           </div>
-          <div class="search-result-languages" ng-if="offer.user.languages.length">
+          <div class="search-result-languages" ng-if="search.offer.user.languages.length">
             <h4>Languages</h4>
             <ul class="list-inline">
-              <li ng-repeat="code in offer.user.languages">{{languages[code]}}</li>
+              <li ng-repeat="code in search.offer.user.languages">{{ ::app.languageNames[code] }}</li>
             </ul>
           </div>
         </a>
@@ -117,7 +131,7 @@
       </div>
 
       <div class="form-group visible-xs-block">
-        <button class="btn btn-primary btn-lg btn-block" ng-click="sidebarOpen = false">Back to map</button>
+        <button class="btn btn-primary btn-lg btn-block" ng-click="search.sidebarOpen = false">Back to map</button>
       </div>
 
     </div>

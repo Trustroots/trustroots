@@ -1,0 +1,53 @@
+/**
+ * Logo
+ */
+.logo {
+  display: block;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+
+  // Logo sizes: xs, sm, md (default)
+  @logo-size: 210px;
+
+  .square(@logo-size);
+  background-size: @logo-size @logo-size;
+
+  &.logo-xs {
+    .square( (@logo-size/2) );
+    background-size: (@logo-size/2) (@logo-size/2);
+  }
+  &.logo-sm {
+    .square( (@logo-size/1.5) );
+    background-size: (@logo-size/1.5) (@logo-size/1.5);
+  }
+
+  // Logo images: color, white, dark
+  .img-retina('/modules/core/img/logo/color.png', '/modules/core/img/logo/color@2x.png', @logo-size, @logo-size);
+
+  &.logo-white {
+    .img-retina('/modules/core/img/logo/white.png', '/modules/core/img/logo/white@2x.png', @logo-size, @logo-size);
+  }
+  &.logo-dark {
+    .img-retina('/modules/core/img/logo/dark.png', '/modules/core/img/logo/dark@2x.png', @logo-size, @logo-size);
+  }
+}
+
+// Horizontal version (doesn't have different sizes and other than white version, feel free to add if you need!)
+.logo-horizontal {
+  display: block;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+
+  // Logo sizes: md
+  @logo-size-width: 177px;
+  @logo-size-height: 31px;
+
+  .size(@logo-size-width, @logo-size-height);
+
+  // Logo images: white (default), color
+  .img-retina('/modules/core/img/logo/horizontal-white.png', '/modules/core/img/logo/horizontal-white@2x.png', @logo-size-width, @logo-size-height);
+
+  &.logo-horizontal-color {
+    .img-retina('/modules/core/img/logo/horizontal-color.png', '/modules/core/img/logo/horizontal-color@2x.png', @logo-size-width, @logo-size-height);
+  }
+}

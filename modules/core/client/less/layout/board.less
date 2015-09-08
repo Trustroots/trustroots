@@ -1,0 +1,102 @@
+/**
+ * Wide full width landscape box
+ */
+.board {
+  clear: both;
+  overflow: auto;
+  width: 100%;
+  margin: 0;
+  padding: 70px 15px;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  background-size: cover;
+  &, label {
+    color: #fff;
+  }
+  a {
+    text-decoration: underline;
+    &.btn {
+      text-decoration: none;
+    }
+    &,
+    &:hover,
+    &:focus,
+    &:active {
+      color: #fff;
+    }
+  }
+  h2 {
+    color: #fff;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
+    font-size: 55px;
+    line-height: 55px;
+    letter-spacing: -1px;
+    margin: 0;
+    padding: 0;
+  }
+  .board-highlight {
+    display: inline-block;
+    padding: 5px 15px;
+    text-shadow: none;
+    margin: 0;
+    &.board-highlight-primary {
+      background: rgba(red(@brand-primary), green(@brand-primary), blue(@brand-primary), .9);
+    }
+    &.board-highlight-secondary {
+      background: rgba(red(@brand-secondary), green(@brand-secondary), blue(@brand-secondary), .9);
+    }
+    &.board-highlight-transparent {
+      text-shadow: 0 1px 10px rgba(0,0,0,1);
+      font-size: 36px;
+      font-weight: bold;
+      letter-spacing: -1px;
+      text-transform: uppercase;
+    }
+  }
+
+  &.board-primary {
+    background-color: @brand-primary;
+    .page-header {
+      h1, h2 {
+        background: @brand-primary;
+      }
+    }
+  }
+  &.board-default {
+    background-color: @brand-secondary;
+    .page-header {
+      h1, h2 {
+        background: @brand-secondary;
+      }
+    }
+  }
+  .page-header {
+    margin: 0;
+    h1 {
+      .h1();
+    }
+    h2 {
+      .h2();
+    }
+    &:before {
+      border-color: #fff;
+    }
+  }
+
+  /**
+   * Board images
+   * Most of the images for .board are coming from core/trBoards directive. Check it out.
+   * Keep just the most simplest stuff here.
+   */
+  &.board-map {
+    // Screenshot from our own map...
+    background-image: url(/modules/core/img/board/map.jpg);
+  }
+  &.board-error {
+    // Photo by Mikael Korpela
+    // https://creativecommons.org/licenses/by-nc-nd/4.0/
+    background-image: url(/modules/core/img/board/error.jpg);
+  }
+
+}

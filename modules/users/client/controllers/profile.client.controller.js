@@ -1,107 +1,135 @@
-'use strict';
+(function() {
+  'use strict';
 
-angular.module('users').controller('ProfileController', ['$scope', '$stateParams', '$state', '$location', '$log', '$modal', 'Languages', 'Users', 'UserProfiles', 'Authentication', '$timeout', 'messageCenterService', 'SettingsFactory',
-  function($scope, $stateParams, $state, $location, $log, $modal, Languages, Users, UserProfiles, Authentication, $timeout, messageCenterService, SettingsFactory) {
+  angular
+    .module('users')
+    .controller('ProfileController', ProfileController);
 
-    var appSettings = SettingsFactory.get();
+  /* @ngInject */
+  function ProfileController($scope, $stateParams, $state, $location, $modal, Languages, Users, Contact, Authentication, $timeout, messageCenterService, profile, contact, appSettings) {
 
-    $scope.user = Authentication.user; // Currently logged in user
-    $scope.profile = false; // Profile to show
-    $scope.languages = Languages.get('object');
-
-    // We landed here from profile editor, show success message
-    if($stateParams.updated) {
-      // Timeout is here due Angular overwriting message at $state change otherwise
-      $timeout(function(){
-        messageCenterService.add('success', 'Profile updated', { timeout: appSettings.flashTimeout });
-      });
+    // No user defined at URL, just redirect to user's own profile
+    if(!$stateParams.username) {
+      $state.go('profile', {username: Authentication.user.username});
     }
 
-    // Fetch profile to show (note: not the currently logged in user's profile)
-    $scope.findProfile = function() {
-      if(!$stateParams.username) {
-        // No username set, direct to your own profile
-        $state.go('profile', {username: $scope.user.username});
-      }
-      else {
-        // Get profile with $stateParams.username
-        $scope.profile = UserProfiles.get({
-          username: $stateParams.username
-        },
-        function() {},//@todo
-        function(errorResponse) {
-          $scope.profileError = true;
-          switch (errorResponse.status) {
-            case 403:
-              $scope.error = 'Profile not found.';
-              break;
-            default:
-              $scope.error = 'Something went wrong. Try again.';
-          }
-        });
-      }
-    };
+    // ViewModel
+    var vm = this;
+    vm.profile = profile;
+    vm.contact = contact;
 
-    // Check if there are additional accounts
-    $scope.hasConnectedAdditionalSocialAccounts = function(provider) {
-      for (var i in $scope.profile.additionalProvidersData) {
-        return true;
-      }
-      return false;
-    };
-
-    // Check if provider is already in use with profile
-    $scope.isConnectedSocialAccount = function(provider) {
-      return $scope.profile.provider === provider || ($scope.profile.additionalProvidersData && $scope.profile.additionalProvidersData[provider]);
-    };
-
-    /*
-     * Return an URL for user's social media profiles
-     * Ensure these fields are set at users.profile.server.controller.js
-     */
-    $scope.socialAccountLink = function(provider, data) {
-      if(provider === 'facebook' && data.id) {
-        return 'https://www.facebook.com/app_scoped_user_id/' + data.id;
-      }
-      else if(provider === 'twitter' && data.screen_name) {
-        return 'https://twitter.com/' + data.screen_name;
-      }
-      else if(provider === 'github' && data.login) {
-        return 'https://github.com/' + data.login;
-      }
-      else return '#';
-    };
-
-    $scope.tabSelected = ($stateParams.tab && ['overview', 'contacts'].indexOf($stateParams.tab) > -1) ? $stateParams.tab : 'overview';
-
-    $scope.tabs = [
+    // Exposed to the view
+    vm.hasConnectedAdditionalSocialAccounts = hasConnectedAdditionalSocialAccounts;
+    vm.isConnectedSocialAccount = isConnectedSocialAccount;
+    vm.socialAccountLink = socialAccountLink;
+    vm.tabSelected = tabSelected;
+    vm.toggleAvatarModal = toggleAvatarModal;
+    vm.tabs = [
       {
         path: 'about',
         title: 'About',
-        content: '/modules/users/views/profile/view-profile-about.client.view.html?c=' + appSettings.commit,
-        active: $stateParams.tab && $stateParams.tab === 'about'
+        content: '/modules/users/views/profile/view-profile-about.client.view.html?c=' + appSettings.commit
       },
       {
         path: 'overview',
         title: 'Overview',
         content: '/modules/users/views/profile/view-profile-sidebar.client.view.html?c=' + appSettings.commit,
-        active: $stateParams.tab && $stateParams.tab === 'overview',
         onlySmallScreen: true
       },
       {
         path: 'accommodation',
         title: 'Accommodation',
-        content: '/modules/offers/views/view-offers.client.view.html?c=' + appSettings.commit,
-        active: $stateParams.tab && $stateParams.tab === 'accommodation',
+        content: '/modules/offers/views/offers-view.client.view.html?c=' + appSettings.commit,
         onlySmallScreen: true
       },
       {
         path: 'contacts',
         title: 'Contacts',
-        content: '/modules/contacts/views/contacts.client.view.html?c=' + appSettings.commit,
-        active: $stateParams.tab && $stateParams.tab === 'contacts'
+        content: '/modules/contacts/views/list-contacts.client.view.html?c=' + appSettings.commit
       }
     ];
 
+    // We landed here from profile editor, show success message
+    if($stateParams.updated && profile.username === Authentication.user.username) {
+      // $timeout due Angular overwriting message at $state change otherwise
+      $timeout(function(){
+        messageCenterService.add('success', 'Profile updated', { timeout: appSettings.flashTimeout });
+      });
+    }
+
+    /**
+     * When contact removal modal signals that the contact was removed, remove it from this scope as well
+     * @todo: any better way to keep vm.contact $resolved but wipe out the actual content?
+     */
+    $scope.$on('contactRemoved', function() {
+      delete vm.contact._id;
+    });
+
+    /**
+     * Open avatar modal (bigger photo)
+     */
+    function toggleAvatarModal() {
+      $modal.open({
+        template: '<a tr-avatar data-user="avatarModal.profile" data-size="512" data-link="false" ng-click="avatarModal.close()"></a>',
+        controller: function($scope, $modalInstance, profile) {
+          var vm = this;
+          vm.profile = profile;
+          vm.close = function() {
+            $modalInstance.dismiss('cancel');
+          };
+        },
+        controllerAs: 'avatarModal',
+        animation: true,
+        windowClass: 'modal-avatar',
+        resolve: {
+          profile: function() {
+            return vm.profile;
+          }
+        }
+      });
+    }
+
+    /**
+     * Determine which tab to select
+     */
+    function tabSelected() {
+      return ($stateParams.tab && ['overview', 'contacts'].indexOf($stateParams.tab) > -1) ? $stateParams.tab : 'overview';
+    }
+
+    /**
+     * Check if there are additional accounts
+     */
+    function hasConnectedAdditionalSocialAccounts(provider) {
+      for (var i in vm.profile.additionalProvidersData) {
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * Check if provider is already in use with profile
+     */
+    function isConnectedSocialAccount(provider) {
+      return vm.profile.provider === provider || (vm.profile.additionalProvidersData && vm.profile.additionalProvidersData[provider]);
+    }
+
+    /**
+     * Return an URL for user's social media profiles
+     * Ensure these fields are set at users.profile.server.controller.js
+     */
+    function socialAccountLink(providerName, providerData) {
+      if(providerName === 'facebook' && providerData.id) {
+        return 'https://www.facebook.com/app_scoped_user_id/' + providerData.id;
+      }
+      else if(providerName === 'twitter' && providerData.screen_name) {
+        return 'https://twitter.com/' + providerData.screen_name;
+      }
+      else if(providerName === 'github' && providerData.login) {
+        return 'https://github.com/' + providerData.login;
+      }
+      else return '#';
+    }
+
   }
-]);
+
+})();

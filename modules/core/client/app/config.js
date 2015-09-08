@@ -9,17 +9,20 @@ var ApplicationConfiguration = (function() {
                                               'ngAnimate',
                                               'ngTouch',
                                               'ngSanitize',
+                                              'ngMessageFormat',
                                               'ui.router',
                                               'ui.bootstrap',
-                                              'ui.utils',
-                                              //'btford.socket-io',
                                               'angularMoment',
                                               'angular-medium-editor',
                                               'leaflet-directive',
-                                              'angularFileUpload',
+                                              'ngFileUpload',
                                               'zumba.angular-waypoints',
                                               'MessageCenterModule',
-                                              'localytics.directives'
+                                              'localytics.directives',
+                                              'angular-loading-bar',
+                                              'trTrustpass',
+                                              'angular-mailcheck',
+                                              'LocalStorageModule'
                                             ];
 
   // Add a new vertical module

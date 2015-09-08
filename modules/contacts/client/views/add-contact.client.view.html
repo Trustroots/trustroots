@@ -1,6 +1,9 @@
-<section class="container container-spacer" ng-controller="AddContactController">
+<section class="container container-spacer">
 
-  <form name="contactForm" ng-submit="addContact()" novalidate autocomplete="off">
+  <!-- Browsing with non-public account -->
+  <div ng-if="!app.user.public" ng-include="'/modules/users/views/profile/activate.client.view.html?c=' + app.cacheBust"></div>
+
+  <form name="contactForm" ng-submit="contactAdd.add()" novalidate autocomplete="off" ng-if="app.user.public">
 
     <div class="row">
 
@@ -10,59 +13,59 @@
           <h2>Add contact</h2>
         </div>
 
-        <div class="panel panel-default contacts-connection" ng-hide="!friend">
+        <div class="panel panel-default contacts-connection" ng-if="contactAdd.friend._id">
           <div class="panel-body">
             <div class="row">
               <div class="col-xs-12 col-sm-5 contacts-connection-profile">
-                <div tr-avatar data-user="user" data-size="128" class="center-block"></div>
+                <div tr-avatar data-user="app.user" data-size="128" class="center-block"></div>
 
-                <h4 class="contacts-connection-name" ng-bind="user.displayName"></h4>
+                <h4 class="contacts-connection-name" ng-bind="app.user.displayName"></h4>
               </div>
               <div class="hidden-xs col-sm-2">
                 <i class="icon-exchange icon-3x text-muted contacts-connection-divider"></i>
               </div>
               <div class="col-xs-12 col-sm-5 contacts-connection-profile">
                 <!-- Avatar while loading -->
-                <div tr-avatar data-source="none" data-size="128" class="center-block" ng-if="!friend.$resolved"></div>
+                <div tr-avatar data-source="none" data-size="128" class="center-block" ng-if="!contactAdd.friend.$resolved"></div>
 
                 <!-- Avatar after loaded -->
-                <div tr-avatar data-user="friend" data-size="128" class="center-block" ng-if="friend.$resolved && friend"></div>
+                <div tr-avatar data-user="contactAdd.friend" data-size="128" class="center-block" ng-if="contactAdd.friend && contactAdd.friend.$resolved"></div>
 
-                <h4 class="contacts-connection-name" ng-bind="friend.displayName"></h4>
+                <h4 class="contacts-connection-name" ng-bind="contactAdd.friend.displayName"></h4>
               </div>
             </div><!-- /.row -->
           </div>
         </div>
 
-        <div class="panel panel-default" ng-hide="isConnected || !friend">
+        <div class="panel panel-default" ng-hide="contactAdd.isConnected || !contactAdd.friend">
           <div class="panel-heading">
-            <h4>Message for {{friend.displayName}}</h4>
+            <h4>Message for {{ ::contactAdd.friend.displayName }}</h4>
           </div>
           <div class="panel-body">
-            <div class="contact-message" ng-model="contact.message" medium-editor options="{'placeholder': 'Optional private message...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+            <div class="contact-message" ng-model="contactAdd.contact.message" medium-editor options="{buttonLabels: 'fontawesome', 'placeholder': 'Write a message', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
           </div>
         </div>
 
         <!-- Notifications -->
-        <div ng-if="success" class="alert alert-success">
-          <h4 ng-bind="success"></h4>
+        <div ng-if="contactAdd.success" class="alert alert-success">
+          <h4 ng-bind="contactAdd.success"></h4>
           <p>
-            <strong><a ui-sref="profile({username: user.username})">{{ user.displayName }}</a></strong> &
-            <strong><a ui-sref="profile({username: friend.username})">{{ friend.displayName }}</a></strong>.
+            <strong><a ui-sref="profile({username: app.user.username})">{{ ::app.user.displayName }}</a></strong> &
+            <strong><a ui-sref="profile({username: contactAdd.friend.username})">{{ ::contactAdd.friend.displayName }}</a></strong>.
           </p>
         </div>
-        <div ng-if="error" class="alert alert-danger text-center">
-          <strong ng-bind="error"></strong>
+        <div ng-if="contactAdd.error" class="alert alert-danger text-center">
+          <strong ng-bind="contactAdd.error"></strong>
         </div>
         <!-- /Notifications -->
 
-        <p class="text-center" ng-hide="isConnected || !friend">
-          <button type="submit" class="btn btn-lg btn-primary" ng-disabled="isLoading">
-            <span ng-hide="isLoading">Add contact</span>
-            <span ng-show="isLoading">Wait a moment...</span>
+        <p class="text-center" ng-hide="contactAdd.isConnected || !contactAdd.friend">
+          <button type="submit" class="btn btn-lg btn-primary" ng-disabled="contactAdd.isLoading">
+            <span ng-hide="contactAdd.isLoading">Add contact</span>
+            <span ng-show="contactAdd.isLoading">Wait a moment...</span>
           </button>
           <br><br>
-          <a ui-sref="profile({username: friend.username})" class="text-muted">Cancel</a>
+          <a ui-sref="profile({username: contactAdd.friend.username})" class="text-muted">Cancel</a>
         </p>
 
       </div><!-- /.col-* -->

@@ -62,12 +62,6 @@ function fuzzyLocation(location) {
  * Create (or update if exists) a Offer
  */
 exports.create = function(req, res) {
-
-  // If user who is creating is hidden, raise error
-  if(!req.user || !req.user.public) {
-    return res.status(400).send('No access.');
-  }
-
   var offer = new Offer(req.body);
   offer.user = req.user;
 
@@ -77,6 +71,15 @@ exports.create = function(req, res) {
   // Sanitize offer contents
   offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
   offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
+
+  // Test in case they're actually empty without html
+  if(offer.description && offer.description.length > 0 && sanitizeHtml(offer.description, {allowedTags: []}).trim() === '') {
+    offer.description = '';
+  }
+  if(offer.noOfferDescription && offer.noOfferDescription.length > 0 && sanitizeHtml(offer.noOfferDescription, {allowedTags: []}).trim() === '') {
+    offer.noOfferDescription = '';
+  }
+
 
   // Convert the Model instance to a simple object using Model's 'toObject' function
   // to prevent weirdness like infinite looping...
@@ -108,21 +111,9 @@ exports.create = function(req, res) {
 
 
 /**
- * Delete an Offer
- */
-exports.delete = function(req, res) {
-  console.log('->offer.delete');
-};
-
-/**
  * List of Offers
  */
 exports.list = function(req, res) {
-
-  // If user who is loading is hidden, don't show anything
-  if(!req.user || !req.user.public) {
-    return res.status(400).send('No access.');
-  }
 
   Offer.find(
     {
@@ -130,7 +121,11 @@ exports.list = function(req, res) {
         { status: 'yes' },
         { status: 'maybe' }
       ],
-      //http://docs.mongodb.org/manual/reference/operator/query/box -> It's latitude first as in the database, not longitude first as in the documentation
+      /**
+       * Note:
+       * http://docs.mongodb.org/manual/reference/operator/query/box
+       * -> It's latitude first as in the database, not longitude first as in the documentation
+       */
       locationFuzzy: {
         $geoWithin: {
           $box: [
@@ -149,14 +144,14 @@ exports.list = function(req, res) {
       });
     } else {
 
-      /*
-      * Could return something like this here already (so no need to refactor at frontend):
-      *
-      * lat: marker.locationFuzzy[0],
-      * lng: marker.locationFuzzy[1],
-      * user: marker.user,
-      * icon: $scope.icons[marker.status]
-      */
+      /**
+       * Could return something like this here already (so no need to refactor at frontend):
+       *
+       * lat: marker.locationFuzzy[0],
+       * lng: marker.locationFuzzy[1],
+       * user: marker.user,
+       * icon: $scope.icons[marker.status]
+       */
       res.json(offers);
     }
   });
@@ -167,43 +162,47 @@ exports.list = function(req, res) {
  * Show the current Offer
  */
 exports.read = function(req, res) {
-  res.json(req.offer);
+
+  res.json(req.offer || {});
 };
 
 
 // Offer reading middleware
 exports.offerByUserId = function(req, res, next, userId) {
+
+  // Not a valid ObjectId
+  if(!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).send({
+      message: errorHandler.getErrorMessageByKey('invalid-id')
+    });
+  }
   Offer.findOne({
       user: userId
+      //55420a6dab370d3f4bb398ae nope
+      // 5425379c8e3e468133926930 ok
     })
     .exec(function(err, offer) {
-      if (err) return next(err);
-      //if (!offer) return next(new Error('Failed to load offers.'));
 
-      if (offer) {
-        offer = offer.toObject();
-
-        // Sanitize each outgoing offer's contents
-        offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
-        offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
-
-        // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
-        if(userId !== req.user.id) {
-          offer.location = offer.locationFuzzy;
-        }
-        delete offer.locationFuzzy;
-
-        req.offer = offer;
+      // Errors
+      if(err) return next(err);
+      if(!offer) {
+			  return res.status(404).send({
+			    message: errorHandler.getErrorMessageByKey('not-found')
+			  });
       }
-      else {
-        // Return default offer
-        req.offer = {
-          status: 'no',
-          user: {
-            id: userId
-          }
-        };
+
+      offer = offer.toObject();
+
+      // Sanitize each outgoing offer's contents
+      offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
+      offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
+
+      // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
+      if(userId !== req.user.id) {
+        offer.location = offer.locationFuzzy;
       }
+      delete offer.locationFuzzy;
+      req.offer = offer;
       next();
     });
 
@@ -212,42 +211,45 @@ exports.offerByUserId = function(req, res, next, userId) {
 
 // Offer reading middleware
 exports.offerById = function(req, res, next, offerId) {
+
+  // Not a valid ObjectId
+  if(!mongoose.Types.ObjectId.isValid(offerId)) {
+    return res.status(400).send({
+      message: errorHandler.getErrorMessageByKey('invalid-id')
+    });
+  }
+
+  // Require user
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
   Offer.findById(offerId)
-    .populate('user', userHandler.userMiniProfileFields + ' birthdate gender tagline')
+    .populate('user', userHandler.userListingProfileFields)
     .exec(function(err, offer) {
-      if (err) return next(err);
-      //if (!offer) return next(new Error('Failed to load offers.'));
 
-      if (offer) {
-        // Sanitize each outgoing offer's contents
-        offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
-        offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
-
-        // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
-        if(offer.user !== req.user.id) {
-          offer.location = offer.locationFuzzy;
-        }
-        delete offer.locationFuzzy;
-
-        req.offer = offer;
+      if(err) return next(err);
+      if(!offer) {
+			  return res.status(404).send({
+			    message: errorHandler.getErrorMessageByKey('not-found')
+			  });
       }
-      else {
-        return res.status(400).send({
-          message: 'Could not find offer by this id.'
-        });
+      offer = offer.toObject();
+
+      // Sanitize each outgoing offer's contents
+      offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
+      offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
+
+      // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
+      if(req.user && offer.user !== req.user.id) {
+        offer.location = offer.locationFuzzy;
       }
+      delete offer.locationFuzzy;
+
+      req.offer = offer;
       next();
     });
 
-};
-
-
-/**
- * Offer authorization middleware
- */
-exports.hasAuthorization = function(req, res, next) {
-  if (req.user.public === true && req.offer.user.id !== req.user.id) {
-    return res.status(403).send('User is not authorized');
-  }
-  next();
 };

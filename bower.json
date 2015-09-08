@@ -1,29 +1,34 @@
 {
   "name": "trustroots",
   "version": "0.2.0",
-  "description": "Hospitality exchange community for hitchhikers and other travellers.",
+  "description": "Trustroots.org",
   "dependencies": {
-    "bootstrap": "~3.3.4",
-    "angular": "~1.3",
-    "angular-resource": "~1.3",
-    "angular-mocks": "~1.3",
-    "angular-animate": "~1.3",
-    "angular-touch": "~1.3",
-    "angular-sanitize": "~1.3",
-    "angular-bootstrap": "~0.13.0",
-    "angular-ui-utils": "~0.2.3",
+    "bootstrap": "~3.3.5",
+    "angular": "~1.4",
+    "angular-resource": "~1.4",
+    "angular-mocks": "~1.4",
+    "angular-animate": "~1.4",
+    "angular-touch": "~1.4",
+    "angular-sanitize": "~1.4",
+    "angular-message-format": "~1.4",
+    "angular-bootstrap": "~0.13.4",
     "angular-ui-router": "~0.2.15",
-    "angular-moment": "~0.10.1",
+    "angular-moment": "~0.10.3",
     "angular-medium-editor": "~0.1.0",
-    "angular-leaflet-directive": "~0.8.1",
+    "angular-leaflet-directive": "~0.8.8",
     "angular-waypoints": "~1.0.1",
     "PruneCluster": "~1.1.0",
-    "ng-file-upload": "~2.0.5",
+    "ng-file-upload": "~7.0.17",
     "imagesloaded": "~3.1.8",
     "message-center": "~1.1.4",
-    "angular-chosen-localytics": "~1.0.7"
+    "angular-chosen-localytics": "~1.0.7",
+    "angular-loading-bar": "~0.8.0",
+    "angular-trustpass": "~0.2.0",
+    "angular-mailcheck": "~0.1.0",
+    "angular-local-storage": "~0.2.2"
   },
   "resolutions": {
-    "angular": "~1.3"
+    "angular": "~1.4",
+    "angular-mocks": "~1.4"
   }
 }

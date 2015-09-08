@@ -1,0 +1,83 @@
+/**
+ * Edit offer
+ */
+
+ @offer-map-height: 400px;
+
+.offers-edit {
+  .page-header {
+    margin-top: 10px;
+  }
+  .offer-map {
+    position: relative;
+    height: @offer-map-height;
+  }
+  #offer-add-location-canvas {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+  // Overlay for the map consisting vignetting shadow and the central marker
+  .offer-location-overlay {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    // Vignetting shadow, darker from sides and bright from the middle:
+    box-shadow: inset 0 0 (@offer-map-height*0.55) rgba(0,0,0,0.45);
+    // Allows dragging the map trough element:
+    pointer-events: none;
+    // Position icon to half the container minus distance to the icon's pointer:
+    background-position: 50% ( (@offer-map-height / 2) - 38px );
+    background-repeat: no-repeat;
+    .img-retina("/modules/core/img/map/marker-locator.png", "/modules/core/img/map/marker-locator@2x.png", 56px, 41px);
+    &.hosting-yes {
+      .img-retina("/modules/core/img/map/marker-locator-yes.png", "/modules/core/img/map/marker-locator-yes@2x.png", 56px, 41px);
+    }
+    &.hosting-maybe {
+      .img-retina("/modules/core/img/map/marker-locator-maybe.png", "/modules/core/img/map/marker-locator-maybe@2x.png", 56px, 41px);
+    }
+  }
+  .offer-panel-map {
+    position: relative;
+  }
+  .offer-map-guide {
+    position: absolute;
+    top: 0;
+    z-index: @zindex-popover;
+    left: 0;
+    right: 0;
+  }
+  .offer-map-location-search {
+    margin-bottom: 0;
+  }
+  .offer-maxguests {
+    max-width: 80px;
+  }
+  .offer-nodescription,
+  .offer-description {
+    font-size: @font-size-large;
+  }
+  .btn-group > .btn-hosting {
+    &, &:hover {
+      border-color: transparent;
+    }
+    span {
+      border-bottom: 2px solid transparent;
+    }
+    &.active {
+      span {
+        border-color: #fff;
+      }
+    }
+    @media (max-width: @screen-xs) {
+      clear: both;
+      width: 100%;
+      margin-left: 0;
+      margin-right: 0;
+      border-radius: 0;
+    }
+  }
+}

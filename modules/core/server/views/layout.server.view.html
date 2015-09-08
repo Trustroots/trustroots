@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-controller="AppController as app">
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -13,10 +13,6 @@
   {# https://developer.mozilla.org/en-US/docs/Web/HTTP/Controlling_DNS_prefetching #}
   <link rel="dns-prefetch" href="//graph.facebook.com">
   <link rel="dns-prefetch" href="//gravatar.com">
-  <!--[if lt IE 9]>
-    <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-    <script src="//oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-  <![endif]-->
   <link rel="icon" sizes="16x16" href="{{hostPort}}/modules/core/img/favicon.png" type="image/png">
   <link rel="icon" sizes="32x32" href="{{hostPort}}/modules/core/img/favicon@2x.png" type="image/png">
   <link rel="apple-touch-icon-precomposed" sizes="152x152" href="{{hostPort}}/modules/core/img/icons/apple-touch-icon-152x152-precomposed.png">
@@ -50,24 +46,24 @@
   <meta name="msapplication-TileColor" content="#FFFFFF">
   <meta name="msapplication-TileImage" content="{{hostPort}}/modules/core/img/icons/apple-touch-icon-144x144-precomposed.png">
   {# Google Analytics #}
-  {% if process.env.NODE_ENV === 'production' && GAcode !=== '' %}
+  {% if process.env.NODE_ENV === 'production' && googleAnalytics.enabled === true %}
   <!-- https://www.trustroots.org/privacy -->
   <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
   })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-  ga('create', '{{GAcode}}', 'auto');
+  ga('create', '{{ googleAnalytics.code }}', 'auto');
   ga('send', 'pageview');
   </script>
   {% endif %}
 </head>
 
-<body class="ng-cloak" ng-controller="MainController">
+<body class="ng-cloak">
   <div id="tr-wrap">
 
     {% block header %}
-      <header ng-include="'/modules/core/views/header.client.view.html?c={{appSettings.commit}}'" id="tr-header" role="banner" class="navbar navbar-default navbar-fixed-top hidden-print" ng-hide="isHidden" ng-controller="HeaderController"></header>
+      {% include 'partials/header.server.view.html' %}
     {% endblock %}
 
     <!-- Flash messages -->
@@ -80,7 +76,7 @@
   </div>
 
   {% block footer %}
-    <footer ng-include="'/modules/core/views/footer.client.view.html?c={{appSettings.commit}}'" id="tr-footer" role="contentinfo" class="hidden-print hidden-xs" ng-class="{ 'footer-transparent footer-sticky' : isTransparent }" ng-hide="isHidden" ng-controller="FooterController"></footer>
+    {% include 'partials/footer.server.view.html' %}
   {% endblock %}
 
   {# Embedding The User and Settings Objects #}
@@ -97,24 +93,6 @@
   {% if process.env.NODE_ENV === 'development' %}
   <!-- Livereload script rendered -->
   <script type="text/javascript" src="{{host}}:35729/livereload.js"></script>
-  {% endif %}
-
-  {# Piwik Analytics #}
-  {% if process.env.NODE_ENV === 'production' && piwik.enabled === true %}
-  <!-- https://www.trustroots.org/privacy -->
-  <script type="text/javascript">
-    var _paq = _paq || [];
-    _paq.push(['trackPageView']);
-    _paq.push(['enableLinkTracking']);
-    (function() {
-      var u="//{{piwik.url}}/";
-      _paq.push(['setTrackerUrl', u+'piwik.php']);
-      _paq.push(['setSiteId', {{piwik.siteId}}]);
-      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-      g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
-    })();
-  </script>
-  <noscript><img src="//{{piwik.url}}/piwik.php?idsite={{piwik.siteId}}" style="border:0;" alt="" /></noscript>
   {% endif %}
 
   {# Piwik Analytics #}

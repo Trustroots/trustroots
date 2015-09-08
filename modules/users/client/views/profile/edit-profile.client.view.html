@@ -1,41 +1,37 @@
-<section class="container container-spacer" id="profile-editor" ng-controller="EditProfileController">
+<section class="container container-spacer" id="profile-editor">
 
-  <div ng-if="error" class="text-center text-danger">
-    <strong ng-bind="error"></strong>
-  </div>
-
-  <form name="userForm" ng-submit="updateUserProfile(userForm.$valid)" autocomplete="off">
+  <form name="userForm" ng-submit="editprofile.updateUserProfile(userForm.$valid)" autocomplete="off">
       <div class="row">
 
         <div class="col-sm-3">
 
           <div class="panel panel-default" id="profile-sidebar">
-            <a href="#" class="avatar-edit" ng-click="avatarModal(user, $event);">
-              <div tr-avatar data-user="user" data-size="256" data-link="false"></div>
+            <a href="#" class="avatar-edit" ng-click="editprofile.avatarModal(editprofile.user, $event);">
+              <div tr-avatar data-user="editprofile.user" data-size="256" data-link="false"></div>
               <label>
-                <i class="icon-2x picture-change"></i><br>
+                <i class="icon-3x icon-picture-change"></i><br>
                 Change profile photo
               </label>
             </a>
             <div class="panel-body">
 
               <div class="form-group text-muted">
-                Member since <span ng-bind="user.created | date:'mediumDate'"></span>
+                Member since <span ng-bind="editprofile.user.created | date:'mediumDate'"></span>
               </div>
 
               <div class="form-group">
                 <label for="location-living"><h4>Lives in</h4></label>
-                <div tr-location="user.locationLiving" data-placeholder="City, Country" id="location-living"></div>
+                <div tr-location="editprofile.user.locationLiving" data-placeholder="City, Country" id="location-living"></div>
               </div>
 
               <div class="form-group">
                 <label for="location-from"><h4>From</h4></label>
-                <div tr-location="user.locationFrom" data-placeholder="City, Country" id="location-from"></div>
+                <div tr-location="editprofile.user.locationFrom" data-placeholder="City, Country" id="location-from"></div>
               </div>
 
               <div class="form-group">
                 <label for="gender"><h4>Gender</h4></label>
-                <select id="gender" name="gender" class="form-control" ng-model="user.gender">
+                <select id="gender" name="gender" class="form-control" ng-model="editprofile.user.gender">
                   <option value="">Unspecified</option>
                   <option value="female">Female</option>
                   <option value="male">Male</option>
@@ -44,11 +40,11 @@
               </div>
 
               <div class="form-group">
-                <label for="birthdate"><h4>Birthdate <small class="text-muted text-uppercase"> {{ birthdateFormat }}</small></h4></label>
+                <label for="birthdate"><h4>Birthdate <small class="text-muted text-uppercase">{{ ::editprofile.birthdateFormat }}</small></h4></label>
                 <p class="input-group profile-editor-birthdate">
-                  <input id="birthdate" type="text" class="form-control" datepicker-popup="{{birthdateFormat}}" ng-model="user.birthdate" is-open="birthdateOpened" datepicker-options="birthdateOptions" ng-required="false" close-text="Close" current-text="Today" clear-text="Clear" />
+                  <input id="birthdate" type="text" class="form-control" datepicker-popup="{{ ::editprofile.birthdateFormat }}" ng-model="editprofile.user.birthdate" is-open="editprofile.birthdateOpened" datepicker-options="editprofile.birthdateOptions" ng-required="false" close-text="Close" current-text="Today" clear-text="Clear">
                   <span class="input-group-btn">
-                    <button type="button" class="btn btn-inverse" ng-click="birthdateOpen($event)"><i class="icon-calendar"></i></button>
+                    <button type="button" class="btn btn-inverse" ng-click="editprofile.birthdateOpen($event)"><i class="icon-calendar"></i></button>
                   </span>
                 </p>
               </div>
@@ -61,49 +57,9 @@
                   data-placeholder="Start typing..."
                   no-results-text="'Not found: '"
                   search-contains="true"
-                  ng-model="userLanguages"
-                  ng-options="language.name for language in languages track by language.key">
+                  ng-model="editprofile.userLanguages"
+                  ng-options="language.name for language in editprofile.languages track by language.key">
                 </select>
-              </div>
-
-              <div class="form-group">
-                <h4>
-                  Profiles
-                  <span class="icon-help cursor-help text-muted pull-right" popover-placement="right" popover-append-to-body="true" popover-trigger="mouseenter" popover="Connecting to these is absolutely optional. Other members in Trustroots will be able to see a link to your other profile and some basic info about you and content you like there. You will be able to use eg. your contact list here in Trustroots. Other networks will then obviously know that you have connected to Trustroots, but we will never send any of your profile data to them."></span>
-                </h4>
-
-                <div ng-if="hasConnectedAdditionalSocialAccounts()">
-                  <ul class="social-profiles list-unstyled text-capitalize">
-                    <li ng-repeat="(providerName, providerData) in user.additionalProvidersData" class="remove-account-container text-capitalize">
-                      <a ng-click="removeUserSocialAccount(providerName)" class="btn btn-link">
-                        <i class="icon-fw icon-lg icon-{{providerName}}"></i> {{providerName}}
-                        <small>(disconnect)</small>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-
-                <div ng-hide="isConnectedSocialAccount('facebook') && isConnectedSocialAccount('twitter') && isConnectedSocialAccount('github')">
-                  <h5>Connect to:</h5>
-                  <ul class="social-profiles list-unstyled">
-                    <li ng-hide="isConnectedSocialAccount('facebook')">
-                      <a href="/api/auth/facebook" target="_top" class="btn btn-link">
-                        <i class="icon-fw icon-lg icon-facebook"></i> Facebook
-                      </a>
-                    </li>
-                    <li ng-hide="isConnectedSocialAccount('twitter')">
-                      <a href="/api/auth/twitter" target="_top" class="btn btn-link">
-                        <i class="icon-fw icon-lg icon-twitter"></i> Twitter
-                      </a>
-                    </li>
-                    <li ng-hide="isConnectedSocialAccount('github')">
-                      <a href="/api/auth/github" target="_top" class="btn btn-link">
-                        <i class="icon-fw icon-lg icon-github"></i> GitHub
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-
               </div>
 
             </div><!-- /.panel-body -->
@@ -115,18 +71,18 @@
           <div class="row">
             <div class="col-md-6">
 
-              <span class="profile-firstname" ng-model="user.firstName" medium-editor options="{'placeholder': 'First name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
-              <span class="profile-lastname" ng-model="user.lastName" medium-editor options="{'placeholder': 'Last name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
+              <span class="profile-firstname" ng-model="editprofile.user.firstName" medium-editor options="{'placeholder': 'First name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
+              <span class="profile-lastname" ng-model="editprofile.user.lastName" medium-editor options="{'placeholder': 'Last name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
 
-              <h4 class="profile-username" tooltip="You cannot change your username" tooltip-placement="right">@{{user.displayUsername || user.username}}</h4>
+              <h4 class="profile-username" tooltip="You cannot change your username" tooltip-placement="right">@{{editprofile.user.displayUsername || editprofile.user.username}}</h4>
 
               <div class="profile-tagline">
-                <div ng-model="user.tagline" medium-editor options="{'placeholder': 'Short tagline...', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></div>
+                <div ng-model="editprofile.user.tagline" medium-editor options="{'placeholder': 'Short tagline...', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></div>
               </div>
 
             </div>
-            <div class="col-md-6 profile-action-buttons">
-              <a ui-sref="profile({username: user.username})" type="cancel" class="btn btn-link profile-editor-cancel">Cancel</a>
+            <div class="col-md-6 profile-actions">
+              <a ui-sref="profile({username: app.user.username})" type="cancel" class="btn btn-link profile-editor-cancel">Cancel</a>
               <button type="submit" class="btn btn-primary profile-editor-save">Save profile</button>
             </div>
           </div>
@@ -150,7 +106,7 @@
                 <label for="description" class="panel-heading">About me</label>
                 <div class="panel-body profile-description">
                   <div class="form-group">
-                    <div id="description" aria-describedby="descriptionHelp" ng-model="user.description" medium-editor options="{'placeholder': 'Description', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+                    <div id="description" aria-describedby="descriptionHelp" ng-model="editprofile.user.description" medium-editor options="{buttonLabels: 'fontawesome', 'placeholder': 'Description', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
                   </div>
                 </div>
                 <div class="panel-footer">
@@ -163,21 +119,90 @@
               </div>
 
             </div><!-- /.col- -->
-            <div class="col-md-6 hidden-xs">
+            <div class="col-md-6">
 
-              <!-- Accommodation -->
-              <div class="panel panel-default panel-disabled">
+              <!-- Profiles -->
+              <div class="panel panel-default">
                 <div class="panel-heading">
-                  Accommodation
+                  Elsewhere
+                  <span class="icon-help cursor-help text-muted pull-right" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover="Connecting to these is absolutely optional. Other members in Trustroots will be able to see a link to your other profile and some basic info about you and content you like there. You will be able to use eg. your contact list here in Trustroots. Other networks will then obviously know that you have connected to Trustroots, but we will never send any of your profile data to them."></span>
                 </div>
                 <div class="panel-body">
-                  <div class="content-empty">
-                    <div class="offer-symbol-sofa center-block"></div>
+
+                  <div ng-if="!editprofile.isConnectedSocialAccount('facebook') ||
+                              !editprofile.isConnectedSocialAccount('twitter') ||
+                              !editprofile.isConnectedSocialAccount('github')">
+                    <h5>Connect to</h5>
+                    <ul class="social-profiles list-unstyled">
+                      <li class="social-profile" ng-if="!editprofile.isConnectedSocialAccount(providerName)" ng-repeat="providerName in ['facebook', 'twitter', 'github'] track by providerName">
+                        <i class="social-profile-icon icon-fw icon-lg icon-{{::providerName}}"></i>
+                        <a class="social-profile-handle" ng-href="/api/auth/{{::providerName}}" target="_top" class="btn btn-link">
+                          <span class="text-capitalize">{{::providerName}}</span>
+                        </a>
+                      </li>
+                    </ul>
                     <br>
-                    <h4>Save your profile first to edit hosting status.</h4>
                   </div>
+
+                  <div ng-if="editprofile.hasConnectedAdditionalSocialAccounts()">
+                    <h5>Connected</h5>
+                    <ul class="social-profiles list-unstyled">
+                      <li class="social-profile" ng-repeat="(providerName, providerData) in editprofile.user.additionalProvidersData track by providerName" ng-class="{'social-profile-active': editprofile.removingSocialAccount === providerName}">
+                        <i class="social-profile-icon icon-fw icon-lg icon-{{::providerName}}"></i>
+
+                        <!-- Connection name -->
+                        <a class="social-profile-handle" ng-click="editprofile.removingSocialAccount = providerName" ng-if="editprofile.removingSocialAccount !== providerName">
+                          <span class="text-capitalize">{{::providerName}}</span>
+                          <small>(disconnect)</small>
+                        </a>
+
+                        <!-- Confirm disconnecting -->
+                        <span class="social-profile-remove" ng-if="editprofile.removingSocialAccount === providerName">
+                          Disconnect from <span class="text-capitalize">{{::providerName}}</span>?
+                          <a class="btn btn-xs btn-primary" ng-click="editprofile.removeUserSocialAccount(providerName)">Yes</a>
+                          <a class="btn btn-xs btn-inverse" ng-click="editprofile.removingSocialAccount = false">Cancel</a>
+                        </span>
+
+                      </li>
+                    </ul>
+                    <br>
+                  </div>
+
+                  <div class="extsites">
+                    <h5>Other hospitality networks</h5>
+                    <div class="form-group">
+                      <div class="input-group">
+                        <label class="input-group-addon" for="extSitesBW">bewelcome.org/members/</label>
+                        <input id="extSitesBW" type="text" class="form-control" ng-model="editprofile.user.extSitesBW" placeholder="your-username">
+                        <span class="input-group-btn" ng-if="editprofile.user.extSitesBW.length">
+                          <a ng-href="http://www.bewelcome.org/members/{{ editprofile.user.extSitesBW }}" target="_blank" rel="nofollow" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip-append-to-body="true" tooltip="Test opening the link"><i class="icon-link-ext"></i></a>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="input-group">
+                        <label class="input-group-addon" for="extSitesCS">couchsurfing.com/people/</label>
+                        <input id="extSitesCS" type="text" class="form-control" ng-model="editprofile.user.extSitesCS" placeholder="your-username">
+                        <span class="input-group-btn" ng-if="editprofile.user.extSitesCS.length">
+                          <a ng-href="https://www.couchsurfing.com/people/{{ editprofile.user.extSitesCS }}" target="_blank" rel="nofollow" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip-append-to-body="true" tooltip="Test opening the link"><i class="icon-link-ext"></i></a>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="input-group">
+                        <label class="input-group-addon" for="extSitesWS">warmshowers.org/users/</label>
+                        <input id="extSitesWS" type="text" class="form-control" ng-model="editprofile.user.extSitesWS" placeholder="your-username">
+                        <span class="input-group-btn" ng-if="editprofile.user.extSitesWS.length">
+                          <a ng-href="https://www.warmshowers.org/users/{{ editprofile.user.extSitesWS }}" target="_blank" rel="nofollow" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip-append-to-body="true" tooltip="Test opening the link"><i class="icon-link-ext"></i></a>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
+              <!-- /Profiles -->
+
 
             </div><!-- /.col- -->
           </div><!-- /.row -->

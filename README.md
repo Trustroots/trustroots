@@ -2,7 +2,7 @@
 
 _Hospitality exchange community for hitchhikers and other travellers._
 
-![Trustroots logo](https://raw.githubusercontent.com/Trustroots/trustroots/master/modules/core/client/img/logo/color-blue.png)
+![Trustroots logo](https://raw.githubusercontent.com/Trustroots/trustroots/master/modules/core/client/img/logo/color.png)
 
 ## Volunteering
 
@@ -22,6 +22,12 @@ See [troubleshooting](https://github.com/Trustroots/trustroots/wiki/Troubleshoot
 
 Install the stack on your localhost and run NodeJS. This approach takes a little more time to setup, and bit more manual configuration, but is super fast, and can be easier to work with. See [INSTALL.md](INSTALL.md) for details.
 
+#### Quick start
+* Install dependencies: `npm install && bower install`
+* Run in development mode: `grunt`
+* Run in production mode: `grunt prod`
+* Run tests: `test`, (server & client) or `test:server` or `test:client` for only either one.
+
 ### Vagrant
 
 The easiest and quickest way to get started is with Vagrant. See [INSTALL-VAGRANT.md](INSTALL-VAGRANT.md) for further details. Running through Vagrant can be a little bit slower, but it's a very quick and easy way to get started. Depending on the specifics of your own development setup, you might prefer to run the code locally if you're going to do a lot of development.
@@ -35,6 +41,12 @@ There's a script that can generate mock user data. It's highly recommended you r
 3. It can take up to 5 minutes. Mongoose might complain about duplicates - just ignore these errors.
 4. To see the result, log in with your chosen username and password `password`.
 
+### Tests
+
+Run `grunt test`.
+
+See [Development/testing](https://github.com/Trustroots/trustroots/wiki/Development#Testing) for more details.
+
 ### Documentation
 
 Produce documentation by running `grunt docs`
@@ -42,5 +54,6 @@ Produce documentation by running `grunt docs`
 Then run the application (just `grunt`) and open [http://localhost:3000/developers/](http://localhost:3000/developers/).
 
 ## License
-
-[The MIT License](LICENSE.md)
+* [The MIT License](LICENSE.md)
+* Photos copyright [photographers](https://github.com/Trustroots/trustroots/blob/master/modules/core/client/directives/tr-boards.client.directive.js#L30) - several of them are under Creative Commons.
+* Logos of external communities are copyrighted work and may be subject to trademark laws.

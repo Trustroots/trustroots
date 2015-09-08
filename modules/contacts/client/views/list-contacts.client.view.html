@@ -1,0 +1,52 @@
+<div ng-controller="ContactsListController as ContactsList">
+
+  <div class="content-wait" ng-if="!ContactsList.contacts || !ContactsList.contacts.$resolved">
+    <small>Wait a moment...</small>
+  </div>
+
+  <!-- Contact list -->
+  <div class="row contacts-list" ng-if="ContactsList.contacts.$resolved && ContactsList.contacts.length > 0">
+
+    <div class="col-xs-12 text-center">
+      <h4 class="text-muted" ng-if="ContactsList.contacts.length === 1">One contact</h4>
+      <h4 class="text-muted" ng-if="ContactsList.contacts.length > 1">{{ ContactsList.contacts.length }} contacts</h4>
+      <br>
+    </div>
+
+    <div class="col-xs-12 col-sm-6" ng-repeat="contact in ContactsList.contacts track by contact._id">
+      <div class="contacts-contact panel panel-default">
+        <div tr-avatar data-user="ContactsList.otherContact(profileCtrl.profile._id, contact)" data-size="128"></div>
+        <h4><a ui-sref="profile({username: ContactsList.otherContact(profileCtrl.profile._id, contact, 'username')})" ng-bind="ContactsList.otherContact(profileCtrl.profile._id, contact, 'displayName')"></a></h4>
+        <small class="text-muted">
+          <span ng-if="contact.confirmed !== undefined && contact.confirmed === true">Since</span>
+          <span ng-if="contact.confirmed !== undefined && contact.confirmed === false">Requested</span>
+          <time ng-bind="contact.created | date:'mediumDate'"></time>
+        </small>
+
+        <!-- Authenticated user requested -->
+        <div class="contact-confirm" ng-if="contact.confirmed !== undefined && contact.confirmed === false && contact.users[1]._id === app.user._id">
+          <small class="text-warning"><em>Contact request sent and pending.</em></small>
+          <a class="btn btn-xs btn-primary" tr-contact-remove="contact">Cancel Request</a>
+        </div>
+
+        <!-- Authenticated user is being asked -->
+        <div class="contact-confirm" ng-if="contact.confirmed !== undefined && contact.confirmed === false && contact.users[0]._id === app.user._id">
+          <small><em>You received a contact request.</em></small>
+          <a class="btn btn-xs btn-primary" ui-sref="contactConfirm({contactId: contact._id})">Confirm Request</a>
+          <a class="btn btn-xs btn-inverse" tr-contact-remove="contact">Delete Request</a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  <!-- /Contact list -->
+
+  <!-- No contacts -->
+  <div class="row content-empty" ng-if="ContactsList.contacts.$resolved && !ContactsList.contacts.length">
+      <i class="icon-3x icon-users"></i>
+      <h4>No contacts yet.</h4>
+  </div>
+  <!-- /No contacts -->
+
+</div>

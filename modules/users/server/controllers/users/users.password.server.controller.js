@@ -36,12 +36,8 @@ exports.forgot = function(req, res, next) {
           ]
         }, '-salt -password', function(err, user) {
           if (!user) {
-            return res.status(400).send({
-              message: 'No account with that username or email.'
-            });
-          } else if (user.provider !== 'local') {
-            return res.status(400).send({
-              message: 'It seems like you signed up using your ' + user.provider + ' account.'
+            return res.status(404).send({
+              message: 'We could not find an account with that username or email. Make sure you have it spelled correctly.'
             });
           } else {
             user.resetPasswordToken = token;
@@ -54,7 +50,7 @@ exports.forgot = function(req, res, next) {
         });
       } else {
         return res.status(400).send({
-          message: 'Please, we really need that username or email first...'
+          message: 'Please, we really need your username or email first...'
         });
       }
     },
@@ -65,8 +61,9 @@ exports.forgot = function(req, res, next) {
       var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
       var renderVars = {
         name: user.displayName,
+        email: user.email,
         ourMail: config.mailer.from,
-        urlConfirm: url + '/auth/reset/' + token,
+        urlConfirm: url + '/api/auth/reset/' + token,
         url: url
       };
 
@@ -100,11 +97,11 @@ exports.forgot = function(req, res, next) {
       smtpTransport.sendMail(mailOptions, function(err) {
         if (!err) {
           res.send({
-            message: 'Check your email for further instructions. Check spam folder and contact us if you did not receive email.'
+            message: 'We sent you an email with further instructions. If you don\'t see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".'
           });
         } else {
           res.status(400).send({
-            message: 'Failure while sending email. Try again later.'
+            message: 'Failure while sending recovery email to you. Please try again later.'
           });
         }
         smtpTransport.close(); // close the connection pool
@@ -177,7 +174,7 @@ exports.reset = function(req, res, next) {
             });
           } else {
             return res.status(400).send({
-              message: 'Passwords do not match'
+              message: 'Passwords do not match.'
             });
           }
         } else {
@@ -245,7 +242,9 @@ exports.changePassword = function(req, res) {
 
       // Return error if no user
       if(!req.user) {
-        done(new Error('User is not signed in.'));
+        return res.status(403).send({
+          message: errorHandler.getErrorMessageByKey('forbidden')
+        });
       }
 
       // Check if we have new password coming up
@@ -347,8 +346,8 @@ exports.changePassword = function(req, res) {
 
   ], function(err) {
     if (err) {
-      res.status(400).send({
-        message: err.message//errorHandler.getErrorMessage(err)
+      res.status(err.status || 400).send({
+        message: err.message || errorHandler.getErrorMessageByKey('default')
       });
     }
   });

@@ -9,6 +9,16 @@
 @brand-primary:             #12b591; // Green
 @brand-secondary:           #cd771b; // Brown
 
+@brand-gradient-from:        #19e6df;
+@brand-gradient-to:          #e0a70e;
+
+// Reel is used at hr's and the spinner
+@color-reel-0: darken(@brand-primary, 5%);
+@color-reel-1: #ca7900;
+@color-reel-2: #e18700;
+@color-reel-3: #e49a00;
+@color-reel-4: #e0b521;
+
 @gray-darker:               lighten(#000, 13.5%); // #222
 @gray-dark:                 lighten(#000, 20%);   // #333
 @gray:                      lighten(#000, 33.5%); // #555
@@ -34,15 +44,32 @@
 
 // Medium editor
 // https://raw.githubusercontent.com/daviferreira/medium-editor/master/src/sass/themes/bootstrap.scss
-// See ./public/modules/core/less/mediumeditor.less
+// See ./modules/core/client/less/mediumeditor.less
 @medium_editor_bgcolor:                  @brand-primary;
 @medium_editor_border_color:             @medium_editor_bgcolor;
 @medium_editor_border_radius:            0;
-@medium_editor_button_size:              55px;
+@medium_editor_button_size:              45px;
 @medium_editor_link_color:               #fff;
 @medium_editor_button_active_text_color: #fff;
 @medium_editor_placeholder_color:        @gray-light;
 @medium_editor_hover_color:              lighten(@medium_editor_bgcolor, 5%);
+
+// Trustpass
+@trustpass-done-color:        @text-muted;
+@trustpass-done-background:   rgba(red(@brand-primary), green(@brand-primary), blue(@brand-primary), .05);
+@trustpass-done-radius:       @border-radius-base;
+@trustpass-done-text-size:    @font-size-small;
+@trustpass-text-size:         @font-size-small;
+@trustpass-line-height:       @line-height-base;
+@trustpass-columns:           1;
+@trustpass-guide-color:       @text-muted;
+@trustpass-guide-text-size:   @font-size-small;
+
+// Loading bar
+// See ./modules/core/client/less/loading-bar.less
+@loading-bar-color:  lighten(@navbar-default-bg, 50%);
+@loading-bar-height: 3px;
+
 
 // Navbar
 // -------------------------
@@ -95,10 +122,11 @@
 @font-size-large:         ceil(@font-size-base * 1.25); // ~18px
 @font-size-small:         ceil(@font-size-base * 0.85); // ~12px
 
-@font-family-brand:         'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-@font-family-sans-serif:    'Helvetica Neue', Helvetica, Arial, sans-serif;
-@font-family-base:          @font-family-sans-serif;
+@font-family-brand:       'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+@font-family-sans-serif:  'Helvetica Neue', Helvetica, Arial, sans-serif;
+@font-family-base:        @font-family-sans-serif;
 
+@text-highlight:          @brand-primary;
 
 // Hosting colors
 // @todo: match names with DB values
@@ -123,6 +151,9 @@
 @border-radius-large:       2px;
 @border-radius-small:       2px;
 
+// File drop areas
+@filedrop-rejected:             #d9534f;
+@filedrop-accepted:             #5cb85c;
 
 // Panels
 // -------------------------
@@ -135,5 +166,5 @@
 
 // Other
 // ---------------------------------------
-@footer-height:             (33px + @padding-base-horizontal);
+@footer-height:             44px;
 @search-map-sidebar-width:  300px;

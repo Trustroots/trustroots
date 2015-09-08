@@ -4,6 +4,7 @@
  * Module dependencies.
  */
 var config = require('../config'),
+    errorHandler = require('../../modules/core/server/controllers/errors.server.controller'),
     languages = require('../languages/languages.json'),
     express = require('express'),
     morgan = require('morgan'),
@@ -15,7 +16,6 @@ var config = require('../config'),
     methodOverride = require('method-override'),
     cookieParser = require('cookie-parser'),
     helmet = require('helmet'),
-    passport = require('passport'),
     flash = require('connect-flash'),
     consolidate = require('consolidate'),
     git = require('git-rev'),
@@ -34,13 +34,14 @@ module.exports.initLocalVariables = function (app) {
   app.locals.facebookPage = config.facebook.page;
   app.locals.googlePage = config.google.page;
   app.locals.newrelic = config.newrelic.enabled;
-  app.locals.GAcode = config.GA.code;
+  app.locals.googleAnalytics = config.googleAnalytics;
   app.locals.languages = languages;
   app.locals.appSettings = config.app;
   app.locals.appSettings.piwik = config.piwik;
   app.locals.appSettings.mapbox = config.mapbox;
   app.locals.appSettings.time = new Date().toISOString();
   app.locals.appSettings.https = config.https;
+  app.locals.appSettings.maxUploadSize = config.maxUploadSize;
 
   app.locals.jsFiles = config.files.client.js;
   app.locals.cssFiles = config.files.client.css;
@@ -53,9 +54,15 @@ module.exports.initLocalVariables = function (app) {
 
   // Passing the request url to environment locals
   app.use(function (req, res, next) {
-    res.locals.hostPort = ((config.https === true || req.protocol === 'https') ? 'https' : 'http') + '://' + req.get('host');
-    res.locals.host = req.protocol + '://' + req.hostname;
-    res.locals.url = req.protocol + '://' + req.headers.host + req.originalUrl;
+
+    // Determine if to use https. When proxying (e.g. with Nginx) to localhost
+    // from https front, req.protocol would end up being http when it should be https.
+    // @todo: sniff if behind proxy and otherwise rely req.protocol.
+    var protocol = (config.https === true || req.protocol === 'https') ? 'https' : 'http';
+
+    res.locals.hostPort = protocol + '://' + req.get('host');
+    res.locals.host = protocol + '://' + req.hostname;
+    res.locals.url = protocol + '://' + req.headers.host + req.originalUrl;
     next();
   });
 };
@@ -206,17 +213,7 @@ module.exports.initModulesServerRoutes = function (app) {
  * Configure error handling
  */
 module.exports.initErrorRoutes = function (app) {
-  app.use(function (err, req, res, next) {
-    // If the error object doesn't exists
-    if (!err) return next();
-
-    // Log it
-    console.error(err.stack);
-
-    // Redirect to error page
-    res.redirect('/server-error');
-  });
-
+  app.use(errorHandler.errorResponse);
 };
 
 /**

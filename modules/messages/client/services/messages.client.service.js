@@ -1,8 +1,13 @@
-'use strict';
+(function() {
+  'use strict';
 
-//Messages service used for communicating with the messages REST endpoints
-angular.module('messages').factory('Messages', ['$resource',
-  function($resource) {
+  // Messages service used for communicating with the messages REST endpoints
+  angular
+    .module('messages')
+    .factory('Messages', Messages);
+
+  /* @ngInject */
+  function Messages($resource) {
 
     function MessageHandler() {
       // Control flow variable; Prevents multiple identical ajax calls
@@ -13,7 +18,7 @@ angular.module('messages').factory('Messages', ['$resource',
     }
 
     MessageHandler.prototype = {
-      parseHeaders: function (header){
+      parseHeaders: function (header) {
         if(header) {
           return {
             page: /<.*\/[^<>]*\?.*page=(\d*).*>;.*/.exec(header)[1],
@@ -25,26 +30,27 @@ angular.module('messages').factory('Messages', ['$resource',
         }
       },
       /**
-      * Fetches messages and sets up pagination environment
-      * Takes additional query params passed in as key , value pairs
-      */
+       * Fetches messages and sets up pagination environment
+       * Takes additional query params passed in as key , value pairs
+       */
       fetchMessages: function(param) {
+
         var that = this;
-        var query = (this.nextPage) ? angular.extend(this.nextPage, param): param;
+        var query = (this.nextPage) ? angular.extend(this.nextPage, param) : param;
 
         if(!this.paginationTimeout) {
           this.paginationTimeout = true;
 
           return(this.ajaxCall.query(
             query,
-            //Successful callback
-            function(data, headers){
+            // Successful callback
+            function(data, headers) {
               that.nextPage = that.parseHeaders(headers().link);
               that.resolved = true;
               that.paginationTimeout = false;
             },
-            //Error callback
-            function(){
+            // Error callback
+            function() {
               that.paginationTimeout = false;
               that.resolved = false;
             }
@@ -58,18 +64,5 @@ angular.module('messages').factory('Messages', ['$resource',
     };
     return MessageHandler;
   }
-]);
 
-angular.module('messages').factory('MessagesRead', ['$resource',
-  function($resource) {
-    return $resource('/api/messages-read', {
-      messageIds: '@messageIds'
-    }, {
-      query: {
-        method: 'POST',
-        isArray: false,
-        cache: false
-      }
-    });
-  }
-]);
+})();

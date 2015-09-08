@@ -14,13 +14,16 @@ import sys
 import re
 import signal
 
-#test_url = 'http://dev.trustroots.org/'
-test_url = 'http://localhost:3000/'
-# test_url = 'http://trustroots.dev/'
+print 'Trustroots Selenium tests'
 
-    
+# URL is passed as an argument
+if len(sys.argv) > 1:
+    test_url = sys.argv[1]
+# Default to localhost
+else:
+    test_url = 'http://localhost:3000/'
 
-
+print 'Testing URL: ' + test_url
 
 class Main:
   def __init__(self):
@@ -52,7 +55,7 @@ class Main:
             finally:
                 if cap['env'] == 'remote':
                     driver.quit()
-            
+
 
 class TestSuite:
     def __init__(self, driver, cap, url):
@@ -67,7 +70,7 @@ class TestSuite:
                 print 'Trying driver.quit()'
                 self.driver.quit()
             sys.exit(0)
-            
+
         signal.signal(signal.SIGINT, signal_handler)
 
 
@@ -79,7 +82,7 @@ class TestSuite:
 
 
 
-        
+
     def run_tests(self):
         self.username = 'tester' + str(time.time())[5:10]
         self.email = self.username + '@example.tld'
@@ -123,11 +126,11 @@ class TestSuite:
     def test_home_map(self):
         self._wait_and_click(self.driver.find_element_by_css_selector, 'a.navbar-brand')
         self.driver.find_element_by_id('search-query').send_keys('Berlin' + Keys.RETURN)
-        
+
     def _assert_contains_regexp(self, regexp):
         text_found = re.search(regexp, self.driver.page_source)
         print text_found
-        
+
         assert text_found != None
 
 

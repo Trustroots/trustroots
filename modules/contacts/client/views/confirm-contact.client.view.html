@@ -1,6 +1,9 @@
-<section class="container container-spacer" ng-controller="ConfirmContactController" ng-init="findContact()">
+<section class="container container-spacer">
 
-  <form name="ConfirmContactForm" ng-submit="confirmContact()" novalidate autocomplete="off">
+  <!-- Browsing with non-public account -->
+  <div ng-if="!app.user.public" ng-include="'/modules/users/views/profile/activate.client.view.html?c=' + app.cacheBust"></div>
+
+  <form name="ConfirmContactForm" ng-submit="contactConfirm.confirmContact()" novalidate autocomplete="off" ng-if="app.user.public">
 
     <div class="row">
 
@@ -10,44 +13,46 @@
           <h2>Confirm contact</h2>
         </div>
 
-        <div class="panel panel-default contacts-connection" ng-hide="!contact || isWrongCode || contact.users[0]._id !== user._id">
+        <div class="panel panel-default contacts-connection" ng-hide="!contactConfirm.contact || contactConfirm.isWrongCode || contactConfirm.contact.users[0]._id !== app.user._id">
           <div class="panel-body">
             <div class="row">
               <div class="col-xs-12 col-sm-5 contacts-connection-profile">
-                <div tr-avatar data-user="contact.users[0]" data-size="128" class="center-block"></div>
-                <h4 class="contacts-connection-name" ng-bind="contact.users[0].displayName"></h4>
+                <div tr-avatar data-user="contactConfirm.contact.users[0]" data-size="128" class="center-block"></div>
+                <h4 class="contacts-connection-name" ng-bind="contactConfirm.contact.users[0].displayName"></h4>
               </div>
               <div class="hidden-xs col-sm-2">
                 <i class="icon-exchange icon-3x text-muted contacts-connection-divider"></i>
               </div>
               <div class="col-xs-12 col-sm-5 contacts-connection-profile">
-                <div tr-avatar data-user="contact.users[1]" data-size="128" class="center-block"></div>
-                <h4 class="contacts-connection-name" ng-bind="contact.users[1].displayName"></h4>
+                <div tr-avatar data-user="contactConfirm.contact.users[1]" data-size="128" class="center-block"></div>
+                <h4 class="contacts-connection-name" ng-bind="contactConfirm.contact.users[1].displayName"></h4>
               </div>
             </div><!-- /.row -->
           </div>
         </div>
 
         <!-- Notifications -->
-        <div ng-if="success" class="alert alert-success">
-          <h4 ng-bind="success"></h4>
+        <!-- Success -->
+        <div ng-if="contactConfirm.success" class="alert alert-success">
+          <h4 ng-bind="contactConfirm.success"></h4>
           <p>
-            <strong><a ui-sref="profile({username: contact.users[0].username})">{{ contact.users[0].displayName }}</a></strong> &
-            <strong><a ui-sref="profile({username: contact.users[1].username})">{{ contact.users[1].displayName }}</a></strong>.
+            <strong><a ui-sref="profile({username: contactConfirm.contact.users[0].username})">{{ ::contactConfirm.contact.users[0].displayName }}</a></strong> &
+            <strong><a ui-sref="profile({username: contactConfirm.contact.users[1].username})">{{ ::contactConfirm.contact.users[1].displayName }}</a></strong>.
           </p>
         </div>
-        <div ng-if="error" class="alert alert-danger text-center">
-          <strong ng-bind="error"></strong>
+        <!-- Errors -->
+        <div ng-if="contactConfirm.error" class="alert alert-danger text-center">
+          <strong ng-bind="contactConfirm.error"></strong>
         </div>
         <!-- /Notifications -->
 
-        <div class="text-center" ng-hide="isConnected || !contact || isWrongCode || contact.users[0]._id !== user._id">
-          <button type="submit" class="btn btn-lg btn-primary" ng-disabled="isLoading">
-            <span ng-hide="isLoading">Confirm contact</span>
-            <span ng-show="isLoading">Wait a moment...</span>
+        <div class="text-center" ng-if="contactConfirm.contact && !contactConfirm.isConnected && !contactConfirm.isWrongCode && contactConfirm.contact.users[0]._id === app.user._id">
+          <button type="submit" class="btn btn-lg btn-primary" ng-disabled="contactConfirm.isLoading">
+            <span ng-if="!contactConfirm.isLoading">Confirm contact</span>
+            <span ng-if="contactConfirm.isLoading">Wait a moment...</span>
           </button>
           <br><br>
-          <a ui-sref="profile({username: friend.username})" class="text-muted">Cancel</a>
+          <a ui-sref="profile({username: contactConfirm.contact.users[1].username})" class="text-muted">Cancel</a>
         </div>
 
       </div><!-- /.col-* -->

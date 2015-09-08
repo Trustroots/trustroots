@@ -1,14 +1,13 @@
-.forgot-password {
-  font-size: @font-size-small;
-  margin-top: 20px;
-  a {
-    .text-muted;
-  }
-}
-
-.signin {
+.form-auth {
   margin-bottom: 20px;
   .alert {
     text-shadow: none;
+  }
+  input {
+    border-color: @input-bg;
+  }
+  input,
+  input:focus {
+    box-shadow: 0 0 10px rgba(0,0,0,.1);
   }
 }

@@ -45,10 +45,10 @@ exports.messageSanitizeOptions = {
  * List of threads aka inbox
  */
 exports.inbox = function(req, res) {
-  //Set pagination limit for inbox
 
   Thread.paginate(
     {
+      // Returns only threads where currently authenticated user is participating member
       $or: [
         { userFrom: req.user },
         { userTo: req.user }
@@ -57,39 +57,40 @@ exports.inbox = function(req, res) {
     req.query.page,
     req.query.limit,
     function(err, pageCount, threads) {
-    if (err) {
-      return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
-      });
-    } else {
+      if (err) {
+        return res.status(400).send({
+          message: errorHandler.getErrorMessage(err)
+        });
+      } else {
 
-      // Sanitize each outgoing thread
-      var threadsCleaned = [];
-      threads.forEach(function(thread) {
+        // Sanitize each outgoing thread
+        var threadsCleaned = [];
+        threads.forEach(function(thread) {
 
-        // Threads need just excerpt
-        thread = thread.toObject();
-        thread.message.excerpt = sanitizeHtml(thread.message.content, {allowedTags: []}); // Clean message content from html
-        thread.message.excerpt = thread.message.excerpt.replace(/\s/g, ' '); // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
-        thread.message.excerpt = thread.message.excerpt.replace(/\&nbsp\;/g, ' '); // Above didn't clean these buggers.
-        thread.message.excerpt = thread.message.excerpt.substring(0,100) + ' ...'; // Shorten
+          // Threads need just excerpt
+          thread = thread.toObject();
+          thread.message.excerpt = sanitizeHtml(thread.message.content, {allowedTags: []}); // Clean message content from html
+          thread.message.excerpt = thread.message.excerpt.replace(/\s/g, ' '); // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
+          thread.message.excerpt = thread.message.excerpt.replace(/\&nbsp\;/g, ' '); // Above didn't clean these buggers.
+          thread.message.excerpt = thread.message.excerpt.substring(0,100) + ' ...'; // Shorten
 
-        delete thread.message.content;
+          delete thread.message.content;
 
-        // If latest message in the thread was from current user, mark it read
-        // Writer obviously read his/her own message
-        if(thread.userFrom._id.toString() === req.user._id.toString()) {
-          thread.read = true;
-        }
+          // If latest message in the thread was from current user, show
+          // it as read - sender obviously read his/her own message
+          if(thread.userFrom._id.toString() === req.user._id.toString()) {
+            thread.read = true;
+          }
 
-        threadsCleaned.push(thread);
-      });
+          threadsCleaned.push(thread);
+        });
 
-      //Pass pagination data to construct link header
-      setLinkHeader(req, res, pageCount);
+        // Pass pagination data to construct link header
+        setLinkHeader(req, res, pageCount);
 
-      res.json(threadsCleaned);
-    }},
+        res.json(threadsCleaned);
+      }
+    },
     {
       sortBy:'-updated',
       populate:{
@@ -107,10 +108,22 @@ exports.inbox = function(req, res) {
  */
 exports.send = function(req, res) {
 
-  // take out socket instance from the app container, we'll need it later
-  //var socketio = req.app.get('socketio');
+  // Not a valid ObjectId
+  if(!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
+    return res.status(400).send({
+      message: errorHandler.getErrorMessageByKey('invalid-id')
+    });
+  }
 
   var message = new Message(req.body);
+
+  // Don't allow sending messages to myself
+  if(req.user._id.toString() === message.userTo.toString()) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
   message.userFrom = req.user;
   message.read = false;
   message.notified = false;
@@ -164,10 +177,7 @@ exports.send = function(req, res) {
           return res.status(400).send({
             message: errorHandler.getErrorMessage(err)
           });
-        } /*else {
-          // Emit an event for all connected clients about new thread
-          socketio.sockets.emit('message.thread', thread);
-        }*/
+        }
       });
 
       // We'll need some info about related users, populate some fields
@@ -198,10 +208,9 @@ exports.send = function(req, res) {
 
 /**
  * Thread of messages
- * @todo: pagination
  */
 exports.thread = function(req, res) {
-  res.json(req.messages);
+  res.json(req.messages || []);
 };
 
 /**
@@ -214,37 +223,42 @@ exports.threadByUser = function(req, res, next, userId) {
     // Find messages
     function(done) {
 
-      if(userId && req.user) {
+      if(!req.user) {
+        return res.status(403).send({
+          message: errorHandler.getErrorMessageByKey('forbidden')
+        });
+      }
 
-        Message.paginate(
-          {
-            $or: [
-              { userFrom: req.user._id, userTo: userId },
-              { userTo: req.user._id, userFrom: userId }
-            ]
-          },
-          req.query.page,
-          req.query.limit,
-          function(err, pageCount, messages) {
-            if (!messages) err = new Error('Failed to load messages.');
+      // Not user id or its not a valid ObjectId
+      if(!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).send({
+          message: errorHandler.getErrorMessageByKey('invalid-id')
+        });
+      }
 
-            //Pass pagination data to construct link header
-            setLinkHeader(req,res,pageCount);
-
-            done(err, messages);
-          },
-          {
-            sortBy:'-created',
-            populate: {
-              path:'userFrom userTo',
-              select: userHandler.userMiniProfileFields
-            }
+      Message.paginate(
+        {
+          $or: [
+            { userFrom: req.user._id, userTo: userId },
+            { userTo: req.user._id, userFrom: userId }
+          ]
+        },
+        req.query.page,
+        req.query.limit,
+        function(err, pageCount, messages) {
+          if (!messages) err = new Error('Failed to load messages.');
+          // Pass pagination data to construct link header
+          setLinkHeader(req,res,pageCount);
+          done(err, messages);
+        },
+        {
+          sortBy:'-created',
+          populate: {
+            path:'userFrom userTo',
+            select: userHandler.userMiniProfileFields
           }
-        );
-      }
-      else {
-        done(new Error('No user.'));
-      }
+        }
+      );
 
     },
 
@@ -309,7 +323,9 @@ exports.threadByUser = function(req, res, next, userId) {
 
   ], function(err) {
       if (err) {
-        return next(err);
+        return res.status(400).send({
+          message: errorHandler.getErrorMessage(err)
+        });
       }
       else return next();
   });
@@ -326,13 +342,6 @@ exports.threadByUser = function(req, res, next, userId) {
  * @link http://mongoosejs.com/docs/api.html#model_Model.findByIdAndUpdate
  */
 exports.markRead = function(req, res) {
-
-  // Only logged in user can update his/her own messages
-  if(!req.user) {
-    return res.status(400).send({
-      message: 'You must be logged in first.'
-    });
-  }
 
   var messages = [];
 

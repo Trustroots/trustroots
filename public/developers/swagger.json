@@ -15,7 +15,9 @@
     ],
     "basePath": "/api",
     "produces": [
-        "application/json"
+        "application/json",
+        "text/html",
+        "text/plain"
     ],
     "tags": [
         {
@@ -77,7 +79,57 @@
                         }
                     },
                     "400": {
-                        "description": "Unknown user or invalid password."
+                        "description": "Unknown user or invalid password.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/signup": {
+            "post": {
+                "summary": "Signup.",
+                "description": "Signup.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users",
+                    "Auth"
+                ],
+                "parameters": [
+                    {
+                        "name": "credentials",
+                        "description": "New user's credentials.",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Signup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Created new user succesfully.",
+                        "schema": {
+                            "$ref": "#/definitions/User"
+                        }
+                    },
+                    "400": {
+                        "description": "Some data was invalid.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -113,8 +165,67 @@
                             "$ref": "#/definitions/User"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/mini/{userId}": {
+            "get": {
+                "summary": "Compact user profile by id.",
+                "description": "Return compact profile by user id.",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "Unique user id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Return compact user object.",
+                        "schema": {
+                            "$ref": "#/definitions/MiniUser"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -148,11 +259,23 @@
                             "$ref": "#/definitions/User"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -186,11 +309,23 @@
                     "200": {
                         "description": "Success. Returns image object."
                     },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "422": {
-                        "description": "Unprocessable Entity. Image is unable to be processed."
+                        "description": "Unprocessable Entity. Image is unable to be processed.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -218,8 +353,17 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -256,8 +400,23 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -319,8 +478,17 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -354,8 +522,17 @@
                             "$ref": "#/definitions/Offer"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -389,8 +566,23 @@
                             "$ref": "#/definitions/Offer"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -427,8 +619,219 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/contact-by/{userId}": {
+            "get": {
+                "summary": "Connection between signed in user and user with given id.",
+                "description": "Connection between signed in user and user with given id.",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "Unique user id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Connection information.",
+                        "schema": {
+                            "$ref": "#/definitions/Contact"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "No connection between these two.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/contact/{contactId}": {
+            "get": {
+                "summary": "Get contact by contact id.",
+                "description": "Get contact by contact id.",
+                "parameters": [
+                    {
+                        "name": "contactId",
+                        "in": "path",
+                        "description": "Unique contact id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Connection information.",
+                        "schema": {
+                            "$ref": "#/definitions/Contact"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "summary": "Confirm contact.",
+                "description": "Confirm contact.",
+                "parameters": [
+                    {
+                        "name": "contactId",
+                        "in": "path",
+                        "description": "Unique contact id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Connection information.",
+                        "schema": {
+                            "$ref": "#/definitions/Contact"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Confirm contact.",
+                "description": "Confirm contact.",
+                "parameters": [
+                    {
+                        "name": "contactId",
+                        "in": "path",
+                        "description": "Unique contact id.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Connection information.",
+                        "schema": {
+                            "$ref": "#/definitions/Contact"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -462,11 +865,23 @@
                             "$ref": "#/definitions/Offer"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
                     "403": {
-                        "description": "Not allowed."
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "404": {
-                        "description": "Not found."
+                        "description": "Not found.",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "default": {
                         "description": "Unexpected error",
@@ -563,7 +978,8 @@
                     "type": "string"
                 },
                 "newsletter": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "default": false
                 },
                 "public": {
                     "type": "boolean",
@@ -581,7 +997,7 @@
                 },
                 "roles": {
                     "type": "array",
-                    "default": "user",
+                    "uniqueItems": true,
                     "items": [
                         {
                             "type": "string"
@@ -594,6 +1010,7 @@
                 },
                 "languages": {
                     "type": "array",
+                    "uniqueItems": true,
                     "items": [
                         {
                             "type": "string"
@@ -644,6 +1061,49 @@
                 "provider"
             ]
         },
+        "MiniUser": {
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "emailHash": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "This is (currently) generated in users.profile.server.controller.js"
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Lowercase enforced username"
+                },
+                "displayUsername": {
+                    "type": "string",
+                    "description": "Unaltered original username"
+                },
+                "updated": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "avatarUploaded": {
+                    "type": "boolean"
+                },
+                "avatarSource": {
+                    "type": "string"
+                },
+                "languages": {
+                    "type": "array",
+                    "items": [
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
+                "additionalProvidersData": {
+                    "type": "object"
+                }
+            }
+        },
         "Contact": {
             "properties": {
                 "_id": {
@@ -663,7 +1123,7 @@
                     "type": "array",
                     "description": "List of users for this connection. First [0] user object in array is receiving user and second [1] is initiating user.",
                     "items": {
-                        "$ref": "#/definitions/User"
+                        "$ref": "#/definitions/MiniUser"
                     }
                 }
             }
@@ -689,11 +1149,11 @@
                 },
                 "userTo": {
                     "description": "User to whom latest message in the thread was sent to.",
-                    "$ref": "#/definitions/User"
+                    "$ref": "#/definitions/MiniUser"
                 },
                 "userFrom": {
                     "description": "User who sent the latest message in the thread.",
-                    "$ref": "#/definitions/User"
+                    "$ref": "#/definitions/MiniUser"
                 }
             }
         },
@@ -722,11 +1182,11 @@
                 },
                 "userTo": {
                     "description": "User to whom latest message in the thread was sent to.",
-                    "$ref": "#/definitions/User"
+                    "$ref": "#/definitions/MiniUser"
                 },
                 "userFrom": {
                     "description": "User who sent the latest message in the thread.",
-                    "$ref": "#/definitions/User"
+                    "$ref": "#/definitions/MiniUser"
                 }
             }
         },
@@ -803,12 +1263,14 @@
             "properties": {
                 "username": {
                     "description": "Username or email.",
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 3
                 },
                 "password": {
                     "description": "Password",
                     "type": "string",
-                    "format": "password"
+                    "format": "password",
+                    "maxLength": 8
                 }
             },
             "required": [
@@ -816,12 +1278,48 @@
                 "password"
             ]
         },
+        "Signup": {
+            "properties": {
+                "username": {
+                    "description": "Username",
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 34
+                },
+                "password": {
+                    "description": "Password",
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8
+                },
+                "email": {
+                    "description": "Email",
+                    "type": "string",
+                    "format": "email"
+                },
+                "firstName": {
+                    "description": "First name",
+                    "type": "string"
+                },
+                "lastName": {
+                    "description": "First name",
+                    "type": "string"
+                },
+                "newsletter": {
+                    "type": "boolean",
+                    "default": false
+                }
+            },
+            "required": [
+                "username",
+                "password",
+                "email",
+                "firstName",
+                "lastName"
+            ]
+        },
         "Error": {
             "properties": {
-                "code": {
-                    "type": "integer",
-                    "format": "int32"
-                },
                 "message": {
                     "type": "string"
                 }

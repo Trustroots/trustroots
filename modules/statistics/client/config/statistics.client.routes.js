@@ -1,14 +1,28 @@
-'use strict';
+(function() {
+  'use strict';
 
-//Setting up route
-angular.module('statistics').config(['$stateProvider',
-  function($stateProvider) {
+  angular
+    .module('statistics')
+    .config(StatisticsRoutes);
+
+  /* @ngInject */
+  function StatisticsRoutes($stateProvider) {
 
     $stateProvider.
       state('statistics', {
         url: '/statistics',
-        templateUrl: 'modules/statistics/views/statistics.client.view.html'
+        templateUrl: 'modules/statistics/views/statistics.client.view.html',
+        controller: 'StatisticsController',
+        controllerAs: 'statistics',
+        resolve: {
+          // A string value resolves to a service
+          SettingsService: 'Statistics',
+          data: function(Statistics) {
+            return Statistics.get();
+          }
+        }
       });
 
   }
-]);
+
+})();

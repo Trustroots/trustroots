@@ -5,7 +5,11 @@
  */
 var crypto = require('crypto'),
     mongoose = require('mongoose'),
+    uniqueValidation = require('mongoose-beautiful-unique-validation'),
+    validator = require('validator'),
     Schema = mongoose.Schema;
+
+var passwordMinLength = 8;
 
 /**
  * A Validation function for local strategy properties
@@ -15,10 +19,17 @@ var validateLocalStrategyProperty = function(property) {
 };
 
 /**
- * A Validation function for local strategy password
+ * A Validation function for local strategy email
  */
-var validateLocalStrategyPassword = function(password) {
-  return (this.provider !== 'local' || (password && password.length >= 8));
+var validateLocalStrategyEmail = function(email) {
+  return ((this.provider !== 'local' && !this.updated) || validator.isEmail(email));
+};
+
+/**
+ * A Validation function for password
+ */
+var validatePassword = function(password) {
+  return password && validator.isLength(password, passwordMinLength);
 };
 
 /**
@@ -32,7 +43,7 @@ var validateLocalStrategyPassword = function(password) {
  */
 
 var validateUsername = function(username) {
-  var usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,}$/,
+  var usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/,
       dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/,
       illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'profile', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test'];
   return (this.provider !== 'local' || ( username &&
@@ -66,11 +77,10 @@ var UserSchema = new Schema({
   email: {
     type: String,
     trim: true,
-    unique: true,
+    unique: 'Email exists already.',
     lowercase: true,
     required: true,
-    validate: [validateLocalStrategyProperty, 'Please enter your email'],
-    match: [/.+\@.+\..+/, 'Please enter a valid email address']
+    validate: [validateLocalStrategyEmail, 'Please fill a valid email address']
   },
   /* New email is stored here until it is confirmed */
   emailTemporary: {
@@ -113,14 +123,32 @@ var UserSchema = new Schema({
   // Lowercase enforced username
   username: {
     type: String,
-    unique: true,
+    unique: 'Username exists already.',
     required: true,
     validate: [validateUsername, 'Please fill in valid username: 3+ characters long, non banned word, characters "_-.", no consecutive dots, does not begin or end with dots, letters a-z and numbers 0-9.'],
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
     trim: true
   },
   // Stores unaltered original username
-  displayUsername:{
+  displayUsername: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  // Bewelcome.org username
+  extSitesBW: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  // Couchsurfing.com username
+  extSitesCS: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  // Warmshowers.org username
+  extSitesWS: {
     type: String,
     default: '',
     trim: true
@@ -128,7 +156,7 @@ var UserSchema = new Schema({
   password: {
     type: String,
     default: '',
-    validate: [validateLocalStrategyPassword, 'Password should be more than 8 characters long.']
+    validate: [validatePassword, 'Password should be more than ' + passwordMinLength + ' characters long.']
   },
   emailHash: {
     type: String
@@ -137,11 +165,12 @@ var UserSchema = new Schema({
     type: String
   },
   /* All this provider stuff relates to oauth logins, will always be local for
-     Trustroots, comes from boilerplate */
+     Trustroots, comes from boilerplate. Will be removed one day. */
   provider: {
     type: String,
     required: true
   },
+  /* Facebook, Twitter etc data is stored here. */
   providerData: {},
   additionalProvidersData: {},
   roles: {
@@ -199,13 +228,13 @@ var UserSchema = new Schema({
  * Hook a pre save method to hash the password
  */
 UserSchema.pre('save', function(next) {
-  if (this.password && this.password.length > 6) {
+  if(this.password && this.isModified('password') && this.password.length >= passwordMinLength) {
     this.salt = crypto.randomBytes(16).toString('base64');
     this.password = this.hashPassword(this.password);
   }
 
   // Pre-cached email hash to use with Gravatar
-  if(this.email && this.email !== '') {
+  if(this.email && this.isModified('email') && this.email !== '') {
     this.emailHash = crypto.createHash('md5').update( this.email.trim().toLowerCase() ).digest('hex');
   }
 
@@ -229,5 +258,11 @@ UserSchema.methods.hashPassword = function(password) {
 UserSchema.methods.authenticate = function(password) {
   return this.password === this.hashPassword(password);
 };
+
+/**
+ * Make sure unique fields yeld verbal errors
+ * @link https://www.npmjs.com/package/mongoose-beautiful-unique-validation
+ */
+UserSchema.plugin(uniqueValidation);
 
 mongoose.model('User', UserSchema);

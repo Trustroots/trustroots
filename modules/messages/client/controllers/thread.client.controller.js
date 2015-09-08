@@ -1,54 +1,144 @@
-'use strict';
+(function() {
+  'use strict';
 
-angular.module('messages').controller('MessagesThreadController', ['$scope', '$stateParams', '$state', '$document', '$window', '$anchorScroll', '$timeout', 'Authentication', 'Messages', 'MessagesRead', 'messageCenterService', 'SettingsFactory', //'Socket',
-  function($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, SettingsFactory) {//, Socket
+/*
+ * checklist:
+ * - scope init variable - needed?
+ * - scaffolding order
+ * - directive scaffolding ord.
+ * - check $apply and $timeout order
+ * - check if vm.isInitialized should come much later?
+ */
 
-    // If no recepient defined, go to inbox
-    if (!$stateParams.userId) $state.go('inboxMessages');
+  angular
+    .module('messages')
+    .controller('MessagesThreadController', MessagesThreadController);
 
-    // Vars
-    var settings = SettingsFactory.get();
-    var flaggedAsRead = [];
-    $scope.user = Authentication.user;
-    $scope.userToId = $stateParams.userId;
-    $scope.isSending = false;
-    $scope.messages = [];
-    $scope.messageHandler = new Messages();
+  /* @ngInject */
+  function MessagesThreadController($scope, $q, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, localStorageService, appSettings, userTo, cfpLoadingBar) {
 
-    // Attach userID for backend calls
-    var fetchMessages = function() {
-      return (
-        $scope.messageHandler.fetchMessages({
-          userId: $stateParams.userId
-        })
-      );
-    };
-
-    // No sending messages to yourself
-    if ($scope.user._id === $scope.userToId) $state.go('inboxMessages');
-
-    // Appends returned messages to model
-    function addMessages(data){
-      angular.forEach(data, function(msg) {
-        $scope.messages.push(msg);
-      });
-      threadLayoutUpdate();
+    // Go back to inbox on these cases
+    // - No recepient defined
+    // - Not signed in
+    // - Sending messages to yourself
+    if(!$stateParams.username || !Authentication.user || Authentication.user._id === userTo._id) {
+      $state.go('inbox');
     }
 
-    /*
+    // Vars
+    var elemThread,
+        syncReadTimer,
+        flaggedAsRead = [],
+        messageIdsInView = [],
+        contentCacheId = 'thread-' + $stateParams.username;
+
+    // View model
+    var vm = this;
+
+    // Exposed to the view
+    vm.userFrom = Authentication.user;
+    vm.userTo = userTo;
+    vm.isSending = false;
+    vm.isInitialized = false;
+    vm.messages = [];
+    vm.messageHandler = new Messages();
+    vm.sendMessage = sendMessage;
+    vm.moreMessages = moreMessages;
+    vm.messageRead = messageRead;
+
+    /**
+     * Unfinished messages are cached to SessionStorage
+     * Check for a previously saved message here
+     *
+     * SessionStorage (instead of LocalStorage) is defined to be used at app init config
+     * See also sendMessage(), where message is clared with remove()
+     */
+    vm.content = localStorageService.get(contentCacheId) || '';
+
+    (function() {
+      // Fetches first page of messages after receiving user has finished loading (we need the userId from there)
+      userTo.$promise.then(function() {
+
+          fetchMessages().$promise.then(function(data) {
+
+            addMessages(data);
+            vm.isInitialized = true;
+
+            // Timeout makes sure thread-dimensions-directive has finished loading
+            // and there would thus be something actually listening to these broadcasts:
+            $timeout(function() {
+              $scope.$broadcast('threadRefreshLayout');
+              if(data.length > 0) {
+                $scope.$broadcast('threadScrollToBottom');
+              }
+            });
+
+          });
+      },
+      // No user...
+      function(error) {
+        // User not found:
+        if(error.status === 404) {
+          vm.isInitialized = true;
+        }
+        // Unexpected errors:
+        else {
+          messageCenterService.add('warning', error.message || 'Cannot load messages.', { timeout: 10000 });
+        }
+      });
+    })();
+
+    /**
+     * Attach userID for backend calls
+     */
+    function fetchMessages() {
+      return (
+        vm.messageHandler.fetchMessages({
+          userId: userTo._id
+        })
+      );
+    }
+
+    /**
+     * Appends returned messages to model
+     */
+    function addMessages(data) {
+      var messages = [];
+
+      // Loop trough received data (for loop is the fastest)
+      for (var i = 0; i < data.length; i++) {
+
+        // Check if message by this ID doesn't exist yet
+        // messageIdsInView is used as a key storage for quick reference of messages already in view
+        if(messageIdsInView.indexOf(data[i]._id) === -1) {
+          messageIdsInView.push(data[i]._id);
+          vm.messages.push(data[i]);
+        }
+      }
+
+      // Finally refresh the layout
+      $timeout(function() {
+        $scope.$broadcast('threadRefreshLayout');
+      });
+    }
+
+    /**
      * Gets next page of messages
      * Activates when the first(top most) message hits the top viewport
      */
-    $scope.moreMessages = function() {
-      if($scope.messageHandler.nextPage) {
-        var oldHeight = threadLayoutThread[0].scrollHeight;
+    function moreMessages() {
+      if(vm.messageHandler.nextPage && !vm.messageHandler.paginationTimeout) {
 
-        fetchMessages().$promise.then( function(data) {
-          setScrollPosition(oldHeight);
+        if(!elemThread) elemThread = angular.element('#messages-thread');
+
+        var oldHeight = elemThread[0].scrollHeight;
+
+        fetchMessages().$promise.then(function(data) {
           addMessages(data);
+          setScrollPosition(oldHeight);
         });
       }
-    };
+    }
 
     /**
      * Restores scroll position after pagination
@@ -56,90 +146,16 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
      */
     function setScrollPosition(oldHeight) {
       $timeout(function() {
-        var newHeight = threadLayoutThread[0].scrollHeight;
-        angular.element(threadLayoutThread.scrollTop(newHeight - oldHeight));
+        var newHeight = elemThread[0].scrollHeight;
+        angular.element(elemThread.scrollTop(newHeight - oldHeight));
       });
     }
-
-    /**
-     * Calculate thread etc layout locations with this massive pile of helpers
-     */
-    var threadLayoutContainer = angular.element('#thread-container'),
-        threadLayoutThread = angular.element('#messages-thread'),
-        threadLayoutReply = angular.element('#message-reply');
-
-    // Add (or reset) timeout to not call the resizing function every pixel
-    var threadLayoutUpdateTimeout;
-    function threadLayoutUpdate() {
-      $timeout.cancel(threadLayoutUpdateTimeout);
-      threadLayoutUpdateTimeout = $timeout(threadLayout, 300);
-    }
-
-    // Keep thread in good condition when screen resizes/orientation changes/message textrea grows
-    // This sorta should be at .less files, but the message thread is such an complicated peace of UI...
-    // Mostly this is needed due growing text field
-    function threadLayout() {
-
-      $scope.replyHeight = threadLayoutReply.height() + 'px';
-
-      // container has 15px padding on both sides when window is bigger than screen-sm-max (768px)
-      var containerPadding = ($window.innerWidth < 768) ? -15 : 30;
-      $scope.containerWidth = threadLayoutContainer.width() - containerPadding + 'px';
-      $scope.replyWidth = threadLayoutContainer.width() - 30 + 'px';
-    }
-
-    // Add (or reset) timeout to not call the scrolling function every key stroke
-    var threadScrollUpdateTimeout;
-    function threadScrollUpdate() {
-      $timeout.cancel(threadScrollUpdateTimeout);
-      threadScrollUpdateTimeout = $timeout(threadScrollBottom, 300);
-    }
-
-    // Scroll thread to bottom to show latest messages
-    function threadScrollBottom() {
-      threadLayoutThread.scrollTop(threadLayoutThread[0].scrollHeight);
-    }
-
-    // Keep layout in good order with these listeners
-    angular.element($window).on('resize', threadLayoutUpdate);
-    angular.element($window).bind('orientationchange', threadLayoutUpdate);
-    angular.element($window).bind('orientationchange', threadScrollBottom);
-
-    // Fire html.resize() so that jQuery-Waypoints can check what's visible on the screen and mark visible messages read.
-    var onScrollTimeout,
-        html = angular.element('html');
-    threadLayoutThread.bind('scroll', function() {
-        if(onScrollTimeout) $timeout.cancel(onScrollTimeout);
-        onScrollTimeout = $timeout(function(){ html.resize(); }, 300);
-    });
-
-    $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
-      // Fetches first page of messages
-      fetchMessages().$promise.then( function(data) {
-        addMessages(data);
-        $timeout(threadScrollBottom, 500);
-      });
-    });
-
-    // Observe for the reply area height while typing your awesome message in it
-    var threadLayoutReplyHeight = threadLayoutReply.height();
-    angular.element('#message-reply-content').on('input', function() {
-      // Only when textarea height actually changes:
-      // - Update reply container height
-      // - Scroll message area to the bottom
-      if(threadLayoutReply.height() !== threadLayoutReplyHeight) {
-        threadLayoutReplyHeight = threadLayoutReply.height();
-        $scope.replyHeight = threadLayoutReplyHeight;
-        threadScrollUpdate();
-      }
-    });
 
 
     /**
      * Send messages marked as read (at frontend) to the backend
      * Has 1s timeout to slow down continuous pinging of the API
      */
-    var syncReadTimer;
     function activateSyncRead() {
       // Cancel previously set timer
       if(syncReadTimer) $timeout.cancel(syncReadTimer);
@@ -149,14 +165,17 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
         syncReadTimer = $timeout(syncRead, 1000);
       }
     }
+
+    /**
+     * Send messages marked at read to the API and then empty buffer
+     */
     function syncRead() {
       MessagesRead.query({
         messageIds: flaggedAsRead
-      }, function(response){
+      }, function(response) {
         flaggedAsRead = [];
       });
     }
-
 
     /**
      * Mark message read at the frontend
@@ -165,13 +184,13 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
      *
      * @todo: kill observer after message is marked read
      */
-    $scope.messageRead = function(message, scrollingUp, scrollingDown) {
+    function messageRead(message, scrollingUp, scrollingDown) {
 
       // It was read earlier
       if(message.read === true) return true;
 
       // Own messages are always read
-      if(message.userFrom._id === $scope.user._id) return true;
+      if(message.userFrom._id === Authentication.user._id) return true;
 
       // It got marked read just now
       var read = (scrollingUp === true || scrollingDown === true);
@@ -182,63 +201,63 @@ angular.module('messages').controller('MessagesThreadController', ['$scope', '$s
       }
 
       return read;
-    };
+    }
 
 
     /**
      * Send a message
      */
-    $scope.send = function() {
-      $scope.isSending = true;
+    function sendMessage() {
+      vm.isSending = true;
 
-      if(this.content === '<p><br></p>' || this.content.trim() === '') {
-        $scope.isSending = false;
-        messageCenterService.add('warning', 'Write a message first...', { timeout: settings.flashTimeout });
+      if(vm.content === '<p><br></p>' || vm.content.trim() === '') {
+        vm.isSending = false;
+        messageCenterService.add('warning', 'Write a message first...', { timeout: appSettings.flashTimeout });
         return;
       }
 
-      var message = new $scope.messageHandler.ajaxCall({
-        content: this.content,
-        userTo: $stateParams.userId,
+      var message = new vm.messageHandler.ajaxCall({
+        content: vm.content,
+        userTo: userTo._id,
         read: false
       });
 
       message.$save(function(response) {
 
-        $scope.content = '';
-        $scope.isSending = false;
+        // Remove cached message
+        //localStorageService.remove(contentCacheId);
 
-        // Emit a 'chatMessage' message event
-        //Socket.emit('message.sent', message);
+        vm.content = '';
+        vm.isSending = false;
 
         // Remove this when socket is back!
-        $scope.messages.unshift(response);
-        $timeout(threadScrollBottom, 300);
+        vm.messages.unshift(response);
+
+        // $timeout ensures scroll happens only after DOM has finished rendering
+        $timeout(function() {
+          $scope.$broadcast('threadScrollToBottom');
+        });
 
       }, function(errorResponse) {
-        $scope.isSending = false;
-        // Show alert
-        messageCenterService.add('danger', errorResponse.data.message, { timeout: settings.flashTimeout });
+        vm.isSending = false;
+        messageCenterService.add('danger', errorResponse.data.message, { timeout: appSettings.flashTimeout });
       });
-
-    };
-
+    }
 
     /**
-     * Listen to received/sent messages and add them to our model
+     * Textarea keypress listener (could be also .on('input') but this seems to be working better for mobile)
+     * - Pressing Ctrl+Enter at message field sends the message
+     * - Save message to a cache (see sendMessage() where it's emptiet and vm-list for the getter)
      */
-     /*
-    Socket.on('message.sent', function(message) {
-      message.pushed = true; // flag as pushed
-      //$scope.messages.push(message);
-      $scope.messages.unshift(message);
-      $timeout(threadScrollBottom, 300);
+    angular.element('#message-reply-content').on('keypress', function(event) {
+      if(event.ctrlKey && event.charCode === 10) {
+        sendMessage();
+      }
+      else {
+        localStorageService.set(contentCacheId, vm.content);
+      }
     });
-    // Remove the event listener when the controller instance is destroyed
-    $scope.$on('$destroy', function() {
-      Socket.removeListener('message.sent');
-    });
-    */
 
   }
-]);
+
+})();

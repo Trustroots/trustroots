@@ -16,7 +16,9 @@ module.exports = {
     options: {
       user: '',
       pass: ''
-    }
+    },
+    // Enable mongoose debug mode
+    debug: process.env.MONGODB_DEBUG || false
   },
   port: 3001,
   app: {

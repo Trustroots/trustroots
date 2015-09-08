@@ -1,10 +1,12 @@
-<section class="board board-bokehblue">
+<section class="board" tr-boards="'bokeh'">
   <div class="container">
     <div class="row">
       <div class="col-xs-12 text-center">
         <br><br>
         <h2 class="visible-xs-block">Media</h2>
-        <h2 class="hidden-xs">Trustroots in Media</h2>
+        <h2 class="hidden-xs">
+          <img src="/modules/core/img/tree-white.svg" alt="Trustroots" width="75" height="75" /> in Media
+        </h2>
         <br><br>
         <p class="lead">Trustroots is a new non-profit hospitality exchange community.</p>
       </div>
@@ -18,18 +20,61 @@
 
     <div class="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
 
-      <h3>Trustroots in Media</h3>
-      <ul>
-        <li>19.4.2015 Frankfurter Allgemeine Zeitung: <a href="http://ideas.trustroots.org/wordpress/wp-content/uploads/2015/04/FAS-170415-V3_Sofasurf.pdf">Sofa So Good</a> <small class="text-muted">(in German)</small> (<a href="http://ideas.trustroots.org/2015/04/23/frankfurter-allgemeine-zeitung-article-in-german/">Read our response</a>)</li>
-        <li>29.1.2015 WAZ: <a href="http://www.derwesten.de/freizeit/moderne-tramper-sind-im-internet-gut-miteinander-vernetzt-id10255948.html">Moderne Tramper sind im Internet gut miteinander vernetzt</a> <small class="text-muted">(in German)</small></li>
-      </ul>
+      <h3 id="in-media">Trustroots in Media</h3>
 
-      <h3>Interviews</h3>
+      <h4 class="media-list-divider text-muted">2015</h4>
+      <dl class="dl-horizontal media-list">
+
+        <dt>
+          <span class="text-muted">Jul 22nd</span><br>
+          MO — Mondiaal Nieuws
+        </dt>
+        <dd>
+          <h4><a href="http://www.mo.be/analyse/vergeet-airbnb-dit-is-het-echte-en-gratis-deelreizen">Vergeet Airbnb, dit is het echte en gratis deelreizen</a></h4>
+          <small class="text-muted">In Dutch.</small>
+        </dd>
+
+        <dt>
+          <span class="text-muted">Jun 12th</span><br>
+          MatadorNetwork
+        </dt>
+        <dd><h4><a href="http://matadornetwork.com/bnt/couchsurfings-destiny-doomed/">Why Couchsurfing’s destiny is doomed</a></h4></dd>
+
+        <dt>
+          <span class="text-muted">May 24th</span><br>
+          Kernelmag-Dailydot
+        </dt>
+        <dd>
+          <h4><a href="http://kernelmag.dailydot.com/issue-sections/features-issue-sections/13124/life-and-death-couchsurfing/">The improbable rise and fall of Couchsurfing</a></h4>
+        </dd>
+
+        <dt>
+          <span class="text-muted">Apr 19th</span><br>
+          Frankfurter Allgemeine Zeitung
+        </dt>
+        <dd>
+          <h4><a href="http://ideas.trustroots.org/wordpress/wp-content/uploads/2015/04/FAS-170415-V3_Sofasurf.pdf">Sofa So Good</a></h4>
+          <small class="text-muted">In German. <a href="http://ideas.trustroots.org/2015/04/23/frankfurter-allgemeine-zeitung-article-in-german/">Our response.</a></small>
+        </dd>
+
+        <dt>
+          <span class="text-muted">Jan 29th</span><br>
+          WAZ
+        </dt>
+        <dd>
+          <h4><a href="http://www.derwesten.de/freizeit/moderne-tramper-sind-im-internet-gut-miteinander-vernetzt-id10255948.html">Moderne Tramper sind im Internet gut miteinander vernetzt</a></h4>
+          <small class="text-muted">In German.</small>
+        </dd>
+
+      </dl>
+
+      <br>
+      <h3 id="interviews">Interviews</h3>
       <p><a ui-sref="contact">Contact us</a> if you have any questions or if you are planning to write about us.</p>
-
       <p><a ui-sref="team">We</a> can give interviews in English, German, Dutch, French, Spanish & Finnish.</p>
 
-      <h3>Fact sheet</h3>
+      <br><br>
+      <h3 id="fact-sheet">Fact sheet</h3>
       <ul>
         <li>Launched Dec 23. 2014</li>
         <li>Non-profit & open source</li>
@@ -40,14 +85,31 @@
         <li>Read <a ui-sref="faq">frequently asked questions</a></li>
       </ul>
 
-      <h3>Logo</h3>
-      <a href="https://raw.githubusercontent.com/Trustroots/media/master/logo/logo.png" class="logo logo-md logo-blue"></a>
-
-      <h3>Files</h3>
-      <ul>
-        <li><a href="https://github.com/Trustroots/media">More logos, screenshots etc</a> (<a href="https://github.com/Trustroots/media/archive/master.zip">zip</a>)</li>
-        <li><em><a ui-sref="contact">Ask</a> us for more photos.</em></li>
+      <br><br>
+      <h3 id="files">Files</h3>
+      <ul class="list-unstyled">
+        <li><a href="https://github.com/Trustroots/media/blob/master/style-guide/Trustroots-Styleguide.pdf">Style guide</a></li>
+        <li><a href="https://github.com/Trustroots/media/tree/master/screenshots">Screenshots</a>
+        <li>Download all media files as a <a href="https://github.com/Trustroots/media/archive/master.zip">zip archive</a></li>
+        <li><em><a ui-sref="contact">Ask</a> us for more photos etc</em></li>
       </ul>
+      <br>
+
+      <div class="media" id="logo">
+        <div class="media-left">
+          <img class="media-object" src="/modules/core/img/logo/color.svg" alt="Trustroots logo" width="130" height="130" />
+        </div>
+        <div class="media-body">
+          <h4 class="media-heading">Trustroots logo</h4>
+          <ul>
+            <li><a target="_top" type="image/png" download="trustroots-logo.png" href="https://raw.githubusercontent.com/Trustroots/media/master/logo/logo.png">PNG</a> <small class="text-muted">(recommended for websites)</small></li>
+            <li><a target="_top" type="application/postscript" download="trustroots-logo.ai" href="https://raw.githubusercontent.com/Trustroots/media/master/logo/Vector/Colors/logo.ai">AI</a></li>
+            <li><a target="_top" type="application/eps" download="trustroots-logo.eps" href="https://raw.githubusercontent.com/Trustroots/media/master/logo/Vector/Colors/logo.eps">EPS</a></li>
+            <li><a target="_top" type="image/svg+xml" download="trustroots-logo.svg" href="https://raw.githubusercontent.com/Trustroots/media/master/logo/Vector/Colors/logo.svg">SVG</a></li>
+            <li><a href="https://github.com/Trustroots/media/tree/master/logo">More...</a></li>
+          </ul>
+        </div>
+      </div>
 
       </div>
     </div><!-- /.row -->

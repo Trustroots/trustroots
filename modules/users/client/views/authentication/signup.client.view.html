@@ -1,63 +1,123 @@
-<section class="container container-spacer" ng-controller="AuthenticationController">
-  <form name="userForm" ng-submit="signup()" class="signin form-horizontal" novalidate autocomplete="off">
+<section class="container container-spacer">
+  <form name="userForm" ng-submit="signup.submitSignup()" class="signin form-horizontal" novalidate autocomplete="off">
     <fieldset>
 
       <div class="row">
-        <div class="col-xs-12">
-          <a ui-sref="home" class="logo logo-sm logo-blue center-block hidden-xs"></a>
-          <a ui-sref="home" class="logo-horizontal logo-horizontal-blue center-block visible-xs-block"></a>
+        <div class="col-xs-12 text-center">
+          <img class="hidden-xs" src="/modules/core/img/tree-color.svg" alt="Trustroots" width="120" height="120" />
+          <img class="visible-xs-inline-block" src="/modules/core/img/tree-color.svg" alt="Trustroots" width="80" height="80" />
           <br><br>
         </div>
       </div>
 
       <!-- Signup form -->
-      <div class="row" ng-hide="success">
+      <div class="row" ng-if="!signup.success">
         <div class="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6 col-lg-offset-4 col-lg-4">
 
-          <div class="form-group">
+          <div class="form-group" ng-class="{'has-error': signup.firstName.$invalid && signup.firstName.$dirty}">
             <label for="firstName" class="col-sm-4 control-label">First Name</label>
             <div class="col-sm-8">
-              <input type="text" required id="firstName" name="firstName" class="form-control input-lg" ng-model="credentials.firstName" placeholder="First Name" popover="This is shown to other members." popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="isLoading">
+              <input type="text"
+                     required
+                     id="firstName"
+                     name="firstName"
+                     class="form-control input-lg"
+                     placeholder="First Name"
+                     ng-model="signup.credentials.firstName"
+                     ng-disabled="signup.isLoading"
+                     tr-focustip="'Visible to other members.'">
             </div>
           </div>
-          <div class="form-group">
+          <div class="form-group" ng-class="{'has-error': userForm.lastName.$invalid && userForm.lastName.$dirty}">
             <label for="lastName" class="col-sm-4 control-label">Last Name</label>
             <div class="col-sm-8">
-              <input type="text" id="lastName" name="lastName" class="form-control input-lg" ng-model="credentials.lastName" placeholder="Last Name" popover="This is shown to other members." popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="isLoading">
+              <input type="text"
+                     required
+                     id="lastName"
+                     name="lastName"
+                     class="form-control input-lg"
+                     placeholder="Last Name"
+                     ng-model="signup.credentials.lastName"
+                     ng-disabled="signup.isLoading"
+                     tr-focustip="'Visible to other members.'">
             </div>
           </div>
-          <div class="form-group">
+          <div class="form-group" ng-class="{'has-error': userForm.username.$invalid && userForm.username.$dirty}">
             <label for="username" class="col-sm-4 control-label">Username</label>
             <div class="col-sm-8">
-              <input type="text" id="username" name="username" class="form-control input-lg" ng-model="credentials.username" placeholder="Username" popover="Only characters a-z, ._- and numbers allowed. This is shown to other members."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="isLoading">
+              <input type="text"
+                     required
+                     id="username"
+                     name="username"
+                     autocapitalize="off"
+                     class="form-control input-lg"
+                     placeholder="Username"
+                     ng-model="signup.credentials.username"
+                     ng-pattern="/^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/"
+                     ng-disabled="signup.isLoading"
+                     ng-minlength="3"
+                     ng-maxlength="34"
+                     tr-focustip="'No spaces. Only letters a-z, numbers and .-_ characters. Visible to other members.'"
+                     tooltip="{{
+                       ((userForm.username.$error.minlength && userForm.username.$dirty) ? 'At least 3 characters long. ' : '') +
+                       ((userForm.username.$error.maxlength && userForm.username.$dirty) ? 'Maximum 34 characters long. ' : '') +
+                       ((userForm.username.$error.pattern && userForm.username.$dirty) ? 'Choose a username that contains only letters, numbers and _-. characters.' : '')
+                     }}"
+                     tooltip-trigger="blur"
+                     tooltip-placement="top"
+                     tooltip-append-to-body="true">
             </div>
           </div>
-          <div class="form-group">
+          <div class="form-group" ng-class="{'has-error': userForm.email.$invalid && userForm.email.$dirty}">
             <label for="email" class="col-sm-4 control-label">Email</label>
             <div class="col-sm-8">
-              <input type="email" id="email" name="email" class="form-control input-lg" ng-model="credentials.email" placeholder="Email" ng-disabled="isLoading">
+              <input type="email"
+                     required
+                     mailcheck
+                     id="email"
+                     name="email"
+                     placeholder="Email"
+                     class="form-control input-lg"
+                     ng-model="signup.credentials.email"
+                     ng-disabled="signup.isLoading"
+                     tooltip="{{ (userForm.email.$error.email && userForm.email.$dirty) ? 'Please give a valid email.' : ''}}"
+                     tooltip-trigger="blur"
+                     tooltip-placement="top"
+                     tooltip-append-to-body="true"
+                     tr-focustip="'We will not reveal this to anyone.'">
             </div>
           </div>
-          <div class="form-group">
+          <div class="form-group" ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}">
             <label for="password" class="col-sm-4 control-label">Password</label>
             <div class="col-sm-8">
-              <input type="password" id="password" name="password" class="form-control input-lg" ng-model="credentials.password" placeholder="Password" popover="At least 8 characters long."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="isLoading">
+              <input type="password"
+                     required
+                     id="password"
+                     name="password"
+                     class="form-control input-lg"
+                     placeholder="Password"
+                     ng-model="signup.credentials.password"
+                     ng-minlength="8"
+                     tr-trustpass="{ special: false, number: false, lowercase: false, uppercase: false, messageDone: 'Your password is secure and you are good to go!' }"
+                     ng-disabled="signup.isLoading">
             </div>
           </div>
           <div class="checkbox">
             <div class="col-sm-offset-4 col-sm-8">
-              <label for="newsletter">
-                <input type="checkbox" id="newsletter" name="newsletter" ng-model="credentials.newsletter" ng-disabled="isLoading">
+              <label>
+                <input type="checkbox" name="newsletter" ng-model="signup.credentials.newsletter" ng-disabled="signup.isLoading">
                 Subscribe to community news
               </label>
             </div>
           </div>
           <div class="text-center form-group">
-            <br>
-            <button type="submit" class="btn btn-lg btn-primary" ng-disabled="isLoading">
-              <span ng-hide="isLoading">Join the community</span>
-              <span ng-show="isLoading">Wait a moment...</span>
+            <br><br>
+            <button type="submit" class="btn btn-lg btn-primary" ng-disabled="signup.isLoading || userForm.$invalid">
+              <span ng-if="!signup.isLoading && !userForm.$invalid">Join the community</span>
+              <span ng-if="signup.isLoading && !userForm.$invalid">Wait a moment...</span>
+              <span ng-if="userForm.$invalid">Please fill in the form</span>
             </button>
+            <br><br>
           </div>
 
         </div><!-- /.col -->
@@ -65,25 +125,25 @@
       <!-- /Signup form -->
 
       <!-- Success -->
-      <div class="row" ng-show="success">
+      <div class="row" ng-if="signup.success">
         <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-          <p class="lead" ng-bind="success"></p>
-          <p><a ui-sref="profile-edit" class="btn btn-primary" id="signup-edit">Edit your profile</a></p>
+          <p class="lead" ng-bind="signup.success"></p>
+          <p><a ui-sref="profile-edit({username: app.user.username})" class="btn btn-primary" id="signup-edit">Edit your profile</a></p>
         </div>
       </div>
       <!-- Success -->
 
       <!-- Rules -->
-      <div class="row" ng-hide="success">
+      <div class="row" ng-if="!signup.success">
         <div class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-          <p class="text-muted">Please, abide to our <a ui-sref="rules" ng-click="openRules($event);" tooltip="Read rules" tooltip-placement="bottom">rules</a> that include standards of behavior that apply to everyone.</p>
+          <p class="text-muted">Please, abide to our <a ui-sref="rules" ng-click="signup.openRules($event);" tooltip="Read rules" tooltip-placement="bottom">rules</a> that include standards of behavior that apply to everyone.</p>
         </div>
         <script type="text/ng-template" id="rules.client.modal.html">
           <div class="modal-header">
             <button type="button" class="close" aria-label="Close" ng-click="closeRules()"><span aria-hidden="true">&times;</span></button>
             <h4 class="modal-title">Rules</h4>
           </div>
-          <div class="modal-body" ng-include="'/modules/pages/views/rules-text.client.partial.html?v={{cacheBust}}'"></div>
+          <div class="modal-body" ng-include="'/modules/pages/views/rules-text.client.partial.html?c=' + app.cacheBust"></div>
           <div class="modal-footer">
             <button class="btn btn-primary" ng-click="closeRules()">Got it!</button>
           </div>
@@ -91,7 +151,7 @@
       </div><!-- .row-->
       <!-- /Rules -->
 
-      <div class="row" ng-hide="success">
+      <div class="row" ng-if="!signup.success">
         <div class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
           <br><br>
           <a ui-sref="signin" class="btn btn-sm btn-link">Login</a>

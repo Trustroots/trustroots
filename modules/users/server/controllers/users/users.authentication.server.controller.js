@@ -3,7 +3,8 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     config = require(path.resolve('./config/config')),
     passport = require('passport'),
@@ -18,6 +19,18 @@ var path = require('path'),
  */
 exports.signup = function(req, res) {
   async.waterfall([
+
+    // Check if we have the required data before hitting more strict validations at Mongo
+    function(done) {
+
+      if(!req.body.firstName || !req.body.lastName || !req.body.username || !req.body.password || !req.body.email) {
+        return res.status(400).send({
+          message: 'Please provide required fields.'
+        });
+      }
+
+      done();
+    },
 
     // Generate random token
     function(done) {
@@ -45,11 +58,16 @@ exports.signup = function(req, res) {
       user.displayUsername = req.body.username;
 
       // Just to simplify email confirm process later
-      // This field is needed when changing email after the signup process
+      // This field is normally needed when changing email after the signup process
+      // Since we set user public=false and require initial email confirmation,
+      // we'll have to have the email also at emailTemporary field
+      // (from where it's then again moved to email field)
       user.emailTemporary = user.email;
 
       // Then save the user
-      user.save(function(err) {
+      // trySave() is a method required by mongoose-beautiful-unique-validation
+      // @link https://www.npmjs.com/package/mongoose-beautiful-unique-validation
+      user.trySave(function(err) {
         if (!err) {
           // Remove sensitive data before login
           user.password = undefined;
@@ -207,7 +225,7 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
 
       // And save the user
       user.save(function(err) {
-        return done(err, user, '/profile/');
+        return done(err, user, '/profile/' + user.username);
       });
     } else {
       return done(new Error('You are already connected using this network.'), user);
@@ -219,12 +237,27 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
  * Remove OAuth provider
  */
 exports.removeOAuthProvider = function(req, res, next) {
-  var user = req.user;
-  var provider = req.param('provider');
 
-  if (user && provider) {
+  // Return error if no user
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  // Return error if no provider or wrong provider
+  if(!req.params.provider || !_.contains(['github', 'facebook', 'twitter'], req.params.provider)) {
+    return res.status(400).send({
+      message: 'No provider defined.'
+    });
+  }
+
+  var user = req.user;
+  var provider = req.params.provider;
+
+  if(user && provider) {
     // Delete the additional provider
-    if (user.additionalProvidersData[provider]) {
+    if(user.additionalProvidersData[provider]) {
       delete user.additionalProvidersData[provider];
 
       // Then tell mongoose that we've updated the additionalProvidersData field
@@ -232,7 +265,7 @@ exports.removeOAuthProvider = function(req, res, next) {
     }
 
     user.save(function(err) {
-      if (err) {
+      if(err) {
         return res.status(400).send({
           message: errorHandler.getErrorMessage(err)
         });
@@ -249,7 +282,6 @@ exports.removeOAuthProvider = function(req, res, next) {
   }
 };
 
-
 /**
  * Confirm email GET from email token
  */
@@ -257,10 +289,9 @@ exports.validateEmailToken = function(req, res) {
   User.findOne({
     emailToken: req.params.token
   }, function(err, user) {
-    if (!user) {
+    if(!user) {
       return res.redirect('/confirm-email-invalid');
     }
-
     res.redirect('/confirm-email/' + req.params.token);
   });
 };
@@ -269,7 +300,6 @@ exports.validateEmailToken = function(req, res) {
  * Confirm email POST from email token
  */
 exports.confirmEmail = function(req, res, next) {
-
   async.waterfall([
 
     function(done) {
@@ -287,7 +317,7 @@ exports.confirmEmail = function(req, res, next) {
           result.profileMadePublic = !user.public;
 
           // We can't do this here because we've got user document with password and we'd just override it:
-          //user.save(function(err) {
+          //user.save(function(err)
           // Instead we'll do normal mongoose update with previously fetched user id
           User.findByIdAndUpdate(
             user._id,
@@ -300,6 +330,7 @@ exports.confirmEmail = function(req, res, next) {
                 public: true,
                 // Replace old email with new one
                 email: user.emailTemporary,
+                // @todo: this should be done at user.server.model.js
                 emailHash: crypto.createHash('md5').update( user.emailTemporary.trim().toLowerCase() ).digest('hex')
               }
             },
@@ -313,6 +344,11 @@ exports.confirmEmail = function(req, res, next) {
                   if (!err) {
                     // Return authenticated user
                     result.user = user;
+
+                    // Remove some fields before returning user
+                    delete result.user.resetPasswordToken;
+                    delete result.user.resetPasswordExpires;
+
                     res.json(result);
                   }
                   done(err);

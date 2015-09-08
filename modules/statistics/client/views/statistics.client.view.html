@@ -1,35 +1,33 @@
-<section class="container container-spacer" ng-controller="StatisticsController">
-
-<section class="container board board-bokehblue container-fullscreen">
+<section class="container board container-fullscreen text-center" tr-boards="'bokeh'">
   <div class="row">
     <div class="col-xs-12">
-      <a ui-sref="home" class="logo logo-sm logo-blue center-block"></a>
+      <img class="hidden-xs" src="/modules/core/img/logo/color.svg" alt="Trustroots" width="140" height="140" />
       <br><br>
     </div>
     <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 statistics">
 
-      <div ng-if="!statistics.$resolved" class="content-wait">
+      <div ng-if="!statistics.data.$resolved" class="content-wait">
         <small>Wait a moment...</small>
       </div>
 
-      <section ng-if="statistics.$resolved">
-        <h3 class="statistics-count">{{statistics.total}} members in total.</h3>
+      <section ng-if="statistics.data.$resolved">
+        <h3 class="statistics-count">{{ statistics.data.total | number }} members in total.</h3>
 
-        <h3 class="statistics-count">{{statistics.hosting}} ({{ (statistics.hosting/statistics.total)*100 | number:1 }}%) are hosting.</h3>
+        <h3 class="statistics-count">{{ statistics.data.hosting | number }} ({{ (statistics.data.hosting/statistics.data.total)*100 | number:1 }}%) are hosting.</h3>
 
         <hr>
 
         <h3>Enabling the latent trust between humans since</h3>
-        <p class="lead">{{launchDate | date:mediumDate}}</p>
+        <time class="lead" ng-bind="statistics.launchDate | date:mediumDate"></time>
 
       </section>
 
       <p>
         <br>
-        <a ng-click="goHome()" class="btn btn-inverse">Home</a>
+        <a ng-click="app.goHome()" class="btn btn-inverse">Home</a>
         <br><br>
         <br><br>
-        <a class="statistics-commit" ng-href="https://github.com/Trustroots/trustroots/commit/{{statistics.commit}}">Currently deployed code at Github</a>
+        <a class="statistics-commit" ng-if="statistics.data.commit" ng-href="https://github.com/Trustroots/trustroots/commit/{{statistics.data.commit}}">Currently deployed code at Github</a>
       </p>
 
     </div>

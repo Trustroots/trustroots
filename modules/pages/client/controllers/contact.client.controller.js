@@ -1,11 +1,18 @@
-'use strict';
+(function() {
+  'use strict';
 
-angular.module('pages').controller('ContactController', ['$scope', '$window',
-  function($scope, $window) {
+  angular
+    .module('pages')
+    .controller('ContactController', ContactController);
 
-    // Redirect to WP for now
-    // https://github.com/Trustroots/trustroots/issues/106
+  /* @ngInject */
+  function ContactController($window) {
+
+    /**
+     * Redirect to Wordpress for now
+     * @todo https://github.com/Trustroots/trustroots/issues/106
+     */
     $window.location = 'http://ideas.trustroots.org/contact/';
 
   }
-]);
+})();
