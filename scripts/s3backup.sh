@@ -10,7 +10,7 @@
 
 BUCKET="trustroots-backups"
 BACKUPSDIR=/srv/backups
-AVATAR_BACKUPSDIR=/srv/trustroots/public/modules/users/img/profile/uploads
+AVATAR_BACKUPSDIR=/srv/trustroots/modules/users/client/img/profile/uploads
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOGSPATH="/srv/logs/aws/"
 LOGFILE=$LOGSPATH/$TIMESTAMP.log
