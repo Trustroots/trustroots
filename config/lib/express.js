@@ -140,7 +140,7 @@ module.exports.initSession = function (app, db) {
     secret: config.sessionSecret,
     cookie: {
       // If secure is true, and you access your site over HTTP, the cookie will not be set.
-      secure: config.https,
+      secure: false,//config.https,
 
       // By default cookie.maxAge is null, meaning no "expires" parameter is
       // set so the cookie becomes a browser-session cookie. When the user
