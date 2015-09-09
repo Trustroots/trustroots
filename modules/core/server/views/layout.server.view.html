@@ -46,7 +46,7 @@
   <meta name="msapplication-TileColor" content="#FFFFFF">
   <meta name="msapplication-TileImage" content="{{hostPort}}/modules/core/img/icons/apple-touch-icon-144x144-precomposed.png">
   {# Google Analytics #}
-  {% if process.env.NODE_ENV === 'production' && googleAnalytics.enabled === true %}
+  {% if googleAnalytics.enabled === true %}
   <!-- https://www.trustroots.org/privacy -->
   <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -98,7 +98,7 @@
   {% endif %}
 
   {# Piwik Analytics #}
-  {% if process.env.NODE_ENV === 'production' && piwik.enabled === true %}
+  {% if piwik.enabled === true %}
   <!-- https://www.trustroots.org/privacy -->
   <script type="text/javascript">
     var _paq = _paq || [];
