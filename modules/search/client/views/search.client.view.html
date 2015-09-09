@@ -119,7 +119,7 @@
           <div class="search-result-languages" ng-if="search.offer.user.languages.length">
             <h4>Languages</h4>
             <ul class="list-inline">
-              <li ng-repeat="code in search.offer.user.languages">{{ ::app.languageNames[code] }}</li>
+              <li ng-repeat="code in search.offer.user.languages track by code">{{ ::app.languageNames[code] || code }}</li>
             </ul>
           </div>
         </a>
