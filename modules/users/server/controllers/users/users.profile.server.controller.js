@@ -517,13 +517,20 @@ exports.userByUsername = function(req, res, next, username) {
     });
   }
 
-  // Got userId instead? Make it work!
-  // This is here because previously some API paths used userId instead of username
-  // This ensures they work during the transition
-  if(mongoose.Types.ObjectId.isValid(username)) {
+  /**
+   * Got userId instead? Make it work!
+   * This is here because previously some API paths used userId instead of username
+   * This ensures they work during the transition
+   * Length must be 24, otherwise we'll get true for 12 characters long usernames
+   * Using $or here in case we make false positive with 24 characters long usernames
+   */
+  if(username.length === 24 && mongoose.Types.ObjectId.isValid(username)) {
     console.warn('userByUsername: Found user id when expecting username.');
     query = {
-      _id: username
+      $or: [
+        { _id: username },
+        { username: username.toLowerCase() }
+      ]
     };
   }
   else {
