@@ -138,8 +138,9 @@ exports.checkUnreadMessages = function(agenda) {
             var mailTitle = (total > 1) ? 'You have ' + total + ' unread messages at Trustroots' : 'You have one unread message at Trustroots';
 
             var mailBody = mailTitle + '.\n\r\n\r' +
-                           'To reply, go to ' + url + '/messages\n\r\n\r' +
+                           'Do not reply directly this email. \n\rGo to ' + url + '/messages to reply.\n\r\n\r' +
                            messageFeed +
+                           'Do not reply directly this email. \n\rGo to ' + url + '/messages to reply.\n\r\n\r' +
                            '-- \n\rTrustroots\n\r' + url + '\n\r' +
                            'Support: ' + url + '/contact/\n\rSupport email: ' + config.mailer.from + '\n\r';
 

@@ -108,7 +108,7 @@
 
           <div class="col-xs-2 col-sm-12">
             <small class="text-muted hidden-xs">Highlight text to add links or change its appearance. Ctrl+Enter to send.</small>
-            <button ng-disabled="!thread.content || thread.isSending === true || !thread.messageHandler.resolved || !thread.userTo._id" type="submit" class="btn btn-md btn-primary message-reply-btn" id="messageReplySubmit"><i class="icon-send"></i><span class="hidden-xs"> Send</span></button>
+            <button ng-disabled="!thread.content || thread.isSending === true || !thread.messageHandler.resolved || !thread.userTo._id" type="submit" class="btn btn-md btn-primary message-reply-btn" id="messageReplySubmit" aria-label="Send"><i class="icon-send"></i><span class="hidden-xs"> Send</span></button>
           </div>
         </div><!-- /.row -->
       </form>

@@ -69,7 +69,7 @@
      * Check if provider is already in use with current user
      */
     function isConnectedSocialAccount(provider) {
-      return vm.user.provider === provider || (vm.user.additionalProvidersData && vm.user.additionalProvidersData[provider]);
+      return vm.user.additionalProvidersData && vm.user.additionalProvidersData[provider];
     }
 
     /**

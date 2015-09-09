@@ -225,12 +225,16 @@ module.exports = function (grunt) {
     shell: {
       'swagger-ui': {
         command: [
-          'mkdir -p tmp',
+          'mkdir -p ./tmp',
+          'rm -fr ./tmp/swagger-ui-master',
           'wget -nv -O ./tmp/swagger-ui.zip  https://github.com/swagger-api/swagger-ui/archive/master.zip',
-          'unzip ./tmp/swagger-ui.zip -d ./tmp',
+          'unzip -q ./tmp/swagger-ui.zip -d ./tmp',
+          'rm -fr ./public/developers/api',
           'mkdir -p ./public/developers/api',
           'mv ./tmp/swagger-ui-master/dist/* ./public/developers/api',
-          'rm -r tmp'
+          'sed -i "" "s!http://petstore\.swagger\.io/v2!/developers!g" ./public/developers/api/index.html',
+          'sed -i "" "s!url: url,!url: url, validatorUrl:null,!g" ./public/developers/api/index.html',
+          'rm -fr ./tmp/swagger-ui-master'
         ].join('&&')
       },
       'fontello': {
