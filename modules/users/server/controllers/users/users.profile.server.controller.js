@@ -540,20 +540,22 @@ exports.userByUsername = function(req, res, next, username) {
         query,
         exports.userProfileFields + ' public').exec(function(err, profile) {
 
-        // Something went wrong or no such user
+        // Something went wrong
         if (err) {
           done(err);
         }
-        // User's own profile
-        else if( (profile && req.user) && (profile._id.toString() === req.user._id.toString()) ) {
-          done(err, profile.toObject());
-        }
-        // Not own profile, but not public either
-        else if( (profile && req.user) && (profile._id.toString() !== req.user._id.toString()) ) {
-          done(err, profile.toObject());
-        }
         // No such user
         else if(!profile) {
+          return res.status(404).send({
+            message: errorHandler.getErrorMessageByKey('not-found')
+          });
+        }
+        // User's own profile, okay to send with public value in it
+        else if( (profile && req.user) && req.user._id.equals(profile._id) ) {
+          done(err, profile.toObject());
+        }
+        // Not own profile and not public
+        else if( (profile && req.user) && (!req.user._id.equals(profile._id) && !profile.public) ) {
           return res.status(404).send({
             message: errorHandler.getErrorMessageByKey('not-found')
           });
