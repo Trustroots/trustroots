@@ -74,7 +74,7 @@
               <span class="profile-firstname" ng-model="editprofile.user.firstName" medium-editor options="{'placeholder': 'First name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
               <span class="profile-lastname" ng-model="editprofile.user.lastName" medium-editor options="{'placeholder': 'Last name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
 
-              <h4 class="profile-username" tooltip="You cannot change your username" tooltip-placement="right">@{{editprofile.user.displayUsername || editprofile.user.username}}</h4>
+              <h4 class="profile-username" tooltip="You cannot change your username" tooltip-placement="right">@{{ ::editprofile.user.displayUsername || editprofile.user.username}}</h4>
 
               <div class="profile-tagline">
                 <div ng-model="editprofile.user.tagline" medium-editor options="{'placeholder': 'Short tagline...', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></div>
@@ -172,28 +172,37 @@
                     <h5>Other hospitality networks</h5>
                     <div class="form-group">
                       <div class="input-group">
+                        <div class="input-group-addon">
+                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover="Go to your BeWelcome profile and copy the username from the address bar."></span>
+                        </div>
                         <label class="input-group-addon" for="extSitesBW">bewelcome.org/members/</label>
-                        <input id="extSitesBW" type="text" class="form-control" ng-model="editprofile.user.extSitesBW" placeholder="your-username">
+                        <input id="extSitesBW" type="text" class="form-control" ng-model="editprofile.user.extSitesBW" placeholder="your-username" aria-label="BeWelcome username">
                         <span class="input-group-btn" ng-if="editprofile.user.extSitesBW.length">
-                          <a ng-href="http://www.bewelcome.org/members/{{ editprofile.user.extSitesBW }}" target="_blank" rel="nofollow" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip-append-to-body="true" tooltip="Test opening the link"><i class="icon-link-ext"></i></a>
+                          <a ng-href="http://www.bewelcome.org/members/{{ editprofile.user.extSitesBW }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
                         </span>
                       </div>
                     </div>
                     <div class="form-group">
                       <div class="input-group">
+                        <div class="input-group-addon">
+                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover="Go to your 'account and settings' page and copy your username."></span>
+                        </div>
                         <label class="input-group-addon" for="extSitesCS">couchsurfing.com/people/</label>
-                        <input id="extSitesCS" type="text" class="form-control" ng-model="editprofile.user.extSitesCS" placeholder="your-username">
+                        <input id="extSitesCS" type="text" class="form-control" ng-model="editprofile.user.extSitesCS" placeholder="your-username" aria-label="Couchsurfing username">
                         <span class="input-group-btn" ng-if="editprofile.user.extSitesCS.length">
-                          <a ng-href="https://www.couchsurfing.com/people/{{ editprofile.user.extSitesCS }}" target="_blank" rel="nofollow" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip-append-to-body="true" tooltip="Test opening the link"><i class="icon-link-ext"></i></a>
+                          <a ng-href="https://www.couchsurfing.com/people/{{ editprofile.user.extSitesCS }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
                         </span>
                       </div>
                     </div>
                     <div class="form-group">
                       <div class="input-group">
+                        <div class="input-group-addon">
+                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover="Edit your Warmshowers profile and copy your username."></span>
+                        </div>
                         <label class="input-group-addon" for="extSitesWS">warmshowers.org/users/</label>
-                        <input id="extSitesWS" type="text" class="form-control" ng-model="editprofile.user.extSitesWS" placeholder="your-username">
+                        <input id="extSitesWS" type="text" class="form-control" ng-model="editprofile.user.extSitesWS" placeholder="your-username" aria-label="Warmshowers username">
                         <span class="input-group-btn" ng-if="editprofile.user.extSitesWS.length">
-                          <a ng-href="https://www.warmshowers.org/users/{{ editprofile.user.extSitesWS }}" target="_blank" rel="nofollow" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip-append-to-body="true" tooltip="Test opening the link"><i class="icon-link-ext"></i></a>
+                          <a ng-href="https://www.warmshowers.org/users/{{ editprofile.user.extSitesWS }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
                         </span>
                       </div>
                     </div>
