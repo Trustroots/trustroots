@@ -67,11 +67,13 @@
 
         // Show action based signup banner for certain pages
         if(toState.name === 'profile') {
-          // Or just continue to the signup page
           $state.go('profile-signin');
         }
+        else if(toState.name === 'search') {
+          $state.go('search-signin', toParams || {});
+        }
+        // Or just continue to the signup page
         else {
-          // Or just continue to the signup page
           $state.go('signin', {'continue': true});
         }
       }

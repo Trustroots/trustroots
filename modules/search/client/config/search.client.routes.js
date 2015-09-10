@@ -24,6 +24,14 @@
             return SettingsService.get();
           }
         }
+      }).
+      state('search-signin', {
+        url: '/search?location?offer',
+        templateUrl: 'modules/search/views/search-signin.client.view.html',
+        requiresAuth: false,
+        footerHidden: true,
+        controller: 'SearchSignupController',
+        controllerAs: 'searchSignup'
       });
   }
 
