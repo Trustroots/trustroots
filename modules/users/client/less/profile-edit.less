@@ -240,11 +240,21 @@
 
 // Usernamefields for external hospex sites (WS+BW+CS)
 .extsites {
-  .input-group-addon:first-child {
+  // Help button and the service URL
+  .input-group-addon {
     background: @input-bg;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  // Consists the service URL
+  label.input-group-addon {
+    padding-left: 0;
     padding-right: 0;
+    border-left: 0;
+    border-right: 0;
     color: @input-color;
   }
+  // Username input
   input {
     border-left-color: transparent;
     padding-left: 2px;

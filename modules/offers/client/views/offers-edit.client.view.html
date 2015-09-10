@@ -1,10 +1,6 @@
 <section class="container container-spacer offers-edit">
 
-  <div class="row text-center" ng-if="app.user.public !== true">
-    <em class="lead">Sorry, you need to first activate your profile before you can start hosting.</em>
-    <br><br>
-    <a ui-sref="profile-settings">Account settings</a>
-  </div>
+  <div ng-if="app.user.public === false" ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
 
   <form name="offerForm" ng-submit="offersEdit.addOffer()" novalidate autocomplete="off" ng-if="app.user.public === true && offersEdit.offer">
 

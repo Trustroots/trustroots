@@ -23,6 +23,17 @@
   // Allows dragging the map trough the element
   pointer-events: none;
   user-select: none;
+  button, a {
+    pointer-events: auto;
+  }
+  a {
+    color: #fff;
+    border-bottom: 2px solid #fff;
+    &:active,
+    &:hover {
+      text-decoration: none;
+    }
+  }
 
   // Animate show-hide toggle
   transition: all .2s;

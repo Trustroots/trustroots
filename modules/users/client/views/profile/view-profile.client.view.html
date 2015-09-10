@@ -14,7 +14,7 @@
   </div>
 
   <!-- Browsing with non-public account -->
-  <div ng-if="app.user.username !== profileCtrl.profile.username && app.user.public === false && profileCtrl.profile.$resolved" ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
+  <div ng-if="app.user.public === false" ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
 
   <!-- Own profile is non-public -->
   <div class="row text-center" ng-if="app.user.username === profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public === false">

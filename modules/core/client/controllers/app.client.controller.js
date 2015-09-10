@@ -64,7 +64,18 @@
         // See modules/users/client/controllers/authentication.client.controller.js for how they're used
         $rootScope.signinState = toState.name;
         $rootScope.signinStateParams = toParams;
-        $state.go('signin', {'continue': true});
+
+        // Show action based signup banner for certain pages
+        if(toState.name === 'profile') {
+          $state.go('profile-signin');
+        }
+        else if(toState.name === 'search') {
+          $state.go('search-signin', toParams || {});
+        }
+        // Or just continue to the signup page
+        else {
+          $state.go('signin', {'continue': true});
+        }
       }
 
     });

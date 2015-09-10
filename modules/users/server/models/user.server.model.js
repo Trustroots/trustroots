@@ -138,19 +138,16 @@ var UserSchema = new Schema({
   // Bewelcome.org username
   extSitesBW: {
     type: String,
-    default: '',
     trim: true
   },
   // Couchsurfing.com username
   extSitesCS: {
     type: String,
-    default: '',
     trim: true
   },
   // Warmshowers.org username
   extSitesWS: {
     type: String,
-    default: '',
     trim: true
   },
   password: {

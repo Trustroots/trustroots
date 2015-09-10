@@ -1,0 +1,26 @@
+.profile-signup {
+  .avatar,
+  .profile-sidebar-section,
+  .profile-username,
+  .profile-tagline,
+  .profile-name {
+    color: @gray-lighter;
+    background: @gray-lighter;
+    cursor: default;
+    user-select: none;
+  }
+}
+
+.profile-signup-blur {
+  filter: blur(2px);
+  -webkit-filter: blur(2px);
+}
+
+.profile-signup-action {
+  padding: 50px 30px;
+  @media (max-width: @screen-xs-max) {
+    padding: 30px;
+    margin: 0;
+    text-align: center;
+  }
+}
