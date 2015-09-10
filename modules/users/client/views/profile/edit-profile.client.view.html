@@ -30,13 +30,20 @@
               </div>
 
               <div class="form-group">
-                <label for="gender"><h4>Gender</h4></label>
-                <select id="gender" name="gender" class="form-control" ng-model="editprofile.user.gender">
-                  <option value="">Unspecified</option>
-                  <option value="female">Female</option>
-                  <option value="male">Male</option>
-                  <option value="other">Other</option>
-                </select>
+                <label><h4>Gender</h4></label>
+                <div class="radio">
+                  <label><input type="radio" value="" ng-model="editprofile.user.gender"> Unspecified</label>
+                </div>
+                <div class="radio">
+                  <label><input type="radio" value="female" ng-model="editprofile.user.gender"> Female</label>
+                </div>
+                <div class="radio">
+                  <label><input type="radio" value="male" ng-model="editprofile.user.gender"> Male</label>
+                </div>
+                <div class="radio">
+                  <label><input type="radio" value="other" ng-model="editprofile.user.gender"> Other</label>
+                </div>
+
               </div>
 
               <div class="form-group">

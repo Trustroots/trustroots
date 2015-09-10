@@ -27,8 +27,13 @@ label {
   color: @gray-light;
   font-family: @font-family-brand;
 }
+.radio label,
 .checkbox label {
   color: @text-color;
+}
+label + .radio,
+label + .checkbox {
+  margin-top: -5px;
 }
 
 /**
