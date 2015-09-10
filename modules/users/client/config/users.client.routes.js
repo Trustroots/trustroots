@@ -85,6 +85,10 @@
 
         }
       }).
+      state('profile-signin', {
+        url: '/profile-signup',
+        templateUrl: 'modules/users/views/profile/profile-signup.client.view.html',
+      }).
 
       // Auth routes
       state('signup', {
