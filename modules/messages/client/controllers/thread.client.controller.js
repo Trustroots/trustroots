@@ -210,7 +210,7 @@
     function sendMessage() {
       vm.isSending = true;
 
-      if(vm.content === '<p><br></p>' || vm.content.trim() === '') {
+      if(vm.content.replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim() === '') {
         vm.isSending = false;
         messageCenterService.add('warning', 'Write a message first...', { timeout: appSettings.flashTimeout });
         return;
@@ -240,7 +240,7 @@
 
       }, function(errorResponse) {
         vm.isSending = false;
-        messageCenterService.add('danger', errorResponse.data.message, { timeout: appSettings.flashTimeout });
+        messageCenterService.add('danger', errorResponse.data.message || 'Couldn not send the message. Please try again.', { timeout: appSettings.flashTimeout });
       });
     }
 

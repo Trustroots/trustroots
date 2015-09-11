@@ -324,7 +324,6 @@ exports.update = function(req, res) {
     var user = req.user;
     user = _.extend(user, req.body);
     user.updated = Date.now();
-    user.displayName = user.firstName + ' ' + user.lastName;
 
     // This is set only if user edited email
     if(token && email) {
@@ -332,17 +331,35 @@ exports.update = function(req, res) {
       user.emailTemporary = email;
     }
 
-    // Sanitize user description
-    user.description = sanitizeHtml(user.description, userSanitizeOptions);
+    // Fix glitches coming in sometimes from wysiwyg editors
+    ['description', 'tagline', 'firstName', 'lastName'].forEach(function(key) {
+      if(user[key] && user[key].length > 0) {
 
-    // Test in case description or tagline are actually empty without html
-    // This happens sometimes with wysiwyg editors
-    if(user.description && user.description.length > 0 && sanitizeHtml(user.description, {allowedTags: []}).trim() === '') {
-      user.description = '';
-    }
-    if(user.tagline && user.tagline.length > 0 && sanitizeHtml(user.tagline, {allowedTags: []}).trim() === '') {
-      user.tagline = '';
-    }
+        // Test in case content is actually empty without html
+        if(sanitizeHtml(user[key], {allowedTags: []}).trim() === '') {
+          user[key] = '';
+        }
+        // If not empty, perform some cleaning
+        else {
+          // Replace "&nbsp;", "<p><br></p>" and trim
+          user[key] = user[key].replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim();
+
+          // Sanitize HTML
+          if(key === 'description') {
+            // Some html is allowed at description
+            user.description = sanitizeHtml(user.description, userSanitizeOptions);
+          }
+          else {
+            // Remove all HTML
+            user[key] = sanitizeHtml(user[key], {allowedTags: []});
+          }
+        }
+
+      }
+    });
+
+    // Generate display name
+    user.displayName = user.firstName + ' ' + user.lastName;
 
     user.save(function(err) {
       if (!err) {

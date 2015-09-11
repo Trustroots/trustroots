@@ -68,18 +68,22 @@ exports.create = function(req, res) {
   // Save Fuzzy location
   offer.locationFuzzy = fuzzyLocation(offer.location);
 
-  // Sanitize offer contents
-  offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
-  offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
-
-  // Test in case they're actually empty without html
-  if(offer.description && offer.description.length > 0 && sanitizeHtml(offer.description, {allowedTags: []}).trim() === '') {
-    offer.description = '';
-  }
-  if(offer.noOfferDescription && offer.noOfferDescription.length > 0 && sanitizeHtml(offer.noOfferDescription, {allowedTags: []}).trim() === '') {
-    offer.noOfferDescription = '';
-  }
-
+  // Fix glitches coming in sometimes from wysiwyg editors
+  ['description', 'noOfferDescription'].forEach(function(key) {
+    if(offer[key] && offer[key].length > 0) {
+      // Test in case content is actually empty without html
+      if(sanitizeHtml(offer[key], {allowedTags: []}).trim() === '') {
+        offer[key] = '';
+      }
+      // If not empty, perform some cleaning
+      else {
+        // Replace "&nbsp;", "<p><br></p>" and trim
+        offer[key] = offer[key].replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim();
+        // Sanitize HTML (some html is allowed)
+        offer[key] = sanitizeHtml(offer[key], offerSanitizeOptions);
+      }
+    }
+  });
 
   // Convert the Model instance to a simple object using Model's 'toObject' function
   // to prevent weirdness like infinite looping...

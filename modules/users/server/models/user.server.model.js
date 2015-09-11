@@ -132,7 +132,6 @@ var UserSchema = new Schema({
   // Stores unaltered original username
   displayUsername: {
     type: String,
-    default: '',
     trim: true
   },
   // Bewelcome.org username

@@ -72,7 +72,7 @@ exports.inbox = function(req, res) {
           thread.message.excerpt = sanitizeHtml(thread.message.content, {allowedTags: []}); // Clean message content from html
           thread.message.excerpt = thread.message.excerpt.replace(/\s/g, ' '); // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
           thread.message.excerpt = thread.message.excerpt.replace(/\&nbsp\;/g, ' '); // Above didn't clean these buggers.
-          thread.message.excerpt = thread.message.excerpt.substring(0,100) + ' ...'; // Shorten
+          thread.message.excerpt = thread.message.excerpt.substring(0, 100) + ' …'; // Shorten
 
           delete thread.message.content;
 
@@ -115,21 +115,32 @@ exports.send = function(req, res) {
     });
   }
 
-  var message = new Message(req.body);
-
   // Don't allow sending messages to myself
-  if(req.user._id.toString() === message.userTo.toString()) {
-    return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+  if(req.user._id.equals(req.body.userTo)) {
+    return res.status(400).send({
+      message: 'Recepient cannot be currently authenticated user.'
     });
   }
+
+  var message = new Message(req.body);
+
+  // Test in case content is actually empty without html
+  if(!message.content || !message.content.length || sanitizeHtml(message.content, {allowedTags: []}).trim() === '') {
+    return res.status(400).send({
+      message: 'Please write a message.'
+    });
+  }
+
+  // Fix glitches coming in sometimes from wysiwyg editors
+  // Replace "&nbsp;", "<p><br></p>" and trim
+  message.content = message.content.replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim();
+
+  // Sanitize HTML (some html is allowed)
+  message.content = sanitizeHtml(message.content, exports.messageSanitizeOptions);
 
   message.userFrom = req.user;
   message.read = false;
   message.notified = false;
-
-  // Sanitize message contents
-  message.content = sanitizeHtml(message.content, exports.messageSanitizeOptions);
 
   message.save(function(err) {
     if (err) {
@@ -192,9 +203,6 @@ exports.send = function(req, res) {
               message: errorHandler.getErrorMessage(err)
             });
           } else {
-
-            // Emit an event for all connected clients about new message
-            //socketio.sockets.emit( 'message.sent', message );
 
             // Finally res
             res.json(message);
