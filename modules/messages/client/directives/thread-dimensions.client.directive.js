@@ -114,6 +114,7 @@
             });
             activateScrollToBottom();
           }
+
         });
 
         /*
@@ -134,6 +135,7 @@
         // At init, run these
         activateRefreshLayout();
         activateScrollToBottom();
+        scope.$emit('threadDimensinsLoaded');
 
       } //link()
     };
