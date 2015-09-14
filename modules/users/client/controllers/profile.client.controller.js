@@ -24,6 +24,7 @@
     vm.socialAccountLink = socialAccountLink;
     vm.tabSelected = tabSelected;
     vm.toggleAvatarModal = toggleAvatarModal;
+    vm.isWarmshowersId = isWarmshowersId;
     vm.tabs = [
       {
         path: 'about',
@@ -64,6 +65,15 @@
     $scope.$on('contactRemoved', function() {
       delete vm.contact._id;
     });
+
+    /**
+     * Determine if given user handle for Warmshowers is an id or username
+     * @link https://github.com/Trustroots/trustroots/issues/308
+     */
+    function isWarmshowersId() {
+      var x;
+      return isNaN(vm.profile.extSitesWS) ? !1 : (x = parseFloat(vm.profile.extSitesWS), (0 | x) === x);
+    }
 
     /**
      * Open avatar modal (bigger photo)
