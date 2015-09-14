@@ -13,7 +13,13 @@
       lat: 48.6908333333,
       lng: 9.14055555556,
       zoom: 6
-    };
+    },
+    cacheId = 'search-map-state';
+
+    // Make cache id unique for this user
+    if(Authentication.user) {
+      cacheId = Authentication.user._id + '.' + cacheId;
+    }
 
     // ViewModel
     var vm = this;
@@ -221,7 +227,7 @@
     $scope.$on('leafletDirectiveMap.load', function(event) {
 
       // Check for cached map state and move map to there if found
-      var cachedMapState = localStorageService.get('search-map-state');
+      var cachedMapState = localStorageService.get(cacheId);
 
       if(cachedMapState && cachedMapState.lat && cachedMapState.lng && cachedMapState.zoom) {
         vm.mapCenter = {
@@ -344,7 +350,7 @@
      * Store map state with localStorageService for later use
      */
     function saveMapState() {
-      localStorageService.set('search-map-state', {
+      localStorageService.set(cacheId, {
         'lat': vm.mapCenter.lat,
         'lng': vm.mapCenter.lng,
         'zoom': vm.mapCenter.zoom

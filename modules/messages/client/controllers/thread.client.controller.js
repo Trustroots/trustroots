@@ -30,7 +30,7 @@
         syncReadTimer,
         flaggedAsRead = [],
         messageIdsInView = [],
-        contentCacheId = 'thread-' + $stateParams.username;
+        cacheId = Authentication.user._id + '.thread-' + $stateParams.username;
 
     // View model
     var vm = this;
@@ -53,7 +53,7 @@
      * SessionStorage (instead of LocalStorage) is defined to be used at app init config
      * See also sendMessage(), where message is clared with remove()
      */
-    vm.content = localStorageService.get(contentCacheId) || '';
+    vm.content = localStorageService.get(cacheId) || '';
 
     (function() {
       // Fetches first page of messages after receiving user has finished loading (we need the userId from there)
@@ -101,7 +101,7 @@
               sendMessage();
             }
             else {
-              localStorageService.set(contentCacheId, vm.content);
+              localStorageService.set(cacheId, vm.content);
             }
           });
         });
@@ -247,7 +247,7 @@
       message.$save(function(response) {
 
         // Remove cached message
-        localStorageService.remove(contentCacheId);
+        localStorageService.remove(cacheId);
 
         vm.content = '';
         vm.isSending = false;
