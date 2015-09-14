@@ -209,7 +209,7 @@
                         <label class="input-group-addon" for="extSitesWS">warmshowers.org/user/</label>
                         <input id="extSitesWS" type="text" class="form-control" ng-model="editprofile.user.extSitesWS" placeholder="your-user-id" aria-label="Warmshowers user id">
                         <span class="input-group-btn" ng-if="editprofile.user.extSitesWS.length">
-                          <a ng-href="https://www.warmshowers.org/{{ ::(!editprofile.isWarmshowersId() ? 'users' : 'user') }}/{{ editprofile.user.extSitesWS }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
+                          <a ng-href="https://www.warmshowers.org/{{ !editprofile.isWarmshowersId() ? 'users' : 'user' }}/{{ editprofile.user.extSitesWS }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
                         </span>
                       </div>
                       <p class="help-block text-warning" ng-if="editprofile.user.extSitesWS && !editprofile.isWarmshowersId()">This should be your numeric user id, not username.</p>
