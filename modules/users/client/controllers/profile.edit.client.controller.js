@@ -29,10 +29,10 @@
 
     // Guide texts for external hospex site inputs
     vm.bwGuide = 'Go to your BeWelcome profile and copy the username from the address bar.' +
-                 '<br><br><img class="img-responsive clearfix" src="/modules/users/img/guide-bw.png" alt="" width="525" height="107" aria-hidden="true">';
+                 '<br><br><img class="img-responsive clearfix" src="/modules/users/img/guide-bw.png" alt="" width="319" height="32" aria-hidden="true">';
 
     vm.csGuide = 'Go to your "account and settings" page and copy your username.' +
-                 '<br><br><img class="img-responsive clearfix" src="/modules/users/img/guide-cs.png" alt="" width="319" height="32" aria-hidden="true">';
+                 '<br><br><img class="img-responsive clearfix" src="/modules/users/img/guide-cs.png" alt="" width="525" height="107" aria-hidden="true">';
 
     vm.wsGuide = 'Edit your Warmshowers profile and copy your numeric user id from the address bar.' +
                  '<br><br><img class="img-responsive clearfix" src="/modules/users/img/guide-ws.png" alt="" width="319" height="32" aria-hidden="true">';
