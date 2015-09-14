@@ -26,7 +26,7 @@
         <!-- Authenticated user requested -->
         <div class="contact-confirm" ng-if="contact.confirmed !== undefined && contact.confirmed === false && contact.users[1]._id === app.user._id">
           <small class="text-warning"><em>Contact request sent and pending.</em></small>
-          <a class="btn btn-xs btn-primary" tr-contact-remove="contact">Cancel Request</a>
+          <a class="btn btn-xs btn-primary" tr-contact-remove="contact">Revoke Request</a>
         </div>
 
         <!-- Authenticated user is being asked -->
