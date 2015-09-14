@@ -152,7 +152,7 @@
                   </div>
 
                   <div ng-if="editprofile.hasConnectedAdditionalSocialAccounts()">
-                    <h5>Connected</h5>
+                    <h5>Already connected</h5>
                     <ul class="social-profiles list-unstyled">
                       <li class="social-profile" ng-repeat="(providerName, providerData) in editprofile.user.additionalProvidersData track by providerName" ng-class="{'social-profile-active': editprofile.removingSocialAccount === providerName}">
                         <i class="social-profile-icon icon-fw icon-lg icon-{{::providerName}}"></i>
