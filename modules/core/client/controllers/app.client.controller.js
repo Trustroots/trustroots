@@ -9,7 +9,7 @@
     .controller('AppController', AppController);
 
   /* @ngInject */
-  function AppController($scope, $rootScope, $window, $state, Authentication, SettingsFactory, Languages) {
+  function AppController($scope, $rootScope, $window, $state, Authentication, SettingsFactory, Languages, localStorageService) {
 
     // ViewModel
     var vm = this;
@@ -19,6 +19,7 @@
     vm.appSettings = SettingsFactory.get();
     vm.languageNames = Languages.get('object');
     vm.goHome = goHome;
+    vm.signout = signout;
     vm.photoCredits = [];
 
     // Used as a cache buster with ng-include
@@ -35,6 +36,19 @@
       else {
         $state.go('home');
       }
+    }
+
+    function signout($event) {
+      if($event) {
+        $event.preventDefault();
+      }
+
+      // Clear out localstorage
+      // @link https://github.com/grevory/angular-local-storage#clearall
+      localStorageService.clearAll();
+
+      // Do the signout and refresh the page
+      $window.top.location.href  = '/api/auth/signout';
     }
 
     /**
