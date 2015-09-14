@@ -6,27 +6,11 @@
 var path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
+    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     sanitizeHtml = require('sanitize-html'),
     mongoose = require('mongoose'),
     Offer = mongoose.model('Offer'),
     User = mongoose.model('User');
-
-
-/**
- * Rules for sanitizing offers coming in and out
- * @link https://github.com/punkave/sanitize-html
- */
-var offerSanitizeOptions = {
-    allowedTags: [ 'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'li', 'ul', 'ol', 'blockquote', 'code', 'pre' ],
-    allowedAttributes: {
-      'a': [ 'href' ],
-      // We don't currently allow img itself, but this would make sense if we did:
-      //'img': [ 'src' ]
-    },
-    selfClosing: [ 'img', 'br' ],
-    // URL schemes we permit
-    allowedSchemes: [ 'http', 'https', 'ftp', 'mailto', 'tel', 'irc' ]
-  };
 
 /**
  * Create a fuzzy location
@@ -68,20 +52,11 @@ exports.create = function(req, res) {
   // Save Fuzzy location
   offer.locationFuzzy = fuzzyLocation(offer.location);
 
-  // Fix glitches coming in sometimes from wysiwyg editors
+  // Sanitize contents coming from wysiwyg editors
   ['description', 'noOfferDescription'].forEach(function(key) {
-    if(offer[key] && offer[key].length > 0) {
-      // Test in case content is actually empty without html
-      if(sanitizeHtml(offer[key], {allowedTags: []}).trim() === '') {
-        offer[key] = '';
-      }
-      // If not empty, perform some cleaning
-      else {
-        // Replace "&nbsp;", "<p><br></p>" and trim
-        offer[key] = offer[key].replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim();
-        // Sanitize HTML (some html is allowed)
-        offer[key] = sanitizeHtml(offer[key], offerSanitizeOptions);
-      }
+    if(offer[key] && !textProcessor.isEmpty(offer[key])) {
+      // Allow some HTML
+      offer[key] = textProcessor.html(offer[key]);
     }
   });
 
@@ -166,7 +141,6 @@ exports.list = function(req, res) {
  * Show the current Offer
  */
 exports.read = function(req, res) {
-
   res.json(req.offer || {});
 };
 
@@ -182,8 +156,6 @@ exports.offerByUserId = function(req, res, next, userId) {
   }
   Offer.findOne({
       user: userId
-      //55420a6dab370d3f4bb398ae nope
-      // 5425379c8e3e468133926930 ok
     })
     .exec(function(err, offer) {
 
@@ -198,8 +170,8 @@ exports.offerByUserId = function(req, res, next, userId) {
       offer = offer.toObject();
 
       // Sanitize each outgoing offer's contents
-      offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
-      offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
+      offer.description = sanitizeHtml(offer.description, textProcessor.sanitizeOptions);
+      offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
 
       // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
       if(userId !== req.user.id) {
@@ -243,8 +215,8 @@ exports.offerById = function(req, res, next, offerId) {
       offer = offer.toObject();
 
       // Sanitize each outgoing offer's contents
-      offer.description = sanitizeHtml(offer.description, offerSanitizeOptions);
-      offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, offerSanitizeOptions);
+      offer.description = sanitizeHtml(offer.description, textProcessor.sanitizeOptions);
+      offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
 
       // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
       if(req.user && offer.user !== req.user.id) {

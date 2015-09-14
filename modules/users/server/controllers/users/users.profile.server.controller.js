@@ -6,6 +6,7 @@
 var _ = require('lodash'),
     path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     config = require(path.resolve('./config/config')),
     nodemailer = require('nodemailer'),
     async = require('async'),
@@ -61,23 +62,6 @@ exports.userMiniProfileFields = [
 
 // Mini + a few fields we'll need at listings
 exports.userListingProfileFields = exports.userMiniProfileFields + ' birthdate gender tagline';
-
-/**
- * Rules for sanitizing user description coming in and out
- * @link https://github.com/punkave/sanitize-html
- */
-var userSanitizeOptions = {
-    allowedTags: [ 'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'li', 'ul', 'ol', 'blockquote', 'code', 'pre' ],
-    allowedAttributes: {
-      'a': [ 'href' ],
-      // We don't currently allow img itself, but this would make sense if we did:
-      //'img': [ 'src' ]
-    },
-    selfClosing: [ 'img', 'br' ],
-    // URL schemes we permit
-    allowedSchemes: [ 'http', 'https', 'ftp', 'mailto', 'tel', 'irc' ]
-  };
-
 
 /**
  * Upload user avatar
@@ -331,30 +315,15 @@ exports.update = function(req, res) {
       user.emailTemporary = email;
     }
 
-    // Fix glitches coming in sometimes from wysiwyg editors
+    // Sanitize contents coming from wysiwyg editors
     ['description', 'tagline', 'firstName', 'lastName'].forEach(function(key) {
-      if(user[key] && user[key].length > 0) {
-
-        // Test in case content is actually empty without html
-        if(sanitizeHtml(user[key], {allowedTags: []}).trim() === '') {
-          user[key] = '';
-        }
-        // If not empty, perform some cleaning
-        else {
-          // Replace "&nbsp;", "<p><br></p>" and trim
-          user[key] = user[key].replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim();
-
-          // Sanitize HTML
-          if(key === 'description') {
-            // Some html is allowed at description
-            user.description = sanitizeHtml(user.description, userSanitizeOptions);
-          }
-          else {
-            // Remove all HTML
-            user[key] = sanitizeHtml(user[key], {allowedTags: []});
-          }
-        }
-
+      if(user[key] && key === 'description') {
+        // Allow some HTML
+        user[key] = textProcessor.html(user[key]);
+      }
+      // Clean out all HTML
+      else if(user[key]) {
+        user[key] = textProcessor.plainText(user[key], true);
       }
     });
 
@@ -598,7 +567,8 @@ exports.userByUsername = function(req, res, next, username) {
     // Sanitize & return profile
     function(profile, done) {
 
-      if(profile.description) profile.description = sanitizeHtml(profile.description, userSanitizeOptions);
+      // We're sanitizing this already on saving/updating the profile, but here we do it again just in case.
+      if(profile.description) profile.description = sanitizeHtml(profile.description, textProcessor.sanitizeOptions);
 
       req.profile = profile;
       next();
