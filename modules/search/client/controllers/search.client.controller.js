@@ -33,7 +33,6 @@
 
     vm.mapLayerstyle = 'street';
     vm.sidebarOpen = false;
-    //vm.languages = Languages.get('object');
     vm.offer = false; // Offer to show
     vm.notFound = false;
     vm.currentSelection = {
@@ -138,10 +137,14 @@
       });
     });
 
-    // Setting up the cluster
+    /**
+     * Setting up marker clustering
+     */
     vm.pruneCluster = new PruneClusterForLeaflet(60, 60);
 
-    // Setting up the marker and click event
+    /**
+     * Setting up the marker and click event
+     */
     vm.pruneCluster.PrepareLeafletMarker = function(leafletMarker, data) {
       leafletMarker.on('click', function(e) {
 
@@ -160,17 +163,14 @@
       leafletMarker.setIcon(data.icon);
     };
 
-    // Sidebar & markers react to these events
+    /**
+     * Sidebar & markers react to these events
+     */
     $scope.$on('leafletDirectiveMap.click', function(event){
       vm.sidebarOpen = false;
       vm.offer = false;
       vm.mapLayers.overlays.selectedOffers.visible = false;
     });
-    /*
-    $scope.$on('leafletDirectiveMarker.click', function(e, args) {
-
-    });
-    */
 
     /**
      * Load markers to the current bounding box
@@ -284,13 +284,14 @@
     vm.searchQuery = '';
     vm.searchQuerySearching = false;
     function enterSearchAddress(event) {
-      if (event.which === 13) {
+      // enter = 13 or 10 depending on browser
+      if (event.which === 13 || event.which === 10) {
         event.preventDefault();
         searchAddress();
       }
     }
     function searchAddress() {
-      if(vm.searchQuery !== '') {
+      if(vm.searchQuery !== '' && appSettings.mapbox && appSettings.mapbox.publicKey) {
         vm.searchQuerySearching = true;
 
         $http
@@ -300,7 +301,7 @@
             vm.searchQuerySearching = false;
             vm.mapCenter = defaultLocation;
 
-            if(response.status === 200 && response.data.features && response.data.features.length > 0) {
+            if(response.status === 200 && response.data && response.data.features && response.data.features.length > 0) {
               mapLocate(response.data.features[0]);
             }
             else {
@@ -341,13 +342,15 @@
           zoom: 5
         };
       }
-
-      // @todo: then what?
-
+      // Failed to pinpoint location to the map
+      else {
+        messageCenterService.add('warning', 'We could not find such a place...', { timeout: appSettings.flashTimeout });
+      }
     }
 
     /**
      * Store map state with localStorageService for later use
+     * @todo: add layer here
      */
     function saveMapState() {
       localStorageService.set(cacheId, {
@@ -363,18 +366,23 @@
      * @link https://www.mapbox.com/developers/api/geocoding/
      */
     function searchSuggestions(val) {
-      return $http
-        .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + val + '.json?access_token=' + appSettings.mapbox.publicKey)
-        .then(function(response) {
-          vm.searchQuerySearching = false;
-          if(response.status === 200 && response.data.features && response.data.features.length > 0) {
-            return response.data.features.map(function(place){
-              place.trTitle = placeTitle(place);
-              return place;
-            });
-          }
-          else return [];
-        });
+      if(appSettings.mapbox && appSettings.mapbox.publicKey) {
+        return $http
+          .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + val + '.json?access_token=' + appSettings.mapbox.publicKey)
+          .then(function(response) {
+            vm.searchQuerySearching = false;
+            if(response.status === 200 && response.data && response.data.features && response.data.features.length > 0) {
+              return response.data.features.map(function(place){
+                place.trTitle = placeTitle(place);
+                return place;
+              });
+            }
+            else return [];
+          });
+      }
+      else {
+        return [];
+      }
     }
 
     /*
@@ -401,10 +409,8 @@
       vm.searchQuery = $stateParams.location.replace('_', ' ', 'g');
       searchAddress();
     }
-    /*
-     * Init opening offer from the URL
-     */
-    else if($stateParams.offer && $stateParams.offer !== '') {
+    // Init opening offer from the URL
+    else if($stateParams.offer && $stateParams.offer.length === 24) {
       OffersService.get({
         offerId: $stateParams.offer
       }, function(offer){
@@ -420,7 +426,9 @@
           zoom: 13
         };
 
-      },function (error) {
+      },
+      // Offer not found
+      function (error) {
         vm.mapCenter = defaultLocation;
         vm.offerNotFound = true;
         $timeout(function(){
