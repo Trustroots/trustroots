@@ -124,6 +124,24 @@
         };
       }
 
+      // Outdoors/Mapbox
+      if(appSettings.mapbox.map.outdoors && appSettings.mapbox.user && appSettings.mapbox.publicKey) {
+        layers.outdoors = {
+          name: 'Outdoors',
+          type: 'xyz',
+          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + appSettings.mapbox.publicKey + ( appSettings.https ? '&secure=1' : ''),
+          layerParams: {
+            user: appSettings.mapbox.user,
+            map: appSettings.mapbox.map.outdoors
+          },
+          layerOptions: {
+            attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank">© Mapbox © OpenStreetMap</a> <a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.outdoors + '/' + location.lng + '/' + location.lat + '/' + location.zoom + '" target="_blank" class="improve-map">Improve the underlying map</a>',
+            continuousWorld: true,
+            TRStyle: 'street' // Not native Leaflet, required by layer switch
+          }
+        };
+      }
+
       // Add any other layers here...
 
       return layers;
