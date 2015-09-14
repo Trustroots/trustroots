@@ -101,7 +101,7 @@ exports.send = function(req, res) {
 
   // Don't allow sending messages to myself
   if(req.user._id.equals(req.body.userTo)) {
-    return res.status(400).send({
+    return res.status(403).send({
       message: 'Recepient cannot be currently authenticated user.'
     });
   }
