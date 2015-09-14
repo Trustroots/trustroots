@@ -47,8 +47,8 @@ module.exports = {
       'modules/core/client/app/less/application.less'
     ],
     less: [
-      'modules/core/client/app/less/**/*.less',
       'modules/core/client/app/less/*.less',
+      'modules/core/client/less/**/*.less',
       'modules/*/client/less/*.less'
     ],
     js: [

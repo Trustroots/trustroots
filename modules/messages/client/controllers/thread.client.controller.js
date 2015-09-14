@@ -30,7 +30,7 @@
         syncReadTimer,
         flaggedAsRead = [],
         messageIdsInView = [],
-        contentCacheId = 'thread-' + $stateParams.username;
+        cacheId = Authentication.user._id + '.thread-' + $stateParams.username;
 
     // View model
     var vm = this;
@@ -53,7 +53,7 @@
      * SessionStorage (instead of LocalStorage) is defined to be used at app init config
      * See also sendMessage(), where message is clared with remove()
      */
-    vm.content = localStorageService.get(contentCacheId) || '';
+    vm.content = localStorageService.get(cacheId) || '';
 
     (function() {
       // Fetches first page of messages after receiving user has finished loading (we need the userId from there)
@@ -83,9 +83,30 @@
         }
         // Unexpected errors:
         else {
-          messageCenterService.add('warning', error.message || 'Cannot load messages.', { timeout: 10000 });
+          messageCenterService.add('warning', error.message || 'Cannot load messages. Please refresh the page and try again.', { timeout: 20000 });
         }
       });
+
+      // This gets called onse thread-dimensions directive has finished its job
+      $scope.$on('threadDimensinsLoaded', function() {
+        /**
+         * Textarea keypress listener (could be also .on('input') but this seems to be working better for mobile)
+         * - Pressing Ctrl+Enter at message field sends the message
+         * - Save message to a cache (see sendMessage() where it's emptiet and vm-list for the getter)
+         */
+        $timeout(function() {
+          angular.element('#message-reply-content').on('keypress', function(event) {
+            // 13+10 covers all the browsers: http://stackoverflow.com/a/9343095/1984644
+            if(event.ctrlKey && (event.charCode === 13 || event.charCode === 10)) {
+              sendMessage();
+            }
+            else {
+              localStorageService.set(cacheId, vm.content);
+            }
+          });
+        });
+      });
+
     })();
 
     /**
@@ -120,6 +141,7 @@
       $timeout(function() {
         $scope.$broadcast('threadRefreshLayout');
       });
+
     }
 
     /**
@@ -210,7 +232,7 @@
     function sendMessage() {
       vm.isSending = true;
 
-      if(vm.content === '<p><br></p>' || vm.content.trim() === '') {
+      if(vm.content.replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim() === '') {
         vm.isSending = false;
         messageCenterService.add('warning', 'Write a message first...', { timeout: appSettings.flashTimeout });
         return;
@@ -225,7 +247,7 @@
       message.$save(function(response) {
 
         // Remove cached message
-        //localStorageService.remove(contentCacheId);
+        localStorageService.remove(cacheId);
 
         vm.content = '';
         vm.isSending = false;
@@ -240,23 +262,9 @@
 
       }, function(errorResponse) {
         vm.isSending = false;
-        messageCenterService.add('danger', errorResponse.data.message, { timeout: appSettings.flashTimeout });
+        messageCenterService.add('danger', errorResponse.data.message || 'Couldn not send the message. Please try again.', { timeout: appSettings.flashTimeout });
       });
     }
-
-    /**
-     * Textarea keypress listener (could be also .on('input') but this seems to be working better for mobile)
-     * - Pressing Ctrl+Enter at message field sends the message
-     * - Save message to a cache (see sendMessage() where it's emptiet and vm-list for the getter)
-     */
-    angular.element('#message-reply-content').on('keypress', function(event) {
-      if(event.ctrlKey && event.charCode === 10) {
-        sendMessage();
-      }
-      else {
-        localStorageService.set(contentCacheId, vm.content);
-      }
-    });
 
   }
 

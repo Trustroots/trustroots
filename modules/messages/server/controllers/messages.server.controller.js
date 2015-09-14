@@ -6,6 +6,7 @@
 var _ = require('lodash'),
     path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
     async = require('async'),
     sanitizeHtml = require('sanitize-html'),
@@ -17,29 +18,13 @@ var _ = require('lodash'),
 
 
 // Constructs link headers for pagination
-var setLinkHeader = function(req, res, pageCount){
+var setLinkHeader = function(req, res, pageCount) {
   if (paginate.hasNextPages(req)(pageCount)){
     var nextPage = {page: req.query.page + 1};
     var linkHead = '<' + req.protocol + ':' + res.locals.url.slice(0,-1) + res.locals.paginate.href(nextPage) + '>; rel="next"';
     res.set('Link',linkHead);
   }
 };
-
-/**
- * Rules for sanitizing messages coming in and out
- * @link https://github.com/punkave/sanitize-html
- */
-exports.messageSanitizeOptions = {
-    allowedTags: [ 'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'li', 'ul', 'ol', 'blockquote', 'code', 'pre' ],
-    allowedAttributes: {
-      'a': [ 'href' ],
-      // We don't currently allow img itself, but this would make sense if we did:
-      //'img': [ 'src' ]
-    },
-    selfClosing: [ 'img', 'br' ],
-    // URL schemes we permit
-    allowedSchemes: [ 'http', 'https', 'ftp', 'mailto', 'tel', 'irc' ]
-  };
 
 /**
  * List of threads aka inbox
@@ -69,10 +54,9 @@ exports.inbox = function(req, res) {
 
           // Threads need just excerpt
           thread = thread.toObject();
-          thread.message.excerpt = sanitizeHtml(thread.message.content, {allowedTags: []}); // Clean message content from html
-          thread.message.excerpt = thread.message.excerpt.replace(/\s/g, ' '); // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
-          thread.message.excerpt = thread.message.excerpt.replace(/\&nbsp\;/g, ' '); // Above didn't clean these buggers.
-          thread.message.excerpt = thread.message.excerpt.substring(0,100) + ' ...'; // Shorten
+
+          thread.message.excerpt = textProcessor.plainText(thread.message.content, true); // Clean message content from html + clean all whitespace
+          thread.message.excerpt = thread.message.excerpt.substring(0, 100) + ' …'; // Shorten
 
           delete thread.message.content;
 
@@ -115,21 +99,28 @@ exports.send = function(req, res) {
     });
   }
 
-  var message = new Message(req.body);
-
   // Don't allow sending messages to myself
-  if(req.user._id.toString() === message.userTo.toString()) {
+  if(req.user._id.equals(req.body.userTo)) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: 'Recepient cannot be currently authenticated user.'
     });
   }
+
+  // Test in case content is actually empty without html
+  if(textProcessor.isEmpty(req.body.content)) {
+    return res.status(400).send({
+      message: 'Please write a message.'
+    });
+  }
+
+  var message = new Message(req.body);
+
+  // Allow some HTML
+  message.content = textProcessor.html(message.content);
 
   message.userFrom = req.user;
   message.read = false;
   message.notified = false;
-
-  // Sanitize message contents
-  message.content = sanitizeHtml(message.content, exports.messageSanitizeOptions);
 
   message.save(function(err) {
     if (err) {
@@ -192,9 +183,6 @@ exports.send = function(req, res) {
               message: errorHandler.getErrorMessage(err)
             });
           } else {
-
-            // Emit an event for all connected clients about new message
-            //socketio.sockets.emit( 'message.sent', message );
 
             // Finally res
             res.json(message);
@@ -270,7 +258,7 @@ exports.threadByUser = function(req, res, next, userId) {
       if(messages && messages.length > 0) {
         // Sanitize each outgoing message's contents
         messages.forEach(function(message) {
-          message.content = sanitizeHtml(message.content, exports.messageSanitizeOptions);
+          message.content = sanitizeHtml(message.content, textProcessor.sanitizeOptions);
           messagesCleaned.push(message);
         });
       }

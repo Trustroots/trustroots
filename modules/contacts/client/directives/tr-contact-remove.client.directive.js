@@ -9,15 +9,15 @@
     .directive('trContactRemove', trContactRemoveDirective);
 
   /* @ngInject */
-  function trContactRemoveDirective($modal) {
+  function trContactRemoveDirective($modal, Authentication) {
     return {
       restrict: 'A',
       scope: {
-        contact: '=trContactRemove'
+        contactToRemove: '=trContactRemove'
       },
       link: function(scope, element, attrs) {
 
-        var contact = scope.contact;
+        var contactToRemove = scope.contactToRemove;
 
         function openModal() {
 
@@ -29,20 +29,41 @@
 
               var vm = this;
               vm.isLoading = false;
-              vm.contact = contact;
+              vm.contact = contactToRemove;
               vm.removeContact = removeContact;
               vm.cancelContactRemoval = cancelContactRemoval;
+
+              // Different confirm button label and modal title depending on situation
+
+              // User is cancelling a request
+              if(angular.isDefined(contactToRemove.confirmed) && contactToRemove.confirmed === false && Authentication.user._id === contactToRemove.users[1]._id) {
+                vm.labelConfirm = 'Yes, revoke request';
+                vm.labelTitle = 'Revoke contact request?';
+                vm.labelTime = 'Requested';
+              }
+              // Decline received request
+              else if(angular.isDefined(contactToRemove.confirmed) && contactToRemove.confirmed === false) {
+                vm.labelConfirm = 'Yes, decline request';
+                vm.labelTitle = 'Decline contact request?';
+                vm.labelTime = 'Requested';
+              }
+              // Removing confirmed contact
+              else {
+                vm.labelConfirm = 'Yes, remove contact';
+                vm.labelTitle = 'Remove contact?';
+                vm.labelTime = 'Connected since';
+              }
 
               function removeContact() {
                 vm.isLoading = true;
 
                 // contact comes from the parent link()
-                Contact.delete({contactId: contact._id},
+                Contact.delete({contactId: contactToRemove._id},
                   // Success
                   function() {
 
                     // Let other controllers know that this was removed, so that they can react
-                    $rootScope.$broadcast('contactRemoved', contact);
+                    $rootScope.$broadcast('contactRemoved', contactToRemove);
 
                     $modalInstance.dismiss('cancel');
                   },

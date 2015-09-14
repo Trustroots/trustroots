@@ -30,13 +30,20 @@
               </div>
 
               <div class="form-group">
-                <label for="gender"><h4>Gender</h4></label>
-                <select id="gender" name="gender" class="form-control" ng-model="editprofile.user.gender">
-                  <option value="">Unspecified</option>
-                  <option value="female">Female</option>
-                  <option value="male">Male</option>
-                  <option value="other">Other</option>
-                </select>
+                <label><h4>Gender</h4></label>
+                <div class="radio">
+                  <label><input type="radio" value="" ng-model="editprofile.user.gender"> Unspecified</label>
+                </div>
+                <div class="radio">
+                  <label><input type="radio" value="female" ng-model="editprofile.user.gender"> Female</label>
+                </div>
+                <div class="radio">
+                  <label><input type="radio" value="male" ng-model="editprofile.user.gender"> Male</label>
+                </div>
+                <div class="radio">
+                  <label><input type="radio" value="other" ng-model="editprofile.user.gender"> Other</label>
+                </div>
+
               </div>
 
               <div class="form-group">
@@ -145,7 +152,7 @@
                   </div>
 
                   <div ng-if="editprofile.hasConnectedAdditionalSocialAccounts()">
-                    <h5>Connected</h5>
+                    <h5>Already connected</h5>
                     <ul class="social-profiles list-unstyled">
                       <li class="social-profile" ng-repeat="(providerName, providerData) in editprofile.user.additionalProvidersData track by providerName" ng-class="{'social-profile-active': editprofile.removingSocialAccount === providerName}">
                         <i class="social-profile-icon icon-fw icon-lg icon-{{::providerName}}"></i>
@@ -173,7 +180,7 @@
                     <div class="form-group">
                       <div class="input-group">
                         <div class="input-group-addon">
-                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover="Go to your BeWelcome profile and copy the username from the address bar."></span>
+                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover-html="editprofile.bwGuide"></span>
                         </div>
                         <label class="input-group-addon" for="extSitesBW">bewelcome.org/members/</label>
                         <input id="extSitesBW" type="text" class="form-control" ng-model="editprofile.user.extSitesBW" placeholder="your-username" aria-label="BeWelcome username">
@@ -185,7 +192,7 @@
                     <div class="form-group">
                       <div class="input-group">
                         <div class="input-group-addon">
-                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover="Go to your 'account and settings' page and copy your username."></span>
+                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover-html="editprofile.csGuide"></span>
                         </div>
                         <label class="input-group-addon" for="extSitesCS">couchsurfing.com/people/</label>
                         <input id="extSitesCS" type="text" class="form-control" ng-model="editprofile.user.extSitesCS" placeholder="your-username" aria-label="Couchsurfing username">
@@ -194,17 +201,18 @@
                         </span>
                       </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" ng-class="{'has-warning': editprofile.user.extSitesWS && !editprofile.isWarmshowersId()}">
                       <div class="input-group">
                         <div class="input-group-addon">
-                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover="Edit your Warmshowers profile and copy your username."></span>
+                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover-html="editprofile.wsGuide"></span>
                         </div>
-                        <label class="input-group-addon" for="extSitesWS">warmshowers.org/users/</label>
-                        <input id="extSitesWS" type="text" class="form-control" ng-model="editprofile.user.extSitesWS" placeholder="your-username" aria-label="Warmshowers username">
+                        <label class="input-group-addon" for="extSitesWS">warmshowers.org/user/</label>
+                        <input id="extSitesWS" type="text" class="form-control" ng-model="editprofile.user.extSitesWS" placeholder="your-user-id" aria-label="Warmshowers user id">
                         <span class="input-group-btn" ng-if="editprofile.user.extSitesWS.length">
-                          <a ng-href="https://www.warmshowers.org/users/{{ editprofile.user.extSitesWS }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
+                          <a ng-href="https://www.warmshowers.org/{{ !editprofile.isWarmshowersId() ? 'users' : 'user' }}/{{ editprofile.user.extSitesWS }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
                         </span>
                       </div>
+                      <p class="help-block text-warning" ng-if="editprofile.user.extSitesWS && !editprofile.isWarmshowersId()">This should be your numeric user id, not username.</p>
                     </div>
                   </div>
 

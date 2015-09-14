@@ -25,6 +25,18 @@
     vm.removeUserSocialAccount = removeUserSocialAccount;
     vm.isConnectedSocialAccount = isConnectedSocialAccount;
     vm.hasConnectedAdditionalSocialAccounts = hasConnectedAdditionalSocialAccounts;
+    vm.isWarmshowersId = isWarmshowersId;
+
+    // Guide texts for external hospex site inputs
+    vm.bwGuide = 'Go to your BeWelcome profile and copy the username from the address bar.' +
+                 '<br><br><img class="img-responsive clearfix" src="/modules/users/img/guide-bw.png" alt="" width="525" height="107" aria-hidden="true">';
+
+    vm.csGuide = 'Go to your "account and settings" page and copy your username.' +
+                 '<br><br><img class="img-responsive clearfix" src="/modules/users/img/guide-cs.png" alt="" width="319" height="32" aria-hidden="true">';
+
+    vm.wsGuide = 'Edit your Warmshowers profile and copy your numeric user id from the address bar.' +
+                 '<br><br><img class="img-responsive clearfix" src="/modules/users/img/guide-ws.png" alt="" width="319" height="32" aria-hidden="true">';
+
 
     // Format user language list for Chosen selector
     decodeUserLanguages();
@@ -54,6 +66,14 @@
       vm.user.languages = langs_arr;
     }
 
+    /**
+     * Determine if given user handle for Warmshowers is an id or username
+     * @link https://github.com/Trustroots/trustroots/issues/308
+     */
+    function isWarmshowersId() {
+      var x;
+      return isNaN(vm.user.extSitesWS) ? !1 : (x = parseFloat(vm.user.extSitesWS), (0 | x) === x);
+    }
 
     /**
      * Check if there are additional accounts

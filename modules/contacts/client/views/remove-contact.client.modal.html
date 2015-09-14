@@ -1,9 +1,7 @@
   <div class="modal-content">
     <div class="modal-header">
       <button type="button" class="close" aria-hidden="true" ng-click="removeContactModal.cancelContactRemoval()" ng-if="!removeContactModal.isLoading">&times;</button>
-      <h4 class="modal-title">
-        Remove contact?
-      </h4>
+      <h4 class="modal-title">{{ ::removeContactModal.labelTitle }}</h4>
     </div>
 
     <div class="modal-body">
@@ -32,12 +30,15 @@
 
         </div>
       </div><!-- /.row -->
+
+      <!-- Date -->
       <div class="row">
         <div class="col-xs-12 text-center text-muted">
-          <p>
-            <br>
-            <small>Connected since {{ ::removeContactModal.contact.created | date:'mediumDate' }}</small>
-          </p>
+          <br>
+          <small>
+            {{ ::removeContactModal.labelTime }}
+            {{ ::removeContactModal.contact.created | date:'mediumDate' }}
+          </small>
         </div>
       </div><!-- /.row -->
 
@@ -46,7 +47,7 @@
     <div class="modal-footer">
       <button class="btn btn-link" ng-click="removeContactModal.cancelContactRemoval()" ng-disabled="removeContactModal.isLoading">Cancel</button>
       <button class="btn btn-primary" ng-click="removeContactModal.removeContact();" ng-disabled="removeContactModal.isLoading">
-        <span ng-if="!removeContactModal.isLoading">Yes, remove contact</span>
+        <span ng-if="!removeContactModal.isLoading">{{ ::removeContactModal.labelConfirm }}</span>
         <span ng-if="removeContactModal.isLoading">Wait a moment...</span>
       </button>
     </div>
