@@ -1255,10 +1255,6 @@
                     "type": "object",
                     "description": "Counters of members connected to several external sites."
                 },
-                "avatars": {
-                    "type": "object",
-                    "description": "Counters of different avatar sources."
-                },
                 "newsletter": {
                     "type": "integer",
                     "format": "int32",
