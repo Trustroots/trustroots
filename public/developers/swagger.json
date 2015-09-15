@@ -1248,9 +1248,21 @@
                     "description": "Hashtag pointing to the currently deployed commit at https://github.com/Trustroots/trustroots/HASHTAG"
                 },
                 "hosting": {
+                    "type": "object",
+                    "description": "Counters of hosts marked as \"yes\" or \"maybe\"."
+                },
+                "connected": {
+                    "type": "object",
+                    "description": "Counters of members connected to several external sites."
+                },
+                "avatars": {
+                    "type": "object",
+                    "description": "Counters of different avatar sources."
+                },
+                "newsletter": {
                     "type": "integer",
                     "format": "int32",
-                    "description": "Count of hosts marked as \"yes\" or \"maybe\"."
+                    "description": "Newsletter subscribers."
                 },
                 "total": {
                     "type": "integer",

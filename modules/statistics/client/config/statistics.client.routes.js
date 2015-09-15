@@ -13,7 +13,7 @@
         url: '/statistics',
         templateUrl: 'modules/statistics/views/statistics.client.view.html',
         controller: 'StatisticsController',
-        controllerAs: 'statistics',
+        controllerAs: 'stats',
         resolve: {
           // A string value resolves to a service
           SettingsService: 'Statistics',
