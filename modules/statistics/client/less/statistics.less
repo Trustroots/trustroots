@@ -1,12 +1,30 @@
 /*
  * Statistics
  */
-.statistics-count {
-  font-size: 40px;
-  line-height: 45px;
+.stats {
+  .panel {
+    color: @text-color;
+    text-shadow: none;
+    h5 {
+      display: inline-block;
+    }
+  }
 }
 
-.statistics-commit {
+.stats-count {
+  font-size: 50px;
+  line-height: 55px;
+  color: @brand-primary;
+  font-family: @font-family-brand;
+  font-weight: 400;
+  font-style: normal;
+}
+.stats-count-lg {
+  font-size: 70px;
+  line-height: 75px;
+}
+
+.stats-commit {
   &:link,
   &:visited,
   &:hover,
