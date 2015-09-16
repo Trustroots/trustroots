@@ -18,8 +18,7 @@ exports.get = function(req, res) {
 
   req.statistics = {
     connected: {},
-    hosting: {},
-    avatars: {}
+    hosting: {}
   };
 
   async.waterfall([
