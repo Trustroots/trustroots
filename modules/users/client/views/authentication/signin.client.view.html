@@ -15,7 +15,14 @@
           </div>
           <div class="form-group">
             <label for="password" class="sr-only">Password</label>
-            <input type="password" required ng-disabled="auth.isLoading" id="password" name="password" class="form-control input-lg" ng-model="auth.credentials.password" placeholder="Password">
+            <div class="input-group">
+              <input type="{{ showPassword ? 'text' : 'password' }}" required ng-disabled="auth.isLoading" id="password" name="password" class="form-control input-lg" ng-model="auth.credentials.password" placeholder="Password">
+              <span class="input-group-btn">
+                <a class="btn btn-lg btn-inverse btn-password-toggle" role="button" ng-click="showPassword=!showPassword" aria-label="Toggle password visibility">
+                  <i class="icon-lg" ng-class="{'icon-eye': !showPassword, 'icon-eye-off': showPassword}"></i>
+                </a>
+              </span>
+            </div>
           </div>
           <div class="text-center form-group">
             <button type="submit" class="btn btn-inverse btn-lg" ng-disabled="auth.isLoading">

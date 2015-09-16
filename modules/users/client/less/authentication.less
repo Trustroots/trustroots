@@ -3,11 +3,23 @@
   .alert {
     text-shadow: none;
   }
+  .form-control,
   input {
-    border-color: @input-bg;
+    border: 0;
   }
   input,
   input:focus {
     box-shadow: 0 0 10px rgba(0,0,0,.1);
+  }
+}
+
+.btn.btn-inverse.btn-password-toggle {
+  padding: 10px;
+  outline: none;
+  &:hover {
+    background: #fff;
+  }
+  &:active {
+    box-shadow: none;
   }
 }
