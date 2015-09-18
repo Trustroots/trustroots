@@ -12,7 +12,7 @@
     .config(initConfig);
 
   /* @ngInject */
-  function initConfig(localStorageServiceProvider, cfpLoadingBarProvider, $locationProvider) {
+  function initConfig(localStorageServiceProvider, cfpLoadingBarProvider, $locationProvider, $messageCenterServiceProvider) {
 
     // Setting HTML5 Location Mode
     $locationProvider.html5Mode({
@@ -32,6 +32,9 @@
     localStorageServiceProvider
       .setPrefix(ApplicationConfiguration.applicationModuleName)
       .setStorageType('sessionStorage');
+
+    // Default timeout for success, error etc messages
+    $messageCenterServiceProvider.setGlobalOptions({timeout: 6000});
 
   }
 

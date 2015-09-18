@@ -35,14 +35,7 @@
         templateUrl: 'modules/users/views/profile/edit-settings.client.view.html',
         controller: 'SettingsController',
         controllerAs: 'settings',
-        requiresAuth: true,
-        resolve: {
-          // A string value resolves to a service
-          SettingsService: 'SettingsService',
-          appSettings: function(SettingsService) {
-            return SettingsService.get();
-          }
-        }
+        requiresAuth: true
       }).
       state('profile', {
         url: '/profile/:username?tab&updated',
@@ -97,15 +90,7 @@
         controller: 'SignupController',
         controllerAs: 'signup',
         footerTransparent: false,
-        headerHidden: true,
-        resolve: {
-          // A string value resolves to a service
-          SettingsService: 'SettingsService',
-
-          appSettings: function(SettingsService) {
-            return SettingsService.get();
-          }
-        }
+        headerHidden: true
       }).
       state('signin', {
         url: '/signin?continue',

@@ -54,7 +54,7 @@
     if($stateParams.updated && profile.username === Authentication.user.username) {
       // $timeout due Angular overwriting message at $state change otherwise
       $timeout(function(){
-        messageCenterService.add('success', 'Profile updated', { timeout: appSettings.flashTimeout });
+        messageCenterService.add('success', 'Profile updated');
       });
     }
 
