@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Sets up Vagrant development box
+# Sets up the Vagrant development box
 
 # Don't run this script directly; run 'vagrant up' instead
 
@@ -16,7 +16,7 @@ echo ""
 # http://stackoverflow.com/questions/10134901/why-sudo-cat-gives-a-permission-denied-but-sudo-vim-works-fine#comment12992710_10134932
 echo 'echo "LC_ALL=\"en_US.UTF-8\"" >> /etc/default/locale' | sudo -s
 LC_ALL="en_US.UTF-8"
-sudo mkdir -p /srv/logs/
+sudo mkdir -p /srv/logs/nginx/
 sudo apt-get update -qq
 sudo apt-get install -q -y git build-essential
 
@@ -82,7 +82,7 @@ echo "---------------------------------------------------------------------"
 echo "Installing NodeJS tools..."
 echo "---------------------------------------------------------------------"
 echo ""
-npm install -g bower grunt-cli yo generator-meanjs node-gyp bson
+npm install -g bower fontello-cli grunt-cli node-gyp bson
 
 
 # Install packages & build assets
@@ -105,7 +105,7 @@ echo "Generating test content, this might take a while..."
 echo "---------------------------------------------------------------------"
 echo ""
 cd /srv/trustroots/
-NODE_ENV=development node scripts/fillTestData.js 5000 trout
+NODE_ENV=development node scripts/fillTestData.js 10000 trout
 
 # Final restart
 sudo service nginx restart
