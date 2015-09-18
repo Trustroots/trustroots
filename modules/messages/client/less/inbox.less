@@ -55,18 +55,31 @@
         a {
           color: @text-color;
           text-decoration: none;
-          &:focus,
-          &:hover {
-
-          }
         }
-        &.summary {
+        &.thread-summary {
           .indicators {
             font-size: @font-size-small;
             color: @gray;
           }
+          span {
+            // https://developer.mozilla.org/en-US/docs/Web/CSS/word-wrap
+            word-wrap: break-word;
+            // http://getbootstrap.com/css/#less-mixins-truncating
+            .text-overflow();
+          }
+          @media (max-width: @screen-sm-max) {
+            span {
+              max-width: 300px;
+              display: inline-block;
+            }
+          }
+          @media (max-width: @screen-xs-max) {
+            span {
+              max-width: 100px;
+            }
+          }
         }
-        &.author {
+        &.thread-author {
           .avatar {
             margin-right: 3px;
           }
@@ -94,5 +107,8 @@
   @media (max-width: @screen-xs-max) {
     margin-left: -15px;
     margin-right: -15px;
+    &.table-responsive {
+      width: auto;
+    }
   }
 }

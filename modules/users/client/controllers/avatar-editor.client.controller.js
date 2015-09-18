@@ -51,7 +51,7 @@
           vm.avatarUploading = false;
           $modalInstance.close(vm.user);
         }).error(function(data, status, headers, config) {
-          messageCenterService.add('danger', 'Oops! Something went wrong. Try again later.', { timeout: appSettings.flashTimeout });
+          messageCenterService.add('danger', 'Oops! Something went wrong. Try again later.');
           vm.avatarUploading = false;
           //$modalInstance.dismiss('close');
         });
@@ -84,10 +84,10 @@
 
       // Validate file
       if(file.type.indexOf('jpeg') === -1 && file.type.indexOf('gif') === -1 && file.type.indexOf('png') === -1) {
-         messageCenterService.add('danger', 'Please give a jpg, gif, or png image.', { timeout: appSettings.flashTimeout });
+         messageCenterService.add('danger', 'Please give a jpg, gif, or png image.');
       }
       else if(file.size > appSettings.maxUploadSize) {
-         messageCenterService.add('danger', 'Whoops, your file is too big. Please keep it up to ' + bytesToSize(appSettings.maxUploadSize) + '. Sorry!', { timeout: appSettings.flashTimeout });
+         messageCenterService.add('danger', 'Whoops, your file is too big. Please keep it up to ' + bytesToSize(appSettings.maxUploadSize) + '. Sorry!');
       }
       // Upload file
       else {

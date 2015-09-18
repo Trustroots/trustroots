@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($scope, $http, $state, $stateParams, $modal, Authentication, messageCenterService, appSettings) {
+  function SignupController($scope, $http, $state, $stateParams, $modal, Authentication, messageCenterService) {
 
     // View Model
     var vm = this;
@@ -33,7 +33,7 @@
         $scope.$emit('userUpdated');
       }).error(function(error) {
         vm.isLoading = false;
-        messageCenterService.add('danger', error.message, { timeout: appSettings.flashTimeout });
+        messageCenterService.add('danger', error.message);
       });
     }
 

@@ -6,7 +6,7 @@
     .controller('InboxController', InboxController);
 
   /* @ngInject */
-  function InboxController($state, Authentication, Messages, messageCenterService) {
+  function InboxController($state, Authentication, Messages) {
 
     // ViewModel
     var vm = this;

@@ -6,7 +6,7 @@
     .controller('AuthenticationController', AuthenticationController);
 
   /* @ngInject */
-  function AuthenticationController($scope, $rootScope, $http, $state, $stateParams, Authentication, messageCenterService, appSettings) {
+  function AuthenticationController($scope, $rootScope, $http, $state, $stateParams, Authentication, messageCenterService) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) $state.go('search');
@@ -48,7 +48,7 @@
         }
       }).error(function(error) {
         vm.isLoading = false;
-        messageCenterService.add('danger', error.message || 'Something went wrong.', { timeout: appSettings.flashTimeout });
+        messageCenterService.add('danger', error.message || 'Something went wrong.');
       });
     }
 

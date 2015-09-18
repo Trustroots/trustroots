@@ -118,7 +118,7 @@
       }, function(err) {
         vm.isLoading = false;
         var errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
-        messageCenterService.add('danger', errorMessage, { timeout: appSettings.flashTimeout });
+        messageCenterService.add('danger', errorMessage);
       });
 
     }
@@ -150,7 +150,7 @@
               mapLocate(response.data.features[0]);
             }
             else {
-              messageCenterService.add('danger', 'Cannot find that place.', { timeout: appSettings.flashTimeout });
+              messageCenterService.add('danger', 'Cannot find that place.');
             }
           });
 

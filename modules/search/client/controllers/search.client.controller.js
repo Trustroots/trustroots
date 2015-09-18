@@ -308,7 +308,7 @@
               if(vm.mapCenter.lat === 0 && vm.mapCenter.zoom === 1) {
                 vm.mapCenter = defaultLocation;
               }
-              messageCenterService.add('warning', 'We could not find such a place...', { timeout: appSettings.flashTimeout });
+              messageCenterService.add('warning', 'We could not find such a place...');
             }
           });
 
@@ -344,7 +344,7 @@
       }
       // Failed to pinpoint location to the map
       else {
-        messageCenterService.add('warning', 'We could not find such a place...', { timeout: appSettings.flashTimeout });
+        messageCenterService.add('warning', 'We could not find such a place...');
       }
     }
 

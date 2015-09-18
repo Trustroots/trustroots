@@ -6,7 +6,7 @@
     .controller('SettingsController', SettingsController);
 
   /* @ngInject */
-  function SettingsController($http, $state, Users, Authentication, messageCenterService, appSettings) {
+  function SettingsController($http, $state, Users, Authentication, messageCenterService) {
 
     // ViewModel
     var vm = this;
@@ -62,12 +62,12 @@
       vm.updatingUserSubscriptions = true;
       var user = new Users(vm.user);
       user.$update(function(response) {
-        messageCenterService.add('success', 'Subscriptions updated.', { timeout: appSettings.flashTimeout });
+        messageCenterService.add('success', 'Subscriptions updated.');
         vm.user = Authentication.user = response;
         vm.updatingUserSubscriptions = false;
       }, function(response) {
         vm.updatingUserSubscriptions = false;
-        messageCenterService.add('error', 'Error: ' + response.data.message, { timeout: appSettings.flashTimeout });
+        messageCenterService.add('error', 'Error: ' + response.data.message);
       });
     }
 
@@ -88,7 +88,7 @@
         vm.verifyPassword = '';
         vm.changeUserPasswordLoading = false;
         vm.user = Authentication.user = response.user;
-        messageCenterService.add('success', response.message, { timeout: appSettings.flashTimeout });
+        messageCenterService.add('success', response.message);
       }).error(function(response) {
         vm.changeUserPasswordLoading = false;
         messageCenterService.add('danger', ((response.message && response.message !== '') ? response.message : 'Password not changed due error, try again.'), { timeout: 10000 });
@@ -116,7 +116,7 @@
 
       } // Require checkbox
       else {
-        messageCenterService.add('warning', 'Choose "I understand this cannot be undone"', { timeout: appSettings.flashTimeout });
+        messageCenterService.add('warning', 'Choose "I understand this cannot be undone"');
       }
 
     }

@@ -18,12 +18,6 @@
       // Settings passed from the backend
       settings = $window.settings;
 
-      // Extend with defaults
-      angular.extend(settings, {
-        // Default timeout for 'message-center' success/alert messages
-        flashTimeout: 6000
-      });
-
       // Gimme settings
       return settings;
     }

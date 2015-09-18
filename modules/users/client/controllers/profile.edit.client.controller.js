@@ -98,7 +98,7 @@
     function removeUserSocialAccount(provider) {
       $http.delete('/api/users/accounts/' + provider)
         .success(function(response) {
-          messageCenterService.add('success', 'Succesfully disconnected from ' + provider, { timeout: appSettings.flashTimeout });
+          messageCenterService.add('success', 'Succesfully disconnected from ' + provider);
           vm.user = Authentication.user = response;
           $scope.$emit('userUpdated');
         }).error(function(response) {
@@ -198,7 +198,7 @@
             // Notify AppController
             $scope.$emit('userUpdated', response);
           }, function(response) {
-            messageCenterService.add('danger', response.data.message || 'Oops! Something went wrong.', { timeout: appSettings.flashTimeout });
+            messageCenterService.add('danger', response.data.message || 'Oops! Something went wrong.');
           });
         }, function() {
           //$log.log('modalInstance cancelled');
