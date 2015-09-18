@@ -9,20 +9,20 @@
       <!-- Other threads -->
       <h4>Conversations</h4>
 
-      <div class="panel panel-default panel-threadlist panel-threadlist-threads panel-xs-no_margin">
+      <div class="panel panel-default panel-threadlist panel-threadlist-threads panel-xs-no_margin table-responsive">
 
         <!-- Threads -->
         <table class="table table-condensed table-hover table-threadlist table-threadlist-threads" ng-if="inbox.threads.length">
           <tbody>
 
             <tr class="thread" ng-class="{ 'thread-unread': !thread.read }" ng-repeat="thread in inbox.threads | orderBy:'updated':true track by thread._id" ng-click="inbox.openThread(thread)">
-              <td class="author col-xs-3 col-md-2">
+              <td class="thread-author col-xs-3 col-md-2">
                 <div tr-avatar data-user="inbox.otherParticipant(thread)" data-size="32" data-link="false" class="pull-left hidden-xs"></div> <span ng-bind="inbox.otherParticipant(thread, 'displayName')"></span>
               </td>
-              <td class="summary">
+              <td class="thread-summary">
                 <span ng-bind-html="thread.message.excerpt"></span>
-                <small class="indicators pull-right">
-                  <i class="icon-reply icon-fw text-muted" ng-show="thread.userFrom._id === app.user._id" tooltip="You replied" tooltip-placement="right"></i>
+                <small class="thread-indicators pull-right">
+                  <i class="icon-reply icon-fw text-muted" ng-if="thread.userFrom._id === app.user._id" tooltip="You replied" tooltip-placement="right"></i>
                 </small>
               </td>
               <td class="ago col-xs-3 col-md-2" am-time-ago="thread.updated" tooltip="{{thread.updated | date:'medium'}}" tooltip-placement="left"></td>

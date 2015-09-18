@@ -35,12 +35,12 @@
        ng-if="app.user._id !== profileCtrl.profile._id && (offersView.offer && offersView.offer.$resolved && offersView.offer.status && app.user.public)"
        ui-sref="messageThread({username: profileCtrl.profile.username})"
        ng-class="{'btn-hosting-yes': offersView.offer.status === 'yes', 'btn-hosting-maybe': offersView.offer.status === 'maybe', 'btn-hosting-no': (!offersView.offer || offersView.offer.status === 'no')}">
-      {{ offersView.hostingStatusLabel(offersView.offer.status) }}
+      {{ ::offersView.hostingStatusLabel(offersView.offer.status) }}
     </a>
   </div>
 
   <!-- Show while offer is loading -->
-  <div class="panel-body text-center text-muted" ng-if="!offersView.offer || !offersView.offer.$resolved">
+  <div class="panel-body text-center text-muted" ng-show="!offersView.offer || !offersView.offer.$resolved">
     <small>Wait a moment...</small>
   </div>
 
