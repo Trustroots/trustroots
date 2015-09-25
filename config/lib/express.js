@@ -20,7 +20,8 @@ var config = require('../config'),
     consolidate = require('consolidate'),
     git = require('git-rev'),
     path = require('path'),
-    paginate = require('express-paginate');
+    paginate = require('express-paginate'),
+    seo = require('mean-seo');
 
 /**
  * Initialize local variables
@@ -176,6 +177,18 @@ module.exports.initHelmetHeaders = function (app) {
 };
 
 /**
+ * Configure SEO rendering for `/?_escaped_fragment_=/pagename` -urls
+ * This must come before client route configs
+ * @link http://meanjs.org/modules.html#seo
+ */
+module.exports.initSEO = function (app) {
+  app.use(seo({
+    cacheClient: 'disk', // Can be 'disk' or 'redis'
+    cacheDuration: 2 * 60 * 60 * 24 * 1000, // In milliseconds for disk cache
+  }));
+};
+
+/**
  * Configure the modules static routes
  */
 module.exports.initModulesClientRoutes = function (app) {
@@ -259,6 +272,9 @@ module.exports.init = function (db) {
 
   // Initialize modules server authorization policies
   this.initModulesServerPolicies(app);
+
+  // Initialize SEO Modules
+  this.initSEO(app);
 
   // Initialize modules server routes
   this.initModulesServerRoutes(app);
