@@ -56,13 +56,22 @@
       state('media', {
         url: '/media',
         templateUrl: 'modules/pages/views/media.client.view.html'
-      }).
-      state('home', {
-        url: '/',
-        templateUrl: 'modules/pages/views/home.client.view.html',
-        footerTransparent: true,
-        headerHidden: true
       });
+
+      /**
+       * Work around redirecting to home on SEO rendered pages
+       */
+      if (window.location.search.search('_escaped_fragment_') === -1) {
+        $stateProvider.state('home', {
+          url: '/',
+          templateUrl: 'modules/pages/views/home.client.view.html',
+          footerTransparent: true,
+          headerHidden: true
+        });
+      } else {
+        $stateProvider.state('home', {url: '/'});
+      }
+
   }
 
 })();
