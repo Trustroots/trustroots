@@ -67,12 +67,6 @@ module.exports = {
     clientSecret: process.env.GITHUB_SECRET || 'APP_SECRET',
     callbackURL: '/api/auth/github/callback'
   },
-  newrelic: {
-    enabled: process.env.NEWRELIC_ENABLED || false,
-    app_name: process.env.NEWRELIC_APP || ['Trustroots'],
-    license_key: process.env.NEWRELIC_KEY || 'NEWRELIC_KEY',
-    logging_level: process.env.NEWRELIC_LOGGING_LEVEL || 'info',
-  },
   googleAnalytics: {
     enabled: process.env.GA_ENABLED || false,
     code: process.env.GA_CODE || ''

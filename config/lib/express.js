@@ -34,7 +34,6 @@ module.exports.initLocalVariables = function (app) {
   app.locals.twitterUsername = config.twitter.username;
   app.locals.facebookPage = config.facebook.page;
   app.locals.googlePage = config.google.page;
-  app.locals.newrelic = config.newrelic.enabled;
   app.locals.googleAnalytics = config.googleAnalytics;
   app.locals.languages = languages;
   app.locals.appSettings = config.app;

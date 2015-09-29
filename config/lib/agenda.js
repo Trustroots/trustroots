@@ -8,10 +8,6 @@ var config = require('../config'),
     chalk = require('chalk'),
     Agenda = require('agenda');
 
-if(process.env.NODE_ENV === 'production' && config.newrelic.enabled === true) {
-  var newrelic = require('newrelic');
-}
-
 exports.setupJobs = function() {
 
   // Load jobs
@@ -28,7 +24,6 @@ exports.setupJobs = function() {
   // Error reporting
   agendaWorker.on('fail', function(err, job) {
     console.error('Agenda job failed with error: %s', err.message);
-    if(newrelic) newrelic.noticeError(err);
   });
 
   agendaWorker.start();
