@@ -2,17 +2,48 @@
  * Angular loading bar
  * https://chieffancypants.github.io/angular-loading-bar/
  */
-/*
-#loading-bar-spinner .spinner-icon {
-  border-top-color:  @loading-bar-color;
-  border-left-color: @loading-bar-color;
-}
-*/
+
+/* Make clicks pass-through */
 #loading-bar {
-  .peg {
-    box-shadow: @loading-bar-color 1px 0 6px 1px;
+  pointer-events: none;
+  transition: 350ms linear all;
+
+  &.ng-enter,
+  &.ng-leave.ng-leave-active {
+    opacity: 0;
   }
+
+  &.ng-enter.ng-enter-active,
+  &.ng-leave {
+    opacity: 1;
+  }
+
   .bar {
+    transition: width 350ms;
     background: @loading-bar-color;
+    position: fixed;
+    z-index: (@zindex-modal + 10); // https://github.com/twbs/bootstrap/blob/master/less/variables.less#L278
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: @loading-bar-height;
+    border-bottom-right-radius: 1px;
+    border-top-right-radius: 1px;
   }
+
+  /* Fancy blur effect */
+  .peg {
+    display: none;
+    /*
+    position: absolute;
+    width: 70px;
+    right: 0;
+    top: 0;
+    height: 2px;
+    opacity: .45;
+    box-shadow: @loading-bar-color 1px 0 6px 1px;
+    border-radius: 100%;
+    */
+  }
+
 }

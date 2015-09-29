@@ -6,8 +6,7 @@ module.exports = {
       css: [
         'public/lib/fontello/css/animation.css',
         'public/lib/fontello/css/tricons-codes.css',
-        'public/lib/medium-editor/dist/css/medium-editor.css',
-        'public/lib/angular-loading-bar/build/loading-bar.css'
+        'public/lib/medium-editor/dist/css/medium-editor.css'
       ],
       js: [
         // Non minified  versions
