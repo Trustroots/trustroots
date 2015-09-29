@@ -15,13 +15,6 @@ var config = require('./config/config'),
 // Initialize mongoose
 mongoose.connect(function(db) {
 
-  // NewRelic monitoring
-  // @link http://newrelic.com/
-  if(process.env.NODE_ENV === 'production' && config.newrelic.enabled === true) {
-    var newrelic = require('./config/lib/newrelic');
-    console.log(chalk.green('Started monitoring with NewRelic'));
-  }
-
   // Initialize express
   var app = express.init(db);
 
