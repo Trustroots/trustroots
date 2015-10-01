@@ -17,6 +17,8 @@ var userTo, userFrom, message;
  * Unit tests
  */
 describe('Message Model Unit Tests:', function() {
+  this.timeout(10000);
+
   beforeEach(function(done) {
 
     userFrom = new User({
