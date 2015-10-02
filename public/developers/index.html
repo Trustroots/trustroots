@@ -7,7 +7,38 @@
   <title>Trustroots for Developers</title>
   <meta name="description" content="Trustroots for Developers. Docs and tools to help you build with Trustroots.">
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <style type="text/css">
+    body {
+      color: #fff;
+      background-color: #1a6db3;
+      /* White squares: */
+    	background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyhpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NzU0NDZFODc1RTAzMTFFNTk3MkE4M0Y2RENENEQ4NTciIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NzU0NDZFODg1RTAzMTFFNTk3MkE4M0Y2RENENEQ4NTciPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo3NTQ0NkU4NTVFMDMxMUU1OTcyQTgzRjZEQ0Q0RDg1NyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo3NTQ0NkU4NjVFMDMxMUU1OTcyQTgzRjZEQ0Q0RDg1NyIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PhShqYEAAAAhSURBVHjaYvz//z8vA5GABUp/JkYxEwMJYFQxfRQDBBgAmNcEFSjYJ2EAAAAASUVORK5CYII=');
+    }
+    .jumbotron {
+      background: rgba(0, 86, 158, 0.5);
+    }
+    .btn-link {
+      color: #fff;
+    }
+    .btn-link:focus, .btn-link:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+      text-decoration: none;
+    }
+    a {
+      color: #fff;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+    }
+    a:focus, a:hover {
+      color: #fff;
+      text-decoration: none;
+      border-bottom: 2px solid rgba(255, 255, 255, 1);
+    }
+    .text-muted {
+      color: rgba(255, 255, 255, 0.7);
+    }
+  </style>
   <link rel="icon" href="/favicon.ico">
 </head>
 <body>
@@ -16,34 +47,49 @@
     <br><br>
 
     <div class="jumbotron">
-      <h2><img src="/modules/core/img/tree-color.svg" width="36" height="36" alt="Trustroots" /> for Developers</h2>
+      <h2><img src="/modules/core/img/tree-white.svg" width="36" height="36" alt="Trustroots" /> for Developers</h2>
       <p class="lead">Docs and tools to help you build with Trustroots.</p>
     </div>
 
     <div class="row">
       <div class="col-sm-6">
-        <h4>REST API</h4>
-        <p>Programmatic access to read and write Trustroots data.</p>
-        <p><a href="./api/" class="btn btn-success" role="button">API documentation</a></p>
+
+        <br>
+        <p class="lead">
+          <em>As our API is still unstable and largely in development, please <a href="/contact">contact us</a> if you want to build something. We're especially interested in native mobile apps for Trustroots.</em>
+        </p>
         <br>
 
-        <h4>OAuth</h4>
-        <p><em><a href="https://github.com/Trustroots/trustroots/issues/186">Coming...</a></em></p>
+        <h3>Reading</h3>
+        <br>
+
+        <h4>REST API</h4>
+        <p>Programmatic access to read and write Trustroots data.</p>
+        <p>
+          <ul>
+            <li><a href="./api/">API documentation</a></li>
+            <li>oAuth <em><a href="https://github.com/Trustroots/trustroots/issues/186">coming later...</a></em></li>
+          </ul>
+        </p>
         <br>
 
         <h4>Style guide & Graphics</h4>
-        <p>See <a href="https://github.com/trustroots/media">media</a> repository.</p>
+        <p>
+          <ul>
+            <li><a href="https://github.com/Trustroots/media/blob/master/style-guide/Trustroots-Styleguide.pdf">Style guide</a> (pdf)</li>
+            <li>See <a href="https://github.com/trustroots/media">media repository</a> for more</li>
+          </ul>
+        </p>
         <br>
-
 
       </div>
       <div class="col-sm-6">
-        <h4>Status</h4>
+        <h3>Status</h3>
         <p>Is Trustroots.org down or is it just me?</p>
         <p><a href="http://status.trustroots.org/" class="btn btn-link" role="button">Check uptime</a></p>
         <br>
 
-        <h4>Bugs / issues</h4>
+        <h3>Bugs & feature requests</h3>
         <p>Expect problems and eat them for breakfast. If you have questions, don't hesitate to contact us.</p>
         <p>
           <a href="https://www.trustroots.org/contact/" class="btn btn-link" role="button">Contact us</a>
@@ -52,7 +98,7 @@
         </p>
         <br>
 
-        <h4>Join development?</h4>
+        <h3>Join development?</h3>
         <p>Become a volunteer and make a difference!</p>
         <p>
           <a href="https://www.trustroots.org/contact/" class="btn btn-link" role="button">Contact us</a>
