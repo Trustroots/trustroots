@@ -18,7 +18,7 @@ You can login with username `trout` and password `password`.
 
 After the setup your virtual machine is running and Grunt is watching any changes.
 
-To stop Grunt watching files, hit `ctrl+c`. This will leave machine still running. To suspend the virtual machine, type `vagrant suspend`.
+To stop Grunt watching files, hit `Ctrl+C`. This will leave machine still running. To suspend the virtual machine, type `vagrant suspend`.
 
 #### Development with Passenger
 When you're ready to begin working again, just run `vagrant up`.
