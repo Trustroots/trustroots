@@ -82,7 +82,7 @@ echo "---------------------------------------------------------------------"
 echo "Installing NodeJS tools..."
 echo "---------------------------------------------------------------------"
 echo ""
-npm install -g bower fontello-cli grunt-cli node-gyp bson
+npm install -g bower fontello-cli grunt-cli gulp node-gyp bson
 
 
 # Install packages & build assets

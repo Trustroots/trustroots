@@ -9,7 +9,7 @@ module.exports = {
         'public/lib/medium-editor/dist/css/medium-editor.css'
       ],
       js: [
-        // Non minified  versions
+        // Non minified versions
         'public/lib/jquery/dist/jquery.js',
         'public/lib/angular/angular.js',
         'public/lib/angular-aria/angular-aria.js',
@@ -25,7 +25,7 @@ module.exports = {
         'public/lib/medium-editor/dist/js/medium-editor.js',
         'public/lib/angular-medium-editor/dist/angular-medium-editor.js',
         'public/lib/leaflet/dist/leaflet-src.js',
-        'public/lib/angular-simple-logger/dist/index.js',
+        'public/lib/angular-simple-logger/dist/index.js', // Required by angular-leaflet-directive
         'public/lib/PruneCluster/dist/PruneCluster.js',
         'public/lib/angular-leaflet-directive/dist/angular-leaflet-directive.js',
         'public/lib/angular-waypoints/dist/angular-waypoints.all.js',
@@ -57,13 +57,15 @@ module.exports = {
       'modules/*/client/controllers/*.js',
       'modules/*/client/**/*.js'
     ],
-    views: ['modules/*/client/views/**/*.html']
+    views: ['modules/*/client/views/**/*.html'],
+    templates: ['build/templates.js']
   },
   server: {
-    allJS: ['gruntfile.js', 'server.js', 'config/**/*.js', 'modules/*/server/**/*.js'],
+    fontelloConfig: 'fontello.json',
+    gulpConfig: 'gulpfile.js',
+    allJS: ['server.js', 'config/**/*.js', 'modules/*/server/**/*.js'],
     models: 'modules/*/server/models/**/*.js',
     routes: ['modules/!(core)/server/routes/**/*.js', 'modules/core/server/routes/**/*.js'],
-    sockets: 'modules/*/server/sockets/**/*.js',
     config: 'modules/*/server/config/*.js',
     policies: 'modules/*/server/policies/*.js',
     views: 'modules/*/server/views/*.html'

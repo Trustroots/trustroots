@@ -29,6 +29,7 @@ passenger.*
 *.pid
 
 # App
+build
 public/lib
 public/dist
 modules/core/client/app/css

@@ -24,9 +24,9 @@ Install the stack on your localhost and run NodeJS. This approach takes a little
 
 #### Quick start
 * Install dependencies: `npm install && bower install`
-* Run in development mode: `grunt`
-* Run in production mode: `grunt prod`
-* Run tests: `test`, (server & client) or `test:server` or `test:client` for only either one.
+* Run in development mode: `gulp`
+* Run in production mode: `gulp prod`
+* Run tests: `gulp test`, (server & client) or `gulp test:server` or `gulp test:client` for only either one.
 
 ### Vagrant
 
@@ -41,17 +41,11 @@ There's a script that can generate mock user data. It's highly recommended you r
 3. It can take up to 5 minutes. Mongoose might complain about duplicates - just ignore these errors.
 4. To see the result, log in with your chosen username and password `password`.
 
-### Tests
-
-Run `grunt test`.
-
-See [Development/testing](https://github.com/Trustroots/trustroots/wiki/Development#Testing) for more details.
-
 ### Documentation
 
-Produce documentation by running `grunt docs`
+Produce documentation by running `gulp docs`
 
-Then run the application (just `grunt`) and open [http://localhost:3000/developers/](http://localhost:3000/developers/).
+Then run the application (just `gulp`) and open [http://localhost:3000/developers/](http://localhost:3000/developers/).
 
 ## License
 * [The MIT License](LICENSE.md)
