@@ -1,16 +1,16 @@
 language: node_js
 node_js:
-- 0.10
-- 0.12
-- 4
+  - 0.10
+  - 0.12
+  - 4
 matrix:
   allow_failures:
-  - node_js: 4
+    - node_js: 4
 # NodeJS v4 requires gcc 4.8
 env:
-- NODE_ENV=travis CXX="g++-4.8"
+  - NODE_ENV=travis CXX="g++-4.8" CC="gcc-4.8"
 services:
-- mongodb
+  - mongodb
 sudo: false
 # gcc 4.8 requires ubuntu-toolchain-r-test
 addons:
@@ -20,16 +20,17 @@ addons:
     packages:
     - g++-4.8
     - gcc-4.8
+    - clang
 before_install:
-- gem update --system
-- npm i nsp -g
+  - gem update --system
+  - npm i nsp -g
 after_script:
-- nsp audit-package
+  - nsp audit-package
 cache:
   apt: true
   directories:
-  - node_modules/
-  - public/lib/
+    - node_modules/
+    - public/lib/
 notifications:
   slack:
     secure: XRMYG9Hf+bJjMSHHXN0XeGT4ZhSP+oCHBUWmjBwxO0p+VORBOEZvlh/2OvxingFuzLGOXFeOPr1g91G+OgiCGR6GxaDpf680lEjk8ESTJ4oECv0aO2NQEZWYR4peiLRtBmJZTCSsKXDY21nrDHiKOaMQyPJqbzkIrTBMnK/YJpg=
