@@ -238,7 +238,7 @@ module.exports = function (grunt) {
         ].join('&&')
       },
       'fontello': {
-        command: 'fontello-cli install --config ./fontello.conf.json --css ./public/lib/fontello/css --font ./public/lib/fontello/fonts'
+        command: 'fontello-cli install --config ./fontello.json --css ./public/lib/fontello/css --font ./public/lib/fontello/fonts'
       },
       'selenium': {
         command: 'python ./scripts/selenium/test.py'
