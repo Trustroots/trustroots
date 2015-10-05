@@ -9,7 +9,7 @@
     "url": "https://github.com/Trustroots/trustroots"
   },
   "engines": {
-    "node": ">=0.10.28",
+    "node": ">=0.12.0",
     "npm": ">=1.4.28"
   },
   "scripts": {
