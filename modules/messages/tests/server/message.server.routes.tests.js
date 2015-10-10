@@ -18,7 +18,6 @@ var app, agent, credentials, userFrom, userTo, userFromId, userToId, message, th
  * Message routes tests
  */
 describe('Message CRUD tests', function() {
-  this.timeout(10000);
 
   before(function(done) {
     // Get application

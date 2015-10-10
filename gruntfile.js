@@ -214,7 +214,8 @@ module.exports = function (grunt) {
     mochaTest: {
       src: testAssets.tests.server,
       options: {
-        reporter: 'spec'
+        reporter: 'spec',
+        timeout: 10000
       }
     },
     karma: {
