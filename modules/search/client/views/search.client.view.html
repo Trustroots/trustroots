@@ -49,14 +49,15 @@
 
   <div class="search-map-sidebar" ng-if="search.sidebarOpen">
 
+    <button class="btn btn-link search-map-toggle" ng-click="search.sidebarOpen = false" aria-label="Close search results">
+      <i class="icon-right hidden-xs"></i>
+      <span class="visible-xs">Back to map</span>
+    </button>
+
     <div class="search-list">
 
-      <div class="form-group visible-xs-block">
-        <button class="btn btn-primary btn-lg btn-block" ng-click="search.sidebarOpen = false">Back to map</button>
-      </div>
-
       <!-- Profile loading -->
-      <div class="search-result panel panel-default panel-loading" ng-hide="search.offer && search.offer.$resolved">
+      <div class="search-result panel panel-default panel-loading" ng-if="!search.offer.$resolved">
         <div class="panel-body">
           <div tr-avatar data-size="32" data-link="false" data-source="none"></div>
           <h4>
@@ -86,7 +87,7 @@
       <!-- /Profile loading -->
 
       <!-- Profile -->
-      <div class="search-result panel panel-default" ng-if="search.offer && search.offer.$resolved">
+      <div class="search-result panel panel-default" ng-if="search.offer.$resolved">
         <a class="panel-body" ui-sref="profile({username: search.offer.user.username})">
           <div tr-avatar data-size="32" data-link="false" data-user="search.offer.user"></div>
           <h4>
@@ -128,10 +129,6 @@
 
       <div class="search-list-instructions">
         Note that locations on the map are not precise.
-      </div>
-
-      <div class="form-group visible-xs-block">
-        <button class="btn btn-primary btn-lg btn-block" ng-click="search.sidebarOpen = false">Back to map</button>
       </div>
 
     </div>
