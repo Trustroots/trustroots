@@ -79,7 +79,7 @@
       overlays: {
         selectedOffers: {
           name: 'Selected hosts',
-          type: 'featureGroup',
+          type: 'group',
           visible: false
         }
       }
