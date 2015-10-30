@@ -14,7 +14,7 @@ var ApplicationConfiguration = (function() {
                                               'ui.bootstrap',
                                               'angularMoment',
                                               'angular-medium-editor',
-                                              'leaflet-directive',
+                                              'ui-leaflet',
                                               'ngFileUpload',
                                               'zumba.angular-waypoints',
                                               'MessageCenterModule',
