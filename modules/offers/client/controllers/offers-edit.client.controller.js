@@ -141,7 +141,7 @@
         vm.searchQuerySearching = true;
 
         $http
-          .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + vm.searchQuery + '.json?access_token=' + appSettings.mapbox.publicKey)
+          .get('//api.mapbox.com/geocoding/v5/mapbox.places/' + vm.searchQuery + '.json?access_token=' + appSettings.mapbox.publicKey)
           .then(function(response) {
 
             vm.searchQuerySearching = false;
@@ -193,7 +193,7 @@
     function searchSuggestions(val) {
 
      return $http
-       .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + val + '.json?access_token=' + appSettings.mapbox.publicKey)
+       .get('//api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json?access_token=' + appSettings.mapbox.publicKey)
        .then(function(response) {
 
          vm.searchQuerySearching = false;

@@ -40,7 +40,7 @@
         $scope.searchSuggestions = function(val) {
 
           return $http
-            .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + val + '.json?access_token=' + settings.mapbox.publicKey)
+            .get('//api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json?access_token=' + settings.mapbox.publicKey)
             .then(function(response) {
 
               if(response.status === 200 && response.data.features && response.data.features.length > 0) {
