@@ -81,7 +81,7 @@
               <label for="search-query" class="sr-only">Search for places on the map</label>
               <input type="text" id="search-query" class="form-control" placeholder="Search for places on the map" ng-disabled="offersEdit.searchQuerySearching" ng-model="offersEdit.searchQuery" ng-keypress="offersEdit.enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in offersEdit.searchSuggestions($viewValue)" typeahead-on-select="offersEdit.mapLocate($item)" />
               <span class="input-group-btn">
-                <button type="button" class="btn btn-inverse" ng-click="offersEdit.searchAddress()" ng-disabled="offersEdit.searchQuerySearching">
+                <button type="button" class="btn btn-default" ng-click="offersEdit.searchAddress()" ng-disabled="offersEdit.searchQuerySearching">
                   <i class="icon-search"></i>
                 </button>
               </span>

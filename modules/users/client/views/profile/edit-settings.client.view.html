@@ -36,7 +36,7 @@
           </div>
           <div class="form-group">
             <button type="submit" class="btn btn-primary" ng-disabled="settingsEmail.email.$invalid && settingsEmail.email.$dirty">Change email</button>
-            <button class="btn btn-inverse" ng-if="settings.user.emailTemporary" ng-click="settings.resendUserEmailConfirm($event)">Resend confirmation</button>
+            <button class="btn btn-default" ng-if="settings.user.emailTemporary" ng-click="settings.resendUserEmailConfirm($event)">Resend confirmation</button>
           </div>
         </fieldset>
       </form>

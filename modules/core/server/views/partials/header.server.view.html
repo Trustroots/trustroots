@@ -1,5 +1,19 @@
 <header id="tr-header" role="banner" class="navbar navbar-default navbar-fixed-top hidden-print" ng-controller="HeaderController as header" ng-hide="header.isHidden">
-  <div class="container">
+
+  <!-- Header for non-authenticated users -->
+  <div class="container" ng-if="!app.user">
+    <nav class="header-welcome" role="navigation">
+      <p class="header-welcome-text">New to Trustroots?</p>
+      <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
+      <small class="header-welcome-divider">or</small>
+      <a ui-sref="signin" class="btn btn-default">Login</a>
+    </nav>
+  </div>
+  <!-- /Header for non-authenticated users -->
+
+  <!-- Header for authenticated users -->
+  <div class="container" ng-if="app.user">
+
     <div class="navbar-header">
       <button class="navbar-toggle" type="button" ng-click="header.toggleCollapsibleMenu()">
         <span class="sr-only">Toggle navigation</span>
@@ -16,7 +30,8 @@
 
     <nav class="collapse navbar-collapse" collapse="!header.isCollapsed" role="navigation">
 
-      <ul class="nav navbar-nav" ng-if="app.user">
+      <!-- Left side -->
+      <ul class="nav navbar-nav">
         <li class="hidden-xs dropdown" dropdown>
           <a class="dropdown-toggle cursor-pointer" dropdown-toggle>
             Help
@@ -27,36 +42,8 @@
         </li>
       </ul>
 
-      <!-- Menu for non logged users -->
-      <ul class="nav navbar-nav navbar-right" ng-if="!app.user">
-        <li class="dropdown" dropdown>
-          <a class="dropdown-toggle cursor-pointer" dropdown-toggle>
-            <i class="icon-lifebuoy icon-fw icon-lg visible-xs-inline-block"></i>
-            About
-            <b class="caret"></b>
-          </a>
-          <ul class="dropdown-menu">
-            {% include 'about-links.server.view.html' %}
-          </ul>
-        </li>
-        <li ui-sref-active="active">
-          <a ui-sref="signup">
-            <i class="icon-sign-up icon-fw icon-lg visible-xs-inline-block"></i>
-            Sign Up
-          </a>
-        </li>
-        <li class="divider-vertical"></li>
-        <li ui-sref-active="active">
-          <a ui-sref="signin">
-            <i class="icon-sign-in icon-fw icon-lg visible-xs-inline-block"></i>
-            Login
-          </a>
-        </li>
-      </ul>
-      <!-- /Menu for non logged users -->
-
-      <!-- Menu for logged in users -->
-      <ul class="nav navbar-nav navbar-right" ng-if="app.user">
+      <!-- Right side -->
+      <ul class="nav navbar-nav navbar-right">
         <li ui-sref-active="active">
           <a ui-sref="search">
             <i class="icon-search icon-fw icon-lg"></i> Map
@@ -124,9 +111,10 @@
           </ul>
         </li>
       </ul>
-      <!-- /Menu for logged in users-->
 
     </nav>
 
   </div>
+  <!-- /Header for authenticated users -->
+
 </header>

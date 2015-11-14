@@ -32,7 +32,7 @@
         <ul class="list-inline">
           <li><strong>{{ ::profileCtrl.profile.displayName }}</strong> sent you a contact request</li>
           <li><a class="btn btn-sm btn-primary" ui-sref="contactConfirm({contactId: profileCtrl.contact._id})">Confirm Request</a></li>
-          <li><a class="btn btn-sm btn-inverse" tr-contact-remove="profileCtrl.contact">Delete Request</a></li>
+          <li><a class="btn btn-sm btn-danger" tr-contact-remove="profileCtrl.contact">Delete Request</a></li>
         </ul>
         <hr>
       </div>

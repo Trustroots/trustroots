@@ -40,7 +40,7 @@
           <div class="contact-confirm" ng-if="contact.confirmed !== undefined && contact.confirmed === false && contact.users[0]._id === app.user._id">
             <small><em>You received a contact request.</em></small>
             <a class="btn btn-xs btn-primary" ui-sref="contactConfirm({contactId: contact._id})">Confirm Request</a>
-            <a class="btn btn-xs btn-inverse" tr-contact-remove="contact">Delete Request</a>
+            <a class="btn btn-xs btn-warn" tr-contact-remove="contact">Delete Request</a>
           </div>
 
         </div>

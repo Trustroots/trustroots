@@ -15,7 +15,7 @@
              typeahead="trTitle as address.trTitle for address in search.searchSuggestions($viewValue)"
              typeahead-on-select="search.mapLocate($item)">
       <span class="input-group-btn">
-        <button type="button" class="btn btn-lg btn-inverse" ng-click="search.searchAddress()" ng-disabled="search.searchQuerySearching">
+        <button type="button" class="btn btn-lg btn-default" ng-click="search.searchAddress()" ng-disabled="search.searchQuerySearching">
           <i class="icon-search"></i>
         </button>
       </span>

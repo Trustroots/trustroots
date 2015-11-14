@@ -1,18 +1,21 @@
-/*
- * Many of these override values from bootstrap/less/variables.less
- * --------------------------------------------------
+/**
+ * LESS Variables
+ *
+ * Many of these override values from /public/lib/bootstrap/less/variables.less
  */
 
 // Color theme
 // ---------------------------------------
 @body-bg:                   #f9f9f9;
-@brand-primary:             #12b591; // Green
-@brand-secondary:           #cd771b; // Brown
+@brand-primary:             #12b591; // "Trustroots Green"
+@brand-secondary:           #cd771b; // "Trustroots Brown"
 
 @brand-gradient-from:        #19e6df;
 @brand-gradient-to:          #e0a70e;
 
-// Reel is used at hr's and the spinner
+// Reel is used at:
+// <hr>'s: ./modules/core/client/less/layout/layout.less
+// Spinner: ./modules/core/client/less/layout/spinner.less
 @color-reel-0: darken(@brand-primary, 5%);
 @color-reel-1: #ca7900;
 @color-reel-2: #e18700;
@@ -25,26 +28,32 @@
 @gray-light:                lighten(#000, 60%);   // #999
 @gray-lighter:              lighten(#000, 93.5%); // #eee
 
-@btn-default-color:         #fff;
-@btn-default-bg:            @brand-secondary;
+@btn-default-color:         @brand-primary;
+@btn-default-bg:            #fff;
 @btn-default-border:        @btn-default-bg;
 
 @btn-primary-color:         #fff;
 @btn-primary-bg:            @brand-primary;
 @btn-primary-border:        @btn-primary-bg;
 
+@btn-inverse-color:         #fff;
+@btn-inverse-bg:            transparent;
+@btn-inverse-border:        @btn-inverse-color;
+
 @text-color:                @gray-dark;
 @link-color:                @brand-secondary;
 @link-hover-color:          darken(@link-color, 15%);
 
 // Leaflet marker cluster bubbles
+// ---------------------------------------
 @prunecluster-color:           @brand-primary;
 @prunecluster-transparency:    0.4;
 @prunecluster-border-contrast: 10%;
 
 // Medium editor
 // https://raw.githubusercontent.com/daviferreira/medium-editor/master/src/sass/themes/bootstrap.scss
-// See ./modules/core/client/less/mediumeditor.less
+// See ./modules/core/client/less/modules/mediumeditor.less
+// ---------------------------------------
 @medium_editor_bgcolor:                  @brand-primary;
 @medium_editor_border_color:             @medium_editor_bgcolor;
 @medium_editor_border_radius:            0;
@@ -55,6 +64,7 @@
 @medium_editor_hover_color:              lighten(@medium_editor_bgcolor, 5%);
 
 // Trustpass
+// ---------------------------------------
 @trustpass-done-color:        @text-muted;
 @trustpass-done-background:   rgba(red(@brand-primary), green(@brand-primary), blue(@brand-primary), .05);
 @trustpass-done-radius:       @border-radius-base;
@@ -66,13 +76,14 @@
 @trustpass-guide-text-size:   @font-size-small;
 
 // Loading bar
-// See ./modules/core/client/less/loading-bar.less
+// See ./modules/core/client/less/modules/loading-bar.less
+// ---------------------------------------
 @loading-bar-color:  rgba(255, 255, 255, 0.5);
 @loading-bar-height: 3px;
 
 
 // Navbar
-// -------------------------
+// ---------------------------------------
 
 // Basics of a navbar
 @navbar-height:                    43px;
@@ -96,7 +107,7 @@
 
 
 // Components
-// -------------------------
+// ---------------------------------------
 // Based on 14px font-size and 1.428 line-height (~20px to start)
 @padding-base-vertical:          6px;
 @padding-base-horizontal:        12px;
@@ -111,13 +122,12 @@
 
 
 // Forms
-// -------------------------
+// ---------------------------------------
 @input-border-focus:             @brand-primary;
 
 
 // Typography
-// -------------------------
-
+// ---------------------------------------
 @font-size-base:          14px;
 @font-size-large:         ceil(@font-size-base * 1.25); // ~18px
 @font-size-small:         ceil(@font-size-base * 0.85); // ~12px
@@ -157,7 +167,7 @@
 @filedrop-accepted:             #5cb85c;
 
 // Panels
-// -------------------------
+// ---------------------------------------
 @panel-bg:                  #fff;
 @panel-border:              #dfdfdf;
 @panel-border-radius:       @border-radius-base;
