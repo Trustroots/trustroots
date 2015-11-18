@@ -78,7 +78,9 @@
 
         }
       }).
-      state('profile-signin', {
+
+      // When attempting to look at profile as non-authenticated user
+      state('profile-signup', {
         url: '/profile-signup',
         templateUrl: 'modules/users/views/profile/profile-signup.client.view.html',
       }).

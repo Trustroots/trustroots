@@ -79,9 +79,10 @@
         $rootScope.signinState = toState.name;
         $rootScope.signinStateParams = toParams;
 
-        // Show action based signup banner for certain pages
+        // Show a special signup ad for certain pages if user isn't authenticated
+        // (Normally we just splash a signup page at this point)
         if(toState.name === 'profile') {
-          $state.go('profile-signin');
+          $state.go('profile-signup');
         }
         else if(toState.name === 'search') {
           $state.go('search-signin', toParams || {});
