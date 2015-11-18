@@ -11,50 +11,61 @@
     $stateProvider.
       state('rules', {
         url: '/rules',
+        title: 'Rules',
         templateUrl: 'modules/pages/views/rules.client.view.html'
       }).
       state('team', {
         url: '/team',
+        title: 'Team',
         templateUrl: 'modules/pages/views/team.client.view.html'
       }).
       state('contact', {
         url: '/contact',
+        title: 'Contact us',
         templateUrl: 'modules/pages/views/contact.client.view.html',
         controller: 'ContactController',
         controllerAs: 'contact'
       }).
       state('about', {
         url: '/about',
+        title: 'About',
         templateUrl: 'modules/pages/views/about.client.view.html'
       }).
       state('privacy', {
         url: '/privacy',
+        title: 'Privacy policy',
         templateUrl: 'modules/pages/views/privacy.client.view.html'
       }).
       state('donate', {
         url: '/donate',
+        title: 'Donate',
         templateUrl: 'modules/pages/views/donate.client.view.html'
       }).
       state('donate-help', {
         url: '/donate/help',
+        title: 'Donation help',
         templateUrl: 'modules/pages/views/donate-help.client.view.html'
       }).
       state('donate-policy', {
         url: '/donate/policy',
+        title: 'Donation policy',
         templateUrl: 'modules/pages/views/donate-policy.client.view.html'
       }).
       state('faq', {
         url: '/faq',
+        title: 'FAQ',
         templateUrl: 'modules/pages/views/faq.client.view.html',
         controller: 'FaqController',
         controllerAs: 'faq',
       }).
       state('foundation', {
         url: '/foundation',
+        title: 'Foundation',
         templateUrl: 'modules/pages/views/foundation.client.view.html'
       }).
       state('media', {
         url: '/media',
+        title: 'Media',
         templateUrl: 'modules/pages/views/media.client.view.html'
       });
 

@@ -12,6 +12,7 @@
     $stateProvider.
       state('inbox', {
         url: '/messages',
+        title: 'Messages',
         templateUrl: 'modules/messages/views/inbox.client.view.html',
         controller: 'InboxController',
         controllerAs: 'inbox',
@@ -19,6 +20,7 @@
       }).
       state('messageThread', {
         url: '/messages/:username',
+        title: 'Messages',
         templateUrl: 'modules/messages/views/thread.client.view.html',
         controller: 'MessagesThreadController',
         controllerAs: 'thread',

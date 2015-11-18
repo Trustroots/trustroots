@@ -18,6 +18,7 @@
     vm.user = Authentication.user;
     vm.appSettings = SettingsFactory.get();
     vm.languageNames = Languages.get('object');
+    vm.pageTitle = $window.title;
     vm.goHome = goHome;
     vm.signout = signout;
     vm.photoCredits = [];
@@ -99,6 +100,9 @@
      * After page change
      */
     $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+
+      // Set page title
+      vm.pageTitle = (toState.title) ? toState.title + ' - ' + $window.title : $window.title;
 
       // Reset photo copyrights on each page change
       // trBoards directive hits in after this and we'll fill this with potential photo credits
