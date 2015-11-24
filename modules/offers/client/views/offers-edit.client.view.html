@@ -40,7 +40,7 @@
           <h4>Tell others why you can't host... <small class="text-muted pull-right">(optional)</small></h4>
         </div>
         <div class="panel-body">
-          <div class="offer-nodescription" ng-class="{'is-not-empty': offersEdit.offer.noOfferDescription.length}" ng-model="offersEdit.offer.noOfferDescription" medium-editor options="{buttonLabels: 'fontawesome', 'placeholder': 'Click here to write...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+          <div class="offer-nodescription" ng-class="{'is-not-empty': offersEdit.offer.noOfferDescription.length}" ng-model="offersEdit.offer.noOfferDescription" medium-editor data-placeholder="Write here..." bind-options="::app.mediumEditorOptions"></div>
         </div>
       </div>
 
@@ -49,7 +49,7 @@
           <h4>Tell about your home and hosting possibilities</h4>
         </div>
         <div class="panel-body">
-          <div class="offer-description" ng-class="{'is-not-empty': offer.description.length}" ng-hide="!offersEdit.offer" ng-model="offersEdit.offer.description" medium-editor options="{buttonLabels: 'fontawesome', 'placeholder': 'Click here to write...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+          <div class="offer-description" ng-class="{'is-not-empty': offer.description.length}" ng-hide="!offersEdit.offer" ng-model="offersEdit.offer.description" medium-editor data-placeholder="Write here..." bind-options="::app.mediumEditorOptions"></div>
         </div>
         <div class="panel-footer text-muted" ng-show="offersEdit.offer.description && offersEdit.offer.status === 'no'">
           <small>This description will be held here but won't be public until you can host again.</small>

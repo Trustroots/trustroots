@@ -23,6 +23,19 @@
     vm.signout = signout;
     vm.photoCredits = [];
 
+    // Default options for Medium-Editor used site wide
+    // @link https://github.com/yabwe/medium-editor
+    // @link https://github.com/thijsw/angular-medium-editor/
+    vm.mediumEditorOptions = {
+      disableReturn: false,
+      disableDoubleReturn: true,
+      disableExtraSpaces: true,
+      buttonLabels: 'fontawesome',
+      toolbar: {
+        buttons: ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']
+      }
+    };
+
     // Used as a cache buster with ng-include
     // Includes a hash of latest git commit
     vm.cacheBust = vm.appSettings.commit || '';

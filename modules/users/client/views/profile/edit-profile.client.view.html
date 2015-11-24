@@ -78,13 +78,13 @@
           <div class="row">
             <div class="col-md-6">
 
-              <span class="profile-firstname" ng-model="editprofile.user.firstName" medium-editor options="{'placeholder': 'First name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
-              <span class="profile-lastname" ng-model="editprofile.user.lastName" medium-editor options="{'placeholder': 'Last name', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></span>
+              <span class="profile-firstname" ng-model="editprofile.user.firstName" medium-editor bind-options="::editprofile.mediumEditorInline" data-placeholder="First name"></span>
+              <span class="profile-lastname" ng-model="editprofile.user.lastName" medium-editor bind-options="::editprofile.mediumEditorInline" data-placeholder="Last name"></span>
 
               <h4 class="profile-username" tooltip="You cannot change your username" tooltip-placement="right">@{{ ::editprofile.user.displayUsername || editprofile.user.username}}</h4>
 
               <div class="profile-tagline">
-                <div ng-model="editprofile.user.tagline" medium-editor options="{'placeholder': 'Short tagline...', 'disableToolbar': true, 'forcePlainText': true, 'disableReturn': true}"></div>
+                <div ng-model="editprofile.user.tagline" medium-editor bind-options="::editprofile.mediumEditorInline" data-placeholder="Short tagline..."></div>
               </div>
 
             </div>
@@ -113,14 +113,14 @@
                 <label for="description" class="panel-heading">About me</label>
                 <div class="panel-body profile-description">
                   <div class="form-group">
-                    <div id="description" aria-describedby="descriptionHelp" ng-model="editprofile.user.description" medium-editor options="{buttonLabels: 'fontawesome', 'placeholder': 'Description', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+                    <div id="description" aria-describedby="descriptionHelp" ng-model="editprofile.user.description" medium-editor bind-options="::app.mediumEditorOptions" data-placeholder="Description"></div>
                   </div>
                 </div>
                 <div class="panel-footer">
                   <div id="descriptionHelp" class="help-block">
                     Help other people get to know you by telling them about your life and the things you like.
                     <br><br>
-                    <small>Highlight text to add links or change its appearance.</small>
+                    <small>Highlight text to add links or change text appearance.</small>
                   </div>
                 </div>
               </div>

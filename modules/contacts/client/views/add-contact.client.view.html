@@ -42,7 +42,7 @@
             <h4>Message for {{ ::contactAdd.friend.displayName }}</h4>
           </div>
           <div class="panel-body">
-            <div class="contact-message" ng-model="contactAdd.contact.message" medium-editor options="{buttonLabels: 'fontawesome', 'placeholder': 'Write a message', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+            <div class="contact-message" ng-model="contactAdd.contact.message" medium-editor data-placeholder="Write a message" bind-options="::app.mediumEditorOptions"></div>
           </div>
         </div>
 

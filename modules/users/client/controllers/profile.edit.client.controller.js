@@ -27,6 +27,13 @@
     vm.hasConnectedAdditionalSocialAccounts = hasConnectedAdditionalSocialAccounts;
     vm.isWarmshowersId = isWarmshowersId;
 
+    // Settings for first and last name inputs
+    vm.mediumEditorInline = {
+      disableReturn: true,
+      disableExtraSpaces: true,
+      toolbar: false
+    };
+
     // Guide texts for external hospex site inputs
     vm.bwGuide = 'Go to your BeWelcome profile and copy the username from the address bar.' +
                  '<br><br><img class="img-responsive clearfix" src="/modules/users/img/guide-bw.png" alt="" width="319" height="32" aria-hidden="true">';
