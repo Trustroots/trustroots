@@ -22,10 +22,10 @@
               <td class="thread-summary">
                 <span ng-bind-html="thread.message.excerpt"></span>
                 <small class="thread-indicators pull-right">
-                  <i class="icon-reply icon-fw text-muted" ng-if="thread.userFrom._id === app.user._id" tooltip="You replied" tooltip-placement="right"></i>
+                  <i class="icon-reply icon-fw text-muted" ng-if="thread.userFrom._id === app.user._id" uib-tooltip="You replied" tooltip-placement="right"></i>
                 </small>
               </td>
-              <td class="ago col-xs-3 col-md-2" am-time-ago="thread.updated" tooltip="{{thread.updated | date:'medium'}}" tooltip-placement="left"></td>
+              <td class="ago col-xs-3 col-md-2" am-time-ago="thread.updated" uib-tooltip="{{thread.updated | date:'medium'}}" tooltip-placement="left"></td>
             </tr>
 
             <!-- Pagination Error -->

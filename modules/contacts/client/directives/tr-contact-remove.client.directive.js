@@ -9,7 +9,7 @@
     .directive('trContactRemove', trContactRemoveDirective);
 
   /* @ngInject */
-  function trContactRemoveDirective($modal, Authentication) {
+  function trContactRemoveDirective($uibModal, Authentication) {
     return {
       restrict: 'A',
       scope: {
@@ -21,11 +21,11 @@
 
         function openModal() {
 
-          $modal.open({
+          $uibModal.open({
             templateUrl: '/modules/contacts/views/remove-contact.client.modal.html',
             controllerAs: 'removeContactModal',
             /* @ngInject */
-            controller: function($rootScope, $modalInstance, $timeout, messageCenterService, Contact) {
+            controller: function($rootScope, $uibModalInstance, $timeout, messageCenterService, Contact) {
 
               var vm = this;
               vm.isLoading = false;
@@ -65,12 +65,12 @@
                     // Let other controllers know that this was removed, so that they can react
                     $rootScope.$broadcast('contactRemoved', contactToRemove);
 
-                    $modalInstance.dismiss('cancel');
+                    $uibModalInstance.dismiss('cancel');
                   },
                   // Error
                   function() {
                     vm.isLoading = false;
-                    $modalInstance.dismiss('cancel');
+                    $uibModalInstance.dismiss('cancel');
                     messageCenterService.add('danger', 'Oops! Something went wrong. Try again later.', { timeout: 7000 });
                   }
                 );
@@ -78,7 +78,7 @@
 
               // Close modal
               function cancelContactRemoval() {
-                $modalInstance.dismiss('cancel');
+                $uibModalInstance.dismiss('cancel');
               }
 
             }

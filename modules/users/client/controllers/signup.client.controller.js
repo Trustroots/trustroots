@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($scope, $http, $state, $stateParams, $modal, Authentication, messageCenterService) {
+  function SignupController($scope, $http, $state, $stateParams, $uibModal, Authentication, messageCenterService) {
 
     // View Model
     var vm = this;
@@ -44,11 +44,11 @@
 
       if($event) $event.preventDefault();
 
-      $modal.open({
+      $uibModal.open({
         templateUrl: 'rules.client.modal.html', //inline at signup template
-        controller: function ($scope, $modalInstance) {
+        controller: function ($scope, $uibModalInstance) {
           $scope.closeRules = function () {
-            $modalInstance.dismiss('cancel');
+            $uibModalInstance.dismiss('cancel');
           };
         }
       });

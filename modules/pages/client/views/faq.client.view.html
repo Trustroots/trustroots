@@ -161,9 +161,9 @@
 
       <div id="faq-sidebar" class="sidebar" zum-waypoint="faq.waypoints" down="flags.on" up="flags.off" ng-class="{'sidebar-sticky': faq.waypoints.flags.on}">
 
-        <accordion close-others="sidebar.closeOthers">
+        <uib-accordion close-others="sidebar.closeOthers">
 
-          <accordion-group heading="Site & community" is-open="sidebar.isCommunityOpen">
+          <uib-accordion-group heading="Site & community" is-open="sidebar.isCommunityOpen">
             <div class="list-group">
               <a ng-click="faq.read('is-trustroots-exclusively-for-hitchhikers')" class="list-group-item">Is Trustroots exclusively for hitchhikers?</a>
               <a ng-click="faq.read('what-is-your-long-term-vision')" class="list-group-item">What is your long term vision?</a>
@@ -174,9 +174,9 @@
               <a ng-click="faq.read('why-is-there-no-forum')" class="list-group-item">Why is there no forum?</a>
               <a ng-click="faq.read('how-can-i-contact-you')" class="list-group-item">How can can I contact you?</a>
             </div>
-          </accordion-group>
+          </uib-accordion-group>
 
-          <accordion-group heading="Organisation" is-open="sidebar.isOrganisationOpen">
+          <uib-accordion-group heading="Organisation" is-open="sidebar.isOrganisationOpen">
             <div class="list-group">
               <a ng-click="faq.read('what-is-your-legal-status')" class="list-group-item">What's your legal status?</a>
               <a ng-click="faq.read('why-limited-by-guarantee')" class="list-group-item">Why Limited by Guarantee under section 60 exemption?</a>
@@ -185,17 +185,17 @@
               <a ng-click="faq.read('how-do-you-want-to-make-the-project-financially-sustainable')" class="list-group-item">How do you want to make the project financially sustainable?</a>
               <a ng-click="faq.read('who-decides-what-gets-done')" class="list-group-item">Who decides what gets done?</a>
             </div>
-          </accordion-group>
+          </uib-accordion-group>
 
-          <accordion-group heading="Technology" is-open="sidebar.isTechnologyOpen">
+          <uib-accordion-group heading="Technology" is-open="sidebar.isTechnologyOpen">
             <div class="list-group">
               <a ng-click="faq.read('im-a-developer')" class="list-group-item">I'm a developer and I want to help!</a>
               <a ng-click="faq.read('are-you-planning-to-do-x-feature')" class="list-group-item">Are you planning to do X feature?</a>
               <a ng-click="faq.read('decentralize-it')" class="list-group-item">Decentralize it?</a>
             </div>
-          </accordion-group>
+          </uib-accordion-group>
 
-        </accordion>
+        </uib-accordion>
 
       </div><!-- .sidebar -->
 

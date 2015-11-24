@@ -64,8 +64,8 @@
 .panel-triangle-right() {
   .panel-triangle-base();
   &:before {
-      .triangle(right, @panel-triangle-size, @panel-border);
-      right: -(@panel-triangle-size + 1);
+    .triangle(right, @panel-triangle-size, @panel-border);
+    right: -(@panel-triangle-size + 1);
   }
   &:after {
     .triangle(right, @panel-triangle-size, @panel-bg);
@@ -79,8 +79,8 @@
     left: -(@panel-triangle-size + 1);
   }
   &:after {
-      .triangle(left, @panel-triangle-size, @panel-bg);
-      left: -@panel-triangle-size;
+    .triangle(left, @panel-triangle-size, @panel-bg);
+    left: -@panel-triangle-size;
   }
 }
 
@@ -92,6 +92,7 @@
   }
 }
 
+// Reset default cursor
 .cursor-pointer {
   cursor: pointer;
 }

@@ -6,7 +6,7 @@
     .controller('EditProfileController', EditProfileController);
 
   /* @ngInject */
-  function EditProfileController($scope, $modal, $http, $stateParams, $state, $window, Languages, Users, Authentication, messageCenterService, Upload, appSettings) {
+  function EditProfileController($scope, $uibModal, $http, $stateParams, $state, $window, Languages, Users, Authentication, messageCenterService, Upload, appSettings) {
 
     // ViewModel
     var vm = this;
@@ -175,7 +175,7 @@
 
       if($event) $event.preventDefault();
 
-      var modalInstance = $modal.open({
+      var modalInstance = $uibModal.open({
         templateUrl: '/modules/users/views/profile/avatar-editor.client.modal.html',
         controller: 'AvatarEditorController',
         controllerAs: 'avatarEditor',

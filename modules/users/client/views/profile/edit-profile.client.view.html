@@ -49,9 +49,9 @@
               <div class="form-group">
                 <label for="birthdate"><h4>Birthdate <small class="text-muted text-uppercase">{{ ::editprofile.birthdateFormat }}</small></h4></label>
                 <p class="input-group profile-editor-birthdate">
-                  <input id="birthdate" type="text" class="form-control" datepicker-popup="{{ ::editprofile.birthdateFormat }}" ng-model="editprofile.user.birthdate" is-open="editprofile.birthdateOpened" datepicker-options="editprofile.birthdateOptions" ng-required="false" close-text="Close" current-text="Today" clear-text="Clear">
+                  <input id="birthdate" type="text" class="form-control" uib-datepicker-popup="{{ ::editprofile.birthdateFormat }}" ng-model="editprofile.user.birthdate" is-open="editprofile.birthdateOpened" datepicker-options="editprofile.birthdateOptions" ng-required="false" close-text="Close" current-text="Today" clear-text="Clear">
                   <span class="input-group-btn">
-                    <button type="button" class="btn btn-inverse" ng-click="editprofile.birthdateOpen($event)"><i class="icon-calendar"></i></button>
+                    <button type="button" class="btn btn-input" ng-click="editprofile.birthdateOpen($event)"><i class="icon-calendar"></i></button>
                   </span>
                 </p>
               </div>
@@ -81,7 +81,7 @@
               <span class="profile-firstname" ng-model="editprofile.user.firstName" medium-editor bind-options="::editprofile.mediumEditorInline" data-placeholder="First name"></span>
               <span class="profile-lastname" ng-model="editprofile.user.lastName" medium-editor bind-options="::editprofile.mediumEditorInline" data-placeholder="Last name"></span>
 
-              <h4 class="profile-username" tooltip="You cannot change your username" tooltip-placement="right">@{{ ::editprofile.user.displayUsername || editprofile.user.username}}</h4>
+              <h4 class="profile-username" uib-tooltip="You cannot change your username" tooltip-placement="right">@{{ ::editprofile.user.displayUsername || editprofile.user.username}}</h4>
 
               <div class="profile-tagline">
                 <div ng-model="editprofile.user.tagline" medium-editor bind-options="::editprofile.mediumEditorInline" data-placeholder="Short tagline..."></div>
@@ -132,7 +132,7 @@
               <div class="panel panel-default">
                 <div class="panel-heading">
                   Elsewhere
-                  <span class="icon-help cursor-help text-muted pull-right" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover="Connecting to these is absolutely optional. Other members in Trustroots will be able to see a link to your other profile and some basic info about you and content you like there. You will be able to use eg. your contact list here in Trustroots. Other networks will then obviously know that you have connected to Trustroots, but we will never send any of your profile data to them."></span>
+                  <span class="icon-help cursor-help text-muted pull-right" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" uib-popover="Connecting to these is absolutely optional. Other members in Trustroots will be able to see a link to your other profile and some basic info about you and content you like there. You will be able to use eg. your contact list here in Trustroots. Other networks will then obviously know that you have connected to Trustroots, but we will never send any of your profile data to them."></span>
                 </div>
                 <div class="panel-body">
 
@@ -185,7 +185,7 @@
                         <label class="input-group-addon" for="extSitesBW">bewelcome.org/members/</label>
                         <input id="extSitesBW" type="text" class="form-control" ng-model="editprofile.user.extSitesBW" placeholder="your-username" aria-label="BeWelcome username">
                         <span class="input-group-btn" ng-if="editprofile.user.extSitesBW.length">
-                          <a ng-href="http://www.bewelcome.org/members/{{ editprofile.user.extSitesBW }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
+                          <a ng-href="http://www.bewelcome.org/members/{{ editprofile.user.extSitesBW }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" uib-tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
                         </span>
                       </div>
                     </div>
@@ -197,7 +197,7 @@
                         <label class="input-group-addon" for="extSitesCS">couchsurfing.com/people/</label>
                         <input id="extSitesCS" type="text" class="form-control" ng-model="editprofile.user.extSitesCS" placeholder="your-username" aria-label="Couchsurfing username">
                         <span class="input-group-btn" ng-if="editprofile.user.extSitesCS.length">
-                          <a ng-href="https://www.couchsurfing.com/people/{{ editprofile.user.extSitesCS }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
+                          <a ng-href="https://www.couchsurfing.com/people/{{ editprofile.user.extSitesCS }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" uib-tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
                         </span>
                       </div>
                     </div>
@@ -209,7 +209,7 @@
                         <label class="input-group-addon" for="extSitesWS">warmshowers.org/user/</label>
                         <input id="extSitesWS" type="text" class="form-control" ng-model="editprofile.user.extSitesWS" placeholder="your-user-id" aria-label="Warmshowers user id">
                         <span class="input-group-btn" ng-if="editprofile.user.extSitesWS.length">
-                          <a ng-href="https://www.warmshowers.org/{{ !editprofile.isWarmshowersId() ? 'users' : 'user' }}/{{ editprofile.user.extSitesWS }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
+                          <a ng-href="https://www.warmshowers.org/{{ !editprofile.isWarmshowersId() ? 'users' : 'user' }}/{{ editprofile.user.extSitesWS }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" uib-tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
                         </span>
                       </div>
                       <p class="help-block text-warning" ng-if="editprofile.user.extSitesWS && !editprofile.isWarmshowersId()">This should be your numeric user id, not username.</p>

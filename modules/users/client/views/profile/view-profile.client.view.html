@@ -85,8 +85,8 @@
                    ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id"
                    tr-contact-remove="profileCtrl.contact">
                   <i class="icon-minus-squared-alt"></i>
-                  <span ng-if="profileCtrl.contact.confirmed" tooltip="Contacts since {{ ::profileCtrl.contact.created | date:'mediumDate' }}" tooltip-placement="bottom">Remove contact</span>
-                  <span ng-if="!profileCtrl.contact.confirmed" tooltip="Request sent {{ ::profileCtrl.contact.created | date:'mediumDate' }}" tooltip-placement="bottom">Delete contact request</span>
+                  <span ng-if="profileCtrl.contact.confirmed" uib-tooltip="Contacts since {{ ::profileCtrl.contact.created | date:'mediumDate' }}" tooltip-placement="bottom">Remove contact</span>
+                  <span ng-if="!profileCtrl.contact.confirmed" uib-tooltip="Request sent {{ ::profileCtrl.contact.created | date:'mediumDate' }}" tooltip-placement="bottom">Delete contact request</span>
                 </a>
               </li>
             </ul>
@@ -96,12 +96,12 @@
         <!-- Profile tabs -->
         <div class="row">
           <div class="col-xs-12">
-            <tabset id="profile-tabs" type="pills">
+            <uib-tabset id="profile-tabs" type="pills">
               <!-- Note that using ng-class causes error here -->
-              <tab ng-repeat="tab in profileCtrl.tabs track by tab.title" class="{{ tab.onlySmallScreen === true ? 'visible-xs-block' : '' }}" heading="{{tab.title}}" active="tab.active" select="profileCtrl.tabSelected = tab.path">
+              <uib-tab ng-repeat="tab in profileCtrl.tabs track by tab.title" class="{{ tab.onlySmallScreen === true ? 'visible-xs-block' : '' }}" heading="{{tab.title}}" active="tab.active" select="profileCtrl.tabSelected = tab.path">
                 <div ng-if="tab.active" ng-include="tab.content"></div>
-              </tab>
-            </tabset>
+              </uib-tab>
+            </uib-tabset>
           </div>
         </div>
         <!-- /Profile tabs -->

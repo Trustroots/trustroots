@@ -58,7 +58,7 @@
                      ng-minlength="3"
                      ng-maxlength="34"
                      tr-focustip="'No spaces. Only letters a-z, numbers and .-_ characters. Visible to other members.'"
-                     tooltip="{{
+                     uib-tooltip="{{
                        ((userForm.username.$error.minlength && userForm.username.$dirty) ? 'At least 3 characters long. ' : '') +
                        ((userForm.username.$error.maxlength && userForm.username.$dirty) ? 'Maximum 34 characters long. ' : '') +
                        ((userForm.username.$error.pattern && userForm.username.$dirty) ? 'Choose a username that contains only letters, numbers and _-. characters.' : '')
@@ -80,7 +80,7 @@
                      class="form-control input-lg"
                      ng-model="signup.credentials.email"
                      ng-disabled="signup.isLoading"
-                     tooltip="{{ (userForm.email.$error.email && userForm.email.$dirty) ? 'Please give a valid email.' : ''}}"
+                     uib-tooltip="{{ (userForm.email.$error.email && userForm.email.$dirty) ? 'Please give a valid email.' : ''}}"
                      tooltip-trigger="blur"
                      tooltip-placement="top"
                      tooltip-append-to-body="true"
@@ -136,7 +136,7 @@
       <!-- Rules -->
       <div class="row" ng-if="!signup.success">
         <div class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-          <p class="text-muted">Please, abide to our <a ui-sref="rules" ng-click="signup.openRules($event);" tooltip="Read rules" tooltip-placement="bottom">rules</a> that include standards of behavior that apply to everyone.</p>
+          <p class="text-muted">Please, abide to our <a ui-sref="rules" ng-click="signup.openRules($event);" uib-tooltip="Read rules" tooltip-placement="bottom">rules</a> that include standards of behavior that apply to everyone.</p>
         </div>
         <script type="text/ng-template" id="rules.client.modal.html">
           <div class="modal-header">
