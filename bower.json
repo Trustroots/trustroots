@@ -22,7 +22,7 @@
     "angular-trustpass": "~0.2.0",
     "angular-ui-router": "~0.2.15",
     "angular-waypoints": "~1.0.1",
-    "bootstrap": "~3.3.5",
+    "bootstrap": "3.3.6",
     "imagesloaded": "~3.1.8",
     "message-center": "~1.2.5",
     "ng-file-upload": "~7.0.17",
