@@ -25,7 +25,7 @@
     "autoprefixer-core": "~5.2.1",
     "blueimp-file-upload-expressjs": "~0.4.4",
     "body-parser": "~1.13.3",
-    "bower": "~1.5",
+    "bower": "~1.6",
     "chalk": "~1.1.1",
     "compression": "~1.5.2",
     "connect-flash": "~0.1.1",
