@@ -57,7 +57,7 @@ gulp.task('nodemon', function () {
   });
 });
 
-// Watch Files For Changes
+// Watch files for changes
 gulp.task('watch', function () {
   // Start livereload
   plugins.livereload.listen();
@@ -66,9 +66,8 @@ gulp.task('watch', function () {
   gulp.watch(defaultAssets.server.views).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.allJS, ['jshint']).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.fontelloConfig, ['fontello']).on('change', plugins.livereload.changed);
-  gulp.watch(defaultAssets.client.js, ['jshint']).on('change', plugins.livereload.changed);
-  //gulp.watch(defaultAssets.client.css, ['csslint']).on('change', plugins.livereload.changed);
-  gulp.watch(defaultAssets.client.less, ['less', 'csslint']).on('change', plugins.livereload.changed);
+  gulp.watch(defaultAssets.client.js, ['jshint', 'uglify']).on('change', plugins.livereload.changed);
+  gulp.watch(defaultAssets.client.less, ['less']).on('change', plugins.livereload.changed);
 
   if (process.env.NODE_ENV === 'production') {
     gulp.watch(defaultAssets.server.gulpConfig, ['templatecache', 'jshint']);
@@ -77,18 +76,6 @@ gulp.task('watch', function () {
     gulp.watch(defaultAssets.server.gulpConfig, ['jshint']);
     gulp.watch(defaultAssets.client.views).on('change', plugins.livereload.changed);
   }
-});
-
-// CSS linting task
-gulp.task('csslint', function (done) {
-  return gulp.src(defaultAssets.client.css)
-    .pipe(plugins.csslint('.csslintrc'))
-    .pipe(plugins.csslint.reporter())
-    .pipe(plugins.csslint.reporter(function (file) {
-      if (!file.csslint.errorCount) {
-        done();
-      }
-    }));
 });
 
 // JS linting task
@@ -178,9 +165,15 @@ gulp.task('templatecache', function () {
 });
 
 // Generate font icon files from Fontello.com
-gulp.task('fontello', function(done){
+gulp.task('fontello', function(done) {
   return gulp.src(defaultAssets.server.fontelloConfig)
-    .pipe(plugins.fontello());
+    .pipe(plugins.fontello( {
+      font:       'font', // Destination dir for Fonts and Glyphs
+      css:        'css',  // Destination dir for CSS Styles,
+      assetsOnly: true    // extract from ZipFile only CSS Styles and Fonts exclude config.json, LICENSE.txt, README.txt and demo.html
+    }))
+    .pipe(plugins.print())
+    .pipe(gulp.dest('public/lib/fontello'));
 });
 
 // Generate Swagger documentation
@@ -214,7 +207,8 @@ gulp.task('mocha', function (done) {
     // Run the tests
     gulp.src(testAssets.tests.server)
       .pipe(plugins.mocha({
-        reporter: 'spec'
+        reporter: 'spec',
+        timeout: 10000
       }))
       .on('error', function (err) {
         // If an error occurs, save it
@@ -254,14 +248,14 @@ gulp.task('protractor', function () {
     });
 });
 
-// Lint CSS and JavaScript files.
+// Lint JavaScript files
 gulp.task('lint', function (done) {
-  runSequence('less', ['jshint'], done);
+  runSequence('jshint', done);
 });
 
-// Lint project files and minify them into two production files.
+// Download fontello icon files, lint project files and minify them into production css and js
 gulp.task('build', function (done) {
-  runSequence('env:dev', 'lint', ['uglify', 'cssmin'], done);
+  runSequence('env:dev', 'fontello', 'lint', ['uglify', 'less', 'cssmin'], done);
 });
 
 // Run the project tests
