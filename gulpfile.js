@@ -176,23 +176,6 @@ gulp.task('fontello', function(done) {
     .pipe(gulp.dest('public/lib/fontello'));
 });
 
-// Generate Swagger documentation
-gulp.task('docs', plugins.shell.task([
-  'mkdir -p ./tmp',
-  'rm -fr ./tmp/swagger-ui-master',
-  'wget -nv -O ./tmp/swagger-ui.zip  https://github.com/swagger-api/swagger-ui/archive/master.zip',
-  'unzip -q ./tmp/swagger-ui.zip -d ./tmp',
-  'rm -fr ./public/developers/api',
-  'mkdir -p ./public/developers/api',
-  'mv ./tmp/swagger-ui-master/dist/* ./public/developers/api',
-  'sed -i "" "s!http://petstore\.swagger\.io/v2!/developers!g" ./public/developers/api/index.html',
-  'sed -i "" "s!url: url,!url: url, validatorUrl:null,!g" ./public/developers/api/index.html',
-  'rm -fr ./tmp/swagger-ui-master'
-]));
-
-// Generate font icon files from Fontello.com
-gulp.task('fontello-cli', plugins.shell.task('fontello-cli install --config ./fontello.conf.json --css ./public/lib/fontello/css --font ./public/lib/fontello/fonts'));
-
 // Run Selenium tasks
 gulp.task('selenium', plugins.shell.task('python ./scripts/selenium/test.py'));
 
