@@ -39,12 +39,102 @@ module.exports = {
         'public/lib/angular-mailcheck/angular-mailcheck.js',
         'public/lib/angular-local-storage/dist/angular-local-storage.js'
       ],
+      less: [
+        'public/lib/angular-trustpass/src/tr-trustpass.less',
+
+        // Bootstrap
+        // ---------
+
+        // Bootstrap core variables
+        'public/lib/bootstrap/less/variables.less',
+
+        // Bootstrap utility mixins
+        // See the full list from 'public/lib/bootstrap/less/mixins.less'
+        // Utility mixins
+        'public/lib/bootstrap/less/mixins/hide-text.less',
+        'public/lib/bootstrap/less/mixins/opacity.less',
+        'public/lib/bootstrap/less/mixins/image.less',
+        'public/lib/bootstrap/less/mixins/labels.less',
+        'public/lib/bootstrap/less/mixins/reset-filter.less',
+        'public/lib/bootstrap/less/mixins/resize.less',
+        'public/lib/bootstrap/less/mixins/responsive-visibility.less',
+        'public/lib/bootstrap/less/mixins/size.less',
+        'public/lib/bootstrap/less/mixins/tab-focus.less',
+        'public/lib/bootstrap/less/mixins/reset-text.less',
+        'public/lib/bootstrap/less/mixins/text-emphasis.less',
+        'public/lib/bootstrap/less/mixins/text-overflow.less',
+        'public/lib/bootstrap/less/mixins/vendor-prefixes.less',
+        // Component mixins
+        'public/lib/bootstrap/less/mixins/alerts.less',
+        'public/lib/bootstrap/less/mixins/buttons.less',
+        'public/lib/bootstrap/less/mixins/panels.less',
+        'public/lib/bootstrap/less/mixins/pagination.less',
+        'public/lib/bootstrap/less/mixins/list-group.less',
+        'public/lib/bootstrap/less/mixins/nav-divider.less',
+        'public/lib/bootstrap/less/mixins/forms.less',
+        'public/lib/bootstrap/less/mixins/progress-bar.less',
+        'public/lib/bootstrap/less/mixins/table-row.less',
+        // Skin mixins
+        'public/lib/bootstrap/less/mixins/background-variant.less',
+        'public/lib/bootstrap/less/mixins/border-radius.less',
+        'public/lib/bootstrap/less/mixins/gradients.less',
+        // Layout mixins
+        'public/lib/bootstrap/less/mixins/clearfix.less',
+        'public/lib/bootstrap/less/mixins/center-block.less',
+        'public/lib/bootstrap/less/mixins/nav-vertical-align.less',
+        'public/lib/bootstrap/less/mixins/grid-framework.less',
+        'public/lib/bootstrap/less/mixins/grid.less',
+
+
+        // Reset and dependencies
+        'public/lib/bootstrap/less/normalize.less',
+        'public/lib/bootstrap/less/print.less',
+        //'public/lib/bootstrap/less/glyphicons.less',
+
+        // Core CSS
+        'public/lib/bootstrap/less/scaffolding.less',
+        'public/lib/bootstrap/less/type.less',
+        //'public/lib/bootstrap/less/code.less',
+        'public/lib/bootstrap/less/grid.less',
+        'public/lib/bootstrap/less/tables.less',
+        'public/lib/bootstrap/less/forms.less',
+        'public/lib/bootstrap/less/buttons.less',
+
+        // Components
+        'public/lib/bootstrap/less/component-animations.less',
+        'public/lib/bootstrap/less/dropdowns.less',
+        'public/lib/bootstrap/less/button-groups.less',
+        'public/lib/bootstrap/less/input-groups.less',
+        'public/lib/bootstrap/less/navs.less',
+        'public/lib/bootstrap/less/navbar.less',
+        //'public/lib/bootstrap/less/breadcrumbs.less',
+        //'public/lib/bootstrap/less/pagination.less',
+        //'public/lib/bootstrap/less/pager.less',
+        'public/lib/bootstrap/less/labels.less',
+        'public/lib/bootstrap/less/badges.less',
+        //'public/lib/bootstrap/less/jumbotron.less',
+        //'public/lib/bootstrap/less/thumbnails.less',
+        'public/lib/bootstrap/less/alerts.less',
+        //'public/lib/bootstrap/less/progress-bars.less',
+        'public/lib/bootstrap/less/media.less',
+        'public/lib/bootstrap/less/list-group.less',
+        'public/lib/bootstrap/less/panels.less',
+        //'public/lib/bootstrap/less/responsive-embed.less',
+        //'public/lib/bootstrap/less/wells.less',
+        'public/lib/bootstrap/less/close.less',
+
+        // Components w/ JavaScript
+        'public/lib/bootstrap/less/modals.less',
+        'public/lib/bootstrap/less/tooltip.less',
+        'public/lib/bootstrap/less/popovers.less',
+        //'public/lib/bootstrap/less/carousel.less',
+
+        // Utility classes
+        'public/lib/bootstrap/less/utilities.less',
+        'public/lib/bootstrap/less/responsive-utilities.less'
+      ],
       tests: ['public/lib/angular-mocks/angular-mocks.js']
     },
-    css: ['modules/core/client/app/css/application.css'],
-    lessSrc: [
-      'modules/core/client/app/less/application.less'
-    ],
     less: [
       'modules/core/client/app/less/*.less',
       'modules/core/client/less/**/*.less',
@@ -57,9 +147,8 @@ module.exports = {
       'modules/*/client/controllers/*.js',
       'modules/*/client/**/*.js'
     ],
-    views: ['modules/*/client/views/**/*.html'],
-    templates: ['build/templates.js']
-  },
+    views: ['modules/*/client/views/**/*.html']
+    },
   server: {
     fontelloConfig: 'fontello.json',
     gulpConfig: 'gulpfile.js',
