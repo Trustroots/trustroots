@@ -3,22 +3,22 @@
   "version": "0.2.0",
   "description": "Trustroots.org",
   "dependencies": {
-    "angular": "~1.4",
-    "angular-animate": "~1.4",
-    "angular-aria": "~1.4",
     "angular-bootstrap": "0.14.3",
+    "angular": "1.4.8",
+    "angular-animate": "1.4.8",
+    "angular-aria": "1.4.8",
     "angular-chosen-localytics": "~1.0.7",
     "angular-leaflet-directive": "~0.8.8",
     "angular-loading-bar": "~0.8.0",
     "angular-local-storage": "~0.2.2",
     "angular-mailcheck": "~0.1.0",
     "angular-medium-editor": "~1.1.0",
-    "angular-message-format": "~1.4",
-    "angular-mocks": "~1.4",
+    "angular-message-format": "1.4.8",
+    "angular-mocks": "1.4.8",
     "angular-moment": "~0.10.3",
-    "angular-resource": "~1.4",
-    "angular-sanitize": "~1.4",
-    "angular-touch": "~1.4",
+    "angular-resource": "1.4.8",
+    "angular-sanitize": "1.4.8",
+    "angular-touch": "1.4.8",
     "angular-trustpass": "~0.2.0",
     "angular-ui-router": "~0.2.15",
     "angular-waypoints": "~1.0.1",
@@ -27,8 +27,5 @@
     "message-center": "~1.2.5",
     "ng-file-upload": "~7.0.17",
     "PruneCluster": "~1.1.0"
-  },
-  "resolutions": {
-    "angular": "~1.4"
   }
 }
