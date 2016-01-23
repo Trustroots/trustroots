@@ -11,9 +11,8 @@ echo "Updating packages & assets..."
 npm update --production
 npm prune --production
 bower update --allow-root --config.interactive=false
-npm i -g fontello-cli
-grunt fontello
-NODE_ENV=production grunt build
+sudo npm i -g bower fontello-cli gulp
+NODE_ENV=production gulp build:prod
 
 echo ""
 echo "Migrating the database..."

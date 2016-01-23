@@ -40,6 +40,10 @@
 @btn-inverse-bg:            transparent;
 @btn-inverse-border:        @btn-inverse-color;
 
+@btn-inverse-primary-color:  @brand-primary;
+@btn-inverse-primary-bg:     transparent;
+@btn-inverse-primary-border: @btn-inverse-primary-color;
+
 @text-color:                @gray-dark;
 @link-color:                @brand-secondary;
 @link-hover-color:          darken(@link-color, 15%);
@@ -135,9 +139,15 @@
 @font-size-large:         ceil(@font-size-base * 1.25); // ~18px
 @font-size-small:         ceil(@font-size-base * 0.85); // ~12px
 
-@font-family-brand:       'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 @font-family-sans-serif:  'Helvetica Neue', Helvetica, Arial, sans-serif;
 @font-family-base:        @font-family-sans-serif;
+
+@font-family-brand-light:     'open_sans-light', @font-family-sans-serif;
+@font-weight-brand-light:     'normal';//300;
+@font-family-brand-regular:   'open_sans-regular', @font-family-sans-serif;
+@font-weight-brand-regular:   'normal';//400;
+@font-family-brand-semibold:  'open_sans-semibold', @font-family-sans-serif;
+@font-weight-brand-semibold:  'normal';//500;
 
 @text-highlight:          lighten(@brand-primary, 40%);
 @text-highlight-color:    @text-color;
@@ -172,3 +182,4 @@
 // Other
 // ---------------------------------------
 @footer-height:             44px;
+@article-padding-bottom:    (@footer-height + 30px);
