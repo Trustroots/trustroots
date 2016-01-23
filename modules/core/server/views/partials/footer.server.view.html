@@ -9,17 +9,10 @@
       </nav>
       <nav class="col-xs-4 text-right" role="navigation">
         <ul class="list-inline">
-          <li class="photo-credits" ng-if="app.photoCredits.length > 0">
-            <span ng-if="app.photoCredits.length === 1">Photo by</span>
-            <span ng-if="app.photoCredits.length > 1">Photos by</span>
-            <span ng-repeat="credit in app.photoCredits track by credit.name">
-              <a ng-href="{% raw %}{{ credit.url }}{% endraw %}" ng-bind="credit.name"></a>
-              <span ng-if="credit.license">(<a ng-href="{% raw %}{{ credit.license_url }}{% endraw %}" ng-bind-html="credit.license" title="License" rel="license" aria-label="License"></a>)</span><span ng-if="($first && footer.photoCredits.length > 1) || $middle">, </span>
-            </span>
-          </li>
-          <li><a href="https://www.facebook.com/trustroots.org" tooltip="Facebook" aria-label="Trustroots at Facebook"><i class="icon-facebook icon-lg"></i></a></li>
-          <li><a href="https://twitter.com/trustroots" tooltip="Twitter" aria-label="Trustroots at Twitter"><i class="icon-twitter icon-lg"></i></a></li>
-          <li><a href="https://plus.google.com/+TrustrootsOrg" tooltip="+Google" aria-label="Trustroots at Google plus"><i class="icon-google icon-lg"></i></a></li>
+          <li class="photo-credits" ng-if="app.photoCreditsCount"><span tr-board-credits></span></li>
+          <li><a href="https://www.facebook.com/trustroots.org" uib-tooltip="Facebook" aria-label="Trustroots at Facebook"><i class="icon-facebook icon-lg"></i></a></li>
+          <li><a href="https://twitter.com/trustroots" uib-tooltip="Twitter" aria-label="Trustroots at Twitter"><i class="icon-twitter icon-lg"></i></a></li>
+          <li><a href="https://plus.google.com/+TrustrootsOrg" uib-tooltip="+Google" aria-label="Trustroots at Google plus"><i class="icon-google icon-lg"></i></a></li>
         </ul>
       </nav>
     </div><!-- /.row -->

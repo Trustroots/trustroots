@@ -21,7 +21,8 @@
     vm.pageTitle = $window.title;
     vm.goHome = goHome;
     vm.signout = signout;
-    vm.photoCredits = [];
+    vm.photoCredits = {};
+    vm.photoCreditsCount = 0;
 
     // Default options for Medium-Editor used site wide
     // @link https://github.com/yabwe/medium-editor
@@ -119,7 +120,8 @@
 
       // Reset photo copyrights on each page change
       // trBoards directive hits in after this and we'll fill this with potential photo credits
-      vm.photoCredits = [];
+      vm.photoCredits = {};
+      vm.photoCreditsCount = 0;
 
       // Reset page scroll on page change
       $window.scrollTo(0,0);
@@ -138,7 +140,8 @@
      * Sniff and apply photo credit changes
      */
     $scope.$on('photoCreditsUpdated', function(scope, photo) {
-      vm.photoCredits.push(photo);
+      angular.extend(vm.photoCredits, photo);
+      vm.photoCreditsCount++;
     });
 
   }

@@ -132,8 +132,12 @@
           //'background-position': (photo.position ? photo.position : '50% 50%')
         });
 
+        // To prevent key being literally `key`: `{key: ...}`, we want it to be actual keyname such as `hitchroad`.
+        var photoObject = {};
+        photoObject[key] = photo;
+
         // Send copyright info down the scope... something will pick it up! (pst, core/app-controller)
-        scope.$emit('photoCreditsUpdated', photo);
+        scope.$emit('photoCreditsUpdated', photoObject);
 
       }
     };
