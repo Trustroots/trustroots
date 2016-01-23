@@ -1,0 +1,29 @@
+#
+# Trustroots.dev Nginx `server {}` block configuration here
+#
+
+## sendfile: Control whether the sendfile kernel support is
+## used to deliver files (assuming that the OS supports it).
+## The default is on; turn this off if you serve from NFS-mounted
+## filesystems.
+## http://nginx.org/en/docs/http/ngx_http_core_module.html#sendfile
+##
+#sendfile off;
+
+## Related to sendfile
+## https://t37.net/nginx-optimization-understanding-sendfile-tcp_nodelay-and-tcp_nopush.html
+tcp_nopush off;
+tcp_nodelay off;
+
+##
+## Disable cache for development
+##
+add_header Cache-Control no-cache;
+expires off;
+if_modified_since off;
+add_header Last-Modified "";
+
+## Maximum allowed size of the client request body,
+## specified in the “Content-Length” request header field
+##
+client_max_body_size 10M;

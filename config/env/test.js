@@ -14,8 +14,11 @@ module.exports = {
   db: {
     uri: 'mongodb://localhost/trust-roots-test',
     options: {
-      user: '',
-      pass: ''
+      auth: {
+        authMechanism: ''
+      }
+      //user: '',
+      //pass: ''
     },
     // Enable mongoose debug mode
     debug: process.env.MONGODB_DEBUG || false

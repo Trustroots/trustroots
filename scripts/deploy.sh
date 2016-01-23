@@ -1,6 +1,15 @@
-#!/bin/sh
+#!/bin/bash
 
-echo "Deploying Trustroots"
+# Check that we're at the right folder
+if [ ! -f ./server.js ]; then
+  >&2 echo "Error: You're probably trying to run the script from a wrong path. Enter the folder where Trustroots is installed and type bash scripts/deploy.sh"
+  exit
+fi
+
+echo "Deploying Trustroots (requires sudo)"
+
+# Make sure user rights are set correctly
+sudo chown -R www-data:www-data .
 
 echo ""
 echo "Pull latest from the currently active branch..."
@@ -19,10 +28,14 @@ echo "Migrating the database..."
 export NODE_ENV=production
 migrate up
 
-echo "Redeploying the application... (requires sudo password)"
+# Make sure user rights are set correctly
+sudo chown -R www-data:www-data .
+
+echo ""
+echo "Restarting the application..."
 # https://www.phusionpassenger.com/library/admin/nginx/restart_app.html#passenger-config-restart-app
 sudo passenger-config restart-app /
 
 echo ""
-echo "Passenger status (requires sudo password)"
+echo "Passenger status"
 sudo passenger-status

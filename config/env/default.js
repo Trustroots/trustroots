@@ -22,13 +22,14 @@ module.exports = {
   sessionSecret: 'MEAN',
   sessionCollection: 'sessions',
   domain: process.env.DOMAIN || 'localhost:3000',
+  supportEmail: 'support@trustroots.org', // TO-address for support requests
   mailer: {
-    from: process.env.MAILER_FROM || 'MAILER_FROM',
+    from: process.env.MAILER_FROM || 'hello@trustroots.org',
     options: {
-      service: process.env.MAILER_SERVICE_PROVIDER || 'MAILER_SERVICE_PROVIDER',
+      service: process.env.MAILER_SERVICE_PROVIDER || false,
       auth: {
-        user: process.env.MAILER_EMAIL_ID || 'MAILER_EMAIL_ID',
-        pass: process.env.MAILER_PASSWORD || 'MAILER_PASSWORD'
+        user: process.env.MAILER_EMAIL_ID || false,
+        pass: process.env.MAILER_PASSWORD || false
       }
     }
   },
@@ -43,7 +44,7 @@ module.exports = {
     publicKey: process.env.MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
   },
   facebook: {
-    page: process.env.FACEBOOK_PAGE || 'PAGE',
+    page: process.env.FACEBOOK_PAGE || '',
     clientID: process.env.FACEBOOK_ID || 'APP_ID',
     clientSecret: process.env.FACEBOOK_SECRET || 'APP_SECRET',
     callbackURL: '/api/auth/facebook/callback'
@@ -55,12 +56,7 @@ module.exports = {
     callbackURL: '/api/auth/twitter/callback'
   },
   google: {
-    page: process.env.GOOGLE_PAGE || 'PAGE',
-  },
-  linkedin: {
-    clientID: process.env.LINKEDIN_ID || 'APP_ID',
-    clientSecret: process.env.LINKEDIN_SECRET || 'APP_SECRET',
-    callbackURL: '/api/auth/linkedin/callback'
+    page: process.env.GOOGLE_PAGE || '',
   },
   github: {
     clientID: process.env.GITHUB_ID || 'APP_ID',

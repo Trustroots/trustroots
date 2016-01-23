@@ -1,20 +1,64 @@
 # Running Trustroots locally
 
 ### Prerequisites
+
 Make sure you have installed all these prerequisites:
-* [Node.js](http://www.nodejs.org/download/) and the NPM package manager.
-* [Git](https://git-scm.com/) (preinstalled on OSX)
-* [MongoDB](http://www.mongodb.org/downloads), version 2.6+ (2.2 is too old, check by typing `mongod --version`)
-* [Bower](http://bower.io/), [Gulp](http://gruntjs.com/) and [Fontello CLI](https://github.com/paulyoung/fontello-cli): `npm -g i bower gulp fontello-cli`
+* [Node.js](http://www.nodejs.org/download/) ([previous versions](https://nodejs.org/en/download/releases/)) v4 and the NPM package manager. You can run multiple Node versions using [NVM](https://github.com/creationix/nvm).
+* [MongoDB](http://www.mongodb.org/downloads), version 2.6+ or 3.0+ (2.2 is too old, check by typing `mongod --version`)
+* [Git](https://git-scm.com/) (`git --version`, preinstalled on OSX)
+* Some of the NPM modules require compiling native code, which might require installing X-Code on OSX or `build-essential` and `make` on Linux.
 
-### Installation
+### Installing
+
 1. Clone the repository: `git clone https://github.com/Trustroots/trustroots.git trustroots`
-2. Install dependencies by running this inside **trustroots** folder: `npm install`. Note that if you run npm with sudo, it might skip installing frontend assets. You can run it manually: `bower install`.
-3. Make sure MongoDB is running on the default port (27017): `mongod`
-4. Create local config file: `cp ./config/env/local.sample.js ./config/env/local.js` — add any configurations you want to keep out of version control here. Many features rely on sending emails, so add settings to the `mailer` section. See [nodemailer smtp usage](https://github.com/andris9/nodemailer-smtp-transport#usage) and note that it has pre filled settings for [some services](https://github.com/andris9/nodemailer-smtp-transport#using-well-known-services). Running grunt first time creates local.js file for you if it doesn't exist.
-5. Finally run grunt default task: `grunt`
+2. Make sure MongoDB is running on the default port (27017): `mongod`
+3. Create a local config file: `cp config/env/local.sample.js config/env/local.js` — add any configurations you want to keep out of version control here. Many features rely on sending emails (such as signup) so add settings at least to the `mailer` section. See [nodemailer smtp usage](https://github.com/andris9/nodemailer-smtp-transport#usage) and note that it has pre filled settings for [some services](https://github.com/andris9/nodemailer-smtp-transport#using-well-known-services). You could also use [MailDev](http://djfarrelly.github.io/MailDev/). The config file is created for you on first run if it doesn't exist.
+4. Finally start the app: `npm start`. It will install all required NPM and Bower modules on first run so it might take a while.
 
-Application should run on the 3000 port in development mode. Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Running & development
+
+- Stop the app by hitting `Ctrl+C`
+- Run the app by typing `npm start`
+- When you do changes to any files, they get recompiled and the browser is refreshed.
+- Keep an eye on console in case of compiling errors.
+- [Read more](https://github.com/Trustroots/trustroots/wiki/Development)
+
+### Generate documentation
+
+Generating docs requires `unzip`. (`sudo apt-get install unzip` on Ubuntu/Debian)
+
+Produce API documentation by running `npm run docs`
+
+Then run the application (`npm start`) and open [http://localhost:3000/developers/](http://localhost:3000/developers/).
+
+### Mock data
+
+There's a script that can generate mock user data. It's highly recommended you run this script after installation, that way you'll have something to look at.
+
+1. Make sure the collections offers and users are empty, in order to avoid duplicate values. This is the default on a new install.
+2. Run `node scripts/fillTestData.js 10000 username` — that will create 10000 users and hosting offers. Username is optional (a-z0-9) and will create an admin user with that username.
+3. It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
+4. To see the result, log in with your chosen username and password `password`.
+
+### Updating
+
+Run these to get most recent version:
+```bash
+$ git pull        # Get the latest code for the current branch
+$ npm run update  # Update NPM and Bower modules
+$ npm run migrate # Migrate database up
+$ npm run build   # Load icons and generate assets
+```
+
+...or simply `bash scripts/update.sh` which does this all for you.
+
+### Running tests
+- `gulp test` (both server & client)
+- `gulp test:server`
+- `gulp test:client`
 
 ### Problems
+
 Check [troubleshooting](https://github.com/Trustroots/trustroots/wiki/Troubleshooting).

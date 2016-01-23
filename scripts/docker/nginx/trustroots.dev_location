@@ -1,0 +1,10 @@
+#
+# Trustroots.dev Nginx `location {}` block configuration here
+#
+
+
+# No cache
+fastcgi_no_cache 1;
+fastcgi_cache_bypass 1;
+proxy_no_cache 1;
+proxy_cache_bypass 1;

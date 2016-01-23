@@ -27,6 +27,8 @@ node_modules/
 *.pyc
 passenger.*
 *.pid
+scipts/docker/nginx-conf/*
+!scipts/docker/nginx-conf/trustroots.conf
 
 # App
 build

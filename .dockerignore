@@ -1,0 +1,18 @@
+# These unnecessary files would invalidate your docker build cache.
+# https://medium.com/@rdsubhas/docker-for-development-common-problems-and-solutions-95b25cae41eb
+
+# Ignore .git folder
+.git*
+
+# Ignore all Windows, Linux and OSX special files
+# https://www.gitignore.io/api/windows,linux,osx,vim
+# Ignore all your language-specific build folders
+public/dist/
+public/lib/
+node_modules/
+.dockerignore
+.gitignore
+.travis.yml
+.DS_Store
+public/developers/api/
+*.md

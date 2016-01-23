@@ -1,9 +1,6 @@
 #!/bin/sh
 
 echo "Trustroots updater"
-echo ""
-echo "If NPM gives EACCESS errors, you probably have an issue with directory permissions."
-echo "Read http://stackoverflow.com/a/16151707 for how to fix it."
 
 # Go to project top
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -11,16 +8,15 @@ APP_DIR=$SCRIPT_DIR/..
 cd "$APP_DIR"
 
 echo ""
-echo "Updating NPM packages..."
-npm update
+echo "Updating..."
+git pull        # Get the latest code for the current branch
+npm run update  # Update NPM and Bower modules
+npm run migrate # Migrate database up
 
 echo ""
-echo "Updating Bower modules..."
-bower update
-
-echo ""
-echo "Migrating database..."
-migrate
+echo "Building..."
+npm run build   # Load icons and generate assets
 
 echo ""
 echo "That's all!"
+exit 0

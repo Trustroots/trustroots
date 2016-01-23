@@ -14,40 +14,17 @@ Check [development page](https://github.com/Trustroots/trustroots/wiki/Developme
 
 ## Installing
 
-We have two major ways of running the software: trough Vagrant box (less work but runs slower) or by installing locally (recommended, more work but runs faster).
-
-See [troubleshooting](https://github.com/Trustroots/trustroots/wiki/Troubleshooting) if you encounter errors.
+We have two major ways of running the software: trough Docker (easier to get started with) or by installing locally.
 
 ### Installing locally
 
 Install the stack on your localhost and run NodeJS. This approach takes a little more time to setup, and bit more manual configuration, but is super fast, and can be easier to work with. See [INSTALL.md](INSTALL.md) for details.
 
-#### Quick start
-* Install dependencies: `npm install && bower install`
-* Run in development mode: `gulp`
-* Run in production mode: `gulp prod`
-* Run tests: `gulp test`, (server & client) or `gulp test:server` or `gulp test:client` for only either one.
+### Installing with Docker
 
-### Vagrant
-
-The easiest and quickest way to get started is with Vagrant. See [INSTALL-VAGRANT.md](INSTALL-VAGRANT.md) for further details. Running through Vagrant can be a little bit slower, but it's a very quick and easy way to get started. Depending on the specifics of your own development setup, you might prefer to run the code locally if you're going to do a lot of development.
-
-### Mock data
-
-There's a script that can generate mock user data. It's highly recommended you run this script after installation, that way you'll have something to look at.
-
-1. Make sure the collections offers and users are empty, in order to avoid duplicate values. This is the default on a new install.
-2. Run `node scripts/fillTestData.js 1000 username` _or_ if you use vagrant box, run: `vagrant ssh -c "node /srv/trustroots/scripts/fillTestData.js 1000 username"`. That will create 1000 users and hosting offers. Username is optional (a-z0-9) and will create a user with that username as an admin.
-3. It can take up to 5 minutes. Mongoose might complain about duplicates - just ignore these errors.
-4. To see the result, log in with your chosen username and password `password`.
-
-### Documentation
-
-Produce documentation by running `gulp docs`
-
-Then run the application (just `gulp`) and open [http://localhost:3000/developers/](http://localhost:3000/developers/).
+The easiest and quickest way to get started is with Docker. See [INSTALL-DOCKER.md](INSTALL-DOCKER.md) for further details. Running through Docker can be a little bit slower.
 
 ## License
 * [The MIT License](LICENSE.md)
-* Photos copyright [photographers](https://github.com/Trustroots/trustroots/blob/master/modules/core/client/directives/tr-boards.client.directive.js#L30) - several of them are under Creative Commons.
+* Photos copyright [photographers](https://github.com/Trustroots/trustroots/blob/master/modules/core/client/directives/tr-boards.client.directive.js#L30) - several of them are under Creative Commons. Others are permitted to use only with Trustroots.
 * Logos of external communities are copyrighted work and may be subject to trademark laws.
