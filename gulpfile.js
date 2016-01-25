@@ -166,18 +166,13 @@ gulp.task('styles', function() {
 
 // Angular template cache task
 gulp.task('templatecache', function() {
-  var re = new RegExp('\\' + path.sep + 'client\\' + path.sep, 'g');
-
   return gulp.src(defaultAssets.client.views)
     .pipe(plugins.templateCache('templates.js', {
       root: 'modules/',
       module: 'core',
       templateHeader: '(function(){ \'use strict\'; angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
       templateBody: '$templateCache.put(\'<%= url %>\', \'<%= contents %>\');',
-      templateFooter: '} })();',
-      transformUrl: function(url) {
-        return url.replace(re, path.sep);
-      }
+      templateFooter: '} })();'
     }))
     .pipe(gulp.dest('public/dist'));
 });
