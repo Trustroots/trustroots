@@ -18,7 +18,7 @@
         footerTransparent: true
       }).
       state('profile-edit', {
-        url: '/profile/:username/edit',
+        url: '/profile/edit',
         title: 'Edit profile',
         templateUrl: 'modules/users/views/profile/edit-profile.client.view.html',
         requiresAuth: true,
@@ -33,7 +33,7 @@
         }
       }).
       state('profile-settings', {
-        url: '/profile/:username/settings',
+        url: '/profile/settings',
         title: 'Profile settings',
         templateUrl: 'modules/users/views/profile/edit-settings.client.view.html',
         controller: 'SettingsController',
