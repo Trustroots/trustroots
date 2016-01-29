@@ -19,13 +19,6 @@
         title: 'Team',
         templateUrl: 'modules/pages/views/team.client.view.html'
       }).
-      state('contact', {
-        url: '/contact',
-        title: 'Contact us',
-        templateUrl: 'modules/pages/views/contact.client.view.html',
-        controller: 'ContactController',
-        controllerAs: 'contact'
-      }).
       state('about', {
         url: '/about',
         title: 'About',
