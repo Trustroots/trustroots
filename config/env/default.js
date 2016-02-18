@@ -66,10 +66,5 @@ module.exports = {
   googleAnalytics: {
     enabled: process.env.GA_ENABLED || false,
     code: process.env.GA_CODE || ''
-  },
-  piwik: {
-    enabled: process.env.PIWIK_ENABLED || false,
-    url: process.env.PIWIK_URL || 'PIWIK_URL',
-    siteId: process.env.PIWIK_ID || 'PIWIK_ID'
   }
 };

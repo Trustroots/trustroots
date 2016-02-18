@@ -126,24 +126,6 @@
   </script>
   {% endif %}
 
-  {# Piwik Analytics #}
-  {% if piwik.enabled === true %}
-  <!-- https://www.trustroots.org/privacy -->
-  <script type="text/javascript">
-    var _paq = _paq || [];
-    _paq.push(['trackPageView']);
-    _paq.push(['enableLinkTracking']);
-    (function() {
-      var u="//{{piwik.url}}/";
-      _paq.push(['setTrackerUrl', u+'piwik.php']);
-      _paq.push(['setSiteId', {{piwik.siteId}}]);
-      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-      g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
-    })();
-  </script>
-  <noscript><img src="//{{piwik.url}}/piwik.php?idsite={{piwik.siteId}}" style="border:0;" alt="" /></noscript>
-  {% endif %}
-
   <!--[if lt IE 9]>
   <section class="browsehappy">
     <h1>Hello there!</h1>
