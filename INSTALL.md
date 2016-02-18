@@ -1,5 +1,7 @@
 # Running Trustroots locally
 
+_These instructions are for installing locally. If you'd like to have containerised setup, see [INSTALL-DOCKER.md](INSTALL-DOCKER.md) instead._
+
 ### Prerequisites
 
 Make sure you have installed all these prerequisites:
@@ -23,6 +25,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - Run the app by typing `npm start`
 - When you do changes to any files, they get recompiled and the browser is refreshed.
 - Keep an eye on console in case of compiling errors.
+- To read and debug MongoDB, use e.g. [Robomongo](https://robomongo.org/) to connect to your localhost.
 - [Read more](https://github.com/Trustroots/trustroots/wiki/Development)
 
 ### Generate documentation

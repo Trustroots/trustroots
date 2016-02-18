@@ -3,7 +3,7 @@
     "info": {
         "title": "Trustroots API",
         "description": "Trustroots.org API",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "contact": {
             "name": "Trustroots",
             "url": "https://www.trustroots.org/developers/"

@@ -19,6 +19,10 @@ var _ = require('lodash'),
     }
   });
 
+gulp.task('bower', function() {
+  return plugins.bower();
+});
+
 // Set NODE_ENV to 'test'
 gulp.task('env:test', function() {
   process.env.NODE_ENV = 'test';
@@ -230,28 +234,14 @@ gulp.task('karma', function(done) {
     }));
 });
 
-// Selenium standalone WebDriver update task
-gulp.task('webdriver-update', plugins.protractor.webdriver_update);
-
-// Protractor test runner task
-gulp.task('protractor', function() {
-  gulp.src([])
-    .pipe(plugins.protractor.protractor({
-      configFile: 'protractor.conf.js'
-    }))
-    .on('error', function(e) {
-      throw e;
-    });
-});
-
 // Build assets for development mode
 gulp.task('build:dev', function(done) {
-  runSequence('env:dev', 'jshint', 'fontello', 'clean', ['styles', 'scripts'], done);
+  runSequence('env:dev', 'bower', 'jshint', 'fontello', 'clean', ['styles', 'scripts'], done);
 });
 
 // Build assets for production mode
 gulp.task('build:prod', function(done) {
-  runSequence('env:prod', 'jshint', 'fontello', 'templatecache', 'clean', ['styles', 'scripts'], done);
+  runSequence('env:prod', 'bower', 'jshint', 'fontello', 'templatecache', 'clean', ['styles', 'scripts'], done);
 });
 
 // Clean dist css and js files

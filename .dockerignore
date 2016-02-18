@@ -1,18 +1,93 @@
 # These unnecessary files would invalidate your docker build cache.
 # https://medium.com/@rdsubhas/docker-for-development-common-problems-and-solutions-95b25cae41eb
 
-# Ignore .git folder
-.git*
 
-# Ignore all Windows, Linux and OSX special files
-# https://www.gitignore.io/api/windows,linux,osx,vim
-# Ignore all your language-specific build folders
+# App
 public/dist/
 public/lib/
 node_modules/
+.migrate
 .dockerignore
 .gitignore
 .travis.yml
-.DS_Store
 public/developers/api/
 *.md
+*.log
+
+
+# Ignore .git folder
+.git*
+
+
+# Ignore all Windows, Linux and OSX special files
+# https://www.gitignore.io/api/windows,linux,osx,vim
+
+### Windows ###
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+
+### Linux ###
+*~
+
+# temporary files which can be created if a process still has a handle open of a deleted file
+.fuse_hidden*
+
+# KDE directory preferences
+.directory
+
+# Linux trash folder which might appear on any partition or disk
+.Trash-*
+
+
+### OSX ###
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+
+### Vim ###
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~

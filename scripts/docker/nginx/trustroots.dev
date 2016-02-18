@@ -8,7 +8,7 @@
 ## filesystems.
 ## http://nginx.org/en/docs/http/ngx_http_core_module.html#sendfile
 ##
-#sendfile off;
+sendfile off;
 
 ## Related to sendfile
 ## https://t37.net/nginx-optimization-understanding-sendfile-tcp_nodelay-and-tcp_nopush.html

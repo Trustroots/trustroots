@@ -21,7 +21,6 @@ trustroots:
     - DOMAIN=trustroots.dev
     - VIRTUAL_HOST=trustroots.dev
     - VIRTUAL_PORT=3000
-#    - DOMAIN=192.168.99.101
 
 
 ## SMTP Server + Web Interface for viewing and testing emails during development.
@@ -45,13 +44,13 @@ mongodb:
   command: "--smallfiles --logpath=/dev/null"
 
 ## Nginx proxy
-## See settings per host from ./scripts/docker/vhost.d
+## See settings per host from ./scripts/docker/nginx/*
 ## https://github.com/jwilder/nginx-proxy
 nginx:
   image: jwilder/nginx-proxy
   restart: always
   volumes:
-    - /var/run/docker.sock:/tmp/docker.sock
+    - /var/run/docker.sock:/tmp/docker.sock:ro
     - ./scripts/docker/nginx/trustroots.dev:/etc/nginx/vhost.d/trustroots.dev
     - ./scripts/docker/nginx/trustroots.dev_location:/etc/nginx/vhost.d/trustroots.dev_location
   ports:
