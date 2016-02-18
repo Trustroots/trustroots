@@ -21,7 +21,9 @@ var config = require('../config'),
     git = require('git-rev'),
     path = require('path'),
     paginate = require('express-paginate'),
-    seo = require('mean-seo');
+    seo = require('mean-seo'),
+    path = require('path'),
+    Agenda = require('agenda');
 
 /**
  * Initialize local variables
@@ -188,6 +190,39 @@ module.exports.initSEO = function (app) {
 };
 
 /**
+ * Configure Agenda "Cron" jobs
+ * @link https://www.npmjs.com/package/agenda
+ */
+module.exports.initAgenda = function (app, db) {
+
+  // Setup agenda
+  var agendaWorker = new Agenda({
+    db: {
+      address: config.db.uri,
+      collection: 'agendaJobs'
+    }
+  });
+
+  agendaWorker.on('ready', function() {
+    // Load jobs
+    var messagesUnreadJob = require(path.resolve('./modules/messages/server/jobs/message-unread.server.job'));
+
+    // Schedule job(s)
+    messagesUnreadJob.checkUnreadMessages(agendaWorker);
+    agendaWorker.every('5 minutes', 'check unread messages');
+
+    // Start worker
+    agendaWorker.start();
+    console.log('Agenda started processing background jobs');
+  });
+
+  // Error reporting
+  agendaWorker.on('fail', function(err, job) {
+    console.error('Agenda job failed with error: %s', err.message);
+  });
+};
+
+/**
  * Configure the modules static routes
  */
 module.exports.initModulesClientRoutes = function (app) {
@@ -280,6 +315,9 @@ module.exports.init = function (db) {
 
   // Initialize error routes
   this.initErrorRoutes(app);
+
+  // Initialize Agenda ("cron" jobs)
+  this.initAgenda(app, db);
 
   // Configure Socket.io
   //app = this.configureSocketIO(app, db);

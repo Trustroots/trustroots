@@ -9,7 +9,6 @@
 var config = require('./config/config'),
     mongoose = require('./config/lib/mongoose'),
     express = require('./config/lib/express'),
-    agenda = require('./config/lib/agenda'),
     chalk = require('chalk');
 
 // Initialize mongoose
@@ -20,9 +19,6 @@ mongoose.connect(function(db) {
 
   // Start the app by listening on <port>
   app.listen(config.port);
-
-  // Setup Agenda ("cron" jobs)
-  agenda.setupJobs();
 
   // Check in case mailer config is still set to default values (a common problem)
   if(config.mailer.service && config.mailer.service === 'MAILER_SERVICE_PROVIDER') {
