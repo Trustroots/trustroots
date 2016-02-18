@@ -71,7 +71,7 @@ gulp.task('watch', function() {
   gulp.watch(defaultAssets.server.allJS, ['jshint']).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.fontelloConfig, ['fontello']).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.client.js, ['clean:js', 'scripts']).on('change', plugins.livereload.changed);
-  gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']).on('change', plugins.livereload.changed);
+  gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
 
   if (process.env.NODE_ENV === 'production') {
     gulp.watch(defaultAssets.server.gulpConfig, ['templatecache', 'jshint']);
@@ -164,7 +164,8 @@ gulp.task('styles', function() {
       .pipe(plugins.less())
       .pipe(plugins.autoprefixer())
     	.pipe(plugins.rename({basename: 'application', extname: '.css'}))
-      .pipe(gulp.dest('public/dist'));
+      .pipe(gulp.dest('public/dist'))
+      .pipe(plugins.livereload());
   }
 });
 
