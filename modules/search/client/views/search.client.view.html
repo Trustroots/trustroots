@@ -38,7 +38,7 @@
 
   <div ng-class="{'leaflet-layerstyle-satellite': (search.mapLayerstyle === 'satellite')}">
     <leaflet id="search-map-canvas"
-             lf-center="search.mapCenter"
+             lf-center="search.$storage.mapCenter"
              markers="search.mapMarkers"
              layers="search.mapLayers"
              bounds="search.mapBounds"

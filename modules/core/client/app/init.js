@@ -12,7 +12,7 @@
     .config(initConfig);
 
   /* @ngInject */
-  function initConfig(localStorageServiceProvider, cfpLoadingBarProvider, $locationProvider, $messageCenterServiceProvider) {
+  function initConfig($localStorageProvider, cfpLoadingBarProvider, $locationProvider, $messageCenterServiceProvider) {
 
     // Setting HTML5 Location Mode
     $locationProvider.html5Mode({
@@ -27,11 +27,8 @@
     cfpLoadingBarProvider.includeSpinner = false;
 
     // Configure local storage module
-    // Not using localStorage here, but sessionStorage instead. It'll get wiped out when closing the browser.
-    // @link https://github.com/grevory/angular-local-storage#configuration
-    localStorageServiceProvider
-      .setPrefix(ApplicationConfiguration.applicationModuleName)
-      .setStorageType('sessionStorage');
+    // @link https://github.com/gsklee/ngStorage
+    $localStorageProvider.setKeyPrefix(ApplicationConfiguration.applicationModuleName + '-');
 
     // Default timeout for success, error etc messages
     $messageCenterServiceProvider.setGlobalOptions({timeout: 6000});

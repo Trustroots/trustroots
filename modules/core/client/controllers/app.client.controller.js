@@ -9,7 +9,7 @@
     .controller('AppController', AppController);
 
   /* @ngInject */
-  function AppController($scope, $rootScope, $window, $state, Authentication, SettingsFactory, Languages, localStorageService) {
+  function AppController($scope, $rootScope, $window, $state, Authentication, SettingsFactory, Languages, $localStorage, $sessionStorage) {
 
     // ViewModel
     var vm = this;
@@ -58,9 +58,10 @@
         $event.preventDefault();
       }
 
-      // Clear out localstorage
-      // @link https://github.com/grevory/angular-local-storage#clearall
-      localStorageService.clearAll();
+      // Clear out session/localstorage
+      // @link https://github.com/gsklee/ngStorage#delete-everything--demo
+      $localStorage.$reset();
+      $sessionStorage.$reset();
 
       // Do the signout and refresh the page
       $window.top.location.href  = '/api/auth/signout';

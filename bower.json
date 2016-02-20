@@ -9,7 +9,7 @@
     "angular-chosen-localytics": "~1.0.7",
     "angular-leaflet-directive": "~0.8.8",
     "angular-loading-bar": "~0.8.0",
-    "angular-local-storage": "~0.2.2",
+    "ngstorage": "~0.3.10",
     "angular-mailcheck": "~0.1.0",
     "angular-medium-editor": "~1.1.0",
     "angular-message-format": "1.5.0",

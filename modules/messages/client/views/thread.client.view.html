@@ -78,7 +78,7 @@
 
               <div class="message-content panel panel-default" zum-waypoint="wp" offset="15%" up="next">
                 <div tr-avatar data-user="message.userFrom" data-size="24"></div>
-                <div class="panel-body" ng-bind-html="message.content | trustedHtml"></div>
+                <div class="panel-body" ng-bind-html="message.$storage.content | trustedHtml"></div>
               </div>
 
             </div>
