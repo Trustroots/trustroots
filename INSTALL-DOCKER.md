@@ -66,7 +66,7 @@ Open [http://trustroots.dev/](http://trustroots.dev/) and [http://trustroots.mai
 ### Running & development
 
 - Hit `Ctrl+C` to turn off containers.
-- Type `docker-compose up` to start them up again. You might want to run containers as daemon: `docker-compose up -d` and then attach to Node container to see the logs: `docker-compose logs trustroots`. Otherwise you'll see logs from all the containers.
+- Type `docker-compose up` to start them up again. You might want to run containers as daemon: `docker-compose up -d` and then attach to Node container to see the logs: `docker-compose logs trustroots`. Otherwise you'll see logs from all the containers. You can use a helper script: `scripts/docker/up.sh`
 - Type `docker-compose build` to rebuild them to have fresh install.
 - When you do changes to any files, they get recompiled and the browser is refreshed. If this step feels too slow for your needs, it's because of Docker. This step is faster on local [install](INSTALL.md) so you might want to consider that.
 - Keep an eye on console in case of compiling errors.
