@@ -70,7 +70,7 @@ gulp.task('watch', function() {
   gulp.watch(defaultAssets.server.views).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.allJS, ['jshint']).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.fontelloConfig, ['fontello']).on('change', plugins.livereload.changed);
-  gulp.watch(defaultAssets.client.js, ['clean:js', 'scripts']).on('change', plugins.livereload.changed);
+  gulp.watch(defaultAssets.client.js, ['clean:js', 'scripts']);
   gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
 
   if (process.env.NODE_ENV === 'production') {
@@ -119,7 +119,8 @@ gulp.task('scripts', function() {
       .pipe(plugins.ngAnnotate())
       .pipe(plugins.concat('application.js'))
       .pipe(plugins.sourcemaps.write())
-      .pipe(gulp.dest('public/dist'));
+      .pipe(gulp.dest('public/dist'))
+      .pipe(plugins.livereload());
   }
 });
 
