@@ -180,7 +180,7 @@
                     <div class="form-group">
                       <div class="input-group">
                         <div class="input-group-addon">
-                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover-html="editprofile.bwGuide"></span>
+                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" uib-popover-html="::editprofile.bwGuide"></span>
                         </div>
                         <label class="input-group-addon" for="extSitesBW">bewelcome.org/members/</label>
                         <input id="extSitesBW" type="text" class="form-control" ng-model="editprofile.user.extSitesBW" placeholder="your-username" aria-label="BeWelcome username">
@@ -192,7 +192,7 @@
                     <div class="form-group">
                       <div class="input-group">
                         <div class="input-group-addon">
-                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover-html="editprofile.csGuide"></span>
+                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" uib-popover-html="::editprofile.csGuide"></span>
                         </div>
                         <label class="input-group-addon" for="extSitesCS">couchsurfing.com/people/</label>
                         <input id="extSitesCS" type="text" class="form-control" ng-model="editprofile.user.extSitesCS" placeholder="your-username" aria-label="Couchsurfing username">
@@ -204,7 +204,7 @@
                     <div class="form-group" ng-class="{'has-warning': editprofile.user.extSitesWS && !editprofile.isWarmshowersId()}">
                       <div class="input-group">
                         <div class="input-group-addon">
-                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" popover-html="editprofile.wsGuide"></span>
+                          <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" uib-popover-html="::editprofile.wsGuide"></span>
                         </div>
                         <label class="input-group-addon" for="extSitesWS">warmshowers.org/user/</label>
                         <input id="extSitesWS" type="text" class="form-control" ng-model="editprofile.user.extSitesWS" placeholder="your-user-id" aria-label="Warmshowers user id">
@@ -212,7 +212,7 @@
                           <a ng-href="https://www.warmshowers.org/{{ !editprofile.isWarmshowersId() ? 'users' : 'user' }}/{{ editprofile.user.extSitesWS }}" target="_blank" class="btn btn-primary" role="button" tooltip-placement="bottom" uib-tooltip="Test opening the link" aria-label="Test opening the link"><i class="icon-link-ext"></i></a>
                         </span>
                       </div>
-                      <p class="help-block text-warning" ng-if="editprofile.user.extSitesWS && !editprofile.isWarmshowersId()">This should be your numeric user id, not username.</p>
+                      <p class="help-block text-warning" ng-if="editprofile.user.extSitesWS && !editprofile.isWarmshowersId()">This should be your <strong>numeric user id</strong>, not username.</p>
                     </div>
                   </div>
 
