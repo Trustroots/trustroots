@@ -26,8 +26,7 @@ module.exports = {
   port: 3001,
   app: {
     title: 'Trustroots test environment.',
-    description: 'Trustroots test environment.',
-    tagline: 'Trustroots test environment.'
+    description: 'Trustroots test environment.'
   },
   mapbox: {
     // Mapbox is publicly exposed to the frontend

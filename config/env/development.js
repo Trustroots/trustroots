@@ -25,8 +25,7 @@ module.exports = {
   },
   app: {
     title: 'Trustroots Development version',
-    description: 'Trustroots development version.',
-    tagline: 'This is a test version, please go to Trustroots.org for the real thing.'
+    description: 'Trustroots development version.'
   },
   // Mapbox is publicly exposed to the frontend
   // To use MapBox maps, copy map values from production.js

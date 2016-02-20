@@ -3,7 +3,7 @@
 var errorHandler = require('./errors.server.controller');
 
 /**
- * Render the main applicaion page
+ * Render the main application page
  */
 exports.renderIndex = function(req, res) {
 

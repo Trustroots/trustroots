@@ -13,8 +13,7 @@
 module.exports = {
   app: {
     title: 'Trustroots',
-    description: 'Travellers community for sharing, hosting and getting people together. Built with hitchhikers in mind. A world that encourages trust and adventure.',
-    tagline: 'Hospitality exchange community for hitchhikers and other travellers.'
+    description: 'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.'
   },
   maxUploadSize: process.env.MAX_UPLOAD_SIZE || 10000000, // 10MB. Remember to change this to Nginx configs as well
   port: process.env.PORT || 3000,

@@ -12,6 +12,7 @@
     var vm = this;
 
     // Exposed
+    vm.$state = $state;
     vm.isCollapsed = false;
     vm.isHidden = false;
     vm.toggleCollapsibleMenu = toggleCollapsibleMenu;

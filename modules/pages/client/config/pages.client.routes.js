@@ -60,6 +60,11 @@
         url: '/media',
         title: 'Media',
         templateUrl: 'modules/pages/views/media.client.view.html'
+      }).
+      state('volunteering', {
+        url: '/volunteering',
+        title: 'Volunteering',
+        templateUrl: 'modules/pages/views/volunteering.client.view.html'
       });
 
       /**
@@ -69,8 +74,9 @@
         $stateProvider.state('home', {
           url: '/',
           templateUrl: 'modules/pages/views/home.client.view.html',
-          footerTransparent: true,
-          headerHidden: true
+          controller: 'HomeController',
+          controllerAs: 'home',
+          footerHidden: true
         });
       } else {
         $stateProvider.state('home', {url: '/'});

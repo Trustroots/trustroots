@@ -1,29 +1,144 @@
-<section class="home board container container-fullscreen" tr-boards="['rainbowpeople', 'hitchroad', 'desertgirl', 'sierranevada', 'wavewatching', 'hitchgirl1', 'hitchgirl2']">
+
+<section class="board container home-intro" tr-boards="::home.boards" ng-style="{height: home.windowHeight}">
   <div class="middle-wrapper middle-wrapper-horizontal">
     <div class="middle-content">
 
       <div class="row">
         <div class="col-xs-12 col-sm-8 col-sm-offset-2">
-          <img class="logo hidden-xs" src="/modules/core/img/logo/white.svg" alt="Trustroots" width="210" height="210">
-          <img class="logo visible-xs-block" src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="250" height="auto">
+          <img class="home-logo hidden-xs center-block" src="/modules/core/img/logo/white.svg" alt="Trustroots" width="210" height="210">
+          <img class="home-logo visible-xs-block center-block" src="/modules/core/img/logo/white.svg" alt="Trustroots" width="130" height="130">
           <h1 class="sr-only">Trustroots</h1>
-          <h3 class="home-tagline" ng-bind="app.appSettings.tagline"></h3>
-        </div>
-      </div><!-- .row -->
 
-      <div class="row">
-        <div class="col-xs-8 col-xs-offset-2">
-          <nav class="btn-group" role="navigation">
-            <a ui-sref="signin" class="btn btn-lg btn-home-login">Login</a>
-            <a ui-sref="signup" class="btn btn-lg btn-home-signup">Become a member</a>
-            <a ui-sref="about" class="btn btn-lg btn-home-readmore">Tell me more</a>
-          </nav>
-          <div class="home-extra hidden-xs">
-            Same team brought you also <a href="http://hitchwiki.org/">Hitchwiki</a>, <a href="http://trashwiki.org/">Trashwiki</a>, <a href="http://nomadwiki.org/">Nomadwiki</a> & more.
+          <!-- For non authenticated -->
+          <div ng-if="!app.user">
+            <h3 class="home-tagline">Travellers' community</h3>
+            <h4 class="home-subtagline">Sharing, hosting and getting people together. <br class="hidden-xs"/>Built with hitchhikers in mind.</h4>
+            <a ui-sref="signup" class="btn btn-lg btn-default home-join hidden-xs">Join Trustroots</a>
           </div>
+
+          <!-- For authenticated -->
+          <h3 class="home-tagline-auth" ng-if="app.user">
+            Hi {{ ::app.user.displayName }}!<br>
+            Being able to rely on strangers, on communities, on trust, are values that are worth preserving. Go travel & spread the word!
+          </h3>
+
+          <div class="home-down"><i class="icon-down"></i></div>
+
         </div>
       </div><!-- .row -->
-
     </div>
   </div>
+</section>
+
+<!-- How does it work -->
+<section class="home-how">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-5 text-center lead">
+        <div class="offer-symbol-sofa center-block"></div>
+        <br>
+        <h2 class="font-brand-light">How does it work?</h2>
+        <br>
+        <p class="font-brand-light">Have a look! Travel anywhere and easily find great people who want to meet you as well. See where other travellers are and help each other out, whether through welcoming them to your home, sharing your stories or becoming friends.</p>
+      </div>
+      <div class="col-md-7">
+        <div class="home-browser">
+          <div class="home-browser-circle"></div>
+          <div class="home-browser-circle"></div>
+          <div class="home-browser-circle"></div>
+          <div class="home-browser-screenshot home-browser-screenshot-search"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Share -->
+<section class="home-how">
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12 col-md-7 hidden-xs hidden-sm">
+        <div class="home-browser">
+          <div class="home-browser-circle"></div>
+          <div class="home-browser-circle"></div>
+          <div class="home-browser-circle"></div>
+          <div class="home-browser-screenshot home-browser-screenshot-profile"></div>
+        </div>
+      </div>
+      <div class="col-xs-12 col-sm-offset-2 col-sm-8 col-md-offset-0 col-md-5 text-center lead">
+        <div class="home-wohoo center-block hidden-xs hidden-sm"></div>
+        <p class="font-brand-light">
+          <br class="hidden-xs hidden-sm"/>
+          Share the beautiful you with the world.
+          <br><br>
+          Put yourself in the shoes of others: what would you like to know about your travel buddies? What should they know about you?
+          <br><br>
+          Be genuine yourself.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Manifesto -->
+<section class="board board-primary board-inset" tr-boards="'mountainforest'" id="manifesto">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-offset-3 col-md-6 text-center lead font-brand-light">
+        <div ng-include="'/modules/pages/views/manifesto-text.client.partial.html?c=' + app.cacheBust"></div>
+        <p ng-if="!app.user">
+          <br><br>
+          <a ui-sref="signup" class="btn btn-lg btn-action btn-inverse">Join Trustroots</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<section class="board board-primary board-inset home-footer" tr-boards="'bokeh'">
+  <div class="container">
+
+    <div class="row">
+    <div class="col-sm-6 col-md-3">
+        <h3 class="font-brand-light">Foundation</h3>
+        <p>Owned and operated by Trustroots Foundation, a non-profit registered in the United Kingdom since March 2015.</p>
+        <p><i class="icon-right"></i> <a ui-sref="foundation" class="home-footer-more font-brand-semibold">Learn more</a></p>
+      </div>
+      <div class="col-sm-6 col-md-3">
+        <h3 class="font-brand-light">Team</h3>
+        <p>Trustroots is being built by a small team of activists who felt that the world of sharing is being taken over by corporations trying to monetize people's willingness to help each other. Same team brought you also <a href="http://hitchwiki.org/">Hitchwiki</a>, <a href="http://trashwiki.org/">Trashwiki</a> and <a href="http://nomadwiki.org/">Nomadwiki</a>.</p>
+        <p><i class="icon-right"></i> <a ui-sref="team" class="home-footer-more font-brand-semibold">Meet the team</a></p>
+      </div>
+      <div class="col-sm-6 col-md-3">
+        <h3 class="font-brand-light">Free and open source</h3>
+        <p>We think it's a shame that former non profits have been sold to venture capital. We've been running other notable free and open projects for a decade now and we hope our deeds so far speak for us.</p>
+        <p><i class="icon-right"></i> <a href="/developers" class="home-footer-more font-brand-semibold">For developers</a></p>
+      </div>
+      <div class="col-sm-6 col-md-3">
+        <ul class="list-unstyled home-footer-pages font-brand-light">
+          <li><a ui-sref="faq">FAQ</a></li>
+          <li><a href="http://ideas.trustroots.org/">Blog</a></li>
+          <li><a ui-sref="volunteering">Volunteering</a></li>
+          <li><a ui-sref="media">Media</a></li>
+          <li><a ui-sref="support">Contact & support</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="row text-center">
+
+      <ul class="list-inline home-footer-some">
+        <li><a href="https://www.facebook.com/trustroots.org" uib-tooltip="Facebook" aria-label="Trustroots at Facebook"><i class="icon-facebook icon-lg"></i></a></li>
+        <li><a href="https://twitter.com/trustroots" uib-tooltip="Twitter" aria-label="Trustroots at Twitter"><i class="icon-twitter icon-lg"></i></a></li>
+        <li><a href="https://plus.google.com/+TrustrootsOrg" uib-tooltip="+Google" aria-label="Trustroots at Google plus"><i class="icon-google icon-lg"></i></a></li>
+      </ul>
+
+      <small ng-if="app.photoCreditsCount" class="font-brand-light">
+        <span tr-board-credits></span>
+      </small>
+
+    </div><!-- /.row -->
+
+  </div><!-- /.container -->
 </section>

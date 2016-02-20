@@ -53,6 +53,9 @@
       }
     }
 
+    /**
+     * Sign out authenticated user
+     */
     function signout($event) {
       if($event) {
         $event.preventDefault();
@@ -78,12 +81,6 @@
      * Before page change
      */
     $scope.$on('$stateChangeStart', function(event, toState, toParams, fromState, fromParams) {
-
-      // Redirect away from frontpage if user is authenticated
-      if(toState.name === 'home' && Authentication.user) {
-        event.preventDefault();
-        $state.go('search');
-      }
 
       // Redirect to login page if no user
       if(toState.requiresAuth && !Authentication.user) {

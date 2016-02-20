@@ -1,106 +1,228 @@
 /**
  * Home page
  */
-@home-page-gaps: 25px;
 
-.home {
+// Section - intro
+.home-intro {
+  margin-top: @navbar-height;
   text-align: center;
   padding: 0;
+}
 
-  .logo,
+// Upmost element at intro section
+.home-logo {
+  margin-bottom: 40px;
+  margin-top: 30px;
+}
+// Downmost element at intro section
+.home-down {
+  font-size: 35px;
+  opacity: .8;
+  margin: 30px 0 0 0;
+}
+.home-tagline,
+.home-tagline-auth {
+  margin: 0 auto;
+}
+.home-join {
+  margin-top: 40px;
+}
+.home-tagline,
+.home-tagline-auth {
+  text-shadow: 1px 1px 6px rgba(0, 0, 0, .6);
+}
+.home-tagline,
+.home-tagline-auth {
+  color: #fff;
+  padding: 0;
+  font-size: 45px;
+  line-height: 50px;
+  .font-brand-semibold();
+}
+.home-subtagline {
+  font-size: 30px;
+  line-height: 40px;
+}
+.home-tagline-auth {
+  font-size: 35px;
+  line-height: 45px;
+}
+// Note `max-height` here instead of max-width
+@media screen and (max-height: 700px) {
+  padding-top: 0;
+  .home-logo,
   .home-tagline,
-  .home-extra,
-  .btn-group {
-    margin: @home-page-gaps auto;
+  .home-tagline-auth {
+    margin: 15px auto;
   }
-
-  // Note "max-height" here
-  @media screen and (max-height: 700px) {
-    padding-top: 0;
-    .logo,
-    .home-tagline,
-    .home-extra,
-    .btn-group {
-      margin: round(@home-page-gaps/2) auto;
-    }
+  .home-logo {
+    max-width: 170px;
+    max-height: 170px;
   }
-
-  .home-tagline,
-  .home-extra {
-    text-shadow: 1px 1px 6px rgba(0, 0, 0, .6);
-  }
+  .home-tagline-auth,
   .home-tagline {
-    color: #fff;
-    font-family: @font-family-brand;
-    font-style: normal;
-    font-weight: 400;
-    font-size: 30px;
+    font-size: 32px;
+    line-height: 40px;
+  }
+  .home-subtagline {
+    font-size: 28px;
+    line-height: 38px;
+  }
+}
+@media (max-width: @screen-sm-max) {
+  .home-subtagline {
+    font-size: 25px;
     line-height: 35px;
-    padding: 0;
   }
-  .home-extra {
-    &, a {
-      font-size: @font-size-base;
-      color: rgba(255, 255, 255, .95);
+}
+@media (max-width: @screen-xs-max) {
+  .home-tagline-auth,
+  .home-tagline {
+    font-size: 22px;
+    line-height: 28px;
+  }
+  .home-subtagline {
+    font-size: 20px;
+    line-height: 29px;
+  }
+}
+
+
+// Home - Browser window
+.home-browser {
+  border: 1px solid @gray-light;
+  border-radius: 10px;
+  padding: 10px;
+  width: 100%;
+  max-width: 620px;
+  margin: 10px auto;
+  @media (max-width: @screen-sm-max) {
+    border-radius: 6px;
+    padding: 5px;
+  }
+}
+.home-browser-circle {
+  float: left;
+  .square(10px);
+  margin: 0 5px 10px 0;
+  border-radius: 50%;
+  border: 1px solid @gray-light;
+  @media (max-width: @screen-sm-max) {
+    .square(5px);
+    margin: 0 3px 5px 0;
+  }
+}
+.home-browser-screenshot {
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  clear: both;
+  margin: 0 auto;
+  background-repeat: no-repeat;
+  border-radius: 5px;
+  max-width: 600px;
+  min-height: 387px;
+  @media (max-width: @screen-sm-max) {
+    border-radius: 3px;
+    min-height: 200px;
+  }
+}
+.home-browser-screenshot-search {
+  .img-retina('/modules/pages/img/screenshot-search.png', '/modules/pages/img/screenshot-search@2x.png', 600px, 387px);
+}
+.home-browser-screenshot-profile {
+  .img-retina('/modules/pages/img/screenshot-profile.png', '/modules/pages/img/screenshot-profile@2x.png', 600px, 387px);
+}
+
+// Home section - hospex & how
+.home-how {
+  background: #fff;
+  padding: 50px 0;
+  @media (max-width: @screen-sm-max) {
+    padding: 30px 0 10px 0;
+  }
+}
+
+
+.home-wohoo {
+  width: 207px;
+  height: 162px;
+  .img-retina('/modules/pages/img/wohoo.png', '/modules/pages/img/wohoo@2x.png', 207px, 162px);
+}
+
+// Home section - footer
+.home-footer {
+  margin-bottom: -@article-padding-bottom;
+  background-position: 50% bottom;
+  padding-top: 30px;
+  text-shadow: none;
+  // Normally this background won't work well on small screens with white text, so we'll just hide it
+  &.board-bokeh {
+    @media (max-width: @screen-sm-max) {
+      background-image: none !important;
+      box-shadow: none;
+    }
+  }
+  .boards-credits {
+    display: block;
+    padding: 30px;
+    a {
       text-decoration: none;
+
     }
-    a:hover {
-      color: #fff;
-      text-decoration: underline;
-    }
-  }
-  // Home page buttons
-  .btn-group {
-    .box-shadow(0 0 8px rgba(0, 0, 0, .3));
-  }
-  .btn-home-readmore,
-  .btn-home-login,
-  .btn-home-signup {
-    color: #fff;
-    text-shadow: 1px 1px 1px rgba(0, 0, 0, .3);
-    border: 0;
-    transition: background-color 0.2s;
-  }
-  .btn-home-login {
-    background-color: @brand-primary;
-    &:hover {
-      background-color: lighten(@brand-primary, 3%);
-      border: 0;
-    }
-  }
-  .btn-home-signup {
-    background-color: @brand-secondary;
-    &:hover {
-      background-color: lighten(@brand-secondary, 3%);
-      border: 0;
-    }
-  }
-  .btn-home-readmore {
-    background-color: #e79800;
-    &:hover {
-      background-color: lighten(#e79800, 3%);
-      border: 0;
-    }
-  }
-  @media (max-width: @screen-xs-max) {
-    .home-tagline {
-      font-size: 18px;
-      line-height: 25px;
-    }
-    .btn-group {
-      border-radius: @border-radius-base;
-      overflow: hidden;
-      .btn {
-        width: 100%;
-        margin: 0;
-        border-radius: 0;
-        &:first-child {
-          .border-top-radius(@border-radius-base);
-        }
-        &:last-child {
-          .border-bottom-radius(@border-radius-base);
-        }
+    // On bigger screens:
+    // Make credits slightly opaque and add hover effects
+    @media (min-width: @screen-md-min) {
+      opacity: 0.5;
+      a:hover {
+        border-bottom: 1px solid #fff;
       }
+      &:hover {
+        transition: opacity 0.3s linear;
+        opacity: 1;
+      }
+    }
+    @media (max-width: @screen-sm-max) {
+      font-size: 13px;
+      a {
+        border-bottom: 1px solid #fff;
+      }
+    }
+  }
+}
+
+.home-footer-some {
+  margin: 40px 0;
+  font-size: 20px;
+}
+
+.home-footer-join {
+  margin: 80px 0;
+}
+
+// This requires `a` and `:not(.btn)` due they are defined for `.board a {}` at core-module's `layout/board.less`
+a.home-footer-more:not(.btn) {
+  text-decoration: none;
+}
+
+.home-footer-pages {
+  font-size: 20px;
+  line-height: 40px;
+  a:not(.btn) {
+    text-decoration: none;
+    &:hover {
+      border-bottom: 1px solid #fff;
+    }
+  }
+  &:before {
+    display: block;
+    width: 40%;
+    height: 1px;
+    background: #fff;
+    content: '';
+    margin: 27px 0 18px 0;
+    @media (max-width: @screen-sm-max) {
+      width: 100%;
     }
   }
 }

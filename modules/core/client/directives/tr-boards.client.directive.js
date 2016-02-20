@@ -116,6 +116,14 @@
             'name': 'Matas Astrauskas',
             'url': 'http://www.matasphoto.com/',
             'file': 'mr-hitchgirl2.jpg'
+          },
+          'mountainforest': {
+            // https://unsplash.com/photos/VNseEaTt9w4
+            'name': 'Sven Scheuermeier',
+            'url': 'hhttps://unsplash.com/sveninho',
+            'file': 'ss-mountainforest.jpg',
+            'license': 'CC',
+            'license_url': 'https://creativecommons.org/publicdomain/zero/1.0/', // https://unsplash.com/license
           }
         };
 

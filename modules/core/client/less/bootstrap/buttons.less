@@ -2,10 +2,7 @@
  * Buttons
  */
 .btn {
-  //border: 0;
-  font-family: @font-family-brand;
-  font-weight: 400;
-  font-style: normal;
+  .font-brand-regular();
   text-shadow: none;
   &, &:hover {
     .box-shadow(none);
@@ -17,7 +14,7 @@
     }
   }
 
-  // A new button style
+  // New button styles
   &.btn-inverse {
     .button-variant(@btn-inverse-color; @btn-inverse-bg; @btn-inverse-border);
     &:hover {
@@ -25,10 +22,23 @@
       background-color: rgba(red(@btn-inverse-border), green(@btn-inverse-border), blue(@btn-inverse-border), .1);
     }
   }
+  &.btn-inverse-primary {
+    .button-variant(@btn-inverse-primary-color; @btn-inverse-primary-bg; @btn-inverse-primary-border);
+    &:hover {
+      border-color: rgba(red(@btn-inverse-primary-border), green(@btn-inverse-primary-border), blue(@btn-inverse-primary-border), .8);
+      background-color: rgba(red(@btn-inverse-primary-border), green(@btn-inverse-primary-border), blue(@btn-inverse-primary-border), .1);
+    }
+  }
 
   // Special colors for buttons appended to inputs
   &.btn-input {
     .button-variant(@brand-primary; @input-bg; @input-border);
+  }
+
+  // Bigger button size `action`
+  &.btn-action {
+    padding: 15px 30px;
+    font-size: 20px;
   }
 }
 // Fix problem with inverse button hover state covering input border

@@ -5,9 +5,7 @@
   width: 100%;
   height: @navbar-height;
   clear: both;
-  font-family: @font-family-brand;
-  font-weight: 400;
-  font-style: normal;
+  .font-brand-regular();
   color: @navbar-default-color;
   .navbar {
     .box-shadow(0 0 8px rgba(0,0,0,0.1));
@@ -71,11 +69,15 @@
 .header-welcome {
   text-align: center;
   padding: 5px 0 0 0;
+  .header-more-text,
   .header-welcome-text {
     display: inline-block;
     padding: 0;
     font-size: 18px;
-    font-family: @font-family-brand;
+    .font-brand-light();
+  }
+  .header-more-text {
+    font-size: 14px;
   }
   .header-welcome-text,
   .btn {

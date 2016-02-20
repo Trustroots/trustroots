@@ -4,6 +4,11 @@ Open Sans is a humanist sans serif typeface designed by [Steve Matteson](https:/
 ### License
 [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
 
+# Webfont
+Generated with [Fontsquirrel.com](http://www.fontsquirrel.com/tools/webfont-generator).
+
+See [generator_config.txt](generator_config.txt) and [../less/layout/fonts.less](../less/layout/fonts.less).
+
 ### Read more
 * http://www.google.com/fonts/specimen/Open+Sans
 * http://en.wikipedia.org/wiki/Open_Sans
