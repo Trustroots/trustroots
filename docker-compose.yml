@@ -49,6 +49,8 @@ mongodb:
 nginx:
   image: jwilder/nginx-proxy
   restart: always
+  links:
+    - trustroots
   volumes:
     - /var/run/docker.sock:/tmp/docker.sock:ro
     - ./scripts/docker/nginx/trustroots.dev:/etc/nginx/vhost.d/trustroots.dev
