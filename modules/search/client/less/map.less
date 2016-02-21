@@ -58,17 +58,21 @@
 
 .map-location-search {
   position: absolute;
-  width: 300px;
   z-index: @zindex-navbar;
-  top: (@navbar-height + @padding-base-horizontal);
-  right: 50%;
-  margin-right: -150px;
-  @media (max-width: @screen-xs-max) {
-    margin-right: 0;
-    top: (@navbar-height + @search-controls-gap-mobile);
-    right: @search-controls-gap-mobile;
-    left: @search-controls-gap-mobile;
-    width: auto;
+  width: auto;
+  margin-right: 0;
+  top: (@navbar-height + @search-controls-gap-mobile);
+  right: @search-controls-gap-mobile;
+  left: @search-controls-gap-mobile;
+  @media (min-width: @screen-sm-min) {
+    width: 300px;
+    left: 70px;
+    top: (@navbar-height + @padding-base-horizontal);
+  }
+  @media (min-width: @screen-md-min) {
+    margin-right: -150px;
+    left: auto;
+    right: 50%;
   }
 
   // Search bar opacity trick
