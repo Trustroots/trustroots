@@ -29,21 +29,14 @@
                 <div tr-location="editprofile.user.locationFrom" data-placeholder="City, Country" id="location-from"></div>
               </div>
 
-                <label><h4>Gender</h4></label>
-                <div class="radio">
-                  <label><input type="radio" value="" ng-model="editprofile.user.gender"> Unspecified</label>
-                </div>
-                <div class="radio">
-                  <label><input type="radio" value="female" ng-model="editprofile.user.gender"> Female</label>
-                </div>
-                <div class="radio">
-                  <label><input type="radio" value="male" ng-model="editprofile.user.gender"> Male</label>
-                </div>
-                <div class="radio">
-                  <label><input type="radio" value="other" ng-model="editprofile.user.gender"> Other</label>
-                </div>
-
               <div class="form-group profile-sidebar-section">
+                <label for="gender"><h4>I Am</h4></label>
+                <select class="form-control" id="gender" ng-model="editprofile.user.gender">
+                  <option ng-selected="editprofile.user.gender === ''" value="">Unspecified</option>
+                  <option ng-selected="editprofile.user.gender === 'female'" value="female">Female</option>
+                  <option ng-selected="editprofile.user.gender === 'male'" value="male">Male</option>
+                  <option ng-selected="editprofile.user.gender === 'other'" value="other">Other</option>
+                </select>
               </div>
 
               <div class="profile-sidebar-section profile-edit-birthdate">
