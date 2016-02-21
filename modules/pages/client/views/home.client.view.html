@@ -17,10 +17,13 @@
           </div>
 
           <!-- For authenticated -->
-          <h3 class="home-tagline-auth" ng-if="app.user">
-            Hi {{ ::app.user.displayName }}!<br>
-            Being able to rely on strangers, on communities, on trust, are values that are worth preserving. Go travel & spread the word!
-          </h3>
+          <div ng-if="app.user">
+            <h3 class="home-tagline-auth">
+              Hi {{ ::app.user.displayName }}!<br>
+              Being able to rely on strangers, on communities, on trust, are values that are worth preserving. Go travel & spread the word!
+            </h3>
+            <a ui-sref="profile-edit" class="btn btn-lg btn-default home-join hidden-xs">Fill your profile</a>
+          </div>
 
           <div class="home-down"><i class="icon-down"></i></div>
 
