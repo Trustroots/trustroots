@@ -15,21 +15,20 @@
             </a>
             <div class="panel-body">
 
-              <div class="form-group text-muted">
+              <div class="form-group profile-sidebar-section text-muted">
                 Member since <span ng-bind="editprofile.user.created | date:'mediumDate'"></span>
               </div>
 
-              <div class="form-group">
+              <div class="form-group profile-sidebar-section">
                 <label for="location-living"><h4>Lives in</h4></label>
                 <div tr-location="editprofile.user.locationLiving" data-placeholder="City, Country" id="location-living"></div>
               </div>
 
-              <div class="form-group">
+              <div class="form-group profile-sidebar-section">
                 <label for="location-from"><h4>From</h4></label>
                 <div tr-location="editprofile.user.locationFrom" data-placeholder="City, Country" id="location-from"></div>
               </div>
 
-              <div class="form-group">
                 <label><h4>Gender</h4></label>
                 <div class="radio">
                   <label><input type="radio" value="" ng-model="editprofile.user.gender"> Unspecified</label>
@@ -44,19 +43,48 @@
                   <label><input type="radio" value="other" ng-model="editprofile.user.gender"> Other</label>
                 </div>
 
+              <div class="form-group profile-sidebar-section">
               </div>
 
-              <div class="form-group">
-                <label for="birthdate"><h4>Birthdate <small class="text-muted text-uppercase">{{ ::editprofile.birthdateFormat }}</small></h4></label>
-                <p class="input-group profile-editor-birthdate">
-                  <input id="birthdate" type="text" class="form-control" uib-datepicker-popup="{{ ::editprofile.birthdateFormat }}" ng-model="editprofile.user.birthdate" is-open="editprofile.birthdateOpened" datepicker-options="editprofile.birthdateOptions" ng-required="false" close-text="Close" current-text="Today" clear-text="Clear">
-                  <span class="input-group-btn">
-                    <button type="button" class="btn btn-input" ng-click="editprofile.birthdateOpen($event)"><i class="icon-calendar"></i></button>
-                  </span>
-                </p>
+              <div class="profile-sidebar-section profile-edit-birthdate">
+                <label><h4>Birthdate</h4></label>
+
+                  <div tr-date-select template-url="tr-birthdate-select.html" ng-model="editprofile.user.birthdate"></div>
+
+                  <script type="text/ng-template" id="tr-birthdate-select.html">
+                    <div class="form-inline">
+                      <div class="form-group">
+                        <label class="sr-only" for="birthdate-month">Month</label>
+                        <select class="form-control"
+                                id="birthdate-month"
+                                ng-model="val.month"
+                                ng-options="m.value as m.name for m in months">
+                          <option value="">Month</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label class="sr-only" for="birthdate-date">Date</label>
+                        <select class="form-control"
+                                id="birthdate-date"
+                                ng-model="val.date"
+                                ng-options="d for d in dates track by d">
+                          <option value="">Day</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label class="sr-only" for="birthdate-year">Year</label>
+                        <select class="form-control"
+                                id="birthdate-year"
+                                ng-model="val.year"
+                                ng-options="y for y in ::years">
+                          <option value="">Year</option>
+                        </select>
+                      </div>
+                    </div>
+                  </script>
               </div>
 
-              <div class="form-group">
+              <div class="form-group profile-sidebar-section">
                 <label for="languages"><h4>Languages</h4></label>
                 <select multiple chosen
                   id="languages"

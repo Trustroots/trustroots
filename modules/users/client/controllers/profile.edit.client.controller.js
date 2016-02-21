@@ -6,7 +6,7 @@
     .controller('EditProfileController', EditProfileController);
 
   /* @ngInject */
-  function EditProfileController($scope, $uibModal, $http, $stateParams, $state, $window, Languages, Users, Authentication, messageCenterService, Upload, appSettings) {
+  function EditProfileController($scope, $uibModal, $http, $stateParams, $state, $window, $locale, $filter, Languages, Users, Authentication, messageCenterService, Upload, appSettings, uibDateParser) {
 
     // ViewModel
     var vm = this;
@@ -16,7 +16,6 @@
     vm.user = new Users(Authentication.user);
 
     // Exposed
-    vm.birthdateOpen = birthdateOpen;
     vm.updateUserProfile = updateUserProfile;
     vm.avatarModal = avatarModal;
     vm.languages = Languages.get('array');
@@ -113,38 +112,6 @@
         });
     }
 
-    /*
-     * Birthday input field
-     * Use server 'appSettings.time' instead of client time
-     * @link http://angular-ui.github.io/bootstrap/#/datepicker
-     */
-    vm.birthdateFormat = 'yyyy-MM-dd';
-    vm.birthdateOpened = false;
-    vm.birthdateOptions = {
-      maxDate: moment(appSettings.time), //  Set an upper limit for mode.
-      minDate: moment(appSettings.time).subtract(moment.duration(100, 'y')), // Set a lower limit for mode.
-      formatYear: 'yyyy', // Format of year in year range
-      startingDay: 1, // Starting day of the week from 0-6 (0=Sunday, ..., 6=Saturday)
-      yearRange: 30, // Number of years displayed in year selection
-      showWeeks: false, // Whether to display week numbers.
-    };
-
-    // A fix to stop birthdate input giving validation errors
-    // This would come from the Mongo sometimes as "1984-10-09T22:00:00.000Z"
-    // and we're just stripping it down to "1984-10-09"
-    if(vm.user.birthdate) {
-      vm.user.birthdate = vm.user.birthdate.substring(0, vm.birthdateFormat.length);
-    }
-
-    /**
-     * Open birthdate dropdown
-     */
-    function birthdateOpen($event) {
-      $event.preventDefault();
-      $event.stopPropagation();
-      vm.birthdateOpened = true;
-    }
-
     /**
      * Update a user profile
      */
@@ -155,6 +122,7 @@
 
         // Fixes #66 - <br> appearing to tagline with Firefox
         user.tagline = user.tagline.replace('<br>', '', 'g').replace('&nbsp;', ' ', 'g');
+
         user.$update(function(response) {
           Authentication.user = response;
           $scope.$emit('userUpdated');
@@ -162,8 +130,9 @@
         }, function(response) {
           messageCenterService.add('danger', response.data.message || 'Something went wrong. Please try again!' , { timeout: 10000 });
         });
-      } else {
-        vm.submitted = true;
+      }
+      else {
+        messageCenterService.add('danger', 'Please fix errors from your profile and try again.' , { timeout: 10000 });
       }
     }
 

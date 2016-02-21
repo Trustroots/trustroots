@@ -43,27 +43,6 @@
     }
   }
 
-  // By default this is pretty uggly, making it pretty.
-  .profile-editor-birthdate {
-    .dropdown-menu {
-      .btn-default {
-        .button-variant(@text-color; transparent; transparent);
-        text-shadow: none;
-        &.active {
-          color: @brand-primary;
-          background: @gray-lighter;
-          font-weight: bold;
-        }
-      }
-      .btn-success {
-        background: @brand-primary;
-      }
-      table:focus {
-        outline: none;
-      }
-    }
-  }
-
   .avatar-edit {
     display: block;
     position: relative;
@@ -134,6 +113,16 @@
 
 }
 
+// Birthdate select inputs need to be a bit smaller, so that they'll fit next to each other at the sidebar
+@media (min-width: @screen-sm-min) {
+  .profile-edit-birthdate {
+    .form-control {
+      font-size: 13px;
+      padding-left: 6px;
+      padding-right: 6px;
+    }
+  }
+}
 
 /* Choose avatar -modal */
 #profile-avatar-choises {
