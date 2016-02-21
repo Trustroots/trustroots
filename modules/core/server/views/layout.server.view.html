@@ -127,12 +127,16 @@
   {% endif %}
 
   <!--[if lt IE 9]>
-  <section class="browsehappy">
-    <h1>Hello there!</h1>
-    <p>You are using an old browser which we unfortunately do not support.</p>
-    <p>Please <a href="http://browsehappy.com/">click here</a> to update your browser before using the website.</p>
-    <p><a href="http://browsehappy.com" class="btn btn-primary btn-lg" role="button">Yes, upgrade my browser!</a></p>
-  </section>
+  <div class="browsehappy text-center" ng-if="!app.hideBrowserhappy">
+    <h2>That's an awfully old browser you're browsing with!</h2>
+    <p class="lead">
+      <br>
+      You are using an old browser which we unfortunately do not support.
+      <br><br>
+      <a href="http://browsehappy.com" class="btn btn-primary btn-lg" role="button">Yes, upgrade my browser</a>
+      <a ng-click="app.hideBrowserhappy=true" class="btn btn-default btn-lg" role="button">Nah, I'll take the risk!</a>
+    </p>
+  </div>
   <![endif]-->
 </body>
 </html>

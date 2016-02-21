@@ -102,11 +102,6 @@
   cursor: help;
 }
 
-// For old IE
-.browsehappy {
-  display: block;
-}
-
 // No messages / no contacts etc -type messages
 .content-empty {
   text-align: center;
@@ -148,4 +143,21 @@
   &.middle-wrapper-horizontal .middle-content > * {
     margin: auto;
   }
+}
+
+/**
+ * Warning for old IE browsers
+ * html at `layout.server.view.html`
+ */
+.browsehappy {
+  display: block;
+  position: fixed;
+  overflow: auto;
+  z-index: 999999;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  padding: 50px 20px;
+  margin: 0;
+  background: #fff;
 }

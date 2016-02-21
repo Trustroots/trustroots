@@ -42,7 +42,7 @@
     "cookie-parser": "~1.4.0",
     "del": "~2.2.0",
     "express": "~4.13.3",
-    "express-paginate": "~0.1.0",
+    "express-paginate": "~0.1.1",
     "express-session": "~1.13.0",
     "git-rev": "~0.2.1",
     "glob": "~7.0.0",
