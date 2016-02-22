@@ -70,7 +70,7 @@
     "gulp-uglify": "~1.5.1",
     "gulp-util": "~3.0.7",
     "helmet": "~1.1.0",
-    "html-to-text": "~1.6.0",
+    "html-to-text": "~2.0.0",
     "jshint": "~2.9.1",
     "lodash": "~4.5.0",
     "lwip": "~0.0.8",
