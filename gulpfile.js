@@ -152,7 +152,7 @@ gulp.task('styles', function() {
     return mergeStream(lessStream, cssStream)
       .pipe(plugins.concat('application.css'))
       .pipe(plugins.autoprefixer())
-    	.pipe(plugins.cssmin())
+    	.pipe(plugins.cssnano())
     	.pipe(plugins.rename({suffix: '.min'}))
       .pipe(gulp.dest('public/dist'));
   }
