@@ -23,7 +23,7 @@ var ApplicationConfiguration = (function() {
                                               'angular-loading-bar',
                                               'trTrustpass',
                                               'angular-mailcheck',
-                                              'ngStorage'
+                                              'angular-locker'
                                             ];
 
   // Add a new vertical module

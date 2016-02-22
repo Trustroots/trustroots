@@ -15,7 +15,7 @@
     .controller('MessagesThreadController', MessagesThreadController);
 
   /* @ngInject */
-  function MessagesThreadController($scope, $q, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, $sessionStorage, appSettings, userTo, cfpLoadingBar) {
+  function MessagesThreadController($scope, $q, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, locker, appSettings, userTo, cfpLoadingBar) {
 
     // Go back to inbox on these cases
     // - No recepient defined
@@ -29,14 +29,15 @@
     var elemThread,
         syncReadTimer,
         flaggedAsRead = [],
-        messageIdsInView = [],
-        cacheId = Authentication.user._id + '_thread-' + $stateParams.username;
+        messageIdsInView = [];
+
+    // Make cache id unique for this user
+    var cachePrefix = 'messages.thread.' + Authentication.user._id + '-' + $stateParams.username;
 
     // View model
     var vm = this;
 
     // Exposed to the view
-    vm.$storage = $sessionStorage;
     vm.userFrom = Authentication.user;
     vm.userTo = userTo;
     vm.isSending = false;
@@ -48,15 +49,20 @@
     vm.messageRead = messageRead;
 
     /**
-     * Unfinished messages are cached to SessionStorage
+     * Is local/sessionStorage supported? This might fail in browser's incognito mode
+     *
+     * If it is, unfinished messages are cached to SessionStorage
      * Check for a previously saved message here
      *
-     * SessionStorage (instead of LocalStorage) is defined to be used at app init config
-     * See also sendMessage(), where message is clared with remove()
+     * See also sendMessage(), where message is clared
      */
-     if(!vm.$storage.content) {
-       vm.$storage.content = '';
-     }
+    if(locker.supported()) {
+      // Get message from cache, use default if it doesn't exist
+      vm.content = locker.driver('session').get(cachePrefix, '');
+    }
+    else {
+      vm.content = '';
+    }
 
     (function() {
       // Fetches first page of messages after receiving user has finished loading (we need the userId from there)
@@ -102,6 +108,9 @@
             // 13+10 covers all the browsers: http://stackoverflow.com/a/9343095/1984644
             if(event.ctrlKey && (event.charCode === 13 || event.charCode === 10)) {
               sendMessage();
+            }
+            else {
+              locker.put(cachePrefix, vm.content);
             }
           });
         });
@@ -235,25 +244,25 @@
 
       // Make sure the message isn't empty.
       // Sometimes we'll have some empty blocks due wysiwyg
-      if(vm.$storage.content.replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim() === '') {
+      if(vm.content.replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim() === '') {
         vm.isSending = false;
         messageCenterService.add('warning', 'Write a message first...');
         return;
       }
 
       var message = new vm.messageHandler.ajaxCall({
-        content: vm.$storage.content,
+        content: vm.content,
         userTo: userTo._id,
         read: false
       });
 
       message.$save(function(response) {
 
-        // Remove cached message
-        delete $sessionStorage[cacheId];
-
-        vm.$storage.content = '';
+        vm.content = '';
         vm.isSending = false;
+
+        // Remove message from cache
+        locker.driver('session').forget(cachePrefix);
 
         // Remove this when socket is back!
         vm.messages.unshift(response);

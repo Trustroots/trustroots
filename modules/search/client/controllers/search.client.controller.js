@@ -6,7 +6,17 @@
     .controller('SearchController', SearchController);
 
   /* @ngInject */
-  function SearchController($log, $scope, $http, $location, $state, $stateParams, $timeout, OffersService, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, $localStorage) {
+  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, OffersService, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, locker) {
+
+    // `search-map-canvas` is id of <leaflet> element
+    var mapId = 'search-map-canvas';
+
+    // Prefix for Leaflet events
+    // @link https://github.com/angular-ui/ui-leaflet/commit/d22b3f0
+    var listenerPrefix = 'leafletDirectiveMap.' + mapId;
+
+    // Make cache id unique for this user
+    var cachePrefix = (Authentication.user) ? 'search.mapCenter.' + Authentication.user._id : 'search.mapCenter';
 
     // Default to Europe for now
     var defaultLocation = {
@@ -14,9 +24,6 @@
       lng: 9.14055555556,
       zoom: 6
     };
-
-    // Make cache id unique for this user
-    var cacheId = (Authentication.user) ? 'searchMapState_' + Authentication.user._id : 'searchMapState';
 
     // ViewModel
     var vm = this;
@@ -27,7 +34,6 @@
     vm.searchAddress = searchAddress;
     vm.mapLocate = mapLocate;
     vm.searchSuggestions = searchSuggestions;
-    vm.$storage = $localStorage;
     vm.mapLayerstyle = 'street';
     vm.sidebarOpen = false;
     vm.offer = false; // Offer to show
@@ -70,9 +76,16 @@
       }
     };
 
-    // Use the default if we don't have previously saved location
-    if(!vm.$storage.mapCenter) {
-      vm.$storage.mapCenter = defaultLocation;
+    // Is local/sessionStorage supported? This might fail in browser's incognito mode
+    if(locker.supported()) {
+      // Get location from cache, use default if it doesn't exist
+      vm.mapCenter = locker.get(cachePrefix, defaultLocation);
+
+      // If the key already exists then no action will be taken and false will be returned
+      locker.add(cachePrefix, defaultLocation);
+    }
+    else {
+      vm.mapCenter = defaultLocation;
     }
 
     vm.mapBounds = {};
@@ -120,7 +133,7 @@
     /**
      * Add attribution controller
      */
-    leafletData.getMap('search-map-canvas').then(function(map) {
+    leafletData.getMap(mapId).then(function(map) {
       map.addControl(L.control.attribution({
         position: 'bottomright',
         prefix: ''
@@ -133,7 +146,7 @@
      * Possible values are: street, satellite
      * Defaults to street
      */
-    $scope.$on('leafletDirectiveMap.baselayerchange', function(event, layer) {
+    $scope.$on(listenerPrefix + '.baselayerchange', function(event, layer) {
       $timeout(function() {
         vm.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? layer.leafletEvent.layer.options.TRStyle : 'street';
       });
@@ -168,7 +181,7 @@
     /**
      * Sidebar & markers react to these events
      */
-    $scope.$on('leafletDirectiveMap.click', function(event){
+    $scope.$on(listenerPrefix + '.click', function(event){
       vm.sidebarOpen = false;
       vm.offer = false;
       vm.mapLayers.overlays.selectedOffers.visible = false;
@@ -187,7 +200,7 @@
       // If we get out of the boundig box of the last api query we have to call the API for the new markers
       if(vm.mapBounds.northEast.lng > vm.mapLastBounds.northEastLng || vm.mapBounds.northEast.lat > vm.mapLastBounds.northEastLat || vm.mapBounds.southWest.lng < vm.mapLastBounds.southWestLng || vm.mapBounds.southWest.lat < vm.mapLastBounds.southWestLat) {
         // We add a margin to the boundings depending on the zoom level
-        var boundingDelta = 10/vm.$storage.mapCenter.zoom;
+        var boundingDelta = 10/vm.mapCenter.zoom;
         // Saving the current bounding box amd zoom
         vm.mapLastBounds = {
           northEastLng: vm.mapBounds.northEast.lng + boundingDelta,
@@ -195,7 +208,7 @@
           southWestLng: vm.mapBounds.southWest.lng - boundingDelta,
           southWestLat: vm.mapBounds.southWest.lat - boundingDelta
         };
-        vm.lastZoom = vm.$storage.mapCenter.zoom;
+        vm.lastZoom = vm.mapCenter.zoom;
         // API Call
         OffersService.query({
           northEastLng: vm.mapLastBounds.northEastLng,
@@ -226,14 +239,14 @@
     /**
      * Event when the map has finished loading
      */
-    $scope.$on('leafletDirectiveMap.load', function(event) {
+    $scope.$on(listenerPrefix + '.load', function(event) {
 
-      leafletData.getMap('search-map-canvas').then(function(map) {
+      leafletData.getMap(mapId).then(function(map) {
         map.addLayer(vm.pruneCluster);
       });
 
       //If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
-      if(vm.$storage.mapCenter.zoom > vm.mapMinimumZoom) {
+      if(vm.mapCenter.zoom > vm.mapMinimumZoom) {
         var loadMarkers = function() {
           if(angular.isDefined(vm.mapBounds.northEast)) {
             getMarkers();
@@ -249,9 +262,9 @@
     });
 
     // Set event that fires everytime we finish to move the map
-    $scope.$on('leafletDirectiveMap.moveend', function(event) {
+    $scope.$on(listenerPrefix + '.moveend', function(event) {
 
-      if(vm.$storage.mapCenter.zoom > vm.mapMinimumZoom) {
+      if(vm.mapCenter.zoom > vm.mapMinimumZoom) {
         getMarkers();
       }
       // Otherwise hide the markers
@@ -266,7 +279,14 @@
         };
       }
 
-      //saveMapState();
+      // Save new map state to the cache
+      // We could also just save `vm.mapCenter`, but it might have Angular related rubbish in it
+      locker.put(cachePrefix, {
+        'lat': vm.mapCenter.lat,
+        'lng': vm.mapCenter.lng,
+        'zoom': vm.mapCenter.zoom
+      });
+
     });
 
     /**
@@ -323,7 +343,7 @@
       }
       // Does it have lat/lng?
       else if(place.center) {
-        vm.$storage.mapCenter = {
+        vm.mapCenter = {
           lat: parseFloat(place.center[1]),
           lng: parseFloat(place.center[0]),
           zoom: 5
@@ -395,7 +415,7 @@
         vm.mapLayers.overlays.selectedOffers.visible = true;
         vm.sidebarOpen = true;
 
-        vm.$storage.mapCenter = {
+        vm.mapCenter = {
           lat: vm.offer.location[0],
           lng: vm.offer.location[1],
           zoom: 13
@@ -404,7 +424,7 @@
       },
       // Offer not found
       function (error) {
-        vm.$storage.mapCenter = defaultLocation;
+        vm.mapCenter = defaultLocation;
         vm.offerNotFound = true;
         $timeout(function(){
           vm.offerNotFound = false;

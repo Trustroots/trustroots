@@ -9,7 +9,6 @@
     "angular-chosen-localytics": "~1.0.7",
     "ui-leaflet": "~1.0.0",
     "angular-loading-bar": "~0.8.0",
-    "ngstorage": "~0.3.10",
     "angular-mailcheck": "~0.1.0",
     "angular-medium-editor": "~1.1.0",
     "angular-message-format": "1.5.0",
@@ -25,7 +24,8 @@
     "imagesloaded": "~4.1.0",
     "message-center": "~1.2.6",
     "ng-file-upload": "~12.0.1",
-    "PruneCluster": "2.0.0-beta"
+    "PruneCluster": "2.0.0-beta",
+    "angular-locker": "~2.0.4"
   },
   "resolutions": {
     "angular": "1.5.0"

@@ -37,7 +37,7 @@ module.exports = {
         'public/lib/angular-trustpass/dist/tr-trustpass.js',
         'public/lib/mailcheck/src/mailcheck.js',
         'public/lib/angular-mailcheck/angular-mailcheck.js',
-        'public/lib/ngstorage/ngStorage.js'
+        'public/lib/angular-locker/dist/angular-locker.js'
       ],
       less: [
         'public/lib/angular-trustpass/src/tr-trustpass.less',

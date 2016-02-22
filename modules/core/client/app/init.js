@@ -12,7 +12,7 @@
     .config(initConfig);
 
   /* @ngInject */
-  function initConfig($localStorageProvider, cfpLoadingBarProvider, $locationProvider, $messageCenterServiceProvider) {
+  function initConfig(lockerProvider, cfpLoadingBarProvider, $locationProvider, $messageCenterServiceProvider) {
 
     // Setting HTML5 Location Mode
     $locationProvider.html5Mode({
@@ -27,8 +27,14 @@
     cfpLoadingBarProvider.includeSpinner = false;
 
     // Configure local storage module
-    // @link https://github.com/gsklee/ngStorage
-    $localStorageProvider.setKeyPrefix(ApplicationConfiguration.applicationModuleName + '-');
+    // @link https://github.com/tymondesigns/angular-locker
+    lockerProvider.defaults({
+        driver: 'local', // local|session
+        namespace: ApplicationConfiguration.applicationModuleName,
+        separator: '.',
+        eventsEnabled: false,
+        extend: {}
+    });
 
     // Default timeout for success, error etc messages
     $messageCenterServiceProvider.setGlobalOptions({timeout: 6000});

@@ -9,7 +9,7 @@
     .controller('AppController', AppController);
 
   /* @ngInject */
-  function AppController($scope, $rootScope, $window, $state, Authentication, SettingsFactory, Languages, $localStorage, $sessionStorage) {
+  function AppController($scope, $rootScope, $window, $state, Authentication, SettingsFactory, Languages, locker) {
 
     // ViewModel
     var vm = this;
@@ -62,9 +62,8 @@
       }
 
       // Clear out session/localstorage
-      // @link https://github.com/gsklee/ngStorage#delete-everything--demo
-      $localStorage.$reset();
-      $sessionStorage.$reset();
+      // @link https://github.com/tymondesigns/angular-locker#removing-items-from-locker
+      locker.clean();
 
       // Do the signout and refresh the page
       $window.top.location.href  = '/api/auth/signout';
