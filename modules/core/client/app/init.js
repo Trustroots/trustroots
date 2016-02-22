@@ -12,7 +12,7 @@
     .config(initConfig);
 
   /* @ngInject */
-  function initConfig(lockerProvider, cfpLoadingBarProvider, $locationProvider, $messageCenterServiceProvider) {
+  function initConfig(lockerProvider, cfpLoadingBarProvider, $locationProvider, $urlMatcherFactoryProvider, $messageCenterServiceProvider) {
 
     // Setting HTML5 Location Mode
     $locationProvider.html5Mode({
@@ -21,6 +21,10 @@
       // @todo better solution?
       requireBase: false
     }).hashPrefix('!');
+
+    // Make a trailing slash optional for all routes (ui-router)
+    // @link https://github.com/angular-ui/ui-router/wiki/Frequently-Asked-Questions#how-to-make-a-trailing-slash-optional-for-all-routes
+    $urlMatcherFactoryProvider.strictMode(false);
 
     // Hide spinner from the loading interceptor
     // @link https://github.com/chieffancypants/angular-loading-bar
