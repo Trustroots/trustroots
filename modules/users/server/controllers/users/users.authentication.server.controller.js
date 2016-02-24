@@ -115,13 +115,7 @@ exports.signup = function(req, res) {
         from: 'Trustroots <' + config.mailer.from + '>',
         subject: 'Confirm Email',
         html: emailHTML,
-        text: emailPlain,
-        // Attaching vCard makes it more certain this mail to pass spamfilters and users can add us to their trusted mails list easier.
-        attachments: [{
-          filename: 'trustroots.vcf',
-          content: 'BEGIN:VCARD\r\nN:Trustroots;Trustroots;;;\r\nEMAIL;INTERNET:' + config.mailer.from + '\r\nORG:Trustroots\r\nURL:' + url + '\r\nEND:VCARD',
-          contentType: 'text/vcard'
-        }]
+        text: emailPlain
       };
       smtpTransport.sendMail(mailOptions, function(err) {
         smtpTransport.close(); // close the connection pool
