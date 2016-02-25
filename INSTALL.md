@@ -17,10 +17,38 @@ brew install imagemagick
 
 ### Installing
 
-1. Clone the repository: `git clone https://github.com/Trustroots/trustroots.git`
-2. Make sure MongoDB is running on the default port (27017): `mongod`
-3. Create a local config file: `cp config/env/local.sample.js config/env/local.js` — add any configurations you want to keep out of version control here. Many features rely on sending emails (such as signup) so add settings at least to the `mailer` section. See [nodemailer smtp usage](https://github.com/andris9/nodemailer-smtp-transport#usage) and note that it has pre filled settings for [some services](https://github.com/andris9/nodemailer-smtp-transport#using-well-known-services). You could also use [MailDev](http://djfarrelly.github.io/MailDev/). The config file is created for you on first run if it doesn't exist.
-4. Finally start the app: `npm start`. It will install all required NPM and Bower modules on first run so it might take a while.
+##### 1. Clone the repository:
+
+```bash
+git clone https://github.com/Trustroots/trustroots.git
+```
+
+##### 2. Make sure MongoDB is running on the default port (27017):
+
+```bash
+mongod
+```
+
+##### 3. Create a local config file:
+
+```
+cp config/env/local.sample.js config/env/local.js
+```
+Add any configurations you want to keep out of version control here.
+
+Many features rely on sending emails (such as signup) so add settings at least to the `mailer` section. See [nodemailer smtp usage](https://github.com/andris9/nodemailer-smtp-transport#usage) and note that it has pre filled settings for [some services](https://github.com/andris9/nodemailer-smtp-transport#using-well-known-services).
+
+For development we highly recommend using [MailDev](http://djfarrelly.github.io/MailDev/) to catch emails.
+
+##### 4. Install Node modules:
+```bash
+npm install
+```
+
+##### 5. Finally start the app:
+```bash
+npm start
+```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
@@ -35,7 +63,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Generate documentation
 
-Generating docs requires `unzip`. (`sudo apt-get install unzip` on Ubuntu/Debian)
+Generating docs requires `unzip` CLI. To install on Ubuntu/Debian: `sudo apt-get install unzip`. OSX has this already.
 
 Produce API documentation by running `npm run docs`
 
@@ -54,10 +82,9 @@ There's a script that can generate mock user data. It's highly recommended you r
 
 Run these to get most recent version:
 ```bash
-$ git pull        # Get the latest code for the current branch
-$ npm run update  # Update NPM and Bower modules
-$ npm run migrate # Migrate database up
-$ npm run build   # Load icons and generate assets
+$ git pull            # Get the latest code for the current branch
+$ npm run update      # Update NPM
+$ npm run migrate     # Migrate database up
 ```
 
 ...or simply `bash scripts/update.sh` which does this all for you.

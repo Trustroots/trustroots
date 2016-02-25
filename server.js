@@ -5,21 +5,19 @@
  * App's main entry file
  */
 
-// Dependencies
-var config = require('./config/config'),
-    mongoose = require('./config/lib/mongoose'),
-    express = require('./config/lib/express'),
-    chalk = require('chalk');
-
-/**
- * Debug Node.js C/C++ native code modules on dev mode
- * @link https://www.npmjs.com/package/segfault-handler
- */
+// Debug Node.js C/C++ native code modules on dev mode
+// @link https://www.npmjs.com/package/segfault-handler
 if(process.env.NODE_ENV === 'development') {
   var SegfaultHandler = require('segfault-handler');
   SegfaultHandler.registerHandler('segfault.log');
   console.log('Logging possible segfault errors to ./segfault.log');
 }
+
+// Dependencies
+var config = require('./config/config'),
+    mongoose = require('./config/lib/mongoose'),
+    express = require('./config/lib/express'),
+    chalk = require('chalk');
 
 // Initialize mongoose
 mongoose.connect(function(db) {
