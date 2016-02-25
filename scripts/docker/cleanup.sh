@@ -3,7 +3,7 @@
 #
 # https://github.com/blueyed/dotfiles/blob/master/usr/bin/docker-cleanup
 #
-# Use `docker-cleanup -n` for a dry run to see what would be deleted.
+# Use `cleanup -n` for a dry run to see what would be deleted.
 
 untagged_containers() {
 	# Print containers using untagged images: $1 is used with awk's print: 0=line, 1=column 1.

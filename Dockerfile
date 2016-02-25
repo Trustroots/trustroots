@@ -21,7 +21,7 @@ RUN wget https://github.com/Yelp/dumb-init/releases/download/v1.0.0/dumb-init_1.
 RUN dpkg -i dumb-init_*.deb
 
 # Create working directory
-RUN mkdir -p /srv/trustroots
+RUN mkdir -p /trustroots
 
 # Install global node modules
 RUN npm install -g -y gulp --quiet
@@ -29,9 +29,8 @@ RUN npm install -g -y bower --quiet
 RUN npm install -g -y faker --quiet
 
 # Install local node modules
-ADD package.json /tmp/package.json
-RUN cd /tmp && npm install --quiet
-RUN cp -a /tmp/node_modules /srv/app
+ADD package.json /trustroots/package.json
+RUN cd /trustroots && npm install --quiet
 
 # Set environment variables
 ENV NODE_ENV development
@@ -41,8 +40,8 @@ ENV DOMAIN trustroots.dev
 
 # Load application's code in, therefore the previous docker
 # "layer" thats been cached will be used if possible
-WORKDIR /srv/trustroots
-ADD . /srv/trustroots
+WORKDIR /trustroots
+ADD . /trustroots
 
 # Expose ports
 # - Nginx proxy     80
