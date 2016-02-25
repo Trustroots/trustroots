@@ -18,6 +18,7 @@
     "build": "gulp build:dev",
     "build:dev": "gulp build:dev",
     "build:prod": "gulp build:prod",
+    "fontello": "gulp fontello",
     "test": "gulp test",
     "migrate": "migrate",
     "docs": "scripts/generate-docs.sh",
