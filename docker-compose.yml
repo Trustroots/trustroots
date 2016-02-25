@@ -26,6 +26,7 @@ trustroots:
     - DOMAIN=trustroots.dev
     - VIRTUAL_HOST=trustroots.dev
     - VIRTUAL_PORT=3000
+    - NODEMON_LEGACY_WATCH=false
 
 
 ## SMTP Server + Web Interface for viewing and testing emails during development.

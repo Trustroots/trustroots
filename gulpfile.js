@@ -53,10 +53,14 @@ gulp.task('copyConfig', function(done) {
 
 // Nodemon task
 gulp.task('nodemon', function() {
+  if(process.env.NODEMON_LEGACY_WATCH) {
+    console.warn('Using Nodemon Legacy Watch mode to detect file changes. This might slow things down.');
+  }
   return plugins.nodemon({
     script: 'server.js',
     nodeArgs: ['--debug'],
-    ext: 'js,html',
+    ext: 'js html',
+    legacyWatch: process.env.NODEMON_LEGACY_WATCH ? true : false, // Set true for Docker containers
     watch: _.union(defaultAssets.server.views, defaultAssets.server.allJS, defaultAssets.server.config)
   });
 });
