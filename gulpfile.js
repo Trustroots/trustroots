@@ -69,7 +69,7 @@ gulp.task('watch', function() {
   // Add watch rules
   gulp.watch(defaultAssets.server.views).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.allJS, ['jshint']).on('change', plugins.livereload.changed);
-  gulp.watch(defaultAssets.server.fontelloConfig, ['fontello']).on('change', plugins.livereload.changed);
+  gulp.watch(defaultAssets.server.fontelloConfig, ['fontello']);
   gulp.watch(defaultAssets.client.js, ['clean:js', 'scripts']);
   gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
 
@@ -192,7 +192,8 @@ gulp.task('fontello', function(done) {
       assetsOnly: true    // extract from ZipFile only CSS Styles and Fonts exclude config.json, LICENSE.txt, README.txt and demo.html
     }))
     .pipe(plugins.print())
-    .pipe(gulp.dest('public/lib/fontello'));
+    .pipe(gulp.dest('modules/core/client/fonts/fontello'))
+    .pipe(plugins.livereload());
 });
 
 // Run Selenium tasks
@@ -238,12 +239,12 @@ gulp.task('karma', function(done) {
 
 // Build assets for development mode
 gulp.task('build:dev', function(done) {
-  runSequence('env:dev', 'bower', 'jshint', 'fontello', 'clean', ['styles', 'scripts'], done);
+  runSequence('env:dev', 'bower', 'jshint', 'clean', ['styles', 'scripts'], done);
 });
 
 // Build assets for production mode
 gulp.task('build:prod', function(done) {
-  runSequence('env:prod', 'bower', 'jshint', 'fontello', 'templatecache', 'clean', ['styles', 'scripts'], done);
+  runSequence('env:prod', 'bower', 'jshint', 'templatecache', 'clean', ['styles', 'scripts'], done);
 });
 
 // Clean dist css and js files

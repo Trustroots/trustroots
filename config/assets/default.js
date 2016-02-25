@@ -5,8 +5,8 @@ module.exports = {
     lib: {
       css: [
         'public/lib/fontello/css/animation.css',
-        'public/lib/fontello/css/tricons-codes.css',
-        'public/lib/medium-editor/dist/css/medium-editor.css'
+        'public/lib/medium-editor/dist/css/medium-editor.css',
+        'modules/core/client/fonts/fontello/css/tricons-codes.css',
       ],
       js: [
         // Non minified versions
@@ -150,7 +150,7 @@ module.exports = {
     views: ['modules/*/client/views/**/*.html']
     },
   server: {
-    fontelloConfig: 'fontello.json',
+    fontelloConfig: 'modules/core/client/fonts/fontello/config.json',
     gulpConfig: 'gulpfile.js',
     allJS: ['server.js', 'config/**/*.js', 'modules/*/server/**/*.js'],
     models: 'modules/*/server/models/**/*.js',

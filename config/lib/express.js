@@ -3,7 +3,8 @@
 /**
  * Module dependencies.
  */
-var config = require('../config'),
+var _ = require('lodash'),
+    config = require('../config'),
     errorHandler = require('../../modules/core/server/controllers/errors.server.controller'),
     languages = require('../languages/languages.json'),
     express = require('express'),
@@ -46,7 +47,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.maxUploadSize = config.maxUploadSize;
 
   app.locals.jsFiles = config.files.client.js;
-  app.locals.cssFiles = config.files.client.css;
+  app.locals.cssFiles = _.map(config.files.client.css, function(file) { return file.replace('/client', ''); });
 
   // Get 'git rev-parse --short HEAD' (the latest git commit hash) to use as a cache buster
   // @link https://www.npmjs.com/package/git-rev
