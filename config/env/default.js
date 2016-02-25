@@ -15,7 +15,10 @@ module.exports = {
     title: 'Trustroots',
     description: 'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.'
   },
-  maxUploadSize: process.env.MAX_UPLOAD_SIZE || 10000000, // 10MB. Remember to change this to Nginx configs as well
+  maxUploadSize: process.env.MAX_UPLOAD_SIZE || 10*1024*1024, // 10MB. Remember to change this to Nginx configs as well
+  imageProcessor: 'graphicsmagick', // graphicsmagick|imagemagick
+  uploadTmpDir: './tmp/',
+  uploadDir: './modules/users/client/img/profile/uploads/',
   port: process.env.PORT || 3000,
   https: process.env.HTTPS || false,
   sessionSecret: 'MEAN',

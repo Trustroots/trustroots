@@ -1,7 +1,6 @@
 
 <!-- If file drop is available, this covers the whole page area -->
-<div ng-if="!avatarEditor.avatarUploading"
-     ngf-drop
+<div ngf-drop
      ngf-drag-over-class="{accept:'acceptDrop', reject:'rejectDrop', delay:100}"
      ngf-stop-propagation="false"
      ngf-change="avatarEditor.fileSelected($files, $event)"

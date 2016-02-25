@@ -72,6 +72,7 @@ Open [http://trustroots.dev/](http://trustroots.dev/) and [http://trustroots.mai
 - Keep an eye on console in case of compiling errors.
 - To read and debug emails, open [http://trustroots.maildev](http://trustroots.maildev) in your browser. Mails won't leave your Docker container unless you configure mailer settings from `config/env/local.js` to use e.g. [Mandrill](https://mandrillapp.com/) or [Gmail](https://support.google.com/a/answer/176600?hl=en).
 - To read and debug MongoDB use e.g. [Robomongo](https://robomongo.org/) to connect to your container's IP.
+- Docker container has both, [GraphicsMagick](http://www.graphicsmagick.org/) and [ImageMagick](http://www.imagemagick.org/) installed.
 - [Read more](https://github.com/Trustroots/trustroots/wiki/Development)
 
 ### Upgrading

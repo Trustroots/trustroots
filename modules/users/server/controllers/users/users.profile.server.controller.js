@@ -12,11 +12,16 @@ var _ = require('lodash'),
     async = require('async'),
     crypto = require('crypto'),
     sanitizeHtml = require('sanitize-html'),
-    lwip = require('lwip'),
     mkdirp = require('mkdirp'),
-    fs = require('fs'),
     mongoose = require('mongoose'),
+    multer = require('multer'),
+    fs = require('fs'),
     User = mongoose.model('User');
+
+// Load either ImageMagick or GraphicsMagick as an image processor
+// Defaults to GraphicsMagick
+// @link https://github.com/aheckmann/gm#use-imagemagick-instead-of-gm
+var imageProcessor = (config.imageProcessor === 'imagemagic') ? require('gm').subClass({imageMagick: true}) : require('gm');
 
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
@@ -66,7 +71,7 @@ exports.userListingProfileFields = exports.userMiniProfileFields + ' birthdate g
 /**
  * Upload user avatar
  */
-exports.uploadAvatar = function (req, res) {
+exports.avatarUpload = function (req, res) {
 
   if(!req.user) {
     return res.status(403).send({
@@ -74,144 +79,94 @@ exports.uploadAvatar = function (req, res) {
     });
   }
 
-  var userId = req.user._id,
-      acceptedImagesRegex = /\.(gif|jpe?g|png|GIF|JPE?G|PNG)/i,
-      uploadsDir = '/modules/users/img/profile/uploads',
-      uploadsPath = path.resolve('./modules/users/client/img/profile/uploads'), // Returns path without trailing slash!
-      options = {
-        tmpDir:  uploadsPath + '/' + userId + '/tmp/', // tmp dir to upload files to
-        uploadDir: uploadsPath + '/' + userId + '/avatar/', // actual location of the file
-        uploadUrl: uploadsDir + '/' + userId + '/avatar/', // end point for delete route
-        acceptFileTypes: acceptedImagesRegex,
-        inlineFileTypes: acceptedImagesRegex,
-        imageTypes: acceptedImagesRegex,
-        copyImgAsThumb: false, // required
-        minFileSize: 1024, // 1kb
-        maxFileSize: config.maxUploadSize,
-        maxPostSize: config.maxUploadSize,
-        imageVersions: {
-          maxWidth: 2048,
-          maxHeight: 'auto',
-          // These could be enabled once package doesn't just resize, but also crops images
-          // Until that we're doing thumbnails manually
-          // @link https://github.com/arvindr21/blueimp-file-upload-expressjs/issues/29
-          /*
-          '512': { width : 512, height : 512 },
-          '256': { width : 256, height : 256 },
-          '128': { width : 128, height : 128 },
-          '64': { width : 64, height : 64 },
-          '32': { width : 32, height : 32 }
-          */
-        },
-        accessControl: {
-          allowOrigin: '*',
-          allowMethods: 'OPTIONS, HEAD, POST', //GET, PUT, DELETE
-          allowHeaders: 'Content-Type, Content-Range, Content-Disposition'
-        },
-        storage: {
-          type: 'local'
-        },
-        useSSL: config.https
-      },
-      uploader = require('blueimp-file-upload-expressjs')(options);
+  // `req.file` is placed there by Multer middleware.
+  // See `users.server.routes.js` for more details.
+  if(!req.file || !req.file.path) {
+    return res.status(422).send({
+      message: errorHandler.getErrorMessageByKey('unprocessable-entity')
+    });
+  }
+
+  // Each user has their own folder for avatars
+  var uploadDir = path.resolve(config.uploadDir) + '/' + req.user._id + '/avatar'; // No trailing slash
 
   /**
    * Process uploaded file
    */
   async.waterfall([
 
-    // Make tmp directory
+    // Ensure user's upload directory exists
     function(done) {
-      mkdirp(options.tmpDir, function (err) {
+      mkdirp(uploadDir, function (err) {
         done(err);
-      });
-    },
-
-    // Make upload directory
-    function(done) {
-      mkdirp(options.uploadDir, function (err) {
-        done(err);
-      });
-    },
-
-    // Make the upload
-    function(done) {
-      uploader.post(req, res, function (err, obj, redirect) {
-
-        // Send error status 422 - Unprocessable Entity
-        if(err || obj.files.length === 0 || (obj.files[0] && obj.files[0].error)) {
-          return res.status(422).send({
-            message: errorHandler.getErrorMessageByKey('unprocessable-entity')
-          });
-        }
-
-        done(err, obj);
-      });
-    },
-
-    // Open the image
-    function(obj, done) {
-      lwip.open(options.uploadDir + '/' + obj.files[0].name, function(err, image){
-        done(err, image, obj);
-      });
-    },
-
-    // Create orginal jpg file
-    function(image, obj, done) {
-      image.batch()
-      .writeFile(options.uploadDir + 'original.jpg', 'jpg', {quality: 90}, function(err, image, res) {
-        done(err, image, obj);
-      });
-    },
-
-    // Delete the uploaded file
-    function(image, obj, done) {
-      fs.unlink(options.uploadDir + '/' + obj.files[0].name, function (err) {
-        done(err, image, obj);
       });
     },
 
     // Make the thumbnails
-    function(image, obj, done) {
+    function(done) {
+      // Create a queue worker
+      var q = async.queue(function (thumbSize, callback) {
+          /**
+           * Create thumbnail size
+           * Images are resized following quality/size -optimization tips from this article:
+           * @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/
+           */
+          imageProcessor(req.file.path)
+            //.in('jpeg:fancy-upsampling=false')  // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#resampling
+            .autoOrient()
+            .noProfile()                          // No color profile
+            .colorspace('rgb')                    // Not sRGB @link https://ehc.ac/p/graphicsmagick/bugs/331/?limit=25
+            .interlace('None')                    // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#progressive-rendering
+            .filter('Triangle')                   // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#resampling
+            .resize(thumbSize, thumbSize+'^')     // ^ = Dimensions are treated as minimum rather than maximum values. @link http://www.graphicsmagick.org/Magick++/Geometry.html
+            .gravity('Center')
+            .extent(thumbSize, thumbSize)
+            .unsharp(0.25, 0.25, 8, 0.065)        // radius [, sigma, amount, threshold] - @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#sharpening
+            .quality(82)                          // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#quality-and-compression
+            .write(uploadDir + '/' + thumbSize + '.jpg', function (err) {
+              if(err) {
+                console.error('Error while generating thumbnail ' + thumbSize);
+                console.error(err);
+                // Stop the queue
+                q.kill();
+                return callback(new Error('Failed to process image, please try again.'));
+              }
+              else {
+                callback(err, thumbSize);
+              }
 
-      // Note that each() spawns these functions in order but they are processed asynchronously
-      _.each([512, 256, 128, 64, 32], function(size, index, list) {
-        lwip.open(options.uploadDir + 'original.jpg', function(err, image) {
-          if(!err) {
-            var square = Math.min(image.width(), image.height());
-            image
-              .batch()
-              .crop(square, square)
-              .resize(size, size)
-              .writeFile(options.uploadDir + size +'.jpg', 'jpg', {quality: 90}, function(err, image) {
-                // Shorten list so we can keep track on processed count (doesn't keep track on WHICH sizes has been processed)
-                list.pop();
-                // Finish on errors & when list is empty (=all sizes done)
-                if(err || list.length === 0) {
-                  done(err, obj);
-                }
-              });
-          }
-          else {
-            done(err);
-          }
-        });
-      });
+            });
+      }, 3); // How many thumbnails to process simultaneously?
+
+      // Start processing these sizes
+      q.push([2048, 1024, 512, 256, 128, 64, 32]);
+
+      // Assign a final callback to work queue
+      // Done with all the thumbnail sizes, continue...
+      q.drain = done;
     },
 
-    // Send response
-    function(obj, done) {
-      return res.json(obj);
+    // Delete uploaded temp file
+    function(done) {
+      fs.unlink(req.file.path, function (err) {
+        done(err);
+      });
     }
 
   // Catch errors
   ], function(err) {
     if(err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorHandler.getErrorMessage(err) || 'Failed to process image, please try again.'
       });
     }
+
+    // All Done!
+    return res.send({
+      message: 'Avatar image uploaded.'
+    });
   });
+
 
 };
 

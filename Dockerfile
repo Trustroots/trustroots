@@ -9,6 +9,8 @@ RUN apt-get -qq update && apt-get -q install -y \
     build-essential \
     unzip \
     wget \
+    graphicsmagick \
+    imagemagick \
     openssl \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
