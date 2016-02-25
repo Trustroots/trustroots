@@ -34,8 +34,8 @@
      * Gets next page of messages
      * Activates when the last thread element hits the bottom view port
      */
-    function moreMessages(waypoints) {
-      if(vm.messageHandler.nextPage && vm.waypoints) {
+    function moreMessages(waypointsDown) {
+      if(vm.messageHandler.nextPage && waypointsDown) {
         vm.messageHandler.fetchMessages().$promise.then(function(data) {
           addMessages(data);
         });

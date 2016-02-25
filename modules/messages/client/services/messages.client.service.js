@@ -13,8 +13,8 @@
       // Control flow variable; Prevents multiple identical ajax calls
       this.paginationTimeout = false;
       // Used in views for show/hide information
-      this.resolved = '';
-      this.nextPage = '';
+      this.resolved = false;
+      this.nextPage = false;
     }
 
     MessageHandler.prototype = {

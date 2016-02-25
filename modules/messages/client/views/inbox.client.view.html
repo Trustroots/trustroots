@@ -1,9 +1,12 @@
-<section class="container container-spacer">
 
-  <!-- Browsing with non-public account -->
-  <div ng-if="app.user.public === false" ng-include="'/modules/users/views/profile/activate.client.view.html?c=' + app.cacheBust"></div>
+<!-- Browsing with non-public account -->
+<section class="container container-spacer" ng-if="app.user.public === false">
+  <div ng-include="'/modules/users/views/profile/activate.client.view.html?c=' + app.cacheBust"></div>
+</section>
 
-  <div class="row" ng-if="app.user.public === true">
+<section class="container container-spacer" ng-if="app.user.public === true">
+
+  <div class="row">
     <div class="col-xs-12">
 
       <!-- Other threads -->
