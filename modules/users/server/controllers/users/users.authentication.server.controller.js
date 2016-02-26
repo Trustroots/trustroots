@@ -240,7 +240,7 @@ exports.removeOAuthProvider = function(req, res, next) {
   }
 
   // Return error if no provider or wrong provider
-  if(!req.params.provider || !_.contains(['github', 'facebook', 'twitter'], req.params.provider)) {
+  if(!req.params.provider || !_.includes(['github', 'facebook', 'twitter'], req.params.provider)) {
     return res.status(400).send({
       message: 'No provider defined.'
     });
