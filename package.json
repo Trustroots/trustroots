@@ -22,8 +22,7 @@
     "test": "gulp test",
     "migrate": "migrate",
     "docs": "scripts/generate-docs.sh",
-    "update": "npm install --quiet && npm prune",
-    "postinstall": "bower install --allow-root --config.interactive=false && bower prune --allow-root --config.interactive=false"
+    "update": "npm install --quiet && npm prune"
   },
   "dependencies": {
     "acl": "~0.4.9",
