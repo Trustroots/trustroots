@@ -121,7 +121,10 @@
         url: '/confirm-email/:token?signup',
         title: 'Confirm email',
         templateUrl: 'modules/users/views/authentication/confirm-email.client.view.html',
-        footerTransparent: true
+        footerTransparent: true,
+        requiresAuth: false,
+        controller: 'ConfirmEmailController',
+        controllerAs: 'confirmEmail'
       }).
 
       // Password reset

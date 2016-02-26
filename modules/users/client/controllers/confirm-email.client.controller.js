@@ -1,23 +1,36 @@
-'use strict';
+(function() {
+  'use strict';
 
-angular.module('users').controller('ConfirmEmailController', ['$scope', '$http', '$state', '$stateParams', 'Authentication',
-  function($scope, $http, $state, $stateParams, Authentication) {
+  angular
+    .module('users')
+    .controller('ConfirmEmailController', ConfirmEmailController);
 
-    $scope.authentication = Authentication;
+  /* @ngInject */
+  function ConfirmEmailController($rootScope, $http, $state, $stateParams, Authentication) {
+
+    // ViewModel
+    var vm = this;
+
+    // Exposed to the view
+    vm.confirmEmail = confirmEmail;
+    vm.success = null;
+    vm.error = null;
+    vm.isLoading = false;
 
     // Is ?signup at the url (set only for first email confirms)
-    $scope.signup = ($stateParams.signup) ? true : false;
+    vm.signup = ($stateParams.signup) ? true : false;
 
     // Change user password
-    $scope.confirmEmail = function() {
-      $scope.isLoading = true;
-      $scope.success = $scope.error = null;
+    function confirmEmail() {
+      vm.isLoading = true;
+      vm.success = vm.error = null;
 
-      $http.post('/api/auth/confirm-email/' + $stateParams.token).success(function(response) {
+      $http.post('/api/auth/confirm-email/' + $stateParams.token)
+        .success(function(response) {
 
         // Attach user profile
         Authentication.user = response.user;
-        $scope.$emit('userUpdated');
+        $rootScope.$broadcast('userUpdated');
 
         // If successful and this was user's first confirm, welcome them to the community
         if(response.profileMadePublic) {
@@ -25,12 +38,15 @@ angular.module('users').controller('ConfirmEmailController', ['$scope', '$http',
         }
         // If succesfull and wasn't first time, say yay!
         else {
-          $scope.success = 'Your email is now confirmed!';
+          vm.success = true;
         }
 
-      }).error(function(response) {
-        $scope.error = response.message;
-      });
-    };
+        })
+        .error(function(response) {
+          vm.error = true;
+        });
+    }
+
   }
-]);
+
+})();

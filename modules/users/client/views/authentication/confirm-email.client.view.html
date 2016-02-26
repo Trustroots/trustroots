@@ -1,5 +1,5 @@
-<section class="container container-spacer" ng-controller="ConfirmEmailController">
-  <form name="confirmForm" ng-submit="confirmEmail()" class="form-horizontal" novalidate autocomplete="off">
+<section class="container container-spacer">
+  <form name="confirmForm" class="form-horizontal" novalidate autocomplete="off" ng-submit="confirmEmail.confirmEmail()">
     <fieldset>
 
       <div class="row">
@@ -16,16 +16,19 @@
 
           <div class="text-center form-group" ng-hide="success">
 
-            <p class="lead" ng-show="signup">Confirm your email and make your profile visible to others.</p>
-            <p class="lead" ng-hide="signup">Confirm your email.</p>
+            <p class="lead" ng-if="confirmEmail.signup">Confirm your email and make your profile visible to others.</p>
+            <p class="lead" ng-if="!confirmEmail.signup">Confirm your email.</p>
 
-            <button type="submit" class="btn btn-lg btn-primary" ng-disabled="isLoading || error">Confirm</button>
+            <button type="submit" class="btn btn-lg btn-primary" ng-disabled="confirmEmail.isLoading || confirmEmail.error">Confirm</button>
           </div>
-          <div ng-show="error" class="alert alert-danger text-center" role="alert">
-            <strong ng-bind="error"></strong>
+          <div ng-if="confirmEmail.error" class="alert alert-danger text-center" role="alert">
+            <p><strong>Email confirm token is invalid or has expired.</strong></p>
+            <p>Perhaps you already confirmed your email? <span ng-if="app.user">Your current activated email is <strong>{{ app.user.email }}</strong></span></p>
+            <p ng-if="app.user">To send a new confirmation or change your email, go to <a ui-sref="profile-settings">your settings</a>.</p>
+            <p ng-if="!app.user"><a ui-sref="signin">Login first</a> to send a new confirmation or change your email.</p>
           </div>
-          <div ng-show="success" class="alert alert-success text-center" role="alert">
-            <strong ng-bind="success"></strong>
+          <div ng-if="confirmEmail.success" class="alert alert-success text-center" role="alert">
+            <strong>Your email is now confirmed!</strong>
           </div>
 
         </div><!-- /.col -->
