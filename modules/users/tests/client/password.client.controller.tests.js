@@ -1,11 +1,11 @@
-'use strict';
-
 (function() {
+  'use strict';
+
   // Authentication controller Spec
   describe('PasswordController', function() {
     // Initialize global variables
     var PasswordController,
-      scope,
+      $scope,
       $httpBackend,
       $stateParams,
       $location,
@@ -30,8 +30,8 @@
 
     describe('Logged out user', function() {
       beforeEach(inject(function($controller, $rootScope, _$window_, _$stateParams_, _$httpBackend_, _$location_) {
-        // Set a new global scope
-        scope = $rootScope.$new();
+        // Set a new global $scope
+        $scope = $rootScope.$new();
 
         // Point global variables to injected services
         $stateParams = _$stateParams_;
@@ -43,7 +43,7 @@
 
         // Initialize the Authentication controller
         PasswordController = $controller('PasswordController', {
-          $scope: scope
+          $scope: $scope
         });
       }));
 
@@ -59,17 +59,17 @@
         beforeEach(function() {
           // Test expected GET request
           $httpBackend.when('GET', 'modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
-          scope.credentials = credentials;
+          $scope.credentials = credentials;
         });
 
-        it('should clear scope.success and scope.error', function() {
+        it('should clear $scope.success and $scope.error', function() {
 
-          scope.success = 'test';
-          scope.error = 'test';
-          scope.askForPasswordReset();
+          $scope.success = 'test';
+          $scope.error = 'test';
+          $scope.askForPasswordReset();
 
-          expect(scope.success).toBeNull();
-          expect(scope.error).toBeNull();
+          expect($scope.success).toBeNull();
+          expect($scope.error).toBeNull();
         });
 
         describe('POST error', function() {
@@ -82,16 +82,16 @@
               'message': errorMessage
             });
 
-            scope.askForPasswordReset();
+            $scope.askForPasswordReset();
             $httpBackend.flush();
           });
 
           it('should clear form', function() {
-            expect(scope.credentials).toBe(null);
+            expect($scope.credentials).toBe(null);
           });
 
           it('should set error to response message', function() {
-            expect(scope.error).toBe(errorMessage);
+            expect($scope.error).toBe(errorMessage);
           });
         });
 
@@ -105,16 +105,16 @@
               'message': successMessage
             });
 
-            scope.askForPasswordReset();
+            $scope.askForPasswordReset();
             $httpBackend.flush();
           });
 
           it('should clear form', function() {
-            expect(scope.credentials).toBe(null);
+            expect($scope.credentials).toBe(null);
           });
 
           it('should set success to response message', function() {
-            expect(scope.success).toBe(successMessage);
+            expect($scope.success).toBe(successMessage);
           });
         });
       });
@@ -130,28 +130,28 @@
           $httpBackend.when('GET', 'modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
 
           $stateParams.token = token;
-          scope.passwordDetails = passwordDetails;
+          $scope.passwordDetails = passwordDetails;
         });
 
-        it('should clear scope.success and scope.error', function() {
-          scope.success = 'test';
-          scope.error = 'test';
-          scope.resetUserPassword();
+        it('should clear $scope.success and $scope.error', function() {
+          $scope.success = 'test';
+          $scope.error = 'test';
+          $scope.resetUserPassword();
 
-          expect(scope.success).toBeNull();
-          expect(scope.error).toBeNull();
+          expect($scope.success).toBeNull();
+          expect($scope.error).toBeNull();
         });
 
-        it('POST error should set scope.error to response message', function() {
+        it('POST error should set $scope.error to response message', function() {
           var errorMessage = 'Passwords do not match';
           $httpBackend.when('POST', '/api/auth/reset/' + token, passwordDetails).respond(400, {
             'message': errorMessage
           });
 
-          scope.resetUserPassword();
+          $scope.resetUserPassword();
           $httpBackend.flush();
 
-          expect(scope.error).toBe(errorMessage);
+          expect($scope.error).toBe(errorMessage);
         });
 
         describe('POST success', function() {
@@ -164,16 +164,16 @@
             $httpBackend.when('GET', 'modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
             $httpBackend.when('POST', '/api/auth/reset/' + token, passwordDetails).respond(user);
 
-            scope.resetUserPassword();
+            $scope.resetUserPassword();
             $httpBackend.flush();
           });
 
           it('should clear password form', function() {
-            expect(scope.passwordDetails).toBe(null);
+            expect($scope.passwordDetails).toBe(null);
           });
 
           it('should attach user profile', function() {
-            expect(scope.authentication.user).toEqual(user);
+            expect($scope.authentication.user).toEqual(user);
           });
 
           it('should redirect to password reset success view', function() {
