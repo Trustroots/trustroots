@@ -97,7 +97,7 @@ exports.forgot = function(req, res, next) {
       smtpTransport.sendMail(mailOptions, function(err) {
         if (!err) {
           res.send({
-            message: 'We sent you an email with further instructions. If you don\'t see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".'
+            message: 'Password reset sent.'
           });
         } else {
           res.status(400).send({

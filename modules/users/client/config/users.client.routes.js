@@ -132,7 +132,9 @@
         url: '/password/forgot',
         title: 'Reset password',
         templateUrl: 'modules/users/views/password/forgot-password.client.view.html',
-        footerTransparent: true
+        footerTransparent: true,
+        controller: 'ForgotPasswordController',
+        controllerAs: 'forgotPassword'
       }).
       state('reset-invalid', {
         url: '/password/reset/invalid',
@@ -150,7 +152,9 @@
         url: '/password/reset/:token',
         title: 'Reset password',
         templateUrl: 'modules/users/views/password/reset-password.client.view.html',
-        footerTransparent: true
+        footerTransparent: true,
+        controller: 'ResetPasswordController',
+        controllerAs: 'resetPassword'
       });
   }
 
