@@ -196,6 +196,13 @@ module.exports.initSEO = function (app) {
  */
 module.exports.initAgenda = function (app, db) {
 
+  // Don't launch Agenda on test environment
+  // @todo: make it possible to launch this manually with very small interwalls for testing
+  // @todo: similarly for testing purposes, write a stopAgenda() method
+  if(process.env.NODE_ENV !== 'production') {
+    return;
+  }
+
   // Setup agenda
   var agendaWorker = new Agenda({
     db: {
