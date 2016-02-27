@@ -39,7 +39,7 @@
 
     // Used as a cache buster with ng-include
     // Includes a hash of latest git commit
-    vm.cacheBust = vm.appSettings.commit || '';
+    vm.cacheBust = vm.appSettings ? vm.appSettings.commit || '' : '';
 
     /**
      * Determine where to direct user from "home" links
@@ -72,7 +72,7 @@
     /**
      * Snif and apply user changes
      */
-    $scope.$on('userUpdated', function(){
+    $scope.$on('userUpdated', function() {
       vm.user = Authentication.user;
     });
 
