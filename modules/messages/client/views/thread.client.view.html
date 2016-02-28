@@ -73,7 +73,8 @@
               <div class="message-meta">
                 <span ng-if="app.user._id === message.userFrom._id">You</span>
                 <a ng-if="app.user._id !== message.userFrom._id" ui-sref="profile({ username: message.userFrom.username })">{{::message.userFrom.displayName}}</a>
-                — <time am-time-ago="message.created" uib-tooltip="{{ ::message.created | date:'medium'}}" tooltip-placement="bottom"></time>
+                —
+                <span tr-time="message.created"></span>
               </div>
 
               <div class="message-content panel panel-default" zum-waypoint="wp" offset="15%" up="next">
