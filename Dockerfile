@@ -37,7 +37,7 @@ ENV NODE_ENV development
 ENV DB_1_PORT_27017_TCP_ADDR mongodb
 ENV PORT 3000
 ENV DOMAIN trustroots.dev
-ENV NODEMON_LEGACY_WATCH false
+ENV NODEMON_LEGACY_WATCH true
 
 # Load application's code in, therefore the previous docker
 # "layer" thats been cached will be used if possible
