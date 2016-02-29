@@ -20,6 +20,7 @@ addons:
     - g++-4.8
     - gcc-4.8
     - clang
+    - graphicsmagick
 before_install:
   - gem update --system
   - npm i nsp -g
