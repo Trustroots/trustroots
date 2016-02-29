@@ -90,9 +90,9 @@ $ npm run migrate     # Migrate database up
 ...or simply `bash scripts/update.sh` which does this all for you.
 
 ### Running tests
-- `gulp test` (both server & client)
-- `gulp test:server`
-- `gulp test:client`
+- `npm run test` (both server & client)
+- `npm run test:server`
+- `npm run test:client`
 
 ### Problems
 
