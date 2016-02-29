@@ -14,6 +14,15 @@ var _ = require('lodash'),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
 
+// Replace mailer with Stub mailer transporter
+// Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
+// it with the sendMail callback. This is useful for testing the emails before actually sending anything.
+// @link https://github.com/andris9/nodemailer-stub-transport
+if (process.env.NODE_ENV === 'test') {
+  var stubTransport = require('nodemailer-stub-transport');
+  config.mailer.options = stubTransport();
+}
+
 /**
  * Signup
  */
@@ -46,6 +55,11 @@ exports.signup = function(req, res) {
       // For security measurement we remove the roles from the req.body object
       delete req.body.roles;
 
+      // These shouldn't be there neither
+      delete req.body.avatarUploaded;
+      delete req.body.created;
+      delete req.body.updated;
+
       // Init Variables
       var user = new User(req.body);
       var message = null;
@@ -54,7 +68,7 @@ exports.signup = function(req, res) {
       user.emailToken = token;
       user.public = false;
       user.provider = 'local';
-      user.displayName = user.firstName + ' ' + user.lastName;
+      user.displayName = user.firstName.trim() + ' ' + user.lastName.trim();
       user.displayUsername = req.body.username;
 
       // Just to simplify email confirm process later

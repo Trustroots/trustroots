@@ -16,7 +16,19 @@ var _ = require('lodash'),
     mongoose = require('mongoose'),
     multer = require('multer'),
     fs = require('fs'),
+    multer = require('multer'),
+    os = require('os'),
+    uploadFileFilter = require(path.resolve('./config/lib/multer')).uploadFileFilter,
     User = mongoose.model('User');
+
+// Replace mailer with Stub mailer transporter
+// Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
+// it with the sendMail callback. This is useful for testing the emails before actually sending anything.
+// @link https://github.com/andris9/nodemailer-stub-transport
+if (process.env.NODE_ENV === 'test') {
+  var stubTransport = require('nodemailer-stub-transport');
+  config.mailer.options = stubTransport();
+}
 
 // Load either ImageMagick or GraphicsMagick as an image processor
 // Defaults to GraphicsMagick
@@ -67,6 +79,38 @@ exports.userMiniProfileFields = [
 
 // Mini + a few fields we'll need at listings
 exports.userListingProfileFields = exports.userMiniProfileFields + ' birthdate gender tagline';
+
+/**
+ * Middleware to validate+process avatar upload field
+ */
+exports.avatarUploadField = function (req, res, next) {
+
+  // Create Multer instance
+  // - Destination folder will default to `os.tmpdir()` if no configuration path available
+  // - Destination filename will default to 16 bytes of
+  //   random data as a hex-string (e.g. a087fda2cf19f341ddaeacacab285acc)
+  //   without file-extension.
+  var upload = multer({
+      dest: config.uploadTmpDir || os.tmpdir(),
+      limits: {
+        fileSize: config.maxUploadSize // max file size in bytes
+      },
+      fileFilter: uploadFileFilter
+    }).single('avatar');
+
+  upload(req, res, function (err) {
+    // An error occurred when uploading
+    if (err) {
+      return res.status(400).send({
+        message: (err.field && err.field === 'fieldThatDoesntWork') ? '`avatar` field missing from the API call.' : errorHandler.getErrorMessageByKey('default')
+      });
+    }
+
+    // Everything went fine
+    next();
+  });
+};
+
 
 /**
  * Upload user avatar
@@ -188,8 +232,8 @@ exports.update = function(req, res) {
   // If user is changing email, check if it's available
   function(done) {
 
-    // Check only if email changed
-    if(req.body.email !== req.user.email) {
+    // Check if email changed and proceed with extra checks if so
+    if(req.body.email && req.body.email !== req.user.email) {
       User.findOne({
         $or: [
           { emailTemporary: req.body.email.toLowerCase() },
@@ -225,7 +269,7 @@ exports.update = function(req, res) {
   function(done) {
 
     // Generate only if email changed
-    if(req.body.email !== req.user.email) {
+    if(req.body.email && req.body.email !== req.user.email) {
       crypto.randomBytes(20, function(err, buffer) {
         var token = buffer.toString('hex');
         done(err, token, req.body.email);
@@ -297,11 +341,13 @@ exports.update = function(req, res) {
             delete user.resetPasswordToken;
             delete user.resetPasswordExpires;
             delete user.emailToken;
-            res.json(user);
+            done(null, false, user);
           }
         });
       }
-      done(err, token, user);
+      else {
+        done(err, token, user);
+      }
     });
 
   },
@@ -325,7 +371,7 @@ exports.update = function(req, res) {
       });
     }
     else {
-      done(null, false, false, false);
+      done(null, false, user, false);
     }
   },
 
@@ -339,7 +385,7 @@ exports.update = function(req, res) {
       });
     }
     else {
-      done(null, false, false, false);
+      done(null, false, false, user);
     }
   },
 
@@ -361,12 +407,17 @@ exports.update = function(req, res) {
       };
       smtpTransport.sendMail(mailOptions, function(err) {
         smtpTransport.close(); // close the connection pool
-        done(err);
+        done(err, user);
       });
     }
     else {
-      done(null);
+      done(null, user);
     }
+  },
+
+  // Return user
+  function(user, done) {
+    return res.json(user);
   },
 
   ], function(err) {

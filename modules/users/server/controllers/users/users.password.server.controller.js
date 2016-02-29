@@ -13,6 +13,15 @@ var path = require('path'),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
 
+// Replace mailer with Stub mailer transporter
+// Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
+// it with the sendMail callback. This is useful for testing the emails before actually sending anything.
+// @link https://github.com/andris9/nodemailer-stub-transport
+if (process.env.NODE_ENV === 'test') {
+  var stubTransport = require('nodemailer-stub-transport');
+  config.mailer.options = stubTransport();
+}
+
 /**
  * Forgot for reset password (forgot POST)
  */
