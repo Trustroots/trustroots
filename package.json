@@ -24,7 +24,7 @@
     "test:server": "gulp test:server",
     "migrate": "migrate",
     "docs": "scripts/generate-docs.sh",
-    "update": "npm install --quiet && npm prune",
+    "update": "npm install --quiet && npm prune && migrate",
     "postinstall": "bower install --allow-root --config.interactive=false && bower prune --allow-root --config.interactive=false"
   },
   "dependencies": {

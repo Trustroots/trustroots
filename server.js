@@ -36,7 +36,6 @@ mongoose.connect(function(db) {
   // Logging initialization
   console.log(chalk.white('--'));
   console.log(chalk.green(new Date()));
-  console.log(chalk.green('Trustroots is rolling now.'));
   console.log(chalk.green('Environment:\t\t' + process.env.NODE_ENV));
   console.log(chalk.green('Database:\t\t' + config.db.uri));
   console.log(chalk.green('HTTPS:\t\t\t' + (config.https ? 'on' : 'off')));
@@ -46,5 +45,7 @@ mongoose.connect(function(db) {
 
   // Reset console color
   console.log(chalk.white('--'));
+
+  console.log(chalk.white('Trustroots is up and running now.'));
 
 });

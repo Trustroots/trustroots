@@ -56,10 +56,12 @@ This will add these lines to your `/etc/hosts` file and it will ask for sudo pas
 
 This will allow you to access Trustroots Node app via Nginx proxy giving you similar setup to our production environment.
 
+To manually check IP, run `docker-machine ip default`
+
 > Tip: If you would like to skip Nginx, you can access NodeJS directly with `http://[DOCKER-MACHINE-IP]:3000/`
 > If you're OSX user, you need to follow [these instructions for OSX](https://labs.ctl.io/tutorials/docker-on-the-mac-without-boot2docker/) (not required on Linux).
 
-##### 4. Done!
+##### 5. Done!
 
 Open [http://trustroots.dev/](http://trustroots.dev/) and [http://trustroots.maildev/](http://trustroots.maildev/) in your browser.
 
@@ -67,6 +69,7 @@ Open [http://trustroots.dev/](http://trustroots.dev/) and [http://trustroots.mai
 
 - Hit `Ctrl+C` to turn off containers.
 - Type `docker-compose up` to start them up again. You might want to run containers as daemon: `docker-compose up -d` and then attach to Node container to see the logs: `docker-compose logs trustroots`. Otherwise you'll see logs from all the containers. You can use a helper script: `scripts/docker/up.sh`
+- If you see a lot of `Run migrate DB script on update` coming from Nginx container, it means NodeJS isn't up yet or it has stopped due error. You should see "Trustroots is up and running now." once Trustroots is really running.
 - Type `docker-compose build` to rebuild them to have fresh install.
 - When you do changes to any files, they get recompiled and the browser is refreshed. If this step feels too slow for your needs, it's because of Docker. This step is faster on local [install](INSTALL.md) so you might want to consider that.
 - Keep an eye on console in case of compiling errors.
@@ -78,19 +81,20 @@ Open [http://trustroots.dev/](http://trustroots.dev/) and [http://trustroots.mai
 ### Upgrading
 
 ```bash
-docker-compose run trustroots npm update
+git pull
+docker-compose run trustroots npm run update
 ```
 
 ### Running tests
 
 ```bash
-docker-compose run trustroots npm test
+docker-compose run trustroots npm run test
 ```
 
 ### Generate API documentation
 
 ```bash
-docker-compose run trustroots npm docs
+docker-compose run trustroots npm run docs
 ```
 
 Open [http://trustroots.dev/developers/api/](http://trustroots.dev/developers/api/) in your browser.
