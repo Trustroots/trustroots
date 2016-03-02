@@ -50,6 +50,11 @@
     // Fixing facebook bug with redirect
     if (window.location.hash === '#_=_') window.location.hash = '';
 
+    // FastClick - Polyfill to remove click delays on browsers with touch UIs
+    // Attach polyfill to `<body>`
+    // @link https://github.com/ftlabs/fastclick
+    FastClick.attach(document.body);
+
     // Then init the app
     angular.bootstrap(document, [ApplicationConfiguration.applicationModuleName]);
   });
