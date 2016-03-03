@@ -203,23 +203,13 @@ describe('User CRUD tests', function () {
 
               // POST does the actual job
               agent.post('/api/auth/confirm-email/WRONG_TOKEN')
-                .expect(200)
+                .expect(400)
                 .end(function (confirmEmailPostErr, confirmEmailPostRes) {
                   if (confirmEmailPostErr) {
                     return done(confirmEmailPostErr);
                   }
 
-                  console.log(confirmEmailPostRes);
-
-                  // User should now be public
-                  //confirmEmailPostRes.body.profileMadePublic.should.equal(true);
-                  //confirmEmailPostRes.body.user.public.should.equal(true);
-                  //confirmEmailPostRes.body.user.emailTemporary.should.be.empty();
-
-                  // Sensitive information should be not sent to the client
-                  //should.not.exist(confirmEmailPostRes.body.user.emailToken);
-                  //should.not.exist(confirmEmailPostRes.body.user.password);
-                  //should.not.exist(confirmEmailPostRes.body.user.salt);
+                  confirmEmailPostRes.body.message.should.equal('Email confirm token is invalid or has expired.');
 
                   return done();
                 });
