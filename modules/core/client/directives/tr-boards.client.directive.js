@@ -120,7 +120,7 @@
           'mountainforest': {
             // https://unsplash.com/photos/VNseEaTt9w4
             'name': 'Sven Scheuermeier',
-            'url': 'hhttps://unsplash.com/sveninho',
+            'url': 'https://unsplash.com/sveninho',
             'file': 'ss-mountainforest.jpg',
             'license': 'CC',
             'license_url': 'https://creativecommons.org/publicdomain/zero/1.0/', // https://unsplash.com/license
