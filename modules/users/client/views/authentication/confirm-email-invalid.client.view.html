@@ -14,22 +14,11 @@
       <div class="row">
         <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
 
-          <div class="text-center form-group" ng-if="!confirmEmail.success">
-
-            <p class="lead" ng-if="confirmEmail.signup">Confirm your email and make your profile visible to others.</p>
-            <p class="lead" ng-if="!confirmEmail.signup">Confirm your email.</p>
-
-            <button type="submit" class="btn btn-lg btn-primary" ng-disabled="confirmEmail.isLoading || confirmEmail.error">Confirm</button>
-          </div>
-          <div ng-if="confirmEmail.error" class="alert alert-danger text-center" role="alert">
+          <div class="alert alert-danger text-center" role="alert">
             <p><strong>Email confirm token is invalid or has expired.</strong></p>
             <p>Perhaps you already confirmed your email? <span ng-if="app.user">Your current activated email is <strong>{{ app.user.email }}</strong></span></p>
             <p ng-if="app.user">To send a new confirmation or change your email, go to <a ui-sref="profile-settings">your settings</a>.</p>
             <p ng-if="!app.user"><a ui-sref="signin">Login first</a> to send a new confirmation or change your email.</p>
-          </div>
-          <div ng-if="confirmEmail.success" class="alert alert-success text-center" role="alert">
-            <p><strong>Your email is now confirmed!</strong></p>
-            <p><a ui-sref="profile-edit">Edit your profile</a></p>
           </div>
 
         </div><!-- /.col -->

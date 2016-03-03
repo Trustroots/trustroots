@@ -28,18 +28,18 @@
       $http.post('/api/auth/confirm-email/' + $stateParams.token)
         .success(function(response) {
 
-        // Attach user profile
-        Authentication.user = response.user;
-        $rootScope.$broadcast('userUpdated');
+          // Attach user profile
+          Authentication.user = response.user;
+          $rootScope.$broadcast('userUpdated');
 
-        // If successful and this was user's first confirm, welcome them to the community
-        if(response.profileMadePublic) {
-          $state.go('welcome');
-        }
-        // If succesfull and wasn't first time, say yay!
-        else {
-          vm.success = true;
-        }
+          // If successful and this was user's first confirm, welcome them to the community
+          if(response.profileMadePublic) {
+            $state.go('welcome');
+          }
+          // If succesfull and wasn't first time, say yay!
+          else {
+            vm.success = true;
+          }
 
         })
         .error(function(response) {

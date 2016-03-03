@@ -18,7 +18,7 @@
 
         <h3>Your data is yours</h3>
 
-        Users on Trustroots can download their profile, contact and hosting data through the Account settings.
+        Users on Trustroots can download their profile, contact and hosting data through the <span ng-if="!app.user">Account settings</span><a ui-sref="profile-settings" ng-if="app.user">Account settings</a>.
 
         <br><br>
 

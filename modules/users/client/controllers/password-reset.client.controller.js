@@ -22,22 +22,24 @@
       vm.error = null;
       vm.isLoading = true;
 
-      $http.post('/api/auth/reset/' + $stateParams.token, vm.passwordDetails).success(function(response) {
-        // Clear form
-        vm.passwordDetails = null;
+      $http.post('/api/auth/reset/' + $stateParams.token, vm.passwordDetails)
+        .success(function(response) {
+          // Clear form
+          vm.passwordDetails = null;
 
-        // Attach user profile
-        Authentication.user = response;
+          // Attach user profile
+          Authentication.user = response;
 
-        // Notify app
-        $rootScope.$broadcast('userUpdated');
+          // Notify app
+          $rootScope.$broadcast('userUpdated');
 
-        // And redirect to the success page
-        $state.go('reset-success');
-      }).error(function(response) {
-        vm.error = response.message;
-        vm.isLoading = false;
-      });
+          // And redirect to the success page
+          $state.go('reset-success');
+        })
+        .error(function(response) {
+          vm.error = response.message;
+          vm.isLoading = false;
+        });
     }
   }
 

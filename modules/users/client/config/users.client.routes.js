@@ -126,6 +126,13 @@
         controller: 'ConfirmEmailController',
         controllerAs: 'confirmEmail'
       }).
+      state('confirm-email-invalid', {
+        url: '/confirm-email-invalid',
+        title: 'Confirm email invalid',
+        templateUrl: 'modules/users/views/authentication/confirm-email-invalid.client.view.html',
+        footerTransparent: true,
+        requiresAuth: false
+      }).
 
       // Password reset
       state('forgot', {

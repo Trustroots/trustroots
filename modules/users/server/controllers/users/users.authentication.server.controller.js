@@ -141,7 +141,11 @@ exports.signup = function(req, res) {
     function(user, done) {
       req.login(user, function(err) {
         if (!err) {
+          // Remove sensitive data befor sending user
+          user = user.toObject();
           delete user.emailToken;
+          delete user.password;
+          delete user.salt;
           res.json(user);
         }
         done(err);
@@ -294,6 +298,7 @@ exports.removeOAuthProvider = function(req, res, next) {
  * Confirm email GET from email token
  */
 exports.validateEmailToken = function(req, res) {
+
   User.findOne({
     emailToken: req.params.token
   }, function(err, user) {
@@ -324,45 +329,7 @@ exports.confirmEmail = function(req, res, next) {
           // If users profile was hidden, it means it was first confirmation email after registration.
           result.profileMadePublic = !user.public;
 
-          // We can't do this here because we've got user document with password and we'd just override it:
-          //user.save(function(err)
-          // Instead we'll do normal mongoose update with previously fetched user id
-          User.findByIdAndUpdate(
-            user._id,
-            {
-              $unset: {
-                emailTemporary: 1,
-                emailToken: 1
-              },
-              $set: {
-                public: true,
-                // Replace old email with new one
-                email: user.emailTemporary,
-                // @todo: this should be done at user.server.model.js
-                emailHash: crypto.createHash('md5').update( user.emailTemporary.trim().toLowerCase() ).digest('hex')
-              }
-            },
-            function (err, user) {
-              if (err) {
-                return res.status(400).send({
-                  message: errorHandler.getErrorMessage(err)
-                });
-              } else {
-                req.login(user, function(err) {
-                  if (!err) {
-                    // Return authenticated user
-                    result.user = user;
-
-                    // Remove some fields before returning user
-                    delete result.user.resetPasswordToken;
-                    delete result.user.resetPasswordExpires;
-
-                    res.json(result);
-                  }
-                  done(err);
-                });
-              }
-            });
+          done(null, result, user);
 
         } else {
           return res.status(400).send({
@@ -370,6 +337,56 @@ exports.confirmEmail = function(req, res, next) {
           });
         }
       });
+    },
+
+    // Update user
+    // We can't do regular `user.save()` here because we've got user document with password and we'd just override it:
+    // Instead we'll do normal Mongoose update with previously fetched user ID
+    function (result, user, done) {
+
+      User.findOneAndUpdate(
+        { _id: user._id },
+        {
+          $unset: {
+            emailTemporary: 1,
+            emailToken: 1
+          },
+          $set: {
+            public: true,
+            // Replace old email with new one
+            email: user.emailTemporary,
+            // @todo: this should be done at user.server.model.js
+            emailHash: crypto.createHash('md5').update( user.emailTemporary.trim().toLowerCase() ).digest('hex')
+          }
+        },
+        {
+          // Return the document after updates if `new = true`
+          new: true
+        },
+        function (err, modifiedUser) {
+          done(err, result, modifiedUser);
+        });
+    },
+
+    function (result, user, done) {
+      req.login(user, function(err) {
+        done(err, result, user);
+      });
+    },
+
+    function (result, user, done) {
+
+      // Return authenticated user
+      result.user = user.toObject();
+
+      // Remove some fields before returning user
+      delete result.user.resetPasswordToken;
+      delete result.user.resetPasswordExpires;
+      delete result.user.emailToken;
+      delete result.user.password;
+      delete result.user.salt;
+
+      res.json(result);
     }
   ], function(err) {
     if (err) {

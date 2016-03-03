@@ -75,10 +75,156 @@ describe('User CRUD tests', function () {
         signupRes.body.public.should.equal(false);
         signupRes.body.created.should.not.be.empty();
         should.not.exist(signupRes.body.updated);
+        // Sensitive information should be not sent to the client
+        should.not.exist(signupRes.body.emailToken);
+        should.not.exist(signupRes.body.password);
+        should.not.exist(signupRes.body.salt);
         // Assert we have just the default 'user' role
         signupRes.body.roles.should.be.instanceof(Array).and.have.lengthOf(1);
         signupRes.body.roles.indexOf('user').should.equal(0);
         done();
+      });
+  });
+
+  it('should be able to register a new user and confirm email with token and user should become public', function (done) {
+
+    _user.username = 'Register_New_User';
+    _user.email = 'register_new_user_@test.com';
+
+    agent.post('/api/auth/signup')
+      .send(_user)
+      .expect(200)
+      .end(function (signupErr, signupRes) {
+        // Handle signpu error
+        if (signupErr) {
+          return done(signupErr);
+        }
+
+        signupRes.body.public.should.equal(false);
+        should.not.exist(signupRes.body.emailToken);
+        should.not.exist(signupRes.body.password);
+        should.not.exist(signupRes.body.salt);
+        signupRes.body.emailTemporary.should.equal(_user.email);
+
+        User.findOne({ username: _user.username.toLowerCase() }, function(err, userRes1) {
+          if (err) {
+            return done(err);
+          }
+
+          userRes1.public.should.equal(false);
+          userRes1.email.should.not.be.empty();
+          userRes1.emailToken.should.not.be.empty();
+
+          // GET should give us redirect
+          agent.get('/api/auth/confirm-email/' + userRes1.emailToken)
+            .expect(302)
+            .end(function (confirmEmailPostErr, confirmEmailGetRes) {
+              if (confirmEmailPostErr) {
+                return done(confirmEmailPostErr);
+              }
+
+              // NodeJS v4 changed the status code representation so we must check
+              // before asserting, to be comptabile with all node versions.
+              if (process.version.indexOf('v4') === 0 || process.version.indexOf('v5') === 0) {
+                confirmEmailGetRes.text.should.equal('Found. Redirecting to /confirm-email/' + userRes1.emailToken);
+              } else {
+                confirmEmailGetRes.text.should.equal('Moved Temporarily. Redirecting to /confirm-email/' + userRes1.emailToken);
+              }
+
+              // POST does the actual job
+              agent.post('/api/auth/confirm-email/' + userRes1.emailToken)
+                .expect(200)
+                .end(function (confirmEmailPostErr, confirmEmailPostRes) {
+                  if (confirmEmailPostErr) {
+                    return done(confirmEmailPostErr);
+                  }
+
+                  // User should now be public
+                  confirmEmailPostRes.body.profileMadePublic.should.equal(true);
+                  confirmEmailPostRes.body.user.public.should.equal(true);
+                  confirmEmailPostRes.body.user.emailTemporary.should.be.empty();
+
+                  // Sensitive information should be not sent to the client
+                  should.not.exist(confirmEmailPostRes.body.user.emailToken);
+                  should.not.exist(confirmEmailPostRes.body.user.password);
+                  should.not.exist(confirmEmailPostRes.body.user.salt);
+
+                  return done();
+                });
+              });
+          });
+      });
+  });
+
+  it('should be able to register a new user and confirming email with wrong token should redirect error and yeld an error and user should not be public', function (done) {
+
+    _user.username = 'Register_New_User';
+    _user.email = 'register_new_user_@test.com';
+
+    agent.post('/api/auth/signup')
+      .send(_user)
+      .expect(200)
+      .end(function (signupErr, signupRes) {
+        // Handle signpu error
+        if (signupErr) {
+          return done(signupErr);
+        }
+
+        signupRes.body.public.should.equal(false);
+        should.not.exist(signupRes.body.emailToken);
+        should.not.exist(signupRes.body.password);
+        should.not.exist(signupRes.body.salt);
+        signupRes.body.emailTemporary.should.equal(_user.email);
+
+        User.findOne({ username: _user.username.toLowerCase() }, function(err, userRes1) {
+          if (err) {
+            return done(err);
+          }
+
+          userRes1.public.should.equal(false);
+          userRes1.email.should.not.be.empty();
+          userRes1.emailToken.should.not.be.empty();
+
+          // GET should give us redirect
+          agent.get('/api/auth/confirm-email/WRONG_TOKEN')
+            .expect(302)
+            .end(function (confirmEmailPostErr, confirmEmailGetRes) {
+              if (confirmEmailPostErr) {
+                return done(confirmEmailPostErr);
+              }
+
+              // NodeJS v4 changed the status code representation so we must check
+              // before asserting, to be comptabile with all node versions.
+              if (process.version.indexOf('v4') === 0 || process.version.indexOf('v5') === 0) {
+                confirmEmailGetRes.text.should.equal('Found. Redirecting to /confirm-email-invalid');
+              } else {
+                confirmEmailGetRes.text.should.equal('Moved Temporarily. Redirecting to /confirm-email-invalid');
+              }
+
+              // POST does the actual job
+              agent.post('/api/auth/confirm-email/WRONG_TOKEN')
+                .expect(200)
+                .end(function (confirmEmailPostErr, confirmEmailPostRes) {
+                  if (confirmEmailPostErr) {
+                    return done(confirmEmailPostErr);
+                  }
+
+                  console.log(confirmEmailPostRes);
+
+                  // User should now be public
+                  //confirmEmailPostRes.body.profileMadePublic.should.equal(true);
+                  //confirmEmailPostRes.body.user.public.should.equal(true);
+                  //confirmEmailPostRes.body.user.emailTemporary.should.be.empty();
+
+                  // Sensitive information should be not sent to the client
+                  //should.not.exist(confirmEmailPostRes.body.user.emailToken);
+                  //should.not.exist(confirmEmailPostRes.body.user.password);
+                  //should.not.exist(confirmEmailPostRes.body.user.salt);
+
+                  return done();
+                });
+              });
+          });
       });
   });
 
@@ -91,6 +237,11 @@ describe('User CRUD tests', function () {
         if (signinErr) {
           return done(signinErr);
         }
+
+        // Sensitive information should be not sent to the client
+        should.not.exist(signinRes.body.emailToken);
+        should.not.exist(signinRes.body.password);
+        should.not.exist(signinRes.body.salt);
 
         // Logout
         agent.get('/api/auth/signout')
@@ -146,29 +297,6 @@ describe('User CRUD tests', function () {
               signoutRes.text.should.equal('Found. Redirecting to /');
             } else {
               signoutRes.text.should.equal('Moved Temporarily. Redirecting to /');
-            }
-
-            return done();
-          });
-      });
-  });
-
-  it('should not be able to retrieve a list of users if not admin', function (done) {
-    agent.post('/api/auth/signin')
-      .send(credentials)
-      .expect(200)
-      .end(function (signinErr, signinRes) {
-        // Handle signin error
-        if (signinErr) {
-          return done(signinErr);
-        }
-
-        // Request list of users
-        agent.get('/api/users')
-          .expect(403)
-          .end(function (usersGetErr, usersGetRes) {
-            if (usersGetErr) {
-              return done(usersGetErr);
             }
 
             return done();
