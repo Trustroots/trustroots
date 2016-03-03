@@ -36,7 +36,7 @@
           </div>
           <div class="form-group">
             <button type="submit" class="btn btn-primary" ng-disabled="settingsEmail.email.$invalid && settingsEmail.email.$dirty">Change email</button>
-            <button class="btn btn-inverse" ng-if="settings.user.emailTemporary" ng-click="settings.resendUserEmailConfirm($event)">Resend confirmation</button>
+            <button class="btn btn-default" ng-if="settings.user.emailTemporary" ng-click="settings.resendUserEmailConfirm($event)">Resend confirmation</button>
           </div>
         </fieldset>
       </form>
@@ -88,7 +88,7 @@
           </div>
           <div class="form-group">
             <label for="newPassword" class="sr-only">New Password</label>
-            <input type="password" id="newPassword" name="newPassword" class="form-control" ng-model="settings.newPassword" placeholder="New Password" popover="New password must be 8 or more characters."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="settings.changeUserPasswordLoading">
+            <input type="password" id="newPassword" name="newPassword" class="form-control" ng-model="settings.newPassword" placeholder="New Password" uib-popover="New password must be 8 or more characters."  popover-trigger="focus" popover-placement="right" popover-append-to-body="true" ng-disabled="settings.changeUserPasswordLoading">
           </div>
           <div class="form-group">
             <label for="verifyPassword" class="sr-only">Verify Password</label>

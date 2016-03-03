@@ -1,0 +1,65 @@
+trustroots:
+  restart: always
+  build: .
+  # Mount the app dir in the container so our changes
+  #  to the app code are also changed in the container
+  #
+  # Mount node_modules separately as a data volume, so
+  #  that they won't get overwritten by app directory
+  #  Read more: http://stackoverflow.com/a/32785014/1984644
+  volumes:
+    - ./:/trustroots
+    - /trustroots/node_modules
+  working_dir: /trustroots/
+  command: npm start
+  links:
+    - mongodb:mongodb
+    - maildev:maildev
+  ports:
+    - "3000:3000"
+    - "5858:5858"
+    - "35729:35729"
+  environment:
+    - NODE_ENV=development
+    - DB_1_PORT_27017_TCP_ADDR=mongodb
+    - PORT=3000
+    - DOMAIN=trustroots.dev
+    - VIRTUAL_HOST=trustroots.dev
+    - VIRTUAL_PORT=3000
+    - NODEMON_LEGACY_WATCH=true
+
+
+## SMTP Server + Web Interface for viewing and testing emails during development.
+## http://djfarrelly.github.io/MailDev/
+maildev:
+  image: djfarrelly/maildev
+  restart: always
+  ports:
+    - "1080:80"
+    - "1025:25"
+  environment:
+    - VIRTUAL_HOST=trustroots.maildev
+    - VIRTUAL_PORT=80
+
+## Database container
+mongodb:
+  image: mongo
+  restart: always
+  ports:
+    - "27017:27017"
+  command: "--smallfiles --logpath=/dev/null"
+
+## Nginx proxy
+## See settings per host from ./scripts/docker/nginx/*
+## https://github.com/jwilder/nginx-proxy
+nginx:
+  image: jwilder/nginx-proxy
+  restart: always
+  links:
+    - trustroots
+  volumes:
+    - /var/run/docker.sock:/tmp/docker.sock:ro
+    - ./scripts/docker/nginx/trustroots.dev:/etc/nginx/vhost.d/trustroots.dev
+    - ./scripts/docker/nginx/trustroots.dev_location:/etc/nginx/vhost.d/trustroots.dev_location
+  ports:
+    - "80:80"

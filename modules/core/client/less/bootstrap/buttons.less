@@ -2,27 +2,43 @@
  * Buttons
  */
 .btn {
-  font-family: @font-family-brand;
-  font-weight: 400;
-  font-style: normal;
-  border: 0;
-  &.btn-primary {
+  .font-brand-regular();
+  text-shadow: none;
+  &, &:hover {
     .box-shadow(none);
-    text-shadow: 1px 1px 1px darken(@btn-primary-bg, 7%);
-    &:hover {
-      .box-shadow(none);
-    }
   }
+
   &.btn-default {
-    .box-shadow(none);
-    text-shadow: 1px 1px 1px darken(@btn-default-bg, 7%);
     &:hover {
-      .box-shadow(none);
+      border-color: @btn-default-border;
     }
   }
+
+  // New button styles
   &.btn-inverse {
-    .button-variant(@brand-primary; #fff; #fff);
-    text-shadow: none;
+    .button-variant(@btn-inverse-color; @btn-inverse-bg; @btn-inverse-border);
+    &:hover {
+      border-color: rgba(red(@btn-inverse-border), green(@btn-inverse-border), blue(@btn-inverse-border), .8);
+      background-color: rgba(red(@btn-inverse-border), green(@btn-inverse-border), blue(@btn-inverse-border), .1);
+    }
+  }
+  &.btn-inverse-primary {
+    .button-variant(@btn-inverse-primary-color; @btn-inverse-primary-bg; @btn-inverse-primary-border);
+    &:hover {
+      border-color: rgba(red(@btn-inverse-primary-border), green(@btn-inverse-primary-border), blue(@btn-inverse-primary-border), .8);
+      background-color: rgba(red(@btn-inverse-primary-border), green(@btn-inverse-primary-border), blue(@btn-inverse-primary-border), .1);
+    }
+  }
+
+  // Special colors for buttons appended to inputs
+  &.btn-input {
+    .button-variant(@brand-primary; @input-bg; @input-border);
+  }
+
+  // Bigger button size `action`
+  &.btn-action {
+    padding: 15px 30px;
+    font-size: 20px;
   }
 }
 // Fix problem with inverse button hover state covering input border

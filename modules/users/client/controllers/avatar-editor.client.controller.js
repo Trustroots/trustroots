@@ -6,7 +6,7 @@
     .controller('AvatarEditorController', AvatarEditorController);
 
   /* @ngInject */
-  function AvatarEditorController($scope, $modalInstance, $timeout, Upload, messageCenterService, user, appSettings) {
+  function AvatarEditorController($scope, $log, $uibModalInstance, $timeout, Upload, messageCenterService, user, appSettings) {
 
     var lastAvatarSource = user.avatarSource,
         fileAvatar = {};
@@ -25,7 +25,7 @@
      * Dismiss modal
      */
     function dismissModal() {
-      $modalInstance.dismiss('cancel');
+      $uibModalInstance.dismiss('cancel');
     }
 
     /**
@@ -40,26 +40,25 @@
         vm.upload = Upload.upload({
           url: '/api/users-avatar',
           method: 'POST',
-          headers : {
+          headers: {
             'Content-Type': (fileAvatar.type !== '' ? fileAvatar.type : 'application/octet-stream')
           },
-          file: fileAvatar
-        }).progress(function(event) {
-          //var uploadProgressPercentage = parseInt(100.0 * event.loaded / event.total);
-          //$log.log('progress: ' + uploadProgressPercentage + '% of ' + event.config.file.name);
-        }).success(function(data, status, headers, config) {
+          data: {
+            avatar: fileAvatar
+          }
+        }).success(function(data, status, headers) {
           vm.avatarUploading = false;
-          $modalInstance.close(vm.user);
+          $uibModalInstance.close(vm.user);
         }).error(function(data, status, headers, config) {
           messageCenterService.add('danger', 'Oops! Something went wrong. Try again later.');
           vm.avatarUploading = false;
-          //$modalInstance.dismiss('close');
+          //$uibModalInstance.dismiss('close');
         });
       }
 
       // Changed avatar selection (but didn't upload new file)
       else if(lastAvatarSource !== vm.user.avatarSource) {
-        $modalInstance.close(vm.user);
+        $uibModalInstance.close(vm.user);
       }
 
       // No changes, just dismiss...

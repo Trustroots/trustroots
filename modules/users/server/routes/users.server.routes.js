@@ -3,7 +3,9 @@
 /**
  * Module dependencies.
  */
-var usersPolicy = require('../policies/users.server.policy'),
+var path = require('path'),
+    config = require(path.resolve('./config/config')),
+    usersPolicy = require('../policies/users.server.policy'),
     users = require('../controllers/users.server.controller');
 
 module.exports = function(app) {
@@ -13,7 +15,7 @@ module.exports = function(app) {
     .put(users.update);
 
   app.route('/api/users-avatar').all(usersPolicy.isAllowed)
-    .post(users.uploadAvatar);
+    .post(users.avatarUploadField, users.avatarUpload);
 
   app.route('/api/users/mini/:userId').all(usersPolicy.isAllowed)
     .get(users.getMiniUser);

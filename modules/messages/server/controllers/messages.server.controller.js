@@ -17,9 +17,11 @@ var _ = require('lodash'),
     User = mongoose.model('User');
 
 
-// Constructs link headers for pagination
+/**
+ * Constructs link headers for pagination
+ */
 var setLinkHeader = function(req, res, pageCount) {
-  if (paginate.hasNextPages(req)(pageCount)){
+  if(paginate.hasNextPages(req)(pageCount)) {
     var nextPage = {page: req.query.page + 1};
     var linkHead = '<' + req.protocol + ':' + res.locals.url.slice(0,-1) + res.locals.paginate.href(nextPage) + '>; rel="next"';
     res.set('Link',linkHead);
@@ -30,7 +32,6 @@ var setLinkHeader = function(req, res, pageCount) {
  * List of threads aka inbox
  */
 exports.inbox = function(req, res) {
-
   Thread.paginate(
     {
       // Returns only threads where currently authenticated user is participating member
@@ -39,9 +40,17 @@ exports.inbox = function(req, res) {
         { userTo: req.user }
       ]
     },
-    req.query.page,
-    req.query.limit,
-    function(err, pageCount, threads) {
+    {
+      page: req.query.page || 1,
+      limit: req.query.limit || 20,
+      sortBy: '-updated',
+      populate: {
+        path: 'userFrom userTo message',
+        select: 'content ' + userHandler.userMiniProfileFields
+      }
+    },
+    function(err, data) {
+
       if (err) {
         return res.status(400).send({
           message: errorHandler.getErrorMessage(err)
@@ -50,36 +59,31 @@ exports.inbox = function(req, res) {
 
         // Sanitize each outgoing thread
         var threadsCleaned = [];
-        threads.forEach(function(thread) {
+        if(data.docs.length > 0) {
+          data.docs.forEach(function(thread) {
 
-          // Threads need just excerpt
-          thread = thread.toObject();
+            // Threads need just excerpt
+            thread = thread.toObject();
 
-          thread.message.excerpt = textProcessor.plainText(thread.message.content, true); // Clean message content from html + clean all whitespace
-          thread.message.excerpt = thread.message.excerpt.substring(0, 100) + ' …'; // Shorten
+            thread.message.excerpt = textProcessor.plainText(thread.message.content, true); // Clean message content from html + clean all whitespace
+            thread.message.excerpt = thread.message.excerpt.substring(0, 100).trim() + ' …'; // Shorten
 
-          delete thread.message.content;
+            delete thread.message.content;
 
-          // If latest message in the thread was from current user, show
-          // it as read - sender obviously read his/her own message
-          if(thread.userFrom._id.toString() === req.user._id.toString()) {
-            thread.read = true;
-          }
+            // If latest message in the thread was from current user, show
+            // it as read - sender obviously read his/her own message
+            if(thread.userFrom._id.toString() === req.user._id.toString()) {
+              thread.read = true;
+            }
 
-          threadsCleaned.push(thread);
-        });
+            threadsCleaned.push(thread);
+          });
+        }
 
         // Pass pagination data to construct link header
-        setLinkHeader(req, res, pageCount);
+        setLinkHeader(req, res, data.pages);
 
         res.json(threadsCleaned);
-      }
-    },
-    {
-      sortBy:'-updated',
-      populate:{
-        path: 'userFrom userTo message',
-        select: 'content ' + userHandler.userMiniProfileFields
       }
     }
   );
@@ -231,20 +235,23 @@ exports.threadByUser = function(req, res, next, userId) {
             { userTo: req.user._id, userFrom: userId }
           ]
         },
-        req.query.page,
-        req.query.limit,
-        function(err, pageCount, messages) {
-          if (!messages) err = new Error('Failed to load messages.');
-          // Pass pagination data to construct link header
-          setLinkHeader(req,res,pageCount);
-          done(err, messages);
-        },
         {
+          page: req.query.page || 1,
+          limit: req.query.limit || 20,
           sortBy:'-created',
           populate: {
             path:'userFrom userTo',
             select: userHandler.userMiniProfileFields
           }
+        },
+        function(err, data) {
+          if (!data.docs) err = new Error('Failed to load messages.');
+
+          // Pass pagination data to construct link header
+          if(data.docs.length > 0) {
+            setLinkHeader(req, res, data.pages);
+          }
+          done(err, data.docs);
         }
       );
 

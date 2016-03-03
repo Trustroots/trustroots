@@ -19,8 +19,8 @@
   <div class="panel-heading">
     Accommodation
     <!-- Button + dropdown for user's own profile -->
-    <div ng-if="app.user._id === profileCtrl.profile._id && (offersView.offer && offersView.offer.$resolved && app.user.public)" class="pull-right btn-group" dropdown is-open="hostingDropdown">
-      <button class="btn btn-sm dropdown-toggle btn-hosting" tooltip="Change" tooltip-placement="left" dropdown-toggle ng-class="{'btn-hosting-yes': offersView.offer.status === 'yes', 'btn-hosting-maybe': offersView.offer.status === 'maybe', 'btn-hosting-no': (!offersView.offer || !offersView.offer.status || offersView.offer.status === 'no')}">
+    <div ng-if="app.user._id === profileCtrl.profile._id && (offersView.offer && offersView.offer.$resolved && app.user.public)" class="pull-right btn-group" uib-dropdown is-open="hostingDropdown">
+      <button class="btn btn-sm dropdown-toggle btn-hosting" uib-tooltip="Change" tooltip-placement="left" uib-dropdown-toggle ng-class="{'btn-hosting-yes': offersView.offer.status === 'yes', 'btn-hosting-maybe': offersView.offer.status === 'maybe', 'btn-hosting-no': (!offersView.offer || !offersView.offer.status || offersView.offer.status === 'no')}">
         {{ offersView.hostingStatusLabel(offersView.offer.status) }}
         <span class="caret"></span>
       </button>

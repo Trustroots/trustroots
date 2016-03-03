@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($scope, $http, $state, $stateParams, $modal, Authentication, messageCenterService) {
+  function SignupController($scope, $http, $state, $stateParams, $uibModal, Authentication, messageCenterService) {
 
     // View Model
     var vm = this;
@@ -28,8 +28,6 @@
         vm.isLoading = false;
         // If successful we assign the response to the global user model
         Authentication.user = newUser;
-        vm.success = 'We sent you an email to ' + newUser.email + ' with further instructions. ' +
-                     'If you don\'t see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".';
         $scope.$emit('userUpdated');
       }).error(function(error) {
         vm.isLoading = false;
@@ -44,11 +42,11 @@
 
       if($event) $event.preventDefault();
 
-      $modal.open({
+      $uibModal.open({
         templateUrl: 'rules.client.modal.html', //inline at signup template
-        controller: function ($scope, $modalInstance) {
+        controller: function ($scope, $uibModalInstance) {
           $scope.closeRules = function () {
-            $modalInstance.dismiss('cancel');
+            $uibModalInstance.dismiss('cancel');
           };
         }
       });

@@ -27,8 +27,11 @@ node_modules/
 *.pyc
 passenger.*
 *.pid
+scipts/docker/nginx-conf/*
+!scipts/docker/nginx-conf/trustroots.conf
 
 # App
+build
 public/lib
 public/dist
 modules/core/client/app/css
@@ -42,6 +45,7 @@ config/env/local.js
 logs
 log
 *.log
+npm-debug.*
 
 # Docs
 public/developers/api

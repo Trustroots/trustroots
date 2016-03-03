@@ -15,7 +15,7 @@
     .controller('MessagesThreadController', MessagesThreadController);
 
   /* @ngInject */
-  function MessagesThreadController($scope, $q, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, localStorageService, appSettings, userTo, cfpLoadingBar) {
+  function MessagesThreadController($scope, $q, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, locker, appSettings, userTo, cfpLoadingBar) {
 
     // Go back to inbox on these cases
     // - No recepient defined
@@ -29,8 +29,10 @@
     var elemThread,
         syncReadTimer,
         flaggedAsRead = [],
-        messageIdsInView = [],
-        cacheId = Authentication.user._id + '.thread-' + $stateParams.username;
+        messageIdsInView = [];
+
+    // Make cache id unique for this user
+    var cachePrefix = 'messages.thread.' + Authentication.user._id + '-' + $stateParams.username;
 
     // View model
     var vm = this;
@@ -47,13 +49,20 @@
     vm.messageRead = messageRead;
 
     /**
-     * Unfinished messages are cached to SessionStorage
+     * Is local/sessionStorage supported? This might fail in browser's incognito mode
+     *
+     * If it is, unfinished messages are cached to SessionStorage
      * Check for a previously saved message here
      *
-     * SessionStorage (instead of LocalStorage) is defined to be used at app init config
-     * See also sendMessage(), where message is clared with remove()
+     * See also sendMessage(), where message is clared
      */
-    vm.content = localStorageService.get(cacheId) || '';
+    if(locker.supported()) {
+      // Get message from cache, use default if it doesn't exist
+      vm.content = locker.driver('session').get(cachePrefix, '');
+    }
+    else {
+      vm.content = '';
+    }
 
     (function() {
       // Fetches first page of messages after receiving user has finished loading (we need the userId from there)
@@ -101,7 +110,7 @@
               sendMessage();
             }
             else {
-              localStorageService.set(cacheId, vm.content);
+              locker.put(cachePrefix, vm.content);
             }
           });
         });
@@ -205,6 +214,7 @@
      * Read message id is stored at array which will be sent to backend and emptied
      *
      * @todo: kill observer after message is marked read
+     * @todo: having this as a function is a performance issue
      */
     function messageRead(message, scrollingUp, scrollingDown) {
 
@@ -232,6 +242,8 @@
     function sendMessage() {
       vm.isSending = true;
 
+      // Make sure the message isn't empty.
+      // Sometimes we'll have some empty blocks due wysiwyg
       if(vm.content.replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim() === '') {
         vm.isSending = false;
         messageCenterService.add('warning', 'Write a message first...');
@@ -246,11 +258,11 @@
 
       message.$save(function(response) {
 
-        // Remove cached message
-        localStorageService.remove(cacheId);
-
         vm.content = '';
         vm.isSending = false;
+
+        // Remove message from cache
+        locker.driver('session').forget(cachePrefix);
 
         // Remove this when socket is back!
         vm.messages.unshift(response);

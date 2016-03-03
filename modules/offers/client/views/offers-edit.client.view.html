@@ -22,9 +22,9 @@
             <div class="col-xs-6">
               <h4>Can you host?</h4>
               <div class="btn-group">
-                <label class="btn btn-lg btn-hosting btn-hosting-yes" ng-model="offersEdit.offer.status" btn-radio="'yes'"><span>Yes</span></label>
-                <label class="btn btn-lg btn-hosting btn-hosting-maybe" ng-model="offersEdit.offer.status" btn-radio="'maybe'"><span>Maybe</span></label>
-                <label class="btn btn-lg btn-hosting btn-hosting-no" ng-model="offersEdit.offer.status" btn-radio="'no'"><span>No</span></label>
+                <label class="btn btn-lg btn-hosting btn-hosting-yes" ng-model="offersEdit.offer.status" uib-btn-radio="'yes'"><span>Yes</span></label>
+                <label class="btn btn-lg btn-hosting btn-hosting-maybe" ng-model="offersEdit.offer.status" uib-btn-radio="'maybe'"><span>Maybe</span></label>
+                <label class="btn btn-lg btn-hosting btn-hosting-no" ng-model="offersEdit.offer.status" uib-btn-radio="'no'"><span>No</span></label>
               </div>
             </div>
             <div class="col-xs-6">
@@ -40,7 +40,7 @@
           <h4>Tell others why you can't host... <small class="text-muted pull-right">(optional)</small></h4>
         </div>
         <div class="panel-body">
-          <div class="offer-nodescription" ng-class="{'is-not-empty': offersEdit.offer.noOfferDescription.length}" ng-model="offersEdit.offer.noOfferDescription" medium-editor options="{buttonLabels: 'fontawesome', 'placeholder': 'Click here to write...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+          <div class="offer-nodescription" ng-class="{'is-not-empty': offersEdit.offer.noOfferDescription.length}" ng-model="offersEdit.offer.noOfferDescription" medium-editor data-placeholder="Write here..." bind-options="::app.mediumEditorOptions"></div>
         </div>
       </div>
 
@@ -49,7 +49,7 @@
           <h4>Tell about your home and hosting possibilities</h4>
         </div>
         <div class="panel-body">
-          <div class="offer-description" ng-class="{'is-not-empty': offer.description.length}" ng-hide="!offersEdit.offer" ng-model="offersEdit.offer.description" medium-editor options="{buttonLabels: 'fontawesome', 'placeholder': 'Click here to write...', 'buttons': ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']}"></div>
+          <div class="offer-description" ng-class="{'is-not-empty': offer.description.length}" ng-hide="!offersEdit.offer" ng-model="offersEdit.offer.description" medium-editor data-placeholder="Write here..." bind-options="::app.mediumEditorOptions"></div>
         </div>
         <div class="panel-footer text-muted" ng-show="offersEdit.offer.description && offersEdit.offer.status === 'no'">
           <small>This description will be held here but won't be public until you can host again.</small>
@@ -79,9 +79,9 @@
           <div class="form-group offer-map-location-search">
             <div class="input-group input-location">
               <label for="search-query" class="sr-only">Search for places on the map</label>
-              <input type="text" id="search-query" class="form-control" placeholder="Search for places on the map" ng-disabled="offersEdit.searchQuerySearching" ng-model="offersEdit.searchQuery" ng-keypress="offersEdit.enterSearchAddress($event)" typeahead="trTitle as address.trTitle for address in offersEdit.searchSuggestions($viewValue)" typeahead-on-select="offersEdit.mapLocate($item)" />
+              <input type="text" id="search-query" class="form-control" placeholder="Search for places on the map" ng-disabled="offersEdit.searchQuerySearching" ng-model="offersEdit.searchQuery" ng-keypress="offersEdit.enterSearchAddress($event)" uib-typeahead="trTitle as address.trTitle for address in offersEdit.searchSuggestions($viewValue)" typeahead-on-select="offersEdit.mapLocate($item)" />
               <span class="input-group-btn">
-                <button type="button" class="btn btn-inverse" ng-click="offersEdit.searchAddress()" ng-disabled="offersEdit.searchQuerySearching">
+                <button type="button" class="btn btn-default" ng-click="offersEdit.searchAddress()" ng-disabled="offersEdit.searchQuerySearching">
                   <i class="icon-search"></i>
                 </button>
               </span>

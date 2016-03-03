@@ -17,7 +17,7 @@ exports.getErrorMessageByKey = function(key) {
     'not-found':            'Not found.',
     'forbidden':            'Forbidden.',
     'invalid-id':           'Cannot interpret id.',
-    'unprocessable-entity': 'Unprocessable Entity',
+    'unprocessable-entity': 'Unprocessable Entity.',
     'default':              defaultErrorMessage
   };
 

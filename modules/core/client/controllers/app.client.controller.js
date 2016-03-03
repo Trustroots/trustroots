@@ -9,7 +9,7 @@
     .controller('AppController', AppController);
 
   /* @ngInject */
-  function AppController($scope, $rootScope, $window, $state, Authentication, SettingsFactory, Languages, localStorageService) {
+  function AppController($scope, $rootScope, $window, $state, Authentication, SettingsFactory, Languages, locker) {
 
     // ViewModel
     var vm = this;
@@ -18,13 +18,28 @@
     vm.user = Authentication.user;
     vm.appSettings = SettingsFactory.get();
     vm.languageNames = Languages.get('object');
+    vm.pageTitle = $window.title;
     vm.goHome = goHome;
     vm.signout = signout;
-    vm.photoCredits = [];
+    vm.photoCredits = {};
+    vm.photoCreditsCount = 0;
+
+    // Default options for Medium-Editor used site wide
+    // @link https://github.com/yabwe/medium-editor
+    // @link https://github.com/thijsw/angular-medium-editor/
+    vm.mediumEditorOptions = {
+      disableReturn: false,
+      disableDoubleReturn: true,
+      disableExtraSpaces: true,
+      buttonLabels: 'fontawesome',
+      toolbar: {
+        buttons: ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']
+      }
+    };
 
     // Used as a cache buster with ng-include
     // Includes a hash of latest git commit
-    vm.cacheBust = vm.appSettings.commit || '';
+    vm.cacheBust = vm.appSettings ? vm.appSettings.commit || '' : '';
 
     /**
      * Determine where to direct user from "home" links
@@ -38,14 +53,17 @@
       }
     }
 
+    /**
+     * Sign out authenticated user
+     */
     function signout($event) {
       if($event) {
         $event.preventDefault();
       }
 
-      // Clear out localstorage
-      // @link https://github.com/grevory/angular-local-storage#clearall
-      localStorageService.clearAll();
+      // Clear out session/localstorage
+      // @link https://github.com/tymondesigns/angular-locker#removing-items-from-locker
+      locker.clean();
 
       // Do the signout and refresh the page
       $window.top.location.href  = '/api/auth/signout';
@@ -54,7 +72,7 @@
     /**
      * Snif and apply user changes
      */
-    $scope.$on('userUpdated', function(){
+    $scope.$on('userUpdated', function() {
       vm.user = Authentication.user;
     });
 
@@ -62,12 +80,6 @@
      * Before page change
      */
     $scope.$on('$stateChangeStart', function(event, toState, toParams, fromState, fromParams) {
-
-      // Redirect away from frontpage if user is authenticated
-      if(toState.name === 'home' && Authentication.user) {
-        event.preventDefault();
-        $state.go('search');
-      }
 
       // Redirect to login page if no user
       if(toState.requiresAuth && !Authentication.user) {
@@ -79,9 +91,10 @@
         $rootScope.signinState = toState.name;
         $rootScope.signinStateParams = toParams;
 
-        // Show action based signup banner for certain pages
+        // Show a special signup ad for certain pages if user isn't authenticated
+        // (Normally we just splash a signup page at this point)
         if(toState.name === 'profile') {
-          $state.go('profile-signin');
+          $state.go('profile-signup');
         }
         else if(toState.name === 'search') {
           $state.go('search-signin', toParams || {});
@@ -99,9 +112,13 @@
      */
     $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
 
+      // Set page title
+      vm.pageTitle = (toState.title) ? toState.title + ' - ' + $window.title : $window.title;
+
       // Reset photo copyrights on each page change
       // trBoards directive hits in after this and we'll fill this with potential photo credits
-      vm.photoCredits = [];
+      vm.photoCredits = {};
+      vm.photoCreditsCount = 0;
 
       // Reset page scroll on page change
       $window.scrollTo(0,0);
@@ -120,7 +137,8 @@
      * Sniff and apply photo credit changes
      */
     $scope.$on('photoCreditsUpdated', function(scope, photo) {
-      vm.photoCredits.push(photo);
+      angular.extend(vm.photoCredits, photo);
+      vm.photoCreditsCount++;
     });
 
   }

@@ -2,15 +2,35 @@
  * TrustRoots core typography styles
  */
 
+// Font mixins
+.font-brand-light() {
+  font-family: @font-family-brand-light;
+  font-style: normal;
+  font-weight: @font-weight-brand-light;
+}
+.font-brand-regular() {
+  font-family: @font-family-brand-regular;
+  font-style: normal;
+  font-weight: @font-weight-brand-regular;
+}
+.font-brand-semibold() {
+  font-family: @font-family-brand-semibold;
+  font-style: normal;
+  font-weight: @font-weight-brand-semibold;
+}
+
+// Helper classes
+.font-brand-light { .font-brand-light() }
+.font-brand-regular { .font-brand-regular() }
+.font-brand-semibold { .font-brand-semibold() }
+
 ::selection {
   background: @text-highlight;
   color: @text-highlight-color;
 }
 
  h1, h2, h3, h4 {
-   font-family: @font-family-brand;
-   font-weight: 400;
-   font-style: normal;
+   .font-brand-regular();
  }
 
 blockquote {

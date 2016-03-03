@@ -8,7 +8,7 @@ var path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     config = require(path.resolve('./config/config')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
-    messageHandler = require(path.resolve('./modules/messages/server/controllers/messages.server.controller')),
+    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     sanitizeHtml = require('sanitize-html'),
     htmlToText = require('html-to-text'),
     nodemailer = require('nodemailer'),
@@ -17,6 +17,14 @@ var path = require('path'),
     Contact = mongoose.model('Contact'),
     User = mongoose.model('User');
 
+// Replace mailer with Stub mailer transporter
+// Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
+// it with the sendMail callback. This is useful for testing the emails before actually sending anything.
+// @link https://github.com/andris9/nodemailer-stub-transport
+if (process.env.NODE_ENV === 'test') {
+  var stubTransport = require('nodemailer-stub-transport');
+  config.mailer.options = stubTransport();
+}
 
 /**
  * Add a contact
@@ -39,7 +47,7 @@ exports.add = function(req, res) {
       var messageHTML = false;
       var messagePlain = false;
       if(req.body.message && req.body.message !== '') {
-        messageHTML = sanitizeHtml(req.body.message, messageHandler.messageSanitizeOptions);
+        messageHTML = sanitizeHtml(req.body.message, textProcessor.sanitizeOptions);
         messagePlain = htmlToText.fromString(req.body.message, {wordwrap: 80});
       }
       delete req.body.message;

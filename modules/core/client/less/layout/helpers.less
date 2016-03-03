@@ -64,8 +64,8 @@
 .panel-triangle-right() {
   .panel-triangle-base();
   &:before {
-      .triangle(right, @panel-triangle-size, @panel-border);
-      right: -(@panel-triangle-size + 1);
+    .triangle(right, @panel-triangle-size, @panel-border);
+    right: -(@panel-triangle-size + 1);
   }
   &:after {
     .triangle(right, @panel-triangle-size, @panel-bg);
@@ -79,8 +79,8 @@
     left: -(@panel-triangle-size + 1);
   }
   &:after {
-      .triangle(left, @panel-triangle-size, @panel-bg);
-      left: -@panel-triangle-size;
+    .triangle(left, @panel-triangle-size, @panel-bg);
+    left: -@panel-triangle-size;
   }
 }
 
@@ -92,6 +92,7 @@
   }
 }
 
+// Reset default cursor
 .cursor-pointer {
   cursor: pointer;
 }
@@ -99,11 +100,6 @@
 // For help-icons/buttons
 .cursor-help {
   cursor: help;
-}
-
-// For old IE
-.browsehappy {
-  display: block;
 }
 
 // No messages / no contacts etc -type messages
@@ -119,22 +115,6 @@
   font-style: italic;
   .text-muted;
   margin: 50px 0;
-}
-
-/**
- * Connection experience
- */
-.experience-positive {
-  font-weight: bold;
-  color: @experience-positive;
-}
-.experience-neutral {
-  font-weight: bold;
-  color: @experience-neutral;
-}
-.experience-negative {
-  font-weight: bold;
-  color: @experience-negative;
 }
 
 /*
@@ -163,4 +143,21 @@
   &.middle-wrapper-horizontal .middle-content > * {
     margin: auto;
   }
+}
+
+/**
+ * Warning for old IE browsers
+ * html at `layout.server.view.html`
+ */
+.browsehappy {
+  display: block;
+  position: fixed;
+  overflow: auto;
+  z-index: 999999;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  padding: 50px 20px;
+  margin: 0;
+  background: #fff;
 }

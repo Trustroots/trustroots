@@ -14,7 +14,8 @@
   &, label {
     color: #fff;
   }
-  a {
+  a:not(.btn),
+  a.btn-link {
     text-decoration: underline;
     &.btn {
       text-decoration: none;
@@ -63,13 +64,10 @@
       }
     }
   }
-  &.board-default {
-    background-color: @brand-secondary;
-    .page-header {
-      h1, h2 {
-        background: @brand-secondary;
-      }
-    }
+
+  // Add inset shadow
+  &.board-inset {
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
   }
 
   .page-header {
@@ -85,6 +83,7 @@
     }
   }
 
+  // Fix panels inside boards
   .panel {
     color: @text-color;
     text-shadow: none;
@@ -95,13 +94,9 @@
    * Most of the images for .board are coming from core/trBoards directive. Check it out.
    * Keep just the most simplest stuff here.
    */
-  &.board-map {
-    // Screenshot from our own map...
-    background-image: url(/modules/core/img/board/map.jpg);
-  }
   &.board-error {
     // Photo by Mikael Korpela
-    // https://creativecommons.org/licenses/by-nc-nd/4.0/
+    // @link https://creativecommons.org/licenses/by-nc-nd/4.0/
     background-image: url(/modules/core/img/board/error.jpg);
   }
 

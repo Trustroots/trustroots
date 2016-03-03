@@ -5,29 +5,33 @@
   width: 100%;
   height: @navbar-height;
   clear: both;
-  font-family: @font-family-brand;
-  font-weight: 400;
-  font-style: normal;
+  .font-brand-regular();
+  color: @navbar-default-color;
   .navbar {
     .box-shadow(0 0 8px rgba(0,0,0,0.1));
   }
   .navbar-brand {
     padding-top: 6px;
   }
-  a {
-    text-shadow: 1px 1px 1px rgba(0,0,0,.3);
-  }
-  .dropdown-menu {
+  .nav {
     a {
-      text-shadow: none;
+      text-shadow: 1px 1px 1px rgba(0,0,0,.3);
+    }
+    .dropdown-menu {
+      a {
+        text-shadow: none;
+      }
     }
   }
 
+  /* Bootstrap dropdowns */
   @media (min-width: @grid-float-breakpoint) {
+
     /* Make Bootstrap dropdowns open at hover */
     .dropdown:hover .dropdown-menu {
       display: block;
     }
+
     /* Make sure avatar works as a dropdown handle */
     .dropdown-user {
       .dropdown-toggle {
@@ -38,6 +42,7 @@
         }
       }
     }
+
   }
 
   /* Mobile navbar */
@@ -45,16 +50,47 @@
     background: @brand-primary;
   }
 
+  /* Header breaks due the logo width => Show only the "tree" version for very narrow screens. */
   .logo-tree {
     display: none;
   }
-  /* Header breaks due the logo width => Show only the "tree" version for very narrow screens. */
   @media (max-width: 280px) {
     .logo-text {
       display: none;
     }
     .logo-tree {
       display: block;
+    }
+  }
+
+}
+
+/* Welcome-header for non-authenticated users */
+.header-welcome {
+  text-align: center;
+  padding: 5px 0 0 0;
+  .header-more-text,
+  .header-welcome-text {
+    display: inline-block;
+    padding: 0;
+    font-size: 18px;
+    .font-brand-light();
+  }
+  .header-more-text {
+    font-size: 14px;
+  }
+  .header-welcome-text,
+  .btn {
+    margin: 0 10px;
+  }
+  // Text is visible only for bigger screen sizes
+  @media (max-width: 490px) {
+    .header-welcome-text,
+    .header-welcome-divider {
+      display: none;
+    }
+    .btn {
+      margin: 0 5px;
     }
   }
 }

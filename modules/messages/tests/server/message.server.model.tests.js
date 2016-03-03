@@ -17,6 +17,7 @@ var userTo, userFrom, message;
  * Unit tests
  */
 describe('Message Model Unit Tests:', function() {
+
   beforeEach(function(done) {
 
     userFrom = new User({

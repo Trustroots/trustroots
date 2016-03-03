@@ -57,7 +57,7 @@
       <br><br>
 
       <h3 class="faq-question" id="how-can-i-contact-you">How can can I contact you?</h3>
-      In plenty of public and private ways: <a ui-sref="contact">drop us a message</a>, <a href="http://ideas.trustroots.org/">our blog</a>, <a href="https://github.com/Trustroots/trustroots/issues">GitHub</a>, <a href="https://twitter.com/trustroots">Twitter</a>, <a href="http://webchat.freenode.net/?channels=trustroots">IRC</a> and for private contacts, see <a ui-sref="team">the team</a> page.
+      In plenty of public and private ways: <a ui-sref="support">drop us a message</a>, <a href="http://ideas.trustroots.org/">our blog</a>, <a href="https://github.com/Trustroots/trustroots/issues">GitHub</a>, <a href="https://twitter.com/trustroots">Twitter</a>, <a href="http://webchat.freenode.net/?channels=trustroots">IRC</a> and for private contacts, see <a ui-sref="team">the team</a> page.
 
       <br><br>
 
@@ -116,12 +116,12 @@
       <br><br>
 
       <h3 class="faq-question" id="how-do-you-want-to-make-the-project-financially-sustainable">How do you want to make the project financially sustainable?</h3>
-      <a ui-sref="donate">Donations</a> and grants are the most likely ways. There are many inspiring organisations out there serving as great examples: <a href="https://www.warmshowers.org/">Warmshowers Foundation</a>, <a href="http://www.abgefahren-ev.de/">Abgefahren e.V.</a> (Hitchwiki), <a href="http://www.bevolunteer.org/">BeVolunteer</a>, <a href="http://www.servas.org/">Servas</a>, <a href="http://www.wwoof.net/">WWOOF</a> and many more. Again, if you have experience with this it would be great if you <a ui-sref="contact">contact us</a>.
+      <a ui-sref="donate">Donations</a> and grants are the most likely ways. There are many inspiring organisations out there serving as great examples: <a href="https://www.warmshowers.org/">Warmshowers Foundation</a>, <a href="http://www.abgefahren-ev.de/">Abgefahren e.V.</a> (Hitchwiki), <a href="http://www.bevolunteer.org/">BeVolunteer</a>, <a href="http://www.servas.org/">Servas</a>, <a href="http://www.wwoof.net/">WWOOF</a> and many more. Again, if you have experience with this it would be great if you <a ui-sref="support">contact us</a>.
 
       <br><br>
 
       <h3 class="faq-question" id="who-decides-what-gets-done">Who decides what gets done?</h3>
-      Anyone can join us as a <a href="https://github.com/Trustroots/trustroots/wiki/Volunteering">volunteer</a>. We're huge fans of do-cracy and getting things done attitude. We have <a ui-sref="team">a core team</a> which is formed from the most active volunteers. There isn't voting or other buraucratic processes involved, but you get more responsibility by simply becoming active contributor and showing your communication skills. Great community values simple translation jobs just as much as highly skilled development. We'll aim to keep the entry level for volunteers as low as possible. No bureaucracy. Pragmatic approach. Trust.
+      Anyone can join us as a <a ui-sref="volunteering">volunteer</a>. We're huge fans of do-cracy and getting things done attitude. We have <a ui-sref="team">a core team</a> which is formed from the most active volunteers. There isn't voting or other buraucratic processes involved, but you get more responsibility by simply becoming active contributor and showing your communication skills. Great community values simple translation jobs just as much as highly skilled development. We'll aim to keep the entry level for volunteers as low as possible. No bureaucracy. Pragmatic approach. Trust.
       <br><br>
       That said, any well organized project needs efficient teams working on specific issues (such as <i>safety</i> or site's <i>features/UX</i>). Rather than building complicated voting mechanisms or other structures, we'll try to concentrate in fostering volunteers into responsible, skilled teams. It's also important to make sure everyone has the same goal and vision.
 
@@ -138,7 +138,7 @@
       <br><br>
 
       <h3 class="faq-question" id="are-you-planning-to-do-x-feature">Are you planning to do X feature?</h3>
-      See <a href="https://github.com/Trustroots/trustroots/issues?q=is%3Aopen+is%3Aissue+milestone%3A%22next+up%22">GitHub</a> for our current todolist. Feel free to <a ui-sref="contact">tell us</a> about your ideas! The current version of Trustroots is the most limited software you can imagine that still works for hospitality. We simply haven't had time to build most of the features yet. Please be patient.
+      See <a href="https://github.com/Trustroots/trustroots/issues?q=is%3Aopen+is%3Aissue+milestone%3A%22next+up%22">GitHub</a> for our current todolist. Feel free to <a ui-sref="support">tell us</a> about your ideas! The current version of Trustroots is the most limited software you can imagine that still works for hospitality. We simply haven't had time to build most of the features yet. Please be patient.
 
       <br><br>
 
@@ -151,7 +151,7 @@
       <hr>
 
       <p class="lead text-center" id="more-questions">
-        More questions? <a ui-sref="contact">Ask us!</a>
+        More questions? <a ui-sref="support">Ask us!</a>
         <br><br>
         See also our <a href="http://ideas.trustroots.org/">blog</a> and <a ui-sref="about">about</a> page.
       </p>
@@ -161,9 +161,9 @@
 
       <div id="faq-sidebar" class="sidebar" zum-waypoint="faq.waypoints" down="flags.on" up="flags.off" ng-class="{'sidebar-sticky': faq.waypoints.flags.on}">
 
-        <accordion close-others="sidebar.closeOthers">
+        <uib-accordion close-others="sidebar.closeOthers">
 
-          <accordion-group heading="Site & community" is-open="sidebar.isCommunityOpen">
+          <uib-accordion-group heading="Site & community" is-open="sidebar.isCommunityOpen">
             <div class="list-group">
               <a ng-click="faq.read('is-trustroots-exclusively-for-hitchhikers')" class="list-group-item">Is Trustroots exclusively for hitchhikers?</a>
               <a ng-click="faq.read('what-is-your-long-term-vision')" class="list-group-item">What is your long term vision?</a>
@@ -174,9 +174,9 @@
               <a ng-click="faq.read('why-is-there-no-forum')" class="list-group-item">Why is there no forum?</a>
               <a ng-click="faq.read('how-can-i-contact-you')" class="list-group-item">How can can I contact you?</a>
             </div>
-          </accordion-group>
+          </uib-accordion-group>
 
-          <accordion-group heading="Organisation" is-open="sidebar.isOrganisationOpen">
+          <uib-accordion-group heading="Organisation" is-open="sidebar.isOrganisationOpen">
             <div class="list-group">
               <a ng-click="faq.read('what-is-your-legal-status')" class="list-group-item">What's your legal status?</a>
               <a ng-click="faq.read('why-limited-by-guarantee')" class="list-group-item">Why Limited by Guarantee under section 60 exemption?</a>
@@ -185,17 +185,17 @@
               <a ng-click="faq.read('how-do-you-want-to-make-the-project-financially-sustainable')" class="list-group-item">How do you want to make the project financially sustainable?</a>
               <a ng-click="faq.read('who-decides-what-gets-done')" class="list-group-item">Who decides what gets done?</a>
             </div>
-          </accordion-group>
+          </uib-accordion-group>
 
-          <accordion-group heading="Technology" is-open="sidebar.isTechnologyOpen">
+          <uib-accordion-group heading="Technology" is-open="sidebar.isTechnologyOpen">
             <div class="list-group">
               <a ng-click="faq.read('im-a-developer')" class="list-group-item">I'm a developer and I want to help!</a>
               <a ng-click="faq.read('are-you-planning-to-do-x-feature')" class="list-group-item">Are you planning to do X feature?</a>
               <a ng-click="faq.read('decentralize-it')" class="list-group-item">Decentralize it?</a>
             </div>
-          </accordion-group>
+          </uib-accordion-group>
 
-        </accordion>
+        </uib-accordion>
 
       </div><!-- .sidebar -->
 

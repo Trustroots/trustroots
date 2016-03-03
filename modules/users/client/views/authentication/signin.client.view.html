@@ -1,46 +1,56 @@
 <section class="container board container-fullscreen" tr-boards="'bokeh'">
-  <div class="row">
-    <div class="col-xs-12 text-center">
-      <img class="hidden-xs" src="/modules/core/img/tree-color.svg" alt="Trustroots" width="120" height="120" />
-      <img class="visible-xs-inline-block" src="/modules/core/img/tree-color.svg" alt="Trustroots" width="80" height="80" />
-      <br><br>
-      <p class="lead" ng-show="auth.continue">Sign in to continue.</p>
+  <div class="middle-wrapper middle-wrapper-horizontal">
+    <div class="middle-content">
+
+      <div class="row">
+        <div class="col-xs-12 text-center">
+          <img class="hidden-xs" src="/modules/core/img/tree-color.svg" alt="Trustroots" width="120" height="120" />
+          <img class="visible-xs-inline-block" src="/modules/core/img/tree-color.svg" alt="Trustroots" width="80" height="80" />
+          <br><br>
+          <p class="lead" ng-show="auth.continue">Sign in to continue.</p>
+        </div>
+        <div class="col-xs-offset-2 col-xs-8 col-sm-offset-4 col-sm-4 col-lg-offset-5 col-lg-2">
+          <form name="signinForm" ng-submit="auth.signin()" class="form-auth" autocomplete="off">
+            <fieldset>
+              <div class="form-group">
+                <label for="username" class="sr-only">Email or username</label>
+                <input type="text" autocapitalize="off" required ng-disabled="iauth.sLoading" id="username" name="username" class="form-control input-lg" ng-model="auth.credentials.username" placeholder="Email or username">
+              </div>
+              <div class="form-group">
+                <label for="password" class="sr-only">Password</label>
+                <div class="input-group">
+                  <input type="{{ showPassword ? 'text' : 'password' }}" required ng-disabled="auth.isLoading" id="password" name="password" class="form-control input-lg" ng-model="auth.credentials.password" placeholder="Password">
+                  <span class="input-group-btn">
+                    <a class="btn btn-lg btn-default btn-password-toggle" role="button" ng-click="showPassword=!showPassword" aria-label="Toggle password visibility">
+                      <i class="icon-lg" ng-class="{'icon-eye': !showPassword, 'icon-eye-off': showPassword}"></i>
+                    </a>
+                  </span>
+                </div>
+              </div>
+              <div class="text-center form-group">
+                <button type="submit" class="btn btn-default btn-lg" ng-disabled="auth.isLoading">
+                  <span ng-if="!auth.isLoading">Login</span>
+                  <span ng-if="auth.isLoading">Wait...</span>
+                </button>
+              </div>
+            </fieldset>
+          </form>
+        </div>
+      </div><!-- .row-->
+      <div class="row">
+        <div class="col-xs-12 text-center text-white">
+          <p>
+            <br>
+            <a ui-sref="forgot" class="btn btn-link btn-sm">Forgot your password?</a><br>
+            <a ui-sref="signup" class="btn btn-link btn-sm">Become a member</a>
+          </p>
+          <p class="visible-xs-block">
+            <br>
+            <a ui-sref="home" class="btn btn-inverse">Back home</a>
+          </p>
+        </div>
+      </div><!-- .row-->
+
     </div>
-    <div class="col-xs-offset-2 col-xs-8 col-sm-offset-4 col-sm-4 col-lg-offset-5 col-lg-2">
-      <form name="signinForm" ng-submit="auth.signin()" class="form-auth" autocomplete="off">
-        <fieldset>
-          <div class="form-group">
-            <label for="username" class="sr-only">Email or username</label>
-            <input type="text" autocapitalize="off" required ng-disabled="iauth.sLoading" id="username" name="username" class="form-control input-lg" ng-model="auth.credentials.username" placeholder="Email or username">
-          </div>
-          <div class="form-group">
-            <label for="password" class="sr-only">Password</label>
-            <div class="input-group">
-              <input type="{{ showPassword ? 'text' : 'password' }}" required ng-disabled="auth.isLoading" id="password" name="password" class="form-control input-lg" ng-model="auth.credentials.password" placeholder="Password">
-              <span class="input-group-btn">
-                <a class="btn btn-lg btn-inverse btn-password-toggle" role="button" ng-click="showPassword=!showPassword" aria-label="Toggle password visibility">
-                  <i class="icon-lg" ng-class="{'icon-eye': !showPassword, 'icon-eye-off': showPassword}"></i>
-                </a>
-              </span>
-            </div>
-          </div>
-          <div class="text-center form-group">
-            <button type="submit" class="btn btn-inverse btn-lg" ng-disabled="auth.isLoading">
-              <span ng-if="!auth.isLoading">Login</span>
-              <span ng-if="auth.isLoading">Wait...</span>
-            </button>
-          </div>
-        </fieldset>
-      </form>
-    </div>
-  </div><!-- .row-->
-  <div class="row">
-    <div class="col-xs-12 text-center text-white">
-      <p>
-        <br>
-        <a ui-sref="forgot" class="btn btn-link btn-sm">Forgot your password?</a><br>
-        <a ui-sref="signup" class="btn btn-link btn-sm">Become a member</a>
-      </p>
-    </div>
-  </div><!-- .row-->
+  </div>
 </section><!-- .container -->

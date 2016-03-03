@@ -4,47 +4,71 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>{{title}}</title>
+  <title ng-bind="app.pageTitle">{{title}}</title>
   <base href="/">
   <meta name="fragment" content="!">
-  {% for cssFile in cssFiles %}<link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}">
-  {% endfor %}
+  {% if process.env.NODE_ENV === 'development' %}
+    {% for cssFile in cssFiles %}<link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}">
+    {% endfor %}
+    <link rel="stylesheet" href="/dist/application.css?c={{appSettings.commit}}">
+  {% endif %}
+  {% if process.env.NODE_ENV === 'production' %}
+    <link rel="stylesheet" href="/dist/application.min.css?c={{appSettings.commit}}">
+  {% endif %}
   {# Prefech some domains that are used for avatars #}
   {# https://developer.mozilla.org/en-US/docs/Web/HTTP/Controlling_DNS_prefetching #}
   <link rel="dns-prefetch" href="//graph.facebook.com">
   <link rel="dns-prefetch" href="//gravatar.com">
-  <link rel="icon" sizes="16x16" href="{{hostPort}}/modules/core/img/favicon.png" type="image/png">
-  <link rel="icon" sizes="32x32" href="{{hostPort}}/modules/core/img/favicon@2x.png" type="image/png">
-  <link rel="apple-touch-icon-precomposed" sizes="152x152" href="{{hostPort}}/modules/core/img/icons/apple-touch-icon-152x152-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="120x120" href="{{hostPort}}/modules/core/img/icons/apple-touch-icon-120x120-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="76x76" href="{{hostPort}}/modules/core/img/icons/apple-touch-icon-76x76-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="60x60" href="{{hostPort}}/modules/core/img/icons/apple-touch-icon-60x60-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="{{hostPort}}/modules/core/img/icons/apple-touch-icon-144x144-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="{{hostPort}}/modules/core/img/icons/apple-touch-icon-114x114-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="{{hostPort}}/modules/core/img/icons/apple-touch-icon-72x72-precomposed.png">
-  <link rel="apple-touch-icon" sizes="57x57" href="{{hostPort}}/modules/core/img/icons/apple-touch-icon-57x57.png">
-  <link rel="publisher" href="{{googlePage}}">
+
+  <!-- Generic / Android / Firefox-->
+  <meta name="description" content="{{description}}">
+  {% if googlePage !== "" %}<link rel="publisher" href="{{googlePage}}">{% endif %}
+  <meta name="application-name" content="{{title}}">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#12b591">
+  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/icons/android/512.png" sizes="512x512">
+  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/icons/android/192.png" sizes="192x192">
+  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/icons/android/144.png" sizes="144x144">
+  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/icons/android/96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/icons/android/72.png" sizes="72x72">
+  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/icons/android/48.png" sizes="48x48">
+  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/favicon@2x.png" sizes="32x32">
+  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/favicon.png" sizes="16x16">
+
+  <!-- Apple -->
+  <link rel="apple-touch-icon-precomposed" sizes="152x152" href="{{hostPort}}/modules/core/img/icons/ios/Icon-76@2x.png">
+  <link rel="apple-touch-icon-precomposed" sizes="120x120" href="{{hostPort}}/modules/core/img/icons/ios/Icon-60@2x.png">
+  <link rel="apple-touch-icon-precomposed" sizes="76x76" href="{{hostPort}}/modules/core/img/icons/ios/Icon-76.png">
+  <link rel="apple-touch-icon-precomposed" sizes="60x60" href="{{hostPort}}/modules/core/img/icons/ios/Icon-60.png">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="{{hostPort}}/modules/core/img/icons/ios/Icon-72@2x.png">
+  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="{{hostPort}}/modules/core/img/icons/ios/Icon@2x.png">
+  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="{{hostPort}}/modules/core/img/icons/ios/Icon-72.png">
+  <link rel="apple-touch-icon" sizes="57x57" href="{{hostPort}}/modules/core/img/icons/ios/Icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="description" content="{{description}}">
-  <meta property="fb:app_id" content="{{facebookAppId}}">
-  <meta property="article:publisher" content="{{facebookPage}}">
+
+  <!-- Facebook -->
+  {% if facebookAppId !== "APP_ID" %}<meta property="fb:app_id" content="{{facebookAppId}}">{% endif %}
+  {% if facebookPage !== "" %}<meta property="article:publisher" content="{{facebookPage}}">{% endif %}
   <meta property="og:site_name" content="{{title}}">
   <meta property="og:title" content="{{title}}">
   <meta property="og:description" content="{{description}}">
   <meta property="og:url" content="{{hostPort}}/">
   <meta property="og:image" content="{{hostPort}}/modules/core/img/og_image.jpg">
   <meta property="og:type" content="website">
+
+  <!-- Twitter -->
   <meta name="twitter:title" content="{{title}}">
   <meta name="twitter:description" content="{{description}}">
   <meta name="twitter:url" content="{{hostPort}}/">
   <meta name="twitter:image" content="{{hostPort}}/modules/core/img/og_image.jpg">
-  <meta name="twitter:site" content="{{twitterUsername}}">
-  <meta name="application-name" content="{{title}}">
-  <meta name="theme-color" content="#12b591">
+  {% if twitterUsername !== "" %}<meta name="twitter:site" content="{{twitterUsername}}">{% endif %}
+
+  <!-- MS -->
   <meta name="msapplication-tap-highlight" content="no">
   <meta name="msapplication-TileColor" content="#FFFFFF">
   <meta name="msapplication-TileImage" content="{{hostPort}}/modules/core/img/icons/apple-touch-icon-144x144-precomposed.png">
+
   {# Google Analytics #}
   {% if googleAnalytics.enabled === true %}
   <!-- https://www.trustroots.org/privacy -->
@@ -57,6 +81,7 @@
   ga('send', 'pageview');
   </script>
   {% endif %}
+
 </head>
 
 <body class="ng-cloak">
@@ -69,9 +94,9 @@
     <!-- Flash messages -->
     <mc-messages></mc-messages>
 
-    <section class="content" id="tr-main" role="main">
+    <article class="content" id="tr-main" role="main">
       {% block content %}{% endblock %}
-    </section>
+    </article>
 
   </div>
 
@@ -79,49 +104,39 @@
     {% include 'partials/footer.server.view.html' %}
   {% endblock %}
 
-  {# Embedding The User and Settings Objects #}
+  {# Embedding constants coming from the backend #}
   <script type="text/javascript">
     var user = {{ user | json | safe }},
+        title = '{{title}}',
         settings = {{ appSettings | json | safe }},
         languages = {{ languages | json | safe }};
   </script>
 
-  {# Le JS #}
-  {% for jsFile in jsFiles %}<script type="text/javascript" src="/{{jsFile}}?c={{appSettings.commit}}"></script>
-  {% endfor %}
+  {% if process.env.NODE_ENV === 'production' %}
+    <script type="text/javascript" src="/dist/application.min.js?c={{appSettings.commit}}"></script>
+    {% endif %}
 
   {% if process.env.NODE_ENV === 'development' %}
+  {% for jsFile in jsFiles %}<script type="text/javascript" src="/{{jsFile}}?c={{appSettings.commit}}"></script>
+  {% endfor %}
+  <script type="text/javascript" src="/dist/application.js?c={{appSettings.commit}}"></script>
   <script type="text/javascript">
     // Make sure we get livereload from the same host (IP/localhost/...)
     document.write('\x3Cscript type="text/javascript" src="//' + window.location.hostname + ':35729/livereload.js">\x3C/script>');
   </script>
   {% endif %}
 
-  {# Piwik Analytics #}
-  {% if piwik.enabled === true %}
-  <!-- https://www.trustroots.org/privacy -->
-  <script type="text/javascript">
-    var _paq = _paq || [];
-    _paq.push(['trackPageView']);
-    _paq.push(['enableLinkTracking']);
-    (function() {
-      var u="//{{piwik.url}}/";
-      _paq.push(['setTrackerUrl', u+'piwik.php']);
-      _paq.push(['setSiteId', {{piwik.siteId}}]);
-      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-      g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
-    })();
-  </script>
-  <noscript><img src="//{{piwik.url}}/piwik.php?idsite={{piwik.siteId}}" style="border:0;" alt="" /></noscript>
-  {% endif %}
-
   <!--[if lt IE 9]>
-  <section class="browsehappy">
-    <h1>Hello there!</h1>
-    <p>You are using an old browser which we unfortunately do not support.</p>
-    <p>Please <a href="http://browsehappy.com/">click here</a> to update your browser before using the website.</p>
-    <p><a href="http://browsehappy.com" class="btn btn-primary btn-lg" role="button">Yes, upgrade my browser!</a></p>
-  </section>
+  <div class="browsehappy text-center" ng-if="!app.hideBrowserhappy">
+    <h2>That's an awfully old browser you're browsing with!</h2>
+    <p class="lead">
+      <br>
+      You are using an old browser which we unfortunately do not support.
+      <br><br>
+      <a href="http://browsehappy.com" class="btn btn-primary btn-lg" role="button">Yes, upgrade my browser</a>
+      <a ng-click="app.hideBrowserhappy=true" class="btn btn-default btn-lg" role="button">Nah, I'll take the risk!</a>
+    </p>
+  </div>
   <![endif]-->
 </body>
 </html>

@@ -12,7 +12,7 @@
     .config(initConfig);
 
   /* @ngInject */
-  function initConfig(localStorageServiceProvider, cfpLoadingBarProvider, $locationProvider, $messageCenterServiceProvider) {
+  function initConfig(lockerProvider, cfpLoadingBarProvider, $locationProvider, $urlMatcherFactoryProvider, $messageCenterServiceProvider) {
 
     // Setting HTML5 Location Mode
     $locationProvider.html5Mode({
@@ -22,16 +22,23 @@
       requireBase: false
     }).hashPrefix('!');
 
+    // Make a trailing slash optional for all routes (ui-router)
+    // @link https://github.com/angular-ui/ui-router/wiki/Frequently-Asked-Questions#how-to-make-a-trailing-slash-optional-for-all-routes
+    $urlMatcherFactoryProvider.strictMode(false);
+
     // Hide spinner from the loading interceptor
     // @link https://github.com/chieffancypants/angular-loading-bar
     cfpLoadingBarProvider.includeSpinner = false;
 
     // Configure local storage module
-    // Not using localStorage here, but sessionStorage instead. It'll get wiped out when closing the browser.
-    // @link https://github.com/grevory/angular-local-storage#configuration
-    localStorageServiceProvider
-      .setPrefix(ApplicationConfiguration.applicationModuleName)
-      .setStorageType('sessionStorage');
+    // @link https://github.com/tymondesigns/angular-locker
+    lockerProvider.defaults({
+        driver: 'local', // local|session
+        namespace: ApplicationConfiguration.applicationModuleName,
+        separator: '.',
+        eventsEnabled: false,
+        extend: {}
+    });
 
     // Default timeout for success, error etc messages
     $messageCenterServiceProvider.setGlobalOptions({timeout: 6000});
@@ -42,6 +49,11 @@
   angular.element(document).ready(function() {
     // Fixing facebook bug with redirect
     if (window.location.hash === '#_=_') window.location.hash = '';
+
+    // FastClick - Polyfill to remove click delays on browsers with touch UIs
+    // Attach polyfill to `<body>`
+    // @link https://github.com/ftlabs/fastclick
+    FastClick.attach(document.body);
 
     // Then init the app
     angular.bootstrap(document, [ApplicationConfiguration.applicationModuleName]);

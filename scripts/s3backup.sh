@@ -43,3 +43,5 @@ echo "Sync user uploads..." >> $LOGFILE
 
 
 echo "Finished at $(date +%Y%m%d_%H%M%S)" >> $LOGFILE
+
+exit 0

@@ -24,12 +24,12 @@
       overlays: {
         selectedPath: {
           name: 'selectedPath',
-          type: 'featureGroup',
+          type: 'group',
           visible: false
         },
         selectedMarker: {
           name: 'selectedMarker',
-          type: 'featureGroup',
+          type: 'group',
           visible: false
         }
       }

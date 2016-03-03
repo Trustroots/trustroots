@@ -14,7 +14,8 @@
 module.exports = {
 
   // See https://github.com/andris9/Nodemailer#tldr-usage-example how to configure mailer
-  // In production we're using Mandrill https://mandrillapp.com
+  // Note about Gmail https://github.com/andris9/Nodemailer#using-gmail
+  // We recommend Mandrill, which is free up to 12K messages.
   /*
   mailer: {
     from: 'gmail.user@gmail.com',
@@ -24,6 +25,19 @@ module.exports = {
         user: 'gmail.user@gmail.com',
         pass: 'userpass'
       }
+    }
+  }
+  */
+
+  // Example configuration using MailDev
+  // https://github.com/djfarrelly/MailDev
+  /*
+  mailer: {
+    from: 'trustroots@dev.trustroots.org',
+    options: {
+      host: 'localhost',
+      port: 1025,
+      ignoreTLS: true
     }
   }
   */

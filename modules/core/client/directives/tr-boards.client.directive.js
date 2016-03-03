@@ -116,6 +116,14 @@
             'name': 'Matas Astrauskas',
             'url': 'http://www.matasphoto.com/',
             'file': 'mr-hitchgirl2.jpg'
+          },
+          'mountainforest': {
+            // https://unsplash.com/photos/VNseEaTt9w4
+            'name': 'Sven Scheuermeier',
+            'url': 'https://unsplash.com/sveninho',
+            'file': 'ss-mountainforest.jpg',
+            'license': 'CC',
+            'license_url': 'https://creativecommons.org/publicdomain/zero/1.0/', // https://unsplash.com/license
           }
         };
 
@@ -132,8 +140,12 @@
           //'background-position': (photo.position ? photo.position : '50% 50%')
         });
 
+        // To prevent key being literally `key`: `{key: ...}`, we want it to be actual keyname such as `hitchroad`.
+        var photoObject = {};
+        photoObject[key] = photo;
+
         // Send copyright info down the scope... something will pick it up! (pst, core/app-controller)
-        scope.$emit('photoCreditsUpdated', photo);
+        scope.$emit('photoCreditsUpdated', photoObject);
 
       }
     };

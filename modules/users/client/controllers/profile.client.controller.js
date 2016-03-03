@@ -6,7 +6,7 @@
     .controller('ProfileController', ProfileController);
 
   /* @ngInject */
-  function ProfileController($scope, $stateParams, $state, $location, $modal, Languages, Users, Contact, Authentication, $timeout, messageCenterService, profile, contact, appSettings) {
+  function ProfileController($scope, $stateParams, $state, $location, $uibModal, Languages, Users, Contact, Authentication, $timeout, messageCenterService, profile, contact, appSettings) {
 
     // No user defined at URL, just redirect to user's own profile
     if(!$stateParams.username) {
@@ -79,13 +79,13 @@
      * Open avatar modal (bigger photo)
      */
     function toggleAvatarModal() {
-      $modal.open({
+      $uibModal.open({
         template: '<a tr-avatar data-user="avatarModal.profile" data-size="512" data-link="false" ng-click="avatarModal.close()"></a>',
-        controller: function($scope, $modalInstance, profile) {
+        controller: function($scope, $uibModalInstance, profile) {
           var vm = this;
           vm.profile = profile;
           vm.close = function() {
-            $modalInstance.dismiss('cancel');
+            $uibModalInstance.dismiss('cancel');
           };
         },
         controllerAs: 'avatarModal',

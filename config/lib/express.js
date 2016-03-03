@@ -3,7 +3,8 @@
 /**
  * Module dependencies.
  */
-var config = require('../config'),
+var _ = require('lodash'),
+    config = require('../config'),
     errorHandler = require('../../modules/core/server/controllers/errors.server.controller'),
     languages = require('../languages/languages.json'),
     express = require('express'),
@@ -21,7 +22,9 @@ var config = require('../config'),
     git = require('git-rev'),
     path = require('path'),
     paginate = require('express-paginate'),
-    seo = require('mean-seo');
+    seo = require('mean-seo'),
+    path = require('path'),
+    Agenda = require('agenda');
 
 /**
  * Initialize local variables
@@ -44,7 +47,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.maxUploadSize = config.maxUploadSize;
 
   app.locals.jsFiles = config.files.client.js;
-  app.locals.cssFiles = config.files.client.css;
+  app.locals.cssFiles = _.map(config.files.client.css, function(file) { return file.replace('/client', ''); });
 
   // Get 'git rev-parse --short HEAD' (the latest git commit hash) to use as a cache buster
   // @link https://www.npmjs.com/package/git-rev
@@ -188,6 +191,46 @@ module.exports.initSEO = function (app) {
 };
 
 /**
+ * Configure Agenda "Cron" jobs
+ * @link https://www.npmjs.com/package/agenda
+ */
+module.exports.initAgenda = function (app, db) {
+
+  // Don't launch Agenda on test environment
+  // @todo: make it possible to launch this manually with very small interwalls for testing
+  // @todo: similarly for testing purposes, write a stopAgenda() method
+  if(process.env.NODE_ENV !== 'production') {
+    return;
+  }
+
+  // Setup agenda
+  var agendaWorker = new Agenda({
+    db: {
+      address: config.db.uri,
+      collection: 'agendaJobs'
+    }
+  });
+
+  agendaWorker.on('ready', function() {
+    // Load jobs
+    var messagesUnreadJob = require(path.resolve('./modules/messages/server/jobs/message-unread.server.job'));
+
+    // Schedule job(s)
+    messagesUnreadJob.checkUnreadMessages(agendaWorker);
+    agendaWorker.every('5 minutes', 'check unread messages');
+
+    // Start worker
+    agendaWorker.start();
+    console.log('Agenda started processing background jobs');
+  });
+
+  // Error reporting
+  agendaWorker.on('fail', function(err, job) {
+    console.error('Agenda job failed with error: %s', err.message);
+  });
+};
+
+/**
  * Configure the modules static routes
  */
 module.exports.initModulesClientRoutes = function (app) {
@@ -257,17 +300,17 @@ module.exports.init = function (db) {
   // Initialize Express view engine
   this.initViewEngine(app);
 
-  // Initialize Express session
-  this.initSession(app, db);
-
-  // Initialize Modules configuration
-  this.initModulesConfiguration(app);
-
   // Initialize Helmet security headers
   this.initHelmetHeaders(app);
 
   // Initialize modules static client routes
   this.initModulesClientRoutes(app);
+
+  // Initialize Express session
+  this.initSession(app, db);
+
+  // Initialize Modules configuration
+  this.initModulesConfiguration(app);
 
   // Initialize modules server authorization policies
   this.initModulesServerPolicies(app);
@@ -280,6 +323,9 @@ module.exports.init = function (db) {
 
   // Initialize error routes
   this.initErrorRoutes(app);
+
+  // Initialize Agenda ("cron" jobs)
+  this.initAgenda(app, db);
 
   // Configure Socket.io
   //app = this.configureSocketIO(app, db);

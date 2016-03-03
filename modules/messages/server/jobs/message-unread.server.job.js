@@ -28,6 +28,15 @@ var _ = require('lodash'),
     Message = mongoose.model('Message'),
     User = mongoose.model('User');
 
+// Replace mailer with Stub mailer transporter
+// Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
+// it with the sendMail callback. This is useful for testing the emails before actually sending anything.
+// @link https://github.com/andris9/nodemailer-stub-transport
+if (process.env.NODE_ENV === 'test') {
+  var stubTransport = require('nodemailer-stub-transport');
+  config.mailer.options = stubTransport();
+}
+
 exports.checkUnreadMessages = function(agenda) {
   agenda.define('check unread messages', {lockLifetime: 10000}, function(job, agendaDone) {
 
@@ -77,13 +86,14 @@ exports.checkUnreadMessages = function(agenda) {
           userIds.push(notification._id);
 
           // Look trough messages and their sender ids
+          // @link https://lodash.com/docs#uniq
           notification.messages.forEach(function(message) {
             userIds.push(message.userFrom);
           });
         });
 
         // Make sure we don't have huge list of dublicate user ids
-        userIds = _.unique(userIds);
+        userIds = _.uniq(userIds);
 
         // Fetch email + displayName for all users involved
         // Remember to add these values also userNotFound object (see below)

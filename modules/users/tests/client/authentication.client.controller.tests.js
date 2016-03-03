@@ -1,11 +1,11 @@
-'use strict';
-
 (function() {
+  'use strict';
+
   // Authentication controller Spec
   describe('AuthenticationController', function() {
     // Initialize global variables
     var AuthenticationController,
-        scope,
+        $scope,
         $httpBackend,
         $stateParams,
         $location,
@@ -32,7 +32,7 @@
 
     describe('Logged out user', function () {
 
-      var scope,
+      var $scope,
           appSettings = {
             flashTimeout: 0
           };
@@ -41,8 +41,8 @@
       // This allows us to inject a service but then attach it to a variable
       // with the same name as the service.
       beforeEach(inject(function($controller, $injector, $rootScope, _$location_, _$stateParams_, _$httpBackend_, _$window_, _$state_, _Authentication_) {
-        // Set a new global scope
-        scope = $rootScope.$new();
+        // Set a new global $scope
+        $scope = $rootScope.$new();
         $window = _$window_;
 
         // Point global variables to injected services
@@ -55,11 +55,11 @@
 
         // Initialize the Authentication controller
         AuthenticationController = $controller('AuthenticationController', {
-          $scope: scope,
+          $scope: $scope,
           appSettings: appSettings
         });
 
-        scope.vm = AuthenticationController;
+        $scope.vm = AuthenticationController;
       }));
 
       describe('AuthenticationController.signin()', function() {
@@ -73,7 +73,7 @@
           AuthenticationController.signin();
           $httpBackend.flush();
 
-          // Test scope value
+          // Test $scope value
           expect(Authentication.user).toEqual('Fred');
         });
 
@@ -89,7 +89,7 @@
           AuthenticationController.signin();
           $httpBackend.flush();
 
-          // Test scope value
+          // Test $scope value
           expect(Authentication.user).toEqual(undefined);
         });
 
@@ -97,7 +97,7 @@
 
       describe('Logged in user', function () {
         beforeEach(inject(function ($controller, $rootScope, _$state_, _Authentication_) {
-          scope = $rootScope.$new();
+          $scope = $rootScope.$new();
 
           $state = _$state_;
           $state.go = jasmine.createSpy().and.returnValue(true);
@@ -109,7 +109,7 @@
           };
 
           AuthenticationController = $controller('AuthenticationController', {
-            $scope: scope,
+            $scope: $scope,
             appSettings: appSettings
           });
         }));

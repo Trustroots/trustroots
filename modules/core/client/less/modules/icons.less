@@ -1,26 +1,20 @@
 /**
  * Fontello icon font
  *
- * Updating icons:
- * - Drag fontello.conf.json to http://fontello.com/
- * - Do your changes
- * - Download
- * - Copy config.json from zip over fontello.conf.json
- * - Run 'grunt fontello'
- * - Update icon version date below
+ * Read more: modules/core/client/fonts/fontello/README.md
  */
 
 // Cache buster
-@icon-version: "2015-09-02";
+@icon-version: "2016-02-25";
 @icon-li-width: (30em / 14);
 
 @font-face {
   font-family: 'tricons';
-  src: url('/lib/fontello/fonts/tricons.eot?v=@{icon-version}');
-  src: url('/lib/fontello/fonts/tricons.eot?v=@{icon-version}#iefix') format('embedded-opentype'),
-       url('/lib/fontello/fonts/tricons.woff?v=@{icon-version}') format('woff'),
-       url('/lib/fontello/fonts/tricons.ttf?v=@{icon-version}') format('truetype'),
-       url('/lib/fontello/fonts/tricons.svg?v=@{icon-version}#tricons') format('svg');
+  src: url('/modules/core/fonts/fontello/font/tricons.eot?v=@{icon-version}');
+  src: url('/modules/core/fonts/fontello/font/tricons.eot?v=@{icon-version}#iefix') format('embedded-opentype'),
+       url('/modules/core/fonts/fontello/font/tricons.woff?v=@{icon-version}') format('woff'),
+       url('/modules/core/fonts/fontello/font/tricons.ttf?v=@{icon-version}') format('truetype'),
+       url('/modules/core/fonts/fontello/font/tricons.svg?v=@{icon-version}#tricons') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -30,16 +24,11 @@
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   @font-face {
     font-family: 'tricons';
-    src: url('/lib/fontello/font/tricons.svg#tricons') format('svg');
+    src: url('/modules/core/fonts/fontello/font/tricons.svg#tricons') format('svg');
   }
 }
 */
 
-// Angular-UI Bootstrap Datepicker has hardcoded "glyphicon",
-// but we don't have Bootstrap's Glyphicons included.
-// Proxying them here. Nasty. Get rid of this if you can.
-// https://angular-ui.github.io/bootstrap/#/datepicker
-.glyphicon:before,
 // Leaflet attribution control i-symbol
 // See leaflet.less for more
 .leaflet-container .leaflet-control-attribution:after,
@@ -106,7 +95,7 @@
 
 
 // List Icons
-// Adapted from FontAwesome - MIT licensed
+// CSS adapted from FontAwesome - MIT licensed
 // @link http://opensource.org/licenses/mit-license.html
 // @link https://github.com/FortAwesome/Font-Awesome/blob/master/less/list.less
 // -------------------------
@@ -138,12 +127,6 @@
   text-align: center;
 }
 
-
-//
-
-// Angular-UI Bootstrap Datepicker has hardcoded "glyphicon"
-.glyphicon-chevron-left:before { content: '\e81e'; }
-.glyphicon-chevron-right:before { content: '\e81d'; }
 
 // Leaflet attribution i-symbol
 .leaflet-container .leaflet-control-attribution:after { content: '\e825'; }

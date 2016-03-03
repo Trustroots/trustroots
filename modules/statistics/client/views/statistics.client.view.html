@@ -13,7 +13,7 @@
       <section ng-if="stats.data.$resolved">
 
         <div class="row">
-          <div class="col-xs-6">
+          <div class="col-sm-6">
 
             <!-- Total members -->
             <div class="panel panel-default panel-glass">
@@ -33,17 +33,18 @@
               <div class="panel-body">
                 <ul class="list-unstyled text-muted text-capitalize">
                   <li ng-repeat="connection in stats.connections | orderBy:'-count'">
-                    <h5 tooltip="{{connection.count | number}} members" tooltip-placement="right">
+                    <h5 uib-tooltip="{{connection.count | number}} members" tooltip-placement="right">
                       {{ connection.network }}
                       {{ ((connection.count/stats.total)*100) | number:1 }}%
                     </h5>
                   </li>
                 </ul>
+                <p ng-if="app.user"><a ui-sref="profile-edit" class="btn btn-sm btn-default">Extend your profile</a></p>
               </div>
             </div>
 
           </div>
-          <div class="col-xs-6">
+          <div class="col-sm-6">
 
             <!-- Hosts -->
             <div class="panel panel-default panel-glass">
@@ -51,11 +52,11 @@
                 <h3 class="panel-title">Hosts</h3>
               </div>
               <div class="panel-body">
-                <span class="stats-count" tooltip="{{ stats.hostingTotal | number }} members" tooltip-placement="bottom">{{ stats.hostingPercentage | number:1 }}%</span><br>
+                <span class="stats-count" uib-tooltip="{{ stats.hostingTotal | number }} members" tooltip-placement="bottom">{{ stats.hostingPercentage | number:1 }}%</span><br>
                 <h5 class="text-muted">
-                  <span tooltip="{{ stats.hosting.yes | number }} members" tooltip-placement="bottom">{{ stats.hostingYesPercentage | number:1 }}% yes</span>
+                  <span uib-tooltip="{{ stats.hosting.yes | number }} members" tooltip-placement="bottom">{{ stats.hostingYesPercentage | number:1 }}% yes</span>
                   —
-                  <span tooltip="{{ stats.hosting.maybe | number }} members" tooltip-placement="bottom">{{ stats.hostingMaybePercentage | number:1 }}% maybe</span>
+                  <span uib-tooltip="{{ stats.hosting.maybe | number }} members" tooltip-placement="bottom">{{ stats.hostingMaybePercentage | number:1 }}% maybe</span>
                 </h5>
               </div>
             </div>
@@ -68,6 +69,7 @@
               <div class="panel-body">
                 <span class="stats-count">{{ stats.newsletterPercentage | number:1 }}%</span><br>
                 <h5 class="text-muted text-uppercase">{{ stats.newsletter | number }} subscribers</h5>
+                <p ng-if="app.user"><a ui-sref="profile-settings" class="btn btn-sm btn-default">Subscribe to newsletter</a></p>
               </div>
             </div>
 
@@ -79,12 +81,11 @@
 
         <h3>Enabling the latent trust between humans since</h3>
         <time class="lead" ng-bind="stats.launchDate | date:mediumDate"></time>
-
       </section>
 
       <p>
         <br>
-        <a ng-click="app.goHome()" class="btn btn-inverse">Home</a>
+        <a ng-if="!app.user" ui-sref="signup" class="btn btn-lg btn-action btn-inverse">Join Trustroots</a>
         <br><br>
         <br><br>
         <a class="stats-commit" ng-if="stats.commit" ng-href="https://github.com/Trustroots/trustroots/tree/{{stats.commit}}">Currently deployed code at Github</a>

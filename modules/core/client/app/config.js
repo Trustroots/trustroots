@@ -14,7 +14,8 @@ var ApplicationConfiguration = (function() {
                                               'ui.bootstrap',
                                               'angularMoment',
                                               'angular-medium-editor',
-                                              'leaflet-directive',
+                                              'nemLogging',
+                                              'ui-leaflet',
                                               'ngFileUpload',
                                               'zumba.angular-waypoints',
                                               'MessageCenterModule',
@@ -22,7 +23,7 @@ var ApplicationConfiguration = (function() {
                                               'angular-loading-bar',
                                               'trTrustpass',
                                               'angular-mailcheck',
-                                              'LocalStorageModule'
+                                              'angular-locker'
                                             ];
 
   // Add a new vertical module

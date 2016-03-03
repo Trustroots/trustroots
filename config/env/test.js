@@ -12,10 +12,13 @@
 
 module.exports = {
   db: {
-    uri: 'mongodb://localhost/trust-roots-test',
+    uri: 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trustroots-test',
     options: {
-      user: '',
-      pass: ''
+      auth: {
+        authMechanism: ''
+      }
+      //user: '',
+      //pass: ''
     },
     // Enable mongoose debug mode
     debug: process.env.MONGODB_DEBUG || false
@@ -23,8 +26,7 @@ module.exports = {
   port: 3001,
   app: {
     title: 'Trustroots test environment.',
-    description: 'Trustroots test environment.',
-    tagline: 'Trustroots test environment.'
+    description: 'Trustroots test environment.'
   },
   mapbox: {
     // Mapbox is publicly exposed to the frontend

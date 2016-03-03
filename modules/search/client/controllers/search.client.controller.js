@@ -6,20 +6,24 @@
     .controller('SearchController', SearchController);
 
   /* @ngInject */
-  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, OffersService, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, localStorageService) {
+  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, OffersService, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, locker) {
+
+    // `search-map-canvas` is id of <leaflet> element
+    var mapId = 'search-map-canvas';
+
+    // Prefix for Leaflet events
+    // @link https://github.com/angular-ui/ui-leaflet/commit/d22b3f0
+    var listenerPrefix = 'leafletDirectiveMap.' + mapId;
+
+    // Make cache id unique for this user
+    var cachePrefix = (Authentication.user) ? 'search.mapCenter.' + Authentication.user._id : 'search.mapCenter';
 
     // Default to Europe for now
     var defaultLocation = {
       lat: 48.6908333333,
       lng: 9.14055555556,
       zoom: 6
-    },
-    cacheId = 'search-map-state';
-
-    // Make cache id unique for this user
-    if(Authentication.user) {
-      cacheId = Authentication.user._id + '.' + cacheId;
-    }
+    };
 
     // ViewModel
     var vm = this;
@@ -30,7 +34,6 @@
     vm.searchAddress = searchAddress;
     vm.mapLocate = mapLocate;
     vm.searchSuggestions = searchSuggestions;
-
     vm.mapLayerstyle = 'street';
     vm.sidebarOpen = false;
     vm.offer = false; // Offer to show
@@ -72,14 +75,26 @@
         }
       }
     };
-    vm.mapCenter = {};
+
+    // Is local/sessionStorage supported? This might fail in browser's incognito mode
+    if(locker.supported()) {
+      // Get location from cache, use default if it doesn't exist
+      vm.mapCenter = locker.get(cachePrefix, defaultLocation);
+
+      // If the key already exists then no action will be taken and false will be returned
+      locker.add(cachePrefix, defaultLocation);
+    }
+    else {
+      vm.mapCenter = defaultLocation;
+    }
+
     vm.mapBounds = {};
     vm.mapLayers = {
       baselayers: {},
       overlays: {
         selectedOffers: {
           name: 'Selected hosts',
-          type: 'featureGroup',
+          type: 'group',
           visible: false
         }
       }
@@ -118,7 +133,7 @@
     /**
      * Add attribution controller
      */
-    leafletData.getMap('search-map-canvas').then(function(map) {
+    leafletData.getMap(mapId).then(function(map) {
       map.addControl(L.control.attribution({
         position: 'bottomright',
         prefix: ''
@@ -131,7 +146,7 @@
      * Possible values are: street, satellite
      * Defaults to street
      */
-    $scope.$on('leafletDirectiveMap.baselayerchange', function(event, layer) {
+    $scope.$on(listenerPrefix + '.baselayerchange', function(event, layer) {
       $timeout(function() {
         vm.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? layer.leafletEvent.layer.options.TRStyle : 'street';
       });
@@ -166,7 +181,7 @@
     /**
      * Sidebar & markers react to these events
      */
-    $scope.$on('leafletDirectiveMap.click', function(event){
+    $scope.$on(listenerPrefix + '.click', function(event){
       vm.sidebarOpen = false;
       vm.offer = false;
       vm.mapLayers.overlays.selectedOffers.visible = false;
@@ -200,7 +215,7 @@
           northEastLat: vm.mapLastBounds.northEastLat,
           southWestLng: vm.mapLastBounds.southWestLng,
           southWestLat: vm.mapLastBounds.southWestLat
-        }, function(offers){
+        }, function(offers) {
           // Remove last markers
           vm.pruneCluster.RemoveMarkers();
           // Let's go through those markers
@@ -224,20 +239,9 @@
     /**
      * Event when the map has finished loading
      */
-    $scope.$on('leafletDirectiveMap.load', function(event) {
+    $scope.$on(listenerPrefix + '.load', function(event) {
 
-      // Check for cached map state and move map to there if found
-      var cachedMapState = localStorageService.get(cacheId);
-
-      if(cachedMapState && cachedMapState.lat && cachedMapState.lng && cachedMapState.zoom) {
-        vm.mapCenter = {
-          lat: parseFloat(cachedMapState.lat),
-          lng: parseFloat(cachedMapState.lng),
-          zoom: parseInt(cachedMapState.zoom)
-        };
-      }
-
-      leafletData.getMap('search-map-canvas').then(function(map) {
+      leafletData.getMap(mapId).then(function(map) {
         map.addLayer(vm.pruneCluster);
       });
 
@@ -258,7 +262,7 @@
     });
 
     // Set event that fires everytime we finish to move the map
-    $scope.$on('leafletDirectiveMap.moveend', function(event) {
+    $scope.$on(listenerPrefix + '.moveend', function(event) {
 
       if(vm.mapCenter.zoom > vm.mapMinimumZoom) {
         getMarkers();
@@ -275,7 +279,14 @@
         };
       }
 
-      saveMapState();
+      // Save new map state to the cache
+      // We could also just save `vm.mapCenter`, but it might have Angular related rubbish in it
+      locker.put(cachePrefix, {
+        'lat': vm.mapCenter.lat,
+        'lng': vm.mapCenter.lng,
+        'zoom': vm.mapCenter.zoom
+      });
+
     });
 
     /**
@@ -295,19 +306,15 @@
         vm.searchQuerySearching = true;
 
         $http
-          .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + vm.searchQuery + '.json?access_token=' + appSettings.mapbox.publicKey)
+          .get('//api.mapbox.com/geocoding/v5/mapbox.places/' + vm.searchQuery + '.json?access_token=' + appSettings.mapbox.publicKey)
           .then(function(response) {
 
             vm.searchQuerySearching = false;
-            vm.mapCenter = defaultLocation;
 
             if(response.status === 200 && response.data && response.data.features && response.data.features.length > 0) {
               mapLocate(response.data.features[0]);
             }
             else {
-              if(vm.mapCenter.lat === 0 && vm.mapCenter.zoom === 1) {
-                vm.mapCenter = defaultLocation;
-              }
               messageCenterService.add('warning', 'We could not find such a place...');
             }
           });
@@ -349,18 +356,6 @@
     }
 
     /**
-     * Store map state with localStorageService for later use
-     * @todo: add layer here
-     */
-    function saveMapState() {
-      localStorageService.set(cacheId, {
-        'lat': vm.mapCenter.lat,
-        'lng': vm.mapCenter.lng,
-        'zoom': vm.mapCenter.zoom
-      });
-    }
-
-    /**
      * Search field's typeahead -suggestions
      *
      * @link https://www.mapbox.com/developers/api/geocoding/
@@ -368,7 +363,7 @@
     function searchSuggestions(val) {
       if(appSettings.mapbox && appSettings.mapbox.publicKey) {
         return $http
-          .get('//api.tiles.mapbox.com/v4/geocode/mapbox.places-v1/' + val + '.json?access_token=' + appSettings.mapbox.publicKey)
+          .get('//api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json?access_token=' + appSettings.mapbox.publicKey)
           .then(function(response) {
             vm.searchQuerySearching = false;
             if(response.status === 200 && response.data && response.data.features && response.data.features.length > 0) {
@@ -435,10 +430,6 @@
           vm.offerNotFound = false;
         }, 3000);
       });
-    }
-    // Nothing to init from URL
-    else {
-      vm.mapCenter = defaultLocation;
     }
 
   }

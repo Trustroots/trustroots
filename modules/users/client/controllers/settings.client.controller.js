@@ -51,7 +51,7 @@
       if($event) $event.preventDefault();
       if(vm.user.emailTemporary) {
         vm.user.email = vm.user.emailTemporary;
-        vm.updateUserEmail();
+        updateUserEmail();
       }
     }
 

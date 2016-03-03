@@ -13,22 +13,25 @@
 module.exports = {
   app: {
     title: 'Trustroots',
-    description: 'Travellers community for sharing, hosting and getting people together. Built with hitchhikers in mind. A world that encourages trust and adventure.',
-    tagline: 'Hospitality exchange community for hitchhikers and other travellers.'
+    description: 'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.'
   },
-  maxUploadSize: process.env.MAX_UPLOAD_SIZE || 10000000, // 10MB. Remember to change this to Nginx configs as well
+  maxUploadSize: process.env.MAX_UPLOAD_SIZE || 10*1024*1024, // 10MB. Remember to change this to Nginx configs as well
+  imageProcessor: 'graphicsmagick', // graphicsmagick|imagemagick
+  uploadTmpDir: './tmp/',
+  uploadDir: './modules/users/client/img/profile/uploads/',
   port: process.env.PORT || 3000,
   https: process.env.HTTPS || false,
   sessionSecret: 'MEAN',
   sessionCollection: 'sessions',
   domain: process.env.DOMAIN || 'localhost:3000',
+  supportEmail: 'support@trustroots.org', // TO-address for support requests
   mailer: {
-    from: process.env.MAILER_FROM || 'MAILER_FROM',
+    from: process.env.MAILER_FROM || 'hello@trustroots.org',
     options: {
-      service: process.env.MAILER_SERVICE_PROVIDER || 'MAILER_SERVICE_PROVIDER',
+      service: process.env.MAILER_SERVICE_PROVIDER || false,
       auth: {
-        user: process.env.MAILER_EMAIL_ID || 'MAILER_EMAIL_ID',
-        pass: process.env.MAILER_PASSWORD || 'MAILER_PASSWORD'
+        user: process.env.MAILER_EMAIL_ID || false,
+        pass: process.env.MAILER_PASSWORD || false
       }
     }
   },
@@ -43,7 +46,7 @@ module.exports = {
     publicKey: process.env.MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
   },
   facebook: {
-    page: process.env.FACEBOOK_PAGE || 'PAGE',
+    page: process.env.FACEBOOK_PAGE || '',
     clientID: process.env.FACEBOOK_ID || 'APP_ID',
     clientSecret: process.env.FACEBOOK_SECRET || 'APP_SECRET',
     callbackURL: '/api/auth/facebook/callback'
@@ -55,12 +58,7 @@ module.exports = {
     callbackURL: '/api/auth/twitter/callback'
   },
   google: {
-    page: process.env.GOOGLE_PAGE || 'PAGE',
-  },
-  linkedin: {
-    clientID: process.env.LINKEDIN_ID || 'APP_ID',
-    clientSecret: process.env.LINKEDIN_SECRET || 'APP_SECRET',
-    callbackURL: '/api/auth/linkedin/callback'
+    page: process.env.GOOGLE_PAGE || '',
   },
   github: {
     clientID: process.env.GITHUB_ID || 'APP_ID',
@@ -70,10 +68,5 @@ module.exports = {
   googleAnalytics: {
     enabled: process.env.GA_ENABLED || false,
     code: process.env.GA_CODE || ''
-  },
-  piwik: {
-    enabled: process.env.PIWIK_ENABLED || false,
-    url: process.env.PIWIK_URL || 'PIWIK_URL',
-    siteId: process.env.PIWIK_ID || 'PIWIK_ID'
   }
 };

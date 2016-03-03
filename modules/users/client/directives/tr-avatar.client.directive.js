@@ -6,7 +6,7 @@
  * @name trustroots:trAvatar
  *
  * @param {object} user User object
- * @param {int} size Size of the image <img>. Supported values are 512, 256, 128, 64, 36, 32, 24 and 16. See avatar.less for details. Defaults to 256.
+ * @param {int} size Size of the image <img>. Supported values are 2048, 1024, 512, 256, 128, 64, 36, 32, 24 and 16. See avatar.less for details. Defaults to 256.
  * @param {string} source Leave empty to use user's selected source. Values "none", "facebook", "local", "gravatar".
  * @param {boolean} link Link to user's profile. Defaults to true.
  *
@@ -101,7 +101,7 @@ angular.module('users').directive('trAvatar', ['$location',
                   // Cache buster
                   var timestamp = new Date($scope.user.updated).getTime();
 
-                  // 32 is the smallest file size we're generating.
+                  // 32 is the smallest and 2048 biggest file size we're generating.
                   var fileSize = ($scope.size < 32) ? 32 : $scope.size;
 
                   $scope.avatar = '/modules/users/img/profile/uploads/' + $scope.user._id + '/avatar/' + fileSize + '.jpg?' + timestamp;

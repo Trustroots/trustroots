@@ -13,6 +13,15 @@ var path = require('path'),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
 
+// Replace mailer with Stub mailer transporter
+// Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
+// it with the sendMail callback. This is useful for testing the emails before actually sending anything.
+// @link https://github.com/andris9/nodemailer-stub-transport
+if (process.env.NODE_ENV === 'test') {
+  var stubTransport = require('nodemailer-stub-transport');
+  config.mailer.options = stubTransport();
+}
+
 /**
  * Forgot for reset password (forgot POST)
  */
@@ -97,7 +106,7 @@ exports.forgot = function(req, res, next) {
       smtpTransport.sendMail(mailOptions, function(err) {
         if (!err) {
           res.send({
-            message: 'We sent you an email with further instructions. If you don\'t see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".'
+            message: 'Password reset sent.'
           });
         } else {
           res.status(400).send({
