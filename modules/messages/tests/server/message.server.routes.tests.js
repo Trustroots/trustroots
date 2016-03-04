@@ -1,6 +1,7 @@
 'use strict';
 
 var should = require('should'),
+    async = require('async'),
     request = require('supertest'),
     path = require('path'),
     mongoose = require('mongoose'),
@@ -71,7 +72,7 @@ describe('Message CRUD tests', function() {
             content: 'Message content',
             userTo: userToId
           };
-          done();
+          return done();
         });
 
       });
@@ -82,8 +83,11 @@ describe('Message CRUD tests', function() {
     agent.get('/api/messages')
       .expect(403)
       .end(function(messageSaveErr, messageSaveRes) {
+
+        messageSaveRes.body.message.should.equal('Forbidden.');
+
         // Call the assertion callback
-        done(messageSaveErr);
+        return done(messageSaveErr);
       });
   });
 
@@ -92,8 +96,11 @@ describe('Message CRUD tests', function() {
       .send(message)
       .expect(403)
       .end(function(messageSaveErr, messageSaveRes) {
+
+        messageSaveRes.body.message.should.equal('Forbidden.');
+
         // Call the assertion callback
-        done(messageSaveErr);
+        return done(messageSaveErr);
       });
   });
 
@@ -126,21 +133,123 @@ describe('Message CRUD tests', function() {
                 var thread = messagesGetRes.body;
 
                 if(!thread[0] || !thread[0].content) {
-                  done(new Error('Missing messages from the message thread.'));
+                  return done(new Error('Missing messages from the message thread.'));
                 }
                 else {
 
                   // Set assertions
                   (thread[0].userFrom._id.toString()).should.equal(userFromId.toString());
                   (thread[0].userTo._id.toString()).should.equal(userToId.toString());
-                  (thread[0].content).should.match('Message content');
+                  (thread[0].content).should.equal('Message content');
+                  (thread[0].notified).should.equal(false);
+                  (thread[0].read).should.equal(false);
 
                   // Call the assertion callback
-                  done();
+                  return done();
                 }
 
               });
           });
+      });
+  });
+
+  it('should be able to send 25 messages and reading them should return messages in paginated order', function(done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) done(signinErr);
+
+        // Get user id
+        var userFromId = signinRes.body._id;
+
+            // Now loop 25 messages in...
+            // "Older" messages will have smaller numbers
+            // @link https://github.com/caolan/async#whilsttest-fn-callback
+            var count = 0;
+            async.whilst(
+              function () { return count < 25; },
+              function (callback) {
+
+                count++;
+                var newMessage = message;
+                newMessage.content = 'Message content ' + count;
+
+                agent.post('/api/messages')
+                  .send(newMessage)
+                  .expect(200)
+                  .end(function(messageSaveErr, messageSaveRes) {
+                    // Handle message save error
+                    if (messageSaveErr) done(messageSaveErr);
+
+                    // This message was saved okay, continue to the next one...
+                    callback(null, count);
+                  });
+              },
+              // All messages sent, continue.
+              function (err, totalCount) {
+
+                // Get a list of messages
+                agent.get('/api/messages/' + userToId)
+                  .expect(200)
+                  .end(function(messagesGetErr, messagesGetRes) {
+                    // Handle message read error
+                    if (messagesGetErr) done(messagesGetErr);
+
+                    // Get messages list
+                    var thread = messagesGetRes.body;
+
+                    // Response header should inform about pagination
+                    //console.log(messagesGetRes.res.headers.link);
+
+                    if(!thread[0] || !thread[0].content) {
+                      return done(new Error('Missing messages from the message thread.'));
+                    }
+                    else {
+                      // Pagination gives 20 messages at once
+                      thread.length.should.equal(20);
+
+                      // Set assertions for first and last message
+                      (thread[0].content).should.match('Message content 25');
+                      (thread[19].content).should.match('Message content 6');
+
+                      // Get the 2nd page
+                      agent.get('/api/messages/' + userToId + '?page=2')
+                        .expect(200)
+                        .end(function(messagesGetErr, messagesGetRes) {
+                          // Handle message read error
+                          if (messagesGetErr) done(messagesGetErr);
+
+                          // Get messages list
+                          var thread = messagesGetRes.body;
+
+                          // Response header should inform about pagination
+                          //console.log(messagesGetRes.res.headers.link);
+
+                          if(!thread[0] || !thread[0].content) {
+                            return done(new Error('Missing messages from the message thread.'));
+                          }
+                          else {
+
+                             // Pagination gives 20 messages at once but there are only 5 left for the 2nd page
+                             thread.length.should.equal(5);
+
+                             // Set assertions for first and last message
+                             (thread[0].content).should.match('Message content 5');
+                             (thread[4].content).should.match('Message content 1');
+
+                            // Call the assertion callback
+                            return done();
+                          }
+                        });
+
+                    }
+                  });
+
+                }
+            );
+
       });
   });
 
@@ -163,8 +272,11 @@ describe('Message CRUD tests', function() {
           .send(messageToMyself)
           .expect(403)
           .end(function(messageSaveErr, messageSaveRes) {
+
+            messageSaveRes.body.message.should.equal('Recepient cannot be currently authenticated user.');
+
             // Call the assertion callback
-            done(messageSaveErr);
+            return done(messageSaveErr);
           });
       });
   });
