@@ -52,10 +52,12 @@
     function otherParticipant(thread, value) {
       var other = (thread.userFrom._id === Authentication.user._id) ? thread.userTo : thread.userFrom;
 
-      if (value === 'displayName') {
+      if(!other) return;
+
+      if (value && value === 'displayName') {
         return other.displayName;
       }
-      else if (value === 'username') {
+      else if (value && value === 'username') {
         return other.username;
       }
       else {

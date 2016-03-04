@@ -5,13 +5,13 @@
  */
 var _ = require('lodash'),
     path = require('path'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
-    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
-    userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
     async = require('async'),
     sanitizeHtml = require('sanitize-html'),
     paginate = require('express-paginate'),
     mongoose = require('mongoose'),
+    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
     Message = mongoose.model('Message'),
     Thread = mongoose.model('Thread'),
     User = mongoose.model('User');
@@ -43,7 +43,7 @@ exports.inbox = function(req, res) {
     {
       page: req.query.page || 1,
       limit: req.query.limit || 20,
-      sortBy: '-updated',
+      sort: 'field -updated',
       populate: {
         path: 'userFrom userTo message',
         select: 'content ' + userHandler.userMiniProfileFields
@@ -238,7 +238,7 @@ exports.threadByUser = function(req, res, next, userId) {
         {
           page: req.query.page || 1,
           limit: req.query.limit || 20,
-          sortBy:'-created',
+          sort: 'field -created',
           populate: {
             path:'userFrom userTo',
             select: userHandler.userMiniProfileFields
