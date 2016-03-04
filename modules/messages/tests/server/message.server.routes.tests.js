@@ -153,6 +153,115 @@ describe('Message CRUD tests', function() {
       });
   });
 
+  it('should be able to send basic correctly formatted html in an message', function(done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) done(signinErr);
+
+        // Get user id
+        var userFromId = signinRes.body._id;
+
+        // Create html in message
+        var htmlMessage = message;
+        htmlMessage.content = '<p>' +
+                                '<b>bold</b><br />' +
+                                '<i>italic</i><br />' +
+                                '<u>underline</u><br />' +
+                              '</p>' +
+                              '<blockquote>blockquote</blockquote>' +
+                              '<p><ul><li>list item</li></ul></p>' +
+                              '<a href="https://www.trustroots.org/" target="_blank">link</a>';
+
+        // Save a new message
+        agent.post('/api/messages')
+          .send(htmlMessage)
+          .expect(200)
+          .end(function(messageSaveErr, messageSaveRes) {
+            // Handle message save error
+            if (messageSaveErr) done(messageSaveErr);
+
+            // Get a list of messages
+            agent.get('/api/messages/' + userToId)
+              .end(function(messagesGetErr, messagesGetRes) {
+                // Handle message save error
+                if (messagesGetErr) done(messagesGetErr);
+
+                // Get messages list
+                var thread = messagesGetRes.body;
+
+                if(!thread[0] || !thread[0].content) {
+                  return done(new Error('Missing messages from the message thread.'));
+                }
+                else {
+
+                  // Set assertions
+                  (thread[0].content).should.equal(htmlMessage.content);
+
+                  // Call the assertion callback
+                  return done();
+                }
+
+              });
+          });
+      });
+  });
+
+  it('should be able to send wrongly formatted html in an message and get back clean html', function(done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) done(signinErr);
+
+        // Get user id
+        var userFromId = signinRes.body._id;
+
+        // Create html in message
+        var htmlMessage = message;
+        htmlMessage.content = '<strong>strong</strong><br><img src="http://www.trustroots.org/">' +
+                              '<foo>blockquote</foo><p>' +
+                              '<script></script>' +
+                              '<a href="https://www.trustroots.org/">link</a>' +
+                              'www.trustroots.org <iframe/>';
+
+        // Save a new message
+        agent.post('/api/messages')
+          .send(htmlMessage)
+          .expect(200)
+          .end(function(messageSaveErr, messageSaveRes) {
+            // Handle message save error
+            if (messageSaveErr) done(messageSaveErr);
+
+            // Get a list of messages
+            agent.get('/api/messages/' + userToId)
+              .end(function(messagesGetErr, messagesGetRes) {
+                // Handle message save error
+                if (messagesGetErr) done(messagesGetErr);
+
+                // Get messages list
+                var thread = messagesGetRes.body;
+
+                if(!thread[0] || !thread[0].content) {
+                  return done(new Error('Missing messages from the message thread.'));
+                }
+                else {
+
+                  // Set assertions
+                  (thread[0].content).should.equal('<b>strong</b><br />blockquote<p><a href="https://www.trustroots.org/">link</a><a href="http://www.trustroots.org" target="_blank">trustroots.org</a> </p>');
+
+                  // Call the assertion callback
+                  return done();
+                }
+
+              });
+          });
+      });
+  });
+
   it('should be able to send 25 messages and reading them should return messages in paginated order', function(done) {
     agent.post('/api/auth/signin')
       .send(credentials)
@@ -211,8 +320,8 @@ describe('Message CRUD tests', function() {
                       thread.length.should.equal(20);
 
                       // Set assertions for first and last message
-                      (thread[0].content).should.match('Message content 25');
-                      (thread[19].content).should.match('Message content 6');
+                      (thread[0].content).should.equal('Message content 25');
+                      (thread[19].content).should.equal('Message content 6');
 
                       // Get the 2nd page
                       agent.get('/api/messages/' + userToId + '?page=2')
@@ -236,8 +345,8 @@ describe('Message CRUD tests', function() {
                              thread.length.should.equal(5);
 
                              // Set assertions for first and last message
-                             (thread[0].content).should.match('Message content 5');
-                             (thread[4].content).should.match('Message content 1');
+                             (thread[0].content).should.equal('Message content 5');
+                             (thread[4].content).should.equal('Message content 1');
 
                             // Call the assertion callback
                             return done();
