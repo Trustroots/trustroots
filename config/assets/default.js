@@ -32,7 +32,7 @@ module.exports = {
         'public/lib/ng-file-upload/ng-file-upload.js',
         'public/lib/message-center/message-center.js',
         'public/lib/chosen/chosen.jquery.js',
-        'public/lib/angular-chosen-localytics/chosen.js',
+        'public/lib/angular-chosen-localytics/dist/angular-chosen.js',
         'public/lib/angular-loading-bar/build/loading-bar.js',
         'public/lib/angular-trustpass/dist/tr-trustpass.js',
         'public/lib/mailcheck/src/mailcheck.js',
