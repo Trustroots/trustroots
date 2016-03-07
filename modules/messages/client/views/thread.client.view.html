@@ -100,7 +100,7 @@
         <div class="row">
           <div class="col-xs-12">
             <div class="panel panel-default">
-              <div id="message-reply-content" ng-if="thread.userTo._id" ng-model="thread.content" medium-editor data-placeholder="Write a message" bind-options="::app.mediumEditorOptions"></div>
+              <div id="message-reply-content" ng-if="thread.userTo._id" ng-model="thread.content" tr-editor tr-editor-options="::app.editorOptions" data-placeholder="Write a message" ng-change="thread.editorContentChanged()"></div>
               <div id="message-reply-content" class="text-muted" ng-if="!thread.userTo._id">
                 <em class="lead">Sorry, you cannot write to this thread.</em>
               </div>
@@ -108,7 +108,7 @@
           </div>
 
           <div class="col-xs-2 col-sm-12">
-            <small class="text-muted hidden-xs">Highlight text to add links or change its appearance. Ctrl+Enter to send.</small>
+            <small class="text-muted hidden-xs">Highlight text to add links or change its appearance.</small>
             <button ng-disabled="!thread.content || thread.isSending === true || !thread.messageHandler.resolved || !thread.userTo._id" type="submit" class="btn btn-md btn-primary message-reply-btn" id="messageReplySubmit" aria-label="Send"><i class="icon-send"></i><span class="hidden-xs"> Send</span></button>
           </div>
         </div><!-- /.row -->

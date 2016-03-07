@@ -13,7 +13,6 @@ var ApplicationConfiguration = (function() {
                                               'ui.router',
                                               'ui.bootstrap',
                                               'angularMoment',
-                                              'angular-medium-editor',
                                               'nemLogging',
                                               'ui-leaflet',
                                               'ngFileUpload',

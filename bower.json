@@ -10,7 +10,6 @@
     "ui-leaflet": "~1.0.0",
     "angular-loading-bar": "~0.8.0",
     "angular-mailcheck": "~0.1.0",
-    "angular-medium-editor": "~1.1.0",
     "angular-message-format": "1.5.0",
     "angular-mocks": "1.5.0",
     "angular-moment": "~0.10.3",
@@ -26,7 +25,8 @@
     "ng-file-upload": "~12.0.1",
     "PruneCluster": "2.0.0-beta.2",
     "angular-locker": "~2.0.4",
-    "fastclick": "~1.0.6"
+    "fastclick": "~1.0.6",
+    "medium-editor": "~5.14.4"
   },
   "resolutions": {
     "angular": "1.5.0"

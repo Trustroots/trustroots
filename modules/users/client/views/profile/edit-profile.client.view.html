@@ -99,13 +99,13 @@
           <div class="row">
             <div class="col-md-6">
 
-              <span class="profile-firstname" ng-model="editprofile.user.firstName" medium-editor bind-options="::editprofile.mediumEditorInline" data-placeholder="First name"></span>
-              <span class="profile-lastname" ng-model="editprofile.user.lastName" medium-editor bind-options="::editprofile.mediumEditorInline" data-placeholder="Last name"></span>
+              <span class="profile-firstname" ng-model="editprofile.user.firstName" tr-editor tr-editor-options="::editprofile.editorInline" data-placeholder="First name"></span>
+              <span class="profile-lastname" ng-model="editprofile.user.lastName" tr-editor tr-editor-options="::editprofile.editorInline" data-placeholder="Last name"></span>
 
               <h4 class="profile-username" uib-tooltip="You cannot change your username" tooltip-placement="right">@{{ ::editprofile.user.displayUsername || editprofile.user.username}}</h4>
 
               <div class="profile-tagline">
-                <div ng-model="editprofile.user.tagline" medium-editor bind-options="::editprofile.mediumEditorInline" data-placeholder="Short tagline..."></div>
+                <div ng-model="editprofile.user.tagline" tr-editor tr-editor-options="::editprofile.editorInline" data-placeholder="Short tagline..."></div>
               </div>
 
             </div>
@@ -131,10 +131,10 @@
 
               <!-- About me -->
               <div class="panel panel-default">
-                <label for="description" class="panel-heading">About me</label>
+                <label for="description" class="panel-heading">Describe Yourself</label>
                 <div class="panel-body profile-description">
                   <div class="form-group">
-                    <div id="description" aria-describedby="descriptionHelp" ng-model="editprofile.user.description" medium-editor bind-options="::app.mediumEditorOptions" data-placeholder="Description"></div>
+                    <div id="description" aria-describedby="descriptionHelp" ng-model="editprofile.user.description" tr-editor tr-editor-options="::app.editorOptions" data-placeholder="Describe Yourself"></div>
                   </div>
                 </div>
                 <div class="panel-footer">

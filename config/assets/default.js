@@ -24,7 +24,6 @@ module.exports = {
         'public/lib/moment/moment.js',
         'public/lib/angular-moment/angular-moment.js',
         'public/lib/medium-editor/dist/js/medium-editor.js',
-        'public/lib/angular-medium-editor/dist/angular-medium-editor.js',
         'public/lib/leaflet/dist/leaflet-src.js',
         'public/lib/angular-simple-logger/dist/angular-simple-logger.js', // Required by angular-leaflet-directive
         'public/lib/PruneCluster/dist/PruneCluster.js',

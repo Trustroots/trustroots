@@ -27,7 +27,7 @@
     vm.isWarmshowersId = isWarmshowersId;
 
     // Settings for first and last name inputs
-    vm.mediumEditorInline = {
+    vm.editorInline = {
       disableReturn: true,
       disableExtraSpaces: true,
       toolbar: false

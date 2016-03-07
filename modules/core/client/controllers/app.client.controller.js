@@ -24,13 +24,13 @@
     vm.photoCredits = {};
     vm.photoCreditsCount = 0;
 
-    // Default options for Medium-Editor used site wide
-    // @link https://github.com/yabwe/medium-editor
-    // @link https://github.com/thijsw/angular-medium-editor/
-    vm.mediumEditorOptions = {
+    // Default options for Medium-Editor directive used site wide
+    // @link https://github.com/yabwe/medium-editor/blob/master/OPTIONS.md
+    vm.editorOptions = {
       disableReturn: false,
-      disableDoubleReturn: true,
+      disableDoubleReturn: false,
       disableExtraSpaces: true,
+      autoLink: true, // automatically turns URLs entered into the text field into HTML anchor tags
       buttonLabels: 'fontawesome',
       toolbar: {
         buttons: ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']
