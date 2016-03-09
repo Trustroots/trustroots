@@ -126,7 +126,7 @@ describe('Message CRUD tests', function() {
             // Get a list of messages
             agent.get('/api/messages/' + userToId)
               .end(function(messagesGetErr, messagesGetRes) {
-                // Handle message save error
+                // Handle message get error
                 if (messagesGetErr) done(messagesGetErr);
 
                 // Get messages list
@@ -186,7 +186,7 @@ describe('Message CRUD tests', function() {
             // Get a list of messages
             agent.get('/api/messages/' + userToId)
               .end(function(messagesGetErr, messagesGetRes) {
-                // Handle message save error
+                // Handle message get error
                 if (messagesGetErr) done(messagesGetErr);
 
                 // Get messages list
@@ -239,7 +239,7 @@ describe('Message CRUD tests', function() {
             // Get a list of messages
             agent.get('/api/messages/' + userToId)
               .end(function(messagesGetErr, messagesGetRes) {
-                // Handle message save error
+                // Handle message get error
                 if (messagesGetErr) done(messagesGetErr);
 
                 // Get messages list

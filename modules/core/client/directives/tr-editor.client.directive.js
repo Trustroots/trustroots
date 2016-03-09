@@ -78,7 +78,7 @@
           var placeholder = ngModel.editor.getExtensionByName('placeholder');
           if (placeholder) {
             placeholder.updatePlaceholder(iElement[0]);
-          };
+          }
         };
 
         ngModel.$isEmpty = function(value) {
