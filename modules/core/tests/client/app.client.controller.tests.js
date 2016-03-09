@@ -15,7 +15,7 @@
         Languages;
 
     // Load the main application module
-    beforeEach(module(ApplicationConfiguration.applicationModuleName));
+    beforeEach(module(AppConfig.appModuleName));
 
     beforeEach(inject(function ($controller, $rootScope, _$window_, _$state_, _Authentication_, _SettingsFactory_, _Languages_) {
       $scope = $rootScope.$new();

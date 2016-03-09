@@ -1,10 +1,10 @@
 'use strict';
 
 // Init the application configuration module for AngularJS application
-var ApplicationConfiguration = (function() {
+var AppConfig = (function() {
   // Init module configuration options
-  var applicationModuleName = 'trustroots';
-  var applicationModuleVendorDependencies = [
+  var appModuleName = 'trustroots';
+  var appModuleVendorDependencies = [
                                               'ngResource',
                                               'ngAnimate',
                                               'ngTouch',
@@ -31,12 +31,12 @@ var ApplicationConfiguration = (function() {
     angular.module(moduleName, dependencies || []);
 
     // Add the module to the AngularJS configuration file
-    angular.module(applicationModuleName).requires.push(moduleName);
+    angular.module(appModuleName).requires.push(moduleName);
   };
 
   return {
-    applicationModuleName: applicationModuleName,
-    applicationModuleVendorDependencies: applicationModuleVendorDependencies,
+    appModuleName: appModuleName,
+    appModuleVendorDependencies: appModuleVendorDependencies,
     registerModule: registerModule
   };
 })();

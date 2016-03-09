@@ -28,7 +28,7 @@
     });
 
     // Load the main application module
-    beforeEach(module(ApplicationConfiguration.applicationModuleName));
+    beforeEach(module(AppConfig.appModuleName));
 
     describe('Logged out user', function () {
 
