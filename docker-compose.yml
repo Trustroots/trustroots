@@ -43,7 +43,7 @@ maildev:
 
 ## Database container
 mongodb:
-  image: mongo
+  image: mongo:3.2
   restart: always
   ports:
     - "27017:27017"
