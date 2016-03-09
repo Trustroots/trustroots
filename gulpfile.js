@@ -74,7 +74,7 @@ gulp.task('watch', function() {
   gulp.watch(defaultAssets.server.views).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.allJS, ['jshint']).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.fontelloConfig, ['fontello']);
-  gulp.watch(defaultAssets.client.js, ['clean:js', 'scripts']);
+  gulp.watch(defaultAssets.client.js, ['jshint', 'clean:js', 'scripts']);
   gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
 
   if (process.env.NODE_ENV === 'production') {
