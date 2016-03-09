@@ -67,8 +67,8 @@
 
           // Test expected GET request
           $httpBackend.when('POST', '/api/auth/signin').respond(200, 'Fred');
-          $httpBackend.when('GET', 'modules/pages/views/home.client.view.html').respond(200, '');
-          $httpBackend.when('GET', 'modules/search/views/search.client.view.html').respond(200, '');
+          $httpBackend.when('GET', '/modules/pages/views/home.client.view.html').respond(200, '');
+          $httpBackend.when('GET', '/modules/search/views/search.client.view.html').respond(200, '');
 
           AuthenticationController.signin();
           $httpBackend.flush();
@@ -83,8 +83,8 @@
           $httpBackend.expectPOST('/api/auth/signin').respond(400, {
             'message': 'Missing credentials'
           });
-          $httpBackend.when('GET', 'modules/pages/views/home.client.view.html').respond(200, '');
-          $httpBackend.when('GET', 'modules/search/views/search.client.view.html').respond(200, '');
+          $httpBackend.when('GET', '/modules/pages/views/home.client.view.html').respond(200, '');
+          $httpBackend.when('GET', '/modules/search/views/search.client.view.html').respond(200, '');
 
           AuthenticationController.signin();
           $httpBackend.flush();

@@ -12,7 +12,7 @@
       state('search', {
         url: '/search?location?offer',
         title: 'Search',
-        templateUrl: 'modules/search/views/search.client.view.html',
+        templateUrl: '/modules/search/views/search.client.view.html',
         requiresAuth: true,
         footerHidden: true,
         controller: 'SearchController',
@@ -29,7 +29,7 @@
       state('search-signin', {
         url: '/search?location?offer',
         title: 'Search',
-        templateUrl: 'modules/search/views/search-signin.client.view.html',
+        templateUrl: '/modules/search/views/search-signin.client.view.html',
         requiresAuth: false,
         footerHidden: true,
         controller: 'SearchSignupController',

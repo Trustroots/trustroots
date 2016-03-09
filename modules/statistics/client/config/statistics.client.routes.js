@@ -12,7 +12,7 @@
       state('statistics', {
         url: '/statistics',
         title: 'Statistics',
-        templateUrl: 'modules/statistics/views/statistics.client.view.html',
+        templateUrl: '/modules/statistics/views/statistics.client.view.html',
         controller: 'StatisticsController',
         controllerAs: 'stats',
         resolve: {

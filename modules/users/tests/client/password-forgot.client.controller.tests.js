@@ -65,7 +65,7 @@
         };
         beforeEach(function() {
           // Test expected GET request
-          $httpBackend.when('GET', 'modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
+          $httpBackend.when('GET', '/modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
           $scope.vm.credentials = credentials;
           Authentication.user = null;
         });
@@ -85,7 +85,7 @@
           beforeEach(function() {
 
             // Test expected GET request
-            $httpBackend.when('GET', 'modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
+            $httpBackend.when('GET', '/modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
             $httpBackend.when('POST', '/api/auth/forgot', credentials).respond(400, {
               'message': errorMessage
             });
@@ -109,7 +109,7 @@
           beforeEach(function() {
 
             // Test expected requests
-            $httpBackend.when('GET', 'modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
+            $httpBackend.when('GET', '/modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
             $httpBackend.when('POST', '/api/auth/forgot', credentials).respond({
               'message': successMessage
             });

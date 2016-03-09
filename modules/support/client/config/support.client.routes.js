@@ -12,7 +12,7 @@
       state('support', {
         url: '/support',
         title: 'Support',
-        templateUrl: 'modules/support/views/support.client.view.html',
+        templateUrl: '/modules/support/views/support.client.view.html',
         requiresAuth: false,
         controller: 'SupportController',
         controllerAs: 'support'
@@ -21,7 +21,7 @@
       state('contact', {
         url: '/contact',
         title: 'Contact us',
-        templateUrl: 'modules/support/views/support.client.view.html',
+        templateUrl: '/modules/support/views/support.client.view.html',
         requiresAuth: false,
         controller: 'SupportController',
         controllerAs: 'support'
