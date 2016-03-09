@@ -46,6 +46,13 @@ function fuzzyLocation(location) {
  * Create (or update if exists) a Offer
  */
 exports.create = function(req, res) {
+
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
   var offer = new Offer(req.body);
   offer.user = req.user;
 
@@ -93,6 +100,12 @@ exports.create = function(req, res) {
  * List of Offers
  */
 exports.list = function(req, res) {
+
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
 
   Offer.find(
     {
@@ -148,12 +161,19 @@ exports.read = function(req, res) {
 // Offer reading middleware
 exports.offerByUserId = function(req, res, next, userId) {
 
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
   // Not a valid ObjectId
   if(!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
       message: errorHandler.getErrorMessageByKey('invalid-id')
     });
   }
+
   Offer.findOne({
       user: userId
     })
@@ -178,6 +198,7 @@ exports.offerByUserId = function(req, res, next, userId) {
         offer.location = offer.locationFuzzy;
       }
       delete offer.locationFuzzy;
+
       req.offer = offer;
       next();
     });
