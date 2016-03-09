@@ -17,7 +17,8 @@ var _ = require('lodash'),
     rename: {
       'gulp-angular-templatecache': 'templateCache'
     }
-  });
+  }),
+  KarmaServer = require('karma').Server;
 
 gulp.task('bower', function() {
   return plugins.bower();
@@ -239,6 +240,14 @@ gulp.task('karma', function(done) {
       action: 'run',
       singleRun: true
     }));
+});
+
+// Karma test runner task
+gulp.task('karma', function (done) {
+  new KarmaServer({
+    configFile: __dirname + '/karma.conf.js',
+    singleRun: true
+  }, done).start();
 });
 
 // Build assets for development mode
