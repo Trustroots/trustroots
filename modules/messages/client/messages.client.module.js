@@ -1,4 +1,5 @@
 'use strict';
 
 // Use Application configuration module to register a new module
-ApplicationConfiguration.registerModule('messages');
+// The core module is required for special route handling; see /core/client/config/core.client.routes
+AppConfig.registerModule('messages', ['core']);

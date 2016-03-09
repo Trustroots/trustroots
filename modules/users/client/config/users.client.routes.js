@@ -13,14 +13,14 @@
       state('welcome', {
         url: '/welcome',
         title: 'Welcome',
-        templateUrl: 'modules/users/views/authentication/welcome.client.view.html',
+        templateUrl: '/modules/users/views/authentication/welcome.client.view.html',
         requiresAuth: true,
         footerTransparent: true
       }).
       state('profile-edit', {
         url: '/profile/edit',
         title: 'Edit profile',
-        templateUrl: 'modules/users/views/profile/edit-profile.client.view.html',
+        templateUrl: '/modules/users/views/profile/edit-profile.client.view.html',
         requiresAuth: true,
         controller: 'EditProfileController',
         controllerAs: 'editprofile',
@@ -35,7 +35,7 @@
       state('profile-settings', {
         url: '/profile/settings',
         title: 'Profile settings',
-        templateUrl: 'modules/users/views/profile/edit-settings.client.view.html',
+        templateUrl: '/modules/users/views/profile/edit-settings.client.view.html',
         controller: 'SettingsController',
         controllerAs: 'settings',
         requiresAuth: true
@@ -43,7 +43,7 @@
       state('profile', {
         url: '/profile/:username?tab&updated',
         title: 'Profile',
-        templateUrl: 'modules/users/views/profile/view-profile.client.view.html',
+        templateUrl: '/modules/users/views/profile/view-profile.client.view.html',
         controller: 'ProfileController',
         controllerAs: 'profileCtrl',
         requiresAuth: true,
@@ -87,14 +87,14 @@
       state('profile-signup', {
         url: '/profile-signup',
         title: 'Trustroots profile',
-        templateUrl: 'modules/users/views/profile/profile-signup.client.view.html',
+        templateUrl: '/modules/users/views/profile/profile-signup.client.view.html',
       }).
 
       // Auth routes
       state('signup', {
         url: '/signup',
         title: 'Sign up',
-        templateUrl: 'modules/users/views/authentication/signup.client.view.html',
+        templateUrl: '/modules/users/views/authentication/signup.client.view.html',
         controller: 'SignupController',
         controllerAs: 'signup',
         footerTransparent: false,
@@ -103,7 +103,7 @@
       state('signin', {
         url: '/signin?continue',
         title: 'Sign in',
-        templateUrl: 'modules/users/views/authentication/signin.client.view.html',
+        templateUrl: '/modules/users/views/authentication/signin.client.view.html',
         controller: 'AuthenticationController',
         controllerAs: 'auth',
         footerTransparent: true,
@@ -120,7 +120,7 @@
       state('confirm-email', {
         url: '/confirm-email/:token?signup',
         title: 'Confirm email',
-        templateUrl: 'modules/users/views/authentication/confirm-email.client.view.html',
+        templateUrl: '/modules/users/views/authentication/confirm-email.client.view.html',
         footerTransparent: true,
         requiresAuth: false,
         controller: 'ConfirmEmailController',
@@ -129,7 +129,7 @@
       state('confirm-email-invalid', {
         url: '/confirm-email-invalid',
         title: 'Confirm email invalid',
-        templateUrl: 'modules/users/views/authentication/confirm-email-invalid.client.view.html',
+        templateUrl: '/modules/users/views/authentication/confirm-email-invalid.client.view.html',
         footerTransparent: true,
         requiresAuth: false
       }).
@@ -138,7 +138,7 @@
       state('forgot', {
         url: '/password/forgot',
         title: 'Reset password',
-        templateUrl: 'modules/users/views/password/forgot-password.client.view.html',
+        templateUrl: '/modules/users/views/password/forgot-password.client.view.html',
         footerTransparent: true,
         controller: 'ForgotPasswordController',
         controllerAs: 'forgotPassword'
@@ -146,19 +146,19 @@
       state('reset-invalid', {
         url: '/password/reset/invalid',
         title: 'Reset password',
-        templateUrl: 'modules/users/views/password/reset-password-invalid.client.view.html',
+        templateUrl: '/modules/users/views/password/reset-password-invalid.client.view.html',
         footerTransparent: true
       }).
       state('reset-success', {
         url: '/password/reset/success',
         title: 'Reset password',
-        templateUrl: 'modules/users/views/password/reset-password-success.client.view.html',
+        templateUrl: '/modules/users/views/password/reset-password-success.client.view.html',
         footerTransparent: true
       }).
       state('reset', {
         url: '/password/reset/:token',
         title: 'Reset password',
-        templateUrl: 'modules/users/views/password/reset-password.client.view.html',
+        templateUrl: '/modules/users/views/password/reset-password.client.view.html',
         footerTransparent: true,
         controller: 'ResetPasswordController',
         controllerAs: 'resetPassword'

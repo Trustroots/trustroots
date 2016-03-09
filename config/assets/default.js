@@ -24,7 +24,6 @@ module.exports = {
         'public/lib/moment/moment.js',
         'public/lib/angular-moment/angular-moment.js',
         'public/lib/medium-editor/dist/js/medium-editor.js',
-        'public/lib/angular-medium-editor/dist/angular-medium-editor.js',
         'public/lib/leaflet/dist/leaflet-src.js',
         'public/lib/angular-simple-logger/dist/angular-simple-logger.js', // Required by angular-leaflet-directive
         'public/lib/PruneCluster/dist/PruneCluster.js',
@@ -33,7 +32,7 @@ module.exports = {
         'public/lib/ng-file-upload/ng-file-upload.js',
         'public/lib/message-center/message-center.js',
         'public/lib/chosen/chosen.jquery.js',
-        'public/lib/angular-chosen-localytics/chosen.js',
+        'public/lib/angular-chosen-localytics/dist/angular-chosen.js',
         'public/lib/angular-loading-bar/build/loading-bar.js',
         'public/lib/angular-trustpass/dist/tr-trustpass.js',
         'public/lib/mailcheck/src/mailcheck.js',

@@ -3,12 +3,12 @@
 
   // Start by defining the main module and adding the module dependencies
   angular
-    .module(ApplicationConfiguration.applicationModuleName,
-            ApplicationConfiguration.applicationModuleVendorDependencies);
+    .module(AppConfig.appModuleName,
+            AppConfig.appModuleVendorDependencies);
 
   // App configs
   angular
-    .module(ApplicationConfiguration.applicationModuleName)
+    .module(AppConfig.appModuleName)
     .config(initConfig);
 
   /* @ngInject */
@@ -34,7 +34,7 @@
     // @link https://github.com/tymondesigns/angular-locker
     lockerProvider.defaults({
         driver: 'local', // local|session
-        namespace: ApplicationConfiguration.applicationModuleName,
+        namespace: AppConfig.appModuleName,
         separator: '.',
         eventsEnabled: false,
         extend: {}
@@ -56,7 +56,7 @@
     FastClick.attach(document.body);
 
     // Then init the app
-    angular.bootstrap(document, [ApplicationConfiguration.applicationModuleName]);
+    angular.bootstrap(document, [AppConfig.appModuleName]);
   });
 
 })();

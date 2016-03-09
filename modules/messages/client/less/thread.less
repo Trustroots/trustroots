@@ -139,8 +139,8 @@
   bottom: @padding-base-horizontal;
   width: 800px;
 
-  // No color glow on hover with this Medium editor
-  .angular-medium-editor {
+  // No color glow on hover with this Medium editor instance
+  .tr-editor {
     &:hover {
       background: transparent;
     }
@@ -164,8 +164,8 @@
       padding: @padding-base-vertical @padding-base-horizontal;
       border: 0;
       border-top: 1px solid transparent;
-      padding-top: 16px;
-      margin-bottom: 16px;
+      padding-top: 5px;
+      margin-bottom: 0;
       min-height: 53px;
       max-height: 250px;
       overflow: auto;
@@ -177,7 +177,7 @@
       }
       &:after {
         margin: 0;
-        top: 0;
+        top: 9px;
         left: 12px;
       }
       p {
@@ -185,10 +185,14 @@
       }
       @media (max-width: @screen-xs-max) {
         padding-top: 8px;
-        margin-bottom: 8px;
-        min-height: 25px;
+        margin-bottom: 0px;
+        min-height: 43px;
         border-radius: 0;
         max-height: 60px;
+        &:after {
+          top: 2px;
+          left: 5px;
+        }
       }
     }
     @media (max-width: @screen-xs-max) {

@@ -29,7 +29,8 @@
     var elemThread,
         syncReadTimer,
         flaggedAsRead = [],
-        messageIdsInView = [];
+        messageIdsInView = [],
+        editorContentChangedTimeout;
 
     // Make cache id unique for this user
     var cachePrefix = 'messages.thread.' + Authentication.user._id + '-' + $stateParams.username;
@@ -47,6 +48,7 @@
     vm.sendMessage = sendMessage;
     vm.moreMessages = moreMessages;
     vm.messageRead = messageRead;
+    vm.editorContentChanged = editorContentChanged;
 
     /**
      * Is local/sessionStorage supported? This might fail in browser's incognito mode
@@ -96,27 +98,27 @@
         }
       });
 
-      // This gets called onse thread-dimensions directive has finished its job
-      $scope.$on('threadDimensinsLoaded', function() {
-        /**
-         * Textarea keypress listener (could be also .on('input') but this seems to be working better for mobile)
-         * - Pressing Ctrl+Enter at message field sends the message
-         * - Save message to a cache (see sendMessage() where it's emptiet and vm-list for the getter)
-         */
-        $timeout(function() {
-          angular.element('#message-reply-content').on('keypress', function(event) {
-            // 13+10 covers all the browsers: http://stackoverflow.com/a/9343095/1984644
-            if(event.ctrlKey && (event.charCode === 13 || event.charCode === 10)) {
-              sendMessage();
-            }
-            else {
-              locker.put(cachePrefix, vm.content);
-            }
-          });
-        });
-      });
-
     })();
+
+    /**
+     * When contents at the editor change, update layout
+     */
+    function editorContentChanged() {
+      // Add (or reset) timeout to prevent calling this too often
+      $timeout.cancel(editorContentChangedTimeout);
+      editorContentChangedTimeout = $timeout(refreshAndScrollToBottom, 300);
+    }
+
+    /**
+     * Call underlaying thread-dimensions directive to update+scroll
+     */
+    function refreshAndScrollToBottom() {
+      $scope.$broadcast('threadRefreshLayout');
+      $scope.$broadcast('threadScrollToBottom');
+
+      // Save message to a cache (see sendMessage() where it's emptiet and vm-list for the getter)
+      locker.put(cachePrefix, vm.content);
+    }
 
     /**
      * Attach userID for backend calls

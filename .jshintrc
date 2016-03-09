@@ -26,7 +26,7 @@
     "PruneClusterForLeaflet": true,
     "L": true, // Leaflet
     "moment": true,
-    "ApplicationConfiguration": true,
+    "AppConfig": true,
     "ga": true, // Google Analytics
     "PhusionPassenger": true,
     "FastClick": true

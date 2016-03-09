@@ -23,7 +23,6 @@
         var elemThread = angular.element('#messages-thread'),
             elemReply = angular.element('#message-reply'),
             elemReplyHeight = elemReply.height(),
-            elemReplyContent = angular.element('#message-reply-content'),
             elemHtml = angular.element('html');
 
         /**
@@ -96,26 +95,6 @@
           // Reply area has always padding 30 on the right
           elemReply.width( elemContainerWidth - 30 );
         }
-
-
-        /**
-         * Update layout on every keypress to the reply-field
-         */
-        elemReplyContent.on('keypress', function() {
-
-          // Observe for the reply area height while typing your awesome message in it
-          // Only when textarea height actually changes:
-          // - Update reply container height
-          // - Scroll message area to the bottom
-          if(elemReply.height() !== elemReplyHeight) {
-            elemReplyHeight = elemReply.height();
-            elemThread.css({
-              bottom: elemReplyHeight
-            });
-            activateScrollToBottom();
-          }
-
-        });
 
         /*
          * Listeners & event bindings

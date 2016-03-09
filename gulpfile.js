@@ -17,7 +17,8 @@ var _ = require('lodash'),
     rename: {
       'gulp-angular-templatecache': 'templateCache'
     }
-  });
+  }),
+  KarmaServer = require('karma').Server;
 
 gulp.task('bower', function() {
   return plugins.bower();
@@ -74,7 +75,7 @@ gulp.task('watch', function() {
   gulp.watch(defaultAssets.server.views).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.allJS, ['jshint']).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.fontelloConfig, ['fontello']);
-  gulp.watch(defaultAssets.client.js, ['clean:js', 'scripts']);
+  gulp.watch(defaultAssets.client.js, ['jshint', 'clean:js', 'scripts']);
   gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
 
   if (process.env.NODE_ENV === 'production') {
@@ -239,6 +240,14 @@ gulp.task('karma', function(done) {
       action: 'run',
       singleRun: true
     }));
+});
+
+// Karma test runner task
+gulp.task('karma', function (done) {
+  new KarmaServer({
+    configFile: __dirname + '/karma.conf.js',
+    singleRun: true
+  }, done).start();
 });
 
 // Build assets for development mode

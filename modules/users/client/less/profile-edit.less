@@ -16,30 +16,13 @@
     margin: 5px 0 0 0;
   }
 
-  // Placeholders & field hover styles
-  // Make it clear we are editing these fields by coloring it when selected
+  // Field hover styles
+  // Make it clear we are editing these fields by coloring it when hovered
   .profile-firstname,
   .profile-lastname,
   .profile-tagline {
     &:focus {
       background: fade(@brand-primary, 10%);
-    }
-    &.medium-editor-placeholder {
-      display: inline;
-      &:after {
-        font-style: normal;
-        display: inline;
-        color: @input-color-placeholder;
-        position: inherit;
-        outline: none;
-      }
-    }
-  }
-  .profile-tagline {
-    .medium-editor-placeholder {
-      &:after {
-        position: relative;
-      }
     }
   }
 

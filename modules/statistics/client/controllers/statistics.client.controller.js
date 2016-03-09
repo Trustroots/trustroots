@@ -6,23 +6,23 @@
     .controller('StatisticsController', StatisticsController);
 
   /* @ngInject */
-  function StatisticsController($scope, $interval, Statistics, data) {
+  function StatisticsController($scope, $interval, Statistics, statisticsData) {
 
     // ViewModel
     var vm = this;
 
-    vm.data = data;
+    vm.statisticsData = statisticsData;
     vm.launchDate = new Date(2014, 11, 23); // Dec 23, 2014
 
-    // Process data at init
-    data.$promise.then(function() {
-      processStats(data);
+    // Process statistics data at init
+    statisticsData.$promise.then(function() {
+      processStats(statisticsData);
     });
 
     // Update page every now and then while it's open
     var statsInterval = $interval(function() {
-      Statistics.get({}, function(data) {
-        processStats(data);
+      Statistics.get({}, function(statisticsData) {
+        processStats(statisticsData);
       });
     }, (10 * 60000)); // every 10 mins
 

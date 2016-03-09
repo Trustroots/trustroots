@@ -39,10 +39,10 @@
 
         <div class="panel panel-default" ng-hide="contactAdd.isConnected || !contactAdd.friend">
           <div class="panel-heading">
-            <h4>Message for {{ ::contactAdd.friend.displayName }}</h4>
+            <h4>Edit message for {{ ::contactAdd.friend.displayName }}:</h4>
           </div>
           <div class="panel-body">
-            <div class="contact-message" ng-model="contactAdd.contact.message" medium-editor data-placeholder="Write a message" bind-options="::app.mediumEditorOptions"></div>
+            <div class="contact-message" ng-model="contactAdd.contact.message" tr-editor tr-editor-options="::app.editorOptions" data-placeholder="Write a message"></div>
           </div>
         </div>
 

@@ -12,13 +12,13 @@
       state('statistics', {
         url: '/statistics',
         title: 'Statistics',
-        templateUrl: 'modules/statistics/views/statistics.client.view.html',
+        templateUrl: '/modules/statistics/views/statistics.client.view.html',
         controller: 'StatisticsController',
         controllerAs: 'stats',
         resolve: {
           // A string value resolves to a service
           SettingsService: 'Statistics',
-          data: function(Statistics) {
+          statisticsData: function(Statistics) {
             return Statistics.get();
           }
         }

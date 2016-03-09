@@ -1,9 +1,9 @@
 /**
- * Angular medium editor
+ * Editor
  */
 
 // Our own customizations
-.angular-medium-editor {
+.tr-editor {
   border: 0;
   background: transparent;
   .box-shadow(none);
@@ -11,6 +11,7 @@
   resize: none;
   margin: 0;
   padding: 0;
+  cursor: text;
   &:hover {
     background: fade(@brand-primary, 10%);
   }
@@ -18,10 +19,6 @@
     background: transparent;
     outline: none;
     border: 0;
-  }
-  &.medium-editor-placeholder:after {
-    color: @input-color-placeholder;
-    cursor: text;
   }
 }
 

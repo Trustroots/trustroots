@@ -11,7 +11,7 @@
     $stateProvider.
       state('contactAdd', {
         url: '/contact-add/:userId',
-        templateUrl: 'modules/contacts/views/add-contact.client.view.html',
+        templateUrl: '/modules/contacts/views/add-contact.client.view.html',
         requiresAuth: true,
         controller: 'ContactAddController',
         controllerAs: 'contactAdd',
@@ -35,7 +35,7 @@
       }).
       state('contactConfirm', {
         url: '/contact-confirm/:contactId',
-        templateUrl: 'modules/contacts/views/confirm-contact.client.view.html',
+        templateUrl: '/modules/contacts/views/confirm-contact.client.view.html',
         requiresAuth: true,
         controller: 'ContactConfirmController',
         controllerAs: 'contactConfirm',
