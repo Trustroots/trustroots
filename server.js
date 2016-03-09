@@ -40,7 +40,7 @@ mongoose.connect(function(db) {
   console.log(chalk.green('Database:\t\t' + config.db.uri));
   console.log(chalk.green('HTTPS:\t\t\t' + (config.https ? 'on' : 'off')));
   console.log(chalk.green('Port:\t\t\t' + config.port));
-  console.log(chalk.green('Image processor:\t\t' + config.imageProcessor));
+  console.log(chalk.green('Image processor:\t' + config.imageProcessor));
   console.log(chalk.green('Phusion Passenger:\t' + (typeof(PhusionPassenger) !== 'undefined' ? 'on' : 'off')));
 
   // Reset console color
