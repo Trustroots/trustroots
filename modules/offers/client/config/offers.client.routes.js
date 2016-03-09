@@ -10,7 +10,7 @@
 
     $stateProvider.
       state('offer', {
-        url: '/offer/?status',
+        url: '/offer?status',
         title: 'Hosting',
         templateUrl: '/modules/offers/views/offers-edit.client.view.html',
         requiresAuth: true,
