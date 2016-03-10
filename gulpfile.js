@@ -267,15 +267,15 @@ gulp.task('clean', function(done) {
 
 // Run the project tests
 gulp.task('test', function(done) {
-  runSequence('env:test', 'copyConfig', ['karma', 'mocha'], done);
+  runSequence('env:test', 'copyConfig', 'jshint', ['karma', 'mocha'], done);
 });
 
 gulp.task('test:server', function(done) {
-  runSequence('env:test', 'copyConfig', 'mocha', done);
+  runSequence('env:test', 'copyConfig', 'jshint', 'mocha', done);
 });
 
 gulp.task('test:client', function(done) {
-  runSequence('env:test', 'copyConfig', 'karma', done);
+  runSequence('env:test', 'copyConfig', 'jshint', 'karma', done);
 });
 
 // Run the project in development mode
