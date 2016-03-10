@@ -45,7 +45,8 @@ mongoose.connect(function(db) {
 
   // Reset console color
   console.log(chalk.white('--'));
-
+  console.log('');
   console.log(chalk.white('Trustroots is up and running now.'));
+  console.log('');
 
 });

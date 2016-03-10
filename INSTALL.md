@@ -2,6 +2,7 @@
 
 _These instructions are for installing locally. If you'd like to have containerised setup, see [INSTALL-DOCKER.md](INSTALL-DOCKER.md) instead._
 
+
 ### Prerequisites
 
 Make sure you have installed all these prerequisites:
@@ -14,6 +15,7 @@ brew install imagemagick
 ```
 * [Git](https://git-scm.com/) (`git --version`, preinstalled on OSX)
 * Some of the NPM modules require compiling native code, which might require installing X-Code on OSX or `build-essential` and `make` on Linux.
+
 
 ### Installing
 
@@ -31,7 +33,7 @@ mongod
 
 ##### 3. Create a local config file:
 
-```
+```bash
 cp config/env/local.sample.js config/env/local.js
 ```
 Add any configurations you want to keep out of version control here.
@@ -52,6 +54,7 @@ npm start
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+
 ### Running & development
 
 - Stop the app by hitting `Ctrl+C`
@@ -61,13 +64,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - To read and debug MongoDB, use e.g. [Robomongo](https://robomongo.org/) to connect to your localhost.
 - [Read more](https://github.com/Trustroots/trustroots/wiki/Development)
 
-### Generate documentation
-
-Generating docs requires `unzip` CLI. To install on Ubuntu/Debian: `sudo apt-get install unzip`. OSX has this already.
-
-Produce API documentation by running `npm run docs`
-
-Then run the application (`npm start`) and open [http://localhost:3000/developers/](http://localhost:3000/developers/).
 
 ### Mock data
 
@@ -78,21 +74,24 @@ There's a script that can generate mock user data. It's highly recommended you r
 3. It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
 4. To see the result, log in with your chosen username and password `password`.
 
+
 ### Updating
 
 Run these to get most recent version:
 ```bash
 $ git pull            # Get the latest code for the current branch
-$ npm run update      # Update NPM
+$ npm update          # Update NPM
 $ npm run migrate     # Migrate database up
 ```
 
 ...or simply `bash scripts/update.sh` which does this all for you.
 
+
 ### Running tests
-- `npm run test` (both server & client)
+- `npm test` (both server & client)
 - `npm run test:server`
 - `npm run test:client`
+
 
 ### Problems
 
