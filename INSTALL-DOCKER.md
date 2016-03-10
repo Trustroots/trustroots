@@ -4,11 +4,13 @@ Trustroots Docker containers are excellent for getting into development quickly.
 
 Development with Docker might be little bit slower than running Mongo+NodeJS+NPM directly at your computer, but saves you from installing and configuring all the required dependencies.
 
+
 ## Prerequisites
 
 * Install [Docker](https://www.docker.com/) on your system.
 * Install [Docker Compose](http://docs.docker.com/compose/) on your system.
 * Make sure you have [`git`](http://git-scm.com/) installed on your system (`git --version`, preinstalled on OSX)
+
 
 ## Install
 
@@ -18,6 +20,7 @@ Development with Docker might be little bit slower than running Mongo+NodeJS+NPM
 git clone https://github.com/Trustroots/trustroots.git
 cd trustroots
 ```
+
 
 ##### 2. Create a config file
 
@@ -65,6 +68,7 @@ To manually check IP, run `docker-machine ip default`
 
 Open [http://trustroots.dev/](http://trustroots.dev/) and [http://trustroots.maildev/](http://trustroots.maildev/) in your browser.
 
+
 ### Running & development
 
 - Hit `Ctrl+C` to turn off containers.
@@ -78,6 +82,7 @@ Open [http://trustroots.dev/](http://trustroots.dev/) and [http://trustroots.mai
 - Docker container has both, [GraphicsMagick](http://www.graphicsmagick.org/) and [ImageMagick](http://www.imagemagick.org/) installed.
 - [Read more](https://github.com/Trustroots/trustroots/wiki/Development)
 
+
 ### Upgrading
 
 ```bash
@@ -85,19 +90,13 @@ git pull
 docker-compose run trustroots npm run update
 ```
 
+
 ### Running tests
 
 ```bash
 docker-compose run trustroots npm run test
 ```
 
-### Generate API documentation
-
-```bash
-docker-compose run trustroots npm run docs
-```
-
-Open [http://trustroots.dev/developers/api/](http://trustroots.dev/developers/api/) in your browser.
 
 ### Problems
 

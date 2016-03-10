@@ -6,10 +6,18 @@
 
   <!-- Contact list -->
   <div class="contacts-list" ng-if="ContactsList.contacts.$resolved && ContactsList.contacts.length > 0">
+  <div ng-repeat="isConfirmed in [false, true]" ng-if="(ContactsList.contacts | filter:{confirmed:isConfirmed}).length">
+
     <div class="row">
       <div class="col-xs-12" ng-class="{'col-sm-8': ContactsList.contacts.length >= 6, 'text-center': ContactsList.contacts.length < 6}">
-        <h4 class="text-muted" ng-if="ContactsList.contacts.length === 1">One contact</h4>
-        <h4 class="text-muted" ng-if="ContactsList.contacts.length > 1">{{ ContactsList.contacts.length }} contacts</h4>
+        <h4 class="text-muted" ng-if="(ContactsList.contacts | filter:{confirmed:isConfirmed}).length === 1">
+          <span ng-if="isConfirmed">One contact</span>
+          <span ng-if="!isConfirmed">One pending contact</span>
+        </h4>
+        <h4 class="text-muted" ng-if="(ContactsList.contacts | filter:{confirmed:isConfirmed}).length > 1">
+          <span ng-if="isConfirmed">{{ (ContactsList.contacts | filter:{confirmed:isConfirmed}).length }} contacts</span>
+          <span ng-if="!isConfirmed">{{ (ContactsList.contacts | filter:{confirmed:isConfirmed}).length }} pending contacts</span>
+        </h4>
       </div>
       <div class="col-xs-12 col-sm-4 text-right" ng-if="ContactsList.contacts.length >= 6">
         <div class="form-group">
@@ -20,7 +28,9 @@
     </div>
 
     <div class="row">
-      <div class="col-xs-12 col-sm-6" ng-repeat="contact in ContactsList.contacts | filter:ContactsList.searchText track by contact._id">
+      <div class="col-xs-12 col-sm-6"
+           ng-repeat="contact in ContactsList.contacts | filter:ContactsList.searchText track by contact._id"
+           ng-if="contact.confirmed === isConfirmed">
         <div class="contacts-contact panel panel-default">
           <div tr-avatar data-user="ContactsList.otherContact(profileCtrl.profile._id, contact)" data-size="128"></div>
           <h4><a ui-sref="profile({username: ContactsList.otherContact(profileCtrl.profile._id, contact, 'username')})" ng-bind="ContactsList.otherContact(profileCtrl.profile._id, contact, 'displayName')"></a></h4>
@@ -48,7 +58,9 @@
     </div>
 
   </div>
+  </div>
   <!-- /Contact list -->
+
 
   <!-- No contacts -->
   <div class="row content-empty" ng-if="ContactsList.contacts.$resolved && !ContactsList.contacts.length">

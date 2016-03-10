@@ -23,7 +23,6 @@
     "test:client": "gulp test:client",
     "test:server": "gulp test:server",
     "migrate": "migrate",
-    "docs": "scripts/generate-docs.sh",
     "update": "npm install --quiet && npm prune && migrate",
     "postinstall": "bower install --allow-root --config.interactive=false && bower prune --allow-root --config.interactive=false"
   },
@@ -55,7 +54,7 @@
     "gulp-bower": "~0.0.13",
     "gulp-concat": "~2.6.0",
     "gulp-csslint": "~0.2.0",
-    "gulp-cssnano": "~2.1.1",
+    "gulp-csso": "~1.1.0",
     "gulp-fontello": "~0.4.5",
     "gulp-jshint": "~2.0.0",
     "gulp-less": "~3.0.5",

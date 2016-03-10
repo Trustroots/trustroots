@@ -157,14 +157,13 @@ gulp.task('styles', function() {
     return mergeStream(lessStream, cssStream)
       .pipe(plugins.concat('application.css'))
       .pipe(plugins.autoprefixer())
-    	.pipe(plugins.cssnano())
+    	.pipe(plugins.csso())
     	.pipe(plugins.rename({suffix: '.min'}))
       .pipe(gulp.dest('public/dist'));
   }
   // In development mode:
   else {
     // Process only LESS files, since CSS libs will be linked directly at the template
-
     return gulp.src( _.union(defaultAssets.client.lib.less, defaultAssets.client.less) )
       .pipe(plugins.concat('less-files.less'))
       .pipe(plugins.less())
