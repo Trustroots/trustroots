@@ -306,16 +306,20 @@
         vm.searchQuerySearching = true;
 
         $http
-          .get('//api.mapbox.com/geocoding/v5/mapbox.places/' + vm.searchQuery + '.json?access_token=' + appSettings.mapbox.publicKey)
+          .get(
+            '//api.mapbox.com/geocoding/v5/mapbox.places/' + vm.searchQuery + '.json' +
+              '?access_token=' + appSettings.mapbox.publicKey +
+              '&types=country,region,place,locality,neighborhood',
+            {
+              ignoreLoadingBar: true
+            }
+          )
           .then(function(response) {
 
             vm.searchQuerySearching = false;
 
             if(response.status === 200 && response.data && response.data.features && response.data.features.length > 0) {
               mapLocate(response.data.features[0]);
-            }
-            else {
-              messageCenterService.add('warning', 'We could not find such a place...');
             }
           });
 
@@ -358,12 +362,19 @@
     /**
      * Search field's typeahead -suggestions
      *
-     * @link https://www.mapbox.com/developers/api/geocoding/
+     * @link https://www.mapbox.com/api-documentation/#geocoding
      */
     function searchSuggestions(val) {
       if(appSettings.mapbox && appSettings.mapbox.publicKey) {
         return $http
-          .get('//api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json?access_token=' + appSettings.mapbox.publicKey)
+          .get(
+            '//api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json' +
+              '?access_token=' + appSettings.mapbox.publicKey +
+              '&types=country,region,place,locality,neighborhood',
+            {
+              ignoreLoadingBar: true
+            }
+          )
           .then(function(response) {
             vm.searchQuerySearching = false;
             if(response.status === 200 && response.data && response.data.features && response.data.features.length > 0) {
@@ -380,14 +391,33 @@
       }
     }
 
-    /*
-     * Compile a nice title for the place, eg. "Jyväskylä, Finland"
+    /**
+     * Compile a nice title for the place, eg. "Helsinki, Finland" or "Chinatown, New York, United States"
      */
     function placeTitle(place) {
-      var title = '';
+      var title = '',
+          titlePostfix = null;
 
-      if(place.place_name) title += place.place_name;
-      else if(place.text) title += place.text;
+      if(place.text) {
+        title = place.text;
+
+        // Relevant context strings
+        if(place.context) {
+          var contextLength = place.context.length;
+          for (var i = 0; i < contextLength; i++) {
+            if(place.context[i].id.substring(0, 6) === 'place.') {
+              title += ', ' + place.context[i].text;
+            }
+            else if(place.context[i].id.substring(0, 8) === 'country.') {
+              title += ', ' + place.context[i].text;
+            }
+          }
+        }
+
+      }
+      else if(place.place_name) {
+        title = place.place_name;
+      }
 
       return title;
     }
