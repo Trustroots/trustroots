@@ -29,7 +29,7 @@
     vm.editorOptions = {
       disableReturn: false,
       disableDoubleReturn: false,
-      disableExtraSpaces: true,
+      disableExtraSpaces: false,
       autoLink: true, // automatically turns URLs entered into the text field into HTML anchor tags
       buttonLabels: 'fontawesome',
       toolbar: {
