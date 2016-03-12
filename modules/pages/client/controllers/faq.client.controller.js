@@ -26,11 +26,12 @@
       closeOthers: false
     };
 
-    /*
+    /**
      * Init
-     * @todo move to a directive
+     * @todo move to a directive?
      */
-    (function() {
+    init();
+    function init() {
       // Determine if sidebar should be scrolling or not
       $timeout(function(){
         if($window.innerHeight <= angular.element('#faq-sidebar').height()) {
@@ -42,11 +43,11 @@
       });
       // Determine fixed width for the sidebar so it doesn't overflow when it gets fixed position
       angular.element('#faq-sidebar').css({ 'max-width': angular.element('#faq-sidebar').width() });
-    })();
+    }
 
     /**
      * Scroll+highlight a FAQ question when clicking title at sidebar
-     * @todo move to a directive
+     * @todo move to a directive?
      */
     function read(id) {
       var $el = angular.element('#' + id);
