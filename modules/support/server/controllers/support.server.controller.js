@@ -72,7 +72,7 @@ exports.supportRequest = function(req, res) {
       smtpTransport.sendMail(mailOptions, function(err) {
         smtpTransport.close(); // close the connection pool
         if (!err) {
-          return res.send();
+          return res.json({message: 'Support request sent.'});
         } else {
           return res.status(400).send({
             message: 'Failure while sending your support request. Please try again.'
