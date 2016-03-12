@@ -25,6 +25,17 @@
       zoom: 6
     };
 
+    // Return constructed icon
+    // @link http://leafletjs.com/reference.html#icon
+    var icon = function(status) {
+      status = (status === 'yes') ? 'yes' : 'maybe';
+      return L.icon({
+        iconUrl:    '/modules/core/img/map/marker-icon-' + status + '.svg',
+        iconSize:   [20, 20], // size of the icon
+        iconAnchor: [10, 10] // point of the icon which will correspond to marker's location
+      });
+    };
+
     // ViewModel
     var vm = this;
 
@@ -50,19 +61,17 @@
       clickable: false
     };
     vm.mapMinimumZoom = 4;
-
-    // Return constructed icon
-    // @link http://leafletjs.com/reference.html#icon
-    var icon = function(status) {
-      status = (status === 'yes') ? 'yes' : 'maybe';
-      return L.icon({
-        iconUrl:    '/modules/core/img/map/marker-icon-' + status + '.svg',
-        iconSize:   [20, 20], // size of the icon
-        iconAnchor: [10, 10] // point of the icon which will correspond to marker's location
-      });
+    vm.mapBounds = {};
+    vm.mapLayers = {
+      baselayers: {},
+      overlays: {
+        selectedOffers: {
+          name: 'Selected hosts',
+          type: 'group',
+          visible: false
+        }
+      }
     };
-
-    // Variables passed to leaflet directive at init
     vm.mapDefaults = {
       attributionControl: false, // Adding this manually below
       keyboard: true,
@@ -75,38 +84,6 @@
         }
       }
     };
-
-    // Is local/sessionStorage supported? This might fail in browser's incognito mode
-    if(locker.supported()) {
-      // Get location from cache, use default if it doesn't exist
-      vm.mapCenter = locker.get(cachePrefix, defaultLocation);
-
-      // If the key already exists then no action will be taken and false will be returned
-      locker.add(cachePrefix, defaultLocation);
-    }
-    else {
-      vm.mapCenter = defaultLocation;
-    }
-
-    vm.mapBounds = {};
-    vm.mapLayers = {
-      baselayers: {},
-      overlays: {
-        selectedOffers: {
-          name: 'Selected hosts',
-          type: 'group',
-          visible: false
-        }
-      }
-    };
-    $timeout(function(){
-      vm.mapLayers.baselayers.streets = MapLayersFactory.streets(defaultLocation);
-      vm.mapLayers.baselayers.satellite = MapLayersFactory.satellite(defaultLocation);
-
-      // Other() returns an object consisting possibly multiple layers
-      angular.extend(vm.mapLayers.baselayers, MapLayersFactory.other(defaultLocation));
-    });
-
     vm.mapPaths = {
       selected: vm.currentSelection
     };
@@ -131,61 +108,93 @@
     };
 
     /**
-     * Add attribution controller
+     * Initialize controller
      */
-    leafletData.getMap(mapId).then(function(map) {
-      map.addControl(L.control.attribution({
-        position: 'bottomright',
-        prefix: ''
-      }));
-    });
+    init();
 
-    /*
-     * Determine currently selected baselayer style
-     * 'TRStyle' has to be set when defining layers.
-     * Possible values are: street, satellite
-     * Defaults to street
-     */
-    $scope.$on(listenerPrefix + '.baselayerchange', function(event, layer) {
-      $timeout(function() {
-        vm.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? layer.leafletEvent.layer.options.TRStyle : 'street';
+    function init() {
+
+      // Is local/sessionStorage supported? This might fail in browser's incognito mode
+      if(locker.supported()) {
+        // Get location from cache, return defaultLocation if it doesn't exist in locker
+        vm.mapCenter = locker.get(cachePrefix, defaultLocation);
+
+        // Make sure there's something in locker for the next time
+        // If the key already exists in locker, then no action will be taken and false will be returned
+        locker.add(cachePrefix, defaultLocation);
+
+      }
+      // When local/sessionStorage is not supported:
+      else {
+        vm.mapCenter = defaultLocation;
+      }
+
+      //$timeout(function(){
+        vm.mapLayers.baselayers.streets = MapLayersFactory.streets(defaultLocation);
+        vm.mapLayers.baselayers.satellite = MapLayersFactory.satellite(defaultLocation);
+
+        // Other() returns an object consisting possibly multiple layers
+        angular.extend(vm.mapLayers.baselayers, MapLayersFactory.other(defaultLocation));
+      //});
+
+      /**
+       * Add attribution controller
+       */
+      leafletData.getMap(mapId).then(function(map) {
+        map.addControl(L.control.attribution({
+          position: 'bottomright',
+          prefix: ''
+        }));
       });
-    });
 
-    /**
-     * Setting up marker clustering
-     */
-    vm.pruneCluster = new PruneClusterForLeaflet(60, 60);
-
-    /**
-     * Setting up the marker and click event
-     */
-    vm.pruneCluster.PrepareLeafletMarker = function(leafletMarker, data) {
-      leafletMarker.on('click', function(e) {
-
-        // Open offer card
-        vm.offer = OffersService.get({
-          offerId: data.userId
+      /**
+       * Determine currently selected baselayer style
+       * 'TRStyle' has to be set when defining layers.
+       * Possible values are: street, satellite
+       * Defaults to street
+       */
+      $scope.$on(listenerPrefix + '.baselayerchange', function(event, layer) {
+        $timeout(function() {
+          vm.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? layer.leafletEvent.layer.options.TRStyle : 'street';
         });
-
-        // Show cirlce around the marker
-        vm.currentSelection.latlngs = e.latlng;
-        vm.mapLayers.overlays.selectedOffers.visible = true;
-
-        vm.sidebarOpen = true;
-
       });
-      leafletMarker.setIcon(data.icon);
-    };
 
-    /**
-     * Sidebar & markers react to these events
-     */
-    $scope.$on(listenerPrefix + '.click', function(event){
-      vm.sidebarOpen = false;
-      vm.offer = false;
-      vm.mapLayers.overlays.selectedOffers.visible = false;
-    });
+      /**
+       * Setting up marker clustering
+       */
+      vm.pruneCluster = new PruneClusterForLeaflet(60, 60);
+
+      /**
+       * Setting up the marker and click event
+       */
+      vm.pruneCluster.PrepareLeafletMarker = function(leafletMarker, data) {
+        leafletMarker.on('click', function(e) {
+
+          // Open offer card
+          vm.offer = OffersService.get({
+            offerId: data.userId
+          });
+
+          // Show cirlce around the marker
+          vm.currentSelection.latlngs = e.latlng;
+          vm.mapLayers.overlays.selectedOffers.visible = true;
+
+          vm.sidebarOpen = true;
+
+        });
+        leafletMarker.setIcon(data.icon);
+      };
+
+      /**
+       * Sidebar & markers react to these events
+       */
+      $scope.$on(listenerPrefix + '.click', function(event){
+        vm.sidebarOpen = false;
+        vm.offer = false;
+        vm.mapLayers.overlays.selectedOffers.visible = false;
+      });
+
+    }
 
     /**
      * Load markers to the current bounding box
