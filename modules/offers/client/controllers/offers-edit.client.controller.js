@@ -50,9 +50,10 @@
     };
 
     /**
-     * Init
+     * Initialize controller
      */
-    (function() {
+    init();
+    function init() {
 
       // Setup Leaflet map layers
       vm.mapLayers.baselayers.streets = MapLayersFactory.streets(defaultLocation);
@@ -85,7 +86,7 @@
         setHostingStatusByURL();
       });
 
-    })();
+    }
 
     /**
      * Determine new hosting status from the URL parameter

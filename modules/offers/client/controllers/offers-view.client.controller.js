@@ -87,9 +87,10 @@
     };
 
     /**
-     * Init
+     * Initialize controller
      */
-    (function() {
+    init();
+    function init() {
 
       /**
        * Toggle marker/circle visible/hidden depending on zoom level
@@ -127,7 +128,7 @@
         });
       }
 
-    })();
+    }
 
 
     /**

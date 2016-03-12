@@ -13,9 +13,6 @@
     <a ui-sref="search">Continue...</a>
   </div>
 
-  <!-- Browsing with non-public account -->
-  <div ng-if="app.user.public === false && app.user.username !== profileCtrl.profile.username" ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
-
   <!-- Own profile is non-public -->
   <div class="row text-center" ng-if="app.user.username === profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public === false">
     <em class="lead">Note that your profile will not be visible to others until you confirm your email.</em>

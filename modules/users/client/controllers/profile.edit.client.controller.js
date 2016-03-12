@@ -59,12 +59,16 @@
      */
     function decodeUserLanguages() {
       var langs_arr = [];
-      vm.user.languages.forEach(function(key) {
-        langs_arr[langs_arr.length] = {key: key, name: vm.languages[key]};
-      });
+      if(vm.user && vm.user.languages) {
+        vm.user.languages.forEach(function(key) {
+          langs_arr[langs_arr.length] = {key: key, name: vm.languages[key]};
+        });
+      }
       vm.userLanguages = langs_arr;
     }
     function encodeUserLanguages() {
+      if(!vm.user) return;
+
       var langs_arr = [];
       vm.userLanguages.forEach(function(lang) {
         langs_arr[langs_arr.length] = lang.key;
