@@ -8,9 +8,10 @@ trustroots:
   #  that they won't get overwritten by app directory
   #  Read more: http://stackoverflow.com/a/32785014/1984644
   volumes:
-    - ./:/trustroots
-    - /trustroots/node_modules
-  working_dir: /trustroots/
+   - ./:/trustroots
+   - /trustroots/node_modules
+   - /trustroots/public
+   - /trustroots/uploads
   command: npm start
   links:
     - mongodb:mongodb
@@ -26,7 +27,6 @@ trustroots:
     - DOMAIN=trustroots.dev
     - VIRTUAL_HOST=trustroots.dev
     - VIRTUAL_PORT=3000
-    - NODEMON_LEGACY_WATCH=true
 
 
 ## SMTP Server + Web Interface for viewing and testing emails during development.

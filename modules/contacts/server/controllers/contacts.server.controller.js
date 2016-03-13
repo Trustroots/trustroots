@@ -295,16 +295,14 @@ exports.contactListByUser = function(req, res, next, listUserId) {
     });
   }
 
-  var contactFields = 'users created';
   var contactQuery = { users: listUserId, confirmed: true };
 
-  // Add 'confirmed' field only if showing currently logged in user's listing
+  // Remove 'confirmed=true' from queries if showing currently logged in user's listing
   if(req.user && req.user._id.equals(listUserId)) {
-    contactFields += ' confirmed';
     delete contactQuery.confirmed;
   }
 
-  Contact.find(contactQuery, contactFields)
+  Contact.find(contactQuery, 'users created confirmed')
     .sort('-created')
     // Populate users
     .populate({

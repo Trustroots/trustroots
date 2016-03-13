@@ -13,7 +13,11 @@ exports.renderIndex = function(req, res) {
   if(req.user) {
     currentUser = req.user;
     // Don't just expose everything to the view...
+    delete currentUser.resetPasswordToken;
+    delete currentUser.resetPasswordExpires;
     delete currentUser.emailToken;
+    delete currentUser.password;
+    delete currentUser.salt;
   }
 
   res.render('modules/core/server/views/index', {

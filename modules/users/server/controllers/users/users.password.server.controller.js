@@ -22,6 +22,10 @@ if (process.env.NODE_ENV === 'test') {
   config.mailer.options = stubTransport();
 }
 
+// Nodemailer Transporter
+// @link http://nodemailer.com/
+var smtpTransport = nodemailer.createTransport(config.mailer.options);
+
 /**
  * Forgot for reset password (forgot POST)
  */
@@ -90,7 +94,6 @@ exports.forgot = function(req, res, next) {
 
     // If valid email, send reset email using service
     function(emailHTML, emailPlain, user, done) {
-      var smtpTransport = nodemailer.createTransport(config.mailer.options);
 
       var mailOptions = {
         to: {
@@ -217,7 +220,6 @@ exports.reset = function(req, res, next) {
 
     // If valid email, send reset email using service
     function(emailHTML, emailPlain, user, done) {
-      var smtpTransport = nodemailer.createTransport(config.mailer.options);
 
       var mailOptions = {
         to: {
@@ -335,7 +337,6 @@ exports.changePassword = function(req, res) {
 
     // If valid email, send reset email using service
     function(emailHTML, emailPlain, user, done) {
-      var smtpTransport = nodemailer.createTransport(config.mailer.options);
 
       var mailOptions = {
         to: {

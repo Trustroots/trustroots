@@ -66,7 +66,11 @@
       vm.content = '';
     }
 
-    (function() {
+    /**
+     * Initialize controller
+     */
+    init();
+    function init() {
       // Fetches first page of messages after receiving user has finished loading (we need the userId from there)
       userTo.$promise.then(function() {
 
@@ -98,7 +102,7 @@
         }
       });
 
-    })();
+    }
 
     /**
      * When contents at the editor change, update layout

@@ -26,9 +26,10 @@
     });
 
     /**
-     * Init
+     * Initialize controller
      */
-    (function() {
+    init();
+    function init() {
 
       // Prevent connecting with yourself
       if($stateParams.userId === Authentication.user._id) {
@@ -55,7 +56,7 @@
         }
       });
 
-    })();
+    }
 
     // Add contact
     function add() {

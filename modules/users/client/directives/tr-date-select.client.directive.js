@@ -123,7 +123,7 @@ angular.module('users')
         model.$render = function() {
           if (!model.$viewValue) return;
 
-          var m = moment(model.$viewValue);
+          var m = moment(new Date(model.$viewValue));
 
           // Always use a dot in ng-model attrs...
           scope.val = {
