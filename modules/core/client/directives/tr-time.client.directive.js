@@ -10,8 +10,9 @@
    * Toggle click event won't propagate further in DOM so placing this inside clickable
    * elements will cause time to toggle, but underlaying button won't be clicked.
    *
-   * Relies on MomentJS
+   * Relies on MomentJS and Angular-Moment
    * @link http://momentjs.com/docs/
+   * @link https://github.com/urish/angular-moment
    *
    * Usage:
    * <time tr-time="Date object or String"></time>
@@ -26,11 +27,14 @@
     .directive('trTime', trTimeDirective);
 
   /* @ngInject */
-  function trTimeDirective($log, $parse, locker) {
+  function trTimeDirective($log, $rootScope, $parse, locker) {
     return {
       restrict: 'A',
       replace: false,
-      template: '<time ng-click="toggleMode($event)" ng-bind="timeVisible" uib-tooltip="{{ timeTooltip }}" tooltip-placement="{{ ::tooltipPlacement }}"></time>',
+      template: '<time ng-click="toggleMode($event)">' +
+                  '<span ng-if="timeModeAgo" am-time-ago="::sourceTime" uib-tooltip="{{ ::sourceTime | date:\'medium\' }}" tooltip-placement="{{ ::tooltipPlacement }}"></span>' +
+                  '<span ng-if="!timeModeAgo">{{ ::sourceTime | date:\'medium\' }}</span>' +
+                '</time>',
       scope: {
         trTime: '@',
         trTimeTooltipPlacement: '@'
@@ -47,43 +51,34 @@
 
         // Avoid creating watchers for this time since it needs to be passed only once
         // @link https://stackoverflow.com/questions/30193069/angularjs-directive-creates-watches/30194100#30194100
-        var sourceTime = $parse(attrs.trTime)(scope.$parent);
+        scope.sourceTime = $parse(attrs.trTime)(scope.$parent);
 
         // Get setting from cache, use default (true) if it doesn't exist
-        var timeModeAgo = (locker.supported()) ? Boolean(locker.get('timeAgo', true)) : true;
+        scope.timeModeAgo = (locker.supported()) ? Boolean(locker.get('timeAgo', true)) : true;
 
-        // Init time objects
-        var momentTime = moment(sourceTime);
-        var timeAgo = momentTime.fromNow();
-        var timeRaw = momentTime.format('ddd, MMMM D YYYY \\a\\t HH:mm');
-
-        // Set moment object
-        scope.setTime = function() {
-          if(timeModeAgo) {
-            scope.timeTooltip = timeRaw;
-            scope.timeVisible = timeAgo;
+        // Sync mode if other directive changes time mode
+        scope.$on('timeModeAgoChanged', timeModeAgoChanged);
+        function timeModeAgoChanged($event, newTimeModeAgo) {
+          if(scope.timeModeAgo !== newTimeModeAgo) {
+            scope.timeModeAgo = newTimeModeAgo;
           }
-          else {
-            scope.timeTooltip = timeAgo;
-            scope.timeVisible = timeRaw;
-          }
-        };
-        scope.setTime();
+        }
 
         // Toggle viewing time between 'ago' and time format.
         // Saves setting to localStorage if it's available
         scope.toggleMode = function($event) {
-
           $event.preventDefault();
           $event.stopPropagation();
 
-          timeModeAgo = !timeModeAgo;
-
-          // Update time format at scope
-          scope.setTime();
+          scope.timeModeAgo = !scope.timeModeAgo;
 
           // Save setting to cache
-          locker.put('timeAgo', timeModeAgo);
+          if(locker.supported()) {
+            locker.put('timeAgo', scope.timeModeAgo);
+          }
+
+          // Tell other directives to update their mode as well
+          $rootScope.$broadcast('timeModeAgoChanged', scope.timeModeAgo);
         };
 
       }

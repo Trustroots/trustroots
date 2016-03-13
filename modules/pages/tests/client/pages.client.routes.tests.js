@@ -256,6 +256,27 @@
         });
       });
 
+      describe('Guide Route', function () {
+        var mainstate;
+        beforeEach(inject(function ($state, $templateCache) {
+          // Test expected GET request
+          $templateCache.put('/modules/pages/views/guide.client.view.html', '');
+          mainstate = $state.get('guide');
+        }));
+
+        it('Should have the correct URL', function () {
+          expect(mainstate.url).toEqual('/guide');
+        });
+
+        it('Should not be abstract', function () {
+          expect(mainstate.abstract).toBe(undefined);
+        });
+
+        it('Should have templateUrl', function () {
+          expect(mainstate.templateUrl).toBe('/modules/pages/views/guide.client.view.html');
+        });
+      });
+
     });
   });
 })();
