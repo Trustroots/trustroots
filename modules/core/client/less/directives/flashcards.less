@@ -1,0 +1,30 @@
+.tr-flashcards {
+  display: block;
+  &,
+  &:hover {
+    color: @gray-light;
+    text-decoration: none;
+  }
+  border: 1px solid @gray-lighter;
+  &:hover {
+    border: 1px solid @brand-primary;
+  }
+  padding: 15px;
+  margin: 30px 20px;
+  @media (min-width: @screen-sm-min) {
+    padding: 20px;
+    margin: 50px;
+  }
+}
+.tr-flashcards-tip {
+  font-size: 11px;
+  line-height: 30px;
+  font-weight: bold;
+}
+.tr-flashcards-title {
+  font-size: 14px;
+  line-height: 18px;
+}
+.tr-flashcards-content {
+  font-size: 12px;
+}

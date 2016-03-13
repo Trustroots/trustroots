@@ -65,6 +65,11 @@
         url: '/volunteering',
         title: 'Volunteering',
         templateUrl: '/modules/pages/views/volunteering.client.view.html'
+      }).
+      state('guide', {
+        url: '/guide',
+        title: 'Guide',
+        templateUrl: '/modules/pages/views/guide.client.view.html'
       });
 
       /**
