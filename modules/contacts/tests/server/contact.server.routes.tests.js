@@ -73,6 +73,13 @@ describe('Contact CRUD tests', function() {
       public: true
     });
 
+    // Set dates to the past to make sure contacts are storted in right order for tests
+    var yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    var daybefore = new Date();
+    daybefore.setDate(daybefore.getDate() - 2);
+
     // Contacts saved to DB
     contact1 = new Contact({
       users: [],
@@ -81,12 +88,12 @@ describe('Contact CRUD tests', function() {
     });
     contact2 = new Contact({
       users: [],
-      created: new Date(),
+      created: yesterday,
       confirmed: true
     });
     contact3 = new Contact({
       users: [],
-      created: new Date(),
+      created: daybefore,
       confirmed: true
     });
 
@@ -97,9 +104,9 @@ describe('Contact CRUD tests', function() {
         user2Id = user2SaveRes._id;
         user3.save(function(err, user3SaveRes) {
           user3Id = user3SaveRes._id;
-          contact1.users = [user1Id, user2Id]; // Users 1+2, un-confirmed
-          contact2.users = [user2Id, user3Id]; // Users 2+3, confirmed
-          contact3.users = [user1Id, user3Id]; // Users 1+3, confirmed
+          contact1.users = [user1Id, user2Id]; // Connection A: Users 1+2, un-confirmed
+          contact2.users = [user2Id, user3Id]; // Connection B: Users 2+3, confirmed
+          contact3.users = [user1Id, user3Id]; // Connection C: Users 1+3, confirmed
           contact1.save(function(err, contact1SaveRes) {
             contact1Id = contact1SaveRes._id;
             contact2.save(function(err, contact2SaveRes) {
@@ -157,14 +164,16 @@ describe('Contact CRUD tests', function() {
               // Set assertions
               contactsGetRes.body.length.should.equal(2);
 
+              // Connection B: Users 2+3, confirmed
               contactsGetRes.body[0].confirmed.should.equal(true);
               contactsGetRes.body[0].created.should.not.be.empty();
-              contactsGetRes.body[0].users[0].username.should.equal(user1.username);
+              contactsGetRes.body[0].users[0].username.should.equal(user2.username);
               contactsGetRes.body[0].users[1].username.should.equal(user3.username);
 
+              // Connection C: Users 1+3, confirmed
               contactsGetRes.body[1].confirmed.should.equal(true);
               contactsGetRes.body[1].created.should.not.be.empty();
-              contactsGetRes.body[1].users[0].username.should.equal(user2.username);
+              contactsGetRes.body[1].users[0].username.should.equal(user1.username);
               contactsGetRes.body[1].users[1].username.should.equal(user3.username);
 
               // Call the assertion callback
@@ -191,15 +200,17 @@ describe('Contact CRUD tests', function() {
               // Set assertions
               contactsGetRes.body.length.should.equal(2);
 
-              contactsGetRes.body[0].confirmed.should.equal(true);
+              // Connection A: Users 1+2, un-confirmed
+              contactsGetRes.body[0].confirmed.should.equal(false);
               contactsGetRes.body[0].created.should.not.be.empty();
               contactsGetRes.body[0].users[0].username.should.equal(user1.username);
-              contactsGetRes.body[0].users[1].username.should.equal(user3.username);
+              contactsGetRes.body[0].users[1].username.should.equal(user2.username);
 
-              contactsGetRes.body[1].confirmed.should.equal(false);
+              // Connection C: Users 1+3, confirmed
+              contactsGetRes.body[1].confirmed.should.equal(true);
               contactsGetRes.body[1].created.should.not.be.empty();
               contactsGetRes.body[1].users[0].username.should.equal(user1.username);
-              contactsGetRes.body[1].users[1].username.should.equal(user2.username);
+              contactsGetRes.body[1].users[1].username.should.equal(user3.username);
 
               // Call the assertion callback
               return done();
