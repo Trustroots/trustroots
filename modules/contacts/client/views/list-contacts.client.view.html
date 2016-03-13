@@ -12,16 +12,16 @@
       <h4 class="text-muted">
 
         <!-- Confirmed contacts -->
-        <span ng-if="(ContactsList.contacts | filter:{confirmed:isConfirmed}).length === 1">
+        <span ng-if="(ContactsList.contacts | filter:{confirmed:true}).length === 1">
           One contact
         </span>
         <span ng-if="(ContactsList.contacts | filter:{confirmed:true}).length > 1">
-          {{ (ContactsList.contacts | filter:{confirmed:isConfirmed}).length }} contacts
+          {{ (ContactsList.contacts | filter:{confirmed:true}).length }} contacts
         </span>
 
         <!-- Pending contacts -->
         <small ng-if="(ContactsList.contacts | filter:{confirmed:false}).length > 0">
-          (additional {{ (ContactsList.contacts | filter:{confirmed:isConfirmed}).length }} pending)
+          (additional {{ (ContactsList.contacts | filter:{confirmed:false}).length }} pending)
         </small>
 
       </h4>
