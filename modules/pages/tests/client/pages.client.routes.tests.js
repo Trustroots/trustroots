@@ -67,27 +67,6 @@
         });
       });
 
-      describe('About Route', function () {
-        var mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/about.client.view.html', '');
-          mainstate = $state.get('about');
-        }));
-
-        it('Should have the correct URL', function () {
-          expect(mainstate.url).toEqual('/about');
-        });
-
-        it('Should not be abstract', function () {
-          expect(mainstate.abstract).toBe(undefined);
-        });
-
-        it('Should have templateUrl', function () {
-          expect(mainstate.templateUrl).toBe('/modules/pages/views/about.client.view.html');
-        });
-      });
-
       describe('Privacy Route', function () {
         var mainstate;
         beforeEach(inject(function ($state, $templateCache) {
