@@ -26,7 +26,7 @@ exports.get = function(req, res) {
     // Total users
     function(done) {
       User
-        .find({public:true})
+        .find({ public: true })
         .count(function(err, count) {
           req.statistics.total = count;
           done(err);
@@ -37,7 +37,8 @@ exports.get = function(req, res) {
     function(done) {
 
       User.count({
-        extSitesBW: { $exists: true, $ne: '' }
+        extSitesBW: { $exists: true, $ne: '' },
+        public: true
       }, function(err, count) {
         req.statistics.connected.bewelcome = (count ? count : 0);
         done(err);
@@ -47,7 +48,8 @@ exports.get = function(req, res) {
     // External sites - Couchsurfing
     function(done) {
       User.count({
-        extSitesCS: { $exists: true, $ne: '' }
+        extSitesCS: { $exists: true, $ne: '' },
+        public: true
       }, function(err, count) {
         req.statistics.connected.couchsurfing = (count ? count : 0);
         done(err);
@@ -57,7 +59,8 @@ exports.get = function(req, res) {
     // External sites - Warmshowers
     function(done) {
       User.count({
-        extSitesWS: { $exists: true, $ne: '' }
+        extSitesWS: { $exists: true, $ne: '' },
+        public: true
       }, function(err, count) {
         req.statistics.connected.warmshowers = (count ? count : 0);
         done(err);
@@ -67,7 +70,8 @@ exports.get = function(req, res) {
     // External sites - Facebook
     function(done) {
       User.count({
-        'additionalProvidersData.facebook': { $exists: true }
+        'additionalProvidersData.facebook': { $exists: true },
+        public: true
       }, function(err, count) {
         req.statistics.connected.facebook = (count ? count : 0);
         done(err);
@@ -77,7 +81,8 @@ exports.get = function(req, res) {
     // External sites - Twitter
     function(done) {
       User.count({
-        'additionalProvidersData.twitter': { $exists: true }
+        'additionalProvidersData.twitter': { $exists: true },
+        public: true
       }, function(err, count) {
         req.statistics.connected.twitter = (count ? count : 0);
         done(err);
@@ -87,7 +92,8 @@ exports.get = function(req, res) {
     // External sites - GitHub
     function(done) {
       User.count({
-        'additionalProvidersData.github': { $exists: true }
+        'additionalProvidersData.github': { $exists: true },
+        public: true
       }, function(err, count) {
         req.statistics.connected.github = (count ? count : 0);
         done(err);
@@ -97,7 +103,8 @@ exports.get = function(req, res) {
     // Newsletter subscribers
     function(done) {
       User.count({
-        newsletter: true
+        newsletter: true,
+        public: true
       },
       function(err, count) {
         req.statistics.newsletter = (count ? count : 0);
