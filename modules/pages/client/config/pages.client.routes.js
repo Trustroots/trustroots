@@ -19,11 +19,6 @@
         title: 'Team',
         templateUrl: '/modules/pages/views/team.client.view.html'
       }).
-      state('about', {
-        url: '/about',
-        title: 'About',
-        templateUrl: '/modules/pages/views/about.client.view.html'
-      }).
       state('privacy', {
         url: '/privacy',
         title: 'Privacy policy',
@@ -70,6 +65,16 @@
         url: '/guide',
         title: 'Guide',
         templateUrl: '/modules/pages/views/guide.client.view.html'
+      }).
+
+      // Redirect to home:
+      state('about', {
+        url: '/about',
+        controller:
+          /* @ngInject */
+          function($state) {
+            $state.go('home');
+          }
       });
 
       /**
