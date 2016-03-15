@@ -148,7 +148,7 @@ module.exports = {
       'modules/*/client/**/*.js'
     ],
     views: ['modules/*/client/views/**/*.html']
-    },
+  },
   server: {
     fontelloConfig: 'modules/core/client/fonts/fontello/config.json',
     gulpConfig: 'gulpfile.js',

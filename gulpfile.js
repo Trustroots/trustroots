@@ -60,6 +60,13 @@ gulp.task('nodemon', function() {
     script: 'server.js',
     nodeArgs: ['--debug'],
     ext: 'js html',
+    ignore: _.union(
+      testAssets.tests.server,
+      testAssets.tests.client,
+      testAssets.tests.e2e,
+      ['modules/*/client/**', 'public/**', 'migrations/**', 'scripts/**', 'tmp/**', 'node_modules/**'],
+      [defaultAssets.server.fontelloConfig, defaultAssets.server.gulpConfig]
+    ),
     watch: _.union(defaultAssets.server.views, defaultAssets.server.allJS, defaultAssets.server.config)
   });
 });
