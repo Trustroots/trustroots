@@ -22,6 +22,8 @@
     "test": "gulp test",
     "test:client": "gulp test:client",
     "test:server": "gulp test:server",
+    "test:server:watch": "gulp test:server:watch",
+    "test:server:watch:onlyChanged": "gulp test:server:watch --onlyChanged",
     "migrate": "migrate",
     "update": "npm install --quiet && npm prune && migrate",
     "postinstall": "bower install --allow-root --config.interactive=false && bower prune --allow-root --config.interactive=false"
@@ -47,7 +49,7 @@
     "express-session": "~1.13.0",
     "gm": "~1.21.1",
     "git-rev": "~0.2.1",
-    "glob": "~7.0.0",
+    "glob": "~7.0.3",
     "gulp": "~3.9",
     "gulp-angular-templatecache": "~1.8.0",
     "gulp-autoprefixer": "~3.1.0",
@@ -111,7 +113,8 @@
     "phantomjs-prebuilt": ">=1.9",
     "segfault-handler": "~1.0.0",
     "should": "~8.2.2",
-    "supertest": "~1.2.0"
+    "supertest": "~1.2.0",
+    "yargs": "~4.3.1"
   },
   "bugs": {
     "url": "https://github.com/Trustroots/trustroots/issues"

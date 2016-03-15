@@ -87,15 +87,17 @@ Open [http://trustroots.dev/](http://trustroots.dev/) and [http://trustroots.mai
 
 ```bash
 git pull
-docker-compose run trustroots npm run update
+docker-compose run trustroots npm update
 ```
 
 
 ### Running tests
 
-```bash
-docker-compose run trustroots npm run test
-```
+- `docker-compose run trustroots npm test` (both client & server)
+- `docker-compose run trustroots npm run test:client`
+- `docker-compose run trustroots npm run test:server`
+- `docker-compose run trustroots npm run test:server:watch` (run + watch for changes)
+- `docker-compose run trustroots npm run test:server:watch:onlyChanged` (run + watch for changes and run only changed files)
 
 
 ### Problems
