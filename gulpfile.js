@@ -6,6 +6,7 @@
 var _ = require('lodash'),
   defaultAssets = require('./config/assets/default'),
   testAssets = require('./config/assets/test'),
+  config = require('./config/config'),
   gulp = require('gulp'),
   gulpLoadPlugins = require('gulp-load-plugins'),
   runSequence = require('run-sequence'),
@@ -196,6 +197,15 @@ gulp.task('fontello', function(done) {
     .pipe(plugins.livereload());
 });
 
+// Make sure upload directory exists
+gulp.task('makeUploadsDir', function () {
+  return fs.mkdir(config.uploadDir, function (err) {
+    if (err && err.code !== 'EEXIST') {
+      console.error(err);
+    }
+  });
+});
+
 // Run Selenium tasks
 gulp.task('selenium', plugins.shell.task('python ./scripts/selenium/test.py'));
 
@@ -262,25 +272,25 @@ gulp.task('clean', function(done) {
 
 // Run the project tests
 gulp.task('test', function(done) {
-  runSequence('env:test', 'copyConfig', 'jshint', ['karma', 'mocha'], done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', ['karma', 'mocha'], done);
 });
 
 gulp.task('test:server', function(done) {
-  runSequence('env:test', 'copyConfig', 'jshint', 'mocha', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', 'mocha', done);
 });
 
 gulp.task('test:client', function(done) {
-  runSequence('env:test', 'copyConfig', 'jshint', 'karma', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', 'karma', done);
 });
 
 // Run the project in development mode
 gulp.task('develop', function(done) {
-  runSequence('env:dev', 'copyConfig', 'build:dev', ['nodemon', 'watch'], done);
+  runSequence('env:dev', 'copyConfig', 'makeUploadsDir', 'build:dev', ['nodemon', 'watch'], done);
 });
 
 // Run the project in production mode
 gulp.task('prod', function(done) {
-  runSequence('env:prod', 'copyConfig', 'build:prod', ['nodemon', 'watch'], done);
+  runSequence('env:prod', 'copyConfig', 'makeUploadsDir', 'build:prod', ['nodemon', 'watch'], done);
 });
 
 // Default to develop mode
