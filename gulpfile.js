@@ -6,7 +6,6 @@
 var _ = require('lodash'),
   defaultAssets = require('./config/assets/default'),
   testAssets = require('./config/assets/test'),
-  config = require('./config/config'),
   gulp = require('gulp'),
   gulpLoadPlugins = require('gulp-load-plugins'),
   runSequence = require('run-sequence'),
@@ -87,7 +86,7 @@ gulp.task('watch', function() {
 
   if (process.env.NODE_ENV === 'test') {
     // Add Server Test file rules
-    gulp.watch([testAssets.tests.server, defaultAssets.server.allJS], ['test:server']).on('change', function (file) {
+    gulp.watch([testAssets.tests.server, defaultAssets.server.allJS], ['test:server']).on('change', function(file) {
 
       var runOnlyChangedTestFile = argv.onlyChanged ? true : false;
 
@@ -96,9 +95,9 @@ gulp.task('watch', function() {
         var changedTestFiles = [];
 
         // iterate through server test glob patterns
-        _.forEach(testAssets.tests.server, function (pattern) {
+        _.forEach(testAssets.tests.server, function(pattern) {
           // determine if the changed (watched) file is a server test
-          _.forEach(glob.sync(pattern), function (f) {
+          _.forEach(glob.sync(pattern), function(f) {
             var filePath = path.resolve(f);
 
             if (filePath === path.resolve(file.path)) {
@@ -231,8 +230,12 @@ gulp.task('fontello', function(done) {
 });
 
 // Make sure upload directory exists
-gulp.task('makeUploadsDir', function () {
-  return fs.mkdir(config.uploadDir, function (err) {
+gulp.task('makeUploadsDir', function() {
+
+  // Loading this before `env:*` task will load configs with wrong environment
+  var config = require('./config/config');
+
+  return fs.mkdir(config.uploadDir, function(err) {
     if (err && err.code !== 'EEXIST') {
       console.error(err);
     }
@@ -243,14 +246,14 @@ gulp.task('makeUploadsDir', function () {
 gulp.task('selenium', plugins.shell.task('python ./scripts/selenium/test.py'));
 
 // Mocha tests task
-gulp.task('mocha', function (done) {
+gulp.task('mocha', function(done) {
   // Open mongoose connections
   var mongoose = require('./config/lib/mongoose');
   var testSuites = Array.isArray(argv.changedTestFiles) && argv.changedTestFiles.length ? argv.changedTestFiles : testAssets.tests.server;
   var error;
 
   // Connect mongoose
-  mongoose.connect(function () {
+  mongoose.connect(function() {
     mongoose.loadModels();
     // Run the tests
     gulp.src(testSuites)
@@ -258,14 +261,14 @@ gulp.task('mocha', function (done) {
         reporter: 'spec',
         timeout: 10000
       }))
-      .on('error', function (err) {
+      .on('error', function(err) {
         // If an error occurs, save it
         error = err;
         console.error(err);
       })
-      .on('end', function () {
+      .on('end', function() {
         // When the tests are done, disconnect mongoose and pass the error state back to gulp
-        mongoose.disconnect(function () {
+        mongoose.disconnect(function() {
           done(error);
         });
       });
@@ -275,16 +278,6 @@ gulp.task('mocha', function (done) {
 
 // Karma test runner task
 gulp.task('karma', function(done) {
-  return gulp.src([])
-    .pipe(plugins.karma({
-      configFile: 'karma.conf.js',
-      action: 'run',
-      singleRun: true
-    }));
-});
-
-// Karma test runner task
-gulp.task('karma', function (done) {
   new KarmaServer({
     configFile: __dirname + '/karma.conf.js',
     singleRun: true
@@ -308,33 +301,33 @@ gulp.task('clean', function(done) {
 
 // Run the project tests
 gulp.task('test', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', ['karma', 'mocha'], done);
+  runSequence('env:test', ['copyConfig', 'makeUploadsDir'], 'jshint', ['karma', 'mocha'], done);
 });
 
 gulp.task('test:server', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', 'mocha', done);
+  runSequence('env:test', ['copyConfig', 'makeUploadsDir'], 'jshint', 'mocha', done);
 });
 
 // Watch all server files for changes & run server tests (test:server) task on changes
 // optional arguments:
 //    --onlyChanged - optional argument for specifying that only the tests in a changed Server Test file will be run
 // example usage: gulp test:server:watch --onlyChanged
-gulp.task('test:server:watch', function (done) {
+gulp.task('test:server:watch', function(done) {
   runSequence('test:server', 'watch', done);
 });
 
 gulp.task('test:client', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', 'karma', done);
+  runSequence('env:test', ['copyConfig', 'makeUploadsDir'], 'jshint', 'karma', done);
 });
 
 // Run the project in development mode
 gulp.task('develop', function(done) {
-  runSequence('env:dev', 'copyConfig', 'makeUploadsDir', 'build:dev', ['nodemon', 'watch'], done);
+  runSequence('env:dev', ['copyConfig', 'makeUploadsDir'], 'build:dev', ['nodemon', 'watch'], done);
 });
 
 // Run the project in production mode
 gulp.task('prod', function(done) {
-  runSequence('env:prod', 'copyConfig', 'makeUploadsDir', 'build:prod', ['nodemon', 'watch'], done);
+  runSequence('env:prod', ['copyConfig', 'makeUploadsDir'], 'build:prod', ['nodemon', 'watch'], done);
 });
 
 // Default to develop mode
