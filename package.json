@@ -15,6 +15,7 @@
   "scripts": {
     "prestart": "if [ ! -d node_modules ]; then npm install --quiet; fi",
     "start": "gulp",
+    "start:prod": "gulp prod",
     "build": "gulp build:dev",
     "build:dev": "gulp build:dev",
     "build:prod": "gulp build:prod",

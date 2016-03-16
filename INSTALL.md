@@ -66,6 +66,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 - Stop the app by hitting `Ctrl+C`
 - Run the app by typing `npm start`
+- Run the app in production mode by typing `npm run start:prod`
 - When you do changes to any files, they get recompiled and the browser is refreshed.
 - Keep an eye on console in case of compiling errors.
 - To read and debug MongoDB, use e.g. [Robomongo](https://robomongo.org/) to connect to your localhost.
