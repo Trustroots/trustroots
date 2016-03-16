@@ -80,13 +80,14 @@ gulp.task('watch', function() {
   gulp.watch(defaultAssets.server.views).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.allJS, ['jshint']).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.fontelloConfig, ['fontello']);
-  gulp.watch(defaultAssets.client.js, ['jshint', 'clean:js', 'scripts']);
   gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
 
   if (process.env.NODE_ENV === 'production') {
+    gulp.watch(defaultAssets.client.js, ['jshint', 'clean:js', 'scripts']);
     gulp.watch(defaultAssets.server.gulpConfig, ['templatecache', 'jshint']);
     gulp.watch(defaultAssets.client.views, ['clean:js', 'templatecache', 'jshint', 'scripts']).on('change', plugins.livereload.changed);
   } else {
+    gulp.watch(defaultAssets.client.js, ['jshint']).on('change', plugins.livereload.changed);
     gulp.watch(defaultAssets.server.gulpConfig, ['jshint']);
     gulp.watch(defaultAssets.client.views).on('change', plugins.livereload.changed);
   }
@@ -142,29 +143,14 @@ gulp.task('jshint', function() {
 
 // JavaScript task
 gulp.task('scripts', function() {
-
-  // In production mode:
-  if (process.env.NODE_ENV === 'production') {
-    return gulp.src( _.union(defaultAssets.client.lib.js, defaultAssets.client.js, ['public/dist/templates.js']) )
-      .pipe(plugins.ngAnnotate())
-      .pipe(plugins.uglify({
-        mangle: false
-      }))
-      .pipe(plugins.concat('application.min.js'))
-      .pipe(gulp.dest('public/dist'));
-  }
-  // In development mode:
-  else {
-    return gulp.src(defaultAssets.client.js)
-      .pipe(plugins.sourcemaps.init())
-      .pipe(plugins.ngAnnotate())
-      .pipe(plugins.concat('application.js'))
-      .pipe(plugins.sourcemaps.write())
-      .pipe(gulp.dest('public/dist'))
-      .pipe(plugins.livereload());
-  }
+  return gulp.src( _.union(defaultAssets.client.lib.js, defaultAssets.client.js, ['public/dist/templates.js']) )
+    .pipe(plugins.ngAnnotate())
+    .pipe(plugins.uglify({
+      mangle: false
+    }))
+    .pipe(plugins.concat('application.min.js'))
+    .pipe(gulp.dest('public/dist'));
 });
-
 
 // Clean JS files -task
 gulp.task('clean:js', function() {
