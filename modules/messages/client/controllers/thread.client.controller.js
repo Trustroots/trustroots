@@ -135,6 +135,15 @@
       );
     }
 
+
+    /**
+     * Return length of a string without html
+     * Very crude html stripping, which is enough for estimating if text is short/empty without html tags
+     */
+    function plainTextLength(text) {
+      return text ? String(text).replace(/&nbsp;/g, ' ').replace(/<[^>]+>/gm, '').trim().length : 0;
+    }
+
     /**
      * Appends returned messages to model
      */
@@ -250,9 +259,9 @@
 
       // Make sure the message isn't empty.
       // Sometimes we'll have some empty blocks due wysiwyg
-      if(vm.content.replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim() === '') {
+      if(plainTextLength(vm.content) === 0) {
         vm.isSending = false;
-        messageCenterService.add('warning', 'Write a message first...');
+        messageCenterService.add('warning', 'Please write a message first...');
         return;
       }
 
