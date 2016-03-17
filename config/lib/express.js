@@ -40,7 +40,6 @@ module.exports.initLocalVariables = function (app) {
   app.locals.googleAnalytics = config.googleAnalytics;
   app.locals.languages = languages;
   app.locals.appSettings = config.app;
-  app.locals.appSettings.piwik = config.piwik;
   app.locals.appSettings.mapbox = config.mapbox;
   app.locals.appSettings.time = new Date().toISOString();
   app.locals.appSettings.https = config.https;
