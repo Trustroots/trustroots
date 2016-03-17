@@ -9,6 +9,7 @@ var _ = require('lodash'),
     sanitizeHtml = require('sanitize-html'),
     paginate = require('express-paginate'),
     mongoose = require('mongoose'),
+    config = require(path.resolve('./config/config')),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
@@ -110,30 +111,96 @@ exports.send = function(req, res) {
     });
   }
 
-  // Test in case content is actually empty without html
+  // Test in case content is actually empty (when html is stripped out)
   if(textProcessor.isEmpty(req.body.content)) {
     return res.status(400).send({
       message: 'Please write a message.'
     });
   }
 
-  var message = new Message(req.body);
+  async.waterfall([
 
-  // Allow some HTML
-  message.content = textProcessor.html(message.content);
+    // Check if this is first message to this thread (=does the thread object exist?)
+    function(done) {
+      Thread.findOne({
+        // User id's can be either way around in thread handle, so we gotta test for both situations
+        $or: [
+          {
+            userTo:   req.user._id,
+            userFrom: req.body.userTo
+          },
+          {
+            userTo:   req.body.userTo,
+            userFrom: req.user._id
+          }
+        ]
+      },
+      function(err, thread) {
 
-  message.userFrom = req.user;
-  message.read = false;
-  message.notified = false;
+          Thread.find({},
+          function(errsrrr, threadsss) {
 
-  message.save(function(err) {
-    if (err) {
-      return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        done(err, thread);
+
       });
-    } else {
+      });
+    },
 
-      // Create/upgrade Thread handle between these two users
+    // Check sender's profile isn't empty If it was first message
+    // If the sending user has an empty profile, reject the message
+    function(thread, done) {
+      // If this was first message to the thread
+      if(!thread) {
+
+        User.findById(req.user._id, 'description').exec(function(err, sender) {
+          // If we were unable to find the sender, return the error and stop here
+          if (err || !sender) {
+            return done(err);
+          }
+
+          var descriptionLength = (sender.description) ? textProcessor.plainText(sender.description).length : 0;
+
+          // If the sender has too empty description, return an error
+          if(descriptionLength < config.profileMinimumLength) {
+            return res.status(400).send({
+              error: 'empty-profile',
+              limit: config.profileMinimumLength,
+              message: (descriptionLength === 0) ? 'Please fill out your profile description before you send messages.' : 'Please write longer profile description before you send messages.'
+            });
+          }
+
+          // Continue
+          done(err);
+        });
+      }
+      // It wasn't first message to this thread
+      else {
+        done(null);
+      }
+
+    },
+
+    // Save message
+    function(done) {
+
+      var message = new Message(req.body);
+
+      // Allow some HTML
+      message.content = textProcessor.html(message.content);
+
+      message.userFrom = req.user;
+      message.read = false;
+      message.notified = false;
+
+      message.save(function(err, message) {
+        done(err, message);
+      });
+
+    },
+
+    // Create/upgrade Thread handle between these two users
+    function(message, done) {
+
       var thread = new Thread();
       thread.updated = Date.now();
       thread.userFrom = message.userFrom;
@@ -156,11 +223,11 @@ exports.send = function(req, res) {
         // User id's can be either way around in old thread handle, so we gotta test for both situations
         $or: [
           {
-            userTo: upsertData.userTo,
+            userTo:   upsertData.userTo,
             userFrom: upsertData.userFrom
           },
           {
-            userTo: upsertData.userFrom,
+            userTo:   upsertData.userFrom,
             userFrom: upsertData.userTo
           }
         ]
@@ -168,14 +235,12 @@ exports.send = function(req, res) {
       upsertData,
       { upsert: true },
       function(err) {
-        if (err) {
-          return res.status(400).send({
-            message: errorHandler.getErrorMessage(err)
-          });
-        }
+        done(err, message);
       });
+    },
 
-      // We'll need some info about related users, populate some fields
+    // We'll need some info about related users, populate some fields
+    function(message, done) {
       message
         .populate('userFrom', userHandler.userMiniProfileFields)
         .populate({
@@ -183,18 +248,23 @@ exports.send = function(req, res) {
           select: userHandler.userMiniProfileFields
         }, function(err, message) {
           if (err) {
-            return res.status(400).send({
-              message: errorHandler.getErrorMessage(err)
-            });
-          } else {
-
-            // Finally res
-            res.json(message);
+            return done(err);
           }
-        });
 
+          // Finally return saved message
+          return res.json(message);
+        });
     }
+
+
+  ], function(err) {
+      if (err) {
+        return res.status(400).send({
+          message: errorHandler.getErrorMessage(err)
+        });
+      }
   });
+
 };
 
 

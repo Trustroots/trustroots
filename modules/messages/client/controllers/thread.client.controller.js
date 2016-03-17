@@ -45,10 +45,12 @@
     vm.isInitialized = false;
     vm.messages = [];
     vm.messageHandler = new Messages();
+    vm.profileDescriptionLength = Authentication.user.description ? plainTextLength(Authentication.user.description) : 0;
     vm.sendMessage = sendMessage;
     vm.moreMessages = moreMessages;
     vm.messageRead = messageRead;
     vm.editorContentChanged = editorContentChanged;
+    vm.plainTextLength = plainTextLength;
     vm.content = '';
 
     activate();

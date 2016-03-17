@@ -8,12 +8,15 @@ var should = require('should'),
     User = mongoose.model('User'),
     Message = mongoose.model('Message'),
     Thread = mongoose.model('Thread'),
+    config = require(path.resolve('./config/config')),
     express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app, agent, credentials, userFrom, userTo, userFromId, userToId, message, thread;
+var app, agent, credentials,
+    userFrom, userTo, userFromId, userToId,
+    message, thread;
 
 /**
  * Message routes tests
@@ -44,6 +47,7 @@ describe('Message CRUD tests', function() {
       username: credentials.username,
       password: credentials.password,
       provider: 'local',
+      description: '0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789', // = 142 chars long string
       public: true
     });
 
@@ -55,26 +59,21 @@ describe('Message CRUD tests', function() {
       username: 'username2',
       password: 'password123',
       provider: 'local',
+      description: '0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789', // = 142 chars long string
       public: true
     });
 
     // Save users to the test db and create new message
-    userFrom.save(function() {
-      userTo.save(function() {
-        // Check id for userTo
-        User.findOne({'username': userTo.username}, function(err, userTo) {
-
-          // Get id
-          userToId = userTo._id;
-
-          // Create message
-          message = {
-            content: 'Message content',
-            userTo: userToId
-          };
-          return done();
-        });
-
+    userFrom.save(function(userFromErr, userFromRes) {
+      userFromId = userFromRes._id;
+      userTo.save(function(userToErr, userToRes) {
+        userToId = userToRes._id;
+        // Create message
+        message = {
+          content: 'Message content',
+          userTo: userToId
+        };
+        return done();
       });
     });
   });
@@ -388,6 +387,106 @@ describe('Message CRUD tests', function() {
             return done(messageSaveErr);
           });
       });
+  });
+
+  it('should not be able to send a message when I have too short description', function(done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) done(signinErr);
+
+        // Update my description to be very short
+        userFrom.description = 'short';
+        userFrom.save(function(err, userFromSaveRes) {
+          userFromSaveRes.description.should.equal('short');
+
+          // Save a new message
+          agent.post('/api/messages')
+            .send(message)
+            .expect(400)
+            .end(function(messageSaveErr, messageSaveRes) {
+
+              messageSaveRes.body.error.should.equal('empty-profile');
+              messageSaveRes.body.limit.should.equal(config.profileMinimumLength);
+              messageSaveRes.body.message.should.equal('Please write longer profile description before you send messages.');
+
+              // Call the assertion callback
+              return done(messageSaveErr);
+            });
+        });
+      });
+  });
+
+  it('should be able to send a message when I have too short description but another user wrote me first', function(done) {
+
+      // Save message to this user from other user
+      var newMessage = new Message({
+        content: 'Enabling the latent trust between humans.',
+        userFrom: userToId,
+        userTo: userFromId,
+        created: new Date(),
+        read: true,
+        notified: true
+      });
+
+      newMessage.save(function(newMessageErr, newMessageRes) {
+
+        // Handle save error
+        if (newMessageErr) done(newMessageErr);
+
+        var newThread = new Thread({
+          userFrom: userToId,
+          userTo: userFromId,
+          updated: new Date(),
+          message: newMessageRes._id,
+          read: true
+        });
+
+        newThread.save(function(newThreadErr, newThreadRes) {
+
+          // Handle save error
+          if (newThreadErr) done(newThreadErr);
+
+          // Sign in
+          agent.post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function(signinErr, signinRes) {
+              // Handle signin error
+              if (signinErr) done(signinErr);
+
+              // Update my description to be very short
+              userFrom.description = 'short';
+              userFrom.save(function(err, userFromSaveRes) {
+
+                userFromSaveRes.description.should.equal('short');
+
+                // Save a new message
+                agent.post('/api/messages')
+                  .send(message)
+                  .expect(200)
+                  .end(function(messageSaveErr, messageSaveRes) {
+
+                    // Set assertions
+                    (messageSaveRes.body.userFrom._id.toString()).should.equal(userFromId.toString());
+                    (messageSaveRes.body.userTo._id.toString()).should.equal(userToId.toString());
+                    messageSaveRes.body.content.should.equal('Message content');
+                    messageSaveRes.body.notified.should.equal(false);
+                    messageSaveRes.body.read.should.equal(false);
+
+                    // Call the assertion callback
+                    return done(messageSaveErr);
+                  });
+
+              });
+
+            });
+
+          }); // newThread
+
+      }); // newMessage
   });
 
   afterEach(function(done) {

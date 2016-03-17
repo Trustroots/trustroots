@@ -44,6 +44,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.time = new Date().toISOString();
   app.locals.appSettings.https = config.https;
   app.locals.appSettings.maxUploadSize = config.maxUploadSize;
+  app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
 
   app.locals.jsFiles = config.files.client.js;
   app.locals.cssFiles = _.map(config.files.client.css, function(file) { return file.replace('/client', ''); });
