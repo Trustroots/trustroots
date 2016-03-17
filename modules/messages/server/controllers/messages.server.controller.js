@@ -66,10 +66,17 @@ exports.inbox = function(req, res) {
             // Threads need just excerpt
             thread = thread.toObject();
 
-            thread.message.excerpt = textProcessor.plainText(thread.message.content, true); // Clean message content from html + clean all whitespace
-            thread.message.excerpt = thread.message.excerpt.substring(0, 100).trim() + ' …'; // Shorten
-
-            delete thread.message.content;
+            // Clean message content from html + clean all whitespace + shorten
+            if(thread.message) {
+              thread.message.excerpt = thread.message.content ? textProcessor.plainText(thread.message.content, true).substring(0, 100).trim() + ' …' : '…';
+              delete thread.message.content;
+            }
+            // Ensure this works even if messages couldn't be found for some reason
+            else {
+              thread.message = {
+                excerpt: '…'
+              };
+            }
 
             // If latest message in the thread was from current user, show
             // it as read - sender obviously read his/her own message
