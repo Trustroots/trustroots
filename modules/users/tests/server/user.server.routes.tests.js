@@ -924,7 +924,64 @@ describe('User CRUD tests', function () {
           .send(credentials)
           .expect(400)
           .end(function (userInfoErr, userInfoRes) {
+            userInfoRes.body.message.should.equal('`avatar` field missing from the API call.');
             done(userInfoErr);
+          });
+      });
+  });
+
+  it('should not be able to change profile picture to a pdf file', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        agent.post('/api/users-avatar')
+          .attach('avatar', './modules/users/tests/server/img/test.pdf')
+          .send(credentials)
+          .expect(400)
+          .end(function (userInfoErr, userInfoRes) {
+
+            // Handle change profile picture error
+            if (userInfoErr) {
+              return done(userInfoErr);
+            }
+
+            userInfoRes.body.message.should.equal('Snap! Something went wrong. If this keeps happening, please contact us.');
+
+            return done();
+          });
+      });
+  });
+
+  it('should not be able to change profile picture to a svg file', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        agent.post('/api/users-avatar')
+          .attach('avatar', './modules/users/tests/server/img/test.svg')
+          .send(credentials)
+          .expect(400)
+          .end(function (userInfoErr, userInfoRes) {
+
+            // Handle change profile picture error
+            if (userInfoErr) {
+              return done(userInfoErr);
+            }
+
+            userInfoRes.body.message.should.equal('Snap! Something went wrong. If this keeps happening, please contact us.');
+
+            return done();
           });
       });
   });
