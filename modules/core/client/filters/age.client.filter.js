@@ -4,7 +4,7 @@
   /**
    * Turn mongo date string into years
    *
-   * Input: 1986-05-30T21:00:00.000Z
+   * Input: '1986-05-30' or new Date(1986, 05, 30)
    * Output: 28 years
    *
    * @link http://stackoverflow.com/a/24883386
@@ -16,8 +16,8 @@
 
   /* @ngInject */
   function ageYearsFilter($filter) {
-    return function(dateString) {
-      var dateObj = new Date( $filter('date')(dateString, 'yyyy-MM-dd') ),
+    return function(dateStringOrDate) {
+      var dateObj = new Date( $filter('date')(dateStringOrDate, 'yyyy-MM-dd') ),
           ageDifMs = Date.now() - dateObj.getTime(),
           ageDate = new Date(ageDifMs); // miliseconds from epoch
 
