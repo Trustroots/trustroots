@@ -15,7 +15,7 @@
     .controller('MessagesThreadController', MessagesThreadController);
 
   /* @ngInject */
-  function MessagesThreadController($scope, $q, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, locker, appSettings, userTo, cfpLoadingBar) {
+  function MessagesThreadController($scope, $q, $stateParams, $state, $document, $window, $anchorScroll, $timeout, $filter, Authentication, Messages, MessagesRead, messageCenterService, locker, appSettings, userTo, cfpLoadingBar) {
 
     // Go back to inbox on these cases
     // - No recepient defined
@@ -45,12 +45,11 @@
     vm.isInitialized = false;
     vm.messages = [];
     vm.messageHandler = new Messages();
-    vm.profileDescriptionLength = Authentication.user.description ? plainTextLength(Authentication.user.description) : 0;
+    vm.profileDescriptionLength = Authentication.user.description ? $filter('plainTextLength')(Authentication.user.description) : 0;
     vm.sendMessage = sendMessage;
     vm.moreMessages = moreMessages;
     vm.messageRead = messageRead;
     vm.editorContentChanged = editorContentChanged;
-    vm.plainTextLength = plainTextLength;
     vm.content = '';
 
     activate();
@@ -135,15 +134,6 @@
           userId: userTo._id
         })
       );
-    }
-
-
-    /**
-     * Return length of a string without html
-     * Very crude html stripping, which is enough for estimating if text is short/empty without html tags
-     */
-    function plainTextLength(text) {
-      return text ? String(text).replace(/&nbsp;/g, ' ').replace(/<[^>]+>/gm, '').trim().length : 0;
     }
 
     /**
@@ -261,7 +251,7 @@
 
       // Make sure the message isn't empty.
       // Sometimes we'll have some empty blocks due wysiwyg
-      if(plainTextLength(vm.content) === 0) {
+      if($filter('plainTextLength')(vm.content) === 0) {
         vm.isSending = false;
         messageCenterService.add('warning', 'Please write a message first...');
         return;
