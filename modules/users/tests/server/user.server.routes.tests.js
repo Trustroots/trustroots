@@ -5,6 +5,7 @@ var should = require('should'),
     path = require('path'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
+    config = require(path.resolve('./config/config')),
     express = require(path.resolve('./config/lib/express'));
 
 /**
@@ -924,7 +925,7 @@ describe('User CRUD tests', function () {
           .send(credentials)
           .expect(400)
           .end(function (userInfoErr, userInfoRes) {
-            userInfoRes.body.message.should.equal('`avatar` field missing from the API call.');
+            userInfoRes.body.message.should.equal('Missing `avatar` field from the API call.');
             done(userInfoErr);
           });
       });
@@ -943,7 +944,7 @@ describe('User CRUD tests', function () {
         agent.post('/api/users-avatar')
           .attach('avatar', './modules/users/tests/server/img/test.pdf')
           .send(credentials)
-          .expect(400)
+          .expect(415)
           .end(function (userInfoErr, userInfoRes) {
 
             // Handle change profile picture error
@@ -951,7 +952,7 @@ describe('User CRUD tests', function () {
               return done(userInfoErr);
             }
 
-            userInfoRes.body.message.should.equal('Snap! Something went wrong. If this keeps happening, please contact us.');
+            userInfoRes.body.message.should.equal('Unsupported Media Type.');
 
             return done();
           });
@@ -971,7 +972,7 @@ describe('User CRUD tests', function () {
         agent.post('/api/users-avatar')
           .attach('avatar', './modules/users/tests/server/img/test.svg')
           .send(credentials)
-          .expect(400)
+          .expect(415)
           .end(function (userInfoErr, userInfoRes) {
 
             // Handle change profile picture error
@@ -979,7 +980,63 @@ describe('User CRUD tests', function () {
               return done(userInfoErr);
             }
 
-            userInfoRes.body.message.should.equal('Snap! Something went wrong. If this keeps happening, please contact us.');
+            userInfoRes.body.message.should.equal('Unsupported Media Type.');
+
+            return done();
+          });
+      });
+  });
+
+  it('should not be able to change profile picture to a text file with jpg extension', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        agent.post('/api/users-avatar')
+          .attach('avatar', './modules/users/tests/server/img/this-is-text-file.jpg')
+          .send(credentials)
+          .expect(422) // 422: Unprocessable Entity.
+          .end(function (userInfoErr, userInfoRes) {
+
+            // Handle change profile picture error
+            if (userInfoErr) {
+              return done(userInfoErr);
+            }
+
+            userInfoRes.body.message.should.equal('Failed to process image, please try again.');
+
+            return done();
+          });
+      });
+  });
+
+  it('should not be able to change profile picture to a too big file', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        agent.post('/api/users-avatar')
+          .attach('avatar', './modules/users/tests/server/img/too-big-file.png')
+          .send(credentials)
+          .expect(413)
+          .end(function (userInfoErr, userInfoRes) {
+
+            // Handle change profile picture error
+            if (userInfoErr) {
+              return done(userInfoErr);
+            }
+
+            userInfoRes.body.message.should.equal('Image too big. Please maximum ' + (config.maxUploadSize / (1024*1024)).toFixed(2) + ' Mb files.');
 
             return done();
           });

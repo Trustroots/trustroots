@@ -14,11 +14,12 @@ var defaultErrorMessage = 'Snap! Something went wrong. If this keeps happening, 
 exports.getErrorMessageByKey = function(key) {
 
   var errorMessages = {
-    'not-found':            'Not found.',
-    'forbidden':            'Forbidden.',
-    'invalid-id':           'Cannot interpret id.',
-    'unprocessable-entity': 'Unprocessable Entity.',
-    'default':              defaultErrorMessage
+    'not-found':              'Not found.',
+    'forbidden':              'Forbidden.',
+    'invalid-id':             'Cannot interpret id.',
+    'unprocessable-entity':   'Unprocessable Entity.', // Status 422, @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
+    'unsupported-media-type': 'Unsupported Media Type.', // Status 415
+    'default':                defaultErrorMessage
   };
 
   return (key && errorMessages[key]) ? errorMessages[key] : defaultErrorMessage;

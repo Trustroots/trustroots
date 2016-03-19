@@ -23,6 +23,7 @@ module.exports = {
     // Enable mongoose debug mode
     debug: process.env.MONGODB_DEBUG || false
   },
+  maxUploadSize: 10000, // =10kb in bytes. Set ridiculously small just for tests
   port: 3001,
   app: {
     title: 'Trustroots test environment.',
