@@ -172,7 +172,7 @@ describe('Message CRUD tests', function() {
                               '</p>' +
                               '<blockquote>blockquote</blockquote>' +
                               '<p><ul><li>list item</li></ul></p>' +
-                              '<a href="https://www.trustroots.org/" target="_blank">link</a>';
+                              '<a href="https://www.trustroots.org/">link</a>';
 
         // Save a new message
         agent.post('/api/messages')
@@ -250,7 +250,57 @@ describe('Message CRUD tests', function() {
                 else {
 
                   // Set assertions
-                  (thread[0].content).should.equal('<b>strong</b><br />blockquote<p><a href="https://www.trustroots.org/">link</a><a href="http://www.trustroots.org" target="_blank">trustroots.org</a> </p>');
+                  (thread[0].content).should.equal('<b>strong</b><br />blockquote<p><a href="https://www.trustroots.org/">link</a><a href="http://www.trustroots.org">trustroots.org</a> </p>');
+
+                  // Call the assertion callback
+                  return done();
+                }
+
+              });
+          });
+      });
+  });
+
+  // Related to https://mathiasbynens.github.io/rel-noopener/
+  it('should be able to send link tag with target="_blank" attribute and get back link without it.', function(done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) done(signinErr);
+
+        // Get user id
+        var userFromId = signinRes.body._id;
+
+        // Create html in message
+        var htmlMessage = message;
+        htmlMessage.content = '<a href="https://www.trustroots.org/" target="_blank">This is nice!</a>';
+
+        // Save a new message
+        agent.post('/api/messages')
+          .send(htmlMessage)
+          .expect(200)
+          .end(function(messageSaveErr, messageSaveRes) {
+            // Handle message save error
+            if (messageSaveErr) done(messageSaveErr);
+
+            // Get a list of messages
+            agent.get('/api/messages/' + userToId)
+              .end(function(messagesGetErr, messagesGetRes) {
+                // Handle message get error
+                if (messagesGetErr) done(messagesGetErr);
+
+                // Get messages list
+                var thread = messagesGetRes.body;
+
+                if(!thread[0] || !thread[0].content) {
+                  return done(new Error('Missing messages from the message thread.'));
+                }
+                else {
+
+                  // Set assertions
+                  (thread[0].content).should.equal('<a href="https://www.trustroots.org/">This is nice!</a>');
 
                   // Call the assertion callback
                   return done();
