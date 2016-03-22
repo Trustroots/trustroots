@@ -21,6 +21,10 @@ input[type="color"] {
     border-color: lighten(@brand-primary, 50%);
     .box-shadow(0 0 3px lighten(@brand-primary, 50%));
   }
+
+  // iOS tends to mess up form elements
+  // @link http://stackoverflow.com/a/10757425/1984644
+  -webkit-appearance: none;
 }
 
 label {
