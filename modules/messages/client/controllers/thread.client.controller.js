@@ -15,7 +15,7 @@
     .controller('MessagesThreadController', MessagesThreadController);
 
   /* @ngInject */
-  function MessagesThreadController($scope, $q, $stateParams, $state, $document, $window, $anchorScroll, $timeout, Authentication, Messages, MessagesRead, messageCenterService, locker, appSettings, userTo, cfpLoadingBar) {
+  function MessagesThreadController($scope, $q, $stateParams, $state, $document, $window, $anchorScroll, $timeout, $filter, Authentication, Messages, MessagesRead, messageCenterService, locker, appSettings, userTo, cfpLoadingBar) {
 
     // Go back to inbox on these cases
     // - No recepient defined
@@ -45,32 +45,33 @@
     vm.isInitialized = false;
     vm.messages = [];
     vm.messageHandler = new Messages();
+    vm.profileDescriptionLength = Authentication.user.description ? $filter('plainTextLength')(Authentication.user.description) : 0;
     vm.sendMessage = sendMessage;
     vm.moreMessages = moreMessages;
     vm.messageRead = messageRead;
     vm.editorContentChanged = editorContentChanged;
+    vm.content = '';
 
-    /**
-     * Is local/sessionStorage supported? This might fail in browser's incognito mode
-     *
-     * If it is, unfinished messages are cached to SessionStorage
-     * Check for a previously saved message here
-     *
-     * See also sendMessage(), where message is clared
-     */
-    if(locker.supported()) {
-      // Get message from cache, use default if it doesn't exist
-      vm.content = locker.driver('session').get(cachePrefix, '');
-    }
-    else {
-      vm.content = '';
-    }
+    activate();
 
     /**
      * Initialize controller
      */
-    init();
-    function init() {
+    function activate() {
+
+      /**
+       * Is local/sessionStorage supported? This might fail in browser's incognito mode
+       *
+       * If it is, unfinished messages are cached to SessionStorage
+       * Check for a previously saved message here
+       *
+       * See also sendMessage(), where message is clared
+       */
+      if(locker.supported()) {
+        // Get message from cache, use default if it doesn't exist
+        vm.content = locker.driver('session').get(cachePrefix, '');
+      }
+
       // Fetches first page of messages after receiving user has finished loading (we need the userId from there)
       userTo.$promise.then(function() {
 
@@ -121,7 +122,7 @@
       $scope.$broadcast('threadScrollToBottom');
 
       // Save message to a cache (see sendMessage() where it's emptiet and vm-list for the getter)
-      locker.put(cachePrefix, vm.content);
+      locker.driver('session').put(cachePrefix, vm.content);
     }
 
     /**
@@ -250,9 +251,9 @@
 
       // Make sure the message isn't empty.
       // Sometimes we'll have some empty blocks due wysiwyg
-      if(vm.content.replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim() === '') {
+      if($filter('plainTextLength')(vm.content) === 0) {
         vm.isSending = false;
-        messageCenterService.add('warning', 'Write a message first...');
+        messageCenterService.add('warning', 'Please write a message first...');
         return;
       }
 

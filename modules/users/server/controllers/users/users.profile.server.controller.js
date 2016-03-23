@@ -16,7 +16,6 @@ var _ = require('lodash'),
     mongoose = require('mongoose'),
     multer = require('multer'),
     fs = require('fs'),
-    multer = require('multer'),
     os = require('os'),
     uploadFileFilter = require(path.resolve('./config/lib/multer')).uploadFileFilter,
     User = mongoose.model('User');
@@ -99,10 +98,38 @@ exports.avatarUploadField = function (req, res, next) {
     }).single('avatar');
 
   upload(req, res, function (err) {
+
     // An error occurred when uploading
+    // See Multer default error codes:
+    // @link https://github.com/expressjs/multer/blob/master/lib/make-error.js
     if (err) {
-      return res.status(400).send({
-        message: (err.field && err.field === 'fieldThatDoesntWork') ? '`avatar` field missing from the API call.' : errorHandler.getErrorMessageByKey('default')
+
+      var errorMessage, errorStatus;
+
+      // Unsupported media type -error
+      // This error is generated from ./config/lib/multer.js
+      if(err.code && err.code === 'UNSUPPORTED_MEDIA_TYPE') {
+        errorMessage = errorHandler.getErrorMessageByKey('unsupported-media-type');
+        errorStatus = 415;
+      }
+      // Too big file
+      // 413: "Request Entity Too Large"
+      else if(err.code && err.code === 'LIMIT_FILE_SIZE') {
+        errorMessage = 'Image too big. Please maximum ' + (config.maxUploadSize / (1024*1024)).toFixed(2) + ' Mb files.';
+        errorStatus = 413;
+      }
+      // Field doesn't exist -error
+      else if(err.code && err.code === 'LIMIT_UNEXPECTED_FILE') {
+        errorMessage = 'Missing `avatar` field from the API call.';
+        errorStatus = 400;
+      }
+      else {
+        errorMessage = errorHandler.getErrorMessageByKey('default');
+        errorStatus = 400;
+      }
+
+      return res.status(errorStatus).send({
+        message: errorMessage
       });
     }
 
@@ -148,7 +175,11 @@ exports.avatarUpload = function (req, res) {
 
     // Make the thumbnails
     function(done) {
+
+      var asyncQueueErrorHappened;
+
       // Create a queue worker
+      // @link https://github.com/caolan/async#queueworker-concurrency
       var q = async.queue(function (thumbSize, callback) {
           /**
            * Create thumbnail size
@@ -168,17 +199,36 @@ exports.avatarUpload = function (req, res) {
             .unsharp(0.25, 0.25, 8, 0.065)        // radius [, sigma, amount, threshold] - @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#sharpening
             .quality(82)                          // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#quality-and-compression
             .write(uploadDir + '/' + thumbSize + '.jpg', function (err) {
+
+              // Something's wrong with the file, stop here.
               if(err) {
-                console.error('Error while generating thumbnail ' + thumbSize);
-                console.error(err);
-                // Stop the queue
-                q.kill();
-                return callback(new Error('Failed to process image, please try again.'));
+                if (process.env.NODE_ENV === 'development') {
+                  console.error('Error while generating thumbnail ' + thumbSize);
+                  console.error(err);
+                }
+
+                // This stops us sending res multiple times since tasks are running paraller
+                if(!asyncQueueErrorHappened) {
+                  asyncQueueErrorHappened = true;
+
+                  // Stop the queue
+                  q.pause();
+
+                  // Attempt to delete tmp file
+                  fs.unlink(req.file.path, function (err) {
+                    // @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
+                    return res.status(422).send({
+                      message: 'Failed to process image, please try again.'
+                    });
+                  });
+                }
+                else {
+                  callback(err, thumbSize);
+                }
               }
               else {
                 callback(err, thumbSize);
               }
-
             });
       }, 3); // How many thumbnails to process simultaneously?
 
@@ -204,11 +254,12 @@ exports.avatarUpload = function (req, res) {
         message: errorHandler.getErrorMessage(err) || 'Failed to process image, please try again.'
       });
     }
-
-    // All Done!
-    return res.send({
-      message: 'Avatar image uploaded.'
-    });
+    else {
+      // All Done!
+      return res.send({
+        message: 'Avatar image uploaded.'
+      });
+    }
   });
 
 

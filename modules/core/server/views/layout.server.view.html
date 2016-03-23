@@ -119,7 +119,6 @@
   {% if process.env.NODE_ENV === 'development' %}
   {% for jsFile in jsFiles %}<script type="text/javascript" src="/{{jsFile}}?c={{appSettings.commit}}"></script>
   {% endfor %}
-  <script type="text/javascript" src="/dist/application.js?c={{appSettings.commit}}"></script>
   <script type="text/javascript">
     // Make sure we get livereload from the same host (IP/localhost/...)
     document.write('\x3Cscript type="text/javascript" src="//' + window.location.hostname + ':35729/livereload.js">\x3C/script>');

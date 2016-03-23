@@ -85,3 +85,14 @@
   border-color: lighten(@brand-primary, 20%);
   .box-shadow(0 0 5px lighten(@brand-primary, 35%));
 }
+
+.panel.panel-transparent {
+  .box-shadow(none);
+  &,
+  .panel-heading,
+  .panel-body,
+  .panel-footer {
+    background-color: transparent;
+    border-color: transparent;
+  }
+}

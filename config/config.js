@@ -63,7 +63,7 @@ var validateEnvironmentVariable = function() {
     }
     process.env.NODE_ENV = 'development';
   } else {
-    console.log(chalk.bold('Application loaded using the "' + process.env.NODE_ENV + '" environment configuration'));
+    console.log(chalk.bold('Loaded "' + process.env.NODE_ENV + '" environment configuration'));
   }
   // Reset console color
   console.log(chalk.white(''));

@@ -25,6 +25,7 @@ module.exports = {
   sessionCollection: 'sessions',
   domain: process.env.DOMAIN || 'localhost:3000',
   supportEmail: 'support@trustroots.org', // TO-address for support requests
+  profileMinimumLength: 140, // Require User.profile.description to be >=140 chars to send messages
   mailer: {
     from: process.env.MAILER_FROM || 'hello@trustroots.org',
     options: {

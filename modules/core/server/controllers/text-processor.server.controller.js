@@ -17,7 +17,7 @@ var Autolinker = require('autolinker'),
 exports.sanitizeOptions = {
   allowedTags: [ 'p', 'br', 'b', 'i', 'em', 'strong', 'u', 'a', 'li', 'ul', 'blockquote' ],
   allowedAttributes: {
-    'a': [ 'href', 'target' ],
+    'a': [ 'href' ],
     // We don't currently allow img itself, but this would make sense if we did:
     //'img': [ 'src' ]
   },
@@ -60,8 +60,32 @@ exports.html = function (content) {
     // Turn URLs/emails/phonenumbers into links
     // @link https://github.com/gregjacobs/Autolinker.js
     content = Autolinker.link(content, {
+                // Don't auto-link Twitter handles (@username)
                 twitter: false,
-                truncate: 150
+
+                // Auto-link emails
+                email: true,
+
+                // Auto-link URLs
+                urls: true,
+
+                // Auto-link phone numbers
+                phone: true,
+
+                // A number for how many characters long URLs/emails/Twitter handles/Twitter hashtags should be truncated to
+                // inside the text of a link. If the match is over the number of characters, it will be truncated to this length
+                // by replacing the end of the string with a two period ellipsis ('..').
+                truncate: {
+                  length: 150,
+                  location: 'middle' // end|middle|smart
+                },
+
+                // Strip 'http://' or 'https://' and/or the 'www.' from the beginning of links.
+                // I.e.: `https://www.wikipedia.org/` => `<a href="https://www.wikipedia.org/">wikipedia.org</a>`
+                stripPrefix: true,
+
+                // Don't add target="_blank" because of https://mathiasbynens.github.io/rel-noopener/ attack.
+                newWindow: false
               });
 
   }

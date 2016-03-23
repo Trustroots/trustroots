@@ -10,9 +10,11 @@ var _ = require('lodash'),
   gulpLoadPlugins = require('gulp-load-plugins'),
   runSequence = require('run-sequence'),
   mergeStream = require('merge-stream'),
+  glob = require('glob'),
   path = require('path'),
   del = require('del'),
   fs = require('fs'),
+  argv = require('yargs').argv,
   plugins = gulpLoadPlugins({
     rename: {
       'gulp-angular-templatecache': 'templateCache'
@@ -58,6 +60,13 @@ gulp.task('nodemon', function() {
     script: 'server.js',
     nodeArgs: ['--debug'],
     ext: 'js html',
+    ignore: _.union(
+      testAssets.tests.server,
+      testAssets.tests.client,
+      testAssets.tests.e2e,
+      ['modules/*/client/**', 'public/**', 'migrations/**', 'scripts/**', 'tmp/**', 'node_modules/**'],
+      [defaultAssets.server.fontelloConfig, defaultAssets.server.gulpConfig]
+    ),
     watch: _.union(defaultAssets.server.views, defaultAssets.server.allJS, defaultAssets.server.config)
   });
 });
@@ -71,16 +80,48 @@ gulp.task('watch', function() {
   gulp.watch(defaultAssets.server.views).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.allJS, ['jshint']).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.fontelloConfig, ['fontello']);
-  gulp.watch(defaultAssets.client.js, ['jshint', 'clean:js', 'scripts']);
   gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
 
   if (process.env.NODE_ENV === 'production') {
+    gulp.watch(defaultAssets.client.js, ['jshint', 'clean:js', 'scripts']);
     gulp.watch(defaultAssets.server.gulpConfig, ['templatecache', 'jshint']);
     gulp.watch(defaultAssets.client.views, ['clean:js', 'templatecache', 'jshint', 'scripts']).on('change', plugins.livereload.changed);
   } else {
+    gulp.watch(defaultAssets.client.js, ['jshint']).on('change', plugins.livereload.changed);
     gulp.watch(defaultAssets.server.gulpConfig, ['jshint']);
     gulp.watch(defaultAssets.client.views).on('change', plugins.livereload.changed);
   }
+
+  if (process.env.NODE_ENV === 'test') {
+    // Add Server Test file rules
+    gulp.watch([testAssets.tests.server, defaultAssets.server.allJS], ['test:server']).on('change', function(file) {
+
+      var runOnlyChangedTestFile = argv.onlyChanged ? true : false;
+
+      // check if we should only run a changed test file
+      if (runOnlyChangedTestFile) {
+        var changedTestFiles = [];
+
+        // iterate through server test glob patterns
+        _.forEach(testAssets.tests.server, function(pattern) {
+          // determine if the changed (watched) file is a server test
+          _.forEach(glob.sync(pattern), function(f) {
+            var filePath = path.resolve(f);
+
+            if (filePath === path.resolve(file.path)) {
+              changedTestFiles.push(f);
+            }
+          });
+        });
+
+        // set task argument for tracking changed test files
+        argv.changedTestFiles = changedTestFiles;
+      }
+
+      plugins.livereload.changed();
+    });
+  }
+
 });
 
 // JS linting task
@@ -102,29 +143,14 @@ gulp.task('jshint', function() {
 
 // JavaScript task
 gulp.task('scripts', function() {
-
-  // In production mode:
-  if (process.env.NODE_ENV === 'production') {
-    return gulp.src( _.union(defaultAssets.client.lib.js, defaultAssets.client.js, ['public/dist/templates.js']) )
-      .pipe(plugins.ngAnnotate())
-      .pipe(plugins.uglify({
-        mangle: false
-      }))
-      .pipe(plugins.concat('application.min.js'))
-      .pipe(gulp.dest('public/dist'));
-  }
-  // In development mode:
-  else {
-    return gulp.src(defaultAssets.client.js)
-      .pipe(plugins.sourcemaps.init())
-      .pipe(plugins.ngAnnotate())
-      .pipe(plugins.concat('application.js'))
-      .pipe(plugins.sourcemaps.write())
-      .pipe(gulp.dest('public/dist'))
-      .pipe(plugins.livereload());
-  }
+  return gulp.src( _.union(defaultAssets.client.lib.js, defaultAssets.client.js, ['public/dist/templates.js']) )
+    .pipe(plugins.ngAnnotate())
+    .pipe(plugins.uglify({
+      mangle: false
+    }))
+    .pipe(plugins.concat('application.min.js'))
+    .pipe(gulp.dest('public/dist'));
 });
-
 
 // Clean JS files -task
 gulp.task('clean:js', function() {
@@ -196,19 +222,34 @@ gulp.task('fontello', function(done) {
     .pipe(plugins.livereload());
 });
 
+// Make sure upload directory exists
+gulp.task('makeUploadsDir', function() {
+
+  // Loading this before `env:*` task will load configs with wrong environment
+  var config = require('./config/config');
+
+  return fs.mkdir(config.uploadDir, function(err) {
+    if (err && err.code !== 'EEXIST') {
+      console.error(err);
+    }
+  });
+});
+
 // Run Selenium tasks
 gulp.task('selenium', plugins.shell.task('python ./scripts/selenium/test.py'));
 
 // Mocha tests task
 gulp.task('mocha', function(done) {
   // Open mongoose connections
-  var mongoose = require('./config/lib/mongoose.js');
+  var mongoose = require('./config/lib/mongoose');
+  var testSuites = Array.isArray(argv.changedTestFiles) && argv.changedTestFiles.length ? argv.changedTestFiles : testAssets.tests.server;
   var error;
 
   // Connect mongoose
   mongoose.connect(function() {
+    mongoose.loadModels();
     // Run the tests
-    gulp.src(testAssets.tests.server)
+    gulp.src(testSuites)
       .pipe(plugins.mocha({
         reporter: 'spec',
         timeout: 10000
@@ -216,6 +257,7 @@ gulp.task('mocha', function(done) {
       .on('error', function(err) {
         // If an error occurs, save it
         error = err;
+        console.error(err);
       })
       .on('end', function() {
         // When the tests are done, disconnect mongoose and pass the error state back to gulp
@@ -229,16 +271,6 @@ gulp.task('mocha', function(done) {
 
 // Karma test runner task
 gulp.task('karma', function(done) {
-  return gulp.src([])
-    .pipe(plugins.karma({
-      configFile: 'karma.conf.js',
-      action: 'run',
-      singleRun: true
-    }));
-});
-
-// Karma test runner task
-gulp.task('karma', function (done) {
   new KarmaServer({
     configFile: __dirname + '/karma.conf.js',
     singleRun: true
@@ -262,25 +294,33 @@ gulp.task('clean', function(done) {
 
 // Run the project tests
 gulp.task('test', function(done) {
-  runSequence('env:test', 'copyConfig', 'jshint', ['karma', 'mocha'], done);
+  runSequence('env:test', ['copyConfig', 'makeUploadsDir'], 'jshint', ['karma', 'mocha'], done);
 });
 
 gulp.task('test:server', function(done) {
-  runSequence('env:test', 'copyConfig', 'jshint', 'mocha', done);
+  runSequence('env:test', ['copyConfig', 'makeUploadsDir'], 'jshint', 'mocha', done);
+});
+
+// Watch all server files for changes & run server tests (test:server) task on changes
+// optional arguments:
+//    --onlyChanged - optional argument for specifying that only the tests in a changed Server Test file will be run
+// example usage: gulp test:server:watch --onlyChanged
+gulp.task('test:server:watch', function(done) {
+  runSequence('test:server', 'watch', done);
 });
 
 gulp.task('test:client', function(done) {
-  runSequence('env:test', 'copyConfig', 'jshint', 'karma', done);
+  runSequence('env:test', ['copyConfig', 'makeUploadsDir'], 'jshint', 'karma', done);
 });
 
 // Run the project in development mode
 gulp.task('develop', function(done) {
-  runSequence('env:dev', 'copyConfig', 'build:dev', ['nodemon', 'watch'], done);
+  runSequence('env:dev', ['copyConfig', 'makeUploadsDir'], 'build:dev', ['nodemon', 'watch'], done);
 });
 
 // Run the project in production mode
 gulp.task('prod', function(done) {
-  runSequence('env:prod', 'copyConfig', 'build:prod', ['nodemon', 'watch'], done);
+  runSequence('env:prod', ['copyConfig', 'makeUploadsDir'], 'build:prod', ['nodemon', 'watch'], done);
 });
 
 // Default to develop mode
