@@ -138,8 +138,9 @@
 
     </div><!-- /.col-* -->
 
-    <div class="col-sm-3 hidden-xs">
-      <div ng-if="thread.userTo._id" tr-monkeybox profile="thread.userTo"></div>
+    <div class="col-sm-3 hidden-xs" ng-if="thread.userTo._id">
+      <div tr-monkeybox profile="thread.userTo"></div>
+      <div tr-reference-thread="thread.userTo._id" ng-if="thread.messageHandler.resolved && thread.messages.length"></div>
     </div>
 
   </div><!-- /.row -->
