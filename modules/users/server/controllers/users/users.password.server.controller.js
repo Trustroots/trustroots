@@ -174,11 +174,8 @@ exports.reset = function(req, res, next) {
               } else {
                 req.login(user, function(err) {
                   if (err) {
-                    res.status(400).send(err);
+                    return res.status(400).send(err);
                   } else {
-                    // Return authenticated user
-                    res.json(user);
-
                     done(err, user);
                   }
                 });
@@ -233,11 +230,21 @@ exports.reset = function(req, res, next) {
 
       smtpTransport.sendMail(mailOptions, function(err) {
         smtpTransport.close(); // close the connection pool
-        done(err);
+        done(err, user);
+      });
+    },
+
+    // Return authenticated user
+    function(user, done) {
+      return res.json(user);
+    }
+
+  ], function(err) {
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
       });
     }
-  ], function(err) {
-    if (err) return next(err);
   });
 };
 
@@ -260,12 +267,12 @@ exports.changePassword = function(req, res) {
 
       // Check if we have new password coming up
       if (!req.body.newPassword) {
-        done(new Error('Please provide a new password.'));
+        return done(new Error('Please provide a new password.'));
       }
 
       // Check if new password matches verification
       if (req.body.newPassword !== req.body.verifyPassword) {
-        done(new Error('Passwords do not match.'));
+        return done(new Error('Passwords do not match.'));
       }
 
       done(null);
