@@ -2,33 +2,33 @@
   "name": "trustroots",
   "description": "Trustroots.org",
   "dependencies": {
-    "angular": "1.5.0",
-    "angular-animate": "1.5.0",
-    "angular-aria": "1.5.0",
     "angular-bootstrap": "1.1.2",
     "angular-chosen-localytics": "~1.2.0",
+    "angular": "1.5.2",
+    "angular-animate": "1.5.2",
+    "angular-aria": "1.5.2",
     "ui-leaflet": "~1.0.0",
-    "angular-loading-bar": "~0.8.0",
+    "angular-loading-bar": "~0.9.0",
     "angular-mailcheck": "~0.1.0",
-    "angular-message-format": "1.5.0",
-    "angular-mocks": "1.5.0",
+    "angular-message-format": "1.5.2",
+    "angular-mocks": "1.5.2",
     "angular-moment": "~0.10.3",
-    "angular-resource": "1.5.0",
-    "angular-sanitize": "1.5.0",
-    "angular-touch": "1.5.0",
+    "angular-resource": "1.5.2",
+    "angular-sanitize": "1.5.2",
+    "angular-touch": "1.5.2",
     "angular-trustpass": "~0.2.0",
     "angular-ui-router": "~0.2.18",
     "angular-waypoints": "~2.0.0",
     "bootstrap": "3.3.6",
     "imagesloaded": "~4.1.0",
     "message-center": "~1.2.6",
-    "ng-file-upload": "~12.0.1",
+    "ng-file-upload": "~12.0.4",
     "PruneCluster": "2.0.0-beta.2",
     "angular-locker": "~2.0.4",
     "fastclick": "~1.0.6",
-    "medium-editor": "~5.14.4"
+    "medium-editor": "~5.15.0"
   },
   "resolutions": {
-    "angular": "1.5.0"
+    "angular": "1.5.2"
   }
 }
