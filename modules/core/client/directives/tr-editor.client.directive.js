@@ -71,13 +71,6 @@
 
         angularIElement.addClass('tr-editor');
 
-        // Ensure we focus this element also on iOS
-        // See https://github.com/Trustroots/trustroots/issues/344
-        angularIElement.on('click', function(e) {
-          e.preventDefault();
-          angularIElement.focus();
-        });
-
         // Global MediumEditor
         ngModel.editor = new MediumEditor(iElement, scope.trEditorOptions);
 

@@ -12,7 +12,6 @@ module.exports = {
         // Non minified versions
         'public/lib/jquery/dist/jquery.js',
         'public/lib/angular/angular.js',
-        'public/lib/fastclick/lib/fastclick.js',
         'public/lib/angular-aria/angular-aria.js',
         'public/lib/angular-resource/angular-resource.js',
         'public/lib/angular-animate/angular-animate.js',
