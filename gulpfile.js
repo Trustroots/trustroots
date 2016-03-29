@@ -9,7 +9,7 @@ var _ = require('lodash'),
   gulp = require('gulp'),
   gulpLoadPlugins = require('gulp-load-plugins'),
   runSequence = require('run-sequence'),
-  mergeStream = require('merge-stream'),
+  MergeStream = require('merge-stream'),
   glob = require('glob'),
   path = require('path'),
   del = require('del'),
@@ -83,9 +83,9 @@ gulp.task('watch', function() {
   gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
 
   if (process.env.NODE_ENV === 'production') {
-    gulp.watch(defaultAssets.client.js, ['jshint', 'clean:js', 'scripts']);
-    gulp.watch(defaultAssets.server.gulpConfig, ['templatecache', 'jshint']);
-    gulp.watch(defaultAssets.client.views, ['clean:js', 'templatecache', 'jshint', 'scripts']).on('change', plugins.livereload.changed);
+    gulp.watch(defaultAssets.client.js, ['jshint', 'clean:js', 'uibTemplatecache', 'scripts']);
+    gulp.watch(defaultAssets.server.gulpConfig, ['jshint']);
+    gulp.watch(defaultAssets.client.views, ['clean:js', 'templatecache', 'uibTemplatecache', 'jshint', 'scripts']).on('change', plugins.livereload.changed);
   } else {
     gulp.watch(defaultAssets.client.js, ['jshint']).on('change', plugins.livereload.changed);
     gulp.watch(defaultAssets.server.gulpConfig, ['jshint']);
@@ -143,7 +143,7 @@ gulp.task('jshint', function() {
 
 // JavaScript task
 gulp.task('scripts', function() {
-  return gulp.src( _.union(defaultAssets.client.lib.js, defaultAssets.client.js, ['public/dist/templates.js']) )
+  return gulp.src( _.union(defaultAssets.client.lib.js, defaultAssets.client.js, ['public/dist/uib-templates.js', 'public/dist/templates.js']) )
     .pipe(plugins.ngAnnotate())
     .pipe(plugins.uglify({
       mangle: false
@@ -176,7 +176,7 @@ gulp.task('styles', function() {
         .pipe(plugins.less());
 
     // Combine CSS and LESS streams into one minified css file
-    return mergeStream(lessStream, cssStream)
+    return MergeStream(lessStream, cssStream)
       .pipe(plugins.concat('application.css'))
       .pipe(plugins.autoprefixer())
     	.pipe(plugins.csso())
@@ -196,9 +196,53 @@ gulp.task('styles', function() {
   }
 });
 
+// Angular UI-Boostrap template cache task
+// We're not using prebuild UI-Boostraps so that
+// we can pick modules we need. Therefore we need
+// to manually compile our UIB templates.
+gulp.task('uibTemplatecache', function() {
+
+  // UIB module templates to include
+  var uibModules = [
+    'accordion',
+    'modal',
+    'popover',
+    'progressbar',
+    'tabs',
+    'tooltip',
+    'typeahead'
+  ];
+
+  var uibModulesStreams = new MergeStream();
+
+  // Loop module names trough
+  uibModules.forEach(function(uibModule) {
+
+    var moduleStream = gulp.src(['public/lib/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
+      .pipe(plugins.htmlmin())
+      .pipe(plugins.templateCache('uib-templates-' + uibModule + '.js', {
+        root: 'uib/template/' + uibModule + '/',
+        module: 'core',
+        templateHeader: '(function(){ \'use strict\'; angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
+        templateBody: '$templateCache.put(\'<%= url %>\', \'<%= contents %>\');',
+        templateFooter: '} })();'
+      }));
+
+      // Combine with previouly processed templates
+      uibModulesStreams.add(moduleStream);
+  });
+
+  // Output all tempaltes to one file
+  uibModulesStreams
+    .pipe(plugins.concat('uib-templates.js'))
+    .pipe(gulp.dest('public/dist'));
+
+});
+
 // Angular template cache task
 gulp.task('templatecache', function() {
   return gulp.src(defaultAssets.client.views)
+    .pipe(plugins.htmlmin())
     .pipe(plugins.templateCache('templates.js', {
       root: 'modules/',
       module: 'core',
@@ -279,12 +323,12 @@ gulp.task('karma', function(done) {
 
 // Build assets for development mode
 gulp.task('build:dev', function(done) {
-  runSequence('env:dev', 'bower', 'jshint', 'clean', ['styles', 'scripts'], done);
+  runSequence('env:dev', 'bower', 'jshint', 'clean', ['uibTemplatecache', 'styles'], done);
 });
 
 // Build assets for production mode
 gulp.task('build:prod', function(done) {
-  runSequence('env:prod', 'bower', 'jshint', 'templatecache', 'clean', ['styles', 'scripts'], done);
+  runSequence('env:prod', 'bower', 'jshint', 'clean', 'templatecache', 'uibTemplatecache', ['styles', 'scripts'], done);
 });
 
 // Clean dist css and js files
