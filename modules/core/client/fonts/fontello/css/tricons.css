@@ -1,10 +1,11 @@
 @font-face {
   font-family: 'tricons';
-  src: url('../font/tricons.eot?58056501');
-  src: url('../font/tricons.eot?58056501#iefix') format('embedded-opentype'),
-       url('../font/tricons.woff?58056501') format('woff'),
-       url('../font/tricons.ttf?58056501') format('truetype'),
-       url('../font/tricons.svg?58056501#tricons') format('svg');
+  src: url('../font/tricons.eot?63411325');
+  src: url('../font/tricons.eot?63411325#iefix') format('embedded-opentype'),
+       url('../font/tricons.woff2?63411325') format('woff2'),
+       url('../font/tricons.woff?63411325') format('woff'),
+       url('../font/tricons.ttf?63411325') format('truetype'),
+       url('../font/tricons.svg?63411325#tricons') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -14,7 +15,7 @@
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   @font-face {
     font-family: 'tricons';
-    src: url('../font/tricons.svg?58056501#tricons') format('svg');
+    src: url('../font/tricons.svg?63411325#tricons') format('svg');
   }
 }
 */
