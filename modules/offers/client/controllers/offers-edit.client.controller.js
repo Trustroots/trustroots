@@ -83,6 +83,15 @@
         // Show guidance
         vm.firstTimeAround = true;
 
+        // Locale map to user's living- or from- location, if they're set
+        if(Authentication.user.locationLiving && Authentication.user.locationLiving !== '') {
+          vm.searchQuery = Authentication.user.locationLiving;
+        }
+        else if(Authentication.user.locationFrom && Authentication.user.locationFrom !== '') {
+          vm.searchQuery = Authentication.user.locationFrom;
+        }
+        searchAddress();
+
         setHostingStatusByURL();
       });
 

@@ -46,8 +46,10 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.maxUploadSize = config.maxUploadSize;
   app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
 
-  app.locals.jsFiles = config.files.client.js;
-  app.locals.cssFiles = _.map(config.files.client.css, function(file) { return file.replace('/client', ''); });
+  if (process.env.NODE_ENV !== 'production') {
+    app.locals.jsFiles = _.concat(config.files.client.js, 'dist/uib-templates.js');
+    app.locals.cssFiles = _.map(config.files.client.css, function(file) { return file.replace('/client', ''); });
+  }
 
   // Get 'git rev-parse --short HEAD' (the latest git commit hash) to use as a cache buster
   // @link https://www.npmjs.com/package/git-rev
@@ -199,7 +201,7 @@ module.exports.initAgenda = function (app, db) {
   // Don't launch Agenda on test environment
   // @todo: make it possible to launch this manually with very small interwalls for testing
   // @todo: similarly for testing purposes, write a stopAgenda() method
-  if(process.env.NODE_ENV !== 'production') {
+  if(process.env.NODE_ENV === 'test') {
     return;
   }
 
@@ -226,7 +228,7 @@ module.exports.initAgenda = function (app, db) {
 
   // Error reporting
   agendaWorker.on('fail', function(err, job) {
-    console.error('Agenda job failed with error: %s', err.message);
+    console.error('Agenda job failed with error: %s', err.message || 'Unknown error');
   });
 };
 

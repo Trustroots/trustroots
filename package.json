@@ -95,13 +95,14 @@
     "passport-local": "~1.0.0",
     "passport-twitter": "~1.0.3",
     "run-sequence": "~1.1.5",
-    "sanitize-html": "~1.11.3",
+    "sanitize-html": "~1.11.4",
     "serve-favicon": "~2.3.0",
     "swig": "~1.4.2",
     "validator": "~5.1.0"
   },
   "devDependencies": {
     "faker": "~3.1.0",
+    "gulp-htmlmin": "~1.3.0",
     "jasmine-core": "~2.4.1",
     "karma": "~0.13.21",
     "karma-chrome-launcher": "~0.2.1",

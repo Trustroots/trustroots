@@ -22,30 +22,20 @@ var _ = require('lodash'),
     config = require(path.resolve('./config/config')),
     nodemailer = require('nodemailer'),
     async = require('async'),
-    //swig = require('swig'),
+    swig = require('swig'),
     htmlToText = require('html-to-text'),
     mongoose = require('mongoose'),
     Message = mongoose.model('Message'),
     User = mongoose.model('User');
 
-// Replace mailer with Stub mailer transporter
-// Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
-// it with the sendMail callback. This is useful for testing the emails before actually sending anything.
-// @link https://github.com/andris9/nodemailer-stub-transport
-if (process.env.NODE_ENV === 'test') {
-  var stubTransport = require('nodemailer-stub-transport');
-  config.mailer.options = stubTransport();
-}
-
 exports.checkUnreadMessages = function(agenda) {
   agenda.define('check unread messages', {lockLifetime: 10000}, function(job, agendaDone) {
-
     async.waterfall([
 
       // Aggregate unread messages
       function(done) {
 
-        // Ignore very recent messages and look for only older than 15 minutes
+        // Ignore very recent messages and look for only older than 10 minutes
         var timeAgo = new Date();
         timeAgo.setMinutes(timeAgo.getMinutes() - 10);
 
@@ -60,49 +50,47 @@ exports.checkUnreadMessages = function(agenda) {
           {
             $group: {
 
-              // Whom we'll send notification emails
-              _id: '$userTo',
+              // Group separate emails
+              _id: {
+                'userTo': '$userTo',
+                'userFrom': '$userFrom',
+              },
 
               // Collect unread messages count
-              //total: { $sum: 1 },
+              total: { $sum: 1 },
 
               // Collect message contents
-              messages: { $push: { id: '$_id', content: '$content', userFrom: '$userFrom' } }
+              messages: { $push: { id: '$_id', content: '$content' } }
             }
           }
         ], function(err, notifications) {
-          done(err, notifications, timeAgo);
+          done(err, notifications);
         });
 
       },
 
       // Fetch userTo and userFrom  email + displayName
-      function(notifications, timeAgo, done) {
+      function(notifications, done) {
 
         var userIds = [];
 
         notifications.forEach(function(notification) {
-          // Collect receiver ids
-          userIds.push(notification._id);
-
-          // Look trough messages and their sender ids
-          // @link https://lodash.com/docs#uniq
-          notification.messages.forEach(function(message) {
-            userIds.push(message.userFrom);
-          });
+          // Collect user ids
+          userIds.push(notification._id.userTo, notification._id.userFrom);
         });
 
         // Make sure we don't have huge list of dublicate user ids
+        // @link https://lodash.com/docs#uniq
         userIds = _.uniq(userIds);
 
         // Fetch email + displayName for all users involved
         // Remember to add these values also userNotFound object (see below)
         if(userIds.length > 0) {
           User
-            .find({ '_id': { $in: userIds } }, 'email displayName')
+            .find({ '_id': { $in: userIds } }, 'email displayName username')
             .exec(function(err, users) {
 
-              // Reorganise users into more handy array
+              // Re-organise users into more handy array
               var usersArr = [];
               if(users) {
                 users.forEach(function(user) {
@@ -110,110 +98,169 @@ exports.checkUnreadMessages = function(agenda) {
                 });
               }
 
-              done(err, usersArr, notifications, timeAgo);
+              done(err, usersArr, notifications);
             });
         } else {
-          done(null, [], notifications, timeAgo);
+          done(null, [], notifications);
+        }
+      },
+
+      // Connect to SMTP
+      function(users, notifications, done) {
+
+        // Replace mailer with Stub mailer transporter
+        // Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
+        // it with the sendMail callback. This is useful for testing the emails before actually sending anything.
+        // @link https://github.com/andris9/nodemailer-stub-transport
+        if (process.env.NODE_ENV === 'test') {
+          var stubTransport = require('nodemailer-stub-transport');
+          config.mailer.options = stubTransport();
+        }
+
+        if(notifications.length > 0) {
+
+          // Create SMTP connection
+          var smtpTransport = nodemailer.createTransport(config.mailer.options);
+
+          // Verify connection configuration
+          // If it returns an error, then something is not correct,
+          // otherwise the server is ready to accept messages.
+          smtpTransport.verify(function(err, success) {
+            done(err, users, notifications, smtpTransport);
+          });
+
+        } else {
+          done(null, users, notifications, null);
         }
       },
 
       // Send emails
-      function(users, notifications, timeAgo, done) {
+      function(users, notifications, smtpTransport, done) {
 
-        if(notifications.length > 0) {
+        var notificationsToProcess = notifications.length;
 
-          var smtpTransport = nodemailer.createTransport(config.mailer.options),
-              url = (config.https ? 'https' : 'http') + '://' + config.domain,
-              userNotFound = {displayName: 'Anonymous', email: config.mailer.from};
+        if(smtpTransport && notificationsToProcess > 0) {
 
-          // Loop notifications trough and send them
-          notifications.forEach(function(notification) {
+          var url = (config.https ? 'https' : 'http') + '://' + config.domain,
+              messageIds = [];
 
-            var userTo = users[notification._id],
-                total = notification.messages.length;
+          // Create a queue worker to send notifications in parallel
+          // Process at most 3 notifications at the same time
+          // @link https://github.com/caolan/async#queueworker-concurrency
+          var notificationsQueue = async.queue(function (notification, notificationCallback) {
 
-            // Compile messages into one feed
-            // @todo: move this to a Twig template (text + html)
-            var messageFeed = '----------------------------------------------------------------------\n\r\n\r';
+            var userTo = (users[notification._id.userTo.toString()]) ? users[notification._id.userTo.toString()] : false,
+                userFrom = (users[notification._id.userFrom.toString()]) ? users[notification._id.userFrom.toString()] : false,
+                messageCount = notification.messages.length;
+
+            // Collect message ids for updating documents to `notified:true` later
             notification.messages.forEach(function(message) {
-
-              // Get user's info from user array. Handles deleted users.
-              var userFrom = (users[message.userFrom]) ? users[message.userFrom] : userNotFound;
-
-              messageFeed += userFrom.displayName + ' writes:\n\r\n\r';
-              messageFeed += htmlToText.fromString(message.content, {wordwrap: 80});
-              messageFeed += '\n\r\n\r----------------------------------------------------------------------\n\r\n\r';
+              messageIds.push(message.id);
             });
 
-            var mailTitle = (total > 1) ? 'You have ' + total + ' unread messages at Trustroots' : 'You have one unread message at Trustroots';
+            // If we don't have info about these users, they've been removed.
+            // Don't send notification mail in such case.
+            if(!userTo) {
+              console.error('Notification email error:');
+              console.error('Could not find userTo from users table.');
+              return;
+            }
+            if(!userFrom) {
+              console.error('Notification email error:');
+              console.error('Could not find userFrom from users table.');
+              return;
+            }
 
-            var mailBody = mailTitle + '.\n\r\n\r' +
-                           'DO NOT REPLY THIS EMAIL DIRECTLY. \n\r\n\rGo to ' + url + '/messages to reply.\n\r\n\r' +
-                           messageFeed +
-                           'DO NOT REPLY THIS EMAIL DIRECTLY. \n\r\n\rGo to ' + url + '/messages to reply.\n\r\n\r' +
-                           '-- \n\rTrustroots\n\r' + url + '\n\r' +
-                           'Support: ' + url + '/contact/\n\rSupport email: ' + config.mailer.from + '\n\r';
+            // Generate mail subject
+            var mailSubject = userFrom.displayName + ' wrote you from Trustroots';
+
+            // Variables passed to templates
+            var mailVariables = {
+              url: url,
+              urlReply: url + '/messages/' + userFrom.username,
+              urlUserFromProfile: url + '/profile/' + userFrom.username,
+              mailTitle: mailSubject,
+              messageCount: messageCount,
+              messages: notification.messages,
+              userFromName: userFrom.displayName,
+              userToName: userTo.displayName
+            };
+
+            // Generate plain text and html versions of the email
+            var mailBodyText = swig.renderFile(path.resolve('./modules/core/server/views/email-templates-text/messages-unread.server.view.html'), mailVariables);
+            var mailBodyHtml = swig.renderFile(path.resolve('./modules/core/server/views/email-templates/messages-unread.server.view.html'), mailVariables);
 
             smtpTransport.sendMail({
                 to: {
                   name: userTo.displayName,
                   address: userTo.email
                 },
-                from: 'Trustroots <' + config.mailer.from + '>',
-                subject: mailTitle,
-                text: mailBody
-              }, function(smtpErr, info) {
-
+                from: {
+                  name: userFrom.displayName + ' (via Trustroots)', // Sender's own name
+                  address: config.mailer.from // Trustroots email
+                },
+                subject: mailSubject,
+                text: mailBodyText,
+                html: mailBodyHtml
+              },
+              function(smtpErr, info) {
                 // Sending email to this user failed
                 // Raise warnings and continue with the next one.
                 if(smtpErr) {
-                  console.error('Sending message notification mail failed! ' + userTo.displayName);
+                  console.error('Sending message notification mail failed! user to:');
                   console.error(smtpErr);
-                  console.error(notification);
-                  return;
+                  console.error('userTo: ' + notification._id.userTo.toString()+ ', userFrom ' + notification._id.userFrom.toString());
                 }
-            });
 
-            // close the connection pool
+                notificationCallback(smtpErr);
+              });
+
+          }, 5); // How many notifications to process simultaneously?
+
+          // Start processing notifications
+          notificationsQueue.push(notifications);
+
+          // Assign a final callback to work queue
+          // All notification jobs done, continue
+          notificationsQueue.drain = function(err, results) {
+            if(err) {
+              console.error('Sending message notification mails caused an error:');
+              console.error(err);
+            }
+
+            // Close the connection pool
             smtpTransport.close();
-            done(null, notifications, timeAgo);
-          });
+            done(null, messageIds);
+          };
 
         }
         // No users to send emails to
         else {
-          done(null, [], false);
+          done(null, []);
         }
 
       },
 
       // Mark messages notified
-      function(notifications, timeAgo, done) {
+      function(messageIds, done) {
 
-        if(timeAgo && notifications.length > 0) {
-          // timeAgo will be the same when aggregating posts
+        if(messageIds.length > 0) {
           Message.update(
-            {
-              read: false,
-              notified: false,
-              created: { $lt: timeAgo }
-            },
+            { _id : {'$in': messageIds } },
             { $set: { notified: true } },
             { multi: true },
             function(err, num, raw) {
+              if(err) {
+                console.error('Error while marking messages as notified.');
+                console.error(err);
+              }
               done(err);
-            }
-          );
+            });
         }
         else {
           done(null);
         }
 
-      },
-
-      // No errors, wrap it up
-      function(done) {
-        agendaDone();
       }
 
     ], function(err) {
@@ -221,9 +268,10 @@ exports.checkUnreadMessages = function(agenda) {
         job.fail(err);
         job.save();
       }
-      agendaDone();
+      // Wrap it up
+      return agendaDone();
     });
 
   }); //agenda.define
 
-};//checkUnreadMessages
+};
