@@ -22,7 +22,11 @@ var _ = require('lodash'),
   }),
   KarmaServer = require('karma').Server;
 
-gulp.task('bower', function() {
+gulp.task('bower', function(done) {
+  if(argv.skipBower) {
+    plugins.util.log('Bower task skipped.');
+    return done();
+  }
   return plugins.bower();
 });
 
