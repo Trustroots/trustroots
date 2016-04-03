@@ -65,7 +65,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ### Running & development
 
 - Stop the app by hitting `Ctrl+C`
-- Run the app by typing `npm start`
+- Run the app in development mode by typing `npm start`. To skip checking Bower modules on start (useful if you're offline), type `npm run start:skipBower`
 - Run the app in production mode by typing `npm run start:prod`
 - When you do changes to any files, they get recompiled and the browser is refreshed.
 - Keep an eye on console in case of compiling errors.
