@@ -281,7 +281,7 @@
 
       }, function(errorResponse) {
         vm.isSending = false;
-        messageCenterService.add('danger', errorResponse.data.message || 'Couldn not send the message. Please try again.');
+        messageCenterService.add('danger', (errorResponse.data && errorResponse.data.message) ? errorResponse.data.message : 'Could not send the message. Please try again.');
       });
     }
 

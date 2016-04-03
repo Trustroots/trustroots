@@ -16,7 +16,7 @@ You don't have the be a programmer to participate. Check [volunteers page](https
 
 ## Development
 
-Check [developers.trustroots.org/](http://developers.trustroots.org/) to get started.
+Check [developers.trustroots.org](http://developers.trustroots.org/) to get started.
 
 
 ## Installing
