@@ -201,7 +201,7 @@ module.exports.initAgenda = function (app, db) {
   // Don't launch Agenda on test environment
   // @todo: make it possible to launch this manually with very small interwalls for testing
   // @todo: similarly for testing purposes, write a stopAgenda() method
-  if(process.env.NODE_ENV !== 'production') {
+  if(process.env.NODE_ENV === 'test') {
     return;
   }
 
@@ -228,7 +228,7 @@ module.exports.initAgenda = function (app, db) {
 
   // Error reporting
   agendaWorker.on('fail', function(err, job) {
-    console.error('Agenda job failed with error: %s', err.message);
+    console.error('Agenda job failed with error: %s', err.message || 'Unknown error');
   });
 };
 
