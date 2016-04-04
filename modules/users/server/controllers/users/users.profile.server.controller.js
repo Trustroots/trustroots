@@ -392,7 +392,7 @@ exports.update = function(req, res) {
             delete user.resetPasswordToken;
             delete user.resetPasswordExpires;
             delete user.emailToken;
-            done(null, false, user);
+            done(null, token, user);
           }
         });
       }
