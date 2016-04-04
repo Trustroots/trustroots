@@ -58,8 +58,8 @@ exports.add = function(req, res) {
       contact.users.push(req.body.friendUserId);
       contact.users.push(req.user._id);
       // Now:
-      // - contact.useres[0] is receiving person
-      // - contact.useres[1] is initiating person
+      // - contact.users[0] is receiving person
+      // - contact.users[1] is initiating person
 
       done(null, contact, messageHTML, messagePlain);
     },
@@ -109,7 +109,7 @@ exports.add = function(req, res) {
       });
     },
 
-    // If valid email, send reset email using service
+    // If valid email, send email using service
     function(emailHTML, emailPlain, friend, done) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
       var mailOptions = {
@@ -125,7 +125,7 @@ exports.add = function(req, res) {
       smtpTransport.sendMail(mailOptions, function(err) {
         smtpTransport.close(); // close the connection pool
         if (!err) {
-          res.send({
+          return res.send({
             message: 'An email was sent to your contact.'
           });
         }

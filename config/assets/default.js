@@ -30,6 +30,7 @@ module.exports = {
         'public/lib/angular-ui-bootstrap/src/modal/modal.js',
         'public/lib/angular-ui-bootstrap/src/popover/popover.js',
         'public/lib/angular-ui-bootstrap/src/position/position.js',
+        'public/lib/angular-ui-bootstrap/src/progressbar/progressbar.js',
         'public/lib/angular-ui-bootstrap/src/stackedMap/stackedMap.js',
         'public/lib/angular-ui-bootstrap/src/tabs/tabs.js',
         'public/lib/angular-ui-bootstrap/src/tooltip/tooltip.js',
@@ -50,7 +51,8 @@ module.exports = {
         'public/lib/angular-trustpass/dist/tr-trustpass.js',
         'public/lib/mailcheck/src/mailcheck.js',
         'public/lib/angular-mailcheck/angular-mailcheck.js',
-        'public/lib/angular-locker/dist/angular-locker.js'
+        'public/lib/angular-locker/dist/angular-locker.js',
+        'public/lib/angular-confirm-modal/angular-confirm.js'
       ],
       less: [
         'public/lib/angular-trustpass/src/tr-trustpass.less',
@@ -128,7 +130,7 @@ module.exports = {
         //'public/lib/bootstrap/less/jumbotron.less',
         //'public/lib/bootstrap/less/thumbnails.less',
         'public/lib/bootstrap/less/alerts.less',
-        //'public/lib/bootstrap/less/progress-bars.less',
+        'public/lib/bootstrap/less/progress-bars.less',
         'public/lib/bootstrap/less/media.less',
         'public/lib/bootstrap/less/list-group.less',
         'public/lib/bootstrap/less/panels.less',

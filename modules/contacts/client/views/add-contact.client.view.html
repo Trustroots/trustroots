@@ -50,8 +50,8 @@
         <div ng-if="contactAdd.success" class="alert alert-success">
           <h4 ng-bind="contactAdd.success"></h4>
           <p>
-            <strong><a ui-sref="profile({username: app.user.username})">{{ ::app.user.displayName }}</a></strong> &
-            <strong><a ui-sref="profile({username: contactAdd.friend.username})">{{ ::contactAdd.friend.displayName }}</a></strong>.
+            <strong><a ui-sref="profile.about({username: app.user.username})">{{ ::app.user.displayName }}</a></strong> &
+            <strong><a ui-sref="profile.about({username: contactAdd.friend.username})">{{ ::contactAdd.friend.displayName }}</a></strong>.
           </p>
         </div>
         <div ng-if="contactAdd.error" class="alert alert-danger text-center">
@@ -65,7 +65,7 @@
             <span ng-show="contactAdd.isLoading">Wait a moment...</span>
           </button>
           <br><br>
-          <a ui-sref="profile({username: contactAdd.friend.username})" class="text-muted">Cancel</a>
+          <a ui-sref="profile.about({username: contactAdd.friend.username})" class="text-muted">Cancel</a>
         </p>
 
       </div><!-- /.col-* -->

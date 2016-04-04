@@ -6,17 +6,13 @@
     .controller('SearchSignupController', SearchSignupController);
 
   /* @ngInject */
-  function SearchSignupController($stateParams, $timeout, MapLayersFactory) {
+  function SearchSignupController($stateParams, $timeout, MapLayersFactory, LocationService) {
 
     // ViewModel
     var vm = this;
 
     // Variables passed to leaflet directive at init
-    vm.mapCenter = {
-      lat: 48.6908333333,
-      lng: 9.14055555556,
-      zoom: 3
-    };
+    vm.mapCenter = LocationService.getDefaultLocation(3);
     vm.mapLayers = {
       baselayers: {
         satellite: MapLayersFactory.satellite(vm.mapCenter)

@@ -9,6 +9,9 @@
  * - allows choosing empty values
  * - allows passing our own templates
  *
+ * Relies on MomentJS
+ * @link http://momentjs.com/
+ *
  */
 angular.module('users')
 
@@ -45,7 +48,7 @@ angular.module('users')
         selectClass: '@trSelectClass'
       },
 
-      link: function(scope, elem, attrs, model) {
+      link: function(scope, elem, attrs, ngModel) {
         scope.val = {};
 
         var min = scope.min = moment(attrs.min || '1900-01-01');
@@ -65,13 +68,15 @@ angular.module('users')
           updateDateOptions();
         });
 
-        scope.$watchCollection('[val.date, val.month, val.year]', function () {
+        scope.$watchCollection('[val.date, val.month, val.year]', function (newDate, oldDate) {
           if (scope.val.year && scope.val.month && scope.val.date) {
-            var m = moment([scope.val.year, scope.val.month-1, scope.val.date]);
-            model.$setViewValue(m.format('YYYY-MM-DD'));
+            if(!angular.equals(newDate, oldDate)) {
+              var m = moment([scope.val.year, scope.val.month-1, scope.val.date]);
+              ngModel.$setViewValue(m.format('YYYY-MM-DD'));
+            }
           }
           else {
-            model.$setViewValue();
+            ngModel.$setViewValue();
           }
         });
 
@@ -119,11 +124,11 @@ angular.module('users')
           if (scope.val.date < minDate || scope.val.date > maxDate) delete scope.val.date;
         }
 
-        // model -> view
-        model.$render = function() {
-          if (!model.$viewValue) return;
+        // ngModel -> view
+        ngModel.$render = function() {
+          if (!ngModel.$viewValue) return;
 
-          var m = moment(new Date(model.$viewValue));
+          var m = moment(new Date(ngModel.$viewValue));
 
           // Always use a dot in ng-model attrs...
           scope.val = {
