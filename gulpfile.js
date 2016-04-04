@@ -19,8 +19,7 @@ var _ = require('lodash'),
     rename: {
       'gulp-angular-templatecache': 'templateCache'
     }
-  }),
-  KarmaServer = require('karma').Server;
+  });
 
 gulp.task('bower', function(done) {
   if(argv.skipBower) {
@@ -319,6 +318,7 @@ gulp.task('mocha', function(done) {
 
 // Karma test runner task
 gulp.task('karma', function(done) {
+  var KarmaServer = require('karma').Server;
   new KarmaServer({
     configFile: __dirname + '/karma.conf.js',
     singleRun: true
