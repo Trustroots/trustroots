@@ -45,7 +45,7 @@ var validatePassword = function(password) {
 var validateUsername = function(username) {
   var usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/,
       dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/,
-      illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'profile', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test'];
+      illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'profile', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test', 'support', 'networks', 'photo', 'account', 'api', 'modify'];
   return (this.provider !== 'local' || ( username &&
                                          usernameRegex.test(username) &&
                                        illegalUsernames.indexOf(username) < 0) &&

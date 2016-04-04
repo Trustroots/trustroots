@@ -82,7 +82,7 @@
 
               <div class="message-meta">
                 <span ng-if="app.user._id === message.userFrom._id">You</span>
-                <a ng-if="app.user._id !== message.userFrom._id" ui-sref="profile({ username: message.userFrom.username })">{{::message.userFrom.displayName}}</a>
+                <a ng-if="app.user._id !== message.userFrom._id" ui-sref="profile.about({ username: message.userFrom.username })">{{::message.userFrom.displayName}}</a>
                 —
                 <span tr-time="message.created"></span>
               </div>

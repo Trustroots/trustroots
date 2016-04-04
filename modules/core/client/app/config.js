@@ -11,11 +11,13 @@ var AppConfig = (function() {
                                               'ngSanitize',
                                               'ngMessageFormat',
                                               'ui.router',
+                                              'ui.bootstrap.dateparser',
                                               'ui.bootstrap.buttons',
                                               'ui.bootstrap.collapse',
                                               'ui.bootstrap.dropdown',
                                               'ui.bootstrap.modal',
                                               'ui.bootstrap.popover',
+                                              'ui.bootstrap.progressbar',
                                               'ui.bootstrap.tabs',
                                               'ui.bootstrap.tooltip',
                                               'ui.bootstrap.typeahead',
@@ -29,7 +31,8 @@ var AppConfig = (function() {
                                               'angular-loading-bar',
                                               'trTrustpass',
                                               'angular-mailcheck',
-                                              'angular-locker'
+                                              'angular-locker',
+                                              'angular-confirm'
                                             ];
 
   // Add a new vertical module

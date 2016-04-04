@@ -365,8 +365,18 @@ exports.update = function(req, res) {
       user.emailTemporary = email;
     }
 
-    // Sanitize contents coming from wysiwyg editors
-    ['description', 'tagline', 'firstName', 'lastName'].forEach(function(key) {
+    // Sanitize string contents
+    // `description` field is allowed to contain some html
+    ['description',
+     'tagline',
+     'firstName',
+     'lastName',
+     'locationLiving',
+     'locationFrom',
+     'extSitesBW',
+     'extSitesCS',
+     'extSitesWS'
+    ].forEach(function(key) {
       if(user[key] && key === 'description') {
         // Allow some HTML
         user[key] = textProcessor.html(user[key]);

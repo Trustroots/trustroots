@@ -1,0 +1,20 @@
+Hello {{userToName}}!
+
+{% if messageCount > 1 %}You have {{ messageCount }} unread messages from {{userFromName}} at Trustroots.
+{% else %}You have one unread message from {{userFromName}} at Trustroots.
+{% endif %}
+To reply, go to: {{urlReply}}
+
+--------------------------------------------------------------------------------
+{% for message in messages %}
+
+{{message.content | striptags}}
+
+--------------------------------------------------------------------------------
+{% endfor %}
+
+Do not reply this email directly.
+
+To reply, go to: {{urlReply}}
+
+See their profile: {{urlUserFromProfile}}

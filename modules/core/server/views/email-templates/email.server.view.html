@@ -64,7 +64,7 @@
       .textContent a, .textContentLast a{color:#12b591; text-decoration:underline;}
       .footerContent {font-family:Helvetica;line-height:125%; color:#555555;font-size:12px; text-align:center;padding-bottom:20px;}
       .footerContent a {color:#555555;text-decoration:underline;}
-      .nestedContainer{background-color:#E5E5E5; border:1px solid #CCCCCC;}
+      .nestedContainer{background-color:#EDEDED;}
       .emailButton{background-color:#12b591; border-collapse:separate; border-radius:4px;}
       .buttonContent{color:#FFFFFF; font-family:Helvetica; font-size:18px; font-weight:bold; line-height:100%; padding:15px; text-align:center;}
       .buttonContent a{color:#FFFFFF; display:block; text-decoration:none;}
@@ -276,18 +276,12 @@
                                                               <tr>
                                                                   <td valign="top" class="footerContent">
 
-                                                                      Remember, I'm just a little mail robot so don't reply this email. <a href="{{url}}/contact">Contact us</a> if you want to talk to a human.
-
-                                                                      {% if ourMail %}
-                                                                        <br><br>
-                                                                        Please add '{{ourMail}}' to your contact list to avoid our mails going to spam folder.
-                                                                      {% endif %}
+                                                                      Remember, I'm just a little mail robot. Don't reply this email directly.<br>
+                                                                      {% if url %}<a href="{{url}}/support">Contact us</a> if you want to talk to a human.{% endif %}
 
                                                                       <br/><br/>
 
-                                                                      {% if url %}<a href="{{url}}">{% endif %}
-                                                                          Trustroots
-                                                                      {% if url %}</a>{% endif %}
+                                                                      {% if url %}<a href="{{url}}">{% endif %}Trustroots{% if url %}</a>{% endif %}
 
                                                                   </td>
                                                               </tr>

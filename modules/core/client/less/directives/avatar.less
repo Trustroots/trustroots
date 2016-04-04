@@ -1,7 +1,14 @@
 .avatar {
   border-radius: @border-radius-base;
-  background-color: @gray-lighter;
+  background: @gray-lighter url(/modules/users/img/avatar.png) no-repeat;
+  background-size: contain;
 
+  &.avatar-2048 {
+    .square(2048px);
+  }
+  &.avatar-1024 {
+    .square(1024px);
+  }
   &.avatar-512 {
     .square(512px);
   }

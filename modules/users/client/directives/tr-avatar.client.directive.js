@@ -34,8 +34,8 @@ angular.module('users').directive('trAvatar', ['$location',
     return {
         template:
           '<div ng-switch="link" ng-cloak>' +
-            '<img class="avatar avatar-{{ size }}" alt="" ng-switch-when="false" ng-src="{{avatar}}">' +
-            '<a ng-switch-when="true" ui-sref="profile({username: user.username})"><img class="avatar avatar-{{ size }}" alt="" ng-class="avatar-{{ size }}" ng-src="{{avatar}}"></a>' +
+            '<img class="avatar avatar-{{ size }}" alt="" ng-switch-when="false" ng-src="{{avatar}}" draggable="false">' +
+            '<a ng-switch-when="true" ui-sref="profile.about({username: user.username})"><img class="avatar avatar-{{ size }}" alt="" ng-class="avatar-{{ size }}" ng-src="{{avatar}}" draggable="false"></a>' +
           '</div>',
         restrict: 'A',
         scope: {

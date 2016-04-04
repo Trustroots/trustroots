@@ -1,4 +1,12 @@
-<div class="panel panel-default" id="profile-sidebar">
+<!-- Avatar+Name for mobile screens -->
+<div class="text-center visible-xs-block">
+  <a tr-avatar data-user="profileCtrl.profile" data-size="512" data-link="false" class="visible-xs-block avatar-circle" ng-click="profileCtrl.biggerAvatar = !profileCtrl.biggerAvatar" ng-class="{'profile-avatar-lg': profileCtrl.biggerAvatar}"></a>
+  <h2 class="profile-name" ng-show="profileCtrl.profile.displayName" ng-bind="profileCtrl.profile.displayName"></h2><br>
+  <h4 class="profile-username">@{{ profileCtrl.profile.displayUsername || profileCtrl.profile.username }}</h4><br>
+  <p class="profile-tagline" ng-show="profileCtrl.profile.tagline" ng-bind="profileCtrl.profile.tagline"></p>
+</div>
+
+<div class="panel panel-default profile-overview">
   <a tr-avatar data-user="profileCtrl.profile" data-size="256" data-link="false" class="hidden-xs" ng-click="profileCtrl.toggleAvatarModal()"></a>
   <div class="panel-body">
 
@@ -10,13 +18,6 @@
     <div class="profile-sidebar-section">
       Member since <time ng-bind="profileCtrl.profile.created | date:'mediumDate'"></time>
     </div>
-
-    <!--
-    <div class="profile-sidebar-section">
-      <h4>Last seen</h4>
-      <time>time</time>
-    </div>
-    -->
 
     <div class="profile-sidebar-section" ng-if="profileCtrl.profile.locationLiving">
       <i class="icon-fw icon-building text-muted"></i> Lives in <a ui-sref="search({location: profileCtrl.profile.locationLiving})" ng-bind="profileCtrl.profile.locationLiving"></a>

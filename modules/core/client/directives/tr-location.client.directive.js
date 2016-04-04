@@ -1,104 +1,107 @@
 (function(){
   'use strict';
 
+  /**
+   * Directive to extend <input> to have location auto suggestions
+   *
+   * Usage:
+   * `<input type="text" tr-location>`
+   *
+   * Usage with Angular-UI-Leaflet:
+   * `<input type="text" tr-location tr-location-center="leafletMapCenter" tr-location-bounds="leafletMapBounds">`
+   *
+   * You can also pass custom minimum length and delay options for Typeahead:
+   * `<input type="text" tr-location typeahead-min-length="2" typeahead-wait-ms="100">`
+   *
+   * Defaults for these are
+   * - typeahead-min-length: 3
+   * - typeahead-wait-ms: 300
+   *
+   * Note that this directive will re-render input element using $compile.
+   */
   angular
     .module('core')
     .directive('trLocation', trLocationDirective);
 
   /* @ngInject */
-  function trLocationDirective($http) {
+  function trLocationDirective($compile, $timeout, LocationService) {
     return {
-      replace: true,
-      template:
-        '<div class="form-group input-location">' +
-          '<label for="input-{{::id}}" class="sr-only">{{::placeholder}}</label>' +
-          '<input type="text" id="input-{{::id}}" class="form-control" placeholder="{{::placeholder}}" ng-model="trLocation" ng-keypress="enterLocation($event)" uib-typeahead="trTitle as address.trTitle for address in searchSuggestions($viewValue)" typeahead-on-select="trLocation = placeTitle($item)" />' +
-        '</div>',
       restrict: 'A',
+      require: 'ngModel',
       scope: {
-        id: '=',
-        trLocation: '=' // Actual model to edit
+        value: '=ngModel',
+        trLocationCenter: '=?', // `?` makes this optional
+        trLocationBounds: '=?', // `?` makes this optional
       },
-      controller: function($scope, $http, SettingsFactory) {
+      replace: false,
+      link: function (scope, element, attr, ngModel) {
 
-        var settings = SettingsFactory.get();
+        // Event handler to stop submitting the surrounding form
+        element.bind('keydown keypress', function($event) {
+           if ($event.which === 13) {
+             $event.preventDefault();
+           }
+        });
 
-        if(!$scope.trLocation) $scope.trLocation = '';
+        // Attach Angular UI Bootstrap TypeAhead
+        element.attr('typeahead-min-length', attr.typeaheadMinLength ? parseInt(attr.typeaheadMinLength) : 3);
+        element.attr('typeahead-wait-ms', attr.typeaheadWaitMs ? parseInt(attr.typeaheadWaitMs) : 300);
+        element.attr('typeahead-on-select', 'trLocation.onSelect($item, $model, $label, $event)');
+        element.attr('uib-typeahead', 'trTitle as address.trTitle for address in trLocation.searchSuggestions($viewValue)');
 
-        // Stop submitting surrounding form
-        $scope.enterLocation = function (event) {
-          if (event.which === 13) {
-            event.preventDefault();
-          }
-        };
+        // Stop infinite rendering on $compile
+        element.removeAttr('tr-location');
 
-        /*
-         * Search field's typeahead -suggestions
-         *
-         * @link https://www.mapbox.com/api-documentation/#geocoding
+        $compile(element)(scope);
+
+        // Without this input value would be left empty due $compile
+        // @todo: any better way of handling this?
+        $timeout(function() {
+          ngModel.$setViewValue(scope.value);
+          ngModel.$render();
+        });
+
+      },
+      controllerAs: 'trLocation',
+      controller: function($scope, $timeout) {
+
+        // View Model
+        var vm = this;
+
+        vm.searchSuggestions = searchSuggestions;
+        vm.onSelect = onSelect;
+
+        /**
+         * Get geolocation suggestions
          */
-        $scope.searchSuggestions = function(val) {
+        function searchSuggestions(query) {
+          return LocationService.suggestions(query);
+        }
 
-          if(!settings.mapbox || !settings.mapbox.publicKey) {
-            return [];
-          }
-
-          return $http
-            .get(
-              '//api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json' +
-                '?access_token=' + settings.mapbox.publicKey +
-                '&types=country,region,place,locality,neighborhood',
-              {
-                ignoreLoadingBar: true
-              }
-            )
-            .then(function(response) {
-              if(response.status === 200 && response.data.features && response.data.features.length > 0) {
-                return response.data.features.map(function(place){
-                  place.trTitle = $scope.placeTitle(place);
-                  return place;
-                });
-              }
-              else return [];
-            });
-
-        };
-
-        /*
-         * Compile a nice title for the place, eg. "Jyväskylä, Finland"
+        /**
+         * When selecting autosuggested location
          */
-        $scope.placeTitle = function(place) {
-          var title = '',
-              titlePostfix = null;
+        function onSelect($item, $model, $label, $event) {
+          $timeout(function() {
+            $scope.value = $label;
+          });
 
-          if(place.text) {
-            title = place.text;
-
-            // Relevant context strings
-            if(place.context) {
-              var contextLength = place.context.length;
-              for (var i = 0; i < contextLength; i++) {
-                if(place.context[i].id.substring(0, 6) === 'place.') {
-                  title += ', ' + place.context[i].text;
-                }
-                else if(place.context[i].id.substring(0, 8) === 'country.') {
-                  title += ', ' + place.context[i].text;
-                }
-              }
+          // Set center bounds for (Angular-UI-Leaflet) model
+          // Bounds is prioritized over center
+          var bounds = LocationService.getBounds($item);
+          if(angular.isObject($scope.trLocationBounds) && bounds) {
+            $scope.trLocationBounds = bounds;
+          }
+          // If no bounds was found, check `center`
+          // Set center coordinates for (Angular-UI-Leaflet) model
+          else if(angular.isObject($scope.trLocationCenter)) {
+            var center = LocationService.getCenter($item);
+            if(center) {
+              angular.extend($scope.trLocationCenter, center);
             }
-
-          }
-          else if(place.place_name) {
-            title = place.place_name;
           }
 
-          return title;
-        };
-
-      },
-      link: function (scope, element, attr, ctrl) {
-
-        scope.placeholder = ( attr.placeholder ) ? attr.placeholder : 'Location...';
+        }
 
       }
     };

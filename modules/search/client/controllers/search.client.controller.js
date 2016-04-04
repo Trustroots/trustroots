@@ -6,7 +6,7 @@
     .controller('SearchController', SearchController);
 
   /* @ngInject */
-  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, OffersService, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, locker) {
+  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, OffersService, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, locker, LocationService) {
 
     // `search-map-canvas` is id of <leaflet> element
     var mapId = 'search-map-canvas';
@@ -18,12 +18,9 @@
     // Make cache id unique for this user
     var cachePrefix = (Authentication.user) ? 'search.mapCenter.' + Authentication.user._id : 'search.mapCenter';
 
-    // Default to Europe for now
-    var defaultLocation = {
-      lat: 48.6908333333,
-      lng: 9.14055555556,
-      zoom: 6
-    };
+    // Default location for all TR maps,
+    // Returns `{lat: Float, lng: Float, zoom: 6}`
+    var defaultLocation = LocationService.getDefaultLocation(6);
 
     // Return constructed icon
     // @link http://leafletjs.com/reference.html#icon

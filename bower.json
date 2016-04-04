@@ -2,11 +2,11 @@
   "name": "trustroots",
   "description": "Trustroots.org",
   "dependencies": {
-    "angular-chosen-localytics": "~1.2.0",
     "angular": "1.5.2",
     "angular-animate": "1.5.2",
     "angular-aria": "1.5.2",
     "angular-ui-bootstrap": "1.2.5",
+    "angular-chosen-localytics": "~1.4.0",
     "ui-leaflet": "~1.0.0",
     "angular-loading-bar": "~0.9.0",
     "angular-mailcheck": "~0.1.0",
@@ -25,7 +25,8 @@
     "ng-file-upload": "~12.0.4",
     "PruneCluster": "2.0.0-beta.2",
     "angular-locker": "~2.0.4",
-    "medium-editor": "~5.15.0"
+    "medium-editor": "~5.15.0",
+    "angular-confirm-modal": "~1.2.3"
   },
   "resolutions": {
     "angular": "1.5.2"
