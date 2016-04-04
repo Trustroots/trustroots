@@ -6,7 +6,7 @@
     .controller('InboxController', InboxController);
 
   /* @ngInject */
-  function InboxController($state, Authentication, Messages) {
+  function InboxController($state, $analytics, Authentication, Messages) {
 
     // ViewModel
     var vm = this;
@@ -38,6 +38,11 @@
       if(vm.messageHandler.nextPage && waypointsDown) {
         vm.messageHandler.fetchMessages().$promise.then(function(data) {
           addMessages(data);
+        });
+
+        $analytics.eventTrack('inbox-pagination', {
+          category: 'messages.inbox',
+          label: 'Inbox page ' + vm.messageHandler.nextPage
         });
       }
     }

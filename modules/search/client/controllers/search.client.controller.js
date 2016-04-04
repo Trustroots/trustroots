@@ -6,7 +6,7 @@
     .controller('SearchController', SearchController);
 
   /* @ngInject */
-  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, OffersService, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, locker, LocationService) {
+  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, $analytics, OffersService, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, locker, LocationService) {
 
     // `search-map-canvas` is id of <leaflet> element
     var mapId = 'search-map-canvas';
@@ -41,7 +41,6 @@
     vm.enterSearchAddress = enterSearchAddress;
     vm.searchAddress = searchAddress;
     vm.mapLocate = mapLocate;
-    vm.searchSuggestions = searchSuggestions;
     vm.mapLayerstyle = 'street';
     vm.sidebarOpen = false;
     vm.offer = false; // Offer to show
@@ -107,9 +106,8 @@
     /**
      * Initialize controller
      */
-    init();
-
-    function init() {
+    activate();
+    function activate() {
 
       // Is local/sessionStorage supported? This might fail in browser's incognito mode
       if(locker.supported()) {
@@ -126,13 +124,11 @@
         vm.mapCenter = defaultLocation;
       }
 
-      //$timeout(function(){
-        vm.mapLayers.baselayers.streets = MapLayersFactory.streets(defaultLocation);
-        vm.mapLayers.baselayers.satellite = MapLayersFactory.satellite(defaultLocation);
+      vm.mapLayers.baselayers.streets = MapLayersFactory.streets(defaultLocation);
+      vm.mapLayers.baselayers.satellite = MapLayersFactory.satellite(defaultLocation);
 
-        // Other() returns an object consisting possibly multiple layers
-        angular.extend(vm.mapLayers.baselayers, MapLayersFactory.other(defaultLocation));
-      //});
+      // Other() returns an object consisting possibly multiple layers
+      angular.extend(vm.mapLayers.baselayers, MapLayersFactory.other(defaultLocation));
 
       /**
        * Add attribution controller
@@ -151,6 +147,10 @@
        * Defaults to street
        */
       $scope.$on(listenerPrefix + '.baselayerchange', function(event, layer) {
+        $analytics.eventTrack('baselayerchange', {
+          category: 'search.map',
+          label: layer.leafletEvent.name
+        });
         $timeout(function() {
           vm.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? layer.leafletEvent.layer.options.TRStyle : 'street';
         });
@@ -177,6 +177,11 @@
           vm.mapLayers.overlays.selectedOffers.visible = true;
 
           vm.sidebarOpen = true;
+
+          $analytics.eventTrack('offer.preview', {
+            category: 'search.map',
+            label: 'Preview offer'
+          });
 
         });
         leafletMarker.setIcon(data.icon);
@@ -309,8 +314,6 @@
     }
     function searchAddress() {
       if(vm.searchQuery !== '' && appSettings.mapbox && appSettings.mapbox.publicKey) {
-        vm.searchQuerySearching = true;
-
         $http
           .get(
             '//api.mapbox.com/geocoding/v5/mapbox.places/' + vm.searchQuery + '.json' +
@@ -321,9 +324,6 @@
             }
           )
           .then(function(response) {
-
-            vm.searchQuerySearching = false;
-
             if(response.status === 200 && response.data && response.data.features && response.data.features.length > 0) {
               mapLocate(response.data.features[0]);
             }
@@ -362,38 +362,6 @@
       // Failed to pinpoint location to the map
       else {
         messageCenterService.add('warning', 'We could not find such a place...');
-      }
-    }
-
-    /**
-     * Search field's typeahead -suggestions
-     *
-     * @link https://www.mapbox.com/api-documentation/#geocoding
-     */
-    function searchSuggestions(val) {
-      if(appSettings.mapbox && appSettings.mapbox.publicKey) {
-        return $http
-          .get(
-            '//api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json' +
-              '?access_token=' + appSettings.mapbox.publicKey +
-              '&types=country,region,place,locality,neighborhood',
-            {
-              ignoreLoadingBar: true
-            }
-          )
-          .then(function(response) {
-            vm.searchQuerySearching = false;
-            if(response.status === 200 && response.data && response.data.features && response.data.features.length > 0) {
-              return response.data.features.map(function(place){
-                place.trTitle = placeTitle(place);
-                return place;
-              });
-            }
-            else return [];
-          });
-      }
-      else {
-        return [];
       }
     }
 

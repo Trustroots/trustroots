@@ -21,6 +21,7 @@ module.exports = {
         'public/lib/angular-touch/angular-touch.js',
         'public/lib/angular-sanitize/angular-sanitize.js',
         'public/lib/angular-message-format/angular-message-format.js',
+        'public/lib/angulartics/src/angulartics.js',
         'public/lib/angular-ui-router/release/angular-ui-router.js',
         'public/lib/angular-ui-bootstrap/src/buttons/buttons.js',
         'public/lib/angular-ui-bootstrap/src/collapse/collapse.js',

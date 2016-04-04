@@ -15,7 +15,7 @@
     .controller('MessagesThreadController', MessagesThreadController);
 
   /* @ngInject */
-  function MessagesThreadController($scope, $q, $stateParams, $state, $document, $window, $anchorScroll, $timeout, $filter, Authentication, Messages, MessagesRead, messageCenterService, locker, appSettings, userTo, cfpLoadingBar) {
+  function MessagesThreadController($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, $filter, $analytics, Authentication, Messages, MessagesRead, messageCenterService, locker, appSettings, userTo, cfpLoadingBar) {
 
     // Go back to inbox on these cases
     // - No recepient defined
@@ -175,6 +175,11 @@
           addMessages(data);
           setScrollPosition(oldHeight);
         });
+        
+        $analytics.eventTrack('thread-pagination', {
+          category: 'messages.thread',
+          label: 'Message thread page ' + vm.messageHandler.nextPage
+        });
       }
     }
 
@@ -273,6 +278,11 @@
 
         // Remove this when socket is back!
         vm.messages.unshift(response);
+
+        $analytics.eventTrack('message.send', {
+          category: 'messages',
+          label: 'Message send'
+        });
 
         // $timeout ensures scroll happens only after DOM has finished rendering
         $timeout(function() {

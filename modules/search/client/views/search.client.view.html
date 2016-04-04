@@ -9,14 +9,12 @@
              placeholder="Search places"
              ng-focus="search.searchActive = true"
              ng-blur="search.searchActive = false"
-             ng-disabled="search.searchQuerySearching"
              ng-model="search.searchQuery"
-             ng-keypress="search.enterSearchAddress($event)"
              tr-location
              tr-location-center="search.mapCenter"
              tr-location-bounds="search.mapBounds">
       <span class="input-group-btn">
-        <button type="button" class="btn btn-lg btn-default" ng-click="search.searchAddress()" ng-disabled="search.searchQuerySearching">
+        <button type="button" class="btn btn-lg btn-default" ng-click="search.searchAddress()">
           <i class="icon-search"></i>
         </button>
       </span>

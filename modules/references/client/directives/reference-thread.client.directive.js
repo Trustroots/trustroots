@@ -36,7 +36,7 @@
   // Note: Note that the directive's controller is outside the directive's closure.
   // This style eliminates issues where the injection gets created as unreachable code after a return.
   /* @ngInject */
-  function trReferenceThreadDirectiveController($scope, messageCenterService, ReferenceThreadService) {
+  function trReferenceThreadDirectiveController($scope, $analytics, messageCenterService, ReferenceThreadService) {
 
     // View Model
     /*jshint validthis: true */
@@ -76,7 +76,7 @@
     function createReference(reference) {
       var newReference = new ReferenceThreadService({
         userTo: vm.userTo,
-        reference: reference
+        reference: String(reference)
       });
 
       vm.reference = newReference;
@@ -84,6 +84,10 @@
       newReference.$save(function(response) {
         vm.reference = response;
         messageCenterService.add('success', 'Thank you!');
+        $analytics.eventTrack('reference-thread-give-' + String(reference), {
+          category: 'reference.thread',
+          label: 'Give ' + String(reference) + ' thread reference'
+        });
       }, function(err) {
         vm.reference = false;
         messageCenterService.add('danger', 'Something went wrong. Please try again.');

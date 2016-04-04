@@ -78,7 +78,6 @@
     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
   })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
   ga('create', '{{ googleAnalytics.code }}', 'auto');
-  ga('send', 'pageview');
   </script>
   {% endif %}
 
@@ -109,7 +108,8 @@
     var user = {{ user | json | safe }},
         title = '{{title}}',
         settings = {{ appSettings | json | safe }},
-        languages = {{ languages | json | safe }};
+        languages = {{ languages | json | safe }},
+        env = '{{ env }}';
   </script>
 
   {% if process.env.NODE_ENV === 'production' %}

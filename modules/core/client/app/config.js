@@ -3,6 +3,7 @@
 // Init the application configuration module for AngularJS application
 var AppConfig = (function() {
   // Init module configuration options
+  var appEnv = window.env || 'production';
   var appModuleName = 'trustroots';
   var appModuleVendorDependencies = [
                                               'ngResource',
@@ -10,6 +11,7 @@ var AppConfig = (function() {
                                               'ngTouch',
                                               'ngSanitize',
                                               'ngMessageFormat',
+                                              'angulartics',
                                               'ui.router',
                                               'ui.bootstrap.dateparser',
                                               'ui.bootstrap.buttons',
@@ -35,6 +37,15 @@ var AppConfig = (function() {
                                               'angular-confirm'
                                             ];
 
+  // Load different service dependency for Angulartics depending on environment
+  // @link https://github.com/angulartics/angulartics
+  if(appEnv === 'production') {
+    appModuleVendorDependencies.push('angulartics.google.analytics');
+  }
+  else {
+    appModuleVendorDependencies.push('angulartics.debug');
+  }
+
   // Add a new vertical module
   var registerModule = function(moduleName, dependencies) {
     // Create angular module
@@ -45,6 +56,7 @@ var AppConfig = (function() {
   };
 
   return {
+    appEnv: appEnv,
     appModuleName: appModuleName,
     appModuleVendorDependencies: appModuleVendorDependencies,
     registerModule: registerModule
