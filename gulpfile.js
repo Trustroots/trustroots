@@ -147,7 +147,7 @@ gulp.task('jshint', function() {
 
 // JavaScript task
 gulp.task('scripts', function() {
-  return gulp.src( _.union(defaultAssets.client.lib.js, defaultAssets.client.js, ['public/dist/uib-templates.js', 'public/dist/templates.js']) )
+  return gulp.src( _.union(defaultAssets.client.lib.js, defaultAssets.client.js) )
     .pipe(plugins.ngAnnotate())
     .pipe(plugins.uglify({
       mangle: false

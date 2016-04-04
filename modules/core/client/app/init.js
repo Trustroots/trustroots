@@ -12,7 +12,7 @@
     .config(initConfig);
 
   /* @ngInject */
-  function initConfig(lockerProvider, cfpLoadingBarProvider, $locationProvider, $urlMatcherFactoryProvider, $messageCenterServiceProvider) {
+  function initConfig(lockerProvider, cfpLoadingBarProvider, $locationProvider, $urlMatcherFactoryProvider, $messageCenterServiceProvider, $compileProvider) {
 
     // Setting HTML5 Location Mode
     $locationProvider.html5Mode({
@@ -33,15 +33,21 @@
     // Configure local storage module
     // @link https://github.com/tymondesigns/angular-locker
     lockerProvider.defaults({
-        driver: 'local', // local|session
-        namespace: AppConfig.appModuleName,
-        separator: '.',
-        eventsEnabled: false,
-        extend: {}
+      driver: 'local', // local|session
+      namespace: AppConfig.appModuleName,
+      separator: '.',
+      eventsEnabled: false,
+      extend: {}
     });
 
     // Default timeout for success, error etc messages
     $messageCenterServiceProvider.setGlobalOptions({timeout: 6000});
+
+    // Disabling Debug Data for production environment
+    // @link https://docs.angularjs.org/guide/production
+    if(AppConfig.appEnv === 'production') {
+      $compileProvider.debugInfoEnabled(false);
+    }
 
   }
 
@@ -51,7 +57,11 @@
     if (window.location.hash === '#_=_') window.location.hash = '';
 
     // Then init the app
-    angular.bootstrap(document, [AppConfig.appModuleName]);
+    // @todo: turn strictDi true for production
+    // @link https://docs.angularjs.org/guide/production
+    angular.bootstrap(document, [AppConfig.appModuleName], {
+      strictDi: false
+    });
   });
 
 })();

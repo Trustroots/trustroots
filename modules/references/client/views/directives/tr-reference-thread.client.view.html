@@ -30,7 +30,11 @@
       <p class="reference-thread-value">
         <span class="text-capitalize" ng-class="{ 'text-danger': (vm.reference.reference === 'no') }" ng-bind="::vm.reference.reference"></span><br>
         <small class="text-muted">
-          {{ ::vm.reference.created | date:'mediumDate' }} · <a class="text-muted" ng-click="vm.reference = false;">Change</a>
+          {{ ::vm.reference.created | date:'mediumDate' }} · <a class="text-muted"
+                                                                ng-click="vm.reference = false;"
+                                                                analytics-on="click"
+                                                                analytics-event="reference-thread-change"
+                                                                analytics-properties="{ category: 'reference.thread', label: 'Change thread reference' }">Change</a>
         </small>
       </p>
 

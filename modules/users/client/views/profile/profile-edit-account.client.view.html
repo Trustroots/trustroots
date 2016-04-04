@@ -153,9 +153,30 @@
     </div>
     <div class="ccol-xs-12 col-sm-7">
       <ul class="list-unstyled">
-        <li><a class="btn btn-link btn-sm" href="/api/users/{{app.user.username}}" target="_top" type="application/json" download="profile.json">Profile</a> <small class="text-muted">(json)</small></li>
-        <li><a class="btn btn-link btn-sm" href="/api/contacts/{{app.user._id}}" target="_top" type="application/json" download="contacts.json">Contacts</a> <small class="text-muted">(json)</small></li>
-        <li><a class="btn btn-link btn-sm" href="/api/offers-by/{{app.user._id}}" target="_top" type="application/json" download="offers.json">Hosting offer</a> <small class="text-muted">(json)</small></li>
+        <li><a class="btn btn-link btn-sm"
+               href="/api/users/{{app.user.username}}"
+               target="_top"
+               type="application/json"
+               download="profile.json"
+               analytics-on="click"
+               analytics-event="user-data-download"
+               analytics-properties="{ category: 'user.data', label: 'Download User Data: Download User Data: Profile' }">Profile</a> <small class="text-muted">(json)</small></li>
+        <li><a class="btn btn-link btn-sm"
+               href="/api/contacts/{{app.user._id}}"
+               target="_top"
+               type="application/json"
+               download="contacts.json"
+               analytics-on="click"
+               analytics-event="user-data-download"
+               analytics-properties="{ category: 'user.data', label: 'Download User Data: Contacts' }">Contacts</a> <small class="text-muted">(json)</small></li>
+        <li><a class="btn btn-link btn-sm"
+               href="/api/offers-by/{{app.user._id}}"
+               target="_top"
+               type="application/json"
+               download="offers.json"
+               analytics-on="click"
+               analytics-event="user-data-download"
+               analytics-properties="{ category: 'user.data', label: 'Download User Data: Hosting offer' }">Hosting offer</a> <small class="text-muted">(json)</small></li>
       </ul>
     </div>
   </div>

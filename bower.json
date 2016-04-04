@@ -26,7 +26,8 @@
     "PruneCluster": "2.0.0-beta.2",
     "angular-locker": "~2.0.4",
     "medium-editor": "~5.15.0",
-    "angular-confirm-modal": "~1.2.3"
+    "angular-confirm-modal": "~1.2.3",
+    "angulartics-google-analytics": "^0.1.4"
   },
   "resolutions": {
     "angular": "1.5.2"
