@@ -237,7 +237,7 @@ gulp.task('uibTemplatecache', function() {
   });
 
   // Output all tempaltes to one file
-  uibModulesStreams
+  return uibModulesStreams
     .pipe(plugins.concat('uib-templates.js'))
     .pipe(gulp.dest('public/dist'));
 
