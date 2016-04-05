@@ -6,7 +6,7 @@
     .controller('SupportController', SupportController);
 
   /* @ngInject */
-  function SupportController($http, messageCenterService) {
+  function SupportController(SupportService, messageCenterService) {
 
     // ViewModel
     var vm = this;
@@ -25,25 +25,26 @@
       vm.success = false;
       vm.isLoading = true;
 
-      if(vm.request.message === '') {
-        messageCenterService.add('danger', 'Please write a message.', { timeout: 20000 });
-        vm.isLoading = false;
-        return false;
-      }
-
       if (!isValid) {
         vm.isLoading = false;
         return false;
       }
 
-      $http.post('/api/support', vm.request)
-        .success(function() {
-          vm.success = true;
-          vm.isLoading = false;
-        }).error(function(response) {
-          vm.isLoading = false;
-          messageCenterService.add('danger', response.message || 'Something went wrong. Please try again.', { timeout: 20000 });
-        });
+      if(vm.request.message === '') {
+        messageCenterService.add('danger', 'Please write a message first.', { timeout: 20000 });
+        vm.isLoading = false;
+        return false;
+      }
+
+      var supportRequest = new SupportService(vm.request);
+
+      supportRequest.$save(function(response) {
+        vm.success = true;
+        vm.isLoading = false;
+      }, function(err) {
+        vm.isLoading = false;
+        messageCenterService.add('danger', err.message || 'Something went wrong. Please try again.', { timeout: 20000 });
+      });
 
     }
 
