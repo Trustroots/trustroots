@@ -63,8 +63,10 @@ exports.supportRequest = function(req, res) {
       }
 
       var mailOptions = {
-        from: fromMail,
-        to: 'Trustroots <' + config.supportEmail + '>',
+        from: 'Trustroots Support <' + config.supportEmail + '>',
+        to: 'Trustroots Support <' + config.supportEmail + '>',
+        replyTo: fromMail,
+        subject: 'Support request',
         subject: 'Support request',
         text: emailPlain
       };
@@ -82,8 +84,8 @@ exports.supportRequest = function(req, res) {
     }
   ], function(err) {
     if(err) {
-      console.log('Support request error:');
-      console.log(err);
+      console.error('Support request error:');
+      console.error(err);
       return res.status(400).send({
         message: 'Failure while sending your support request. Please try again.'
       });
