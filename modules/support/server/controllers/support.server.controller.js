@@ -63,8 +63,10 @@ exports.supportRequest = function(req, res) {
       }
 
       var mailOptions = {
-        from: fromMail,
-        to: 'Trustroots <' + config.supportEmail + '>',
+        from: 'Trustroots Support <' + config.supportEmail + '>',
+        to: 'Trustroots Support <' + config.supportEmail + '>',
+        replyTo: fromMail,
+        subject: 'Support request',
         subject: 'Support request',
         text: emailPlain
       };
