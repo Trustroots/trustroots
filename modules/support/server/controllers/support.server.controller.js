@@ -82,8 +82,8 @@ exports.supportRequest = function(req, res) {
     }
   ], function(err) {
     if(err) {
-      console.log('Support request error:');
-      console.log(err);
+      console.error('Support request error:');
+      console.error(err);
       return res.status(400).send({
         message: 'Failure while sending your support request. Please try again.'
       });
