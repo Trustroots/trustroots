@@ -4,22 +4,25 @@
  * Module dependencies.
  */
 var _ = require('lodash'),
-  defaultAssets = require('./config/assets/default'),
-  testAssets = require('./config/assets/test'),
-  gulp = require('gulp'),
-  gulpLoadPlugins = require('gulp-load-plugins'),
-  runSequence = require('run-sequence'),
-  MergeStream = require('merge-stream'),
-  glob = require('glob'),
-  path = require('path'),
-  del = require('del'),
-  fs = require('fs'),
-  argv = require('yargs').argv,
-  plugins = gulpLoadPlugins({
-    rename: {
-      'gulp-angular-templatecache': 'templateCache'
-    }
-  });
+    path = require('path'),
+    defaultAssets = require('./config/assets/default'),
+    testAssets = require('./config/assets/test'),
+    gulp = require('gulp'),
+    gulpLoadPlugins = require('gulp-load-plugins'),
+    runSequence = require('run-sequence'),
+    MergeStream = require('merge-stream'),
+    glob = require('glob'),
+    del = require('del'),
+    fs = require('fs'),
+    argv = require('yargs').argv,
+    plugins = gulpLoadPlugins({
+      rename: {
+        'gulp-angular-templatecache': 'templateCache'
+      }
+    });
+
+// These will be loaded in `loadConfig` task
+var environmentAssets, assets, config;
 
 gulp.task('bower', function(done) {
   if(argv.skipBower) {
@@ -47,14 +50,30 @@ gulp.task('env:prod', function() {
 // Make sure local config file exists
 gulp.task('copyConfig', function(done) {
   if(!fs.existsSync('config/env/local.js') ) {
-    return gulp
+    gulp
       .src('config/env/local.sample.js')
       .pipe(plugins.rename('local.js'))
       .pipe(gulp.dest('config/env/'));
+      done();
   }
   else {
     done();
   }
+});
+
+// Load config + assets
+// Loading config before `env:*` and `copyConfig` tasks would load configs with wrong environment
+gulp.task('loadConfig', function(done) {
+  if(!config) {
+    config = require('./config/config');
+  }
+  if(!environmentAssets) {
+    environmentAssets = require('./config/assets/' + process.env.NODE_ENV || 'development') || {};
+  }
+  if(!assets) {
+    assets = _.extend(defaultAssets, environmentAssets);
+  }
+  done();
 });
 
 // Nodemon task
@@ -86,9 +105,9 @@ gulp.task('watch', function() {
   gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
 
   if (process.env.NODE_ENV === 'production') {
-    gulp.watch(defaultAssets.client.js, ['jshint', 'clean:js', 'uibTemplatecache', 'scripts']);
+    gulp.watch(defaultAssets.client.js, ['jshint', 'clean:js', 'scripts']);
     gulp.watch(defaultAssets.server.gulpConfig, ['jshint']);
-    gulp.watch(defaultAssets.client.views, ['clean:js', 'templatecache', 'uibTemplatecache', 'jshint', 'scripts']).on('change', plugins.livereload.changed);
+    gulp.watch(defaultAssets.client.views, ['clean:js', 'scripts']).on('change', plugins.livereload.changed);
   } else {
     gulp.watch(defaultAssets.client.js, ['jshint']).on('change', plugins.livereload.changed);
     gulp.watch(defaultAssets.server.gulpConfig, ['jshint']);
@@ -145,8 +164,9 @@ gulp.task('jshint', function() {
 });
 
 // JavaScript task
-gulp.task('scripts', function() {
-  return gulp.src( _.union(defaultAssets.client.lib.js, defaultAssets.client.js) )
+gulp.task('scripts', ['loadConfig', 'templatecache', 'uibTemplatecache'], function() {
+  var scriptFiles = _.union(assets.client.lib.js, assets.client.js);
+  return gulp.src( scriptFiles )
     .pipe(plugins.ngAnnotate())
     .pipe(plugins.uglify({
       mangle: false
@@ -205,24 +225,13 @@ gulp.task('styles', function() {
 // to manually compile our UIB templates.
 gulp.task('uibTemplatecache', function() {
 
-  // UIB module templates to include
-  var uibModules = [
-    'accordion',
-    'modal',
-    'popover',
-    'progressbar',
-    'tabs',
-    'tooltip',
-    'typeahead'
-  ];
-
   var uibModulesStreams = new MergeStream();
 
-  // Loop module names trough
-  uibModules.forEach(function(uibModule) {
+  // Loop trough module names
+  defaultAssets.client.lib.uibModuleTemplates.forEach(function(uibModule) {
 
     var moduleStream = gulp.src(['public/lib/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
-      .pipe(plugins.htmlmin())
+      .pipe(plugins.htmlmin({ collapseWhitespace: true }))
       .pipe(plugins.templateCache('uib-templates-' + uibModule + '.js', {
         root: 'uib/template/' + uibModule + '/',
         module: 'core',
@@ -245,9 +254,12 @@ gulp.task('uibTemplatecache', function() {
 // Angular template cache task
 gulp.task('templatecache', function() {
   return gulp.src(defaultAssets.client.views)
-    .pipe(plugins.htmlmin())
+    .pipe(plugins.htmlmin({ collapseWhitespace: true }))
     .pipe(plugins.templateCache('templates.js', {
-      root: 'modules/',
+      root: '/modules/',
+      transformUrl: function(url) {
+	      return url.replace('/client', '');
+      },
       module: 'core',
       templateHeader: '(function(){ \'use strict\'; angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
       templateBody: '$templateCache.put(\'<%= url %>\', \'<%= contents %>\');',
@@ -270,11 +282,7 @@ gulp.task('fontello', function(done) {
 });
 
 // Make sure upload directory exists
-gulp.task('makeUploadsDir', function() {
-
-  // Loading this before `env:*` task will load configs with wrong environment
-  var config = require('./config/config');
-
+gulp.task('makeUploadsDir', ['loadConfig'], function() {
   return fs.mkdir(config.uploadDir, function(err) {
     if (err && err.code !== 'EEXIST') {
       console.error(err);
@@ -332,7 +340,7 @@ gulp.task('build:dev', function(done) {
 
 // Build assets for production mode
 gulp.task('build:prod', function(done) {
-  runSequence('env:prod', 'bower', 'jshint', 'clean', 'templatecache', 'uibTemplatecache', ['styles', 'scripts'], done);
+  runSequence('env:prod', 'bower', 'jshint', 'clean', ['styles', 'scripts'], done);
 });
 
 // Clean dist css and js files
@@ -342,11 +350,11 @@ gulp.task('clean', function(done) {
 
 // Run the project tests
 gulp.task('test', function(done) {
-  runSequence('env:test', ['copyConfig', 'makeUploadsDir'], 'jshint', ['karma', 'mocha'], done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', ['karma', 'mocha'], done);
 });
 
 gulp.task('test:server', function(done) {
-  runSequence('env:test', ['copyConfig', 'makeUploadsDir'], 'jshint', 'mocha', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', 'mocha', done);
 });
 
 // Watch all server files for changes & run server tests (test:server) task on changes
@@ -358,17 +366,17 @@ gulp.task('test:server:watch', function(done) {
 });
 
 gulp.task('test:client', function(done) {
-  runSequence('env:test', ['copyConfig', 'makeUploadsDir'], 'jshint', 'karma', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', 'karma', done);
 });
 
 // Run the project in development mode
 gulp.task('develop', function(done) {
-  runSequence('env:dev', ['copyConfig', 'makeUploadsDir'], 'build:dev', ['nodemon', 'watch'], done);
+  runSequence('env:dev', 'copyConfig', 'makeUploadsDir', 'build:dev', ['nodemon', 'watch'], done);
 });
 
 // Run the project in production mode
 gulp.task('prod', function(done) {
-  runSequence('env:prod', ['copyConfig', 'makeUploadsDir'], 'build:prod', ['nodemon', 'watch'], done);
+  runSequence('env:prod', 'copyConfig', 'makeUploadsDir', 'build:prod', ['nodemon', 'watch'], done);
 });
 
 // Default to develop mode
