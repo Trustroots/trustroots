@@ -3,6 +3,16 @@
 module.exports = {
   client: {
     lib: {
+      // Load Angular-UI-Bootstrap module templates for these modules:
+      uibModuleTemplates: [
+        'accordion',
+        'modal',
+        'popover',
+        'progressbar',
+        'tabs',
+        'tooltip',
+        'typeahead'
+      ],
       css: [
         'public/lib/fontello/css/animation.css',
         'public/lib/medium-editor/dist/css/medium-editor.css',

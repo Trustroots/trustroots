@@ -8,6 +8,7 @@ module.exports = {
   // Override any default asset blocks here or add new blocks
   client: {
     lib: {
+      uibModuleTemplates: defaultAssets.client.lib.uibModuleTemplates,
       css: defaultAssets.client.lib.css,
       js: _.union(defaultAssets.client.lib.js, [
         'public/lib/angulartics/src/angulartics-debug.js'
