@@ -36,8 +36,8 @@
         <div ng-if="contactConfirm.success" class="alert alert-success">
           <h4 ng-bind="contactConfirm.success"></h4>
           <p>
-            <strong><a ui-sref="profile({username: contactConfirm.contact.users[0].username})">{{ ::contactConfirm.contact.users[0].displayName }}</a></strong> &
-            <strong><a ui-sref="profile({username: contactConfirm.contact.users[1].username})">{{ ::contactConfirm.contact.users[1].displayName }}</a></strong>.
+            <strong><a ui-sref="profile.about({username: contactConfirm.contact.users[0].username})">{{ ::contactConfirm.contact.users[0].displayName }}</a></strong> &
+            <strong><a ui-sref="profile.about({username: contactConfirm.contact.users[1].username})">{{ ::contactConfirm.contact.users[1].displayName }}</a></strong>.
           </p>
         </div>
         <!-- Errors -->
@@ -52,7 +52,7 @@
             <span ng-if="contactConfirm.isLoading">Wait a moment...</span>
           </button>
           <br><br>
-          <a ui-sref="profile({username: contactConfirm.contact.users[1].username})" class="text-muted">Cancel</a>
+          <a ui-sref="profile.about({username: contactConfirm.contact.users[1].username})" class="text-muted">Cancel</a>
         </div>
 
       </div><!-- /.col-* -->

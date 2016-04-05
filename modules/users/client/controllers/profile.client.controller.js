@@ -6,11 +6,11 @@
     .controller('ProfileController', ProfileController);
 
   /* @ngInject */
-  function ProfileController($scope, $stateParams, $state, $location, $uibModal, Languages, Users, Contact, Authentication, $timeout, messageCenterService, profile, contact, appSettings) {
+  function ProfileController($scope, $stateParams, $state, $location, $uibModal, $filter, $window, Languages, Users, Contact, Authentication, $timeout, messageCenterService, profile, contact, appSettings) {
 
     // No user defined at URL, just redirect to user's own profile
     if(!$stateParams.username) {
-      $state.go('profile', {username: Authentication.user.username});
+      $state.go('profile.about', {username: Authentication.user.username});
     }
 
     // ViewModel
@@ -22,49 +22,46 @@
     vm.hasConnectedAdditionalSocialAccounts = hasConnectedAdditionalSocialAccounts;
     vm.isConnectedSocialAccount = isConnectedSocialAccount;
     vm.socialAccountLink = socialAccountLink;
-    vm.tabSelected = tabSelected;
     vm.toggleAvatarModal = toggleAvatarModal;
     vm.isWarmshowersId = isWarmshowersId;
-    vm.tabs = [
-      {
-        path: 'about',
-        title: 'About',
-        content: '/modules/users/views/profile/view-profile-about.client.view.html?c=' + appSettings.commit
-      },
-      {
-        path: 'overview',
-        title: 'Overview',
-        content: '/modules/users/views/profile/view-profile-sidebar.client.view.html?c=' + appSettings.commit,
-        onlySmallScreen: true
-      },
-      {
-        path: 'accommodation',
-        title: 'Accommodation',
-        content: '/modules/offers/views/offers-view.client.view.html?c=' + appSettings.commit,
-        onlySmallScreen: true
-      },
-      {
-        path: 'contacts',
-        title: 'Contacts',
-        content: '/modules/contacts/views/list-contacts.client.view.html?c=' + appSettings.commit
-      }
-    ];
 
-    // We landed here from profile editor, show success message
-    if($stateParams.updated && profile.username === Authentication.user.username) {
-      // $timeout due Angular overwriting message at $state change otherwise
-      $timeout(function(){
-        messageCenterService.add('success', 'Profile updated');
-      });
-    }
+    activate();
 
     /**
-     * When contact removal modal signals that the contact was removed, remove it from this scope as well
-     * @todo: any better way to keep vm.contact $resolved but wipe out the actual content?
+     * Initialize controller
      */
-    $scope.$on('contactRemoved', function() {
-      delete vm.contact._id;
-    });
+    function activate() {
+
+      // When on small screen...
+      if(angular.element('body').width() <= 480) {
+        // By default we land to `about` tab of this controller
+        // If we're on small screens, direct to `overview` tab instead
+        if($state.current.name === 'profile.about') {
+          // Timeout ensures `ui-sref-active=""` gets updated at the templates
+          $timeout(function() {
+            $state.go('profile.overview', { username: profile.username });
+          });
+        }
+      }
+      // When on bigger screen...
+      // Redirect "mobile only" tabs to about tab
+      else if(['profile.overview', 'profile.accommodation'].indexOf($state.current.name) > -1) {
+        $state.go('profile.about', { username: profile.username });
+      }
+
+      // If this is authenticated user's own profile, measure profile description length
+      if(Authentication.user._id === profile._id) {
+        vm.profileDescriptionLength = Authentication.user.description ? $filter('plainTextLength')(Authentication.user.description) : 0;
+      }
+
+      /**
+       * When contact removal modal signals that the contact was removed, remove it from this scope as well
+       * @todo: any better way to keep vm.contact $resolved but wipe out the actual content?
+       */
+      $scope.$on('contactRemoved', function() {
+        delete vm.contact._id;
+      });
+    }
 
     /**
      * Determine if given user handle for Warmshowers is an id or username
@@ -100,13 +97,6 @@
     }
 
     /**
-     * Determine which tab to select
-     */
-    function tabSelected() {
-      return ($stateParams.tab && ['overview', 'contacts'].indexOf($stateParams.tab) > -1) ? $stateParams.tab : 'overview';
-    }
-
-    /**
      * Check if there are additional accounts
      */
     function hasConnectedAdditionalSocialAccounts(provider) {
@@ -125,7 +115,7 @@
 
     /**
      * Return an URL for user's social media profiles
-     * Ensure these fields are set at users.profile.server.controller.js
+     * Ensure these values are published at users.profile.server.controller.js
      */
     function socialAccountLink(providerName, providerData) {
       if(providerName === 'facebook' && providerData.id) {

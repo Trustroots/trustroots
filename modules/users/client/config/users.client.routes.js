@@ -17,36 +17,75 @@
         requiresAuth: true,
         footerTransparent: true
       }).
-      state('profile-edit', {
-        url: '/profile/edit',
-        title: 'Edit profile',
-        templateUrl: '/modules/users/views/profile/edit-profile.client.view.html',
-        requiresAuth: true,
-        controller: 'EditProfileController',
-        controllerAs: 'editprofile',
-        resolve: {
-          // A string value resolves to a service
-          SettingsService: 'SettingsService',
-          appSettings: function(SettingsService) {
-            return SettingsService.get();
-          }
-        }
-      }).
+
+      // This route was deprecated Mar 2016
+      // Redirects to `profile-edit.account`
       state('profile-settings', {
         url: '/profile/settings',
-        title: 'Profile settings',
-        templateUrl: '/modules/users/views/profile/edit-settings.client.view.html',
-        controller: 'SettingsController',
-        controllerAs: 'settings',
-        requiresAuth: true
+        title: 'Account',
+        requiresAuth: true,
+        controller:
+          /* @ngInject */
+          function($state) {
+            $state.go('profile-edit.account');
+          }
       }).
+
+      state('profile-edit', {
+        url: '/profile/edit',
+        templateUrl: '/modules/users/views/profile/profile-edit.client.view.html',
+        abstract: true,
+        controller: 'ProfileEditController',
+        controllerAs : 'profileEdit'
+      }).
+        state('profile-edit.about', {
+          url: '',
+          title: 'Edit profile',
+          templateUrl: '/modules/users/views/profile/profile-edit-about.client.view.html',
+          controller: 'ProfileEditAboutController',
+          controllerAs: 'profileEditAbout',
+          requiresAuth: true
+        }).
+        state('profile-edit.photo', {
+          url: '/photo',
+          title: 'Edit profile photo',
+          templateUrl: '/modules/users/views/profile/profile-edit-photo.client.view.html',
+          controller: 'ProfileEditPhotoController',
+          controllerAs: 'profileEditPhoto',
+          requiresAuth: true,
+          resolve: {
+            // A string value resolves to a service
+            SettingsService: 'SettingsService',
+            appSettings: function(SettingsService) {
+              return SettingsService.get();
+            }
+          }
+        }).
+        state('profile-edit.networks', {
+          url: '/networks',
+          title: 'Edit Profile networks',
+          templateUrl: '/modules/users/views/profile/profile-edit-networks.client.view.html',
+          controller: 'ProfileEditNetworksController',
+          controllerAs: 'profileEditNetworks',
+          requiresAuth: true
+        }).
+        state('profile-edit.account', {
+          url: '/account',
+          title: 'Account',
+          templateUrl: '/modules/users/views/profile/profile-edit-account.client.view.html',
+          controller: 'EditProfileAccountController',
+          controllerAs: 'profileEditAccount',
+          requiresAuth: true
+        }).
+
       state('profile', {
-        url: '/profile/:username?tab&updated',
+        url: '/profile/:username',
         title: 'Profile',
-        templateUrl: '/modules/users/views/profile/view-profile.client.view.html',
+        templateUrl: '/modules/users/views/profile/profile-view.client.view.html',
         controller: 'ProfileController',
         controllerAs: 'profileCtrl',
         requiresAuth: true,
+        abstract: true,
         resolve: {
           // A string value resolves to a service
           UserProfilesService: 'UserProfilesService',
@@ -63,13 +102,12 @@
             });
           },
 
-          // Contact is loaded only after profile is loaded, because we need the user ID
+          // Contact is loaded only after profile is loaded, because we need the profile ID
           contact: function(ContactByService, profile, Authentication) {
-            return profile.$promise.then(function() {
-
-              // Own profile, no need to load contact
+            return profile.$promise.then(function(profile) {
+              // No profile found or looking at own profile: no need to load contact
               if(Authentication.user && Authentication.user._id === profile._id) {
-                return false;
+                return;
               }
               // Load contact
               else {
@@ -82,6 +120,34 @@
 
         }
       }).
+        state('profile.about', {
+          url: '',
+          title: 'Profile',
+          templateUrl: '/modules/users/views/profile/profile-view-about.client.view.html',
+          requiresAuth: true,
+          noScrollingTop: true
+        }).
+        state('profile.accommodation', {
+          url: '/accommodation',
+          title: 'Profile accommodation',
+          templateUrl: '/modules/offers/views/offers-view.client.view.html',
+          requiresAuth: true,
+          noScrollingTop: true
+        }).
+        state('profile.overview', {
+          url: '/overview',
+          title: 'Profile overview',
+            templateUrl: '/modules/users/views/profile/profile-view-basics.client.view.html',
+          requiresAuth: true,
+          noScrollingTop: true
+        }).
+        state('profile.contacts', {
+          url: '/contacts',
+          title: 'Profile contacts',
+          templateUrl: '/modules/contacts/views/list-contacts.client.view.html',
+          requiresAuth: true,
+          noScrollingTop: true
+        }).
 
       // When attempting to look at profile as non-authenticated user
       state('profile-signup', {

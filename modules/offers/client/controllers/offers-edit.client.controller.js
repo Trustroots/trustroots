@@ -6,14 +6,11 @@
     .controller('OffersEditController', OffersEditController);
 
   /* @ngInject */
-  function OffersEditController($http, $timeout, $state, $stateParams, $location, leafletBoundsHelpers, OffersService, Authentication, messageCenterService, MapLayersFactory, offer, appSettings) {
+  function OffersEditController($http, $timeout, $state, $stateParams, $location, leafletBoundsHelpers, OffersService, Authentication, messageCenterService, MapLayersFactory, offer, appSettings, LocationService) {
 
-    var defaultLocation = {
-      // Default to Europe
-      lat: 48.6908333333,
-      lng: 9.14055555556,
-      zoom: 4
-    };
+    // Default location for all TR maps,
+    // Returns `{lat: Float, lng: Float, zoom: 4}`
+    var defaultLocation = LocationService.getDefaultLocation(4);
 
     // ViewModel
     var vm = this;
@@ -22,9 +19,7 @@
     vm.offer = {};
     vm.addOffer = addOffer;
     vm.mapLocate = mapLocate;
-    vm.enterSearchAddress = enterSearchAddress;
     vm.searchAddress = searchAddress;
-    vm.searchSuggestions = searchSuggestions;
     vm.searchQuery = '';
     vm.searchQuerySearching = false;
     vm.isLoading = false;
@@ -124,23 +119,13 @@
       newOffer.$save(function(response) {
         // Done!
         vm.isLoading = false;
-        $state.go('profile', {username: Authentication.user.username});
+        $state.go('profile.about', { username: Authentication.user.username });
       }, function(err) {
         vm.isLoading = false;
         var errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
         messageCenterService.add('danger', errorMessage);
       });
 
-    }
-
-    /**
-     * Map address search
-     */
-    function enterSearchAddress(event) {
-      if (event.which === 13) {
-        event.preventDefault();
-        searchAddress();
-      }
     }
 
     /**
@@ -192,32 +177,6 @@
           zoom: 5
         };
       }
-
-    }
-
-    /**
-     * Search field's typeahead -suggestions
-     *
-     * @link https://www.mapbox.com/developers/api/geocoding/
-     */
-    function searchSuggestions(val) {
-
-     return $http
-       .get('//api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json?access_token=' + appSettings.mapbox.publicKey)
-       .then(function(response) {
-
-         vm.searchQuerySearching = false;
-
-         if(response.status === 200 && response.data.features && response.data.features.length > 0) {
-
-             return response.data.features.map(function(place){
-               place.trTitle = placeTitle(place);
-               return place;
-             });
-
-         }
-         else return [];
-       });
 
     }
 

@@ -9,7 +9,7 @@
     .controller('AppController', AppController);
 
   /* @ngInject */
-  function AppController($scope, $rootScope, $window, $state, Authentication, SettingsFactory, Languages, locker) {
+  function AppController($scope, $rootScope, $window, $state, $analytics, Authentication, SettingsFactory, Languages, locker) {
 
     // ViewModel
     var vm = this;
@@ -60,6 +60,11 @@
       if($event) {
         $event.preventDefault();
       }
+
+      $analytics.eventTrack('signout', {
+        category: 'authentication',
+        label: 'Sign out'
+      });
 
       // Clear out session/localstorage
       // @link https://github.com/tymondesigns/angular-locker#removing-items-from-locker
@@ -122,15 +127,6 @@
 
       // Reset page scroll on page change
       $window.scrollTo(0,0);
-
-      // Analytics
-      if (typeof(ga) === 'function') {
-        ga('send', 'pageview', {
-          'page': toState.url,
-          //'title': ''
-        });
-      }
-
     });
 
     /**

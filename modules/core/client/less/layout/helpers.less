@@ -117,7 +117,7 @@
   margin: 50px 0;
 }
 
-/*
+/**
  * Middle helper
  *
  * Usage:
@@ -143,6 +143,28 @@
   &.middle-wrapper-horizontal .middle-content > * {
     margin: auto;
   }
+}
+
+/**
+ * Middle wrapper using flex
+ * Since we're using Bootstrap 3, which doesn't yet support flex,
+ * this is here to help with middle align on less important places.
+ * It's more convenient than `middlw-wrapper` which uses table-cell hack.
+ *
+ * Usage:
+ * <div calss="flex-centered">
+ *   <div>...</div>
+ * </div>
+ */
+.flex-centered {
+  height: 100%;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /**

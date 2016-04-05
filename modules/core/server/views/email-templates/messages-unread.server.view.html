@@ -36,11 +36,17 @@
                                       <tr>
                                           <td valign="top" class="textContent">
 
-                                              <p>Hello!</p>
+                                              <p>Hello {{userToName}}!</p>
 
-                                              <p>You have unread messages at Trustroots.</p>
+                                              {% if messageCount > 1 %}
+                                                <p>You have {{ messageCount }} unread messages from <strong><a href="{{urlUserFromProfile}}">{{userFromName}}</a></strong> at Trustroots.</p>
+                                              {% else %}
+                                                <p>You have one unread message from <strong>{{userFromName}}</strong> at Trustroots.</p>
+                                              {% endif %}
 
-                                              <p><a href="{{urlInbox}}" target="_blank">Open your inbox</a></p>
+                                              {% for message in messages %}
+                                                {% include 'partials/message.server.view.html' with {'message': message.content, date: message.created} %}
+                                              {% endfor %}
 
                                           </td>
                                       </tr>
@@ -59,5 +65,7 @@
       </td>
   </tr>
   <!-- // MODULE ROW -->
+
+  {% include 'partials/button.server.view.html' with {'buttonUrl': urlReply, 'buttonTitle': 'Reply to ' + userFromName } %}
 
 {% endblock %}

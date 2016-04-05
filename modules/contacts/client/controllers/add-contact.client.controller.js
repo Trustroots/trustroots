@@ -9,7 +9,7 @@
   function ContactAddController($state, $stateParams, Contact, Authentication, friend, existingContact) {
 
     // If no friend ID defined, go to elsewhere
-    if (!$stateParams.userId) $state.go('profile');
+    if (!$stateParams.userId) $state.go('profile.about');
 
     // ViewModel
     var vm = this;

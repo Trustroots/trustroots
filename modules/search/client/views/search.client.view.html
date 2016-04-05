@@ -9,13 +9,12 @@
              placeholder="Search places"
              ng-focus="search.searchActive = true"
              ng-blur="search.searchActive = false"
-             ng-disabled="search.searchQuerySearching"
              ng-model="search.searchQuery"
-             ng-keypress="search.enterSearchAddress($event)"
-             uib-typeahead="trTitle as address.trTitle for address in search.searchSuggestions($viewValue)"
-             typeahead-on-select="search.mapLocate($item)">
+             tr-location
+             tr-location-center="search.mapCenter"
+             tr-location-bounds="search.mapBounds">
       <span class="input-group-btn">
-        <button type="button" class="btn btn-lg btn-default" ng-click="search.searchAddress()" ng-disabled="search.searchQuerySearching">
+        <button type="button" class="btn btn-lg btn-default" ng-click="search.searchAddress()">
           <i class="icon-search"></i>
         </button>
       </span>
@@ -88,7 +87,7 @@
 
       <!-- Profile -->
       <div class="search-result panel panel-default" ng-if="search.offer.$resolved">
-        <a class="panel-body" ui-sref="profile({username: search.offer.user.username})">
+        <a class="panel-body" ui-sref="profile.about({username: search.offer.user.username})">
           <div tr-avatar data-size="32" data-link="false" data-user="search.offer.user"></div>
           <h4>
             {{ ::search.offer.user.displayName }}

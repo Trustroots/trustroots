@@ -1,30 +1,72 @@
-#profile-editor {
 
-  .profile-firstname,
-  .profile-lastname {
-    .h2();
-    .font-brand-regular();
-    margin: 0 10px 5px 0;
-  }
-  .profile-firstname {
-    margin-right: 4px;
-  }
-  .profile-tagline {
-    width: 100%;
-    height: 27px;
-    clear: both;
-    margin: 5px 0 0 0;
-  }
+// Make space for .profile-edit-navbar-mobile
+.profile-edit {
+  margin-bottom: @navbar-height;
+}
 
-  // Field hover styles
-  // Make it clear we are editing these fields by coloring it when hovered
-  .profile-firstname,
-  .profile-lastname,
-  .profile-tagline {
-    &:focus {
-      background: fade(@brand-primary, 10%);
+// Profile edit navbar, visible only on bigger screens
+.profile-edit-navbar a {
+  color: @text-color;
+}
+
+.profile-edit-description {
+  &,
+  &:focus {
+    min-height: 150px;
+    margin-bottom: 10px;
+    font-size: 15px;
+    line-height: 22px;
+    border-bottom: 1px solid @gray-lighter;
+  }
+  &:focus {
+    border-color: lighten(@brand-primary, 50%);
+  }
+}
+
+.profile-edit-description-progress {
+  width: 100px;
+  margin: 8px 0 0 10px;
+  height: 6px;
+  .progress-bar {
+    background-color: lighten(@gray, 50%);
+    box-shadow: none;
+  }
+}
+
+
+// Profile avatar
+.profile-edit-avatar-choise {
+  border-bottom: 1px solid @gray-lighter;
+  padding-bottom: 25px;
+  margin-bottom: 10px;
+
+  @media (max-width: @screen-sm-max) {
+    text-align: center;
+  }
+  @media (min-width: @screen-md-min) {
+    // For our flexbox helper to work, all these need to be the same height as the avatar
+    .flex-centered {
+      min-height: 128px;
     }
   }
+}
+@media (min-width: @screen-md-min) {
+  .profile-edit-avatar-label {
+    .flex-centered {
+      justify-content: flex-start;
+    }
+  }
+}
+.profile-avatar-choises .profile-edit-avatar-choise:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+
+
+
+/*
+#profile-editor {
 
   .avatar-edit {
     display: block;
@@ -78,116 +120,112 @@
     }
   }//avatar-edit
 
-  /* Profile tabs aren't active, but keep them visible */
-  #profile-tabs {
-    // No hover effect...
-    opacity: 0.4;
-    .nav {
-      > li {
-        > a {
-          &:hover,
-          &:focus {
-            border-color: transparent;
-          }
-        }
-      }
-    }
-  }// #profile-tabs
-
 }
+*/
 
-// Birthdate select inputs need to be a bit smaller, so that they'll fit next to each other at the sidebar
-@media (min-width: @screen-sm-min) {
-  .profile-edit-birthdate {
-    .form-control {
-      font-size: 13px;
-      padding-left: 6px;
-      padding-right: 6px;
-    }
+// When avatar image works as a link
+.avatar-source-link {
+  display: block;
+  position: relative;
+  .square(128px);
+  @media (max-width: @screen-sm-max) {
+    margin-left: auto;
+    margin-right: auto;
   }
-}
-
-/* Choose avatar -modal */
-#profile-avatar-choises {
-  // When avatar image works as a link
-  .avatar-source-link {
+  img {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  span {
+    position: absolute;
     display: block;
-    position: relative;
-    .square(128px);
-    img {
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    line-height: 128px;
+    text-align: center;
+    color: #fff;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    transition: background .2s;
+    background: transparent;
+    font-weight: bold;
+  }
+  &:hover,
+  &:active {
     span {
-      position: absolute;
-      display: block;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      line-height: 128px;
-      text-align: center;
-      color: #fff;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-      transition: background .2s;
-      background: transparent;
-      font-weight: bold;
-    }
-    &:hover,
-    &:active {
-      span {
-        background: rgba(0,0,0,0.1);
-      }
+      background: rgba(0,0,0,0.1);
     }
   }
-  .avatar-source-label {
-    margin: 10px 0 15px 0;
-    input {
-      margin-right: 5px;
-    }
+}
+.avatar-source-label {
+  margin: 10px 0 15px 0;
+  input {
+    margin-right: 5px;
   }
-  .avatar-source-upload {
-    cursor: pointer;
-  }
-  .avatar-preview {
-    .square(128px);
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: 50% 50%;
-    background-color: transparent;
+}
+.avatar-source-upload {
+  cursor: pointer;
+}
+.avatar-source-preview {
+  .square(128px);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+  background-color: transparent;
+  @media (max-width: @screen-sm-max) {
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 
 /**
  * Drag'n'drop area for avatar uploads
  */
-.avatar-source-droparea {
+ /*
+.profile-edit-avatar-upload {
+  display: block;
+  padding: 30px 50px;
+  cursor: pointer;
+}
+*/
+
+
+.profile-edit-avatar-drop {
+  display: block;
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  z-index: (@zindex-modal + 100); // `@zindex-modal` is the highest from Bootstrap
+  border: 10px solid transparent;
+  text-align: center;
+  visibility: hidden;
+  &.visibleDrop {
+    visibility: visible;
+  }
   .drop-instructions {
-    &,
+    opacity: 0;
+    pointer-events: none;
     .drop-instructions-accept,
     .drop-instructions-reject {
       display: none;
     }
     opacity: 1;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    text-align: center;
-    color: #fff;
-    text-shadow: none;
-    cursor: default;
+    cursor: pointer;
   }
   &.acceptDrop {
-    background: @filedrop-accepted;
+    border-color: @filedrop-accepted;
+    background-color: lighten(@filedrop-accepted, 40%);
     .drop-instructions-accept {
       display: block;
     }
   }
   &.rejectDrop {
-    background: @filedrop-rejected;
+    border-color: @filedrop-rejected;
+    background-color: lighten(@filedrop-rejected, 40%);
     .drop-instructions-reject {
       display: block;
       cursor: not-allowed;
@@ -198,12 +236,8 @@
   &.acceptDrop {
     user-select: none;
     opacity: 1;
-    .modal-footer,
-    .modal-body {
-      opacity: 0;
-    }
     .drop-instructions {
-      display: block;
+      opacity: 1;
     }
   }
 }
@@ -218,11 +252,13 @@
   }
   // Consists the service URL
   label.input-group-addon {
-    padding-left: 0;
-    padding-right: 0;
     border-left: 0;
     border-right: 0;
     color: @input-color;
+    padding-left: 0;
+    @media (min-width: @screen-sm-min) {
+      padding-right: 0;
+    }
   }
   // Username input
   input {

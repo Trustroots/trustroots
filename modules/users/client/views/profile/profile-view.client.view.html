@@ -1,4 +1,43 @@
-<section class="container container-spacer" id="profile">
+<!-- Top Navigation for small screens -->
+<!-- When looking at own profile -->
+<nav class="navbar navbar-white navbar-fixed-top visible-xs-block profile-navbar-mobile" ng-if="app.user._id === profileCtrl.profile._id">
+  <div class="container">
+    <ul class="nav navbar-nav" role="navigation">
+      <li><a ui-sref="profile-edit.about">Edit your profile</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Top Navigation for small screens -->
+<!-- When looking at somebody else's profile -->
+<nav class="navbar navbar-white navbar-fixed-top visible-xs-block profile-navbar-mobile" ng-if="app.user._id !== profileCtrl.profile._id">
+  <div class="container">
+    <ul class="nav navbar-nav" role="navigation">
+      <li><a ui-sref="messageThread({username: profileCtrl.profile.username})">Send a message</a></li>
+      <li>
+        <a ui-sref="contactAdd({userId: profileCtrl.profile._id})" ng-if="profileCtrl.contact.$resolved && !profileCtrl.contact._id">Add contact</a>
+        <a ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id" tr-contact-remove="profileCtrl.contact">
+          <span ng-if="profileCtrl.contact.confirmed" uib-tooltip="Contacts since {{ ::profileCtrl.contact.created | date:'mediumDate' }}" tooltip-placement="bottom">Remove contact</span>
+          <span ng-if="!profileCtrl.contact.confirmed" uib-tooltip="Request sent {{ ::profileCtrl.contact.created | date:'mediumDate' }}" tooltip-placement="bottom">Delete contact request</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Bottom Navigation for small screens -->
+<nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block profile-navbar-mobile">
+  <div class="container">
+    <ul class="nav navbar-nav">
+      <li ui-sref-active="active"><a ui-sref="profile.overview">Overview</a></li>
+      <li ui-sref-active="active"><a ui-sref="profile.about">About</a></li>
+      <li ui-sref-active="active"><a ui-sref="profile.accommodation">Hosting</a></li>
+      <li ui-sref-active="active"><a ui-sref="profile.contacts">Contacts</a></li>
+    </ul>
+  </div>
+</nav>
+
+<section class="container container-spacer profile-view">
 
   <!-- Loading -->
   <div class="row content-wait" ng-if="profileCtrl.profile && !profileCtrl.profile.$resolved">
@@ -36,24 +75,15 @@
     </div>
 
     <div class="row">
-      <div class="col-xs-12 text-center visible-xs-block">
-        <a tr-avatar data-user="profileCtrl.profile" data-size="512" data-link="false" class="visible-xs-block avatar-circle" ng-click="profileCtrl.biggerAvatar = !profileCtrl.biggerAvatar" ng-class="{'profile-avatar-lg': profileCtrl.biggerAvatar}"></a>
-        <h2 class="profile-name" ng-show="profileCtrl.profile.displayName" ng-bind="profileCtrl.profile.displayName"></h2><br>
-        <h4 class="profile-username">@{{ profileCtrl.profile.displayUsername || profileCtrl.profile.username }}</h4><br>
-        <p class="profile-tagline" ng-show="profileCtrl.profile.tagline" ng-bind="profileCtrl.profile.tagline"></p>
-      </div>
-    </div>
 
-    <div class="row">
-
-      <div class="col-sm-3 hidden-xs" ng-include="'/modules/users/views/profile/view-profile-sidebar.client.view.html?c=' + app.cacheBust"></div>
+      <div class="col-sm-3 hidden-xs" ng-include="'/modules/users/views/profile/profile-view-basics.client.view.html?c=' + app.cacheBust"></div>
 
       <div class="col-sm-9">
 
-        <div class="row">
-          <div class="col-md-6 hidden-xs">
+        <div class="row hidden-xs">
+          <div class="col-md-6">
               <h2 class="profile-name" ng-if="profileCtrl.profile.displayName" ng-bind="profileCtrl.profile.displayName"></h2>
-              <h4 class="profile-username" ng-if="profileCtrl.profile.username">@{{ profileCtrl.profile.displayUsername || profileCtrl.profile.username }}</h4>
+              <h4 class="text-muted profile-username" ng-if="profileCtrl.profile.username">@{{ profileCtrl.profile.displayUsername || profileCtrl.profile.username }}</h4>
               <div class="profile-tagline" ng-if="profileCtrl.profile.tagline" ng-bind="profileCtrl.profile.tagline"></div>
           </div>
 
@@ -61,7 +91,7 @@
           <div class="col-md-6 profile-actions" ng-if="app.user._id === profileCtrl.profile._id">
             <small class="profile-edit-help text-muted hidden-xs">This is your profile as others see it.</small>
             &nbsp;
-            <a ui-sref="profile-edit" class="btn btn-primary">Edit your profile</a>
+            <a ui-sref="profile-edit.about" class="btn btn-primary">Edit your profile</a>
           </div>
 
           <!-- When looking at somebody else's profile -->
@@ -93,12 +123,13 @@
         <!-- Profile tabs -->
         <div class="row">
           <div class="col-xs-12">
-            <uib-tabset id="profile-tabs" type="pills">
-              <!-- Note that using ng-class causes error here -->
-              <uib-tab ng-repeat="tab in ::profileCtrl.tabs track by tab.title" class="{{ ::tab.onlySmallScreen === true ? 'visible-xs-block' : '' }}" heading="{{ ::tab.title }}" active="tab.active" select="profileCtrl.tabSelected = tab.path">
-                <div ng-if="tab.active" ng-include="::tab.content + '?c=' + app.cacheBust"></div>
-              </uib-tab>
-            </uib-tabset>
+            <div class="profile-tabs hidden-xs">
+              <ul class="nav nav-pills">
+                <li ui-sref-active="active"><a ui-sref="profile.about">About</a></li>
+                <li ui-sref-active="active"><a ui-sref="profile.contacts">Contacts</a></li>
+              </ul>
+            </div>
+            <div ui-view></div>
           </div>
         </div>
         <!-- /Profile tabs -->

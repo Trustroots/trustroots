@@ -25,6 +25,12 @@
         <blockquote class="profile-quote" ng-if="!profileCtrl.profile.description || profileCtrl.profile.description === ''">
           “Everyone is necessarily the hero of his own life story.”
         </blockquote>
+
+      </div>
+
+      <!-- User watching their own profile and it's too short -->
+      <div class="panel-footer" ng-if="app.user._id === profileCtrl.profile._id && (!profileCtrl.profile.description || (profileCtrl.profile.description|plainTextLength) < app.appSettings.profileMinimumLength)">
+        Your profile description should be longer so that you can send messages. <a ui-sref="profile-edit.about">Fill your profile</a>
       </div>
     </div>
     <!-- /About me -->

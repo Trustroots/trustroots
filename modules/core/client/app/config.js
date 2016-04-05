@@ -3,6 +3,7 @@
 // Init the application configuration module for AngularJS application
 var AppConfig = (function() {
   // Init module configuration options
+  var appEnv = window.env || 'production';
   var appModuleName = 'trustroots';
   var appModuleVendorDependencies = [
                                               'ngResource',
@@ -10,12 +11,15 @@ var AppConfig = (function() {
                                               'ngTouch',
                                               'ngSanitize',
                                               'ngMessageFormat',
+                                              'angulartics',
                                               'ui.router',
+                                              'ui.bootstrap.dateparser',
                                               'ui.bootstrap.buttons',
                                               'ui.bootstrap.collapse',
                                               'ui.bootstrap.dropdown',
                                               'ui.bootstrap.modal',
                                               'ui.bootstrap.popover',
+                                              'ui.bootstrap.progressbar',
                                               'ui.bootstrap.tabs',
                                               'ui.bootstrap.tooltip',
                                               'ui.bootstrap.typeahead',
@@ -29,8 +33,18 @@ var AppConfig = (function() {
                                               'angular-loading-bar',
                                               'trTrustpass',
                                               'angular-mailcheck',
-                                              'angular-locker'
+                                              'angular-locker',
+                                              'angular-confirm'
                                             ];
+
+  // Load different service dependency for Angulartics depending on environment
+  // @link https://github.com/angulartics/angulartics
+  if(appEnv === 'production') {
+    appModuleVendorDependencies.push('angulartics.google.analytics');
+  }
+  else {
+    appModuleVendorDependencies.push('angulartics.debug');
+  }
 
   // Add a new vertical module
   var registerModule = function(moduleName, dependencies) {
@@ -42,6 +56,7 @@ var AppConfig = (function() {
   };
 
   return {
+    appEnv: appEnv,
     appModuleName: appModuleName,
     appModuleVendorDependencies: appModuleVendorDependencies,
     registerModule: registerModule
