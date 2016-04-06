@@ -6,9 +6,11 @@
 
 var path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
-    config = require(path.resolve('./config/config')),
-    userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
+    emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
+    userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
+    config = require(path.resolve('./config/config')),
     sanitizeHtml = require('sanitize-html'),
     htmlToText = require('html-to-text'),
     nodemailer = require('nodemailer'),
@@ -83,15 +85,33 @@ exports.add = function(req, res) {
     // Prepare HTML email for friend
     function(contact, messageHTML, messagePlain, friend, done) {
 
-      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
-      var renderVars = {
-        name: friend.displayName,
-        message: messageHTML,
-        meName: req.user.displayName,
-        url: url,
-        meURL: url + '/profile/' + req.user.username,
-        urlConfirm: url + '/contact-confirm/' + contact._id,
-      };
+      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
+          meURL = url + '/profile/' + req.user.username,
+          urlConfirm = url + '/contact-confirm/' + contact._id;
+
+      var renderVars = emailsHandler.addEmailBaseTemplateParams(
+        req.headers.host,
+        {
+          name: friend.displayName,
+          message: messageHTML,
+          meName: req.user.displayName,
+          meURLPlainText: meURL,
+          meURL: analyticsHandler.appendUTMParams(meURL, {
+            source: 'transactional-email',
+            medium: 'email',
+            campaign: 'confirm-contact',
+            content: 'profile'
+          }),
+          urlConfirmPlainText: urlConfirm,
+          urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
+            source: 'transactional-email',
+            medium: 'email',
+            campaign: 'confirm-contact',
+            content: 'confirm-contact'
+          })
+        },
+        'confirm-contact'
+      );
 
       res.render(path.resolve('./modules/core/server/views/email-templates/confirm-contact'), renderVars, function(err, emailHTML) {
         done(err, contact, emailHTML, messagePlain, friend, renderVars);
