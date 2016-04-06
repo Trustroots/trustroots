@@ -6,6 +6,8 @@
    *
    * Usage:
    * <input tr-focustip="'Text to appear under input'" type="text">
+   *
+   * Note that currently this directive uses isolated scope, so you can't combine it with other isolate scope directives.
    */
   angular
     .module('core')
