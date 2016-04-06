@@ -25,6 +25,9 @@ exports.invokeRolesPolicies = function() {
     }, {
       resources: '/api/messages-read',
       permissions: []
+    }, {
+      resources: '/api/messages-count',
+      permissions: []
     }]
   }, {
     roles: ['user'],
@@ -37,6 +40,9 @@ exports.invokeRolesPolicies = function() {
     }, {
       resources: '/api/messages-read',
       permissions: ['post']
+    }, {
+      resources: '/api/messages-count',
+      permissions: ['get']
     }]
   }]);
 };

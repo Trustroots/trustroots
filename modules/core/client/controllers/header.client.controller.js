@@ -21,15 +21,20 @@
       vm.isCollapsed = !vm.isCollapsed;
     }
 
-    // Perform actions at page change
-    $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+    activate();
 
-      // Collapsing the menu after navigation
-      vm.isCollapsed = false;
+    function activate() {
 
-      // Hide header at certain pages
-      vm.isHidden = (angular.isDefined(toState.headerHidden) && toState.headerHidden === true) ? true : false;
-    });
+      // Perform actions at page change
+      $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+
+        // Collapsing the menu after navigation
+        vm.isCollapsed = false;
+
+        // Hide header at certain pages
+        vm.isHidden = (angular.isDefined(toState.headerHidden) && toState.headerHidden === true) ? true : false;
+      });
+    }
 
   }
 

@@ -1,0 +1,27 @@
+.notification-badge {
+  .font-brand-regular();
+  background-color: @notification-badge-bg;
+  color: @notification-badge-text;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, .4);
+  border-radius: 4px;
+  line-height: 1.3;
+  font-size: 10px;
+  min-height: 13px;
+  padding: 1px 3px;
+  margin: 0 0 0 5px;
+  display: inline-block;
+  @media (min-width: @grid-float-breakpoint) {
+    opacity: 1;
+    display: block;
+    position: absolute;
+    top: 8px;
+    right: 5px;
+    &.ng-hide-add,
+    &.ng-hide-remove {
+      transition: all linear 0.1s;
+    }
+    &.ng-hide {
+      opacity: 0;
+    }
+  }
+}

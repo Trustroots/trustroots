@@ -15,7 +15,7 @@
     .controller('MessagesThreadController', MessagesThreadController);
 
   /* @ngInject */
-  function MessagesThreadController($scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, $filter, $analytics, Authentication, Messages, MessagesRead, messageCenterService, locker, appSettings, userTo, cfpLoadingBar) {
+  function MessagesThreadController($rootScope, $scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, $filter, $analytics, Authentication, Messages, MessagesRead, messageCenterService, locker, appSettings, userTo, cfpLoadingBar) {
 
     // Go back to inbox on these cases
     // - No recepient defined
@@ -58,6 +58,8 @@
      * Initialize controller
      */
     function activate() {
+      // Tell unread-messages directive to sync itself
+      $rootScope.$broadcast('syncUnreadMessagesCount');
 
       /**
        * Is local/sessionStorage supported? This might fail in browser's incognito mode
@@ -175,10 +177,10 @@
           addMessages(data);
           setScrollPosition(oldHeight);
         });
-        
+
         $analytics.eventTrack('thread-pagination', {
           category: 'messages.thread',
-          label: 'Message thread page ' + vm.messageHandler.nextPage
+          label: 'Message thread page ' + (vm.messageHandler.nextPage ? vm.messageHandler.nextPage.page : 0)
         });
       }
     }
@@ -217,6 +219,8 @@
         messageIds: flaggedAsRead
       }, function(response) {
         flaggedAsRead = [];
+        // Tell app controller to sync this counter
+        $rootScope.$broadcast('syncUnreadMessagesCount');
       });
     }
 

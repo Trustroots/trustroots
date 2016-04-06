@@ -41,6 +41,78 @@
     // Includes a hash of latest git commit
     vm.cacheBust = vm.appSettings ? vm.appSettings.commit || '' : '';
 
+    activate();
+
+    /**
+     * Initialize controller
+     */
+    function activate() {
+
+      /**
+       * Snif and apply user changes
+       */
+      $scope.$on('userUpdated', function() {
+        vm.user = Authentication.user;
+      });
+
+      /**
+       * Before page change
+       */
+      $scope.$on('$stateChangeStart', function(event, toState, toParams, fromState, fromParams) {
+
+        // Redirect to login page if no user
+        if(toState.requiresAuth && !Authentication.user) {
+          // Cancel stateChange
+          event.preventDefault();
+
+          // Save previous state
+          // See modules/users/client/controllers/authentication.client.controller.js for how they're used
+          $rootScope.signinState = toState.name;
+          $rootScope.signinStateParams = toParams;
+
+          // Show a special signup ad for certain pages if user isn't authenticated
+          // (Normally we just splash a signup page at this point)
+          if(toState.name === 'profile') {
+            $state.go('profile-signup');
+          }
+          else if(toState.name === 'search') {
+            $state.go('search-signin', toParams || {});
+          }
+          // Or just continue to the signup page
+          else {
+            $state.go('signin', {'continue': true});
+          }
+        }
+
+      });
+
+      /**
+       * After page change
+       */
+      $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+
+        // Set page title
+        vm.pageTitle = (toState.title) ? toState.title + ' - ' + $window.title : $window.title;
+
+        // Reset photo copyrights on each page change
+        // trBoards directive hits in after this and we'll fill this with potential photo credits
+        vm.photoCredits = {};
+        vm.photoCreditsCount = 0;
+
+        // Reset page scroll on page change
+        $window.scrollTo(0,0);
+      });
+
+      /**
+       * Sniff and apply photo credit changes
+       */
+      $scope.$on('photoCreditsUpdated', function(scope, photo) {
+        angular.extend(vm.photoCredits, photo);
+        vm.photoCreditsCount++;
+      });
+
+    }
+
     /**
      * Determine where to direct user from "home" links
      */
@@ -74,68 +146,6 @@
       $window.top.location.href  = '/api/auth/signout';
     }
 
-    /**
-     * Snif and apply user changes
-     */
-    $scope.$on('userUpdated', function() {
-      vm.user = Authentication.user;
-    });
-
-    /**
-     * Before page change
-     */
-    $scope.$on('$stateChangeStart', function(event, toState, toParams, fromState, fromParams) {
-
-      // Redirect to login page if no user
-      if(toState.requiresAuth && !Authentication.user) {
-        // Cancel stateChange
-        event.preventDefault();
-
-        // Save previous state
-        // See modules/users/client/controllers/authentication.client.controller.js for how they're used
-        $rootScope.signinState = toState.name;
-        $rootScope.signinStateParams = toParams;
-
-        // Show a special signup ad for certain pages if user isn't authenticated
-        // (Normally we just splash a signup page at this point)
-        if(toState.name === 'profile') {
-          $state.go('profile-signup');
-        }
-        else if(toState.name === 'search') {
-          $state.go('search-signin', toParams || {});
-        }
-        // Or just continue to the signup page
-        else {
-          $state.go('signin', {'continue': true});
-        }
-      }
-
-    });
-
-    /**
-     * After page change
-     */
-    $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
-
-      // Set page title
-      vm.pageTitle = (toState.title) ? toState.title + ' - ' + $window.title : $window.title;
-
-      // Reset photo copyrights on each page change
-      // trBoards directive hits in after this and we'll fill this with potential photo credits
-      vm.photoCredits = {};
-      vm.photoCreditsCount = 0;
-
-      // Reset page scroll on page change
-      $window.scrollTo(0,0);
-    });
-
-    /**
-     * Sniff and apply photo credit changes
-     */
-    $scope.$on('photoCreditsUpdated', function(scope, photo) {
-      angular.extend(vm.photoCredits, photo);
-      vm.photoCreditsCount++;
-    });
 
   }
 
