@@ -83,8 +83,9 @@
                      uib-tooltip="{{ (userForm.email.$error.email && userForm.email.$dirty) ? 'Please give a valid email.' : ''}}"
                      tooltip-trigger="blur"
                      tooltip-placement="top"
-                     tooltip-append-to-body="true"
-                     tr-focustip="'We will not reveal this to anyone.'">
+                     tooltip-append-to-body="true">
+                     <!-- Temporarily disabled due isolate scope errors with mailcheck:
+                     tr-focustip="'We will not reveal this to anyone.'"> -->
             </div>
           </div>
           <div class="form-group" ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}">
