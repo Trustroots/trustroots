@@ -18,6 +18,9 @@ module.exports = function(app) {
   app.route('/api/messages-read').all(messagesPolicy.isAllowed)
     .post(messages.markRead);
 
+  app.route('/api/messages-count').all(messagesPolicy.isAllowed)
+    .get(messages.messagesCount);
+
   // Finish by binding the message middleware
   app.param('messageUserId', messages.threadByUser);
 };

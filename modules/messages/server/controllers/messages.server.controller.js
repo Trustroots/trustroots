@@ -33,6 +33,14 @@ var setLinkHeader = function(req, res, pageCount) {
  * List of threads aka inbox
  */
 exports.inbox = function(req, res) {
+
+  // No user
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
   Thread.paginate(
     {
       // Returns only threads where currently authenticated user is participating member
@@ -103,6 +111,13 @@ exports.inbox = function(req, res) {
  * Send a message
  */
 exports.send = function(req, res) {
+
+  // No user
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
 
   // Not a valid ObjectId
   if(!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
@@ -415,6 +430,12 @@ exports.threadByUser = function(req, res, next, userId) {
  */
 exports.markRead = function(req, res) {
 
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
   var messages = [];
 
   // Produce an array of messages to be updated
@@ -450,4 +471,29 @@ exports.markRead = function(req, res) {
 
   });
 
+};
+
+
+/**
+ * Get unread message count for currently logged in user
+ */
+exports.messagesCount = function(req, res) {
+
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  Message.count({
+    read: false,
+    userTo: req.user._id
+  }, function(err, unreadCount) {
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
+      });
+    }
+    return res.json({unread: parseInt(unreadCount) || 0});
+  });
 };
