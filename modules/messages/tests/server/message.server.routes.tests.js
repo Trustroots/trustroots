@@ -629,7 +629,10 @@ describe('Message CRUD tests', function() {
                   .expect(200)
                   .end(function(countReadErr, countReadRes) {
 
-                    countReadRes.body.unread.should.equal(2);
+                    // Although we saved two messages,
+                    // but because we saved them to same thread,
+                    // we should get `1` as a count.
+                    countReadRes.body.unread.should.equal(1);
 
                     // Call the assertion callback
                     return done(countReadErr);

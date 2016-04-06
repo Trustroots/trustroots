@@ -485,7 +485,7 @@ exports.messagesCount = function(req, res) {
     });
   }
 
-  Message.count({
+  Thread.count({
     read: false,
     userTo: req.user._id
   }, function(err, unreadCount) {
