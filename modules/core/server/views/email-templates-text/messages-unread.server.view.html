@@ -3,7 +3,7 @@ Hello {{userToName}}!
 {% if messageCount > 1 %}You have {{ messageCount }} unread messages from {{userFromName}} at Trustroots.
 {% else %}You have one unread message from {{userFromName}} at Trustroots.
 {% endif %}
-To reply, go to: {{urlReply}}
+To reply, go to: {{urlReplyPlainText}}
 
 --------------------------------------------------------------------------------
 {% for message in messages %}
@@ -15,6 +15,6 @@ To reply, go to: {{urlReply}}
 
 Do not reply this email directly.
 
-To reply, go to: {{urlReply}}
+To reply, go to: {{urlReplyPlainText}}
 
-See their profile: {{urlUserFromProfile}}
+See their profile: {{urlUserFromProfilePlainText}}

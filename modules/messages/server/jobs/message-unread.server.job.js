@@ -20,6 +20,8 @@
 var _ = require('lodash'),
     path = require('path'),
     config = require(path.resolve('./config/config')),
+    analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
+    emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
     nodemailer = require('nodemailer'),
     async = require('async'),
     swig = require('swig'),
@@ -174,21 +176,40 @@ exports.checkUnreadMessages = function(agenda) {
             // Generate mail subject
             var mailSubject = userFrom.displayName + ' wrote you from Trustroots';
 
-            // Variables passed to templates
-            var mailVariables = {
-              url: url,
-              urlReply: url + '/messages/' + userFrom.username,
-              urlUserFromProfile: url + '/profile/' + userFrom.username,
-              mailTitle: mailSubject,
-              messageCount: messageCount,
-              messages: notification.messages,
-              userFromName: userFrom.displayName,
-              userToName: userTo.displayName
-            };
+            // URLs to use at email templates
+            var urlUserFromProfile = url + '/profile/' + userFrom.username,
+                urlReply = url + '/messages/' + userFrom.username;
+
+            // Variables passed to email text/html templates
+            var renderVars = emailsHandler.addEmailBaseTemplateParams(
+              config.domain,
+              {
+                mailTitle: mailSubject,
+                messageCount: messageCount,
+                messages: notification.messages,
+                userFromName: userFrom.displayName,
+                userToName: userTo.displayName,
+                urlReplyPlainText: urlReply,
+                urlReply: analyticsHandler.appendUTMParams(urlReply, {
+                  source: 'transactional-email',
+                  medium: 'email',
+                  campaign: 'messages-unread',
+                  content: 'reply-to'
+                }),
+                urlUserFromProfilePlainText: urlUserFromProfile,
+                urlUserFromProfile: analyticsHandler.appendUTMParams(urlUserFromProfile, {
+                  source: 'transactional-email',
+                  medium: 'email',
+                  campaign: 'messages-unread',
+                  content: 'profile'
+                })
+              },
+              'messages-unread'
+            );
 
             // Generate plain text and html versions of the email
-            var mailBodyText = swig.renderFile(path.resolve('./modules/core/server/views/email-templates-text/messages-unread.server.view.html'), mailVariables);
-            var mailBodyHtml = swig.renderFile(path.resolve('./modules/core/server/views/email-templates/messages-unread.server.view.html'), mailVariables);
+            var mailBodyText = swig.renderFile(path.resolve('./modules/core/server/views/email-templates-text/messages-unread.server.view.html'), renderVars);
+            var mailBodyHtml = swig.renderFile(path.resolve('./modules/core/server/views/email-templates/messages-unread.server.view.html'), renderVars);
 
             smtpTransport.sendMail({
                 to: {

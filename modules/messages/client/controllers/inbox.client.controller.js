@@ -6,7 +6,7 @@
     .controller('InboxController', InboxController);
 
   /* @ngInject */
-  function InboxController($state, $analytics, Authentication, Messages) {
+  function InboxController($rootScope, $state, $analytics, Authentication, Messages) {
 
     // ViewModel
     var vm = this;
@@ -22,6 +22,13 @@
     vm.messageHandler.fetchMessages().$promise.then(function(data){
       addMessages(data);
     });
+
+    activate();
+
+    function activate() {
+      // Tell unread-messages directive to sync itself
+      $rootScope.$broadcast('syncUnreadMessagesCount');
+    }
 
     // Appends returned messages to model
     function addMessages(data){

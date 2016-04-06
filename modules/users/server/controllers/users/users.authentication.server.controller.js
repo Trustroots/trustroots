@@ -6,6 +6,8 @@
 var _ = require('lodash'),
     path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
+    emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
     config = require(path.resolve('./config/config')),
     passport = require('passport'),
     nodemailer = require('nodemailer'),
@@ -97,14 +99,24 @@ exports.signup = function(req, res) {
     // Prepare HTML email
     function(user, done) {
 
-      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
-      var renderVars = {
-        name: user.displayName,
-        email: user.email,
-        ourMail: config.mailer.from,
-        url: url,
-        urlConfirm: url + '/confirm-email/' + user.emailToken + '?signup',
-      };
+      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
+          urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup';
+
+      var renderVars = emailsHandler.addEmailBaseTemplateParams(
+        req.headers.host,
+        {
+          name: user.displayName,
+          email: user.email,
+          ourMail: config.mailer.from,
+          urlConfirmPlainText: urlConfirm,
+          urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
+            source: 'transactional-email',
+            medium: 'email',
+            campaign: 'confirm-email'
+          })
+        },
+        'confirm-email'
+      );
 
       res.render(path.resolve('./modules/core/server/views/email-templates/signup'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, user, renderVars, url);

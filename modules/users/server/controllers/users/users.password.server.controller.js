@@ -5,6 +5,8 @@
  */
 var path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
+    emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
     config = require(path.resolve('./config/config')),
     passport = require('passport'),
     nodemailer = require('nodemailer'),
@@ -71,14 +73,24 @@ exports.forgot = function(req, res, next) {
     // Prepare HTML email
     function(token, user, done) {
 
-      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
-      var renderVars = {
-        name: user.displayName,
-        email: user.email,
-        ourMail: config.mailer.from,
-        urlConfirm: url + '/api/auth/reset/' + token,
-        url: url
-      };
+      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
+          urlConfirm = url + '/api/auth/reset/' + token;
+
+      var renderVars = emailsHandler.addEmailBaseTemplateParams(
+        req.headers.host,
+        {
+          name: user.displayName,
+          email: user.email,
+          ourMail: config.mailer.from,
+          urlConfirmPlainText: urlConfirm,
+          urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
+            source: 'transactional-email',
+            medium: 'email',
+            campaign: 'reset-password'
+          })
+        },
+        'reset-password'
+      );
 
       res.render(path.resolve('./modules/core/server/views/email-templates/reset-password'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, user, renderVars);
@@ -140,7 +152,18 @@ exports.validateResetToken = function(req, res) {
       return res.redirect('/password/reset/invalid');
     }
 
-    res.redirect('/password/reset/' + req.params.token);
+    var passwordResetUrl = '/password/reset/' + req.params.token;
+
+    // Re-apply possible UTM variables to the redirect URL
+    if(req.query && req.query.utm_source && req.query.utm_medium && req.query.utm_campaign) {
+      passwordResetUrl = analyticsHandler.appendUTMParams(passwordResetUrl, {
+        source: req.query.utm_source,
+        medium: req.query.utm_medium,
+        campaign: req.query.utm_campaign
+      });
+    }
+
+    res.redirect(passwordResetUrl);
   });
 };
 
@@ -197,11 +220,13 @@ exports.reset = function(req, res, next) {
     // Prepare HTML email
     function(user, done) {
 
-      var renderVars = {
-        name: user.displayName,
-        ourMail: config.mailer.from,
-        url: (config.https ? 'https' : 'http') + '://' + req.headers.host
-      };
+      var renderVars = emailsHandler.addEmailBaseTemplateParams(
+        req.headers.host,
+        {
+          name: user.displayName
+        },
+        'reset-password-confirm'
+      );
 
       res.render(path.resolve('./modules/core/server/views/email-templates/reset-password-confirm'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, user, renderVars);
@@ -324,11 +349,13 @@ exports.changePassword = function(req, res) {
     // Prepare HTML email
     function(user, done) {
 
-      var renderVars = {
-        name: user.displayName,
-        ourMail: config.mailer.from,
-        url: (config.https ? 'https' : 'http') + '://' + req.headers.host
-      };
+      var renderVars = emailsHandler.addEmailBaseTemplateParams(
+        req.headers.host,
+        {
+          name: user.displayName
+        },
+        'reset-password-confirm'
+      );
 
       res.render(path.resolve('./modules/core/server/views/email-templates/reset-password-confirm'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, user, renderVars);

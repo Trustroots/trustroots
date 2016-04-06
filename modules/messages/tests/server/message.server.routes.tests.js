@@ -537,6 +537,108 @@ describe('Message CRUD tests', function() {
           }); // newThread
 
       }); // newMessage
+
+  });
+
+  it('should not be able to check for unread message count if not logged in', function(done) {
+    agent.get('/api/messages-count')
+      .expect(403)
+      .end(function(countReadErr, countReadRes) {
+
+        countReadRes.body.message.should.equal('Forbidden.');
+
+        // Call the assertion callback
+        return done(countReadErr);
+      });
+  });
+
+  it('should be able to check for unread message count if logged in', function(done) {
+
+    // Sign in
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) done(signinErr);
+
+        agent.get('/api/messages-count')
+          .expect(200)
+          .end(function(countReadErr, countReadRes) {
+
+            countReadRes.body.unread.should.equal(0);
+
+            // Call the assertion callback
+            return done(countReadErr);
+          });
+      });
+  });
+
+  it('should be able to check for unread message count if logged in', function(done) {
+
+      // Save message to this user from other user
+      var newMessage1 = new Message({
+        content: 'Enabling the latent trust between humans.',
+        userFrom: userToId,
+        userTo: userFromId,
+        created: new Date(),
+        read: false,
+        notified: true
+      });
+      var newMessage2 = new Message({
+        content: 'Another one!',
+        userFrom: userToId,
+        userTo: userFromId,
+        created: new Date(),
+        read: false,
+        notified: true
+      });
+
+      newMessage1.save(function(newMessage1Err, newMessage1Res) {
+
+        // Handle save error
+        if (newMessage1Err) done(newMessage1Err);
+
+        newMessage2.save(function(newMessage2Err, newMessage2Res) {
+
+          // Handle save error
+          if (newMessage2Err) done(newMessage2Err);
+
+          var newThread = new Thread({
+            userFrom: userToId,
+            userTo: userFromId,
+            updated: new Date(),
+            message: newMessage2Res._id,
+            read: false
+          });
+
+          newThread.save(function(newThreadErr, newThreadRes) {
+
+            // Handle save error
+            if (newThreadErr) done(newThreadErr);
+
+            // Sign in
+            agent.post('/api/auth/signin')
+              .send(credentials)
+              .expect(200)
+              .end(function(signinErr, signinRes) {
+                // Handle signin error
+                if (signinErr) done(signinErr);
+
+                agent.get('/api/messages-count')
+                  .expect(200)
+                  .end(function(countReadErr, countReadRes) {
+
+                    countReadRes.body.unread.should.equal(2);
+
+                    // Call the assertion callback
+                    return done(countReadErr);
+                  });
+              });
+          });
+        });
+    });
+
   });
 
   afterEach(function(done) {
