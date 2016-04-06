@@ -7,6 +7,8 @@ var _ = require('lodash'),
     path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
+    emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
     config = require(path.resolve('./config/config')),
     nodemailer = require('nodemailer'),
     async = require('async'),
@@ -419,13 +421,23 @@ exports.update = function(req, res) {
     // If no token, user didn't change email = pass this phase
     if(token) {
 
-      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host;
-      var renderVars = {
-        url: url,
-        name: user.displayName,
-        email: user.emailTemporary,
-        urlConfirm: url + '/confirm-email/' + token
-      };
+      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
+          urlConfirm = url + '/confirm-email/' + token;
+
+      var renderVars = emailsHandler.addEmailBaseTemplateParams(
+        req.headers.host,
+        {
+          name: user.displayName,
+          email: user.emailTemporary,
+          urlConfirmPlainText: urlConfirm,
+          urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
+            source: 'transactional-email',
+            medium: 'email',
+            campaign: 'reset-password'
+          })
+        },
+        'reset-password'
+      );
 
       res.render(path.resolve('./modules/core/server/views/email-templates-text/email-confirmation'), renderVars, function(err, emailPlain) {
         done(err, emailPlain, user, renderVars);

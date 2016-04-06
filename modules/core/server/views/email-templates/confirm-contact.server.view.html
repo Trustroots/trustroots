@@ -36,7 +36,7 @@
                                           <td valign="top" class="textContent">
 
                                               <p>Hey {{name}}!</p>
-                                              <p><a href="{{meURL}}" target="_blank">{{meName}}</a> would like to connect with you on Trustroots.</p>
+                                              <p><a href="{{meURL}}">{{meName}}</a> would like to connect with you on Trustroots.</p>
 
                                               {% if message %}
                                               <div class="message">
@@ -65,6 +65,6 @@
 
   {% include 'partials/button.server.view.html' with {'buttonUrl': urlConfirm, 'buttonTitle': 'See connection'} %}
 
-  {% include 'partials/copypasteurl.server.view.html' with {'url': urlConfirm} %}
-  
+  {% include 'partials/copypasteurl.server.view.html' with {'url': urlConfirmPlainText} %}
+
 {% endblock %}

@@ -173,9 +173,9 @@
                                                               <tr>
                                                                   <td valign="middle" align="center" style="text-align:center">
                                                                     <center>
-                                                                      {% if url %}<a href="{{url}}" target="_blank" class="logo-link">{% endif %}
+                                                                      {% if headerUrl %}<a href="{{headerUrl}}" target="_blank" class="logo-link">{% endif %}
                                                                           <h2 class="logo-text">TRUSTROOTS</h2>
-                                                                      {% if url %}</a>{% endif %}
+                                                                      {% if headerUrl %}</a>{% endif %}
                                                                     </center>
                                                                   </td>
                                                               </tr>
@@ -275,14 +275,12 @@
                                                           <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                                               <tr>
                                                                   <td valign="top" class="footerContent">
-
-                                                                      Remember, I'm just a little mail robot. Don't reply this email directly.<br>
-                                                                      {% if url %}<a href="{{url}}/support">Contact us</a> if you want to talk to a human.{% endif %}
-
-                                                                      <br/><br/>
-
-                                                                      {% if url %}<a href="{{url}}">{% endif %}Trustroots{% if url %}</a>{% endif %}
-
+                                                                      <p>
+                                                                        Remember, I'm just a little mail robot. Don't reply this email directly.<br>
+                                                                        {% if supportUrl %}<a href="{{supportUrl}}">Contact us</a> if you want to talk to a human.{% endif %}
+                                                                        <br/><br/>
+                                                                        {% if footerUrl %}<a href="{{footerUrl}}">{% endif %}Trustroots{% if footerUrl %}</a>{% endif %}
+                                                                      </p>
                                                                   </td>
                                                               </tr>
                                                           </table>
