@@ -24,15 +24,29 @@
 
       scope.unread = 0;
 
-      // Check for unread messages only if user is authenticated
-      if(Authentication.user) {
-        activate();
-      }
+      activate();
 
       /**
        * Initialize checking for unread messages
        */
       function activate() {
+
+        if(!Authentication.user || !Authentication.user.public) {
+          // If user wasn't authenticated or public, set up watch
+          var activationWatch = scope.$on('userUpdated', function(user) {
+            // Did user become public with that update?
+            if(Authentication.user.public) {
+              // Remove this watch
+              activationWatch();
+              // Init activation
+              activate();
+            }
+          });
+
+          // Check for unread messages only if user is authenticated + public
+          // Otherwise, stop here.
+          return;
+        }
 
         // Check for unread messages on init
         check();
