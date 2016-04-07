@@ -3,10 +3,10 @@
 
   angular
     .module('users')
-    .controller('EditProfileAccountController', EditProfileAccountController);
+    .controller('ProfileEditAccountController', ProfileEditAccountController);
 
   /* @ngInject */
-  function EditProfileAccountController($http, $state, $window, Users, Authentication, messageCenterService) {
+  function ProfileEditAccountController($http, $state, $window, Users, Authentication, messageCenterService) {
 
     // ViewModel
     var vm = this;

@@ -73,7 +73,7 @@
           url: '/account',
           title: 'Account',
           templateUrl: '/modules/users/views/profile/profile-edit-account.client.view.html',
-          controller: 'EditProfileAccountController',
+          controller: 'ProfileEditAccountController',
           controllerAs: 'profileEditAccount',
           requiresAuth: true
         }).
@@ -137,7 +137,7 @@
         state('profile.overview', {
           url: '/overview',
           title: 'Profile overview',
-            templateUrl: '/modules/users/views/profile/profile-view-basics.client.view.html',
+          templateUrl: '/modules/users/views/profile/profile-view-basics.client.view.html',
           requiresAuth: true,
           noScrollingTop: true
         }).
