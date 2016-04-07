@@ -3,7 +3,9 @@
 /**
  * Module dependencies.
  */
-var should = require('should'),
+var path = require('path'),
+    config = require(path.resolve('./config/config')),
+    should = require('should'),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
 
@@ -190,6 +192,16 @@ describe('User Model Unit Tests:', function() {
       });
     });
 
+    it('should be able to show an error when try to save with not allowed username', function (done) {
+      var _user = new User(user);
+
+      _user.username = config.illegalStrings[Math.floor(Math.random() * config.illegalStrings.length)];
+      _user.save(function(err) {
+        should.exist(err);
+        done();
+      });
+    });
+
     it('should show error to save username end with .', function(done) {
       var _user = new User(user);
 
@@ -230,10 +242,10 @@ describe('User Model Unit Tests:', function() {
       });
     });
 
-    it('should show error saving a username longer than 32 characters', function(done) {
+    it('should show error saving a username longer than 34 characters', function(done) {
       var _user = new User(user);
 
-      _user.username = '1234567890' + '1234567890' + '1234567890' + '1234a';
+      _user.username = 'l'.repeat(35);
       _user.save(function(err) {
         should.exist(err);
         done();

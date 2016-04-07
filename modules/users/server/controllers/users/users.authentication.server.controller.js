@@ -8,6 +8,7 @@ var _ = require('lodash'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
+    profileHandler = require(path.resolve('./modules/users/server/controllers/users/users.profile.server.controller')),
     config = require(path.resolve('./config/config')),
     passport = require('passport'),
     nodemailer = require('nodemailer'),
@@ -54,7 +55,7 @@ exports.signup = function(req, res) {
     // Save user
     function(token, done) {
 
-      // For security measurement we remove the roles from the req.body object
+      // For security measurement we remove the roles from the `req.body` object
       delete req.body.roles;
 
       // These shouldn't be there neither
@@ -154,10 +155,7 @@ exports.signup = function(req, res) {
       req.login(user, function(err) {
         if (!err) {
           // Remove sensitive data befor sending user
-          user = user.toObject();
-          delete user.emailToken;
-          delete user.password;
-          delete user.salt;
+          user = profileHandler.sanitizeProfile(user);
           res.json(user);
         }
         done(err);
@@ -166,6 +164,7 @@ exports.signup = function(req, res) {
 
   ], function(err) {
     if (err) {
+      console.log(err);
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
       });

@@ -1071,6 +1071,36 @@ describe('User CRUD tests', function () {
       });
   });
 
+  it('should be able to join a tribe with "is" relation', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        agent.post('/api/users/tags')
+          .send({
+            tag: ''
+            relation: 'is'
+          })
+          .expect(200)
+          .end(function (userInfoErr, userInfoRes) {
+
+            // Handle change profile picture error
+            if (userInfoErr) {
+              return done(userInfoErr);
+            }
+
+            console.log(userInfoRes.body);
+
+            return done();
+          });
+      });
+  });
+
   afterEach(function (done) {
     User.remove().exec(done);
   });

@@ -84,6 +84,44 @@
   </div>
 </section>
 
+<!-- Tribes -->
+<section class="home-how" ng-if="home.tribes && home.tribes.length">
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-3 col-sm-push-6">
+        <div class="text-center flex-centered tribe-intro">
+          <p class="font-brand-light">
+            Joining Tribes helps you find likeminded Trustroots members and tells others what you're interested in.
+            <br><br>
+            <a ui-sref="tribes.list" class="btn btn-default btn-lg">More Tribes</a>
+          </p>
+        </div>
+      </div>
+      <div class="col-xs-12 visible-xs tribes-xs">
+        <a ui-sref="tribes.tribe({tribe: tribe.slug})"
+           class="img-circle tribe-xs tribe-image"
+           ng-repeat="tribe in ::home.tribes | limitTo:3 track by tribe._id"
+           tr-tribe-styles="{{::tribe}}"
+           tr-tribe-join>
+          <span ng-if="::!tribe.image" ng-bind="::tribe.label.charAt(0)"></span>
+        </a>
+      </div>
+      <div class="col-sm-3 hidden-xs"
+           ng-class="{'col-sm-pull-3': !$last}"
+           ng-repeat="tribe in ::home.tribes | limitTo:3 track by tribe._id">
+        <div class="img-circle tribe tribe-image"
+             tr-tribe-styles="{{::tribe}}"
+             tr-tribe-join>
+          <a ui-sref="tribes.tribe({tribe: tribe.slug})" class="tribe-link">
+            <h3 class="tribe-label" ng-bind="::tribe.label"></h3>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 <!-- Manifesto -->
 <section class="board board-primary board-inset" tr-boards="'mountainforest'" id="manifesto">
   <div class="container">

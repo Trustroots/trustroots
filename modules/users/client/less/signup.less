@@ -1,0 +1,72 @@
+
+// Form
+.signup-form-steps {
+  position: relative;
+  //min-height: 600px;
+}
+.signup-form-step {
+  //position: absolute;
+  width: 100%;
+  opacity: 1;
+  &.ng-hide-add,
+  &.ng-hide-remove {
+    //transition: all 0.2s linear;
+  }
+  &.ng-hide {
+    opacity: 0;
+  }
+}
+.signup-form-step-animate-wrapper {
+  position: relative;
+  height: 600px;
+  overflow: hidden;
+}
+
+// Pre-fetched tribe under "Join Trustroots" title
+.signup-tribe {
+  margin-bottom: 0;
+  height: 30px;
+  overflow: hidden;
+  font-size: 18px;
+  &.ng-hide-add,
+  &.ng-hide-remove {
+    transition: all ease-in-out 0.1s;
+  }
+  &.ng-hide {
+    height: 0;
+  }
+}
+
+// 1-2-3 steps
+.signup-steps {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin: 30px 0 40px 0;
+}
+// Horizontal line between step indicators
+.signup-step-line {
+  display: block;
+  width: 25px;
+  height: 2px;
+  margin: 0 15px 30px 15px;
+  background-color: @gray-lighter;
+}
+.signup-step-indicator {
+  margin: 0 auto 10px auto;
+  font-size: 19px;
+  clear: both;
+  line-height: 30px;
+  .square(30px);
+  border-radius: 50%;
+  background-color: @gray-lighter;
+  color: @gray-light;
+}
+.signup-step-active {
+  .signup-step-indicator {
+    background-color: @brand-primary;
+    color: #fff;
+  }
+}
+//font-brand-semibold

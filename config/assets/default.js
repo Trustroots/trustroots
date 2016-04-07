@@ -63,7 +63,8 @@ module.exports = {
         'public/lib/mailcheck/src/mailcheck.js',
         'public/lib/angular-mailcheck/angular-mailcheck.js',
         'public/lib/angular-locker/dist/angular-locker.js',
-        'public/lib/angular-confirm-modal/angular-confirm.js'
+        'public/lib/angular-confirm-modal/angular-confirm.js',
+        'public/lib/angulargrid/angulargrid.js'
       ],
       less: [
         'public/lib/angular-trustpass/src/tr-trustpass.less',

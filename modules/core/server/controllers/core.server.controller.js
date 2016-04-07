@@ -1,6 +1,8 @@
 'use strict';
 
-var errorHandler = require('./errors.server.controller');
+var path = require('path'),
+    errorHandler = require('./errors.server.controller'),
+    usersHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller'));
 
 /**
  * Render the main application page
@@ -8,16 +10,15 @@ var errorHandler = require('./errors.server.controller');
 exports.renderIndex = function(req, res) {
 
   var currentUser = null;
+  console.log('------------------------------------------------------------------------------------------------');
+  console.log('------------------------------------------------------------------------------------------------');
+  console.log('------------------------------------------------------------------------------------------------');
+  console.log(req);
+  console.log('------------------------------------------------------------------------------------------------');
 
   // Expose user
   if(req.user) {
-    currentUser = req.user;
-    // Don't just expose everything to the view...
-    delete currentUser.resetPasswordToken;
-    delete currentUser.resetPasswordExpires;
-    delete currentUser.emailToken;
-    delete currentUser.password;
-    delete currentUser.salt;
+    currentUser = usersHandler.sanitizeProfile(req.user, req.user);
   }
 
   res.render('modules/core/server/views/index', {
