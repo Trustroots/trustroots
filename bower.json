@@ -27,7 +27,8 @@
     "angular-locker": "~2.0.4",
     "medium-editor": "~5.15.0",
     "angular-confirm-modal": "~1.2.3",
-    "angulartics-google-analytics": "^0.1.4"
+    "angulartics-google-analytics": "~0.1.4",
+    "angulargrid": "~0.5.4"
   },
   "resolutions": {
     "angular": "1.5.3"

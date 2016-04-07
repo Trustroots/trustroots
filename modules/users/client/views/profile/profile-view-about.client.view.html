@@ -37,7 +37,21 @@
 
   </div>
 
-  <!-- Offers -->
-  <div class="col-md-6 hidden-xs" ng-if="profileCtrl.profile" ng-include="'/modules/offers/views/offers-view.client.view.html'"></div>
+  <div class="col-md-6">
+
+    <!-- Offers -->
+    <div class="hidden-xs" ng-if="profileCtrl.profile" ng-include="'/modules/offers/views/offers-view.client.view.html'"></div>
+
+    <!-- Tribes -->
+    <div class="panel panel-default" ng-if="profileCtrl.memberships.tribes.is.length">
+      <div class="panel-heading">
+        Tribes
+      </div>
+      <div class="panel-body">
+        <div tr-tribes-list="profileCtrl.memberships.tribes.is" ng-if="profileCtrl.memberships.tribes.is.length"></div>
+      </div>
+    </div>
+
+  </div>
 
 </div><!-- /.row -->

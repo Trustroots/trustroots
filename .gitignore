@@ -56,3 +56,4 @@ migrations/.migrate
 # User uploads
 uploads
 modules/users/client/img/profile/uploads
+modules/tags/client/img/tribe

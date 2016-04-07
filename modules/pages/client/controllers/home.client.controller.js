@@ -6,7 +6,7 @@
     .controller('HomeController', HomeController);
 
   /* @ngInject */
-  function HomeController($log, $window, $location, Authentication) {
+  function HomeController(Authentication, TribesService) {
 
     var headerHeight = angular.element('#tr-header').height() || 0;
 
@@ -17,6 +17,10 @@
     vm.windowHeight = angular.element('html').height() - headerHeight;
 
     vm.boards = Authentication.user ? 'wavewatching' : ['rainbowpeople', 'hitchroad', 'desertgirl', 'sierranevada', 'wavewatching', 'hitchgirl1', 'hitchgirl2'];
+
+    vm.tribes = TribesService.query({
+      limit: 3
+    });
 
   }
 })();
