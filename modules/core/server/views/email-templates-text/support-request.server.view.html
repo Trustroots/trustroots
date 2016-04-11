@@ -1,7 +1,12 @@
 {{message}}
 
+
+-- {# These two dashes should have space after them and this line stops .editorconfig stripping it out. #}
 Username: {{username}}
 Email: {{email}}
 Authenticated: {{authenticated}}
 Browser: {{userAgent}}
 ID: {{userId}}
+Signup confirmed: {{profilePublic}}
+Signup date: {{signupDate}}
+{% if emailTemp %}Active email change: {{emailTemp}}{% endif %}
