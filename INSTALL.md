@@ -100,7 +100,6 @@ $ npm run migrate     # Migrate database up
 - `npm run test:client`
 - `npm run test:server`
 - `npm run test:server:watch` (run + watch for changes)
-- `npm run test:server:watch:onlyChanged` (run + watch for changes and run only changed files)
 
 ### Problems
 
