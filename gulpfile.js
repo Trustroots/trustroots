@@ -14,6 +14,7 @@ var _ = require('lodash'),
     glob = require('glob'),
     del = require('del'),
     fs = require('fs'),
+    argv = require('yargs').argv,
     plugins = gulpLoadPlugins({
       rename: {
         'gulp-angular-templatecache': 'templateCache'
