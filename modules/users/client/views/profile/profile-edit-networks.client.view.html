@@ -51,11 +51,13 @@
       <div class="form-group">
         <div class="input-group">
           <div class="input-group-addon">
-            <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" uib-popover-templat="bwGuidePopover.html"></span>
+            <a tabindex="0" class="icon-help cursor-help tr-help" popover-placement="bottom-left" popover-append-to-body="true" popover-trigger="mouseenter" uib-popover-template="'bwGuidePopover.html'"></a>
             <script type="text/ng-template" id="bwGuidePopover.html">
-              Go to your BeWelcome profile and copy the username from the address bar.
-              <br><br>
-              <img class="img-responsive clearfix" src="/modules/users/img/guide-bw.png" alt="" width="319" height="32" aria-hidden="true">
+              <div>
+                Go to your BeWelcome profile and copy the username from the address bar.
+                <br><br>
+                <img class="img-responsive clearfix" src="/modules/users/img/guide-bw.png" alt="" width="319" height="32" aria-hidden="true">
+              </div>
             </script>
           </div>
           <label class="input-group-addon" for="extSitesBW">
@@ -71,11 +73,13 @@
       <div class="form-group">
         <div class="input-group">
           <div class="input-group-addon">
-            <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter"  uib-popover-templat="csGuidePopover.html"></span>
+            <a tabindex="0" class="icon-help cursor-help tr-help" popover-placement="bottom-left" popover-append-to-body="true" popover-trigger="mouseenter"  uib-popover-template="'csGuidePopover.html'"></a>
             <script type="text/ng-template" id="csGuidePopover.html">
-              Go to your "account and settings" page and copy your username.
-              <br><br>
-              <img class="img-responsive clearfix" src="/modules/users/img/guide-cs.png" alt="" width="525" height="107" aria-hidden="true">
+              <div>
+                Go to your "account and settings" page and copy your username.
+                <br><br>
+                <img class="img-responsive clearfix" src="/modules/users/img/guide-cs.png" alt="" width="525" height="107" aria-hidden="true">
+              </div>
             </script>
           </div>
           <label class="input-group-addon" for="extSitesCS">
@@ -91,11 +95,13 @@
       <div class="form-group" ng-class="{'has-warning': profileEditNetworks.user.extSitesWS && !profileEditNetworks.isWarmshowersId()}">
         <div class="input-group">
           <div class="input-group-addon">
-            <span class="icon-help cursor-help text-muted" popover-placement="left" popover-append-to-body="true" popover-trigger="mouseenter" uib-popover-templat="wsGuidePopover.html"></span>
+            <a tabindex="0" class="icon-help cursor-help tr-help" popover-placement="bottom-left" popover-append-to-body="true" popover-trigger="mouseenter" uib-popover-template="'wsGuidePopover.html'"></a>
             <script type="text/ng-template" id="wsGuidePopover.html">
-              Edit your Warmshowers profile and copy your numeric user id from the address bar.
-              <br><br>
-              <img class="img-responsive clearfix" src="/modules/users/img/guide-ws.png" alt="" width="319" height="32" aria-hidden="true">
+              <div>
+                Edit your Warmshowers profile and copy your numeric user id from the address bar.
+                <br><br>
+                <img class="img-responsive clearfix" src="/modules/users/img/guide-ws.png" alt="" width="319" height="32" aria-hidden="true">
+              </div>
             </script>
           </div>
           <label class="input-group-addon" for="extSitesWS">
