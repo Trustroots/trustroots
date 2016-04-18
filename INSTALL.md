@@ -47,7 +47,7 @@ npm install -g maildev
 maildev
 ```
 
-Simply uncomment MailDev configuration example from local.js file.
+Then simply uncomment MailDev configuration example from local.js file.
 
 #### 4. Install Node modules:
 ```bash
