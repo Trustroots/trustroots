@@ -1,8 +1,6 @@
 # [Trustroots.org](https://www.trustroots.org/)
 
-_Travellers' community_
-_Sharing, hosting and getting people together._
-_Built with hitchhikers in mind._
+_Travellers' community. Sharing, hosting and getting people together._
 
 ![Trustroots logo](https://raw.githubusercontent.com/Trustroots/trustroots/master/modules/core/client/img/icons/android/192.png)
 
@@ -22,18 +20,16 @@ Check [developers.trustroots.org](http://developers.trustroots.org/) to get star
 ## Installing
 
 We have two major ways of running the software:
-* Using Docker containers — easier and quick to get started with. See [INSTALL.md](INSTALL.md)
-* Installing locally — runs faster, but more initial work. See [INSTALL-DOCKER.md](INSTALL-DOCKER.md)
 
 
 ### Installing locally
 
-Install the stack on your localhost and run NodeJS. This approach takes a little more time to setup, and bit more manual configuration, but is super fast, and can be easier to work with. See [INSTALL.md](INSTALL.md) for details.
+Install the stack on your localhost and run NodeJS. This approach takes a little more time to setup, and bit more manual configuration, but is super fast, and can be easier to work with. See [INSTALL.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL.md) for details.
 
 
 ### Installing with Docker
 
-The easiest and quickest way to get started is with Docker. See [INSTALL-DOCKER.md](INSTALL-DOCKER.md) for further details. Running through Docker can be a little bit slower.
+The easiest and quickest way to get started is with Docker. See [INSTALL-DOCKER.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL-DOCKER.md) for further details. Running through Docker can be a little bit slower.
 
 
 ## License
