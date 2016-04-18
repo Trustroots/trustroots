@@ -1,11 +1,15 @@
 # [Trustroots.org](https://www.trustroots.org/)
 
-_Hospitality exchange community for hitchhikers and other travellers._
+_Travellers' community_
+_Sharing, hosting and getting people together._
+_Built with hitchhikers in mind._
 
-![Trustroots logo](https://raw.githubusercontent.com/Trustroots/trustroots/master/modules/core/client/img/logo/color.png)
+![Trustroots logo](https://raw.githubusercontent.com/Trustroots/trustroots/master/modules/core/client/img/icons/android/192.png)
 
 
 ## Volunteering
+
+[developers.trustroots.org](http://developers.trustroots.org/)
 
 You don't have the be a programmer to participate. Check [volunteers page](https://www.trustroots.org/volunteering) for more info.
 
@@ -17,7 +21,9 @@ Check [developers.trustroots.org](http://developers.trustroots.org/) to get star
 
 ## Installing
 
-We have two major ways of running the software: trough Docker (easier to get started with) or by installing locally.
+We have two major ways of running the software:
+* Using Docker containers — easier and quick to get started with. See [INSTALL.md](INSTALL.md)
+* Installing locally — runs faster, but more initial work. See [INSTALL-DOCKER.md](INSTALL-DOCKER.md)
 
 
 ### Installing locally
