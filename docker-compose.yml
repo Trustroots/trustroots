@@ -1,4 +1,5 @@
 trustroots:
+  container_name: trustroots
   restart: always
   build: .
   # Mount the app dir in the container so our changes
@@ -33,6 +34,7 @@ trustroots:
 ## http://djfarrelly.github.io/MailDev/
 maildev:
   image: djfarrelly/maildev
+  container_name: maildev
   restart: always
   ports:
     - "1080:80"
@@ -43,6 +45,7 @@ maildev:
 ## Database container
 mongodb:
   image: mongo:3.2
+  container_name: db_1
   restart: always
   command: "--smallfiles --logpath=/dev/null"
 
@@ -51,6 +54,7 @@ mongodb:
 ## https://github.com/jwilder/nginx-proxy
 nginx:
   image: jwilder/nginx-proxy
+  container_name: nginx
   restart: always
   links:
     - trustroots
