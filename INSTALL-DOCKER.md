@@ -31,6 +31,7 @@ cp config/env/local.docker.js config/env/local.js
 
 See `config/env/local.sample.js` or `config/env/default.js` for more details if you want to change something (optional).
 
+
 ##### 3. Run the install script
 
 ```bash
@@ -41,17 +42,22 @@ On OSX you need to run this inside _Docker Terminal_.
 
 This will take a while. Good news is you just have to sit back and let it do it's magic.
 
+
 ##### 4. Done!
-
-Check what is your Docker machine's name, run `docker-machine ls` — often it's `default`.
-
-To check your Docker machine IP, run `docker-machine ip default` (replace the word `default` with your machine name, if it differs)
 
 You can now access these from your browser:
 
+###### On Linux:
+* Node app via Nginx proxy: [`http://localhost:3080`](http://localhost:3080)
+* Node app directly: [`http://localhost:3000`](http://localhost:3000)
+* Maildev: [`http://localhost:1080`](http://localhost:1080)
+
+###### On OSX/Windows:
 * Node app via Nginx proxy: `http://YOUR_MACHINE_IP:3080`
 * Node app directly: `http://YOUR_MACHINE_IP:3000`
 * Maildev: `http://YOUR_MACHINE_IP:1080`
+
+To check your Docker machine IP, run: `docker-machine ip default` (replace the word `default` with your machine name, if it differs). To check what your Docker machine's name is, run: `docker-machine ls`
 
 
 ##### 5. (optional) Configure `/etc/hosts` file
