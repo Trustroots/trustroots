@@ -12,17 +12,10 @@ button {
   touch-action: manipulation;
 }
 
-/* Required by body and .page-header */
-.bg() {
-  background: @body-bg url(/modules/core/img/bg.png);
-}
-
 html,
 body {
   height: 100%;
-}
-body {
-  .bg();
+  background-color: @body-bg;
 }
 
 .container-spacer {
