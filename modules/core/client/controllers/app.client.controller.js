@@ -31,9 +31,26 @@
       disableDoubleReturn: false,
       disableExtraSpaces: false,
       autoLink: true, // automatically turns URLs entered into the text field into HTML anchor tags
-      buttonLabels: 'fontawesome',
       toolbar: {
-        buttons: ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']
+        buttons: [{
+            name: 'bold',
+            contentDefault: '<span class="icon-bold"></span>'
+          }, {
+            name: 'italic',
+            contentDefault: '<span class="icon-italic"></span>'
+          }, {
+            name: 'underline',
+            contentDefault: '<span class="icon-underline"></span>'
+          }, {
+            name: 'anchor',
+            contentDefault: '<span class="icon-link"></span>'
+          }, {
+            name: 'quote',
+            contentDefault: '<span class="icon-quote"></span>'
+          }, {
+            name: 'unorderedlist',
+            contentDefault: '<span class="icon-list"></span>'
+          }]
       }
     };
 
