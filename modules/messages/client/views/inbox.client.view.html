@@ -1,7 +1,7 @@
 
 <!-- Browsing with non-public account -->
 <section class="container container-spacer" ng-if="app.user.public === false">
-  <div ng-include="'/modules/users/views/profile/activate.client.view.html?c=' + app.cacheBust"></div>
+  <div ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
 </section>
 
 <section class="container container-spacer" ng-if="app.user.public === true">

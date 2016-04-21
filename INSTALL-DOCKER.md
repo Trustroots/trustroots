@@ -31,6 +31,7 @@ cp config/env/local.docker.js config/env/local.js
 
 See `config/env/local.sample.js` or `config/env/default.js` for more details if you want to change something (optional).
 
+
 ##### 3. Run the install script
 
 ```bash
@@ -41,32 +42,40 @@ On OSX you need to run this inside _Docker Terminal_.
 
 This will take a while. Good news is you just have to sit back and let it do it's magic.
 
-##### 4. Configure `/etc/hosts` file
 
-Check what is your Docker machine's name by running `docker-machine ls` — often it's `default`.
+##### 4. Done!
 
-Then run this one-liner — just replace `default` with your machine name, if it differs:
+You can now access these from your browser:
+
+###### On Linux:
+* Node app via Nginx proxy: [`http://localhost:3080`](http://localhost:3080)
+* Node app directly: [`http://localhost:3000`](http://localhost:3000)
+* Maildev: [`http://localhost:1080`](http://localhost:1080)
+
+###### On OSX/Windows:
+* Node app via Nginx proxy: `http://YOUR_MACHINE_IP:3080`
+* Node app directly: `http://YOUR_MACHINE_IP:3000`
+* Maildev: `http://YOUR_MACHINE_IP:1080`
+
+To check your Docker machine IP, run: `docker-machine ip default` (replace the word `default` with your machine name, if it differs). To check what your Docker machine's name is, run: `docker-machine ls`
+
+
+##### 5. (optional) Configure `/etc/hosts` file
+
+If you'd like to use easier-to-remember hostname, rather than IP, you can add a line to your hosts file.
+
+Run this one-liner — just replace the word `default` with your machine name, if it differs:
 ```bash
-printf "\n\n$(docker-machine ip default)\\ttrustroots.dev\n$(docker-machine ip default)\ttrustroots.maildev" | sudo tee -a /etc/hosts > /dev/null
+printf "\n\n$(docker-machine ip default)\\ttrustroots.dev" | sudo tee -a /etc/hosts > /dev/null
 ```
 
-This will add these lines to your `/etc/hosts` file and it will ask for sudo password:
+This will add this line to your `/etc/hosts` file and it will ask for sudo password:
 
 ```
 [DOCKER-MACHINE-IP]	trustroots.dev
-[DOCKER-MACHINE-IP]	trustroots.maildev
 ```
 
-This will allow you to access Trustroots Node app via Nginx proxy giving you similar setup to our production environment.
-
-To manually check IP, run `docker-machine ip default`
-
-> Tip: If you would like to skip Nginx, you can access NodeJS directly with `http://[DOCKER-MACHINE-IP]:3000/`
-> If you're OSX user, you need to follow [these instructions for OSX](https://labs.ctl.io/tutorials/docker-on-the-mac-without-boot2docker/) (not required on Linux).
-
-##### 5. Done!
-
-Open [http://trustroots.dev/](http://trustroots.dev/) and [http://trustroots.maildev/](http://trustroots.maildev/) in your browser.
+You can now use `http://trustroots.dev:PORT` instead of machine IP.
 
 
 ### Running & development
@@ -77,7 +86,7 @@ Open [http://trustroots.dev/](http://trustroots.dev/) and [http://trustroots.mai
 - Type `docker-compose build` to rebuild them to have fresh install.
 - When you do changes to any files, they get recompiled and the browser is refreshed. If this step feels too slow for your needs, it's because of Docker. This step is faster on local [install](INSTALL.md) so you might want to consider that.
 - Keep an eye on console in case of compiling errors.
-- To read and debug emails, open [http://trustroots.maildev](http://trustroots.maildev) in your browser. Mails won't leave your Docker container unless you configure mailer settings from `config/env/local.js` to use e.g. [Mandrill](https://mandrillapp.com/) or [Gmail](https://support.google.com/a/answer/176600?hl=en).
+- To read and debug emails, open Maildev (http://YOUR_MACHINE_IP:1080) in your browser. Mails won't leave your Docker container unless you configure mailer settings from `config/env/local.js` to use e.g. [SparkPost](https://www.sparkpost.com/) or [Gmail](https://support.google.com/a/answer/176600?hl=en).
 - To read and debug MongoDB use e.g. [Robomongo](https://robomongo.org/) to connect to your container's IP.
 - Docker container has both, [GraphicsMagick](http://www.graphicsmagick.org/) and [ImageMagick](http://www.imagemagick.org/) installed.
 - [Read more](https://github.com/Trustroots/trustroots/wiki/Development)
@@ -97,7 +106,6 @@ docker-compose run trustroots npm update
 - `docker-compose run trustroots npm run test:client`
 - `docker-compose run trustroots npm run test:server`
 - `docker-compose run trustroots npm run test:server:watch` (run + watch for changes)
-- `docker-compose run trustroots npm run test:server:watch:onlyChanged` (run + watch for changes and run only changed files)
 
 
 ### Problems

@@ -1,7 +1,7 @@
 <section class="container container-spacer">
 
   <!-- Browsing with non-public account -->
-  <div ng-if="!app.user.public" ng-include="'/modules/users/views/profile/activate.client.view.html?c=' + app.cacheBust"></div>
+  <div ng-if="!app.user.public" ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
 
   <form name="ConfirmContactForm" ng-submit="contactConfirm.confirmContact()" novalidate autocomplete="off" ng-if="app.user.public">
 

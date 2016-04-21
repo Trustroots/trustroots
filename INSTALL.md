@@ -47,7 +47,7 @@ npm install -g maildev
 maildev
 ```
 
-Simply uncomment MailDev configuration example from local.js file.
+Then simply uncomment MailDev configuration example from local.js file.
 
 #### 4. Install Node modules:
 ```bash
@@ -100,7 +100,6 @@ $ npm run migrate     # Migrate database up
 - `npm run test:client`
 - `npm run test:server`
 - `npm run test:server:watch` (run + watch for changes)
-- `npm run test:server:watch:onlyChanged` (run + watch for changes and run only changed files)
 
 ### Problems
 

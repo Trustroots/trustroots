@@ -9,7 +9,7 @@
     .controller('AppController', AppController);
 
   /* @ngInject */
-  function AppController($scope, $rootScope, $window, $state, $analytics, Authentication, SettingsFactory, Languages, locker) {
+  function AppController($scope, $rootScope, $window, $state, $analytics, Authentication, SettingsFactory, Languages, locker, PollMessagesCount) {
 
     // ViewModel
     var vm = this;
@@ -21,8 +21,27 @@
     vm.pageTitle = $window.title;
     vm.goHome = goHome;
     vm.signout = signout;
+    vm.onWindowBlur = onWindowBlur;
+    vm.onWindowFocus = onWindowFocus;
     vm.photoCredits = {};
     vm.photoCreditsCount = 0;
+
+
+    /**
+     * Handle the window blur event
+     */
+    function onWindowBlur() {
+      PollMessagesCount.setFrequency('low');
+    }
+
+    /**
+     * handle window focus event
+     */
+    function onWindowFocus() {
+      PollMessagesCount.setFrequency('high');
+      // Poll now
+      PollMessagesCount.poll();
+    }
 
     // Default options for Medium-Editor directive used site wide
     // @link https://github.com/yabwe/medium-editor/blob/master/OPTIONS.md
@@ -31,15 +50,28 @@
       disableDoubleReturn: false,
       disableExtraSpaces: false,
       autoLink: true, // automatically turns URLs entered into the text field into HTML anchor tags
-      buttonLabels: 'fontawesome',
       toolbar: {
-        buttons: ['bold', 'italic', 'underline', 'anchor', 'quote', 'unorderedlist']
+        buttons: [{
+            name: 'bold',
+            contentDefault: '<span class="icon-bold"></span>'
+          }, {
+            name: 'italic',
+            contentDefault: '<span class="icon-italic"></span>'
+          }, {
+            name: 'underline',
+            contentDefault: '<span class="icon-underline"></span>'
+          }, {
+            name: 'anchor',
+            contentDefault: '<span class="icon-link"></span>'
+          }, {
+            name: 'quote',
+            contentDefault: '<span class="icon-quote"></span>'
+          }, {
+            name: 'unorderedlist',
+            contentDefault: '<span class="icon-list"></span>'
+          }]
       }
     };
-
-    // Used as a cache buster with ng-include
-    // Includes a hash of latest git commit
-    vm.cacheBust = vm.appSettings ? vm.appSettings.commit || '' : '';
 
     activate();
 

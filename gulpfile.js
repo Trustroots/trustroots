@@ -21,6 +21,9 @@ var _ = require('lodash'),
       }
     });
 
+// Local settings
+var changedTestFiles = [];
+
 // These will be loaded in `loadConfig` task
 var environmentAssets, assets, config;
 
@@ -113,37 +116,31 @@ gulp.task('watch', function() {
     gulp.watch(defaultAssets.server.gulpConfig, ['jshint']);
     gulp.watch(defaultAssets.client.views).on('change', plugins.livereload.changed);
   }
+});
 
-  if (process.env.NODE_ENV === 'test') {
-    // Add Server Test file rules
-    gulp.watch([testAssets.tests.server, defaultAssets.server.allJS], ['test:server']).on('change', function(file) {
+// Watch server test files
+gulp.task('watch:server:run-tests', function () {
+  // Start livereload
+  plugins.livereload.listen();
 
-      var runOnlyChangedTestFile = argv.onlyChanged ? true : false;
+  // Add Server Test file rules
+  gulp.watch([testAssets.tests.server, defaultAssets.server.allJS], ['test:server']).on('change', function (file) {
+    changedTestFiles = [];
 
-      // check if we should only run a changed test file
-      if (runOnlyChangedTestFile) {
-        var changedTestFiles = [];
+    // iterate through server test glob patterns
+    _.forEach(testAssets.tests.server, function (pattern) {
+      // determine if the changed (watched) file is a server test
+      _.forEach(glob.sync(pattern), function (f) {
+        var filePath = path.resolve(f);
 
-        // iterate through server test glob patterns
-        _.forEach(testAssets.tests.server, function(pattern) {
-          // determine if the changed (watched) file is a server test
-          _.forEach(glob.sync(pattern), function(f) {
-            var filePath = path.resolve(f);
-
-            if (filePath === path.resolve(file.path)) {
-              changedTestFiles.push(f);
-            }
-          });
-        });
-
-        // set task argument for tracking changed test files
-        argv.changedTestFiles = changedTestFiles;
-      }
-
-      plugins.livereload.changed();
+        if (filePath === path.resolve(file.path)) {
+          changedTestFiles.push(f);
+        }
+      });
     });
-  }
 
+    plugins.livereload.changed();
+  });
 });
 
 // JS linting task
@@ -297,7 +294,7 @@ gulp.task('selenium', plugins.shell.task('python ./scripts/selenium/test.py'));
 gulp.task('mocha', function(done) {
   // Open mongoose connections
   var mongoose = require('./config/lib/mongoose');
-  var testSuites = Array.isArray(argv.changedTestFiles) && argv.changedTestFiles.length ? argv.changedTestFiles : testAssets.tests.server;
+  var testSuites = changedTestFiles.length ? changedTestFiles : testAssets.tests.server;
   var error;
 
   // Connect mongoose
@@ -358,11 +355,8 @@ gulp.task('test:server', function(done) {
 });
 
 // Watch all server files for changes & run server tests (test:server) task on changes
-// optional arguments:
-//    --onlyChanged - optional argument for specifying that only the tests in a changed Server Test file will be run
-// example usage: gulp test:server:watch --onlyChanged
 gulp.task('test:server:watch', function(done) {
-  runSequence('test:server', 'watch', done);
+  runSequence('test:server', 'watch:server:run-tests', done);
 });
 
 gulp.task('test:client', function(done) {

@@ -1,12 +1,21 @@
 (function() {
   'use strict';
 
+  /**
+   * Directive show unread messages counter
+   *
+   * Usage:
+   * `<div messages-unread-count></div>`
+   *
+   * Adding this directive one or more times will cause `PollMessagesCount`
+   * service to poll for new messages.
+   */
   angular
     .module('messages')
     .directive('messagesUnreadCount', messagesUnreadCountDirective);
 
   /* @ngInject */
-  function messagesUnreadCountDirective($interval, MessagesCount, Authentication) {
+  function messagesUnreadCountDirective($interval, MessagesCount, PollMessagesCount, Authentication) {
 
     var directive = {
       restrict: 'A',
@@ -20,9 +29,7 @@
 
     function link(scope, elem, attr) {
 
-      var isChecking = false;
-
-      scope.unread = 0;
+      scope.unread = PollMessagesCount.getUnreadCount();
 
       activate();
 
@@ -30,7 +37,6 @@
        * Initialize checking for unread messages
        */
       function activate() {
-
         if(!Authentication.user || !Authentication.user.public) {
           // If user wasn't authenticated or public, set up watch
           var activationWatch = scope.$on('userUpdated', function(user) {
@@ -48,30 +54,22 @@
           return;
         }
 
+        // Initialize polling on intervals
+        PollMessagesCount.initPolling();
+
         // Check for unread messages on init
-        check();
+        PollMessagesCount.poll();
 
-        // Check for unread messages once a minute
-        $interval(check, 60*1000);
+        // When we have new messages, act upon them
+        var clearUnreadCountUpdated = scope.$on('unreadCountUpdated', onUnreadCountUpdated);
 
-        // Check for unread messages on request signal
-        scope.$on('syncUnreadMessagesCount', check);
+        // Clean out `$on` watcher when directive is removed from DOM
+        scope.$on('$destroy', clearUnreadCountUpdated);
       }
 
-      /**
-       * Check for unread messages
-       */
-      function check() {
-        if(isChecking) {
-          return;
-        }
-        isChecking = true;
-        MessagesCount.get(function(data) {
-          isChecking = false;
-          scope.unread = (data && data.unread) ? parseInt(data.unread) : 0;
-        });
+      function onUnreadCountUpdated($event, newUnreadCount) {
+        scope.unread = newUnreadCount;
       }
-
 
     }
   }
