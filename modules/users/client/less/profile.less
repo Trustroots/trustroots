@@ -6,6 +6,7 @@
   border-radius: 0;
   &.navbar-fixed-top {
     top: @navbar-height;
+    z-index: (@zindex-navbar-fixed - 1); // Ensures this navbar won't cover header's drop menu
   }
   .container {
     width: 100%;
