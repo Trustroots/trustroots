@@ -54,10 +54,6 @@
       }
     };
 
-    // Used as a cache buster with ng-include
-    // Includes a hash of latest git commit
-    vm.cacheBust = vm.appSettings ? vm.appSettings.commit || '' : '';
-
     activate();
 
     /**
