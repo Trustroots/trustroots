@@ -82,8 +82,10 @@
   {% endif %}
 
 </head>
+<body class="ng-cloak"
+      tr-window-blur="app.onWindowBlur()"
+      tr-window-focus="app.onWindowFocus()">
 
-<body class="ng-cloak">
   <div id="tr-wrap">
 
     {% block header %}

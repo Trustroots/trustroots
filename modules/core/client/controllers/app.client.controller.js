@@ -9,7 +9,7 @@
     .controller('AppController', AppController);
 
   /* @ngInject */
-  function AppController($scope, $rootScope, $window, $state, $analytics, Authentication, SettingsFactory, Languages, locker) {
+  function AppController($scope, $rootScope, $window, $state, $analytics, Authentication, SettingsFactory, Languages, locker, PollMessagesCount) {
 
     // ViewModel
     var vm = this;
@@ -21,8 +21,27 @@
     vm.pageTitle = $window.title;
     vm.goHome = goHome;
     vm.signout = signout;
+    vm.onWindowBlur = onWindowBlur;
+    vm.onWindowFocus = onWindowFocus;
     vm.photoCredits = {};
     vm.photoCreditsCount = 0;
+
+
+    /**
+     * Handle the window blur event
+     */
+    function onWindowBlur() {
+      PollMessagesCount.setFrequency('low');
+    }
+
+    /**
+     * handle window focus event
+     */
+    function onWindowFocus() {
+      PollMessagesCount.setFrequency('high');
+      // Poll now
+      PollMessagesCount.poll();
+    }
 
     // Default options for Medium-Editor directive used site wide
     // @link https://github.com/yabwe/medium-editor/blob/master/OPTIONS.md
