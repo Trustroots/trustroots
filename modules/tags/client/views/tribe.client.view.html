@@ -28,7 +28,7 @@
            ng-swipe-left="tribeCtrl.goBack()"
            ng-swipe-right="tribeCtrl.goBack()"
            ng-class="{'is-guest': !app.user}">
-    <a ng-click="tribeCtrl.goBack()" ng-if="app.user" class="btn btn-lg btn-link tribe-header-back"><i class="icon-left"></i> Other tribes</a>
+    <a ng-click="tribeCtrl.goBack()" class="btn btn-lg btn-link tribe-header-back"><i class="icon-left"></i> More tribes</a>
     <div class="flex-centered tribe-header-info">
       <div class="container">
         <div class="row">
@@ -59,7 +59,10 @@
               <br><br>
               Join to meet, host and get hosted by this and other communities.
               <br><br>
-              <a class="btn btn-lg btn-primary btn-action" ui-sref="signup({'tribe': tribeCtrl.tribe.slug})">Join {{::tribeCtrl.tribe.label}} on Trustroots</a><br>
+              <a class="btn btn-lg btn-primary btn-action tribe-join" ui-sref="signup({'tribe': tribeCtrl.tribe.slug})">
+                Join {{::tribeCtrl.tribe.label}} on Trustroots
+              </a>
+              <br>
               <a class="btn btn-lg btn-link tribe-readmore" ui-sref="home({'tribe': tribeCtrl.tribe.slug})"><i class="icon-right"></i> Read more</a>
             </p>
           </div>
