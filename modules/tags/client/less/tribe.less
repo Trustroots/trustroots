@@ -1,5 +1,4 @@
 .tribe-header {
-  background-position: 50% 30%;
   padding: 0;
   position: fixed;
   top: @navbar-height;
@@ -23,6 +22,13 @@
         margin-left: 0;
       }
     }
+    @media (max-width: @screen-xs-max) {
+      position: absolute;
+      top: 0;
+      left: 0;
+      padding-right: 50px;
+      right: 0;
+    }
   }
 }
 .tribe-header-info {
@@ -41,6 +47,10 @@
   }
   .tribe-join.btn.btn-active span {
     color: #fff;
+  }
+  .tribe-join {
+    white-space: normal;
+    margin-bottom: 30px;
   }
 }
 // For non-authenticated members we show more text, so make header darker
