@@ -26,12 +26,11 @@ function randomHex() {
 }
 
 /**
- * A Validation function for label
+ * A Validation function for `TagSchema.label`
  * - should contain at least one a-zA-Z character
  * - not in list of illegal labels
  * - not begin or end with "."
  */
-
 var validateLabel = function(label) {
   return (label &&
           label.match(/[a-z]/) && // Should have at least one a-zA-Z (non case-insensitive regex)
@@ -39,6 +38,22 @@ var validateLabel = function(label) {
           label.charAt(0) !== '.' && // Don't start with `.`
           label.slice(-1) !== '.' // Don't end with `.`
          );
+};
+
+/**
+ * Validation function for `TagSchema.attribution_url`
+ * @link https://www.npmjs.com/package/validator#validators
+ */
+var validateURL = function(url) {
+  return (url && validator.isURL(url, {
+    protocols: ['http','https'],
+    require_tld: true,
+    require_protocol: true,
+    require_valid_protocol: true,
+    allow_underscores: false,
+    allow_trailing_dot: false,
+    allow_protocol_relative_urls: false
+  }));
 };
 
 /**
@@ -99,6 +114,17 @@ var TagSchema = new Schema({
     type: Boolean,
     default: false,
     required: true
+  },
+  attribution: {
+    type: String,
+    minlength: 3,
+    maxlength: 255
+  },
+  attribution_url: {
+    type: String,
+    minlength: 12,
+    trim: true,
+    validate: [validateURL, 'Please fill a valid URL.']
   }
 });
 

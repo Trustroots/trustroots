@@ -56,7 +56,9 @@ describe('Tag CRUD tests', function () {
     // Create a new tribe
     _tribe = {
       label: 'Awesome Tribe',
-      tribe: true
+      attribution: 'Photo credits',
+      attribution_url: 'http://www.trustroots.org',
+      tribe: true,
     };
 
     // Create a new non-public tribe
@@ -97,6 +99,8 @@ describe('Tag CRUD tests', function () {
         tribesReadRes.body.should.have.length(1);
         tribesReadRes.body[0].label.should.equal('Awesome Tribe');
         tribesReadRes.body[0].slug.should.equal('awesome-tribe');
+        tribesReadRes.body[0].attribution.should.equal('Photo credits');
+        tribesReadRes.body[0].attribution_url.should.equal('http://www.trustroots.org');
         tribesReadRes.body[0].count.should.eql(0);
         should.exist(tribesReadRes.body[0]._id);
 
@@ -133,6 +137,8 @@ describe('Tag CRUD tests', function () {
             tribesReadRes.body.should.have.length(1);
             tribesReadRes.body[0].label.should.equal('Awesome Tribe');
             tribesReadRes.body[0].slug.should.equal('awesome-tribe');
+            tribesReadRes.body[0].attribution.should.equal('Photo credits');
+            tribesReadRes.body[0].attribution_url.should.equal('http://www.trustroots.org');
             tribesReadRes.body[0].count.should.eql(0);
             should.exist(tribesReadRes.body[0]._id);
 
@@ -178,6 +184,8 @@ describe('Tag CRUD tests', function () {
         should.not.exist(tagsReadRes.body[0].labelHistory);
         should.not.exist(tagsReadRes.body[0].slugHistory);
         should.not.exist(tagsReadRes.body[0].created);
+        should.not.exist(tagsReadRes.body[0].attribution);
+        should.not.exist(tagsReadRes.body[0].attribution_url);
 
         // Call the assertion callback
         return done(tagsReadErr);
@@ -213,6 +221,8 @@ describe('Tag CRUD tests', function () {
             should.not.exist(tagsReadRes.body[0].labelHistory);
             should.not.exist(tagsReadRes.body[0].slugHistory);
             should.not.exist(tagsReadRes.body[0].created);
+            should.not.exist(tagsReadRes.body[0].attribution);
+            should.not.exist(tagsReadRes.body[0].attribution_url);
 
             // Call the assertion callback
             return done(tagsReadErr);
