@@ -66,7 +66,6 @@ describe('Tag Model Unit Tests:', function() {
         _tag.slugHistory.should.be.empty();
         _tag.slug.should.equal('tag-label');
         _tag.count.should.eql(0);
-        //_tag.image.should.equal(false);
         should.exist(_tag.color);
         _tag.color.should.not.containEql('#');
         validator.isHexadecimal(_tag.color).should.equal(true);

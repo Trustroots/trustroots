@@ -103,6 +103,9 @@
            class="img-circle tribe-xs tribe-image"
            ng-repeat="tribe in ::home.tribes | limitTo:3 track by tribe._id"
            tr-tribe-styles="{{::tribe}}"
+           tr-tribe-styles-dimensions="520x520"
+           tr-tribe-styles-quality="lightest"
+           tr-tribe-styles-progressive="yes"
            tr-tribe-join>
           <span ng-if="::!tribe.image" ng-bind="::tribe.label.charAt(0)"></span>
         </a>

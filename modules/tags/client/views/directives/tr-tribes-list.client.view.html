@@ -1,7 +1,10 @@
 <ul class="tribes-list">
   <li class="tribe" ng-repeat="tribe in ::tribes track by tribe._id" tr-tribe-join>
-    <div class="tribe-image" tr-tribe-styles="{{::tribe}}">
-      <span ng-if="::!tribe.image" ng-bind="::tribe.label.charAt(0)"></span>
+    <div class="tribe-image"
+         tr-tribe-styles="{{::tribe}}"
+         tr-tribe-styles-dimensions="120x120"
+         tr-tribe-styles-quality="lightest">
+      <span ng-if="::!tribe.image_UUID" ng-bind="::tribe.label.charAt(0)"></span>
     </div>
     <div class="tribe-info">
       <a class="tribe-link" ng-click="tribeJoinDirective.openTribe()" ng-bind="::tribe.label"></a><br>

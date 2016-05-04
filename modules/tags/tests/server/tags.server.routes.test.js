@@ -57,7 +57,8 @@ describe('Tag CRUD tests', function () {
     _tribe = {
       label: 'Awesome Tribe',
       attribution: 'Photo credits',
-      attribution_url: 'http://www.trustroots.org',
+      attribution_url: 'http://www.trustroots.org/team',
+      image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
       tribe: true,
     };
 
@@ -99,14 +100,14 @@ describe('Tag CRUD tests', function () {
         tribesReadRes.body.should.have.length(1);
         tribesReadRes.body[0].label.should.equal('Awesome Tribe');
         tribesReadRes.body[0].slug.should.equal('awesome-tribe');
-        tribesReadRes.body[0].attribution.should.equal('Photo credits');
-        tribesReadRes.body[0].attribution_url.should.equal('http://www.trustroots.org');
+        tribesReadRes.body[0].attribution.should.equal(_tribe.attribution);
+        tribesReadRes.body[0].attribution_url.should.equal(_tribe.attribution_url);
         tribesReadRes.body[0].count.should.eql(0);
         should.exist(tribesReadRes.body[0]._id);
 
-        // `color` and `image` are published only for tribes
+        // `color` and `image_UUID` are published only for tribes
         should.exist(tribesReadRes.body[0].color);
-        tribesReadRes.body[0].image.should.equal(false);
+        tribesReadRes.body[0].image_UUID.should.equal(_tribe.image_UUID);
 
 
         // These are at the model, but aren't exposed
@@ -137,14 +138,14 @@ describe('Tag CRUD tests', function () {
             tribesReadRes.body.should.have.length(1);
             tribesReadRes.body[0].label.should.equal('Awesome Tribe');
             tribesReadRes.body[0].slug.should.equal('awesome-tribe');
-            tribesReadRes.body[0].attribution.should.equal('Photo credits');
-            tribesReadRes.body[0].attribution_url.should.equal('http://www.trustroots.org');
+            tribesReadRes.body[0].attribution.should.equal(_tribe.attribution);
+            tribesReadRes.body[0].attribution_url.should.equal(_tribe.attribution_url);
             tribesReadRes.body[0].count.should.eql(0);
             should.exist(tribesReadRes.body[0]._id);
 
-            // `color` and `image` are published only for tribes
+            // `color` and `image_UUID` are published only for tribes
             should.exist(tribesReadRes.body[0].color);
-            tribesReadRes.body[0].image.should.equal(false);
+            tribesReadRes.body[0].image_UUID.should.equal(_tribe.image_UUID);
 
 
             // These are at the model, but aren't exposed
@@ -260,9 +261,9 @@ describe('Tag CRUD tests', function () {
         tagsReadRes.body[0].count.should.eql(0);
         should.exist(tagsReadRes.body[0]._id);
 
-        // `color` and `image` are published only for tribes
+        // `color` and `image_UUID` are published only for tribes
         should.not.exist(tagsReadRes.body[0].color);
-        should.not.exist(tagsReadRes.body[0].image);
+        should.not.exist(tagsReadRes.body[0].image_UUID);
 
         // These are at the model, but aren't exposed
         should.not.exist(tagsReadRes.body[0].tribe);
@@ -297,9 +298,9 @@ describe('Tag CRUD tests', function () {
             tagsReadRes.body[0].count.should.eql(0);
             should.exist(tagsReadRes.body[0]._id);
 
-            // `color` and `image` are published only for tribes
+            // `color` and `image_UUID` are published only for tribes
             should.not.exist(tagsReadRes.body[0].color);
-            should.not.exist(tagsReadRes.body[0].image);
+            should.not.exist(tagsReadRes.body[0].image_UUID);
 
             // These are at the model, but aren't exposed
             should.not.exist(tagsReadRes.body[0].tribe);

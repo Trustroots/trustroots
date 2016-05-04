@@ -25,6 +25,8 @@
   <section class="board flex-centered tribe-image tribe-header"
            ng-if="tribeCtrl.tribe._id"
            tr-tribe-styles="{{::tribeCtrl.tribe}}"
+           tr-tribe-styles-dimensions="1400x900"
+           tr-tribe-styles-progressive="yes"
            ng-swipe-left="tribeCtrl.goBack()"
            ng-swipe-right="tribeCtrl.goBack()"
            ng-class="{'is-guest': !app.user}">

@@ -17,7 +17,7 @@ exports.tribeFields = [
                 'label',
                 'count',
                 'color',
-                'image',
+                'image_UUID',
                 'attribution',
                 'attribution_url'
                 ].join(' ');

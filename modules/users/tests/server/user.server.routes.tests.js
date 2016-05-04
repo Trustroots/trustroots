@@ -1111,7 +1111,6 @@ describe('User CRUD tests', function () {
               // It should return correct tribe with new count
               userTagRes.body.tag._id.should.be.equal(tribe._id.toString());
               userTagRes.body.tag.count.should.be.equal(1);
-              userTagRes.body.tag.image.should.be.equal(false);
               userTagRes.body.tag.label.should.be.equal('Awesome Tribe');
               userTagRes.body.tag.slug.should.be.equal('awesome-tribe');
               should.exist(userTagRes.body.tag.color);
@@ -1168,7 +1167,6 @@ describe('User CRUD tests', function () {
               // It should return correct tribe with new count
               userTagRes.body.tag._id.should.be.equal(tribe._id.toString());
               userTagRes.body.tag.count.should.be.equal(1);
-              userTagRes.body.tag.image.should.be.equal(false);
               userTagRes.body.tag.label.should.be.equal('Awesome Tribe');
               userTagRes.body.tag.slug.should.be.equal('awesome-tribe');
               should.exist(userTagRes.body.tag.color);

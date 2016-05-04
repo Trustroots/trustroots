@@ -26,9 +26,11 @@
         <li class="panel tribe tribe-image"
             ng-repeat="tribe in tribesList.tribes track by tribe._id"
             tr-tribe-styles="{{::tribe}}"
+            tr-tribe-styles-dimensions="742x496"
+            tr-tribe-styles-progressive="yes"
             tr-tribe-join>
           <a ng-click="tribeJoinDirective.openTribe()" class="tribe-link">
-            <div class="tribe-content" ng-class="{'is-image': tribe.image}">
+            <div class="tribe-content" ng-class="{'is-image': tribe.image_UUID}">
               <h3 class="font-brand-light tribe-label" ng-bind="::tribe.label"></h3>
               <ng-pluralize
                 class="tribe-meta"

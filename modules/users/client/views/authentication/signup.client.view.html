@@ -165,8 +165,11 @@
                ng-if="signup.tribe && signup.tribe._id"
                ng-repeat="tribe in [signup.tribe] track by tribe._id"
                tr-tribe-styles="{{::tribe}}"
+               tr-tribe-styles-dimensions="906x240"
+               tr-tribe-styles-quality="lightest"
+               tr-tribe-styles-progressive="yes"
                tr-tribe-join>
-            <div class="tribe-content" ng-class="{'is-image': tribe.image}">
+            <div class="tribe-content" ng-class="{'is-image': tribe.image_UUID}">
               <div>
                 <h3 class="tribe-label" ng-bind="::tribe.label"></h3>
                 <div class="tribe-meta">
@@ -190,8 +193,11 @@
             <li class="panel tribe tribe-image"
                 ng-repeat="tribe in ::signup.suggestedTribes | limitTo:signup.suggestionsLimit track by tribe._id"
                 tr-tribe-styles="{{::tribe}}"
+                tr-tribe-styles-dimensions="906x240"
+                tr-tribe-styles-quality="lightest"
+                tr-tribe-styles-progressive="yes"
                 tr-tribe-join>
-             <div class="tribe-content" ng-class="{'is-image': tribe.image}">
+             <div class="tribe-content" ng-class="{'is-image': tribe.image_UUID}">
                <div>
                  <h3 class="tribe-label" ng-bind="::tribe.label"></h3>
                  <div class="tribe-meta">
