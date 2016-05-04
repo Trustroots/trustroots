@@ -9,21 +9,21 @@ var path = require('path'),
  */
 exports.renderIndex = function(req, res) {
 
-  var currentUser = null;
-  console.log('------------------------------------------------------------------------------------------------');
-  console.log('------------------------------------------------------------------------------------------------');
-  console.log('------------------------------------------------------------------------------------------------');
-  console.log(req);
-  console.log('------------------------------------------------------------------------------------------------');
+  var renderVars = {
+    user: null
+  };
 
   // Expose user
   if(req.user) {
-    currentUser = usersHandler.sanitizeProfile(req.user, req.user);
+    renderVars.user = usersHandler.sanitizeProfile(req.user, req.user);
   }
 
-  res.render('modules/core/server/views/index', {
-    user: currentUser
-  });
+  // Expose tribe (when browsing `/tribes/tribe-name`)
+  if(req.tribe) {
+    renderVars.tribe = req.tribe;
+  }
+
+  res.render('modules/core/server/views/index', renderVars);
 };
 
 /**
