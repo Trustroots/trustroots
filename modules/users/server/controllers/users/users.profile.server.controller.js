@@ -19,7 +19,8 @@ var _ = require('lodash'),
     multer = require('multer'),
     fs = require('fs'),
     os = require('os'),
-    uploadFileFilter = require(path.resolve('./config/lib/multer')).uploadFileFilter,
+    mmmagic = require('mmmagic'),
+    multerConfig = require(path.resolve('./config/lib/multer')),
     User = mongoose.model('User');
 
 // Replace mailer with Stub mailer transporter
@@ -96,7 +97,7 @@ exports.avatarUploadField = function (req, res, next) {
       limits: {
         fileSize: config.maxUploadSize // max file size in bytes
       },
-      fileFilter: uploadFileFilter
+      fileFilter: multerConfig.uploadFileFilter
     }).single('avatar');
 
   upload(req, res, function (err) {
@@ -167,6 +168,22 @@ exports.avatarUpload = function (req, res) {
    * Process uploaded file
    */
   async.waterfall([
+
+    // Validate uploaded file using libmagic
+    // The check is performed with "magic bytes"
+    // @link https://www.npmjs.com/package/mmmagic
+    function(done) {
+      var Magic = mmmagic.Magic;
+      var magic = new Magic(mmmagic.MAGIC_MIME_TYPE);
+      magic.detectFile(req.file.path, function(err, result) {
+        if (err || (result && multerConfig.validMimeTypes.indexOf(result) === -1)) {
+          return res.status(415).send({
+            message: errorHandler.getErrorMessageByKey('unsupported-media-type')
+          });
+        }
+        done(err);
+      });
+    },
 
     // Ensure user's upload directory exists
     function(done) {
