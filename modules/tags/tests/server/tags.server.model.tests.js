@@ -135,7 +135,6 @@ describe('Tag Model Unit Tests:', function() {
 
       _tag.attribution_url = 'this-is-not-URL';
       _tag.save(function(err) {
-        console.log(err);
         should.exist(err);
         done();
       });
@@ -189,7 +188,7 @@ describe('Tag Model Unit Tests:', function() {
     it('should be able to show an error when try to save with not allowed label', function (done) {
       var _tag = new Tag(tag);
 
-      _tag.label = config.illegalStrings[Math.floor(Math.random() * config.illegalStrings.length)];
+      _tag.label = config.illegalStrings[0];
       _tag.save(function (err) {
         should.exist(err);
         done();
