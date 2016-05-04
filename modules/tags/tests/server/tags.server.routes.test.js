@@ -161,6 +161,92 @@ describe('Tag CRUD tests', function () {
       });
   });
 
+  it('should be able to read only 2 most popular tribes', function(done) {
+
+    // Create more tribes
+    var tribe1 = new Tag(_tribe);
+    tribe1.label = 'Tribe 1';
+    tribe1.count = '50';
+    tribe1.save(function (err) {
+      should.not.exist(err);
+      var tribe2 = new Tag(_tribe);
+      tribe2.label = 'Tribe 2';
+      tribe2.count = '40';
+      tribe2.save(function (err) {
+        should.not.exist(err);
+        var tribe3 = new Tag(_tribe);
+        tribe3.label = 'Tribe 3';
+        tribe3.count = '30';
+        tribe3.save(function (err) {
+          should.not.exist(err);
+          var tribe4 = new Tag(_tribe);
+          tribe4.label = 'Tribe 4';
+          tribe4.count = '20';
+          tribe4.save(function (err) {
+            should.not.exist(err);
+
+            // Read tribes
+            agent.get('/api/tribes?limit=2')
+              .expect(200)
+              .end(function(tribesReadErr, tribesReadRes) {
+
+                tribesReadRes.body.should.have.length(2);
+                tribesReadRes.body[0].label.should.equal('Tribe 1');
+                tribesReadRes.body[1].label.should.equal('Tribe 2');
+
+                // Call the assertion callback
+                return done(tribesReadErr);
+              });
+          });
+        });
+      });
+    });
+
+  });
+
+  it('should be able to read only 2 second popular tribes', function(done) {
+
+    // Create more tribes
+    var tribe1 = new Tag(_tribe);
+    tribe1.label = 'Tribe 1';
+    tribe1.count = '50';
+    tribe1.save(function (err) {
+      should.not.exist(err);
+      var tribe2 = new Tag(_tribe);
+      tribe2.label = 'Tribe 2';
+      tribe2.count = '40';
+      tribe2.save(function (err) {
+        should.not.exist(err);
+        var tribe3 = new Tag(_tribe);
+        tribe3.label = 'Tribe 3';
+        tribe3.count = '30';
+        tribe3.save(function (err) {
+          should.not.exist(err);
+          var tribe4 = new Tag(_tribe);
+          tribe4.label = 'Tribe 4';
+          tribe4.count = '20';
+          tribe4.save(function (err) {
+            should.not.exist(err);
+
+            // Read tribes
+            agent.get('/api/tribes?limit=2&page=2')
+              .expect(200)
+              .end(function(tribesReadErr, tribesReadRes) {
+
+                tribesReadRes.body.should.have.length(2);
+                tribesReadRes.body[0].label.should.equal('Tribe 3');
+                tribesReadRes.body[1].label.should.equal('Tribe 4');
+
+                // Call the assertion callback
+                return done(tribesReadErr);
+              });
+          });
+        });
+      });
+    });
+
+  });
+
   it('should be able to read tags when not logged in', function(done) {
 
     // Read tags
