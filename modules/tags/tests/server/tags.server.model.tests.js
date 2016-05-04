@@ -131,6 +131,17 @@ describe('Tag Model Unit Tests:', function() {
       });
     });
 
+    it('should show error when trying to save tag with invalid attribution URL', function(done) {
+      var _tag = new Tag(tag);
+
+      _tag.attribution_url = 'this-is-not-URL';
+      _tag.save(function(err) {
+        console.log(err);
+        should.exist(err);
+        done();
+      });
+    });
+
   });
 
   describe('Slug generator', function() {
@@ -186,7 +197,7 @@ describe('Tag Model Unit Tests:', function() {
       });
     });
 
-    it('should show error to save tag label beginning with .', function(done) {
+    it('should be able to show an error when trying to save tag label beginning with .', function(done) {
       var _tag = new Tag(tag);
 
       _tag.label = '.label';
@@ -196,7 +207,7 @@ describe('Tag Model Unit Tests:', function() {
       });
     });
 
-    it('should show error to save tag label end with .', function(done) {
+    it('should be able to show an error when trying to save tag label end with .', function(done) {
       var _tag = new Tag(tag);
 
       _tag.label = 'label.';
@@ -216,7 +227,7 @@ describe('Tag Model Unit Tests:', function() {
       });
     });
 
-    it('should show error to save label shorter than 2 character', function(done) {
+    it('should be able to show an error when trying to save label shorter than 2 character', function(done) {
       var _tag = new Tag(tag);
 
       _tag.label = 's';
@@ -226,7 +237,7 @@ describe('Tag Model Unit Tests:', function() {
       });
     });
 
-    it('should show error saving a label without at least one alpha character', function(done) {
+    it('should be able to show an error when trying to save a label without at least one alpha character', function(done) {
       var _tag = new Tag(tag);
 
       _tag.label = '1234567890';
@@ -236,7 +247,7 @@ describe('Tag Model Unit Tests:', function() {
       });
     });
 
-    it('should show error saving a label longer than 255 characters', function(done) {
+    it('should be able to show an error when trying to save a label longer than 255 characters', function(done) {
       var _tag = new Tag(tag);
 
       _tag.label = 'l'.repeat(256);
