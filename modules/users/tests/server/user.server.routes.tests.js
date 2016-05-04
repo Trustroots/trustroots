@@ -5,6 +5,7 @@ var should = require('should'),
     path = require('path'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
+    Tag = mongoose.model('Tag'),
     config = require(path.resolve('./config/config')),
     express = require(path.resolve('./config/lib/express'));
 
@@ -1081,20 +1082,377 @@ describe('User CRUD tests', function () {
           return done(signinErr);
         }
 
+        // Create test tribe
+        var tribe = new Tag({
+          label: 'Awesome Tribe',
+          tribe: true
+        });
+
+        // Add tribe to test DB
+        tribe.save(function (err, tribe) {
+          should.not.exist(err);
+
+          agent.post('/api/users/tags')
+            .send({
+              id: tribe._id,
+              relation: 'is'
+            })
+            .expect(200)
+            .end(function (userTagErr, userTagRes) {
+
+              // Handle joining tag error
+              if (userTagErr) {
+                return done(userTagErr);
+              }
+
+              // Confirmation message
+              userTagRes.body.message.should.be.equal('Joined tribe.');
+
+              // It should return correct tribe with new count
+              userTagRes.body.tag._id.should.be.equal(tribe._id.toString());
+              userTagRes.body.tag.count.should.be.equal(1);
+              userTagRes.body.tag.image.should.be.equal(false);
+              userTagRes.body.tag.label.should.be.equal('Awesome Tribe');
+              userTagRes.body.tag.slug.should.be.equal('awesome-tribe');
+              should.exist(userTagRes.body.tag.color);
+
+              // It should return updated user
+              userTagRes.body.user.username.should.be.equal(credentials.username.toLowerCase());
+              userTagRes.body.user.memberIds[0].should.be.equal(tribe._id.toString());
+              userTagRes.body.user.member[0].tag.should.be.equal(tribe._id.toString());
+              userTagRes.body.user.member[0].relation.should.be.equal('is');
+              should.exist(userTagRes.body.user.member[0].since);
+
+              return done();
+            });
+        });
+      });
+  });
+
+  it('should be able to join a tribe with "likes" relation', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        // Create test tribe
+        var tribe = new Tag({
+          label: 'Awesome Tribe',
+          tribe: true
+        });
+
+        // Add tribe to test DB
+        tribe.save(function (err, tribe) {
+          should.not.exist(err);
+
+          agent.post('/api/users/tags')
+            .send({
+              id: tribe._id,
+              relation: 'likes'
+            })
+            .expect(200)
+            .end(function (userTagErr, userTagRes) {
+
+              // Handle joining tag error
+              if (userTagErr) {
+                return done(userTagErr);
+              }
+
+              // Confirmation message
+              userTagRes.body.message.should.be.equal('Joined tribe.');
+
+              // It should return correct tribe with new count
+              userTagRes.body.tag._id.should.be.equal(tribe._id.toString());
+              userTagRes.body.tag.count.should.be.equal(1);
+              userTagRes.body.tag.image.should.be.equal(false);
+              userTagRes.body.tag.label.should.be.equal('Awesome Tribe');
+              userTagRes.body.tag.slug.should.be.equal('awesome-tribe');
+              should.exist(userTagRes.body.tag.color);
+
+              // It should return updated user
+              userTagRes.body.user.username.should.be.equal(credentials.username.toLowerCase());
+              userTagRes.body.user.memberIds[0].should.be.equal(tribe._id.toString());
+              userTagRes.body.user.member[0].tag.should.be.equal(tribe._id.toString());
+              userTagRes.body.user.member[0].relation.should.be.equal('likes');
+              should.exist(userTagRes.body.user.member[0].since);
+
+              return done();
+            });
+        });
+      });
+  });
+
+  it('should be able to leave tribe', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        // Create test tribe
+        var tribe = new Tag({
+          label: 'Hitchhikers',
+          tribe: true
+        });
+
+        // Add tribe to test DB
+        tribe.save(function (err, tribe) {
+          should.not.exist(err);
+
+          agent.post('/api/users/tags')
+            .send({
+              id: tribe._id,
+              relation: 'is'
+            })
+            .expect(200)
+            .end(function (userTagJoinErr, userTagJoinRes) {
+
+              // Handle joining tag error
+              if (userTagJoinErr) {
+                return done(userTagJoinErr);
+              }
+
+              // Count +1
+              userTagJoinRes.body.tag.count.should.be.equal(1);
+
+              // User is now member of tribe
+              userTagJoinRes.body.user.memberIds.length.should.be.equal(1);
+              userTagJoinRes.body.user.member.length.should.be.equal(1);
+
+              agent.post('/api/users/tags')
+                .send({
+                  id: tribe._id,
+                  relation: 'leave'
+                })
+                .expect(200)
+                .end(function (userTagLeaveErr, userTagLeaveRes) {
+
+                  // Handle leaving tag error
+                  if (userTagLeaveErr) {
+                    return done(userTagLeaveErr);
+                  }
+
+                  // Count -1
+                  userTagLeaveRes.body.tag.count.should.be.equal(0);
+
+                  // No more tags left on user's array
+                  userTagLeaveRes.body.user.memberIds.length.should.be.equal(0);
+                  userTagLeaveRes.body.user.member.length.should.be.equal(0);
+
+                  return done();
+                });
+
+            });
+        });
+      });
+  });
+
+  it('should be able to show error if trying to join same tribe twice', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        // Create test tribe
+        var tribe = new Tag({
+          label: 'Russian literature students',
+          tribe: true
+        });
+
+        // Add tribe to test DB
+        tribe.save(function (err, tribe) {
+          should.not.exist(err);
+
+          agent.post('/api/users/tags')
+            .send({
+              id: tribe._id,
+              relation: 'is'
+            })
+            .expect(200)
+            .end(function (userTagJoinErr, userTagJoinRes) {
+
+              // Handle joining tag error
+              if (userTagJoinErr) {
+                return done(userTagJoinErr);
+              }
+
+              // Count +1
+              userTagJoinRes.body.tag.count.should.be.equal(1);
+
+              // User is now member of tribe
+              userTagJoinRes.body.user.memberIds.length.should.be.equal(1);
+              userTagJoinRes.body.user.member.length.should.be.equal(1);
+
+              agent.post('/api/users/tags')
+                .send({
+                  id: tribe._id,
+                  relation: 'is'
+                })
+                .expect(409)
+                .end(function (userTagJoin2Err, userTagJoin2Res) {
+
+                  // Handle leaving tag error
+                  if (userTagJoin2Err) {
+                    return done(userTagJoin2Err);
+                  }
+
+                  userTagJoin2Res.body.message.should.be.equal('Conflict.');
+
+                  return done();
+                });
+
+            });
+        });
+      });
+  });
+
+  it('should be able to show error if trying to leave tribe user is not member of', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        // Create test tribe
+        var tribe = new Tag({
+          label: 'Japanese linguistics',
+          tribe: true
+        });
+
+        // Add tribe to test DB
+        tribe.save(function (err, tribe) {
+          should.not.exist(err);
+
+          agent.post('/api/users/tags')
+            .send({
+              id: tribe._id,
+              relation: 'leave'
+            })
+            .expect(409)
+            .end(function (userTagJoinErr, userTagJoinRes) {
+
+              // Handle joining tag error
+              if (userTagJoinErr) {
+                return done(userTagJoinErr);
+              }
+
+              userTagJoinRes.body.message.should.be.equal('Conflict.');
+
+              return done();
+            });
+        });
+      });
+  });
+
+  it('should be able to show error if sending an action with odd "relation" info', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        // Create test tribe
+        var tribe = new Tag({
+          label: 'Space Squirrels',
+          tribe: true
+        });
+
+        // Add tribe to test DB
+        tribe.save(function (err, tribe) {
+          should.not.exist(err);
+
+          agent.post('/api/users/tags')
+            .send({
+              id: tribe._id,
+              relation: 'wtf'
+            })
+            .expect(400)
+            .end(function (userTagJoinErr, userTagJoinRes) {
+
+              // Handle joining tag error
+              if (userTagJoinErr) {
+                return done(userTagJoinErr);
+              }
+
+              userTagJoinRes.body.message.should.be.equal('Missing relation info.');
+
+              return done();
+            });
+        });
+      });
+  });
+
+  it('should be able to show error if trying to join non-existing tribe', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
         agent.post('/api/users/tags')
           .send({
-            tag: ''
+            id: '572a3d36f905fe5c53bf1d1f',
             relation: 'is'
           })
-          .expect(200)
-          .end(function (userInfoErr, userInfoRes) {
+          .expect(400)
+          .end(function (userTagJoinErr, userTagJoinRes) {
 
-            // Handle change profile picture error
-            if (userInfoErr) {
-              return done(userInfoErr);
+            // Handle joining tag error
+            if (userTagJoinErr) {
+              return done(userTagJoinErr);
             }
 
-            console.log(userInfoRes.body);
+            userTagJoinRes.body.message.should.be.equal('Bad request.');
+
+            return done();
+          });
+      });
+  });
+
+  it('should be able to show error if trying to join with non standard ID', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        agent.post('/api/users/tags')
+          .send({
+            id: '123456',
+            relation: 'is'
+          })
+          .expect(400)
+          .end(function (userTagJoinErr, userTagJoinRes) {
+
+            // Handle joining tag error
+            if (userTagJoinErr) {
+              return done(userTagJoinErr);
+            }
+
+            userTagJoinRes.body.message.should.be.equal('Cannot interpret id.');
 
             return done();
           });
@@ -1102,6 +1460,8 @@ describe('User CRUD tests', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(done);
+    User.remove().exec(function() {
+      Tag.remove().exec(done);
+    });
   });
 });

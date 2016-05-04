@@ -45,7 +45,7 @@ var validateLabel = function(label) {
  * @link https://www.npmjs.com/package/validator#validators
  */
 var validateURL = function(url) {
-  return (url && validator.isURL(url, {
+  return !url || validator.isURL(url, {
     protocols: ['http','https'],
     require_tld: true,
     require_protocol: true,
@@ -53,7 +53,7 @@ var validateURL = function(url) {
     allow_underscores: false,
     allow_trailing_dot: false,
     allow_protocol_relative_urls: false
-  }));
+  });
 };
 
 /**

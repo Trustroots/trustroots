@@ -790,6 +790,14 @@ exports.modifyUserTag = function(req, res) {
         new: true // get the updated document in return
       })
       .exec(function(err, tag) {
+
+        // Tag by id `req.body.id` didn't exist
+        if(!tag || !tag._id) {
+          return res.status(400).send({
+            message: errorHandler.getErrorMessageByKey('bad-request')
+          });
+        }
+
         done(err, tag);
       });
     },
