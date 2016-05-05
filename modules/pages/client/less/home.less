@@ -163,17 +163,6 @@
       text-decoration: none;
     }
   }
-  .tribe-intro {
-    text-align: center;
-    p {
-      padding: 0;
-      margin: 0;
-      font-size: 16px;
-      @media (min-width: @screen-md-min) {
-        font-size: 21px;
-      }
-    }
-  }
   .tribe,
   .tribe-intro {
     margin-left: auto;
@@ -188,6 +177,28 @@
     }
     @media (min-width: @screen-lg-min) {
       .square(260px);
+    }
+  }
+  .tribe-intro {
+    text-align: center;
+    height: auto;
+    p {
+      padding: 0;
+      margin: 0;
+      font-size: 16px;
+    }
+    h2 {
+      font-size: 23px;
+    }
+    @media (min-width: @screen-md-min) {
+      p {
+        font-size: 21px;
+      }
+      h2 {
+        font-size: 26px;
+      }
+    }
+    @media (max-width: @screen-md-max) {
     }
   }
   .tribe {
@@ -247,7 +258,6 @@
     padding: 30px;
     a {
       text-decoration: none;
-
     }
     // On bigger screens:
     // Make credits slightly opaque and add hover effects
