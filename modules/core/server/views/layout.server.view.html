@@ -54,8 +54,9 @@
     <meta property="og:title" content="{{tribe.label|striptags|addslashes}} - Trustroots Tribe">
     <meta property="og:description" content="Join to meet, host and get hosted by this and other communities. Trustroots is a travellers' community for sharing, hosting and getting people together.">
     <meta property="og:url" content="{{hostPort}}/tribes/{{tribe.slug}}">
-    {% if tribe.image %}
-      <meta property="og:image" content="{{hostPort}}/modules/tags/img/tribe/{{tribe._id|json|safe|replace('"', '', 'g')}}.jpg">
+    {% if tribe.image_UUID %}
+      {# https://developers.facebook.com/docs/sharing/best-practices#images #}
+      <meta property="og:image" content="https://ucarecdn.com/{{tribe.image_UUID}}/-/progressive/yes/-/scale_crop/1200x630/center/-/quality/lightest/-/format/jpeg/">
     {% else %}
       <meta property="og:image" content="{{hostPort}}/modules/core/img/og_image.jpg">
     {% endif %}
@@ -75,8 +76,8 @@
     <meta name="twitter:title" content="{{tribe.label|striptags|addslashes}} - Trustroots Tribe">
     <meta name="twitter:description" content="Join to meet, host and get hosted by this and other communities. Trustroots is a travellers' community for sharing, hosting and getting people together.">
     <meta name="twitter:url" content="{{hostPort}}/tribes/{{tribe.slug}}">
-    {% if tribe.image %}
-      <meta name="twitter:image" content="{{hostPort}}/modules/tags/img/tribe/{{tribe._id|json|safe|replace('"', '', 'g')}}.jpg">
+    {% if tribe.image_UUID %}
+      <meta name="twitter:image" content="https://ucarecdn.com/{{tribe.image_UUID}}/-/progressive/yes/-/scale_crop/1200x630/center/-/quality/lightest/-/format/jpeg/">
     {% else %}
       <meta name="twitter:image" content="{{hostPort}}/modules/core/img/og_image.jpg">
     {% endif %}
