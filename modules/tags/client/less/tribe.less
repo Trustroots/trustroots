@@ -81,3 +81,24 @@
     }
   }
 }
+
+.tribe-attribution {;
+  display: block;
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  padding: 30px;
+  a:not(.btn) {
+    text-decoration: none;
+  }
+  // On bigger screens:
+  // Make credits slightly opaque and add hover effects
+  opacity: 0.5;
+  a:hover {
+    border-bottom: 1px solid #fff;
+  }
+  &:hover {
+    transition: opacity 0.3s linear;
+    opacity: 1;
+  }
+}

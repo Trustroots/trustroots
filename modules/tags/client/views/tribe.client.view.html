@@ -71,6 +71,11 @@
 
         </div><!-- /.row -->
       </div>
+      <small class="hidden-xs font-brand-light tribe-attribution" ng-if="tribe.attribution">
+        Photo by
+          <a ng-if="tribe.attribution_url" ng-href="tribe.attribution_url" ng-bind="tribe.attribution"></a>
+          <span ng-if="!tribe.attribution_url" ng-bind="tribe.attribution"></span>
+      </small>
     </div>
   </section>
 
