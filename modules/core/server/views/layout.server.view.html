@@ -51,8 +51,8 @@
   {% if facebookAppId !== "APP_ID" %}<meta property="fb:app_id" content="{{facebookAppId}}">{% endif %}
   {% if facebookPage !== "" %}<meta property="article:publisher" content="{{facebookPage}}">{% endif %}
   {% if tribe %}
-    <meta property="og:title" content="{{tribe.label|striptags|addslashes}} - Trustroots Tribe">
-    <meta property="og:description" content="Join to meet, host and get hosted by this and other communities. Trustroots is a travellers' community for sharing, hosting and getting people together.">
+    <meta property="og:title" content="Join {{tribe.label|striptags|addslashes}} on Trustroots">
+    <meta property="og:description" content="Join to meet, host and get hosted by Trustroots Tribe {{tribe.label|striptags|addslashes}}. Trustroots is a travellers' community for sharing, hosting and getting people together.">
     <meta property="og:url" content="{{hostPort}}/tribes/{{tribe.slug}}">
     {% if tribe.image_UUID %}
       {# https://developers.facebook.com/docs/sharing/best-practices#images #}
@@ -73,8 +73,8 @@
   {# Twitter #}
   {% if twitterUsername !== "" %}<meta name="twitter:site" content="{{twitterUsername}}">{% endif %}
   {% if tribe %}
-    <meta name="twitter:title" content="{{tribe.label|striptags|addslashes}} - Trustroots Tribe">
-    <meta name="twitter:description" content="Join to meet, host and get hosted by this and other communities. Trustroots is a travellers' community for sharing, hosting and getting people together.">
+    <meta name="twitter:title" content="Join {{tribe.label|striptags|addslashes}} on Trustroots">
+    <meta name="twitter:description" content="Join to meet, host and get hosted by Trustroots Tribe {{tribe.label|striptags|addslashes}}. Trustroots is a travellers' community for sharing, hosting and getting people together.">
     <meta name="twitter:url" content="{{hostPort}}/tribes/{{tribe.slug}}">
     {% if tribe.image_UUID %}
       <meta name="twitter:image" content="https://ucarecdn.com/{{tribe.image_UUID}}/-/progressive/yes/-/scale_crop/1200x630/center/-/quality/lightest/-/format/jpeg/">
@@ -135,6 +135,7 @@
         title = '{{title}}',
         settings = {{ appSettings | json | safe }},
         languages = {{ languages | json | safe }},
+        {% if facebookAppId !== "APP_ID" %}facebookAppId = '{{facebookAppId}}',{% endif %}
         env = '{{ env }}';
   </script>
 

@@ -132,6 +132,13 @@
             'license': 'CC',
             'license_url': 'https://creativecommons.org/licenses/by-nc-nd/4.0/',
             'file': 'tribes-1.jpg'
+          },
+          'woman-bridge': {
+            'name': 'Michael Hull',
+            'url': 'https://unsplash.com/photos/JibIPPrvITE',
+            'license': 'CC',
+            'license_url': 'https://unsplash.com/license',
+            'file': 'mh-woman-bridge.jpg'
           }
         };
 
