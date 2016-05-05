@@ -49,14 +49,36 @@
               }"></ng-pluralize>
             <br><br>
             <button class="btn btn-lg btn-primary tribe-join" tr-tribe-join-button tr-tribe-joined-label="You're a member" tr-tribe-join-label="Join this tribe" tr-tribe-join-icon="false"></button>
+            <br><br>
+            <p class="lead tribe-intro">
+              Trustroots is built on communities. Share this page within your community and invite them to join!
+            </p>
+            <span class="tribe-share" ng-if="app.user.additionalProvidersData.twitter">
+              <a href="https://twitter.com/share" class="twitter-share-button" data-text="test" data-via="trustroots">Tweet</a>
+              <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+            </span>
+            <span class="tribe-share" ng-if="app.user.additionalProvidersData.facebook">
+              <span id="fb_share"></span>
+              <script>
+                document.getElementById('fb_share').innerHTML = '<div class="fb-share-button" data-href="' + encodeURIComponent(location.href) + '" data-layout="button" data-mobile-iframe="true"></div>';
+              </script>
+              <div id="fb-root"></div>
+              <script>(function(d, s, id) {
+                var js, fjs = d.getElementsByTagName(s)[0];
+                if (d.getElementById(id)) return;
+                js = d.createElement(s); js.id = id;
+                js.src = "//connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v2.6";//&appId=";
+                fjs.parentNode.insertBefore(js, fjs);
+              }(document, 'script', 'facebook-jssdk'));</script>
+            </span>
           </div>
 
           <!-- For non authenticated members -->
           <div class="col-xs-12 col-sm-7 col-md-6 col-lg-5" ng-if="!app.user">
             <p class="lead tribe-pre">Trustroots Tribe</p>
             <h2 class="font-brand-regular tribe-title" ng-bind="::tribeCtrl.tribe.label"></h2>
+            <br><br>
             <p class="lead tribe-intro">
-              <br><br>
               Trustroots is a travellers' community for sharing, hosting and getting people together.
               <br><br>
               Join to meet, host and get hosted by this and other communities.
@@ -71,10 +93,10 @@
 
         </div><!-- /.row -->
       </div>
-      <small class="hidden-xs font-brand-light tribe-attribution" ng-if="tribe.attribution">
+      <small class="hidden-xs font-brand-light tribe-attribution" ng-if="::tribe.attribution">
         Photo by
-          <a ng-if="tribe.attribution_url" ng-href="tribe.attribution_url" ng-bind="tribe.attribution"></a>
-          <span ng-if="!tribe.attribution_url" ng-bind="tribe.attribution"></span>
+          <a ng-if="tribe.attribution_url" ng-href="{{::tribe.attribution_url}}" ng-bind="::tribe.attribution"></a>
+          <span ng-if="!tribe.attribution_url" ng-bind="::tribe.attribution"></span>
       </small>
     </div>
   </section>
