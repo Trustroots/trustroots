@@ -20,14 +20,18 @@
       </div>
 
       <h3 class="faq-question" id="is-trustroots-exclusively-for-hitchhikers">Is Trustroots exclusively for hitchhikers?</h3>
-      You're welcome to sign up if you've never hitchhiked; we don't exclusively focus on hitchhikers. In the initial phase we're focusing on getting especially hitchhikers on board and making the site ideal for that. Many people who hitchhike have a specific way of traveling that is not always well served by some websites. Hitchhikers are also traveling a lot more than the average Joe, which is a good way to spread the idea further. Our background is within Hitchhikers community and in <a href="http://hitchwiki.org/">Hitchwiki</a>. The site will obviously remain rather alternative and true to its roots, even when we introduce it to new communities.
-      <br>
-      We want to maintain the feeling of a small community and we have some technical ideas for doing this with the site. We'll soon add functionality that will make it convenient for people who prefer to host people from within their own communities (e.g. vegans, musicians), but it will always be possible to open your home to anyone on the site if you prefer.
+      No. Trustroots is for everyone.
+      <br><br>
+      Trustroots was initially built with hitchhikers in mind but anyone has always been welcome to sign up even if they've never hitchhiked.
+      <br><br>
+      In the initial phase we were focusing on getting especially hitchhikers on board and making the site ideal for that. Our background is within Hitchhikers community and in <a href="http://hitchwiki.org/">Hitchwiki</a>. The site will obviously remain rather alternative and true to its roots, even when we introduce it to new communities.
+      <br><br>
+      Take a look at <a ui-sref="tribes.list">tribes</a>.
 
       <br><br>
 
       <h3 class="faq-question" id="what-is-your-long-term-vision">What is your long term vision?</h3>
-      <em>"We want a world that encourages trust, adventure and intercultural connections."</em> See <a ui-sref="about">about</a> for more.
+      <em>"We want a world that encourages trust, adventure and intercultural connections."</em> <a ui-sref="foundation">Read more</a>.
 
       <br><br>
 
@@ -37,7 +41,7 @@
       <br><br>
 
       <h3 class="faq-question" id="how-is-this-connected-to-hitchwiki-nomadwiki-or-trashwiki">How is this connected to Hitchwiki, Nomadwiki or Trashwiki?</h3>
-      The team creating Trustroots also created these projects. We will want to integrate them to some degree into Trustroots since they share pretty much the same vision and user base.
+      The team creating Trustroots also created these projects. We will want to look into integrating them to some degree into Trustroots since they share pretty much the same vision and user base.
 
       <br><br>
 
@@ -149,7 +153,7 @@
       <p class="lead text-center" id="more-questions">
         More questions? <a ui-sref="support">Ask us!</a>
         <br><br>
-        See also our <a href="http://ideas.trustroots.org/">blog</a> and <a ui-sref="about">about</a> page.
+        See also our <a href="http://ideas.trustroots.org/">blog</a> and <a ui-sref="home">about</a> page.
       </p>
 
     </div>
@@ -161,33 +165,33 @@
 
           <uib-accordion-group heading="Site & community" is-open="sidebar.isCommunityOpen">
             <div class="list-group">
-              <a ng-click="faq.read('is-trustroots-exclusively-for-hitchhikers')" class="list-group-item">Is Trustroots exclusively for hitchhikers?</a>
-              <a ng-click="faq.read('what-is-your-long-term-vision')" class="list-group-item">What is your long term vision?</a>
-              <a ng-click="faq.read('is-trustroots-alternative')" class="list-group-item">Is Trustroots an alternative for CouchSurfing or BeWelcome?</a>
-              <a ng-click="faq.read('how-is-this-connected-to-hitchwiki-nomadwiki-or-trashwiki')" class="list-group-item">How is this connected to Hitchwiki, Nomadwiki or Trashwiki?</a>
-              <a ng-click="faq.read('why-the-name-trustroots')" class="list-group-item">Why the name Trustroots?</a>
-              <a ng-click="faq.read('why-is-there-facebook-connection')" class="list-group-item">Why is there Facebook connection?</a>
-              <a ng-click="faq.read('why-is-there-no-forum')" class="list-group-item">Why is there no forum?</a>
-              <a ng-click="faq.read('how-can-i-contact-you')" class="list-group-item">How can can I contact you?</a>
+              <a ng-click="faq.readQuestion('is-trustroots-exclusively-for-hitchhikers')" class="list-group-item">Is Trustroots exclusively for hitchhikers?</a>
+              <a ng-click="faq.readQuestion('what-is-your-long-term-vision')" class="list-group-item">What is your long term vision?</a>
+              <a ng-click="faq.readQuestion('is-trustroots-alternative')" class="list-group-item">Is Trustroots an alternative for CouchSurfing or BeWelcome?</a>
+              <a ng-click="faq.readQuestion('how-is-this-connected-to-hitchwiki-nomadwiki-or-trashwiki')" class="list-group-item">How is this connected to Hitchwiki, Nomadwiki or Trashwiki?</a>
+              <a ng-click="faq.readQuestion('why-the-name-trustroots')" class="list-group-item">Why the name Trustroots?</a>
+              <a ng-click="faq.readQuestion('why-is-there-facebook-connection')" class="list-group-item">Why is there Facebook connection?</a>
+              <a ng-click="faq.readQuestion('why-is-there-no-forum')" class="list-group-item">Why is there no forum?</a>
+              <a ng-click="faq.readQuestion('how-can-i-contact-you')" class="list-group-item">How can can I contact you?</a>
             </div>
           </uib-accordion-group>
 
           <uib-accordion-group heading="Organisation" is-open="sidebar.isOrganisationOpen">
             <div class="list-group">
-              <a ng-click="faq.read('what-is-your-legal-status')" class="list-group-item">What's your legal status?</a>
-              <a ng-click="faq.read('why-limited-by-guarantee')" class="list-group-item">Why Limited by Guarantee under section 60 exemption?</a>
-              <a ng-click="faq.read('are-you-going-to-sell-out')" class="list-group-item">Could Trustroots assets be sold?</a>
-              <a ng-click="faq.read('who-are-the-board')" class="list-group-item">Who are the board?</a>
-              <a ng-click="faq.read('how-do-you-want-to-make-the-project-financially-sustainable')" class="list-group-item">How do you want to make the project financially sustainable?</a>
-              <a ng-click="faq.read('who-decides-what-gets-done')" class="list-group-item">Who decides what gets done?</a>
+              <a ng-click="faq.readQuestion('what-is-your-legal-status')" class="list-group-item">What's your legal status?</a>
+              <a ng-click="faq.readQuestion('why-limited-by-guarantee')" class="list-group-item">Why Limited by Guarantee under section 60 exemption?</a>
+              <a ng-click="faq.readQuestion('are-you-going-to-sell-out')" class="list-group-item">Could Trustroots assets be sold?</a>
+              <a ng-click="faq.readQuestion('who-are-the-board')" class="list-group-item">Who are the board?</a>
+              <a ng-click="faq.readQuestion('how-do-you-want-to-make-the-project-financially-sustainable')" class="list-group-item">How do you want to make the project financially sustainable?</a>
+              <a ng-click="faq.readQuestion('who-decides-what-gets-done')" class="list-group-item">Who decides what gets done?</a>
             </div>
           </uib-accordion-group>
 
           <uib-accordion-group heading="Technology" is-open="sidebar.isTechnologyOpen">
             <div class="list-group">
-              <a ng-click="faq.read('im-a-developer')" class="list-group-item">I'm a developer and I want to help!</a>
-              <a ng-click="faq.read('are-you-planning-to-do-x-feature')" class="list-group-item">Are you planning to do X feature?</a>
-              <a ng-click="faq.read('decentralize-it')" class="list-group-item">Decentralize it?</a>
+              <a ng-click="faq.readQuestion('im-a-developer')" class="list-group-item">I'm a developer and I want to help!</a>
+              <a ng-click="faq.readQuestion('are-you-planning-to-do-x-feature')" class="list-group-item">Are you planning to do X feature?</a>
+              <a ng-click="faq.readQuestion('decentralize-it')" class="list-group-item">Decentralize it?</a>
             </div>
           </uib-accordion-group>
 
