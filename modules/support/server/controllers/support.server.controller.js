@@ -40,6 +40,7 @@ exports.supportRequest = function(req, res) {
         authenticated: (req.user) ? 'yes' : 'no',
         profilePublic: (req.user && req.user.public) ? 'yes' : 'no',
         signupDate:    (req.user) ? req.user.created.toString() : '-',
+        reportMember:  (req.body.reportMember) ? textProcessor.plainText(req.body.reportMember) : false,
       };
 
       res.render(

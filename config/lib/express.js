@@ -174,10 +174,22 @@ module.exports.initModulesConfiguration = function (app, db) {
  */
 module.exports.initHelmetHeaders = function (app) {
   // Use helmet to secure Express headers
+  var SIX_MONTHS = 15778476000;
+
   app.use(helmet.xframe());
   app.use(helmet.xssFilter());
   app.use(helmet.nosniff());
   app.use(helmet.ienoopen());
+
+  // This only works if your site actually has HTTPS.
+  // It won't tell users on HTTP to switch to HTTPS,
+  // it will just tell HTTPS users to stick around
+  app.use(helmet.hsts({
+    maxAge: SIX_MONTHS, // Must be at least 18 weeks to be approved by Google
+    includeSubdomains: false, // Must be enabled to be approved by Google
+    force: true
+  }));
+
   app.disable('x-powered-by');
 };
 

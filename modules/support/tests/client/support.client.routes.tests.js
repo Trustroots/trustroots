@@ -24,7 +24,7 @@
         }));
 
         it('Should have the correct URL', function () {
-          expect(mainstate.url).toEqual('/support');
+          expect(mainstate.url).toEqual('/support?report=');
         });
 
         it('Should not be abstract', function () {

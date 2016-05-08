@@ -11,7 +11,7 @@
     .factory('PollMessagesCount', PollMessagesCountFactory);
 
   /* @ngInject */
-  function PollMessagesCountFactory($interval, $rootScope, MessagesCount) {
+  function PollMessagesCountFactory($interval, $rootScope, MessagesCount, Authentication) {
 
     var highFrequency = 2*60*1000, // once every 2 minutes
         lowFrequency = 5*60*1000, // once every 5 minutes
@@ -93,6 +93,10 @@
       if(newFrequency !== frequency) {
         frequency = newFrequency;
         setPollingInterval();
+        // When turning to high frequency, poll on frequency change
+        if(frequencyString === 'high' && Authentication.user && Authentication.user.public) {
+          poll();
+        }
       }
     }
 

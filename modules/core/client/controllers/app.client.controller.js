@@ -39,8 +39,6 @@
      */
     function onWindowFocus() {
       PollMessagesCount.setFrequency('high');
-      // Poll now
-      PollMessagesCount.poll();
     }
 
     // Default options for Medium-Editor directive used site wide

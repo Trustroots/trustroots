@@ -959,6 +959,34 @@ describe('User CRUD tests', function () {
       });
   });
 
+  it('should not be able to change profile picture to a pdf file disguised as jpg file', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr, signinRes) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        agent.post('/api/users-avatar')
+          .attach('avatar', './modules/users/tests/server/img/test-actually-pdf-looks-like-jpg.jpg')
+          .send(credentials)
+          .expect(415)
+          .end(function (userInfoErr, userInfoRes) {
+
+            // Handle change profile picture error
+            if (userInfoErr) {
+              return done(userInfoErr);
+            }
+
+            userInfoRes.body.message.should.equal('Unsupported Media Type.');
+
+            return done();
+          });
+      });
+  });
+
   it('should not be able to change profile picture to a svg file', function (done) {
     agent.post('/api/auth/signin')
       .send(credentials)
@@ -1000,7 +1028,7 @@ describe('User CRUD tests', function () {
         agent.post('/api/users-avatar')
           .attach('avatar', './modules/users/tests/server/img/this-is-text-file.jpg')
           .send(credentials)
-          .expect(422) // 422: Unprocessable Entity.
+          .expect(415) // 415: Unsupported Media Type.
           .end(function (userInfoErr, userInfoRes) {
 
             // Handle change profile picture error
@@ -1008,7 +1036,7 @@ describe('User CRUD tests', function () {
               return done(userInfoErr);
             }
 
-            userInfoRes.body.message.should.equal('Failed to process image, please try again.');
+            userInfoRes.body.message.should.equal('Unsupported Media Type.');
 
             return done();
           });
