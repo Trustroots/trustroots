@@ -10,7 +10,7 @@
 
     $stateProvider.
       state('support', {
-        url: '/support',
+        url: '/support?report=',
         title: 'Support',
         templateUrl: '/modules/support/views/support.client.view.html',
         requiresAuth: false,

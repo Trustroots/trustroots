@@ -24,6 +24,15 @@
 
           <form name="supportForm" ng-submit="support.sendSupportRequest(supportForm.$valid)" novalidate autocomplete="off" class="form-horizontal">
 
+            <!-- Reporting another profile -->
+            <div class="form-group" ng-if="support.request.reportMember">
+              <label class="col-sm-2 control-label">Reporting member</label>
+              <div class="col-sm-10">
+                <p class="form-control-static" ng-bind="::support.request.reportMember"></p>
+              </div>
+            </div>
+
+            <!-- Message -->
             <div class="form-group">
               <label for="message" class="col-sm-2 control-label">Message</label>
               <div class="col-sm-10">

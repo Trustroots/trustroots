@@ -6,7 +6,7 @@
     .controller('SupportController', SupportController);
 
   /* @ngInject */
-  function SupportController(SupportService, messageCenterService) {
+  function SupportController(SupportService, messageCenterService, $stateParams) {
 
     // ViewModel
     var vm = this;
@@ -21,6 +21,20 @@
       message: ''
     };
 
+    activate();
+
+    /**
+     * Initialize controller
+     */
+    function activate() {
+      if($stateParams.report && $stateParams.report !== '') {
+        vm.request.reportMember = $stateParams.report;
+      }
+    }
+
+    /**
+     * Send support request
+     */
     function sendSupportRequest(isValid) {
       vm.success = false;
       vm.isLoading = true;
