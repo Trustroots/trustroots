@@ -15,7 +15,8 @@
       restrict: 'A',
       replace: true,
       scope: {
-        tribes: '=trTribesList'
+        tribes: '=trTribesList',
+        isOwnProfile: '=isOwnProfile'
       }
     };
 

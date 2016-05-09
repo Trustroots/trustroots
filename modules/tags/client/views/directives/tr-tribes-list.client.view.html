@@ -24,8 +24,7 @@
       </div>
     </li>
   </ul>
-
-  <div class="text-center" ng-if="app.user._id === user._id">
+  <div class="text-center" ng-if="isOwnProfile">
     <div class="content-empty" ng-if="tribes && tribes.length === 0">
       <div class="icon-tribes icon-3x text-muted"></div>
       <p><em>Joining Tribes helps you find likeminded Trustroots members.</em></p>
