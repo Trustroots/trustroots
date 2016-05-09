@@ -19,6 +19,8 @@ exports.getErrorMessageByKey = function(key) {
     'invalid-id':             'Cannot interpret id.',
     'unprocessable-entity':   'Unprocessable Entity.', // Status 422, @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
     'unsupported-media-type': 'Unsupported Media Type.', // Status 415
+    'bad-request':            'Bad request.', // Status 400
+    'conflict':               'Conflict.', // Status 409 
     'default':                defaultErrorMessage
   };
 

@@ -6,7 +6,7 @@
     .controller('FaqController', FaqController);
 
   /* @ngInject */
-  function FaqController($timeout, $window) {
+  function FaqController($timeout, $window, $location) {
 
     var $body = angular.element('body');
 
@@ -14,7 +14,7 @@
     var vm = this;
 
     // Exposed to the view
-    vm.read = read;
+    vm.readQuestion = readQuestion;
 
     // Toggles for the accordion
     vm.sidebar = {
@@ -26,12 +26,13 @@
       closeOthers: false
     };
 
+    activate();
+
     /**
-     * Init
+     * Initialize
      * @todo move to a directive?
      */
-    init();
-    function init() {
+    function activate() {
       // Determine if sidebar should be scrolling or not
       $timeout(function(){
         if($window.innerHeight <= angular.element('#faq-sidebar').height()) {
@@ -43,14 +44,21 @@
       });
       // Determine fixed width for the sidebar so it doesn't overflow when it gets fixed position
       angular.element('#faq-sidebar').css({ 'max-width': angular.element('#faq-sidebar').width() });
+
+      if($location.hash() !== '') {
+        readQuestion($location.hash());
+      }
     }
 
     /**
      * Scroll+highlight a FAQ question when clicking title at sidebar
      * @todo move to a directive?
      */
-    function read(id) {
+    function readQuestion(id) {
       var $el = angular.element('#' + id);
+
+      // Set URL
+      $location.hash(id);
 
       // Scroll to element
       $body.animate({scrollTop: $el.offset().top - 60}, 'fast');

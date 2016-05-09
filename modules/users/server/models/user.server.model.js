@@ -3,7 +3,9 @@
 /**
  * Module dependencies.
  */
-var crypto = require('crypto'),
+var path = require('path'),
+    config = require(path.resolve('./config/config')),
+    crypto = require('crypto'),
     mongoose = require('mongoose'),
     uniqueValidation = require('mongoose-beautiful-unique-validation'),
     validator = require('validator'),
@@ -44,14 +46,37 @@ var validatePassword = function(password) {
 
 var validateUsername = function(username) {
   var usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/,
-      dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/,
-      illegalUsernames = ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'user', 'profile', 'password', 'username', 'unknown', 'anonymous', 'home', 'signup', 'signin', 'edit', 'settings', 'password', 'username', 'user', ' demo', 'test', 'support', 'networks', 'photo', 'account', 'api', 'modify'];
+      dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/;
   return (this.provider !== 'local' || ( username &&
                                          usernameRegex.test(username) &&
-                                       illegalUsernames.indexOf(username) < 0) &&
-                                       dotsRegex.test(username)
-                                     );
+                                         config.illegalStrings.indexOf(username) < 0) &&
+                                         dotsRegex.test(username)
+                                        );
 };
+
+/**
+ * SubSchema for `User` schema's `member` array
+ * This could be defined directly under `UserSchema` as well,
+ * but then we'd have extra `_id`'s hanging around.
+ */
+var UserMemberSchema = mongoose.Schema({
+  tag: {
+    type: Schema.Types.ObjectId,
+    ref: 'Tag',
+    required: true
+  },
+  relation: {
+    type: String,
+    enum: ['is', 'likes'],
+    default: 'is',
+    required: true
+  },
+  since: {
+    type: Date,
+    default: Date.now,
+    required: true
+  }
+}, { _id : false });
 
 /**
  * User Schema
@@ -189,7 +214,7 @@ var UserSchema = new Schema({
   },
   avatarSource: {
     type: String,
-    enum: ['none','gravatar','facebook','local'],
+    enum: ['none', 'gravatar', 'facebook', 'local'],
     default: 'gravatar'
   },
   avatarUploaded: {
@@ -217,6 +242,10 @@ var UserSchema = new Schema({
   },
   resetPasswordExpires: {
     type: Date
+  },
+  /* Tags & Tribes user is member of */
+  member: {
+    type: [UserMemberSchema]
   }
 });
 

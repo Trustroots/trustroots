@@ -1,28 +1,29 @@
 'use strict';
 
-var errorHandler = require('./errors.server.controller');
+var path = require('path'),
+    errorHandler = require('./errors.server.controller'),
+    usersHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller'));
 
 /**
  * Render the main application page
  */
 exports.renderIndex = function(req, res) {
 
-  var currentUser = null;
+  var renderVars = {
+    user: null
+  };
 
   // Expose user
   if(req.user) {
-    currentUser = req.user;
-    // Don't just expose everything to the view...
-    delete currentUser.resetPasswordToken;
-    delete currentUser.resetPasswordExpires;
-    delete currentUser.emailToken;
-    delete currentUser.password;
-    delete currentUser.salt;
+    renderVars.user = usersHandler.sanitizeProfile(req.user, req.user);
   }
 
-  res.render('modules/core/server/views/index', {
-    user: currentUser
-  });
+  // Expose tribe (when browsing `/tribes/tribe-name`)
+  if(req.tribe) {
+    renderVars.tribe = req.tribe;
+  }
+
+  res.render('modules/core/server/views/index', renderVars);
 };
 
 /**

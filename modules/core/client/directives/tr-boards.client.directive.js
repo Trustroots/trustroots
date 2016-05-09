@@ -124,6 +124,21 @@
             'file': 'ss-mountainforest.jpg',
             'license': 'CC',
             'license_url': 'https://creativecommons.org/publicdomain/zero/1.0/', // https://unsplash.com/license
+          },
+          'tribes-1': {
+            // Permission granted for Trustroots (asked by Mikael Korpela)
+            'name': 'Antonio Fulghieri',
+            'url': 'https://aaoutthere.wordpress.com/',
+            'license': 'CC',
+            'license_url': 'https://creativecommons.org/licenses/by-nc-nd/4.0/',
+            'file': 'tribes-1.jpg'
+          },
+          'woman-bridge': {
+            'name': 'Michael Hull',
+            'url': 'https://unsplash.com/photos/JibIPPrvITE',
+            'license': 'CC',
+            'license_url': 'https://unsplash.com/license',
+            'file': 'mh-woman-bridge.jpg'
           }
         };
 

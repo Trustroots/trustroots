@@ -1,18 +1,39 @@
 <section class="container container-spacer">
-  <form name="userForm" ng-submit="signup.submitSignup()" class="signin form-horizontal" novalidate autocomplete="off">
-    <fieldset>
+  <form name="userForm" class="signin form-horizontal" novalidate autocomplete="off">
 
       <div class="row">
         <div class="col-xs-12 text-center">
-          <img class="hidden-xs" src="/modules/core/img/tree-color.svg" alt="Trustroots" width="120" height="120" />
-          <img class="visible-xs-inline-block" src="/modules/core/img/tree-color.svg" alt="Trustroots" width="80" height="80" />
-          <br><br>
+          <h3>Join Trustroots</h3>
+          <p class="font-brand-light signup-tribe" ng-show="signup.tribe && signup.tribe._id && signup.step < 3">
+            + Tribe {{::signup.tribe.label}}
+          </p>
+          <div class="signup-steps">
+
+            <div class="font-brand-regular" ng-class="{'signup-step-active font-brand-semibold': signup.step === 1}"><!-- ng-click="signup.step = 1;">-->
+              <div class="signup-step-indicator font-brand-light">1</div>
+              Info
+            </div>
+            <div class="signup-step-line"></div>
+            <div class="font-brand-regular" ng-class="{'signup-step-active font-brand-semibold': signup.step === 2}">
+              <div class="signup-step-indicator font-brand-light">2</div>
+              Tribes
+            </div>
+            <div class="signup-step-line"></div>
+            <div class="font-brand-regular" ng-class="{'signup-step-active font-brand-semibold': signup.step === 3}">
+              <div class="signup-step-indicator font-brand-light">3</div>
+              Done
+            </div>
+
+          </div>
         </div>
       </div>
 
-      <!-- Signup form -->
-      <div class="row" ng-if="!app.user">
+      <div class="row signup-form-steps">
+
+      <!-- STEP 1 -->
+      <div class="signup-form-step" ng-if="signup.step === 1">
         <div class="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6 col-lg-offset-4 col-lg-4">
+
 
           <div class="form-group" ng-class="{'has-error': signup.firstName.$invalid && signup.firstName.$dirty}">
             <label for="firstName" class="col-sm-4 control-label">First Name</label>
@@ -22,7 +43,6 @@
                      id="firstName"
                      name="firstName"
                      class="form-control input-lg"
-                     placeholder="First Name"
                      ng-model="signup.credentials.firstName"
                      ng-disabled="signup.isLoading"
                      tr-focustip="'Visible to other members.'">
@@ -36,7 +56,6 @@
                      id="lastName"
                      name="lastName"
                      class="form-control input-lg"
-                     placeholder="Last Name"
                      ng-model="signup.credentials.lastName"
                      ng-disabled="signup.isLoading"
                      tr-focustip="'Visible to other members.'">
@@ -51,17 +70,16 @@
                      name="username"
                      autocapitalize="off"
                      class="form-control input-lg"
-                     placeholder="Username"
                      ng-model="signup.credentials.username"
                      ng-pattern="/^(?=.*[0-9A-Za-z])[0-9A-Za-z.\-_]{3,34}$/"
                      ng-disabled="signup.isLoading"
                      ng-minlength="3"
                      ng-maxlength="34"
-                     tr-focustip="'No spaces. Only letters a-z, numbers and .-_ characters. Visible to other members.'"
+                     tr-focustip="'Can only contain letters, numbers, periods, hyphens, and underscores and cannot be longer than 34 characters and has to be at least 3 characters long. Most people choose to use their first name, last name, nickname, or some combination of those with initials. Choose wisely.'"
                      uib-tooltip="{{
                        ((userForm.username.$error.minlength && userForm.username.$dirty) ? 'At least 3 characters long. ' : '') +
-                       ((userForm.username.$error.maxlength && userForm.username.$dirty) ? 'Maximum 34 characters long. ' : '') +
-                       ((userForm.username.$error.pattern && userForm.username.$dirty) ? 'Choose a username that contains only letters, numbers and _-. characters.' : '')
+                       ((userForm.username.$error.maxlength && userForm.username.$dirty) ? 'Cannot be longer than 34 characters. ' : '') +
+                       ((userForm.username.$error.pattern && userForm.username.$dirty) ? 'Can only contain letters, numbers, periods, hyphens, and underscores.' : '')
                      }}"
                      tooltip-trigger="blur"
                      tooltip-placement="top"
@@ -76,7 +94,6 @@
                      mailcheck
                      id="email"
                      name="email"
-                     placeholder="Email"
                      class="form-control input-lg"
                      ng-model="signup.credentials.email"
                      ng-disabled="signup.isLoading"
@@ -96,78 +113,144 @@
                      id="password"
                      name="password"
                      class="form-control input-lg"
-                     placeholder="Password"
                      ng-model="signup.credentials.password"
                      ng-minlength="8"
                      tr-trustpass="{ special: false, number: false, lowercase: false, uppercase: false, messageDone: 'Your password is secure and you are good to go!' }"
                      ng-disabled="signup.isLoading">
             </div>
           </div>
-          <div class="checkbox">
+          <div class="form-group checkbox">
             <div class="col-sm-offset-4 col-sm-8">
               <label>
                 <input type="checkbox" name="newsletter" ng-model="signup.credentials.newsletter" ng-disabled="signup.isLoading">
                 Subscribe to community news
               </label>
+              <br><br>
             </div>
           </div>
+
+          <!-- Rules -->
+          <div class="form-group">
+            <div class="col-xs-8 col-sm-8 col-sm-offset-4 text-muted">
+              <p>
+                Please, abide to our
+                <span class="visible-xs-inline">rules</span>
+                <a class="hidden-xs" ui-sref="rules" ng-click="signup.openRules($event);" uib-tooltip="Read rules" tooltip-placement="bottom">rules</a>
+                that include standards of behavior that apply to everyone.
+              </p>
+            </div>
+            <div class="col-xs-4 visible-xs-block">
+              <a class="btn btn-default" ui-sref="rules" ng-click="signup.openRules($event);">Read rules</a>
+            </div>
+          </div>
+          <!-- /Rules -->
+
+          <!-- Next -->
           <div class="text-center form-group">
-            <br><br>
-            <button type="submit" class="btn btn-lg btn-primary" ng-disabled="signup.isLoading || userForm.$invalid">
-              <span ng-if="!signup.isLoading && !userForm.$invalid">Join the community</span>
-              <span ng-if="signup.isLoading && !userForm.$invalid">Wait a moment...</span>
-              <span ng-if="userForm.$invalid">Please fill in the form</span>
-            </button>
+            <br>
+            <button type="button" class="btn btn-lg btn-primary" ng-click="signup.submitSignup()" ng-disabled="userForm.$invalid" ng-bind="(!userForm.$invalid ? 'Next': 'Please fill in the form')"></button>
             <br><br>
           </div>
 
         </div><!-- /.col -->
       </div><!-- .row-->
-      <!-- /Signup form -->
+      <!-- /STEP 1 -->
 
-      <!-- Success -->
-      <div class="row" ng-if="app.user">
-        <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
+
+      <!-- STEP 2 -->
+      <div class="signup-form-step" ng-if="signup.step === 2">
+        <div class="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6 col-lg-offset-4 col-lg-4 signup-tribe-suggestions">
+
+          <div class="panel tribe tribe-image"
+               ng-if="signup.tribe && signup.tribe._id"
+               ng-repeat="tribe in [signup.tribe] track by tribe._id"
+               tr-tribe-styles="{{::tribe}}"
+               tr-tribe-styles-dimensions="906x240"
+               tr-tribe-styles-quality="lightest"
+               tr-tribe-styles-progressive="yes"
+               tr-tribe-join>
+            <div class="tribe-content" ng-class="{'is-image': tribe.image_UUID}">
+              <div>
+                <h3 class="tribe-label" ng-bind="::tribe.label"></h3>
+                <div class="tribe-meta">
+                  <ng-pluralize count="tribe.count" when="{
+                    '0': 'No members yet',
+                    '1': 'One member',
+                    'other': '{{::tribe.count|number}} members'
+                  }"></ng-pluralize>
+                </div>
+              </div>
+              <button class="tribe-join" tr-tribe-join-button></button>
+            </div>
+          </div>
+          <p class="lead text-center" ng-if="signup.suggestedTribes && signup.suggestedTribes.length && tribe && tribe._id">Other suggested Tribes for you</p>
+
+          <p class="lead text-center" ng-if="signup.suggestedTribes && signup.suggestedTribes.length && !tribe">
+            Join these popular Tribes?
+          </p>
+
+          <ul class="list-unstyled tribe-suggestions-list" ng-if="signup.suggestedTribes && signup.suggestedTribes.length">
+            <li class="panel tribe tribe-image"
+                ng-repeat="tribe in ::signup.suggestedTribes | limitTo:signup.suggestionsLimit track by tribe._id"
+                tr-tribe-styles="{{::tribe}}"
+                tr-tribe-styles-dimensions="906x240"
+                tr-tribe-styles-quality="lightest"
+                tr-tribe-styles-progressive="yes"
+                tr-tribe-join>
+             <div class="tribe-content" ng-class="{'is-image': tribe.image_UUID}">
+               <div>
+                 <h3 class="tribe-label" ng-bind="::tribe.label"></h3>
+                 <div class="tribe-meta">
+                   <ng-pluralize count="tribe.count" when="{
+                     '0': 'No members yet',
+                     '1': 'One member',
+                     'other': '{{' + tribe.count + '|number}} members'
+                   }"></ng-pluralize>
+                 </div>
+               </div>
+               <button class="tribe-join" tr-tribe-join-button></button>
+             </div>
+            </li>
+          </ul>
+
+          <p class="lead text-center">Joining Tribes helps you find likeminded Trustroots members and tells others what you're interested in.</p>
+
+          <div class="text-center form-group">
+            <br><br>
+            <button class="btn btn-lg btn-primary" ng-click="signup.step = 3" ng-disabled="signup.isLoading">Next</button>
+            <br><br>
+          </div>
+
+        </div><!-- /.col -->
+      </div><!-- .row-->
+      <!-- /STEP 2 -->
+
+
+      <!-- STEP 3 (Success) -->
+      <div class="signup-form-step" ng-if="signup.step === 3 && app.user">
+        <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4 text-center">
           <p class="lead">
-            We sent you an email to <strong>{{ app.user.email }}</strong> with further instructions.
+            We sent you an email to <strong ng-bind="::app.user.email"></strong> with further instructions.
             <br><br>
             If you don't see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".
           </p>
-          <p><a ui-sref="profile-edit.about" class="btn btn-primary" id="signup-edit">Fill your profile</a></p>
+          <p><a ui-sref="profile-edit.about" class="btn btn-lg btn-primary" id="signup-edit">Fill your profile</a></p>
         </div>
       </div>
-      <!-- Success -->
+      <!-- STEP 3 (Success) -->
 
-      <!-- Rules -->
-      <div class="row" ng-if="!app.user">
-        <div class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-          <p class="text-muted">Please, abide to our <a ui-sref="rules" ng-click="signup.openRules($event);" uib-tooltip="Read rules" tooltip-placement="bottom">rules</a> that include standards of behavior that apply to everyone.</p>
-        </div>
-        <script type="text/ng-template" id="rules.client.modal.html">
-          <div class="modal-header">
-            <button type="button" class="close" aria-label="Close" ng-click="closeRules()"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title">Rules</h4>
-          </div>
-          <div class="modal-body" ng-include="'/modules/pages/views/rules-text.client.partial.html'"></div>
-          <div class="modal-footer">
-            <button class="btn btn-primary" ng-click="closeRules()">Got it!</button>
-          </div>
-        </script>
-      </div><!-- .row-->
-      <!-- /Rules -->
+    </div><!-- /.row.steps -->
 
-      <div class="row" ng-if="!app.user">
-        <div class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-          <br><br>
-          <a ui-sref="signin" class="btn btn-sm btn-link">Login</a>
-          <br><br>
-          <p class="visible-xs-block">
-            <a ui-sref="home" class="btn btn-default">Back home</a>
-          </p>
-        </div>
+    <div class="row" ng-if="signup.step === 1">
+      <div class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
+        <br><br>
+        <a ui-sref="signin" class="btn btn-link">Login</a>
+        <br><br>
+        <p class="visible-xs-block">
+          <a ui-sref="home" class="btn btn-link">About Trustroots</a>
+        </p>
       </div>
+    </div>
 
-    </fieldset>
   </form>
-
 </section><!-- .container -->

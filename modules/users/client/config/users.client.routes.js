@@ -148,6 +148,13 @@
           requiresAuth: true,
           noScrollingTop: true
         }).
+        state('profile.tribes', {
+          url: '/tribes',
+          title: 'Profile tribes',
+          templateUrl: '/modules/users/views/profile/profile-view-tribes.client.view.html',
+          requiresAuth: true,
+          noScrollingTop: true
+        }).
 
       // When attempting to look at profile as non-authenticated user
       state('profile-signup', {
@@ -158,7 +165,7 @@
 
       // Auth routes
       state('signup', {
-        url: '/signup',
+        url: '/signup?tribe',
         title: 'Sign up',
         templateUrl: '/modules/users/views/authentication/signup.client.view.html',
         controller: 'SignupController',

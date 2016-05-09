@@ -34,7 +34,8 @@ var AppConfig = (function() {
                                               'trTrustpass',
                                               'angular-mailcheck',
                                               'angular-locker',
-                                              'angular-confirm'
+                                              'angular-confirm',
+                                              'angularGrid'
                                             ];
 
   // Load different service dependency for Angulartics depending on environment

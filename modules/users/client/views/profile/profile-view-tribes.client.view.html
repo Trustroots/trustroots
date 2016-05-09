@@ -1,0 +1,27 @@
+<div class="row">
+  <div class="col-md-12">
+
+    <ul class="tribes-grid"
+        angular-grid="profileCtrl.profile.member"
+        ag-grid-width="300"
+        ag-gutter-size="10"
+        ag-angular-grid-id="tribes"
+        ag-refresh-on-img-load="false">
+      <li class="panel tribe tribe-image"
+          tr-tribe-styles="{{::tribe}}"
+          data-ng-repeat="tribe in profileCtrl.profile.member | filter: { tribe.tag.tribe: true } track by tribe.tag._id">
+        <a ui-sref="tribes.tribe({tribe: tribe.tag.slug})" class="tribe-link">
+          <div class="tribe-content" ng-class="{'is-image': tribe.tag.image}" tr-tribe-join>
+            <h3 class="tribe-label" ng-bind="::tribe.tag.label"></h3>
+            <div class="tribe-meta">
+              <ng-pluralize count="tribe.count" when="tribes.pluralizeMembers('tribe.tag.count')"></ng-pluralize>
+            </div>
+            <button class="btn btn-xs btn-primary" tr-tribe-join-button></button>
+          </div>
+        </a>
+      </li>
+    </ul>
+
+  </div>
+
+</div><!-- /.row -->

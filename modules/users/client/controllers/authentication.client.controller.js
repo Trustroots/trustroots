@@ -34,7 +34,7 @@
 
         // Attach user to $analytics calls from now on
         $analytics.setUsername(Authentication.user._id);
-        
+
         $analytics.eventTrack('login.success', {
           category: 'authentication',
           label: 'Login success'

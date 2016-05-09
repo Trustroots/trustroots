@@ -1,7 +1,7 @@
 {
   "name": "trustroots",
   "description": "Trustroots.org",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "author": "https://www.trustroots.org/foundation",
   "private": true,
   "repository": {
@@ -87,7 +87,9 @@
     "mongodb": "~2.1.7",
     "mongoose": "4.4.11",
     "mongoose-beautiful-unique-validation": "~2.0.3",
+    "mongoose-integer": "~0.1.1",
     "mongoose-paginate": "~5.0.0",
+    "mongoose-url-slugs": "~0.2.1",
     "morgan": "~1.7.0",
     "multer": "~1.1.0",
     "nodemailer": "~2.3.0",
@@ -96,10 +98,12 @@
     "passport-github": "~1.1.0",
     "passport-local": "~1.0.0",
     "passport-twitter": "~1.0.3",
+    "randomcolor": "~0.4.4",
     "run-sequence": "~1.1.5",
     "sanitize-html": "~1.11.4",
     "segfault-handler": "~1.0.0",
     "serve-favicon": "~2.3.0",
+    "speakingurl": "~9.0.0",
     "swig": "~1.4.2",
     "validator": "~5.2.0",
     "yargs": "~4.4.0"
