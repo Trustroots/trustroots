@@ -82,7 +82,7 @@
        */
       if (window.location.search.search('_escaped_fragment_') === -1) {
         $stateProvider.state('home', {
-          url: '/',
+          url: '/?tribe',
           templateUrl: '/modules/pages/views/home.client.view.html',
           controller: 'HomeController',
           controllerAs: 'home',

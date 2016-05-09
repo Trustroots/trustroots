@@ -8,6 +8,8 @@ var _ = require('lodash'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
+    tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
+    tagsHandler = require(path.resolve('./modules/tags/server/controllers/tags.server.controller')),
     emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
     config = require(path.resolve('./config/config')),
     nodemailer = require('nodemailer'),
@@ -21,7 +23,8 @@ var _ = require('lodash'),
     os = require('os'),
     mmmagic = require('mmmagic'),
     multerConfig = require(path.resolve('./config/lib/multer')),
-    User = mongoose.model('User');
+    User = mongoose.model('User'),
+    Tag = mongoose.model('Tag');
 
 // Replace mailer with Stub mailer transporter
 // Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
@@ -57,6 +60,7 @@ exports.userProfileFields = [
                     'updated',
                     'avatarSource',
                     'avatarUploaded',
+                    'member',
                     'extSitesBW', // BeWelcome username
                     'extSitesCS', // CouchSurfing username
                     'extSitesWS', // WarmShowers username
@@ -356,6 +360,7 @@ exports.update = function(req, res) {
 
     // For security measurement remove these from the req.body object
     // Users aren't allowed to modify these directly
+    delete req.body.member;
     delete req.body.public;
     delete req.body.created;
     delete req.body.seen;
@@ -415,12 +420,6 @@ exports.update = function(req, res) {
           if (err) {
             done(err);
           } else {
-            user = user.toObject();
-            delete user.salt;
-            delete user.password;
-            delete user.resetPasswordToken;
-            delete user.resetPasswordExpires;
-            delete user.emailToken;
             done(null, token, user);
           }
         });
@@ -507,6 +506,7 @@ exports.update = function(req, res) {
 
   // Return user
   function(user, done) {
+    user = exports.sanitizeProfile(user);
     return res.json(user);
   },
 
@@ -523,7 +523,19 @@ exports.update = function(req, res) {
  * Show the profile of the user
  */
 exports.getUser = function(req, res) {
-  res.json(req.profile || {});
+  // Not a profile of currently authenticated user:
+  if( req.profile && !req.user._id.equals(req.profile._id) ) {
+    // 'public' isn't needed at frontend.
+    // We had to bring it until here trough
+    // ACL policy since it's needed there.
+    // `req.profile.toObject()` is done at sanitizeProfile() before this.
+    delete req.profile.public;
+    res.json(req.profile);
+  }
+  // Profile of currently authenticated user:
+  else {
+    res.json(req.profile || {});
+  }
 };
 
 /**
@@ -593,41 +605,29 @@ exports.userByUsername = function(req, res, next, username) {
   }
 
   // Proper 'username' value required
-  if(typeof username !== 'string' || username === '' || username.length < 3) {
+  if(typeof username !== 'string' || username.trim() === '' || username.length < 3) {
     return res.status(400).send({
       message: 'Valid username required.'
     });
-  }
-
-  /**
-   * Got userId instead? Make it work!
-   * This is here because previously some API paths used userId instead of username
-   * This ensures they work during the transition
-   * Length must be 24, otherwise we'll get true for 12 characters long usernames
-   * Using $or here in case we make false positive with 24 characters long usernames
-   */
-  if(username.length === 24 && mongoose.Types.ObjectId.isValid(username)) {
-    console.warn('userByUsername: Found user id when expecting username.');
-    query = {
-      $or: [
-        { _id: username },
-        { username: username.toLowerCase() }
-      ]
-    };
-  }
-  else {
-    query = {
-      username: username.toLowerCase()
-    };
   }
 
   async.waterfall([
 
     // Find user
     function(done) {
-      User.findOne(
-        query,
-        exports.userProfileFields + ' public').exec(function(err, profile) {
+      User
+        .findOne({
+            username: username.toLowerCase()
+          },
+          exports.userProfileFields + ' public'
+        )
+        .populate({
+          path: 'member.tag',
+          select: tribesHandler.tribeFields + ' tribe', // Loads `tribe` fields for both `tribe:true` and `tribe:false` objects
+          model: 'Tag',
+          options: { sort: { count: -1 }}
+        })
+        .exec(function(err, profile) {
 
         // Something went wrong
         if (err) {
@@ -641,7 +641,7 @@ exports.userByUsername = function(req, res, next, username) {
         }
         // User's own profile, okay to send with public value in it
         else if( (profile && req.user) && req.user._id.equals(profile._id) ) {
-          done(err, profile.toObject());
+          done(err, profile);
         }
         // Not own profile and not public
         else if( (profile && req.user) && (!req.user._id.equals(profile._id) && !profile.public) ) {
@@ -650,11 +650,8 @@ exports.userByUsername = function(req, res, next, username) {
           });
         }
         else {
-          // This isn't needed at frontend
-          delete profile.public;
-
           // Transform profile into object so that we can add new fields to it
-          done(err, profile.toObject());
+          done(err, profile);
         }
 
       });
@@ -662,16 +659,211 @@ exports.userByUsername = function(req, res, next, username) {
 
     // Sanitize & return profile
     function(profile, done) {
-
-      // We're sanitizing this already on saving/updating the profile, but here we do it again just in case.
-      if(profile.description) profile.description = sanitizeHtml(profile.description, textProcessor.sanitizeOptions);
-
-      req.profile = profile;
+      req.profile = exports.sanitizeProfile(profile, req.user);
       next();
     }
 
   ], function(err) {
     if (err) return next(err);
+  });
+
+};
+
+
+/**
+ * Sanitize profile before sending it to frontend
+ * - Ensures certain fields are removed before publishing
+ * - Collects tribe and tag id's into one simple array
+ * - Removes tag and tribe references that don't exist anymore (i.e. they are removed from `tags` table but reference ID remains in the user's table)
+ * - Sanitize description in case
+ */
+exports.sanitizeProfile = function(profile, authenticatedUser) {
+  if(!profile) {
+    console.warn('sanitizeProfile() needs profile data to sanitize.');
+    return;
+  }
+
+  profile = profile.toObject();
+
+  // We're sanitizing this already on saving/updating the profile, but here we do it again just in case.
+  if(profile.description) profile.description = sanitizeHtml(profile.description, textProcessor.sanitizeOptions);
+
+  // Remove tribes/tags without reference object (= they've been deleted from tags table)
+  if(profile.member && profile.member.length > 0) {
+    profile.member = _.reject(profile.member, function(o) { return !o.tag; });
+  }
+
+  // Create simple arrays of tag and tribe id's
+  profile.memberIds = [];
+  if(profile.member && profile.member.length > 0) {
+    profile.member.forEach(function(obj) {
+      // If profile's `member.tag` path was populated
+      if(obj.tag && obj.tag._id) {
+        profile.memberIds.push(obj.tag._id.toString());
+      }
+      // If profile's `member.tag` path wasn't populated, tag is ObjectId
+      else if(obj.tag) {
+        profile.memberIds.push(obj.tag.toString());
+      }
+    });
+  }
+
+  // Profile does not belong to currently authenticated user
+  // Remove data we don't need from other member's profile
+  if(!authenticatedUser || !authenticatedUser._id.equals(profile._id)) {
+    delete profile.updated;
+  }
+
+  // This info totally shouldn't be at the frontend
+  //
+  // - They're not included on `exports.userProfileFields`,
+  //   but this is an additional layer of security
+  //
+  // - This step is required by `core.server.controller.js `
+  //   as it would otherwise send authenticated user's profile "as is"
+  delete profile.resetPasswordToken;
+  delete profile.resetPasswordExpires;
+  delete profile.emailToken;
+  delete profile.password;
+  delete profile.salt;
+
+  return profile;
+};
+
+/**
+ * Join tribe or tag
+ */
+exports.modifyUserTag = function(req, res) {
+
+  // Relation (`is`|`likes`|`leave`) should be present
+  if(!req.body.relation || typeof req.body.relation !== 'string' || ['is', 'likes', 'leave'].indexOf(req.body.relation) === -1) {
+    return res.status(400).send({
+      message: 'Missing relation info.'
+    });
+  }
+
+  // Not a valid ObjectId
+  if(!req.body.id || !mongoose.Types.ObjectId.isValid(req.body.id)) {
+    return res.status(400).send({
+      message: errorHandler.getErrorMessageByKey('invalid-id')
+    });
+  }
+
+  if(!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  // Joining (is/likes) or leaving?
+  var joining = (req.body.relation !== 'leave') ? true : false;
+
+  async.waterfall([
+
+    // Check user is a member of this tag/tribe
+    function(done) {
+
+      // Search for existing occurance with provided tag/tribe id
+      var isMember = (req.user.member && req.user.member.length) ? _.find(req.user.member, function(membership) {
+        return membership.tag.equals(req.body.id);
+      }) : false;
+
+      // Return error if "is joining + is a member" OR "is leaving + isn't a member"
+      if((isMember && joining) || (!isMember && !joining)) {
+        return res.status(409).send({
+          message: errorHandler.getErrorMessageByKey('conflict')
+        });
+      }
+      else {
+        done(null);
+      }
+    },
+
+    // Update tribe/tag counter
+    function(done) {
+      Tag.findByIdAndUpdate(req.body.id, {
+        $inc: {
+          count: (joining ? 1 : -1)
+        }
+      }, {
+        safe: false, // @link http://stackoverflow.com/a/4975054/1984644
+        new: true // get the updated document in return
+      })
+      .exec(function(err, tag) {
+
+        // Tag by id `req.body.id` didn't exist
+        if(!tag || !tag._id) {
+          return res.status(400).send({
+            message: errorHandler.getErrorMessageByKey('bad-request')
+          });
+        }
+
+        done(err, tag);
+      });
+    },
+
+    // Add tribe/tag to user's object
+    function(tag, done) {
+
+      // Mongo query to perform
+      var query = (joining) ?
+        // When joining:
+        {
+          $push: {
+            member: {
+              tag: tag._id,
+              relation: req.body.relation,
+              since: Date.now()
+            }
+          }
+        } :
+        // When leaving:
+        {
+          $pull: {
+            member: {
+              tag: tag._id
+            }
+          }
+        };
+
+      User.findByIdAndUpdate(req.user._id, query, {
+        safe: true, // @link http://stackoverflow.com/a/4975054/1984644
+        new: true // get the updated document in return
+      })
+      .exec(function(err, user) {
+        done(err, tag, user);
+      });
+    },
+
+    // Done, output new tribe/tag + user objects
+    function(tag, user, done) {
+
+      // Preserver only public fields
+      // Array of keys to preserve in tag/tribe before sending it to the frontend
+      var pickFields = tag.tribe ? tribesHandler.tribeFields.split(' ') : tagsHandler.tagFields.split(' ');
+      var pickedTag = _.pick(tag, pickFields);
+
+      // Sanitize user profile
+      user = exports.sanitizeProfile(user, req.user);
+
+      var message = '';
+      message += (joining ? 'Joined' : 'Left');
+      message += ' ' + ((tag && tag.tribe) ? 'tribe' : 'tag') + '.';
+
+      return res.send({
+        message: message,
+        tag: pickedTag,
+        user: user
+      });
+    }
+
+  // Catch errors
+  ], function(err) {
+    if(err) {
+      return res.status(400).send({
+        message: 'Failed to join tribe/tag.'
+      });
+    }
   });
 
 };

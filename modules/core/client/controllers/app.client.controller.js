@@ -47,7 +47,7 @@
       disableReturn: false,
       disableDoubleReturn: false,
       disableExtraSpaces: false,
-      autoLink: true, // automatically turns URLs entered into the text field into HTML anchor tags
+      autoLink: false, // automatically turns URLs entered into the text field into HTML anchor tags
       toolbar: {
         buttons: [{
             name: 'bold',

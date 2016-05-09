@@ -34,6 +34,9 @@ exports.invokeRolesPolicies = function() {
     }, {
       resources: '/api/auth/accounts',
       permissions: []
+    }, {
+      resources: '/api/users/tags',
+      permissions: []
     }]
   }, {
     roles: ['user'],
@@ -73,6 +76,9 @@ exports.invokeRolesPolicies = function() {
     }, {
       resources: '/api/auth/github/callback',
       permissions: ['get']
+    }, {
+      resources: '/api/users/tags',
+      permissions: ['post']
     }]
   }]);
 };
