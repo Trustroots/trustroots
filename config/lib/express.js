@@ -190,6 +190,7 @@ module.exports.initHelmetHeaders = function (app) {
     force: true
   }));
 
+  // This method isn't helmet specific, but coming from Express
   app.disable('x-powered-by');
 };
 
