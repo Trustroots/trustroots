@@ -176,10 +176,13 @@ module.exports.initHelmetHeaders = function (app) {
   // Use helmet to secure Express headers
   var SIX_MONTHS = 15778476000;
 
-  app.use(helmet.xframe());
+  // X-Frame protection
+  // @link https://github.com/helmetjs/frameguard
+  app.use(helmet.frameguard({ action: 'sameorigin' }));
+
   app.use(helmet.xssFilter());
-  app.use(helmet.nosniff());
-  app.use(helmet.ienoopen());
+  app.use(helmet.noSniff());
+  app.use(helmet.ieNoOpen());
 
   // This only works if your site actually has HTTPS.
   // It won't tell users on HTTP to switch to HTTPS,
