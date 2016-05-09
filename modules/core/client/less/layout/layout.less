@@ -47,7 +47,7 @@ body {
  hr {
    position: relative;
    height: .15em;
-   margin: 40px 0;
+   margin: 40px auto;
    padding: 0;
    border: 0;
    overflow: hidden;
@@ -72,6 +72,26 @@ body {
        60em 0 0 0 @color-reel-3,
        70em 0 0 0 @color-reel-2,
        80em 0 0 0 @color-reel-1;
+   }
+   &.hr-white {
+     background: #fff;
+     &:before {
+       background: #fff;
+       box-shadow: none;
+     }
+   }
+   &.hr-gray {
+     background: @gray-lighter;
+     &:before {
+       background: @gray-lighter;
+       box-shadow: none;
+     }
+   }
+   &.hr-xs {
+     width: 10%
+   }
+   &.hr-tight {
+     margin: 20px auto;
    }
  }
 
