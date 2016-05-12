@@ -59,7 +59,7 @@
     vm.mapMinimumZoom = 4;
     vm.mapBounds = {};
     vm.mapLayers = {
-      baselayers: {},
+      baselayers: MapLayersFactory.getLayers({ streets: true, satellite: true, outdoors: true }),
       overlays: {
         selectedOffers: {
           name: 'Selected hosts',
@@ -103,32 +103,30 @@
       southWestLat: 0
     };
 
+    activate();
+
     /**
      * Initialize controller
      */
-    activate();
     function activate() {
 
       // Is local/sessionStorage supported? This might fail in browser's incognito mode
       if(locker.supported()) {
         // Get location from cache, return defaultLocation if it doesn't exist in locker
-        vm.mapCenter = locker.get(cachePrefix, defaultLocation);
+        var cachedLocation = locker.get(cachePrefix, defaultLocation);
+
+        // Validate cached location or fall back to default
+        vm.mapCenter = (cachedLocation && cachedLocation.lat && cachedLocation.lng && cachedLocation.zoom) ? cachedLocation : defaultLocation;
 
         // Make sure there's something in locker for the next time
-        // If the key already exists in locker, then no action will be taken and false will be returned
+        // If the key already exists in locker, then no action will
+        // be taken and false will be returned
         locker.add(cachePrefix, defaultLocation);
-
       }
-      // When local/sessionStorage is not supported:
+      // When local/sessionStorage is not supported, use default location:
       else {
         vm.mapCenter = defaultLocation;
       }
-
-      vm.mapLayers.baselayers.streets = MapLayersFactory.streets(defaultLocation);
-      vm.mapLayers.baselayers.satellite = MapLayersFactory.satellite(defaultLocation);
-
-      // Other() returns an object consisting possibly multiple layers
-      angular.extend(vm.mapLayers.baselayers, MapLayersFactory.other(defaultLocation));
 
       /**
        * Add attribution controller
@@ -152,7 +150,7 @@
           label: layer.leafletEvent.name
         });
         $timeout(function() {
-          vm.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? layer.leafletEvent.layer.options.TRStyle : 'street';
+          vm.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? layer.leafletEvent.layer.options.TRStyle : 'streets';
         });
       });
 
