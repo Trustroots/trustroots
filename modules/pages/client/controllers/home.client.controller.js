@@ -16,7 +16,6 @@
 
   /* @ngInject */
   function HomeController($stateParams, $state, $scope, Authentication, TribesService, TribeService) {
-    console.log('->HomeController');
 
     var headerHeight = angular.element('#tr-header').height() || 0;
 

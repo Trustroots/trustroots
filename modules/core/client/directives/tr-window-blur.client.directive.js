@@ -26,7 +26,7 @@
 
       function link(scope, element, attributes) {
 
-        // Hook up blur-handler.
+        // Hook up blur-handler
         var win = angular.element($window).on('blur', handleBlur);
 
         // When the scope is destroyed, we have to make sure to teardown
