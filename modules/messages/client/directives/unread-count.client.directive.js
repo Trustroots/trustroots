@@ -29,6 +29,10 @@
 
     function link(scope, elem, attr) {
 
+      var favicon1xElem = angular.element('#favicon'),
+          favicon2xElem = angular.element('#favicon2x'),
+          faviconPath = '/modules/core/img/';
+
       scope.unread = PollMessagesCount.getUnreadCount();
 
       activate();
@@ -69,6 +73,17 @@
 
       function onUnreadCountUpdated($event, newUnreadCount) {
         scope.unread = newUnreadCount;
+
+        // Change favicon to special notification icon
+        if(newUnreadCount > 0) {
+          favicon1xElem.attr('href', faviconPath + 'favicon-notification.png');
+          favicon2xElem.attr('href', faviconPath + 'favicon-notification@2x.png');
+        }
+        // Change favicon back to normal
+        else {
+          favicon1xElem.attr('href', faviconPath + 'favicon.png');
+          favicon2xElem.attr('href', faviconPath + 'favicon@2x.png');
+        }
       }
 
     }
