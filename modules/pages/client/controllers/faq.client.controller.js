@@ -61,11 +61,9 @@
      */
     function canSidebarBeSticky() {
       $timeout(function() {
-        console.log('canSidebarBeSticky');
         if($window.innerHeight <= angular.element('#faq-sidebar').height()) {
           vm.allowStickySidebar = false;
         }
-        console.log(vm.allowStickySidebar);
       });
     }
 
@@ -78,7 +76,6 @@
       // Performs color flash for link, see faq.less for more.
       // Animation time at CSS is 1000ms
       if($el.length) {
-
         $el.addClass('faq-question-flash');
         $timeout(function() {
           $el.removeClass('faq-question-flash');
