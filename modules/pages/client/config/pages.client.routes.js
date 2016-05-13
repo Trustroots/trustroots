@@ -43,9 +43,30 @@
         url: '/faq',
         title: 'FAQ',
         templateUrl: '/modules/pages/views/faq.client.view.html',
+        abstract: true,
         controller: 'FaqController',
         controllerAs: 'faq',
       }).
+        state('faq.general', {
+          url: '',
+          title: 'FAQ - Site & community',
+          templateUrl: '/modules/pages/views/faq-general.client.view.html'
+        }).
+        state('faq.tribes', {
+          url: '/tribes',
+          title: 'FAQ - Tribes',
+          templateUrl: '/modules/pages/views/faq-tribes.client.view.html'
+        }).
+        state('faq.foundation', {
+          url: '/foundation',
+          title: 'FAQ - Foundation',
+          templateUrl: '/modules/pages/views/faq-foundation.client.view.html'
+        }).
+        state('faq.technology', {
+          url: '/technology',
+          title: 'FAQ - Technology',
+          templateUrl: '/modules/pages/views/faq-technology.client.view.html'
+        }).
       state('foundation', {
         url: '/foundation',
         title: 'Foundation',

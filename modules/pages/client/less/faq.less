@@ -10,9 +10,22 @@
   }
 }
 
+#faq-sidebar.sidebar {
+  margin-top: (20px + @navbar-height);
+  &.sidebar-sticky {
+    margin-top: 0;
+  }
+}
+
 .faq-question {
-  background-color: transparent;
-  &.faq-question-flash {
+  margin-top: 0;
+  padding-top: (20px + @navbar-height);
+  h3 {
+    margin-top: 0;
+    padding-top: 0;
+    background-color: transparent;
+  }
+  &.faq-question-flash h3 {
     .animation-name(faqFlash);
     .animation-duration(1000ms);
     .animation-iteration-count(1);
