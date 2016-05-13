@@ -6,7 +6,7 @@
     .controller('SearchController', SearchController);
 
   /* @ngInject */
-  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, $analytics, OffersService, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, locker, LocationService) {
+  function SearchController($scope, $http, $q, $state, $stateParams, $timeout, $analytics, OffersService, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, locker, LocationService) {
 
     // `search-map-canvas` is id of <leaflet> element
     var mapId = 'search-map-canvas';
@@ -110,23 +110,12 @@
      */
     function activate() {
 
-      // Is local/sessionStorage supported? This might fail in browser's incognito mode
-      if(locker.supported()) {
-        // Get location from cache, return defaultLocation if it doesn't exist in locker
-        var cachedLocation = locker.get(cachePrefix, defaultLocation);
-
-        // Validate cached location or fall back to default
-        vm.mapCenter = (cachedLocation && cachedLocation.lat && cachedLocation.lng && cachedLocation.zoom) ? cachedLocation : defaultLocation;
-
-        // Make sure there's something in locker for the next time
-        // If the key already exists in locker, then no action will
-        // be taken and false will be returned
-        locker.add(cachePrefix, defaultLocation);
-      }
-      // When local/sessionStorage is not supported, use default location:
-      else {
-        vm.mapCenter = defaultLocation;
-      }
+      /**
+       * Set map location
+       */
+      getMapCenter().then(function(location) {
+        vm.mapCenter = location;
+      });
 
       /**
        * Add attribution controller
@@ -194,6 +183,48 @@
         vm.mapLayers.overlays.selectedOffers.visible = false;
       });
 
+    }
+
+    /**
+     * Return map location from cache or fallback to default location
+     */
+    function getMapCenter() {
+      return $q(function(resolve, reject) {
+
+        // Is local/sessionStorage supported? This might fail in browser's incognito mode
+        if(locker.supported()) {
+          // Get location from cache, return `false` if it doesn't exist in locker
+          var cachedLocation = locker.get(cachePrefix, false);
+
+          // Validate cached location or fall back to default
+          // If it's older than two days, we won't use it.
+          if(cachedLocation &&
+             cachedLocation.lat &&
+             cachedLocation.lng &&
+             cachedLocation.zoom &&
+             isFinite(cachedLocation.lat) &&
+             isFinite(cachedLocation.lng) &&
+             isFinite(cachedLocation.zoom) &&
+             cachedLocation.date &&
+             moment().diff(moment(cachedLocation.date), 'days') < 2) {
+            resolve(cachedLocation);
+          }
+          // No cached location found, it was invalid or it was outdated
+          else {
+            resolve(defaultLocation);
+          }
+
+          // Make sure there's something in locker for the next time
+          // If the key already exists in locker, then no action will
+          // be taken and false will be returned
+          locker.add(cachePrefix, defaultLocation);
+        }
+        // When local/sessionStorage is not supported, use default location:
+        else {
+          resolve(defaultLocation);
+        }
+
+      });
     }
 
     /**
@@ -293,7 +324,8 @@
       locker.put(cachePrefix, {
         'lat': vm.mapCenter.lat,
         'lng': vm.mapCenter.lng,
-        'zoom': vm.mapCenter.zoom
+        'zoom': vm.mapCenter.zoom,
+        'date': new Date()
       });
 
     });

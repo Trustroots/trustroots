@@ -35,7 +35,7 @@
     We could not find such an offer...
   </div>
 
-  <div ng-class="{'leaflet-layerstyle-satellite': (search.mapLayerstyle === 'satellite')}">
+  <div ng-if="search.mapCenter" ng-class="{'leaflet-layerstyle-satellite': (search.mapLayerstyle === 'satellite')}">
     <leaflet id="search-map-canvas"
              lf-center="search.mapCenter"
              markers="search.mapMarkers"
