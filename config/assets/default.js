@@ -5,7 +5,6 @@ module.exports = {
     lib: {
       // Load Angular-UI-Bootstrap module templates for these modules:
       uibModuleTemplates: [
-        'accordion',
         'modal',
         'popover',
         'progressbar',
