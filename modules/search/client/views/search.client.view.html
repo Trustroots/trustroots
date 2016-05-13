@@ -22,17 +22,14 @@
   </div>
 
   <!-- Map overlay messages -->
-  <div ng-if="app.user && !app.user.public && !search.locationNotFound && !search.offerNotFound" class="search-overlay-message">
+  <div ng-if="app.user && !app.user.public && !search.locationNotFound" class="search-overlay-message">
     Sorry, you need to first activate your profile before you can browse others.
   </div>
-  <div ng-show="search.mapCenter.zoom <= search.mapMinimumZoom && app.user.public && !search.locationNotFound && !search.offerNotFound" class="text-uppercase search-overlay-message">
+  <div ng-show="search.mapCenter.zoom <= search.mapMinimumZoom && app.user.public && !search.locationNotFound" class="text-uppercase search-overlay-message">
     Zoom in closer to see everyone
   </div>
-  <div ng-show="search.locationNotFound && !search.offerNotFound" class="search-overlay-message">
+  <div ng-show="search.locationNotFound" class="search-overlay-message">
     We could not find such a place...
-  </div>
-  <div ng-show="search.offerNotFound" class="search-overlay-message">
-    We could not find such an offer...
   </div>
 
   <div ng-if="search.mapCenter" ng-class="{'leaflet-layerstyle-satellite': (search.mapLayerstyle === 'satellite')}">

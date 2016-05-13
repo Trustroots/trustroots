@@ -456,13 +456,13 @@
         };
 
       },
-      // Offer not found
-      function (error) {
-        vm.mapCenter = defaultLocation;
-        vm.offerNotFound = true;
-        $timeout(function(){
-          vm.offerNotFound = false;
-        }, 3000);
+      // Offer not found or other error
+      function() {
+        messageCenterService.add('danger', 'Sorry, we did not find what you are looking for!');
+        $analytics.eventTrack('offer-not-found', {
+          category: 'search.map',
+          label: 'Offer not found'
+        });
       });
     }
 
