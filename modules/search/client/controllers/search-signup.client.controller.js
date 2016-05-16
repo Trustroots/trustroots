@@ -14,9 +14,7 @@
     // Variables passed to leaflet directive at init
     vm.mapCenter = LocationService.getDefaultLocation(3);
     vm.mapLayers = {
-      baselayers: {
-        satellite: MapLayersFactory.satellite(vm.mapCenter)
-      },
+      baselayers: MapLayersFactory.getLayers({ streets: false, satellite: true, outdoors: false }),
       overlays: {
         selectedPath: {
           name: 'selectedPath',

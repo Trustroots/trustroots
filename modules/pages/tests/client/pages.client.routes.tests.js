@@ -156,6 +156,7 @@
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/pages/views/faq.client.view.html', '');
+          $templateCache.put('/modules/pages/views/faq-general.client.view.html', '');
           mainstate = $state.get('faq');
         }));
 
@@ -164,11 +165,33 @@
         });
 
         it('Should not be abstract', function () {
-          expect(mainstate.abstract).toBe(undefined);
+          expect(mainstate.abstract).toBe(true);
         });
 
         it('Should have templateUrl', function () {
           expect(mainstate.templateUrl).toBe('/modules/pages/views/faq.client.view.html');
+        });
+      });
+
+      describe('FAQ Sub Route', function () {
+        var mainstate;
+        beforeEach(inject(function ($state, $templateCache) {
+          // Test expected GET request
+          $templateCache.put('/modules/pages/views/faq.client.view.html', '');
+          $templateCache.put('/modules/pages/views/faq-foundation.client.view.html', '');
+          mainstate = $state.get('faq.foundation');
+        }));
+
+        it('Should have the correct URL', function () {
+          expect(mainstate.url).toEqual('/foundation');
+        });
+
+        it('Should not be abstract', function () {
+          expect(mainstate.abstract).toBe(undefined);
+        });
+
+        it('Should have templateUrl', function () {
+          expect(mainstate.templateUrl).toBe('/modules/pages/views/faq-foundation.client.view.html');
         });
       });
 

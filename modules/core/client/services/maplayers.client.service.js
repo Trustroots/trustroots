@@ -2,54 +2,115 @@
   'use strict';
 
   /**
-   * Service for map layers
-   * - Streets from Mapbox (fallback from OSM)
-   * - Satellite from Mapbox (fallback from MapQuest)
-   * - Other maps:
-   *    - Hitchmap from Mapbox (no fallback)
+   * Service for getting map layers for Leaflet
+   *
+   * Configure `mapbox` object at environment configs
+   *
+   * If Mapbox `user` or `publicKey` are set false,
+   * fall back to OSM and MapQuest
    */
   angular
     .module('core')
     .factory('MapLayersFactory', MapLayersFactory);
 
   /* @ngInject */
-  function MapLayersFactory(SettingsFactory) {
+  function MapLayersFactory($log, SettingsFactory, LocationService) {
 
     var appSettings = SettingsFactory.get();
 
-    // Location for "improve this map"-links (defaults to Europe)
-    var defaultLocation = {
-      lat: 48.6908333333,
-      lng: 9.14055555556,
-      zoom: 6
+    // Is Mapbox configuration available
+    var isMapboxAvailable = (appSettings.mapbox && angular.isObject(appSettings.mapbox.maps) && angular.isString(appSettings.mapbox.user) && angular.isString(appSettings.mapbox.publicKey));
+
+    // Location for "improve this map"-links
+    var location = LocationService.getDefaultLocation(3);
+
+    var service = {
+      getLayers: getLayers
     };
 
-    var service = {};
+    return service;
 
-    service.streets = function(center) {
 
-      var location = center || defaultLocation;
+    /**
+     * Return object for Mapbox layer
+     */
+    function getMapboxLayer(label, TRStyle, layerConf) {
 
-      // Streets/Mapbox
-      if(appSettings.mapbox.map.default && appSettings.mapbox.user && appSettings.mapbox.publicKey) {
-        return {
-          name: 'Streets',
-          type: 'xyz',
-          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + appSettings.mapbox.publicKey + ( appSettings.https ? '&secure=1' : ''),
-          layerParams: {
-            user: appSettings.mapbox.user,
-            map: appSettings.mapbox.map.default
-          },
-          layerOptions: {
-            attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank">© Mapbox © OpenStreetMap</a> <a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.default + '/' + location.lng + '/' + location.lat + '/' + location.zoom + '" target="_blank" class="improve-map">Improve the underlying map</a>',
-            continuousWorld: true,
-            TRStyle: 'street' // Not native Leaflet key, required by our layer switch
-          }
-        };
+      if(!isMapboxAvailable || !layerConf) return;
+
+      var layer = {
+        name: label || 'Mapbox',
+        type: 'xyz',
+        layerParams: {
+          map: layerConf.map,
+          user: layerConf.user || appSettings.mapbox.user,
+          token: appSettings.mapbox.publicKey
+        },
+        layerOptions: {
+          attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank">© Mapbox © OpenStreetMap</a>',
+          continuousWorld: true,
+          TRStyle: TRStyle || 'streets' // Not native Leaflet key, required by our layer switch
+        }
+      };
+
+      // Legacy tiles
+      if(layerConf.legacy) {
+        layer.url = 'https://{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token={token}&secure=1';
       }
-      // Streets/OpenStreetMap as a fallback
+      // Publicly available Mapbox styles
       else {
-        return {
+        layer.url = 'https://api.mapbox.com/styles/v1/{user}/{map}/tiles/{z}/{x}/{y}?access_token={token}';
+      }
+
+      // This feedback layer id is good for private styles
+      var feedbackLayer = appSettings.mapbox.user + '.' + layerConf.map;
+
+      // These feedback layer id's are required for public styles
+      if(!layerConf.legacy && TRStyle === 'satellite') {
+        feedbackLayer = 'mapbox.satellite';
+      }
+      else if(!layerConf.legacy) {
+        feedbackLayer = 'mapbox.streets';
+      }
+
+      // Add feedback link to attribution info
+      layer.layerOptions.attribution += ' <a href="https://www.mapbox.com/map-feedback/#' +
+                                            feedbackLayer + '/' +
+                                            location.lng + '/' +
+                                            location.lat + '/' +
+                                            location.zoom + '" target="_blank" class="improve-map">Improve the underlying map</a>';
+
+
+      return layer;
+    }
+
+    /**
+     * Return object containing different Leaflet layers
+     */
+    function getLayers(options) {
+
+      var layers = {};
+
+      // Set layer types to return
+      // Defaults to return only `streets` layer
+      options = angular.merge({
+        streets: true,
+        satellite: false,
+        outdoors: false
+      }, options || {});
+
+      // Streets
+      if(options.streets && isMapboxAvailable && appSettings.mapbox.maps.streets) {
+        // Streets: Mapbox
+        layers.streets = getMapboxLayer(
+          'Streets',
+          'streets',
+          appSettings.mapbox.maps.streets
+        );
+        // Streets fallback
+      } else if(options.streets) {
+        // Streets: OpenStreetMap
+        layers.streets = {
           name: 'Streets',
           type: 'xyz',
           url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -57,37 +118,24 @@
             subdomains: ['a', 'b', 'c'],
             attribution: '<a href="https://www.openstreetmap.org/" target="_blank">© OpenStreetMap</a> <a href="https://www.openstreetmap.org/login#map=' + location.zoom + '/' + location.lat + '/' + location.lng + '" target="_blank" class="improve-map">Improve the underlying map</a>',
             continuousWorld: true,
-            TRStyle: 'street' // Not native Leaflet key, required by our layer switch
+            TRStyle: 'streets' // Not native Leaflet key, required by our layer switch
           }
         };
       }
 
-    };
-
-    service.satellite = function(center) {
-
-      var location = center || defaultLocation;
-
-      // Satellite/Mapbox
-      if(appSettings.mapbox.map.satellite && appSettings.mapbox.user && appSettings.mapbox.publicKey) {
-        return {
-          name: 'Satellite',
-          type: 'xyz',
-          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + appSettings.mapbox.publicKey + ( appSettings.https ? '&secure=1' : ''),
-          layerParams: {
-            user: appSettings.mapbox.user,
-            map: appSettings.mapbox.map.satellite
-          },
-          layerOptions: {
-            attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank">© Mapbox © OpenStreetMap</a> <a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.satellite + '/' + location.lng + '/' + location.lat + '/' + location.zoom + '" target="_blank" class="improve-map">Improve the underlying map</a>',
-            continuousWorld: true,
-            TRStyle: 'satellite' // Not native Leaflet key, required by our layer switch
-          }
-        };
+      // Satellite
+      if(options.satellite && isMapboxAvailable && appSettings.mapbox.maps.satellite) {
+      // Satellite: Mapbox
+        layers.satellite = getMapboxLayer(
+          'Satellite',
+          'satellite',
+          appSettings.mapbox.maps.satellite
+        );
       }
-      // Satellite/MapQuest as a fallback
-      else {
-        return {
+      // Satellite fallback
+      else if(options.satellite) {
+        // Satellite: MapQuest
+        layers.satellite = {
           name: 'Satellite',
           type: 'xyz',
           url: '//otile{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
@@ -99,56 +147,20 @@
           }
         };
       }
-    };
 
-    service.other = function (center) {
-
-      var location = center || defaultLocation,
-          layers = {};
-
-      // Hitchmap/Mapbox (experimental, no fallback)
-      if(appSettings.mapbox.map.hitchmap && appSettings.mapbox.user && appSettings.mapbox.publicKey) {
-        layers.hitchmap = {
-          name: 'Hitchmap',
-          type: 'xyz',
-          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + appSettings.mapbox.publicKey + ( appSettings.https ? '&secure=1' : ''),
-          layerParams: {
-            user: appSettings.mapbox.user,
-            map: appSettings.mapbox.map.hitchmap
-          },
-          layerOptions: {
-            attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank">© Mapbox © OpenStreetMap</a> <a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.hitchmap + '/' + location.lng + '/' + location.lat + '/' + location.zoom + '" target="_blank" class="improve-map">Improve the underlying map</a>',
-            continuousWorld: true,
-            TRStyle: 'street' // Not native Leaflet, required by layer switch
-          }
-        };
+      // Outdoors (without fallback)
+      if(options.outdoors && isMapboxAvailable && appSettings.mapbox.maps.outdoors) {
+        // Outdoors: Mapbox
+        layers.outdoors = getMapboxLayer(
+          'Outdoors',
+          'streets',
+          appSettings.mapbox.maps.outdoors
+        );
       }
-
-      // Outdoors/Mapbox
-      if(appSettings.mapbox.map.outdoors && appSettings.mapbox.user && appSettings.mapbox.publicKey) {
-        layers.outdoors = {
-          name: 'Outdoors',
-          type: 'xyz',
-          url: '//{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token=' + appSettings.mapbox.publicKey + ( appSettings.https ? '&secure=1' : ''),
-          layerParams: {
-            user: appSettings.mapbox.user,
-            map: appSettings.mapbox.map.outdoors
-          },
-          layerOptions: {
-            attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank">© Mapbox © OpenStreetMap</a> <a href="https://www.mapbox.com/map-feedback/#' + appSettings.mapbox.user + '.' + appSettings.mapbox.map.outdoors + '/' + location.lng + '/' + location.lat + '/' + location.zoom + '" target="_blank" class="improve-map">Improve the underlying map</a>',
-            continuousWorld: true,
-            TRStyle: 'street' // Not native Leaflet, required by layer switch
-          }
-        };
-      }
-
-      // Add any other layers here...
 
       return layers;
+    }
 
-    };
-
-    return service;
   }
 
 })();

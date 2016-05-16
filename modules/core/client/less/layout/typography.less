@@ -37,9 +37,15 @@ blockquote {
   font-size: @font-size-base;
 }
 
- .undecorated-link:hover {
-   text-decoration: none;
+ .undecorated-link {
+   &,
+   &:active,
+   &:focus,
+   &:hover {
+     text-decoration: none;
+   }
  }
+ 
  .text-color-links {
    a {
      color: @text-color;

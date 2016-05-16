@@ -28,7 +28,7 @@
     // Leaflet
     vm.mapCenter = defaultLocation;
     vm.mapLayers = {
-      baselayers: {}
+      baselayers: MapLayersFactory.getLayers({ streets: true, satellite: true, outdoors: false }),
     };
     vm.mapDefaults = {
       scrollWheelZoom: false,
@@ -49,10 +49,6 @@
      */
     init();
     function init() {
-
-      // Setup Leaflet map layers
-      vm.mapLayers.baselayers.streets = MapLayersFactory.streets(defaultLocation);
-      vm.mapLayers.baselayers.satellite = MapLayersFactory.satellite(defaultLocation);
 
       // Make sure offer is there
       offer.$promise.then(function() {

@@ -42,15 +42,27 @@ module.exports = {
       }
     }
   },
+  // Mapbox is publicly exposed to the frontend
   mapbox: {
-    // Mapbox is publicly exposed to the frontend
-    user: process.env.MAPBOX_USERNAME || 'trustroots',
-    map: {
-      default: process.env.MAPBOX_MAP_DEFAULT || 'k8mokch5',
-      satellite: process.env.MAPBOX_MAP_SATELLITE || 'kil7hee6',
-      hitchmap: process.env.MAPBOX_MAP_HITCHMAP || 'ce8bb774'
+    maps: {
+      streets: {
+        map: 'streets-v9',
+        user: 'mapbox',
+        legacy: false
+      },
+      satellite: {
+        map: 'satellite-streets-v9',
+        user: 'mapbox',
+        legacy: false
+      },
+      outdoors: {
+        map: 'outdoors-v9',
+        user: 'mapbox',
+        legacy: false
+      },
     },
-    publicKey: process.env.MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
+    user: process.env.MAPBOX_USERNAME || false,
+    publicKey: process.env.MAPBOX_ACCESS_TOKEN || false
   },
   facebook: {
     page: process.env.FACEBOOK_PAGE || '',

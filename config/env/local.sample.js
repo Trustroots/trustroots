@@ -45,11 +45,25 @@ module.exports = {
   // Uncomment if you want to have Mapbox maps at development environment
   /*
   mapbox: {
-    map: {
-      default: 'k8mokch5',
-      satellite: 'kil7hee6',
-      hitchmap: 'ce8bb774'
-    }
+    maps: {
+      streets: {
+        map: 'k8mokch5',
+        user: 'trustroots',
+        legacy: true
+      },
+      satellite: {
+        map: 'satellite-streets-v9',
+        user: 'mapbox',
+        legacy: false
+      },
+      outdoors: {
+        map: 'outdoors-v9',
+        user: 'mapbox',
+        legacy: false
+      },
+    },
+    user: 'trustroots',
+    publicKey: 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
   }
   */
 };

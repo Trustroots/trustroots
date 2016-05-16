@@ -6,7 +6,7 @@
     .controller('SearchController', SearchController);
 
   /* @ngInject */
-  function SearchController($scope, $http, $location, $state, $stateParams, $timeout, $analytics, OffersService, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, locker, LocationService) {
+  function SearchController($scope, $http, $q, $state, $stateParams, $timeout, $analytics, OffersService, leafletBoundsHelpers, Authentication, Languages, leafletData, messageCenterService, MapLayersFactory, appSettings, locker, LocationService) {
 
     // `search-map-canvas` is id of <leaflet> element
     var mapId = 'search-map-canvas';
@@ -59,7 +59,7 @@
     vm.mapMinimumZoom = 4;
     vm.mapBounds = {};
     vm.mapLayers = {
-      baselayers: {},
+      baselayers: MapLayersFactory.getLayers({ streets: true, satellite: true, outdoors: true }),
       overlays: {
         selectedOffers: {
           name: 'Selected hosts',
@@ -103,32 +103,19 @@
       southWestLat: 0
     };
 
+    activate();
+
     /**
      * Initialize controller
      */
-    activate();
     function activate() {
 
-      // Is local/sessionStorage supported? This might fail in browser's incognito mode
-      if(locker.supported()) {
-        // Get location from cache, return defaultLocation if it doesn't exist in locker
-        vm.mapCenter = locker.get(cachePrefix, defaultLocation);
-
-        // Make sure there's something in locker for the next time
-        // If the key already exists in locker, then no action will be taken and false will be returned
-        locker.add(cachePrefix, defaultLocation);
-
-      }
-      // When local/sessionStorage is not supported:
-      else {
-        vm.mapCenter = defaultLocation;
-      }
-
-      vm.mapLayers.baselayers.streets = MapLayersFactory.streets(defaultLocation);
-      vm.mapLayers.baselayers.satellite = MapLayersFactory.satellite(defaultLocation);
-
-      // Other() returns an object consisting possibly multiple layers
-      angular.extend(vm.mapLayers.baselayers, MapLayersFactory.other(defaultLocation));
+      /**
+       * Set map location
+       */
+      getMapCenter().then(function(location) {
+        vm.mapCenter = location;
+      });
 
       /**
        * Add attribution controller
@@ -152,7 +139,7 @@
           label: layer.leafletEvent.name
         });
         $timeout(function() {
-          vm.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? layer.leafletEvent.layer.options.TRStyle : 'street';
+          vm.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? layer.leafletEvent.layer.options.TRStyle : 'streets';
         });
       });
 
@@ -196,6 +183,48 @@
         vm.mapLayers.overlays.selectedOffers.visible = false;
       });
 
+    }
+
+    /**
+     * Return map location from cache or fallback to default location
+     */
+    function getMapCenter() {
+      return $q(function(resolve, reject) {
+
+        // Is local/sessionStorage supported? This might fail in browser's incognito mode
+        if(locker.supported()) {
+          // Get location from cache, return `false` if it doesn't exist in locker
+          var cachedLocation = locker.get(cachePrefix, false);
+
+          // Validate cached location or fall back to default
+          // If it's older than two days, we won't use it.
+          if(cachedLocation &&
+             cachedLocation.lat &&
+             cachedLocation.lng &&
+             cachedLocation.zoom &&
+             isFinite(cachedLocation.lat) &&
+             isFinite(cachedLocation.lng) &&
+             isFinite(cachedLocation.zoom) &&
+             cachedLocation.date &&
+             moment().diff(moment(cachedLocation.date), 'days') < 2) {
+            resolve(cachedLocation);
+          }
+          // No cached location found, it was invalid or it was outdated
+          else {
+            resolve(defaultLocation);
+          }
+
+          // Make sure there's something in locker for the next time
+          // If the key already exists in locker, then no action will
+          // be taken and false will be returned
+          locker.add(cachePrefix, defaultLocation);
+        }
+        // When local/sessionStorage is not supported, use default location:
+        else {
+          resolve(defaultLocation);
+        }
+
+      });
     }
 
     /**
@@ -295,7 +324,8 @@
       locker.put(cachePrefix, {
         'lat': vm.mapCenter.lat,
         'lng': vm.mapCenter.lng,
-        'zoom': vm.mapCenter.zoom
+        'zoom': vm.mapCenter.zoom,
+        'date': new Date()
       });
 
     });
@@ -426,13 +456,13 @@
         };
 
       },
-      // Offer not found
-      function (error) {
-        vm.mapCenter = defaultLocation;
-        vm.offerNotFound = true;
-        $timeout(function(){
-          vm.offerNotFound = false;
-        }, 3000);
+      // Offer not found or other error
+      function() {
+        messageCenterService.add('danger', 'Sorry, we did not find what you are looking for!');
+        $analytics.eventTrack('offer-not-found', {
+          category: 'search.map',
+          label: 'Offer not found'
+        });
       });
     }
 

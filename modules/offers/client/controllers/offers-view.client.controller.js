@@ -6,7 +6,7 @@
     .controller('OffersViewController', OffersViewController);
 
   /* @ngInject */
-  function OffersViewController($scope, $state, OffersByService, Authentication, leafletData, MapLayersFactory) {
+  function OffersViewController($scope, $state, OffersByService, Authentication, leafletData, MapLayersFactory, LocationService) {
 
     // ViewModel
     var vm = this;
@@ -24,12 +24,7 @@
         iconAnchor: [10, 10] // point of the icon which will correspond to marker's location
       }
     };
-    var defaultLocation = {
-      // Default to Europe, we set center to Offer once it loads
-      lat: 48.6908333333,
-      lng: 9.14055555556,
-      zoom: 5
-    };
+    var defaultLocation = LocationService.getDefaultLocation(5);
 
     // Exposed
     vm.offer = false;
@@ -60,9 +55,7 @@
     };
     vm.mapMarkers = [];
     vm.mapLayers = {
-      baselayers: {
-        streets: MapLayersFactory.streets(defaultLocation)
-      },
+      baselayers: MapLayersFactory.getLayers({ streets: true, satellite: false, outdoors: false }),
       overlays: {
         selectedPath: {
           name: 'selectedPath',
