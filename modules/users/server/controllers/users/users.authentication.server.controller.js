@@ -82,9 +82,7 @@ exports.signup = function(req, res) {
       user.emailTemporary = user.email;
 
       // Then save the user
-      // trySave() is a method required by mongoose-beautiful-unique-validation
-      // @link https://www.npmjs.com/package/mongoose-beautiful-unique-validation
-      user.trySave(function(err) {
+      user.save(function(err) {
         if (!err) {
           // Remove sensitive data before login
           user.password = undefined;
