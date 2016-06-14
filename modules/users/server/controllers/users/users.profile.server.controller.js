@@ -358,6 +358,9 @@ exports.update = function(req, res) {
   // Update user
   function(token, email, done) {
 
+    // For security measurement do not use _id from the req.body object
+    delete req.body._id;
+
     // For security measurement remove these from the req.body object
     // Users aren't allowed to modify these directly
     delete req.body.member;
