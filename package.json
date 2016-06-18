@@ -52,7 +52,7 @@
     "glob": "~7.0.3",
     "gm": "~1.22.0",
     "gulp": "~3.9",
-    "gulp-angular-templatecache": "~1.8.0",
+    "gulp-angular-templatecache": "~1.9.0",
     "gulp-autoprefixer": "~3.1.0",
     "gulp-bower": "~0.0.13",
     "gulp-concat": "~2.6.0",
