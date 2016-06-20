@@ -158,13 +158,7 @@ exports.send = function(req, res) {
         ]
       },
       function(err, thread) {
-
-          Thread.find({},
-          function(errsrrr, threadsss) {
-
         done(err, thread);
-
-      });
       });
     },
 

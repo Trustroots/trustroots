@@ -9,7 +9,7 @@ end_of_line = lf
 insert_final_newline = true
 
 # Standard at: https://github.com/felixge/node-style-guide
-[**.js, **.json]
+[**.{js,json}]
 trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
@@ -25,12 +25,12 @@ spaces_in_brackets = false
 [node_modules/**.js]
 codepaint = false
 
-[**.yml, **.html, **.css, **.less]
+[**.{yml,html,css,less}]
 trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
-[**.conf, **.json]
+[**.json]
 insert_final_newline = false
 trim_trailing_whitespace = true
 
