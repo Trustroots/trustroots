@@ -59,8 +59,10 @@ ADD . /trustroots
 # - Nodemon server  3000
 # - Node debug      5858
 # - LiveReload      35729
+# - MongoDB         27017
 EXPOSE 80
 EXPOSE 3000
 EXPOSE 5858
 EXPOSE 35729
+EXPOSE 27017
 CMD ["dumb-init", "npm", "start"]

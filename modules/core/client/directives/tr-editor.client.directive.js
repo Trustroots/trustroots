@@ -43,13 +43,21 @@
    *    tr-editor-options="{'toolbar': {'buttons': ['bold', 'italic', 'underline']}}"
    *    data-placeholder="Enter a description"></p>
    * ```
+   *
+   * #### Apply function on control+enter
+   * ```html
+   * <p tr-editor
+   *    tr-editor-on-ctrl-enter="functionname()">
+   * </p>
+   * ```
+   *
    */
   angular
     .module('core')
     .directive('trEditor', trEditorDirective);
 
   /* @ngInject */
-  function trEditorDirective() {
+  function trEditorDirective($parse) {
 
     function toInnerText(value) {
       var tempEl = document.createElement('div'),
@@ -96,6 +104,17 @@
         ngModel.editor.subscribe('editableInput', function (event, editable) {
           ngModel.$setViewValue(editable.innerHTML.trim());
         });
+
+        // On ctrl+enter
+        if(iAttrs.trEditorOnCtrlEnter) {
+          ngModel.editor.subscribe('editableKeydownEnter', function (event, editable) {
+            if(event.ctrlKey) {
+              event.preventDefault();
+              // Apply linked function
+              $parse(iAttrs.trEditorOnCtrlEnter)(scope.$parent);
+            }
+          });
+        }
 
         scope.$watch('trEditorOptions', function(trEditorOptions) {
           ngModel.editor.init(iElement, trEditorOptions);
