@@ -120,6 +120,7 @@
     "mocha": "~2.5.3",
     "nodemailer-stub-transport": "~1.0.0",
     "phantomjs-prebuilt": ">=1.9",
+    "semver": "^5.2.0",
     "should": "~9.0.0",
     "supertest": "~1.2.0"
   },

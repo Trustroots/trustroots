@@ -4,6 +4,7 @@ var should = require('should'),
     request = require('supertest'),
     path = require('path'),
     mongoose = require('mongoose'),
+    semver = require('semver'),
     User = mongoose.model('User'),
     Tag = mongoose.model('Tag'),
     config = require(path.resolve('./config/config')),
@@ -125,13 +126,7 @@ describe('User CRUD tests', function () {
                 return done(confirmEmailPostErr);
               }
 
-              // NodeJS v4 changed the status code representation so we must check
-              // before asserting, to be comptabile with all node versions.
-              if (process.version.indexOf('v4') === 0 || process.version.indexOf('v5') === 0) {
-                confirmEmailGetRes.text.should.equal('Found. Redirecting to /confirm-email/' + userRes1.emailToken);
-              } else {
-                confirmEmailGetRes.text.should.equal('Moved Temporarily. Redirecting to /confirm-email/' + userRes1.emailToken);
-              }
+              confirmEmailGetRes.text.should.equal(redirectMessage('/confirm-email/' + userRes1.emailToken));
 
               // POST does the actual job
               agent.post('/api/auth/confirm-email/' + userRes1.emailToken)
@@ -195,13 +190,7 @@ describe('User CRUD tests', function () {
                 return done(confirmEmailPostErr);
               }
 
-              // NodeJS v4 changed the status code representation so we must check
-              // before asserting, to be comptabile with all node versions.
-              if (process.version.indexOf('v4') === 0 || process.version.indexOf('v5') === 0) {
-                confirmEmailGetRes.text.should.equal('Found. Redirecting to /confirm-email-invalid');
-              } else {
-                confirmEmailGetRes.text.should.equal('Moved Temporarily. Redirecting to /confirm-email-invalid');
-              }
+              confirmEmailGetRes.text.should.equal(redirectMessage('/confirm-email-invalid'));
 
               // POST does the actual job
               agent.post('/api/auth/confirm-email/WRONG_TOKEN')
@@ -244,14 +233,7 @@ describe('User CRUD tests', function () {
             }
 
             signoutRes.redirect.should.equal(true);
-
-            // NodeJS v4 changed the status code representation so we must check
-            // before asserting, to be comptabile with all node versions.
-            if (process.version.indexOf('v4') === 0 || process.version.indexOf('v5') === 0) {
-              signoutRes.text.should.equal('Found. Redirecting to /');
-            } else {
-              signoutRes.text.should.equal('Moved Temporarily. Redirecting to /');
-            }
+            signoutRes.text.should.equal(redirectMessage('/'));
 
             return done();
           });
@@ -282,14 +264,7 @@ describe('User CRUD tests', function () {
             }
 
             signoutRes.redirect.should.equal(true);
-
-            // NodeJS v4 changed the status code representation so we must check
-            // before asserting, to be comptabile with all node versions.
-            if (process.version.indexOf('v4') === 0 || process.version.indexOf('v5') === 0) {
-              signoutRes.text.should.equal('Found. Redirecting to /');
-            } else {
-              signoutRes.text.should.equal('Moved Temporarily. Redirecting to /');
-            }
+            signoutRes.text.should.equal(redirectMessage('/'));
 
             return done();
           });
@@ -1463,3 +1438,16 @@ describe('User CRUD tests', function () {
     });
   });
 });
+
+/**
+ * Returns the NodeJS redirect text for any version.
+ */
+function redirectMessage(url) {
+  // NodeJS v4 changed the status code representation so we must check
+  // before asserting, to be comptabile with all node versions.
+  if (semver.satisfies(process.versions.node, '>=4.0.0')) {
+    return 'Found. Redirecting to ' + url;
+  } else {
+    return 'Moved Temporarily. Redirecting to ' + url;
+  }
+}
