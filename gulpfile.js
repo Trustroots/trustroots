@@ -14,6 +14,7 @@ var _ = require('lodash'),
     glob = require('glob'),
     del = require('del'),
     fs = require('fs'),
+    mkdirRecursive = require('mkdir-recursive'),
     argv = require('yargs').argv,
     plugins = gulpLoadPlugins({
       rename: {
@@ -279,11 +280,12 @@ gulp.task('fontello', function(done) {
 });
 
 // Make sure upload directory exists
-gulp.task('makeUploadsDir', ['loadConfig'], function() {
-  return fs.mkdir(config.uploadDir, function(err) {
+gulp.task('makeUploadsDir', ['loadConfig'], function(done) {
+  mkdirRecursive.mkdir(config.uploadDir, function(err) {
     if (err && err.code !== 'EEXIST') {
       console.error(err);
     }
+    done();
   });
 });
 

@@ -82,6 +82,7 @@
     "merge-stream": "~1.0.0",
     "method-override": "~2.3.5",
     "migrate": "~0.2.2",
+    "mkdir-recursive": "~0.2.1",
     "mkdirp": "~0.5.1",
     "mmmagic": "~0.4.4",
     "mongodb": "~2.1.7",
