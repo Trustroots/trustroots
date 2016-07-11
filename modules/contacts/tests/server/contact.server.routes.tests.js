@@ -146,76 +146,75 @@ describe('Contact CRUD tests', function() {
       });
   });
 
-  it('should be able to read contact list of other users when logged in', function(done) {
-    agent.post('/api/auth/signin')
-      .send(credentials) // = user 1
-      .expect(200)
-      .end(function(signinErr, signinRes) {
-        // Handle signin error
-        if (signinErr) done(signinErr);
+  context('authenticated', function(){
 
-          // Get contacts from the other user
-          agent.get('/api/contacts/' + user3Id)
-            .expect(200)
-            .end(function(contactsGetErr, contactsGetRes) {
-              // Handle contact get error
-              if (contactsGetErr) done(contactsGetErr);
+    beforeEach(function(done){
 
-              // Set assertions
-              contactsGetRes.body.length.should.equal(2);
+      agent.post('/api/auth/signin')
+        .send(credentials) // = user 1
+        .expect(200)
+        .end(function(signinErr, signinRes) {
+          done(signinErr);
+        });
 
-              // Connection B: Users 2+3, confirmed
-              contactsGetRes.body[0].confirmed.should.equal(true);
-              contactsGetRes.body[0].created.should.not.be.empty();
-              contactsGetRes.body[0].users[0].username.should.equal(user2.username);
-              contactsGetRes.body[0].users[1].username.should.equal(user3.username);
+    });
 
-              // Connection C: Users 1+3, confirmed
-              contactsGetRes.body[1].confirmed.should.equal(true);
-              contactsGetRes.body[1].created.should.not.be.empty();
-              contactsGetRes.body[1].users[0].username.should.equal(user1.username);
-              contactsGetRes.body[1].users[1].username.should.equal(user3.username);
+    it('should be able to read contact list of other users when logged in', function(done) {
+      // Get contacts from the other user
+      agent.get('/api/contacts/' + user3Id)
+        .expect(200)
+        .end(function(contactsGetErr, contactsGetRes) {
+          // Handle contact get error
+          if (contactsGetErr) done(contactsGetErr);
 
-              // Call the assertion callback
-              return done();
-            });
-      });
-  });
+          // Set assertions
+          contactsGetRes.body.length.should.equal(2);
 
-  it('should be able to read own contact list when logged in and see unconfirmed contacts', function(done) {
-    agent.post('/api/auth/signin')
-      .send(credentials) // = user 1
-      .expect(200)
-      .end(function(signinErr, signinRes) {
-        // Handle signin error
-        if (signinErr) done(signinErr);
+          // Connection B: Users 2+3, confirmed
+          contactsGetRes.body[0].confirmed.should.equal(true);
+          contactsGetRes.body[0].created.should.not.be.empty();
+          contactsGetRes.body[0].users[0].username.should.equal(user2.username);
+          contactsGetRes.body[0].users[1].username.should.equal(user3.username);
 
-          // Get contacts from the other user
-          agent.get('/api/contacts/' + user1Id)
-            .expect(200)
-            .end(function(contactsGetErr, contactsGetRes) {
-              // Handle contact get error
-              if (contactsGetErr) done(contactsGetErr);
+          // Connection C: Users 1+3, confirmed
+          contactsGetRes.body[1].confirmed.should.equal(true);
+          contactsGetRes.body[1].created.should.not.be.empty();
+          contactsGetRes.body[1].users[0].username.should.equal(user1.username);
+          contactsGetRes.body[1].users[1].username.should.equal(user3.username);
 
-              // Set assertions
-              contactsGetRes.body.length.should.equal(2);
+          // Call the assertion callback
+          return done();
+        });
+    });
 
-              // Connection A: Users 1+2, un-confirmed
-              contactsGetRes.body[0].confirmed.should.equal(false);
-              contactsGetRes.body[0].created.should.not.be.empty();
-              contactsGetRes.body[0].users[0].username.should.equal(user1.username);
-              contactsGetRes.body[0].users[1].username.should.equal(user2.username);
+    it('should be able to read own contact list when logged in and see unconfirmed contacts', function(done) {
+      // Get contacts from the other user
+      agent.get('/api/contacts/' + user1Id)
+        .expect(200)
+        .end(function(contactsGetErr, contactsGetRes) {
+          // Handle contact get error
+          if (contactsGetErr) done(contactsGetErr);
 
-              // Connection C: Users 1+3, confirmed
-              contactsGetRes.body[1].confirmed.should.equal(true);
-              contactsGetRes.body[1].created.should.not.be.empty();
-              contactsGetRes.body[1].users[0].username.should.equal(user1.username);
-              contactsGetRes.body[1].users[1].username.should.equal(user3.username);
+          // Set assertions
+          contactsGetRes.body.length.should.equal(2);
 
-              // Call the assertion callback
-              return done();
-            });
-      });
+          // Connection A: Users 1+2, un-confirmed
+          contactsGetRes.body[0].confirmed.should.equal(false);
+          contactsGetRes.body[0].created.should.not.be.empty();
+          contactsGetRes.body[0].users[0].username.should.equal(user1.username);
+          contactsGetRes.body[0].users[1].username.should.equal(user2.username);
+
+          // Connection C: Users 1+3, confirmed
+          contactsGetRes.body[1].confirmed.should.equal(true);
+          contactsGetRes.body[1].created.should.not.be.empty();
+          contactsGetRes.body[1].users[0].username.should.equal(user1.username);
+          contactsGetRes.body[1].users[1].username.should.equal(user3.username);
+
+          // Call the assertion callback
+          return done();
+        });
+    });
+
   });
 
 /*
