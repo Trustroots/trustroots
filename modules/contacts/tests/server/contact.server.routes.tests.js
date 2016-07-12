@@ -161,6 +161,20 @@ describe('Contact CRUD tests', function() {
       });
   });
 
+  it('should not be able to delete contact if not logged in', function(done) {
+    agent.delete('/api/contact/' + contact1Id)
+      .expect(403)
+      .end(function(contactDelErr, contactDelRes) {
+        // Handle contact del error
+        if (contactDelErr) done(contactDelErr);
+
+        contactDelRes.body.message.should.equal('Forbidden.');
+
+        // Call the assertion callback
+        return done();
+      });
+  });
+
   context('logged in', function(){
 
     beforeEach(function(done){
@@ -287,24 +301,6 @@ describe('Contact CRUD tests', function() {
     });
 
   });
-
-/*
-  it('should not be able to delete contact if not logged in', function(done) {
-    console.log('del: '+contact1Id);
-    agent.delete('/api/contact/' + contact1Id)
-      //.expect(403)
-      .end(function(contactDelErr, contactDelRes) {
-
-        console.log(contactDelErr);
-        console.log(contactDelRes);
-
-        //ContactDelRes.body.message.should.equal('Forbidden.');
-
-        // Call the assertion callback
-        return done(contactDelErr);
-      });
-  });
-*/
 
   afterEach(function(done) {
     // Uggggly pyramid revenge!
