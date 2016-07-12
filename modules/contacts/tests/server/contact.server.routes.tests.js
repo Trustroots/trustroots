@@ -300,6 +300,29 @@ describe('Contact CRUD tests', function() {
 
     });
 
+    it('should be able to delete contact', function(done) {
+      agent.delete('/api/contact/' + contact1Id)
+        .expect(200)
+        .end(function(contactDelErr, contactDelRes) {
+          // Handle contact del error
+          if (contactDelErr) done(contactDelErr);
+
+          // The contact should be gone now
+          agent.get('/api/contact-by/' + user2Id)
+            .expect(404)
+            .end(function(contactByErr, contactByRes){
+              // Handle contact by error
+              if (contactByErr) done(contactByErr);
+
+              contactByRes.body.message.should.equal('Not found.');
+
+              // Call the assertion callback
+              return done();
+            });
+
+        });
+    });
+
   });
 
   afterEach(function(done) {
