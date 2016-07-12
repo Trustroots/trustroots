@@ -188,6 +188,29 @@ describe('Contact CRUD tests', function() {
 
     });
 
+    it('should be able to get a contact by user id', function(done){
+      // Get the contact for User1 -> User2 : Contact1
+      agent.get('/api/contact-by/' + user2Id)
+        .expect(200)
+        .end(function(contactByErr, contactByRes){
+          // Handle contact by error
+          if (contactByErr) done(contactByErr);
+
+          var contact = contactByRes.body;
+
+          contact._id.should.equal(contact1Id.toString());
+
+          // Connection A: Users 1+2, un-confirmed
+          contact.confirmed.should.equal(false);
+          contact.created.should.not.be.empty();
+          contact.users[0].username.should.equal(user1.username);
+          contact.users[1].username.should.equal(user2.username);
+
+          // Call the assertion callback
+          return done();
+        });
+    });
+
     it('should be able to read contact list of other users', function(done) {
       // Get contacts from the other user
       agent.get('/api/contacts/' + user3Id)
