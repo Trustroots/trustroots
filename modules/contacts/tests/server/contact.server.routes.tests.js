@@ -264,6 +264,28 @@ describe('Contact CRUD tests', function() {
         });
     });
 
+    it('should be possible to confirm a contact', function(done){
+      // Confirm un-confirmed Contact1 between User1 -> User2
+      agent.put('/api/contact/' + contact1Id)
+        .expect(200)
+        .end(function(contactConfirmErr, contactConfirmRes){
+          // Handle contact confirm error
+          if (contactConfirmErr) done(contactConfirmErr);
+
+          var confirmedContact = contactConfirmRes.body;
+
+          should.exist(confirmedContact);
+          confirmedContact.confirmed.should.equal(true);
+          confirmedContact.created.should.not.be.empty();
+          confirmedContact.users[0].username.should.equal(user1.username);
+          confirmedContact.users[1].username.should.equal(user2.username);
+
+          // Call the assertion callback
+          return done();
+        });
+
+    });
+
   });
 
 /*
