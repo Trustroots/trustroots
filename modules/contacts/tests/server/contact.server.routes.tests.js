@@ -161,7 +161,7 @@ describe('Contact CRUD tests', function() {
       });
   });
 
-  context('authenticated', function(){
+  context('logged in', function(){
 
     beforeEach(function(done){
 
@@ -174,7 +174,7 @@ describe('Contact CRUD tests', function() {
 
     });
 
-    it('should be able to read contact list of other users when logged in', function(done) {
+    it('should be able to read contact list of other users', function(done) {
       // Get contacts from the other user
       agent.get('/api/contacts/' + user3Id)
         .expect(200)
@@ -202,7 +202,7 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    it('should be able to read own contact list when logged in and see unconfirmed contacts', function(done) {
+    it('should be able to read own contact list and see unconfirmed contacts', function(done) {
       // Get contacts from the other user
       agent.get('/api/contacts/' + user1Id)
         .expect(200)
@@ -230,7 +230,7 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    it('should be possible to create a new contact', function(done){
+    it('should be able to create a new unconfirmed contact', function(done){
       // Create a contact User1 -> User4
       agent.post('/api/contact')
         .send({ friendUserId: user4Id })
@@ -264,8 +264,8 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    it('should be possible to confirm a contact', function(done){
-      // Confirm un-confirmed Contact1 between User1 -> User2
+    it('should be able to confirm a contact', function(done){
+      // Confirm the un-confirmed Contact1 between User1 -> User2
       agent.put('/api/contact/' + contact1Id)
         .expect(200)
         .end(function(contactConfirmErr, contactConfirmRes){
