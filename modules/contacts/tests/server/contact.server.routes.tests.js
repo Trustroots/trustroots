@@ -12,8 +12,8 @@ var should = require('should'),
  * Globals
  */
 var app, agent, credentials,
-    user1, user2, user3,
-    user1Id, user2Id, user3Id,
+    user1, user2, user3, user4,
+    user1Id, user2Id, user3Id, user4Id,
     contact1, contact2, contact3,
     contact1Id, contact2Id, contact3Id;
 
@@ -73,6 +73,18 @@ describe('Contact CRUD tests', function() {
       public: true
     });
 
+    // Create a new user
+    user4 = new User({
+      firstName: 'Full',
+      lastName: 'Name',
+      displayName: 'Full Name',
+      email: 'test4@test.com',
+      username: credentials.username + '4',
+      password: credentials.password,
+      provider: 'local',
+      public: true
+    });
+
     // Set dates to the past to make sure contacts are storted in right order for tests
     var yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -104,16 +116,19 @@ describe('Contact CRUD tests', function() {
         user2Id = user2SaveRes._id;
         user3.save(function(err, user3SaveRes) {
           user3Id = user3SaveRes._id;
-          contact1.users = [user1Id, user2Id]; // Connection A: Users 1+2, un-confirmed
-          contact2.users = [user2Id, user3Id]; // Connection B: Users 2+3, confirmed
-          contact3.users = [user1Id, user3Id]; // Connection C: Users 1+3, confirmed
-          contact1.save(function(err, contact1SaveRes) {
-            contact1Id = contact1SaveRes._id;
-            contact2.save(function(err, contact2SaveRes) {
-              contact2Id = contact2SaveRes._id;
-              contact3.save(function(err, contact3SaveRes) {
-                contact3Id = contact3SaveRes._id;
-                return done();
+          user4.save(function(err, user4SaveRes) {
+            user4Id = user4SaveRes._id;
+            contact1.users = [user1Id, user2Id]; // Connection A: Users 1+2, un-confirmed
+            contact2.users = [user2Id, user3Id]; // Connection B: Users 2+3, confirmed
+            contact3.users = [user1Id, user3Id]; // Connection C: Users 1+3, confirmed
+            contact1.save(function(err, contact1SaveRes) {
+              contact1Id = contact1SaveRes._id;
+              contact2.save(function(err, contact2SaveRes) {
+                contact2Id = contact2SaveRes._id;
+                contact3.save(function(err, contact3SaveRes) {
+                  contact3Id = contact3SaveRes._id;
+                  return done();
+                });
               });
             });
           });
@@ -212,6 +227,40 @@ describe('Contact CRUD tests', function() {
 
           // Call the assertion callback
           return done();
+        });
+    });
+
+    it('should be possible to create a new contact', function(done){
+      // Create a contact User1 -> User4
+      agent.post('/api/contact')
+        .send({ friendUserId: user4Id })
+        .expect(200)
+        .end(function(contactAddErr, contactAddRes){
+          // Handle contact add error
+          if (contactAddErr) done(contactAddErr);
+
+          contactAddRes.body.message.should.equal('An email was sent to your contact.');
+
+          // Get the contact for User4 that we just created
+          agent.get('/api/contact-by/' + user4Id)
+            .expect(200)
+            .end(function(contactByErr, contactByRes){
+              // Handle contact by error
+              if (contactByErr) done(contactByErr);
+
+              var contact = contactByRes.body;
+
+              // User4 should be an unconfirmed contact now
+              should.exist(contact);
+              contact.confirmed.should.equal(false);
+              contact.created.should.not.be.empty();
+              contact.users[0].username.should.equal(user4.username);
+              contact.users[1].username.should.equal(user1.username);
+
+              // Call the assertion callback
+              return done();
+            });
+
         });
     });
 
