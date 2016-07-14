@@ -283,24 +283,28 @@ exports.contactById = function(req, res, next, contactId) {
     });
   }
 
-  Contact.findById(contactId)
-    .populate('users', userHandler.userMiniProfileFields)
-    .exec(function(err, contact) {
-      if (err) return next(err);
+  if (req.user && req.user.public) {
+    Contact.findById(contactId)
+      .populate('users', userHandler.userMiniProfileFields)
+      .exec(function(err, contact) {
+        if (err) return next(err);
 
-      // If nothing was found or neither of the user ID's match currently authenticated user's id, return 404
-      if(!contact || (
-          !contact.users[0]._id.equals(req.user._id.valueOf()) &&
-          !contact.users[1]._id.equals(req.user._id.valueOf())
-      )) {
-        return res.status(404).json({
-          message: errorHandler.getErrorMessageByKey('not-found')
-        });
-      }
+        // If nothing was found or neither of the user ID's match currently authenticated user's id, return 404
+        if(!contact || !req.user || (
+            !contact.users[0]._id.equals(req.user._id.valueOf()) &&
+            !contact.users[1]._id.equals(req.user._id.valueOf())
+        )) {
+          return res.status(404).json({
+            message: errorHandler.getErrorMessageByKey('not-found')
+          });
+        }
 
-      req.contact = contact;
-      next();
-    });
+        req.contact = contact;
+        next();
+      });
+  } else {
+    next();
+  }
 };
 
 /**
