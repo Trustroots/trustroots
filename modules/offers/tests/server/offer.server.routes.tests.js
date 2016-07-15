@@ -129,7 +129,8 @@ describe('Offer CRUD tests', function() {
               offerGetRes.body.description.should.equal(offer2.description);
               offerGetRes.body.noOfferDescription.should.equal(offer2.noOfferDescription);
               offerGetRes.body.maxGuests.should.equal(offer2.maxGuests);
-              offerGetRes.body.location.should.deepEqual(offer2.location);
+              offerGetRes.body.location.should.be.instanceof(Array).and.have.lengthOf(2);
+              offerGetRes.body.location.should.deepEqual([offer2.location[0], offer2.location[1]]);
               offerGetRes.body.updated.should.not.be.empty();
               should.not.exist(offerGetRes.body.locationFuzzy);
 
@@ -182,7 +183,8 @@ describe('Offer CRUD tests', function() {
                 offerGetRes.body.description.should.equal(offer1.description);
                 offerGetRes.body.noOfferDescription.should.equal(offer1.noOfferDescription);
                 offerGetRes.body.maxGuests.should.equal(offer1.maxGuests);
-                offerGetRes.body.location.should.deepEqual(offer1.location);
+                offerGetRes.body.location.should.be.instanceof(Array).and.have.lengthOf(2);
+                offerGetRes.body.location.should.deepEqual([offer1.location[0], offer1.location[1]]);
                 offerGetRes.body.updated.should.not.be.empty();
 
                 // Call the assertion callback
@@ -262,7 +264,8 @@ describe('Offer CRUD tests', function() {
                 offersGetRes.body.length.should.equal(1);
                 offersGetRes.body[0].user.should.equal(user2Id.toString());
                 offersGetRes.body[0].status.should.equal(offer2.status);
-                offersGetRes.body[0].locationFuzzy.should.deepEqual(offer2.locationFuzzy);
+                offersGetRes.body[0].locationFuzzy.should.be.instanceof(Array).and.have.lengthOf(2);
+                offersGetRes.body[0].locationFuzzy.should.deepEqual([offer2.locationFuzzy[0], offer2.locationFuzzy[1]]);
                 offersGetRes.body[0]._id.should.not.be.empty();
 
                 // Call the assertion callback
