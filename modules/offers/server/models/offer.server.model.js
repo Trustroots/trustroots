@@ -34,12 +34,12 @@ var OfferSchema = new Schema({
   },
   // Actual location user has marked
   location: {
-    type: []
+    type: [Number]
   },
   // This is sent publicly to frontend;
   // some 50-200m fuzzy presentation of actual location
   locationFuzzy: {
-    type: []
+    type: [Number]
   },
   updated: {
     type: Date,
