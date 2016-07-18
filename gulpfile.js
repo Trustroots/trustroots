@@ -323,12 +323,21 @@ gulp.task('mocha', function(done) {
 
 });
 
-// Karma test runner task
+// Karma test runner task - singleRun mode
 gulp.task('karma', function(done) {
   var KarmaServer = require('karma').Server;
   new KarmaServer({
     configFile: __dirname + '/karma.conf.js',
     singleRun: true
+  }, done).start();
+});
+
+// Karma test runner task - watch mode
+gulp.task('karma:watch', function(done) {
+  var KarmaServer = require('karma').Server;
+  new KarmaServer({
+    configFile: __dirname + '/karma.conf.js',
+    singleRun: false
   }, done).start();
 });
 
@@ -363,6 +372,10 @@ gulp.task('test:server:watch', function(done) {
 
 gulp.task('test:client', function(done) {
   runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', 'karma', done);
+});
+
+gulp.task('test:client:watch', function(done) {
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', 'karma:watch', done);
 });
 
 // Run the project in development mode
