@@ -301,6 +301,18 @@ describe('Contact CRUD tests', function() {
         });
     });
 
+    it('should not be able to create a duplicate contact', function(done){
+      // Try and create a contact User1 -> User2
+      agent.post('/api/contact')
+        .send({ friendUserId: user2Id })
+        .expect(403)
+        .end(function(contactAddErr, contactAddRes){
+          // Handle contact add error
+          if (contactAddErr) return done(contactAddErr);
+          return done();
+        });
+    });
+
     it('should be able to confirm a contact', function(done){
       // Confirm the un-confirmed Contact1 between User1 -> User2
       agent.put('/api/contact/' + contact1Id)
