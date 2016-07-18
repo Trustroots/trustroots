@@ -93,7 +93,7 @@ describe('Support CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Send support message
         agent.post('/api/support')

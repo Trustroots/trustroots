@@ -334,7 +334,7 @@ describe('Reference Thread CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Save a new reference
         agent.post('/api/references/threads')
@@ -342,7 +342,7 @@ describe('Reference Thread CRUD tests', function() {
           .expect(403)
           .end(function(referenceSaveErr, referenceSaveRes) {
             // Handle reference save error
-            if (referenceSaveErr) done(referenceSaveErr);
+            if (referenceSaveErr) return done(referenceSaveErr);
 
             referenceSaveRes.body.message.should.equal('Forbidden.');
 
@@ -358,7 +358,7 @@ describe('Reference Thread CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Save a new reference
         referenceThread.userTo = referenceUserFromId;
@@ -369,7 +369,7 @@ describe('Reference Thread CRUD tests', function() {
           .end(function(referenceSaveErr, referenceSaveRes) {
 
             // Handle reference save error
-            if (referenceSaveErr) done(referenceSaveErr);
+            if (referenceSaveErr) return done(referenceSaveErr);
 
             referenceSaveRes.body.message.should.equal('Thread does not exist.');
 
@@ -385,7 +385,7 @@ describe('Reference Thread CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Save a new reference
         agent.post('/api/references/threads')
@@ -393,7 +393,7 @@ describe('Reference Thread CRUD tests', function() {
           .expect(200)
           .end(function(referenceSaveErr, referenceSaveRes) {
             // Handle reference save error
-            if (referenceSaveErr) done(referenceSaveErr);
+            if (referenceSaveErr) return done(referenceSaveErr);
 
             referenceSaveRes.body.userFrom.should.equal(referenceUserFromId.toString());
             referenceSaveRes.body.userTo.should.equal(referenceUserToId.toString());
@@ -413,7 +413,7 @@ describe('Reference Thread CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         referenceThread.reference = 'yes';
         referenceThread.userFrom = referenceUserFromId;
@@ -435,7 +435,7 @@ describe('Reference Thread CRUD tests', function() {
               .expect(200)
               .end(function(referenceSaveErr, referenceSaveRes) {
                 // Handle reference save error
-                if (referenceSaveErr) done(referenceSaveErr);
+                if (referenceSaveErr) return done(referenceSaveErr);
 
                   // Check DB has two entries
                   ReferenceThread

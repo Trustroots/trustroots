@@ -141,7 +141,7 @@ describe('Statistics CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Read statistics
         agent.get('/api/statistics')

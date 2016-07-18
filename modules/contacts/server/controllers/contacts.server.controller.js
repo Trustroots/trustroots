@@ -69,7 +69,7 @@ exports.add = function(req, res) {
     // Find friend
     function(contact, messageHTML, messagePlain, done) {
       User.findById(req.body.friendUserId, 'email displayName').exec(function(err, friend) {
-        if (!friend) done(new Error('Failed to load user ' + req.body.friendUserId));
+        if (!friend) return done(new Error('Failed to load user ' + req.body.friendUserId));
 
         done(err, contact, messageHTML, messagePlain, friend);
       });

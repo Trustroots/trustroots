@@ -128,7 +128,7 @@ describe('Tag CRUD tests', function () {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Read tribes
         agent.get('/api/tribes')
@@ -285,7 +285,7 @@ describe('Tag CRUD tests', function () {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Read tags
         agent.get('/api/tags')
