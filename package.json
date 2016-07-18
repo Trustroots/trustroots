@@ -23,6 +23,7 @@
     "fontello": "gulp fontello",
     "test": "gulp test",
     "test:client": "gulp test:client",
+    "test:client:watch": "gulp test:client:watch",
     "test:server": "gulp test:server",
     "test:server:watch": "gulp test:server:watch",
     "migrate": "migrate",
