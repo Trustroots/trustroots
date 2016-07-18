@@ -308,7 +308,7 @@ describe('Contact CRUD tests', function() {
       // Try and create a contact User1 -> User2
       agent.post('/api/contact')
         .send({ friendUserId: user2Id })
-        .expect(403)
+        .expect(400)
         .end(function(contactAddErr, contactAddRes){
           // Handle contact add error
           if (contactAddErr) return done(contactAddErr);

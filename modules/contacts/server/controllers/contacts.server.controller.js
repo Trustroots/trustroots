@@ -38,7 +38,7 @@ exports.add = function(req, res) {
 
   async.waterfall([
 
-    // Validate + Sanitize contact
+    // Validate
     function(done) {
 
       // Not a valid ObjectId
@@ -48,6 +48,29 @@ exports.add = function(req, res) {
         });
       }
 
+      // Check if contact already exists
+      Contact.findOne({
+        $or: [
+          { users: [ req.body.friendUserId, req.user._id ] },
+          { users: [ req.user._id, req.body.friendUserId ] }
+        ]
+      }).exec(function(err, existingContact) {
+        if (err) return done(err);
+
+        if (existingContact) {
+          // Contact already exists!
+          return res.status(400).json({
+            message: errorHandler.getErrorMessageByKey('invalid-id')
+          });
+        }
+
+        done();
+      });
+    },
+
+     // Sanitize message
+    function(done) {
+
       // Catch message separately
       var messageHTML = false;
       var messagePlain = false;
@@ -56,6 +79,12 @@ exports.add = function(req, res) {
         messagePlain = htmlToText.fromString(req.body.message, {wordwrap: 80});
       }
       delete req.body.message;
+
+      done(null, messageHTML, messagePlain);
+    },
+
+    // Create Contact
+    function(messageHTML, messagePlain, done) {
 
       contact = new Contact(req.body);
       contact.confirmed = false;
