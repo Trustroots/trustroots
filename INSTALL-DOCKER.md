@@ -105,6 +105,7 @@ docker-compose run trustroots npm update
 
 - `docker-compose run trustroots npm test` (both client & server)
 - `docker-compose run trustroots npm run test:client`
+- `docker-compose run trustroots npm run test:client:watch` (run + watch for changes)
 - `docker-compose run trustroots npm run test:server`
 - `docker-compose run trustroots npm run test:server:watch` (run + watch for changes)
 
