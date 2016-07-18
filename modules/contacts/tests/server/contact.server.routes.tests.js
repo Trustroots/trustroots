@@ -166,7 +166,7 @@ describe('Contact CRUD tests', function() {
       .expect(403)
       .end(function(contactDelErr, contactDelRes) {
         // Handle contact del error
-        if (contactDelErr) done(contactDelErr);
+        if (contactDelErr) return done(contactDelErr);
 
         contactDelRes.body.message.should.equal('Forbidden.');
 
@@ -194,7 +194,7 @@ describe('Contact CRUD tests', function() {
         .expect(200)
         .end(function(contactByErr, contactByRes){
           // Handle contact by error
-          if (contactByErr) done(contactByErr);
+          if (contactByErr) return done(contactByErr);
 
           var contact = contactByRes.body;
 
@@ -217,7 +217,7 @@ describe('Contact CRUD tests', function() {
         .expect(200)
         .end(function(contactsGetErr, contactsGetRes) {
           // Handle contact get error
-          if (contactsGetErr) done(contactsGetErr);
+          if (contactsGetErr) return done(contactsGetErr);
 
           // Set assertions
           contactsGetRes.body.length.should.equal(2);
@@ -245,7 +245,7 @@ describe('Contact CRUD tests', function() {
         .expect(200)
         .end(function(contactsGetErr, contactsGetRes) {
           // Handle contact get error
-          if (contactsGetErr) done(contactsGetErr);
+          if (contactsGetErr) return done(contactsGetErr);
 
           // Set assertions
           contactsGetRes.body.length.should.equal(2);
@@ -274,7 +274,7 @@ describe('Contact CRUD tests', function() {
         .expect(200)
         .end(function(contactAddErr, contactAddRes){
           // Handle contact add error
-          if (contactAddErr) done(contactAddErr);
+          if (contactAddErr) return done(contactAddErr);
 
           contactAddRes.body.message.should.equal('An email was sent to your contact.');
 
@@ -283,7 +283,7 @@ describe('Contact CRUD tests', function() {
             .expect(200)
             .end(function(contactByErr, contactByRes){
               // Handle contact by error
-              if (contactByErr) done(contactByErr);
+              if (contactByErr) return done(contactByErr);
 
               var contact = contactByRes.body;
 
@@ -307,7 +307,7 @@ describe('Contact CRUD tests', function() {
         .expect(200)
         .end(function(contactConfirmErr, contactConfirmRes){
           // Handle contact confirm error
-          if (contactConfirmErr) done(contactConfirmErr);
+          if (contactConfirmErr) return done(contactConfirmErr);
 
           var confirmedContact = contactConfirmRes.body;
 
@@ -328,14 +328,14 @@ describe('Contact CRUD tests', function() {
         .expect(200)
         .end(function(contactDelErr, contactDelRes) {
           // Handle contact del error
-          if (contactDelErr) done(contactDelErr);
+          if (contactDelErr) return done(contactDelErr);
 
           // The contact should be gone now
           agent.get('/api/contact-by/' + user2Id)
             .expect(404)
             .end(function(contactByErr, contactByRes){
               // Handle contact by error
-              if (contactByErr) done(contactByErr);
+              if (contactByErr) return done(contactByErr);
 
               contactByRes.body.message.should.equal('Not found.');
 

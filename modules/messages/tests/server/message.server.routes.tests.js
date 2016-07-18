@@ -109,7 +109,7 @@ describe('Message CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Get user id
         var userFromId = signinRes.body._id;
@@ -120,13 +120,13 @@ describe('Message CRUD tests', function() {
           .expect(200)
           .end(function(messageSaveErr, messageSaveRes) {
             // Handle message save error
-            if (messageSaveErr) done(messageSaveErr);
+            if (messageSaveErr) return done(messageSaveErr);
 
             // Get a list of messages
             agent.get('/api/messages/' + userToId)
               .end(function(messagesGetErr, messagesGetRes) {
                 // Handle message get error
-                if (messagesGetErr) done(messagesGetErr);
+                if (messagesGetErr) return done(messagesGetErr);
 
                 // Get messages list
                 var thread = messagesGetRes.body;
@@ -158,7 +158,7 @@ describe('Message CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Get user id
         var userFromId = signinRes.body._id;
@@ -180,13 +180,13 @@ describe('Message CRUD tests', function() {
           .expect(200)
           .end(function(messageSaveErr, messageSaveRes) {
             // Handle message save error
-            if (messageSaveErr) done(messageSaveErr);
+            if (messageSaveErr) return done(messageSaveErr);
 
             // Get a list of messages
             agent.get('/api/messages/' + userToId)
               .end(function(messagesGetErr, messagesGetRes) {
                 // Handle message get error
-                if (messagesGetErr) done(messagesGetErr);
+                if (messagesGetErr) return done(messagesGetErr);
 
                 // Get messages list
                 var thread = messagesGetRes.body;
@@ -214,7 +214,7 @@ describe('Message CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Get user id
         var userFromId = signinRes.body._id;
@@ -233,13 +233,13 @@ describe('Message CRUD tests', function() {
           .expect(200)
           .end(function(messageSaveErr, messageSaveRes) {
             // Handle message save error
-            if (messageSaveErr) done(messageSaveErr);
+            if (messageSaveErr) return done(messageSaveErr);
 
             // Get a list of messages
             agent.get('/api/messages/' + userToId)
               .end(function(messagesGetErr, messagesGetRes) {
                 // Handle message get error
-                if (messagesGetErr) done(messagesGetErr);
+                if (messagesGetErr) return done(messagesGetErr);
 
                 // Get messages list
                 var thread = messagesGetRes.body;
@@ -268,7 +268,7 @@ describe('Message CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Get user id
         var userFromId = signinRes.body._id;
@@ -283,13 +283,13 @@ describe('Message CRUD tests', function() {
           .expect(200)
           .end(function(messageSaveErr, messageSaveRes) {
             // Handle message save error
-            if (messageSaveErr) done(messageSaveErr);
+            if (messageSaveErr) return done(messageSaveErr);
 
             // Get a list of messages
             agent.get('/api/messages/' + userToId)
               .end(function(messagesGetErr, messagesGetRes) {
                 // Handle message get error
-                if (messagesGetErr) done(messagesGetErr);
+                if (messagesGetErr) return done(messagesGetErr);
 
                 // Get messages list
                 var thread = messagesGetRes.body;
@@ -317,7 +317,7 @@ describe('Message CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Get user id
         var userFromId = signinRes.body._id;
@@ -339,7 +339,7 @@ describe('Message CRUD tests', function() {
                   .expect(200)
                   .end(function(messageSaveErr, messageSaveRes) {
                     // Handle message save error
-                    if (messageSaveErr) done(messageSaveErr);
+                    if (messageSaveErr) return done(messageSaveErr);
 
                     // This message was saved okay, continue to the next one...
                     callback(null, count);
@@ -353,7 +353,7 @@ describe('Message CRUD tests', function() {
                   .expect(200)
                   .end(function(messagesGetErr, messagesGetRes) {
                     // Handle message read error
-                    if (messagesGetErr) done(messagesGetErr);
+                    if (messagesGetErr) return done(messagesGetErr);
 
                     // Get messages list
                     var thread = messagesGetRes.body;
@@ -377,7 +377,7 @@ describe('Message CRUD tests', function() {
                         .expect(200)
                         .end(function(messagesGetErr, messagesGetRes) {
                           // Handle message read error
-                          if (messagesGetErr) done(messagesGetErr);
+                          if (messagesGetErr) return done(messagesGetErr);
 
                           // Get messages list
                           var thread = messagesGetRes.body;
@@ -417,7 +417,7 @@ describe('Message CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Get user id
         var userFromId = signinRes.body._id;
@@ -445,7 +445,7 @@ describe('Message CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Update my description to be very short
         userFrom.description = 'short';
@@ -484,7 +484,7 @@ describe('Message CRUD tests', function() {
       newMessage.save(function(newMessageErr, newMessageRes) {
 
         // Handle save error
-        if (newMessageErr) done(newMessageErr);
+        if (newMessageErr) return done(newMessageErr);
 
         var newThread = new Thread({
           userFrom: userToId,
@@ -497,7 +497,7 @@ describe('Message CRUD tests', function() {
         newThread.save(function(newThreadErr, newThreadRes) {
 
           // Handle save error
-          if (newThreadErr) done(newThreadErr);
+          if (newThreadErr) return done(newThreadErr);
 
           // Sign in
           agent.post('/api/auth/signin')
@@ -505,7 +505,7 @@ describe('Message CRUD tests', function() {
             .expect(200)
             .end(function(signinErr, signinRes) {
               // Handle signin error
-              if (signinErr) done(signinErr);
+              if (signinErr) return done(signinErr);
 
               // Update my description to be very short
               userFrom.description = 'short';
@@ -560,7 +560,7 @@ describe('Message CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         agent.get('/api/messages-count')
           .expect(200)
@@ -597,12 +597,12 @@ describe('Message CRUD tests', function() {
       newMessage1.save(function(newMessage1Err, newMessage1Res) {
 
         // Handle save error
-        if (newMessage1Err) done(newMessage1Err);
+        if (newMessage1Err) return done(newMessage1Err);
 
         newMessage2.save(function(newMessage2Err, newMessage2Res) {
 
           // Handle save error
-          if (newMessage2Err) done(newMessage2Err);
+          if (newMessage2Err) return done(newMessage2Err);
 
           var newThread = new Thread({
             userFrom: userToId,
@@ -615,7 +615,7 @@ describe('Message CRUD tests', function() {
           newThread.save(function(newThreadErr, newThreadRes) {
 
             // Handle save error
-            if (newThreadErr) done(newThreadErr);
+            if (newThreadErr) return done(newThreadErr);
 
             // Sign in
             agent.post('/api/auth/signin')
@@ -623,7 +623,7 @@ describe('Message CRUD tests', function() {
               .expect(200)
               .end(function(signinErr, signinRes) {
                 // Handle signin error
-                if (signinErr) done(signinErr);
+                if (signinErr) return done(signinErr);
 
                 agent.get('/api/messages-count')
                   .expect(200)

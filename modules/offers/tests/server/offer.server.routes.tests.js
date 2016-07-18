@@ -114,14 +114,14 @@ describe('Offer CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
           // Get a offer from the other user
           agent.get('/api/offers-by/' + user2Id)
             .expect(200)
             .end(function(offerGetErr, offerGetRes) {
               // Handle offer get error
-              if (offerGetErr) done(offerGetErr);
+              if (offerGetErr) return done(offerGetErr);
 
               // Set assertions
               offerGetRes.body.user.should.equal(user2Id.toString());
@@ -160,7 +160,7 @@ describe('Offer CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Save a new offer
         agent.post('/api/offers')
@@ -168,14 +168,14 @@ describe('Offer CRUD tests', function() {
           .expect(200)
           .end(function(offerSaveErr, offerSaveRes) {
             // Handle offer save error
-            if (offerSaveErr) done(offerSaveErr);
+            if (offerSaveErr) return done(offerSaveErr);
 
             // Get a offer
             agent.get('/api/offers-by/' + user1Id)
               .expect(200)
               .end(function(offerGetErr, offerGetRes) {
                 // Handle offer get error
-                if (offerGetErr) done(offerGetErr);
+                if (offerGetErr) return done(offerGetErr);
 
                 // Set assertions
                 offerGetRes.body.user.should.equal(user1Id.toString());
@@ -200,7 +200,7 @@ describe('Offer CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         var offerWithoutStatus = offer1;
         delete offerWithoutStatus.status;
@@ -231,7 +231,7 @@ describe('Offer CRUD tests', function() {
       .expect(403)
       .end(function(offersGetErr, offersGetRes) {
         // Handle offer get error
-        if (offersGetErr) done(offersGetErr);
+        if (offersGetErr) return done(offersGetErr);
 
         offersGetRes.body.message.should.equal('Forbidden.');
 
@@ -246,7 +246,7 @@ describe('Offer CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
             // Get offers (around Berlin)
             agent.get('/api/offers' +
@@ -258,7 +258,7 @@ describe('Offer CRUD tests', function() {
               .expect(200)
               .end(function(offersGetErr, offersGetRes) {
                 // Handle offer get error
-                if (offersGetErr) done(offersGetErr);
+                if (offersGetErr) return done(offersGetErr);
 
                 // Set assertions
                 offersGetRes.body.length.should.equal(1);
@@ -281,7 +281,7 @@ describe('Offer CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
             // Get offers (in Niger)
             agent.get('/api/offers' +
@@ -293,7 +293,7 @@ describe('Offer CRUD tests', function() {
               .expect(200)
               .end(function(offersGetErr, offersGetRes) {
                 // Handle offer get error
-                if (offersGetErr) done(offersGetErr);
+                if (offersGetErr) return done(offersGetErr);
 
                 // Set assertions
                 offersGetRes.body.length.should.equal(0);
