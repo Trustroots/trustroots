@@ -1,8 +1,7 @@
 'use strict';
 
-// The default error message to return when now knowing what to do.
+// Default error message when unsure how to respond
 var defaultErrorMessage = 'Snap! Something went wrong. If this keeps happening, please contact us.';
-
 
 /**
  * Get the error by key
