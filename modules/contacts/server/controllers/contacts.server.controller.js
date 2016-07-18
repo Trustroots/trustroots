@@ -33,6 +33,9 @@ if (process.env.NODE_ENV === 'test') {
  */
 exports.add = function(req, res) {
 
+  // Defined in this scope so we can remove it in in the case of an error
+  var contact;
+
   async.waterfall([
 
     // Validate + Sanitize contact
@@ -54,7 +57,7 @@ exports.add = function(req, res) {
       }
       delete req.body.message;
 
-      var contact = new Contact(req.body);
+      contact = new Contact(req.body);
       contact.confirmed = false;
       contact.users = [];
       contact.users.push(req.body.friendUserId);
@@ -63,27 +66,27 @@ exports.add = function(req, res) {
       // - contact.users[0] is receiving person
       // - contact.users[1] is initiating person
 
-      done(null, contact, messageHTML, messagePlain);
+      done(null, messageHTML, messagePlain);
     },
 
     // Find friend
-    function(contact, messageHTML, messagePlain, done) {
+    function(messageHTML, messagePlain, done) {
       User.findById(req.body.friendUserId, 'email displayName').exec(function(err, friend) {
         if (!friend) return done(new Error('Failed to load user ' + req.body.friendUserId));
 
-        done(err, contact, messageHTML, messagePlain, friend);
+        done(err, messageHTML, messagePlain, friend);
       });
     },
 
     // Save contact
-    function(contact, messageHTML, messagePlain, friend, done) {
+    function(messageHTML, messagePlain, friend, done) {
       contact.save(function(err) {
-        done(err, contact, messageHTML, messagePlain, friend);
+        done(err, messageHTML, messagePlain, friend);
       });
     },
 
     // Prepare HTML email for friend
-    function(contact, messageHTML, messagePlain, friend, done) {
+    function(messageHTML, messagePlain, friend, done) {
 
       var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
           meURL = url + '/profile/' + req.user.username,
@@ -114,12 +117,12 @@ exports.add = function(req, res) {
       );
 
       res.render(path.resolve('./modules/core/server/views/email-templates/confirm-contact'), renderVars, function(err, emailHTML) {
-        done(err, contact, emailHTML, messagePlain, friend, renderVars);
+        done(err, emailHTML, messagePlain, friend, renderVars);
       });
     },
 
     // Prepare TEXT email for friend
-    function(contact, emailHTML, messagePlain, friend, renderVars, done) {
+    function(emailHTML, messagePlain, friend, renderVars, done) {
 
       // Replace html version of attached message with text version
       renderVars.message = messagePlain;
@@ -155,9 +158,17 @@ exports.add = function(req, res) {
 
   ], function(err) {
     if (err) {
-      return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
-      });
+      if (contact) {
+        contact.remove(function(){
+          return res.status(400).send({
+            message: errorHandler.getErrorMessage(err)
+          });
+        });
+      } else {
+        return res.status(400).send({
+          message: errorHandler.getErrorMessage(err)
+        });
+      }
     }
   });
 
