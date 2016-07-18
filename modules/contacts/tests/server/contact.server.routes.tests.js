@@ -6,7 +6,10 @@ var should = require('should'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
     Contact = mongoose.model('Contact'),
+    stubTransport = require('nodemailer-stub-transport'),
+    config = require(path.resolve('./config/config')),
     express = require(path.resolve('./config/lib/express'));
+
 
 /**
  * Globals
@@ -356,6 +359,43 @@ describe('Contact CRUD tests', function() {
             });
 
         });
+    });
+
+    context('with email sending error', function(){
+
+      var originalMailerOptions;
+
+      beforeEach(function(){
+        // Set the mail sending to fail
+        originalMailerOptions = config.mailer.options;
+        config.mailer.options = stubTransport({
+          error: new Error('fail!')
+        });
+      });
+
+      afterEach(function(){
+        config.mailer.options = originalMailerOptions;
+      });
+
+      it('should fail to create contact', function(done){
+        // Try and create a contact User1 -> User4
+        agent.post('/api/contact')
+          .send({ friendUserId: user4Id })
+          .expect(400)
+          .end(function(contactAddErr, contactAddRes){
+            // Handle contact add error
+            if (contactAddErr) return done(contactAddErr);
+
+            contactAddRes.body.message.should.equal('Snap! Something went wrong. If this keeps happening, please contact us.');
+
+            // No contact should have been created
+            agent.get('/api/contact-by/' + user4Id)
+              .expect(404)
+              .end(done);
+
+          });
+      });
+
     });
 
   });
