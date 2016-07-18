@@ -59,8 +59,9 @@ exports.add = function(req, res) {
 
         if (existingContact) {
           // Contact already exists!
-          return res.status(400).json({
-            message: errorHandler.getErrorMessageByKey('invalid-id')
+          return res.status(409).json({
+            message: errorHandler.getErrorMessageByKey('conflict'),
+            confirmed: existingContact.confirmed
           });
         }
 
