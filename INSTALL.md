@@ -6,7 +6,7 @@ _These instructions are for installing locally. If you'd like to have containeri
 ### Prerequisites
 
 Make sure you have installed all these prerequisites:
-* [Node.js](http://www.nodejs.org/download/) ([previous versions](https://nodejs.org/en/download/releases/)) v4 and the NPM package manager. You can run multiple Node versions using [NVM](https://github.com/creationix/nvm).
+* [Node.js](http://www.nodejs.org/download/) ([previous versions](https://nodejs.org/en/download/releases/)) v5 or v6 and the NPM package manager. You can run multiple Node versions using [NVM](https://github.com/creationix/nvm).
 * [MongoDB](http://www.mongodb.org/downloads), version 2.6+ or 3.0+ (2.2 is too old, check by typing `mongod --version`)
 * [GraphicsMagick](http://www.graphicsmagick.org/). If you prefer [ImageMagick](http://www.imagemagick.org/) instead, change `imageProcessor` setting from configs to `imagemagic`. In Mac OS X, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) and do:
 ```
