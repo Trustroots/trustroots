@@ -98,6 +98,7 @@ $ npm run migrate     # Migrate database up
 ### Running tests
 - `npm test` (both client & server)
 - `npm run test:client`
+- `npm run test:client:watch` (run + watch for changes)
 - `npm run test:server`
 - `npm run test:server:watch` (run + watch for changes)
 
