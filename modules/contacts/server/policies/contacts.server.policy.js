@@ -54,7 +54,7 @@ exports.invokeRolesPolicies = function() {
 exports.isAllowed = function(req, res, next) {
 
   // No contacts for un-published users
-  if(req.user && req.user.public !== true) {
+  if (req.user && req.user.public !== true) {
     return res.status(403).json({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
@@ -62,7 +62,7 @@ exports.isAllowed = function(req, res, next) {
 
   // If an contact is being processed and the current user owns it, then allow any manipulation
   // 'Delete' gets allowed here
-  if(req.contact && req.user &&
+  if (req.contact && req.user &&
     (
       req.contact.users[0]._id.equals(req.user._id.valueOf()) ||
       req.contact.users[1]._id.equals(req.user._id.valueOf())

@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -45,7 +45,7 @@
         templateUrl: '/modules/pages/views/faq.client.view.html',
         abstract: true,
         controller: 'FaqController',
-        controllerAs: 'faq',
+        controllerAs: 'faq'
       }).
         state('faq.general', {
           url: '',
@@ -98,21 +98,21 @@
           }
       });
 
-      /**
-       * Work around redirecting to home on SEO rendered pages
-       */
-      if (window.location.search.search('_escaped_fragment_') === -1) {
-        $stateProvider.state('home', {
-          url: '/?tribe',
-          templateUrl: '/modules/pages/views/home.client.view.html',
-          controller: 'HomeController',
-          controllerAs: 'home',
-          footerHidden: true
-        });
-      } else {
-        $stateProvider.state('home', {url: '/'});
-      }
+    /**
+     * Work around redirecting to home on SEO rendered pages
+     */
+    if (window.location.search.search('_escaped_fragment_') === -1) {
+      $stateProvider.state('home', {
+        url: '/?tribe',
+        templateUrl: '/modules/pages/views/home.client.view.html',
+        controller: 'HomeController',
+        controllerAs: 'home',
+        footerHidden: true
+      });
+    } else {
+      $stateProvider.state('home', { url: '/' });
+    }
 
   }
 
-})();
+}());

@@ -31,7 +31,7 @@ var _ = require('lodash'),
     User = mongoose.model('User');
 
 exports.checkUnreadMessages = function(agenda) {
-  agenda.define('check unread messages', {lockLifetime: 10000}, function(job, agendaDone) {
+  agenda.define('check unread messages', { lockLifetime: 10000 }, function(job, agendaDone) {
     async.waterfall([
 
       // Aggregate unread messages
@@ -55,7 +55,7 @@ exports.checkUnreadMessages = function(agenda) {
               // Group separate emails
               _id: {
                 'userTo': '$userTo',
-                'userFrom': '$userFrom',
+                'userFrom': '$userFrom'
               },
 
               // Collect unread messages count
@@ -87,14 +87,14 @@ exports.checkUnreadMessages = function(agenda) {
 
         // Fetch email + displayName for all users involved
         // Remember to add these values also userNotFound object (see below)
-        if(userIds.length > 0) {
+        if (userIds.length > 0) {
           User
             .find({ '_id': { $in: userIds } }, 'email displayName username')
             .exec(function(err, users) {
 
               // Re-organise users into more handy array
               var usersArr = [];
-              if(users) {
+              if (users) {
                 users.forEach(function(user) {
                   usersArr[user._id] = user;
                 });
@@ -119,7 +119,7 @@ exports.checkUnreadMessages = function(agenda) {
           config.mailer.options = stubTransport();
         }
 
-        if(notifications.length > 0) {
+        if (notifications.length > 0) {
 
           // Create SMTP connection
           var smtpTransport = nodemailer.createTransport(config.mailer.options);
@@ -141,7 +141,7 @@ exports.checkUnreadMessages = function(agenda) {
 
         var notificationsToProcess = notifications.length;
 
-        if(smtpTransport && notificationsToProcess > 0) {
+        if (smtpTransport && notificationsToProcess > 0) {
 
           var url = (config.https ? 'https' : 'http') + '://' + config.domain,
               messageIds = [];
@@ -162,12 +162,12 @@ exports.checkUnreadMessages = function(agenda) {
 
             // If we don't have info about these users, they've been removed.
             // Don't send notification mail in such case.
-            if(!userTo) {
+            if (!userTo) {
               console.error('Notification email error:');
               console.error('Could not find userTo from users table.');
               return;
             }
-            if(!userFrom) {
+            if (!userFrom) {
               console.error('Notification email error:');
               console.error('Could not find userFrom from users table.');
               return;
@@ -182,59 +182,58 @@ exports.checkUnreadMessages = function(agenda) {
 
             // Variables passed to email text/html templates
             var renderVars = emailsHandler.addEmailBaseTemplateParams(
-              config.domain,
-              {
-                mailTitle: mailSubject,
-                messageCount: messageCount,
-                messages: notification.messages,
-                userFromName: userFrom.displayName,
-                userToName: userTo.displayName,
-                urlReplyPlainText: urlReply,
-                urlReply: analyticsHandler.appendUTMParams(urlReply, {
-                  source: 'transactional-email',
-                  medium: 'email',
-                  campaign: 'messages-unread',
-                  content: 'reply-to'
-                }),
-                urlUserFromProfilePlainText: urlUserFromProfile,
-                urlUserFromProfile: analyticsHandler.appendUTMParams(urlUserFromProfile, {
-                  source: 'transactional-email',
-                  medium: 'email',
-                  campaign: 'messages-unread',
-                  content: 'profile'
-                })
-              },
-              'messages-unread'
-            );
+                config.domain,
+                {
+                  mailTitle: mailSubject,
+                  messageCount: messageCount,
+                  messages: notification.messages,
+                  userFromName: userFrom.displayName,
+                  userToName: userTo.displayName,
+                  urlReplyPlainText: urlReply,
+                  urlReply: analyticsHandler.appendUTMParams(urlReply, {
+                    source: 'transactional-email',
+                    medium: 'email',
+                    campaign: 'messages-unread',
+                    content: 'reply-to'
+                  }),
+                  urlUserFromProfilePlainText: urlUserFromProfile,
+                  urlUserFromProfile: analyticsHandler.appendUTMParams(urlUserFromProfile, {
+                    source: 'transactional-email',
+                    medium: 'email',
+                    campaign: 'messages-unread',
+                    content: 'profile'
+                  })
+                },
+                'messages-unread'
+              );
 
             // Generate plain text and html versions of the email
             var mailBodyText = swig.renderFile(path.resolve('./modules/core/server/views/email-templates-text/messages-unread.server.view.html'), renderVars);
             var mailBodyHtml = swig.renderFile(path.resolve('./modules/core/server/views/email-templates/messages-unread.server.view.html'), renderVars);
 
             smtpTransport.sendMail({
-                to: {
-                  name: userTo.displayName,
-                  address: userTo.email
-                },
-                from: {
-                  name: userFrom.displayName + ' (via Trustroots)', // Sender's own name
-                  address: config.mailer.from // Trustroots email
-                },
-                subject: mailSubject,
-                text: mailBodyText,
-                html: mailBodyHtml
+              to: {
+                name: userTo.displayName,
+                address: userTo.email
               },
-              function(smtpErr, info) {
-                // Sending email to this user failed
-                // Raise warnings and continue with the next one.
-                if(smtpErr) {
-                  console.error('Sending message notification mail failed! user to:');
-                  console.error(smtpErr);
-                  console.error('userTo: ' + notification._id.userTo.toString()+ ', userFrom ' + notification._id.userFrom.toString());
-                }
-
-                notificationCallback(smtpErr);
-              });
+              from: {
+                name: userFrom.displayName + ' (via Trustroots)', // Sender's own name
+                address: config.mailer.from // Trustroots email
+              },
+              subject: mailSubject,
+              text: mailBodyText,
+              html: mailBodyHtml
+            },
+            function(smtpErr, info) {
+              // Sending email to this user failed
+              // Raise warnings and continue with the next one.
+              if (smtpErr) {
+                console.error('Sending message notification mail failed! user to:');
+                console.error(smtpErr);
+                console.error('userTo: ' + notification._id.userTo.toString() + ', userFrom ' + notification._id.userFrom.toString());
+              }
+              notificationCallback(smtpErr);
+            });
 
           }, 5); // How many notifications to process simultaneously?
 
@@ -244,7 +243,7 @@ exports.checkUnreadMessages = function(agenda) {
           // Assign a final callback to work queue
           // All notification jobs done, continue
           notificationsQueue.drain = function(err, results) {
-            if(err) {
+            if (err) {
               console.error('Sending message notification mails caused an error:');
               console.error(err);
             }
@@ -254,9 +253,8 @@ exports.checkUnreadMessages = function(agenda) {
             done(null, messageIds);
           };
 
-        }
-        // No users to send emails to
-        else {
+        } else {
+          // No users to send emails to
           done(null, []);
         }
 
@@ -265,20 +263,19 @@ exports.checkUnreadMessages = function(agenda) {
       // Mark messages notified
       function(messageIds, done) {
 
-        if(messageIds.length > 0) {
+        if (messageIds.length > 0) {
           Message.update(
-            { _id : {'$in': messageIds } },
+            { _id: { '$in': messageIds } },
             { $set: { notified: true } },
             { multi: true },
             function(err, num, raw) {
-              if(err) {
+              if (err) {
                 console.error('Error while marking messages as notified.');
                 console.error(err);
               }
               done(err);
             });
-        }
-        else {
+        } else {
           done(null);
         }
 
@@ -293,6 +290,6 @@ exports.checkUnreadMessages = function(agenda) {
       return agendaDone();
     });
 
-  }); //agenda.define
+  }); // agenda.define
 
 };

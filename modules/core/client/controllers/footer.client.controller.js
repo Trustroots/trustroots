@@ -1,4 +1,4 @@
-(function(){
+(function () {
   'use strict';
 
   angular
@@ -19,14 +19,14 @@
     $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
 
       // Footer is transparent on these pages
-      vm.isTransparent = (angular.isDefined(toState.footerTransparent) && toState.footerTransparent === true) ? true : false;
+      vm.isTransparent = (angular.isDefined(toState.footerTransparent) && toState.footerTransparent === true);
 
       // Footer is hidden on these pages
-      vm.isHidden = (angular.isDefined(toState.footerHidden) && toState.footerHidden === true) ? true : false;
+      vm.isHidden = (angular.isDefined(toState.footerHidden) && toState.footerHidden === true);
 
     });
 
 
   }
 
-})();
+}());

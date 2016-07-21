@@ -12,7 +12,7 @@ var mongoose = require('mongoose'),
 var OfferSchema = new Schema({
   status: {
     type: String,
-    enum: ['yes','maybe','no'],
+    enum: ['yes', 'maybe', 'no'],
     default: 'no'
   },
   description: {

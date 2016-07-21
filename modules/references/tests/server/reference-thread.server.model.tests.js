@@ -13,7 +13,11 @@ var should = require('should'),
 /**
  * Globals
  */
-var user1, user2, message, thread, referenceThread;
+var user1,
+    user2,
+    message,
+    thread,
+    referenceThread;
 
 /**
  * Unit tests

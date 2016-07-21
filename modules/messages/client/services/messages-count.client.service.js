@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   // MessagesCount service used for communicating with the messages REST endpoints
@@ -11,4 +11,4 @@
     return $resource('/api/messages-count');
   }
 
-})();
+}());

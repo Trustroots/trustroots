@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -23,7 +23,7 @@
     }
   }
 
-})();
+}());
 
 
 // TODO: Clean this out (deprecated)
@@ -59,4 +59,4 @@
     }
   }
 
-})();
+}());

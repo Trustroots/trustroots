@@ -13,7 +13,12 @@ var should = require('should'),
 /**
  * Globals
  */
-var app, agent, credentials, user, _user, admin;
+var app,
+    agent,
+    credentials,
+    user,
+    _user,
+    admin;
 
 /**
  * User routes tests
@@ -148,8 +153,8 @@ describe('User CRUD tests', function () {
 
                   return done();
                 });
-              });
-          });
+            });
+        });
       });
   });
 
@@ -204,8 +209,8 @@ describe('User CRUD tests', function () {
 
                   return done();
                 });
-              });
-          });
+            });
+        });
       });
   });
 
@@ -641,12 +646,12 @@ describe('User CRUD tests', function () {
 
           var userUpdate = {
             firstName: 'user_update_first',
-            lastName: 'user_update_last',
+            lastName: 'user_update_last'
           };
 
           agent.put('/api/users')
             .send(userUpdate)
-            //.expect(200)
+            // .expect(200)
             .end(function (userInfoErr, userInfoRes) {
               if (userInfoErr) {
                 return done(userInfoErr);
@@ -769,7 +774,7 @@ describe('User CRUD tests', function () {
 
       var userUpdate = {
         firstName: 'user_update_first',
-        lastName: 'user_update_last',
+        lastName: 'user_update_last'
       };
 
       agent.put('/api/users')
@@ -1040,7 +1045,7 @@ describe('User CRUD tests', function () {
               return done(userInfoErr);
             }
 
-            userInfoRes.body.message.should.equal('Image too big. Please maximum ' + (config.maxUploadSize / (1024*1024)).toFixed(2) + ' Mb files.');
+            userInfoRes.body.message.should.equal('Image too big. Please maximum ' + (config.maxUploadSize / (1024 * 1024)).toFixed(2) + ' Mb files.');
 
             return done();
           });

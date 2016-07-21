@@ -38,50 +38,50 @@ if (process.env.NODE_ENV === 'test') {
 // Load either ImageMagick or GraphicsMagick as an image processor
 // Defaults to GraphicsMagick
 // @link https://github.com/aheckmann/gm#use-imagemagick-instead-of-gm
-var imageProcessor = (config.imageProcessor === 'imagemagic') ? require('gm').subClass({imageMagick: true}) : require('gm');
+var imageProcessor = (config.imageProcessor === 'imagemagic') ? require('gm').subClass({ imageMagick: true }) : require('gm');
 
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
 // Pick here fields to send
 exports.userProfileFields = [
-                    'id',
-                    'displayName',
-                    'username',
-                    'displayUsername',
-                    'gender',
-                    'tagline',
-                    'description',
-                    'locationFrom',
-                    'locationLiving',
-                    'languages',
-                    'birthdate',
-                    'seen',
-                    'created',
-                    'updated',
-                    'avatarSource',
-                    'avatarUploaded',
-                    'member',
-                    'extSitesBW', // BeWelcome username
-                    'extSitesCS', // CouchSurfing username
-                    'extSitesWS', // WarmShowers username
-                    'emailHash', // MD5 hashed email to use with Gravatars
-                    'additionalProvidersData.facebook.id', // For FB avatars and profile links
-                    'additionalProvidersData.twitter.screen_name', // For Twitter profile links
-                    'additionalProvidersData.github.login' // For GitHub profile links
-                    ].join(' ');
+  'id',
+  'displayName',
+  'username',
+  'displayUsername',
+  'gender',
+  'tagline',
+  'description',
+  'locationFrom',
+  'locationLiving',
+  'languages',
+  'birthdate',
+  'seen',
+  'created',
+  'updated',
+  'avatarSource',
+  'avatarUploaded',
+  'member',
+  'extSitesBW', // BeWelcome username
+  'extSitesCS', // CouchSurfing username
+  'extSitesWS', // WarmShowers username
+  'emailHash', // MD5 hashed email to use with Gravatars
+  'additionalProvidersData.facebook.id', // For FB avatars and profile links
+  'additionalProvidersData.twitter.screen_name', // For Twitter profile links
+  'additionalProvidersData.github.login' // For GitHub profile links
+].join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed
 exports.userMiniProfileFields = [
-                    'id',
-                    'updated', // Used as local-avatar cache buster
-                    'displayName',
-                    'username',
-                    'displayUsername',
-                    'avatarSource',
-                    'avatarUploaded',
-                    'emailHash',
-                    'additionalProvidersData.facebook.id' // For FB avatars
-                    ].join(' ');
+  'id',
+  'updated', // Used as local-avatar cache buster
+  'displayName',
+  'username',
+  'displayUsername',
+  'avatarSource',
+  'avatarUploaded',
+  'emailHash',
+  'additionalProvidersData.facebook.id' // For FB avatars
+].join(' ');
 
 // Mini + a few fields we'll need at listings
 exports.userListingProfileFields = exports.userMiniProfileFields + ' birthdate gender tagline';
@@ -97,12 +97,12 @@ exports.avatarUploadField = function (req, res, next) {
   //   random data as a hex-string (e.g. a087fda2cf19f341ddaeacacab285acc)
   //   without file-extension.
   var upload = multer({
-      dest: config.uploadTmpDir || os.tmpdir(),
-      limits: {
-        fileSize: config.maxUploadSize // max file size in bytes
-      },
-      fileFilter: multerConfig.uploadFileFilter
-    }).single('avatar');
+    dest: config.uploadTmpDir || os.tmpdir(),
+    limits: {
+      fileSize: config.maxUploadSize // max file size in bytes
+    },
+    fileFilter: multerConfig.uploadFileFilter
+  }).single('avatar');
 
   upload(req, res, function (err) {
 
@@ -111,26 +111,25 @@ exports.avatarUploadField = function (req, res, next) {
     // @link https://github.com/expressjs/multer/blob/master/lib/make-error.js
     if (err) {
 
-      var errorMessage, errorStatus;
+      var errorMessage,
+          errorStatus;
 
-      // Unsupported media type -error
-      // This error is generated from ./config/lib/multer.js
-      if(err.code && err.code === 'UNSUPPORTED_MEDIA_TYPE') {
+      if (err.code && err.code === 'UNSUPPORTED_MEDIA_TYPE') {
+        // Unsupported media type -error
+        // This error is generated from ./config/lib/multer.js
         errorMessage = errorHandler.getErrorMessageByKey('unsupported-media-type');
         errorStatus = 415;
-      }
-      // Too big file
-      // 413: "Request Entity Too Large"
-      else if(err.code && err.code === 'LIMIT_FILE_SIZE') {
-        errorMessage = 'Image too big. Please maximum ' + (config.maxUploadSize / (1024*1024)).toFixed(2) + ' Mb files.';
+      } else if (err.code && err.code === 'LIMIT_FILE_SIZE') {
+        // Too big file
+        // 413: "Request Entity Too Large"
+        errorMessage = 'Image too big. Please maximum ' + (config.maxUploadSize / (1024 * 1024)).toFixed(2) + ' Mb files.';
         errorStatus = 413;
-      }
-      // Field doesn't exist -error
-      else if(err.code && err.code === 'LIMIT_UNEXPECTED_FILE') {
+      } else if (err.code && err.code === 'LIMIT_UNEXPECTED_FILE') {
+        // Field doesn't exist -error
         errorMessage = 'Missing `avatar` field from the API call.';
         errorStatus = 400;
-      }
-      else {
+      } else {
+        // Any other error
         errorMessage = errorHandler.getErrorMessageByKey('default');
         errorStatus = 400;
       }
@@ -151,7 +150,7 @@ exports.avatarUploadField = function (req, res, next) {
  */
 exports.avatarUpload = function (req, res) {
 
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
@@ -159,7 +158,7 @@ exports.avatarUpload = function (req, res) {
 
   // `req.file` is placed there by Multer middleware.
   // See `users.server.routes.js` for more details.
-  if(!req.file || !req.file.path) {
+  if (!req.file || !req.file.path) {
     return res.status(422).send({
       message: errorHandler.getErrorMessageByKey('unprocessable-entity')
     });
@@ -204,55 +203,51 @@ exports.avatarUpload = function (req, res) {
       // Create a queue worker
       // @link https://github.com/caolan/async#queueworker-concurrency
       var q = async.queue(function (thumbSize, callback) {
-          /**
-           * Create thumbnail size
-           * Images are resized following quality/size -optimization tips from this article:
-           * @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/
-           */
-          imageProcessor(req.file.path)
-            //.in('jpeg:fancy-upsampling=false')  // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#resampling
-            .autoOrient()
-            .noProfile()                          // No color profile
-            .colorspace('rgb')                    // Not sRGB @link https://ehc.ac/p/graphicsmagick/bugs/331/?limit=25
-            .interlace('None')                    // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#progressive-rendering
-            .filter('Triangle')                   // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#resampling
-            .resize(thumbSize, thumbSize+'^')     // ^ = Dimensions are treated as minimum rather than maximum values. @link http://www.graphicsmagick.org/Magick++/Geometry.html
-            .gravity('Center')
-            .extent(thumbSize, thumbSize)
-            .unsharp(0.25, 0.25, 8, 0.065)        // radius [, sigma, amount, threshold] - @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#sharpening
-            .quality(82)                          // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#quality-and-compression
-            .write(uploadDir + '/' + thumbSize + '.jpg', function (err) {
+        // Create thumbnail size
+        // Images are resized following quality/size -optimization tips from this article:
+        // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/
+        imageProcessor(req.file.path)
+          // .in('jpeg:fancy-upsampling=false')  // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#resampling
+          .autoOrient()
+          .noProfile()                          // No color profile
+          .colorspace('rgb')                    // Not sRGB @link https://ehc.ac/p/graphicsmagick/bugs/331/?limit=25
+          .interlace('None')                    // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#progressive-rendering
+          .filter('Triangle')                   // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#resampling
+          .resize(thumbSize, thumbSize + '^')     // ^ = Dimensions are treated as minimum rather than maximum values. @link http://www.graphicsmagick.org/Magick++/Geometry.html
+          .gravity('Center')
+          .extent(thumbSize, thumbSize)
+          .unsharp(0.25, 0.25, 8, 0.065)        // radius [, sigma, amount, threshold] - @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#sharpening
+          .quality(82)                          // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#quality-and-compression
+          .write(uploadDir + '/' + thumbSize + '.jpg', function (err) {
 
-              // Something's wrong with the file, stop here.
-              if(err) {
-                if (process.env.NODE_ENV === 'development') {
-                  console.error('Error while generating thumbnail ' + thumbSize);
-                  console.error(err);
-                }
-
-                // This stops us sending res multiple times since tasks are running paraller
-                if(!asyncQueueErrorHappened) {
-                  asyncQueueErrorHappened = true;
-
-                  // Stop the queue
-                  q.pause();
-
-                  // Attempt to delete tmp file
-                  fs.unlink(req.file.path, function (err) {
-                    // @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
-                    return res.status(422).send({
-                      message: 'Failed to process image, please try again.'
-                    });
-                  });
-                }
-                else {
-                  callback(err, thumbSize);
-                }
+            // Something's wrong with the file, stop here.
+            if (err) {
+              if (process.env.NODE_ENV === 'development') {
+                console.error('Error while generating thumbnail ' + thumbSize);
+                console.error(err);
               }
-              else {
+
+              // This stops us sending res multiple times since tasks are running paraller
+              if (!asyncQueueErrorHappened) {
+                asyncQueueErrorHappened = true;
+
+                // Stop the queue
+                q.pause();
+
+                // Attempt to delete tmp file
+                fs.unlink(req.file.path, function (err) {
+                  // @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
+                  return res.status(422).send({
+                    message: 'Failed to process image, please try again.'
+                  });
+                });
+              } else {
                 callback(err, thumbSize);
               }
-            });
+            } else {
+              callback(err, thumbSize);
+            }
+          });
       }, 3); // How many thumbnails to process simultaneously?
 
       // Start processing these sizes
@@ -272,30 +267,25 @@ exports.avatarUpload = function (req, res) {
 
   // Catch errors
   ], function(err) {
-    if(err) {
+    if (err) {
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err) || 'Failed to process image, please try again.'
       });
-    }
-    else {
+    } else {
       // All Done!
       return res.send({
         message: 'Avatar image uploaded.'
       });
     }
   });
-
-
 };
-
-
 
 /**
  * Update
  */
 exports.update = function(req, res) {
 
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
@@ -303,215 +293,206 @@ exports.update = function(req, res) {
 
   async.waterfall([
 
-  // If user is changing email, check if it's available
-  function(done) {
+    // If user is changing email, check if it's available
+    function(done) {
 
-    // Check if email changed and proceed with extra checks if so
-    if(req.body.email && req.body.email !== req.user.email) {
-      User.findOne({
-        $or: [
-          { emailTemporary: req.body.email.toLowerCase() },
-          { email: req.body.email.toLowerCase() }
-        ]
-      }, 'emailTemporary email', function(err, emailUser) {
-        // Not free
-        if(emailUser) {
-          // If the user we found with this email is currently authenticated user, let user pass to resend confirmation email
-          if(emailUser._id.equals(req.user._id)) {
+      // Check if email changed and proceed with extra checks if so
+      if (req.body.email && req.body.email !== req.user.email) {
+        User.findOne({
+          $or: [
+            { emailTemporary: req.body.email.toLowerCase() },
+            { email: req.body.email.toLowerCase() }
+          ]
+        }, 'emailTemporary email', function(err, emailUser) {
+          // Not free
+          if (emailUser) {
+            // If the user we found with this email is currently authenticated user, let user pass to resend confirmation email
+            if (emailUser._id.equals(req.user._id)) {
+              done(null);
+            } else {
+              // Otherwise it was someone else's email. Block the way.
+              return res.status(403).send({
+                message: 'This email is already in use. Please use another one.'
+              });
+            }
+          } else {
+            // Free, proceed generating the token
             done(null);
           }
-          // Otherwise it was someone else's email. Block the way.
-          else {
-            return res.status(403).send({
-              message: 'This email is already in use. Please use another one.'
-            });
-          }
-        }
-        // Free, proceed generating the token
-        else {
-          done(null);
-        }
-      });
-    }
-    // Email didn't change, just continue
-    else {
-      done(null);
-    }
-  },
-
-  // Check if we should generate new email token
-  function(done) {
-
-    // Generate only if email changed
-    if(req.body.email && req.body.email !== req.user.email) {
-      crypto.randomBytes(20, function(err, buffer) {
-        var token = buffer.toString('hex');
-        done(err, token, req.body.email);
-      });
-    }
-    // Email didn't change, just continue
-    else {
-      done(null, false, false);
-    }
-  },
-
-  // Update user
-  function(token, email, done) {
-
-    // For security measurement do not use _id from the req.body object
-    delete req.body._id;
-
-    // For security measurement remove these from the req.body object
-    // Users aren't allowed to modify these directly
-    delete req.body.member;
-    delete req.body.public;
-    delete req.body.created;
-    delete req.body.seen;
-    delete req.body.roles;
-    delete req.body.email;
-    delete req.body.emailHash;
-    delete req.body.emailToken;
-    delete req.body.emailTemporary;
-    delete req.body.provider;
-    delete req.body.username;
-    delete req.body.displayUsername;
-    delete req.body.salt;
-    delete req.body.password;
-    delete req.body.resetPasswordToken;
-    delete req.body.resetPasswordExpires;
-    delete req.body.additionalProvidersData;
-
-    // Merge existing user
-    var user = req.user;
-    user = _.extend(user, req.body);
-    user.updated = Date.now();
-
-    // This is set only if user edited email
-    if(token && email) {
-      user.emailToken = token;
-      user.emailTemporary = email;
-    }
-
-    // Sanitize string contents
-    // `description` field is allowed to contain some html
-    ['description',
-     'tagline',
-     'firstName',
-     'lastName',
-     'locationLiving',
-     'locationFrom',
-     'extSitesBW',
-     'extSitesCS',
-     'extSitesWS'
-    ].forEach(function(key) {
-      if(user[key] && key === 'description') {
-        // Allow some HTML
-        user[key] = textProcessor.html(user[key]);
-      }
-      // Clean out all HTML
-      else if(user[key]) {
-        user[key] = textProcessor.plainText(user[key], true);
-      }
-    });
-
-    // Generate display name
-    user.displayName = user.firstName + ' ' + user.lastName;
-
-    user.save(function(err) {
-      if (!err) {
-        req.login(user, function(err) {
-          if (err) {
-            done(err);
-          } else {
-            done(null, token, user);
-          }
         });
+      } else {
+        // Email didn't change, just continue
+        done(null);
       }
-      else {
-        done(err, token, user);
+    },
+
+    // Check if we should generate new email token
+    function(done) {
+
+      // Generate only if email changed
+      if (req.body.email && req.body.email !== req.user.email) {
+        crypto.randomBytes(20, function(err, buffer) {
+          var token = buffer.toString('hex');
+          done(err, token, req.body.email);
+        });
+      } else {
+        // Email didn't change, just continue
+        done(null, false, false);
       }
-    });
+    },
 
-  },
+    // Update user
+    function(token, email, done) {
 
-  // Prepare TEXT mail
-  function(token, user, done) {
+      // For security measurement do not use _id from the req.body object
+      delete req.body._id;
 
-    // If no token, user didn't change email = pass this phase
-    if(token) {
+      // For security measurement remove these from the req.body object
+      // Users aren't allowed to modify these directly
+      delete req.body.member;
+      delete req.body.public;
+      delete req.body.created;
+      delete req.body.seen;
+      delete req.body.roles;
+      delete req.body.email;
+      delete req.body.emailHash;
+      delete req.body.emailToken;
+      delete req.body.emailTemporary;
+      delete req.body.provider;
+      delete req.body.username;
+      delete req.body.displayUsername;
+      delete req.body.salt;
+      delete req.body.password;
+      delete req.body.resetPasswordToken;
+      delete req.body.resetPasswordExpires;
+      delete req.body.additionalProvidersData;
 
-      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
-          urlConfirm = url + '/confirm-email/' + token;
+      // Merge existing user
+      var user = req.user;
+      user = _.extend(user, req.body);
+      user.updated = Date.now();
 
-      var renderVars = emailsHandler.addEmailBaseTemplateParams(
-        req.headers.host,
-        {
-          name: user.displayName,
-          email: user.emailTemporary,
-          urlConfirmPlainText: urlConfirm,
-          urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
-            source: 'transactional-email',
-            medium: 'email',
-            campaign: 'reset-password'
-          })
-        },
-        'reset-password'
-      );
+      // This is set only if user edited email
+      if (token && email) {
+        user.emailToken = token;
+        user.emailTemporary = email;
+      }
 
-      res.render(path.resolve('./modules/core/server/views/email-templates-text/email-confirmation'), renderVars, function(err, emailPlain) {
-        done(err, emailPlain, user, renderVars);
+      // Sanitize string contents
+      // `description` field is allowed to contain some html
+      ['description',
+       'tagline',
+       'firstName',
+       'lastName',
+       'locationLiving',
+       'locationFrom',
+       'extSitesBW',
+       'extSitesCS',
+       'extSitesWS'
+      ].forEach(function(key) {
+        if (user[key] && key === 'description') {
+          // Allow some HTML
+          user[key] = textProcessor.html(user[key]);
+        } else if (user[key]) {
+          // Clean out all HTML
+          user[key] = textProcessor.plainText(user[key], true);
+        }
       });
-    }
-    else {
-      done(null, false, user, false);
-    }
-  },
 
-  // Prepare HTML mail
-  function(emailPlain, user, renderVars, done) {
+      // Generate display name
+      user.displayName = user.firstName + ' ' + user.lastName;
 
-    // If no emailPlain, user didn't change email = pass this phase
-    if(emailPlain) {
-      res.render(path.resolve('./modules/core/server/views/email-templates/email-confirmation'), renderVars, function(err, emailHTML) {
-        done(err, emailHTML, emailPlain, user);
+      user.save(function(err) {
+        if (!err) {
+          req.login(user, function(err) {
+            if (err) {
+              done(err);
+            } else {
+              done(null, token, user);
+            }
+          });
+        } else {
+          done(err, token, user);
+        }
       });
-    }
-    else {
-      done(null, false, false, user);
-    }
-  },
 
-  // If valid email, send confirm email using service
-  function(emailHTML, emailPlain, user, done) {
+    },
 
-    // If no emailHTML, user didn't change email = pass this phase
-    if(emailHTML) {
-      var smtpTransport = nodemailer.createTransport(config.mailer.options);
-      var mailOptions = {
-        to: {
-          name: user.displayName,
-          address: user.emailTemporary
-        },
-        from: 'Trustroots <' + config.mailer.from + '>',
-        subject: 'Confirm email change',
-        text: emailPlain,
-        html: emailHTML
-      };
-      smtpTransport.sendMail(mailOptions, function(err) {
-        smtpTransport.close(); // close the connection pool
-        done(err, user);
-      });
-    }
-    else {
-      done(null, user);
-    }
-  },
+    // Prepare TEXT mail
+    function(token, user, done) {
 
-  // Return user
-  function(user, done) {
-    user = exports.sanitizeProfile(user);
-    return res.json(user);
-  },
+      // If no token, user didn't change email = pass this phase
+      if (token) {
+
+        var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
+            urlConfirm = url + '/confirm-email/' + token;
+
+        var renderVars = emailsHandler.addEmailBaseTemplateParams(
+            req.headers.host,
+            {
+              name: user.displayName,
+              email: user.emailTemporary,
+              urlConfirmPlainText: urlConfirm,
+              urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
+                source: 'transactional-email',
+                medium: 'email',
+                campaign: 'reset-password'
+              })
+            },
+            'reset-password'
+          );
+
+        res.render(path.resolve('./modules/core/server/views/email-templates-text/email-confirmation'), renderVars, function(err, emailPlain) {
+          done(err, emailPlain, user, renderVars);
+        });
+      } else {
+        done(null, false, user, false);
+      }
+    },
+
+    // Prepare HTML mail
+    function(emailPlain, user, renderVars, done) {
+
+      // If no emailPlain, user didn't change email = pass this phase
+      if (emailPlain) {
+        res.render(path.resolve('./modules/core/server/views/email-templates/email-confirmation'), renderVars, function(err, emailHTML) {
+          done(err, emailHTML, emailPlain, user);
+        });
+      } else {
+        done(null, false, false, user);
+      }
+    },
+
+    // If valid email, send confirm email using service
+    function(emailHTML, emailPlain, user, done) {
+
+      // If no emailHTML, user didn't change email = pass this phase
+      if (emailHTML) {
+        var smtpTransport = nodemailer.createTransport(config.mailer.options);
+        var mailOptions = {
+          to: {
+            name: user.displayName,
+            address: user.emailTemporary
+          },
+          from: 'Trustroots <' + config.mailer.from + '>',
+          subject: 'Confirm email change',
+          text: emailPlain,
+          html: emailHTML
+        };
+        smtpTransport.sendMail(mailOptions, function(err) {
+          smtpTransport.close(); // close the connection pool
+          done(err, user);
+        });
+      } else {
+        done(null, user);
+      }
+    },
+
+    // Return user
+    function(user, done) {
+      user = exports.sanitizeProfile(user);
+      return res.json(user);
+    }
 
   ], function(err) {
     if (err) {
@@ -527,16 +508,15 @@ exports.update = function(req, res) {
  */
 exports.getUser = function(req, res) {
   // Not a profile of currently authenticated user:
-  if( req.profile && !req.user._id.equals(req.profile._id) ) {
+  if (req.profile && !req.user._id.equals(req.profile._id)) {
     // 'public' isn't needed at frontend.
     // We had to bring it until here trough
     // ACL policy since it's needed there.
     // `req.profile.toObject()` is done at sanitizeProfile() before this.
     delete req.profile.public;
     res.json(req.profile);
-  }
-  // Profile of currently authenticated user:
-  else {
+  } else {
+    // Profile of currently authenticated user:
     res.json(req.profile || {});
   }
 };
@@ -546,15 +526,14 @@ exports.getUser = function(req, res) {
  */
 exports.getMiniUser = function(req, res) {
 
-  if(req.profile) {
+  if (req.profile) {
     // 'public' isn't needed at frontend.
     // We had to bring it until here trough
     // ACL policy since it's needed there.
     var profile = req.profile.toObject();
     delete profile.public;
     res.json(profile);
-  }
-  else {
+  } else {
     res.json({});
   }
 
@@ -567,7 +546,7 @@ exports.getMiniUser = function(req, res) {
 exports.userMiniByID = function(req, res, next, userId) {
 
   // Not a valid ObjectId
-  if(!mongoose.Types.ObjectId.isValid(userId)) {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
       message: errorHandler.getErrorMessageByKey('invalid-id')
     });
@@ -576,12 +555,12 @@ exports.userMiniByID = function(req, res, next, userId) {
   User.findById(userId, exports.userMiniProfileFields + ' public').exec(function(err, profile) {
 
     // Something went wrong
-    if(err) {
+    if (err) {
       return next(err);
     }
 
     // No such user
-    if(!profile || !profile.public) {
+    if (!profile || !profile.public) {
       return res.status(404).send({
         message: errorHandler.getErrorMessageByKey('not-found')
       });
@@ -601,14 +580,14 @@ exports.userByUsername = function(req, res, next, username) {
   var query;
 
   // Require user
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
   }
 
   // Proper 'username' value required
-  if(typeof username !== 'string' || username.trim() === '' || username.length < 3) {
+  if (typeof username !== 'string' || username.trim() === '' || username.length < 3) {
     return res.status(400).send({
       message: 'Valid username required.'
     });
@@ -620,44 +599,37 @@ exports.userByUsername = function(req, res, next, username) {
     function(done) {
       User
         .findOne({
-            username: username.toLowerCase()
-          },
-          exports.userProfileFields + ' public'
-        )
+          username: username.toLowerCase()
+        },
+        exports.userProfileFields + ' public')
         .populate({
           path: 'member.tag',
           select: tribesHandler.tribeFields + ' tribe', // Loads `tribe` fields for both `tribe:true` and `tribe:false` objects
           model: 'Tag',
-          options: { sort: { count: -1 }}
+          options: { sort: { count: -1 } }
         })
         .exec(function(err, profile) {
-
-        // Something went wrong
-        if (err) {
-          done(err);
-        }
-        // No such user
-        else if(!profile) {
-          return res.status(404).send({
-            message: errorHandler.getErrorMessageByKey('not-found')
-          });
-        }
-        // User's own profile, okay to send with public value in it
-        else if( (profile && req.user) && req.user._id.equals(profile._id) ) {
-          done(err, profile);
-        }
-        // Not own profile and not public
-        else if( (profile && req.user) && (!req.user._id.equals(profile._id) && !profile.public) ) {
-          return res.status(404).send({
-            message: errorHandler.getErrorMessageByKey('not-found')
-          });
-        }
-        else {
-          // Transform profile into object so that we can add new fields to it
-          done(err, profile);
-        }
-
-      });
+          if (err) {
+            // Something went wrong
+            done(err);
+          } else if (!profile) {
+            // No such user
+            return res.status(404).send({
+              message: errorHandler.getErrorMessageByKey('not-found')
+            });
+          } else if ((profile && req.user) && req.user._id.equals(profile._id)) {
+            // User's own profile, okay to send with public value in it
+            done(err, profile);
+          } else if ((profile && req.user) && (!req.user._id.equals(profile._id) && !profile.public)) {
+            // Not own profile and not public
+            return res.status(404).send({
+              message: errorHandler.getErrorMessageByKey('not-found')
+            });
+          } else {
+            // Transform profile into object so that we can add new fields to it
+            done(err, profile);
+          }
+        });
     },
 
     // Sanitize & return profile
@@ -681,7 +653,7 @@ exports.userByUsername = function(req, res, next, username) {
  * - Sanitize description in case
  */
 exports.sanitizeProfile = function(profile, authenticatedUser) {
-  if(!profile) {
+  if (!profile) {
     console.warn('sanitizeProfile() needs profile data to sanitize.');
     return;
   }
@@ -689,23 +661,22 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
   profile = profile.toObject();
 
   // We're sanitizing this already on saving/updating the profile, but here we do it again just in case.
-  if(profile.description) profile.description = sanitizeHtml(profile.description, textProcessor.sanitizeOptions);
+  if (profile.description) profile.description = sanitizeHtml(profile.description, textProcessor.sanitizeOptions);
 
   // Remove tribes/tags without reference object (= they've been deleted from tags table)
-  if(profile.member && profile.member.length > 0) {
+  if (profile.member && profile.member.length > 0) {
     profile.member = _.reject(profile.member, function(o) { return !o.tag; });
   }
 
   // Create simple arrays of tag and tribe id's
   profile.memberIds = [];
-  if(profile.member && profile.member.length > 0) {
+  if (profile.member && profile.member.length > 0) {
     profile.member.forEach(function(obj) {
       // If profile's `member.tag` path was populated
-      if(obj.tag && obj.tag._id) {
+      if (obj.tag && obj.tag._id) {
         profile.memberIds.push(obj.tag._id.toString());
-      }
-      // If profile's `member.tag` path wasn't populated, tag is ObjectId
-      else if(obj.tag) {
+      } else if (obj.tag) {
+        // If profile's `member.tag` path wasn't populated, tag is ObjectId
         profile.memberIds.push(obj.tag.toString());
       }
     });
@@ -713,7 +684,7 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
 
   // Profile does not belong to currently authenticated user
   // Remove data we don't need from other member's profile
-  if(!authenticatedUser || !authenticatedUser._id.equals(profile._id)) {
+  if (!authenticatedUser || !authenticatedUser._id.equals(profile._id)) {
     delete profile.updated;
   }
 
@@ -739,27 +710,28 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
 exports.modifyUserTag = function(req, res) {
 
   // Relation (`is`|`likes`|`leave`) should be present
-  if(!req.body.relation || typeof req.body.relation !== 'string' || ['is', 'likes', 'leave'].indexOf(req.body.relation) === -1) {
+  if (!req.body.relation || typeof req.body.relation !== 'string' || ['is', 'likes', 'leave'].indexOf(req.body.relation) === -1) {
     return res.status(400).send({
       message: 'Missing relation info.'
     });
   }
 
   // Not a valid ObjectId
-  if(!req.body.id || !mongoose.Types.ObjectId.isValid(req.body.id)) {
+  if (!req.body.id || !mongoose.Types.ObjectId.isValid(req.body.id)) {
     return res.status(400).send({
       message: errorHandler.getErrorMessageByKey('invalid-id')
     });
   }
 
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
   }
 
-  // Joining (is/likes) or leaving?
-  var joining = (req.body.relation !== 'leave') ? true : false;
+  // Joining [is/likes] (=true) or leaving (=false)?
+  // Relation can be "join" or "leave"
+  var joining = (req.body.relation !== 'leave');
 
   async.waterfall([
 
@@ -772,12 +744,11 @@ exports.modifyUserTag = function(req, res) {
       }) : false;
 
       // Return error if "is joining + is a member" OR "is leaving + isn't a member"
-      if((isMember && joining) || (!isMember && !joining)) {
+      if ((isMember && joining) || (!isMember && !joining)) {
         return res.status(409).send({
           message: errorHandler.getErrorMessageByKey('conflict')
         });
-      }
-      else {
+      } else {
         done(null);
       }
     },
@@ -795,7 +766,7 @@ exports.modifyUserTag = function(req, res) {
       .exec(function(err, tag) {
 
         // Tag by id `req.body.id` didn't exist
-        if(!tag || !tag._id) {
+        if (!tag || !tag._id) {
           return res.status(400).send({
             message: errorHandler.getErrorMessageByKey('bad-request')
           });
@@ -808,10 +779,11 @@ exports.modifyUserTag = function(req, res) {
     // Add tribe/tag to user's object
     function(tag, done) {
 
-      // Mongo query to perform
-      var query = (joining) ?
-        // When joining:
-        {
+      // Mongo query to perform...
+      var query;
+      if (joining) {
+        // When joining...
+        query = {
           $push: {
             member: {
               tag: tag._id,
@@ -819,15 +791,17 @@ exports.modifyUserTag = function(req, res) {
               since: Date.now()
             }
           }
-        } :
-        // When leaving:
-        {
+        };
+      } else {
+        // When leaving...
+        query = {
           $pull: {
             member: {
               tag: tag._id
             }
           }
         };
+      }
 
       User.findByIdAndUpdate(req.user._id, query, {
         safe: true, // @link http://stackoverflow.com/a/4975054/1984644
@@ -862,7 +836,7 @@ exports.modifyUserTag = function(req, res) {
 
   // Catch errors
   ], function(err) {
-    if(err) {
+    if (err) {
       return res.status(400).send({
         message: 'Failed to join tribe/tag.'
       });

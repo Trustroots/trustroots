@@ -14,11 +14,23 @@ var should = require('should'),
 /**
  * Globals
  */
-var app, agent, credentials,
-    user1, user2, user3, user4,
-    user1Id, user2Id, user3Id, user4Id,
-    contact1, contact2, contact3,
-    contact1Id, contact2Id, contact3Id;
+var app,
+    agent,
+    credentials,
+    user1,
+    user2,
+    user3,
+    user4,
+    user1Id,
+    user2Id,
+    user3Id,
+    user4Id,
+    contact1,
+    contact2,
+    contact3,
+    contact1Id,
+    contact2Id,
+    contact3Id;
 
 /**
  * Contact routes tests
@@ -178,9 +190,9 @@ describe('Contact CRUD tests', function() {
       });
   });
 
-  context('logged in', function(){
+  context('logged in', function() {
 
-    beforeEach(function(done){
+    beforeEach(function(done) {
 
       agent.post('/api/auth/signin')
         .send(credentials) // = user 1
@@ -191,11 +203,11 @@ describe('Contact CRUD tests', function() {
 
     });
 
-    it('should be able to get a contact by user id', function(done){
+    it('should be able to get a contact by user id', function(done) {
       // Get the contact for User1 -> User2 : Contact1
       agent.get('/api/contact-by/' + user2Id)
         .expect(200)
-        .end(function(contactByErr, contactByRes){
+        .end(function(contactByErr, contactByRes) {
           // Handle contact by error
           if (contactByErr) return done(contactByErr);
 
@@ -270,12 +282,12 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    it('should be able to create a new unconfirmed contact', function(done){
+    it('should be able to create a new unconfirmed contact', function(done) {
       // Create a contact User1 -> User4
       agent.post('/api/contact')
         .send({ friendUserId: user4Id })
         .expect(200)
-        .end(function(contactAddErr, contactAddRes){
+        .end(function(contactAddErr, contactAddRes) {
           // Handle contact add error
           if (contactAddErr) return done(contactAddErr);
 
@@ -284,7 +296,7 @@ describe('Contact CRUD tests', function() {
           // Get the contact for User4 that we just created
           agent.get('/api/contact-by/' + user4Id)
             .expect(200)
-            .end(function(contactByErr, contactByRes){
+            .end(function(contactByErr, contactByRes) {
               // Handle contact by error
               if (contactByErr) return done(contactByErr);
 
@@ -304,23 +316,23 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    it('should not be able to create a duplicate contact', function(done){
+    it('should not be able to create a duplicate contact', function(done) {
       // Try and create a contact User1 -> User2
       agent.post('/api/contact')
         .send({ friendUserId: user2Id })
         .expect(409)
-        .end(function(contactAddErr, contactAddRes){
+        .end(function(contactAddErr, contactAddRes) {
           // Handle contact add error
           if (contactAddErr) return done(contactAddErr);
           return done();
         });
     });
 
-    it('should be able to confirm a contact', function(done){
+    it('should be able to confirm a contact', function(done) {
       // Confirm the un-confirmed Contact1 between User1 -> User2
       agent.put('/api/contact/' + contact1Id)
         .expect(200)
-        .end(function(contactConfirmErr, contactConfirmRes){
+        .end(function(contactConfirmErr, contactConfirmRes) {
           // Handle contact confirm error
           if (contactConfirmErr) return done(contactConfirmErr);
 
@@ -348,7 +360,7 @@ describe('Contact CRUD tests', function() {
           // The contact should be gone now
           agent.get('/api/contact-by/' + user2Id)
             .expect(404)
-            .end(function(contactByErr, contactByRes){
+            .end(function(contactByErr, contactByRes) {
               // Handle contact by error
               if (contactByErr) return done(contactByErr);
 
@@ -361,11 +373,11 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    context('with email sending error', function(){
+    context('with email sending error', function() {
 
       var originalMailerOptions;
 
-      beforeEach(function(){
+      beforeEach(function() {
         // Set the mail sending to fail
         originalMailerOptions = config.mailer.options;
         config.mailer.options = stubTransport({
@@ -373,16 +385,16 @@ describe('Contact CRUD tests', function() {
         });
       });
 
-      afterEach(function(){
+      afterEach(function() {
         config.mailer.options = originalMailerOptions;
       });
 
-      it('should fail to create contact', function(done){
+      it('should fail to create contact', function(done) {
         // Try and create a contact User1 -> User4
         agent.post('/api/contact')
           .send({ friendUserId: user4Id })
           .expect(400)
-          .end(function(contactAddErr, contactAddRes){
+          .end(function(contactAddErr, contactAddRes) {
             // Handle contact add error
             if (contactAddErr) return done(contactAddErr);
 

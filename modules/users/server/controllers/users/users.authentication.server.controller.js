@@ -35,7 +35,7 @@ exports.signup = function(req, res) {
     // Check if we have the required data before hitting more strict validations at Mongo
     function(done) {
 
-      if(!req.body.firstName || !req.body.lastName || !req.body.username || !req.body.password || !req.body.email) {
+      if (!req.body.firstName || !req.body.lastName || !req.body.username || !req.body.password || !req.body.email) {
         return res.status(400).send({
           message: 'Please provide required fields.'
         });
@@ -102,20 +102,20 @@ exports.signup = function(req, res) {
           urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup';
 
       var renderVars = emailsHandler.addEmailBaseTemplateParams(
-        req.headers.host,
-        {
-          name: user.displayName,
-          email: user.email,
-          ourMail: config.mailer.from,
-          urlConfirmPlainText: urlConfirm,
-          urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
-            source: 'transactional-email',
-            medium: 'email',
-            campaign: 'confirm-email'
-          })
-        },
-        'confirm-email'
-      );
+          req.headers.host,
+          {
+            name: user.displayName,
+            email: user.email,
+            ourMail: config.mailer.from,
+            urlConfirmPlainText: urlConfirm,
+            urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
+              source: 'transactional-email',
+              medium: 'email',
+              campaign: 'confirm-email'
+            })
+          },
+          'confirm-email'
+        );
 
       res.render(path.resolve('./modules/core/server/views/email-templates/signup'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, user, renderVars, url);
@@ -261,14 +261,14 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
 exports.removeOAuthProvider = function(req, res, next) {
 
   // Return error if no user
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
   }
 
   // Return error if no provider or wrong provider
-  if(!req.params.provider || !_.includes(['github', 'facebook', 'twitter'], req.params.provider)) {
+  if (!req.params.provider || !_.includes(['github', 'facebook', 'twitter'], req.params.provider)) {
     return res.status(400).send({
       message: 'No provider defined.'
     });
@@ -277,9 +277,9 @@ exports.removeOAuthProvider = function(req, res, next) {
   var user = req.user;
   var provider = req.params.provider;
 
-  if(user && provider) {
+  if (user && provider) {
     // Delete the additional provider
-    if(user.additionalProvidersData[provider]) {
+    if (user.additionalProvidersData[provider]) {
       delete user.additionalProvidersData[provider];
 
       // Then tell mongoose that we've updated the additionalProvidersData field
@@ -287,7 +287,7 @@ exports.removeOAuthProvider = function(req, res, next) {
     }
 
     user.save(function(err) {
-      if(err) {
+      if (err) {
         return res.status(400).send({
           message: errorHandler.getErrorMessage(err)
         });
@@ -312,7 +312,7 @@ exports.validateEmailToken = function(req, res) {
   User.findOne({
     emailToken: req.params.token
   }, function(err, user) {
-    if(!user) {
+    if (!user) {
       return res.redirect('/confirm-email-invalid');
     }
     res.redirect('/confirm-email/' + req.params.token);
@@ -366,7 +366,7 @@ exports.confirmEmail = function(req, res, next) {
             // Replace old email with new one
             email: user.emailTemporary,
             // @todo: this should be done at user.server.model.js
-            emailHash: crypto.createHash('md5').update( user.emailTemporary.trim().toLowerCase() ).digest('hex')
+            emailHash: crypto.createHash('md5').update(user.emailTemporary.trim().toLowerCase()).digest('hex')
           }
         },
         {

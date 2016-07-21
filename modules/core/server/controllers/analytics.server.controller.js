@@ -50,13 +50,13 @@ var url = require('url');
  *
  */
 exports.appendUTMParams = function(trackUrl, utmParams) {
-  if(!trackUrl || !utmParams || !utmParams.source || !utmParams.medium || !utmParams.campaign) {
+  if (!trackUrl || !utmParams || !utmParams.source || !utmParams.medium || !utmParams.campaign) {
     console.error('utmTrackify() missing one of the required variables:');
     console.error('- trackUrl: ' + trackUrl);
     console.error('- utmParams.source: ' + utmParams.source);
     console.error('- utmParams.medium: ' + utmParams.medium);
     console.error('- utmParams.campaign: ' + utmParams.campaign);
-    return (trackUrl) ? trackUrl : '';
+    return trackUrl || '';
   }
 
   // Append required UTM parameters
@@ -66,10 +66,10 @@ exports.appendUTMParams = function(trackUrl, utmParams) {
   obj.query.utm_campaign = String(utmParams.campaign);
 
   // Optional UTM parameters
-  if(utmParams.term) {
+  if (utmParams.term) {
     obj.query.utm_term = String(utmParams.term);
   }
-  if(utmParams.content) {
+  if (utmParams.content) {
     obj.query.utm_content = String(utmParams.content);
   }
 

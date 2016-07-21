@@ -19,8 +19,8 @@ module.exports = {
     less: defaultAssets.client.less,
     js: _.union(defaultAssets.client.js, [
       'public/dist/uib-templates.js',
-      'public/dist/templates.js',
+      'public/dist/templates.js'
     ]),
     views: defaultAssets.client.views
-  },
+  }
 };

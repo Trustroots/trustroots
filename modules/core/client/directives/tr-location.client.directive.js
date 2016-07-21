@@ -1,4 +1,4 @@
-(function(){
+(function () {
   'use strict';
 
   /**
@@ -31,21 +31,21 @@
       scope: {
         value: '=ngModel',
         trLocationCenter: '=?', // `?` makes this optional
-        trLocationBounds: '=?', // `?` makes this optional
+        trLocationBounds: '=?'  // `?` makes this optional
       },
       replace: false,
       link: function (scope, element, attr, ngModel) {
 
         // Event handler to stop submitting the surrounding form
         element.bind('keydown keypress', function($event) {
-           if ($event.which === 13) {
-             $event.preventDefault();
-           }
+          if ($event.which === 13) {
+            $event.preventDefault();
+          }
         });
 
         // Attach Angular UI Bootstrap TypeAhead
-        element.attr('typeahead-min-length', attr.typeaheadMinLength ? parseInt(attr.typeaheadMinLength) : 3);
-        element.attr('typeahead-wait-ms', attr.typeaheadWaitMs ? parseInt(attr.typeaheadWaitMs) : 300);
+        element.attr('typeahead-min-length', attr.typeaheadMinLength ? parseInt(attr.typeaheadMinLength, 10) : 3);
+        element.attr('typeahead-wait-ms', attr.typeaheadWaitMs ? parseInt(attr.typeaheadWaitMs, 10) : 300);
         element.attr('typeahead-on-select', 'trLocation.onSelect($item, $model, $label, $event)');
         element.attr('uib-typeahead', 'trTitle as address.trTitle for address in trLocation.searchSuggestions($viewValue)');
 
@@ -89,14 +89,14 @@
           // Set center bounds for (Angular-UI-Leaflet) model
           // Bounds is prioritized over center
           var bounds = LocationService.getBounds($item);
-          if(angular.isObject($scope.trLocationBounds) && bounds) {
+
+          if (angular.isObject($scope.trLocationBounds) && bounds) {
             $scope.trLocationBounds = bounds;
-          }
-          // If no bounds was found, check `center`
-          // Set center coordinates for (Angular-UI-Leaflet) model
-          else if(angular.isObject($scope.trLocationCenter)) {
+          } else if (angular.isObject($scope.trLocationCenter)) {
+            // If no bounds was found, check `center`
+            // Set center coordinates for (Angular-UI-Leaflet) model
             var center = LocationService.getCenter($item);
-            if(center) {
+            if (center) {
               angular.extend($scope.trLocationCenter, center);
             }
           }
@@ -107,4 +107,4 @@
     };
   }
 
-})();
+}());

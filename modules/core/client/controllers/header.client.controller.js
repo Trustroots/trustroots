@@ -1,4 +1,4 @@
-(function(){
+(function () {
   'use strict';
 
   angular
@@ -32,10 +32,10 @@
         vm.isCollapsed = false;
 
         // Hide header at certain pages
-        vm.isHidden = (angular.isDefined(toState.headerHidden) && toState.headerHidden === true) ? true : false;
+        vm.isHidden = (angular.isDefined(toState.headerHidden) && toState.headerHidden === true);
       });
     }
 
   }
 
-})();
+}());

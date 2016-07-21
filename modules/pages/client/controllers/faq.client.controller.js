@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -23,7 +23,7 @@
 
       // Follow on which FAQ category we are at
       $scope.$on('$stateChangeSuccess', function() {
-        if($state.current.name.substr(0, 4) === 'faq.') {
+        if ($state.current.name.substr(0, 4) === 'faq.') {
           vm.category = $state.current.name.replace('faq.', '');
           canSidebarBeSticky();
         }
@@ -31,7 +31,7 @@
 
       // Act when hash changes
       $scope.$on('$locationChangeSuccess', function() {
-        if($location.hash() !== '') {
+        if ($location.hash() !== '') {
           highlightQuestion($location.hash());
         }
       });
@@ -42,7 +42,7 @@
       $timeout(function() {
 
         // If hash is present on initial page load, open it
-        if($location.hash() !== '') {
+        if ($location.hash() !== '') {
           // Scroll to element
           $uiViewScroll(angular.element('#' + $location.hash()));
           highlightQuestion($location.hash());
@@ -61,7 +61,7 @@
      */
     function canSidebarBeSticky() {
       $timeout(function() {
-        if($window.innerHeight <= angular.element('#faq-sidebar').height()) {
+        if ($window.innerHeight <= angular.element('#faq-sidebar').height()) {
           vm.allowStickySidebar = false;
         }
       });
@@ -75,7 +75,7 @@
 
       // Performs color flash for link, see faq.less for more.
       // Animation time at CSS is 1000ms
-      if($el.length) {
+      if ($el.length) {
         $el.addClass('faq-question-flash');
         $timeout(function() {
           $el.removeClass('faq-question-flash');
@@ -84,4 +84,5 @@
     }
 
   }
-})();
+
+}());

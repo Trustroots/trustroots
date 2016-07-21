@@ -10,29 +10,28 @@ var passport = require('passport'),
 module.exports = function(config) {
   // Use github strategy
   passport.use(new GithubStrategy({
-      clientID: config.github.clientID,
-      clientSecret: config.github.clientSecret,
-      callbackURL: config.github.callbackURL,
-      passReqToCallback: true
-    },
-    function(req, accessToken, refreshToken, profile, done) {
-      // Set the provider data and include tokens
-      var providerData = profile._json;
-      providerData.accessToken = accessToken;
-      providerData.refreshToken = refreshToken;
+    clientID: config.github.clientID,
+    clientSecret: config.github.clientSecret,
+    callbackURL: config.github.callbackURL,
+    passReqToCallback: true
+  },
+  function(req, accessToken, refreshToken, profile, done) {
+    // Set the provider data and include tokens
+    var providerData = profile._json;
+    providerData.accessToken = accessToken;
+    providerData.refreshToken = refreshToken;
 
-      // Create the user OAuth profile
-      var providerUserProfile = {
-        displayName: profile.displayName || profile.username,
-        email: profile.emails[0].value,
-        username: profile.username,
-        provider: 'github',
-        providerIdentifierField: 'id',
-        providerData: providerData
-      };
+    // Create the user OAuth profile
+    var providerUserProfile = {
+      displayName: profile.displayName || profile.username,
+      email: profile.emails[0].value,
+      username: profile.username,
+      provider: 'github',
+      providerIdentifierField: 'id',
+      providerData: providerData
+    };
 
-      // Save the user OAuth profile
-      users.saveOAuthUserProfile(req, providerUserProfile, done);
-    }
-  ));
+    // Save the user OAuth profile
+    users.saveOAuthUserProfile(req, providerUserProfile, done);
+  }));
 };

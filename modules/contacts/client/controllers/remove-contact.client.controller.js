@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -10,7 +10,10 @@
 
     var contactToRemove = $scope.contactToRemove;
 
+    // ViewModel
     var vm = this;
+
+    // Exposed to the view
     vm.isLoading = false;
     vm.contact = contactToRemove;
     vm.removeContact = removeContact;
@@ -18,20 +21,18 @@
 
     // Different confirm button label and modal title depending on situation
 
-    // User is cancelling a request
-    if(angular.isDefined(contactToRemove.confirmed) && contactToRemove.confirmed === false && Authentication.user._id === contactToRemove.users[1]._id) {
+    if (angular.isDefined(contactToRemove.confirmed) && contactToRemove.confirmed === false && Authentication.user._id === contactToRemove.users[1]._id) {
+      // User is cancelling a request
       vm.labelConfirm = 'Yes, revoke request';
       vm.labelTitle = 'Revoke contact request?';
       vm.labelTime = 'Requested';
-    }
-    // Decline received request
-    else if(angular.isDefined(contactToRemove.confirmed) && contactToRemove.confirmed === false) {
+    } else if (angular.isDefined(contactToRemove.confirmed) && contactToRemove.confirmed === false) {
+      // Decline received request
       vm.labelConfirm = 'Yes, decline request';
       vm.labelTitle = 'Decline contact request?';
       vm.labelTime = 'Requested';
-    }
-    // Removing confirmed contact
-    else {
+    } else {
+      // Removing confirmed contact
       vm.labelConfirm = 'Yes, remove contact';
       vm.labelTitle = 'Remove contact?';
       vm.labelTime = 'Connected since';
@@ -41,7 +42,7 @@
       vm.isLoading = true;
 
       // contact comes from the parent link()
-      Contact.delete({contactId: contactToRemove._id},
+      Contact.delete({ contactId: contactToRemove._id },
         // Success
         function() {
 
@@ -66,4 +67,4 @@
 
   }
 
-})();
+}());

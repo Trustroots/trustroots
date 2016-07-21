@@ -1,5 +1,5 @@
-/*global MediumEditor */
-(function(){
+/* global MediumEditor */
+(function () {
   'use strict';
 
   /**
@@ -106,9 +106,9 @@
         });
 
         // On ctrl+enter
-        if(iAttrs.trEditorOnCtrlEnter) {
+        if (iAttrs.trEditorOnCtrlEnter) {
           ngModel.editor.subscribe('editableKeydownEnter', function (event, editable) {
-            if(event.ctrlKey) {
+            if (event.ctrlKey) {
               event.preventDefault();
               // Apply linked function
               $parse(iAttrs.trEditorOnCtrlEnter)(scope.$parent);
@@ -123,4 +123,4 @@
     };
   }
 
-})();
+}());

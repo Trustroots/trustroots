@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -9,7 +9,7 @@
   /* @ngInject */
   function HomeRunBlock($location, Authentication) {
     // When landing to frontpage as authenticated user, redirect to search
-    if(Authentication.user && $location.path() === '/') {
+    if (Authentication.user && $location.path() === '/') {
       $location.path('/search');
     }
   }
@@ -28,10 +28,9 @@
 
     // Load front page's landing photos
     // @todo, move part of this logic data to the DB
-    if($stateParams.tribe && ['hitchhikers', 'dumpster-divers', 'punks'].indexOf($stateParams.tribe) > -1) {
+    if ($stateParams.tribe && ['hitchhikers', 'dumpster-divers', 'punks'].indexOf($stateParams.tribe) > -1) {
       vm.boards = ['rainbowpeople', 'hitchroad', 'desertgirl', 'hitchgirl1', 'hitchgirl2'];
-    }
-    else {
+    } else {
       vm.boards = Authentication.user ? ['woman-bridge', 'wavewatching'] : ['woman-bridge', 'rainbowpeople', 'hitchroad', 'hitchgirl1', 'wavewatching'];
     }
 
@@ -40,36 +39,35 @@
       limit: 3
     }, function() {
       // Got those three tribes, now fetch one more if requested
-      if($stateParams.tribe && $stateParams.tribe !== '') {
+      if ($stateParams.tribe && $stateParams.tribe !== '') {
 
         // Loop trough tribes to see if requested tribe is already there, and simply move it to be first
         var foundTribeFromArray = false;
         angular.forEach(vm.tribes, function(tribe) {
-          if(tribe.slug === $stateParams.tribe) {
+          if (tribe.slug === $stateParams.tribe) {
             foundTribeFromArray = true;
           }
         });
-        if(!foundTribeFromArray) {
+        if (!foundTribeFromArray) {
           vm.tribe = TribeService.get({
             tribeSlug: $stateParams.tribe
           });
           vm.tribe.then(function(tribe) {
             // If tribe was found, put it to the beginning of `vm.tribes` array
-            if(tribe && tribe._id) {
+            if (tribe && tribe._id) {
               vm.tribes.unshift(tribe);
             }
             vm.tribesLoaded = true;
           });
-        }
-        else {
+        } else {
           vm.tribesLoaded = true;
         }
 
-      }
-      else {
+      } else {
         vm.tribesLoaded = true;
       }
     });
 
   }
-})();
+
+}());

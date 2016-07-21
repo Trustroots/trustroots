@@ -20,10 +20,10 @@
 
     it('should return 0 length for non string values', inject(function(plainTextLengthFilter) {
       expect(plainTextLengthFilter(false)).toBe(0);
-      expect(plainTextLengthFilter({test:'test'})).toBe(0);
+      expect(plainTextLengthFilter({ test: 'test' })).toBe(0);
       expect(plainTextLengthFilter(null)).toBe(0);
-      expect(plainTextLengthFilter(['A','B','C'])).toBe(0);
-      expect(plainTextLengthFilter(1+2)).toBe(0);
+      expect(plainTextLengthFilter(['A', 'B', 'C'])).toBe(0);
+      expect(plainTextLengthFilter(1 + 2)).toBe(0);
     }));
 
     it('should return length for a string after stripping white space', inject(function(plainTextLengthFilter) {
@@ -31,4 +31,5 @@
     }));
 
   });
-})();
+
+}());

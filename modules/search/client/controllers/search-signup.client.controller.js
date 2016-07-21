@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -43,10 +43,10 @@
     /**
      * Pass search query to the view
      */
-    if($stateParams.location && $stateParams.location !== '') {
+    if ($stateParams.location && $stateParams.location !== '') {
       vm.searchQuery = $stateParams.location.replace('_', ' ', 'g');
     }
 
   }
 
-})();
+}());

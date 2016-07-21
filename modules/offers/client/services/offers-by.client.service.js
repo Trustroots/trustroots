@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   // OffersBy service used for communicating with the offers REST endpoints
@@ -18,4 +18,4 @@
     });
   }
 
-})();
+}());

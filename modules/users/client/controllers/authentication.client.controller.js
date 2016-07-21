@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -42,15 +42,14 @@
 
         // Redirect to where we were left off before sign-in page
         // See modules/core/client/controllers/main.client.controller.js
-        if(vm.continue) {
+        if (vm.continue) {
           var stateTo = $rootScope.signinState || 'search',
               stateToParams = $rootScope.signinStateParams || {};
           delete $rootScope.signinState;
           delete $rootScope.signinStateParams;
           $state.go(stateTo, stateToParams);
-        }
-        // Redirect to the search page
-        else {
+        } else {
+          // Redirect to the search page
           $state.go('search');
         }
       }).error(function(error) {
@@ -65,4 +64,4 @@
 
   }
 
-})();
+}());

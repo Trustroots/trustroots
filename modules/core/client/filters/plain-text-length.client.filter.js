@@ -1,4 +1,4 @@
-(function(){
+(function () {
   'use strict';
 
   /**
@@ -24,4 +24,4 @@
     };
   }
 
-})();
+}());

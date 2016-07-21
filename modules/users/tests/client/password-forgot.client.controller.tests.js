@@ -5,12 +5,12 @@
   describe('ForgotPasswordController', function() {
     // Initialize global variables
     var ForgotPasswordController,
-      $scope,
-      $httpBackend,
-      $stateParams,
-      $location,
-      $window,
-      Authentication;
+        $scope,
+        $httpBackend,
+        $stateParams,
+        $location,
+        $window,
+        Authentication;
 
     // The $resource service augments the response object with methods for updating and deleting the resource.
     // If we were to use the standard toEqual matcher, our tests would fail because the test values would not match

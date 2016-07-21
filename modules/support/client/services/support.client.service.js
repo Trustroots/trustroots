@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   // Support service used for communicating with the support REST endpoints
@@ -12,4 +12,4 @@
     return $resource('/api/support');
   }
 
-})();
+}());

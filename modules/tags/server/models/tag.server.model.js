@@ -9,7 +9,7 @@ var path = require('path'),
     mongoosePaginate = require('mongoose-paginate'),
     uniqueValidation = require('mongoose-beautiful-unique-validation'),
     integerValidator = require('mongoose-integer'),
-    URLSlugs = require('mongoose-url-slugs'),
+    urlslugs = require('mongoose-url-slugs'),
     randomColor = require('randomcolor'),
     speakingurl = require('speakingurl'),
     validator = require('validator'),
@@ -46,7 +46,7 @@ var validateLabel = function(label) {
  */
 var validateURL = function(url) {
   return !url || validator.isURL(url, {
-    protocols: ['http','https'],
+    protocols: ['http', 'https'],
     require_tld: true,
     require_protocol: true,
     require_valid_protocol: true,
@@ -145,13 +145,13 @@ var TagSchema = new Schema({
  * @link https://npmjs.org/package/speakingurl
  * @link https://github.com/mindblaze/mongoose-url-slugs/issues/17
  */
-TagSchema.plugin(URLSlugs('label', {
+TagSchema.plugin(urlslugs('label', {
   field: 'slug',
   generator: function(string) {
     return speakingurl(string, {
       separator: '-', // char that replaces the whitespaces
       maintainCase: false, // maintain case (true, convert all chars to lower case (false)
-  	  truncate: 255 // trim to max length ({number}), don't truncate (0)
+      truncate: 255 // trim to max length ({number}), don't truncate (0)
     });
   }
 }));

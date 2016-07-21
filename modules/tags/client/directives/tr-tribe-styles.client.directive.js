@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   /**
@@ -27,13 +27,13 @@
       scope: false,
       link: function(scope, elem, attrs) {
 
-        if(angular.isDefined(attrs.trTribeStyles) && attrs.trTribeStyles !== '') {
+        if (angular.isDefined(attrs.trTribeStyles) && attrs.trTribeStyles !== '') {
           var style = '',
               tribe = angular.fromJson(attrs.trTribeStyles);
 
           // Set background image
           // Uses Uploadcare.com to resize and deliver images
-          if(tribe.image_UUID) {
+          if (tribe.image_UUID) {
             var dimensions = (angular.isDefined(attrs.trTribeStylesDimensions) && attrs.trTribeStylesDimensions !== '') ? attrs.trTribeStylesDimensions : '1024x768',
                 quality = (angular.isDefined(attrs.trTribeStylesQuality) && attrs.trTribeStylesQuality !== '') ? attrs.trTribeStylesQuality : 'lighter',
                 progressive = (angular.isDefined(attrs.trTribeStylesProgressive) && (attrs.trTribeStylesProgressive === 'yes' || attrs.trTribeStylesProgressive === 'no')) ? attrs.trTribeStylesProgressive : 'no';
@@ -49,11 +49,11 @@
             style += 'background-image: url(https://ucarecdn.com/' + tribe.image_UUID + '/-/' + img_params.join('/-/') + '/);';
           }
 
-          if(tribe.color) {
+          if (tribe.color) {
             style += 'background-color: #' + tribe.color + ';';
           }
 
-          if(style !== '') {
+          if (style !== '') {
             attrs.$set('style', style);
           }
         }
@@ -61,4 +61,5 @@
       }
     };
   }
-})();
+
+}());

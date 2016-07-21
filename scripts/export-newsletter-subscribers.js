@@ -30,7 +30,7 @@ console.log(chalk.white('--'));
 
 
 // Export file is required
-if(process.argv[2] == null) {
+if (process.argv[2] == null) {
   console.log(chalk.red('Please give export file path!'));
   console.log('Example:');
   console.log('node export-newsletter-subscribers.js ~/emails.csv');
@@ -45,7 +45,7 @@ else {
 
   // Bootstrap db connection
   var db = mongoose.connect(config.db.uri, function(err) {
-    if(err) {
+    if (err) {
       console.error(chalk.red('Could not connect to MongoDB!'));
       console.log(err);
       process.exit(0);
@@ -58,11 +58,11 @@ else {
   User.find({newsletter:true}, {email: 1, firstName: 1, lastName: 1})
   .exec(function(err, users) {
     console.log('Found ' + users.length + ' users.');
-    if(err) {
+    if (err) {
       console.error(chalk.red('Error:'));
       console.log(err);
       process.exit(0);
-    } else if(users.length <= 0) {
+    } else if (users.length <= 0) {
       console.error(chalk.red('Could not find any users!'));
       console.log(err);
       process.exit(0);
@@ -77,7 +77,7 @@ else {
       // Write contents
       console.log('Writing content to ' + csvFile);
       fs.writeFile(csvFile, data, function(err) {
-          if(err) {
+          if (err) {
             console.error(chalk.red('Error while saving the file!'));
             console.error(err);
           }

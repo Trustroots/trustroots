@@ -27,7 +27,7 @@ var random = function (max) {
 
 var randomizeLoaction = function () {
   var random =  Math.random();
-  if(random > 0.98) {
+  if (random > 0.98) {
     random = ((Math.random()-0.5)*Math.random()*4)-1;
   }
   else {
@@ -59,12 +59,12 @@ var addUsers = function (index, max) {
   user.username = index+user.firstName.toLowerCase().replace('\'', '');
 
   user.save(function(err) {
-    if(err != null) console.log(err);
+    if (err != null) console.log(err);
   });
   index++;
   addOffer(user._id, index, max);
 
-  if(index <= max) {
+  if (index <= max) {
     addUsers(index, max);
   }
 
@@ -86,10 +86,10 @@ var addOffer = function (id, index, max) {
   offer.locationFuzzy = location;
 
   offer.save(function(err) {
-    if(err != null) console.log(err);
+    if (err != null) console.log(err);
     else {
       savedCounter++;
-      if(savedCounter >= max) {
+      if (savedCounter >= max) {
         console.log(chalk.green('Done with ' + max + ' test users!'));
         console.log(chalk.white(''));// Reset to white
         process.exit(0);
@@ -102,14 +102,14 @@ var addOffer = function (id, index, max) {
 var adminUsername = (process.argv[3] == null) ? false : process.argv[3];
 
 // Number of users is required
-if(process.argv[2] == null) {
+if (process.argv[2] == null) {
   console.log(chalk.red('Please give a number of users to add.'));
 }
 else {
   var numberOfUsers = process.argv[2];
 
   // Create admin user + regular users
-  if(adminUsername !== false) {
+  if (adminUsername !== false) {
     var adminUser = new User();
 
     adminUser.firstName = faker.name.firstName();
@@ -124,7 +124,7 @@ else {
     adminUser.avatarUploaded = false;
 
     adminUser.save(function(err) {
-      if(!err) {
+      if (!err) {
         console.log('Created admin user. Login with: ' + adminUsername + ' / password');
       } else {
         console.log(chalk.red('Could not add admin user ' + adminUsername));
@@ -133,7 +133,7 @@ else {
 
       // Add regular users
       console.log('Generating ' + numberOfUsers + ' users...');
-      if(numberOfUsers > 2000) {
+      if (numberOfUsers > 2000) {
         console.log('...this might really take a while... go grab some coffee!');
       }
       addUsers(1, numberOfUsers);
@@ -142,7 +142,7 @@ else {
   else {
     // Add regular users
     console.log('Generating ' + numberOfUsers + ' users...');
-    if(numberOfUsers > 2000) {
+    if (numberOfUsers > 2000) {
       console.log('...this might really take a while... go grab some coffee!');
     }
     addUsers(0, numberOfUsers);

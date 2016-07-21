@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -26,12 +26,10 @@
       // Got contact
       function(contact) {
         vm.isLoading = false;
-        if(vm.contact.confirmed === true) {
+        if (vm.contact.confirmed === true) {
           vm.isConnected = true;
           vm.success = 'You two are already connected. Great!';
-        }
-        // [0] contains contact requester's id, [1] is the receiver
-        else if (vm.contact.users[0]._id !== Authentication.user._id) {
+        } else if (vm.contact.users[0]._id !== Authentication.user._id) { // [0] contains contact requester's id, [1] is the receiver
           vm.error = 'You must wait until he/she confirms your connection.';
         }
       },
@@ -57,4 +55,4 @@
 
   }
 
-})();
+}());

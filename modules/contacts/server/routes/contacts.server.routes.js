@@ -12,12 +12,12 @@ module.exports = function(app) {
     .post(contacts.add);
 
   app.route('/api/contact-by/:contactUserId').all(contactsPolicy.isAllowed)
-    .get(contacts.get); //contacts.hasAuthorization,
+    .get(contacts.get);
 
   app.route('/api/contact/:contactId').all(contactsPolicy.isAllowed)
-    .get(contacts.get) //contacts.hasAuthorization,
-    .put(contacts.confirm) //contacts.receiverHasAuthorization,
-    .delete(contacts.remove); //contacts.hasAuthorization,
+    .get(contacts.get)
+    .put(contacts.confirm)
+    .delete(contacts.remove);
 
   // Contact list
   app.route('/api/contacts/:listUserId').all(contactsPolicy.isAllowed)

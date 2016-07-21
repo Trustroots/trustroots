@@ -52,7 +52,7 @@
           $httpBackend.when('GET', '/api/users/mini/123').respond(200, '');
           $httpBackend.expectGET('/api/users/mini/123');
 
-          $state.go('contactAdd', { userId: '123'});
+          $state.go('contactAdd', { userId: '123' });
           $rootScope.$digest();
         }));
 
@@ -96,7 +96,7 @@
           $httpBackend.when('GET', '/api/contact/123').respond(200, '');
           $httpBackend.expectGET('/api/contact/123');
 
-          $state.go('contactConfirm', { contactId: '123'});
+          $state.go('contactConfirm', { contactId: '123' });
           $rootScope.$digest();
         }));
 
@@ -112,4 +112,5 @@
 
 
   });
-})();
+
+}());

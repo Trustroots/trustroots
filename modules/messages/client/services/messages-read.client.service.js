@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   // MessagesRead service used for communicating with the messages REST endpoints
@@ -20,4 +20,4 @@
     });
   }
 
-})();
+}());

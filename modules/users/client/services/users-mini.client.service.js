@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   // Used to receive basic info to show avatars etc...
@@ -9,7 +9,7 @@
   /* @ngInject */
   function UsersMiniFactory($resource) {
     return $resource('/api/users/mini/:userId', {
-      userId:'@id'
+      userId: '@id'
     }, {
       get: {
         method: 'GET'
@@ -17,4 +17,4 @@
     });
   }
 
-})();
+}());

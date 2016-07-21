@@ -1,5 +1,5 @@
-(function() {
- 'use strict';
+(function () {
+  'use strict';
 
   // Start by defining the main module and adding the module dependencies
   angular
@@ -41,11 +41,11 @@
     });
 
     // Default timeout for success, error etc messages
-    $messageCenterServiceProvider.setGlobalOptions({timeout: 6000});
+    $messageCenterServiceProvider.setGlobalOptions({ timeout: 6000 });
 
     // Disabling Debug Data for production environment
     // @link https://docs.angularjs.org/guide/production
-    if(AppConfig.appEnv === 'production') {
+    if (AppConfig.appEnv === 'production') {
       $compileProvider.debugInfoEnabled(false);
     }
 
@@ -64,4 +64,4 @@
     });
   });
 
-})();
+}());

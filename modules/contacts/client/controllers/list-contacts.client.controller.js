@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -41,11 +41,9 @@
 
       if (value === 'displayName') {
         return other.displayName;
-      }
-      else if (value === 'username') {
+      } else if (value === 'username') {
         return other.username;
-      }
-      else {
+      } else {
         // User object
         return other;
       }
@@ -53,4 +51,4 @@
 
   }
 
-})();
+}());

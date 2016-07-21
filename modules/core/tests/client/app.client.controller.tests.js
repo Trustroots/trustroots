@@ -62,12 +62,12 @@
 
     it('should expose app settings', function () {
       expect(SettingsFactory.get).toHaveBeenCalled();
-      //expect($scope.vm.appSettings).toBeTruthy();
+      // expect($scope.vm.appSettings).toBeTruthy();
     });
 
     it('should expose languages', function () {
       expect(Languages.get).toHaveBeenCalledWith('object');
-      //expect($scope.vm.languageNames).toBeTruthy();
+      // expect($scope.vm.languageNames).toBeTruthy();
     });
 
     it('should expose photo credits', function () {
@@ -79,4 +79,5 @@
       expect($scope.vm.user).toBeTruthy();
     });
   });
-})();
+
+}());

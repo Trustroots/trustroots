@@ -12,7 +12,9 @@ var path = require('path'),
 /**
  * Globals
  */
-var user, user2, user3;
+var user,
+    user2,
+    user3;
 
 /**
  * Unit tests

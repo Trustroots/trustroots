@@ -15,7 +15,7 @@ module.exports = {
     title: 'Trustroots',
     description: 'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.'
   },
-  maxUploadSize: process.env.MAX_UPLOAD_SIZE || 10*1024*1024, // 10MB. Remember to change this to Nginx configs as well
+  maxUploadSize: process.env.MAX_UPLOAD_SIZE || 10 * 1024 * 1024, // 10MB. Remember to change this to Nginx configs as well
   imageProcessor: 'graphicsmagick', // graphicsmagick|imagemagick
   uploadTmpDir: './tmp/',
   uploadDir: './modules/users/client/img/profile/uploads/',
@@ -59,7 +59,7 @@ module.exports = {
         map: 'outdoors-v9',
         user: 'mapbox',
         legacy: false
-      },
+      }
     },
     user: process.env.MAPBOX_USERNAME || false,
     publicKey: process.env.MAPBOX_ACCESS_TOKEN || false
@@ -77,7 +77,7 @@ module.exports = {
     callbackURL: '/api/auth/twitter/callback'
   },
   google: {
-    page: process.env.GOOGLE_PAGE || '',
+    page: process.env.GOOGLE_PAGE || ''
   },
   github: {
     clientID: process.env.GITHUB_ID || 'APP_ID',

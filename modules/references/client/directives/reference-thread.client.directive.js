@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   /**
@@ -39,7 +39,6 @@
   function trReferenceThreadDirectiveController($scope, $analytics, messageCenterService, ReferenceThreadService) {
 
     // View Model
-    /*jshint validthis: true */
     var vm = this;
 
     // Exposed to the view
@@ -59,14 +58,14 @@
         userToId: vm.userTo
       }, function(referenceThread) {
         vm.isLoading = false;
-        if(referenceThread) {
+        if (referenceThread) {
           vm.allowCreatingReference = true;
           vm.reference = referenceThread;
         }
       }, function(referenceThreadErr) {
         vm.isLoading = false;
         // In case of 404, API will tell us if we are allowed to send references to this user
-        vm.allowCreatingReference = (referenceThreadErr.data && angular.isDefined(referenceThreadErr.data.allowCreatingReference)) ? referenceThreadErr.data.allowCreatingReference : false;
+        vm.allowCreatingReference = (referenceThreadErr.data && angular.isDefined(referenceThreadErr.data.allowCreatingReference)) ? Boolean(referenceThreadErr.data.allowCreatingReference) : false;
       });
     }
 
@@ -96,4 +95,4 @@
 
   }
 
-})();
+}());

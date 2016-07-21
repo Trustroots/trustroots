@@ -1,4 +1,4 @@
-(function(){
+(function () {
   'use strict';
 
   /**
@@ -15,35 +15,35 @@
     .module('core')
     .directive('trWindowFocus', trWindowFocusDirective);
 
-    /* @ngInject */
-    function trWindowFocusDirective($window) {
-      var directive = {
-        link: link,
-        restrict: 'A'
-      };
+  /* @ngInject */
+  function trWindowFocusDirective($window) {
+    var directive = {
+      link: link,
+      restrict: 'A'
+    };
 
-      return directive;
+    return directive;
 
-      function link(scope, element, attributes) {
+    function link(scope, element, attributes) {
 
-        // Hook up focus-handler
-        var win = angular.element($window).on('focus', handleFocus);
+      // Hook up focus-handler
+      var win = angular.element($window).on('focus', handleFocus);
 
-        // When the scope is destroyed, we have to make sure to teardown
-        // the event binding so we don't get a leak.
-        scope.$on('$destroy', handleDestroy);
+      // When the scope is destroyed, we have to make sure to teardown
+      // the event binding so we don't get a leak.
+      scope.$on('$destroy', handleDestroy);
 
-        // Handle the focus event on the Window
-        function handleFocus() {
-          scope.$apply(attributes.trWindowFocus);
-        }
-
-        // Teardown the directive
-        function handleDestroy() {
-          win.off('focus', handleFocus);
-        }
-
+      // Handle the focus event on the Window
+      function handleFocus() {
+        scope.$apply(attributes.trWindowFocus);
       }
-    }
 
-})();
+      // Teardown the directive
+      function handleDestroy() {
+        win.off('focus', handleFocus);
+      }
+
+    }
+  }
+
+}());
