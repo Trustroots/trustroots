@@ -68,7 +68,12 @@
         vm.success = 'Done! We sent an email to your contact and he/she still needs to confirm it.';
       }, function(error) {
         vm.isLoading = false;
-        vm.error = error.message || 'Something went wrong. Try again.';
+        if (error.status === 409) {
+          // 409 means contact already existed
+          vm.success = (error.data.confirmed) ? 'You two are already connected. Great!' : 'Connection already initiated; now it has to be confirmed.';
+        } else {
+          vm.error = error.message || 'Something went wrong. Try again.';
+        }
       });
 
     }
