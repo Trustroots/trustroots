@@ -8,7 +8,8 @@ var should = require('should'),
     User = mongoose.model('User'),
     Tag = mongoose.model('Tag'),
     config = require(path.resolve('./config/config')),
-    express = require(path.resolve('./config/lib/express'));
+    express = require(path.resolve('./config/lib/express')),
+    testutils = require(path.resolve('./testutils'));
 
 /**
  * Globals
@@ -24,6 +25,8 @@ var app,
  * User routes tests
  */
 describe('User CRUD tests', function () {
+
+  var sentEmails = testutils.catchEmails();
 
   before(function (done) {
     // Get application
@@ -90,6 +93,11 @@ describe('User CRUD tests', function () {
         // Assert we have just the default 'user' role
         signupRes.body.roles.should.be.instanceof(Array).and.have.lengthOf(1);
         signupRes.body.roles.indexOf('user').should.equal(0);
+
+        sentEmails.length.should.equal(1);
+        sentEmails[0].data.subject.should.equal('Confirm Email');
+        sentEmails[0].data.to.address.should.equal(_user.email);
+
         done();
       });
   });
@@ -113,6 +121,10 @@ describe('User CRUD tests', function () {
         should.not.exist(signupRes.body.password);
         should.not.exist(signupRes.body.salt);
         signupRes.body.emailTemporary.should.equal(_user.email);
+
+        sentEmails.length.should.equal(1);
+        sentEmails[0].data.subject.should.equal('Confirm Email');
+        sentEmails[0].data.to.address.should.equal(_user.email);
 
         User.findOne({ username: _user.username.toLowerCase() }, function(err, userRes1) {
           if (err) {
@@ -140,6 +152,8 @@ describe('User CRUD tests', function () {
                   if (confirmEmailPostErr) {
                     return done(confirmEmailPostErr);
                   }
+
+                  sentEmails.length.should.equal(1);
 
                   // User should now be public
                   confirmEmailPostRes.body.profileMadePublic.should.equal(true);
