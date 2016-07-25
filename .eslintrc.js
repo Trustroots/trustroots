@@ -7,7 +7,7 @@ module.exports = {
     'comma-dangle': [2, 'never'],
     'comma-spacing': [2, { before: false, after: true }],
     'consistent-return': 0,
-    curly: 0,
+    curly: [2, 'multi-line'],
     'default-case': 0,
     eqeqeq: [2, 'smart'],
     'func-names': 0,
