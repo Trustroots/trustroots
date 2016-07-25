@@ -11,7 +11,15 @@ var should = require('should'),
 /**
  * Globals
  */
-var app, agent, credentials, user1, user2, user1Id, user2Id, offer1, offer2;
+var app,
+    agent,
+    credentials,
+    user1,
+    user2,
+    user1Id,
+    user2Id,
+    offer1,
+    offer2;
 
 /**
  * Offer routes tests
@@ -80,10 +88,10 @@ describe('Offer CRUD tests', function() {
     user1.save(function(err) {
       user2.save(function(err) {
         // Check id for user1
-        User.findOne({'username': user1.username}, function(err, user1) {
+        User.findOne({ 'username': user1.username }, function(err, user1) {
           user1Id = user1._id;
           // Check id for user2
-          User.findOne({'username': user1.username}, function(err, user2) {
+          User.findOne({ 'username': user1.username }, function(err, user2) {
             user2Id = user2._id;
             offer2.user = user2Id;
             offer2.save(function(err) {
@@ -116,27 +124,27 @@ describe('Offer CRUD tests', function() {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
-          // Get a offer from the other user
-          agent.get('/api/offers-by/' + user2Id)
-            .expect(200)
-            .end(function(offerGetErr, offerGetRes) {
-              // Handle offer get error
-              if (offerGetErr) return done(offerGetErr);
+        // Get a offer from the other user
+        agent.get('/api/offers-by/' + user2Id)
+          .expect(200)
+          .end(function(offerGetErr, offerGetRes) {
+            // Handle offer get error
+            if (offerGetErr) return done(offerGetErr);
 
-              // Set assertions
-              offerGetRes.body.user.should.equal(user2Id.toString());
-              offerGetRes.body.status.should.equal(offer2.status);
-              offerGetRes.body.description.should.equal(offer2.description);
-              offerGetRes.body.noOfferDescription.should.equal(offer2.noOfferDescription);
-              offerGetRes.body.maxGuests.should.equal(offer2.maxGuests);
-              offerGetRes.body.location.should.be.instanceof(Array).and.have.lengthOf(2);
-              offerGetRes.body.location.should.deepEqual([offer2.location[0], offer2.location[1]]);
-              offerGetRes.body.updated.should.not.be.empty();
-              should.not.exist(offerGetRes.body.locationFuzzy);
+            // Set assertions
+            offerGetRes.body.user.should.equal(user2Id.toString());
+            offerGetRes.body.status.should.equal(offer2.status);
+            offerGetRes.body.description.should.equal(offer2.description);
+            offerGetRes.body.noOfferDescription.should.equal(offer2.noOfferDescription);
+            offerGetRes.body.maxGuests.should.equal(offer2.maxGuests);
+            offerGetRes.body.location.should.be.instanceof(Array).and.have.lengthOf(2);
+            offerGetRes.body.location.should.deepEqual([offer2.location[0], offer2.location[1]]);
+            offerGetRes.body.updated.should.not.be.empty();
+            should.not.exist(offerGetRes.body.locationFuzzy);
 
-              // Call the assertion callback
-              return done();
-            });
+            // Call the assertion callback
+            return done();
+          });
 
       });
   });
@@ -248,29 +256,29 @@ describe('Offer CRUD tests', function() {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
-            // Get offers (around Berlin)
-            agent.get('/api/offers' +
-                '?northEastLat=55.31212135084999' +
-                '&northEastLng=18.73318142361111' +
-                '&southWestLat=44.66407507240992' +
-                '&southWestLng=3.689914279513889'
-              )
-              .expect(200)
-              .end(function(offersGetErr, offersGetRes) {
-                // Handle offer get error
-                if (offersGetErr) return done(offersGetErr);
+        // Get offers (around Berlin)
+        agent.get('/api/offers' +
+            '?northEastLat=55.31212135084999' +
+            '&northEastLng=18.73318142361111' +
+            '&southWestLat=44.66407507240992' +
+            '&southWestLng=3.689914279513889'
+          )
+          .expect(200)
+          .end(function(offersGetErr, offersGetRes) {
+            // Handle offer get error
+            if (offersGetErr) return done(offersGetErr);
 
-                // Set assertions
-                offersGetRes.body.length.should.equal(1);
-                offersGetRes.body[0].user.should.equal(user2Id.toString());
-                offersGetRes.body[0].status.should.equal(offer2.status);
-                offersGetRes.body[0].locationFuzzy.should.be.instanceof(Array).and.have.lengthOf(2);
-                offersGetRes.body[0].locationFuzzy.should.deepEqual([offer2.locationFuzzy[0], offer2.locationFuzzy[1]]);
-                offersGetRes.body[0]._id.should.not.be.empty();
+            // Set assertions
+            offersGetRes.body.length.should.equal(1);
+            offersGetRes.body[0].user.should.equal(user2Id.toString());
+            offersGetRes.body[0].status.should.equal(offer2.status);
+            offersGetRes.body[0].locationFuzzy.should.be.instanceof(Array).and.have.lengthOf(2);
+            offersGetRes.body[0].locationFuzzy.should.deepEqual([offer2.locationFuzzy[0], offer2.locationFuzzy[1]]);
+            offersGetRes.body[0]._id.should.not.be.empty();
 
-                // Call the assertion callback
-                return done();
-              });
+            // Call the assertion callback
+            return done();
+          });
 
       });
   });
@@ -283,24 +291,24 @@ describe('Offer CRUD tests', function() {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
-            // Get offers (in Niger)
-            agent.get('/api/offers' +
-                '?northEastLat=32.89472514359572' +
-                '&northEastLng=25.598493303571427' +
-                '&southWestLat=-20.49068931208608' +
-                '&southWestLng=-12.986188616071427'
-              )
-              .expect(200)
-              .end(function(offersGetErr, offersGetRes) {
-                // Handle offer get error
-                if (offersGetErr) return done(offersGetErr);
+        // Get offers (in Niger)
+        agent.get('/api/offers' +
+            '?northEastLat=32.89472514359572' +
+            '&northEastLng=25.598493303571427' +
+            '&southWestLat=-20.49068931208608' +
+            '&southWestLng=-12.986188616071427'
+          )
+          .expect(200)
+          .end(function(offersGetErr, offersGetRes) {
+            // Handle offer get error
+            if (offersGetErr) return done(offersGetErr);
 
-                // Set assertions
-                offersGetRes.body.length.should.equal(0);
+            // Set assertions
+            offersGetRes.body.length.should.equal(0);
 
-                // Call the assertion callback
-                return done();
-              });
+            // Call the assertion callback
+            return done();
+          });
 
       });
   });

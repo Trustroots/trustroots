@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -18,7 +18,7 @@
     vm.isLoading = false;
 
     // Is ?signup at the url (set only for first email confirms)
-    vm.signup = ($stateParams.signup) ? true : false;
+    vm.signup = angular.isDefined($stateParams.signup);
 
     // Change user password
     function confirmEmail() {
@@ -32,12 +32,11 @@
           Authentication.user = response.user;
           $rootScope.$broadcast('userUpdated');
 
-          // If successful and this was user's first confirm, welcome them to the community
-          if(response.profileMadePublic) {
+          if (response.profileMadePublic) {
+              // If successful and this was user's first confirm, welcome them to the community
             $state.go('welcome');
-          }
-          // If succesfull and wasn't first time, say yay!
-          else {
+          } else {
+            // If succesfull and wasn't first time, say yay!
             vm.success = true;
           }
 
@@ -49,4 +48,4 @@
 
   }
 
-})();
+}());

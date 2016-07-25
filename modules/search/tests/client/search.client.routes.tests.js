@@ -5,7 +5,7 @@
     // Initialize global variables
     var $scope;
 
-    //We can start by loading the main application module
+    // We can start by loading the main application module
     beforeEach(module(AppConfig.appModuleName));
 
     beforeEach(inject(function ($rootScope, $templateCache) {
@@ -55,4 +55,5 @@
 
     });
   });
-})();
+
+}());

@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   // Messages service used for communicating with the messages REST endpoints
@@ -19,13 +19,12 @@
 
     MessageHandler.prototype = {
       parseHeaders: function (header) {
-        if(header) {
+        if (header) {
           return {
             page: /<.*\/[^<>]*\?.*page=(\d*).*>;.*/.exec(header)[1],
             limit: /<.*\/[^<>]*\?.*limit=(\d*).*>;.*/.exec(header)[1]
           };
-        }
-        else {
+        } else {
           return header;
         }
       },
@@ -38,10 +37,10 @@
         var that = this;
         var query = (this.nextPage) ? angular.extend(this.nextPage, param) : param;
 
-        if(!this.paginationTimeout) {
+        if (!this.paginationTimeout) {
           this.paginationTimeout = true;
 
-          return(this.ajaxCall.query(
+          return this.ajaxCall.query(
             query,
             // Successful callback
             function(data, headers) {
@@ -54,7 +53,7 @@
               that.paginationTimeout = false;
               that.resolved = false;
             }
-          ));
+          );
         }
       },
       ajaxCall: $resource('/api/messages/:userId',
@@ -65,4 +64,4 @@
     return MessageHandler;
   }
 
-})();
+}());

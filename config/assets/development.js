@@ -19,5 +19,5 @@ module.exports = {
     less: defaultAssets.client.less,
     js: defaultAssets.client.js,
     views: defaultAssets.client.views
-  },
+  }
 };

@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -32,7 +32,7 @@
     function init() {
 
       // Prevent connecting with yourself
-      if($stateParams.userId === Authentication.user._id) {
+      if ($stateParams.userId === Authentication.user._id) {
         vm.isConnected = true;
         vm.error = 'You cannot connect with yourself. That is just silly!';
       }
@@ -50,7 +50,7 @@
 
       // If contact already exists, stop here
       existingContact.$promise.then(function(response) {
-        if(response) {
+        if (response) {
           vm.isConnected = true;
           vm.success = (response.confirmed) ? 'You two are already connected. Great!' : 'Connection already initiated; now it has to be confirmed.';
         }
@@ -80,4 +80,4 @@
 
   }
 
-})();
+}());

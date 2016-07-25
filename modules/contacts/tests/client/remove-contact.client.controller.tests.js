@@ -24,7 +24,7 @@
     // Load the main application module
     beforeEach(module(AppConfig.appModuleName));
 
-    beforeEach(inject(function($templateCache, _$httpBackend_, _Authentication_, _$rootScope_, _messageCenterService_){
+    beforeEach(inject(function($templateCache, _$httpBackend_, _Authentication_, _$rootScope_, _messageCenterService_) {
       $httpBackend = _$httpBackend_;
       Authentication = _Authentication_;
 
@@ -42,15 +42,15 @@
       $templateCache.put('/modules/pages/views/home.client.view.html', '');
     }));
 
-    afterEach(function(){
+    afterEach(function() {
       $httpBackend.verifyNoOutstandingExpectation();
       $httpBackend.verifyNoOutstandingRequest();
     });
 
-    describe('logged in', function(){
+    describe('logged in', function() {
 
-      beforeEach(function(done){
-        inject(function($controller){
+      beforeEach(function(done) {
+        inject(function($controller) {
           Authentication.user = user1;
           ContactRemoveController = $controller('ContactRemoveController', {
             $scope: $scope,

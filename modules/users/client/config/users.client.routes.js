@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -36,7 +36,7 @@
         templateUrl: '/modules/users/views/profile/profile-edit.client.view.html',
         abstract: true,
         controller: 'ProfileEditController',
-        controllerAs : 'profileEdit'
+        controllerAs: 'profileEdit'
       }).
         state('profile-edit.about', {
           url: '',
@@ -105,12 +105,11 @@
           // Contact is loaded only after profile is loaded, because we need the profile ID
           contact: function(ContactByService, profile, Authentication) {
             return profile.$promise.then(function(profile) {
-              // No profile found or looking at own profile: no need to load contact
-              if(Authentication.user && Authentication.user._id === profile._id) {
+              if (Authentication.user && Authentication.user._id === profile._id) {
+                // No profile found or looking at own profile: no need to load contact
                 return;
-              }
-              // Load contact
-              else {
+              } else {
+                // Load contact
                 return ContactByService.get({
                   userId: profile._id
                 });
@@ -160,7 +159,7 @@
       state('profile-signup', {
         url: '/profile-signup',
         title: 'Trustroots profile',
-        templateUrl: '/modules/users/views/profile/profile-signup.client.view.html',
+        templateUrl: '/modules/users/views/profile/profile-signup.client.view.html'
       }).
 
       // Auth routes
@@ -238,4 +237,4 @@
       });
   }
 
-})();
+}());

@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -27,7 +27,7 @@
      * Initialize controller
      */
     function activate() {
-      if($stateParams.report && $stateParams.report !== '') {
+      if ($stateParams.report && $stateParams.report !== '') {
         vm.request.reportMember = $stateParams.report;
       }
     }
@@ -44,7 +44,7 @@
         return false;
       }
 
-      if(vm.request.message === '') {
+      if (vm.request.message === '') {
         messageCenterService.add('danger', 'Please write a message first.', { timeout: 20000 });
         vm.isLoading = false;
         return false;
@@ -64,4 +64,4 @@
 
   }
 
-})();
+}());

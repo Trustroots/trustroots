@@ -13,14 +13,14 @@ var defaultErrorMessage = 'Snap! Something went wrong. If this keeps happening, 
 exports.getErrorMessageByKey = function(key) {
 
   var errorMessages = {
-    'not-found':              'Not found.',
-    'forbidden':              'Forbidden.',
-    'invalid-id':             'Cannot interpret id.',
-    'unprocessable-entity':   'Unprocessable Entity.', // Status 422, @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
+    'not-found': 'Not found.',
+    'forbidden': 'Forbidden.',
+    'invalid-id': 'Cannot interpret id.',
+    'unprocessable-entity': 'Unprocessable Entity.', // Status 422, @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
     'unsupported-media-type': 'Unsupported Media Type.', // Status 415
-    'bad-request':            'Bad request.', // Status 400
-    'conflict':               'Conflict.', // Status 409 
-    'default':                defaultErrorMessage
+    'bad-request': 'Bad request.', // Status 400
+    'conflict': 'Conflict.', // Status 409
+    'default': defaultErrorMessage
   };
 
   return (key && errorMessages[key]) ? errorMessages[key] : defaultErrorMessage;
@@ -38,7 +38,7 @@ exports.getNewError = function(key, status) {
   var message = this.getErrorMessageByKey(key),
       err = new Error(message);
 
-  if(status) err.status = status;
+  if (status) err.status = status;
 
   return err;
 };

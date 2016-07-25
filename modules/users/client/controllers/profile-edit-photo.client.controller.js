@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -54,7 +54,7 @@
      */
     function saveAvatar() {
       // Uploaded new file
-      if(vm.user.avatarSource === 'local' && vm.avatarPreview === true) {
+      if (vm.user.avatarSource === 'local' && vm.avatarPreview === true) {
         // Upload the new file
         vm.avatarUploading = true;
         vm.upload = Upload.upload({
@@ -73,16 +73,14 @@
           // Default error
           var saveAvatarErr = 'Oops! Something went wrong. Try again later.';
 
-          // Could not process file
-          if(status === 422) {
+          if (status === 422) {
+            // Could not process file
             saveAvatarErr = 'Sorry, we could not process this file.';
-          }
-          // File too large
-          else if(status === 413) {
+          } else if (status === 413) {
+            // File too large
             saveAvatarErr = 'Whoops, your file is too big. Please keep it up to ' + bytesToSize(appSettings.maxUploadSize) + '.';
-          }
-          // Unsupported media type
-          else if(status === 415) {
+          } else if (status === 415) {
+            // Unsupported media type
             saveAvatarErr = 'Sorry, we do not support this type of file.';
           }
 
@@ -95,11 +93,11 @@
     }
 
     /**
-     * Process preview after file is selected/dropped/received from camera
+     * Process preview after file is selected via fileinput / dropped to window / received from camera
      */
     function fileSelected($files, $event) {
       // Too early
-      if($files && $files.length === 0) {
+      if ($files && $files.length === 0) {
         return;
       }
 
@@ -109,15 +107,14 @@
       vm.user.avatarSource = 'local';
       vm.user.avatarUploaded = true;
 
-      // Validate file
-      if(file.type.indexOf('jpeg') === -1 && file.type.indexOf('gif') === -1 && file.type.indexOf('png') === -1) {
-         messageCenterService.add('danger', 'Please give a jpg, gif, or png image.');
-      }
-      else if(file.size > appSettings.maxUploadSize) {
-         messageCenterService.add('danger', 'Whoops, your file is too big. Please keep it up to ' + bytesToSize(appSettings.maxUploadSize) + '.');
-      }
-      // Upload file
-      else {
+      // Validate filetype
+      if (file.type.indexOf('jpeg') === -1 && file.type.indexOf('gif') === -1 && file.type.indexOf('png') === -1) {
+        messageCenterService.add('danger', 'Please give a jpg, gif, or png image.');
+      // Validate filesize
+      } else if (file.size > appSettings.maxUploadSize) {
+        messageCenterService.add('danger', 'Whoops, your file is too big. Please keep it up to ' + bytesToSize(appSettings.maxUploadSize) + '.');
+      // All good, uploading file...
+      } else {
         vm.avatarUploading = true;
 
         // Show the local file as a preview
@@ -161,11 +158,11 @@
     function bytesToSize(bytes) {
       var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
       if (bytes === 0) return '0 Byte';
-      var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+      var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
       return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
     }
 
 
   }
 
-})();
+}());

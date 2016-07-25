@@ -13,7 +13,9 @@ var path = require('path'),
 /**
  * Globals
  */
-var tag, tag2, tag3;
+var tag,
+    tag2,
+    tag3;
 
 /**
  * Unit tests

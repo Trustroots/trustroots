@@ -14,12 +14,12 @@ exports.renderIndex = function(req, res) {
   };
 
   // Expose user
-  if(req.user) {
+  if (req.user) {
     renderVars.user = usersHandler.sanitizeProfile(req.user, req.user);
   }
 
   // Expose tribe (when browsing `/tribes/tribe-name`)
-  if(req.tribe) {
+  if (req.tribe) {
     renderVars.tribe = req.tribe;
   }
 
@@ -39,7 +39,7 @@ exports.renderNotFound = function(req, res) {
       res.json({ message: errorHandler.getErrorMessageByKey('not-found') });
     },
     'default': function() {
-      res.send( errorHandler.getErrorMessageByKey('not-found') );
+      res.send(errorHandler.getErrorMessageByKey('not-found'));
     }
   });
 };

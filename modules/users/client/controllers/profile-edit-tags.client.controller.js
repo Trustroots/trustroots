@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -22,20 +22,19 @@
      * Update a user profile
      */
     function updateUserProfile(isValid) {
-      if(isValid) {
+      if (isValid) {
         vm.user.$update(function(response) {
           Authentication.user = response;
           $scope.$emit('userUpdated');
           messageCenterService.add('success', 'Hospitality networks updated.');
         }, function(response) {
-          messageCenterService.add('danger', response.data.message || 'Something went wrong. Please try again!' , { timeout: 10000 });
+          messageCenterService.add('danger', response.data.message || 'Something went wrong. Please try again!', { timeout: 10000 });
         });
-      }
-      else {
-        messageCenterService.add('danger', 'Please fix errors from your profile and try again.' , { timeout: 10000 });
+      } else {
+        messageCenterService.add('danger', 'Please fix errors from your profile and try again.', { timeout: 10000 });
       }
     }
 
   }
 
-})();
+}());

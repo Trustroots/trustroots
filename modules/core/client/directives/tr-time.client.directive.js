@@ -1,4 +1,4 @@
-(function(){
+(function () {
   'use strict';
 
   /**
@@ -41,7 +41,7 @@
       },
       link: function(scope, el, attrs, ctrl) {
 
-        if(!scope.trTime) {
+        if (!scope.trTime) {
           $log.warn('No time passed for tr-time directive.');
           return;
         }
@@ -59,7 +59,7 @@
         // Sync mode if other directive changes time mode
         scope.$on('timeModeAgoChanged', timeModeAgoChanged);
         function timeModeAgoChanged($event, newTimeModeAgo) {
-          if(scope.timeModeAgo !== newTimeModeAgo) {
+          if (scope.timeModeAgo !== newTimeModeAgo) {
             scope.timeModeAgo = newTimeModeAgo;
           }
         }
@@ -73,7 +73,7 @@
           scope.timeModeAgo = !scope.timeModeAgo;
 
           // Save setting to cache
-          if(locker.supported()) {
+          if (locker.supported()) {
             locker.put('timeAgo', scope.timeModeAgo);
           }
 
@@ -85,4 +85,4 @@
     };
   }
 
-})();
+}());

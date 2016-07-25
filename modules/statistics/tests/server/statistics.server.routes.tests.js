@@ -11,7 +11,13 @@ var should = require('should'),
 /**
  * Globals
  */
-var app, agent, credentials, user1, user2, user3, offer;
+var app,
+    agent,
+    credentials,
+    user1,
+    user2,
+    user3,
+    offer;
 
 /**
  * Statistics routes tests

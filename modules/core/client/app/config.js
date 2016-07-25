@@ -1,49 +1,50 @@
 'use strict';
 
 // Init the application configuration module for AngularJS application
-var AppConfig = (function() {
+var AppConfig = (function () {
   // Init module configuration options
   var appEnv = window.env || 'production';
   var appModuleName = 'trustroots';
   var appModuleVendorDependencies = [
-                                              'ngResource',
-                                              'ngAnimate',
-                                              'ngTouch',
-                                              'ngSanitize',
-                                              'ngMessageFormat',
-                                              'angulartics',
-                                              'ui.router',
-                                              'ui.bootstrap.dateparser',
-                                              'ui.bootstrap.buttons',
-                                              'ui.bootstrap.collapse',
-                                              'ui.bootstrap.dropdown',
-                                              'ui.bootstrap.modal',
-                                              'ui.bootstrap.popover',
-                                              'ui.bootstrap.progressbar',
-                                              'ui.bootstrap.tabs',
-                                              'ui.bootstrap.tooltip',
-                                              'ui.bootstrap.typeahead',
-                                              'angularMoment',
-                                              'nemLogging',
-                                              'ui-leaflet',
-                                              'ngFileUpload',
-                                              'zumba.angular-waypoints',
-                                              'MessageCenterModule',
-                                              'localytics.directives',
-                                              'angular-loading-bar',
-                                              'trTrustpass',
-                                              'angular-mailcheck',
-                                              'angular-locker',
-                                              'angular-confirm',
-                                              'angularGrid'
-                                            ];
+    'ngResource',
+    'ngAnimate',
+    'ngTouch',
+    'ngSanitize',
+    'ngMessageFormat',
+    'angulartics',
+    'ui.router',
+    'ui.bootstrap.dateparser',
+    'ui.bootstrap.buttons',
+    'ui.bootstrap.collapse',
+    'ui.bootstrap.dropdown',
+    'ui.bootstrap.modal',
+    'ui.bootstrap.popover',
+    'ui.bootstrap.progressbar',
+    'ui.bootstrap.tabs',
+    'ui.bootstrap.tooltip',
+    'ui.bootstrap.typeahead',
+    'angularMoment',
+    'nemLogging',
+    'ui-leaflet',
+    'ngFileUpload',
+    'zumba.angular-waypoints',
+    'MessageCenterModule',
+    'localytics.directives',
+    'angular-loading-bar',
+    'trTrustpass',
+    'angular-mailcheck',
+    'angular-locker',
+    'angular-confirm',
+    'angularGrid'
+  ];
 
-  // Load different service dependency for Angulartics depending on environment
-  // @link https://github.com/angulartics/angulartics
-  if(appEnv === 'production') {
+  /**
+   * Load different service dependency for Angulartics depending on environment
+   * @link https://github.com/angulartics/angulartics
+   */
+  if (appEnv === 'production') {
     appModuleVendorDependencies.push('angulartics.google.analytics');
-  }
-  else {
+  } else {
     appModuleVendorDependencies.push('angulartics.debug');
   }
 
@@ -62,4 +63,4 @@ var AppConfig = (function() {
     appModuleVendorDependencies: appModuleVendorDependencies,
     registerModule: registerModule
   };
-})();
+}());

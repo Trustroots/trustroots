@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -19,7 +19,7 @@
     vm.openThread = openThread;
 
     // Fetches first page of messages
-    vm.messageHandler.fetchMessages().$promise.then(function(data){
+    vm.messageHandler.fetchMessages().$promise.then(function(data) {
       addMessages(data);
     });
 
@@ -31,8 +31,8 @@
     }
 
     // Appends returned messages to model
-    function addMessages(data){
-      angular.forEach(data, function(msg){
+    function addMessages(data) {
+      angular.forEach(data, function(msg) {
         vm.threads.unshift(msg);
       });
     }
@@ -42,7 +42,7 @@
      * Activates when the last thread element hits the bottom view port
      */
     function moreMessages(waypointsDown) {
-      if(vm.messageHandler.nextPage && waypointsDown) {
+      if (vm.messageHandler.nextPage && waypointsDown) {
         vm.messageHandler.fetchMessages().$promise.then(function(data) {
           addMessages(data);
         });
@@ -64,15 +64,13 @@
     function otherParticipant(thread, value) {
       var other = (thread.userFrom._id === Authentication.user._id) ? thread.userTo : thread.userFrom;
 
-      if(!other) return;
+      if (!other) return;
 
       if (value && value === 'displayName') {
         return other.displayName;
-      }
-      else if (value && value === 'username') {
+      } else if (value && value === 'username') {
         return other.username;
-      }
-      else {
+      } else {
         // User object
         return other;
       }
@@ -87,4 +85,4 @@
 
   }
 
-})();
+}());

@@ -42,7 +42,7 @@ exports.add = function(req, res) {
     function(done) {
 
       // Not a valid ObjectId
-      if(!mongoose.Types.ObjectId.isValid(req.body.friendUserId)) {
+      if (!mongoose.Types.ObjectId.isValid(req.body.friendUserId)) {
         return res.status(400).json({
           message: errorHandler.getErrorMessageByKey('invalid-id')
         });
@@ -51,8 +51,8 @@ exports.add = function(req, res) {
       // Check if contact already exists
       Contact.findOne({
         $or: [
-          { users: [ req.body.friendUserId, req.user._id ] },
-          { users: [ req.user._id, req.body.friendUserId ] }
+          { users: [req.body.friendUserId, req.user._id] },
+          { users: [req.user._id, req.body.friendUserId] }
         ]
       }).exec(function(err, existingContact) {
         if (err) return done(err);
@@ -75,9 +75,9 @@ exports.add = function(req, res) {
       // Catch message separately
       var messageHTML = false;
       var messagePlain = false;
-      if(req.body.message && req.body.message !== '') {
+      if (req.body.message && req.body.message !== '') {
         messageHTML = sanitizeHtml(req.body.message, textProcessor.sanitizeOptions);
-        messagePlain = htmlToText.fromString(req.body.message, {wordwrap: 80});
+        messagePlain = htmlToText.fromString(req.body.message, { wordwrap: 80 });
       }
       delete req.body.message;
 
@@ -123,28 +123,28 @@ exports.add = function(req, res) {
           urlConfirm = url + '/contact-confirm/' + contact._id;
 
       var renderVars = emailsHandler.addEmailBaseTemplateParams(
-        req.headers.host,
-        {
-          name: friend.displayName,
-          message: messageHTML,
-          meName: req.user.displayName,
-          meURLPlainText: meURL,
-          meURL: analyticsHandler.appendUTMParams(meURL, {
-            source: 'transactional-email',
-            medium: 'email',
-            campaign: 'confirm-contact',
-            content: 'profile'
-          }),
-          urlConfirmPlainText: urlConfirm,
-          urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
-            source: 'transactional-email',
-            medium: 'email',
-            campaign: 'confirm-contact',
-            content: 'confirm-contact'
-          })
-        },
-        'confirm-contact'
-      );
+          req.headers.host,
+          {
+            name: friend.displayName,
+            message: messageHTML,
+            meName: req.user.displayName,
+            meURLPlainText: meURL,
+            meURL: analyticsHandler.appendUTMParams(meURL, {
+              source: 'transactional-email',
+              medium: 'email',
+              campaign: 'confirm-contact',
+              content: 'profile'
+            }),
+            urlConfirmPlainText: urlConfirm,
+            urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
+              source: 'transactional-email',
+              medium: 'email',
+              campaign: 'confirm-contact',
+              content: 'confirm-contact'
+            })
+          },
+          'confirm-contact'
+        );
 
       res.render(path.resolve('./modules/core/server/views/email-templates/confirm-contact'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, messagePlain, friend, renderVars);
@@ -189,7 +189,7 @@ exports.add = function(req, res) {
   ], function(err) {
     if (err) {
       if (contact) {
-        contact.remove(function(){
+        contact.remove(function() {
           return res.status(400).send({
             message: errorHandler.getErrorMessage(err)
           });
@@ -209,17 +209,17 @@ exports.add = function(req, res) {
  * Disconnect contact
  */
 exports.remove = function(req, res) {
-	var contact = req.contact;
+  var contact = req.contact;
 
-	contact.remove(function(err) {
-		if (err) {
-			return res.status(400).send({
-				message: errorHandler.getErrorMessage(err)
-			});
-		} else {
-			res.json(contact);
-		}
-	});
+  contact.remove(function(err) {
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
+      });
+    } else {
+      res.json(contact);
+    }
+  });
 };
 
 
@@ -229,7 +229,7 @@ exports.remove = function(req, res) {
 exports.confirm = function(req, res) {
 
   // Only receiving user can confirm user connections
-  if(!req.contact || !req.contact.users[0]._id.equals(req.user._id.valueOf())) {
+  if (!req.contact || !req.contact.users[0]._id.equals(req.user._id.valueOf())) {
     return res.status(403).json({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
@@ -237,17 +237,17 @@ exports.confirm = function(req, res) {
 
   // Ta'da!
   var contact = req.contact;
-	contact.confirmed = true;
+  contact.confirmed = true;
 
-	contact.save(function(err) {
-		if(err) {
-			return res.status(400).send({
-				message: errorHandler.getErrorMessage(err)
-			});
-		} else {
-			res.json(contact);
-		}
-	});
+  contact.save(function(err) {
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
+      });
+    } else {
+      res.json(contact);
+    }
+  });
 };
 
 /**
@@ -261,7 +261,7 @@ exports.list = function(req, res) {
  * Single contact
  */
 exports.get = function(req, res) {
- res.json(req.contact || {});
+  res.json(req.contact || {});
 };
 
 /**
@@ -272,31 +272,31 @@ exports.get = function(req, res) {
 exports.contactByUserId = function(req, res, next, userId) {
 
   // Not a valid ObjectId
-  if(!mongoose.Types.ObjectId.isValid(userId)) {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json({
       message: errorHandler.getErrorMessageByKey('invalid-id')
     });
   }
 
   // User's own profile, don't bother hitting the DB
-  if(req.user && req.user._id === userId) {
+  if (req.user && req.user._id === userId) {
     return res.status(400).json({
       message: errorHandler.getErrorMessageByKey('invalid-id')
     });
   }
 
-  if(req.user && req.user.public) {
+  if (req.user && req.user.public) {
     Contact.findOne({
       $or: [
-        { users: [ userId, req.user._id ] },
-        { users: [ req.user._id, userId ] }
+        { users: [userId, req.user._id] },
+        { users: [req.user._id, userId] }
       ]
     })
     .populate('users', userHandler.userMiniProfileFields)
     .exec(function(err, contact) {
 
-      if(err) return next(err);
-      if(!contact) {
+      if (err) return next(err);
+      if (!contact) {
         return res.status(404).json({
           message: errorHandler.getErrorMessageByKey('not-found')
         });
@@ -305,8 +305,7 @@ exports.contactByUserId = function(req, res, next, userId) {
       req.contact = contact;
       next();
     });
-  }
-  else {
+  } else {
     next();
   }
 };
@@ -318,7 +317,7 @@ exports.contactByUserId = function(req, res, next, userId) {
 exports.contactById = function(req, res, next, contactId) {
 
   // Not a valid ObjectId
-  if(!mongoose.Types.ObjectId.isValid(contactId)) {
+  if (!mongoose.Types.ObjectId.isValid(contactId)) {
     return res.status(400).json({
       message: errorHandler.getErrorMessageByKey('invalid-id')
     });
@@ -331,7 +330,7 @@ exports.contactById = function(req, res, next, contactId) {
         if (err) return next(err);
 
         // If nothing was found or neither of the user ID's match currently authenticated user's id, return 404
-        if(!contact || !req.user || (
+        if (!contact || !req.user || (
             !contact.users[0]._id.equals(req.user._id.valueOf()) &&
             !contact.users[1]._id.equals(req.user._id.valueOf())
         )) {
@@ -354,7 +353,7 @@ exports.contactById = function(req, res, next, contactId) {
 exports.contactListByUser = function(req, res, next, listUserId) {
 
   // Not a valid ObjectId
-  if(!mongoose.Types.ObjectId.isValid(listUserId)) {
+  if (!mongoose.Types.ObjectId.isValid(listUserId)) {
     return res.status(400).json({
       message: errorHandler.getErrorMessageByKey('invalid-id')
     });
@@ -363,7 +362,7 @@ exports.contactListByUser = function(req, res, next, listUserId) {
   var contactQuery = { users: listUserId, confirmed: true };
 
   // Remove 'confirmed=true' from queries if showing currently logged in user's listing
-  if(req.user && req.user._id.equals(listUserId)) {
+  if (req.user && req.user._id.equals(listUserId)) {
     delete contactQuery.confirmed;
   }
 
@@ -373,12 +372,12 @@ exports.contactListByUser = function(req, res, next, listUserId) {
     .populate({
       path: 'users',
       // ...except don't populate user's own info for confirmed contacts. We don't need it dozen times there:
-      //match: { _id: { $ne: listUserId } },
+      // match: { _id: { $ne: listUserId } },
       select: userHandler.userMiniProfileFields
     })
     .exec(function(err, contacts) {
-      if(err) return next(err);
-      if(!contacts) return next(new Error('Failed to load contacts.'));
+      if (err) return next(err);
+      if (!contacts) return next(new Error('Failed to load contacts.'));
 
       req.contacts = contacts;
       next();

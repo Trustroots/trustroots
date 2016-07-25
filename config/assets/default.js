@@ -18,7 +18,7 @@ module.exports = {
         'modules/core/client/fonts/fontello/css/tricons-codes.css',
         'public/lib/angular-ui-bootstrap/src/position/position.css',
         'public/lib/angular-ui-bootstrap/src/typeahead/typeahead.css',
-        'public/lib/angular-ui-bootstrap/src/tooltip/tooltip.css',
+        'public/lib/angular-ui-bootstrap/src/tooltip/tooltip.css'
       ],
       js: [
         // Non minified versions
@@ -115,12 +115,12 @@ module.exports = {
         // Reset and dependencies
         'public/lib/bootstrap/less/normalize.less',
         'public/lib/bootstrap/less/print.less',
-        //'public/lib/bootstrap/less/glyphicons.less',
+        // 'public/lib/bootstrap/less/glyphicons.less',
 
         // Core CSS
         'public/lib/bootstrap/less/scaffolding.less',
         'public/lib/bootstrap/less/type.less',
-        //'public/lib/bootstrap/less/code.less',
+        // 'public/lib/bootstrap/less/code.less',
         'public/lib/bootstrap/less/grid.less',
         'public/lib/bootstrap/less/tables.less',
         'public/lib/bootstrap/less/forms.less',
@@ -133,27 +133,27 @@ module.exports = {
         'public/lib/bootstrap/less/input-groups.less',
         'public/lib/bootstrap/less/navs.less',
         'public/lib/bootstrap/less/navbar.less',
-        //'public/lib/bootstrap/less/breadcrumbs.less',
-        //'public/lib/bootstrap/less/pagination.less',
-        //'public/lib/bootstrap/less/pager.less',
+        // 'public/lib/bootstrap/less/breadcrumbs.less',
+        // 'public/lib/bootstrap/less/pagination.less',
+        // 'public/lib/bootstrap/less/pager.less',
         'public/lib/bootstrap/less/labels.less',
         'public/lib/bootstrap/less/badges.less',
-        //'public/lib/bootstrap/less/jumbotron.less',
-        //'public/lib/bootstrap/less/thumbnails.less',
+        // 'public/lib/bootstrap/less/jumbotron.less',
+        // 'public/lib/bootstrap/less/thumbnails.less',
         'public/lib/bootstrap/less/alerts.less',
         'public/lib/bootstrap/less/progress-bars.less',
         'public/lib/bootstrap/less/media.less',
         'public/lib/bootstrap/less/list-group.less',
         'public/lib/bootstrap/less/panels.less',
-        //'public/lib/bootstrap/less/responsive-embed.less',
-        //'public/lib/bootstrap/less/wells.less',
+        // 'public/lib/bootstrap/less/responsive-embed.less',
+        // 'public/lib/bootstrap/less/wells.less',
         'public/lib/bootstrap/less/close.less',
 
         // Components w/ JavaScript
         'public/lib/bootstrap/less/modals.less',
         'public/lib/bootstrap/less/tooltip.less',
         'public/lib/bootstrap/less/popovers.less',
-        //'public/lib/bootstrap/less/carousel.less',
+        // 'public/lib/bootstrap/less/carousel.less',
 
         // Utility classes
         'public/lib/bootstrap/less/utilities.less',

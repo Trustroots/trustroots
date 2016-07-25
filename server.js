@@ -7,7 +7,7 @@
 
 // Debug Node.js C/C++ native code modules on dev mode
 // @link https://www.npmjs.com/package/segfault-handler
-if(process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development') {
   var SegfaultHandler = require('segfault-handler');
   SegfaultHandler.registerHandler('segfault.log');
   console.log('Logging possible segfault errors to ./segfault.log');
@@ -29,7 +29,7 @@ mongoose.connect(function(db) {
   app.listen(config.port);
 
   // Check in case mailer config is still set to default values (a common problem)
-  if(config.mailer.service && config.mailer.service === 'MAILER_SERVICE_PROVIDER') {
+  if (config.mailer.service && config.mailer.service === 'MAILER_SERVICE_PROVIDER') {
     console.warn(chalk.red('Remember to setup mailer from ./config/env/local.js - some features won\'t work without it.'));
   }
 

@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -17,9 +17,11 @@
     function get(type) {
       if (type === 'array') {
         var langsArr = [];
-        for (var key in $window.languages) {
-          langsArr[langsArr.length] = {key: key, name: $window.languages[key]};
-        }
+
+        angular.forEach($window.languages, function(value, key) {
+          this.push({ key: key, name: value });
+        }, langsArr);
+
         return langsArr;
       }
 
@@ -27,8 +29,6 @@
       return $window.languages;
     }
 
-    return service;
-
   }
 
-})();
+}());

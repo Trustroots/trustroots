@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -48,8 +48,8 @@
      * Resend confirmation email for already sent email
      */
     function resendUserEmailConfirm($event) {
-      if($event) $event.preventDefault();
-      if(vm.user.emailTemporary) {
+      if ($event) $event.preventDefault();
+      if (vm.user.emailTemporary) {
         vm.user.email = vm.user.emailTemporary;
         updateUserEmail();
       }
@@ -86,7 +86,7 @@
         vm.currentPassword = '';
         vm.newPassword = '';
         vm.verifyPassword = '';
-        angular.element('#newPassword').val(''); //Fix to bypass password verification directive
+        angular.element('#newPassword').val(''); // Fix to bypass password verification directive
         vm.changeUserPasswordLoading = false;
         vm.user = Authentication.user = response.user;
         messageCenterService.add('success', 'Your password is now changed. Have a nice day!');
@@ -99,4 +99,4 @@
 
   }
 
-})();
+}());

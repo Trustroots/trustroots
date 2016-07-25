@@ -17,8 +17,8 @@ module.exports = {
       auth: {
         authMechanism: ''
       }
-      //user: '',
-      //pass: ''
+      // user: '',
+      // pass: ''
     },
     // Enable mongoose debug mode
     debug: process.env.MONGODB_DEBUG || false

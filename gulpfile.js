@@ -29,7 +29,7 @@ var changedTestFiles = [];
 var environmentAssets, assets, config;
 
 gulp.task('bower', function(done) {
-  if(argv.skipBower) {
+  if (argv.skipBower) {
     plugins.util.log('Bower task skipped.');
     return done();
   }
@@ -53,7 +53,7 @@ gulp.task('env:prod', function() {
 
 // Make sure local config file exists
 gulp.task('copyConfig', function(done) {
-  if(!fs.existsSync('config/env/local.js') ) {
+  if (!fs.existsSync('config/env/local.js') ) {
     gulp
       .src('config/env/local.sample.js')
       .pipe(plugins.rename('local.js'))
@@ -68,13 +68,13 @@ gulp.task('copyConfig', function(done) {
 // Load config + assets
 // Loading config before `env:*` and `copyConfig` tasks would load configs with wrong environment
 gulp.task('loadConfig', function(done) {
-  if(!config) {
+  if (!config) {
     config = require('./config/config');
   }
-  if(!environmentAssets) {
+  if (!environmentAssets) {
     environmentAssets = require('./config/assets/' + process.env.NODE_ENV || 'development') || {};
   }
-  if(!assets) {
+  if (!assets) {
     assets = _.extend(defaultAssets, environmentAssets);
   }
   done();
@@ -104,17 +104,17 @@ gulp.task('watch', function() {
 
   // Add watch rules
   gulp.watch(defaultAssets.server.views).on('change', plugins.livereload.changed);
-  gulp.watch(defaultAssets.server.allJS, ['jshint']).on('change', plugins.livereload.changed);
+  gulp.watch(defaultAssets.server.allJS, ['eslint']).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.fontelloConfig, ['fontello']);
   gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
 
   if (process.env.NODE_ENV === 'production') {
-    gulp.watch(defaultAssets.client.js, ['jshint', 'clean:js', 'scripts']);
-    gulp.watch(defaultAssets.server.gulpConfig, ['jshint']);
+    gulp.watch(defaultAssets.client.js, ['eslint', 'clean:js', 'scripts']);
+    gulp.watch(defaultAssets.server.gulpConfig, ['eslint']);
     gulp.watch(defaultAssets.client.views, ['clean:js', 'scripts']).on('change', plugins.livereload.changed);
   } else {
-    gulp.watch(defaultAssets.client.js, ['jshint']).on('change', plugins.livereload.changed);
-    gulp.watch(defaultAssets.server.gulpConfig, ['jshint']);
+    gulp.watch(defaultAssets.client.js, ['eslint']).on('change', plugins.livereload.changed);
+    gulp.watch(defaultAssets.server.gulpConfig, ['eslint']);
     gulp.watch(defaultAssets.client.views).on('change', plugins.livereload.changed);
   }
 });
@@ -144,8 +144,8 @@ gulp.task('watch:server:run-tests', function () {
   });
 });
 
-// JS linting task
-gulp.task('jshint', function() {
+// ESLint JS linting task
+gulp.task('eslint', function() {
   var assets = _.union(
     defaultAssets.server.gulpConfig,
     defaultAssets.server.allJS,
@@ -156,9 +156,11 @@ gulp.task('jshint', function() {
   );
 
   return gulp.src(assets)
-    .pipe(plugins.jshint())
-    .pipe(plugins.jshint.reporter('default'))
-    .pipe(plugins.jshint.reporter('fail'));
+    .pipe(plugins.eslint())
+    .pipe(plugins.eslint.format())
+    // To have the process exit with an error code (1) on
+    // lint error, return the stream and pipe to failAfterError last.
+    .pipe(plugins.eslint.failAfterError());
 });
 
 // JavaScript task
@@ -233,7 +235,7 @@ gulp.task('uibTemplatecache', function() {
       .pipe(plugins.templateCache('uib-templates-' + uibModule + '.js', {
         root: 'uib/template/' + uibModule + '/',
         module: 'core',
-        templateHeader: '(function(){ \'use strict\'; angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
+        templateHeader: '(function() { \'use strict\'; angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
         templateBody: '$templateCache.put(\'<%= url %>\', \'<%= contents %>\');',
         templateFooter: '} })();'
       }));
@@ -259,7 +261,7 @@ gulp.task('templatecache', function() {
 	      return url.replace('/client', '');
       },
       module: 'core',
-      templateHeader: '(function(){ \'use strict\'; angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
+      templateHeader: '(function() { \'use strict\'; angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
       templateBody: '$templateCache.put(\'<%= url %>\', \'<%= contents %>\');',
       templateFooter: '} })();'
     }))
@@ -343,12 +345,12 @@ gulp.task('karma:watch', function(done) {
 
 // Build assets for development mode
 gulp.task('build:dev', function(done) {
-  runSequence('env:dev', 'bower', 'jshint', 'clean', ['uibTemplatecache', 'styles'], done);
+  runSequence('env:dev', 'bower', 'eslint', 'clean', ['uibTemplatecache', 'styles'], done);
 });
 
 // Build assets for production mode
 gulp.task('build:prod', function(done) {
-  runSequence('env:prod', 'bower', 'jshint', 'clean', ['styles', 'scripts'], done);
+  runSequence('env:prod', 'bower', 'eslint', 'clean', ['styles', 'scripts'], done);
 });
 
 // Clean dist css and js files
@@ -358,11 +360,11 @@ gulp.task('clean', function(done) {
 
 // Run the project tests
 gulp.task('test', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', ['karma', 'mocha'], done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'eslint', ['karma', 'mocha'], done);
 });
 
 gulp.task('test:server', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', 'mocha', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'eslint', 'mocha', done);
 });
 
 // Watch all server files for changes & run server tests (test:server) task on changes
@@ -371,11 +373,11 @@ gulp.task('test:server:watch', function(done) {
 });
 
 gulp.task('test:client', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', 'karma', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'eslint', 'karma', done);
 });
 
 gulp.task('test:client:watch', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', 'karma:watch', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'eslint', 'karma:watch', done);
 });
 
 // Run the project in development mode

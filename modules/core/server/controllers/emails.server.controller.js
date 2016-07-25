@@ -18,12 +18,12 @@ var path = require('path'),
  * @returns {Object[]} - Returns object with supportUrl, footerUrl and headerUrl parameters.
  */
 exports.addEmailBaseTemplateParams = function(host, params, utmCampaign) {
-  if(params === null || typeof params !== 'object') {
+  if (params === null || typeof params !== 'object') {
     console.error('appendUrlParams: requires param to be Object. No URL parameters added.');
     return {};
   }
 
-  if(!host) {
+  if (!host) {
     console.error('appendUrlParams: requires host.');
     return params;
   }

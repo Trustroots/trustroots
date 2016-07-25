@@ -10,17 +10,17 @@ var path = require('path'),
 
 // Publicly exposed fields from tags
 exports.tagFields = [
-                '_id',
-                'slug',
-                'label',
-                'count'
-                ].join(' ');
+  '_id',
+  'slug',
+  'label',
+  'count'
+].join(' ');
 
 /**
  * Crate a tag
  */
 exports.createTag = function(req, res) {
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });

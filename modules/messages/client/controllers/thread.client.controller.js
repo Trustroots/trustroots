@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
 /*
@@ -21,7 +21,7 @@
     // - No recepient defined
     // - Not signed in
     // - Sending messages to yourself
-    if(!$stateParams.username || !Authentication.user || Authentication.user._id === userTo._id) {
+    if (!$stateParams.username || !Authentication.user || Authentication.user._id === userTo._id) {
       $state.go('inbox');
     }
 
@@ -69,38 +69,36 @@
        *
        * See also sendMessage(), where message is clared
        */
-      if(locker.supported()) {
+      if (locker.supported()) {
         // Get message from cache, use default if it doesn't exist
         vm.content = locker.driver('session').get(cachePrefix, '');
       }
 
       // Fetches first page of messages after receiving user has finished loading (we need the userId from there)
       userTo.$promise.then(function() {
+        fetchMessages().$promise.then(function(data) {
 
-          fetchMessages().$promise.then(function(data) {
+          addMessages(data);
+          vm.isInitialized = true;
 
-            addMessages(data);
-            vm.isInitialized = true;
-
-            // Timeout makes sure thread-dimensions-directive has finished loading
-            // and there would thus be something actually listening to these broadcasts:
-            $timeout(function() {
-              $scope.$broadcast('threadRefreshLayout');
-              if(data.length > 0) {
-                $scope.$broadcast('threadScrollToBottom');
-              }
-            });
-
+          // Timeout makes sure thread-dimensions-directive has finished loading
+          // and there would thus be something actually listening to these broadcasts:
+          $timeout(function() {
+            $scope.$broadcast('threadRefreshLayout');
+            if (data.length > 0) {
+              $scope.$broadcast('threadScrollToBottom');
+            }
           });
+
+        });
       },
       // No user...
       function(error) {
-        // User not found:
-        if(error.status === 404) {
+        // User not found...
+        if (error.status === 404) {
           vm.isInitialized = true;
-        }
-        // Unexpected errors:
-        else {
+        // Other Unexpected errors...
+        } else {
           messageCenterService.add('warning', error.message || 'Cannot load messages. Please refresh the page and try again.', { timeout: 20000 });
         }
       });
@@ -149,7 +147,7 @@
 
         // Check if message by this ID doesn't exist yet
         // messageIdsInView is used as a key storage for quick reference of messages already in view
-        if(messageIdsInView.indexOf(data[i]._id) === -1) {
+        if (messageIdsInView.indexOf(data[i]._id) === -1) {
           messageIdsInView.push(data[i]._id);
           vm.messages.push(data[i]);
         }
@@ -167,9 +165,9 @@
      * Activates when the first(top most) message hits the top viewport
      */
     function moreMessages() {
-      if(vm.messageHandler.nextPage && !vm.messageHandler.paginationTimeout) {
+      if (vm.messageHandler.nextPage && !vm.messageHandler.paginationTimeout) {
 
-        if(!elemThread) elemThread = angular.element('#messages-thread');
+        if (!elemThread) elemThread = angular.element('#messages-thread');
 
         var oldHeight = elemThread[0].scrollHeight;
 
@@ -203,10 +201,10 @@
      */
     function activateSyncRead() {
       // Cancel previously set timer
-      if(syncReadTimer) $timeout.cancel(syncReadTimer);
+      if (syncReadTimer) $timeout.cancel(syncReadTimer);
       // syncRead happens with 1s delay
       // (and gets postponed by 1s if new activateSyncRead() happens)
-      if(flaggedAsRead.length > 0) {
+      if (flaggedAsRead.length > 0) {
         syncReadTimer = $timeout(syncRead, 1000);
       }
     }
@@ -235,14 +233,14 @@
     function messageRead(message, scrollingUp, scrollingDown) {
 
       // It was read earlier
-      if(message.read === true) return true;
+      if (message.read === true) return true;
 
       // Own messages are always read
-      if(message.userFrom._id === Authentication.user._id) return true;
+      if (message.userFrom._id === Authentication.user._id) return true;
 
       // It got marked read just now
       var read = (scrollingUp === true || scrollingDown === true);
-      if(message.userFrom._id !== Authentication.user._id && !message.read && read) {
+      if (message.userFrom._id !== Authentication.user._id && !message.read && read) {
         message.read = true;
         flaggedAsRead.push(message._id);
         activateSyncRead();
@@ -260,12 +258,13 @@
 
       // Make sure the message isn't empty.
       // Sometimes we'll have some empty blocks due wysiwyg
-      if($filter('plainTextLength')(vm.content) === 0) {
+      if ($filter('plainTextLength')(vm.content) === 0) {
         vm.isSending = false;
         messageCenterService.add('warning', 'Please write a message first...');
         return;
       }
 
+      // eslint-disable-next-line new-cap
       var message = new vm.messageHandler.ajaxCall({
         content: vm.content,
         userTo: userTo._id,
@@ -301,4 +300,4 @@
 
   }
 
-})();
+}());
