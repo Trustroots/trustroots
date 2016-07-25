@@ -8,7 +8,8 @@ var should = require('should'),
     Contact = mongoose.model('Contact'),
     stubTransport = require('nodemailer-stub-transport'),
     config = require(path.resolve('./config/config')),
-    express = require(path.resolve('./config/lib/express'));
+    express = require(path.resolve('./config/lib/express')),
+    testutils = require(path.resolve('./testutils'));
 
 
 /**
@@ -34,6 +35,8 @@ var app,
  * Contact routes tests
  */
 describe('Contact CRUD tests', function() {
+
+  var sentEmails = testutils.catchEmails();
 
   before(function(done) {
     // Get application
@@ -295,6 +298,10 @@ describe('Contact CRUD tests', function() {
           if (contactAddErr) return done(contactAddErr);
 
           contactAddRes.body.message.should.equal('An email was sent to your contact.');
+
+          sentEmails.length.should.equal(1);
+          sentEmails[0].data.subject.should.equal('Confirm contact');
+          sentEmails[0].data.to.address.should.equal(user4.email);
 
           // Get the contact for User4 that we just created
           agent.get('/api/contact-by/' + user4Id)
