@@ -380,6 +380,10 @@ gulp.task('test:client:watch', function(done) {
   runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'eslint', 'karma:watch', done);
 });
 
+gulp.task('test:client:watch', function(done) {
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'jshint', 'karma:watch', done);
+});
+
 // Run the project in development mode
 gulp.task('develop', function(done) {
   runSequence('env:dev', 'copyConfig', 'makeUploadsDir', 'build:dev', ['nodemon', 'watch'], done);
