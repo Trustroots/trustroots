@@ -15,6 +15,10 @@ module.exports = function(app) {
     .get(users.validateEmailToken)
     .post(users.confirmEmail);
 
+  // Resend email confirmation
+  app.route('/api/auth/resend-confirmation')
+    .post(users.resendConfirmation);
+
   // Setting up the users password api
   app.route('/api/auth/forgot').post(users.forgot);
   app.route('/api/auth/reset/:token')

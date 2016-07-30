@@ -17,7 +17,10 @@ var app,
     agent,
     credentials,
     user,
-    _user;
+    _user,
+    confirmedCredentials,
+    confirmedUser,
+    _confirmedUser;
 
 /**
  * User routes tests
@@ -32,6 +35,8 @@ describe('User CRUD tests', function () {
     done();
   });
 
+  // Create an unconfirmed user
+
   beforeEach(function (done) {
     // Create user credentials
     credentials = {
@@ -45,6 +50,7 @@ describe('User CRUD tests', function () {
       lastName: 'Name',
       displayName: 'Full Name',
       email: 'test@test.com',
+      emailToken: 'initial email token',
       username: credentials.username.toLowerCase(),
       displayUsername: credentials.username,
       password: credentials.password,
@@ -54,10 +60,34 @@ describe('User CRUD tests', function () {
     user = new User(_user);
 
     // Save a user to the test db
-    user.save(function (err) {
-      should.not.exist(err);
-      done(err);
-    });
+    user.save(done);
+  });
+
+  // Create a confirmed user
+
+  beforeEach(function (done) {
+
+    confirmedCredentials = {
+      username: 'TR_username_confirmed',
+      password: 'M3@n.jsI$Aw3$0m4'
+    };
+
+    _confirmedUser = {
+      public: true,
+      firstName: 'Full',
+      lastName: 'Name',
+      displayName: 'Full Name',
+      email: 'confirmed-test@test.com',
+      username: confirmedCredentials.username.toLowerCase(),
+      displayUsername: confirmedCredentials.username,
+      password: confirmedCredentials.password,
+      provider: 'local'
+    };
+
+    confirmedUser = new User(_confirmedUser);
+
+    // Save a user to the test db
+    confirmedUser.save(done);
   });
 
   it('should be able to register a new user', function (done) {
@@ -273,6 +303,68 @@ describe('User CRUD tests', function () {
             return done();
           });
       });
+  });
+
+  context('logged in as a confirmed user', function() {
+
+    beforeEach(function(done) {
+      agent.post('/api/auth/signin')
+        .send(confirmedCredentials)
+        .expect(200)
+        .end(function(err, signinRes) {
+          if (err) return done(err);
+          // Sanity check they are confirmed
+          signinRes.body.public.should.equal(true);
+          done();
+        });
+    });
+
+    it('should not resend confirmation token', function(done) {
+      agent.post('/api/auth/resend-confirmation')
+        .expect(400)
+        .end(function(err, resendRes) {
+          if (err) return done(err);
+          resendRes.body.message.should.equal('Already confirmed.');
+          done();
+        });
+    });
+
+  });
+
+  context('logged in as unconfirmed user', function() {
+
+    beforeEach(function(done) {
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function(err, signinRes) {
+          if (err) return done(err);
+          // Sanity check they are unconfirmed
+          signinRes.body.public.should.equal(false);
+          done();
+        });
+    });
+
+    it('should resend confirmation token', function(done) {
+      agent.post('/api/auth/resend-confirmation')
+        .expect(200)
+        .end(function(err, resendRes) {
+          if (err) return done(err);
+          resendRes.body.message.should.equal('Sent confirmation email.');
+          User.findOne(
+            { username: _user.username.toLowerCase() },
+            'emailToken',
+            function(err, userRes) {
+              if (err) return done(err);
+              should.exist(userRes);
+              should.exist(userRes.emailToken);
+              // Make sure it has changed from the original value
+              userRes.emailToken.should.not.equal(_user.emailToken);
+              done();
+            });
+        });
+    });
+
   });
 
   it('forgot password should return 400 for non-existent username', function (done) {

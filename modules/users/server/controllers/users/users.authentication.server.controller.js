@@ -404,3 +404,114 @@ exports.confirmEmail = function(req, res) {
     }
   });
 };
+
+/**
+ * Resend email confirmation token
+ */
+exports.resendConfirmation = function(req, res) {
+
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  // If they are already confirmed they cannot get a new token
+  if (req.user.public) {
+    return res.status(400).send({
+      message: 'Already confirmed.'
+    });
+  }
+
+  async.waterfall([
+
+    // Generate random token
+    function(done) {
+      crypto.randomBytes(20, function(err, buffer) {
+        if (err) return done(err);
+        done(null, buffer.toString('hex'));
+      });
+    },
+
+    // Save token
+    function(token, done) {
+      var user = req.user;
+      user.updated = Date.now();
+      user.emailToken = token;
+      user.save(function(err) {
+        if (err) return done(err);
+        done(null, token, user);
+      });
+    },
+
+    // Prepare TEXT mail
+    function(token, user, done) {
+
+      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
+          urlConfirm = url + '/confirm-email/' + token;
+
+      var renderVars = emailsHandler.addEmailBaseTemplateParams(
+          req.headers.host,
+          {
+            name: user.displayName,
+            email: user.emailTemporary,
+            urlConfirmPlainText: urlConfirm,
+            urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
+              source: 'transactional-email',
+              medium: 'email',
+              campaign: 'resend-confirmation'
+            })
+          },
+          'resend-confirmation'
+        );
+
+      res.render(path.resolve('./modules/core/server/views/email-templates-text/signup'), renderVars, function(err, emailPlain) {
+        done(err, emailPlain, user, renderVars);
+      });
+
+    },
+
+    // Prepare HTML mail
+    function(emailPlain, user, renderVars, done) {
+
+      res.render(path.resolve('./modules/core/server/views/email-templates/signup'), renderVars, function(err, emailHTML) {
+        done(err, emailHTML, emailPlain, user);
+      });
+
+    },
+
+    // If valid email, send confirm email using service
+    function(emailHTML, emailPlain, user, done) {
+
+      var smtpTransport = nodemailer.createTransport(config.mailer.options);
+      var mailOptions = {
+        to: {
+          name: user.displayName,
+          address: user.emailTemporary
+        },
+        from: 'Trustroots <' + config.mailer.from + '>',
+        subject: 'Confirm Email',
+        text: emailPlain,
+        html: emailHTML
+      };
+      smtpTransport.sendMail(mailOptions, function(err) {
+        smtpTransport.close(); // close the connection pool
+        done(err, user);
+      });
+
+    },
+
+    // Return confirmation
+    function() {
+      return res.json({ message: 'Sent confirmation email.' });
+    }
+
+  ], function(err) {
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
+      });
+    }
+  });
+
+};

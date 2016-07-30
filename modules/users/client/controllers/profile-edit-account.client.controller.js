@@ -50,8 +50,19 @@
     function resendUserEmailConfirm($event) {
       if ($event) $event.preventDefault();
       if (vm.user.emailTemporary) {
-        vm.user.email = vm.user.emailTemporary;
-        updateUserEmail();
+        $http.post('/api/auth/resend-confirmation')
+          .success(function() {
+            messageCenterService.add('success', 'Confirmation email resent.');
+          })
+          .error(function(response) {
+            var errorMessage;
+            if (response) {
+              errorMessage = 'Error: ' + (response.data.message || 'Something went wrong.');
+            } else {
+              errorMessage = 'Something went wrong.';
+            }
+            messageCenterService.add('danger', errorMessage);
+          });
       }
     }
 
