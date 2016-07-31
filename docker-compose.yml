@@ -16,6 +16,7 @@ trustroots:
   command: npm start
   links:
     - mongodb:mongodb
+    - rabbitmq:rabbitmq
     - maildev:maildev
   ports:
     - "3000:3000"
@@ -50,6 +51,16 @@ mongodb:
   command: "--smallfiles --logpath=/dev/null"
   ports:
     - "27017:27017"
+
+## Job queue container
+rabbitmq:
+  image: rabbitmq:3.6
+  container_name: rabbitmq
+  hostname: rabbitmq
+  restart: always
+  ports:
+    - "5672:5672"
+    - "15672:15672"
 
 ## Nginx proxy
 ## See settings per host from ./scripts/docker/nginx/*
