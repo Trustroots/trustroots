@@ -26,7 +26,9 @@ var _ = require('lodash'),
 var changedTestFiles = [];
 
 // These will be loaded in `loadConfig` task
-var environmentAssets, assets, config;
+var environmentAssets,
+    assets,
+    config;
 
 gulp.task('bower', function(done) {
   if (argv.skipBower) {
@@ -81,7 +83,7 @@ gulp.task('loadConfig', function(done) {
 });
 
 // Nodemon task
-gulp.task('nodemon', function() {
+gulp.task('nodemon', function(done) {
   return plugins.nodemon({
     script: 'server.js',
     nodeArgs: ['--debug'],
@@ -94,8 +96,38 @@ gulp.task('nodemon', function() {
       [defaultAssets.server.fontelloConfig, defaultAssets.server.gulpConfig]
     ),
     watch: _.union(defaultAssets.server.views, defaultAssets.server.allJS, defaultAssets.server.config)
+  })
+  .on('crash', function () {
+    console.error('[Server] Script crashed.');
+  })
+  .on('exit', function () {
+    console.log('[Server] Script exited.');
   });
 });
+
+// Nodemon task
+gulp.task('nodemon:worker', function(done) {
+  return plugins.nodemon({
+    script: 'worker.js',
+    //nodeArgs: ['--debug'],
+    ext: 'js',
+    ignore: _.union(
+      testAssets.tests.server,
+      testAssets.tests.client,
+      testAssets.tests.e2e,
+      ['modules/*/client/**', 'public/**', 'migrations/**', 'scripts/**', 'tmp/**', 'node_modules/**'],
+      [defaultAssets.server.fontelloConfig, defaultAssets.server.gulpConfig]
+    ),
+    watch: _.union(defaultAssets.server.workerJS, defaultAssets.server.config)
+  })
+  .on('crash', function () {
+    console.error('[Worker] Script crashed.');
+  })
+  .on('exit', function () {
+    console.log('[Worker] Script exited.');
+  });
+});
+
 
 // Watch files for changes
 gulp.task('watch', function() {
@@ -388,6 +420,16 @@ gulp.task('develop', function(done) {
 // Run the project in production mode
 gulp.task('prod', function(done) {
   runSequence('env:prod', 'copyConfig', 'makeUploadsDir', 'build:prod', ['nodemon', 'watch'], done);
+});
+
+// Run worker script in development mode
+gulp.task('worker:dev', function(done) {
+  runSequence('env:dev', 'copyConfig', ['nodemon:worker'], done);
+});
+
+// Run worker script in production mode
+gulp.task('worker:prod', function(done) {
+  runSequence('env:prod', 'copyConfig', ['nodemon:worker'], done);
 });
 
 // Default to develop mode

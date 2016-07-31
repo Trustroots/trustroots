@@ -3,7 +3,10 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
+    amqp = require('amqp'),
+    Promise = require('bluebird'),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     config = require(path.resolve('./config/config'));
 
@@ -55,4 +58,49 @@ exports.addEmailBaseTemplateParams = function(host, params, utmCampaign) {
   });
 
   return params;
+};
+
+
+/**
+ * Pushes generated emails to RabbitMQ for sending
+ */
+exports.pushToQueue = function(message, messageOptions) {
+  console.log('->emails->sendEmail');
+  return new Promise(function(resolve, reject) {
+    return reject(new Error('test'));
+/*
+    if (message === null || typeof message !== 'object') {
+      var err = new Error('Failed to put message to queue: message missing.');
+      console.error('sendEmail: Message object error.', err);
+      return reject(err);
+    }
+
+    // Set default message options
+    var publishOptions = _.extend({
+      contentType: 'application/json',
+      type: 'email', // Just a category label, can be anything
+      priority: 5 // 0-9; Larger numbers indicate higher priority
+    }, messageOptions || {});
+
+    // Create connection to RabbitMQ
+    var queueConnection = amqp.createConnection(config.rabbitmq.options);
+
+    queueConnection.on('error', function(err) {
+      console.error('sendEmail: Error connecting to RabbitMQ', err);
+      return reject(err);
+    });
+
+    queueConnection.on('ready', function() {
+      console.log('->emails->queueConnection ready');
+      queueConnection.publish(config.rabbitmq.emailsQueue, message, publishOptions, function(err) {
+        if (err) {
+          console.error('emails->Failed to put email to queue.');
+          return reject(new Error('Failed to put email to queue.'));
+        }
+        console.log('emails->Pushed message to queue.');
+        resolve();
+      });
+    });
+*/
+  });
 };
