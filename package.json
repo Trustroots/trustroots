@@ -14,9 +14,11 @@
   },
   "scripts": {
     "prestart": "if [ ! -d node_modules ]; then npm install --quiet; fi",
-    "start": "gulp",
+    "start": "concurrently --raw --kill-others 'gulp' 'gulp worker:dev'",
     "start:skipBower": "gulp --skipBower",
     "start:prod": "gulp prod",
+    "start:worker": "gulp worker:dev",
+    "start:worker:prod": "gulp worker:prod",
     "build": "gulp build:dev",
     "build:dev": "gulp build:dev",
     "build:prod": "gulp build:prod",
@@ -95,6 +97,7 @@
     "morgan": "~1.7.0",
     "multer": "~1.1.0",
     "nodemailer": "~2.5.0",
+    "nodemailer-smtp-pool": "~2.7.0",
     "passport": "~0.3.2",
     "passport-facebook": "~2.1.1",
     "passport-github": "~1.1.0",
@@ -111,6 +114,7 @@
     "yargs": "~4.8.1"
   },
   "devDependencies": {
+    "concurrently": "~2.2.0",
     "faker": "~3.1.0",
     "jasmine-core": "~2.4.1",
     "karma": "~1.1.2",
