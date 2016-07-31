@@ -67,4 +67,32 @@ module.exports = {
     publicKey: 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
   }
   */
+
+  // RabbitMQ job queue
+  // https://www.rabbitmq.com/access-control.html
+  /*
+  rabbitmq: {
+    emailsQueue: 'emails',
+    // options object for AMQP
+    // https://www.npmjs.com/package/amqp
+    options: {
+      host: 'localhost',
+      port: 5672,
+      login: 'guest',
+      password: 'guest',
+      connectionTimeout: 10000,
+      noDelay: true,
+      authMechanism: 'AMQPLAIN',
+      vhost: '/',
+      ssl: {
+        enabled: true,
+        keyFile: '/path/to/key/file',
+        certFile: '/path/to/cert/file',
+        caFile: '/path/to/cacert/file',
+        rejectUnauthorized: true
+      }
+    }
+  }
+  */
+
 };

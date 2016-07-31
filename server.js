@@ -10,7 +10,7 @@
 if (process.env.NODE_ENV === 'development') {
   var SegfaultHandler = require('segfault-handler');
   SegfaultHandler.registerHandler('segfault.log');
-  console.log('Logging possible segfault errors to ./segfault.log');
+  console.log('[Server] Logging possible segfault errors to ./segfault.log');
 }
 
 // Dependencies
@@ -30,23 +30,25 @@ mongoose.connect(function(db) {
 
   // Check in case mailer config is still set to default values (a common problem)
   if (config.mailer.service && config.mailer.service === 'MAILER_SERVICE_PROVIDER') {
-    console.warn(chalk.red('Remember to setup mailer from ./config/env/local.js - some features won\'t work without it.'));
+    console.warn(chalk.red('[Server] Remember to setup mailer from ./config/env/local.js - some features won\'t work without it.'));
   }
 
   // Logging initialization
   console.log(chalk.white('--'));
-  console.log(chalk.green(new Date()));
-  console.log(chalk.green('Environment:\t\t' + process.env.NODE_ENV));
-  console.log(chalk.green('Database:\t\t' + config.db.uri));
-  console.log(chalk.green('HTTPS:\t\t\t' + (config.https ? 'on' : 'off')));
-  console.log(chalk.green('Port:\t\t\t' + config.port));
-  console.log(chalk.green('Image processor:\t' + config.imageProcessor));
-  console.log(chalk.green('Phusion Passenger:\t' + (typeof(PhusionPassenger) !== 'undefined' ? 'on' : 'off')));
+  console.log(chalk.green('[Server] ' + new Date()));
+  console.log(chalk.green('[Server] Environment:\t\t' + process.env.NODE_ENV));
+  console.log(chalk.green('[Server] Database:\t\t' + config.db.uri));
+  console.log(chalk.green('[Server] HTTPS:\t\t\t' + (config.https ? 'on' : 'off')));
+  console.log(chalk.green('[Server] Port:\t\t\t' + config.port));
+  console.log(chalk.green('[Server] Image processor:\t' + config.imageProcessor));
+  console.log(chalk.green('[Server] RabbitMQ URL:\t\t' + config.rabbitmq.options.host + ':' + config.rabbitmq.options.port));
+  console.log(chalk.green('[Server] RabbitMQ SSL:\t\t' + config.rabbitmq.options.ssl.enabled));
+  console.log(chalk.green('[Server] Phusion Passenger:\t' + (typeof(PhusionPassenger) !== 'undefined' ? 'on' : 'off')));
 
   // Reset console color
   console.log(chalk.white('--'));
   console.log('');
-  console.log(chalk.white('Trustroots is up and running now.'));
+  console.log(chalk.white('Trustroots server is up and running now.'));
   console.log('');
 
 });

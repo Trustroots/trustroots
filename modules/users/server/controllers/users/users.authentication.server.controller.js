@@ -131,8 +131,7 @@ exports.signup = function(req, res) {
 
     // If valid email, send confirm email using service
     function(emailHTML, emailPlain, user, url, done) {
-      var smtpTransport = nodemailer.createTransport(config.mailer.options);
-      var mailOptions = {
+      var email = {
         to: {
           name: user.displayName,
           address: user.email
@@ -142,10 +141,30 @@ exports.signup = function(req, res) {
         html: emailHTML,
         text: emailPlain
       };
-      smtpTransport.sendMail(mailOptions, function(err) {
-        smtpTransport.close(); // close the connection pool
-        done(err, user);
-      });
+
+      var queueOptions = {
+        type: 'signup-email',
+        priority: 9 // 0-9, Larger numbers indicate higher priority.
+      };
+
+      // Try calling `emailsHandler()` 3 times, waiting 500 ms between each retry
+      async.retry(
+        { times: 3, interval: 500 },
+        function(retryCallback) {
+          emailsHandler.pushToQueue(email, queueOptions)
+            .then(function() {
+              retryCallback();
+            })
+            .catch(function(err) {
+              retryCallback(err);
+            });
+        },
+        // When method succeeds or all retries returned error
+        function(err) {
+          done(err);
+        }
+      );
+
     },
 
     // Login
@@ -154,7 +173,7 @@ exports.signup = function(req, res) {
         if (!err) {
           // Remove sensitive data befor sending user
           user = profileHandler.sanitizeProfile(user);
-          res.json(user);
+          return res.json(user);
         }
         done(err);
       });
@@ -162,7 +181,7 @@ exports.signup = function(req, res) {
 
   ], function(err) {
     if (err) {
-      console.log(err);
+      console.error(err);
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
       });

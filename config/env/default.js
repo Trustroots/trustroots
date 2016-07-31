@@ -42,6 +42,26 @@ module.exports = {
       }
     }
   },
+  // RabbitMQ job queue
+  // https://www.rabbitmq.com/access-control.html
+  rabbitmq: {
+    emailsQueue: 'emails',
+    // Options object for AMQP
+    // https://www.npmjs.com/package/amqp
+    options: {
+      host: process.env.RABBITMQ_HOST || 'localhost',
+      port: process.env.RABBITMQ_PORT || 5672,
+      login: process.env.RABBITMQ_LOGIN || 'guest',
+      password: process.env.RABBITMQ_PASSWORD || 'guest',
+      connectionTimeout: process.env.RABBITMQ_CONNECTION_TIMEOUT || 10000,
+      // `noDelay`: When set to true, disables Nagle's algorithm. Default is true. Highly recommended for most users.
+      // @link https://en.wikipedia.org/wiki/Nagle%27s_algorithm
+      noDelay: process.env.RABBITMQ_CONNECTION_TIMEOUT || true,
+      ssl: {
+        enabled: false
+      }
+    }
+  },
   // Mapbox is publicly exposed to the frontend
   mapbox: {
     maps: {
