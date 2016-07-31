@@ -19,7 +19,7 @@ module.exports = {
 
   /**
    * NodeMailer settings for Maildev Docker image
-   * https://github.com/djfarrelly/MailDev
+   * @link https://github.com/djfarrelly/MailDev
    */
   mailer: {
     from: 'hello@trustroots.dev',
@@ -29,8 +29,25 @@ module.exports = {
       ignoreTLS: true,
       auth: false
     }
-  }
+  },
 
+  /**
+   * RabbitMQ job queue
+   * @link https://www.rabbitmq.com/access-control.html
+   */
+  rabbitmq: {
+    emailsQueue: 'emails',
+    // Options object for AMQP
+    // https://www.npmjs.com/package/amqp
+    options: {
+      host: 'rabbitmq',
+      port: 5672,
+      login: 'guest',
+      password: 'guest',
+      connectionTimeout: 10000,
+      noDelay: true
+    }
+  }
 
   // See config/env/local.sample.js for how to configure mapbox layers, sending emails via Gmail etc
 
