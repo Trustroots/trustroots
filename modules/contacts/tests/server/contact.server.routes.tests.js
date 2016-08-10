@@ -6,9 +6,8 @@ var should = require('should'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
     Contact = mongoose.model('Contact'),
-    stubTransport = require('nodemailer-stub-transport'),
-    config = require(path.resolve('./config/config')),
     express = require(path.resolve('./config/lib/express')),
+    agenda = require(path.resolve('./config/lib/agenda')),
     testutils = require(path.resolve('./testutils'));
 
 
@@ -36,7 +35,7 @@ var app,
  */
 describe('Contact CRUD tests', function() {
 
-  var sentEmails = testutils.catchEmails();
+  var jobs = testutils.catchJobs();
 
   before(function(done) {
     // Get application
@@ -299,9 +298,9 @@ describe('Contact CRUD tests', function() {
 
           contactAddRes.body.message.should.equal('An email was sent to your contact.');
 
-          sentEmails.length.should.equal(1);
-          sentEmails[0].data.subject.should.equal('Confirm contact');
-          sentEmails[0].data.to.address.should.equal(user4.email);
+          jobs.length.should.equal(1);
+          jobs[0].data.subject.should.equal('Confirm contact');
+          jobs[0].data.to.address.should.equal(user4.email);
 
           // Get the contact for User4 that we just created
           agent.get('/api/contact-by/' + user4Id)
@@ -386,18 +385,20 @@ describe('Contact CRUD tests', function() {
 
     context('with email sending error', function() {
 
-      var originalMailerOptions;
+      var originalNow;
 
       beforeEach(function() {
-        // Set the mail sending to fail
-        originalMailerOptions = config.mailer.options;
-        config.mailer.options = stubTransport({
-          error: new Error('fail!')
-        });
+        // Set the agenda.now() function to fail
+        originalNow = agenda.now;
+        agenda.now = function(type, data, callback) {
+          process.nextTick(function() {
+            callback(new Error('fail!'));
+          });
+        };
       });
 
       afterEach(function() {
-        config.mailer.options = originalMailerOptions;
+        agenda.now = originalNow;
       });
 
       it('should fail to create contact', function(done) {
