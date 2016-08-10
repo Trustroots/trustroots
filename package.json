@@ -15,7 +15,6 @@
   "scripts": {
     "prestart": "if [ ! -d node_modules ]; then npm install --quiet; fi",
     "start": "concurrently --raw --kill-others 'gulp' 'gulp worker:dev'",
-    "all": "concurrently --raw --kill-others 'gulp' 'gulp worker:dev' 'mongod' 'rabbitmq-server'",
     "start:skipBower": "gulp --skipBower",
     "start:prod": "gulp prod",
     "start:worker": "gulp worker:dev",
@@ -37,7 +36,6 @@
   "dependencies": {
     "acl": "~0.4.9",
     "agenda": "~0.8.1",
-    "amqp": "^0.2.6",
     "async": "~2.0.1",
     "autolinker": "~0.27.0",
     "autoprefixer-core": "~6.0.1",

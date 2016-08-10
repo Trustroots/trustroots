@@ -8,10 +8,6 @@ _These instructions are for installing locally. If you'd like to have containeri
 Make sure you have installed all these prerequisites:
 * [Node.js](http://www.nodejs.org/download/) ([previous versions](https://nodejs.org/en/download/releases/)) v5 or v6 and the NPM package manager. You can run multiple Node versions using [NVM](https://github.com/creationix/nvm).
 * [MongoDB](http://www.mongodb.org/downloads), version 2.6+ or 3.0+ (2.2 is too old, check by typing `mongod --version`)
-* [RabbitMQ](https://www.rabbitmq.com/). In Mac OS X, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) and do:
-```
-brew install rabbitmq
-```
 * [GraphicsMagick](http://www.graphicsmagick.org/). If you prefer [ImageMagick](http://www.imagemagick.org/) instead, change `imageProcessor` setting from `./configs/env/local.js` (see install step 2) to `imagemagic`. In Mac OS X, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) and do:
 ```
 brew install graphicsmagick
@@ -66,22 +62,12 @@ Optional: If you need to modify connection settings, see `local.js` config file 
 
 Optional: Installing [Robomongo](https://robomongo.org/) might come handy.
 
-### 5. Make sure RabbitMQ is running on the default port (5672) with username/password "guest".
-
-```bash
-rabbitmq-server
-```
-
-Optional: If you need to modify connection settings, see `local.js` config file or use these environment variables: `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_LOGIN` & `RABBITMQ_PASSWORD`.
-
-Optional: Setting up [RabbitMQ management tool](https://www.rabbitmq.com/management.html) might come handy.
-
-### 6. Install Node modules:
+### 5. Install Node modules:
 ```bash
 npm install
 ```
 
-### 7. Finally start the app:
+### 6. Finally start the app:
 ```bash
 npm start
 ```

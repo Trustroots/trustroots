@@ -41,8 +41,6 @@ mongoose.connect(function(db) {
   console.log(chalk.green('[Server] HTTPS:\t\t\t' + (config.https ? 'on' : 'off')));
   console.log(chalk.green('[Server] Port:\t\t\t' + config.port));
   console.log(chalk.green('[Server] Image processor:\t' + config.imageProcessor));
-  console.log(chalk.green('[Server] RabbitMQ URL:\t\t' + config.rabbitmq.options.host + ':' + config.rabbitmq.options.port));
-  console.log(chalk.green('[Server] RabbitMQ SSL:\t\t' + config.rabbitmq.options.ssl.enabled));
   console.log(chalk.green('[Server] Phusion Passenger:\t' + (typeof(PhusionPassenger) !== 'undefined' ? 'on' : 'off')));
 
   // Reset console color
