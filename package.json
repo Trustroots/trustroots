@@ -14,7 +14,8 @@
   },
   "scripts": {
     "prestart": "if [ ! -d node_modules ]; then npm install --quiet; fi",
-    "start": "concurrently --raw --kill-others 'gulp' 'gulp worker:dev'",
+    "start": "concurrently --raw --kill-others 'gulp' 'gulp worker:dev' 'maildev' './scripts/agendash-dev'",
+    "start:no-maildev": "concurrently --raw --kill-others 'gulp' 'gulp worker:dev' './scripts/agendash-dev'",
     "start:skipBower": "gulp --skipBower",
     "start:prod": "gulp prod",
     "start:worker": "gulp worker:dev",
@@ -125,6 +126,7 @@
     "karma-firefox-launcher": "~1.0.0",
     "karma-jasmine": "~1.0.2",
     "karma-phantomjs-launcher": "~1.0.1",
+    "maildev": "^0.13.4",
     "mocha": "~2.5.3",
     "nodemailer-stub-transport": "~1.0.0",
     "phantomjs-prebuilt": ">=2.1",
