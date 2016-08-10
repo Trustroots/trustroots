@@ -3,8 +3,7 @@
 
   describe('Statistics Route Tests', function () {
     // Initialize global variables
-    var $scope,
-        $httpBackend;
+    var $httpBackend;
 
     // We can start by loading the main application module
     beforeEach(module(AppConfig.appModuleName));
@@ -13,8 +12,6 @@
     // This allows us to inject a service but then attach it to a variable
     // with the same name as the service.
     beforeEach(inject(function ($rootScope, _$httpBackend_) {
-      // Set a new global scope
-      $scope = $rootScope.$new();
       $httpBackend = _$httpBackend_;
     }));
 
@@ -44,7 +41,7 @@
       });
 
       describe('Handle Trailing Slash', function () {
-        beforeEach(inject(function ($state, $rootScope, _Authentication_) {
+        beforeEach(inject(function ($state, $rootScope) {
           // Test expected GET request
           $httpBackend.when('GET', '/modules/pages/views/home.client.view.html').respond(200, '');
           $httpBackend.when('GET', '/modules/statistics/views/statistics.client.view.html').respond(200, '');

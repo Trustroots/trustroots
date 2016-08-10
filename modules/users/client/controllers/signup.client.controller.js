@@ -8,8 +8,6 @@
   /* @ngInject */
   function SignupController($scope, $rootScope, $timeout, $http, $q, $state, $stateParams, $uibModal, $window, Authentication, UserTagsService, messageCenterService, TribeService, TribesService) {
 
-    var unloadConfirmActivated = false;
-
     // View Model
     var vm = this;
 

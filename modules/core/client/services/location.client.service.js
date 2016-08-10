@@ -157,8 +157,7 @@
      * @return String
      */
     function shortTitle(geolocation) {
-      var title = '',
-          titlePostfix = null;
+      var title = '';
 
       if (geolocation.text) {
         title = geolocation.text;

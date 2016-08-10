@@ -101,7 +101,7 @@
             }
           }
 
-          function updateDateOptions (year, month) {
+          function updateDateOptions () {
             var minDate,
                 maxDate;
 

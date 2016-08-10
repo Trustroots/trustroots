@@ -212,7 +212,7 @@ module.exports.initSEO = function (app) {
  * Configure Agenda "Cron" jobs
  * @link https://www.npmjs.com/package/agenda
  */
-module.exports.initAgenda = function (app, db) {
+module.exports.initAgenda = function () {
 
   // Don't launch Agenda on test environment
   // @todo: make it possible to launch this manually with very small interwalls for testing
@@ -243,7 +243,7 @@ module.exports.initAgenda = function (app, db) {
   });
 
   // Error reporting
-  agendaWorker.on('fail', function(err, job) {
+  agendaWorker.on('fail', function(err) {
     console.error('Agenda job failed with error: %s', err.message || 'Unknown error');
   });
 };
@@ -265,7 +265,7 @@ module.exports.initModulesClientRoutes = function (app) {
 /**
  * Configure the modules ACL policies
  */
-module.exports.initModulesServerPolicies = function (app) {
+module.exports.initModulesServerPolicies = function () {
   // Globbing policy files
   config.files.server.policies.forEach(function (policyPath) {
     require(path.resolve(policyPath)).invokeRolesPolicies();

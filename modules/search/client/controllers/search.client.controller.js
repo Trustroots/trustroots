@@ -177,7 +177,7 @@
       /**
        * Sidebar & markers react to these events
        */
-      $scope.$on(listenerPrefix + '.click', function(event) {
+      $scope.$on(listenerPrefix + '.click', function() {
         vm.sidebarOpen = false;
         vm.offer = false;
         vm.mapLayers.overlays.selectedOffers.visible = false;
@@ -189,7 +189,7 @@
      * Return map location from cache or fallback to default location
      */
     function getMapCenter() {
-      return $q(function(resolve, reject) {
+      return $q(function(resolve) {
 
         // Is local/sessionStorage supported? This might fail in browser's incognito mode
         if (locker.supported()) {
@@ -280,7 +280,7 @@
     /**
      * Event when the map has finished loading
      */
-    $scope.$on(listenerPrefix + '.load', function(event) {
+    $scope.$on(listenerPrefix + '.load', function() {
 
       leafletData.getMap(mapId).then(function(map) {
         map.addLayer(vm.pruneCluster);
@@ -302,7 +302,7 @@
     });
 
     // Set event that fires everytime we finish to move the map
-    $scope.$on(listenerPrefix + '.moveend', function(event) {
+    $scope.$on(listenerPrefix + '.moveend', function() {
 
       if (vm.mapCenter.zoom > vm.mapMinimumZoom) {
         getMarkers();
@@ -397,8 +397,7 @@
      * Compile a nice title for the place, eg. "Helsinki, Finland" or "Chinatown, New York, United States"
      */
     function placeTitle(place) {
-      var title = '',
-          titlePostfix = null;
+      var title = '';
 
       if (place.text) {
         title = place.text;

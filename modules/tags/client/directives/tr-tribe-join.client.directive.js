@@ -97,7 +97,7 @@
               vm.isMember = false;
               reject(false);
             }
-          }, function(err) {
+          }, function() {
             toggleMembershipError();
             vm.isMember = false;
             reject(false);
@@ -145,7 +145,7 @@
                 vm.isMember = true;
                 reject(true);
               }
-            }, function(err) {
+            }, function() {
               // API returned error
               toggleMembershipError();
               vm.isMember = true;

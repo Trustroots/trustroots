@@ -88,7 +88,7 @@
       /**
        * Before page change
        */
-      $scope.$on('$stateChangeStart', function(event, toState, toParams, fromState, fromParams) {
+      $scope.$on('$stateChangeStart', function(event, toState, toParams) {
 
         // Redirect to login page if no user
         if (toState.requiresAuth && !Authentication.user) {
@@ -117,7 +117,7 @@
       /**
        * After page change
        */
-      $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+      $scope.$on('$stateChangeSuccess', function(event, toState) {
 
         // Set page title
         vm.pageTitle = (toState.title) ? toState.title + ' - ' + $window.title : $window.title;

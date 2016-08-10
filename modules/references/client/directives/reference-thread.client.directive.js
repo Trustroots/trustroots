@@ -87,7 +87,7 @@
           category: 'reference.thread',
           label: 'Give ' + String(reference) + ' thread reference'
         });
-      }, function(err) {
+      }, function() {
         vm.reference = false;
         messageCenterService.add('danger', 'Something went wrong. Please try again.');
       });

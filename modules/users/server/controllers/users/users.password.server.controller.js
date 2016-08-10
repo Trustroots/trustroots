@@ -8,7 +8,6 @@ var path = require('path'),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
     config = require(path.resolve('./config/config')),
-    passport = require('passport'),
     nodemailer = require('nodemailer'),
     async = require('async'),
     crypto = require('crypto'),
@@ -170,7 +169,7 @@ exports.validateResetToken = function(req, res) {
 /**
  * Reset password POST from email token
  */
-exports.reset = function(req, res, next) {
+exports.reset = function(req, res) {
   // Init Variables
   var passwordDetails = req.body;
 
@@ -260,7 +259,7 @@ exports.reset = function(req, res, next) {
     },
 
     // Return authenticated user
-    function(user, done) {
+    function(user) {
       return res.json(user);
     }
 

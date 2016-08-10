@@ -63,9 +63,7 @@ exports.signup = function(req, res) {
       delete req.body.created;
       delete req.body.updated;
 
-      // Init Variables
       var user = new User(req.body);
-      var message = null;
 
       // Add missing user fields
       user.emailToken = token;
@@ -258,7 +256,7 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
 /**
  * Remove OAuth provider
  */
-exports.removeOAuthProvider = function(req, res, next) {
+exports.removeOAuthProvider = function(req, res) {
 
   // Return error if no user
   if (!req.user) {
@@ -322,7 +320,7 @@ exports.validateEmailToken = function(req, res) {
 /**
  * Confirm email POST from email token
  */
-exports.confirmEmail = function(req, res, next) {
+exports.confirmEmail = function(req, res) {
   async.waterfall([
 
     function(done) {
@@ -384,7 +382,7 @@ exports.confirmEmail = function(req, res, next) {
       });
     },
 
-    function (result, user, done) {
+    function (result, user) {
 
       // Return authenticated user
       result.user = user.toObject();
@@ -396,7 +394,7 @@ exports.confirmEmail = function(req, res, next) {
       delete result.user.password;
       delete result.user.salt;
 
-      res.json(result);
+      return res.json(result);
     }
   ], function(err) {
     if (err) {

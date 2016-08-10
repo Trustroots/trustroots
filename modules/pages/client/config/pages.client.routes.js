@@ -6,7 +6,7 @@
     .config(PagesRoutes);
 
   /* @ngInject */
-  function PagesRoutes($stateProvider, $urlRouterProvider) {
+  function PagesRoutes($stateProvider) {
 
     $stateProvider.
       state('rules', {

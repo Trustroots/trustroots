@@ -6,9 +6,7 @@
 
   describe('App Controller Tests', function () {
     // Initialize global variables
-    var AppController,
-        $scope,
-        $window,
+    var $scope,
         $state,
         Authentication,
         SettingsFactory,
@@ -17,7 +15,7 @@
     // Load the main application module
     beforeEach(module(AppConfig.appModuleName));
 
-    beforeEach(inject(function ($controller, $rootScope, _$window_, _$state_, _Authentication_, _SettingsFactory_, _Languages_) {
+    beforeEach(inject(function ($controller, $rootScope, _$state_, _Authentication_, _SettingsFactory_, _Languages_) {
       $scope = $rootScope.$new();
 
       // Point global variables to injected services
@@ -25,7 +23,6 @@
       SettingsFactory = _SettingsFactory_;
       Languages = _Languages_;
       $state = _$state_;
-      $window = _$window_;
 
 
       // Mock logged in user
@@ -43,7 +40,7 @@
 
       // Mock languages
       Languages = {
-        get: function(type) {
+        get: function() {
           return {};
         }
       };
@@ -53,7 +50,7 @@
       spyOn($state, 'go');
 
       // Initialize the App controller.
-      AppController = $controller('AppController as vm', {
+      $controller('AppController as vm', {
         $scope: $scope,
         SettingsFactory: SettingsFactory,
         Languages: Languages

@@ -6,7 +6,7 @@
     .controller('ProfileEditAboutController', ProfileEditAboutController);
 
   /* @ngInject */
-  function ProfileEditAboutController($scope, $uibModal, $http, $timeout, $stateParams, $state, $window, $locale, $filter, Languages, Users, Authentication, messageCenterService, Upload, uibDateParser) {
+  function ProfileEditAboutController($scope, $state, Languages, Users, Authentication, messageCenterService) {
 
     // ViewModel
     var vm = this;

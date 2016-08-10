@@ -142,8 +142,8 @@ exports.get = function(req, res) {
     },
 
     // Done!
-    function(done) {
-      res.json(req.statistics);
+    function() {
+      return res.json(req.statistics);
     }
 
   ],

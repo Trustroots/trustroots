@@ -4,7 +4,6 @@
  * Module dependencies.
  */
 var path = require('path'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     config = require(path.resolve('./config/config')),
     nodemailer = require('nodemailer'),
@@ -54,7 +53,7 @@ exports.supportRequest = function(req, res) {
     },
 
     // If valid email, send reset email using service
-    function(emailPlain, renderVars, done) {
+    function(emailPlain, renderVars) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
 
       var fromMail = {

@@ -24,7 +24,8 @@
     // Load the main application module
     beforeEach(module(AppConfig.appModuleName));
 
-    beforeEach(inject(function($templateCache, _$httpBackend_, _Authentication_, _$rootScope_, _messageCenterService_) {
+    beforeEach(inject(function(_$templateCache_, _$httpBackend_, _Authentication_, _$rootScope_, _messageCenterService_) {
+      $templateCache = _$templateCache_;
       $httpBackend = _$httpBackend_;
       Authentication = _Authentication_;
 

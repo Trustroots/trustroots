@@ -4,7 +4,6 @@
  * Module dependencies.
  */
 var path = require('path'),
-    async = require('async'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     paginate = require('express-paginate'),
     mongoose = require('mongoose'),

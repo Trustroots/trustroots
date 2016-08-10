@@ -22,7 +22,7 @@
       scope: {
         trBoards: '='
       },
-      link: function(scope, elem, attr) {
+      link: function(scope, elem) {
 
         // If requested photo is missing or request is invalid, rely on this photo
         var defaultPhoto = 'bokeh';

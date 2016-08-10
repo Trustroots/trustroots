@@ -1,6 +1,7 @@
 'use strict';
 
 // Init the application configuration module for AngularJS application
+// eslint-disable-next-line no-unused-vars
 var AppConfig = (function () {
   // Init module configuration options
   var appEnv = window.env || 'production';

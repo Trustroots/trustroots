@@ -6,7 +6,7 @@
     .controller('ProfileEditNetworksController', ProfileEditNetworksController);
 
   /* @ngInject */
-  function ProfileEditNetworksController($scope, $http, $stateParams, $state, Users, Authentication, messageCenterService) {
+  function ProfileEditNetworksController($scope, $http, Users, Authentication, messageCenterService) {
 
     // ViewModel
     var vm = this;

@@ -9,7 +9,7 @@
   function threadDimensionsDirective($window, $timeout) {
 
     return {
-      link: function (scope, elemContainer, attr) {
+      link: function (scope, elemContainer) {
 
         // vars used with $timeout to cancel() timeouts.
         var refreshLayoutTimeout,

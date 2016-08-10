@@ -3,8 +3,7 @@
 
   describe('ContactAddController', function() {
     // Initialize global variables
-    var $templateCache,
-        $httpBackend,
+    var $httpBackend,
         Authentication,
         UsersMini,
         ContactByService,

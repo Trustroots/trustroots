@@ -107,7 +107,7 @@
 
         // On ctrl+enter
         if (iAttrs.trEditorOnCtrlEnter) {
-          ngModel.editor.subscribe('editableKeydownEnter', function (event, editable) {
+          ngModel.editor.subscribe('editableKeydownEnter', function (event) {
             if (event.ctrlKey) {
               event.preventDefault();
               // Apply linked function

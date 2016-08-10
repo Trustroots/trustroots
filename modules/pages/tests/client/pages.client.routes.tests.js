@@ -2,8 +2,6 @@
   'use strict';
 
   describe('Pages Route Tests', function () {
-    // Initialize global variables
-    var $scope;
 
     // We can start by loading the main application module
     beforeEach(module(AppConfig.appModuleName));
@@ -13,15 +11,6 @@
     // See http://stackoverflow.com/a/26613169/1984644 for more
     beforeEach(module(function($urlRouterProvider) {
       $urlRouterProvider.deferIntercept();
-    }));
-
-    beforeEach(inject(function ($rootScope, $templateCache) {
-      // Set a new global scope
-      $scope = $rootScope.$new();
-
-      // You'll need this here if you allow route transitions:
-      // See http://stackoverflow.com/a/26613169/1984644 for more
-      // $templateCache.put('/modules/pages/views/home.client.view.html', '');
     }));
 
     describe('Route Config', function () {

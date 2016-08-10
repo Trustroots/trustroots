@@ -4,8 +4,7 @@
   // Authentication controller Spec
   describe('ResetPasswordController', function() {
     // Initialize global variables
-    var ResetPasswordController,
-        $scope,
+    var $scope,
         $httpBackend,
         $stateParams,
         $location,
@@ -19,7 +18,7 @@
     // account and ignores methods.
     beforeEach(function () {
       jasmine.addMatchers({
-        toEqualData: function (util, customEqualityTesters) {
+        toEqualData: function () {
           return {
             compare: function (actual, expected) {
               return {
@@ -51,7 +50,7 @@
         Authentication.user = null;
 
         // Initialize the Authentication controller
-        ResetPasswordController = $controller('ResetPasswordController as vm', {
+        $controller('ResetPasswordController as vm', {
           $scope: $scope
         });
       }));

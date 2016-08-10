@@ -236,6 +236,10 @@ exports.avatarUpload = function (req, res) {
 
                 // Attempt to delete tmp file
                 fs.unlink(req.file.path, function (err) {
+                  if (err) {
+                    console.error('Failed to clean out temporary image.');
+                    console.error(err);
+                  }
                   // @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
                   return res.status(422).send({
                     message: 'Failed to process image, please try again.'
@@ -489,7 +493,7 @@ exports.update = function(req, res) {
     },
 
     // Return user
-    function(user, done) {
+    function(user) {
       user = exports.sanitizeProfile(user);
       return res.json(user);
     }
@@ -577,8 +581,6 @@ exports.userMiniByID = function(req, res, next, userId) {
  */
 exports.userByUsername = function(req, res, next, username) {
 
-  var query;
-
   // Require user
   if (!req.user) {
     return res.status(403).send({
@@ -633,9 +635,9 @@ exports.userByUsername = function(req, res, next, username) {
     },
 
     // Sanitize & return profile
-    function(profile, done) {
+    function(profile) {
       req.profile = exports.sanitizeProfile(profile, req.user);
-      next();
+      return next();
     }
 
   ], function(err) {
@@ -813,7 +815,7 @@ exports.modifyUserTag = function(req, res) {
     },
 
     // Done, output new tribe/tag + user objects
-    function(tag, user, done) {
+    function(tag, user) {
 
       // Preserver only public fields
       // Array of keys to preserve in tag/tribe before sending it to the frontend
