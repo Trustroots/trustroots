@@ -21,6 +21,8 @@ addons:
 before_install:
   - gem update --system
   - npm i nsp -g
+before_script:
+  - mongo --version
 after_script:
   - nsp audit-package
 cache:
