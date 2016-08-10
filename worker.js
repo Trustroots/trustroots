@@ -1,8 +1,10 @@
-var nodemailer = require('nodemailer'),
-    path = require('path'),
-    config = require(path.resolve('./config/config')),
+var path = require('path'),
+    format = require('util').format,
     mongoose = require(path.resolve('./config/lib/mongoose')),
     agenda = require(path.resolve('./config/lib/agenda'));
+
+var MAX_ATTEMPTS = 10;
+var RETRY_DELAY_SECONDS = 10;
 
 init(function() {
 
@@ -31,10 +33,43 @@ init(function() {
 
 });
 
-// Error reporting
+// Error reporting and retry logic
 agenda.on('fail', function(err, job) {
-  console.error('Agenda job failed with error: %s', err.message || 'Unknown error', err.stack);
+
+  var extraMessage = '';
+
+  if (job.attrs.failCount >= MAX_ATTEMPTS) {
+
+    extraMessage = format('too many failures, giving up');
+
+  } else if (shouldRetry(err)) {
+
+    job.attrs.attempt = (job.attrs.attempt || 0) + 1;
+    job.attrs.nextRunAt = secondsFromNowDate(RETRY_DELAY_SECONDS);
+
+    extraMessage = format('will retry in %s seconds at %s',
+      RETRY_DELAY_SECONDS, job.attrs.nextRunAt.toISOString());
+
+    job.save();
+  }
+
+  console.error('Agenda job [%s] %s failed with [%s] %s failCount:%s',
+    job.attrs.name, job.attrs._id, err.message || 'Unknown error', extraMessage, job.attrs.failCount);
+
 });
+
+function shouldRetry(err) {
+
+  // Retry on connection errors as they may just be temporary
+  if (/(ECONNRESET|ECONNREFUSED)/.test(err.message)) {
+    return true;
+  }
+  return false;
+}
+
+function secondsFromNowDate(seconds) {
+  return new Date(new Date().getTime() + (seconds * 1000));
+}
 
 function init(callback) {
   agenda.on('ready', function() {
