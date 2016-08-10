@@ -31,11 +31,13 @@
     "test:server:watch": "gulp test:server:watch",
     "migrate": "migrate",
     "update": "npm install --quiet && npm prune && migrate",
-    "postinstall": "bower install --allow-root && bower prune --allow-root"
+    "postinstall": "bower install --allow-root && bower prune --allow-root",
+    "agendash": "agendash --db=mongodb://localhost/trustroots-dev --collection=agendaJobs --port=3001"
   },
   "dependencies": {
     "acl": "~0.4.9",
     "agenda": "~0.8.1",
+    "amqp": "^0.2.6",
     "async": "~2.0.1",
     "autolinker": "~0.27.0",
     "autoprefixer-core": "~6.0.1",
@@ -115,6 +117,7 @@
     "yargs": "~4.8.1"
   },
   "devDependencies": {
+    "agendash": "^0.3.2",
     "concurrently": "~2.2.0",
     "faker": "~3.1.0",
     "jasmine-core": "~2.4.1",

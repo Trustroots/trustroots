@@ -6,25 +6,13 @@
 var _ = require('lodash'),
     path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
-    analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
-    emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
+    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     profileHandler = require(path.resolve('./modules/users/server/controllers/users/users.profile.server.controller')),
-    config = require(path.resolve('./config/config')),
     passport = require('passport'),
-    nodemailer = require('nodemailer'),
     async = require('async'),
     crypto = require('crypto'),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
-
-// Replace mailer with Stub mailer transporter
-// Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
-// it with the sendMail callback. This is useful for testing the emails before actually sending anything.
-// @link https://github.com/andris9/nodemailer-stub-transport
-if (process.env.NODE_ENV === 'test') {
-  var stubTransport = require('nodemailer-stub-transport');
-  config.mailer.options = stubTransport();
-}
 
 /**
  * Signup
@@ -93,76 +81,10 @@ exports.signup = function(req, res) {
 
     },
 
-    // Prepare HTML email
     function(user, done) {
-
-      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
-          urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup';
-
-      var renderVars = emailsHandler.addEmailBaseTemplateParams(
-          req.headers.host,
-          {
-            name: user.displayName,
-            email: user.email,
-            ourMail: config.mailer.from,
-            urlConfirmPlainText: urlConfirm,
-            urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
-              source: 'transactional-email',
-              medium: 'email',
-              campaign: 'confirm-email'
-            })
-          },
-          'confirm-email'
-        );
-
-      res.render(path.resolve('./modules/core/server/views/email-templates/signup'), renderVars, function(err, emailHTML) {
-        done(err, emailHTML, user, renderVars, url);
+      emailService.sendEmailConfirmation(user, function(err) {
+        done(err, user);
       });
-    },
-
-    // Prepare TEXT email
-    function(emailHTML, user, renderVars, url, done) {
-      res.render(path.resolve('./modules/core/server/views/email-templates-text/signup'), renderVars, function(err, emailPlain) {
-        done(err, emailHTML, emailPlain, user, url);
-      });
-    },
-
-    // If valid email, send confirm email using service
-    function(emailHTML, emailPlain, user, url, done) {
-      var email = {
-        to: {
-          name: user.displayName,
-          address: user.email
-        },
-        from: 'Trustroots <' + config.mailer.from + '>',
-        subject: 'Confirm Email',
-        html: emailHTML,
-        text: emailPlain
-      };
-
-      var queueOptions = {
-        type: 'signup-email',
-        priority: 9 // 0-9, Larger numbers indicate higher priority.
-      };
-
-      // Try calling `emailsHandler()` 3 times, waiting 500 ms between each retry
-      async.retry(
-        { times: 3, interval: 500 },
-        function(retryCallback) {
-          emailsHandler.pushToQueue(email, queueOptions)
-            .then(function() {
-              retryCallback();
-            })
-            .catch(function(err) {
-              retryCallback(err);
-            });
-        },
-        // When method succeeds or all retries returned error
-        function(err) {
-          done(err);
-        }
-      );
-
     },
 
     // Login

@@ -6,26 +6,11 @@
 var path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
-    emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
-    config = require(path.resolve('./config/config')),
-    nodemailer = require('nodemailer'),
+    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     async = require('async'),
     crypto = require('crypto'),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
-
-// Replace mailer with Stub mailer transporter
-// Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
-// it with the sendMail callback. This is useful for testing the emails before actually sending anything.
-// @link https://github.com/andris9/nodemailer-stub-transport
-if (process.env.NODE_ENV === 'test') {
-  var stubTransport = require('nodemailer-stub-transport');
-  config.mailer.options = stubTransport();
-}
-
-// Nodemailer Transporter
-// @link http://nodemailer.com/
-var smtpTransport = nodemailer.createTransport(config.mailer.options);
 
 /**
  * Forgot for reset password (forgot POST)
@@ -58,7 +43,7 @@ exports.forgot = function(req, res, next) {
             user.resetPasswordExpires = Date.now() + (24 * 3600000); // 24 hours
 
             user.save(function(err) {
-              done(err, token, user);
+              done(err, user);
             });
           }
         });
@@ -69,69 +54,21 @@ exports.forgot = function(req, res, next) {
       }
     },
 
-    // Prepare HTML email
-    function(token, user, done) {
-
-      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
-          urlConfirm = url + '/api/auth/reset/' + token;
-
-      var renderVars = emailsHandler.addEmailBaseTemplateParams(
-          req.headers.host,
-          {
-            name: user.displayName,
-            email: user.email,
-            ourMail: config.mailer.from,
-            urlConfirmPlainText: urlConfirm,
-            urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
-              source: 'transactional-email',
-              medium: 'email',
-              campaign: 'reset-password'
-            })
-          },
-          'reset-password'
-        );
-
-      res.render(path.resolve('./modules/core/server/views/email-templates/reset-password'), renderVars, function(err, emailHTML) {
-        done(err, emailHTML, user, renderVars);
-      });
-    },
-
-    // Prepare TEXT email
-    function(emailHTML, user, renderVars, done) {
-      res.render(path.resolve('./modules/core/server/views/email-templates-text/reset-password'), renderVars, function(err, emailPlain) {
-        done(err, emailHTML, emailPlain, user);
-      });
-    },
-
-    // If valid email, send reset email using service
-    function(emailHTML, emailPlain, user, done) {
-
-      var mailOptions = {
-        to: {
-          name: user.displayName,
-          address: user.email
-        },
-        from: 'Trustroots <' + config.mailer.from + '>',
-        subject: 'Password Reset',
-        html: emailHTML,
-        text: emailPlain
-      };
-
-      smtpTransport.sendMail(mailOptions, function(err) {
+    // Send email
+    function(user) {
+      emailService.sendResetPassword(user, function(err) {
         if (!err) {
-          res.send({
+          return res.send({
             message: 'Password reset sent.'
           });
         } else {
-          res.status(400).send({
+          return res.status(400).send({
             message: 'Failure while sending recovery email to you. Please try again later.'
           });
         }
-        smtpTransport.close(); // close the connection pool
-
-        done(err);
       });
     }
+
   ], function(err) {
     if (err) return next(err);
   });
@@ -216,46 +153,9 @@ exports.reset = function(req, res) {
       });
     },
 
-    // Prepare HTML email
+    // Send email
     function(user, done) {
-
-      var renderVars = emailsHandler.addEmailBaseTemplateParams(
-          req.headers.host,
-          {
-            name: user.displayName
-          },
-          'reset-password-confirm'
-        );
-
-      res.render(path.resolve('./modules/core/server/views/email-templates/reset-password-confirm'), renderVars, function(err, emailHTML) {
-        done(err, emailHTML, user, renderVars);
-      });
-    },
-
-    // Prepare TEXT email
-    function(emailHTML, user, renderVars, done) {
-      res.render(path.resolve('./modules/core/server/views/email-templates-text/reset-password-confirm'), renderVars, function(err, emailPlain) {
-        done(err, emailHTML, emailPlain, user);
-      });
-    },
-
-    // If valid email, send reset email using service
-    function(emailHTML, emailPlain, user, done) {
-
-      var mailOptions = {
-        to: {
-          name: user.displayName,
-          address: user.email
-        },
-        from: 'Trustroots <' + config.mailer.from + '>',
-        subject: 'Your password has been changed',
-        html: emailHTML
-      };
-
-      smtpTransport.sendMail(mailOptions, function(err) {
-        smtpTransport.close(); // close the connection pool
-        done(err, user);
-      });
+      emailService.sendResetPassword(user, done);
     },
 
     // Return authenticated user
@@ -334,56 +234,20 @@ exports.changePassword = function(req, res) {
     function(user, done) {
 
       req.login(user, function(err) {
-        if (!err) {
-          res.send({
-            user: user,
-            message: 'Password changed successfully!'
-          });
-        }
-        done(err, user);
+        if (err) return done(err);
+        done(null, user);
       });
 
     },
 
-    // Prepare HTML email
+    // Send email
     function(user, done) {
-
-      var renderVars = emailsHandler.addEmailBaseTemplateParams(
-          req.headers.host,
-          {
-            name: user.displayName
-          },
-          'reset-password-confirm'
-        );
-
-      res.render(path.resolve('./modules/core/server/views/email-templates/reset-password-confirm'), renderVars, function(err, emailHTML) {
-        done(err, emailHTML, user, renderVars);
-      });
-    },
-
-    // Prepare TEXT email
-    function(emailHTML, user, renderVars, done) {
-      res.render(path.resolve('./modules/core/server/views/email-templates-text/reset-password-confirm'), renderVars, function(err, emailPlain) {
-        done(err, emailHTML, emailPlain, user);
-      });
-    },
-
-    // If valid email, send reset email using service
-    function(emailHTML, emailPlain, user, done) {
-
-      var mailOptions = {
-        to: {
-          name: user.displayName,
-          address: user.email
-        },
-        from: 'Trustroots <' + config.mailer.from + '>',
-        subject: 'Your password has been changed',
-        html: emailHTML
-      };
-
-      smtpTransport.sendMail(mailOptions, function(err) {
-        smtpTransport.close(); // close the connection pool
-        done(err);
+      emailService.sendResetPasswordConfirm(user, function(err) {
+        if (err) return done(err);
+        return res.send({
+          user: user,
+          message: 'Password changed successfully!'
+        });
       });
     }
 

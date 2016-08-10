@@ -28,7 +28,7 @@ var app,
  */
 describe('User CRUD tests', function () {
 
-  var sentEmails = testutils.catchEmails();
+  var jobs = testutils.catchJobs();
 
   before(function (done) {
     // Get application
@@ -124,9 +124,10 @@ describe('User CRUD tests', function () {
         signupRes.body.roles.should.be.instanceof(Array).and.have.lengthOf(1);
         signupRes.body.roles.indexOf('user').should.equal(0);
 
-        sentEmails.length.should.equal(1);
-        sentEmails[0].data.subject.should.equal('Confirm Email');
-        sentEmails[0].data.to.address.should.equal(_user.email);
+        jobs.length.should.equal(1);
+        jobs[0].type.should.equal('send email');
+        jobs[0].data.subject.should.equal('Confirm Email');
+        jobs[0].data.to.address.should.equal(_user.email);
 
         done();
       });
@@ -152,9 +153,10 @@ describe('User CRUD tests', function () {
         should.not.exist(signupRes.body.salt);
         signupRes.body.emailTemporary.should.equal(_user.email);
 
-        sentEmails.length.should.equal(1);
-        sentEmails[0].data.subject.should.equal('Confirm Email');
-        sentEmails[0].data.to.address.should.equal(_user.email);
+        jobs.length.should.equal(1);
+        jobs[0].type.should.equal('send email');
+        jobs[0].data.subject.should.equal('Confirm Email');
+        jobs[0].data.to.address.should.equal(_user.email);
 
         User.findOne({ username: _user.username.toLowerCase() }, function(err, userRes1) {
           if (err) {
@@ -183,7 +185,8 @@ describe('User CRUD tests', function () {
                     return done(confirmEmailPostErr);
                   }
 
-                  sentEmails.length.should.equal(1);
+                  jobs.length.should.equal(1);
+                  jobs[0].type.should.equal('send email');
 
                   // User should now be public
                   confirmEmailPostRes.body.profileMadePublic.should.equal(true);

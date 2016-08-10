@@ -18,12 +18,11 @@ var _ = require('lodash'),
     cookieParser = require('cookie-parser'),
     helmet = require('helmet'),
     flash = require('connect-flash'),
-    consolidate = require('consolidate'),
+    render = require('./render'),
     git = require('git-rev'),
     path = require('path'),
     paginate = require('express-paginate'),
-    seo = require('mean-seo'),
-    Agenda = require('agenda');
+    seo = require('mean-seo');
 
 /**
  * Initialize local variables
@@ -126,7 +125,7 @@ module.exports.initMiddleware = function (app) {
  */
 module.exports.initViewEngine = function (app) {
   // Set swig as the template engine
-  app.engine('server.view.html', consolidate.swig);
+  app.engine('server.view.html', render);
 
   // Set views path and view engine
   app.set('view engine', 'server.view.html');
@@ -209,46 +208,6 @@ module.exports.initSEO = function (app) {
 };
 
 /**
- * Configure Agenda "Cron" jobs
- * @link https://www.npmjs.com/package/agenda
- */
-module.exports.initAgenda = function () {
-
-  // Don't launch Agenda on test environment
-  // @todo: make it possible to launch this manually with very small interwalls for testing
-  // @todo: similarly for testing purposes, write a stopAgenda() method
-  if (process.env.NODE_ENV === 'test') {
-    return;
-  }
-
-  // Setup agenda
-  var agendaWorker = new Agenda({
-    db: {
-      address: config.db.uri,
-      collection: 'agendaJobs'
-    }
-  });
-
-  agendaWorker.on('ready', function() {
-    // Load jobs
-    var messagesUnreadJob = require(path.resolve('./modules/messages/server/jobs/message-unread.server.job'));
-
-    // Schedule job(s)
-    messagesUnreadJob.checkUnreadMessages(agendaWorker);
-    agendaWorker.every('5 minutes', 'check unread messages');
-
-    // Start worker
-    agendaWorker.start();
-    console.log('Agenda started processing background jobs');
-  });
-
-  // Error reporting
-  agendaWorker.on('fail', function(err) {
-    console.error('Agenda job failed with error: %s', err.message || 'Unknown error');
-  });
-};
-
-/**
  * Configure the modules static routes
  */
 module.exports.initModulesClientRoutes = function (app) {
@@ -328,9 +287,6 @@ module.exports.init = function (db) {
 
   // Initialize error routes
   this.initErrorRoutes(app);
-
-  // Initialize Agenda ("cron" jobs)
-  this.initAgenda(app, db);
 
   return app;
 };

@@ -7,12 +7,10 @@ var _ = require('lodash'),
     path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
-    analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
     tagsHandler = require(path.resolve('./modules/tags/server/controllers/tags.server.controller')),
-    emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
+    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     config = require(path.resolve('./config/config')),
-    nodemailer = require('nodemailer'),
     async = require('async'),
     crypto = require('crypto'),
     sanitizeHtml = require('sanitize-html'),
@@ -422,69 +420,10 @@ exports.update = function(req, res) {
 
     },
 
-    // Prepare TEXT mail
+    // Send email
     function(token, user, done) {
-
-      // If no token, user didn't change email = pass this phase
       if (token) {
-
-        var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
-            urlConfirm = url + '/confirm-email/' + token;
-
-        var renderVars = emailsHandler.addEmailBaseTemplateParams(
-            req.headers.host,
-            {
-              name: user.displayName,
-              email: user.emailTemporary,
-              urlConfirmPlainText: urlConfirm,
-              urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
-                source: 'transactional-email',
-                medium: 'email',
-                campaign: 'reset-password'
-              })
-            },
-            'reset-password'
-          );
-
-        res.render(path.resolve('./modules/core/server/views/email-templates-text/email-confirmation'), renderVars, function(err, emailPlain) {
-          done(err, emailPlain, user, renderVars);
-        });
-      } else {
-        done(null, false, user, false);
-      }
-    },
-
-    // Prepare HTML mail
-    function(emailPlain, user, renderVars, done) {
-
-      // If no emailPlain, user didn't change email = pass this phase
-      if (emailPlain) {
-        res.render(path.resolve('./modules/core/server/views/email-templates/email-confirmation'), renderVars, function(err, emailHTML) {
-          done(err, emailHTML, emailPlain, user);
-        });
-      } else {
-        done(null, false, false, user);
-      }
-    },
-
-    // If valid email, send confirm email using service
-    function(emailHTML, emailPlain, user, done) {
-
-      // If no emailHTML, user didn't change email = pass this phase
-      if (emailHTML) {
-        var smtpTransport = nodemailer.createTransport(config.mailer.options);
-        var mailOptions = {
-          to: {
-            name: user.displayName,
-            address: user.emailTemporary
-          },
-          from: 'Trustroots <' + config.mailer.from + '>',
-          subject: 'Confirm email change',
-          text: emailPlain,
-          html: emailHTML
-        };
-        smtpTransport.sendMail(mailOptions, function(err) {
-          smtpTransport.close(); // close the connection pool
+        emailService.sendEmailConfirmation(user, function(err) {
           done(err, user);
         });
       } else {
