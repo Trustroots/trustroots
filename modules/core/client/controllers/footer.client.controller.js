@@ -16,7 +16,7 @@
     vm.isHidden = false;
 
     // Changing footer styles/contents after navigation
-    $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+    $scope.$on('$stateChangeSuccess', function(event, toState) {
 
       // Footer is transparent on these pages
       vm.isTransparent = (angular.isDefined(toState.footerTransparent) && toState.footerTransparent === true);

@@ -93,17 +93,23 @@ describe('Statistics CRUD tests', function() {
 
     // Save users and offers to the test db
     user1.save(function(err, user1res) {
+      should.not.exist(err);
       offer.user = user1res._id;
       offer.status = 'yes';
       new Offer(offer).save(function(err) {
+        should.not.exist(err);
         user2.save(function(err, user2res) {
+          should.not.exist(err);
           offer.user = user2res._id;
           offer.status = 'maybe';
           new Offer(offer).save(function(err) {
+            should.not.exist(err);
             user3.save(function(err, user3res) {
+              should.not.exist(err);
               offer.user = user3res._id;
               offer.status = 'no';
               new Offer(offer).save(function(err) {
+                should.not.exist(err);
                 return done();
               });
             });
@@ -145,7 +151,7 @@ describe('Statistics CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 

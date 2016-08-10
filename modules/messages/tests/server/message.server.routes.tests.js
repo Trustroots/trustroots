@@ -21,8 +21,7 @@ var app,
     userTo,
     userFromId,
     userToId,
-    message,
-    thread;
+    message;
 
 /**
  * Message routes tests
@@ -71,8 +70,10 @@ describe('Message CRUD tests', function() {
 
     // Save users to the test db and create new message
     userFrom.save(function(userFromErr, userFromRes) {
+      should.not.exist(userFromErr);
       userFromId = userFromRes._id;
       userTo.save(function(userToErr, userToRes) {
+        should.not.exist(userToErr);
         userToId = userToRes._id;
         // Create message
         message = {
@@ -124,7 +125,7 @@ describe('Message CRUD tests', function() {
         agent.post('/api/messages')
           .send(message)
           .expect(200)
-          .end(function(messageSaveErr, messageSaveRes) {
+          .end(function(messageSaveErr) {
             // Handle message save error
             if (messageSaveErr) return done(messageSaveErr);
 
@@ -161,12 +162,9 @@ describe('Message CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
-        // Get user id
-        var userFromId = signinRes.body._id;
 
         // Create html in message
         var htmlMessage = message;
@@ -183,7 +181,7 @@ describe('Message CRUD tests', function() {
         agent.post('/api/messages')
           .send(htmlMessage)
           .expect(200)
-          .end(function(messageSaveErr, messageSaveRes) {
+          .end(function(messageSaveErr) {
             // Handle message save error
             if (messageSaveErr) return done(messageSaveErr);
 
@@ -215,12 +213,9 @@ describe('Message CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
-        // Get user id
-        var userFromId = signinRes.body._id;
 
         // Create html in message
         var htmlMessage = message;
@@ -234,7 +229,7 @@ describe('Message CRUD tests', function() {
         agent.post('/api/messages')
           .send(htmlMessage)
           .expect(200)
-          .end(function(messageSaveErr, messageSaveRes) {
+          .end(function(messageSaveErr) {
             // Handle message save error
             if (messageSaveErr) return done(messageSaveErr);
 
@@ -267,12 +262,9 @@ describe('Message CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
-        // Get user id
-        var userFromId = signinRes.body._id;
 
         // Create html in message
         var htmlMessage = message;
@@ -282,7 +274,7 @@ describe('Message CRUD tests', function() {
         agent.post('/api/messages')
           .send(htmlMessage)
           .expect(200)
-          .end(function(messageSaveErr, messageSaveRes) {
+          .end(function(messageSaveErr) {
             // Handle message save error
             if (messageSaveErr) return done(messageSaveErr);
 
@@ -315,12 +307,9 @@ describe('Message CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
-        // Get user id
-        var userFromId = signinRes.body._id;
 
         // Now loop 25 messages in...
         // "Older" messages will have smaller numbers
@@ -339,7 +328,7 @@ describe('Message CRUD tests', function() {
             agent.post('/api/messages')
               .send(newMessage)
               .expect(200)
-              .end(function(messageSaveErr, messageSaveRes) {
+              .end(function(messageSaveErr) {
                 // Handle message save error
                 if (messageSaveErr) return done(messageSaveErr);
 
@@ -348,7 +337,8 @@ describe('Message CRUD tests', function() {
               });
           },
           // All messages sent, continue.
-          function (err, totalCount) {
+          function (err) {
+            if (err) return done(err);
 
             // Get a list of messages
             agent.get('/api/messages/' + userToId)
@@ -436,7 +426,7 @@ describe('Message CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -487,7 +477,7 @@ describe('Message CRUD tests', function() {
         read: true
       });
 
-      newThread.save(function(newThreadErr, newThreadRes) {
+      newThread.save(function(newThreadErr) {
 
         // Handle save error
         if (newThreadErr) return done(newThreadErr);
@@ -496,7 +486,7 @@ describe('Message CRUD tests', function() {
         agent.post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function(signinErr, signinRes) {
+          .end(function(signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
 
@@ -551,7 +541,7 @@ describe('Message CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -587,7 +577,7 @@ describe('Message CRUD tests', function() {
       notified: true
     });
 
-    newMessage1.save(function(newMessage1Err, newMessage1Res) {
+    newMessage1.save(function(newMessage1Err) {
 
       // Handle save error
       if (newMessage1Err) return done(newMessage1Err);
@@ -605,7 +595,7 @@ describe('Message CRUD tests', function() {
           read: false
         });
 
-        newThread.save(function(newThreadErr, newThreadRes) {
+        newThread.save(function(newThreadErr) {
 
           // Handle save error
           if (newThreadErr) return done(newThreadErr);
@@ -614,7 +604,7 @@ describe('Message CRUD tests', function() {
           agent.post('/api/auth/signin')
             .send(credentials)
             .expect(200)
-            .end(function(signinErr, signinRes) {
+            .end(function(signinErr) {
               // Handle signin error
               if (signinErr) return done(signinErr);
 

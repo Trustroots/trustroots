@@ -28,9 +28,7 @@ var app,
     contact1,
     contact2,
     contact3,
-    contact1Id,
-    contact2Id,
-    contact3Id;
+    contact1Id;
 
 /**
  * Contact routes tests
@@ -126,22 +124,27 @@ describe('Contact CRUD tests', function() {
 
     // Save user to the test db
     user1.save(function(err, user1SaveRes) {
+      should.not.exist(err);
       user1Id = user1SaveRes._id;
       user2.save(function(err, user2SaveRes) {
+        should.not.exist(err);
         user2Id = user2SaveRes._id;
         user3.save(function(err, user3SaveRes) {
+          should.not.exist(err);
           user3Id = user3SaveRes._id;
           user4.save(function(err, user4SaveRes) {
+            should.not.exist(err);
             user4Id = user4SaveRes._id;
             contact1.users = [user1Id, user2Id]; // Connection A: Users 1+2, un-confirmed
             contact2.users = [user2Id, user3Id]; // Connection B: Users 2+3, confirmed
             contact3.users = [user1Id, user3Id]; // Connection C: Users 1+3, confirmed
             contact1.save(function(err, contact1SaveRes) {
+              should.not.exist(err);
               contact1Id = contact1SaveRes._id;
-              contact2.save(function(err, contact2SaveRes) {
-                contact2Id = contact2SaveRes._id;
-                contact3.save(function(err, contact3SaveRes) {
-                  contact3Id = contact3SaveRes._id;
+              contact2.save(function(err) {
+                should.not.exist(err);
+                contact3.save(function(err) {
+                  should.not.exist(err);
                   return done();
                 });
               });
@@ -197,7 +200,7 @@ describe('Contact CRUD tests', function() {
       agent.post('/api/auth/signin')
         .send(credentials) // = user 1
         .expect(200)
-        .end(function(signinErr, signinRes) {
+        .end(function(signinErr) {
           done(signinErr);
         });
 
@@ -321,7 +324,7 @@ describe('Contact CRUD tests', function() {
       agent.post('/api/contact')
         .send({ friendUserId: user2Id })
         .expect(409)
-        .end(function(contactAddErr, contactAddRes) {
+        .end(function(contactAddErr) {
           // Handle contact add error
           if (contactAddErr) return done(contactAddErr);
           return done();
@@ -353,7 +356,8 @@ describe('Contact CRUD tests', function() {
     it('should be able to delete contact', function(done) {
       agent.delete('/api/contact/' + contact1Id)
         .expect(200)
-        .end(function(contactDelErr, contactDelRes) {
+        .end(function(contactDelErr) {
+
           // Handle contact del error
           if (contactDelErr) return done(contactDelErr);
 

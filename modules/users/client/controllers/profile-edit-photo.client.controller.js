@@ -27,13 +27,13 @@
     activate();
 
     function activate() {
-      $window.addEventListener('dragenter', function(e) {
+      $window.addEventListener('dragenter', function() {
         showDropZone();
       });
-      $window.addEventListener('drop', function(e) {
+      $window.addEventListener('drop', function() {
         hideDropZone();
       });
-      angular.element('#profile-edit-avatar-drop')[0].addEventListener('dragleave', function(e) {
+      angular.element('#profile-edit-avatar-drop')[0].addEventListener('dragleave', function() {
         hideDropZone();
       });
     }
@@ -66,10 +66,10 @@
           data: {
             avatar: fileAvatar
           }
-        }).success(function(data, status, headers) {
+        }).success(function() {
           vm.avatarUploading = false;
           updateUserProfile();
-        }).error(function(data, status, headers, config) {
+        }).error(function(data, status) {
           // Default error
           var saveAvatarErr = 'Oops! Something went wrong. Try again later.';
 
@@ -95,7 +95,7 @@
     /**
      * Process preview after file is selected via fileinput / dropped to window / received from camera
      */
-    function fileSelected($files, $event) {
+    function fileSelected($files) {
       // Too early
       if ($files && $files.length === 0) {
         return;

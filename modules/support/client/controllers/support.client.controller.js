@@ -52,7 +52,7 @@
 
       var supportRequest = new SupportService(vm.request);
 
-      supportRequest.$save(function(response) {
+      supportRequest.$save(function() {
         vm.success = true;
         vm.isLoading = false;
       }, function(err) {

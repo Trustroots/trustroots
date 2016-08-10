@@ -6,7 +6,7 @@
     .controller('AvatarEditorController', AvatarEditorController);
 
   /* @ngInject */
-  function AvatarEditorController($scope, $log, $uibModalInstance, $timeout, Upload, messageCenterService, user, appSettings) {
+  function AvatarEditorController($scope, $uibModalInstance, Upload, messageCenterService, user, appSettings) {
 
     var lastAvatarSource = user.avatarSource,
         fileAvatar = {};
@@ -46,10 +46,10 @@
           data: {
             avatar: fileAvatar
           }
-        }).success(function(data, status, headers) {
+        }).success(function() {
           vm.avatarUploading = false;
           $uibModalInstance.close(vm.user);
-        }).error(function(data, status, headers, config) {
+        }).error(function() {
           messageCenterService.add('danger', 'Oops! Something went wrong. Try again later.');
           vm.avatarUploading = false;
         });
@@ -65,7 +65,7 @@
     /**
      * Process preview after file is selected via fileinput / dropped to window / received from camera
      */
-    function fileSelected($files, $event) {
+    function fileSelected($files) {
       // Too early
       if ($files && $files.length === 0) {
         return;

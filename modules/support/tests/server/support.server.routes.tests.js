@@ -57,6 +57,7 @@ describe('Support CRUD tests', function() {
 
     // Save user to the test db
     user.save(function(err) {
+      should.not.exist(err);
       return done();
     });
   });
@@ -95,7 +96,7 @@ describe('Support CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 

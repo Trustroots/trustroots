@@ -108,7 +108,7 @@
           });
 
         }],
-        link: function (scope, element, attr, ctrl) {
+        link: function (scope, element, attr) {
 
           // Make sure source won't change dynamicly when user changes
           if (attr.source) {

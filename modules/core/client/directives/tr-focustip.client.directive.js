@@ -14,14 +14,14 @@
     .directive('trFocustip', trFocustipDirective);
 
   /* @ngInject */
-  function trFocustipDirective($compile, $timeout) {
+  function trFocustipDirective($compile) {
     return {
       restrict: 'A',
       replace: false,
       scope: {
         trFocustip: '='
       },
-      link: function(scope, element, attrs, ctrl) {
+      link: function(scope, element) {
 
         // Compiled template
         // after() requires jQuery

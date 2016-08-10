@@ -3,8 +3,7 @@
 
   describe('Contact Route Tests', function () {
     // Initialize global variables
-    var $scope,
-        $httpBackend;
+    var $httpBackend;
 
     // We can start by loading the main application module
     beforeEach(module(AppConfig.appModuleName));
@@ -13,8 +12,6 @@
     // This allows us to inject a service but then attach it to a variable
     // with the same name as the service.
     beforeEach(inject(function ($rootScope, _$httpBackend_) {
-      // Set a new global scope
-      $scope = $rootScope.$new();
       $httpBackend = _$httpBackend_;
     }));
 
@@ -44,7 +41,7 @@
       });
 
       describe('Handle Trailing Slash', function () {
-        beforeEach(inject(function ($state, $rootScope, $templateCache, _Authentication_) {
+        beforeEach(inject(function ($state, $rootScope, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/contacts/views/add-contact.client.view.html', '');
           $httpBackend.when('GET', '/api/contact-by/123').respond(200, '');
@@ -90,7 +87,7 @@
       });
 
       describe('Handle Trailing Slash', function () {
-        beforeEach(inject(function ($state, $rootScope, $templateCache, _Authentication_) {
+        beforeEach(inject(function ($state, $rootScope, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/contacts/views/confirm-contact.client.view.html', '');
           $httpBackend.when('GET', '/api/contact/123').respond(200, '');

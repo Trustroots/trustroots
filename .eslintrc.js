@@ -33,7 +33,7 @@ module.exports = {
     'no-unreachable': 2,
     'no-underscore-dangle': 0,
     'no-unused-expressions': 0,
-    'no-unused-vars': 0,
+    'no-unused-vars': 2,
     'no-use-before-define': [1, 'nofunc'],
     'no-var': 0,
     'object-curly-spacing': [2, 'always'],

@@ -20,7 +20,7 @@
     });
 
     // React when state changes and there are unsaved modifications
-    $scope.$on('$stateChangeStart', function(event, toState, toParams, fromState, fromParams, options) {
+    $scope.$on('$stateChangeStart', function(event, toState, toParams) {
       if (vm.unsavedModifications) {
         // Cancel original $state transition
         // transitionTo() promise will be rejected with

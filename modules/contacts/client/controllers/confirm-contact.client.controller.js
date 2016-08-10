@@ -24,7 +24,7 @@
     // First fetch contact object, just to make it sure it exists
     vm.contact.$promise.then(
       // Got contact
-      function(contact) {
+      function() {
         vm.isLoading = false;
         if (vm.contact.confirmed === true) {
           vm.isConnected = true;
@@ -43,7 +43,7 @@
     function confirmContact() {
       vm.isLoading = true;
       vm.contact.confirm = true;
-      vm.contact.$update(function(response) {
+      vm.contact.$update(function() {
         vm.isLoading = false;
         vm.isConnected = true;
         vm.success = 'You two are now connected!';

@@ -66,7 +66,7 @@
 
       },
       // No previous offer, fill in defaults
-      function(error) {
+      function() {
 
         vm.offer.maxGuests = 1;
         vm.offer.status = 'yes';
@@ -111,7 +111,7 @@
         maxGuests: parseInt(vm.offer.maxGuests, 10)
       });
 
-      newOffer.$save(function(response) {
+      newOffer.$save(function() {
         // Done!
         vm.isLoading = false;
         $state.go('profile.about', { username: Authentication.user.username });

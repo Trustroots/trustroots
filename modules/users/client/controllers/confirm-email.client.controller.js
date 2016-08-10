@@ -41,7 +41,7 @@
           }
 
         })
-        .error(function(response) {
+        .error(function() {
           vm.error = true;
         });
     }

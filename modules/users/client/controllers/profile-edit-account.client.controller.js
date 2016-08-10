@@ -6,7 +6,7 @@
     .controller('ProfileEditAccountController', ProfileEditAccountController);
 
   /* @ngInject */
-  function ProfileEditAccountController($http, $state, $window, Users, Authentication, messageCenterService) {
+  function ProfileEditAccountController($http, Users, Authentication, messageCenterService) {
 
     // ViewModel
     var vm = this;

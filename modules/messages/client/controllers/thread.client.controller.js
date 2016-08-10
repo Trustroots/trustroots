@@ -15,7 +15,7 @@
     .controller('MessagesThreadController', MessagesThreadController);
 
   /* @ngInject */
-  function MessagesThreadController($rootScope, $scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, $filter, $analytics, Authentication, Messages, MessagesRead, messageCenterService, locker, appSettings, userTo, cfpLoadingBar) {
+  function MessagesThreadController($rootScope, $scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, $filter, $analytics, Authentication, Messages, MessagesRead, messageCenterService, locker, appSettings, userTo) {
 
     // Go back to inbox on these cases
     // - No recepient defined
@@ -140,7 +140,6 @@
      * Appends returned messages to model
      */
     function addMessages(data) {
-      var messages = [];
 
       // Loop trough received data (for loop is the fastest)
       for (var i = 0; i < data.length; i++) {
@@ -215,7 +214,7 @@
     function syncRead() {
       MessagesRead.query({
         messageIds: flaggedAsRead
-      }, function(response) {
+      }, function() {
         flaggedAsRead = [];
         // Tell app controller to sync this counter
         $rootScope.$broadcast('syncUnreadMessagesCount');

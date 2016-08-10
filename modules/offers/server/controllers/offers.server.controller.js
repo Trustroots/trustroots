@@ -9,8 +9,7 @@ var path = require('path'),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     sanitizeHtml = require('sanitize-html'),
     mongoose = require('mongoose'),
-    Offer = mongoose.model('Offer'),
-    User = mongoose.model('User');
+    Offer = mongoose.model('Offer');
 
 /**
  * Create a fuzzy offset between specified distances

@@ -6,7 +6,6 @@ var should = require('should'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
     Tag = mongoose.model('Tag'),
-    config = require(path.resolve('./config/config')),
     express = require(path.resolve('./config/lib/express'));
 
 /**
@@ -136,7 +135,7 @@ describe('Tag CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -293,7 +292,7 @@ describe('Tag CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 

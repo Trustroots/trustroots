@@ -103,6 +103,7 @@ describe('Tag Model Unit Tests:', function() {
         var colorBefore = _tag.color;
         _tag.label = 'test';
         _tag.save(function (err) {
+          should.not.exist(err);
           var colorAfter = _tag.color;
           colorBefore.should.equal(colorAfter);
           _tag.remove(function (err) {

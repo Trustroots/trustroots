@@ -25,7 +25,6 @@ var _ = require('lodash'),
     nodemailer = require('nodemailer'),
     async = require('async'),
     swig = require('swig'),
-    htmlToText = require('html-to-text'),
     mongoose = require('mongoose'),
     Message = mongoose.model('Message'),
     User = mongoose.model('User');
@@ -127,7 +126,7 @@ exports.checkUnreadMessages = function(agenda) {
           // Verify connection configuration
           // If it returns an error, then something is not correct,
           // otherwise the server is ready to accept messages.
-          smtpTransport.verify(function(err, success) {
+          smtpTransport.verify(function(err) {
             done(err, users, notifications, smtpTransport);
           });
 
@@ -224,7 +223,7 @@ exports.checkUnreadMessages = function(agenda) {
               text: mailBodyText,
               html: mailBodyHtml
             },
-            function(smtpErr, info) {
+            function(smtpErr) {
               // Sending email to this user failed
               // Raise warnings and continue with the next one.
               if (smtpErr) {
@@ -242,7 +241,7 @@ exports.checkUnreadMessages = function(agenda) {
 
           // Assign a final callback to work queue
           // All notification jobs done, continue
-          notificationsQueue.drain = function(err, results) {
+          notificationsQueue.drain = function(err) {
             if (err) {
               console.error('Sending message notification mails caused an error:');
               console.error(err);
@@ -268,7 +267,7 @@ exports.checkUnreadMessages = function(agenda) {
             { _id: { '$in': messageIds } },
             { $set: { notified: true } },
             { multi: true },
-            function(err, num, raw) {
+            function(err) {
               if (err) {
                 console.error('Error while marking messages as notified.');
                 console.error(err);

@@ -17,8 +17,7 @@ var app,
     agent,
     credentials,
     user,
-    _user,
-    admin;
+    _user;
 
 /**
  * User routes tests
@@ -254,7 +253,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(emailCredentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -384,7 +383,7 @@ describe('User CRUD tests', function () {
           username: user.username
         })
         .expect(200)
-        .end(function (err, res) {
+        .end(function (err) {
           // Handle error
           if (err) {
             return done(err);
@@ -419,7 +418,7 @@ describe('User CRUD tests', function () {
           username: user.username
         })
         .expect(200)
-        .end(function (err, res) {
+        .end(function (err) {
           // Handle error
           if (err) {
             return done(err);
@@ -446,7 +445,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -475,7 +474,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -504,7 +503,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -533,7 +532,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -582,7 +581,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -638,7 +637,7 @@ describe('User CRUD tests', function () {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr, signinRes) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -679,7 +678,7 @@ describe('User CRUD tests', function () {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr, signinRes) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -736,7 +735,7 @@ describe('User CRUD tests', function () {
       agent.post('/api/auth/signin')
         .send(credentials2)
         .expect(200)
-        .end(function (signinErr, signinRes) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -814,7 +813,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -841,7 +840,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -868,7 +867,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -895,7 +894,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -916,7 +915,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -944,7 +943,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -972,7 +971,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1000,7 +999,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1028,7 +1027,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1056,7 +1055,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1112,7 +1111,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1168,7 +1167,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1236,7 +1235,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1299,7 +1298,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1340,7 +1339,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1381,7 +1380,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1411,7 +1410,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);

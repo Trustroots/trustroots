@@ -3,9 +3,7 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    config = require(path.resolve('./config/config')),
-    tagsPolicy = require('../policies/tags.server.policy'),
+var tagsPolicy = require('../policies/tags.server.policy'),
     tribes = require('../controllers/tribes.server.controller'),
     tags = require('../controllers/tags.server.controller');
 

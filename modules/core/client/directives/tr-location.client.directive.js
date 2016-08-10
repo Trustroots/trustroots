@@ -81,7 +81,7 @@
         /**
          * When selecting autosuggested location
          */
-        function onSelect($item, $model, $label, $event) {
+        function onSelect($item, $model, $label) {
           $timeout(function() {
             $scope.value = $label;
           });

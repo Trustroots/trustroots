@@ -204,14 +204,14 @@ describe('Reference Thread CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(referenceUserNonpublicCredentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Save a new reference
         referenceThread.userFrom = referenceUserNonPublicId;
         referenceThread.thread = threadNonpublicId;
-        new ReferenceThread(referenceThread).save(function(referenceThreadErr, referenceThreadRes) {
+        new ReferenceThread(referenceThread).save(function(referenceThreadErr) {
 
           // Handle error
           if (referenceThreadErr) return done(referenceThreadErr);
@@ -239,14 +239,14 @@ describe('Reference Thread CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(referenceUserFromCredentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Save a new reference
         referenceThread.userFrom = referenceUserFromId;
         referenceThread.thread = threadId;
-        new ReferenceThread(referenceThread).save(function(referenceThreadErr, referenceThreadRes) {
+        new ReferenceThread(referenceThread).save(function(referenceThreadErr) {
 
           // Handle error
           if (referenceThreadErr) return done(referenceThreadErr);
@@ -274,7 +274,7 @@ describe('Reference Thread CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(referenceUserFromCredentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -300,7 +300,7 @@ describe('Reference Thread CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(referenceUserFromCredentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -346,7 +346,7 @@ describe('Reference Thread CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(referenceUserNonpublicCredentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -370,7 +370,7 @@ describe('Reference Thread CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(referenceUserFromCredentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -397,7 +397,7 @@ describe('Reference Thread CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(referenceUserFromCredentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -425,7 +425,7 @@ describe('Reference Thread CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(referenceUserFromCredentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -438,7 +438,7 @@ describe('Reference Thread CRUD tests', function() {
         referenceThread.created = d.setHours(d.getHours() - 24); // 24 hours in the past
 
         // Save 1st new reference ("yes") directly to the DB:
-        new ReferenceThread(referenceThread).save(function(referenceThreadErr, referenceThreadRes) {
+        new ReferenceThread(referenceThread).save(function(referenceThreadErr) {
 
           if (referenceThreadErr) return done(referenceThreadErr);
 
@@ -447,7 +447,7 @@ describe('Reference Thread CRUD tests', function() {
           agent.post('/api/references/threads')
             .send(referenceThread)
             .expect(200)
-            .end(function(referenceSaveErr, referenceSaveRes) {
+            .end(function(referenceSaveErr) {
               // Handle reference save error
               if (referenceSaveErr) return done(referenceSaveErr);
 

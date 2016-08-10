@@ -86,15 +86,20 @@ describe('Offer CRUD tests', function() {
 
     // Save user to the test db
     user1.save(function(err) {
+      should.not.exist(err);
       user2.save(function(err) {
+        should.not.exist(err);
         // Check id for user1
         User.findOne({ 'username': user1.username }, function(err, user1) {
+          should.not.exist(err);
           user1Id = user1._id;
           // Check id for user2
           User.findOne({ 'username': user1.username }, function(err, user2) {
+            should.not.exist(err);
             user2Id = user2._id;
             offer2.user = user2Id;
             offer2.save(function(err) {
+              should.not.exist(err);
               return done();
             });
           });
@@ -120,7 +125,7 @@ describe('Offer CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -166,7 +171,7 @@ describe('Offer CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -174,7 +179,7 @@ describe('Offer CRUD tests', function() {
         agent.post('/api/offers')
           .send(offer1)
           .expect(200)
-          .end(function(offerSaveErr, offerSaveRes) {
+          .end(function(offerSaveErr) {
             // Handle offer save error
             if (offerSaveErr) return done(offerSaveErr);
 
@@ -206,7 +211,7 @@ describe('Offer CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -252,7 +257,7 @@ describe('Offer CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -287,7 +292,7 @@ describe('Offer CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 

@@ -26,7 +26,7 @@
     function activate() {
 
       // Perform actions at page change
-      $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+      $scope.$on('$stateChangeSuccess', function(event, toState) {
 
         // Collapsing the menu after navigation
         vm.isCollapsed = false;

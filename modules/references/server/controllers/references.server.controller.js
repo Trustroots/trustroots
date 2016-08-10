@@ -7,7 +7,6 @@ var path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     async = require('async'),
     mongoose = require('mongoose'),
-    User = mongoose.model('User'),
     Message = mongoose.model('Message'),
     Thread = mongoose.model('Thread'),
     ReferenceThread = mongoose.model('ReferenceThread');
@@ -93,7 +92,7 @@ exports.createReferenceThread = function(req, res) {
     },
 
     // Save referenceThread
-    function(threadId, referenceUserTo, done) {
+    function(threadId, referenceUserTo) {
 
       var referenceThread = new ReferenceThread(req.body);
 

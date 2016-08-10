@@ -42,7 +42,7 @@
         function() {
           // User exists
         },
-        function(error) {
+        function() {
           vm.isConnected = true;
           vm.error = 'User does not exist.';
         }
@@ -62,7 +62,7 @@
     function add() {
       vm.isLoading = true;
 
-      vm.contact.$save(function(response) {
+      vm.contact.$save(function() {
         vm.isLoading = false;
         vm.isConnected = true;
         vm.success = 'Done! We sent an email to your contact and he/she still needs to confirm it.';

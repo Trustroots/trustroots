@@ -39,7 +39,7 @@
         trTime: '@',
         trTimeTooltipPlacement: '@'
       },
-      link: function(scope, el, attrs, ctrl) {
+      link: function(scope, element, attrs) {
 
         if (!scope.trTime) {
           $log.warn('No time passed for tr-time directive.');

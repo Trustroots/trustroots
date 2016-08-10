@@ -74,7 +74,7 @@ var validateEnvironmentVariable = function() {
 /**
  * Initialize global configuration files
  */
-var initGlobalConfigFolders = function(config, assets) {
+var initGlobalConfigFolders = function(config) {
   // Appending files
   config.folders = {
     server: {},

@@ -27,7 +27,7 @@
 
     return directive;
 
-    function link(scope, elem, attr) {
+    function link(scope) {
 
       var favicon1xElem = angular.element('#favicon'),
           favicon2xElem = angular.element('#favicon2x'),
@@ -43,7 +43,7 @@
       function activate() {
         if (!Authentication.user || !Authentication.user.public) {
           // If user wasn't authenticated or public, set up watch
-          var activationWatch = scope.$on('userUpdated', function(user) {
+          var activationWatch = scope.$on('userUpdated', function() {
             // Did user become public with that update?
             if (Authentication.user.public) {
               // Remove this watch
