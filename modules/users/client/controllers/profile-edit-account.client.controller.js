@@ -57,7 +57,7 @@
           .error(function(response) {
             var errorMessage;
             if (response) {
-              errorMessage = 'Error: ' + (response.data.message || 'Something went wrong.');
+              errorMessage = 'Error: ' + (response.message || 'Something went wrong.');
             } else {
               errorMessage = 'Something went wrong.';
             }
