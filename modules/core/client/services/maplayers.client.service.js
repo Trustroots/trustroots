@@ -130,15 +130,27 @@
           appSettings.mapbox.maps.satellite
         );
       } else if (options.satellite) {
-        // Satellite fallback: MapQuest
+        // Satellite fallback: NASA Earth Data
+        // @link https://earthdata.nasa.gov/about/science-system-description/eosdis-components/global-imagery-browse-services-gibs
+        // @link https://github.com/nasa-gibs/gibs-web-examples/blob/release/examples/leaflet/webmercator-epsg3857.js
         layers.satellite = {
           name: 'Satellite',
           type: 'xyz',
-          url: '//otile{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
+          url: '//map1{s}.vis.earthdata.nasa.gov/wmts-webmerc/{layer}/default/{time}/{tileMatrixSet}/{z}/{y}/{x}.jpg',
           layerOptions: {
-            subdomains: ['1', '2', '3', '4'],
-            attribution: '<a href="http://www.mapquest.com/" target="_blank">© MapQuest</a>',
+            layer: 'MODIS_Terra_CorrectedReflectance_TrueColor',
+            tileMatrixSet: 'GoogleMapsCompatible_Level9',
+            time: '2014-12-23',
+            subdomains: ['a', 'b', 'c'],
+            attribution: '<a href="https://wiki.earthdata.nasa.gov/display/GIBS" target="_blank">© NASA Earth Data</a>',
+            noWrap: true,
             continuousWorld: true,
+            tileSize: 256,
+            // Prevent Leaflet from retrieving non-existent tiles on the borders
+            bounds: [
+              [-85.0511287776, -179.999999975],
+              [85.0511287776, 179.999999975]
+            ],
             TRStyle: 'satellite' // Not native Leaflet key, required by our layer switch
           }
         };
