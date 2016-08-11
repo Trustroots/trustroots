@@ -103,19 +103,19 @@
           $httpBackend.flush();
           expect(messageCenterService.add).toHaveBeenCalledWith(
             'danger',
-            'Something went wrong.'
+            'Error: Something went wrong.'
           );
         });
 
         it('can show an custom error message during failure', function() {
           $httpBackend.expect('POST', '/api/auth/resend-confirmation').respond(400, {
-            message: 'my customer error'
+            message: 'my custom error'
           });
           ProfileEditAccountController.resendUserEmailConfirm();
           $httpBackend.flush();
           expect(messageCenterService.add).toHaveBeenCalledWith(
             'danger',
-            'Error: my customer error'
+            'Error: my custom error'
           );
         });
 

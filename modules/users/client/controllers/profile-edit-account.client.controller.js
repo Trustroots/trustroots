@@ -51,13 +51,13 @@
       if ($event) $event.preventDefault();
       if (vm.user.emailTemporary) {
         $http.post('/api/auth/resend-confirmation')
-          .success(function() {
+          .then(function() {
             messageCenterService.add('success', 'Confirmation email resent.');
           })
-          .error(function(response) {
+          .catch(function(response) {
             var errorMessage;
             if (response) {
-              errorMessage = 'Error: ' + (response.message || 'Something went wrong.');
+              errorMessage = 'Error: ' + ((response.data && response.data.message) || 'Something went wrong.');
             } else {
               errorMessage = 'Something went wrong.';
             }
