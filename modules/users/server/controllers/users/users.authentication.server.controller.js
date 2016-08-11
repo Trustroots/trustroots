@@ -416,12 +416,21 @@ exports.resendConfirmation = function(req, res) {
     });
   }
 
-  // If they are already confirmed they cannot get a new token
-  if (req.user.public) {
+  /*
+    There are two valid cases for getting the confirmation resent:
+      1) user is unconfirmed
+      2) user is changing email address
+    In both cases they will have emailTemporary set
+  */
+  if (!req.user.emailTemporary) {
     return res.status(400).send({
       message: 'Already confirmed.'
     });
   }
+
+  var isEmailChange = !!req.user.public;
+  var emailTemplateName = isEmailChange ? 'email-confirmation' : 'signup';
+  var emailSubject = isEmailChange ? 'Confirm email change' : 'Confirm Email';
 
   async.waterfall([
 
@@ -465,7 +474,7 @@ exports.resendConfirmation = function(req, res) {
           'resend-confirmation'
         );
 
-      res.render(path.resolve('./modules/core/server/views/email-templates-text/signup'), renderVars, function(err, emailPlain) {
+      res.render(path.resolve('./modules/core/server/views/email-templates-text/' + emailTemplateName), renderVars, function(err, emailPlain) {
         done(err, emailPlain, user, renderVars);
       });
 
@@ -474,7 +483,7 @@ exports.resendConfirmation = function(req, res) {
     // Prepare HTML mail
     function(emailPlain, user, renderVars, done) {
 
-      res.render(path.resolve('./modules/core/server/views/email-templates/signup'), renderVars, function(err, emailHTML) {
+      res.render(path.resolve('./modules/core/server/views/email-templates/' + emailTemplateName), renderVars, function(err, emailHTML) {
         done(err, emailHTML, emailPlain, user);
       });
 
@@ -490,7 +499,7 @@ exports.resendConfirmation = function(req, res) {
           address: user.emailTemporary
         },
         from: 'Trustroots <' + config.mailer.from + '>',
-        subject: 'Confirm Email',
+        subject: emailSubject,
         text: emailPlain,
         html: emailHTML
       };

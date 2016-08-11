@@ -50,6 +50,7 @@ describe('User CRUD tests', function () {
       lastName: 'Name',
       displayName: 'Full Name',
       email: 'test@test.com',
+      emailTemporary: 'test@test.com', // unconfirmed users have this set
       emailToken: 'initial email token',
       username: credentials.username.toLowerCase(),
       displayUsername: credentials.username,
