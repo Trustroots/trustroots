@@ -81,8 +81,9 @@ exports.signup = function(req, res) {
 
     },
 
+    // Send email
     function(user, done) {
-      emailService.sendEmailConfirmation(user, function(err) {
+      emailService.sendSignupEmailConfirmation(user, function(err) {
         done(err, user);
       });
     },
@@ -370,8 +371,6 @@ exports.resendConfirmation = function(req, res) {
   }
 
   var isEmailChange = !!req.user.public;
-  var emailTemplateName = isEmailChange ? 'email-confirmation' : 'signup';
-  var emailSubject = isEmailChange ? 'Confirm email change' : 'Confirm Email';
 
   async.waterfall([
 
@@ -394,61 +393,18 @@ exports.resendConfirmation = function(req, res) {
       });
     },
 
-    // Prepare TEXT mail
+    // Send email
     function(token, user, done) {
-
-      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
-          urlConfirm = url + '/confirm-email/' + token;
-
-      var renderVars = emailsHandler.addEmailBaseTemplateParams(
-          req.headers.host,
-          {
-            name: user.displayName,
-            email: user.emailTemporary,
-            urlConfirmPlainText: urlConfirm,
-            urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
-              source: 'transactional-email',
-              medium: 'email',
-              campaign: 'resend-confirmation'
-            })
-          },
-          'resend-confirmation'
-        );
-
-      res.render(path.resolve('./modules/core/server/views/email-templates-text/' + emailTemplateName), renderVars, function(err, emailPlain) {
-        done(err, emailPlain, user, renderVars);
-      });
-
-    },
-
-    // Prepare HTML mail
-    function(emailPlain, user, renderVars, done) {
-
-      res.render(path.resolve('./modules/core/server/views/email-templates/' + emailTemplateName), renderVars, function(err, emailHTML) {
-        done(err, emailHTML, emailPlain, user);
-      });
-
-    },
-
-    // If valid email, send confirm email using service
-    function(emailHTML, emailPlain, user, done) {
-
-      var smtpTransport = nodemailer.createTransport(config.mailer.options);
-      var mailOptions = {
-        to: {
-          name: user.displayName,
-          address: user.emailTemporary
-        },
-        from: 'Trustroots <' + config.mailer.from + '>',
-        subject: emailSubject,
-        text: emailPlain,
-        html: emailHTML
-      };
-      smtpTransport.sendMail(mailOptions, function(err) {
-        smtpTransport.close(); // close the connection pool
-        done(err, user);
-      });
-
+      if (isEmailChange) {
+        emailService.sendChangeEmailConfirmation(user, function(err) {
+          done(err, user);
+        });
+      } else {
+        // signup confirmation
+        emailService.sendSignupEmailConfirmation(user, function(err) {
+          done(err, user);
+        });
+      }
     },
 
     // Return confirmation

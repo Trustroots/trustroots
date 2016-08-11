@@ -110,15 +110,15 @@ exports.sendResetPasswordConfirm = function(user, callback) {
   exports.renderEmailAndSend('reset-password-confirm', params, callback);
 };
 
-exports.sendEmailConfirmation = function(user, callback) {
+exports.sendChangeEmailConfirmation = function(user, callback) {
 
-  var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup',
+  var urlConfirm = url + '/confirm-email/' + user.emailToken,
       utmCampaign = 'confirm-email';
 
   var params = exports.addEmailBaseTemplateParams({
-    subject: 'Confirm Email',
+    subject: 'Confirm email change',
     name: user.displayName,
-    email: user.email,
+    email: user.emailTemporary,
     urlConfirmPlainText: urlConfirm,
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
@@ -130,6 +130,28 @@ exports.sendEmailConfirmation = function(user, callback) {
 
   exports.renderEmailAndSend('email-confirmation', params, callback);
 };
+
+exports.sendSignupEmailConfirmation = function(user, callback) {
+
+  var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup',
+      utmCampaign = 'confirm-email';
+
+  var params = exports.addEmailBaseTemplateParams({
+    subject: 'Confirm Email',
+    name: user.displayName,
+    email: user.emailTemporary,
+    urlConfirmPlainText: urlConfirm,
+    urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
+      source: 'transactional-email',
+      medium: 'email',
+      campaign: utmCampaign
+    }),
+    utmCampaign: utmCampaign
+  });
+
+  exports.renderEmailAndSend('signup', params, callback);
+};
+
 
 /**
  * Add several parameters to be used to render transactional emails

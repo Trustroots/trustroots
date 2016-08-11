@@ -423,7 +423,7 @@ exports.update = function(req, res) {
     // Send email
     function(token, user, done) {
       if (token) {
-        emailService.sendEmailConfirmation(user, function(err) {
+        emailService.sendChangeEmailConfirmation(user, function(err) {
           done(err, user);
         });
       } else {
