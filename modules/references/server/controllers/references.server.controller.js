@@ -7,7 +7,6 @@ var path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     async = require('async'),
     mongoose = require('mongoose'),
-    User = mongoose.model('User'),
     Message = mongoose.model('Message'),
     Thread = mongoose.model('Thread'),
     ReferenceThread = mongoose.model('ReferenceThread');
@@ -17,14 +16,14 @@ var path = require('path'),
  */
 exports.createReferenceThread = function(req, res) {
 
-  if(!req.user || (req.user && !req.user.public)) {
+  if (!req.user || (req.user && !req.user.public)) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
   }
 
   // Validate userTo ID
-  if(!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
+  if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
     return res.status(400).send({
       message: errorHandler.getErrorMessageByKey('invalid-id')
     });
@@ -50,18 +49,15 @@ exports.createReferenceThread = function(req, res) {
             return res.status(400).send({
               message: 'Thread does not exist.'
             });
-          }
-          else if(thread) {
-            // UserTo at the thread is currently authenticated user
-            if(thread.userTo && thread.userTo.equals(req.user._id)) {
+          } else if (thread) {
+            if (thread.userTo && thread.userTo.equals(req.user._id)) {
+              // UserTo at the thread is currently authenticated user
               done(null, thread._id, thread.userFrom);
-            }
-            // userFrom at the thread is currently authenticated user
-            else if(thread.userFrom && thread.userFrom.equals(req.user._id)) {
+            } else if (thread.userFrom && thread.userFrom.equals(req.user._id)) {
+              // userFrom at the thread is currently authenticated user
               done(null, thread._id, thread.userTo);
-            }
-            // Currently authenticated user is not participating in this thread!
-            else {
+            } else {
+              // Currently authenticated user is not participating in this thread!
               return res.status(403).send({
                 message: errorHandler.getErrorMessageByKey('forbidden')
               });
@@ -82,10 +78,9 @@ exports.createReferenceThread = function(req, res) {
         },
         'userFrom userTo',
         function(err, message) {
-          if(!err && message) {
+          if (!err && message) {
             done(null, threadId, referenceUserTo);
-          }
-          else {
+          } else {
             console.log('Not allowed per message rules');
             return res.status(403).send({
               message: 'Referenced person has not sent messages to to you.'
@@ -97,7 +92,7 @@ exports.createReferenceThread = function(req, res) {
     },
 
     // Save referenceThread
-    function(threadId, referenceUserTo, done) {
+    function(threadId, referenceUserTo) {
 
       var referenceThread = new ReferenceThread(req.body);
 
@@ -140,14 +135,14 @@ exports.readReferenceThread = function(req, res) {
 exports.readReferenceThreadById = function(req, res, next, userToId) {
 
   // Check if user is authenticated
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
   }
 
   // Not a valid ObjectId
-  if(!mongoose.Types.ObjectId.isValid(userToId)) {
+  if (!mongoose.Types.ObjectId.isValid(userToId)) {
     return res.status(400).send({
       message: errorHandler.getErrorMessageByKey('invalid-id')
     });
@@ -157,47 +152,40 @@ exports.readReferenceThreadById = function(req, res, next, userToId) {
 
     // Check if we have refference thread stored
     function(done) {
-
       ReferenceThread.findOne({
-          userTo: userToId,
-          userFrom: req.user._id // Ensure we get only references we are allowed to read
-        })
-        .sort('-created') // Latest first
-        .exec(function(err, referenceThread) {
+        userTo: userToId,
+        userFrom: req.user._id // Ensure we get only references we are allowed to read
+      })
+      .sort('-created') // Latest first
+      .exec(function(err, referenceThread) {
+        if (err) return done(err);
 
-          if(err) return next(err);
-
-          // Found, move on to the next middleware
-          if(referenceThread) {
-            req.referenceThread = referenceThread;
-            return next();
-          }
+        // Found, move on to the next middleware
+        if (referenceThread) {
+          req.referenceThread = referenceThread;
+          return next();
+        } else {
           // No existing reference thread found, move on to do more checks
-          else {
-            done(null);
-          }
-        });
+          done(null);
+        }
+      });
     },
 
     // Since no pre-existing reference thread found,
     // check if authenticated user would be allowed to send reference to this user at all
     function(done) {
-
       Message.findOne({
-          userFrom: userToId,
-          userTo: req.user._id
-        }, function(err, message) {
+        userFrom: userToId,
+        userTo: req.user._id
+      }, function(err, message) {
+        if (err) return done(err);
 
-          if(err) return next(err);
-
-          // Return 404, but also let client know if we would allow creating a referenceThread
-          return res.status(404).send({
-            message: errorHandler.getErrorMessageByKey('not-found'),
-            allowCreatingReference: (message) ? true : false
-          });
-
+        // Return 404, but also let client know if we would allow creating a referenceThread
+        return res.status(404).send({
+          message: errorHandler.getErrorMessageByKey('not-found'),
+          allowCreatingReference: Boolean(message)
         });
-
+      });
     }
 
   ], function(err) {

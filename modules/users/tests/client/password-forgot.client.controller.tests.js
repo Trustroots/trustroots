@@ -4,13 +4,11 @@
   // Authentication controller Spec
   describe('ForgotPasswordController', function() {
     // Initialize global variables
-    var ForgotPasswordController,
-      $scope,
-      $httpBackend,
-      $stateParams,
-      $location,
-      $window,
-      Authentication;
+    var $scope,
+        $httpBackend,
+        $location,
+        $window,
+        Authentication;
 
     // The $resource service augments the response object with methods for updating and deleting the resource.
     // If we were to use the standard toEqual matcher, our tests would fail because the test values would not match
@@ -19,7 +17,7 @@
     // account and ignores methods.
     beforeEach(function () {
       jasmine.addMatchers({
-        toEqualData: function (util, customEqualityTesters) {
+        toEqualData: function () {
           return {
             compare: function (actual, expected) {
               return {
@@ -35,12 +33,11 @@
     beforeEach(module(AppConfig.appModuleName));
 
     describe('Logged out user', function() {
-      beforeEach(inject(function($controller, $rootScope, _$window_, _$stateParams_, _$httpBackend_, _$location_, _Authentication_) {
+      beforeEach(inject(function($controller, $rootScope, _$window_, _$httpBackend_, _$location_, _Authentication_) {
         // Set a new global $scope
         $scope = $rootScope.$new();
 
         // Point global variables to injected services
-        $stateParams = _$stateParams_;
         $httpBackend = _$httpBackend_;
         $location = _$location_;
         $location.path = jasmine.createSpy().and.returnValue(true);
@@ -49,7 +46,7 @@
         Authentication = _Authentication_;
 
         // Initialize the Authentication controller
-        ForgotPasswordController = $controller('ForgotPasswordController as vm', {
+        $controller('ForgotPasswordController as vm', {
           $scope: $scope
         });
       }));

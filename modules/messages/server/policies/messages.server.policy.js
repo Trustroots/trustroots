@@ -54,7 +54,7 @@ exports.invokeRolesPolicies = function() {
 exports.isAllowed = function(req, res, next) {
 
   // No messages feature for un-published users
-  if(req.user && req.user.public !== true) {
+  if (req.user && req.user.public !== true) {
     return res.status(403).json({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });

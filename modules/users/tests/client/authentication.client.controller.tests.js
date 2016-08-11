@@ -5,17 +5,13 @@
   describe('AuthenticationController', function() {
     // Initialize global variables
     var AuthenticationController,
-        $scope,
         $httpBackend,
-        $stateParams,
-        $location,
         $state,
-        $window,
         Authentication;
 
     beforeEach(function() {
       jasmine.addMatchers({
-        toEqualData: function(util, customEqualityTesters) {
+        toEqualData: function() {
           return {
             compare: function(actual, expected) {
               return {
@@ -40,16 +36,12 @@
       // The injector ignores leading and trailing underscores here (i.e. _$httpBackend_).
       // This allows us to inject a service but then attach it to a variable
       // with the same name as the service.
-      beforeEach(inject(function($controller, $injector, $rootScope, _$location_, _$stateParams_, _$httpBackend_, _$window_, _$state_, _Authentication_) {
+      beforeEach(inject(function($controller, $injector, $rootScope, _$httpBackend_, _$state_, _Authentication_) {
         // Set a new global $scope
         $scope = $rootScope.$new();
-        $window = _$window_;
 
         // Point global variables to injected services
-        $stateParams = _$stateParams_;
         $httpBackend = _$httpBackend_;
-        $location = _$location_;
-        $window = _$window_;
         $state = _$state_;
         Authentication = _Authentication_;
 

@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -32,7 +32,7 @@
     function init() {
 
       // Prevent connecting with yourself
-      if($stateParams.userId === Authentication.user._id) {
+      if ($stateParams.userId === Authentication.user._id) {
         vm.isConnected = true;
         vm.error = 'You cannot connect with yourself. That is just silly!';
       }
@@ -42,7 +42,7 @@
         function() {
           // User exists
         },
-        function(error) {
+        function() {
           vm.isConnected = true;
           vm.error = 'User does not exist.';
         }
@@ -50,7 +50,7 @@
 
       // If contact already exists, stop here
       existingContact.$promise.then(function(response) {
-        if(response) {
+        if (response) {
           vm.isConnected = true;
           vm.success = (response.confirmed) ? 'You two are already connected. Great!' : 'Connection already initiated; now it has to be confirmed.';
         }
@@ -62,17 +62,22 @@
     function add() {
       vm.isLoading = true;
 
-      vm.contact.$save(function(response) {
+      vm.contact.$save(function() {
         vm.isLoading = false;
         vm.isConnected = true;
         vm.success = 'Done! We sent an email to your contact and he/she still needs to confirm it.';
       }, function(error) {
         vm.isLoading = false;
-        vm.error = error.message || 'Something went wrong. Try again.';
+        if (error.status === 409) {
+          // 409 means contact already existed
+          vm.success = (error.data.confirmed) ? 'You two are already connected. Great!' : 'Connection already initiated; now it has to be confirmed.';
+        } else {
+          vm.error = error.message || 'Something went wrong. Try again.';
+        }
       });
 
     }
 
   }
 
-})();
+}());

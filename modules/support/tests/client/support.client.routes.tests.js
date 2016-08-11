@@ -2,16 +2,9 @@
   'use strict';
 
   describe('Support Route Tests', function () {
-    // Initialize global variables
-    var $scope;
 
     // We can start by loading the main application module
     beforeEach(module(AppConfig.appModuleName));
-
-    beforeEach(inject(function ($rootScope) {
-      // Set a new global scope
-      $scope = $rootScope.$new();
-    }));
 
     describe('Route Config', function () {
       describe('Main Route (support)', function () {
@@ -59,7 +52,7 @@
       });
 
       describe('Handle Trailing Slash', function () {
-        beforeEach(inject(function ($state, $rootScope, $templateCache, _Authentication_) {
+        beforeEach(inject(function ($state, $rootScope, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/support/views/support.client.view.html', '');
 
@@ -77,4 +70,5 @@
 
     });
   });
-})();
+
+}());

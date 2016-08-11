@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -28,7 +28,7 @@
     // Leaflet
     vm.mapCenter = defaultLocation;
     vm.mapLayers = {
-      baselayers: MapLayersFactory.getLayers({ streets: true, satellite: true, outdoors: false }),
+      baselayers: MapLayersFactory.getLayers({ streets: true, satellite: true, outdoors: false })
     };
     vm.mapDefaults = {
       scrollWheelZoom: false,
@@ -56,7 +56,7 @@
         vm.offer = offer;
 
         // Populate map if user ralready has an offer
-        if(vm.offer && vm.offer.location) {
+        if (vm.offer && vm.offer.location) {
           vm.mapCenter.lat = parseFloat(vm.offer.location[0]);
           vm.mapCenter.lng = parseFloat(vm.offer.location[1]);
           vm.mapCenter.zoom = 16;
@@ -66,7 +66,7 @@
 
       },
       // No previous offer, fill in defaults
-      function(error) {
+      function() {
 
         vm.offer.maxGuests = 1;
         vm.offer.status = 'yes';
@@ -75,10 +75,9 @@
         vm.firstTimeAround = true;
 
         // Locale map to user's living- or from- location, if they're set
-        if(Authentication.user.locationLiving && Authentication.user.locationLiving !== '') {
+        if (Authentication.user.locationLiving && Authentication.user.locationLiving !== '') {
           vm.searchQuery = Authentication.user.locationLiving;
-        }
-        else if(Authentication.user.locationFrom && Authentication.user.locationFrom !== '') {
+        } else if (Authentication.user.locationFrom && Authentication.user.locationFrom !== '') {
           vm.searchQuery = Authentication.user.locationFrom;
         }
         searchAddress();
@@ -93,7 +92,7 @@
      * Overrides any previous status
      */
     function setHostingStatusByURL() {
-      if($stateParams.status && jQuery.inArray( $stateParams.status, ['yes', 'maybe', 'no'] ) > -1 ) {
+      if ($stateParams.status && jQuery.inArray($stateParams.status, ['yes', 'maybe', 'no']) > -1) {
         vm.offer.status = $stateParams.status;
       }
     }
@@ -108,11 +107,11 @@
         status: vm.offer.status,
         description: vm.offer.description,
         noOfferDescription: vm.offer.noOfferDescription,
-        location: [ parseFloat(vm.mapCenter.lat), parseFloat(vm.mapCenter.lng) ],
-        maxGuests: parseInt(vm.offer.maxGuests),
+        location: [parseFloat(vm.mapCenter.lat), parseFloat(vm.mapCenter.lng)],
+        maxGuests: parseInt(vm.offer.maxGuests, 10)
       });
 
-      newOffer.$save(function(response) {
+      newOffer.$save(function() {
         // Done!
         vm.isLoading = false;
         $state.go('profile.about', { username: Authentication.user.username });
@@ -128,7 +127,7 @@
      * Center map to the address in query input
      */
     function searchAddress() {
-      if(vm.searchQuery !== '') {
+      if (vm.searchQuery !== '') {
         vm.searchQuerySearching = true;
 
         $http
@@ -137,10 +136,9 @@
 
             vm.searchQuerySearching = false;
 
-            if(response.status === 200 && response.data.features && response.data.features.length > 0) {
+            if (response.status === 200 && response.data.features && response.data.features.length > 0) {
               mapLocate(response.data.features[0]);
-            }
-            else {
+            } else {
               messageCenterService.add('danger', 'Cannot find that place.');
             }
           });
@@ -158,15 +156,12 @@
       vm.searchQuery = placeTitle(place);
 
       // Does the place have bounding box?
-      if(place.bbox) {
+      if (place.bbox) {
         vm.mapBounds = leafletBoundsHelpers.createBoundsFromArray([
-          [ parseFloat(place.bbox[1]), parseFloat(place.bbox[0]) ],
-          [ parseFloat(place.bbox[3]), parseFloat(place.bbox[2]) ]
+          [parseFloat(place.bbox[1]), parseFloat(place.bbox[0])],
+          [parseFloat(place.bbox[3]), parseFloat(place.bbox[2])]
         ]);
-      }
-
-      // Does it have lat/lng?
-      else if(place.center) {
+      } else if (place.center) {
         vm.mapCenter = {
           lat: parseFloat(place.center[0]),
           lng: parseFloat(place.center[1]),
@@ -182,12 +177,12 @@
     function placeTitle(place) {
       var title = '';
 
-      if(place.place_name) title += place.place_name;
-      else if(place.text) title += place.text;
+      if (place.place_name) title += place.place_name;
+      else if (place.text) title += place.text;
 
       return title;
     }
 
   }
 
-})();
+}());

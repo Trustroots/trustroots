@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   /**
@@ -13,10 +13,10 @@
   function trTribeJoinButtonTemplate($templateCache) {
     var buttonTemplate = [
       '<button type="button" ng-class="{\'btn-active\': isMember}" ng-click="toggleMembership()" ng-disabled="isLoading" uib-tooltip="Leave Tribe" tooltip-enable="isMember" tooltip-placement="bottom">',
-        '<i ng-if="icon" ng-class="{\'icon-plus\': !isMember, \'icon-ok\': isMember}"></i> ',
-        '<span ng-if="!isMember" ng-bind="::joinLabel"></span>',
-        '<span ng-if="isMember" ng-bind="::joinedLabel"></span>',
-      '</button>',
+      '  <i ng-if="icon" ng-class="{\'icon-plus\': !isMember, \'icon-ok\': isMember}"></i> ',
+      '  <span ng-if="!isMember" ng-bind="::joinLabel"></span>',
+      '  <span ng-if="isMember" ng-bind="::joinedLabel"></span>',
+      '</button>'
     ];
     $templateCache.put('tr-tribe-join-button.html', buttonTemplate.join(''));
   }
@@ -26,7 +26,6 @@
     return {
       restrict: 'A',
       replace: true,
-      //transclude: true,
       scope: false,
       require: '^^trTribeJoin', // Require `tr-tribe-join` directive above this in DOM
       templateUrl: 'tr-tribe-join-button.html',
@@ -40,10 +39,9 @@
       // Set labels
       scope.joinLabel = (angular.isUndefined(attrs.trTribeJoinLabel)) ? 'Join' : attrs.trTribeJoinLabel;
       scope.joinedLabel = (angular.isUndefined(attrs.trTribeJoinedLabel)) ? 'Joined' : attrs.trTribeJoinedLabel;
-      //scope.leaveLabel = (angular.isUndefined(attrs.trTribeLeaveLabel)) ? 'Leave Tribe' : attrs.trTribeLeaveLabel;
 
       // Set icon visibility
-      scope.icon = (angular.isDefined(attrs.trTribeJoinIcon) && (attrs.trTribeJoinIcon === false || attrs.trTribeJoinIcon === 'false')) ? false : true;
+      scope.icon = !(angular.isDefined(attrs.trTribeJoinIcon) && (attrs.trTribeJoinIcon === false || attrs.trTribeJoinIcon === 'false'));
 
       /**
        * Toggle membership
@@ -52,13 +50,13 @@
         scope.isLoading = true;
 
         // If user is not authenticated, redirect them to signup page
-        if(!Authentication.user) {
+        if (!Authentication.user) {
           parentCtrl.tribeSignup();
           return;
         }
 
         // Optimistic toggle without API action when joining
-        if(!scope.isMember) {
+        if (!scope.isMember) {
           scope.isMember = true;
         }
 
@@ -75,4 +73,4 @@
     }
   }
 
-})();
+}());

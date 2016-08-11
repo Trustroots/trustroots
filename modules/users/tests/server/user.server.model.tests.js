@@ -12,7 +12,9 @@ var path = require('path'),
 /**
  * Globals
  */
-var user, user2, user3;
+var user,
+    user2,
+    user3;
 
 /**
  * Unit tests
@@ -113,6 +115,7 @@ describe('User Model Unit Tests:', function() {
         var passwordBefore = _user.password;
         _user.firstName = 'test';
         _user.save(function (err) {
+          should.not.exist(err);
           var passwordAfter = _user.password;
           passwordBefore.should.equal(passwordAfter);
           _user.remove(function (err) {
@@ -149,6 +152,7 @@ describe('User Model Unit Tests:', function() {
       _user.remove(function(err) {
         should.not.exist(err);
         _user.save(function(err) {
+          should.not.exist(err);
           var user3_email = _user3.email;
           _user3.email = _user.email;
           _user3.save(function(err) {
@@ -168,6 +172,7 @@ describe('User Model Unit Tests:', function() {
       _user.remove(function(err) {
         should.not.exist(err);
         _user.save(function(err) {
+          should.not.exist(err);
           var user3_username = _user3.username;
           _user3.username = _user.username;
           _user3.save(function(err) {

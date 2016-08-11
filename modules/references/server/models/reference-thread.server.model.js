@@ -29,7 +29,7 @@ var ReferenceThreadSchema = new Schema({
   },
   reference: {
     type: String,
-    enum: ['yes','no'],
+    enum: ['yes', 'no'],
     required: true
   },
   created: {

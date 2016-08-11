@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -7,8 +7,6 @@
 
   /* @ngInject */
   function SignupController($scope, $rootScope, $timeout, $http, $q, $state, $stateParams, $uibModal, $window, Authentication, UserTagsService, messageCenterService, TribeService, TribesService) {
-
-    var unloadConfirmActivated = false;
 
     // View Model
     var vm = this;
@@ -30,20 +28,20 @@
     function activate() {
 
       // If user is already signed in then redirect to search page
-      if(Authentication.user) {
+      if (Authentication.user) {
         $state.go('search');
         return;
       }
 
       // Fetch information about referred tribe
-      if($stateParams.tribe && $stateParams.tribe !== '') {
+      if ($stateParams.tribe && $stateParams.tribe !== '') {
         TribeService.get({
           tribeSlug: $stateParams.tribe
         })
         .then(function(tribe) {
 
           // Got it
-          if(tribe._id) {
+          if (tribe._id) {
             vm.tribe = tribe;
             // Show one less suggestion since we have referred tribe
             vm.suggestionsLimit--;
@@ -53,8 +51,7 @@
           getSuggestedTribes(tribe._id || null);
 
         });
-      }
-      else {
+      } else {
         getSuggestedTribes();
       }
     }
@@ -67,22 +64,21 @@
     function getSuggestedTribes(withoutTribeId) {
       TribesService.query({
         // If we have referred tribe, load one extra suggestion in case we load referred tribe among suggestions
-        limit: (vm.tribe ? (parseInt(vm.suggestionsLimit + 1)) : vm.suggestionsLimit)
+        limit: (vm.tribe ? (parseInt(vm.suggestionsLimit + 1, 10)) : vm.suggestionsLimit)
       },
       function(tribes) {
         var suggestedTribes = [];
 
         // Make sure to remove referred tribe from suggested tribes so that we won't have dublicates
         // We'll always show 2 or 3 of these at the frontend depending on if referred tribe is shown.
-        if(withoutTribeId) {
+        if (withoutTribeId) {
           angular.forEach(tribes, function(suggestedTribe) {
-            if(suggestedTribe._id !== withoutTribeId) {
+            if (suggestedTribe._id !== withoutTribeId) {
               this.push(suggestedTribe);
             }
           }, suggestedTribes);
           vm.suggestedTribes = suggestedTribes;
-        }
-        else {
+        } else {
           vm.suggestedTribes = tribes;
         }
       });
@@ -99,7 +95,7 @@
         .success(function(newUser) {
 
           // If there is referred tribe, add user to that next up
-          if(vm.tribe && vm.tribe._id) {
+          if (vm.tribe && vm.tribe._id) {
             UserTagsService.post({
               id: vm.tribe._id,
               relation: 'is'
@@ -109,9 +105,8 @@
               vm.isLoading = false;
               vm.step = 2;
             });
-          }
-          // No tribe to join, just continue
-          else {
+          } else {
+            // No tribe to join, just continue
             updateUser(newUser);
             vm.isLoading = false;
             vm.step = 2;
@@ -138,7 +133,7 @@
      * Open rules modal
      */
     function openRules($event) {
-      if($event) {
+      if ($event) {
         $event.preventDefault();
       }
       $uibModal.open({
@@ -153,4 +148,4 @@
 
   }
 
-})();
+}());

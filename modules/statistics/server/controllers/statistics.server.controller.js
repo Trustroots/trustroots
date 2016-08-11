@@ -40,7 +40,7 @@ exports.get = function(req, res) {
         extSitesBW: { $exists: true, $ne: '' },
         public: true
       }, function(err, count) {
-        req.statistics.connected.bewelcome = (count ? count : 0);
+        req.statistics.connected.bewelcome = count || 0;
         done(err);
       });
     },
@@ -51,7 +51,7 @@ exports.get = function(req, res) {
         extSitesCS: { $exists: true, $ne: '' },
         public: true
       }, function(err, count) {
-        req.statistics.connected.couchsurfing = (count ? count : 0);
+        req.statistics.connected.couchsurfing = count || 0;
         done(err);
       });
     },
@@ -62,7 +62,7 @@ exports.get = function(req, res) {
         extSitesWS: { $exists: true, $ne: '' },
         public: true
       }, function(err, count) {
-        req.statistics.connected.warmshowers = (count ? count : 0);
+        req.statistics.connected.warmshowers = count || 0;
         done(err);
       });
     },
@@ -73,7 +73,7 @@ exports.get = function(req, res) {
         'additionalProvidersData.facebook': { $exists: true },
         public: true
       }, function(err, count) {
-        req.statistics.connected.facebook = (count ? count : 0);
+        req.statistics.connected.facebook = count || 0;
         done(err);
       });
     },
@@ -84,7 +84,7 @@ exports.get = function(req, res) {
         'additionalProvidersData.twitter': { $exists: true },
         public: true
       }, function(err, count) {
-        req.statistics.connected.twitter = (count ? count : 0);
+        req.statistics.connected.twitter = count || 0;
         done(err);
       });
     },
@@ -95,7 +95,7 @@ exports.get = function(req, res) {
         'additionalProvidersData.github': { $exists: true },
         public: true
       }, function(err, count) {
-        req.statistics.connected.github = (count ? count : 0);
+        req.statistics.connected.github = count || 0;
         done(err);
       });
     },
@@ -107,7 +107,7 @@ exports.get = function(req, res) {
         public: true
       },
       function(err, count) {
-        req.statistics.newsletter = (count ? count : 0);
+        req.statistics.newsletter = count || 0;
         done(err);
       });
     },
@@ -116,14 +116,14 @@ exports.get = function(req, res) {
     function(done) {
       Offer.aggregate({
         $group: {
-            _id : '$status',
-            count: { $sum: 1 }
+          _id: '$status',
+          count: { $sum: 1 }
         }
       },
       function(err, counters) {
-        if(counters && counters.length > 0) {
+        if (counters && counters.length > 0) {
           counters.forEach(function(counter) {
-            if(['yes', 'maybe'].indexOf(counter._id) !== -1) {
+            if (['yes', 'maybe'].indexOf(counter._id) !== -1) {
               req.statistics.hosting[counter._id] = counter.count;
             }
           });
@@ -136,14 +136,14 @@ exports.get = function(req, res) {
     // @link https://www.npmjs.com/package/git-rev
     function(done) {
       git.long(function (hash) {
-        req.statistics.commit = (hash ? hash : '');
+        req.statistics.commit = hash || '';
         done(null);
       });
     },
 
     // Done!
-    function(done) {
-      res.json(req.statistics);
+    function() {
+      return res.json(req.statistics);
     }
 
   ],

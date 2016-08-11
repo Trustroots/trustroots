@@ -1,4 +1,4 @@
-(function(){
+(function () {
   'use strict';
 
   /**
@@ -14,21 +14,22 @@
     .directive('trFocustip', trFocustipDirective);
 
   /* @ngInject */
-  function trFocustipDirective($compile, $timeout) {
+  function trFocustipDirective($compile) {
     return {
       restrict: 'A',
       replace: false,
       scope: {
         trFocustip: '='
       },
-      link: function(scope, el, attrs, ctrl) {
+      link: function(scope, element) {
 
         // Compiled template
         // after() requires jQuery
         var template = $compile('<div class="help-block" ng-show="enabled">' + scope.trFocustip + '</div>')(scope);
-        el.after(template);
+        element.after(template);
 
-        el.bind('focus', function() {
+        element
+          .bind('focus', function() {
             // Enable only if there's some text to show
             scope.enabled = (angular.isString(scope.trFocustip) && scope.trFocustip !== '');
             scope.$apply();
@@ -42,4 +43,4 @@
     };
   }
 
-})();
+}());

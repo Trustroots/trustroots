@@ -11,7 +11,7 @@ module.exports = {
       uibModuleTemplates: defaultAssets.client.lib.uibModuleTemplates,
       css: defaultAssets.client.lib.css,
       js: _.union(defaultAssets.client.lib.js, [
-        'public/lib/angulartics-google-analytics/lib/angulartics-google-analytics.js'
+        'public/lib/angulartics-google-analytics/lib/angulartics-ga.js'
       ]),
       less: defaultAssets.client.lib.less,
       tests: defaultAssets.client.lib.tests
@@ -19,8 +19,8 @@ module.exports = {
     less: defaultAssets.client.less,
     js: _.union(defaultAssets.client.js, [
       'public/dist/uib-templates.js',
-      'public/dist/templates.js',
+      'public/dist/templates.js'
     ]),
     views: defaultAssets.client.views
-  },
+  }
 };

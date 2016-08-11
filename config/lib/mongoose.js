@@ -9,16 +9,22 @@ var config = require('../config'),
     mongoose = require('mongoose');
 
 // Load the mongoose models
-module.exports.loadModels = function() {
+module.exports.loadModels = function(callback) {
   // Globbing model files
   config.files.server.models.forEach(function(modelPath) {
     require(path.resolve(modelPath));
   });
+
+  if (callback) callback();
 };
 
 // Initialize Mongoose
-module.exports.connect = function(cb) {
+module.exports.connect = function(callback) {
   var _this = this;
+
+  // Use native promises
+  // You could use any ES6 promise constructor here, e.g. `bluebird`
+  mongoose.Promise = global.Promise;
 
   var db = mongoose.connect(config.db.uri, function (err) {
     // Log Error
@@ -33,14 +39,14 @@ module.exports.connect = function(cb) {
       _this.loadModels();
 
       // Call callback FN
-      if (cb) cb(db);
+      if (callback) callback(db);
     }
   });
 };
 
-module.exports.disconnect = function(cb) {
+module.exports.disconnect = function(callback) {
   mongoose.disconnect(function(err) {
     console.info(chalk.yellow('Disconnected from MongoDB.'));
-    cb(err);
+    callback(err);
   });
 };

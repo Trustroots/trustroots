@@ -33,7 +33,9 @@ var getGlobbedPaths = function(globPatterns, excludes) {
         files = files.map(function(file) {
           if (_.isArray(excludes)) {
             for (var i in excludes) {
-              file = file.replace(excludes[i], '');
+              if (excludes.hasOwnProperty(i)) {
+                file = file.replace(excludes[i], '');
+              }
             }
           } else {
             file = file.replace(excludes, '');
@@ -72,7 +74,7 @@ var validateEnvironmentVariable = function() {
 /**
  * Initialize global configuration files
  */
-var initGlobalConfigFolders = function(config, assets) {
+var initGlobalConfigFolders = function(config) {
   // Appending files
   config.folders = {
     server: {},
@@ -80,7 +82,7 @@ var initGlobalConfigFolders = function(config, assets) {
   };
 
   // Setting globbed client paths
-  config.folders.client = getGlobbedPaths(path.join(process.cwd(), 'modules/*/client/'), process.cwd().replace(new RegExp(/\\/g),'/'));
+  config.folders.client = getGlobbedPaths(path.join(process.cwd(), 'modules/*/client/'), process.cwd().replace(new RegExp(/\\/g), '/'));
 };
 
 /**
@@ -108,7 +110,7 @@ var initGlobalConfigFiles = function(config, assets) {
   config.files.server.policies = getGlobbedPaths(assets.server.policies);
 
   // Setting Globbed js files
-  if(process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production') {
     // In production mode assets.client.lib.js are combined into client.js already
     config.files.client.js = getGlobbedPaths(assets.client.js, ['client/', 'public/']);
     config.files.client.lib.js = getGlobbedPaths(assets.client.lib.js, 'public/');
@@ -117,7 +119,7 @@ var initGlobalConfigFiles = function(config, assets) {
   }
 
   // Setting Globbed css files
-  if(process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production') {
     // In production mode assets.client.lib.css are combined into client.css already
     config.files.client.css = getGlobbedPaths(assets.client.css, ['client/', 'public/']);
   } else {

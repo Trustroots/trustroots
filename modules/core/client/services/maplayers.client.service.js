@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   /**
@@ -36,7 +36,7 @@
      */
     function getMapboxLayer(label, TRStyle, layerConf) {
 
-      if(!isMapboxAvailable || !layerConf) return;
+      if (!isMapboxAvailable || !layerConf) return;
 
       var layer = {
         name: label || 'Mapbox',
@@ -53,12 +53,11 @@
         }
       };
 
-      // Legacy tiles
-      if(layerConf.legacy) {
+      if (layerConf.legacy) {
+        // Legacy tiles URL
         layer.url = 'https://{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token={token}&secure=1';
-      }
-      // Publicly available Mapbox styles
-      else {
+      } else {
+        // Publicly available Mapbox styles URL
         layer.url = 'https://api.mapbox.com/styles/v1/{user}/{map}/tiles/{z}/{x}/{y}?access_token={token}';
       }
 
@@ -66,10 +65,9 @@
       var feedbackLayer = appSettings.mapbox.user + '.' + layerConf.map;
 
       // These feedback layer id's are required for public styles
-      if(!layerConf.legacy && TRStyle === 'satellite') {
+      if (!layerConf.legacy && TRStyle === 'satellite') {
         feedbackLayer = 'mapbox.satellite';
-      }
-      else if(!layerConf.legacy) {
+      } else if (!layerConf.legacy) {
         feedbackLayer = 'mapbox.streets';
       }
 
@@ -100,7 +98,7 @@
       }, options || {});
 
       // Streets
-      if(options.streets && isMapboxAvailable && appSettings.mapbox.maps.streets) {
+      if (options.streets && isMapboxAvailable && appSettings.mapbox.maps.streets) {
         // Streets: Mapbox
         layers.streets = getMapboxLayer(
           'Streets',
@@ -108,7 +106,7 @@
           appSettings.mapbox.maps.streets
         );
         // Streets fallback
-      } else if(options.streets) {
+      } else if (options.streets) {
         // Streets: OpenStreetMap
         layers.streets = {
           name: 'Streets',
@@ -124,32 +122,42 @@
       }
 
       // Satellite
-      if(options.satellite && isMapboxAvailable && appSettings.mapbox.maps.satellite) {
-      // Satellite: Mapbox
+      if (options.satellite && isMapboxAvailable && appSettings.mapbox.maps.satellite) {
+        // Satellite: Mapbox
         layers.satellite = getMapboxLayer(
           'Satellite',
           'satellite',
           appSettings.mapbox.maps.satellite
         );
-      }
-      // Satellite fallback
-      else if(options.satellite) {
-        // Satellite: MapQuest
+      } else if (options.satellite) {
+        // Satellite fallback: NASA Earth Data
+        // @link https://earthdata.nasa.gov/about/science-system-description/eosdis-components/global-imagery-browse-services-gibs
+        // @link https://github.com/nasa-gibs/gibs-web-examples/blob/release/examples/leaflet/webmercator-epsg3857.js
         layers.satellite = {
           name: 'Satellite',
           type: 'xyz',
-          url: '//otile{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
+          url: '//map1{s}.vis.earthdata.nasa.gov/wmts-webmerc/{layer}/default/{time}/{tileMatrixSet}/{z}/{y}/{x}.jpg',
           layerOptions: {
-            subdomains: ['1', '2', '3', '4'],
-            attribution: '<a href="http://www.mapquest.com/" target="_blank">© MapQuest</a>',
+            layer: 'MODIS_Terra_CorrectedReflectance_TrueColor',
+            tileMatrixSet: 'GoogleMapsCompatible_Level9',
+            time: '2014-12-23',
+            subdomains: ['a', 'b', 'c'],
+            attribution: '<a href="https://wiki.earthdata.nasa.gov/display/GIBS" target="_blank">© NASA Earth Data</a>',
+            noWrap: true,
             continuousWorld: true,
+            tileSize: 256,
+            // Prevent Leaflet from retrieving non-existent tiles on the borders
+            bounds: [
+              [-85.0511287776, -179.999999975],
+              [85.0511287776, 179.999999975]
+            ],
             TRStyle: 'satellite' // Not native Leaflet key, required by our layer switch
           }
         };
       }
 
       // Outdoors (without fallback)
-      if(options.outdoors && isMapboxAvailable && appSettings.mapbox.maps.outdoors) {
+      if (options.outdoors && isMapboxAvailable && appSettings.mapbox.maps.outdoors) {
         // Outdoors: Mapbox
         layers.outdoors = getMapboxLayer(
           'Outdoors',
@@ -163,4 +171,4 @@
 
   }
 
-})();
+}());

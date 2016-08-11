@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -6,7 +6,7 @@
     .controller('ProfileEditNetworksController', ProfileEditNetworksController);
 
   /* @ngInject */
-  function ProfileEditNetworksController($scope, $http, $stateParams, $state, Users, Authentication, messageCenterService) {
+  function ProfileEditNetworksController($scope, $http, Users, Authentication, messageCenterService) {
 
     // ViewModel
     var vm = this;
@@ -35,11 +35,8 @@
     /**
      * Check if there are additional accounts
      */
-    function hasConnectedAdditionalSocialAccounts(provider) {
-      for (var i in vm.user.additionalProvidersData) {
-        return true;
-      }
-      return false;
+    function hasConnectedAdditionalSocialAccounts() {
+      return (vm.user.additionalProvidersData && Object.keys(vm.user.additionalProvidersData).length);
     }
 
     /**
@@ -59,7 +56,7 @@
           vm.user = Authentication.user = response;
           $scope.$emit('userUpdated');
         }).error(function(response) {
-          messageCenterService.add('danger', response.message || 'Something went wrong. Try again or contact us to disconnect your profile.' , { timeout: 10000 });
+          messageCenterService.add('danger', response.message || 'Something went wrong. Try again or contact us to disconnect your profile.', { timeout: 10000 });
         });
     }
 
@@ -67,20 +64,19 @@
      * Update a user profile
      */
     function updateUserProfile(isValid) {
-      if(isValid) {
+      if (isValid) {
         vm.user.$update(function(response) {
           Authentication.user = response;
           $scope.$emit('userUpdated');
           messageCenterService.add('success', 'Hospitality networks updated.');
         }, function(response) {
-          messageCenterService.add('danger', response.data.message || 'Something went wrong. Please try again!' , { timeout: 10000 });
+          messageCenterService.add('danger', response.data.message || 'Something went wrong. Please try again!', { timeout: 10000 });
         });
-      }
-      else {
-        messageCenterService.add('danger', 'Please fix errors from your profile and try again.' , { timeout: 10000 });
+      } else {
+        messageCenterService.add('danger', 'Please fix errors from your profile and try again.', { timeout: 10000 });
       }
     }
 
   }
 
-})();
+}());

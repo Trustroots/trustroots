@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -6,7 +6,7 @@
     .controller('ProfileEditAboutController', ProfileEditAboutController);
 
   /* @ngInject */
-  function ProfileEditAboutController($scope, $uibModal, $http, $timeout, $stateParams, $state, $window, $locale, $filter, Languages, Users, Authentication, messageCenterService, Upload, uibDateParser) {
+  function ProfileEditAboutController($scope, $state, Languages, Users, Authentication, messageCenterService) {
 
     // ViewModel
     var vm = this;
@@ -43,15 +43,15 @@
      */
     function decodeUserLanguages() {
       var langs_arr = [];
-      if(vm.user && vm.user.languages) {
+      if (vm.user && vm.user.languages) {
         vm.user.languages.forEach(function(key) {
-          langs_arr[langs_arr.length] = {key: key, name: vm.languages[key]};
+          langs_arr[langs_arr.length] = { key: key, name: vm.languages[key] };
         });
       }
       vm.userLanguages = langs_arr;
     }
     function encodeUserLanguages() {
-      if(!vm.user) return;
+      if (!vm.user) return;
 
       var langs_arr = [];
       vm.userLanguages.forEach(function(lang) {
@@ -65,21 +65,20 @@
      */
     function updateUserProfile(isValid) {
       encodeUserLanguages();
-      if(isValid) {
+      if (isValid) {
         vm.user.$update(function(response) {
           Authentication.user = response;
           $scope.$emit('userUpdated');
           messageCenterService.add('success', 'Profile updated.');
         }, function(response) {
-          messageCenterService.add('danger', response.data.message || 'Something went wrong. Please try again!' , { timeout: 10000 });
+          messageCenterService.add('danger', response.data.message || 'Something went wrong. Please try again!', { timeout: 10000 });
         });
-      }
-      else {
-        messageCenterService.add('danger', 'Please fix errors from your profile and try again.' , { timeout: 10000 });
+      } else {
+        messageCenterService.add('danger', 'Please fix errors from your profile and try again.', { timeout: 10000 });
       }
     }
 
 
   }
 
-})();
+}());

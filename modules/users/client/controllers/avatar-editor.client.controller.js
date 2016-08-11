@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -6,7 +6,7 @@
     .controller('AvatarEditorController', AvatarEditorController);
 
   /* @ngInject */
-  function AvatarEditorController($scope, $log, $uibModalInstance, $timeout, Upload, messageCenterService, user, appSettings) {
+  function AvatarEditorController($scope, $uibModalInstance, Upload, messageCenterService, user, appSettings) {
 
     var lastAvatarSource = user.avatarSource,
         fileAvatar = {};
@@ -34,7 +34,7 @@
     function saveAvatar() {
 
       // Uploaded new file
-      if(vm.user.avatarSource === 'local' && vm.avatarPreview === true) {
+      if (vm.user.avatarSource === 'local' && vm.avatarPreview === true) {
         // Upload the new file
         vm.avatarUploading = true;
         vm.upload = Upload.upload({
@@ -46,33 +46,28 @@
           data: {
             avatar: fileAvatar
           }
-        }).success(function(data, status, headers) {
+        }).success(function() {
           vm.avatarUploading = false;
           $uibModalInstance.close(vm.user);
-        }).error(function(data, status, headers, config) {
+        }).error(function() {
           messageCenterService.add('danger', 'Oops! Something went wrong. Try again later.');
           vm.avatarUploading = false;
-          //$uibModalInstance.dismiss('close');
         });
-      }
-
-      // Changed avatar selection (but didn't upload new file)
-      else if(lastAvatarSource !== vm.user.avatarSource) {
+      } else if (lastAvatarSource !== vm.user.avatarSource) {
+        // Close modal due user changed avatar selection (but didn't upload a new file)
         $uibModalInstance.close(vm.user);
-      }
-
-      // No changes, just dismiss...
-      else {
+      } else {
+        // No changes, just dismiss...
         dismissModal();
       }
     }
 
     /**
-     * Process preview after file is selected/dropped/received from camera
+     * Process preview after file is selected via fileinput / dropped to window / received from camera
      */
-    function fileSelected($files, $event) {
+    function fileSelected($files) {
       // Too early
-      if($files && $files.length === 0) {
+      if ($files && $files.length === 0) {
         return;
       }
 
@@ -82,14 +77,11 @@
       vm.user.avatarSource = 'local';
 
       // Validate file
-      if(file.type.indexOf('jpeg') === -1 && file.type.indexOf('gif') === -1 && file.type.indexOf('png') === -1) {
-         messageCenterService.add('danger', 'Please give a jpg, gif, or png image.');
-      }
-      else if(file.size > appSettings.maxUploadSize) {
-         messageCenterService.add('danger', 'Whoops, your file is too big. Please keep it up to ' + bytesToSize(appSettings.maxUploadSize) + '. Sorry!');
-      }
-      // Upload file
-      else {
+      if (file.type.indexOf('jpeg') === -1 && file.type.indexOf('gif') === -1 && file.type.indexOf('png') === -1) {
+        messageCenterService.add('danger', 'Please give a jpg, gif, or png image.');
+      } else if (file.size > appSettings.maxUploadSize) {
+        messageCenterService.add('danger', 'Whoops, your file is too big. Please keep it up to ' + bytesToSize(appSettings.maxUploadSize) + '. Sorry!');
+      } else {
         vm.avatarUploading = true;
 
         // Show the local file as a preview
@@ -114,10 +106,10 @@
     function bytesToSize(bytes) {
       var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
       if (bytes === 0) return '0 Byte';
-      var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+      var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
       return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
     }
 
   }
 
-})();
+}());

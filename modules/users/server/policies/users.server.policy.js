@@ -90,14 +90,14 @@ exports.invokeRolesPolicies = function() {
 exports.isAllowed = function(req, res, next) {
 
   // Non-public profiles are invisible
-  if(req.profile && !req.profile.public && req.user && !req.profile._id.equals(req.user._id)) {
+  if (req.profile && !req.profile.public && req.user && !req.profile._id.equals(req.user._id)) {
     return res.status(404).json({
       message: errorHandler.getErrorMessageByKey('not-found')
     });
   }
 
   // No profile browsing for non-public users
-  if(req.profile && req.user && !req.user.public && !req.profile._id.equals(req.user._id)) {
+  if (req.profile && req.user && !req.user.public && !req.profile._id.equals(req.user._id)) {
     return res.status(403).json({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });

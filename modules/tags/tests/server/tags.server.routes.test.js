@@ -6,13 +6,22 @@ var should = require('should'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
     Tag = mongoose.model('Tag'),
-    config = require(path.resolve('./config/config')),
     express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app, agent, credentials, user, _user, tag, _tag, tribe, _tribe, tribeNonPublic, _tribeNonPublic;
+var app,
+    agent,
+    credentials,
+    user,
+    _user,
+    tag,
+    _tag,
+    tribe,
+    _tribe,
+    tribeNonPublic,
+    _tribeNonPublic;
 
 /**
  * User routes tests
@@ -59,7 +68,7 @@ describe('Tag CRUD tests', function () {
       attribution: 'Photo credits',
       attribution_url: 'http://www.trustroots.org/team',
       image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
-      tribe: true,
+      tribe: true
     };
 
     // Create a new non-public tribe
@@ -126,9 +135,9 @@ describe('Tag CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Read tribes
         agent.get('/api/tribes')
@@ -283,9 +292,9 @@ describe('Tag CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Read tags
         agent.get('/api/tags')

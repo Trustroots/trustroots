@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -6,7 +6,7 @@
     .controller('ProfileEditAccountController', ProfileEditAccountController);
 
   /* @ngInject */
-  function ProfileEditAccountController($http, $state, $window, Users, Authentication, messageCenterService) {
+  function ProfileEditAccountController($http, Users, Authentication, messageCenterService) {
 
     // ViewModel
     var vm = this;
@@ -40,7 +40,7 @@
                           'If you don\'t see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".';
         vm.user = Authentication.user = response;
       }, function(response) {
-        vm.emailError = response.data.message || 'Something went wrong.';
+        vm.emailError = (response.data && response.data.message) || 'Something went wrong.';
       });
     }
 
@@ -48,10 +48,21 @@
      * Resend confirmation email for already sent email
      */
     function resendUserEmailConfirm($event) {
-      if($event) $event.preventDefault();
-      if(vm.user.emailTemporary) {
-        vm.user.email = vm.user.emailTemporary;
-        updateUserEmail();
+      if ($event) $event.preventDefault();
+      if (vm.user.emailTemporary) {
+        $http.post('/api/auth/resend-confirmation')
+          .then(function() {
+            messageCenterService.add('success', 'Confirmation email resent.');
+          })
+          .catch(function(response) {
+            var errorMessage;
+            if (response) {
+              errorMessage = 'Error: ' + ((response.data && response.data.message) || 'Something went wrong.');
+            } else {
+              errorMessage = 'Something went wrong.';
+            }
+            messageCenterService.add('danger', errorMessage);
+          });
       }
     }
 
@@ -86,7 +97,7 @@
         vm.currentPassword = '';
         vm.newPassword = '';
         vm.verifyPassword = '';
-        angular.element('#newPassword').val(''); //Fix to bypass password verification directive
+        angular.element('#newPassword').val(''); // Fix to bypass password verification directive
         vm.changeUserPasswordLoading = false;
         vm.user = Authentication.user = response.user;
         messageCenterService.add('success', 'Your password is now changed. Have a nice day!');
@@ -99,4 +110,4 @@
 
   }
 
-})();
+}());

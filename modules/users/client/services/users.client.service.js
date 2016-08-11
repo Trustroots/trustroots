@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   // Users service used for communicating with the users REST endpoint
@@ -18,4 +18,4 @@
     });
   }
 
-})();
+}());

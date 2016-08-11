@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   /**
@@ -27,7 +27,7 @@
 
     return directive;
 
-    function link(scope, elem, attr) {
+    function link(scope) {
 
       var favicon1xElem = angular.element('#favicon'),
           favicon2xElem = angular.element('#favicon2x'),
@@ -41,11 +41,11 @@
        * Initialize checking for unread messages
        */
       function activate() {
-        if(!Authentication.user || !Authentication.user.public) {
+        if (!Authentication.user || !Authentication.user.public) {
           // If user wasn't authenticated or public, set up watch
-          var activationWatch = scope.$on('userUpdated', function(user) {
+          var activationWatch = scope.$on('userUpdated', function() {
             // Did user become public with that update?
-            if(Authentication.user.public) {
+            if (Authentication.user.public) {
               // Remove this watch
               activationWatch();
               // Init activation
@@ -74,13 +74,12 @@
       function onUnreadCountUpdated($event, newUnreadCount) {
         scope.unread = newUnreadCount;
 
-        // Change favicon to special notification icon
-        if(newUnreadCount > 0) {
+        if (newUnreadCount > 0) {
+          // Change favicon to special notification icon
           favicon1xElem.attr('href', faviconPath + 'favicon-notification.png');
           favicon2xElem.attr('href', faviconPath + 'favicon-notification@2x.png');
-        }
-        // Change favicon back to normal
-        else {
+        } else {
+          // Change favicon back to normal
           favicon1xElem.attr('href', faviconPath + 'favicon.png');
           favicon2xElem.attr('href', faviconPath + 'favicon@2x.png');
         }
@@ -89,4 +88,4 @@
     }
   }
 
-})();
+}());

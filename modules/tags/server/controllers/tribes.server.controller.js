@@ -4,7 +4,6 @@
  * Module dependencies.
  */
 var path = require('path'),
-    async = require('async'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     paginate = require('express-paginate'),
     mongoose = require('mongoose'),
@@ -12,24 +11,24 @@ var path = require('path'),
 
 // Publicly exposed fields from tribes
 exports.tribeFields = [
-                '_id',
-                'slug',
-                'label',
-                'count',
-                'color',
-                'image_UUID',
-                'attribution',
-                'attribution_url'
-                ].join(' ');
+  '_id',
+  'slug',
+  'label',
+  'count',
+  'color',
+  'image_UUID',
+  'attribution',
+  'attribution_url'
+].join(' ');
 
 /**
  * Constructs link headers for pagination
  */
 var setLinkHeader = function(req, res, pageCount) {
-  if(paginate.hasNextPages(req)(pageCount)) {
+  if (paginate.hasNextPages(req)(pageCount)) {
     var nextPage = { page: req.query.page + 1 };
-    var linkHead = '<' + req.protocol + ':' + res.locals.url.slice(0,-1) + res.locals.paginate.href(nextPage) + '>; rel="next"';
-    res.set('Link',linkHead);
+    var linkHead = '<' + req.protocol + ':' + res.locals.url.slice(0, -1) + res.locals.paginate.href(nextPage) + '>; rel="next"';
+    res.set('Link', linkHead);
   }
 };
 
@@ -44,8 +43,8 @@ exports.listTribes = function(req, res) {
       tribe: true
     },
     {
-      page: parseInt(req.query.page) || 1, // Note: `parseInt('0')` will return `NaN`, `page` will be set to `1` in such case.
-      limit: parseInt(req.query.limit) || 0, // `0` for infinite
+      page: parseInt(req.query.page, 10) || 1, // Note: `parseInt('0')` will return `NaN`, `page` will be set to `1` in such case.
+      limit: parseInt(req.query.limit, 10) || 0, // `0` for infinite
       sort: {
         count: 'desc'
       },

@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -27,8 +27,8 @@
     var icon = function(status) {
       status = (status === 'yes') ? 'yes' : 'maybe';
       return L.icon({
-        iconUrl:    '/modules/core/img/map/marker-icon-' + status + '.svg',
-        iconSize:   [20, 20], // size of the icon
+        iconUrl: '/modules/core/img/map/marker-icon-' + status + '.svg',
+        iconSize: [20, 20], // size of the icon
         iconAnchor: [10, 10] // point of the icon which will correspond to marker's location
       });
     };
@@ -92,7 +92,7 @@
      */
     vm.mapEvents = {
       map: {
-        enable: ['click','mousedown', 'moveend', 'load', 'baselayerchange'],
+        enable: ['click', 'mousedown', 'moveend', 'load', 'baselayerchange'],
         logic: 'emit'
       }
     };
@@ -177,7 +177,7 @@
       /**
        * Sidebar & markers react to these events
        */
-      $scope.$on(listenerPrefix + '.click', function(event){
+      $scope.$on(listenerPrefix + '.click', function() {
         vm.sidebarOpen = false;
         vm.offer = false;
         vm.mapLayers.overlays.selectedOffers.visible = false;
@@ -189,16 +189,16 @@
      * Return map location from cache or fallback to default location
      */
     function getMapCenter() {
-      return $q(function(resolve, reject) {
+      return $q(function(resolve) {
 
         // Is local/sessionStorage supported? This might fail in browser's incognito mode
-        if(locker.supported()) {
+        if (locker.supported()) {
           // Get location from cache, return `false` if it doesn't exist in locker
           var cachedLocation = locker.get(cachePrefix, false);
 
           // Validate cached location or fall back to default
           // If it's older than two days, we won't use it.
-          if(cachedLocation &&
+          if (cachedLocation &&
              cachedLocation.lat &&
              cachedLocation.lng &&
              cachedLocation.zoom &&
@@ -208,9 +208,8 @@
              cachedLocation.date &&
              moment().diff(moment(cachedLocation.date), 'days') < 2) {
             resolve(cachedLocation);
-          }
-          // No cached location found, it was invalid or it was outdated
-          else {
+          } else {
+            // No cached location found, it was invalid or it was outdated
             resolve(defaultLocation);
           }
 
@@ -218,9 +217,8 @@
           // If the key already exists in locker, then no action will
           // be taken and false will be returned
           locker.add(cachePrefix, defaultLocation);
-        }
-        // When local/sessionStorage is not supported, use default location:
-        else {
+        } else {
+          // When local/sessionStorage is not supported, use default location:
           resolve(defaultLocation);
         }
 
@@ -235,12 +233,12 @@
       // Don't proceed if:
       // - Map does not have bounds set (typically at map init these might be missing for some milliseconds)
       // - If user isn't public(confirmed) yet - no need to hit API just to get 401
-      if(!vm.mapBounds.northEast || !Authentication.user.public) return;
+      if (!vm.mapBounds.northEast || !Authentication.user.public) return;
 
       // If we get out of the boundig box of the last api query we have to call the API for the new markers
-      if(vm.mapBounds.northEast.lng > vm.mapLastBounds.northEastLng || vm.mapBounds.northEast.lat > vm.mapLastBounds.northEastLat || vm.mapBounds.southWest.lng < vm.mapLastBounds.southWestLng || vm.mapBounds.southWest.lat < vm.mapLastBounds.southWestLat) {
+      if (vm.mapBounds.northEast.lng > vm.mapLastBounds.northEastLng || vm.mapBounds.northEast.lat > vm.mapLastBounds.northEastLat || vm.mapBounds.southWest.lng < vm.mapLastBounds.southWestLng || vm.mapBounds.southWest.lat < vm.mapLastBounds.southWestLat) {
         // We add a margin to the boundings depending on the zoom level
-        var boundingDelta = 10/vm.mapCenter.zoom;
+        var boundingDelta = 10 / vm.mapCenter.zoom;
         // Saving the current bounding box amd zoom
         vm.mapLastBounds = {
           northEastLng: vm.mapBounds.northEast.lng + boundingDelta,
@@ -257,6 +255,7 @@
           southWestLat: vm.mapLastBounds.southWestLat
         }, function(offers) {
           // Remove last markers
+          // eslint-disable-next-line new-cap
           vm.pruneCluster.RemoveMarkers();
           // Let's go through those markers
           // This loop might look weird but it's actually speed optimized :P
@@ -268,9 +267,11 @@
             marker.data.icon = icon(offers[i].status);
             marker.data.userId = offers[i]._id;
             // Register markers
+            // eslint-disable-next-line new-cap
             vm.pruneCluster.RegisterMarker(marker);
           }
           // Update markers
+          // eslint-disable-next-line new-cap
           vm.pruneCluster.ProcessView();
         });
       }
@@ -279,19 +280,18 @@
     /**
      * Event when the map has finished loading
      */
-    $scope.$on(listenerPrefix + '.load', function(event) {
+    $scope.$on(listenerPrefix + '.load', function() {
 
       leafletData.getMap(mapId).then(function(map) {
         map.addLayer(vm.pruneCluster);
       });
 
-      //If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
-      if(vm.mapCenter.zoom > vm.mapMinimumZoom) {
+      // If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
+      if (vm.mapCenter.zoom > vm.mapMinimumZoom) {
         var loadMarkers = function() {
-          if(angular.isDefined(vm.mapBounds.northEast)) {
+          if (angular.isDefined(vm.mapBounds.northEast)) {
             getMarkers();
-          }
-          else {
+          } else {
             // $timeout does $apply for us
             $timeout(loadMarkers, 10);
           }
@@ -302,15 +302,18 @@
     });
 
     // Set event that fires everytime we finish to move the map
-    $scope.$on(listenerPrefix + '.moveend', function(event) {
+    $scope.$on(listenerPrefix + '.moveend', function() {
 
-      if(vm.mapCenter.zoom > vm.mapMinimumZoom) {
+      if (vm.mapCenter.zoom > vm.mapMinimumZoom) {
         getMarkers();
-      }
-      // Otherwise hide the markers
-      else {
+      } else {
+        // Otherwise hide the markers...
+
+        /* eslint-disable new-cap */
         vm.pruneCluster.RemoveMarkers();
         vm.pruneCluster.ProcessView();
+        /* eslint-enable new-cap */
+
         vm.mapLastBounds = {
           northEastLng: 0,
           northEastLat: 0,
@@ -343,18 +346,16 @@
       }
     }
     function searchAddress() {
-      if(vm.searchQuery !== '' && appSettings.mapbox && appSettings.mapbox.publicKey) {
-        $http
-          .get(
-            '//api.mapbox.com/geocoding/v5/mapbox.places/' + vm.searchQuery + '.json' +
-              '?access_token=' + appSettings.mapbox.publicKey +
-              '&types=country,region,place,locality,neighborhood',
-            {
-              ignoreLoadingBar: true
-            }
-          )
+      if (vm.searchQuery !== '' && appSettings.mapbox && appSettings.mapbox.publicKey) {
+        $http.get(
+          '//api.mapbox.com/geocoding/v5/mapbox.places/' + vm.searchQuery + '.json'
+          + '?access_token=' + appSettings.mapbox.publicKey
+          + '&types=country,region,place,locality,neighborhood',
+          {
+            ignoreLoadingBar: true
+          })
           .then(function(response) {
-            if(response.status === 200 && response.data && response.data.features && response.data.features.length > 0) {
+            if (response.status === 200 && response.data && response.data.features && response.data.features.length > 0) {
               mapLocate(response.data.features[0]);
             }
           });
@@ -372,25 +373,22 @@
       // Show full place name at search  query
       vm.searchQuery = placeTitle(place);
       // Does the place have bounding box?
-      if(place.bbox) {
-        //Set a timeout here otherwise the markers will not load.
-        $timeout( function () {
+      if (place.bbox) {
+        // Set a timeout here otherwise the markers will not load.
+        $timeout(function() {
           vm.mapBounds = leafletBoundsHelpers.createBoundsFromArray([
-            [ parseFloat(place.bbox[1]), parseFloat(place.bbox[0]) ],
-            [ parseFloat(place.bbox[3]), parseFloat(place.bbox[2]) ]
+            [parseFloat(place.bbox[1]), parseFloat(place.bbox[0])],
+            [parseFloat(place.bbox[3]), parseFloat(place.bbox[2])]
           ]);
         });
-      }
-      // Does it have lat/lng?
-      else if(place.center) {
+      } else if (place.center) {
         vm.mapCenter = {
           lat: parseFloat(place.center[1]),
           lng: parseFloat(place.center[0]),
           zoom: 5
         };
-      }
-      // Failed to pinpoint location to the map
-      else {
+      } else {
+        // Failed to pinpoint location to the map
         messageCenterService.add('warning', 'We could not find such a place...');
       }
     }
@@ -399,27 +397,23 @@
      * Compile a nice title for the place, eg. "Helsinki, Finland" or "Chinatown, New York, United States"
      */
     function placeTitle(place) {
-      var title = '',
-          titlePostfix = null;
+      var title = '';
 
-      if(place.text) {
+      if (place.text) {
         title = place.text;
 
         // Relevant context strings
-        if(place.context) {
+        if (place.context) {
           var contextLength = place.context.length;
           for (var i = 0; i < contextLength; i++) {
-            if(place.context[i].id.substring(0, 6) === 'place.') {
+            if (place.context[i].id.substring(0, 6) === 'place.') {
               title += ', ' + place.context[i].text;
-            }
-            else if(place.context[i].id.substring(0, 8) === 'country.') {
+            } else if (place.context[i].id.substring(0, 8) === 'country.') {
               title += ', ' + place.context[i].text;
             }
           }
         }
-
-      }
-      else if(place.place_name) {
+      } else if (place.place_name) {
         title = place.place_name;
       }
 
@@ -434,15 +428,16 @@
      * @link https://github.com/Hitchwiki/hitchwiki/issues/61
      * @link https://github.com/Trustroots/trustroots/issues/113
      */
-    if($stateParams.location && $stateParams.location !== '') {
+    if ($stateParams.location && $stateParams.location !== '') {
       vm.searchQuery = $stateParams.location.replace('_', ' ', 'g');
       searchAddress();
-    }
-    // Init opening offer from the URL
-    else if($stateParams.offer && $stateParams.offer.length === 24) {
+    } else if ($stateParams.offer && $stateParams.offer.length === 24) {
+
+      // Initializing opening offer from the URL
+
       OffersService.get({
         offerId: $stateParams.offer
-      }, function(offer){
+      }, function(offer) {
         vm.offer = offer;
 
         vm.currentSelection.latlngs = vm.offer.location;
@@ -468,4 +463,4 @@
 
   }
 
-})();
+}());

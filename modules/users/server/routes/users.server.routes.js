@@ -3,9 +3,7 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    config = require(path.resolve('./config/config')),
-    usersPolicy = require('../policies/users.server.policy'),
+var usersPolicy = require('../policies/users.server.policy'),
     users = require('../controllers/users.server.controller');
 
 module.exports = function(app) {

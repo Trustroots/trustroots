@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   // Offers service used for communicating with the offers REST endpoints
@@ -10,7 +10,7 @@
   /* @ngInject */
   function OffersService($resource) {
     return $resource('/api/offers/:offerId', {
-      offerId:'@id'
+      offerId: '@id'
     }, {
       get: {
         method: 'GET'
@@ -18,4 +18,4 @@
     });
   }
 
-})();
+}());

@@ -15,16 +15,16 @@ var Autolinker = require('autolinker'),
  * @link https://github.com/punkave/sanitize-html
  */
 exports.sanitizeOptions = {
-  allowedTags: [ 'p', 'br', 'b', 'i', 'em', 'strong', 'u', 'a', 'li', 'ul', 'blockquote' ],
+  allowedTags: ['p', 'br', 'b', 'i', 'em', 'strong', 'u', 'a', 'li', 'ul', 'blockquote'],
   allowedAttributes: {
-    'a': [ 'href' ],
+    'a': ['href']
     // We don't currently allow img itself, but this would make sense if we did:
-    //'img': [ 'src' ]
+    // 'img': [ 'src' ]
   },
   // If we would allow class attributes, you can limit which classes are allowed:
-  //allowedClasses: {
-  //  'a': [ 'classname' ]
-  //},
+  // allowedClasses: {
+  //   'a': [ 'classname' ]
+  // },
   // Convert these tags to unify html
   transformTags: {
     'strong': 'b',
@@ -34,9 +34,9 @@ exports.sanitizeOptions = {
   exclusiveFilter: function(frame) {
     return frame.tag === 'a' && !frame.text.trim();
   },
-  selfClosing: [ 'img', 'br' ],
+  selfClosing: ['img', 'br'],
   // URL schemes we permit
-  allowedSchemes: [ 'http', 'https', 'ftp', 'mailto', 'tel', 'irc' ]
+  allowedSchemes: ['http', 'https', 'ftp', 'mailto', 'tel', 'irc']
 };
 
 
@@ -49,7 +49,7 @@ exports.sanitizeOptions = {
  */
 exports.html = function (content) {
 
-  if(typeof content === 'string' && content.length > 0) {
+  if (typeof content === 'string' && content.length > 0) {
 
     // Replace "&nbsp;", "<p><br></p>" and trim
     content = content.replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim();
@@ -60,33 +60,33 @@ exports.html = function (content) {
     // Turn URLs/emails/phonenumbers into links
     // @link https://github.com/gregjacobs/Autolinker.js
     content = Autolinker.link(content, {
-                // Don't auto-link Twitter handles (@username)
-                twitter: false,
+      // Don't auto-link Twitter handles (@username)
+      twitter: false,
 
-                // Auto-link emails
-                email: true,
+      // Auto-link emails
+      email: true,
 
-                // Auto-link URLs
-                urls: true,
+      // Auto-link URLs
+      urls: true,
 
-                // Auto-link phone numbers
-                phone: true,
+      // Auto-link phone numbers
+      phone: true,
 
-                // A number for how many characters long URLs/emails/Twitter handles/Twitter hashtags should be truncated to
-                // inside the text of a link. If the match is over the number of characters, it will be truncated to this length
-                // by replacing the end of the string with a two period ellipsis ('..').
-                truncate: {
-                  length: 150,
-                  location: 'middle' // end|middle|smart
-                },
+      // A number for how many characters long URLs/emails/Twitter handles/Twitter hashtags should be truncated to
+      // inside the text of a link. If the match is over the number of characters, it will be truncated to this length
+      // by replacing the end of the string with a two period ellipsis ('..').
+      truncate: {
+        length: 150,
+        location: 'middle' // end|middle|smart
+      },
 
-                // Strip 'http://' or 'https://' and/or the 'www.' from the beginning of links.
-                // I.e.: `https://www.wikipedia.org/` => `<a href="https://www.wikipedia.org/">wikipedia.org</a>`
-                stripPrefix: true,
+      // Strip 'http://' or 'https://' and/or the 'www.' from the beginning of links.
+      // I.e.: `https://www.wikipedia.org/` => `<a href="https://www.wikipedia.org/">wikipedia.org</a>`
+      stripPrefix: true,
 
-                // Don't add target="_blank" because of https://mathiasbynens.github.io/rel-noopener/ attack.
-                newWindow: false
-              });
+      // Don't add target="_blank" because of https://mathiasbynens.github.io/rel-noopener/ attack.
+      newWindow: false
+    });
 
   }
 
@@ -103,7 +103,7 @@ exports.isEmpty = function (content) {
   return (
     typeof content !== 'string' ||
     content.length === 0 ||
-    sanitizeHtml(content, {allowedTags: []}).replace(/&nbsp;/g, ' ').trim() === ''
+    sanitizeHtml(content, { allowedTags: [] }).replace(/&nbsp;/g, ' ').trim() === ''
   );
 };
 
@@ -115,13 +115,13 @@ exports.isEmpty = function (content) {
  */
 exports.plainText = function (content, cleanWhitespace) {
 
-  if(typeof content === 'string' && content.length > 0) {
+  if (typeof content === 'string' && content.length > 0) {
 
     // No HTML allowed
-    content = sanitizeHtml(content, {allowedTags: []});
+    content = sanitizeHtml(content, { allowedTags: [] });
 
     // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
-    if(cleanWhitespace === true) {
+    if (cleanWhitespace === true) {
       content = content.replace(/\s/g, ' ');
     }
 

@@ -13,7 +13,11 @@ var should = require('should'),
 /**
  * Globals
  */
-var user1, user2, message, thread, referenceThread;
+var user1,
+    user2,
+    message,
+    thread,
+    referenceThread;
 
 /**
  * Unit tests
@@ -91,7 +95,7 @@ describe('Reference Thread Model Unit Tests:', function() {
   describe('Method Save', function() {
     it('should be able to save without problems', function(done) {
 
-      return referenceThread.save(function(err, res) {
+      return referenceThread.save(function(err) {
         should.not.exist(err);
         done();
       });

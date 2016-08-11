@@ -1,4 +1,4 @@
-(function(){
+(function() {
   'use strict';
 
   /**
@@ -50,24 +50,24 @@
       autoLink: false, // automatically turns URLs entered into the text field into HTML anchor tags
       toolbar: {
         buttons: [{
-            name: 'bold',
-            contentDefault: '<span class="icon-bold"></span>'
-          }, {
-            name: 'italic',
-            contentDefault: '<span class="icon-italic"></span>'
-          }, {
-            name: 'underline',
-            contentDefault: '<span class="icon-underline"></span>'
-          }, {
-            name: 'anchor',
-            contentDefault: '<span class="icon-link"></span>'
-          }, {
-            name: 'quote',
-            contentDefault: '<span class="icon-quote"></span>'
-          }, {
-            name: 'unorderedlist',
-            contentDefault: '<span class="icon-list"></span>'
-          }]
+          name: 'bold',
+          contentDefault: '<span class="icon-bold"></span>'
+        }, {
+          name: 'italic',
+          contentDefault: '<span class="icon-italic"></span>'
+        }, {
+          name: 'underline',
+          contentDefault: '<span class="icon-underline"></span>'
+        }, {
+          name: 'anchor',
+          contentDefault: '<span class="icon-link"></span>'
+        }, {
+          name: 'quote',
+          contentDefault: '<span class="icon-quote"></span>'
+        }, {
+          name: 'unorderedlist',
+          contentDefault: '<span class="icon-list"></span>'
+        }]
       }
     };
 
@@ -88,10 +88,10 @@
       /**
        * Before page change
        */
-      $scope.$on('$stateChangeStart', function(event, toState, toParams, fromState, fromParams) {
+      $scope.$on('$stateChangeStart', function(event, toState, toParams) {
 
         // Redirect to login page if no user
-        if(toState.requiresAuth && !Authentication.user) {
+        if (toState.requiresAuth && !Authentication.user) {
           // Cancel stateChange
           event.preventDefault();
 
@@ -102,15 +102,13 @@
 
           // Show a special signup ad for certain pages if user isn't authenticated
           // (Normally we just splash a signup page at this point)
-          if(toState.name === 'profile') {
+          if (toState.name === 'profile') {
             $state.go('profile-signup');
-          }
-          else if(toState.name === 'search') {
+          } else if (toState.name === 'search') {
             $state.go('search-signin', toParams || {});
-          }
-          // Or just continue to the signup page
-          else {
-            $state.go('signin', {'continue': true});
+          } else {
+            // Or just continue to the signup page...
+            $state.go('signin', { 'continue': true });
           }
         }
 
@@ -119,7 +117,7 @@
       /**
        * After page change
        */
-      $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+      $scope.$on('$stateChangeSuccess', function(event, toState) {
 
         // Set page title
         vm.pageTitle = (toState.title) ? toState.title + ' - ' + $window.title : $window.title;
@@ -130,7 +128,7 @@
         vm.photoCreditsCount = 0;
 
         // Reset page scroll on page change
-        $window.scrollTo(0,0);
+        $window.scrollTo(0, 0);
       });
 
       /**
@@ -147,10 +145,9 @@
      * Determine where to direct user from "home" links
      */
     function goHome() {
-      if(Authentication.user) {
+      if (Authentication.user) {
         $state.go('search');
-      }
-      else {
+      } else {
         $state.go('home');
       }
     }
@@ -159,7 +156,7 @@
      * Sign out authenticated user
      */
     function signout($event) {
-      if($event) {
+      if ($event) {
         $event.preventDefault();
       }
 
@@ -173,10 +170,10 @@
       locker.clean();
 
       // Do the signout and refresh the page
-      $window.top.location.href  = '/api/auth/signout';
+      $window.top.location.href = '/api/auth/signout';
     }
 
 
   }
 
-})();
+}());

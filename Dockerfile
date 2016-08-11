@@ -1,4 +1,4 @@
-FROM node:4.2
+FROM node:6.3
 
 # Install prerequisites
 # https://docs.docker.com/engine/articles/dockerfile_best-practices/#apt-get

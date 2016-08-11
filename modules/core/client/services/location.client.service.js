@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   /**
@@ -25,7 +25,7 @@
       getBounds: getBounds,
       getCenter: getCenter,
       shortTitle: shortTitle,
-      suggestions: suggestions,
+      suggestions: suggestions
     };
 
     /**
@@ -43,7 +43,7 @@
       return {
         lat: defaultLocation.lat,
         lng: defaultLocation.lng,
-        zoom: parseInt(zoom) || defaultLocation.zoom,
+        zoom: parseInt(zoom || defaultLocation.zoom, 10)
       };
     }
 
@@ -64,7 +64,7 @@
      * }
      */
     function getBounds(geolocation) {
-      if(!geolocation || !geolocation.bbox || !angular.isArray(geolocation.bbox) || geolocation.bbox.length !== 4) {
+      if (!geolocation || !geolocation.bbox || !angular.isArray(geolocation.bbox) || geolocation.bbox.length !== 4) {
         return false;
       }
       return {
@@ -93,15 +93,14 @@
     function getCenter(geolocation) {
       var coords;
 
-      if(geolocation.center) {
+      if (geolocation.center) {
         coords = geolocation.center;
-      }
-      else if(geolocation.geometry && geolocation.geometry.coordinates) {
+      } else if (geolocation.geometry && geolocation.geometry.coordinates) {
         coords = geolocation.geometry.coordinates;
       }
 
       // Nothing found, return old or false
-      if(!coords || !angular.isArray(coords) || coords.length !== 2) {
+      if (!coords || !angular.isArray(coords) || coords.length !== 2) {
         return false;
       }
 
@@ -124,29 +123,28 @@
      *                     Defaults to `country,region,place,locality,neighborhood`
      */
     function suggestions(val, types) {
-      if(!appSettings.mapbox || !appSettings.mapbox.publicKey) {
+      if (!appSettings.mapbox || !appSettings.mapbox.publicKey) {
         return [];
       }
 
-      return $http
-        .get(
-          '//api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json' +
-            '?access_token=' + appSettings.mapbox.publicKey +
-            '&types=' + (types || 'country,region,place,locality,neighborhood'),
-          {
-            // Tells Angular-Loading-Bar to ignore this http request
-            // @link https://github.com/chieffancypants/angular-loading-bar#ignoring-particular-xhr-requests
-            ignoreLoadingBar: true
-          }
-        )
+      return $http.get(
+        '//api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json'
+        + '?access_token=' + appSettings.mapbox.publicKey
+        + '&types=' + (types || 'country,region,place,locality,neighborhood'),
+        {
+          // Tells Angular-Loading-Bar to ignore this http request
+          // @link https://github.com/chieffancypants/angular-loading-bar#ignoring-particular-xhr-requests
+          ignoreLoadingBar: true
+        })
         .then(function(response) {
-          if(response.status === 200 && response.data.features && response.data.features.length > 0) {
+          if (response.status === 200 && response.data.features && response.data.features.length > 0) {
             return response.data.features.map(function(geolocation) {
               geolocation.trTitle = shortTitle(geolocation);
               return geolocation;
             });
+          } else {
+            return [];
           }
-          else return [];
         });
     }
 
@@ -159,27 +157,24 @@
      * @return String
      */
     function shortTitle(geolocation) {
-      var title = '',
-          titlePostfix = null;
+      var title = '';
 
-      if(geolocation.text) {
+      if (geolocation.text) {
         title = geolocation.text;
 
         // Relevant context strings
-        if(geolocation.context) {
+        if (geolocation.context) {
           var contextLength = geolocation.context.length;
           for (var i = 0; i < contextLength; i++) {
-            if(geolocation.context[i].id.substring(0, 6) === 'place.') {
+            if (geolocation.context[i].id.substring(0, 6) === 'place.') {
               title += ', ' + geolocation.context[i].text;
-            }
-            else if(geolocation.context[i].id.substring(0, 8) === 'country.') {
+            } else if (geolocation.context[i].id.substring(0, 8) === 'country.') {
               title += ', ' + geolocation.context[i].text;
             }
           }
         }
 
-      }
-      else if(geolocation.place_name) {
+      } else if (geolocation.place_name) {
         title = geolocation.place_name;
       }
 
@@ -190,4 +185,4 @@
     return service;
   }
 
-})();
+}());

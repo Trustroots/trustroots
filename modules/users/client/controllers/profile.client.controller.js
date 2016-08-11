@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -6,11 +6,11 @@
     .controller('ProfileController', ProfileController);
 
   /* @ngInject */
-  function ProfileController($scope, $stateParams, $state, $location, $uibModal, $filter, $window, Languages, Users, Contact, Authentication, $timeout, messageCenterService, profile, contact, appSettings) {
+  function ProfileController($scope, $stateParams, $state, $location, $uibModal, $filter, $window, Languages, Users, Contact, Authentication, $timeout, messageCenterService, profile, contact) {
 
     // No user defined at URL, just redirect to user's own profile
-    if(!$stateParams.username) {
-      $state.go('profile.about', {username: Authentication.user.username});
+    if (!$stateParams.username) {
+      $state.go('profile.about', { username: Authentication.user.username });
     }
 
     // ViewModel
@@ -40,24 +40,23 @@
       initMemberships();
 
       // When on small screen...
-      if(angular.element('body').width() <= 480) {
+      if (angular.element('body').width() <= 480) {
         // By default we land to `about` tab of this controller
         // If we're on small screens, direct to `overview` tab instead
-        if($state.current.name === 'profile.about') {
+        if ($state.current.name === 'profile.about') {
           // Timeout ensures `ui-sref-active=""` gets updated at the templates
           $timeout(function() {
             $state.go('profile.overview', { username: profile.username });
           });
         }
-      }
       // When on bigger screen...
       // Redirect "mobile only" tabs to about tab
-      else if(['profile.overview', 'profile.accommodation'].indexOf($state.current.name) > -1) {
+      } else if (['profile.overview', 'profile.accommodation'].indexOf($state.current.name) > -1) {
         $state.go('profile.about', { username: profile.username });
       }
 
       // If this is authenticated user's own profile, measure profile description length
-      if(Authentication.user._id === profile._id) {
+      if (Authentication.user._id === profile._id) {
         vm.profileDescriptionLength = Authentication.user.description ? $filter('plainTextLength')(Authentication.user.description) : 0;
       }
 
@@ -84,20 +83,22 @@
      */
     function initMemberships() {
       var memberships = {
-            'tribes': {
-              'is': [],
-              'likes': []
-            },
-            'tags': {
-              'is': [],
-              'likes': []
-            }
-          };
+        'tribes': {
+          'is': [],
+          'likes': []
+        },
+        'tags': {
+          'is': [],
+          'likes': []
+        }
+      };
       // Construct tribes & tags
-      if(profile && profile.member && profile.member.length > 0) {
+      if (profile && profile.member && profile.member.length > 0) {
         for (var i = 0, len = profile.member.length; i < len; i++) {
-          // Sort to right category...
-          memberships[ (profile.member[i].tag.tribe ? 'tribes' : 'tags') ][ profile.member[i].relation ].push(profile.member[i].tag);
+          // Sort to the right category...
+          var tribeOrTag = (profile.member[i].tag.tribe ? 'tribes' : 'tags'),
+              relation = profile.member[i].relation;
+          memberships[tribeOrTag][relation].push(profile.member[i].tag);
         }
       }
       vm.memberships = memberships;
@@ -130,11 +131,8 @@
     /**
      * Check if there are additional accounts
      */
-    function hasConnectedAdditionalSocialAccounts(provider) {
-      for (var i in vm.profile.additionalProvidersData) {
-        return true;
-      }
-      return false;
+    function hasConnectedAdditionalSocialAccounts() {
+      return (vm.profile.additionalProvidersData && Object.keys(vm.profile.additionalProvidersData).length);
     }
 
     /**
@@ -149,18 +147,17 @@
      * Ensure these values are published at users.profile.server.controller.js
      */
     function socialAccountLink(providerName, providerData) {
-      if(providerName === 'facebook' && providerData.id) {
+      if (providerName === 'facebook' && providerData.id) {
         return 'https://www.facebook.com/app_scoped_user_id/' + providerData.id;
-      }
-      else if(providerName === 'twitter' && providerData.screen_name) {
+      } else if (providerName === 'twitter' && providerData.screen_name) {
         return 'https://twitter.com/' + providerData.screen_name;
-      }
-      else if(providerName === 'github' && providerData.login) {
+      } else if (providerName === 'github' && providerData.login) {
         return 'https://github.com/' + providerData.login;
+      } else {
+        return '#';
       }
-      else return '#';
     }
 
   }
 
-})();
+}());

@@ -47,11 +47,11 @@ var validatePassword = function(password) {
 var validateUsername = function(username) {
   var usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/,
       dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/;
-  return (this.provider !== 'local' || ( username &&
-                                         usernameRegex.test(username) &&
-                                         config.illegalStrings.indexOf(username) < 0) &&
-                                         dotsRegex.test(username)
-                                        );
+  return (
+    this.provider !== 'local' ||
+    (username && usernameRegex.test(username) && config.illegalStrings.indexOf(username) < 0) &&
+    dotsRegex.test(username)
+  );
 };
 
 /**
@@ -59,7 +59,7 @@ var validateUsername = function(username) {
  * This could be defined directly under `UserSchema` as well,
  * but then we'd have extra `_id`'s hanging around.
  */
-var UserMemberSchema = mongoose.Schema({
+var UserMemberSchema = new Schema({
   tag: {
     type: Schema.Types.ObjectId,
     ref: 'Tag',
@@ -76,7 +76,7 @@ var UserMemberSchema = mongoose.Schema({
     default: Date.now,
     required: true
   }
-}, { _id : false });
+}, { _id: false });
 
 /**
  * User Schema
@@ -130,7 +130,7 @@ var UserSchema = new Schema({
   },
   gender: {
     type: String,
-    enum: ['','male','female','other'],
+    enum: ['', 'male', 'female', 'other'],
     default: ''
   },
   languages: {
@@ -253,14 +253,14 @@ var UserSchema = new Schema({
  * Hook a pre save method to hash the password
  */
 UserSchema.pre('save', function(next) {
-  if(this.password && this.isModified('password') && this.password.length >= passwordMinLength) {
+  if (this.password && this.isModified('password') && this.password.length >= passwordMinLength) {
     this.salt = crypto.randomBytes(16).toString('base64');
     this.password = this.hashPassword(this.password);
   }
 
   // Pre-cached email hash to use with Gravatar
-  if(this.email && this.isModified('email') && this.email !== '') {
-    this.emailHash = crypto.createHash('md5').update( this.email.trim().toLowerCase() ).digest('hex');
+  if (this.email && this.isModified('email') && this.email !== '') {
+    this.emailHash = crypto.createHash('md5').update(this.email.trim().toLowerCase()).digest('hex');
   }
 
   next();

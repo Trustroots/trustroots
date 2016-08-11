@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -24,14 +24,12 @@
     // First fetch contact object, just to make it sure it exists
     vm.contact.$promise.then(
       // Got contact
-      function(contact) {
+      function() {
         vm.isLoading = false;
-        if(vm.contact.confirmed === true) {
+        if (vm.contact.confirmed === true) {
           vm.isConnected = true;
           vm.success = 'You two are already connected. Great!';
-        }
-        // [0] contains contact requester's id, [1] is the receiver
-        else if (vm.contact.users[0]._id !== Authentication.user._id) {
+        } else if (vm.contact.users[0]._id !== Authentication.user._id) { // [0] contains contact requester's id, [1] is the receiver
           vm.error = 'You must wait until he/she confirms your connection.';
         }
       },
@@ -45,7 +43,7 @@
     function confirmContact() {
       vm.isLoading = true;
       vm.contact.confirm = true;
-      vm.contact.$update(function(response) {
+      vm.contact.$update(function() {
         vm.isLoading = false;
         vm.isConnected = true;
         vm.success = 'You two are now connected!';
@@ -57,4 +55,4 @@
 
   }
 
-})();
+}());

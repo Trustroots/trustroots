@@ -4,7 +4,6 @@
  * Module dependencies.
  */
 var path = require('path'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     config = require(path.resolve('./config/config')),
     nodemailer = require('nodemailer'),
@@ -30,6 +29,7 @@ exports.supportRequest = function(req, res) {
     function(done) {
 
       var renderVars = {
+        /* eslint-disable key-spacing */
         message:       (req.body.message) ? textProcessor.plainText(req.body.message) : '—',
         username:      (req.user) ? req.user.username : textProcessor.plainText(req.body.username),
         email:         (req.user) ? req.user.email : textProcessor.plainText(req.body.email),
@@ -40,7 +40,8 @@ exports.supportRequest = function(req, res) {
         authenticated: (req.user) ? 'yes' : 'no',
         profilePublic: (req.user && req.user.public) ? 'yes' : 'no',
         signupDate:    (req.user) ? req.user.created.toString() : '-',
-        reportMember:  (req.body.reportMember) ? textProcessor.plainText(req.body.reportMember) : false,
+        reportMember:  (req.body.reportMember) ? textProcessor.plainText(req.body.reportMember) : false
+        /* eslint-enable key-spacing */
       };
 
       res.render(
@@ -52,7 +53,7 @@ exports.supportRequest = function(req, res) {
     },
 
     // If valid email, send reset email using service
-    function(emailPlain, renderVars, done) {
+    function(emailPlain, renderVars) {
       var smtpTransport = nodemailer.createTransport(config.mailer.options);
 
       var fromMail = {
@@ -62,7 +63,7 @@ exports.supportRequest = function(req, res) {
       };
 
       // Add name to sender if we have it
-      if(req.user) {
+      if (req.user) {
         fromMail.name = req.user.displayName;
       }
 
@@ -77,7 +78,7 @@ exports.supportRequest = function(req, res) {
       smtpTransport.sendMail(mailOptions, function(err) {
         smtpTransport.close(); // close the connection pool
         if (!err) {
-          return res.json({message: 'Support request sent.'});
+          return res.json({ message: 'Support request sent.' });
         } else {
           return res.status(400).send({
             message: 'Failure while sending your support request. Please try again.'
@@ -86,7 +87,7 @@ exports.supportRequest = function(req, res) {
       });
     }
   ], function(err) {
-    if(err) {
+    if (err) {
       console.error('Support request error:');
       console.error(err);
       return res.status(400).send({

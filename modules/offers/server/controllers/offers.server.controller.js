@@ -9,8 +9,7 @@ var path = require('path'),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     sanitizeHtml = require('sanitize-html'),
     mongoose = require('mongoose'),
-    Offer = mongoose.model('Offer'),
-    User = mongoose.model('User');
+    Offer = mongoose.model('Offer');
 
 /**
  * Create a fuzzy offset between specified distances
@@ -19,17 +18,17 @@ var path = require('path'),
  * @returns {Array<Number>} - array of length 2 (horizontal and vertical offset)
  */
 function fuzzyOffset(minimum, maximum) {
-  //please note that Math.random() is not cryptographically secure.
-  //for this purpose it's probably ok, but can be improved i.e. with node crypto module.
-  if(maximum < minimum) throw new Error('maximum must be greater than minimum');
+  // Please note that Math.random() is not cryptographically secure.
+  // For this purpose it's probably ok, but can be improved i.e. with node crypto module.
+  if (maximum < minimum) throw new Error('maximum must be greater than minimum');
   var difference = maximum - minimum;
-  var randomDistance = Math.floor(difference*Math.random()+minimum); //Distance will be from interval [minimum, maximum)
-  var randomDirection = 2*Math.PI*Math.random(); //random direction is from interval [0, 2*PI) radians
+  var randomDistance = Math.floor(difference * Math.random() + minimum); // Distance will be from interval [minimum, maximum)
+  var randomDirection = 2 * Math.PI * Math.random(); // Random direction is from interval [0, 2*PI) radians
 
   var horizontal = randomDistance * Math.cos(randomDirection);
   var vertical = randomDistance * Math.sin(randomDirection);
 
-  return [horizontal, vertical]; //the order doesn't matter here
+  return [horizontal, vertical]; // The order doesn't matter here
 }
 
 /**
@@ -52,12 +51,12 @@ function fuzzyLocation(location) {
   var Radius = 6378137;
 
   // Coordinate offsets in radians
-  var dLat = dn/Radius;
-  var dLng = de/(Radius*Math.cos(Math.PI*lat/180));
+  var dLat = dn / Radius;
+  var dLng = de / (Radius * Math.cos(Math.PI * lat / 180));
 
   // OffsetPosition, decimal degrees
-  var latO = lat + dLat * 180/Math.PI;
-  var lngO = lng + dLng * 180/Math.PI;
+  var latO = lat + dLat * 180 / Math.PI;
+  var lngO = lng + dLng * 180 / Math.PI;
 
   return [latO, lngO];
 }
@@ -68,7 +67,7 @@ function fuzzyLocation(location) {
  */
 exports.create = function(req, res) {
 
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
@@ -82,7 +81,7 @@ exports.create = function(req, res) {
 
   // Sanitize contents coming from wysiwyg editors
   ['description', 'noOfferDescription'].forEach(function(key) {
-    if(offer[key] && !textProcessor.isEmpty(offer[key])) {
+    if (offer[key] && !textProcessor.isEmpty(offer[key])) {
       // Allow some HTML
       offer[key] = textProcessor.html(offer[key]);
     }
@@ -100,7 +99,7 @@ exports.create = function(req, res) {
   // Otherwise, update the existing doc with upsertData
   // @link http://stackoverflow.com/a/7855281
   Offer.update({
-    user: upsertData.user,
+    user: upsertData.user
   },
   upsertData,
   { upsert: true },
@@ -122,7 +121,7 @@ exports.create = function(req, res) {
  */
 exports.list = function(req, res) {
 
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
@@ -182,47 +181,47 @@ exports.read = function(req, res) {
 // Offer reading middleware
 exports.offerByUserId = function(req, res, next, userId) {
 
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
   }
 
   // Not a valid ObjectId
-  if(!mongoose.Types.ObjectId.isValid(userId)) {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
       message: errorHandler.getErrorMessageByKey('invalid-id')
     });
   }
 
   Offer.findOne({
-      user: userId
-    })
-    .exec(function(err, offer) {
+    user: userId
+  })
+  .exec(function(err, offer) {
 
-      // Errors
-      if(err) return next(err);
-      if(!offer) {
-			  return res.status(404).send({
-			    message: errorHandler.getErrorMessageByKey('not-found')
-			  });
-      }
+    // Errors
+    if (err) return next(err);
+    if (!offer) {
+      return res.status(404).send({
+        message: errorHandler.getErrorMessageByKey('not-found')
+      });
+    }
 
-      offer = offer.toObject();
+    offer = offer.toObject();
 
-      // Sanitize each outgoing offer's contents
-      offer.description = sanitizeHtml(offer.description, textProcessor.sanitizeOptions);
-      offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
+    // Sanitize each outgoing offer's contents
+    offer.description = sanitizeHtml(offer.description, textProcessor.sanitizeOptions);
+    offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
 
-      // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
-      if(userId !== req.user.id) {
-        offer.location = offer.locationFuzzy;
-      }
-      delete offer.locationFuzzy;
+    // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
+    if (userId !== req.user.id) {
+      offer.location = offer.locationFuzzy;
+    }
+    delete offer.locationFuzzy;
 
-      req.offer = offer;
-      next();
-    });
+    req.offer = offer;
+    next();
+  });
 
 };
 
@@ -231,14 +230,14 @@ exports.offerByUserId = function(req, res, next, userId) {
 exports.offerById = function(req, res, next, offerId) {
 
   // Not a valid ObjectId
-  if(!mongoose.Types.ObjectId.isValid(offerId)) {
+  if (!mongoose.Types.ObjectId.isValid(offerId)) {
     return res.status(400).send({
       message: errorHandler.getErrorMessageByKey('invalid-id')
     });
   }
 
   // Require user
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
@@ -248,11 +247,11 @@ exports.offerById = function(req, res, next, offerId) {
     .populate('user', userHandler.userListingProfileFields)
     .exec(function(err, offer) {
 
-      if(err) return next(err);
-      if(!offer) {
-			  return res.status(404).send({
-			    message: errorHandler.getErrorMessageByKey('not-found')
-			  });
+      if (err) return next(err);
+      if (!offer) {
+        return res.status(404).send({
+          message: errorHandler.getErrorMessageByKey('not-found')
+        });
       }
       offer = offer.toObject();
 
@@ -261,7 +260,7 @@ exports.offerById = function(req, res, next, offerId) {
       offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
 
       // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
-      if(req.user && offer.user !== req.user.id) {
+      if (req.user && offer.user !== req.user.id) {
         offer.location = offer.locationFuzzy;
       }
       delete offer.locationFuzzy;

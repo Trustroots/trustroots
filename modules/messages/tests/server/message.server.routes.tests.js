@@ -14,9 +14,14 @@ var should = require('should'),
 /**
  * Globals
  */
-var app, agent, credentials,
-    userFrom, userTo, userFromId, userToId,
-    message, thread;
+var app,
+    agent,
+    credentials,
+    userFrom,
+    userTo,
+    userFromId,
+    userToId,
+    message;
 
 /**
  * Message routes tests
@@ -65,8 +70,10 @@ describe('Message CRUD tests', function() {
 
     // Save users to the test db and create new message
     userFrom.save(function(userFromErr, userFromRes) {
+      should.not.exist(userFromErr);
       userFromId = userFromRes._id;
       userTo.save(function(userToErr, userToRes) {
+        should.not.exist(userToErr);
         userToId = userToRes._id;
         // Create message
         message = {
@@ -109,7 +116,7 @@ describe('Message CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Get user id
         var userFromId = signinRes.body._id;
@@ -118,23 +125,22 @@ describe('Message CRUD tests', function() {
         agent.post('/api/messages')
           .send(message)
           .expect(200)
-          .end(function(messageSaveErr, messageSaveRes) {
+          .end(function(messageSaveErr) {
             // Handle message save error
-            if (messageSaveErr) done(messageSaveErr);
+            if (messageSaveErr) return done(messageSaveErr);
 
             // Get a list of messages
             agent.get('/api/messages/' + userToId)
               .end(function(messagesGetErr, messagesGetRes) {
                 // Handle message get error
-                if (messagesGetErr) done(messagesGetErr);
+                if (messagesGetErr) return done(messagesGetErr);
 
                 // Get messages list
                 var thread = messagesGetRes.body;
 
-                if(!thread[0] || !thread[0].content) {
+                if (!thread[0] || !thread[0].content) {
                   return done(new Error('Missing messages from the message thread.'));
-                }
-                else {
+                } else {
 
                   // Set assertions
                   (thread[0].userFrom._id.toString()).should.equal(userFromId.toString());
@@ -156,12 +162,9 @@ describe('Message CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
-        if (signinErr) done(signinErr);
-
-        // Get user id
-        var userFromId = signinRes.body._id;
+        if (signinErr) return done(signinErr);
 
         // Create html in message
         var htmlMessage = message;
@@ -178,24 +181,22 @@ describe('Message CRUD tests', function() {
         agent.post('/api/messages')
           .send(htmlMessage)
           .expect(200)
-          .end(function(messageSaveErr, messageSaveRes) {
+          .end(function(messageSaveErr) {
             // Handle message save error
-            if (messageSaveErr) done(messageSaveErr);
+            if (messageSaveErr) return done(messageSaveErr);
 
             // Get a list of messages
             agent.get('/api/messages/' + userToId)
               .end(function(messagesGetErr, messagesGetRes) {
                 // Handle message get error
-                if (messagesGetErr) done(messagesGetErr);
+                if (messagesGetErr) return done(messagesGetErr);
 
                 // Get messages list
                 var thread = messagesGetRes.body;
 
-                if(!thread[0] || !thread[0].content) {
+                if (!thread[0] || !thread[0].content) {
                   return done(new Error('Missing messages from the message thread.'));
-                }
-                else {
-
+                } else {
                   // Set assertions
                   (thread[0].content).should.equal(htmlMessage.content);
 
@@ -212,12 +213,9 @@ describe('Message CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
-        if (signinErr) done(signinErr);
-
-        // Get user id
-        var userFromId = signinRes.body._id;
+        if (signinErr) return done(signinErr);
 
         // Create html in message
         var htmlMessage = message;
@@ -231,24 +229,22 @@ describe('Message CRUD tests', function() {
         agent.post('/api/messages')
           .send(htmlMessage)
           .expect(200)
-          .end(function(messageSaveErr, messageSaveRes) {
+          .end(function(messageSaveErr) {
             // Handle message save error
-            if (messageSaveErr) done(messageSaveErr);
+            if (messageSaveErr) return done(messageSaveErr);
 
             // Get a list of messages
             agent.get('/api/messages/' + userToId)
               .end(function(messagesGetErr, messagesGetRes) {
                 // Handle message get error
-                if (messagesGetErr) done(messagesGetErr);
+                if (messagesGetErr) return done(messagesGetErr);
 
                 // Get messages list
                 var thread = messagesGetRes.body;
 
-                if(!thread[0] || !thread[0].content) {
+                if (!thread[0] || !thread[0].content) {
                   return done(new Error('Missing messages from the message thread.'));
-                }
-                else {
-
+                } else {
                   // Set assertions
                   (thread[0].content).should.equal('<b>strong</b><br />blockquote<p><a href="https://www.trustroots.org/">link</a><a href="http://www.trustroots.org">trustroots.org</a> </p>');
 
@@ -266,12 +262,9 @@ describe('Message CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
-        if (signinErr) done(signinErr);
-
-        // Get user id
-        var userFromId = signinRes.body._id;
+        if (signinErr) return done(signinErr);
 
         // Create html in message
         var htmlMessage = message;
@@ -281,23 +274,22 @@ describe('Message CRUD tests', function() {
         agent.post('/api/messages')
           .send(htmlMessage)
           .expect(200)
-          .end(function(messageSaveErr, messageSaveRes) {
+          .end(function(messageSaveErr) {
             // Handle message save error
-            if (messageSaveErr) done(messageSaveErr);
+            if (messageSaveErr) return done(messageSaveErr);
 
             // Get a list of messages
             agent.get('/api/messages/' + userToId)
               .end(function(messagesGetErr, messagesGetRes) {
                 // Handle message get error
-                if (messagesGetErr) done(messagesGetErr);
+                if (messagesGetErr) return done(messagesGetErr);
 
                 // Get messages list
                 var thread = messagesGetRes.body;
 
-                if(!thread[0] || !thread[0].content) {
+                if (!thread[0] || !thread[0].content) {
                   return done(new Error('Missing messages from the message thread.'));
-                }
-                else {
+                } else {
 
                   // Set assertions
                   (thread[0].content).should.equal('<a href="https://www.trustroots.org/">This is nice!</a>');
@@ -315,98 +307,89 @@ describe('Message CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
-        // Get user id
-        var userFromId = signinRes.body._id;
+        // Now loop 25 messages in...
+        // "Older" messages will have smaller numbers
+        // @link https://github.com/caolan/async#whilsttest-fn-callback
+        var count = 0;
+        async.whilst(
+          function () {
+            return count < 25;
+          },
+          function (callback) {
 
-            // Now loop 25 messages in...
-            // "Older" messages will have smaller numbers
-            // @link https://github.com/caolan/async#whilsttest-fn-callback
-            var count = 0;
-            async.whilst(
-              function () { return count < 25; },
-              function (callback) {
+            count++;
+            var newMessage = message;
+            newMessage.content = 'Message content ' + count;
 
-                count++;
-                var newMessage = message;
-                newMessage.content = 'Message content ' + count;
+            agent.post('/api/messages')
+              .send(newMessage)
+              .expect(200)
+              .end(function(messageSaveErr) {
+                // Handle message save error
+                if (messageSaveErr) return done(messageSaveErr);
 
-                agent.post('/api/messages')
-                  .send(newMessage)
-                  .expect(200)
-                  .end(function(messageSaveErr, messageSaveRes) {
-                    // Handle message save error
-                    if (messageSaveErr) done(messageSaveErr);
+                // This message was saved okay, continue to the next one...
+                callback(null, count);
+              });
+          },
+          // All messages sent, continue.
+          function (err) {
+            if (err) return done(err);
 
-                    // This message was saved okay, continue to the next one...
-                    callback(null, count);
-                  });
-              },
-              // All messages sent, continue.
-              function (err, totalCount) {
+            // Get a list of messages
+            agent.get('/api/messages/' + userToId)
+              .expect(200)
+              .end(function(messagesGetErr, messagesGetRes) {
+                // Handle message read error
+                if (messagesGetErr) return done(messagesGetErr);
 
-                // Get a list of messages
-                agent.get('/api/messages/' + userToId)
-                  .expect(200)
-                  .end(function(messagesGetErr, messagesGetRes) {
-                    // Handle message read error
-                    if (messagesGetErr) done(messagesGetErr);
+                // Get messages list
+                var thread = messagesGetRes.body;
 
-                    // Get messages list
-                    var thread = messagesGetRes.body;
+                if (!thread[0] || !thread[0].content) {
+                  return done(new Error('Missing messages from the message thread.'));
+                } else {
+                  // Pagination gives 20 messages at once
+                  thread.length.should.equal(20);
 
-                    // Response header should inform about pagination
-                    //console.log(messagesGetRes.res.headers.link);
+                  // Set assertions for first and last message
+                  (thread[0].content).should.equal('Message content 25');
+                  (thread[19].content).should.equal('Message content 6');
 
-                    if(!thread[0] || !thread[0].content) {
-                      return done(new Error('Missing messages from the message thread.'));
-                    }
-                    else {
-                      // Pagination gives 20 messages at once
-                      thread.length.should.equal(20);
+                  // Get the 2nd page
+                  agent.get('/api/messages/' + userToId + '?page=2')
+                    .expect(200)
+                    .end(function(messagesGetErr, messagesGetRes) {
+                      // Handle message read error
+                      if (messagesGetErr) return done(messagesGetErr);
 
-                      // Set assertions for first and last message
-                      (thread[0].content).should.equal('Message content 25');
-                      (thread[19].content).should.equal('Message content 6');
+                      // Get messages list
+                      var thread = messagesGetRes.body;
 
-                      // Get the 2nd page
-                      agent.get('/api/messages/' + userToId + '?page=2')
-                        .expect(200)
-                        .end(function(messagesGetErr, messagesGetRes) {
-                          // Handle message read error
-                          if (messagesGetErr) done(messagesGetErr);
+                      if (!thread[0] || !thread[0].content) {
+                        return done(new Error('Missing messages from the message thread.'));
+                      } else {
+                        // Pagination gives 20 messages at once but there are only 5 left for the 2nd page
+                        thread.length.should.equal(5);
 
-                          // Get messages list
-                          var thread = messagesGetRes.body;
+                        // Set assertions for first and last message
+                        (thread[0].content).should.equal('Message content 5');
+                        (thread[4].content).should.equal('Message content 1');
 
-                          // Response header should inform about pagination
-                          //console.log(messagesGetRes.res.headers.link);
-
-                          if(!thread[0] || !thread[0].content) {
-                            return done(new Error('Missing messages from the message thread.'));
-                          }
-                          else {
-
-                             // Pagination gives 20 messages at once but there are only 5 left for the 2nd page
-                             thread.length.should.equal(5);
-
-                             // Set assertions for first and last message
-                             (thread[0].content).should.equal('Message content 5');
-                             (thread[4].content).should.equal('Message content 1');
-
-                            // Call the assertion callback
-                            return done();
-                          }
-                        });
-
-                    }
-                  });
+                        // Call the assertion callback
+                        return done();
+                      }
+                    });
 
                 }
-            );
+              });
+
+          }
+        );
 
       });
   });
@@ -417,7 +400,7 @@ describe('Message CRUD tests', function() {
       .expect(200)
       .end(function(signinErr, signinRes) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Get user id
         var userFromId = signinRes.body._id;
@@ -443,9 +426,9 @@ describe('Message CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         // Update my description to be very short
         userFrom.description = 'short';
@@ -471,72 +454,72 @@ describe('Message CRUD tests', function() {
 
   it('should be able to send a message when I have too short description but another user wrote me first', function(done) {
 
-      // Save message to this user from other user
-      var newMessage = new Message({
-        content: 'Enabling the latent trust between humans.',
+    // Save message to this user from other user
+    var newMessage = new Message({
+      content: 'Enabling the latent trust between humans.',
+      userFrom: userToId,
+      userTo: userFromId,
+      created: new Date(),
+      read: true,
+      notified: true
+    });
+
+    newMessage.save(function(newMessageErr, newMessageRes) {
+
+      // Handle save error
+      if (newMessageErr) return done(newMessageErr);
+
+      var newThread = new Thread({
         userFrom: userToId,
         userTo: userFromId,
-        created: new Date(),
-        read: true,
-        notified: true
+        updated: new Date(),
+        message: newMessageRes._id,
+        read: true
       });
 
-      newMessage.save(function(newMessageErr, newMessageRes) {
+      newThread.save(function(newThreadErr) {
 
         // Handle save error
-        if (newMessageErr) done(newMessageErr);
+        if (newThreadErr) return done(newThreadErr);
 
-        var newThread = new Thread({
-          userFrom: userToId,
-          userTo: userFromId,
-          updated: new Date(),
-          message: newMessageRes._id,
-          read: true
-        });
+        // Sign in
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function(signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
 
-        newThread.save(function(newThreadErr, newThreadRes) {
+            // Update my description to be very short
+            userFrom.description = 'short';
+            userFrom.save(function(err, userFromSaveRes) {
 
-          // Handle save error
-          if (newThreadErr) done(newThreadErr);
+              userFromSaveRes.description.should.equal('short');
 
-          // Sign in
-          agent.post('/api/auth/signin')
-            .send(credentials)
-            .expect(200)
-            .end(function(signinErr, signinRes) {
-              // Handle signin error
-              if (signinErr) done(signinErr);
+              // Save a new message
+              agent.post('/api/messages')
+                .send(message)
+                .expect(200)
+                .end(function(messageSaveErr, messageSaveRes) {
 
-              // Update my description to be very short
-              userFrom.description = 'short';
-              userFrom.save(function(err, userFromSaveRes) {
+                  // Set assertions
+                  (messageSaveRes.body.userFrom._id.toString()).should.equal(userFromId.toString());
+                  (messageSaveRes.body.userTo._id.toString()).should.equal(userToId.toString());
+                  messageSaveRes.body.content.should.equal('Message content');
+                  messageSaveRes.body.notified.should.equal(false);
+                  messageSaveRes.body.read.should.equal(false);
 
-                userFromSaveRes.description.should.equal('short');
-
-                // Save a new message
-                agent.post('/api/messages')
-                  .send(message)
-                  .expect(200)
-                  .end(function(messageSaveErr, messageSaveRes) {
-
-                    // Set assertions
-                    (messageSaveRes.body.userFrom._id.toString()).should.equal(userFromId.toString());
-                    (messageSaveRes.body.userTo._id.toString()).should.equal(userToId.toString());
-                    messageSaveRes.body.content.should.equal('Message content');
-                    messageSaveRes.body.notified.should.equal(false);
-                    messageSaveRes.body.read.should.equal(false);
-
-                    // Call the assertion callback
-                    return done(messageSaveErr);
-                  });
-
-              });
+                  // Call the assertion callback
+                  return done(messageSaveErr);
+                });
 
             });
 
-          }); // newThread
+          });
 
-      }); // newMessage
+      }); // newThread
+
+    }); // newMessage
 
   });
 
@@ -558,9 +541,9 @@ describe('Message CRUD tests', function() {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function(signinErr) {
         // Handle signin error
-        if (signinErr) done(signinErr);
+        if (signinErr) return done(signinErr);
 
         agent.get('/api/messages-count')
           .expect(200)
@@ -576,70 +559,70 @@ describe('Message CRUD tests', function() {
 
   it('should be able to check for unread message count if logged in', function(done) {
 
-      // Save message to this user from other user
-      var newMessage1 = new Message({
-        content: 'Enabling the latent trust between humans.',
-        userFrom: userToId,
-        userTo: userFromId,
-        created: new Date(),
-        read: false,
-        notified: true
-      });
-      var newMessage2 = new Message({
-        content: 'Another one!',
-        userFrom: userToId,
-        userTo: userFromId,
-        created: new Date(),
-        read: false,
-        notified: true
-      });
+    // Save message to this user from other user
+    var newMessage1 = new Message({
+      content: 'Enabling the latent trust between humans.',
+      userFrom: userToId,
+      userTo: userFromId,
+      created: new Date(),
+      read: false,
+      notified: true
+    });
+    var newMessage2 = new Message({
+      content: 'Another one!',
+      userFrom: userToId,
+      userTo: userFromId,
+      created: new Date(),
+      read: false,
+      notified: true
+    });
 
-      newMessage1.save(function(newMessage1Err, newMessage1Res) {
+    newMessage1.save(function(newMessage1Err) {
+
+      // Handle save error
+      if (newMessage1Err) return done(newMessage1Err);
+
+      newMessage2.save(function(newMessage2Err, newMessage2Res) {
 
         // Handle save error
-        if (newMessage1Err) done(newMessage1Err);
+        if (newMessage2Err) return done(newMessage2Err);
 
-        newMessage2.save(function(newMessage2Err, newMessage2Res) {
+        var newThread = new Thread({
+          userFrom: userToId,
+          userTo: userFromId,
+          updated: new Date(),
+          message: newMessage2Res._id,
+          read: false
+        });
+
+        newThread.save(function(newThreadErr) {
 
           // Handle save error
-          if (newMessage2Err) done(newMessage2Err);
+          if (newThreadErr) return done(newThreadErr);
 
-          var newThread = new Thread({
-            userFrom: userToId,
-            userTo: userFromId,
-            updated: new Date(),
-            message: newMessage2Res._id,
-            read: false
-          });
+          // Sign in
+          agent.post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function(signinErr) {
+              // Handle signin error
+              if (signinErr) return done(signinErr);
 
-          newThread.save(function(newThreadErr, newThreadRes) {
+              agent.get('/api/messages-count')
+                .expect(200)
+                .end(function(countReadErr, countReadRes) {
 
-            // Handle save error
-            if (newThreadErr) done(newThreadErr);
+                  // Although we saved two messages,
+                  // but because we saved them to same thread,
+                  // we should get `1` as a count.
+                  countReadRes.body.unread.should.equal(1);
 
-            // Sign in
-            agent.post('/api/auth/signin')
-              .send(credentials)
-              .expect(200)
-              .end(function(signinErr, signinRes) {
-                // Handle signin error
-                if (signinErr) done(signinErr);
-
-                agent.get('/api/messages-count')
-                  .expect(200)
-                  .end(function(countReadErr, countReadRes) {
-
-                    // Although we saved two messages,
-                    // but because we saved them to same thread,
-                    // we should get `1` as a count.
-                    countReadRes.body.unread.should.equal(1);
-
-                    // Call the assertion callback
-                    return done(countReadErr);
-                  });
-              });
-          });
+                  // Call the assertion callback
+                  return done(countReadErr);
+                });
+            });
         });
+      });
     });
 
   });

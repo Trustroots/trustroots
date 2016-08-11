@@ -1,4 +1,4 @@
-(function(){
+(function () {
   'use strict';
 
   /**
@@ -22,7 +22,7 @@
       scope: {
         trBoards: '='
       },
-      link: function(scope, elem, attr) {
+      link: function(scope, elem) {
 
         // If requested photo is missing or request is invalid, rely on this photo
         var defaultPhoto = 'bokeh';
@@ -36,14 +36,14 @@
             'file': 'flickr-bokeh.jpg'
           },
           'forestpath': {
-            'name': 'Johnson', //Johnson Cameraface
+            'name': 'Johnson', // Johnson Cameraface
             'url': 'https://www.flickr.com/photos/54459164@N00/15506455245',
             'license': 'CC',
             'license_url': 'https://creativecommons.org/licenses/by-nc-sa/2.0/',
             'file': 'flickr-forestpath.jpg'
           },
           'forestpath-toned': {
-            'name': 'Johnson', //Johnson Cameraface
+            'name': 'Johnson', // Johnson Cameraface
             'url': 'https://www.flickr.com/photos/54459164@N00/15506455245',
             'license': 'CC',
             'license_url': 'https://creativecommons.org/licenses/by-nc-sa/2.0/',
@@ -123,7 +123,7 @@
             'url': 'https://unsplash.com/sveninho',
             'file': 'ss-mountainforest.jpg',
             'license': 'CC',
-            'license_url': 'https://creativecommons.org/publicdomain/zero/1.0/', // https://unsplash.com/license
+            'license_url': 'https://creativecommons.org/publicdomain/zero/1.0/' // https://unsplash.com/license
           },
           'tribes-1': {
             // Permission granted for Trustroots (asked by Mikael Korpela)
@@ -152,7 +152,6 @@
         elem.addClass('board-' + key);
         elem.css({
           'background-image': 'url(/modules/core/img/board/' + photo.file + ')'
-          //'background-position': (photo.position ? photo.position : '50% 50%')
         });
 
         // To prevent key being literally `key`: `{key: ...}`, we want it to be actual keyname such as `hitchroad`.
@@ -166,4 +165,4 @@
     };
   }
 
-})();
+}());

@@ -35,7 +35,7 @@ exports.signup = function(req, res) {
     // Check if we have the required data before hitting more strict validations at Mongo
     function(done) {
 
-      if(!req.body.firstName || !req.body.lastName || !req.body.username || !req.body.password || !req.body.email) {
+      if (!req.body.firstName || !req.body.lastName || !req.body.username || !req.body.password || !req.body.email) {
         return res.status(400).send({
           message: 'Please provide required fields.'
         });
@@ -63,9 +63,7 @@ exports.signup = function(req, res) {
       delete req.body.created;
       delete req.body.updated;
 
-      // Init Variables
       var user = new User(req.body);
-      var message = null;
 
       // Add missing user fields
       user.emailToken = token;
@@ -102,20 +100,20 @@ exports.signup = function(req, res) {
           urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup';
 
       var renderVars = emailsHandler.addEmailBaseTemplateParams(
-        req.headers.host,
-        {
-          name: user.displayName,
-          email: user.email,
-          ourMail: config.mailer.from,
-          urlConfirmPlainText: urlConfirm,
-          urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
-            source: 'transactional-email',
-            medium: 'email',
-            campaign: 'confirm-email'
-          })
-        },
-        'confirm-email'
-      );
+          req.headers.host,
+          {
+            name: user.displayName,
+            email: user.email,
+            ourMail: config.mailer.from,
+            urlConfirmPlainText: urlConfirm,
+            urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
+              source: 'transactional-email',
+              medium: 'email',
+              campaign: 'confirm-email'
+            })
+          },
+          'confirm-email'
+        );
 
       res.render(path.resolve('./modules/core/server/views/email-templates/signup'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, user, renderVars, url);
@@ -258,17 +256,17 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
 /**
  * Remove OAuth provider
  */
-exports.removeOAuthProvider = function(req, res, next) {
+exports.removeOAuthProvider = function(req, res) {
 
   // Return error if no user
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
   }
 
   // Return error if no provider or wrong provider
-  if(!req.params.provider || !_.includes(['github', 'facebook', 'twitter'], req.params.provider)) {
+  if (!req.params.provider || !_.includes(['github', 'facebook', 'twitter'], req.params.provider)) {
     return res.status(400).send({
       message: 'No provider defined.'
     });
@@ -277,9 +275,9 @@ exports.removeOAuthProvider = function(req, res, next) {
   var user = req.user;
   var provider = req.params.provider;
 
-  if(user && provider) {
+  if (user && provider) {
     // Delete the additional provider
-    if(user.additionalProvidersData[provider]) {
+    if (user.additionalProvidersData[provider]) {
       delete user.additionalProvidersData[provider];
 
       // Then tell mongoose that we've updated the additionalProvidersData field
@@ -287,7 +285,7 @@ exports.removeOAuthProvider = function(req, res, next) {
     }
 
     user.save(function(err) {
-      if(err) {
+      if (err) {
         return res.status(400).send({
           message: errorHandler.getErrorMessage(err)
         });
@@ -312,7 +310,7 @@ exports.validateEmailToken = function(req, res) {
   User.findOne({
     emailToken: req.params.token
   }, function(err, user) {
-    if(!user) {
+    if (!user) {
       return res.redirect('/confirm-email-invalid');
     }
     res.redirect('/confirm-email/' + req.params.token);
@@ -322,7 +320,7 @@ exports.validateEmailToken = function(req, res) {
 /**
  * Confirm email POST from email token
  */
-exports.confirmEmail = function(req, res, next) {
+exports.confirmEmail = function(req, res) {
   async.waterfall([
 
     function(done) {
@@ -366,7 +364,7 @@ exports.confirmEmail = function(req, res, next) {
             // Replace old email with new one
             email: user.emailTemporary,
             // @todo: this should be done at user.server.model.js
-            emailHash: crypto.createHash('md5').update( user.emailTemporary.trim().toLowerCase() ).digest('hex')
+            emailHash: crypto.createHash('md5').update(user.emailTemporary.trim().toLowerCase()).digest('hex')
           }
         },
         {
@@ -384,7 +382,7 @@ exports.confirmEmail = function(req, res, next) {
       });
     },
 
-    function (result, user, done) {
+    function (result, user) {
 
       // Return authenticated user
       result.user = user.toObject();
@@ -396,7 +394,7 @@ exports.confirmEmail = function(req, res, next) {
       delete result.user.password;
       delete result.user.salt;
 
-      res.json(result);
+      return res.json(result);
     }
   ], function(err) {
     if (err) {
@@ -405,4 +403,124 @@ exports.confirmEmail = function(req, res, next) {
       });
     }
   });
+};
+
+/**
+ * Resend email confirmation token
+ */
+exports.resendConfirmation = function(req, res) {
+
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  /*
+    There are two valid cases for getting the confirmation resent:
+      1) user is unconfirmed
+      2) user is changing email address
+    In both cases they will have emailTemporary set
+  */
+  if (!req.user.emailTemporary) {
+    return res.status(400).send({
+      message: 'Already confirmed.'
+    });
+  }
+
+  var isEmailChange = !!req.user.public;
+  var emailTemplateName = isEmailChange ? 'email-confirmation' : 'signup';
+  var emailSubject = isEmailChange ? 'Confirm email change' : 'Confirm Email';
+
+  async.waterfall([
+
+    // Generate random token
+    function(done) {
+      crypto.randomBytes(20, function(err, buffer) {
+        if (err) return done(err);
+        done(null, buffer.toString('hex'));
+      });
+    },
+
+    // Save token
+    function(token, done) {
+      var user = req.user;
+      user.updated = Date.now();
+      user.emailToken = token;
+      user.save(function(err) {
+        if (err) return done(err);
+        done(null, token, user);
+      });
+    },
+
+    // Prepare TEXT mail
+    function(token, user, done) {
+
+      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
+          urlConfirm = url + '/confirm-email/' + token;
+
+      var renderVars = emailsHandler.addEmailBaseTemplateParams(
+          req.headers.host,
+          {
+            name: user.displayName,
+            email: user.emailTemporary,
+            urlConfirmPlainText: urlConfirm,
+            urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
+              source: 'transactional-email',
+              medium: 'email',
+              campaign: 'resend-confirmation'
+            })
+          },
+          'resend-confirmation'
+        );
+
+      res.render(path.resolve('./modules/core/server/views/email-templates-text/' + emailTemplateName), renderVars, function(err, emailPlain) {
+        done(err, emailPlain, user, renderVars);
+      });
+
+    },
+
+    // Prepare HTML mail
+    function(emailPlain, user, renderVars, done) {
+
+      res.render(path.resolve('./modules/core/server/views/email-templates/' + emailTemplateName), renderVars, function(err, emailHTML) {
+        done(err, emailHTML, emailPlain, user);
+      });
+
+    },
+
+    // If valid email, send confirm email using service
+    function(emailHTML, emailPlain, user, done) {
+
+      var smtpTransport = nodemailer.createTransport(config.mailer.options);
+      var mailOptions = {
+        to: {
+          name: user.displayName,
+          address: user.emailTemporary
+        },
+        from: 'Trustroots <' + config.mailer.from + '>',
+        subject: emailSubject,
+        text: emailPlain,
+        html: emailHTML
+      };
+      smtpTransport.sendMail(mailOptions, function(err) {
+        smtpTransport.close(); // close the connection pool
+        done(err, user);
+      });
+
+    },
+
+    // Return confirmation
+    function() {
+      return res.json({ message: 'Sent confirmation email.' });
+    }
+
+  ], function(err) {
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
+      });
+    }
+  });
+
 };

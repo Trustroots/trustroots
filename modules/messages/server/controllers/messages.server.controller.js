@@ -22,10 +22,10 @@ var _ = require('lodash'),
  * Constructs link headers for pagination
  */
 var setLinkHeader = function(req, res, pageCount) {
-  if(paginate.hasNextPages(req)(pageCount)) {
-    var nextPage = {page: req.query.page + 1};
-    var linkHead = '<' + req.protocol + ':' + res.locals.url.slice(0,-1) + res.locals.paginate.href(nextPage) + '>; rel="next"';
-    res.set('Link',linkHead);
+  if (paginate.hasNextPages(req)(pageCount)) {
+    var nextPage = { page: req.query.page + 1 };
+    var linkHead = '<' + req.protocol + ':' + res.locals.url.slice(0, -1) + res.locals.paginate.href(nextPage) + '>; rel="next"';
+    res.set('Link', linkHead);
   }
 };
 
@@ -35,7 +35,7 @@ var setLinkHeader = function(req, res, pageCount) {
 exports.inbox = function(req, res) {
 
   // No user
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
@@ -68,19 +68,18 @@ exports.inbox = function(req, res) {
 
         // Sanitize each outgoing thread
         var threadsCleaned = [];
-        if(data.docs.length > 0) {
+        if (data.docs.length > 0) {
           data.docs.forEach(function(thread) {
 
             // Threads need just excerpt
             thread = thread.toObject();
 
             // Clean message content from html + clean all whitespace + shorten
-            if(thread.message) {
+            if (thread.message) {
               thread.message.excerpt = thread.message.content ? textProcessor.plainText(thread.message.content, true).substring(0, 100).trim() + ' …' : '…';
               delete thread.message.content;
-            }
-            // Ensure this works even if messages couldn't be found for some reason
-            else {
+            } else {
+              // Ensure this works even if messages couldn't be found for some reason
               thread.message = {
                 excerpt: '…'
               };
@@ -88,7 +87,7 @@ exports.inbox = function(req, res) {
 
             // If latest message in the thread was from current user, show
             // it as read - sender obviously read his/her own message
-            if(thread.userFrom._id.toString() === req.user._id.toString()) {
+            if (thread.userFrom._id.toString() === req.user._id.toString()) {
               thread.read = true;
             }
 
@@ -105,36 +104,34 @@ exports.inbox = function(req, res) {
   );
 };
 
-
-
 /**
  * Send a message
  */
 exports.send = function(req, res) {
 
   // No user
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
   }
 
   // Not a valid ObjectId
-  if(!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
+  if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
     return res.status(400).send({
       message: errorHandler.getErrorMessageByKey('invalid-id')
     });
   }
 
   // Don't allow sending messages to myself
-  if(req.user._id.equals(req.body.userTo)) {
+  if (req.user._id.equals(req.body.userTo)) {
     return res.status(403).send({
       message: 'Recepient cannot be currently authenticated user.'
     });
   }
 
   // Test in case content is actually empty (when html is stripped out)
-  if(textProcessor.isEmpty(req.body.content)) {
+  if (textProcessor.isEmpty(req.body.content)) {
     return res.status(400).send({
       message: 'Please write a message.'
     });
@@ -148,11 +145,11 @@ exports.send = function(req, res) {
         // User id's can be either way around in thread handle, so we gotta test for both situations
         $or: [
           {
-            userTo:   req.user._id,
+            userTo: req.user._id,
             userFrom: req.body.userTo
           },
           {
-            userTo:   req.body.userTo,
+            userTo: req.body.userTo,
             userFrom: req.user._id
           }
         ]
@@ -166,7 +163,7 @@ exports.send = function(req, res) {
     // If the sending user has an empty profile, reject the message
     function(thread, done) {
       // If this was first message to the thread
-      if(!thread) {
+      if (!thread) {
 
         User.findById(req.user._id, 'description').exec(function(err, sender) {
           // If we were unable to find the sender, return the error and stop here
@@ -177,7 +174,7 @@ exports.send = function(req, res) {
           var descriptionLength = (sender.description) ? textProcessor.plainText(sender.description).length : 0;
 
           // If the sender has too empty description, return an error
-          if(descriptionLength < config.profileMinimumLength) {
+          if (descriptionLength < config.profileMinimumLength) {
             return res.status(400).send({
               error: 'empty-profile',
               limit: config.profileMinimumLength,
@@ -188,9 +185,8 @@ exports.send = function(req, res) {
           // Continue
           done(err);
         });
-      }
-      // It wasn't first message to this thread
-      else {
+      } else {
+        // It wasn't first message to this thread
         done(null);
       }
 
@@ -239,11 +235,11 @@ exports.send = function(req, res) {
         // User id's can be either way around in old thread handle, so we gotta test for both situations
         $or: [
           {
-            userTo:   upsertData.userTo,
+            userTo: upsertData.userTo,
             userFrom: upsertData.userFrom
           },
           {
-            userTo:   upsertData.userFrom,
+            userTo: upsertData.userFrom,
             userFrom: upsertData.userTo
           }
         ]
@@ -274,11 +270,11 @@ exports.send = function(req, res) {
 
 
   ], function(err) {
-      if (err) {
-        return res.status(400).send({
-          message: errorHandler.getErrorMessage(err)
-        });
-      }
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
+      });
+    }
   });
 
 };
@@ -301,14 +297,14 @@ exports.threadByUser = function(req, res, next, userId) {
     // Find messages
     function(done) {
 
-      if(!req.user) {
+      if (!req.user) {
         return res.status(403).send({
           message: errorHandler.getErrorMessageByKey('forbidden')
         });
       }
 
       // Not user id or its not a valid ObjectId
-      if(!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         return res.status(400).send({
           message: errorHandler.getErrorMessageByKey('invalid-id')
         });
@@ -326,7 +322,7 @@ exports.threadByUser = function(req, res, next, userId) {
           limit: req.query.limit || 20,
           sort: 'field -created',
           populate: {
-            path:'userFrom userTo',
+            path: 'userFrom userTo',
             select: userHandler.userMiniProfileFields
           }
         },
@@ -334,7 +330,7 @@ exports.threadByUser = function(req, res, next, userId) {
           if (!data.docs) err = new Error('Failed to load messages.');
 
           // Pass pagination data to construct link header
-          if(data.docs.length > 0) {
+          if (data.docs.length > 0) {
             setLinkHeader(req, res, data.pages);
           }
           done(err, data.docs);
@@ -348,7 +344,7 @@ exports.threadByUser = function(req, res, next, userId) {
 
       var messagesCleaned = [];
 
-      if(messages && messages.length > 0) {
+      if (messages && messages.length > 0) {
         // Sanitize each outgoing message's contents
         messages.forEach(function(message) {
           message.content = sanitizeHtml(message.content, textProcessor.sanitizeOptions);
@@ -368,12 +364,12 @@ exports.threadByUser = function(req, res, next, userId) {
      */
     function(done) {
 
-      if(req.messages && req.messages.length > 0) {
+      if (req.messages && req.messages.length > 0) {
 
         var recentMessage = _.first(req.messages);
 
         // If latest message in the thread was to current user, mark thread read
-        if(recentMessage.userTo._id.toString() === req.user._id.toString()) {
+        if (recentMessage.userTo._id.toString() === req.user._id.toString()) {
 
           Thread.update(
             {
@@ -387,7 +383,7 @@ exports.threadByUser = function(req, res, next, userId) {
             {
               multi: false
             },
-            function(err){
+            function(err) {
               done(err);
             }
           );
@@ -403,12 +399,13 @@ exports.threadByUser = function(req, res, next, userId) {
     }
 
   ], function(err) {
-      if (err) {
-        return res.status(400).send({
-          message: errorHandler.getErrorMessage(err)
-        });
-      }
-      else return next();
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
+      });
+    } else {
+      return next();
+    }
   });
 
 };
@@ -424,7 +421,7 @@ exports.threadByUser = function(req, res, next, userId) {
  */
 exports.markRead = function(req, res) {
 
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
@@ -436,7 +433,7 @@ exports.markRead = function(req, res) {
   req.body.messageIds.forEach(function(messageId) {
     messages.push({
       _id: messageId,
-      //read: false,
+      // read: false,
 
       // Although this isn't in index, but it ensures
       // user has access to update only his/hers own messages
@@ -445,25 +442,26 @@ exports.markRead = function(req, res) {
   });
 
   // Mark messages read
-  Message.update({
-    $or: messages
-  },
-  {
-    read: true
-  }, {
-    multi: true
-  }, function (err) {
-
-    if (err) {
-      return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
-      });
+  Message.update(
+    {
+      $or: messages
+    },
+    {
+      read: true
+    },
+    {
+      multi: true
+    },
+    function (err) {
+      if (err) {
+        return res.status(400).send({
+          message: errorHandler.getErrorMessage(err)
+        });
+      } else {
+        res.status(200).send();
+      }
     }
-    else {
-      res.status(200).send();
-    }
-
-  });
+  );
 
 };
 
@@ -473,7 +471,7 @@ exports.markRead = function(req, res) {
  */
 exports.messagesCount = function(req, res) {
 
-  if(!req.user) {
+  if (!req.user) {
     return res.status(403).send({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
@@ -488,6 +486,6 @@ exports.messagesCount = function(req, res) {
         message: errorHandler.getErrorMessage(err)
       });
     }
-    return res.json({unread: parseInt(unreadCount) || 0});
+    return res.json({ unread: unreadCount ? parseInt(unreadCount, 10) : 0 });
   });
 };

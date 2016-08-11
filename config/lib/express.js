@@ -23,7 +23,6 @@ var _ = require('lodash'),
     path = require('path'),
     paginate = require('express-paginate'),
     seo = require('mean-seo'),
-    path = require('path'),
     Agenda = require('agenda');
 
 /**
@@ -146,7 +145,7 @@ module.exports.initSession = function (app, db) {
     secret: config.sessionSecret,
     cookie: {
       // If secure is true, and you access your site over HTTP, the cookie will not be set.
-      secure: false,//config.https,
+      secure: false, // ...or you could use `config.https`, but it screws things up with Nginx proxy.
 
       // By default cookie.maxAge is null, meaning no "expires" parameter is
       // set so the cookie becomes a browser-session cookie. When the user
@@ -205,7 +204,7 @@ module.exports.initHelmetHeaders = function (app) {
 module.exports.initSEO = function (app) {
   app.use(seo({
     cacheClient: 'disk', // Can be 'disk' or 'redis'
-    cacheDuration: 2 * 60 * 60 * 24 * 1000, // In milliseconds for disk cache
+    cacheDuration: 2 * 60 * 60 * 24 * 1000 // In milliseconds for disk cache
   }));
 };
 
@@ -213,12 +212,12 @@ module.exports.initSEO = function (app) {
  * Configure Agenda "Cron" jobs
  * @link https://www.npmjs.com/package/agenda
  */
-module.exports.initAgenda = function (app, db) {
+module.exports.initAgenda = function () {
 
   // Don't launch Agenda on test environment
   // @todo: make it possible to launch this manually with very small interwalls for testing
   // @todo: similarly for testing purposes, write a stopAgenda() method
-  if(process.env.NODE_ENV === 'test') {
+  if (process.env.NODE_ENV === 'test') {
     return;
   }
 
@@ -244,7 +243,7 @@ module.exports.initAgenda = function (app, db) {
   });
 
   // Error reporting
-  agendaWorker.on('fail', function(err, job) {
+  agendaWorker.on('fail', function(err) {
     console.error('Agenda job failed with error: %s', err.message || 'Unknown error');
   });
 };
@@ -266,7 +265,7 @@ module.exports.initModulesClientRoutes = function (app) {
 /**
  * Configure the modules ACL policies
  */
-module.exports.initModulesServerPolicies = function (app) {
+module.exports.initModulesServerPolicies = function () {
   // Globbing policy files
   config.files.server.policies.forEach(function (policyPath) {
     require(path.resolve(policyPath)).invokeRolesPolicies();
@@ -289,19 +288,6 @@ module.exports.initModulesServerRoutes = function (app) {
 module.exports.initErrorRoutes = function (app) {
   app.use(errorHandler.errorResponse);
 };
-
-/**
- * Configure Socket.io
- */
-/*
-module.exports.configureSocketIO = function (app, db) {
-  // Load the Socket.io configuration
-  var server = require('./socket.io')(app, db);
-
-  // Return server object
-  return server;
-};
-*/
 
 /**
  * Initialize the Express application
@@ -345,9 +331,6 @@ module.exports.init = function (db) {
 
   // Initialize Agenda ("cron" jobs)
   this.initAgenda(app, db);
-
-  // Configure Socket.io
-  //app = this.configureSocketIO(app, db);
 
   return app;
 };

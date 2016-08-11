@@ -1,4 +1,4 @@
-(function(){
+(function () {
   'use strict';
 
   angular
@@ -16,17 +16,17 @@
     vm.isHidden = false;
 
     // Changing footer styles/contents after navigation
-    $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+    $scope.$on('$stateChangeSuccess', function(event, toState) {
 
       // Footer is transparent on these pages
-      vm.isTransparent = (angular.isDefined(toState.footerTransparent) && toState.footerTransparent === true) ? true : false;
+      vm.isTransparent = (angular.isDefined(toState.footerTransparent) && toState.footerTransparent === true);
 
       // Footer is hidden on these pages
-      vm.isHidden = (angular.isDefined(toState.footerHidden) && toState.footerHidden === true) ? true : false;
+      vm.isHidden = (angular.isDefined(toState.footerHidden) && toState.footerHidden === true);
 
     });
 
 
   }
 
-})();
+}());

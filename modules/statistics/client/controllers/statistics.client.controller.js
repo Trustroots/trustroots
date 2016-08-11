@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -35,24 +35,25 @@
 
     function processStats(data) {
 
-        angular.extend(vm, data);
+      angular.extend(vm, data);
 
-        vm.hostingTotal = data.hosting.yes + data.hosting.maybe;
-        vm.hostingPercentage = (vm.hostingTotal/data.total)*100;
-        vm.hostingYesPercentage = (data.hosting.yes/vm.hostingTotal)*100;
-        vm.hostingMaybePercentage = (data.hosting.maybe/vm.hostingTotal)*100;
+      vm.hostingTotal = data.hosting.yes + data.hosting.maybe;
+      vm.hostingPercentage = (vm.hostingTotal / data.total) * 100;
+      vm.hostingYesPercentage = (data.hosting.yes / vm.hostingTotal) * 100;
+      vm.hostingMaybePercentage = (data.hosting.maybe / vm.hostingTotal) * 100;
 
-        vm.newsletterPercentage = (data.newsletter/data.total)*100;
+      vm.newsletterPercentage = (data.newsletter / data.total) * 100;
 
-        vm.connections = [];
-        angular.forEach(data.connected, function(count, network) {
-          vm.connections.push({
-            network: network,
-            count: count
-          });
+      vm.connections = [];
+      angular.forEach(data.connected, function(count, network) {
+        vm.connections.push({
+          network: network,
+          count: count
         });
+      });
 
     }
 
   }
-})();
+
+}());

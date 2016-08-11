@@ -4,13 +4,12 @@
   // Authentication controller Spec
   describe('ResetPasswordController', function() {
     // Initialize global variables
-    var ResetPasswordController,
-      $scope,
-      $httpBackend,
-      $stateParams,
-      $location,
-      $window,
-      Authentication;
+    var $scope,
+        $httpBackend,
+        $stateParams,
+        $location,
+        $window,
+        Authentication;
 
     // The $resource service augments the response object with methods for updating and deleting the resource.
     // If we were to use the standard toEqual matcher, our tests would fail because the test values would not match
@@ -19,7 +18,7 @@
     // account and ignores methods.
     beforeEach(function () {
       jasmine.addMatchers({
-        toEqualData: function (util, customEqualityTesters) {
+        toEqualData: function () {
           return {
             compare: function (actual, expected) {
               return {
@@ -51,7 +50,7 @@
         Authentication.user = null;
 
         // Initialize the Authentication controller
-        ResetPasswordController = $controller('ResetPasswordController as vm', {
+        $controller('ResetPasswordController as vm', {
           $scope: $scope
         });
       }));

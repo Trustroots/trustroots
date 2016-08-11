@@ -1,4 +1,4 @@
-(function(){
+(function () {
   'use strict';
 
   angular
@@ -26,16 +26,16 @@
     function activate() {
 
       // Perform actions at page change
-      $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+      $scope.$on('$stateChangeSuccess', function(event, toState) {
 
         // Collapsing the menu after navigation
         vm.isCollapsed = false;
 
         // Hide header at certain pages
-        vm.isHidden = (angular.isDefined(toState.headerHidden) && toState.headerHidden === true) ? true : false;
+        vm.isHidden = (angular.isDefined(toState.headerHidden) && toState.headerHidden === true);
       });
     }
 
   }
 
-})();
+}());

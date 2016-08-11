@@ -11,7 +11,11 @@ var should = require('should'),
 /**
  * Globals
  */
-var user1, user2, user1Id, user2Id, contact;
+var user1,
+    user2,
+    user1Id,
+    user2Id,
+    contact;
 
 /**
  * Unit tests
@@ -76,7 +80,7 @@ describe('Contact Model Unit Tests:', function() {
     it('should be able to show an error when try to save without users', function(done) {
       contact.users = '';
 
-      return contact.save(function(err, res) {
+      return contact.save(function(err) {
         should.exist(err);
         done();
       });

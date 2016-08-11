@@ -8,7 +8,6 @@ var path = require('path'),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
     config = require(path.resolve('./config/config')),
-    passport = require('passport'),
     nodemailer = require('nodemailer'),
     async = require('async'),
     crypto = require('crypto'),
@@ -77,20 +76,20 @@ exports.forgot = function(req, res, next) {
           urlConfirm = url + '/api/auth/reset/' + token;
 
       var renderVars = emailsHandler.addEmailBaseTemplateParams(
-        req.headers.host,
-        {
-          name: user.displayName,
-          email: user.email,
-          ourMail: config.mailer.from,
-          urlConfirmPlainText: urlConfirm,
-          urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
-            source: 'transactional-email',
-            medium: 'email',
-            campaign: 'reset-password'
-          })
-        },
-        'reset-password'
-      );
+          req.headers.host,
+          {
+            name: user.displayName,
+            email: user.email,
+            ourMail: config.mailer.from,
+            urlConfirmPlainText: urlConfirm,
+            urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
+              source: 'transactional-email',
+              medium: 'email',
+              campaign: 'reset-password'
+            })
+          },
+          'reset-password'
+        );
 
       res.render(path.resolve('./modules/core/server/views/email-templates/reset-password'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, user, renderVars);
@@ -155,7 +154,7 @@ exports.validateResetToken = function(req, res) {
     var passwordResetUrl = '/password/reset/' + req.params.token;
 
     // Re-apply possible UTM variables to the redirect URL
-    if(req.query && req.query.utm_source && req.query.utm_medium && req.query.utm_campaign) {
+    if (req.query && req.query.utm_source && req.query.utm_medium && req.query.utm_campaign) {
       passwordResetUrl = analyticsHandler.appendUTMParams(passwordResetUrl, {
         source: req.query.utm_source,
         medium: req.query.utm_medium,
@@ -170,7 +169,7 @@ exports.validateResetToken = function(req, res) {
 /**
  * Reset password POST from email token
  */
-exports.reset = function(req, res, next) {
+exports.reset = function(req, res) {
   // Init Variables
   var passwordDetails = req.body;
 
@@ -221,12 +220,12 @@ exports.reset = function(req, res, next) {
     function(user, done) {
 
       var renderVars = emailsHandler.addEmailBaseTemplateParams(
-        req.headers.host,
-        {
-          name: user.displayName
-        },
-        'reset-password-confirm'
-      );
+          req.headers.host,
+          {
+            name: user.displayName
+          },
+          'reset-password-confirm'
+        );
 
       res.render(path.resolve('./modules/core/server/views/email-templates/reset-password-confirm'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, user, renderVars);
@@ -260,7 +259,7 @@ exports.reset = function(req, res, next) {
     },
 
     // Return authenticated user
-    function(user, done) {
+    function(user) {
       return res.json(user);
     }
 
@@ -284,7 +283,7 @@ exports.changePassword = function(req, res) {
     function(done) {
 
       // Return error if no user
-      if(!req.user) {
+      if (!req.user) {
         return res.status(403).send({
           message: errorHandler.getErrorMessageByKey('forbidden')
         });
@@ -350,12 +349,12 @@ exports.changePassword = function(req, res) {
     function(user, done) {
 
       var renderVars = emailsHandler.addEmailBaseTemplateParams(
-        req.headers.host,
-        {
-          name: user.displayName
-        },
-        'reset-password-confirm'
-      );
+          req.headers.host,
+          {
+            name: user.displayName
+          },
+          'reset-password-confirm'
+        );
 
       res.render(path.resolve('./modules/core/server/views/email-templates/reset-password-confirm'), renderVars, function(err, emailHTML) {
         done(err, emailHTML, user, renderVars);

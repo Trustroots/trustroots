@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -9,7 +9,7 @@
   function threadDimensionsDirective($window, $timeout) {
 
     return {
-      link: function (scope, elemContainer, attr) {
+      link: function (scope, elemContainer) {
 
         // vars used with $timeout to cancel() timeouts.
         var refreshLayoutTimeout,
@@ -30,7 +30,7 @@
          * check what's visible on the screen and mark visible messages read.
          */
         elemThread.bind('scroll', function() {
-          if(onScrollTimeout) $timeout.cancel(onScrollTimeout);
+          if (onScrollTimeout) $timeout.cancel(onScrollTimeout);
           onScrollTimeout = $timeout(function() {
             elemHtml.resize();
           }, 300);
@@ -46,6 +46,13 @@
         }
 
         /**
+         * Scroll thread to bottom to show latest messages
+         */
+        var scrollToBottom = function() {
+          elemThread.scrollTop(elemThread[0].scrollHeight);
+        };
+
+        /**
          * Timeout wrapper for scrollToBottom() function
          */
         function activateScrollToBottom() {
@@ -54,12 +61,6 @@
           scrollToBottomTimeout = $timeout(scrollToBottom, 300);
         }
 
-        /**
-         * Scroll thread to bottom to show latest messages
-         */
-        var scrollToBottom = function() {
-          elemThread.scrollTop(elemThread[0].scrollHeight);
-        };
 
         /**
          * Refresh layout
@@ -70,10 +71,10 @@
          */
         function refreshLayout() {
 
-          if(!isInitialized) {
+          if (!isInitialized) {
             isInitialized = true;
-            $timeout(function(){
-              elemContainer.css({'opacity': '1.0'});
+            $timeout(function() {
+              elemContainer.css({ 'opacity': '1.0' });
             });
           }
 
@@ -88,15 +89,15 @@
           elemThread.css({
             // container has 15px padding on both sides when window is bigger than screen-sm-max (768px)
             width: elemContainerWidth - elemContainerPadding,
-            //Bottom part of the message thread should touch top part of textarea
+            // Bottom part of the message thread should touch top part of textarea
             bottom: elemReplyHeight
           });
 
           // Reply area has always padding 30 on the right
-          elemReply.width( elemContainerWidth - 30 );
+          elemReply.width(elemContainerWidth - 30);
         }
 
-        /*
+        /**
          * Listeners & event bindings
          */
         scope.$on('threadRefreshLayout', function() {
@@ -116,8 +117,8 @@
         activateScrollToBottom();
         scope.$emit('threadDimensinsLoaded');
 
-      } //link()
+      } // link()
     };
   }
 
-})();
+}());

@@ -4,6 +4,7 @@ var should = require('should'),
     request = require('supertest'),
     path = require('path'),
     mongoose = require('mongoose'),
+    semver = require('semver'),
     User = mongoose.model('User'),
     Tag = mongoose.model('Tag'),
     config = require(path.resolve('./config/config')),
@@ -12,7 +13,14 @@ var should = require('should'),
 /**
  * Globals
  */
-var app, agent, credentials, user, _user, admin;
+var app,
+    agent,
+    credentials,
+    user,
+    _user,
+    confirmedCredentials,
+    confirmedUser,
+    _confirmedUser;
 
 /**
  * User routes tests
@@ -27,6 +35,8 @@ describe('User CRUD tests', function () {
     done();
   });
 
+  // Create an unconfirmed user
+
   beforeEach(function (done) {
     // Create user credentials
     credentials = {
@@ -40,6 +50,8 @@ describe('User CRUD tests', function () {
       lastName: 'Name',
       displayName: 'Full Name',
       email: 'test@test.com',
+      emailTemporary: 'test@test.com', // unconfirmed users have this set
+      emailToken: 'initial email token',
       username: credentials.username.toLowerCase(),
       displayUsername: credentials.username,
       password: credentials.password,
@@ -49,10 +61,34 @@ describe('User CRUD tests', function () {
     user = new User(_user);
 
     // Save a user to the test db
-    user.save(function (err) {
-      should.not.exist(err);
-      done(err);
-    });
+    user.save(done);
+  });
+
+  // Create a confirmed user
+
+  beforeEach(function (done) {
+
+    confirmedCredentials = {
+      username: 'TR_username_confirmed',
+      password: 'M3@n.jsI$Aw3$0m4'
+    };
+
+    _confirmedUser = {
+      public: true,
+      firstName: 'Full',
+      lastName: 'Name',
+      displayName: 'Full Name',
+      email: 'confirmed-test@test.com',
+      username: confirmedCredentials.username.toLowerCase(),
+      displayUsername: confirmedCredentials.username,
+      password: confirmedCredentials.password,
+      provider: 'local'
+    };
+
+    confirmedUser = new User(_confirmedUser);
+
+    // Save a user to the test db
+    confirmedUser.save(done);
   });
 
   it('should be able to register a new user', function (done) {
@@ -125,13 +161,7 @@ describe('User CRUD tests', function () {
                 return done(confirmEmailPostErr);
               }
 
-              // NodeJS v4 changed the status code representation so we must check
-              // before asserting, to be comptabile with all node versions.
-              if (process.version.indexOf('v4') === 0 || process.version.indexOf('v5') === 0) {
-                confirmEmailGetRes.text.should.equal('Found. Redirecting to /confirm-email/' + userRes1.emailToken);
-              } else {
-                confirmEmailGetRes.text.should.equal('Moved Temporarily. Redirecting to /confirm-email/' + userRes1.emailToken);
-              }
+              confirmEmailGetRes.text.should.equal(redirectMessage('/confirm-email/' + userRes1.emailToken));
 
               // POST does the actual job
               agent.post('/api/auth/confirm-email/' + userRes1.emailToken)
@@ -153,8 +183,8 @@ describe('User CRUD tests', function () {
 
                   return done();
                 });
-              });
-          });
+            });
+        });
       });
   });
 
@@ -195,13 +225,7 @@ describe('User CRUD tests', function () {
                 return done(confirmEmailPostErr);
               }
 
-              // NodeJS v4 changed the status code representation so we must check
-              // before asserting, to be comptabile with all node versions.
-              if (process.version.indexOf('v4') === 0 || process.version.indexOf('v5') === 0) {
-                confirmEmailGetRes.text.should.equal('Found. Redirecting to /confirm-email-invalid');
-              } else {
-                confirmEmailGetRes.text.should.equal('Moved Temporarily. Redirecting to /confirm-email-invalid');
-              }
+              confirmEmailGetRes.text.should.equal(redirectMessage('/confirm-email-invalid'));
 
               // POST does the actual job
               agent.post('/api/auth/confirm-email/WRONG_TOKEN')
@@ -215,8 +239,8 @@ describe('User CRUD tests', function () {
 
                   return done();
                 });
-              });
-          });
+            });
+        });
       });
   });
 
@@ -244,14 +268,7 @@ describe('User CRUD tests', function () {
             }
 
             signoutRes.redirect.should.equal(true);
-
-            // NodeJS v4 changed the status code representation so we must check
-            // before asserting, to be comptabile with all node versions.
-            if (process.version.indexOf('v4') === 0 || process.version.indexOf('v5') === 0) {
-              signoutRes.text.should.equal('Found. Redirecting to /');
-            } else {
-              signoutRes.text.should.equal('Moved Temporarily. Redirecting to /');
-            }
+            signoutRes.text.should.equal(redirectMessage('/'));
 
             return done();
           });
@@ -267,7 +284,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(emailCredentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -282,18 +299,73 @@ describe('User CRUD tests', function () {
             }
 
             signoutRes.redirect.should.equal(true);
-
-            // NodeJS v4 changed the status code representation so we must check
-            // before asserting, to be comptabile with all node versions.
-            if (process.version.indexOf('v4') === 0 || process.version.indexOf('v5') === 0) {
-              signoutRes.text.should.equal('Found. Redirecting to /');
-            } else {
-              signoutRes.text.should.equal('Moved Temporarily. Redirecting to /');
-            }
+            signoutRes.text.should.equal(redirectMessage('/'));
 
             return done();
           });
       });
+  });
+
+  context('logged in as a confirmed user', function() {
+
+    beforeEach(function(done) {
+      agent.post('/api/auth/signin')
+        .send(confirmedCredentials)
+        .expect(200)
+        .end(function(err, signinRes) {
+          if (err) return done(err);
+          // Sanity check they are confirmed
+          signinRes.body.public.should.equal(true);
+          done();
+        });
+    });
+
+    it('should not resend confirmation token', function(done) {
+      agent.post('/api/auth/resend-confirmation')
+        .expect(400)
+        .end(function(err, resendRes) {
+          if (err) return done(err);
+          resendRes.body.message.should.equal('Already confirmed.');
+          done();
+        });
+    });
+
+  });
+
+  context('logged in as unconfirmed user', function() {
+
+    beforeEach(function(done) {
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function(err, signinRes) {
+          if (err) return done(err);
+          // Sanity check they are unconfirmed
+          signinRes.body.public.should.equal(false);
+          done();
+        });
+    });
+
+    it('should resend confirmation token', function(done) {
+      agent.post('/api/auth/resend-confirmation')
+        .expect(200)
+        .end(function(err, resendRes) {
+          if (err) return done(err);
+          resendRes.body.message.should.equal('Sent confirmation email.');
+          User.findOne(
+            { username: _user.username.toLowerCase() },
+            'emailToken',
+            function(err, userRes) {
+              if (err) return done(err);
+              should.exist(userRes);
+              should.exist(userRes.emailToken);
+              // Make sure it has changed from the original value
+              userRes.emailToken.should.not.equal(_user.emailToken);
+              done();
+            });
+        });
+    });
+
   });
 
   it('forgot password should return 400 for non-existent username', function (done) {
@@ -404,7 +476,7 @@ describe('User CRUD tests', function () {
           username: user.username
         })
         .expect(200)
-        .end(function (err, res) {
+        .end(function (err) {
           // Handle error
           if (err) {
             return done(err);
@@ -439,7 +511,7 @@ describe('User CRUD tests', function () {
           username: user.username
         })
         .expect(200)
-        .end(function (err, res) {
+        .end(function (err) {
           // Handle error
           if (err) {
             return done(err);
@@ -466,7 +538,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -495,7 +567,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -524,7 +596,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -553,7 +625,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -602,7 +674,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -658,7 +730,7 @@ describe('User CRUD tests', function () {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr, signinRes) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -666,12 +738,12 @@ describe('User CRUD tests', function () {
 
           var userUpdate = {
             firstName: 'user_update_first',
-            lastName: 'user_update_last',
+            lastName: 'user_update_last'
           };
 
           agent.put('/api/users')
             .send(userUpdate)
-            //.expect(200)
+            // .expect(200)
             .end(function (userInfoErr, userInfoRes) {
               if (userInfoErr) {
                 return done(userInfoErr);
@@ -699,7 +771,7 @@ describe('User CRUD tests', function () {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr, signinRes) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -756,7 +828,7 @@ describe('User CRUD tests', function () {
       agent.post('/api/auth/signin')
         .send(credentials2)
         .expect(200)
-        .end(function (signinErr, signinRes) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -794,7 +866,7 @@ describe('User CRUD tests', function () {
 
       var userUpdate = {
         firstName: 'user_update_first',
-        lastName: 'user_update_last',
+        lastName: 'user_update_last'
       };
 
       agent.put('/api/users')
@@ -834,7 +906,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -861,7 +933,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -888,7 +960,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -915,7 +987,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -936,7 +1008,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -964,7 +1036,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -992,7 +1064,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1020,7 +1092,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1048,7 +1120,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1065,7 +1137,7 @@ describe('User CRUD tests', function () {
               return done(userInfoErr);
             }
 
-            userInfoRes.body.message.should.equal('Image too big. Please maximum ' + (config.maxUploadSize / (1024*1024)).toFixed(2) + ' Mb files.');
+            userInfoRes.body.message.should.equal('Image too big. Please maximum ' + (config.maxUploadSize / (1024 * 1024)).toFixed(2) + ' Mb files.');
 
             return done();
           });
@@ -1076,7 +1148,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1132,7 +1204,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1188,7 +1260,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1256,7 +1328,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1319,7 +1391,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1360,7 +1432,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1401,7 +1473,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1431,7 +1503,7 @@ describe('User CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr, signinRes) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -1463,3 +1535,16 @@ describe('User CRUD tests', function () {
     });
   });
 });
+
+/**
+ * Returns the NodeJS redirect text for any version.
+ */
+function redirectMessage(url) {
+  // NodeJS v4 changed the status code representation so we must check
+  // before asserting, to be comptabile with all node versions.
+  if (semver.satisfies(process.versions.node, '>=4.0.0')) {
+    return 'Found. Redirecting to ' + url;
+  } else {
+    return 'Moved Temporarily. Redirecting to ' + url;
+  }
+}

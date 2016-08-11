@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   angular
@@ -10,7 +10,7 @@
 
     // `$resource` to communicate with tribes REST API
     var Tribe = $resource('/api/tribes/:tribeSlug', {
-      tribeSlug:'@slug'
+      tribeSlug: '@slug'
     }, {
       get: {
         method: 'GET'
@@ -32,11 +32,10 @@
      * Automatically clears cache on `get()`.
      */
     function fillCache(tribe) {
-      if(!angular.isDefined(tribe) || !angular.isDefined(tribe.slug)) {
+      if (!angular.isDefined(tribe) || !angular.isDefined(tribe.slug)) {
         $log.error('Missing tribe to cache.');
         return;
-      }
-      else {
+      } else {
         cachedTribe = tribe;
         cachedTribe.$resolved = true;
       }
@@ -55,21 +54,16 @@
      * Automatically clears cache after retreiving object from cache
      */
     function get(options) {
-
       return $q(function(resolve, reject) {
-        if(!angular.isDefined(options) || !angular.isDefined(options.tribeSlug) || !angular.isString(options.tribeSlug)) {
+        if (!angular.isDefined(options) || !angular.isDefined(options.tribeSlug) || !angular.isString(options.tribeSlug)) {
           $log.error('Missing tribeSlug');
           reject();
-        }
-
-        // Found from cache
-        else if(cachedTribe && cachedTribe.slug === options.tribeSlug) {
+        } else if (cachedTribe && cachedTribe.slug === options.tribeSlug) {
+          // Found from cache
           resolve(cachedTribe);
           clearCache();
-        }
-
-        // Not found from cache, return $resource
-        else {
+        } else {
+          // Not found from cache, return $resource
           Tribe.get({
             tribeSlug: options.tribeSlug
           }).$promise
@@ -85,4 +79,4 @@
 
   }
 
-})();
+}());

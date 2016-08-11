@@ -29,8 +29,8 @@ var ThreadSchema = new Schema({
     ref: 'Message'
   },
   read: {
-      type: Boolean,
-      default: false
+    type: Boolean,
+    default: false
   }
 });
 

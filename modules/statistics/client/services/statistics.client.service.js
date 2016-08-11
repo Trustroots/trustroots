@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   // Statistics service used for communicating with the statistics REST endpoints
@@ -12,4 +12,4 @@
     return $resource('/api/statistics');
   }
 
-})();
+}());
