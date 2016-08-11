@@ -13,19 +13,47 @@ describe('service: email', function() {
     emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
   });
 
-  it('can send email confirmation', function(done) {
+  it('can send signup email confirmation', function(done) {
     var user = {
       displayName: 'test user',
       email: 'test@test.com',
+      emailTemporary: 'test@test.com',
       emailToken: 'emailtoken'
     };
-    emailService.sendEmailConfirmation(user, function(err) {
+    emailService.sendSignupEmailConfirmation(user, function(err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal('Confirm Email');
-      jobs[0].data.html.should.containEql('You initiated an email change at Trustroots.');
-      jobs[0].data.text.should.containEql('You initiated an email change at Trustroots.');
+      jobs[0].data.to.name.should.equal(user.displayName);
+      jobs[0].data.to.address.should.equal(user.emailTemporary);
+      ['html', 'text'].forEach(function(format) {
+        jobs[0].data[format].should.containEql('Thank you very much for signing up with us.');
+        jobs[0].data[format].should.containEql('Confirm your email address (' + user.emailTemporary + ') to complete your Trustroots account.');
+        jobs[0].data[format].should.containEql('/confirm-email/' + user.emailToken);
+      });
+      done();
+    });
+  });
+
+  it('can send change email confirmation', function(done) {
+    var user = {
+      displayName: 'test user',
+      email: 'test@test.com',
+      emailTemporary: 'test-change@test.com',
+      emailToken: 'emailtoken'
+    };
+    emailService.sendChangeEmailConfirmation(user, function(err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].type.should.equal('send email');
+      jobs[0].data.subject.should.equal('Confirm email change');
+      jobs[0].data.to.name.should.equal(user.displayName);
+      jobs[0].data.to.address.should.equal(user.emailTemporary);
+      ['html', 'text'].forEach(function(format) {
+        jobs[0].data[format].should.containEql('You initiated an email change at Trustroots.');
+        jobs[0].data[format].should.containEql('Please click the confirmation link below to confirm your new email address: ' + user.emailTemporary);
+      });
       done();
     });
   });
@@ -41,10 +69,10 @@ describe('service: email', function() {
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal('Password Reset');
-      jobs[0].data.html.should.containEql(user.resetPasswordToken);
-      jobs[0].data.text.should.containEql(user.resetPasswordToken);
-      jobs[0].data.text.should.containEql('/api/auth/reset/' + user.resetPasswordToken);
-      jobs[0].data.html.should.containEql('/api/auth/reset/' + user.resetPasswordToken);
+      ['html', 'text'].forEach(function(format) {
+        jobs[0].data[format].should.containEql(user.resetPasswordToken);
+        jobs[0].data[format].should.containEql('/api/auth/reset/' + user.resetPasswordToken);
+      });
       jobs[0].data.to.name.should.equal(user.displayName);
       jobs[0].data.to.address.should.equal(user.email);
       done();

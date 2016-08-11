@@ -347,6 +347,31 @@ describe('User CRUD tests', function () {
         });
     });
 
+    context('with changed email address', function() {
+
+      beforeEach(function(done) {
+        confirmedUser.emailTemporary = 'confirmed-test-changed@test.com';
+        confirmedUser.save(done);
+      });
+
+      it('should resend confirmation token for email change', function(done) {
+
+        agent.post('/api/auth/resend-confirmation')
+          .expect(200)
+          .end(function(err, resendRes) {
+            if (err) return done(err);
+            resendRes.body.message.should.equal('Sent confirmation email.');
+            jobs.length.should.equal(1);
+            jobs[0].type.should.equal('send email');
+            jobs[0].data.subject.should.equal('Confirm email change');
+            jobs[0].data.to.address.should.equal('confirmed-test-changed@test.com');
+            done();
+          });
+
+      });
+
+    });
+
   });
 
   context('logged in as unconfirmed user', function() {
@@ -378,6 +403,10 @@ describe('User CRUD tests', function () {
               should.exist(userRes.emailToken);
               // Make sure it has changed from the original value
               userRes.emailToken.should.not.equal(_user.emailToken);
+              jobs.length.should.equal(1);
+              jobs[0].type.should.equal('send email');
+              jobs[0].data.subject.should.equal('Confirm Email');
+              jobs[0].data.to.address.should.equal(_user.emailTemporary);
               done();
             });
         });
