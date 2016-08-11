@@ -49,6 +49,42 @@
         });
       });
 
+      describe('change email address', function() {
+
+        it('can update email address', function() {
+          ProfileEditAccountController.user.emailTemporary = 'new@email.com';
+          var expectedPutData = {
+            _id: 'user',
+            displayName: 'User',
+            emailTemporary: 'new@email.com'
+          };
+          $httpBackend.expect('PUT', '/api/users', expectedPutData).respond(200);
+          ProfileEditAccountController.updateUserEmail();
+          $httpBackend.flush();
+          expect(messageCenterService.add).toHaveBeenCalledWith(
+            'success',
+            'Check your email for further instructions.'
+          );
+        });
+
+        it('can show an error message during failure', function() {
+          ProfileEditAccountController.user.emailTemporary = 'new@email.com';
+          $httpBackend.expect('PUT', '/api/users').respond(500);
+          ProfileEditAccountController.updateUserEmail();
+          $httpBackend.flush();
+          expect(ProfileEditAccountController.emailError).toEqual('Something went wrong.');
+        });
+
+        it('can show a custom error message during failure', function() {
+          ProfileEditAccountController.user.emailTemporary = 'new@email.com';
+          $httpBackend.expect('PUT', '/api/users').respond(400, { message: 'custom error' });
+          ProfileEditAccountController.updateUserEmail();
+          $httpBackend.flush();
+          expect(ProfileEditAccountController.emailError).toEqual('custom error');
+        });
+
+      });
+
       describe('resend email confirmation', function() {
 
         it('can resend email', function() {

@@ -40,7 +40,7 @@
                           'If you don\'t see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".';
         vm.user = Authentication.user = response;
       }, function(response) {
-        vm.emailError = response.data.message || 'Something went wrong.';
+        vm.emailError = (response.data && response.data.message) || 'Something went wrong.';
       });
     }
 
