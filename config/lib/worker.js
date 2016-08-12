@@ -1,3 +1,5 @@
+'use strict';
+
 var path = require('path'),
     format = require('util').format,
     agenda = require(path.resolve('./config/lib/agenda'));
