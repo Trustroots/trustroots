@@ -57,10 +57,11 @@
     .directive('trEditor', trEditorDirective);
 
   /* @ngInject */
-  function trEditorDirective($parse, $document) {
+  function trEditorDirective($parse) {
 
     function toInnerText(value) {
-      var tempEl = $document.createElement('div'),
+      // eslint-disable-next-line angular/document-service
+      var tempEl = document.createElement('div'),
           text;
       tempEl.innerHTML = value;
       text = tempEl.textContent || '';
