@@ -1,3 +1,5 @@
+'use strict';
+
 var nodemailer = require('nodemailer'),
     path = require('path'),
     config = require(path.resolve('./config/config'));

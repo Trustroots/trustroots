@@ -1,3 +1,5 @@
+'use strict';
+
 var Agenda = require('agenda'),
     config = require('../config');
 

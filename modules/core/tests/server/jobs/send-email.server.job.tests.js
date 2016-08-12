@@ -1,5 +1,3 @@
-// config.mailer.options
-
 'use strict';
 
 var path = require('path'),
