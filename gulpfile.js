@@ -355,7 +355,7 @@ gulp.task('karma:watch', function(done) {
   }, done).start();
 });
 
-// Run the project in development mode
+// Analyse code for potential errors
 gulp.task('lint', function(done) {
   runSequence(['eslint', 'eslint-angular'], done);
 });
