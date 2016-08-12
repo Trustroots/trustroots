@@ -15,7 +15,7 @@
     .directive('messagesUnreadCount', messagesUnreadCountDirective);
 
   /* @ngInject */
-  function messagesUnreadCountDirective($interval, MessagesCount, PollMessagesCount, Authentication) {
+  function messagesUnreadCountDirective(PollMessagesCount, Authentication) {
 
     var directive = {
       restrict: 'A',

@@ -6,7 +6,7 @@
     .controller('ProfileController', ProfileController);
 
   /* @ngInject */
-  function ProfileController($scope, $stateParams, $state, $location, $uibModal, $filter, $window, Languages, Users, Contact, Authentication, $timeout, messageCenterService, profile, contact) {
+  function ProfileController($scope, $stateParams, $state, $uibModal, $filter, Authentication, $timeout, profile, contact) {
 
     // No user defined at URL, just redirect to user's own profile
     if (!$stateParams.username) {

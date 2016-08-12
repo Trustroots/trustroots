@@ -6,7 +6,7 @@
     .controller('ProfileEditPhotoController', ProfileEditPhotoController);
 
   /* @ngInject */
-  function ProfileEditPhotoController($scope, $state, $window, Users, Authentication, messageCenterService, Upload, appSettings) {
+  function ProfileEditPhotoController($scope, $window, Users, Authentication, messageCenterService, Upload, appSettings) {
 
     // ViewModel
     var vm = this;

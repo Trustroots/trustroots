@@ -6,7 +6,7 @@
     .controller('OffersViewController', OffersViewController);
 
   /* @ngInject */
-  function OffersViewController($scope, $state, OffersByService, Authentication, leafletData, MapLayersFactory, LocationService) {
+  function OffersViewController($scope, OffersByService, MapLayersFactory, LocationService) {
 
     // ViewModel
     var vm = this;

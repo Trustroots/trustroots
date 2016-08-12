@@ -6,7 +6,7 @@
     .controller('ContactRemoveController', ContactRemoveController);
 
   /* @ngInject */
-  function ContactRemoveController($scope, $rootScope, $uibModalInstance, $timeout, messageCenterService, Contact, Authentication) {
+  function ContactRemoveController($scope, $rootScope, $uibModalInstance, messageCenterService, Contact, Authentication) {
 
     var contactToRemove = $scope.contactToRemove;
 

@@ -4,6 +4,7 @@
 // eslint-disable-next-line no-unused-vars
 var AppConfig = (function () {
   // Init module configuration options
+  // eslint-disable-next-line angular/window-service
   var appEnv = window.env || 'production';
   var appModuleName = 'trustroots';
   var appModuleVendorDependencies = [
