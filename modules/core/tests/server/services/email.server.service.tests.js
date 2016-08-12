@@ -193,4 +193,20 @@ describe('service: email', function() {
     });
   });
 
+  it('emails should have inline css styles', function(done) {
+    var params = emailService.addEmailBaseTemplateParams({
+      subject: 'test',
+      name: 'test',
+      email: 'test@test.com',
+      utmCampaign: 'test',
+      urlConfirmPlainText: '#',
+      urlConfirm: '#'
+    });
+
+    emailService.renderEmail('reset-password', params, function(err, email) {
+      email.html.should.containEql('<body style=');
+      done();
+    });
+  });
+
 });

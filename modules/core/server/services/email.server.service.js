@@ -5,6 +5,7 @@
  */
 var path = require('path'),
     async = require('async'),
+    juice = require('juice'),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     render = require(path.resolve('./config/lib/render')),
     agenda = require(path.resolve('./config/lib/agenda')),
@@ -226,7 +227,7 @@ exports.renderEmail = function(templateName, params, callback) {
       },
       from: 'Trustroots <' + config.mailer.from + '>',
       subject: params.subject,
-      html: result.html,
+      html: juice(result.html),
       text: result.text
     };
     callback(null, email);
