@@ -29,9 +29,8 @@ module.exports = {
   }
   */
 
-  // Example configuration using MailDev
+  // Configuration to work with default MailDev dev setup
   // https://github.com/djfarrelly/MailDev
-  /*
   mailer: {
     from: 'trustroots@dev.trustroots.org',
     options: {
@@ -41,7 +40,6 @@ module.exports = {
       auth: false
     }
   }
-  */
 
   // Uncomment if you want to have Mapbox maps at development environment
   /*
@@ -67,4 +65,5 @@ module.exports = {
     publicKey: 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
   }
   */
+
 };

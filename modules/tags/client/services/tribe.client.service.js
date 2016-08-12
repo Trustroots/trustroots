@@ -32,7 +32,7 @@
      * Automatically clears cache on `get()`.
      */
     function fillCache(tribe) {
-      if (!angular.isDefined(tribe) || !angular.isDefined(tribe.slug)) {
+      if (angular.isUndefined(tribe) || angular.isUndefined(tribe.slug)) {
         $log.error('Missing tribe to cache.');
         return;
       } else {
@@ -55,7 +55,7 @@
      */
     function get(options) {
       return $q(function(resolve, reject) {
-        if (!angular.isDefined(options) || !angular.isDefined(options.tribeSlug) || !angular.isString(options.tribeSlug)) {
+        if (angular.isUndefined(options) || angular.isUndefined(options.tribeSlug) || !angular.isString(options.tribeSlug)) {
           $log.error('Missing tribeSlug');
           reject();
         } else if (cachedTribe && cachedTribe.slug === options.tribeSlug) {

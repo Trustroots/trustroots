@@ -11,7 +11,6 @@
   /* @ngInject */
   function trBoardCreditsDirective() {
     return {
-      replace: true,
       template:
         '<span class="boards-credits" ng-if="app.photoCreditsCount">' +
         '  <span ng-if="app.photoCreditsCount === 1">Photo by</span>' +

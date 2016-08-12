@@ -6,7 +6,7 @@
     .controller('ContactConfirmController', ContactConfirmController);
 
   /* @ngInject */
-  function ContactConfirmController($state, $stateParams, Authentication, Contact, contact) {
+  function ContactConfirmController($stateParams, Authentication, contact) {
 
     // ViewModel
     var vm = this;

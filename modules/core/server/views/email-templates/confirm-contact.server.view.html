@@ -38,9 +38,9 @@
                                               <p>Hey {{name}}!</p>
                                               <p><a href="{{meURL}}">{{meName}}</a> would like to connect with you on Trustroots.</p>
 
-                                              {% if message %}
+                                              {% if messageHTML %}
                                               <div class="message">
-                                                {{message | safe }}
+                                                {{messageHTML | safe }}
                                               </div>
                                               {% endif %}
 

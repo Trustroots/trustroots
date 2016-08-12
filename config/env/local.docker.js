@@ -19,7 +19,7 @@ module.exports = {
 
   /**
    * NodeMailer settings for Maildev Docker image
-   * https://github.com/djfarrelly/MailDev
+   * @link https://github.com/djfarrelly/MailDev
    */
   mailer: {
     from: 'hello@trustroots.dev',
@@ -30,7 +30,6 @@ module.exports = {
       auth: false
     }
   }
-
 
   // See config/env/local.sample.js for how to configure mapbox layers, sending emails via Gmail etc
 
