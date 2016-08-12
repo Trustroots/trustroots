@@ -33,26 +33,7 @@ cp config/env/local.sample.js config/env/local.js
 ```
 Add here any configurations you want to keep out of version control.
 
-### 3. Configure Nodemailer
-Many features (such as signup) rely on sending emails so configure at least `mailer` section from newly created `local.js`. See [Nodemailer SMTP usage](https://github.com/andris9/nodemailer-smtp-transport#usage) and note that it has pre filled settings for [some services](https://github.com/andris9/nodemailer-smtp-transport#using-well-known-services).
-
-For development we highly recommend using [MailDev](http://djfarrelly.github.io/MailDev/) to catch emails locally.
-
-Install it:
-```bash
-npm install -g maildev
-```
-
-Run it:
-```bash
-maildev
-```
-
-See it running at [http://localhost:1080/](http://localhost:1080/).
-
-Then simply uncomment MailDev configuration example from `local.js` file
-
-### 4. Make sure MongoDB is running on the default port (27017):
+### 3. Make sure MongoDB is running on the default port (27017):
 
 ```bash
 mongod
@@ -62,18 +43,22 @@ Optional: If you need to modify connection settings, see `local.js` config file 
 
 Optional: Installing [Robomongo](https://robomongo.org/) might come handy.
 
-### 5. Install Node modules:
+### 4. Install Node modules:
 ```bash
 npm install
 ```
 
-### 6. Finally start the app:
+### 5. Finally start the app:
 ```bash
 npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [localhost:3000](http://localhost:3000) in your browser.
 
+Additionally, [maildev](http://danfarrelly.nyc/MailDev/) (dev email ui)
+will be available at [localhost:1080](http://localhost:3000) and
+[agendash](https://github.com/joeframbach/agendash) (background job dashboard)
+at [localhost:1081](http://localhost:1081).
 
 ## Running & development
 
