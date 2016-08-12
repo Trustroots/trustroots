@@ -108,7 +108,11 @@ sudo passenger-status
 echo ""
 echo "Clean out old versions"
 cd "$DEPLOYMENT_BASE"
-find . -maxdepth 1 -type d -not \( -name '.' -or -name "$DEPLOYMENT_NAME_NEXT" -or -name "$DEPLOYMENT_NAME_SYMLINK" -or -name "$DEPLOYMENT_NAME_PREV" -or -name "$DEPLOYMENT_NAME$
+find . -maxdepth 1 -type d -not \( -name '.'  \
+                               -or -name "$DEPLOYMENT_NAME_NEXT"  \
+                               -or -name "$DEPLOYMENT_NAME_SYMLINK"  \
+                               -or -name "$DEPLOYMENT_NAME_PREV"  \
+                               -or -name "$DEPLOYMENT_NAME_PREV_SYMLINK" \) -exec rm -fr {} +
 ls -l "$DEPLOYMENT_BASE"
 
 echo ""
