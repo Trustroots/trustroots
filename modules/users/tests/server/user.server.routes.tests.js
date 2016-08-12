@@ -8,7 +8,8 @@ var should = require('should'),
     User = mongoose.model('User'),
     Tag = mongoose.model('Tag'),
     config = require(path.resolve('./config/config')),
-    express = require(path.resolve('./config/lib/express'));
+    express = require(path.resolve('./config/lib/express')),
+    testutils = require(path.resolve('./testutils'));
 
 /**
  * Globals
@@ -26,6 +27,8 @@ var app,
  * User routes tests
  */
 describe('User CRUD tests', function () {
+
+  var jobs = testutils.catchJobs();
 
   before(function (done) {
     // Get application
@@ -120,6 +123,12 @@ describe('User CRUD tests', function () {
         // Assert we have just the default 'user' role
         signupRes.body.roles.should.be.instanceof(Array).and.have.lengthOf(1);
         signupRes.body.roles.indexOf('user').should.equal(0);
+
+        jobs.length.should.equal(1);
+        jobs[0].type.should.equal('send email');
+        jobs[0].data.subject.should.equal('Confirm Email');
+        jobs[0].data.to.address.should.equal(_user.email);
+
         done();
       });
   });
@@ -143,6 +152,11 @@ describe('User CRUD tests', function () {
         should.not.exist(signupRes.body.password);
         should.not.exist(signupRes.body.salt);
         signupRes.body.emailTemporary.should.equal(_user.email);
+
+        jobs.length.should.equal(1);
+        jobs[0].type.should.equal('send email');
+        jobs[0].data.subject.should.equal('Confirm Email');
+        jobs[0].data.to.address.should.equal(_user.email);
 
         User.findOne({ username: _user.username.toLowerCase() }, function(err, userRes1) {
           if (err) {
@@ -170,6 +184,9 @@ describe('User CRUD tests', function () {
                   if (confirmEmailPostErr) {
                     return done(confirmEmailPostErr);
                   }
+
+                  jobs.length.should.equal(1);
+                  jobs[0].type.should.equal('send email');
 
                   // User should now be public
                   confirmEmailPostRes.body.profileMadePublic.should.equal(true);
@@ -330,6 +347,31 @@ describe('User CRUD tests', function () {
         });
     });
 
+    context('with changed email address', function() {
+
+      beforeEach(function(done) {
+        confirmedUser.emailTemporary = 'confirmed-test-changed@test.com';
+        confirmedUser.save(done);
+      });
+
+      it('should resend confirmation token for email change', function(done) {
+
+        agent.post('/api/auth/resend-confirmation')
+          .expect(200)
+          .end(function(err, resendRes) {
+            if (err) return done(err);
+            resendRes.body.message.should.equal('Sent confirmation email.');
+            jobs.length.should.equal(1);
+            jobs[0].type.should.equal('send email');
+            jobs[0].data.subject.should.equal('Confirm email change');
+            jobs[0].data.to.address.should.equal('confirmed-test-changed@test.com');
+            done();
+          });
+
+      });
+
+    });
+
   });
 
   context('logged in as unconfirmed user', function() {
@@ -361,6 +403,10 @@ describe('User CRUD tests', function () {
               should.exist(userRes.emailToken);
               // Make sure it has changed from the original value
               userRes.emailToken.should.not.equal(_user.emailToken);
+              jobs.length.should.equal(1);
+              jobs[0].type.should.equal('send email');
+              jobs[0].data.subject.should.equal('Confirm Email');
+              jobs[0].data.to.address.should.equal(_user.emailTemporary);
               done();
             });
         });

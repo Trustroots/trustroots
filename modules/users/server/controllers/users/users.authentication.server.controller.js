@@ -6,25 +6,13 @@
 var _ = require('lodash'),
     path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
-    analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
-    emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
+    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     profileHandler = require(path.resolve('./modules/users/server/controllers/users/users.profile.server.controller')),
-    config = require(path.resolve('./config/config')),
     passport = require('passport'),
-    nodemailer = require('nodemailer'),
     async = require('async'),
     crypto = require('crypto'),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
-
-// Replace mailer with Stub mailer transporter
-// Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
-// it with the sendMail callback. This is useful for testing the emails before actually sending anything.
-// @link https://github.com/andris9/nodemailer-stub-transport
-if (process.env.NODE_ENV === 'test') {
-  var stubTransport = require('nodemailer-stub-transport');
-  config.mailer.options = stubTransport();
-}
 
 /**
  * Signup
@@ -93,55 +81,9 @@ exports.signup = function(req, res) {
 
     },
 
-    // Prepare HTML email
+    // Send email
     function(user, done) {
-
-      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
-          urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup';
-
-      var renderVars = emailsHandler.addEmailBaseTemplateParams(
-          req.headers.host,
-          {
-            name: user.displayName,
-            email: user.email,
-            ourMail: config.mailer.from,
-            urlConfirmPlainText: urlConfirm,
-            urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
-              source: 'transactional-email',
-              medium: 'email',
-              campaign: 'confirm-email'
-            })
-          },
-          'confirm-email'
-        );
-
-      res.render(path.resolve('./modules/core/server/views/email-templates/signup'), renderVars, function(err, emailHTML) {
-        done(err, emailHTML, user, renderVars, url);
-      });
-    },
-
-    // Prepare TEXT email
-    function(emailHTML, user, renderVars, url, done) {
-      res.render(path.resolve('./modules/core/server/views/email-templates-text/signup'), renderVars, function(err, emailPlain) {
-        done(err, emailHTML, emailPlain, user, url);
-      });
-    },
-
-    // If valid email, send confirm email using service
-    function(emailHTML, emailPlain, user, url, done) {
-      var smtpTransport = nodemailer.createTransport(config.mailer.options);
-      var mailOptions = {
-        to: {
-          name: user.displayName,
-          address: user.email
-        },
-        from: 'Trustroots <' + config.mailer.from + '>',
-        subject: 'Confirm Email',
-        html: emailHTML,
-        text: emailPlain
-      };
-      smtpTransport.sendMail(mailOptions, function(err) {
-        smtpTransport.close(); // close the connection pool
+      emailService.sendSignupEmailConfirmation(user, function(err) {
         done(err, user);
       });
     },
@@ -152,7 +94,7 @@ exports.signup = function(req, res) {
         if (!err) {
           // Remove sensitive data befor sending user
           user = profileHandler.sanitizeProfile(user);
-          res.json(user);
+          return res.json(user);
         }
         done(err);
       });
@@ -160,7 +102,7 @@ exports.signup = function(req, res) {
 
   ], function(err) {
     if (err) {
-      console.log(err);
+      console.error(err);
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
       });
@@ -429,8 +371,6 @@ exports.resendConfirmation = function(req, res) {
   }
 
   var isEmailChange = !!req.user.public;
-  var emailTemplateName = isEmailChange ? 'email-confirmation' : 'signup';
-  var emailSubject = isEmailChange ? 'Confirm email change' : 'Confirm Email';
 
   async.waterfall([
 
@@ -453,61 +393,18 @@ exports.resendConfirmation = function(req, res) {
       });
     },
 
-    // Prepare TEXT mail
+    // Send email
     function(token, user, done) {
-
-      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
-          urlConfirm = url + '/confirm-email/' + token;
-
-      var renderVars = emailsHandler.addEmailBaseTemplateParams(
-          req.headers.host,
-          {
-            name: user.displayName,
-            email: user.emailTemporary,
-            urlConfirmPlainText: urlConfirm,
-            urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
-              source: 'transactional-email',
-              medium: 'email',
-              campaign: 'resend-confirmation'
-            })
-          },
-          'resend-confirmation'
-        );
-
-      res.render(path.resolve('./modules/core/server/views/email-templates-text/' + emailTemplateName), renderVars, function(err, emailPlain) {
-        done(err, emailPlain, user, renderVars);
-      });
-
-    },
-
-    // Prepare HTML mail
-    function(emailPlain, user, renderVars, done) {
-
-      res.render(path.resolve('./modules/core/server/views/email-templates/' + emailTemplateName), renderVars, function(err, emailHTML) {
-        done(err, emailHTML, emailPlain, user);
-      });
-
-    },
-
-    // If valid email, send confirm email using service
-    function(emailHTML, emailPlain, user, done) {
-
-      var smtpTransport = nodemailer.createTransport(config.mailer.options);
-      var mailOptions = {
-        to: {
-          name: user.displayName,
-          address: user.emailTemporary
-        },
-        from: 'Trustroots <' + config.mailer.from + '>',
-        subject: emailSubject,
-        text: emailPlain,
-        html: emailHTML
-      };
-      smtpTransport.sendMail(mailOptions, function(err) {
-        smtpTransport.close(); // close the connection pool
-        done(err, user);
-      });
-
+      if (isEmailChange) {
+        emailService.sendChangeEmailConfirmation(user, function(err) {
+          done(err, user);
+        });
+      } else {
+        // signup confirmation
+        emailService.sendSignupEmailConfirmation(user, function(err) {
+          done(err, user);
+        });
+      }
     },
 
     // Return confirmation

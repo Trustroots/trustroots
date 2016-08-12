@@ -14,9 +14,11 @@
   },
   "scripts": {
     "prestart": "if [ ! -d node_modules ]; then npm install --quiet; fi",
-    "start": "gulp",
+    "start": "concurrently --raw --kill-others 'gulp' 'gulp worker:dev' 'maildev' './scripts/agendash-dev'",
     "start:skipBower": "gulp --skipBower",
     "start:prod": "gulp prod",
+    "start:worker": "gulp worker:dev",
+    "start:worker:prod": "gulp worker:prod",
     "build": "gulp build:dev",
     "build:dev": "gulp build:dev",
     "build:prod": "gulp build:prod",
@@ -28,7 +30,8 @@
     "test:server:watch": "gulp test:server:watch",
     "migrate": "migrate",
     "update": "npm install --quiet && npm prune && migrate",
-    "postinstall": "bower install --allow-root && bower prune --allow-root"
+    "postinstall": "bower install --allow-root && bower prune --allow-root",
+    "agendash": "./scripts/agendash-dev"
   },
   "dependencies": {
     "acl": "~0.4.9",
@@ -95,6 +98,7 @@
     "morgan": "~1.7.0",
     "multer": "~1.1.0",
     "nodemailer": "~2.5.0",
+    "nodemailer-smtp-pool": "~2.7.0",
     "passport": "~0.3.2",
     "passport-facebook": "~2.1.1",
     "passport-github": "~1.1.0",
@@ -111,6 +115,8 @@
     "yargs": "~4.8.1"
   },
   "devDependencies": {
+    "agendash": "^0.3.2",
+    "concurrently": "~2.2.0",
     "faker": "~3.1.0",
     "jasmine-core": "~2.4.1",
     "karma": "~1.1.2",
@@ -119,11 +125,13 @@
     "karma-firefox-launcher": "~1.0.0",
     "karma-jasmine": "~1.0.2",
     "karma-phantomjs-launcher": "~1.0.1",
+    "maildev": "^0.13.4",
     "mocha": "~2.5.3",
     "nodemailer-stub-transport": "~1.0.0",
     "phantomjs-prebuilt": ">=2.1",
     "semver": "~5.3.0",
     "should": "~10.0.0",
+    "sinon": "^1.17.5",
     "supertest": "~1.2.0"
   },
   "bugs": {

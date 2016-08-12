@@ -7,13 +7,11 @@
 var path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
-    analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
-    emailsHandler = require(path.resolve('./modules/core/server/controllers/emails.server.controller')),
+    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
     config = require(path.resolve('./config/config')),
     sanitizeHtml = require('sanitize-html'),
     htmlToText = require('html-to-text'),
-    nodemailer = require('nodemailer'),
     async = require('async'),
     mongoose = require('mongoose'),
     Contact = mongoose.model('Contact'),
@@ -115,74 +113,13 @@ exports.add = function(req, res) {
       });
     },
 
-    // Prepare HTML email for friend
+    // Send email
     function(messageHTML, messagePlain, friend, done) {
-
-      var url = (config.https ? 'https' : 'http') + '://' + req.headers.host,
-          meURL = url + '/profile/' + req.user.username,
-          urlConfirm = url + '/contact-confirm/' + contact._id;
-
-      var renderVars = emailsHandler.addEmailBaseTemplateParams(
-          req.headers.host,
-          {
-            name: friend.displayName,
-            message: messageHTML,
-            meName: req.user.displayName,
-            meURLPlainText: meURL,
-            meURL: analyticsHandler.appendUTMParams(meURL, {
-              source: 'transactional-email',
-              medium: 'email',
-              campaign: 'confirm-contact',
-              content: 'profile'
-            }),
-            urlConfirmPlainText: urlConfirm,
-            urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
-              source: 'transactional-email',
-              medium: 'email',
-              campaign: 'confirm-contact',
-              content: 'confirm-contact'
-            })
-          },
-          'confirm-contact'
-        );
-
-      res.render(path.resolve('./modules/core/server/views/email-templates/confirm-contact'), renderVars, function(err, emailHTML) {
-        done(err, emailHTML, messagePlain, friend, renderVars);
-      });
-    },
-
-    // Prepare TEXT email for friend
-    function(emailHTML, messagePlain, friend, renderVars, done) {
-
-      // Replace html version of attached message with text version
-      renderVars.message = messagePlain;
-
-      res.render(path.resolve('./modules/core/server/views/email-templates-text/confirm-contact'), renderVars, function(err, emailPlain) {
-        done(err, emailHTML, emailPlain, friend);
-      });
-    },
-
-    // If valid email, send email using service
-    function(emailHTML, emailPlain, friend, done) {
-      var smtpTransport = nodemailer.createTransport(config.mailer.options);
-      var mailOptions = {
-        to: {
-          name: friend.displayName,
-          address: friend.email
-        },
-        from: 'Trustroots <' + config.mailer.from + '>',
-        subject: 'Confirm contact',
-        text: emailPlain,
-        html: emailHTML
-      };
-      smtpTransport.sendMail(mailOptions, function(err) {
-        smtpTransport.close(); // close the connection pool
-        if (!err) {
-          return res.send({
-            message: 'An email was sent to your contact.'
-          });
-        }
-        done(err);
+      emailService.sendConfirmContact(req.user, friend, contact, messageHTML, messagePlain, function(err) {
+        if (err) return done(err);
+        return res.send({
+          message: 'An email was sent to your contact.'
+        });
       });
     }
 
