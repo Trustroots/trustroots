@@ -15,7 +15,6 @@
   "scripts": {
     "prestart": "if [ ! -d node_modules ]; then npm install --quiet; fi",
     "start": "concurrently --raw --kill-others 'gulp' 'gulp worker:dev' 'maildev' './scripts/agendash-dev'",
-    "start:no-maildev": "concurrently --raw --kill-others 'gulp' 'gulp worker:dev' './scripts/agendash-dev'",
     "start:skipBower": "gulp --skipBower",
     "start:prod": "gulp prod",
     "start:worker": "gulp worker:dev",
@@ -32,7 +31,7 @@
     "migrate": "migrate",
     "update": "npm install --quiet && npm prune && migrate",
     "postinstall": "bower install --allow-root && bower prune --allow-root",
-    "agendash": "agendash --db=mongodb://localhost/trustroots-dev --collection=agendaJobs --port=3001"
+    "agendash": "./scripts/agendash-dev"
   },
   "dependencies": {
     "acl": "~0.4.9",
