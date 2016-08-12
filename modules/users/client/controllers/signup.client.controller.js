@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($scope, $rootScope, $timeout, $http, $q, $state, $stateParams, $uibModal, $window, Authentication, UserTagsService, messageCenterService, TribeService, TribesService) {
+  function SignupController($rootScope, $http, $state, $stateParams, $uibModal, Authentication, UserTagsService, messageCenterService, TribeService, TribesService) {
 
     // View Model
     var vm = this;
@@ -74,6 +74,7 @@
         if (withoutTribeId) {
           angular.forEach(tribes, function(suggestedTribe) {
             if (suggestedTribe._id !== withoutTribeId) {
+              // eslint-disable-next-line angular/controller-as-vm
               this.push(suggestedTribe);
             }
           }, suggestedTribes);
@@ -137,12 +138,7 @@
         $event.preventDefault();
       }
       $uibModal.open({
-        templateUrl: '/modules/users/views/authentication/rules-modal.client.view.html',
-        controller: function ($scope, $uibModalInstance) {
-          $scope.closeRules = function () {
-            $uibModalInstance.dismiss('cancel');
-          };
-        }
+        templateUrl: '/modules/users/views/authentication/rules-modal.client.view.html'
       });
     }
 

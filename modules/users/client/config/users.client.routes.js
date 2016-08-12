@@ -28,7 +28,8 @@
           /* @ngInject */
           function($state) {
             $state.go('profile-edit.account');
-          }
+          },
+        controllerAs: 'profileSettings'
       }).
 
       state('profile-edit', {

@@ -14,7 +14,7 @@
     .factory('MapLayersFactory', MapLayersFactory);
 
   /* @ngInject */
-  function MapLayersFactory($log, SettingsFactory, LocationService) {
+  function MapLayersFactory(SettingsFactory, LocationService) {
 
     var appSettings = SettingsFactory.get();
 

@@ -20,6 +20,7 @@
 
     // `tr-tribe-join-button` and `tr-tribe-join` directives expect
     // `tribe` to be directly on their scope, as they don't have their own scope.
+    // eslint-disable-next-line angular/controller-as
     $scope.tribe = tribe;
 
     /**

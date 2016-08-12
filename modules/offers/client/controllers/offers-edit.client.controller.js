@@ -6,7 +6,7 @@
     .controller('OffersEditController', OffersEditController);
 
   /* @ngInject */
-  function OffersEditController($http, $timeout, $state, $stateParams, $location, leafletBoundsHelpers, OffersService, Authentication, messageCenterService, MapLayersFactory, offer, appSettings, LocationService) {
+  function OffersEditController($http, $state, $stateParams, leafletBoundsHelpers, OffersService, Authentication, messageCenterService, MapLayersFactory, offer, appSettings, LocationService) {
 
     // Default location for all TR maps,
     // Returns `{lat: Float, lng: Float, zoom: 4}`

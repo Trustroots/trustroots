@@ -57,10 +57,10 @@
     .directive('trEditor', trEditorDirective);
 
   /* @ngInject */
-  function trEditorDirective($parse) {
+  function trEditorDirective($parse, $document) {
 
     function toInnerText(value) {
-      var tempEl = document.createElement('div'),
+      var tempEl = $document.createElement('div'),
           text;
       tempEl.innerHTML = value;
       text = tempEl.textContent || '';

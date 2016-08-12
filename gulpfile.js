@@ -136,17 +136,17 @@ gulp.task('watch', function() {
 
   // Add watch rules
   gulp.watch(defaultAssets.server.views).on('change', plugins.livereload.changed);
-  gulp.watch(defaultAssets.server.allJS, ['eslint']).on('change', plugins.livereload.changed);
+  gulp.watch(defaultAssets.server.allJS, ['lint']).on('change', plugins.livereload.changed);
   gulp.watch(defaultAssets.server.fontelloConfig, ['fontello']);
   gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
 
   if (process.env.NODE_ENV === 'production') {
-    gulp.watch(defaultAssets.client.js, ['eslint', 'clean:js', 'scripts']);
-    gulp.watch(defaultAssets.server.gulpConfig, ['eslint']);
+    gulp.watch(defaultAssets.client.js, ['lint', 'clean:js', 'scripts']);
+    gulp.watch(defaultAssets.server.gulpConfig, ['lint']);
     gulp.watch(defaultAssets.client.views, ['clean:js', 'scripts']).on('change', plugins.livereload.changed);
   } else {
-    gulp.watch(defaultAssets.client.js, ['eslint']).on('change', plugins.livereload.changed);
-    gulp.watch(defaultAssets.server.gulpConfig, ['eslint']);
+    gulp.watch(defaultAssets.client.js, ['lint']).on('change', plugins.livereload.changed);
+    gulp.watch(defaultAssets.server.gulpConfig, ['lint']);
     gulp.watch(defaultAssets.client.views).on('change', plugins.livereload.changed);
   }
 });
@@ -189,6 +189,18 @@ gulp.task('eslint', function() {
 
   return gulp.src(assets)
     .pipe(plugins.eslint())
+    .pipe(plugins.eslint.format())
+    // To have the process exit with an error code (1) on
+    // lint error, return the stream and pipe to failAfterError last.
+    .pipe(plugins.eslint.failAfterError());
+});
+
+// ESLint JS linting task for Angular files
+gulp.task('eslint-angular', function() {
+  return gulp.src(defaultAssets.client.js)
+    .pipe(plugins.eslint({
+      configFile: '.eslintrc-angular.js'
+    }))
     .pipe(plugins.eslint.format())
     // To have the process exit with an error code (1) on
     // lint error, return the stream and pipe to failAfterError last.
@@ -379,14 +391,19 @@ gulp.task('karma:watch', function(done) {
   }, done).start();
 });
 
+// Analyse code for potential errors
+gulp.task('lint', function(done) {
+  runSequence(['eslint', 'eslint-angular'], done);
+});
+
 // Build assets for development mode
 gulp.task('build:dev', function(done) {
-  runSequence('env:dev', 'bower', 'eslint', 'clean', ['uibTemplatecache', 'styles'], done);
+  runSequence('env:dev', 'bower', 'lint', 'clean', ['uibTemplatecache', 'styles'], done);
 });
 
 // Build assets for production mode
 gulp.task('build:prod', function(done) {
-  runSequence('env:prod', 'bower', 'eslint', 'clean', ['styles', 'scripts'], done);
+  runSequence('env:prod', 'bower', 'lint', 'clean', ['styles', 'scripts'], done);
 });
 
 // Clean dist css and js files
@@ -396,11 +413,11 @@ gulp.task('clean', function(done) {
 
 // Run the project tests
 gulp.task('test', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'eslint', ['karma', 'mocha'], done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', ['karma', 'mocha'], done);
 });
 
 gulp.task('test:server', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'eslint', 'mocha', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'mocha', done);
 });
 
 gulp.task('test:server:no-lint', function(done) {
@@ -413,11 +430,11 @@ gulp.task('test:server:watch', function(done) {
 });
 
 gulp.task('test:client', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'eslint', 'karma', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'karma', done);
 });
 
 gulp.task('test:client:watch', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'eslint', 'karma:watch', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'karma:watch', done);
 });
 
 // Run the project in development mode

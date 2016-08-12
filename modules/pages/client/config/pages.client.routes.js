@@ -95,12 +95,15 @@
           /* @ngInject */
           function($state) {
             $state.go('home');
-          }
+          },
+        controllerAs: 'about'
       });
 
     /**
      * Work around redirecting to home on SEO rendered pages
      */
+    // Angular's `$window` service is not available for `config` blocks
+    // eslint-disable-next-line angular/window-service
     if (window.location.search.search('_escaped_fragment_') === -1) {
       $stateProvider.state('home', {
         url: '/?tribe',

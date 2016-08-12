@@ -6,7 +6,7 @@
     .controller('SearchSignupController', SearchSignupController);
 
   /* @ngInject */
-  function SearchSignupController($stateParams, $timeout, MapLayersFactory, LocationService) {
+  function SearchSignupController($stateParams, MapLayersFactory, LocationService) {
 
     // ViewModel
     var vm = this;

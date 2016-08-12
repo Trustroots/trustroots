@@ -15,7 +15,7 @@
     .controller('MessagesThreadController', MessagesThreadController);
 
   /* @ngInject */
-  function MessagesThreadController($rootScope, $scope, $stateParams, $state, $document, $window, $anchorScroll, $timeout, $filter, $analytics, Authentication, Messages, MessagesRead, messageCenterService, locker, appSettings, userTo) {
+  function MessagesThreadController($rootScope, $scope, $stateParams, $state, $timeout, $filter, $analytics, Authentication, Messages, MessagesRead, messageCenterService, locker, userTo) {
 
     // Go back to inbox on these cases
     // - No recepient defined
