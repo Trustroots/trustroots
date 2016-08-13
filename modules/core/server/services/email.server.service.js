@@ -101,11 +101,20 @@ exports.sendResetPassword = function(user, callback) {
 };
 
 exports.sendResetPasswordConfirm = function(user, callback) {
+
+  var urlResetPassword = url + '/password/forgot';
+
   var params = exports.addEmailBaseTemplateParams({
     subject: 'Your password has been changed',
     name: user.displayName,
     email: user.email,
-    utmCampaign: 'reset-password-confirm'
+    utmCampaign: 'reset-password-confirm',
+    urlResetPasswordPlainText: urlResetPassword,
+    urlResetPassword: analyticsHandler.appendUTMParams(urlResetPassword, {
+      source: 'transactional-email',
+      medium: 'email',
+      campaign: 'reset-password-confirm'
+    })
   });
   exports.renderEmailAndSend('reset-password-confirm', params, callback);
 };
