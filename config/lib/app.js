@@ -13,14 +13,6 @@ mongoose.loadModels();
 
 module.exports.init = function init(callback) {
 
-  // Debug Node.js C/C++ native code modules on dev mode
-  // @link https://www.npmjs.com/package/segfault-handler
-  if (process.env.NODE_ENV === 'development') {
-    var SegfaultHandler = require('segfault-handler');
-    SegfaultHandler.registerHandler('segfault.log');
-    console.log('Logging possible segfault errors to ./segfault.log');
-  }
-
   mongoose.connect(function (db) {
     // Initialize express
     var app = express.init(db);
