@@ -9,7 +9,7 @@
   function AuthenticationController($scope, $rootScope, $http, $state, $stateParams, $analytics, Authentication, messageCenterService) {
 
     // If user is already signed in then redirect to search page
-    if (Authentication.user) $state.go('search');
+    if (Authentication.user) $state.go('search.map');
 
     // View Model
     var vm = this;
@@ -52,7 +52,7 @@
             $state.go(stateTo, stateToParams);
           } else {
             // Redirect to the search page
-            $state.go('search');
+            $state.go('search.map');
           }
         },
         function(error) { // On error function

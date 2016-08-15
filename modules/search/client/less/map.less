@@ -3,14 +3,7 @@
  * Try to keep this "mobile first"
  */
 
-// Variables
-@search-sidebar-bg:                 rgba(255, 255, 255, 0.85);
-@search-sidebar-width:              300px;
-@search-toolbar-opacity:            0.95;
-@search-controls-gap-mobile:        6px;
-
-
-.search-map {
+.search {
   // Hide overlays list from the layer controller
   // @todo: This should be done at JS but isn't possible with Angular-Leaflet
   .leaflet-control-layers {
@@ -21,112 +14,73 @@
   }
 }
 
-#search-map-canvas {
-  left: 0;
-  right: 0;
-  width: auto;
-  height: auto;
-  z-index: 0;
+// Active area where Leaflet centers etc
+// @link https://github.com/Mappy/Leaflet-active-area
+.search-map-active-area {
+  pointer-events: none;
   position: fixed;
   top: @navbar-height;
+  left: 0;
+  right: 0;
   bottom: 0;
-
-  // Move some controllers to different places from their initial corners
-  @media (max-width: @screen-xs-max) {
-    // Zoom control on botton-right instead at small screens
-    .leaflet-top.leaflet-left {
-      left: auto;
-      top: auto;
-      bottom: 0;
-      right: 0;
-      .leaflet-control {
-        margin: 0 @search-controls-gap-mobile @search-controls-gap-mobile 0;
-      }
-    }
-    // Attribution control
-    .leaflet-bottom.leaflet-right {
-      right: 70px;
-    }
-    // Layer switch
-    .leaflet-bottom.leaflet-left {
-      .leaflet-control {
-        margin: 0 0 @search-controls-gap-mobile @search-controls-gap-mobile;
-      }
-    }
+}
+.search.is-sidebar-open .search-map-active-area {
+  left: @search-sidebar-percentage-width;
+  @media (max-width: @search-sidebar-min-breakpoint) {
+    left: @search-sidebar-min-width;
+  }
+  @media (min-width: @search-sidebar-max-breakpoint) {
+    left: @search-sidebar-max-width;
   }
 }
 
-.map-location-search {
-  position: absolute;
-  z-index: @zindex-navbar;
-  width: auto;
-  margin-right: 0;
-  top: (@navbar-height + @search-controls-gap-mobile);
-  right: @search-controls-gap-mobile;
-  left: @search-controls-gap-mobile;
-  @media (min-width: @screen-sm-min) {
-    width: 300px;
-    left: 70px;
-    top: (@navbar-height + @padding-base-horizontal);
+.search-map-container {
+  &.is-sidebar-open {
+    .leaflet-left {
+      left: @search-sidebar-percentage-width;
+      @media (max-width: @search-sidebar-min-breakpoint) {
+        left: @search-sidebar-min-width;
+      }
+      @media (min-width: @search-sidebar-max-breakpoint) {
+        left: @search-sidebar-max-width;
+      }
+    }
   }
-  @media (min-width: @screen-md-min) {
-    margin-right: -150px;
-    left: auto;
-    right: 50%;
+  .leaflet-container {
+    left: 0;
+    right: 0;
+    width: auto;
+    height: auto;
+    z-index: 0;
+    position: fixed;
+    top: @navbar-height;
+    bottom: 0;
+
+    // Move some controllers to different places from their initial corners
+    /*
+    @media (max-width: @screen-xs-max) {
+      // Zoom control on botton-right instead at small screens
+      .leaflet-top.leaflet-left {
+        left: auto;
+        top: auto;
+        bottom: 0;
+        right: 0;
+        .leaflet-control {
+          margin: 0 @search-controls-gap-mobile @search-controls-gap-mobile 0;
+        }
+      }
+      // Attribution control
+      .leaflet-bottom.leaflet-right {
+        right: 70px;
+      }
+      // Layer switch
+      .leaflet-bottom.leaflet-left {
+        .leaflet-control {
+          margin: 0 0 @search-controls-gap-mobile @search-controls-gap-mobile;
+        }
+      }
+    }
+    */
   }
 
-  // Search bar opacity trick
-  .btn,
-  #search-query {
-    background: #fff;
-    opacity: @search-toolbar-opacity;
-    transition: opacity 0.2s;
-  }
-  // Notice .active and :active
-  &.active,
-  &:active,
-  &:hover {
-    .btn,
-    #search-query {
-      opacity: 1;
-    }
-  }
-  .btn,
-  #search-query {
-    &:focus,
-    &:active,
-    &:hover {
-      opacity: 1;
-    }
-  }
-  .input-group {
-    box-shadow: 0 1px 5px rgba(0,0,0,0.35);
-  }
-  .btn,
-  #search-query {
-    &:disabled {
-      background: #fff;
-      opacity: 0.8;
-    }
-    &:active,
-    &:focus {
-      outline: none;
-      box-shadow: none;
-    }
-  }
-  #search-query {
-    box-shadow: none;
-    border-color: #fff;
-    border-radius: 0;
-    border-right: 0;
-    .border-left-radius(@border-radius-base);
-  }
-  .btn {
-    border-radius: 0;
-    border-left: 0;
-    .border-right-radius(@border-radius-base);
-    &.btn-lg {
-      height: 46px; // @todo: fixing different size btn and input, but why this occurs?
-    }
-  }
 }

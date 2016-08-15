@@ -29,7 +29,8 @@
     "medium-editor": "~5.21.0",
     "angular-confirm-modal": "~1.2.5",
     "angulartics-google-analytics": "~0.2.0",
-    "angulargrid": "~0.6.0"
+    "angulargrid": "~0.6.0",
+    "leaflet-active-area": "#6f13cffe44faee56e8a089ff6ea6022465c257a9"
   },
   "resolutions": {
     "angular": "1.5.7",

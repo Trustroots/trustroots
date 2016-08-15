@@ -61,6 +61,8 @@
           $httpBackend.when('POST', '/api/auth/signin').respond(200, 'Fred');
           $httpBackend.when('GET', '/modules/pages/views/home.client.view.html').respond(200, '');
           $httpBackend.when('GET', '/modules/search/views/search.client.view.html').respond(200, '');
+          $httpBackend.when('GET', '/modules/search/views/search-map.client.view.html').respond(200, '');
+          $httpBackend.when('GET', '/modules/search/views/search-sidebar.client.view.html').respond(200, '');
 
           AuthenticationController.signin();
           $httpBackend.flush();
@@ -107,7 +109,7 @@
         }));
 
         it('should be redirected to home', function () {
-          expect($state.go).toHaveBeenCalledWith('search');
+          expect($state.go).toHaveBeenCalledWith('search.map');
         });
       });
 

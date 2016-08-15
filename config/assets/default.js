@@ -52,6 +52,7 @@ module.exports = {
         'public/lib/angular-simple-logger/dist/angular-simple-logger.js', // Required by angular-leaflet-directive
         'public/lib/PruneCluster/dist/PruneCluster.js',
         'public/lib/ui-leaflet/dist/ui-leaflet.js',
+        'public/lib/leaflet-active-area/src/leaflet.activearea.js',
         'public/lib/angular-waypoints/dist/angular-waypoints.all.js',
         'public/lib/ng-file-upload/ng-file-upload.js',
         'public/lib/message-center/message-center.js',

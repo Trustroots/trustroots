@@ -30,16 +30,27 @@
       require: 'ngModel',
       scope: {
         value: '=ngModel',
-        trLocationCenter: '=?', // `?` makes this optional
-        trLocationBounds: '=?'  // `?` makes this optional
+        // `?` makes these optional
+        trLocationInit: '=?',
+        trLocationChange: '=?',
+        trLocationNotfound: '=?',
+        trLocationCenter: '=?',
+        trLocationBounds: '=?'
       },
       replace: false,
       link: function (scope, element, attr, ngModel) {
 
         // Event handler to stop submitting the surrounding form
         element.bind('keydown keypress', function($event) {
+          scope.trLocationNotfound = false;
+
+          // On enter
           if ($event.which === 13) {
+            // Signal to controller that enter was pressed
+            scope.skipSuggestions = true;
             $event.preventDefault();
+          } else {
+            scope.skipSuggestions = false;
           }
         });
 
@@ -71,11 +82,41 @@
         vm.searchSuggestions = searchSuggestions;
         vm.onSelect = onSelect;
 
+        // Initialize controller
+        activate();
+
+        function activate() {
+          // If directive has init value, use it to search a location
+          if (angular.isDefined($scope.trLocationInit) && angular.isString($scope.trLocationInit)) {
+            // If location is found, don't show suggestions list but activate first found result
+            $scope.skipSuggestions = true;
+            searchSuggestions($scope.trLocationInit);
+          }
+        }
+
         /**
          * Get geolocation suggestions
          */
         function searchSuggestions(query) {
-          return LocationService.suggestions(query);
+          $scope.trLocationNotfound = false;
+          return LocationService.suggestions(query).then(function(suggestions) {
+            // Enter was pressed before we got these results, thus just pick first
+            if ($scope.skipSuggestions) {
+              $scope.skipSuggestions = false;
+              if (suggestions.length) {
+                locate(suggestions[0]);
+                $scope.value = suggestions[0].trTitle;
+              } else {
+                // Don't return suggestions list
+                $scope.trLocationNotfound = query;
+              }
+              // Don't return suggestions list
+              return [];
+            } else {
+              // Return suggestions list
+              return suggestions;
+            }
+          });
         }
 
         /**
@@ -85,20 +126,26 @@
           $timeout(function() {
             $scope.value = $label;
           });
+          locate($item);
+        }
 
-          // Set center bounds for (Angular-UI-Leaflet) model
-          // Bounds is prioritized over center
-          var bounds = LocationService.getBounds($item);
+        /**
+         * Modify `trLocationCenter` or `trLocationBounds` objects
+         */
+        function locate(location) {
+
+          // Set center bounds and center coordinates for (Angular-UI-Leaflet) model
+          var bounds = LocationService.getBounds(location),
+              center = LocationService.getCenter(location);
 
           if (angular.isObject($scope.trLocationBounds) && bounds) {
             $scope.trLocationBounds = bounds;
-          } else if (angular.isObject($scope.trLocationCenter)) {
-            // If no bounds was found, check `center`
-            // Set center coordinates for (Angular-UI-Leaflet) model
-            var center = LocationService.getCenter($item);
-            if (center) {
-              angular.extend($scope.trLocationCenter, center);
-            }
+          } else if (angular.isObject($scope.trLocationCenter) && center) {
+            angular.extend($scope.trLocationCenter, center);
+          } else if (angular.isFunction($scope.trLocationChange) && bounds) {
+            $scope.trLocationChange(bounds, 'bounds');
+          } else if (angular.isFunction($scope.trLocationChange) && center) {
+            $scope.trLocationChange(center, 'center');
           }
 
         }

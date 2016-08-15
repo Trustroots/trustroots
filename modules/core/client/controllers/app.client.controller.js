@@ -26,7 +26,6 @@
     vm.photoCredits = {};
     vm.photoCreditsCount = 0;
 
-
     /**
      * Handle the window blur event
      */
@@ -124,7 +123,7 @@
           // (Normally we just splash a signup page at this point)
           if (toState.name === 'profile') {
             $state.go('profile-signup');
-          } else if (toState.name === 'search') {
+          } else if (toState.name === 'search' || toState.name === 'search.map') {
             $state.go('search-signin', toParams || {});
           } else {
             // Or just continue to the signup page...
@@ -163,7 +162,7 @@
      */
     function goHome() {
       if (Authentication.user) {
-        $state.go('search');
+        $state.go('search.map');
       } else {
         $state.go('home');
       }
