@@ -27,12 +27,19 @@ exports.start = function(options, callback) {
       { lockLifetime: 10000 },
       require(path.resolve('./modules/statistics/server/jobs/daily-statistics.server.job'))
     );
+    agenda.define(
+      'send signup reminders',
+      { lockLifetime: 10000, concurrency: 10 },
+      require(path.resolve('./modules/users/server/jobs/user-finish-signup.server.job'))
+    );
 
     // Schedule job(s)
 
     agenda.every('5 minutes', 'check unread messages');
     agenda.every('24 hours', 'daily statistics');
 
+
+    agenda.every('30 minutes', 'send signup reminders');
 
     // Start worker
 

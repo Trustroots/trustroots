@@ -1,0 +1,16 @@
+{% extends 'email.server.view.html' %}
+
+{% block content %}
+{{name}},
+
+We haven't heard from you since you signed up to Trustroots.
+
+Your profile will not be visible to others if you don't confirm your email address ({{email}}).
+
+It's easy — just click on the link below.
+
+<{{urlConfirmPlainText}}>
+
+Thank you very much for signing up with us!
+
+{% endblock %}

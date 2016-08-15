@@ -273,4 +273,25 @@ describe('Service: email', function() {
     });
   });
 
+  it('can send signup reminder email', function(done) {
+    var user = {
+      _id: 'user-id',
+      username: 'username',
+      displayName: 'Firstname Lastname',
+      email: 'email@test.com',
+      emailTemporary: 'email@test.com',
+      emailToken: 'email-token'
+    };
+    emailService.sendSignupEmailReminder(user, function(err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].type.should.equal('send email');
+      jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
+      jobs[0].data.text.should.containEql('Your profile will not be visible to others if you don\'t confirm your email address (' + user.emailTemporary + ').');
+      jobs[0].data.text.should.containEql('/confirm-email/' + user.emailToken + '?signup');
+      jobs[0].data.to.name.should.equal(user.displayName);
+      jobs[0].data.to.address.should.equal(user.email);
+      done();
+    });
+  });
 });

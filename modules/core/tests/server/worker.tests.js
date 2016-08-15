@@ -145,6 +145,11 @@ describe('Worker tests', function() {
     jobNames.should.containEql('daily statistics');
   });
 
+  it('defines [send signup reminders] job', function() {
+    var jobNames = _.map(definedJobs, 'name');
+    jobNames.should.containEql('send signup reminders');
+  });
+
   it('defines two repeating jobs', function() {
     scheduledJobs.length.should.equal(2);
   });

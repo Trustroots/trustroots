@@ -236,6 +236,14 @@ var UserSchema = new Schema({
     type: Boolean,
     default: false
   },
+  /* Count and latest date of emails sent to remind about un-finished signup
+     Will be removed once user sets `public:true` */
+  publicReminderCount: {
+    type: Number
+  },
+  publicReminderSent: {
+    type: Date
+  },
   /* For reset password */
   resetPasswordToken: {
     type: String
