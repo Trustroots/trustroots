@@ -204,6 +204,7 @@ describe('service: email', function() {
     });
 
     emailService.renderEmail('reset-password', params, function(err, email) {
+      if (err) return done(err);
       email.html.should.containEql('<body style=');
       done();
     });
