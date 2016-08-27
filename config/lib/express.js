@@ -74,11 +74,6 @@ module.exports.initLocalVariables = function (app) {
  * Initialize application middleware
  */
 module.exports.initMiddleware = function (app) {
-  // Showing stack errors
-  app.set('showStackError', true);
-
-  // Enable jsonp
-  app.enable('jsonp callback');
 
   // Should be placed before express.static
   app.use(compress({
