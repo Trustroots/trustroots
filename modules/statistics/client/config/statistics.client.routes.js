@@ -11,7 +11,6 @@
     $stateProvider.
       state('statistics', {
         url: '/statistics',
-        title: 'Statistics',
         templateUrl: '/modules/statistics/views/statistics.client.view.html',
         controller: 'StatisticsController',
         controllerAs: 'stats',
@@ -21,6 +20,9 @@
           statisticsData: function(Statistics) {
             return Statistics.get();
           }
+        },
+        data: {
+          pageTitle: 'Statistics'
         }
       });
 

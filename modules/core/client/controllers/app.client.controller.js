@@ -117,10 +117,7 @@
       /**
        * After page change
        */
-      $scope.$on('$stateChangeSuccess', function(event, toState) {
-
-        // Set page title
-        vm.pageTitle = (toState.title) ? toState.title + ' - ' + $window.title : $window.title;
+      $scope.$on('$stateChangeSuccess', function() {
 
         // Reset photo copyrights on each page change
         // trBoards directive hits in after this and we'll fill this with potential photo credits
