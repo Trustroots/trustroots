@@ -42,16 +42,16 @@ describe('Offer Model Unit Tests:', function() {
         location: [52.498981209298776, 13.418329954147339],
         locationFuzzy: [52.50155039101136, 13.42255019882177]
       });
-      done();
+      return done();
     });
   });
 
   describe('Method Save', function() {
     it('should be able to save without problems', function(done) {
 
-      return offer.save(function(err) {
+      offer.save(function(err) {
         should.not.exist(err);
-        done();
+        return done();
       });
     });
 
@@ -59,27 +59,27 @@ describe('Offer Model Unit Tests:', function() {
       offer.description = '';
       offer.noOfferDescription = '';
 
-      return offer.save(function(err) {
+      offer.save(function(err) {
         should.not.exist(err);
-        done();
+        return done();
       });
     });
 
     it('should be able to show an error when try to save without status', function(done) {
       offer.status = '';
 
-      return offer.save(function(err) {
+      offer.save(function(err) {
         should.exist(err);
-        done();
+        return done();
       });
     });
 
     it('should be able to show an error when try to save without location', function(done) {
       offer.location = '';
 
-      return offer.save(function(err) {
+      offer.save(function(err) {
         should.exist(err);
-        done();
+        return done();
       });
     });
 

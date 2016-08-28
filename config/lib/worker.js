@@ -29,7 +29,9 @@ exports.start = function(options, callback) {
     // Start worker
 
     agenda.start();
-    console.log('Agenda started processing background jobs');
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('Agenda started processing background jobs');
+    }
 
     if (callback) callback();
 
@@ -54,8 +56,10 @@ exports.start = function(options, callback) {
       job.save();
     }
 
-    console.error('Agenda job [%s] %s failed with [%s] %s failCount:%s',
-      job.attrs.name, job.attrs._id, err.message || 'Unknown error', extraMessage, job.attrs.failCount);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Agenda job [%s] %s failed with [%s] %s failCount:%s',
+        job.attrs.name, job.attrs._id, err.message || 'Unknown error', extraMessage, job.attrs.failCount);
+    }
 
   });
 

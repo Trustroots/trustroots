@@ -71,7 +71,6 @@
     "gulp-less": "~3.1.0",
     "gulp-livereload": "~3.8.1",
     "gulp-load-plugins": "~1.2.4",
-    "gulp-mocha": "~2.2.0",
     "gulp-ng-annotate": "~2.0.0",
     "gulp-nodemon": "~2.1.0",
     "gulp-print": "~2.0.1",
@@ -115,9 +114,10 @@
     "yargs": "~4.8.1"
   },
   "devDependencies": {
-    "agendash": "^0.3.2",
+    "agendash": "~0.3.2",
     "concurrently": "~2.2.0",
     "faker": "~3.1.0",
+    "gulp-mocha": "~3.0.1",
     "jasmine-core": "~2.4.1",
     "karma": "~1.1.2",
     "karma-chrome-launcher": "~1.0.1",
@@ -125,13 +125,13 @@
     "karma-firefox-launcher": "~1.0.0",
     "karma-jasmine": "~1.0.2",
     "karma-phantomjs-launcher": "~1.0.1",
-    "maildev": "^0.13.4",
-    "mocha": "~2.5.3",
+    "maildev": "~0.13.4",
+    "mocha": "~3.0.2",
     "nodemailer-stub-transport": "~1.0.0",
     "phantomjs-prebuilt": ">=2.1",
     "semver": "~5.3.0",
     "should": "~10.0.0",
-    "sinon": "^1.17.5",
+    "sinon": "~1.17.5",
     "supertest": "~1.2.0"
   },
   "bugs": {
