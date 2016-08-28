@@ -36,7 +36,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.googlePage = config.google.page;
   app.locals.googleAnalytics = config.googleAnalytics;
   app.locals.languages = languages;
-  app.locals.env = (process.env.NODE_ENV === 'production') ? 'production' : 'development';
+  app.locals.env = process.env.NODE_ENV;
   app.locals.appSettings = config.app;
   app.locals.appSettings.mapbox = config.mapbox;
   app.locals.appSettings.time = new Date().toISOString();
