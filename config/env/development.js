@@ -26,5 +26,16 @@ module.exports = {
   app: {
     title: 'Trustroots Development version',
     description: 'Trustroots development version.'
+  },
+  // Configuration to work with default MailDev dev setup
+  // https://github.com/djfarrelly/MailDev
+  mailer: {
+    from: 'trustroots@localhost',
+    options: {
+      host: 'localhost',
+      port: 1025,
+      ignoreTLS: true,
+      auth: false
+    }
   }
 };

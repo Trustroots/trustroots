@@ -13,34 +13,6 @@
 
 module.exports = {
 
-  // See https://github.com/andris9/Nodemailer#tldr-usage-example how to configure mailer
-  // Note about Gmail https://github.com/andris9/Nodemailer#using-gmail
-  // We recommend Mandrill, which is free up to 12K messages.
-  /*
-  mailer: {
-    from: 'gmail.user@gmail.com',
-    options: {
-      service: 'Gmail',
-      auth: {
-        user: 'gmail.user@gmail.com',
-        pass: 'userpass'
-      }
-    }
-  }
-  */
-
-  // Configuration to work with default MailDev dev setup
-  // https://github.com/djfarrelly/MailDev
-  mailer: {
-    from: 'trustroots@dev.trustroots.org',
-    options: {
-      host: 'localhost',
-      port: 1025,
-      ignoreTLS: true,
-      auth: false
-    }
-  }
-
   // Uncomment if you want to have Mapbox maps at development environment
   /*
   mapbox: {
@@ -59,7 +31,7 @@ module.exports = {
         map: 'outdoors-v9',
         user: 'mapbox',
         legacy: false
-      },
+      }
     },
     user: 'trustroots',
     publicKey: 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
