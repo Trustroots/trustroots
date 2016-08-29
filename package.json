@@ -9,8 +9,8 @@
     "url": "https://github.com/Trustroots/trustroots"
   },
   "engines": {
-    "node": ">=5.0.0",
-    "npm": ">=2.0.0"
+    "node": ">=6.0.0",
+    "npm": ">=3.0.0"
   },
   "scripts": {
     "prestart": "if [ ! -d node_modules ]; then npm install --quiet; fi",
