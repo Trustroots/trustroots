@@ -62,7 +62,7 @@
      * Return either displayName or user object
      */
     function otherParticipant(thread, value) {
-      var other = (thread.userFrom._id === Authentication.user._id) ? thread.userTo : thread.userFrom;
+      var other = (thread.userFrom && thread.userFrom._id === Authentication.user._id) ? thread.userTo : thread.userFrom;
 
       if (!other) return;
 
@@ -79,8 +79,10 @@
     /*
      * Open thread
      */
-    function openThread(thread) {
-      $state.go('messageThread', { username: otherParticipant(thread, 'username') });
+    function openThread(user) {
+      if (angular.isDefined(user.username)) {
+        $state.go('messageThread', { username: user.username });
+      }
     }
 
   }

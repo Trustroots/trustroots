@@ -422,6 +422,100 @@ describe('Message CRUD tests', function() {
       });
   });
 
+  it('should not be able to send a message without `userTo` field', function(done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr) {
+        // Handle signin error
+        if (signinErr) return done(signinErr);
+
+        delete message.userTo;
+
+        agent.post('/api/messages')
+          .send(message)
+          .expect(400)
+          .end(function(messageSaveErr, messageSaveRes) {
+
+            messageSaveRes.body.message.should.equal('Missing `userTo` field.');
+
+            // Call the assertion callback
+            return done(messageSaveErr);
+          });
+      });
+  });
+
+  it('should get error if trying to send with invalid `userTo` id', function(done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr) {
+        // Handle signin error
+        if (signinErr) return done(signinErr);
+
+        message.userTo = '123';
+
+        agent.post('/api/messages')
+          .send(message)
+          .expect(400)
+          .end(function(messageSaveErr, messageSaveRes) {
+
+            messageSaveRes.body.message.should.equal('Cannot interpret id.');
+
+            // Call the assertion callback
+            return done(messageSaveErr);
+          });
+      });
+  });
+
+  it('should not be able to send a message to non-existing user', function(done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr) {
+        // Handle signin error
+        if (signinErr) return done(signinErr);
+
+        message.userTo = '507f1f77bcf86cd799439011';
+
+        agent.post('/api/messages')
+          .send(message)
+          .expect(404)
+          .end(function(messageSaveErr, messageSaveRes) {
+
+            messageSaveRes.body.message.should.equal('Member you are writing to does not exist.');
+
+            // Call the assertion callback
+            return done(messageSaveErr);
+          });
+      });
+  });
+
+  it('should not be able to send a message to non-public user', function(done) {
+    User.findByIdAndUpdate(userToId, { $set: { public: false } }, function(err) {
+      if (err) return done(err);
+
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function(signinErr) {
+          // Handle signin error
+          if (signinErr) return done(signinErr);
+
+          agent.post('/api/messages')
+            .send(message)
+            .expect(404)
+            .end(function(messageSaveErr, messageSaveRes) {
+
+              messageSaveRes.body.message.should.equal('Member you are writing to does not exist.');
+
+              // Call the assertion callback
+              return done(messageSaveErr);
+            });
+        });
+    });
+  });
+
   it('should not be able to send a message when I have too short description', function(done) {
     agent.post('/api/auth/signin')
       .send(credentials)

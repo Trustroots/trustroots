@@ -87,11 +87,20 @@ exports.inbox = function(req, res) {
 
             // If latest message in the thread was from current user, show
             // it as read - sender obviously read his/her own message
-            if (thread.userFrom._id.toString() === req.user._id.toString()) {
+            if (thread.userFrom && thread.userFrom._id && thread.userFrom._id.toString() === req.user._id.toString()) {
               thread.read = true;
             }
 
-            threadsCleaned.push(thread);
+            // If users weren't populated, they were removed.
+            // Don't return thread at all at this point.
+            //
+            // @todo:
+            // Return thread but with placeholder user and old user's ID
+            // With ID we could fetch the message thread — now all we could
+            // show is this line at inbox but not actual messages
+            if (thread.userTo && thread.userFrom) {
+              threadsCleaned.push(thread);
+            }
           });
         }
 
@@ -116,6 +125,13 @@ exports.send = function(req, res) {
     });
   }
 
+  // No receiver
+  if (!req.body.userTo) {
+    return res.status(400).send({
+      message: 'Missing `userTo` field.'
+    });
+  }
+
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
     return res.status(400).send({
@@ -130,14 +146,27 @@ exports.send = function(req, res) {
     });
   }
 
-  // Test in case content is actually empty (when html is stripped out)
-  if (textProcessor.isEmpty(req.body.content)) {
+  // No content or test if content is actually empty (when html is stripped out)
+  if (!req.body.content || textProcessor.isEmpty(req.body.content)) {
     return res.status(400).send({
       message: 'Please write a message.'
     });
   }
 
   async.waterfall([
+
+    // Check receiver
+    function(done) {
+      User.findById(req.body.userTo, 'public').exec(function(err, receiver) {
+        // If we were unable to find the receiver, return the error and stop here
+        if (err || !receiver || !receiver.public) {
+          return res.status(404).send({
+            message: 'Member you are writing to does not exist.'
+          });
+        }
+        done();
+      });
+    },
 
     // Check if this is first message to this thread (=does the thread object exist?)
     function(done) {
@@ -166,8 +195,8 @@ exports.send = function(req, res) {
       if (!thread) {
 
         User.findById(req.user._id, 'description').exec(function(err, sender) {
-          // If we were unable to find the sender, return the error and stop here
-          if (err || !sender) {
+          // Handle errors
+          if (err) {
             return done(err);
           }
 
@@ -327,12 +356,19 @@ exports.threadByUser = function(req, res, next, userId) {
           }
         },
         function(err, data) {
-          if (!data.docs) err = new Error('Failed to load messages.');
+          if (err) {
+            return done(err);
+          }
+
+          if (!data || !data.docs) {
+            return done(new Error('Failed to load messages.'));
+          }
 
           // Pass pagination data to construct link header
           if (data.docs.length > 0) {
             setLinkHeader(req, res, data.pages);
           }
+
           done(err, data.docs);
         }
       );
@@ -369,7 +405,7 @@ exports.threadByUser = function(req, res, next, userId) {
         var recentMessage = _.first(req.messages);
 
         // If latest message in the thread was to current user, mark thread read
-        if (recentMessage.userTo._id.toString() === req.user._id.toString()) {
+        if (recentMessage.userTo._id && recentMessage.userTo._id.toString() === req.user._id.toString()) {
 
           Thread.update(
             {
@@ -414,10 +450,6 @@ exports.threadByUser = function(req, res, next, userId) {
 /**
  * Mark set of messages as read
  * Works only for currently logged in user's messages
- *
- * @todo: when array has only one id, as a small
- * optimization could be wise to use findByIdAndUpdate()
- * @link http://mongoosejs.com/docs/api.html#model_Model.findByIdAndUpdate
  */
 exports.markRead = function(req, res) {
 
