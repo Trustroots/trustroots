@@ -55,7 +55,7 @@
   <!-- Own profile is non-public -->
   <div class="row text-center" ng-if="app.user.username === profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public === false">
     <em class="lead">Note that your profile will not be visible to others until you confirm your email.</em>
-    <p>If you didn't receive the message, check your spam folder or resend it via <a ui-sref="profile-settings">email settings</a>.</p>
+    <p>If you didn't receive the message, check your spam folder or resend it via <a ui-sref="profile-edit.account">email settings</a>.</p>
     <hr>
   </div>
 
