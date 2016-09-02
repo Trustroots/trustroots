@@ -11,7 +11,6 @@
     $stateProvider.
       state('offer', {
         url: '/offer?status',
-        title: 'Hosting',
         templateUrl: '/modules/offers/views/offers-edit.client.view.html',
         requiresAuth: true,
         controller: 'OffersEditController',
@@ -30,6 +29,9 @@
               userId: Authentication.user._id
             });
           }
+        },
+        data: {
+          pageTitle: 'Hosting'
         }
       });
   }

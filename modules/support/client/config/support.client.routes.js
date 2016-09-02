@@ -11,20 +11,24 @@
     $stateProvider.
       state('support', {
         url: '/support?report=',
-        title: 'Support',
         templateUrl: '/modules/support/views/support.client.view.html',
         requiresAuth: false,
         controller: 'SupportController',
-        controllerAs: 'support'
+        controllerAs: 'support',
+        data: {
+          pageTitle: 'Support'
+        }
       }).
       // Deprecated (02-2016):
       state('contact', {
         url: '/contact',
-        title: 'Contact us',
         templateUrl: '/modules/support/views/support.client.view.html',
         requiresAuth: false,
         controller: 'SupportController',
-        controllerAs: 'support'
+        controllerAs: 'support',
+        data: {
+          pageTitle: 'Contact us'
+        }
       });
   }
 

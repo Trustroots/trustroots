@@ -5,6 +5,7 @@
  */
 var path = require('path'),
     async = require('async'),
+    juice = require('juice'),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     render = require(path.resolve('./config/lib/render')),
     agenda = require(path.resolve('./config/lib/agenda')),
@@ -161,6 +162,20 @@ exports.sendSignupEmailConfirmation = function(user, callback) {
   exports.renderEmailAndSend('signup', params, callback);
 };
 
+exports.sendSupportRequest = function(replyTo, supportRequest, callback) {
+
+  var params = {
+    from: 'Trustroots Support <' + config.supportEmail + '>',
+    name: 'Trustroots Support', // `To:`
+    email: config.supportEmail, // `To:`
+    replyTo: replyTo,
+    subject: 'Support request',
+    request: supportRequest,
+    skipHtmlTemplate: true // Don't render html template for this email
+  };
+
+  exports.renderEmailAndSend('support-request', params, callback);
+};
 
 /**
  * Add several parameters to be used to render transactional emails
@@ -207,15 +222,17 @@ exports.addEmailBaseTemplateParams = function(params) {
 
 exports.renderEmail = function(templateName, params, callback) {
 
-  var htmlTemplatePath = path.join(htmlTemplateDir, templateName + '.server.view.html');
-  var textTemplatePath = path.join(textTemplateDir, templateName + '.server.view.html');
+  var templatePaths = {};
+
+  templatePaths.text = path.join(textTemplateDir, templateName + '.server.view.html');
+
+  if (!params.skipHtmlTemplate) {
+    templatePaths.html = path.join(htmlTemplateDir, templateName + '.server.view.html');
+  }
 
   // Rendering in parallel leads to an error. maybe because
   // swig is unmaintained now https://github.com/paularmstrong/swig)
-  async.mapValuesSeries({
-    html: htmlTemplatePath,
-    text: textTemplatePath
-  }, function(templatePath, key, done) {
+  async.mapValuesSeries(templatePaths, function(templatePath, key, done) {
     render(templatePath, params, function(err, rendered) {
 
       // there are promises inside render(), need to execute callback in
@@ -233,11 +250,16 @@ exports.renderEmail = function(templateName, params, callback) {
         name: params.name,
         address: params.email
       },
-      from: 'Trustroots <' + config.mailer.from + '>',
+      from: params.from || 'Trustroots <' + config.mailer.from + '>',
       subject: params.subject,
-      html: result.html,
       text: result.text
     };
+    if (result.html) {
+      email.html = juice(result.html);
+    }
+    if (params.replyTo) {
+      email.replyTo = params.replyTo;
+    }
     callback(null, email);
   });
 };

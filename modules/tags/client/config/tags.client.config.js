@@ -16,7 +16,6 @@
       }).
         state('tribes.list', {
           url: '',
-          title: 'Tribes',
           templateUrl: '/modules/tags/views/tribes-list.client.view.html',
           controller: 'TribesListController',
           controllerAs: 'tribesList',
@@ -26,11 +25,13 @@
             tribes: function(TribesService) {
               return TribesService.query();
             }
+          },
+          data: {
+            pageTitle: 'Tribes'
           }
         }).
         state('tribes.tribe', {
           url: '/:tribe',
-          title: 'Tribe',
           footerHidden: true,
           templateUrl: '/modules/tags/views/tribe.client.view.html',
           controller: 'TribeController',
@@ -43,6 +44,9 @@
                 tribeSlug: $stateParams.tribe
               });
             }
+          },
+          data: {
+            pageTitle: 'Tribe'
           }
         });
 

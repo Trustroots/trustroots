@@ -1,7 +1,9 @@
 'use strict';
 
 var path = require('path'),
-    testutils = require(path.resolve('./testutils'));
+    should = require('should'),
+    testutils = require(path.resolve('./testutils')),
+    config = require(path.resolve('./config/config'));
 
 var emailService;
 
@@ -189,6 +191,84 @@ describe('service: email', function() {
       jobs[0].data.html.should.containEql('/messages/' + userFrom.username);
       jobs[0].data.to.name.should.equal(userTo.displayName);
       jobs[0].data.to.address.should.equal(userTo.email);
+      done();
+    });
+  });
+
+  it('can send support request email', function(done) {
+    var supportRequest = {
+      message: 'test-support-message',
+      username: 'joedoe',
+      email: 'test@test.com',
+      emailTemp: false,
+      displayName: 'Joe Doe',
+      userId: '123',
+      userAgent: 'Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20100101 Firefox/10.0',
+      authenticated: 'yes',
+      profilePublic: 'yes',
+      signupDate: new Date().toString(),
+      reportMember: 'baduser'
+    };
+    var replyTo = {
+      email: 'replyto@test.com'
+    };
+    emailService.sendSupportRequest(replyTo, supportRequest, function(err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].type.should.equal('send email');
+      jobs[0].data.subject.should.equal('Support request');
+      jobs[0].data.replyTo.email.should.equal(replyTo.email);
+      should.not.exist(jobs[0].data.replyTo.name);
+      jobs[0].data.to.address.should.equal(config.supportEmail);
+      jobs[0].data.to.name.should.equal('Trustroots Support');
+      jobs[0].data.from.should.equal('Trustroots Support <' + config.supportEmail + '>');
+      should.not.exist(jobs[0].data.html);
+      should.exist(jobs[0].data.text);
+      jobs[0].data.text.should.containEql('test-support-message');
+      jobs[0].data.text.should.containEql('Reporting member: ' + supportRequest.reportMember);
+      jobs[0].data.text.should.containEql('Username: ' + supportRequest.username);
+      jobs[0].data.text.should.containEql('Email: ' + supportRequest.email);
+      jobs[0].data.text.should.containEql('Authenticated: ' + supportRequest.authenticated);
+      jobs[0].data.text.should.containEql('Browser: ' + supportRequest.userAgent);
+      jobs[0].data.text.should.containEql('ID: ' + supportRequest.userId);
+      jobs[0].data.text.should.containEql('Signup confirmed: ' + supportRequest.profilePublic);
+      jobs[0].data.text.should.containEql('Signup date: ' + supportRequest.signupDate);
+      done();
+    });
+  });
+
+  it('should be able to render text-only emails', function(done) {
+    var params = emailService.addEmailBaseTemplateParams({
+      subject: 'test',
+      name: 'test',
+      email: 'test@test.com',
+      utmCampaign: 'test',
+      urlConfirmPlainText: '#',
+      urlConfirm: '#',
+      skipHtmlTemplate: true
+    });
+
+    emailService.renderEmail('reset-password', params, function(err, email) {
+      if (err) return done(err);
+      should.exist(email.text);
+      should.not.exist(email.html);
+      done();
+    });
+  });
+
+  it('emails should have inline css styles', function(done) {
+    var params = emailService.addEmailBaseTemplateParams({
+      subject: 'test',
+      name: 'test',
+      email: 'test@test.com',
+      utmCampaign: 'test',
+      urlConfirmPlainText: '#',
+      urlConfirm: '#'
+    });
+
+    emailService.renderEmail('reset-password', params, function(err, email) {
+      if (err) return done(err);
+      email.html.should.containEql('<body style=');
       done();
     });
   });

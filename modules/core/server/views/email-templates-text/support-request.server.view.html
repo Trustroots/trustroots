@@ -1,14 +1,14 @@
-{% if reportMember %}Reporting member: {{reportMember}}
+{% if request.reportMember %}Reporting member: {{request.reportMember}}
 {% endif %}
-{{message}}
+{{request.message}}
 
 
 -- {# These two dashes should have space after them and this line stops .editorconfig stripping it out. #}
-Username: {{username}}
-Email: {{email}}
-Authenticated: {{authenticated}}
-Browser: {{userAgent}}
-ID: {{userId}}
-Signup confirmed: {{profilePublic}}
-Signup date: {{signupDate}}
-{% if emailTemp %}Active email change: {{emailTemp}}{% endif %}
+Username: {{request.username}}
+Email: {{request.email}}
+Authenticated: {{request.authenticated}}
+Browser: {{request.userAgent}}
+ID: {{request.userId}}
+Signup confirmed: {{request.profilePublic}}
+Signup date: {{request.signupDate}}
+{% if request.emailTemp %}Active email change: {{request.emailTemp}}{% endif %}

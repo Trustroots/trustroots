@@ -11,81 +11,111 @@
     $stateProvider.
       state('rules', {
         url: '/rules',
-        title: 'Rules',
-        templateUrl: '/modules/pages/views/rules.client.view.html'
+        templateUrl: '/modules/pages/views/rules.client.view.html',
+        data: {
+          pageTitle: 'Rules'
+        }
       }).
       state('team', {
         url: '/team',
-        title: 'Team',
-        templateUrl: '/modules/pages/views/team.client.view.html'
+        templateUrl: '/modules/pages/views/team.client.view.html',
+        data: {
+          pageTitle: 'Team'
+        }
       }).
       state('privacy', {
         url: '/privacy',
-        title: 'Privacy policy',
-        templateUrl: '/modules/pages/views/privacy.client.view.html'
+        templateUrl: '/modules/pages/views/privacy.client.view.html',
+        data: {
+          pageTitle: 'Privacy policy'
+        }
       }).
       state('donate', {
         url: '/donate',
-        title: 'Donate',
-        templateUrl: '/modules/pages/views/donate.client.view.html'
+        templateUrl: '/modules/pages/views/donate.client.view.html',
+        data: {
+          pageTitle: 'Donate'
+        }
       }).
       state('donate-help', {
         url: '/donate/help',
-        title: 'Donation help',
-        templateUrl: '/modules/pages/views/donate-help.client.view.html'
+        templateUrl: '/modules/pages/views/donate-help.client.view.html',
+        data: {
+          pageTitle: 'Donation help'
+        }
       }).
       state('donate-policy', {
         url: '/donate/policy',
-        title: 'Donation policy',
-        templateUrl: '/modules/pages/views/donate-policy.client.view.html'
+        templateUrl: '/modules/pages/views/donate-policy.client.view.html',
+        data: {
+          pageTitle: 'Donation policy'
+        }
       }).
       state('faq', {
         url: '/faq',
-        title: 'FAQ',
         templateUrl: '/modules/pages/views/faq.client.view.html',
         abstract: true,
         controller: 'FaqController',
-        controllerAs: 'faq'
+        controllerAs: 'faq',
+        data: {
+          pageTitle: 'FAQ'
+        }
       }).
         state('faq.general', {
           url: '',
-          title: 'FAQ - Site & community',
-          templateUrl: '/modules/pages/views/faq-general.client.view.html'
+          templateUrl: '/modules/pages/views/faq-general.client.view.html',
+          data: {
+            pageTitle: 'FAQ - Site & community'
+          }
         }).
         state('faq.tribes', {
           url: '/tribes',
-          title: 'FAQ - Tribes',
-          templateUrl: '/modules/pages/views/faq-tribes.client.view.html'
+          templateUrl: '/modules/pages/views/faq-tribes.client.view.html',
+          data: {
+            pageTitle: 'FAQ - Tribes'
+          }
         }).
         state('faq.foundation', {
           url: '/foundation',
-          title: 'FAQ - Foundation',
-          templateUrl: '/modules/pages/views/faq-foundation.client.view.html'
+          templateUrl: '/modules/pages/views/faq-foundation.client.view.html',
+          data: {
+            pageTitle: 'FAQ - Foundation'
+          }
         }).
         state('faq.technology', {
           url: '/technology',
-          title: 'FAQ - Technology',
-          templateUrl: '/modules/pages/views/faq-technology.client.view.html'
+          templateUrl: '/modules/pages/views/faq-technology.client.view.html',
+          data: {
+            pageTitle: 'FAQ - Technology'
+          }
         }).
       state('foundation', {
         url: '/foundation',
-        title: 'Foundation',
-        templateUrl: '/modules/pages/views/foundation.client.view.html'
+        templateUrl: '/modules/pages/views/foundation.client.view.html',
+        data: {
+          pageTitle: 'Foundation'
+        }
       }).
       state('media', {
         url: '/media',
-        title: 'Media',
-        templateUrl: '/modules/pages/views/media.client.view.html'
+        templateUrl: '/modules/pages/views/media.client.view.html',
+        data: {
+          pageTitle: 'Media'
+        }
       }).
       state('volunteering', {
         url: '/volunteering',
-        title: 'Volunteering',
-        templateUrl: '/modules/pages/views/volunteering.client.view.html'
+        templateUrl: '/modules/pages/views/volunteering.client.view.html',
+        data: {
+          pageTitle: 'Volunteering'
+        }
       }).
       state('guide', {
         url: '/guide',
-        title: 'Guide',
-        templateUrl: '/modules/pages/views/guide.client.view.html'
+        templateUrl: '/modules/pages/views/guide.client.view.html',
+        data: {
+          pageTitle: 'Guide'
+        }
       }).
 
       // Redirect to home:

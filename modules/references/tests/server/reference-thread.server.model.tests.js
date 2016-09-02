@@ -85,7 +85,7 @@ describe('Reference Thread Model Unit Tests:', function() {
           new Thread(thread).save(function(err, thread2res) {
             referenceThread.thread = thread2res._id;
             referenceThread = new ReferenceThread(referenceThread);
-            done();
+            return done();
           });
         });
       });
@@ -95,27 +95,27 @@ describe('Reference Thread Model Unit Tests:', function() {
   describe('Method Save', function() {
     it('should be able to save without problems', function(done) {
 
-      return referenceThread.save(function(err) {
+      referenceThread.save(function(err) {
         should.not.exist(err);
-        done();
+        return done();
       });
     });
 
     it('should be able to save without problems with reference text set to "no"', function(done) {
       referenceThread.reference = 'no';
 
-      return referenceThread.save(function(err) {
+      referenceThread.save(function(err) {
         should.not.exist(err);
-        done();
+        return done();
       });
     });
 
     it('should be able to show an error when try to save with reference text set to something else than "yes" or "no"', function(done) {
       referenceThread.reference = 'beer';
 
-      return referenceThread.save(function(err) {
+      referenceThread.save(function(err) {
         should.exist(err);
-        done();
+        return done();
       });
     });
 

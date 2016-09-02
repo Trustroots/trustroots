@@ -18,17 +18,22 @@
         <table class="table table-condensed table-hover table-threadlist table-threadlist-threads" ng-if="inbox.threads.length">
           <tbody>
 
-            <tr class="thread" ng-class="{ 'thread-unread': !thread.read }" ng-repeat="thread in inbox.threads | orderBy:'updated':true track by thread._id" ng-click="inbox.openThread(thread)">
+            <tr class="thread"
+                ng-class="{ 'thread-unread': !thread.read }"
+                ng-repeat="thread in inbox.threads | orderBy:'updated':true track by thread._id"
+                ng-init="thread.with = inbox.otherParticipant(thread)"
+                ng-click="inbox.openThread(thread.with)"
+                ng-if="::!thread.with.isRemoved">
               <td class="thread-author col-xs-3 col-md-2">
-                <div tr-avatar data-user="inbox.otherParticipant(thread)" data-size="32" data-link="false" class="pull-left hidden-xs"></div> <span ng-bind="inbox.otherParticipant(thread, 'displayName')"></span>
+                <div tr-avatar data-user="thread.with" data-size="32" data-link="false" class="pull-left hidden-xs"></div> <span ng-bind="::thread.with.displayName"></span>
               </td>
               <td class="thread-summary">
                 <span ng-bind-html="thread.message.excerpt"></span>
                 <small class="thread-indicators pull-right">
-                  <i class="icon-reply icon-fw text-muted" ng-if="thread.userFrom._id === app.user._id" uib-tooltip="You replied" tooltip-placement="right"></i>
+                  <i class="icon-reply icon-fw text-muted" ng-if="::thread.userFrom._id === app.user._id" uib-tooltip="You replied" tooltip-placement="right"></i>
                 </small>
               </td>
-              <td class="ago col-xs-3 col-md-2" tr-time="thread.updated" tr-time-tooltip-placement="left"></td>
+              <td class="ago col-xs-3 col-md-2" tr-time="::thread.updated" tr-time-tooltip-placement="left"></td>
             </tr>
 
             <!-- Pagination Error -->

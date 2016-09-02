@@ -52,7 +52,7 @@ describe('Message Model Unit Tests:', function() {
             userTo: userTo._id,
             read: false
           });
-          done();
+          return done();
         });
       });
 
@@ -61,27 +61,27 @@ describe('Message Model Unit Tests:', function() {
 
   describe('Method Save', function() {
     it('should be able to save without problems', function(done) {
-      return message.save(function(err) {
+      message.save(function(err) {
         should.not.exist(err);
-        done();
+        return done();
       });
     });
 
     it('should be able to show an error when try to send without content', function(done) {
       message.userTo = '';
 
-      return message.save(function(err) {
+      message.save(function(err) {
         should.exist(err);
-        done();
+        return done();
       });
     });
 
     it('should be able to show an error when try to send without receiver', function(done) {
       message.content = '';
 
-      return message.save(function(err) {
+      message.save(function(err) {
         should.exist(err);
-        done();
+        return done();
       });
     });
 

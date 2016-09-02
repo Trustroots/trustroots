@@ -238,7 +238,7 @@ gulp.task('styles', function() {
     var cssStream = gulp.src(defaultAssets.client.lib.css)
         .pipe(plugins.concat('css-files.css'));
 
-    var lessStream = gulp.src( _.union(defaultAssets.client.lib.less, defaultAssets.client.less) )
+    var lessStream = gulp.src(_.union(defaultAssets.client.lib.less, defaultAssets.client.less))
         .pipe(plugins.concat('less-files.less'))
         .pipe(plugins.less());
 
@@ -247,17 +247,22 @@ gulp.task('styles', function() {
       .pipe(plugins.concat('application.css'))
       .pipe(plugins.autoprefixer())
     	.pipe(plugins.csso())
-    	.pipe(plugins.rename({suffix: '.min'}))
+    	.pipe(plugins.rename({ suffix: '.min' }))
       .pipe(gulp.dest('public/dist'));
   }
   // In development mode:
   else {
+    // More verbose `less` errors
+    var lessProcessor = plugins.less();
+    lessProcessor.on('error', function(err) {
+      console.log(err);
+    });
     // Process only LESS files, since CSS libs will be linked directly at the template
-    return gulp.src( _.union(defaultAssets.client.lib.less, defaultAssets.client.less) )
+    return gulp.src(_.union(defaultAssets.client.lib.less, defaultAssets.client.less))
       .pipe(plugins.concat('less-files.less'))
-      .pipe(plugins.less())
+      .pipe(lessProcessor)
       .pipe(plugins.autoprefixer())
-    	.pipe(plugins.rename({basename: 'application', extname: '.css'}))
+    	.pipe(plugins.rename({ basename: 'application', extname: '.css' }))
       .pipe(gulp.dest('public/dist'))
       .pipe(plugins.livereload());
   }

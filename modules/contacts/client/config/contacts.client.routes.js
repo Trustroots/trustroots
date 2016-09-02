@@ -31,6 +31,9 @@
               userId: $stateParams.userId
             });
           }
+        },
+        data: {
+          pageTitle: 'Add contact'
         }
       }).
       state('contactConfirm', {
@@ -49,6 +52,9 @@
             });
           }
 
+        },
+        data: {
+          pageTitle: 'Confirm contact'
         }
       });
 

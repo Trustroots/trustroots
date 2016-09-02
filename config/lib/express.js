@@ -21,8 +21,7 @@ var _ = require('lodash'),
     render = require('./render'),
     git = require('git-rev'),
     path = require('path'),
-    paginate = require('express-paginate'),
-    seo = require('mean-seo');
+    paginate = require('express-paginate');
 
 /**
  * Initialize local variables
@@ -37,7 +36,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.googlePage = config.google.page;
   app.locals.googleAnalytics = config.googleAnalytics;
   app.locals.languages = languages;
-  app.locals.env = (process.env.NODE_ENV === 'production') ? 'production' : 'development';
+  app.locals.env = process.env.NODE_ENV;
   app.locals.appSettings = config.app;
   app.locals.appSettings.mapbox = config.mapbox;
   app.locals.appSettings.time = new Date().toISOString();
@@ -75,11 +74,6 @@ module.exports.initLocalVariables = function (app) {
  * Initialize application middleware
  */
 module.exports.initMiddleware = function (app) {
-  // Showing stack errors
-  app.set('showStackError', true);
-
-  // Enable jsonp
-  app.enable('jsonp callback');
 
   // Should be placed before express.static
   app.use(compress({
@@ -196,18 +190,6 @@ module.exports.initHelmetHeaders = function (app) {
 };
 
 /**
- * Configure SEO rendering for `/?_escaped_fragment_=/pagename` -urls
- * This must come before client route configs
- * @link http://meanjs.org/modules.html#seo
- */
-module.exports.initSEO = function (app) {
-  app.use(seo({
-    cacheClient: 'disk', // Can be 'disk' or 'redis'
-    cacheDuration: 2 * 60 * 60 * 24 * 1000 // In milliseconds for disk cache
-  }));
-};
-
-/**
  * Configure the modules static routes
  */
 module.exports.initModulesClientRoutes = function (app) {
@@ -278,9 +260,6 @@ module.exports.init = function (db) {
 
   // Initialize modules server authorization policies
   this.initModulesServerPolicies(app);
-
-  // Initialize SEO Modules
-  this.initSEO(app);
 
   // Initialize modules server routes
   this.initModulesServerRoutes(app);

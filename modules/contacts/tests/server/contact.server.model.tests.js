@@ -71,18 +71,18 @@ describe('Contact Model Unit Tests:', function() {
   describe('Method Save', function() {
     it('should be able to save without problems', function(done) {
 
-      return contact.save(function(err) {
+      contact.save(function(err) {
         should.not.exist(err);
-        done();
+        return done();
       });
     });
 
     it('should be able to show an error when try to save without users', function(done) {
       contact.users = '';
 
-      return contact.save(function(err) {
+      contact.save(function(err) {
         should.exist(err);
-        done();
+        return done();
       });
     });
 

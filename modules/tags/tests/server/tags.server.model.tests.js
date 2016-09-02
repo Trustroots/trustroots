@@ -56,16 +56,15 @@ describe('Tag Model Unit Tests:', function() {
 
     it('should be able to save without problems and have correct default values', function (done) {
       var _tag = new Tag(tag);
-
       _tag.save(function (err) {
         should.not.exist(err);
         _tag.tribe.should.equal(false);
         _tag.synonyms.should.be.an.Array();
-        _tag.synonyms.should.be.empty();
+        _tag.synonyms.length.should.eql(0);
         _tag.labelHistory.should.be.an.Array();
-        _tag.labelHistory.should.be.empty();
+        _tag.labelHistory.length.should.eql(0);
         _tag.slugHistory.should.be.an.Array();
-        _tag.slugHistory.should.be.empty();
+        _tag.slugHistory.length.should.eql(0);
         _tag.slug.should.equal('tag-label');
         _tag.count.should.eql(0);
         should.exist(_tag.color);
