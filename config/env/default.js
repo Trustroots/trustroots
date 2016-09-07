@@ -32,6 +32,17 @@ module.exports = {
                    'edit', 'settings', 'username', 'user', ' demo', 'test', 'support', 'networks', 'profile', 'avatar', 'mini',
                    'photo', 'account', 'api', 'modify', 'feedback', 'security', 'accounts', 'tribe', 'tag', 'community'
                   ],
+  influxdb: {
+    enabled: false,
+    options: {
+      host: 'localhost',
+      port: 8086, // default 8086
+      protocol: 'http', // default 'http'
+      // username: '',
+      // password: '',
+      database: 'trustroots'
+    }
+  },
   mailer: {
     from: process.env.MAILER_FROM || 'hello@trustroots.org',
     options: {

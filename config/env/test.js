@@ -30,6 +30,9 @@ module.exports = {
     title: 'Trustroots test environment.',
     description: 'Trustroots test environment.'
   },
+  influxdb: {
+    enabled: false
+  },
   mapbox: {
     // Mapbox is publicly exposed to the frontend
     user: process.env.MAPBOX_USERNAME || 'trustroots',

@@ -22,9 +22,17 @@ exports.start = function(options, callback) {
       require(path.resolve('./modules/messages/server/jobs/message-unread.server.job'))
     );
 
+    agenda.define(
+      'daily statistics',
+      { lockLifetime: 10000 },
+      require(path.resolve('./modules/statistics/server/jobs/daily-statistics.server.job'))
+    );
+
     // Schedule job(s)
 
     agenda.every('5 minutes', 'check unread messages');
+    agenda.every('24 hours', 'daily statistics');
+
 
     // Start worker
 
