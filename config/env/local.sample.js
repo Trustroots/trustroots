@@ -13,6 +13,21 @@
 
 module.exports = {
 
+  // Uncomment if you have installed InfluxDB and would like to store collected statistics
+  /*
+  influxdb: {
+    enabled: true,
+    options: {
+      host: 'localhost',
+      port: 8086, // default 8086
+      protocol: 'http', // default 'http'
+      // username: '',
+      // password: '',
+      database: 'trustroots'
+    }
+  },
+  */
+
   // Uncomment if you want to have Mapbox maps at development environment
   /*
   mapbox: {

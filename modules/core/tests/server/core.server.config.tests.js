@@ -22,7 +22,7 @@ describe('Testing exposing environment as a variable to layout', function () {
       // Set env to development for this test
       process.env.NODE_ENV = env;
 
-      // Gget application
+      // Get application
       app = express.init(mongoose);
       agent = request.agent(app);
 

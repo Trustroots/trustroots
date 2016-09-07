@@ -69,6 +69,24 @@ at [localhost:1081](http://localhost:1081).
 - Keep an eye on console in case of compiling errors.
 - [Read more](https://github.com/Trustroots/trustroots/wiki/Development)
 
+## Enable collecting statistics
+
+* 1. [Install InfluxDB](https://docs.influxdata.com/influxdb/latest/introduction/installation/) 0.9+ and run it (type `influxd`) at default port (8086)
+* 2. Add InfluxDB configuration to your `./config/env/local.js`:
+```
+influxdb: {
+  enabled: true,
+  options: {
+    host: 'localhost',
+    port: 8086, // default 8086
+    protocol: 'http', // default 'http'
+    // username: '',
+    // password: '',
+    database: 'trustroots'
+  }
+}
+```
+* 3. Optionally to observe metrics, you can [install Grafana](http://docs.grafana.org/installation/), but you can also observe data trough InfluxDB admin panel, too: [http://localhost:8083/](http://localhost:8083/)
 
 ## Mock data
 
