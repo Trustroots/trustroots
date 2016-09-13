@@ -101,12 +101,12 @@
           vm.verifyPassword = '';
           angular.element('#newPassword').val(''); // Fix to bypass password verification directive
           vm.changeUserPasswordLoading = false;
-          vm.user = Authentication.user = response.user;
+          vm.user = Authentication.user = response.data.user;
           messageCenterService.add('success', 'Your password is now changed. Have a nice day!');
         },
         function(response) { // On error function
           vm.changeUserPasswordLoading = false;
-          messageCenterService.add('danger', ((response.message && response.message !== '') ? response.message : 'Password not changed due error, try again.'), { timeout: 10000 });
+          messageCenterService.add('danger', ((response.data.message && response.data.message !== '') ? response.data.message : 'Password not changed due error, try again.'), { timeout: 10000 });
         }
       );
 

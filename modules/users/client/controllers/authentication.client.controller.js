@@ -30,8 +30,8 @@
         function(response) { // On success function
           vm.isLoading = false;
 
-          // If successful we assign the response to the global user model
-          Authentication.user = response;
+          // If successful we assign the data to the global user model
+          Authentication.user = response.data;
           $scope.$emit('userUpdated');
 
           // Attach user to $analytics calls from now on
@@ -57,7 +57,7 @@
         },
         function(error) { // On error function
           vm.isLoading = false;
-          messageCenterService.add('danger', error.message || 'Something went wrong.');
+          messageCenterService.add('danger', error.data.message || 'Something went wrong.');
           $analytics.eventTrack('login.failed', {
             category: 'authentication',
             label: 'Login failed'

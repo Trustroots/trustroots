@@ -103,20 +103,20 @@
                 relation: 'is'
               },
               function(data) {
-                updateUser(data.user || newUser);
+                updateUser(data.user || newUser.data);
                 vm.isLoading = false;
                 vm.step = 2;
               });
             } else {
               // No tribe to join, just continue
-              updateUser(newUser);
+              updateUser(newUser.data);
               vm.isLoading = false;
               vm.step = 2;
             }
           },
           function(error) { // On error function
             vm.isLoading = false;
-            messageCenterService.add('danger', error.message || 'Something went wrong.');
+            messageCenterService.add('danger', error.data.message || 'Something went wrong.');
           }
         );
     }

@@ -27,13 +27,13 @@
         function(response) { // On success function
           // Show user success message and clear form
           vm.credentials = null;
-          vm.success = response.message;
+          vm.success = response.data.message;
           vm.isLoading = false;
         },
         function(response) { // On error function
           // Show user error message
           vm.isLoading = false;
-          vm.error = response.message;
+          vm.error = response.data.message;
         }
       );
     }

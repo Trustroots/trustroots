@@ -54,11 +54,11 @@
       .then(
         function(response) { // On success function
           messageCenterService.add('success', 'Succesfully disconnected from ' + provider);
-          vm.user = Authentication.user = response;
+          vm.user = Authentication.user = response.data;
           $scope.$emit('userUpdated');
         },
         function(response) { // On error function
-          messageCenterService.add('danger', response.message || 'Something went wrong. Try again or contact us to disconnect your profile.', { timeout: 10000 });
+          messageCenterService.add('danger', response.data.message || 'Something went wrong. Try again or contact us to disconnect your profile.', { timeout: 10000 });
         }
       );
     }

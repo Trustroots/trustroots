@@ -29,7 +29,7 @@
           vm.passwordDetails = null;
 
           // Attach user profile
-          Authentication.user = response;
+          Authentication.user = response.data;
 
           // Notify app
           $rootScope.$broadcast('userUpdated');
@@ -38,7 +38,7 @@
           $state.go('reset-success');
         },
         function(response) { // On error function
-          vm.error = response.message;
+          vm.error = response.data.message;
           vm.isLoading = false;
         }
       );
