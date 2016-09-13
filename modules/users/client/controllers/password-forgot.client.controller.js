@@ -23,17 +23,19 @@
       vm.success = vm.error = null;
       vm.isLoading = true;
       $http.post('/api/auth/forgot', vm.credentials)
-        .success(function(response) {
+      .then(
+        function(response) { // On success function
           // Show user success message and clear form
           vm.credentials = null;
           vm.success = response.message;
           vm.isLoading = false;
-        })
-        .error(function(response) {
+        },
+        function(response) { // On error function
           // Show user error message
           vm.isLoading = false;
           vm.error = response.message;
-        });
+        }
+      );
     }
   }
 

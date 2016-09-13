@@ -26,7 +26,8 @@
       vm.success = vm.error = null;
 
       $http.post('/api/auth/confirm-email/' + $stateParams.token)
-        .success(function(response) {
+      .then(
+        function(response) { // On success function
 
           // Attach user profile
           Authentication.user = response.user;
@@ -40,10 +41,11 @@
             vm.success = true;
           }
 
-        })
-        .error(function() {
+        },
+        function() { // On error function
           vm.error = true;
-        });
+        }
+      );
     }
 
   }

@@ -93,30 +93,32 @@
 
       $http
         .post('/api/auth/signup', vm.credentials)
-        .success(function(newUser) {
+        .then(
+          function(newUser) { // On success function
 
-          // If there is referred tribe, add user to that next up
-          if (vm.tribe && vm.tribe._id) {
-            UserTagsService.post({
-              id: vm.tribe._id,
-              relation: 'is'
-            },
-            function(data) {
-              updateUser(data.user || newUser);
+            // If there is referred tribe, add user to that next up
+            if (vm.tribe && vm.tribe._id) {
+              UserTagsService.post({
+                id: vm.tribe._id,
+                relation: 'is'
+              },
+              function(data) {
+                updateUser(data.user || newUser);
+                vm.isLoading = false;
+                vm.step = 2;
+              });
+            } else {
+              // No tribe to join, just continue
+              updateUser(newUser);
               vm.isLoading = false;
               vm.step = 2;
-            });
-          } else {
-            // No tribe to join, just continue
-            updateUser(newUser);
+            }
+          },
+          function(error) { // On error function
             vm.isLoading = false;
-            vm.step = 2;
+            messageCenterService.add('danger', error.message || 'Something went wrong.');
           }
-        })
-        .error(function(error) {
-          vm.isLoading = false;
-          messageCenterService.add('danger', error.message || 'Something went wrong.');
-        });
+        );
     }
 
     /**

@@ -23,7 +23,8 @@
       vm.isLoading = true;
 
       $http.post('/api/auth/reset/' + $stateParams.token, vm.passwordDetails)
-        .success(function(response) {
+      .then(
+        function(response) { // On success function
           // Clear form
           vm.passwordDetails = null;
 
@@ -35,11 +36,12 @@
 
           // And redirect to the success page
           $state.go('reset-success');
-        })
-        .error(function(response) {
+        },
+        function(response) { // On error function
           vm.error = response.message;
           vm.isLoading = false;
-        });
+        }
+      );
     }
   }
 
