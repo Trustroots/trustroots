@@ -26,13 +26,14 @@
       vm.success = vm.error = null;
 
       $http.post('/api/auth/confirm-email/' + $stateParams.token)
-        .success(function(response) {
+      .then(
+        function(response) { // On success function
 
           // Attach user profile
-          Authentication.user = response.user;
+          Authentication.user = response.data.user;
           $rootScope.$broadcast('userUpdated');
 
-          if (response.profileMadePublic) {
+          if (response.data.profileMadePublic) {
               // If successful and this was user's first confirm, welcome them to the community
             $state.go('welcome');
           } else {
@@ -40,10 +41,11 @@
             vm.success = true;
           }
 
-        })
-        .error(function() {
+        },
+        function() { // On error function
           vm.error = true;
-        });
+        }
+      );
     }
 
   }

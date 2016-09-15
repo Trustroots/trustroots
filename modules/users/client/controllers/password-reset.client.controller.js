@@ -23,23 +23,25 @@
       vm.isLoading = true;
 
       $http.post('/api/auth/reset/' + $stateParams.token, vm.passwordDetails)
-        .success(function(response) {
+      .then(
+        function(response) { // On success function
           // Clear form
           vm.passwordDetails = null;
 
           // Attach user profile
-          Authentication.user = response;
+          Authentication.user = response.data;
 
           // Notify app
           $rootScope.$broadcast('userUpdated');
 
           // And redirect to the success page
           $state.go('reset-success');
-        })
-        .error(function(response) {
-          vm.error = response.message;
+        },
+        function(response) { // On error function
+          vm.error = response.data.message;
           vm.isLoading = false;
-        });
+        }
+      );
     }
   }
 

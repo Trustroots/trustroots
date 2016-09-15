@@ -93,18 +93,22 @@
         currentPassword: vm.currentPassword,
         newPassword: vm.newPassword,
         verifyPassword: vm.verifyPassword
-      }).success(function(response) {
-        vm.currentPassword = '';
-        vm.newPassword = '';
-        vm.verifyPassword = '';
-        angular.element('#newPassword').val(''); // Fix to bypass password verification directive
-        vm.changeUserPasswordLoading = false;
-        vm.user = Authentication.user = response.user;
-        messageCenterService.add('success', 'Your password is now changed. Have a nice day!');
-      }).error(function(response) {
-        vm.changeUserPasswordLoading = false;
-        messageCenterService.add('danger', ((response.message && response.message !== '') ? response.message : 'Password not changed due error, try again.'), { timeout: 10000 });
-      });
+      })
+      .then(
+        function(response) { // On success function
+          vm.currentPassword = '';
+          vm.newPassword = '';
+          vm.verifyPassword = '';
+          angular.element('#newPassword').val(''); // Fix to bypass password verification directive
+          vm.changeUserPasswordLoading = false;
+          vm.user = Authentication.user = response.data.user;
+          messageCenterService.add('success', 'Your password is now changed. Have a nice day!');
+        },
+        function(response) { // On error function
+          vm.changeUserPasswordLoading = false;
+          messageCenterService.add('danger', ((response.data.message && response.data.message !== '') ? response.data.message : 'Password not changed due error, try again.'), { timeout: 10000 });
+        }
+      );
 
     }
 

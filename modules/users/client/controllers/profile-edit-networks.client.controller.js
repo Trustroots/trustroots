@@ -51,13 +51,16 @@
      */
     function removeUserSocialAccount(provider) {
       $http.delete('/api/users/accounts/' + provider)
-        .success(function(response) {
+      .then(
+        function(response) { // On success function
           messageCenterService.add('success', 'Succesfully disconnected from ' + provider);
-          vm.user = Authentication.user = response;
+          vm.user = Authentication.user = response.data;
           $scope.$emit('userUpdated');
-        }).error(function(response) {
-          messageCenterService.add('danger', response.message || 'Something went wrong. Try again or contact us to disconnect your profile.', { timeout: 10000 });
-        });
+        },
+        function(response) { // On error function
+          messageCenterService.add('danger', response.data.message || 'Something went wrong. Try again or contact us to disconnect your profile.', { timeout: 10000 });
+        }
+      );
     }
 
     /**
