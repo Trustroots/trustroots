@@ -31,7 +31,7 @@ before_script:
   - mongod --version
   - snyk test
 after_script:
-  - nsp audit-package
+  - nsp check
 cache:
   apt: true
   directories:
