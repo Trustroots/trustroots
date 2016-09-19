@@ -15,7 +15,7 @@
   "scripts": {
     "prestart": "if [ ! -d node_modules ]; then npm install --quiet; fi",
     "start": "concurrently --raw --kill-others 'gulp' 'gulp worker:dev' 'maildev' './scripts/agendash-dev'",
-    "start:skipBower": "gulp --skipBower",
+    "start:skipBower": "concurrently --raw --kill-others 'gulp --skipBower' 'gulp worker:dev' 'maildev' './scripts/agendash-dev'",
     "start:prod": "gulp prod",
     "start:worker": "gulp worker:dev",
     "start:worker:prod": "gulp worker:prod",
