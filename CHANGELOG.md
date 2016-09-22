@@ -4,7 +4,7 @@
 ## Application
 
 We don't generally track changes in application here, but you could have a look at:
-- [Blog](http://ideas.trustroots.org/)
+- [Blog](https://ideas.trustroots.org/)
 - [Commits to master](https://github.com/Trustroots/trustroots/commits/master)
 - [Closed issues](https://github.com/trustroots/trustroots/issues?q=is%3Aissue+is%3Aclosed)
 
