@@ -23,7 +23,7 @@ module.exports = function(job, agendaDone) {
     }
 
     // Save to influx here
-    influxService.writePoint('members', count, { members: 'members' }, function(err, result) {
+    influxService.writePoint('members', count, { members: 'members' }, function(err) { // removed result from callback function because of ESLint complains
       if (err) {
         // InfluxDB was not enabled, don't scream out error
         if (config.influxdb || !config.influxdb.enabled) {

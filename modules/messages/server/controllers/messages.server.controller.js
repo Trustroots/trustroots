@@ -5,6 +5,8 @@
  */
 var _ = require('lodash'),
     path = require('path'),
+    messageToInfluxService = require(path.resolve('./modules/messages/server/services/message-to-influx.server.service')),
+    influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
     async = require('async'),
     sanitizeHtml = require('sanitize-html'),
     paginate = require('express-paginate'),
@@ -278,6 +280,13 @@ exports.send = function(req, res) {
       function(err) {
         done(err, message);
       });
+    },
+
+    // Here we collect some message data into the influxdb
+    function (message, done) {
+      // the module returns a promise
+      messageToInfluxService(message, { Message: Message, influxService: influxService })
+      .then(() => done(null, message), (e) => done(e, message));
     },
 
     // We'll need some info about related users, populate some fields

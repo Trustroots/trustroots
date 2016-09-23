@@ -1,7 +1,8 @@
 'use strict';
 
+require('should');
+
 var path = require('path'),
-    should = require('should'),
     influxService = require(path.resolve('./modules/core/server/services/influx.server.service'));
 
 describe('Service: influx', function() {
