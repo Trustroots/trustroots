@@ -7,6 +7,7 @@ env:
   - NODE_ENV=travis CXX="g++-4.8" CC="gcc-4.8"
 services:
   - mongodb
+  - influxdb
 sudo: false
 # gcc 4.8 requires ubuntu-toolchain-r-test
 addons:
@@ -20,6 +21,7 @@ addons:
     - gcc-4.8
     - clang
     - graphicsmagick
+    - influxdb
     - mongodb-org-server
     - mongodb-org-shell
 before_install:
