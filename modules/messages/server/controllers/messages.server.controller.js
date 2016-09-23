@@ -6,7 +6,6 @@
 var _ = require('lodash'),
     path = require('path'),
     messageToInfluxService = require(path.resolve('./modules/messages/server/services/message-to-influx.server.service')),
-    influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
     async = require('async'),
     sanitizeHtml = require('sanitize-html'),
     paginate = require('express-paginate'),
@@ -284,9 +283,16 @@ exports.send = function(req, res) {
 
     // Here we collect some message data into the influxdb
     function (message, done) {
-      // the module returns a promise
-      messageToInfluxService(message, { Message: Message, influxService: influxService })
-      .then(() => done(null, message), (e) => done(e, message));
+      // the module returns a Promise
+      // it is async, but we'll let it run wild (not waiting for the promise to
+      // be fulfilled or rejected)
+      messageToInfluxService(message, { Message: Message })
+      .catch(function (e) {
+        // TODO handle the exception (probably log somewhere)
+        e; // ESLint complained about not using this
+      });
+
+      return done(null, message);
     },
 
     // We'll need some info about related users, populate some fields

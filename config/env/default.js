@@ -26,6 +26,10 @@ module.exports = {
   domain: process.env.DOMAIN || 'localhost:3000',
   supportEmail: 'support@trustroots.org', // TO-address for support requests
   profileMinimumLength: 140, // Require User.profile.description to be >=140 chars to send messages
+  // A message below longMessageMinimumLength will be 'short' in influxdb, otherwise 'long'
+  // TODO choose an expressive value
+  // Used in ./modules/messages/server/services/message-to-influx.server.service
+  longMessageMinimumLength: 150,
   // Strings not allowed as usernames and tag/tribe labels
   illegalStrings: ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'password',
                    'username', 'unknown', 'anonymous', 'null', 'undefined', 'home', 'signup', 'signin', 'login', 'user',

@@ -1,20 +1,27 @@
 'use strict';
-var mongoose = require('mongoose');
-var co = require('co');
-var path = require('path');
-var influxService = require(path.resolve('./modules/core/server/services/influx.server.service'));
-let fluxIn = require(path.resolve('./modules/messages/server/services/message-to-influx.server.service'));
+var path = require('path'),
+    chalk = require('chalk'),
+    co = require('co'),
+    config = require(path.resolve('./config/config')),
+    configMongoose = require(path.resolve('./config/lib/mongoose')),
+    mongoose = require('mongoose'),
+    fluxIn = require(path.resolve('./modules/messages/server/services/message-to-influx.server.service')),
+    messageModels = require(path.resolve('./modules/messages/server/models/message.server.model')),
+    Message = mongoose.model('Message');
 
 mongoose.Promise = Promise;
 
-require('./fill-messages-to-influx/message.server.model.js');
 var Message = mongoose.model('Message');
 
-// the database name needs to be changed if you run this in production
-// TODO the main config should be used for this
-mongoose.connect('mongodb://localhost/trustroots-dev');
+// Bootstrap db connection
+var db = mongoose.connect(config.db.uri, function(err) {
+  if (err) {
+    console.log(chalk.red('Could not connect to MongoDB!'));
+    console.error(err);
+  }
+});
 
-// settings how often the progressbar will be printed to console
+// settings how often the progress will be printed to console
 // every PROGRESS_INTERVAL %
 const PROGRESS_INTERVAL = 1;
 
@@ -27,7 +34,7 @@ co(function * () {
   let msgLen = messages.length;
   let progress = 0;  // a progress counter
   for (let msg of messages) {
-    yield fluxIn(msg, { Message: Message, influxService: influxService });
+    yield fluxIn(msg, { Message: Message });
 
     //showing a progress
     if(progress % Math.ceil(msgLen / 100 * PROGRESS_INTERVAL) === 0) {

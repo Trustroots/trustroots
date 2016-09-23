@@ -2,7 +2,12 @@
 /**
  * Module dependencies.
  */
-var co = require('co');
+var co = require('co'),
+    path = require('path'),
+    influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
+    config = require(path.resolve('./config/config')),
+    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller'));
+
 
 /**
  * this module gets some statistical information for message from database
@@ -15,7 +20,7 @@ var co = require('co');
  * @returns {Promise} - promise to be resolved with influxdb response or
  * rejected with an error
  */
-module.exports = function (message, { Message: Message, influxService: influxService }) {
+module.exports = function (message, { Message: Message }) {
 
   return co(function * () {
     // some variables used later, filled in inner scopes
@@ -72,8 +77,8 @@ module.exports = function (message, { Message: Message, influxService: influxSer
     }
 
     // count length of the message
-    // TODO it is rather naive. maybe we should exclude html tags.
-    msgLen = message.content.length;
+    // excluding html tags and multiple whitespace characters
+    msgLen = textProcessor.plainText(message.content, true).length;
 
 
     // message position in the thread
@@ -87,12 +92,9 @@ module.exports = function (message, { Message: Message, influxService: influxSer
     }
 
 
-    // TODO this is a completely random value. needs some thinking
-    // TODO this value could be moved to some settings
-    // the lenType is rather simple - including html tags etc. (TODO improve)
-    const MIN_LONG_MESSAGE_LENGTH = 150;
-    let msgLenType = msgLen < MIN_LONG_MESSAGE_LENGTH ? 'short' : 'long';
+    let msgLenType = msgLen < config.longMessageMinimumLength ? 'short' : 'long';
 
+    // TODO figure out whether to use cammelCase or underscore_names
     // values for influxdb
     let values = {
       id_message: String(message._id), // id of message
@@ -117,7 +119,6 @@ module.exports = function (message, { Message: Message, influxService: influxSer
         }
       );
     });
-
 
     return response;
   })
