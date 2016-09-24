@@ -134,6 +134,5 @@ module.exports = function (message) {
   })
     .catch(function (e) {
       console.error(e);
-      throw e;
     });
 };

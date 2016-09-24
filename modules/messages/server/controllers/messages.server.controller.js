@@ -286,11 +286,7 @@ exports.send = function(req, res) {
       // the module returns a Promise
       // it is async, but we'll let it run wild (not waiting for the promise to
       // be fulfilled or rejected)
-      messageToInfluxService(message)
-      .catch(function (e) {
-        // TODO handle the exception (probably log somewhere)
-        e; // ESLint complained about not using this
-      });
+      messageToInfluxService(message);
 
       return done(null, message);
     },
