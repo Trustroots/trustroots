@@ -25,11 +25,9 @@ addons:
 before_install:
   - gem update --system
   - npm i nsp -g
-  - npm i snyk -g
 before_script:
   - mongo --version
   - mongod --version
-  - snyk test
 after_script:
   - nsp check
 notifications:
