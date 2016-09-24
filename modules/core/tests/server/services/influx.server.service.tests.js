@@ -3,16 +3,31 @@
 require('should');
 
 var path = require('path'),
-    influxService = require(path.resolve('./modules/core/server/services/influx.server.service'));
+    influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
+    config = require(path.resolve('./config/config'));
+console.log(config);
 
 describe('Service: influx', function() {
 
-  it('Getting client returns error if no InfluxDB configured', function(done) {
-    influxService.getClient(function(err) {
-      err.message.should.equal('No InfluxDB configured.');
-      done();
+  context('InfluxDB disabled', function () {
+    var originalInfluxSettings;
+
+    before(function () {
+      originalInfluxSettings = config.influxdb.enabled;
+      config.influxdb.enabled = false;
     });
-  });
+
+    after(function () {
+      config.influxdb.enabled = originalInfluxSettings;
+    });
+
+    it('Getting client returns error if no InfluxDB configured', function(done) {
+      influxService.getClient(function(err) {
+        err.message.should.equal('No InfluxDB configured.');
+        done();
+      });
+    });
+  })
 
   it('Writing point returns error with no seriesName', function(done) {
     influxService.writePoint(null, 1, { 'tag': 'tag' }, function(err) {
