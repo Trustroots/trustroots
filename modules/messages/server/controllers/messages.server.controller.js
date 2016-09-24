@@ -283,9 +283,12 @@ exports.send = function(req, res) {
 
     // Here we collect some message data into the influxdb
     function (message, done) {
-      // the module returns a Promise
-      // it is async, but we'll let it run wild (not waiting for the promise to
-      // be fulfilled or rejected)
+      // this module collects, processes and sends data to influxdb via
+      // influxService /modules/core/server/services/...
+      // the function takes callback as an optional 2nd argument
+      // in this case we don't provide the callback and don't wait for finishing
+      // because it has (should have) no effect on sending the message and
+      // longer waiting for the response would influence performance negatively
       messageToInfluxService(message);
 
       return done(null, message);
