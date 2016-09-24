@@ -5,7 +5,6 @@ require('should');
 var path = require('path'),
     influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
     config = require(path.resolve('./config/config'));
-console.log(config);
 
 describe('Service: influx', function() {
 
@@ -27,7 +26,7 @@ describe('Service: influx', function() {
         done();
       });
     });
-  })
+  });
 
   it('Writing point returns error with no seriesName', function(done) {
     influxService.writePoint(null, 1, { 'tag': 'tag' }, function(err) {

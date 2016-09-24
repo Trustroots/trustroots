@@ -11,8 +11,6 @@ var path = require('path'),
 
 mongoose.Promise = Promise;
 
-var Message = mongoose.model('Message');
-
 // Bootstrap db connection
 var db = mongoose.connect(config.db.uri, function(err) {
   if (err) {
@@ -34,7 +32,7 @@ co(function * () {
   let msgLen = messages.length;
   let progress = 0;  // a progress counter
   for (let msg of messages) {
-    yield fluxIn(msg, { Message: Message });
+    yield fluxIn(msg);
 
     //showing a progress
     if(progress % Math.ceil(msgLen / 100 * PROGRESS_INTERVAL) === 0) {

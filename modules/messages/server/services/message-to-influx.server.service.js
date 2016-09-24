@@ -4,10 +4,14 @@
  */
 var co = require('co'),
     path = require('path'),
-    influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
     config = require(path.resolve('./config/config')),
+    mongoose = require('mongoose');
+// eslint complained here about unused variable => requiring without assignment
+require(path.resolve('./modules/messages/server/models/message.server.model'));
+var influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller'));
 
+var Message = mongoose.model('Message');
 
 /**
  * this module gets some statistical information for message from database
@@ -20,7 +24,7 @@ var co = require('co'),
  * @returns {Promise} - promise to be resolved with influxdb response or
  * rejected with an error
  */
-module.exports = function (message, { Message: Message }) {
+module.exports = function (message) {
 
   return co(function * () {
     // some variables used later, filled in inner scopes
@@ -54,6 +58,13 @@ module.exports = function (message, { Message: Message }) {
       ]
     })
     .sort({ created: 1 });
+
+
+    // if no message was found, throw error (there is always the first message
+    // already (at least the one just saved))
+    if (!firstMessage) {
+      throw new Error('first message not found, but should have been already saved');
+    }
 
     // is the new message the first message of the thread?
     isFirstMessage = !!(String(firstMessage._id) === String(message._id));
