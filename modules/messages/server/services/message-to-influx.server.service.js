@@ -105,25 +105,24 @@ module.exports = function (message) {
 
     let msgLenType = msgLen < config.longMessageMinimumLength ? 'short' : 'long';
 
-    // TODO figure out whether to use cammelCase or underscore_names
-    // values for influxdb
+    // values for influxdb, using camelCase for tag and field keys
     let values = {
-      id_message: String(message._id), // id of message
-      id_from: String(userFrom), // id of sender
-      id_to: String(userTo), // id of receiver
-      msg_length: msgLen, // length of the content
-      reply_time: isFirstReply ? replyTime : -1, // reply time when first response only
+      messageId: String(message._id), // id of message, (discussed keeping for now)
+      idFrom: String(userFrom), // id of sender
+      idTo: String(userTo), // id of receiver
+      msgLength: msgLen, // length of the content
+      replyTime: isFirstReply ? replyTime : -1, // reply time when first response only
       time: message.created.getTime() // creation timestamp (milliseconds)
     };
 
     // tags for influxdb
     let tags = {
       position: position, // position (first, first_reply, normal)
-      msg_length_type: msgLenType // (short, long) content (shortness defined in MIN_LONG_MESSAGE_LENGTH)
+      msgLengthType: msgLenType // (short, long) content (shortness defined in MIN_LONG_MESSAGE_LENGTH)
     };
 
     let response = yield new Promise(function (resolve, reject) {
-      influxService.writePoint('messages_sent', values, tags,
+      influxService.writePoint('messageSent', values, tags,
         function (err, response) {
           if (err) return reject(err);
           return resolve(response);
