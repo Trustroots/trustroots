@@ -289,7 +289,7 @@ exports.send = function(req, res) {
       // in this case we don't provide the callback and don't wait for finishing
       // because it has (should have) no effect on sending the message and
       // longer waiting for the response would influence performance negatively
-      messageToInfluxService(message);
+      messageToInfluxService.save(message);
 
       return done(null, message);
     },

@@ -25,12 +25,44 @@ var Message = mongoose.model('Message');
  */
 
 /**
- * this module gets some statistical information for message from database
- * and sends the data to influxService to add to influxdb
- * @param {Object} message - a message object (as returned by mongoDB)
- * @returns {influxCallback} callback - a callback that handles the response
+ * This is a callback for the exports.process
+ *
+ * @callback processMessageCallback
+ * @param {error} error
+ * @param {object} fields - object of field keys and values as they'll be saved
+ * in influx
+ * @param {object} tags - object of tag keys and values as they'll be saved in
+ * influx
  */
-module.exports = function (message, callback) {
+
+/**
+ * this function is a shortcut for processing and sending the data to
+ * influxService (which sends it to influxdb)
+ * @param {object} message - a message object (as returned by mongoDB)
+ * @param {influxCallback} callback - a callback that handles the response
+ */
+module.exports.save = function (message, callback) {
+  async.waterfall([
+    function (done) {
+      return done(null, message);
+    },
+    module.exports.process,
+    module.exports.send
+  ], function (err, response) {
+    if (err) console.error(err);
+    if (typeof callback === 'function') {
+      return callback(err, response);
+    }
+  });
+};
+
+/**
+ * this function gets some info about the message sent and then calls the callback
+ * with field and tag keys and values as they're expected in database
+ * @param {object} message - a message object as returned by mongoDB
+ * @param {processMessageCallback} callback
+ */
+module.exports.process = function (message, callback) {
   // some variables used later, filled inside waterfall
   var isFirstMessage,
       isFirstReply;
@@ -93,7 +125,7 @@ module.exports = function (message, callback) {
       }
     },
 
-    function sendDataToInflux(firstMessage, firstReply, done) {
+    function prepareData(firstMessage, firstReply, done) {
       // is the new message the first reply of the thread?
       isFirstReply = !!(firstReply && String(firstReply._id) === String(message._id));
 
@@ -115,14 +147,13 @@ module.exports = function (message, callback) {
       } else if (isFirstReply) {
         position = 'first_reply';
       } else {
-        position = 'normal';
+        position = 'other';
       }
-
 
       var msgLenType = msgLen < config.longMessageMinimumLength ? 'short' : 'long';
 
       // values for influxdb, using camelCase for tag and field keys
-      var values = {
+      var fields = {
         messageId: String(message._id), // id of message, (discussed keeping for now)
         idFrom: String(userFrom), // id of sender
         idTo: String(userTo), // id of receiver
@@ -134,23 +165,22 @@ module.exports = function (message, callback) {
       // tags for influxdb
       var tags = {
         position: position, // position (first, first_reply, normal)
-        msgLengthType: msgLenType // (short, long) content (shortness defined in a config
+        msgLengthType: msgLenType // (short, long) content (shortness defined in a config)
       };
 
-      // sending the data to influxdb via the service
-      return influxService.writePoint('messageSent', values, tags,
-        function (err, result) {
-          return done(err, result);
-        });
+      return done(null, fields, tags);
     }
-  ], function (err, result) {
-    if (err) {
-      console.error(err);
-    }
-    if (typeof(callback) === 'function') {
-      return callback(err, result);
-    }
-  });
+  ], callback);
+};
 
-  return;
+/**
+ * this function sends the processed field tags and values to influxService
+ * @param {object} fields - object of field keys and values as expected by
+ * influxService & influxdb
+ * @param {object} tags - object of tag keys and values as expected by
+ * influxService & influxdb
+ * @param {influxCallback} callback - a callback that handles the response
+ */
+module.exports.send = function (fields, tags, callback) {
+  return influxService.writePoint('messageSent', fields, tags, callback);
 };
