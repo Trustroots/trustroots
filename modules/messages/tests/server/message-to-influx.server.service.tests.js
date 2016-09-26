@@ -59,143 +59,174 @@ describe('Message to influx server service Unit Tests:', function() {
     });
   });
 
-  describe('Testing messageToInfluxService.process', function () {
+  describe('Testing messageToInfluxService.process(message)', function () {
+    // here we create some example messages
+    var message1to2,
+        message2to1,
+        shortMessage,
+        longMessage;
 
-    // defining some messages which will be later used for testing
-    // note: the userFrom and userTo is not existent at this point, yet
-    var message1to2 = { content: 'message content' };
-    var message2to1 = { content: 'message content' };
-    var shortMessage = { content: 'short content' };
-    // setting a long message
-    var longString = '0123456789';
-    for (var i = 0; i < 5; ++i) {
-      var output = longString + longString;
-      longString = output;
-    }
-    var longMessage = { content: longString };
+    beforeEach(function (done) {
+      // defining some messages which will be later used for testing
+      message1to2 = new Message({
+        userFrom: user1._id,
+        userTo: user2._id,
+        content: 'message content'
+      });
+      message2to1 = new Message({
+        userFrom: user2._id,
+        userTo: user1._id,
+        content: 'message content'
+      });
+      shortMessage = new Message({
+        userFrom: user1._id,
+        userTo: user2._id,
+        content: 'short content'
+      });
+      // setting a long message
+      var longString = '0123456789';
+      for (var i = 0; i < 5; ++i) {
+        var output = longString + longString;
+        longString = output;
+      }
+      longMessage = new Message({
+        userFrom: user2._id,
+        userTo: user1._id,
+        content: longString
+      });
 
-    // here we populate prepared message objects with userFrom & userTo
-    // now they finally exist (after running the previous beforeEach)
-    beforeEach(function () {
-      message1to2.userFrom = user1._id;
-      message1to2.userTo = user2._id;
-      message2to1.userFrom = user2._id;
-      message2to1.userTo = user1._id;
-      shortMessage.userFrom = user1._id;
-      shortMessage.userTo = user2._id;
-      longMessage.userFrom = user1._id;
-      longMessage.userTo = user2._id;
+      // save the messages to mongoDB
+      async.eachSeries([message1to2, message2to1, shortMessage, longMessage],
+        function (msg, callback) {
+          // make sure messages will be created with some time difference
+          setTimeout(function () {
+            msg.save(callback);
+          }, 2);
+        }, done);
     });
 
-    context('The first message', testKeyAndValue([], message1to2, 'tag',
-      'position', 'first'));
 
-    context('The first reply', testKeyAndValue([message2to1], message1to2, 'tag',
-      'position', 'first_reply'));
-
-    context('The other message', testKeyAndValue([message2to1, message1to2],
-      message1to2, 'tag', 'position', 'other'));
-
-    context('The short message', testKeyAndValue([], shortMessage, 'tag',
-      'msgLengthType', 'short'));
-
-    context('The long message', testKeyAndValue([], longMessage, 'tag',
-      'msgLengthType', 'long'));
-
-    // too lazy to write test for the actual amount of reply time
-    context('The first reply', testKeyAndValue([message2to1], message1to2,
-      'field', 'replyTime'));
-
-    context('Other messages', testKeyAndValue([], message1to2,
-      'field', 'replyTime', -1));
-
-    context('Any message (correct length number)', testKeyAndValue([], longMessage, 'field',
-      'msgLength', longMessage.content.length));
-
-    context('All messages', testKeyAndValue([], message1to2,
-      'field', 'time'));
-
-    /**
-     * the preparation function for testing keys and values of the process
-     * function
-     * @param {Object[]} messagesBefore - array of object that would go to 'new
-     * Message(param) before saving to mongoDB via mongoose'
-     * @param {string} messagesBefore[].content - a message content
-     * @param {string|Object} messagesBefore[].userFrom - message sender's id
-     * (id in form of string or idObject (whatever mongoose accepts))
-     * @param {string|Object} messagesBefore[].userTo - message receiver's id
-     * (id in form of string or idObject (whatever mongoose accepts))
-     * @param {Object} messageToProcess - object that would go to new Message()
-     * @param {string} fieldOrTag - do we test field or tag? provide 'field' or
-     * 'tag'
-     * @param {string} key - field or tag key as will be saved to influxDB
-     * @param {mixed} value - field or tag value as will be saved to influxDB
-     * if not present, we test for the presence of the field only
-     * @returns {function} - the returned function is ready to be a second
-     * parameter of context();
-     */
-    function testKeyAndValue(messagesBefore, messageToProcess, fieldOrTag, key, value) {
-      // we wish to check whether the value is provided
-      var arglen = arguments.length;
-
-      return function () {
-        // create some initial message(s)
-        beforeEach(function (done) {
-          async.eachSeries(messagesBefore, saveMessage, done);
-          function saveMessage(message, callback) {
-            var messageDB = new Message(message);
-            messageDB.save(callback);
+    it('[first message] should give tag with key `position` and value `first`',
+      function (done) {
+        messageToInfluxService.process(message1to2, function (err, fields, tags) {
+          if (err) return done(err);
+          try {
+            tags.should.have.property('position', 'first');
+            return done();
+          } catch (err) {
+            return done(err);
           }
         });
+      });
 
-        // showing value in test name or not
-        var valueString = arglen === 5 ? ': ' + value : '';
-        // the test itself
-        it('result tags should have property ' + key + valueString, function (done) {
-          var message = new Message(messageToProcess);
-
-          // creating te message
-          message.save(function (err, result) {
-            if (err) return done(err);
-
-            // processing the message (running the actual tested module)
-            messageToInfluxService.process(result, function (err, fields, tags) {
-              if (err) return done(err);
-
-              // checking the results
-              // do we check fields or tags?
-              var testedObject;
-              switch (fieldOrTag) {
-                case 'field':
-                  testedObject = fields;
-                  break;
-                case 'tag':
-                  testedObject = tags;
-                  break;
-                default:
-                  return done(new Error('do we test fields or tags?'));
-              }
-              // how do we actually use the 'should' library asynchronously?
-              // is it possible to run these tests without try catch? where will
-              // be the done(err) then?
-              try {
-                if (arglen === 5) { // value provided
-                  // testing the key and its value
-                  testedObject.should.have.property(key, value);
-                } else if (arglen === 4) { // value not provided
-                  // testing the key only
-                  testedObject.should.have.property(key);
-                } else {
-                  return done(new Error('wrong number of parameters provided'));
-                }
-                return done();
-              } catch (err) {
-                return done(err);
-              }
-            });
-          });
+    it('[first reply] should give tag with key `position` and value `first_reply`',
+      function (done) {
+        messageToInfluxService.process(message2to1, function (err, fields, tags) {
+          if (err) return done(err);
+          try {
+            tags.should.have.property('position', 'first_reply');
+            return done();
+          } catch (e) {
+            return done(e);
+          }
         });
-      };
-    }
+      });
+
+    it('[first reply] should give field with key `replyTime` >= 0',
+      function (done) {
+        messageToInfluxService.process(message2to1, function (err, fields) {
+          if (err) return done(err);
+          try {
+            fields.should.have.property('replyTime');
+            (fields.replyTime >= 0).should.be.exactly(true);
+            return done();
+          } catch (err) {
+            return done(err);
+          }
+        });
+      });
+
+    it('[not first position nor first reply] should give tag with key `position` and value `first_reply`',
+      function (done) {
+        messageToInfluxService.process(shortMessage, function (err, fields, tags) {
+          if (err) return done(err);
+          try {
+            tags.should.have.property('position', 'other');
+            return done();
+          } catch (err) {
+            return done(err);
+          }
+        });
+      });
+
+    it('[short message] should give tag with key `msgLength` and value `short`',
+      function (done) {
+        messageToInfluxService.process(shortMessage, function (err, fields, tags) {
+          if (err) return done(err);
+          try {
+            tags.should.have.property('msgLengthType', 'short');
+            return done();
+          } catch (err) {
+            return done(err);
+          }
+        });
+      });
+
+    it('[short message] should give tag with key `msgLength` and value `long`',
+      function (done) {
+        messageToInfluxService.process(longMessage, function (err, fields, tags) {
+          if (err) return done(err);
+          try {
+            tags.should.have.property('msgLengthType', 'long');
+            return done();
+          } catch (err) {
+            return done(err);
+          }
+        });
+      });
+
+    it('[not-first-reply message] should give field with key `replyTime` and value -1',
+      function (done) {
+        messageToInfluxService.process(longMessage, function (err, fields) {
+          if (err) return done(err);
+          try {
+            fields.should.have.property('replyTime', -1);
+            return done();
+          } catch (err) {
+            return done(err);
+          }
+        });
+      });
+
+    it('[every message] should give field with key `msgLength` and correct length as value',
+      function (done) {
+        messageToInfluxService.process(message1to2, function (err, fields) {
+          if (err) return done(err);
+          try {
+            fields.should.have.property('msgLength', message1to2.content.length);
+            return done();
+          } catch (err) {
+            return done(err);
+          }
+        });
+      });
+
+    it('[every message] should give field with key `time` which is timestamp (integer) in specific range',
+      function (done) {
+        messageToInfluxService.process(message1to2, function (err, fields) {
+          if (err) return done(err);
+          try {
+            fields.should.have.property('time');
+            (typeof fields.time).should.be.exactly('number');
+            // here we test wheter the number is between now and some not so
+            // past time
+            (fields.time > 1400000000 * 1000).should.be.exactly(true);
+            (fields.time <= Date.now()).should.be.exactly(true);
+            return done();
+          } catch (err) {
+            return done(err);
+          }
+        });
+      });
   });
 });
