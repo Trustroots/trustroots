@@ -283,13 +283,20 @@ exports.send = function(req, res) {
 
     // Here we collect some message data into the influxdb
     function (message, done) {
-      // this module collects, processes and sends data to influxdb via
-      // influxService /modules/core/server/services/...
+      // messageToInfluxService.save collects, processes and sends data to
+      // influxdb via influxService /modules/core/server/services/...
+      //
       // the function takes callback as an optional 2nd argument
       // in this case we don't provide the callback and don't wait for finishing
       // because it has (should have) no effect on sending the message and
       // longer waiting for the response would influence performance negatively
-      messageToInfluxService.save(message);
+      var isInfluxEnabled = _.get(config, 'influxdb.enabled');
+      if (isInfluxEnabled === true) {
+        // async function, callback omitted on purpose, not waiting for it, not
+        // checking success here
+        // TODO the fail of this should be managed somehow
+        messageToInfluxService.save(message);
+      }
 
       return done(null, message);
     },

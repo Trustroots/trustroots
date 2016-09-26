@@ -28,22 +28,22 @@ describe('Service: influx', function() {
     });
   });
 
-  it('Writing point returns error with no seriesName', function(done) {
-    influxService.writePoint(null, 1, { 'tag': 'tag' }, function(err) {
-      err.message.should.equal('InfluxDB Service: no `seriesName` defined.');
+  it('Writing point returns error with no measurementName', function(done) {
+    influxService.writePoint(null, { value: 1 }, { tag: 'tag' }, function(err) {
+      err.message.should.equal('InfluxDB Service: no `measurementName` defined.');
       done();
     });
   });
 
   it('Writing point returns error with no value', function(done) {
-    influxService.writePoint('test', null, { 'tag': 'tag' }, function(err) {
-      err.message.should.equal('InfluxDB Service: no `values` defined.');
+    influxService.writePoint('test', null, { tag: 'tag' }, function(err) {
+      err.message.should.equal('InfluxDB Service: no `fields` defined.');
       done();
     });
   });
 
   it('Writing point returns error with no tag', function(done) {
-    influxService.writePoint('test', 1, null, function(err) {
+    influxService.writePoint('test', { value: 1 }, null, function(err) {
       err.message.should.equal('InfluxDB Service: no `tags` defined.');
       done();
     });

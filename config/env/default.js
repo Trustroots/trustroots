@@ -26,7 +26,10 @@ module.exports = {
   domain: process.env.DOMAIN || 'localhost:3000',
   supportEmail: 'support@trustroots.org', // TO-address for support requests
   profileMinimumLength: 140, // Require User.profile.description to be >=140 chars to send messages
-  // A message below longMessageMinimumLength will be 'short' in influxdb, otherwise 'long'
+  // longMessageMinimumLength: message with content below this value will be
+  // tagged msgLengthType: 'short' in influxDB
+  // equal and longer messages will be tagged 'long'
+  // we count only plain text characters.
   // TODO choose an expressive value
   // Used in ./modules/messages/server/services/message-to-influx.server.service
   longMessageMinimumLength: 150,

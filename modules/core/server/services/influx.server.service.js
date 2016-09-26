@@ -5,53 +5,68 @@
  */
 var path = require('path'),
     influx = require('influx'),
+    _ = require('lodash'),
     config = require(path.resolve('./config/config'));
 
 /**
  * Get InfluxDB Client
  */
 exports.getClient = function(callback) {
-  if (!config.influxdb ||
-      !config.influxdb.enabled ||
-      !config.influxdb.options ||
-      !config.influxdb.options.host ||
-      !config.influxdb.options.database) {
+
+  // Check that influxdb is enabled and that we have a host and database value.
+  var enabled = _.get(config, 'influxdb.enabled');
+  var host = _.get(config, 'influxdb.options.host');
+  var database = _.get(config, 'influxdb.options.database');
+
+  var isNotConfigured = enabled !== true || _.isUndefined(host) || _.isUndefined(database);
+  if (isNotConfigured) {
     return callback(new Error('No InfluxDB configured.'));
   }
+
+  // check passed so we send configuration to influx()
   callback(null, influx(config.influxdb.options));
 };
 
 /**
  * Write point to InfluxDB
  *
- * `values` can be either an object or a single value. For the latter the columname is set to value.
- * You can set the time by passing an object propety called time. The time an be either an integer value or a Date object.
- * When providing a single value, don't forget to adjust the time precision accordingly. The default value is `ms`.
+ * fields - object of field key: value pairs. To save to influxdb.
+ *   - key in camelCase
+ *   - value - mixed types
+ * You can specify time by passing a property called time (default: now)
+ *   - time can either be an integer (default ms) or a date object.
+ * tags - object of tag key: value pairs. To save to influxdb
+ *   - key in camelCase
+ *   - value should be string or will be casted to string
+ * don't forget to adjust the time precision accordingly. The default value is `ms`.
+ *
+ * @param {string} measurementName - measurement name as will be saved in
+ * influxdb (camelCase)
+ * @param {Object} fields - key: value pairs will be saved in influxdb as field
+ * key: field value
+ * @param {number|Date} [fields.time=new Date()] - time of measurement with precision ms
+ * @param {Object} tags - key: value pairs will be saved in influxdb as tag key:
+ * tag value
+ * @param {function} callback - expected to be like function (err, result) {}
  */
-exports.writePoint = function(seriesName, values, tags, callback) {
+exports.writePoint = function(measurementName, fields, tags, callback) {
 
-  if (!seriesName || typeof seriesName !== 'string' || seriesName.length === 0) {
-    return callback(new Error('InfluxDB Service: no `seriesName` defined.'));
+  if (!measurementName || typeof measurementName !== 'string'
+    || measurementName.length === 0) {
+    return callback(new Error('InfluxDB Service: no `measurementName` defined.'));
   }
 
-  if (values === undefined || values === null) {
-    return callback(new Error('InfluxDB Service: no `values` defined.'));
+  if (!_.isPlainObject(fields)) {
+    return callback(new Error('InfluxDB Service: no `fields` defined.'));
   }
 
-  if (!tags || typeof tags !== 'object') {
+  if (!_.isPlainObject(tags)) {
     return callback(new Error('InfluxDB Service: no `tags` defined.'));
   }
 
-  // Turn `values` into object so that we can add time if it's missing
-  if (typeof values !== 'object') {
-    values = {
-      value: values
-    };
-  }
-
-  // Add current time to `values` if it's missing
-  if (!values.time) {
-    values.time = new Date();
+  // Add current time to `fields` if it's missing
+  if (!fields.time) {
+    fields.time = new Date();
   }
 
   exports.getClient(function(err, client) {
@@ -59,7 +74,6 @@ exports.writePoint = function(seriesName, values, tags, callback) {
       return callback(err);
     }
 
-    // `callback` will return `function (err, response)`
-    client.writePoint(seriesName, values, tags, callback);
+    client.writePoint(measurementName, fields, tags, callback);
   });
 };

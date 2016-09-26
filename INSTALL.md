@@ -69,7 +69,7 @@ at [localhost:1081](http://localhost:1081).
 - Keep an eye on console in case of compiling errors.
 - [Read more](https://github.com/Trustroots/trustroots/wiki/Development)
 
-## Enable collecting statistics
+## Enable collecting statistics (optional)
 
 * 1. [Install InfluxDB](https://docs.influxdata.com/influxdb/latest/introduction/installation/) 0.9+ and run it (type `influxd`) at default port (8086)
 * 2. Add InfluxDB configuration to your `./config/env/local.js`:
