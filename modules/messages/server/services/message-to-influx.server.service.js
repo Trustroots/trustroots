@@ -103,8 +103,9 @@ module.exports.process = function (message, callback) {
         done(err);
       }
 
+
       // is the new message the first message of the thread?
-      isFirstMessage = !!(String(firstMessage._id) === String(message._id));
+      isFirstMessage = String(firstMessage._id) === String(message._id);
 
       // can the message be the actual first reply?
       // - is it not the firstMessage?
@@ -150,6 +151,8 @@ module.exports.process = function (message, callback) {
         position = 'other';
       }
 
+      console.log(firstMessage, firstReply, message);
+
       var msgLenType = msgLen < config.longMessageMinimumLength ? 'short' : 'long';
 
       // values for influxdb, using camelCase for tag and field keys
@@ -157,15 +160,20 @@ module.exports.process = function (message, callback) {
         messageId: String(message._id), // id of message, (discussed keeping for now)
         idFrom: String(userFrom), // id of sender
         idTo: String(userTo), // id of receiver
-        msgLength: msgLen, // length of the content
-        replyTime: isFirstReply ? replyTime : -1, // reply time when first response only
+        messageLength: msgLen, // length of the content
         time: message.created.getTime() // creation timestamp (milliseconds)
       };
+
+      // we measure the reply time only for the first replies (time since the
+      // first message sent by the other user)
+      if (isFirstReply) {
+        fields.replyTime = replyTime;
+      }
 
       // tags for influxdb
       var tags = {
         position: position, // position (first, first_reply, normal)
-        msgLengthType: msgLenType // (short, long) content (shortness defined in a config)
+        messageLengthType: msgLenType // (short, long) content (shortness defined in a config)
       };
 
       return done(null, fields, tags);

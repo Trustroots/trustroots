@@ -5,7 +5,7 @@ var path = require('path'),
     config = require(path.resolve('./config/config')),
     configMongoose = require(path.resolve('./config/lib/mongoose')),
     mongoose = require('mongoose'),
-    fluxIn = require(path.resolve('./modules/messages/server/services/message-to-influx.server.service')),
+    messageToInflux = require(path.resolve('./modules/messages/server/services/message-to-influx.server.service')),
     messageModels = require(path.resolve('./modules/messages/server/models/message.server.model')),
     Message = mongoose.model('Message');
 
@@ -23,44 +23,99 @@ var db = mongoose.connect(config.db.uri, function(err) {
 });
 
 async.waterfall([
-
-  function readAllMessages(done) {
-    Message.find(done);
+  // count all messages to be able to show progress
+  function countAllMessages(done) {
+    Message.count().exec(function (err, messageNo) {
+      done(err, messageNo);
+    })
   },
 
-  function processTheMessages(messages, done) {
-    console.log('found ' + messages.length + ' messages\n');
-    console.log('processing and adding the messages to influx now\n');
+  function findAndProcessMessages(messageNo, done) {
+    console.log('found ' + messageNo + ' messages\n');
+    console.log('streaming, processing and adding the messages to influx now\n');
 
+    // cursor for streaming from mongoDB
+    var cursor = Message.find().cursor();
+
+    // preparation for async.doWhilst function
+    //
     // settings how often the progress will be printed to console
     // every PROGRESS_INTERVAL %
-    const PROGRESS_INTERVAL = 1;
-    var msgLen = messages.length;
-    var progress = 0;  // a progress counter
+    const PROGRESS_INTERVAL = 0.1; // percent
+    var keepGoing = true;
+    var progress = 0; // progress counter
 
-    async.eachSeries(messages, saveMessageAndRunCounter, done);
+    // this is the test for async.doWhilst
+    function testKeepGoing() {
+      return keepGoing;
+    }
 
+    // here we process the message and (sometimes) print progress
     function saveMessageAndRunCounter(message, callback) {
       // showing a progress
-      if (progress % Math.ceil(msgLen / 100 * PROGRESS_INTERVAL) === 0) {
-        console.log(Math.floor(progress / msgLen * 100) + '%');
+      if (progress % Math.ceil(messageNo / 100 * PROGRESS_INTERVAL) === 0) {
+        // update the progress instead of logging to newline
+        var progressPercent = (progress / messageNo * 100).toFixed(1);
+        process.stdout.clearLine();
+        process.stdout.cursorTo(0);
+        process.stdout.write(progressPercent + '% (' + progress + '/' +
+          messageNo + ')');
       }
       ++progress;
 
       // processing and saving the point to database
-      fluxIn.save(message, callback);
+      messageToInflux.save(message, callback);
     }
 
+    // the iteratee (function to run in each step) of async.doWhilst
+    function processNext(callback) {
+
+      // getting the next message from mongodb
+      cursor.next(function (err, msg) {
+        // error
+        if(err) {
+          console.error(err);
+          return callback(err);
+        }
+
+        // when we got to the end of stream
+        // msg should be null at the end, but weaker check is safe
+        if(!msg) {
+          keepGoing = false;
+          return callback();
+        }
+
+        // when there is a message to process, process it
+        saveMessageAndRunCounter(msg, callback);
+      });
+    }
+
+    // callback for the end of the script
+    function finish(err) {
+      return done(err, progress, messageNo);
+    }
+
+    async.doWhilst(processNext, testKeepGoing, finish);
   }
-], function (err) {
+], function (err, processedNo, allNo) {
   mongoose.disconnect();
-  if (err) {
-    console.log(err);
+  if(err) {
+    console.error(err);
     console.log('******************* errored **************************');
     return;
   }
+
+  // finish writing the progress bar
+  process.stdout.clearLine();
+  process.stdout.cursorTo(0);
+  process.stdout.write(Math.floor(processedNo / allNo * 100) + '% (' + processedNo + '/' + allNo + ') (ended)\n\n');
+
   console.log('************** finished successfully *****************');
   console.log('******* you can play with the data in grafana ********');
   console.log('******************* or not ^_^ ***********************');
   console.log('********************* bye! ***************************');
+
+  return; // all finished!
 });
+
+

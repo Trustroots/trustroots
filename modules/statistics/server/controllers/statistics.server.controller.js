@@ -16,7 +16,11 @@ var path = require('path'),
  */
 exports.getUsersCount = function(callback) {
   User.count({ public: true }, function(err, count) {
-    callback(err, count || 0);
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, count || 0);
   });
 };
 
@@ -62,7 +66,11 @@ exports.getExternalSiteCount = function(site, callback) {
   }
 
   User.count(query, function(err, count) {
-    callback(err, count || 0);
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, count || 0);
   });
 };
 
@@ -78,6 +86,10 @@ exports.getOffersCount = function(callback) {
     }
   },
   function(err, counters) {
+    if (err) {
+      callback(err);
+      return;
+    }
     var values = {
       yes: 0,
       maybe: 0
@@ -89,7 +101,7 @@ exports.getOffersCount = function(callback) {
         }
       });
     }
-    callback(err, values);
+    callback(null, values);
   });
 };
 
@@ -102,7 +114,11 @@ exports.getNewsletterSubscriptionsCount = function(callback) {
     public: true
   },
   function(err, count) {
-    callback(err, count || 0);
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, count || 0);
   });
 };
 

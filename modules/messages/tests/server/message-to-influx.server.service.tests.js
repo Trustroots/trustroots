@@ -5,12 +5,17 @@
  */
 var mongoose = require('mongoose'),
     path = require('path'),
+    _ = require('lodash'),
     async = require('async'),
+    config = require(path.resolve('./config/config')),
     User = mongoose.model('User'),
     Message = mongoose.model('Message'),
     messageToInfluxService =
   require(path.resolve('./modules/messages/server/services/message-to-influx.server.service'));
 require('should');
+
+// for testing length of long or short messages
+var longMessageMinimumLength = config.longMessageMinimumLength;
 
 /**
  * Unit tests
@@ -67,42 +72,66 @@ describe('Message to influx server service Unit Tests:', function() {
         longMessage;
 
     beforeEach(function (done) {
-      // defining some messages which will be later used for testing
-      message1to2 = new Message({
-        userFrom: user1._id,
-        userTo: user2._id,
-        content: 'message content'
-      });
-      message2to1 = new Message({
-        userFrom: user2._id,
-        userTo: user1._id,
-        content: 'message content'
-      });
-      shortMessage = new Message({
-        userFrom: user1._id,
-        userTo: user2._id,
-        content: 'short content'
-      });
-      // setting a long message
-      var longString = '0123456789';
-      for (var i = 0; i < 5; ++i) {
-        var output = longString + longString;
-        longString = output;
-      }
-      longMessage = new Message({
-        userFrom: user2._id,
-        userTo: user1._id,
-        content: longString
-      });
+      // creating content for short & long message
+      var shortMsgContent = _.repeat('.', longMessageMinimumLength - 1);
+      var longMsgContent = _.repeat('.', longMessageMinimumLength);
 
-      // save the messages to mongoDB
-      async.eachSeries([message1to2, message2to1, shortMessage, longMessage],
-        function (msg, callback) {
-          // make sure messages will be created with some time difference
+      // defining some messages which will be later used for testing
+      async.waterfall([
+
+        // defining the messages with some time difference
+        function (done) {
           setTimeout(function () {
-            msg.save(callback);
+            message1to2 = new Message({
+              userFrom: user1._id,
+              userTo: user2._id,
+              content: 'message content'
+            });
+            done();
           }, 2);
-        }, done);
+        },
+
+        function (done) {
+          setTimeout(function () {
+            message2to1 = new Message({
+              userFrom: user2._id,
+              userTo: user1._id,
+              content: 'message content'
+            });
+            done();
+          }, 2);
+        },
+
+        function (done) {
+          setTimeout(function () {
+            shortMessage = new Message({
+              userFrom: user1._id,
+              userTo: user2._id,
+              content: shortMsgContent
+            });
+            done();
+          }, 2);
+        },
+
+        function (done) {
+          setTimeout(function () {
+            longMessage = new Message({
+              userFrom: user2._id,
+              userTo: user1._id,
+              content: longMsgContent
+            });
+            done();
+          }, 2);
+        },
+
+        // saving the messages to mongoDB
+        function (done) {
+          async.eachSeries([message1to2, message2to1, shortMessage, longMessage],
+            function (msg, callback) {
+              msg.save(callback);
+            }, done);
+        }
+      ], done);
     });
 
 
@@ -159,12 +188,12 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[short message] should give tag with key `msgLength` and value `short`',
+    it('[short message] should give tag with key `messageLength` and value `short`',
       function (done) {
         messageToInfluxService.process(shortMessage, function (err, fields, tags) {
           if (err) return done(err);
           try {
-            tags.should.have.property('msgLengthType', 'short');
+            tags.should.have.property('messageLengthType', 'short');
             return done();
           } catch (err) {
             return done(err);
@@ -172,12 +201,12 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[short message] should give tag with key `msgLength` and value `long`',
+    it('[short message] should give tag with key `messageLength` and value `long`',
       function (done) {
         messageToInfluxService.process(longMessage, function (err, fields, tags) {
           if (err) return done(err);
           try {
-            tags.should.have.property('msgLengthType', 'long');
+            tags.should.have.property('messageLengthType', 'long');
             return done();
           } catch (err) {
             return done(err);
@@ -185,12 +214,12 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[not-first-reply message] should give field with key `replyTime` and value -1',
+    it('[not-first-reply message] should not give the key `replyTime`',
       function (done) {
         messageToInfluxService.process(longMessage, function (err, fields) {
           if (err) return done(err);
           try {
-            fields.should.have.property('replyTime', -1);
+            fields.should.not.have.property('replyTime');
             return done();
           } catch (err) {
             return done(err);
@@ -198,12 +227,12 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[every message] should give field with key `msgLength` and correct length as value',
+    it('[every message] should give field with key `messageLength` and correct length as value',
       function (done) {
         messageToInfluxService.process(message1to2, function (err, fields) {
           if (err) return done(err);
           try {
-            fields.should.have.property('msgLength', message1to2.content.length);
+            fields.should.have.property('messageLength', message1to2.content.length);
             return done();
           } catch (err) {
             return done(err);
