@@ -49,11 +49,8 @@ describe('Message to influx server service Unit Tests:', function() {
 
     // save those users to mongoDB
     user1.save(function(err) {
-      if (err) done(err);
-      user2.save(function(err) {
-        if (err) done(err);
-        done();
-      });
+      if (err) return done(err);
+      user2.save(done);
     });
   });
 
@@ -161,13 +158,13 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[first reply] should give field with key `replyTime` >= 0',
+    it('[first reply] should give field with key `replyTime` > 0',
       function (done) {
         messageToInfluxService.process(message2to1, function (err, fields) {
           if (err) return done(err);
           try {
             fields.should.have.property('replyTime');
-            (fields.replyTime >= 0).should.be.exactly(true);
+            (fields.replyTime).should.be.above(0);
             return done();
           } catch (err) {
             return done(err);

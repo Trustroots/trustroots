@@ -151,8 +151,6 @@ module.exports.process = function (message, callback) {
         position = 'other';
       }
 
-      console.log(firstMessage, firstReply, message);
-
       var msgLenType = msgLen < config.longMessageMinimumLength ? 'short' : 'long';
 
       // values for influxdb, using camelCase for tag and field keys

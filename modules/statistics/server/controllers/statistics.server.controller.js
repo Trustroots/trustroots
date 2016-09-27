@@ -149,65 +149,89 @@ exports.getPublicStatistics = function(req, res) {
     // External sites - BeWelcome
     function(done) {
       exports.getExternalSiteCount('bewelcome', function(err, count) {
+        if (err) {
+          return done(err);
+        }
         req.statistics.connected.bewelcome = count;
-        done(err);
+        done();
       });
     },
 
     // External sites - Couchsurfing
     function(done) {
       exports.getExternalSiteCount('couchsurfing', function(err, count) {
+        if (err) {
+          return done(err);
+        }
         req.statistics.connected.couchsurfing = count;
-        done(err);
+        done();
       });
     },
 
     // External sites - Warmshowers
     function(done) {
       exports.getExternalSiteCount('warmshowers', function(err, count) {
+        if (err) {
+          return done(err);
+        }
         req.statistics.connected.warmshowers = count;
-        done(err);
+        done();
       });
     },
 
     // External sites - Facebook
     function(done) {
       exports.getExternalSiteCount('facebook', function(err, count) {
+        if (err) {
+          return done(err);
+        }
         req.statistics.connected.facebook = count;
-        done(err);
+        done();
       });
     },
 
     // External sites - Twitter
     function(done) {
       exports.getExternalSiteCount('twitter', function(err, count) {
+        if (err) {
+          return done(err);
+        }
         req.statistics.connected.twitter = count;
-        done(err);
+        done();
       });
     },
 
     // External sites - GitHub
     function(done) {
       exports.getExternalSiteCount('github', function(err, count) {
+        if (err) {
+          return done(err);
+        }
         req.statistics.connected.github = count;
-        done(err);
+        done();
       });
     },
 
     // Newsletter subscribers
     function(done) {
       exports.getNewsletterSubscriptionsCount(function(err, count) {
+        if (err) {
+          return done(err);
+        }
         req.statistics.newsletter = count;
-        done(err);
+        done();
       });
     },
 
     // Hosting stats
     function(done) {
       exports.getOffersCount(function(err, counter) {
+        if (err) {
+          return done(err);
+        }
         req.statistics.hosting.yes = counter.yes;
         req.statistics.hosting.maybe = counter.maybe;
-        done(err);
+        done();
       });
     },
 

@@ -22,30 +22,47 @@ describe('Service: influx', function() {
 
     it('Getting client returns error if no InfluxDB configured', function(done) {
       influxService.getClient(function(err) {
-        err.message.should.equal('No InfluxDB configured.');
-        done();
+        try {
+          err.message.should.equal('No InfluxDB configured.');
+          return done();
+        } catch (e) {
+          return done(e);
+        }
       });
     });
   });
 
   it('Writing point returns error with no measurementName', function(done) {
     influxService.writePoint(null, { value: 1 }, { tag: 'tag' }, function(err) {
-      err.message.should.equal('InfluxDB Service: no `measurementName` defined.');
-      done();
+      try {
+        err.message.should.equal('InfluxDB Service: no `measurementName` defined.');
+        return done();
+
+      } catch (e) {
+        return done(e);
+      }
     });
   });
 
   it('Writing point returns error with no value', function(done) {
     influxService.writePoint('test', null, { tag: 'tag' }, function(err) {
-      err.message.should.equal('InfluxDB Service: no `fields` defined.');
-      done();
+      try {
+        err.message.should.equal('InfluxDB Service: no `fields` defined.');
+        return done();
+      } catch (e) {
+        return done(e);
+      }
     });
   });
 
   it('Writing point returns error with no tag', function(done) {
     influxService.writePoint('test', { value: 1 }, null, function(err) {
-      err.message.should.equal('InfluxDB Service: no `tags` defined.');
-      done();
+      try {
+        err.message.should.equal('InfluxDB Service: no `tags` defined.');
+        return done();
+      } catch (e) {
+        return done(e);
+      }
     });
   });
 

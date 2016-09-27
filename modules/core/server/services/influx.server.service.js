@@ -32,7 +32,7 @@ exports.getClient = function(callback) {
  *
  * fields - object of field key: value pairs. To save to influxdb.
  *   - key in camelCase
- *   - value - mixed types
+ *   - value - string or number (other options?)
  * You can specify time by passing a property called time (default: now)
  *   - time can either be an integer (default ms) or a date object.
  * tags - object of tag key: value pairs. To save to influxdb
