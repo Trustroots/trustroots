@@ -61,20 +61,20 @@
             font-size: @font-size-small;
             color: @gray;
           }
-          span {
+          .thread-excerpt {
             // https://developer.mozilla.org/en-US/docs/Web/CSS/word-wrap
             word-wrap: break-word;
             // http://getbootstrap.com/css/#less-mixins-truncating
             .text-overflow();
           }
           @media (max-width: @screen-sm-max) {
-            span {
+            .thread-excerpt {
               max-width: 300px;
               display: inline-block;
             }
           }
           @media (max-width: @screen-xs-max) {
-            span {
+            .thread-excerpt {
               max-width: 100px;
             }
           }

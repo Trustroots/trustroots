@@ -25,10 +25,13 @@
                 ng-click="inbox.openThread(thread.with)"
                 ng-if="::!thread.with.isRemoved">
               <td class="thread-author col-xs-3 col-md-2">
-                <div tr-avatar data-user="thread.with" data-size="32" data-link="false" class="pull-left hidden-xs"></div> <span ng-bind="::thread.with.displayName"></span>
+                <a ui-sref="messageThread({ username: thread.with.username })">
+                  <div tr-avatar data-user="thread.with" data-size="32" data-link="false" class="pull-left hidden-xs"></div>
+                  <span ng-bind="::thread.with.displayName"></span>
+                </a>
               </td>
               <td class="thread-summary">
-                <span ng-bind-html="thread.message.excerpt"></span>
+                <a class="thread-excerpt" ui-sref="messageThread({ username: thread.with.username })" ng-bind-html="::thread.message.excerpt"></a>
                 <small class="thread-indicators pull-right">
                   <i class="icon-reply icon-fw text-muted" ng-if="::thread.userFrom._id === app.user._id" uib-tooltip="You replied" tooltip-placement="right"></i>
                 </small>
