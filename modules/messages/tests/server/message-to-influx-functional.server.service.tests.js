@@ -57,7 +57,7 @@ describe('Message to influx server service Functional Test', function () {
       password: 'password123',
       provider: 'local',
       public: true,
-      description: _.repeat('.', 140)
+      description: _.repeat('.', config.profileMinimumLength)
     });
 
     user2 = new User({
@@ -73,9 +73,9 @@ describe('Message to influx server service Functional Test', function () {
 
     // save those users to mongoDB
     user1.save(function(err) {
-      if (err) done(err);
+      if (err) return done(err);
       user2.save(function(err) {
-        if (err) done(err);
+        if (err) return done(err);
         done();
       });
     });
@@ -99,10 +99,12 @@ describe('Message to influx server service Functional Test', function () {
     function Res() {}
     Res.prototype.status = function (statusCode) {
       statusCode; // here we just satisfy eslint; may be used for something
+      // this.statusCode = statusCode; // use for debug
       return this;
     };
     // we could do something on response, but we don't care
     Res.prototype.send = function (response) {
+      // console.log(this.statusCode, response); // use for debug
       response; // satisfy ESLint
     };
     Res.prototype.json = Res.prototype.send;
@@ -113,7 +115,7 @@ describe('Message to influx server service Functional Test', function () {
       },
       body: {
         userTo: String(user2._id),
-        content: _.repeat('.', config.longMessageMinimumLength - 1)
+        content: _.repeat('.', config.limits.longMessageMinimumLength - 1)
       }
     };
     var res = new Res();

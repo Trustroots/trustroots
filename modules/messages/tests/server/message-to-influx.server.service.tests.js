@@ -15,7 +15,7 @@ var mongoose = require('mongoose'),
 require('should');
 
 // for testing length of long or short messages
-var longMessageMinimumLength = config.longMessageMinimumLength;
+var longMessageMinimumLength = config.limits.longMessageMinimumLength;
 
 /**
  * Unit tests
@@ -145,12 +145,12 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[first reply] should give tag with key `position` and value `first_reply`',
+    it('[first reply] should give tag with key `position` and value `firstReply`',
       function (done) {
         messageToInfluxService.process(message2to1, function (err, fields, tags) {
           if (err) return done(err);
           try {
-            tags.should.have.property('position', 'first_reply');
+            tags.should.have.property('position', 'firstReply');
             return done();
           } catch (e) {
             return done(e);
@@ -172,7 +172,7 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[not first position nor first reply] should give tag with key `position` and value `first_reply`',
+    it('[not first position nor first reply] should give tag with key `position` and value `other`',
       function (done) {
         messageToInfluxService.process(shortMessage, function (err, fields, tags) {
           if (err) return done(err);

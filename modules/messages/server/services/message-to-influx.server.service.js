@@ -3,6 +3,7 @@
  * Module dependencies.
  */
 var path = require('path'),
+    _ = require('lodash'),
     async = require('async'),
     config = require(path.resolve('./config/config')),
     mongoose = require('mongoose'),
@@ -43,13 +44,32 @@ var Message = mongoose.model('Message');
  */
 module.exports.save = function (message, callback) {
   async.waterfall([
+    // Check whether the influxDB is enabled. Be lazy and quit if disabled.
     function (done) {
-      return done(null, message);
+      var isInfluxEnabled = _.get(config, 'influxdb.enabled');
+      if (isInfluxEnabled !== true) {
+        return done(new Error('influxDB is disabled'));
+      }
+      return done();
     },
-    module.exports.process,
-    module.exports.send
+
+    // Process the message provided
+    function (done) {
+      module.exports.process(message, function (err, fields, tags) {
+        return done(err, fields, tags);
+      });
+    },
+
+    // Send the message provided to influxService
+    function (fields, tags, done) {
+      module.exports.send(fields, tags, function (err, response) {
+        return done(err, response);
+      });
+    }
   ], function (err, response) {
-    if (err) console.error(err);
+    if (err && (process.env.NODE_ENV === 'production')) {
+      console.error(err);
+    }
     if (typeof callback === 'function') {
       return callback(err, response);
     }
@@ -100,7 +120,7 @@ module.exports.process = function (message, callback) {
       // already (at least the one just saved))
       if (!firstMessage) {
         var err = new Error('first message not found, but should have been already saved');
-        done(err);
+        return done(err);
       }
 
 
@@ -128,9 +148,9 @@ module.exports.process = function (message, callback) {
 
     function prepareData(firstMessage, firstReply, done) {
       // is the new message the first reply of the thread?
-      isFirstReply = !!(firstReply && String(firstReply._id) === String(message._id));
+      isFirstReply = Boolean(firstReply && String(firstReply._id) === String(message._id));
 
-      // count the reply time for statistics (miliseconds)
+      // count the reply time for statistics (milliseconds)
       var replyTime;
       if (isFirstReply) {
         replyTime = firstReply.created.getTime() - firstMessage.created.getTime();
@@ -146,18 +166,18 @@ module.exports.process = function (message, callback) {
       if (isFirstMessage) {
         position = 'first';
       } else if (isFirstReply) {
-        position = 'first_reply';
+        position = 'firstReply';
       } else {
         position = 'other';
       }
 
-      var msgLenType = msgLen < config.longMessageMinimumLength ? 'short' : 'long';
+      var msgLenType = msgLen < config.limits.longMessageMinimumLength ? 'short' : 'long';
 
-      // values for influxdb, using camelCase for tag and field keys
+      // values for influxdb
       var fields = {
-        messageId: String(message._id), // id of message, (discussed keeping for now)
-        idFrom: String(userFrom), // id of sender
-        idTo: String(userTo), // id of receiver
+        messageId: String(message._id),
+        userFrom: String(userFrom), // id of sender
+        userTo: String(userTo), // id of receiver
         messageLength: msgLen, // length of the content
         time: message.created.getTime() // creation timestamp (milliseconds)
       };
@@ -170,8 +190,8 @@ module.exports.process = function (message, callback) {
 
       // tags for influxdb
       var tags = {
-        position: position, // position (first, first_reply, normal)
-        messageLengthType: msgLenType // (short, long) content (shortness defined in a config)
+        position: position, // position (first|firstReply|other)
+        messageLengthType: msgLenType // (short|long) content (shortness defined in a config)
       };
 
       return done(null, fields, tags);

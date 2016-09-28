@@ -65,14 +65,4 @@ describe('Service: influx', function() {
       }
     });
   });
-
-  /*
-  it('Writing point should succeed with 0 value', function(done) {
-    influxService.writePoint('test', 0, { 'tag':'tag' }, function(err) {
-      err.message.should.equal('InfluxDB Service: No `values` defined.');
-      done();
-    });
-  });
-  */
-
 });

@@ -284,16 +284,9 @@ exports.send = function(req, res) {
     // Here we send some metrics to InfluxDB to measure how many messages
     // are sent, what type of messages, etc.
     function (message, done) {
-      var isInfluxEnabled = _.get(config, 'influxdb.enabled');
-      if (isInfluxEnabled === true) {
-        // We don't want to wait for a result if the metrics collection succeeds
-        // or fails, we silently ignore any success or error messages.
-        messageToInfluxService.save(message, function (err, response) {
-          // do nothing
-          err;
-          response; // to satisfy ESLint unused variables
-        });
-      }
+      messageToInfluxService.save(message, function () {
+        // do nothing
+      });
 
       return done(null, message);
     },

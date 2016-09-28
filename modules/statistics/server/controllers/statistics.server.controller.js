@@ -90,6 +90,23 @@ exports.getOffersCount = function(callback) {
       callback(err);
       return;
     }
+
+    // the returned counters is expected to be an array of a form
+    //
+    // [
+    //   {
+    //     _id: 'yes',
+    //     count: number // amount of 'yes' offers
+    //   },
+    //   {
+    //     _id: 'maybe',
+    //     count: number // amount of 'maybe' offers
+    //   },
+    //   {
+    //     _id: 'no',
+    //     count: number // amount of 'no' offers
+    //   }
+    // ]
     var values = {
       yes: 0,
       maybe: 0
