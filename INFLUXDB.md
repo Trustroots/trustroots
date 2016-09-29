@@ -20,11 +20,11 @@ By default Grafana runs on port 3000. In order to solve the conflict with trustr
 - find, uncomment and change `http_port` value according to your preference
 - save the changes and start/restart the grafana server (i.e. `systemctl start grafana`, it is system specific)
 - run the client on localhost:(your-value)
-- there may be a dashboard available for import (TODO)
+- [ ] we'll provide a dashboard which you can import and use with the data.
 
 ## Metrics
 
-[Read more about how to query InfluxDB.](https://docs.influxdata.com/influxdb/v1.0/query_language/) Browse Query Language in Content to see more chapters.
+[Read more about how to query InfluxDB.](https://docs.influxdata.com/influxdb/v1.0/query_language/) On the website look for more chapters in Contents.
 
 ### Messages
 
@@ -40,62 +40,89 @@ fields: {
   idTo: string,
   messageLength: number, // counting only plainText of the message content
   replyTime: number [ms], // field time between the first message and the first reply
-                          // available only for "position"='first_reply', otherwise -1
+                          // available only for "position"='firstReply', otherwise -1
 }
 
 tags: {
   messageLengthType: string, // (short|long)
-  position: string, // (first|first_reply|other) position in the thread
+  position: string, // (first|firstReply|other) position in the thread
 }
 ```
 
 #### Amounts
 
-How many messages are sent weekly?
+##### How many messages are sent weekly?
 
 ```
-SELECT COUNT(messageLength) FROM messageSent WHERE time > now() - 100w GROUP BY time(1w)
+SELECT COUNT(messageLength) FROM messageSent WHERE time > now() - 100w GROUP BY time(1w) fill(0)
 ```
 
 #### Reply rate
 
-How many new threads are started? How many new threads are replied?
+##### How many new threads are started? How many new threads are replied?
 
 ```
-SELECT COUNT(messageLength) FROM messageSent WHERE time > now() - 100w AND position = 'first' GROUP BY time(1w)
-SELECT COUNT(messageLength) FROM messageSent WHERE time > now() - 100w AND position = 'first_reply' GROUP BY time(1w)
+SELECT COUNT(messageLength) FROM messageSent WHERE time > now() - 100w AND position = 'first' GROUP BY time(1w) fill(0)
+SELECT COUNT(messageLength) FROM messageSent WHERE time > now() - 100w AND position = 'firstReply' GROUP BY time(1w) fill(0)
 ```
 
-What is the ratio at given time?
+##### What is the ratio at given time?
 
-_To be continued..._
+_Note: Messages and replies are decoupled in the database. Here we show the ratio between amount of new threads written now and first replies replied now._
+
+- counting data to a new measurement `messageRatio` with SELECT INTO
+
+```
+SELECT COUNT(messageLength) AS firstMessageCount INTO messageRatio FROM messageSent WHERE time > now() - 100w position='first' GROUP BY time(1w) fill(0)
+SELECT COUNT(messageLength) AS firstReplyCount INTO messageRatio FROM messageSent WHERE time > now() - 100w position='firstReply' GROUP BY time(1w) fill(0)
+```
+
+- comparing the data
+
+```
+SELECT SUM(firstReplyCount)/SUM(firstMessageCount) AS percent FROM messageRatio WHERE time > now() - 100w GROUP BY time(1w) fill(0)
+```
+
+- keeping the messageRatio updated with CONTINUOUS QUERIES
+
+```
+CREATE CONTINUOUS QUERY "firstMessageCountCQ" ON "trustroots" RESAMPLE FOR 2w BEGIN SELECT COUNT(messageLength) AS firstMessageCount INTO messageRatio FROM messageSent WHERE position='first' GROUP BY time(1w) END
+```
+
+... and similarly for `firstReplyCount`.
 
 #### Reply time
 
-What is the time since the first message till the first reply?
+##### What is the time since the first message till the first reply?
 
-Average reply time may be interesting:
-
-```
-SELECT MEAN(replyTime) FROM messageSent WHERE time > now() - 100w AND position='first_reply' GROUP BY time(1w)
-```
-
-Median reply time will be influenced less by very long rare reply times.
+- Average reply time may be interesting:
 
 ```
-SELECT MEDIAN(replyTime) FROM messageSent WHERE time > now() - 100w AND position='first_reply' GROUP BY time(1w)
+SELECT MEAN(replyTime) FROM messageSent WHERE time > now() - 100w AND position='firstReply' GROUP BY time(1w)
+```
+
+- Median reply time will be influenced less by very late replies.
+
+```
+SELECT MEDIAN(replyTime) FROM messageSent WHERE time > now() - 100w AND position='firstReply' GROUP BY time(1w)
+```
+
+##### How many replies are useful (replied within 1,3,7,14 days)?
+
+```
+SELECT COUNT(messageLength) FROM messageSent WHERE time > now() - 100w AND position = 'firstReply' AND replyTime < 24*3600*1000 GROUP BY time(1w) fill(0)
 ```
 
 #### Message length
 
-How frequent are long and short messages?
+##### How frequent are long and short messages?
 
 ```
 SELECT COUNT(messageLength) FROM messageSent WHERE time > now() - 100w AND messageLengthType='short' GROUP BY time(1w)
 SELECT COUNT(messageLength) FROM messageSent WHERE time > now() - 100w AND messageLengthType='long' GROUP BY time(1w)
 ```
 
-What is the ratio?
+##### What is the ratio?
 
 _To be continued..._
 
