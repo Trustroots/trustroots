@@ -93,7 +93,7 @@
     "mongoose": "~4.5.10",
     "mongoose-beautiful-unique-validation": "~5.0.1",
     "mongoose-integer": "~0.1.1",
-    "mongoose-paginate": "~5.0.0",
+    "mongoose-paginate": "5.0.0",
     "mongoose-url-slugs": "~0.2.1",
     "morgan": "~1.7.0",
     "multer": "~1.2.0",
