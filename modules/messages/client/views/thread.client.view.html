@@ -106,7 +106,12 @@
       <!-- /Thread -->
 
       <!-- Reply -->
-      <form ng-submit="thread.sendMessage()" ng-disabled="!thread.userTo._id" id="message-reply" name="messageForm" class="form-horizontal" novalidate>
+      <form id="message-reply"
+            name="messageForm"
+            class="form-horizontal"
+            novalidate
+            ng-submit="thread.sendMessage()"
+            ng-disabled="!thread.userTo._id">
         <div class="row">
           <div class="col-xs-12">
             <div class="panel panel-default">
