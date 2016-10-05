@@ -12,9 +12,138 @@ var path = require('path'),
     User = mongoose.model('User');
 
 /**
+ * Get count of all public users
+ */
+exports.getUsersCount = function(callback) {
+  User.count({ public: true }, function(err, count) {
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, count || 0);
+  });
+};
+
+/**
+ * Get count of all public users
+ */
+exports.getExternalSiteCount = function(site, callback) {
+  var validSites = ['bewelcome', 'couchsurfing', 'warmshowers', 'facebook', 'twitter', 'github'];
+
+  // Validate site
+  if (!site || validSites.indexOf(site) === -1) {
+    return callback(new Error('Missing external site id.'));
+  }
+
+  // Build the query
+  var query = { public: true };
+
+  switch (site) {
+    case 'bewelcome':
+      query.extSitesBW = { $exists: true, $ne: '' };
+      break;
+    case 'couchsurfing':
+      query.extSitesCS = { $exists: true, $ne: '' };
+      break;
+    case 'warmshowers':
+      query.extSitesWS = { $exists: true, $ne: '' };
+      break;
+    case 'facebook':
+      query.additionalProvidersData = {
+        facebook: { $exists: true }
+      };
+      break;
+    case 'twitter':
+      query.additionalProvidersData = {
+        twitter: { $exists: true }
+      };
+      break;
+    case 'github':
+      query.additionalProvidersData = {
+        github: { $exists: true }
+      };
+      break;
+  }
+
+  User.count(query, function(err, count) {
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, count || 0);
+  });
+};
+
+/**
+ * Get count of hosting offers
+ * Callback will be called with Object `{ yes: Int, maybe: Int }`
+ */
+exports.getOffersCount = function(callback) {
+  Offer.aggregate({
+    $group: {
+      _id: '$status',
+      count: { $sum: 1 }
+    }
+  },
+  function(err, counters) {
+    if (err) {
+      callback(err);
+      return;
+    }
+
+    // the returned counters is expected to be an array of a form
+    //
+    // [
+    //   {
+    //     _id: 'yes',
+    //     count: number // amount of 'yes' offers
+    //   },
+    //   {
+    //     _id: 'maybe',
+    //     count: number // amount of 'maybe' offers
+    //   },
+    //   {
+    //     _id: 'no',
+    //     count: number // amount of 'no' offers
+    //   }
+    // ]
+    var values = {
+      yes: 0,
+      maybe: 0
+    };
+    if (counters && counters.length > 0) {
+      counters.forEach(function(counter) {
+        if (['yes', 'maybe'].indexOf(counter._id) !== -1) {
+          values[counter._id] = counter.count || 0;
+        }
+      });
+    }
+    callback(null, values);
+  });
+};
+
+/**
+ * Get count of newsletter subscriptions
+ */
+exports.getNewsletterSubscriptionsCount = function(callback) {
+  User.count({
+    newsletter: true,
+    public: true
+  },
+  function(err, count) {
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, count || 0);
+  });
+};
+
+
+/**
  * Get all statistics
  */
-exports.get = function(req, res) {
+exports.getPublicStatistics = function(req, res) {
 
   req.statistics = {
     connected: {},
@@ -25,110 +154,101 @@ exports.get = function(req, res) {
 
     // Total users
     function(done) {
-      User
-        .find({ public: true })
-        .count(function(err, count) {
-          req.statistics.total = count;
-          done(err);
-        });
+      exports.getUsersCount(function(err, count) {
+        if (err) {
+          return done(err);
+        }
+        req.statistics.total = count;
+        done();
+      });
     },
 
     // External sites - BeWelcome
     function(done) {
-
-      User.count({
-        extSitesBW: { $exists: true, $ne: '' },
-        public: true
-      }, function(err, count) {
-        req.statistics.connected.bewelcome = count || 0;
-        done(err);
+      exports.getExternalSiteCount('bewelcome', function(err, count) {
+        if (err) {
+          return done(err);
+        }
+        req.statistics.connected.bewelcome = count;
+        done();
       });
     },
 
     // External sites - Couchsurfing
     function(done) {
-      User.count({
-        extSitesCS: { $exists: true, $ne: '' },
-        public: true
-      }, function(err, count) {
-        req.statistics.connected.couchsurfing = count || 0;
-        done(err);
+      exports.getExternalSiteCount('couchsurfing', function(err, count) {
+        if (err) {
+          return done(err);
+        }
+        req.statistics.connected.couchsurfing = count;
+        done();
       });
     },
 
     // External sites - Warmshowers
     function(done) {
-      User.count({
-        extSitesWS: { $exists: true, $ne: '' },
-        public: true
-      }, function(err, count) {
-        req.statistics.connected.warmshowers = count || 0;
-        done(err);
+      exports.getExternalSiteCount('warmshowers', function(err, count) {
+        if (err) {
+          return done(err);
+        }
+        req.statistics.connected.warmshowers = count;
+        done();
       });
     },
 
     // External sites - Facebook
     function(done) {
-      User.count({
-        'additionalProvidersData.facebook': { $exists: true },
-        public: true
-      }, function(err, count) {
-        req.statistics.connected.facebook = count || 0;
-        done(err);
+      exports.getExternalSiteCount('facebook', function(err, count) {
+        if (err) {
+          return done(err);
+        }
+        req.statistics.connected.facebook = count;
+        done();
       });
     },
 
     // External sites - Twitter
     function(done) {
-      User.count({
-        'additionalProvidersData.twitter': { $exists: true },
-        public: true
-      }, function(err, count) {
-        req.statistics.connected.twitter = count || 0;
-        done(err);
+      exports.getExternalSiteCount('twitter', function(err, count) {
+        if (err) {
+          return done(err);
+        }
+        req.statistics.connected.twitter = count;
+        done();
       });
     },
 
     // External sites - GitHub
     function(done) {
-      User.count({
-        'additionalProvidersData.github': { $exists: true },
-        public: true
-      }, function(err, count) {
-        req.statistics.connected.github = count || 0;
-        done(err);
+      exports.getExternalSiteCount('github', function(err, count) {
+        if (err) {
+          return done(err);
+        }
+        req.statistics.connected.github = count;
+        done();
       });
     },
 
     // Newsletter subscribers
     function(done) {
-      User.count({
-        newsletter: true,
-        public: true
-      },
-      function(err, count) {
-        req.statistics.newsletter = count || 0;
-        done(err);
+      exports.getNewsletterSubscriptionsCount(function(err, count) {
+        if (err) {
+          return done(err);
+        }
+        req.statistics.newsletter = count;
+        done();
       });
     },
 
     // Hosting stats
     function(done) {
-      Offer.aggregate({
-        $group: {
-          _id: '$status',
-          count: { $sum: 1 }
+      exports.getOffersCount(function(err, counter) {
+        if (err) {
+          return done(err);
         }
-      },
-      function(err, counters) {
-        if (counters && counters.length > 0) {
-          counters.forEach(function(counter) {
-            if (['yes', 'maybe'].indexOf(counter._id) !== -1) {
-              req.statistics.hosting[counter._id] = counter.count;
-            }
-          });
-        }
-        done(err);
+        req.statistics.hosting.yes = counter.yes;
+        req.statistics.hosting.maybe = counter.maybe;
+        done();
       });
     },
 

@@ -5,6 +5,7 @@
  */
 var _ = require('lodash'),
     path = require('path'),
+    messageToInfluxService = require(path.resolve('./modules/messages/server/services/message-to-influx.server.service')),
     async = require('async'),
     sanitizeHtml = require('sanitize-html'),
     paginate = require('express-paginate'),
@@ -278,6 +279,16 @@ exports.send = function(req, res) {
       function(err) {
         done(err, message);
       });
+    },
+
+    // Here we send some metrics to InfluxDB to measure how many messages
+    // are sent, what type of messages, etc.
+    function (message, done) {
+      messageToInfluxService.save(message, function () {
+        // do nothing
+      });
+
+      return done(null, message);
     },
 
     // We'll need some info about related users, populate some fields
