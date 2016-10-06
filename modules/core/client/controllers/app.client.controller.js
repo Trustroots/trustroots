@@ -9,7 +9,7 @@
     .controller('AppController', AppController);
 
   /* @ngInject */
-  function AppController($scope, $rootScope, $window, $state, $analytics, Authentication, SettingsFactory, Languages, locker, PollMessagesCount) {
+  function AppController($scope, $rootScope, $uibModal, $window, $state, $analytics, Authentication, SettingsFactory, Languages, locker, PollMessagesCount) {
 
     // ViewModel
     var vm = this;
@@ -77,6 +77,26 @@
      * Initialize controller
      */
     function activate() {
+
+      /**
+       * Show "service unavailable" badge if http interceptor sends us this signal
+       */
+      $rootScope.$on('serviceUnavailable', function() {
+        $uibModal.open({
+          ariaLabelledBy: 'Service unavailable',
+          template:
+            '<div class="modal-body lead text-center">' +
+            '  <p class="lead">Unfortunately Trustroots is down for a bit of maintenance right now.</p>' +
+            '  <p>We expect to be back in a couple minutes. Thanks for your patience.</p>' +
+            '  <p>In the meantime, check our ' +
+            '    <a href="https://twitter.com/trustroots" target="_blank">Twitter account</a> or ' +
+            '    <a href="http://status.trustroots.org/" target="_blank">status page</a> for news.</p>' +
+            '</div>' +
+            '<div class="modal-footer">' +
+            '  <button class="btn btn-primary" type="button" ng-click="$dismiss()">OK</button>' +
+            '</div>'
+        });
+      });
 
       /**
        * Snif and apply user changes

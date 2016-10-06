@@ -9,22 +9,12 @@ var path = require('path'),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
-    config = require(path.resolve('./config/config')),
     sanitizeHtml = require('sanitize-html'),
     htmlToText = require('html-to-text'),
     async = require('async'),
     mongoose = require('mongoose'),
     Contact = mongoose.model('Contact'),
     User = mongoose.model('User');
-
-// Replace mailer with Stub mailer transporter
-// Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
-// it with the sendMail callback. This is useful for testing the emails before actually sending anything.
-// @link https://github.com/andris9/nodemailer-stub-transport
-if (process.env.NODE_ENV === 'test') {
-  var stubTransport = require('nodemailer-stub-transport');
-  config.mailer.options = stubTransport();
-}
 
 /**
  * Add a contact

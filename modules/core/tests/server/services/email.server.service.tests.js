@@ -7,7 +7,7 @@ var path = require('path'),
 
 var emailService;
 
-describe('service: email', function() {
+describe('Service: email', function() {
 
   var jobs = testutils.catchJobs();
 

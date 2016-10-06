@@ -8,6 +8,8 @@
   /* @ngInject */
   function PagesRoutes($stateProvider) {
 
+    // Remember to update `./public/sitemap.xml`
+
     $stateProvider.
       state('rules', {
         url: '/rules',

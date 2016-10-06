@@ -11,6 +11,9 @@ $RECYCLE.BIN/
 ._*
 *~
 
+# Vim editor junk
+*.swp
+
 # Icon must end with two \r.
 Icon
 

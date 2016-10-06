@@ -24,15 +24,6 @@ var _ = require('lodash'),
     User = mongoose.model('User'),
     Tag = mongoose.model('Tag');
 
-// Replace mailer with Stub mailer transporter
-// Stub transport does not send anything, it builds the mail stream into a single Buffer and returns
-// it with the sendMail callback. This is useful for testing the emails before actually sending anything.
-// @link https://github.com/andris9/nodemailer-stub-transport
-if (process.env.NODE_ENV === 'test') {
-  var stubTransport = require('nodemailer-stub-transport');
-  config.mailer.options = stubTransport();
-}
-
 // Load either ImageMagick or GraphicsMagick as an image processor
 // Defaults to GraphicsMagick
 // @link https://github.com/aheckmann/gm#use-imagemagick-instead-of-gm
