@@ -49,19 +49,13 @@ exports.getExternalSiteCount = function(site, callback) {
       query.extSitesWS = { $exists: true, $ne: '' };
       break;
     case 'facebook':
-      query.additionalProvidersData = {
-        facebook: { $exists: true }
-      };
+      query['additionalProvidersData.facebook'] = { $exists: true };
       break;
     case 'twitter':
-      query.additionalProvidersData = {
-        twitter: { $exists: true }
-      };
+      query['additionalProvidersData.twitter'] = { $exists: true };
       break;
     case 'github':
-      query.additionalProvidersData = {
-        github: { $exists: true }
-      };
+      query['additionalProvidersData.github'] = { $exists: true };
       break;
   }
 

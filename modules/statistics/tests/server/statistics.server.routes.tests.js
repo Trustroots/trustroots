@@ -79,6 +79,17 @@ describe('Statistics CRUD tests', function() {
       newsletter: false,
       public: true,
       extSitesCS: 'username3',
+      additionalProvidersData: {
+        facebook: {
+          username: 'username3'
+        },
+        twitter: {
+          username: 'username3'
+        },
+        github: {
+          username: 'username3'
+        }
+      },
       extSitesBW: ''
     });
 
@@ -130,9 +141,9 @@ describe('Statistics CRUD tests', function() {
         statsReadRes.body.connected.bewelcome.should.equal(1);
         statsReadRes.body.connected.couchsurfing.should.equal(2);
         statsReadRes.body.connected.warmshowers.should.equal(1);
-        statsReadRes.body.connected.facebook.should.equal(0);
-        statsReadRes.body.connected.twitter.should.equal(0);
-        statsReadRes.body.connected.github.should.equal(0);
+        statsReadRes.body.connected.facebook.should.equal(1);
+        statsReadRes.body.connected.twitter.should.equal(1);
+        statsReadRes.body.connected.github.should.equal(1);
 
         statsReadRes.body.hosting.maybe.should.equal(1);
         statsReadRes.body.hosting.yes.should.equal(1);
@@ -163,9 +174,9 @@ describe('Statistics CRUD tests', function() {
             statsReadRes.body.connected.bewelcome.should.equal(1);
             statsReadRes.body.connected.couchsurfing.should.equal(2);
             statsReadRes.body.connected.warmshowers.should.equal(1);
-            statsReadRes.body.connected.facebook.should.equal(0);
-            statsReadRes.body.connected.twitter.should.equal(0);
-            statsReadRes.body.connected.github.should.equal(0);
+            statsReadRes.body.connected.facebook.should.equal(1);
+            statsReadRes.body.connected.twitter.should.equal(1);
+            statsReadRes.body.connected.github.should.equal(1);
 
             statsReadRes.body.hosting.maybe.should.equal(1);
             statsReadRes.body.hosting.yes.should.equal(1);
