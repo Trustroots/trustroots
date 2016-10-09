@@ -10,6 +10,8 @@ var _ = require('lodash'),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
     tagsHandler = require(path.resolve('./modules/tags/server/controllers/tags.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+    userReplyRate =
+  require(path.resolve('./modules/users/server/controllers/user-reply-rate.server.controller')),
     config = require(path.resolve('./config/config')),
     async = require('async'),
     crypto = require('crypto'),
@@ -564,9 +566,27 @@ exports.userByUsername = function(req, res, next, username) {
         });
     },
 
-    // Sanitize & return profile
+    // Sanitize profile
+    function(profile, done) {
+      profile = exports.sanitizeProfile(profile, req.user);
+      return done(null, profile);
+    },
+
+    // Add replyRate and replyTime to profile
+    function(profile, done) {
+      userReplyRate.read(profile._id, function (err, result) {
+        if (err) return done(err);
+
+        profile.replyRate = result.replyRate;
+        profile.replyTime = result.replyTime;
+
+        return done(null, profile);
+      });
+    },
+
+    // Return profile
     function(profile) {
-      req.profile = exports.sanitizeProfile(profile, req.user);
+      req.profile = profile;
       return next();
     }
 

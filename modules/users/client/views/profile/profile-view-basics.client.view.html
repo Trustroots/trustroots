@@ -15,6 +15,16 @@
       <span ng-if="profileCtrl.profile.gender" ng-class="{ 'text-capitalize': !profileCtrl.profile.birthdate }">{{ profileCtrl.profile.gender }}.</span>
     </div>
 
+    <!-- Reply Rate -->
+    <div class="profile-sidebar-section" ng-if="::(profileCtrl.profile.replyRate || profileCtrl.profile.replyTime)">
+      <span ng-if="::profileCtrl.profile.replyRate">
+        Replied to {{ ::profileCtrl.profile.replyRate }}
+      </span>
+      <span ng-if="::profileCtrl.profile.replyTime">
+        in {{ ::profileCtrl.profile.replyTime }} on average
+      </span>
+    </div>
+
     <div class="profile-sidebar-section">
       Member since <time ng-bind="profileCtrl.profile.created | date:'mediumDate'"></time>
     </div>
