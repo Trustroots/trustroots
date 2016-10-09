@@ -857,6 +857,7 @@ describe('User CRUD tests', function () {
 
     _user2.username = 'user2_username';
     _user2.email = 'user2_email@test.com';
+    _user2.emailTemporary = 'user2_email@test.com';
 
     var credentials2 = {
       username: 'username2',
