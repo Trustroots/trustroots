@@ -131,30 +131,30 @@ gulp.task('nodemon:worker', function(done) {
 
 // Watch files for changes
 gulp.task('watch', function() {
-  // Start livereload
-  plugins.livereload.listen();
+  // Start Refresh
+  plugins.refresh.listen();
 
   // Add watch rules
-  gulp.watch(defaultAssets.server.views).on('change', plugins.livereload.changed);
-  gulp.watch(defaultAssets.server.allJS, ['lint']).on('change', plugins.livereload.changed);
+  gulp.watch(defaultAssets.server.views).on('change', plugins.refresh.changed);
+  gulp.watch(defaultAssets.server.allJS, ['lint']).on('change', plugins.refresh.changed);
   gulp.watch(defaultAssets.server.fontelloConfig, ['fontello']);
   gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
 
   if (process.env.NODE_ENV === 'production') {
     gulp.watch(defaultAssets.client.js, ['lint', 'clean:js', 'scripts']);
     gulp.watch(defaultAssets.server.gulpConfig, ['lint']);
-    gulp.watch(defaultAssets.client.views, ['clean:js', 'scripts']).on('change', plugins.livereload.changed);
+    gulp.watch(defaultAssets.client.views, ['clean:js', 'scripts']).on('change', plugins.refresh.changed);
   } else {
-    gulp.watch(defaultAssets.client.js, ['lint']).on('change', plugins.livereload.changed);
+    gulp.watch(defaultAssets.client.js, ['lint']).on('change', plugins.refresh.changed);
     gulp.watch(defaultAssets.server.gulpConfig, ['lint']);
-    gulp.watch(defaultAssets.client.views).on('change', plugins.livereload.changed);
+    gulp.watch(defaultAssets.client.views).on('change', plugins.refresh.changed);
   }
 });
 
 // Watch server test files
 gulp.task('watch:server:run-tests', function () {
-  // Start livereload
-  plugins.livereload.listen();
+  // Start Refresh
+  plugins.refresh.listen();
 
   // Add Server Test file rules
   gulp.watch([testAssets.tests.server, defaultAssets.server.allJS], ['test:server:no-lint']).on('change', function (file) {
@@ -172,7 +172,7 @@ gulp.task('watch:server:run-tests', function () {
       });
     });
 
-    plugins.livereload.changed();
+    plugins.refresh.changed();
   });
 });
 
@@ -264,7 +264,7 @@ gulp.task('styles', function() {
       .pipe(plugins.autoprefixer())
     	.pipe(plugins.rename({ basename: 'application', extname: '.css' }))
       .pipe(gulp.dest('public/dist'))
-      .pipe(plugins.livereload());
+      .pipe(plugins.refresh());
   }
 });
 
@@ -327,7 +327,7 @@ gulp.task('fontello', function(done) {
     }))
     .pipe(plugins.print())
     .pipe(gulp.dest('modules/core/client/fonts/fontello'))
-    .pipe(plugins.livereload());
+    .pipe(plugins.refresh());
 });
 
 // Make sure upload directory exists

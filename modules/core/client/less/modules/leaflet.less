@@ -145,8 +145,8 @@
   }
 
 .leaflet-zoom-anim .leaflet-zoom-animated {
-  .transition-transform(0.25s cubic-bezier(0,0,0.25,1));
-  }
+  .transition-transform(@map-zoom-transition);
+}
 .leaflet-zoom-anim .leaflet-tile,
 .leaflet-pan-anim .leaflet-tile,
 .leaflet-touching .leaflet-zoom-animated {
@@ -304,16 +304,49 @@
 .leaflet-control-layers .leaflet-control-layers-list,
 .leaflet-control-layers-expanded .leaflet-control-layers-toggle {
   display: none;
-  }
+}
 .leaflet-control-layers-expanded .leaflet-control-layers-list {
   display: block;
   position: relative;
-  }
+}
 .leaflet-control-layers-expanded {
   padding: 6px 10px 6px 6px;
   color: @text-color;
   background: #fff;
+  // Re-position layer selector for mobile screens,
+  // so that it wouldnt cover filter/search inputs
+  @media (max-width: @screen-sm-max) {
+    position: fixed;
+    box-sizing: content-box;
+    left: 10px;
+    right: 10px;
+    bottom: 50%;
+    width: auto;
+    border: 10px solid rgba(0,0,0,0.35);
+    box-shadow: none;
+    form:before {
+      display: block;
+      box-sizing: content-box;
+      content: '×';
+      position: absolute;
+      bottom: -70px;
+      left: 50%;
+      margin-left: -50px;
+      width: 100px;
+      height: 40px;
+      line-height: 35px;
+      font-size: 25px;
+      text-align: center;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+      color: @btn-primary-color;
+      background: @btn-primary-bg;
+      pointer-events: none;
+    }
   }
+  @media (max-width: @screen-sm-max) and (orientation:landscape) {
+    bottom: 110px;
+  }
+}
 .leaflet-control-layers-selector {
   margin-top: 2px;
   position: relative;

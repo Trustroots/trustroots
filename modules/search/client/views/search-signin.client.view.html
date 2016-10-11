@@ -1,6 +1,6 @@
-<section class="search-map search-map-signup">
+<section class="search search-signup">
 
-  <div class="search-overlay-message">
+  <div class="search-message">
     <p class="lead" ng-if="searchSignup.searchQuery">
       Join our community to find members in<br>
       <i>{{ ::searchSignup.searchQuery}}</i>
@@ -10,9 +10,11 @@
     <p class="lead">Already a member? <a ui-sref="signin({continue:true})">Login</a></p>
   </div>
 
-  <leaflet id="search-map-canvas"
-           lf-center="searchSignup.mapCenter"
-           layers="searchSignup.mapLayers"
-           defaults="searchSignup.mapDefaults"></leaflet>
+  <div class="search-map-container">
+    <leaflet id="search-map-canvas"
+             lf-center="searchSignup.mapCenter"
+             layers="searchSignup.mapLayers"
+             defaults="searchSignup.mapDefaults"></leaflet>
+  </div>
 
 </section>

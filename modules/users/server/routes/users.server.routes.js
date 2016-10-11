@@ -15,7 +15,8 @@ module.exports = function(app) {
   app.route('/api/users-avatar').all(usersPolicy.isAllowed)
     .post(users.avatarUploadField, users.avatarUpload);
 
-  app.route('/api/users/tags').all(usersPolicy.isAllowed)
+  app.route('/api/users/memberships/:type?').all(usersPolicy.isAllowed)
+    .get(users.getUserMemberships)
     .post(users.modifyUserTag);
 
   app.route('/api/users/mini/:userId').all(usersPolicy.isAllowed)

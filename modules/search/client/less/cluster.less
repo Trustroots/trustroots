@@ -1,13 +1,16 @@
 .leaflet-marker-icon:not(.no-anim),
 .leaflet-marker-shadow:not(.no-anim),
 .leaflet-markercluster-icon:not(.no-anim) {
-	transition: all 0.3s linear;
+  transition: @map-zoom-transition;
 }
-
-.leaflet-zoom-anim .leaflet-zoom-animated.leaflet-marker-icon:not(.no-anim),
-.leaflet-zoom-anim .leaflet-zoom-animated.leaflet-marker-shadow:not(.no-anim),
-.leaflet-zoom-anim .leaflet-zoom-animated.leaflet-markercluster-icon:not(.no-anim) {
-    transition: transform 0.25s cubic-bezier(0,0,0.25,1);
+.leaflet-zoom-anim {
+  .leaflet-zoom-animated {
+    .leaflet-marker-icon:not(.no-anim),
+    .leaflet-marker-shadow:not(.no-anim),
+    .leaflet-markercluster-icon:not(.no-anim) {
+      transition: @map-zoom-transition;
+    }
+  }
 }
 
 // Clustering markers
@@ -18,7 +21,7 @@
 	margin-top: 4px;
 	border-radius: 50%;
 	background-clip: padding-box;
-  transition: all 0.3s linear;
+  transition: all 0.1s linear;
 	background-color: rgba(red(lighten(@prunecluster-color, @prunecluster-border-contrast)), green(lighten(@prunecluster-color, @prunecluster-border-contrast)), blue(lighten(@prunecluster-color, @prunecluster-border-contrast)), @prunecluster-transparency);
 	div {
 		.square(30px);

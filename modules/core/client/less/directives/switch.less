@@ -1,0 +1,92 @@
+// Medium size (default)
+@switch-md-width: 40px;
+@switch-md-height: 24px;
+@toggle-md-size: 20px;
+@toggle-md-margin: 2px;
+
+// Small size
+@switch-sm-width: 30px;
+@switch-sm-height: 18px;
+@toggle-sm-size: 14px;
+@toggle-sm-margin: 2px;
+
+@switch-space-to-label: 10px;
+@toggle-transition-speed: 80ms;
+
+/* The switch - the box around the slider */
+.tr-switch {
+  position: relative;
+  display: inline-block;
+  padding-left: (@switch-md-width + @switch-space-to-label);
+  width: 100%;
+  height: @switch-md-height;
+  line-height: @switch-md-height;
+  // Hide default HTML checkbox
+  input {
+    display: none;
+  }
+  /* The slider */
+  .toggle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: @switch-md-width;
+    background-color: @gray-light;
+    transition: @toggle-transition-speed;
+    border-radius: @switch-md-height;
+    &:before {
+      position: absolute;
+      content: '';
+      .square(@toggle-md-size);
+      left: @toggle-md-margin;
+      bottom: @toggle-md-margin;
+      background-color: @btn-primary-color;
+      transition: @toggle-transition-speed;
+      border-radius: 50%;
+    }
+  }
+  input:checked + .toggle {
+    background-color: @btn-primary-bg;
+    &:before {
+      transform: translateX((@switch-md-width / 2 - (@toggle-md-margin * 2)));
+    }
+  }
+
+  input:focus + .toggle {
+    box-shadow: 0 0 1px @btn-primary-bg;
+  }
+}
+.tr-switch-right {
+  padding-right: (@switch-md-width + @switch-space-to-label);
+  padding-left: 0;
+  .toggle {
+    left: auto;
+    right: 0;
+  }
+}
+
+// Small switch
+.tr-switch-sm {
+  padding-left: (@switch-sm-width + @switch-space-to-label);
+  height: @switch-sm-height;
+  line-height: @switch-sm-height;
+  /* The slider */
+  .toggle {
+    width: @switch-sm-width;
+    border-radius: @switch-sm-height;
+    &:before {
+      .square(@toggle-sm-size);
+      left: @toggle-sm-margin;
+      bottom: @toggle-sm-margin;
+    }
+  }
+  input:checked + .toggle {
+    &:before {
+      transform: translateX((@switch-sm-width / 2 - (@toggle-sm-margin * 2)));
+    }
+  }
+  &.tr-switch-right {
+    padding-right: (@switch-sm-width + @switch-space-to-label);
+  }
+}

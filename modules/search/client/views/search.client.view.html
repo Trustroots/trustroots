@@ -1,136 +1,32 @@
-<section class="search-map">
+<section class="search" ng-class="{ 'is-sidebar-open': search.isSidebarOpen }">
 
-  <div class="form-group map-location-search" ng-class="{'active': search.searchQuery !== '' || search.searchActive }">
-    <div class="input-group input-location">
-      <label for="search-query" class="sr-only">Search places</label>
-      <input type="text"
-             id="search-query"
-             class="form-control input-lg"
-             placeholder="Search places"
-             ng-focus="search.searchActive = true"
-             ng-blur="search.searchActive = false"
-             ng-model="search.searchQuery"
-             tr-location
-             tr-location-center="search.mapCenter"
-             tr-location-bounds="search.mapBounds">
-      <span class="input-group-btn">
-        <button type="button" class="btn btn-lg btn-default" ng-click="search.searchAddress()">
-          <i class="icon-search"></i>
-        </button>
+  <!-- Location search for small screens -->
+  <!-- There's another one inside `search-sidebar.client.view.html` template -->
+  <div class="visible-xs panel panel-default search-map-place" ng-include="'/modules/search/views/search-input.client.view.html'"></div>
+  <!-- /Search -->
+
+  <div ui-view="map"></div>
+
+  <div class="search-sidebar-toggle"
+       ng-if="app.user && app.user.public">
+    <button class="btn btn-link"
+            ng-click="search.toggleSidebar()"
+            aria-label="{{ search.isSidebarOpen ? 'Hide search' : 'Open search' }}"
+            uib-tooltip="{{ search.isSidebarOpen ? 'Collapse side panel' : 'Open side panel' }}"
+            tooltip-enable="::searchSidebar.screenWidth >= 768"
+            tooltip-placement="right">
+      <i class="hidden-xs" ng-class="{ 'icon-left': search.isSidebarOpen, 'icon-right': !search.isSidebarOpen }"></i>
+      <span class="visible-xs">
+        <i class="icon-sliders"></i>
+        {{ search.isSidebarOpen ? 'See hosts' : 'Modify filters' }}
       </span>
-    </div>
-  </div>
-
-  <!-- Map overlay messages -->
-  <div ng-if="app.user && !app.user.public && !search.locationNotFound" class="search-overlay-message">
-    Sorry, you need to first activate your profile before you can browse others.
-  </div>
-  <div ng-show="search.mapCenter.zoom <= search.mapMinimumZoom && app.user.public && !search.locationNotFound" class="text-uppercase search-overlay-message">
-    Zoom in closer to see everyone
-  </div>
-  <div ng-show="search.locationNotFound" class="search-overlay-message">
-    We could not find such a place...
-  </div>
-
-  <div ng-if="search.mapCenter" ng-class="{'leaflet-layerstyle-satellite': (search.mapLayerstyle === 'satellite')}">
-    <leaflet id="search-map-canvas"
-             lf-center="search.mapCenter"
-             markers="search.mapMarkers"
-             layers="search.mapLayers"
-             bounds="search.mapBounds"
-             paths="search.mapPaths"
-             defaults="search.mapDefaults"
-             event-broadcast="search.mapEvents"></leaflet>
-  </div>
-
-  <div class="search-map-sidebar" ng-if="search.sidebarOpen">
-
-    <button class="btn btn-link search-map-toggle" ng-click="search.sidebarOpen = false" aria-label="Close search results">
-      <i class="icon-right hidden-xs"></i>
-      <span class="visible-xs">Back to map</span>
     </button>
-
-    <div class="search-list">
-
-      <!-- Profile loading -->
-      <div class="search-result panel panel-default panel-loading" ng-if="!search.offer.$resolved">
-        <div class="panel-body">
-          <div tr-avatar data-size="32" data-link="false" data-source="none"></div>
-          <h4>
-            ███ ███
-            <small class="text-muted">@███</small>
-          </h4>
-          <div class="search-result-meta">
-            █ ███, ███.
-          </div>
-          <div class="search-result-tagline">
-            █████ █████ ████
-          </div>
-          <div class="search-result-hosting">
-            <span class="search-result-label">Hosting:</span>
-            <span class="label">██</span>
-            <div class="search-result-description">██████ █████ █████</div>
-          </div>
-          <div class="search-result-languages">
-            <h4>Languages</h4>
-            <ul class="list-inline">
-              <li>████</li>
-              <li>████</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      <!-- /Profile loading -->
-
-      <!-- Profile -->
-      <div class="search-result panel panel-default" ng-if="search.offer.$resolved">
-        <a class="panel-body" ui-sref="profile.about({username: search.offer.user.username})">
-          <div tr-avatar data-size="32" data-link="false" data-user="search.offer.user"></div>
-          <h4>
-            {{ ::search.offer.user.displayName }}
-            <small class="text-muted">@{{ ::search.offer.user.displayUsername || search.offer.user.username }}</small>
-          </h4>
-          <div class="search-result-meta">
-            <span ng-if="search.offer.user.birthdate" ng-bind="search.offer.user.birthdate | ageyears"></span><span ng-if="search.offer.user.birthdate && search.offer.user.gender">, </span>
-            <span ng-if="search.offer.user.gender" ng-class="{ 'text-capitalize': !search.offer.user.birthdate }">{{ ::search.offer.user.gender }}.</span>
-          </div>
-          <div class="search-result-tagline" ng-if="search.offer.user.tagline" ng-bind="search.offer.user.tagline"></div>
-          <div class="search-result-hosting">
-            <div class="search-result-label">
-              Hosting:
-              <span class="label" ng-class="{'btn-hosting-yes': search.offer.status === 'yes', 'btn-hosting-maybe': search.offer.status === 'maybe'}" ng-bind="search.offer.status"></span>
-            </div>
-
-            <!-- Short descriptions -->
-            <div class="search-result-description" ng-if="search.offer.description && search.offer.description.length < 1000" ng-bind-html="search.offer.description | trustedHtml"></div>
-
-            <!-- Long descriptions -->
-            <div class="search-result-description" ng-if="search.offer.description && search.offer.description.length >= 1000">
-              <div class="panel-more-wrap">
-                <div ng-bind-html="search.offer.description | limitTo:1000 | trustedHtml" class="panel-more-excerpt"></div>
-                <div class="panel-more-fade">Show more...</div>
-              </div>
-            </div>
-
-          </div>
-          <div class="search-result-languages" ng-if="search.offer.user.languages.length">
-            <h4>Languages</h4>
-            <ul class="list-inline">
-              <li ng-repeat="code in search.offer.user.languages track by code">{{ ::app.languageNames[code] || code }}</li>
-            </ul>
-          </div>
-        </a>
-      </div>
-      <!-- /Profile -->
-
-      <div class="search-list-instructions">
-        Note that locations on the map are not precise.
-      </div>
-
-    </div>
-    <!-- /.search-list -->
-
   </div>
-  <!-- /.search-map-sidebar -->
+
+  <div class="search-sidebar"
+       ui-view="sidebar"
+       ng-if="app.user && app.user.public"
+       ng-show="search.isSidebarOpen"
+       ng-class="{ 'is-offer-open': search.offer || search.loadingOffer }"></div>
 
 </section>

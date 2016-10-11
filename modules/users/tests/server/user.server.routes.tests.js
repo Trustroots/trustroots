@@ -857,6 +857,7 @@ describe('User CRUD tests', function () {
 
     _user2.username = 'user2_username';
     _user2.email = 'user2_email@test.com';
+    _user2.emailTemporary = 'user2_email@test.com';
 
     var credentials2 = {
       username: 'username2',
@@ -1210,7 +1211,7 @@ describe('User CRUD tests', function () {
         tribe.save(function (err, tribe) {
           should.not.exist(err);
 
-          agent.post('/api/users/tags')
+          agent.post('/api/users/memberships')
             .send({
               id: tribe._id,
               relation: 'is'
@@ -1266,7 +1267,7 @@ describe('User CRUD tests', function () {
         tribe.save(function (err, tribe) {
           should.not.exist(err);
 
-          agent.post('/api/users/tags')
+          agent.post('/api/users/memberships')
             .send({
               id: tribe._id,
               relation: 'likes'
@@ -1322,7 +1323,7 @@ describe('User CRUD tests', function () {
         tribe.save(function (err, tribe) {
           should.not.exist(err);
 
-          agent.post('/api/users/tags')
+          agent.post('/api/users/memberships')
             .send({
               id: tribe._id,
               relation: 'is'
@@ -1342,7 +1343,7 @@ describe('User CRUD tests', function () {
               userTagJoinRes.body.user.memberIds.length.should.be.equal(1);
               userTagJoinRes.body.user.member.length.should.be.equal(1);
 
-              agent.post('/api/users/tags')
+              agent.post('/api/users/memberships')
                 .send({
                   id: tribe._id,
                   relation: 'leave'
@@ -1390,7 +1391,7 @@ describe('User CRUD tests', function () {
         tribe.save(function (err, tribe) {
           should.not.exist(err);
 
-          agent.post('/api/users/tags')
+          agent.post('/api/users/memberships')
             .send({
               id: tribe._id,
               relation: 'is'
@@ -1410,7 +1411,7 @@ describe('User CRUD tests', function () {
               userTagJoinRes.body.user.memberIds.length.should.be.equal(1);
               userTagJoinRes.body.user.member.length.should.be.equal(1);
 
-              agent.post('/api/users/tags')
+              agent.post('/api/users/memberships')
                 .send({
                   id: tribe._id,
                   relation: 'is'
@@ -1453,7 +1454,7 @@ describe('User CRUD tests', function () {
         tribe.save(function (err, tribe) {
           should.not.exist(err);
 
-          agent.post('/api/users/tags')
+          agent.post('/api/users/memberships')
             .send({
               id: tribe._id,
               relation: 'leave'
@@ -1494,7 +1495,7 @@ describe('User CRUD tests', function () {
         tribe.save(function (err, tribe) {
           should.not.exist(err);
 
-          agent.post('/api/users/tags')
+          agent.post('/api/users/memberships')
             .send({
               id: tribe._id,
               relation: 'wtf'
@@ -1525,7 +1526,7 @@ describe('User CRUD tests', function () {
           return done(signinErr);
         }
 
-        agent.post('/api/users/tags')
+        agent.post('/api/users/memberships')
           .send({
             id: '572a3d36f905fe5c53bf1d1f',
             relation: 'is'
@@ -1555,7 +1556,7 @@ describe('User CRUD tests', function () {
           return done(signinErr);
         }
 
-        agent.post('/api/users/tags')
+        agent.post('/api/users/memberships')
           .send({
             id: '123456',
             relation: 'is'

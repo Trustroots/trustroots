@@ -48,7 +48,13 @@
                 'other': '{{tribeCtrl.tribe.count|number}} members'
               }"></ng-pluralize>
             <br><br>
-            <button class="btn btn-lg btn-primary tribe-join" tr-tribe-join-button tr-tribe-joined-label="You're a member" tr-tribe-join-label="Join this tribe" tr-tribe-join-icon="false"></button>
+            <button class="btn btn-lg btn-primary tribe-join"
+                    tr-tribe-join-button
+                    tr-tribe-joined-label="You're a member"
+                    tr-tribe-join-label="Join this tribe"
+                    tr-tribe-join-icon="false"></button>
+            &nbsp;
+            <a class="btn btn-lg btn-default" ui-sref="search.map({ tribe: tribeCtrl.tribe.slug })">Find members</a>
             <br><br>
             <p class="lead tribe-intro">
               Trustroots is built on communities. Share this page within your community and invite them to join!
