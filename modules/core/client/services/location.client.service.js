@@ -9,7 +9,7 @@
     .factory('LocationService', LocationService);
 
   /* @ngInject */
-  function LocationService($http, SettingsFactory) {
+  function LocationService($log, $http, SettingsFactory) {
 
     var appSettings = SettingsFactory.get();
 
@@ -124,6 +124,7 @@
      */
     function suggestions(val, types) {
       if (!appSettings.mapbox || !appSettings.mapbox.publicKey) {
+        $log.warn('No Mapbox settings found; cannot do geocoding!');
         return [];
       }
 

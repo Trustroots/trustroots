@@ -38,21 +38,6 @@
     }
   }
 
-  &.panel-disabled {
-    opacity: 0.4;
-  }
-  &.panel-loading {
-    &, * {
-      color: lighten(@gray-lighter, 2%) !important;
-    }
-  }
-
-  // Slightly transcluent white panel
-  &.panel-glass {
-    background: rgba(255,255,255, .9);
-    border-color: transparent;
-  }
-
   // Use this to wrap long texts into shorter box with "show more" link at the bottom
   .panel-more-wrap {
     position: relative;
@@ -74,7 +59,22 @@
       }
     }
   }
+}
 
+.panel-disabled {
+  opacity: 0.4;
+}
+
+.panel-loading {
+  &, * {
+    color: lighten(@gray-lighter, 2%) !important;
+  }
+}
+
+// Slightly transcluent white panel
+.panel-glass {
+  background: rgba(255,255,255, .9);
+  border-color: transparent;
 }
 
 

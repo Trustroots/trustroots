@@ -1,0 +1,83 @@
+
+.search-sidebar-toggle {
+  // All/small screens:
+  position: fixed;
+  pointer-events: none; // Click trough the spacer element
+  top: auto;
+  right: 70px;
+  bottom: 10px;
+  left: 70px;
+  z-index: @zindex-navbar + 1;
+  height: @search-sidebar-toggle-height;
+  // Bigger screens:
+  @media (min-width: @screen-sm-min) {
+    // See `.is-sidebar-open` below regarding `0` width
+    min-width: 0;
+    width: 0;
+    top: (@navbar-height + 10px);
+    right: auto;
+    bottom: auto;
+    left: 0;
+    max-width: @search-sidebar-max-width;
+  }
+  .btn {
+    pointer-events: visible; // Enable these again since they were disabled at parent element
+    text-decoration: none;
+    width: 100%;
+    height: 100%;
+    box-shadow: @map-toolbar-shadow;
+    @media (min-width: @screen-sm-min) {
+      .border-right-radius(@border-radius-base);
+      box-shadow: none;
+      width: 15px;
+      position: absolute;
+      top: 0;
+      right: -15px;
+      padding: 0;
+      [class^="icon-"]:before,
+      [class*=" icon-"]:before {
+        margin: 0;
+        width: 100%;
+      }
+    }
+    font-size: @font-size-base;
+    border-radius: 0;
+    &,
+    &:hover,
+    &:focus,
+    &:active,
+    &:active:focus {
+      outline: none;
+      color: @gray-light;
+      background: @search-sidebar-bg;
+    }
+    &:hover {
+      color: @gray;
+    }
+  }
+}
+
+.search.is-sidebar-open {
+  .search-sidebar-toggle {
+    right: 0;
+    left: 0;
+    bottom: 0;
+    @media (max-width: @screen-xs-max) {
+      .btn {
+        color: @btn-primary-color;
+        background: @btn-primary-bg;
+      }
+      [class^="icon-"]:before,
+      [class*=" icon-"]:before {
+        display: none;
+      }
+    }
+    @media (min-width: @screen-sm-min) {
+      left: auto;
+      right: auto;
+      bottom: auto;
+      min-width: @search-sidebar-min-width;
+      width: @search-sidebar-percentage-width;
+    }
+  }
+}

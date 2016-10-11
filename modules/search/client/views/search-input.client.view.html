@@ -1,0 +1,38 @@
+<div class="form-group search-form-group search-place" ng-class="{ 'has-warning': search.locationNotFound }">
+  <div class="input-group input-location">
+    <label for="search-query" class="sr-only">Search places</label>
+    <input type="text"
+           id="search-query"
+           class="form-control input-lg"
+           placeholder="Search places"
+           ng-model="search.searchQuery"
+           tr-location
+           tr-location-init="search.initializeSearch"
+           tr-location-change="search.onPlaceSearch"
+           tr-location-skipsuggestions="search.skipSuggestions"
+           tr-location-notfound="search.locationNotFound">
+    <span class="input-group-btn">
+      <button type="button"
+              ng-if="search.searchQuery.length"
+              class="btn btn-lg btn-default"
+              ng-click="search.searchQuery = ''"
+              uib-tooltip="Clear search"
+              tooltip-enable="::search.screenWidth >= 768"
+              tooltip-placement="bottom">
+        <i class="icon-close"></i>
+      </button>
+      <button type="button"
+              class="btn btn-lg btn-default"
+              ng-click="search.skipSuggestions = true"
+              uib-tooltip="Search"
+              tooltip-enable="::search.screenWidth >= 768"
+              tooltip-placement="bottom">
+        <i class="icon-search"></i>
+      </button>
+    </span>
+  </div>
+  <p class="help-block" ng-if="search.locationNotFound">
+    We could not find <em ng-bind="::search.locationNotFound"></em><br>
+    <small>Make sure your search is spelled correctly.</small>
+  </p>
+</div>

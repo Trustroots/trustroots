@@ -2,9 +2,8 @@
  * Critical search errors floating on top of the map, at least:
  * - show to non public users
  * - when zoom level is too high
- * - when couldn't find search results
  */
-.search-overlay-message {
+.search-message {
   position: absolute;
   z-index: 1000;
   height: auto;
@@ -14,11 +13,17 @@
   right: 50%;
   color: white;
   text-shadow: 0 2px 6px rgba(0,0,0,0.7);
-  font-size: 36px;
-  font-weight: bold;
   text-align: center;
   background: transparent;
   opacity: 1;
+
+  h4 {
+    font-size: 36px;
+    font-weight: bold;
+  }
+  p {
+    line-height: 40px;
+  }
 
   // Allows dragging the map trough the element
   pointer-events: none;
@@ -42,14 +47,25 @@
   }
 
   // Make notification responsive
-  @search-overlay-message-width: 300px;
-  width: (@search-overlay-message-width - 40px);
-  margin-left: -(@search-overlay-message-width/2);
+  width: (@search-message-width - 40px);
+  margin-left: -(@search-message-width/2);
   font-size: 24px;
   @media (min-width: @screen-sm-min) {
-    @search-overlay-message-width: 650px;
-    width: (@search-overlay-message-width - 40px);
-    margin-left: -(@search-overlay-message-width/2);
+    @search-message-width: 650px;
+    width: (@search-message-width - 40px);
+    margin-left: -(@search-message-width / 2);
     font-size: 28px;
   }
+}
+
+.search.is-sidebar-open .search-message {
+  @media (min-width: @screen-sm-min) {
+    left: 54%;
+    margin-left: -((@search-message-width/2));
+  }
+}
+
+.search-message-solid {
+  background: rgba(red(@brand-primary), green(@brand-primary), blue(@brand-primary), 0.9);
+  text-shadow: none;
 }

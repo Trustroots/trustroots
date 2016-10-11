@@ -1,0 +1,68 @@
+// Search input at sidebar (bigger screens)
+.search-sidebar-section {
+  .search-place {
+    input[type="text"], .btn {
+      &,
+      &:disabled,
+      &:hover,
+      &:active,
+      &:focus {
+        border-color: @brand-primary;
+      }
+    }
+  }
+}
+
+// Search input over the map (small screens)
+.search-map-place {
+  position: absolute;
+  top: @navbar-height;
+  margin-bottom: 0;
+  border: 0;
+  box-shadow: @map-toolbar-shadow;
+  .search-place {
+    .btn {
+      // Search buttons are narrow:
+      max-width: 40px;
+      padding-left: 7px;
+      padding-right: 7px;
+    }
+    // Location sugestion
+    .dropdown-menu {
+      width: 100%;
+      margin-top: -1px;
+      border-top: 0;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      border: 1px solid #eee;
+      box-shadow: 0 3px 3px rgba(0, 0, 0, 0.1);
+    }
+  }
+}
+
+.search-form-group {
+  width: auto;
+  margin-right: 0;
+  .btn,
+  input[type="text"],
+  input[type="search"] {
+    border-radius: 0;
+    &,
+    &:disabled,
+    &:hover,
+    &:active,
+    &:focus {
+      background: #fff;
+      border-color: #eee;
+      outline: none;
+      box-shadow: none;
+    }
+  }
+  input[type="text"],
+  input[type="search"] {
+    border-right: 0;
+  }
+  .btn {
+    border-left: 0;
+  }
+}

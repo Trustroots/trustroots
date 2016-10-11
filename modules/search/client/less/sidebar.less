@@ -1,99 +1,86 @@
+
 // Styled as 'mobile first'
-.search-map-sidebar {
+.search-sidebar {
   position: absolute;
   width: auto;
   top: @navbar-height;
-  bottom: 0;
+  bottom: @search-sidebar-toggle-height;
   left: 0;
   right: 0;
   height: auto;
   z-index: @zindex-navbar;
   overflow: hidden;
+  overflow-y: auto;
   background: @gray-lighter;
   box-shadow: 0 0 5px rgba(0,0,0,0.2);
 
   @media (min-width: @screen-sm-min) {
     background: @search-sidebar-bg;
     box-shadow: none;
-    min-width: 300px;
-    max-width: 480px;
     overflow: visible;
-    width: 30%;
-    right: 0;
-    left: auto;
+    overflow-y: auto;
+    min-width: @search-sidebar-min-width;
+    max-width: @search-sidebar-max-width;
+    width: @search-sidebar-percentage-width;
+    right: auto;
     bottom: 0;
   }
-}
-
-.search-map-toggle {
-  position: fixed;
-  z-index: @zindex-navbar;
-  padding: 0;
-  height: 46px;
-  bottom: 0;
-  width: 100%;
-  left: 0;
-  font-size: @font-size-base;
-  box-shadow: 0 0 3px rgba(0,0,0,0.3);
-  border-radius: 0;
-  [class^="icon-"]:before,
-  [class*=" icon-"]:before {
-    margin: 0;
-    width: 100%;
-  }
-  &,
-  &:hover,
-  &:focus,
-  &:active,
-  &:active:focus {
-    outline: none;
-    background: @brand-primary;
-    color: #fff;
-  }
-  &:hover {
-    color: @gray;
-  }
-  @media (min-width: @screen-sm-min) {
-    position: absolute;
-    .border-left-radius(@border-radius-base);
-    box-shadow: none;
-    height: 40px;
-    width: 15px;
-    left: -15px;
-    top: 10px;
-    &,
-    &:hover,
-    &:focus,
-    &:active {
-      color: @gray-light;
-      background: @search-sidebar-bg;
+  // On small screens, don't show filters when offer is open
+  &.is-offer-open {
+    @media (max-width: @screen-xs-max) {
+      .search-sidebar-filters {
+        display: none;
+      }
     }
   }
 }
 
-.search-list {
-  display: block;
-  float: left;
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  overflow: scroll;
-  padding: 5px 5px 50px 5px;
-  @media (min-width: @screen-sm-min) {
-    padding: 10px;
-  }
-  .panel {
-    margin-bottom: 5px;
+// "Clear selections" button for filters
+.search-sidebar-filters-clear {
+  float: right;
+  @media (max-width: @screen-xs-max) {
+    float: none;
+    clear: both;
+    width: 100%;
+    margin: 10px 0 20px 0;
   }
 }
 
-.search-list-instructions {
-  color: @gray;
-  text-align: center;
-  font-size: 12px;
-  padding: 10px;
-  @media (max-width: @screen-xs-max) {
-    display: none;
+.search-form-group {
+  width: auto;
+  margin-right: 0;
+  .btn,
+  input[type="text"],
+  input[type="search"] {
+    border-radius: 0;
+    &,
+    &:disabled,
+    &:hover,
+    &:active,
+    &:focus {
+      background: #fff;
+      border-color: #eee;
+      outline: none;
+      box-shadow: none;
+    }
+  }
+  input[type="text"],
+  input[type="search"] {
+    border-right: 0;
+  }
+  .btn {
+    border-left: 0;
+  }
+}
+
+.search-sidebar-section {
+  margin: 10px;
+  @media (min-width: @screen-sm-min) {
+    margin: 15px;
+  }
+  border-bottom: 1px solid @gray-lighter;
+  &:last-child {
+    border-bottom: 0;
   }
 }
 
@@ -162,8 +149,4 @@
   margin: 0;
   padding: 10px 0;
   font-size: 15px;
-}
-
-.search-result-lastseen {
-  font-size: @font-size-small;
 }

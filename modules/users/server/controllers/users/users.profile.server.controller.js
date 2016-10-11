@@ -776,3 +776,49 @@ exports.modifyUserTag = function(req, res) {
   });
 
 };
+
+/**
+ * Get user's tags and tribes
+ */
+exports.getUserMemberships = function(req, res) {
+
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  if (req.params.type && (req.params.type !== 'tribe' && req.params.type !== 'tag')) {
+    return res.status(400).send({
+      message: 'Type can be only either `tribe` or `tag`.'
+    });
+  }
+
+  User
+    .findById(req.user._id, 'member')
+    .populate({
+      path: 'member.tag',
+      select: tagsHandler.tagFields + ' ' + tribesHandler.tribeFields + ' tribe',
+      model: 'Tag',
+      options: { sort: { count: -1 } }
+    })
+    .exec(function(err, profile) {
+
+      // Something went wrong
+      if (err) {
+        return res.status(400).send({
+          message: 'Failed to get list of tags and/or tribes.'
+        });
+      }
+
+      var memberships = profile.member || [];
+
+      // Only tags or tribes?
+      if (req.params.type && memberships.length) {
+        var tribeOrTag = req.params.type === 'tribe';
+        memberships = _.filter(memberships, { 'tag': { 'tribe': tribeOrTag } });
+      }
+
+      return res.send(memberships);
+    });
+};

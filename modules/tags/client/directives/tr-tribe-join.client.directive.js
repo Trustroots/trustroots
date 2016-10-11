@@ -19,7 +19,7 @@
     };
 
     /* @ngInject */
-    function trTribeJoinDirectiveController($q, $rootScope, $scope, $state, $analytics, $confirm, TribeService, UserTagsService, Authentication, messageCenterService) {
+    function trTribeJoinDirectiveController($q, $rootScope, $scope, $state, $analytics, $confirm, TribeService, UserMembershipsService, Authentication, messageCenterService) {
 
       // View Model
       var vm = this;
@@ -80,7 +80,7 @@
         });
 
         return $q(function(resolve, reject) {
-          UserTagsService.post({
+          UserMembershipsService.post({
             id: $scope.tribe._id,
             relation: 'is'
           },
@@ -126,7 +126,7 @@
             cancel: 'Cancel'
           })
           .then(function() {
-            UserTagsService.post({
+            UserMembershipsService.post({
               id: $scope.tribe._id,
               relation: 'leave'
             },

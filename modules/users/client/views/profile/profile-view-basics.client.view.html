@@ -20,11 +20,11 @@
     </div>
 
     <div class="profile-sidebar-section" ng-if="profileCtrl.profile.locationLiving">
-      <i class="icon-fw icon-building text-muted"></i> Lives in <a ui-sref="search({location: profileCtrl.profile.locationLiving})" ng-bind="profileCtrl.profile.locationLiving"></a>
+      <i class="icon-fw icon-building text-muted"></i> Lives in <a ui-sref="search.map({location: profileCtrl.profile.locationLiving})" ng-bind="profileCtrl.profile.locationLiving"></a>
     </div>
 
     <div class="profile-sidebar-section" ng-if="profileCtrl.profile.locationFrom">
-      <i class="icon-fw icon-home text-muted"></i> From <a ui-sref="search({location: profileCtrl.profile.locationFrom})" ng-bind="profileCtrl.profile.locationFrom"></a>
+      <i class="icon-fw icon-home text-muted"></i> From <a ui-sref="search.map({location: profileCtrl.profile.locationFrom})" ng-bind="profileCtrl.profile.locationFrom"></a>
     </div>
 
     <div class="profile-sidebar-section" ng-if="profileCtrl.profile.languages.length">

@@ -20,11 +20,11 @@
         }));
 
         it('Should have the correct URL', function () {
-          expect(mainstate.url).toEqual('/search?location?offer');
+          expect(mainstate.url).toEqual('/search?location?offer?tribe');
         });
 
-        it('Should not be abstract', function () {
-          expect(mainstate.abstract).toBe(undefined);
+        it('Should be abstract', function () {
+          expect(mainstate.abstract).toBe(true);
         });
 
         it('Should have templateUrl', function () {
@@ -32,12 +32,69 @@
         });
       });
 
+      describe('Map Route', function () {
+        var mainstate;
+        beforeEach(inject(function ($state, $templateCache) {
+          // Test expected GET request
+          $templateCache.put('/modules/search/views/search.client.view.html', '');
+          $templateCache.put('/modules/search/views/search-map.client.view.html', '');
+          $templateCache.put('/modules/search/views/search-sidebar.client.view.html', '');
+
+          mainstate = $state.get('search.map');
+        }));
+
+        it('Should have the correct URL', function () {
+          expect(mainstate.url).toEqual('');
+        });
+
+        it('Should not be abstract', function () {
+          expect(mainstate.abstract).toBe(undefined);
+        });
+
+        it('Should have map and sidebar views', function () {
+          expect(mainstate.views.map).toBeDefined();
+          expect(mainstate.views.sidebar).toBeDefined();
+        });
+
+        it('Should have map templateUrl', function () {
+          expect(mainstate.views.map.templateUrl).toBe('/modules/search/views/search-map.client.view.html');
+        });
+
+        it('Should have sidebar templateUrl', function () {
+          expect(mainstate.views.sidebar.templateUrl).toBe('/modules/search/views/search-sidebar.client.view.html');
+        });
+      });
+
+      describe('Search non-authenticated Route', function () {
+        var mainstate;
+        beforeEach(inject(function ($state, $templateCache) {
+          // Test expected GET request
+          $templateCache.put('/modules/search/views/search-signin.client.view.html', '');
+
+          mainstate = $state.get('search-signin');
+        }));
+
+        it('Should have the correct URL', function () {
+          expect(mainstate.url).toEqual('/search?location?offer?tribe');
+        });
+
+        it('Should not be abstract', function () {
+          expect(mainstate.abstract).toBe(undefined);
+        });
+
+        it('Should have templateUrl', function () {
+          expect(mainstate.templateUrl).toBe('/modules/search/views/search-signin.client.view.html');
+        });
+      });
+
       describe('Handle Trailing Slash', function () {
         beforeEach(inject(function ($state, $rootScope, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/search/views/search.client.view.html', '');
+          $templateCache.put('/modules/search/views/search-map.client.view.html', '');
+          $templateCache.put('/modules/search/views/search-sidebar.client.view.html', '');
 
-          $state.go('search');
+          $state.go('search.map');
           $rootScope.$digest();
         }));
 
