@@ -56,7 +56,7 @@
     <meta property="og:url" content="{{hostPort}}/tribes/{{tribe.slug}}">
     {% if tribe.image_UUID %}
       {# https://developers.facebook.com/docs/sharing/best-practices#images #}
-      <meta property="og:image" content="https://ucarecdn.com/{{tribe.image_UUID}}/-/progressive/yes/-/scale_crop/1200x630/center/-/quality/lightest/-/format/jpeg/-/overlay/b72e2604-e926-4e17-acbd-e37c0e1f5c73/50%25x50%25/center/">
+      <meta property="og:image" content="https://ucarecdn.com/{{tribe.image_UUID}}/-/progressive/yes/-/scale_crop/1200x630/center/-/quality/lightest/-/format/jpeg/-/overlay/b72e2604-e926-4e17-acbd-e37c0e1f5c73/50%25x50%25/center/{{tribe.slug}}.jpg">
     {% else %}
       <meta property="og:image" content="{{hostPort}}/modules/core/img/og_image.jpg">
     {% endif %}
@@ -77,7 +77,7 @@
     <meta name="twitter:description" content="Join to meet, host and get hosted by Trustroots Tribe {{tribe.label|striptags|addslashes}}. Trustroots is a travellers' community for sharing, hosting and getting people together.">
     <meta name="twitter:url" content="{{hostPort}}/tribes/{{tribe.slug}}">
     {% if tribe.image_UUID %}
-      <meta name="twitter:image" content="https://ucarecdn.com/{{tribe.image_UUID}}/-/progressive/yes/-/scale_crop/1200x630/center/-/quality/lightest/-/format/jpeg/-/overlay/b72e2604-e926-4e17-acbd-e37c0e1f5c73/50%25x50%25/center/">
+      <meta name="twitter:image" content="https://ucarecdn.com/{{tribe.image_UUID}}/-/progressive/yes/-/scale_crop/1200x630/center/-/quality/lightest/-/format/jpeg/-/overlay/b72e2604-e926-4e17-acbd-e37c0e1f5c73/50%25x50%25/center/{{tribe.slug}}.jpg">
     {% else %}
       <meta name="twitter:image" content="{{hostPort}}/modules/core/img/og_image.jpg">
     {% endif %}
