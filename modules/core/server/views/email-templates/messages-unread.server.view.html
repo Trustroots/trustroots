@@ -41,7 +41,7 @@
                                               {% if messageCount > 1 %}
                                                 <p>You have {{ messageCount }} unread messages from <strong><a href="{{urlUserFromProfile}}">{{userFromName}}</a></strong> at Trustroots.</p>
                                               {% else %}
-                                                <p>You have one unread message from <strong>{{userFromName}}</strong> at Trustroots.</p>
+                                                <p>You have one unread message from <strong><a href="{{urlUserFromProfile}}">{{userFromName}}</a></strong> at Trustroots.</p>
                                               {% endif %}
 
                                               {% for message in messages %}
