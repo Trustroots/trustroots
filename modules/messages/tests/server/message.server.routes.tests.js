@@ -246,7 +246,14 @@ describe('Message CRUD tests', function() {
                   return done(new Error('Missing messages from the message thread.'));
                 } else {
                   // Set assertions
-                  (thread[0].content).should.equal('<b>strong</b><br />blockquote<p><a href="https://www.trustroots.org/">link</a><a href="http://www.trustroots.org">trustroots.org</a> </p>');
+                  var output = '<b>strong</b>' +
+                    '<br />blockquote' +
+                    '<p>' +
+                    '<a href="https://www.trustroots.org/">link</a>' +
+                    '<a href="http://www.trustroots.org">www.trustroots.org</a>' +
+                    ' </p>';
+
+                  (thread[0].content).should.equal(output);
 
                   // Call the assertion callback
                   return done();

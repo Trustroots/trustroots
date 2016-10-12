@@ -37,7 +37,7 @@
     "acl": "~0.4.9",
     "agenda": "~0.9.0",
     "async": "~2.0.1",
-    "autolinker": "~0.28.0",
+    "autolinker": "~1.2.0",
     "autoprefixer-core": "~6.0.1",
     "body-parser": "~1.15.2",
     "bower": "~1.7",
