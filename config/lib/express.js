@@ -181,7 +181,7 @@ module.exports.initHelmetHeaders = function (app) {
   // it will just tell HTTPS users to stick around
   app.use(helmet.hsts({
     maxAge: SIX_MONTHS, // Must be at least 18 weeks to be approved by Google
-    includeSubdomains: false, // Must be enabled to be approved by Google
+    includeSubDomains: false, // Must be enabled to be approved by Google
     force: true
   }));
 
