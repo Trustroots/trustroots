@@ -14,6 +14,7 @@ var _ = require('lodash'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
+    agenda = require(path.resolve('./config/lib/agenda')),
     Message = mongoose.model('Message'),
     Thread = mongoose.model('Thread'),
     User = mongoose.model('User');
@@ -303,8 +304,23 @@ exports.send = function(req, res) {
             return done(err);
           }
 
-          // Finally return saved message
-          return res.json(message);
+          // Finally return saved message...
+          res.json(message);
+
+          // ...and run agenda job to update sender and receiver reply rates
+          // naive, no check whether it is necessary
+          // TODO maybe check if the message is first or first reply in thread
+          // if first, update only receiver
+          // if first reply, update only sender
+          agenda.now('update reply rate',
+            { userId: String(message.userFrom._id) });
+          // we schedule updating reply rate of receiver later
+          // give the receiver opportunity to reply fast
+          // without her reply rate going down
+          agenda.schedule('in 6 hours', 'update reply rate',
+            { userId: String(message.userTo._id) });
+
+          return;
         });
     }
 

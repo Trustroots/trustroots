@@ -28,10 +28,25 @@ exports.start = function(options, callback) {
       require(path.resolve('./modules/statistics/server/jobs/daily-statistics.server.job'))
     );
 
+    agenda.define(
+      'update reply rate',
+      { lockLifetime: 10000 },
+      require(path.resolve('./modules/users/server/jobs/reply-rate.server.jobs'))
+        .updateUser
+    );
+
+    agenda.define(
+      'update expired reply rates',
+      { lockLifetime: 10000 },
+      require(path.resolve('./modules/users/server/jobs/reply-rate.server.jobs'))
+        .updateExpiredUsers
+    );
+
     // Schedule job(s)
 
     agenda.every('5 minutes', 'check unread messages');
     agenda.every('24 hours', 'daily statistics');
+    agenda.every('24 hours', 'update expired reply rates');
 
 
     // Start worker

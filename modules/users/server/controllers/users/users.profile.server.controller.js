@@ -58,7 +58,9 @@ exports.userProfileFields = [
   'emailHash', // MD5 hashed email to use with Gravatars
   'additionalProvidersData.facebook.id', // For FB avatars and profile links
   'additionalProvidersData.twitter.screen_name', // For Twitter profile links
-  'additionalProvidersData.github.login' // For GitHub profile links
+  'additionalProvidersData.github.login', // For GitHub profile links
+  'replyRate',
+  'replyTime'
 ].join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed
@@ -361,6 +363,9 @@ exports.update = function(req, res) {
       delete req.body.resetPasswordToken;
       delete req.body.resetPasswordExpires;
       delete req.body.additionalProvidersData;
+      delete req.body.replyRate;
+      delete req.body.replyTime;
+      delete req.body.replyExpire;
 
       // Merge existing user
       var user = req.user;
@@ -566,27 +571,9 @@ exports.userByUsername = function(req, res, next, username) {
         });
     },
 
-    // Sanitize profile
-    function(profile, done) {
-      profile = exports.sanitizeProfile(profile, req.user);
-      return done(null, profile);
-    },
-
-    // Add replyRate and replyTime to profile
-    function(profile, done) {
-      userReplyRate.read(profile._id, function (err, result) {
-        if (err) return done(err);
-
-        profile.replyRate = result.replyRate;
-        profile.replyTime = result.replyTime;
-
-        return done(null, profile);
-      });
-    },
-
-    // Return profile
+    // Sanitize and return profile
     function(profile) {
-      req.profile = profile;
+      req.profile = exports.sanitizeProfile(profile, req.user);
       return next();
     }
 
@@ -633,6 +620,17 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
       }
     });
   }
+
+  // Convert replyRate and replyTime to output format
+  var replyStats = userReplyRate.display({
+    replyRate: profile.replyRate,
+    replyTime: profile.replyTime
+  });
+  delete profile.replyRate;
+  delete profile.replyTime;
+  delete profile.replyExpire;
+  profile.replyRate = replyStats.replyRate;
+  profile.replyTime = replyStats.replyTime;
 
   // Profile does not belong to currently authenticated user
   // Remove data we don't need from other member's profile

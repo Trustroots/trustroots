@@ -7,12 +7,14 @@ var path = require('path'),
     mongoose = require('mongoose');
 
 require(path.resolve('./modules/messages/server/models/message.server.model'));
+require(path.resolve('./modules/users/server/models/user.server.model'));
 
 var Message = mongoose.model('Message');
+var User = mongoose.model('User');
 var ObjectId = mongoose.Types.ObjectId;
 
 /**
- * A callback for the asynchronous module.exports.read
+ * A callback for the asynchronous exports.read
  *
  * @callback readCallback
  * @param {error} error
@@ -29,19 +31,19 @@ var ObjectId = mongoose.Types.ObjectId;
  * @param {readCallback} callback - result is object with parameters replyRate
  * and replyTime
  */
-module.exports.read = function (userId, callback) {
-  module.exports.readFromDatabase(new ObjectId(userId), function (err, result) {
+exports.read = function (userId, callback) {
+  exports.readFromDatabase(new ObjectId(userId), function (err, result) {
     if (err) {
       return callback(err);
     }
 
-    var processed = module.exports.process(result);
+    var processed = exports.process(result);
     return callback(null, processed);
   });
 };
 
 /**
- * A callback for the asynchronous module.exports.readFromDatabase
+ * A callback for the asynchronous exports.readFromDatabase
  *
  * @callback readFromDatabaseCallback
  * @param {error} error
@@ -60,7 +62,7 @@ module.exports.read = function (userId, callback) {
  * @param {string|ObjectId} userId - id of user to get the replyRate from
  * @param {readFromDatabaseCallback} callback
  */
-module.exports.readFromDatabase = function (userId, callback) {
+exports.readFromDatabase = function (userId, callback) {
   async.waterfall([
     function (done) {
       // we want to get amount of replied and notReplied threads, and average
@@ -129,6 +131,7 @@ module.exports.readFromDatabase = function (userId, callback) {
         },
         // group messages into groups separated by thread and whether sent or
         // received
+        // We have a group for sent/received messages of each thread
         {
           $group: {
             _id: { id: '$id', fromMe: '$messages.fromMe' },
@@ -136,6 +139,7 @@ module.exports.readFromDatabase = function (userId, callback) {
           }
         },
         // keep only the oldest message of each group and rename stuff
+        // We keep only info about first & firstReply messages
         {
           $project: {
             id: '$_id.id',
@@ -149,6 +153,7 @@ module.exports.readFromDatabase = function (userId, callback) {
           $sort: { created: 1 }
         },
         // group by threads
+        // we have info about each thread
         {
           $group: {
             _id: '$id',
@@ -173,7 +178,10 @@ module.exports.readFromDatabase = function (userId, callback) {
                 { $arrayElemAt: ['$messages', 0] }
               ] },
               0
-            ] }
+            ] },
+            threadCreated: {
+              $min: '$messages'
+            }
           }
         },
         // group by `replied` (1 for notResponded, 2 for responded)
@@ -183,7 +191,8 @@ module.exports.readFromDatabase = function (userId, callback) {
           $group: {
             _id: '$replied',
             replyTime: { $avg: '$replyTime' },
-            count: { $sum: 1 }
+            count: { $sum: 1 },
+            oldest: { $min: '$threadCreated' }
           }
         }
       ])
@@ -207,14 +216,99 @@ module.exports.readFromDatabase = function (userId, callback) {
       var notReplied = notRepliedOutput ? notRepliedOutput.count : 0;
       var replyTime = repliedOutput ? repliedOutput.replyTime : null;
 
+      // creation of the oldest message
+      var oldest;
+      if (repliedOutput && notRepliedOutput) {
+        oldest = repliedOutput.oldest < notRepliedOutput.oldest
+          ? repliedOutput.oldest
+          : notRepliedOutput.oldest;
+      } else if (repliedOutput) {
+        oldest = repliedOutput.oldest;
+      } else if (notRepliedOutput) {
+        oldest = notRepliedOutput.oldest;
+      } else {
+        oldest = null;
+      }
+
       // return values
       return done(null, {
         replied: replied,
         notReplied: notReplied,
-        replyTime: replyTime
+        replyTime: replyTime,
+        oldest: oldest
       });
     }
   ], callback);
+};
+
+exports.updateUserReplyRate = function (userId, callback) {
+  exports.readFromDatabase(new ObjectId(userId), function (err, result) {
+    if (err) return callback(err);
+    var processed = exports.processSimple(result);
+
+    User.findByIdAndUpdate(new ObjectId(userId),
+      {
+        replyRate: processed.replyRate,
+        replyTime: processed.replyTime,
+        replyExpire: processed.replyExpire
+      },
+      {
+        new: true,
+        select: 'username _id replyRate replyTime replyExpire'
+      },
+      function (err, result) {
+        if (err) return callback(err);
+        if (result === null) return callback(new Error('User Not Found'));
+        return callback(null, result.toObject());
+      });
+  });
+};
+
+exports.updateExpiredReplyRates = function (callback) {
+  var cursor = User.find({
+    $or: [
+      { replyExpire: { $lt: new Date() } },
+      { replyExpire: { $exists: false } }
+    ]
+  }, { select: '_id' }).cursor();
+
+
+  // this is the test for async.doWhilst
+  var keepGoing = true;
+  var progress = 0;
+  function testKeepGoing() {
+    return keepGoing;
+  }
+
+  // the iteratee (function to run in each step) of async.doWhilst
+  function processNext(cb) {
+
+    // getting the next user from mongodb
+    cursor.next(function (err, user) {
+      // error
+      if (err) return cb(err);
+      // stream finished
+      if (!user) {
+        keepGoing = false;
+        return cb();
+      }
+
+      // update
+      exports.updateUserReplyRate(user._id, function (err) {
+        if (err) cb(err);
+        ++progress;
+        return cb();
+      });
+
+    });
+  }
+
+  // callback for the end of the script
+  function finish(err) {
+    return callback(err, progress);
+  }
+
+  async.doWhilst(processNext, testKeepGoing, finish);
 };
 
 /**
@@ -227,7 +321,7 @@ module.exports.readFromDatabase = function (userId, callback) {
 
 /**
  * (synchronous)
- * process the data from module.exports.readFromDatabase to readable replyRate
+ * process the data from exports.readFromDatabase to readable replyRate
  * and replyTime
  *
  * @param {Object} data
@@ -236,15 +330,18 @@ module.exports.readFromDatabase = function (userId, callback) {
  * @param {number|null} data.replyTime - average reply time
  * @returns {ReplyData} replyRate and replyTime for display
  */
-module.exports.process = function (data) {
-  // replyRate in % or empty string when not countable
-  var replyRate = data.replied + data.notReplied > 0
-    ? Math.round(data.replied * 100 / (data.replied + data.notReplied)) + '%'
-    : '';
+exports.process = function (data) {
+  return exports.display(exports.processSimple(data));
+};
+
+exports.display = function (data) {
+
+  var replyRate = data.replyRate === null
+    ? ''
+    : Math.round(data.replyRate * 100) + '%';
 
   // length of a day in milliseconds
   var day = 24 * 3600 * 1000;
-
   var replyTime;
 
   // generate the approximate average replyTime described by words
@@ -265,5 +362,35 @@ module.exports.process = function (data) {
   return {
     replyRate: replyRate,
     replyTime: replyTime
+  };
+};
+
+exports.processSimple = function (data) {
+  // replyRate in % or empty string when not countable
+  var replyRate = data.replied + data.notReplied > 0
+    ? data.replied / (data.replied + data.notReplied)
+    : null;
+
+  var replyTime = Math.round(data.replyTime);
+
+  var replyExpire;
+
+  var day = 24 * 3600 * 1000;
+
+  if (data.oldest === null) {
+    replyExpire = null;
+  } else {
+    // 180 days after the oldest message
+    var oldest180d = data.oldest.getTime() + 180 * day;
+    // 1 day after now
+    var now1d = Date.now() + 1 * day;
+    // later of both values (not to count this too often)
+    replyExpire = new Date(Math.max(oldest180d, now1d));
+  }
+
+  return {
+    replyRate: replyRate,
+    replyTime: replyTime,
+    replyExpire: replyExpire
   };
 };
