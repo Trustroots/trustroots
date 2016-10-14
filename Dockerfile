@@ -65,4 +65,4 @@ EXPOSE 3000
 EXPOSE 5858
 EXPOSE 35729
 EXPOSE 27017
-CMD ["dumb-init", "npm", "start"]
+CMD ["dumb-init", "npm", "start:docker"]
