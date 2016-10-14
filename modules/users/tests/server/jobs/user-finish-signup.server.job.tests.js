@@ -179,7 +179,7 @@ describe('Job: user finish signup', function() {
 
     // Create test users
     var _users = [];
-    for (var i = 1; i <= config.limits.maxProcessSignupReminders+1; i++) {
+    for (var i = 1; i <= config.limits.maxProcessSignupReminders + 1; i++) {
       var loopVars = {
         username: 'l' + i + _unConfirmedUser.username,
         displayUsername: 'l' + i + _unConfirmedUser.displayUsername,

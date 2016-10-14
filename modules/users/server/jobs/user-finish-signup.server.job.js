@@ -86,7 +86,7 @@ module.exports = function(job, agendaDone) {
                   publicReminderCount: 1
                 }
               },
-              function(err, user) {
+              function(err) {
                 if (err) {
                   console.error('Failed to mark user\'s reminder sent.');
                 }
