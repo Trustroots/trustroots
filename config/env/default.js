@@ -29,7 +29,7 @@ module.exports = {
   // Strings not allowed as usernames and tag/tribe labels
   illegalStrings: ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'password',
                    'username', 'unknown', 'anonymous', 'null', 'undefined', 'home', 'signup', 'signin', 'login', 'user',
-                   'edit', 'settings', 'username', 'user', ' demo', 'test', 'support', 'networks', 'profile', 'avatar', 'mini',
+                   'edit', 'settings', 'username', 'user', 'demo', 'test', 'support', 'networks', 'profile', 'avatar', 'mini',
                    'photo', 'account', 'api', 'modify', 'feedback', 'security', 'accounts', 'tribe', 'tag', 'community'
                   ],
   influxdb: {
