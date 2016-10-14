@@ -2,8 +2,8 @@
 
 /**
  * Task that checks for users who didn't finish their signup process and thus
- * have `public:false` in their profile. The script sends 3 reminder emails
- * to these users in 3 day intervals, starting 24h after signup.
+ * have `public:false` in their profile. The script sends 3 (configurable)
+ * reminder emails to these users in 2 day intervals, starting 4h after signup.
  *
  * Keeps count of reminder emails at user's model.
  */
@@ -14,13 +14,11 @@
  */
 var path = require('path'),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+    config = require(path.resolve('./config/config')),
     async = require('async'),
     moment = require('moment'),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
-
-// How many reminder emails we should send?
-var maxReminders = 3;
 
 module.exports = function(job, agendaDone) {
   async.waterfall([
@@ -44,7 +42,7 @@ module.exports = function(job, agendaDone) {
         .and([
           {
             $or: [
-              { publicReminderCount: { $lt: maxReminders } },
+              { publicReminderCount: { $lt: config.limits.maxSignupReminders || 3 } },
               { publicReminderCount: { $exists: false } }
             ]
           },
@@ -55,7 +53,7 @@ module.exports = function(job, agendaDone) {
             ]
           }
         ])
-        .limit(50)
+        .limit(config.limits.maxProcessSignupReminders || 50)
         .exec(function(err, users) {
           done(err, users);
         });
@@ -64,46 +62,49 @@ module.exports = function(job, agendaDone) {
 
     // Send emails
     function(users, done) {
-
-      if (users.length > 0) {
-
-        users.forEach(function(user) {
-
-          emailService.sendSignupEmailReminder(user, function(err) {
-            if (err) {
-              console.error('Failed to send user\'s reminder.');
-              console.error(err);
-              // Continue regardless the failure so that we can process other
-              // reminders without getting stuck here
-              done();
-            } else {
-              // Mark reminder sent and update the reminder count
-              User.findByIdAndUpdate(
-                { _id: user._id },
-                {
-                  publicReminderSent: new Date(),
-                  $inc: { publicReminderCount: 1 }
-                },
-                function(err) {
-                  if (err) {
-                    console.error('Failed to mark user\'s reminder sent.');
-                    console.error(err);
-                  }
-                  done();
-                }
-              );
-            }
-          });
-
-        });
-      } else {
-        // No users to send emails to
-        done();
+      // No users to send emails to
+      if (!users.length) {
+        return done();
       }
+
+      async.eachSeries(users, function(user, callback) {
+
+        emailService.sendSignupEmailReminder(user, function(err) {
+          if (err) {
+            return callback(err);
+          } else {
+            // Mark reminder sent and update the reminder count
+            User.findByIdAndUpdate(
+              user._id,
+              {
+                $set: {
+                  publicReminderSent: new Date()
+                },
+                // If the field does not exist, $inc creates the field
+                // and sets the field to the specified value.
+                $inc: {
+                  publicReminderCount: 1
+                }
+              },
+              function(err, user) {
+                if (err) {
+                  console.error('Failed to mark user\'s reminder sent.');
+                }
+                callback(err);
+              }
+            );
+          }
+        });
+      }, function(err) {
+        done(err);
+      });
 
     }
 
   ], function(err) {
+    if (err) {
+      console.error(err);
+    }
     return agendaDone(err);
   });
 

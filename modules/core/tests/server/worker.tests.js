@@ -150,8 +150,8 @@ describe('Worker tests', function() {
     jobNames.should.containEql('send signup reminders');
   });
 
-  it('defines two repeating jobs', function() {
-    scheduledJobs.length.should.equal(2);
+  it('defines right number of repeating jobs', function() {
+    scheduledJobs.length.should.equal(3);
   });
 
   it('only schedules defined jobs', function() {

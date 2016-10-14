@@ -46,7 +46,11 @@ module.exports = {
   limits: {
     // Messages shorter than this will be tagged 'short' in influxdb,
     // otherwise 'long'
-    longMessageMinimumLength: 170
+    longMessageMinimumLength: 170,
+    // How many signup reminders to send before giving up
+    maxSignupReminders: 3,
+    // How many signup reminders to process at once
+    maxProcessSignupReminders: 50
   },
   mailer: {
     from: process.env.MAILER_FROM || 'hello@trustroots.org',
