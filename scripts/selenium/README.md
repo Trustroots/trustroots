@@ -1,4 +1,4 @@
-
+_Outdated as of October 2016_
 
 Some Selenium tests for Trustroots, written in Python.
 
