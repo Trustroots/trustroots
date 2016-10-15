@@ -571,7 +571,7 @@ exports.userByUsername = function(req, res, next, username) {
         });
     },
 
-    // Sanitize and return profile
+    // Sanitize & return profile
     function(profile) {
       req.profile = exports.sanitizeProfile(profile, req.user);
       return next();
