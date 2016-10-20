@@ -4,6 +4,7 @@
  */
 var path = require('path'),
     async = require('async'),
+    _ = require('lodash'),
     mongoose = require('mongoose');
 
 require(path.resolve('./modules/messages/server/models/message.server.model'));
@@ -12,35 +13,6 @@ require(path.resolve('./modules/users/server/models/user.server.model'));
 var Message = mongoose.model('Message');
 var User = mongoose.model('User');
 var ObjectId = mongoose.Types.ObjectId;
-
-/**
- * A callback for the asynchronous exports.read
- *
- * @callback readCallback
- * @param {error} error
- * @param {Object} result
- * @param {string} result.replyRate - user's reply rate in %
- * @param {string} result.replyTime - user's average reply time described
- */
-
-/**
- * (asynchronous)
- * Read from database and process the replyRate of user with userId
- *
- * @param {string|ObjectId} userId - id of user to get the replyRate from
- * @param {readCallback} callback - result is object with parameters replyRate
- * and replyTime
- */
-exports.read = function (userId, callback) {
-  exports.readFromDatabase(new ObjectId(userId), function (err, result) {
-    if (err) {
-      return callback(err);
-    }
-
-    var processed = exports.process(result);
-    return callback(null, processed);
-  });
-};
 
 /**
  * A callback for the asynchronous exports.readFromDatabase
@@ -241,17 +213,33 @@ exports.readFromDatabase = function (userId, callback) {
   ], callback);
 };
 
+/**
+ * A callback for the asynchronous exports.updateUserReplyRate
+ *
+ * @callback updateUserReplyRateCallback
+ * @param {error} error
+ * @param {Object} result
+ * @param {string} result._id - updated user's id
+ * @param {string} result.username - updated user's username
+ * @param {string} result.replyRate
+ * @param {string} result.replyTime
+ * @param {Date} result.replyExpire
+ */
+
+/**
+ * (asynchronous)
+ * Update reply statistics of a user identified by userId
+ *
+ * @param {string|ObjectId} userId - identifier of user to update
+ * @param {updateUserReplyRateCallback} callback
+ */
 exports.updateUserReplyRate = function (userId, callback) {
   exports.readFromDatabase(new ObjectId(userId), function (err, result) {
     if (err) return callback(err);
-    var processed = exports.processSimple(result);
+    var processed = exports.process(result);
 
     User.findByIdAndUpdate(new ObjectId(userId),
-      {
-        replyRate: processed.replyRate,
-        replyTime: processed.replyTime,
-        replyExpire: processed.replyExpire
-      },
+      _.pick(processed, ['replyRate', 'replyTime', 'replyExpire']),
       {
         new: true,
         select: 'username _id replyRate replyTime replyExpire'
@@ -264,6 +252,21 @@ exports.updateUserReplyRate = function (userId, callback) {
   });
 };
 
+/**
+ * A callback for the asynchronous exports.updateExpiredReplyRates
+ *
+ * @callback updateExpiredReplyRatesCallback
+ * @param {error} error
+ * @param {number} count (progress) final amount of updated users
+ */
+
+/**
+ * (asynchronous)
+ * Update reply statistics of users whose data are outdated
+ * Should be run regularly (agenda)
+ *
+ * @param {updateExpiredReplyRatesCallback} callback
+ */
 exports.updateExpiredReplyRates = function (callback) {
   var cursor = User.find({
     $or: [
@@ -321,19 +324,14 @@ exports.updateExpiredReplyRates = function (callback) {
 
 /**
  * (synchronous)
- * process the data from exports.readFromDatabase to readable replyRate
- * and replyTime
+ * process the data from exports.readFromDatabase to raw stats (to be saved to
+ * user's profile)
  *
  * @param {Object} data
- * @param {number} data.replied - # of replied threads
- * @param {number} data.notReplied - # of not replied threads
+ * @param {number|null} data.replyRate - reply rate in fraction of 1
  * @param {number|null} data.replyTime - average reply time
  * @returns {ReplyData} replyRate and replyTime for display
  */
-exports.process = function (data) {
-  return exports.display(exports.processSimple(data));
-};
-
 exports.display = function (data) {
 
   var replyRate = data.replyRate === null
@@ -365,7 +363,33 @@ exports.display = function (data) {
   };
 };
 
-exports.processSimple = function (data) {
+/**
+ * @typedef {Object} ReplyStats
+ * @property {number|null} data.replyRate - reply rate in fraction of 1
+ * @property {number|null} data.replyTime - average reply time
+ * @property {Date|null} data.replyExpire - when the replyStats should be
+ * updated
+ */
+
+/**
+ * (synchronous)
+ * Process the raw data returned from the exports.readFromDatabase
+ * Return replyRate (0 - 1 or null)
+ *        replyTime (milliseconds or null)
+ *        replyExpire (Date) - either 180 days after the oldest included
+ *          message or 1 day from now; the later Date of these two
+ *
+ * @param {Object} data
+        replyTime: replyTime,
+        oldest: oldest
+ * @param {number} data.replied - number of replied threads of user
+ * @param {number} data.notReplied - number of not replied threads of user
+ * @param {number|null} data.replyTime - average reply time in milliseconds
+ * @param {Date|null} oldest - date of the oldest message included in statistics
+ *   for counting the replyExpire Date
+ * @returns {ReplyStats} replyRate and replyTime for display
+ */
+exports.process = function (data) {
   // replyRate in % or empty string when not countable
   var replyRate = data.replied + data.notReplied > 0
     ? data.replied / (data.replied + data.notReplied)

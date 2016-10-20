@@ -319,12 +319,12 @@ exports.send = function(req, res) {
                 // give the receiver opportunity to reply fast
                 // without her reply rate going down
                 agenda.schedule('in 6 hours', 'update reply rate',
-                  { userId: String(message.userTo._id) });
+                  { userId: String(message.userTo._id) }, function () {});
                 break;
               case 'firstReply':
                 // if first reply, update only sender
                 agenda.now('update reply rate',
-                  { userId: String(message.userFrom._id) });
+                  { userId: String(message.userFrom._id) }, function () {});
                 break;
               default:
             }
