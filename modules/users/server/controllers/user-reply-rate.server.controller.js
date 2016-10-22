@@ -23,6 +23,7 @@ var ObjectId = mongoose.Types.ObjectId;
  * @param {number} result.replied - amount of user's replied threads
  * @param {number} result.notReplied - amount of user's unreplied threads
  * @param {number|null} result.replyTime - average reply time of user in ms,
+ * @param {number|null} result.medianReplyTime - median reply time of user in ms,
  * null when result.replied === 0
  */
 
@@ -163,6 +164,7 @@ exports.readFromDatabase = function (userId, callback) {
           $group: {
             _id: '$replied',
             replyTime: { $avg: '$replyTime' },
+            replyTimes: { $push: '$replyTime' },
             count: { $sum: 1 },
             oldest: { $min: '$threadCreated' }
           }
@@ -187,6 +189,19 @@ exports.readFromDatabase = function (userId, callback) {
       var replied = repliedOutput ? repliedOutput.count : 0;
       var notReplied = notRepliedOutput ? notRepliedOutput.count : 0;
       var replyTime = repliedOutput ? repliedOutput.replyTime : null;
+      var replyTimes = repliedOutput ? repliedOutput.replyTimes : [];
+
+      var medianReplyTime = (function countMedian(replyTimes) {
+        if (replyTimes.length === 0) return null;
+        var sortedReplyTimes = replyTimes.sort(function compareNumbers(a, b) {
+          return a - b;
+        });
+
+        var replyTimesLength = sortedReplyTimes.length;
+        var lower = Math.floor((replyTimesLength - 1) / 2);
+        var upper = Math.ceil((replyTimesLength - 1) / 2);
+        return (sortedReplyTimes[lower] + sortedReplyTimes[upper]) / 2;
+      }(replyTimes));
 
       // creation of the oldest message
       var oldest;
@@ -207,6 +222,7 @@ exports.readFromDatabase = function (userId, callback) {
         replied: replied,
         notReplied: notReplied,
         replyTime: replyTime,
+        medianReplyTime: medianReplyTime,
         oldest: oldest
       });
     }
@@ -223,6 +239,7 @@ exports.readFromDatabase = function (userId, callback) {
  * @param {string} result.username - updated user's username
  * @param {string} result.replyRate
  * @param {string} result.replyTime
+ * @param {string} result.medianReplyTime
  * @param {Date} result.replyExpire
  */
 
@@ -239,10 +256,10 @@ exports.updateUserReplyRate = function (userId, callback) {
     var processed = exports.process(result);
 
     User.findByIdAndUpdate(new ObjectId(userId),
-      _.pick(processed, ['replyRate', 'replyTime', 'replyExpire']),
+      _.pick(processed, ['replyRate', 'replyTime', 'medianReplyTime', 'replyExpire']),
       {
         new: true,
-        select: 'username _id replyRate replyTime replyExpire'
+        select: 'username _id replyRate replyTime replyExpire medianReplyTime'
       },
       function (err, result) {
         if (err) return callback(err);
@@ -320,6 +337,8 @@ exports.updateExpiredReplyRates = function (callback) {
  * when no threads received by the user
  * @property {string} replyTime - Average reply time of user for display. Empty
  * string if no received threads replied
+ * @property {string} medianReplyTime - Median reply time of user for display.
+ * Empty string if no received threads replied
  */
 
 /**
@@ -330,6 +349,7 @@ exports.updateExpiredReplyRates = function (callback) {
  * @param {Object} data
  * @param {number|null} data.replyRate - reply rate in fraction of 1
  * @param {number|null} data.replyTime - average reply time
+ * @param {number|null} data.medianReplyTime - median reply time
  * @returns {ReplyData} replyRate and replyTime for display
  */
 exports.display = function (data) {
@@ -338,35 +358,44 @@ exports.display = function (data) {
     ? ''
     : Math.round(data.replyRate * 100) + '%';
 
-  // length of a day in milliseconds
-  var day = 24 * 3600 * 1000;
-  var replyTime;
+  var replyTime = getReplyTimeText(data.replyTime);
+  var medianReplyTime = getReplyTimeText(data.medianReplyTime);
 
-  // generate the approximate average replyTime described by words
-  if (data.replyTime === null) { // not available
-    replyTime = '';
-  } else if (data.replyTime < day) { // less than a day
-    replyTime = 'less than a day';
-  } else if (data.replyTime < 7 * day) { // 1 - 7 days
-    var dayCount = Math.round(data.replyTime / day);
-    replyTime = dayCount + ' day' + (dayCount > 1 ? 's' : ''); // '# days'
-  } else if (data.replyTime < 32 * day) { // 7 days - 1 month
-    var weekCount = Math.round(data.replyTime / (7 * day));
-    replyTime = weekCount + ' week' + (weekCount > 1 ? 's' : ''); // '# weeks'
-  } else {
-    replyTime = 'more than a month';
-  }
 
   return {
     replyRate: replyRate,
-    replyTime: replyTime
+    replyTime: replyTime,
+    medianReplyTime: medianReplyTime
   };
 };
+
+/**
+ *  generate a replyTime described by a string
+ *
+ */
+function getReplyTimeText(replyTime) {
+  // length of a day in milliseconds
+  var day = 24 * 3600 * 1000;
+  if (!(_.isNumber(replyTime))) { // not available
+    return '';
+  } else if (replyTime < day) { // less than a day
+    return 'less than a day';
+  } else if (replyTime < 7 * day) { // 1 - 7 days
+    var dayCount = Math.round(replyTime / day);
+    return dayCount + ' day' + (dayCount > 1 ? 's' : ''); // '# days'
+  } else if (replyTime < 32 * day) { // 7 days - 1 month
+    var weekCount = Math.round(replyTime / (7 * day));
+    return weekCount + ' week' + (weekCount > 1 ? 's' : ''); // '# weeks'
+  } else {
+    return 'more than a month';
+  }
+}
 
 /**
  * @typedef {Object} ReplyStats
  * @property {number|null} data.replyRate - reply rate in fraction of 1
  * @property {number|null} data.replyTime - average reply time
+ * @property {number|null} data.medianReplyTime - median reply time
  * @property {Date|null} data.replyExpire - when the replyStats should be
  * updated
  */
@@ -380,11 +409,10 @@ exports.display = function (data) {
  *          message or 1 day from now; the later Date of these two
  *
  * @param {Object} data
-        replyTime: replyTime,
-        oldest: oldest
  * @param {number} data.replied - number of replied threads of user
  * @param {number} data.notReplied - number of not replied threads of user
  * @param {number|null} data.replyTime - average reply time in milliseconds
+ * @param {number|null} data.medianReplyTime - median reply time in milliseconds
  * @param {Date|null} oldest - date of the oldest message included in statistics
  *   for counting the replyExpire Date
  * @returns {ReplyStats} replyRate and replyTime for display
@@ -395,7 +423,12 @@ exports.process = function (data) {
     ? data.replied / (data.replied + data.notReplied)
     : null;
 
-  var replyTime = Math.round(data.replyTime);
+  var replyTime = (_.isNumber(data.replyTime))
+    ? Math.round(data.replyTime)
+    : null;
+  var medianReplyTime = (_.isNumber(data.medianReplyTime))
+    ? Math.round(data.medianReplyTime)
+    : null;
 
   var replyExpire;
 
@@ -415,6 +448,7 @@ exports.process = function (data) {
   return {
     replyRate: replyRate,
     replyTime: replyTime,
+    medianReplyTime: medianReplyTime,
     replyExpire: replyExpire
   };
 };

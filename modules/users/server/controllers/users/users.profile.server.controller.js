@@ -60,7 +60,8 @@ exports.userProfileFields = [
   'additionalProvidersData.twitter.screen_name', // For Twitter profile links
   'additionalProvidersData.github.login', // For GitHub profile links
   'replyRate',
-  'replyTime'
+  'replyTime',
+  'medianReplyTime'
 ].join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed
@@ -365,6 +366,7 @@ exports.update = function(req, res) {
       delete req.body.additionalProvidersData;
       delete req.body.replyRate;
       delete req.body.replyTime;
+      delete req.body.medianReplyTime;
       delete req.body.replyExpire;
 
       // Merge existing user
@@ -621,16 +623,19 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
     });
   }
 
-  // Convert replyRate and replyTime to output format
+  // Convert replyRate, medianReplyTime and replyTime to output format
   var replyStats = userReplyRate.display({
     replyRate: profile.replyRate,
-    replyTime: profile.replyTime
+    replyTime: profile.replyTime,
+    medianReplyTime: profile.medianReplyTime
   });
   delete profile.replyRate;
   delete profile.replyTime;
+  delete profile.medianReplyTime;
   delete profile.replyExpire;
   profile.replyRate = replyStats.replyRate;
   profile.replyTime = replyStats.replyTime;
+  profile.medianReplyTime = replyStats.medianReplyTime;
 
   // Profile does not belong to currently authenticated user
   // Remove data we don't need from other member's profile

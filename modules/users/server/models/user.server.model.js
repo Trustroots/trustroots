@@ -255,6 +255,10 @@ var UserSchema = new Schema({
     type: Number,
     default: null
   },
+  medianReplyTime: {
+    type: Number,
+    default: null
+  },
   replyExpire: {
     type: Date,
     default: null

@@ -56,14 +56,16 @@ describe('Reply Rate and Time Unit Test', function () {
     // messageData - array of messages: [userFromNo, userToNo, created]
     var messageDataStubs = [
       // general testing
+      // average replyTime = 2 days
+      // median replyTime = 2.6 days
       [1, 0, new Date(Date.now() - 5 * day)],
-      [0, 1, new Date(Date.now() - 4 * day)],
+      [0, 1, new Date(Date.now() - 4.3 * day)], // 0.7 day
       [0, 1, new Date(Date.now() - 3.1 * day)],
       [1, 0, new Date(Date.now() - 3 * day)],
-      [2, 0, new Date(Date.now() - 4 * day)],
-      [0, 2, new Date(Date.now() - 2 * day)],
+      [2, 0, new Date(Date.now() - 4.7 * day)],
+      [0, 2, new Date(Date.now() - 2 * day)], // 2.7 days
       [3, 0, new Date(Date.now() - 4 * day)],
-      [0, 3, new Date(Date.now() - 1 * day)],
+      [0, 3, new Date(Date.now() - 1.4 * day)], // 2.6 days
       [4, 0, new Date(Date.now() - 2 * day)],
       // testing ignoring old threads
       [2, 1, new Date(Date.now() - 179 * day)],
@@ -123,6 +125,20 @@ describe('Reply Rate and Time Unit Test', function () {
           try {
             resp.should.have.property('replyTime');
             (resp.replyTime).should.be.approximately(2 * day, 10);
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+      });
+
+    it('should return median replyTime of replied threads by user',
+      function (done) {
+        replyRateModule.readFromDatabase(users[0]._id, function (err, resp) {
+          if (err) return done(err);
+          try {
+            resp.should.have.property('medianReplyTime');
+            (resp.medianReplyTime).should.be.approximately(2.6 * day, 10);
             return done();
           } catch (e) {
             return done(e);
@@ -236,13 +252,13 @@ describe('Reply Rate and Time Unit Test', function () {
     // messageData - array of messages: [userFromNo, userToNo, created]
     var messageDataStubs = [
       [1, 0, new Date(Date.now() - 5 * day)],
-      [0, 1, new Date(Date.now() - 4 * day)],
+      [0, 1, new Date(Date.now() - 4.3 * day)],
       [0, 1, new Date(Date.now() - 3.1 * day)],
       [1, 0, new Date(Date.now() - 3 * day)],
-      [2, 0, new Date(Date.now() - 4 * day)],
+      [2, 0, new Date(Date.now() - 4.7 * day)],
       [0, 2, new Date(Date.now() - 2 * day)],
       [3, 0, new Date(Date.now() - 4 * day)],
-      [0, 3, new Date(Date.now() - 1 * day)],
+      [0, 3, new Date(Date.now() - 1.4 * day)],
       [4, 0, new Date(Date.now() - 2 * day)],
       // testing old message
       [5, 1, new Date(Date.now() - 179.5 * day)],
@@ -272,7 +288,7 @@ describe('Reply Rate and Time Unit Test', function () {
         }, done);
     });
 
-    it('should return user profile with replyRate, replyTime, replyExpire',
+    it('should return user profile with replyRate, replyTime, medianReplyTime, replyExpire',
       function (done) {
         replyRateModule.updateUserReplyRate(users[0]._id, function (err, resp) {
           if (err) return done(err);
@@ -280,6 +296,8 @@ describe('Reply Rate and Time Unit Test', function () {
             resp.should.have.property('replyRate', 0.75);
             resp.should.have.property('replyTime');
             (resp.replyTime).should.be.approximately(2 * day, 10);
+            resp.should.have.property('medianReplyTime');
+            (resp.medianReplyTime).should.be.approximately(2.6 * day, 10);
             resp.should.have.property('replyExpire',
               new Date(oldestMessageCreated.getTime() + 180 * day));
             return done();
@@ -376,10 +394,12 @@ describe('Reply Rate and Time Unit Test', function () {
     it('[reply rate] should return data as expected', function () {
       var output = replyRateModule.display({
         replyRate: 0.3371,
-        replyTime: 7 * 24 * 3600 * 1000 + 7549
+        replyTime: 7 * 24 * 3600 * 1000 + 7549,
+        medianReplyTime: 5 * 24 * 3600 * 1000 - 3312
       });
       output.should.have.property('replyRate', '34%');
       output.should.have.property('replyTime', '1 week');
+      output.should.have.property('medianReplyTime', '5 days');
     });
   });
 });
