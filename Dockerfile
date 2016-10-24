@@ -33,22 +33,21 @@ WORKDIR /trustroots
 
 # Copies the local package.json file to the container
 # and utilities docker container cache to not needing to rebuild
-# and install node_modules/ everytime we build the docker, but only
+# and install node_modules/ every time we build the docker, but only
 # when the local package.json file changes.
 # Install npm packages
-COPY package.json /trustroots/package.json
+COPY package.json /trustroots/
 RUN npm install --quiet
 
 # Install bower packages
-COPY bower.json /trustroots/bower.json
-COPY .bowerrc /trustroots/.bowerrc
+COPY bower.json /trustroots/
+COPY .bowerrc /trustroots/
 RUN bower install --quiet --config.interactive=false --allow-root
 
 # Set environment variables
 ENV NODE_ENV development
 ENV DB_1_PORT_27017_TCP_ADDR mongodb
 ENV PORT 3000
-ENV DOMAIN trustroots.dev
 
 # Share local directory on the docker container
 # ...therefore the previous docker "layer" thats been cached will be used if possible
