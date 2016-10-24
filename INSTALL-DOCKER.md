@@ -38,8 +38,6 @@ Optional: See `config/env/local.sample.js` or `config/env/default.js` for detail
 docker-compose up
 ```
 
-On OSX you need to run this inside _Docker Terminal_.
-
 This will take a while. Good news is you just have to sit back and let it do it's magic.
 
 
@@ -47,35 +45,9 @@ This will take a while. Good news is you just have to sit back and let it do it'
 
 You can now access these from your browser:
 
-###### On Linux:
 * Node app via Nginx proxy: [`http://localhost:3080`](http://localhost:3080)
 * Node app directly: [`http://localhost:3000`](http://localhost:3000)
 * Maildev: [`http://localhost:1080`](http://localhost:1080)
-
-###### On OSX/Windows:
-* Node app via Nginx proxy: `http://YOUR_MACHINE_IP:3080`
-* Node app directly: `http://YOUR_MACHINE_IP:3000`
-* Maildev: `http://YOUR_MACHINE_IP:1080`
-
-To check your Docker machine IP, run: `docker-machine ip default` (replace the word `default` with your machine name, if it differs). To check what your Docker machine's name is, run: `docker-machine ls`
-
-
-##### 5. (optional) Configure `/etc/hosts` file
-
-If you'd like to use easier-to-remember hostname, rather than IP, you can add a line to your hosts file.
-
-Run this one-liner — just replace the word `default` with your machine name, if it differs:
-```bash
-printf "\n\n$(docker-machine ip default)\\ttrustroots.dev" | sudo tee -a /etc/hosts > /dev/null
-```
-
-This will add this line to your `/etc/hosts` file and it will ask for sudo password:
-
-```
-[DOCKER-MACHINE-IP]	trustroots.dev
-```
-
-You can now use `http://trustroots.dev:PORT` instead of machine IP.
 
 
 ### Running & development
