@@ -17,6 +17,7 @@ trustroots:
   links:
     - mongodb:mongodb
     - maildev:maildev
+    - influxdb:influxdb
   ports:
     - "3000:3000"
     - "5858:5858"
@@ -47,6 +48,20 @@ mongodb:
   command: "--smallfiles --logpath=/dev/null"
   ports:
     - "27017:27017"
+
+## InfluxDB container
+## https://github.com/tutumcloud/influxdb
+influxdb:
+  image: tutum/influxdb:latest
+  container_name: influxdb
+  restart: always
+  ports:
+    - "8083:8083"
+    - "8086:8086"
+  environment:
+    - ADMIN_USER=root
+    - INFLUXDB_INIT_PWD=root
+    - PRE_CREATE_DB=trustroots
 
 ## Nginx proxy
 ## See settings per host from ./scripts/docker/nginx/*

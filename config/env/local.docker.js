@@ -29,6 +29,21 @@ module.exports = {
       ignoreTLS: true,
       auth: false
     }
+  },
+
+  /**
+   * Settings for InfluxDB Docker image
+   */
+  influxdb: {
+    enabled: true,
+    options: {
+      host: 'influxdb',
+      port: 8086,
+      protocol: 'http',
+      username: 'root',
+      password: 'root',
+      database: 'trustroots'
+    }
   }
 
   // See config/env/local.sample.js for how to configure mapbox layers, sending emails via Gmail etc
