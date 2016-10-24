@@ -37,10 +37,7 @@ maildev:
   container_name: maildev
   restart: always
   ports:
-    - "1080:80"
-  environment:
-    - VIRTUAL_HOST=trustroots.maildev
-    - VIRTUAL_PORT=80
+    - "1080:1080"
 
 ## Database container
 mongodb:
