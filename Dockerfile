@@ -36,12 +36,12 @@ WORKDIR /trustroots
 # and install node_modules/ everytime we build the docker, but only
 # when the local package.json file changes.
 # Install npm packages
-ADD package.json /trustroots/package.json
+COPY package.json /trustroots/package.json
 RUN npm install --quiet
 
 # Install bower packages
-ADD bower.json /trustroots/bower.json
-ADD .bowerrc /trustroots/.bowerrc
+COPY bower.json /trustroots/bower.json
+COPY .bowerrc /trustroots/.bowerrc
 RUN bower install --quiet --config.interactive=false --allow-root
 
 # Set environment variables
@@ -52,7 +52,7 @@ ENV DOMAIN trustroots.dev
 
 # Share local directory on the docker container
 # ...therefore the previous docker "layer" thats been cached will be used if possible
-ADD . /trustroots
+COPY . /trustroots
 
 # Expose ports
 # - Nginx proxy     80
