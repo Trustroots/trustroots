@@ -145,8 +145,18 @@ describe('Worker tests', function() {
     jobNames.should.containEql('daily statistics');
   });
 
-  it('defines two repeating jobs', function() {
-    scheduledJobs.length.should.equal(2);
+  it('defines [update reply rate] job', function() {
+    var jobNames = _.map(definedJobs, 'name');
+    jobNames.should.containEql('update reply rate');
+  });
+
+  it('defines [update expired reply rates] job', function() {
+    var jobNames = _.map(definedJobs, 'name');
+    jobNames.should.containEql('update expired reply rates');
+  });
+
+  it('defines three repeating jobs', function() {
+    scheduledJobs.length.should.equal(3);
   });
 
   it('only schedules defined jobs', function() {

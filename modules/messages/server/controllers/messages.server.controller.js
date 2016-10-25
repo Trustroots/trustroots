@@ -14,9 +14,11 @@ var _ = require('lodash'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
+    agenda = require(path.resolve('./config/lib/agenda')),
     Message = mongoose.model('Message'),
     Thread = mongoose.model('Thread'),
-    User = mongoose.model('User');
+    User = mongoose.model('User'),
+    ObjectId = mongoose.Types.ObjectId;
 
 
 /**
@@ -306,8 +308,32 @@ exports.send = function(req, res) {
             return done(err);
           }
 
-          // Finally return saved message
-          return res.json(message);
+          // Finally return saved message...
+          res.json(message);
+
+          // ...and run agenda job to update sender and receiver reply rates
+          //
+          // find out which is the position of the message
+          exports.positionInThread(message, function (err, position) {
+            switch (position) {
+              case 'first':
+                // if first, update only receiver
+                // we schedule updating reply rate of receiver later
+                // give the receiver opportunity to reply fast
+                // without her reply rate going down
+                agenda.schedule('in 6 hours', 'update reply rate',
+                  { userId: String(message.userTo._id) }, function () {});
+                break;
+              case 'firstReply':
+                // if first reply, update only sender
+                agenda.now('update reply rate',
+                  { userId: String(message.userFrom._id) }, function () {});
+                break;
+              default:
+            }
+          });
+
+          return;
         });
     }
 
@@ -322,6 +348,81 @@ exports.send = function(req, res) {
 
 };
 
+/**
+ * @callback positionCallback
+ *
+ * @param {Error}
+ * @param {String} position - one of ['first', 'firstReply', 'other']
+ * @param {Number} [replyTime] - only if position === 'firstReply'; milliseconds
+ */
+
+/**
+ * Find out what is the position of the message within it's thread
+ * Possible return values: 'first', 'firstReply', 'other'
+ * and replyTime in milliseconds when it is firstReply
+ *
+ * asynchronous
+ * @param {MongooseObject} message
+ * @param {positionCallback} callback
+ */
+exports.positionInThread = function (message, callback) {
+  // get basic info about the message;
+  var userFrom = String(message.userFrom._id || message.userFrom);
+  var userTo = String(message.userTo._id || message.userTo);
+  var messageId = String(message._id);
+
+  // find the oldest messages of the thread in both ways
+  async.parallel([
+
+    function findOneWayOldestMessage(done) {
+      Message
+        .findOne({
+          userFrom: new ObjectId(userFrom),
+          userTo: new ObjectId(userTo)
+        })
+        .sort({ created: 1 })
+        .exec(done);
+    },
+
+    function findOtherWayOldestMessage(done) {
+      Message
+        .findOne({
+          userFrom: new ObjectId(userTo),
+          userTo: new ObjectId(userFrom)
+        })
+        .sort({ created: 1 })
+        .exec(done);
+    }
+  ], function (err, results) {
+    // both messages as objects or null
+    var oneWay = results[0] && results[0].toObject(); // returns null or object
+    var otherWay = results[1] && results[1].toObject(); // returns null or obj.
+
+    // oneWay should always be found
+    if (!oneWay) return callback(new Error('Provided message doesn\'t exist'));
+
+    // message === oneWay?
+    var oneWayIsThis = String(oneWay._id) === messageId;
+
+    if (oneWayIsThis) {
+      // the older of [oneWay, otherWay] is first, newer is firstReply
+      var oneWayIsLater = Boolean(otherWay) && otherWay.created < oneWay.created;
+      if (oneWayIsLater) {
+
+        // our message is the newer one
+        var replyTime = oneWay.created.getTime() - otherWay.created.getTime();
+        return callback(null, 'firstReply', replyTime);
+
+      } else {
+        // our message is the older one or the only one of the two
+        return callback(null, 'first');
+      }
+    } else {
+      // the message is later
+      return callback(null, 'other');
+    }
+  });
+};
 
 /**
  * Thread of messages

@@ -6,6 +6,7 @@ var path = require('path'),
 exports.catchJobs = function() {
 
   var jobs = [],
+      originalSchedule,
       originalNow;
 
   beforeEach(function() {
@@ -26,12 +27,26 @@ exports.catchJobs = function() {
 
     };
 
+    originalSchedule = agenda.schedule;
+    agenda.schedule = function(time, type, data, callback) {
+
+      // ensure it is plain data by serializing to json and back
+      jobs.push(JSON.parse(JSON.stringify({ type: type, data: data })));
+
+      // run in nextTick() to simulate async action that real agenda would do
+      process.nextTick(function() {
+        callback();
+      });
+
+    };
+
   });
 
   afterEach(function() {
 
     // Revert all changes we made
     agenda.now = originalNow;
+    agenda.schedule = originalSchedule;
 
   });
 

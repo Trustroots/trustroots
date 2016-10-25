@@ -10,6 +10,8 @@ var _ = require('lodash'),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
     tagsHandler = require(path.resolve('./modules/tags/server/controllers/tags.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+    userReplyRate =
+  require(path.resolve('./modules/users/server/controllers/user-reply-rate.server.controller')),
     config = require(path.resolve('./config/config')),
     async = require('async'),
     crypto = require('crypto'),
@@ -56,7 +58,10 @@ exports.userProfileFields = [
   'emailHash', // MD5 hashed email to use with Gravatars
   'additionalProvidersData.facebook.id', // For FB avatars and profile links
   'additionalProvidersData.twitter.screen_name', // For Twitter profile links
-  'additionalProvidersData.github.login' // For GitHub profile links
+  'additionalProvidersData.github.login', // For GitHub profile links
+  'replyRate',
+  'replyTime',
+  'medianReplyTime'
 ].join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed
@@ -359,6 +364,10 @@ exports.update = function(req, res) {
       delete req.body.resetPasswordToken;
       delete req.body.resetPasswordExpires;
       delete req.body.additionalProvidersData;
+      delete req.body.replyRate;
+      delete req.body.replyTime;
+      delete req.body.medianReplyTime;
+      delete req.body.replyExpire;
 
       // Merge existing user
       var user = req.user;
@@ -613,6 +622,20 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
       }
     });
   }
+
+  // Convert replyRate, medianReplyTime and replyTime to output format
+  var replyStats = userReplyRate.display({
+    replyRate: profile.replyRate,
+    replyTime: profile.replyTime,
+    medianReplyTime: profile.medianReplyTime
+  });
+  delete profile.replyRate;
+  delete profile.replyTime;
+  delete profile.medianReplyTime;
+  delete profile.replyExpire;
+  profile.replyRate = replyStats.replyRate;
+  profile.replyTime = replyStats.replyTime;
+  profile.medianReplyTime = replyStats.medianReplyTime;
 
   // Profile does not belong to currently authenticated user
   // Remove data we don't need from other member's profile

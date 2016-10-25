@@ -246,6 +246,22 @@ var UserSchema = new Schema({
   /* Tags & Tribes user is member of */
   member: {
     type: [UserMemberSchema]
+  },
+  replyRate: {
+    type: Number,
+    default: null
+  },
+  replyTime: {
+    type: Number,
+    default: null
+  },
+  medianReplyTime: {
+    type: Number,
+    default: null
+  },
+  replyExpire: {
+    type: Date,
+    default: null
   }
 });
 
