@@ -145,8 +145,13 @@ describe('Worker tests', function() {
     jobNames.should.containEql('daily statistics');
   });
 
-  it('defines two repeating jobs', function() {
-    scheduledJobs.length.should.equal(2);
+  it('defines [send signup reminders] job', function() {
+    var jobNames = _.map(definedJobs, 'name');
+    jobNames.should.containEql('send signup reminders');
+  });
+
+  it('defines right number of repeating jobs', function() {
+    scheduledJobs.length.should.equal(3);
   });
 
   it('only schedules defined jobs', function() {

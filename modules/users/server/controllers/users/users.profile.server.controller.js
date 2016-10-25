@@ -359,6 +359,8 @@ exports.update = function(req, res) {
       delete req.body.resetPasswordToken;
       delete req.body.resetPasswordExpires;
       delete req.body.additionalProvidersData;
+      delete req.body.publicReminderCount;
+      delete req.body.publicReminderSent;
 
       // Merge existing user
       var user = req.user;
@@ -632,6 +634,10 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
   delete profile.emailToken;
   delete profile.password;
   delete profile.salt;
+
+  // This information is not sensitive, but isn't needed at frontend
+  delete profile.publicReminderCount;
+  delete profile.publicReminderSent;
 
   return profile;
 };

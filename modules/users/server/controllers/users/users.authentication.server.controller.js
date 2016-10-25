@@ -299,7 +299,13 @@ exports.confirmEmail = function(req, res) {
         {
           $unset: {
             emailTemporary: 1,
-            emailToken: 1
+            emailToken: 1,
+            // Note that `publicReminderCount` and `publicReminderSent` get reset now each
+            // time user confirms any email change, even if they didn't confirm their profile yet.
+            // That's fine: we'll just start sending 'finish signup' notifications from scratch
+            // to the new email. That old email before the change might've been wrong anyway...
+            publicReminderCount: 1,
+            publicReminderSent: 1
           },
           $set: {
             public: true,

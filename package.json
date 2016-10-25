@@ -90,6 +90,7 @@
     "mkdir-recursive": "~0.2.2",
     "mkdirp": "~0.5.1",
     "mmmagic": "~0.4.4",
+    "moment": "~2.15.1",
     "mongodb": "~2.2.4",
     "mongoose": "~4.6.3",
     "mongoose-beautiful-unique-validation": "~5.1.1",
