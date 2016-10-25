@@ -354,6 +354,10 @@ describe('Message CRUD tests', function() {
                 // Handle message read error
                 if (messagesGetErr) return done(messagesGetErr);
 
+                // Check for pagination header
+                var url = (config.https ? 'https' : 'http') + '://' + config.domain;
+                messagesGetRes.headers.link.should.equal('<' + url + '/api/messages/' + userToId + '?page=2&limit=20>; rel="next"');
+
                 // Get messages list
                 var thread = messagesGetRes.body;
 
@@ -368,11 +372,14 @@ describe('Message CRUD tests', function() {
                   (thread[19].content).should.equal('Message content 6');
 
                   // Get the 2nd page
-                  agent.get('/api/messages/' + userToId + '?page=2')
+                  agent.get('/api/messages/' + userToId + '?page=2&limit=20')
                     .expect(200)
                     .end(function(messagesGetErr, messagesGetRes) {
                       // Handle message read error
                       if (messagesGetErr) return done(messagesGetErr);
+
+                      // There are no more pages to paginate, link header shouldn't exist
+                      should.not.exist(messagesGetRes.headers.link);
 
                       // Get messages list
                       var thread = messagesGetRes.body;
