@@ -24,12 +24,13 @@ exports.start = function(options, callback) {
 
     agenda.define(
       'daily statistics',
-      { lockLifetime: 10000 },
+      { lockLifetime: 10000, concurrency: 1 },
       require(path.resolve('./modules/statistics/server/jobs/daily-statistics.server.job'))
     );
+
     agenda.define(
       'send signup reminders',
-      { lockLifetime: 10000, concurrency: 10 },
+      { lockLifetime: 10000, concurrency: 1 },
       require(path.resolve('./modules/users/server/jobs/user-finish-signup.server.job'))
     );
 
@@ -37,8 +38,6 @@ exports.start = function(options, callback) {
 
     agenda.every('5 minutes', 'check unread messages');
     agenda.every('24 hours', 'daily statistics');
-
-
     agenda.every('30 minutes', 'send signup reminders');
 
     // Start worker
