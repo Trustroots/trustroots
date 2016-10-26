@@ -172,7 +172,7 @@ gulp.task('watch:server:run-tests', function () {
       });
     });
 
-    plugins.refresh.changed();
+    plugins.refresh.changed(file);
   });
 });
 
