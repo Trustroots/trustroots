@@ -198,6 +198,30 @@ exports.sendSignupEmailReminder = function(user, callback) {
   exports.renderEmailAndSend('signup-reminder', params, callback);
 };
 
+exports.sendReactivateHosts = function(user, callback) {
+  var urlOffer = url + '/offer',
+      utmCampaign = 'reactivate-hosts',
+      utmParams = {
+        source: 'transactional-email',
+        medium: 'email',
+        campaign: utmCampaign
+      };
+
+  var params = exports.addEmailBaseTemplateParams({
+    subject: user.firstName + ', start hosting on Trustroots again?',
+    firstName: user.firstName,
+    name: user.displayName,
+    email: user.email,
+    urlOfferPlainText: urlOffer,
+    urlOffer: analyticsHandler.appendUTMParams(urlOffer, utmParams),
+    urlSurveyPlainText: config.surveyReactivateHosts || false,
+    urlSurvey: config.surveyReactivateHosts ? analyticsHandler.appendUTMParams(config.surveyReactivateHosts, utmParams) : false,
+    utmCampaign: utmCampaign
+  });
+
+  exports.renderEmailAndSend('reactivate-hosts', params, callback);
+};
+
 /**
  * Add several parameters to be used to render transactional emails
  * These variables are used by email base template:

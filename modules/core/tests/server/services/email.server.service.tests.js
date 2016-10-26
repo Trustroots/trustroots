@@ -98,6 +98,29 @@ describe('Service: email', function() {
     });
   });
 
+  it('can send host reactivation email', function(done) {
+    var urlOffer = (config.https ? 'https' : 'http') + '://' + config.domain + '/offer';
+    var user = {
+      firstName: 'first',
+      lastName: 'last',
+      displayName: 'first last',
+      email: 'test@test.com'
+    };
+    emailService.sendReactivateHosts(user, function(err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].type.should.equal('send email');
+      jobs[0].data.subject.should.equal(user.firstName + ', start hosting on Trustroots again?');
+      jobs[0].data.to.name.should.equal(user.displayName);
+      jobs[0].data.to.address.should.equal(user.email);
+      jobs[0].data.html.should.containEql('Hi ' + user.firstName + ',');
+      jobs[0].data.text.should.containEql('Hi ' + user.firstName + ',');
+      jobs[0].data.html.should.containEql(urlOffer);
+      jobs[0].data.text.should.containEql(urlOffer);
+      done();
+    });
+  });
+
   context('confirm contact', function() {
 
     var user = {

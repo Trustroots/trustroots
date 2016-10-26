@@ -31,9 +31,11 @@ describe('Offer Model Unit Tests:', function() {
       provider: 'local'
     });
 
-    // Create users
-    user.save(function() {
+    // Save user and hosting offer
+    user.save(function(err, user) {
+      should.not.exist(err);
       offer = new Offer({
+        user: user._id,
         status: 'yes',
         description: '<p>I can host! :)</p>',
         noOfferDescription: '<p>I cannot host... :(</p>',
@@ -48,7 +50,6 @@ describe('Offer Model Unit Tests:', function() {
 
   describe('Method Save', function() {
     it('should be able to save without problems', function(done) {
-
       offer.save(function(err) {
         should.not.exist(err);
         return done();

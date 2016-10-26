@@ -150,8 +150,13 @@ describe('Worker tests', function() {
     jobNames.should.containEql('send signup reminders');
   });
 
+  it('defines [reactivate hosts] job', function() {
+    var jobNames = _.map(definedJobs, 'name');
+    jobNames.should.containEql('reactivate hosts');
+  });
+
   it('defines right number of repeating jobs', function() {
-    scheduledJobs.length.should.equal(3);
+    scheduledJobs.length.should.equal(4);
   });
 
   it('only schedules defined jobs', function() {

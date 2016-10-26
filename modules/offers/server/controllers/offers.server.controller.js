@@ -327,6 +327,9 @@ exports.offerByUserId = function(req, res, next, userId) {
     }
     delete offer.locationFuzzy;
 
+    // Never send this field
+    delete offer.reactivateReminderSent;
+
     req.offer = offer;
     next();
   });
@@ -372,6 +375,9 @@ exports.offerById = function(req, res, next, offerId) {
         offer.location = offer.locationFuzzy;
       }
       delete offer.locationFuzzy;
+
+      // Never send this field
+      delete offer.reactivateReminderSent;
 
       req.offer = offer;
       next();
