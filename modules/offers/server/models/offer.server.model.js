@@ -48,6 +48,9 @@ var OfferSchema = new Schema({
   user: {
     type: Schema.ObjectId,
     ref: 'User'
+  },
+  reactivateReminderSent: {
+    type: Date
   }
 });
 

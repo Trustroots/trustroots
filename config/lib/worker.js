@@ -34,11 +34,18 @@ exports.start = function(options, callback) {
       require(path.resolve('./modules/users/server/jobs/user-finish-signup.server.job'))
     );
 
+    agenda.define(
+      'reactivate hosts',
+      { lockLifetime: 10000, concurrency: 1 },
+      require(path.resolve('./modules/offers/server/jobs/reactivate-hosts.server.job'))
+    );
+
     // Schedule job(s)
 
     agenda.every('5 minutes', 'check unread messages');
     agenda.every('24 hours', 'daily statistics');
     agenda.every('30 minutes', 'send signup reminders');
+    agenda.every('30 minutes', 'reactivate hosts');
 
     // Start worker
 
