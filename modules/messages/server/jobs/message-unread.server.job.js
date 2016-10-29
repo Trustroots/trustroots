@@ -21,6 +21,7 @@ var _ = require('lodash'),
     path = require('path'),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     async = require('async'),
+    moment = require('moment'),
     mongoose = require('mongoose'),
     Message = mongoose.model('Message'),
     User = mongoose.model('User');
@@ -32,15 +33,15 @@ module.exports = function(job, agendaDone) {
     function(done) {
 
       // Ignore very recent messages and look for only older than 10 minutes
-      var timeAgo = new Date();
-      timeAgo.setMinutes(timeAgo.getMinutes() - 10);
+      // Has to be a JS Date object, not a Moment object
+      var createdTimeAgo = moment().subtract(moment.duration({ 'minutes': 10 })).toDate();
 
       Message.aggregate([
         {
           $match: {
             read: false,
             notified: false,
-            created: { $lt: timeAgo }
+            created: { $lt: createdTimeAgo }
           }
         },
         {
@@ -124,15 +125,9 @@ module.exports = function(job, agendaDone) {
 
           // If we don't have info about these users, they've been removed.
           // Don't send notification mail in such case.
-          if (!userTo) {
-            console.error('Notification email error:');
-            console.error('Could not find userTo from users table.');
-            return;
-          }
-          if (!userFrom) {
-            console.error('Notification email error:');
-            console.error('Could not find userFrom from users table.');
-            return;
+          // Message will still be marked as notified.
+          if (!userFrom || !userTo) {
+            return notificationCallback(new Error('Could not find all users relevant for this message to notify about.'));
           }
 
           emailService.sendMessagesUnread(userFrom, userTo, notification, notificationCallback);
@@ -149,7 +144,6 @@ module.exports = function(job, agendaDone) {
             console.error('Sending message notification mails caused an error:');
             console.error(err);
           }
-
           done(null, messageIds);
         };
       } else {
@@ -181,12 +175,8 @@ module.exports = function(job, agendaDone) {
     }
 
   ], function(err) {
-    if (err) {
-      job.fail(err);
-      job.save();
-    }
     // Wrap it up
-    return agendaDone();
+    return agendaDone(err);
   });
 
 };

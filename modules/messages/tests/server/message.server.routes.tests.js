@@ -1,6 +1,7 @@
 'use strict';
 
-var should = require('should'),
+var _ = require('lodash'),
+    should = require('should'),
     async = require('async'),
     request = require('supertest'),
     path = require('path'),
@@ -52,7 +53,7 @@ describe('Message CRUD tests', function() {
       username: credentials.username,
       password: credentials.password,
       provider: 'local',
-      description: '0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789', // = 142 chars long string
+      description: _.repeat('.', config.profileMinimumLength),
       public: true
     });
 
@@ -64,7 +65,7 @@ describe('Message CRUD tests', function() {
       username: 'username2',
       password: 'password123',
       provider: 'local',
-      description: '0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789', // = 142 chars long string
+      description: _.repeat('.', config.profileMinimumLength),
       public: true
     });
 
