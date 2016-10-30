@@ -4,6 +4,7 @@ var should = require('should'),
     async = require('async'),
     request = require('supertest'),
     path = require('path'),
+    moment = require('moment'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
     Message = mongoose.model('Message'),
@@ -434,8 +435,7 @@ describe('Reference Thread CRUD tests', function() {
         referenceThread.thread = threadId;
 
         // Set date to past for reference to be saved directly to the DB:
-        var d = new Date();
-        referenceThread.created = d.setHours(d.getHours() - 24); // 24 hours in the past
+        referenceThread.created = moment().subtract(moment.duration({ hours: 24 })).toDate();
 
         // Save 1st new reference ("yes") directly to the DB:
         new ReferenceThread(referenceThread).save(function(referenceThreadErr) {
@@ -472,8 +472,7 @@ describe('Reference Thread CRUD tests', function() {
                   referenceThreadFindRes[1].reference.should.equal('yes');
 
                   // Dates should have ~24h difference (when rounded, there might be a few seconds extra due time it takes to run tests)
-                  // `36e5` is the scientific notation for 60*60*1000, dividing by which converts the milliseconds difference into hours.
-                  (Math.round(Math.abs(referenceThreadFindRes[1].created - referenceThreadFindRes[0].created) / 36e5)).should.equal(24);
+                  moment().diff(referenceThreadFindRes[1].created, 'hours').should.equal(24);
 
                   // Read reference
                   agent.get('/api/references/threads/' + referenceUserToId)
