@@ -1,13 +1,19 @@
-'use strict'
+'use strict';
 
 var async = require('async'),
     mongoose = require('mongoose'),
     Message = mongoose.model('Message'),
     ThreadStat = mongoose.model('ThreadStat');
 
+/**
+ * Provided Thread and Message, this function will create or update the
+ * ThreadStat belonging to the Thread and Message provided
+ */
 exports.updateThreadStat = function (thread, message, callback) {
 
-  // this will add
+  /**
+   * Creates & saves a new ThreadStat document
+   */
   function createThreadStat(thread, message, done) {
     var threadStat = new ThreadStat({
       thread: thread._id,
@@ -20,11 +26,15 @@ exports.updateThreadStat = function (thread, message, callback) {
     threadStat.save(done);
   }
 
+  /**
+   * update the ThreadStat with a first reply information
+   */
   function addFirstReplyInfo (threadStat, message, done) {
     ThreadStat.findOneAndUpdate({
       thread: threadStat.thread,
       firstMessageUserFrom: message.userTo,
-      firstMessageUserTo: message.userFrom
+      firstMessageUserTo: message.userFrom,
+      firstReplyCreated: null
     }, {
       $set: {
         firstReplyCreated: message.created,
@@ -49,7 +59,7 @@ exports.updateThreadStat = function (thread, message, callback) {
         }, function (err, messages) {
           if (err) return done(err);
           return done(null, threadStat, messages);
-        })
+        });
       });
     },
 
@@ -62,19 +72,20 @@ exports.updateThreadStat = function (thread, message, callback) {
         || (messages.length === 1
           && String(messages[0]._id) === String(message._id));
 
-      // the thread started before this existed
+      // did the thread start before this controller existed?
       var isOld = !isThreadCreatedNow && threadStat === null;
 
-      // is first when threadStat doesn't exist yet
+      // is first? when threadStat doesn't exist yet
       var isFirst = !isOld && threadStat === null;
 
-      // is firstReply when threadStat exists, but has firstReply info null
-      var isFirstReply = !isFirst
+      // is firstReply? when threadStat exists, but has firstReply info null
+      var isFirstReply = !isFirst && !isOld
         && String(threadStat.firstMessageUserFrom) === String(message.userTo)
         && threadStat.firstReplyCreated === null;
 
-
       // when the thread existed before without ThreadStat, ignore
+      // if we didn't ignore this case, the data saved would be wrong
+      // to fix the historic cases we'll need to write a script
       if (isOld) {
         return done(null, 'historic');
 
@@ -103,13 +114,5 @@ exports.updateThreadStat = function (thread, message, callback) {
   ], function (err, response) {
     if (err) return callback(err);
     callback(null, response);
-
   });
-  // and return if success
-  //
-  // we'll update the threadStat when the message is sent by the receiver
-  // and the fields are null
-  //
-  // we'll do nothing otherwise
-
 };
