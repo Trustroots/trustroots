@@ -3,13 +3,23 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     sanitizeHtml = require('sanitize-html'),
     mongoose = require('mongoose'),
     Offer = mongoose.model('Offer');
+
+// Selected fields to return publicly for offers
+var publicOfferFields = [
+  'status',
+  'description',
+  'noOfferDescription',
+  'maxGuests',
+  'location'
+];
 
 /**
  * Create a fuzzy offset between specified distances
@@ -92,6 +102,13 @@ exports.create = function(req, res) {
     });
   }
 
+  // Missing required fields
+  if (!req.body.location) {
+    return res.status(400).send({
+      message: 'Missing offer location.'
+    });
+  }
+
   var offer = new Offer(req.body);
   offer.user = req.user;
 
@@ -113,6 +130,12 @@ exports.create = function(req, res) {
   // Delete the _id property, otherwise Mongo will return a "Mod on _id not allowed" error
   delete upsertData._id;
 
+  // Remove reminder flag
+  upsertData.$unset = { reactivateReminderSent: 1 };
+
+  // Having this present in update query would break `$unset`:ing this field
+  delete upsertData.reactivateReminderSent;
+
   // Do the upsert, which works like this: If no Offer document exists with
   // _id = offer.id, then create a new doc using upsertData.
   // Otherwise, update the existing doc with upsertData
@@ -121,15 +144,20 @@ exports.create = function(req, res) {
     user: upsertData.user
   },
   upsertData,
+  // Warning: To avoid inserting the same document more than once,
+  // only use `upsert:true` if the query field is uniquely indexed.
+  // This is not the case with our Schema.
   { upsert: true },
   function(err) {
     if (err) {
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
       });
-    } else {
-      res.json(upsertData);
     }
+
+    res.json({
+      message: 'Offer saved.'
+    });
   });
 
 };
@@ -325,10 +353,9 @@ exports.offerByUserId = function(req, res, next, userId) {
     if (userId !== req.user.id) {
       offer.location = offer.locationFuzzy;
     }
-    delete offer.locationFuzzy;
 
-    // Never send this field
-    delete offer.reactivateReminderSent;
+    // Filter out some fields from public object
+    offer = _.pick(offer, publicOfferFields);
 
     req.offer = offer;
     next();
@@ -374,10 +401,9 @@ exports.offerById = function(req, res, next, offerId) {
       if (req.user && offer.user !== req.user.id) {
         offer.location = offer.locationFuzzy;
       }
-      delete offer.locationFuzzy;
 
-      // Never send this field
-      delete offer.reactivateReminderSent;
+      // Filter out some fields from public object
+      offer = _.pick(offer, publicOfferFields);
 
       req.offer = offer;
       next();
