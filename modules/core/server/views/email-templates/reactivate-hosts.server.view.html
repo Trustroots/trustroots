@@ -25,7 +25,6 @@
                         <tr>
                             <td align="center" valign="top" width="600" class="flexibleContainerCell">
 
-
                                   <!-- CONTENT TABLE // -->
                                   <!--
                                     The content table is the first element
@@ -36,17 +35,14 @@
                                       <tr>
                                           <td valign="top" class="textContent">
 
-                                              <p>Hello {{userToName}}!</p>
-
-                                              {% if messageCount > 1 %}
-                                                <p>You have {{ messageCount }} unread messages from <strong><a href="{{urlUserFromProfile}}">{{userFromName}}</a></strong> at Trustroots.</p>
-                                              {% else %}
-                                                <p>You have one unread message from <strong><a href="{{urlUserFromProfile}}">{{userFromName}}</a></strong> at Trustroots.</p>
+                                              <p>Hi {{firstName}},</p>
+                                              <p>you haven't been hosting for a while, would you like to host again?<br>
+                                                <a href="{{urlOffer}}">Change your status here</a>.</p>
+                                              {% if urlSurvey %}
+                                                <p>If you've decided to stop hosting, we'd absolutely love to<br>
+                                                  hear why on <a href="{{urlSurvey}}">this 1 question survey</a>.</p>
                                               {% endif %}
-
-                                              {% for message in messages %}
-                                                {% include 'partials/message.server.view.html' with {'message': message.content, date: message.created} %}
-                                              {% endfor %}
+                                              <p>Thanks for being part of the Trustroots community!</p>
 
                                           </td>
                                       </tr>
@@ -65,7 +61,5 @@
       </td>
   </tr>
   <!-- // MODULE ROW -->
-
-  {% include 'partials/button.server.view.html' with {'buttonUrl': urlReply, 'buttonTitle': 'Reply to ' + userFromName } %}
 
 {% endblock %}

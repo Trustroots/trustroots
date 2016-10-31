@@ -25,11 +25,12 @@ module.exports = {
   sessionCollection: 'sessions',
   domain: process.env.DOMAIN || 'localhost:3000',
   supportEmail: 'support@trustroots.org', // TO-address for support requests
+  surveyReactivateHosts: 'https://ideas.trustroots.org/?p=1302#page-1302', // Survey to send with host reactivation emails
   profileMinimumLength: 140, // Require User.profile.description to be >=140 chars to send messages
   // Strings not allowed as usernames and tag/tribe labels
   illegalStrings: ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'password',
                    'username', 'unknown', 'anonymous', 'null', 'undefined', 'home', 'signup', 'signin', 'login', 'user',
-                   'edit', 'settings', 'username', 'user', ' demo', 'test', 'support', 'networks', 'profile', 'avatar', 'mini',
+                   'edit', 'settings', 'username', 'user', 'demo', 'test', 'support', 'networks', 'profile', 'avatar', 'mini',
                    'photo', 'account', 'api', 'modify', 'feedback', 'security', 'accounts', 'tribe', 'tag', 'community'
                   ],
   influxdb: {
@@ -46,7 +47,14 @@ module.exports = {
   limits: {
     // Messages shorter than this will be tagged 'short' in influxdb,
     // otherwise 'long'
-    longMessageMinimumLength: 170
+    longMessageMinimumLength: 170,
+    // How many signup reminders to send before giving up
+    maxSignupReminders: 3,
+    // How many signup reminders to process at once
+    maxProcessSignupReminders: 50,
+    // How long we should wait before trying to reactivate "no" hosts?
+    // Moment.js `duration` object literal http://momentjs.com/docs/#/durations/
+    timeToReactivateHosts: { days: 90 }
   },
   mailer: {
     from: process.env.MAILER_FROM || 'hello@trustroots.org',

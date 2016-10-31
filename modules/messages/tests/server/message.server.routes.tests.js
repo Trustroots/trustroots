@@ -1,6 +1,7 @@
 'use strict';
 
-var should = require('should'),
+var _ = require('lodash'),
+    should = require('should'),
     async = require('async'),
     request = require('supertest'),
     path = require('path'),
@@ -52,7 +53,7 @@ describe('Message CRUD tests', function() {
       username: credentials.username,
       password: credentials.password,
       provider: 'local',
-      description: '0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789', // = 142 chars long string
+      description: _.repeat('.', config.profileMinimumLength),
       public: true
     });
 
@@ -64,7 +65,7 @@ describe('Message CRUD tests', function() {
       username: 'username2',
       password: 'password123',
       provider: 'local',
-      description: '0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789 0123456789', // = 142 chars long string
+      description: _.repeat('.', config.profileMinimumLength),
       public: true
     });
 
@@ -246,7 +247,14 @@ describe('Message CRUD tests', function() {
                   return done(new Error('Missing messages from the message thread.'));
                 } else {
                   // Set assertions
-                  (thread[0].content).should.equal('<b>strong</b><br />blockquote<p><a href="https://www.trustroots.org/">link</a><a href="http://www.trustroots.org">trustroots.org</a> </p>');
+                  var output = '<b>strong</b>' +
+                    '<br />blockquote' +
+                    '<p>' +
+                    '<a href="https://www.trustroots.org/">link</a>' +
+                    '<a href="http://www.trustroots.org">www.trustroots.org</a>' +
+                    ' </p>';
+
+                  (thread[0].content).should.equal(output);
 
                   // Call the assertion callback
                   return done();
@@ -347,6 +355,10 @@ describe('Message CRUD tests', function() {
                 // Handle message read error
                 if (messagesGetErr) return done(messagesGetErr);
 
+                // Check for pagination header
+                var url = (config.https ? 'https' : 'http') + '://' + config.domain;
+                messagesGetRes.headers.link.should.equal('<' + url + '/api/messages/' + userToId + '?page=2&limit=20>; rel="next"');
+
                 // Get messages list
                 var thread = messagesGetRes.body;
 
@@ -361,11 +373,14 @@ describe('Message CRUD tests', function() {
                   (thread[19].content).should.equal('Message content 6');
 
                   // Get the 2nd page
-                  agent.get('/api/messages/' + userToId + '?page=2')
+                  agent.get('/api/messages/' + userToId + '?page=2&limit=20')
                     .expect(200)
                     .end(function(messagesGetErr, messagesGetRes) {
                       // Handle message read error
                       if (messagesGetErr) return done(messagesGetErr);
+
+                      // There are no more pages to paginate, link header shouldn't exist
+                      should.not.exist(messagesGetRes.headers.link);
 
                       // Get messages list
                       var thread = messagesGetRes.body;

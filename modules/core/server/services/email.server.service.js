@@ -149,7 +149,7 @@ exports.sendSignupEmailConfirmation = function(user, callback) {
   var params = exports.addEmailBaseTemplateParams({
     subject: 'Confirm Email',
     name: user.displayName,
-    email: user.emailTemporary,
+    email: user.emailTemporary || user.email,
     urlConfirmPlainText: urlConfirm,
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
@@ -175,6 +175,51 @@ exports.sendSupportRequest = function(replyTo, supportRequest, callback) {
   };
 
   exports.renderEmailAndSend('support-request', params, callback);
+};
+
+exports.sendSignupEmailReminder = function(user, callback) {
+
+  var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup',
+      utmCampaign = 'signup-reminder';
+
+  var params = exports.addEmailBaseTemplateParams({
+    subject: 'Complete your signup to Trustroots',
+    name: user.displayName,
+    email: user.emailTemporary || user.email,
+    urlConfirmPlainText: urlConfirm,
+    urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
+      source: 'transactional-email',
+      medium: 'email',
+      campaign: utmCampaign
+    }),
+    utmCampaign: utmCampaign
+  });
+
+  exports.renderEmailAndSend('signup-reminder', params, callback);
+};
+
+exports.sendReactivateHosts = function(user, callback) {
+  var urlOffer = url + '/offer',
+      utmCampaign = 'reactivate-hosts',
+      utmParams = {
+        source: 'transactional-email',
+        medium: 'email',
+        campaign: utmCampaign
+      };
+
+  var params = exports.addEmailBaseTemplateParams({
+    subject: user.firstName + ', start hosting on Trustroots again?',
+    firstName: user.firstName,
+    name: user.displayName,
+    email: user.email,
+    urlOfferPlainText: urlOffer,
+    urlOffer: analyticsHandler.appendUTMParams(urlOffer, utmParams),
+    urlSurveyPlainText: config.surveyReactivateHosts || false,
+    urlSurvey: config.surveyReactivateHosts ? analyticsHandler.appendUTMParams(config.surveyReactivateHosts, utmParams) : false,
+    utmCampaign: utmCampaign
+  });
+
+  exports.renderEmailAndSend('reactivate-hosts', params, callback);
 };
 
 /**

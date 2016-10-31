@@ -24,9 +24,12 @@ var _ = require('lodash'),
  */
 var setLinkHeader = function(req, res, pageCount) {
   if (paginate.hasNextPages(req)(pageCount)) {
-    var nextPage = { page: req.query.page + 1 };
-    var linkHead = '<' + req.protocol + ':' + res.locals.url.slice(0, -1) + res.locals.paginate.href(nextPage) + '>; rel="next"';
-    res.set('Link', linkHead);
+    var url = (config.https ? 'https' : 'http') + '://' + config.domain;
+    var nextPage = url + res.locals.paginate.href({ page: req.query.page + 1 });
+    res.links({
+      next: nextPage
+      // last: ''
+    });
   }
 };
 

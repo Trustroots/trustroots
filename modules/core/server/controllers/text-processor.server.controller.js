@@ -60,8 +60,11 @@ exports.html = function (content) {
     // Turn URLs/emails/phonenumbers into links
     // @link https://github.com/gregjacobs/Autolinker.js
     content = Autolinker.link(content, {
-      // Don't auto-link Twitter handles (@username)
-      twitter: false,
+      // Don't auto-link mention handles (@username)
+      mention: false,
+
+      // Don't auto-link hashtags (#tag)
+      hashtag: false,
 
       // Auto-link emails
       email: true,
@@ -72,7 +75,7 @@ exports.html = function (content) {
       // Auto-link phone numbers
       phone: true,
 
-      // A number for how many characters long URLs/emails/Twitter handles/Twitter hashtags should be truncated to
+      // A number for how many characters long URLs/emails/handles/hashtags should be truncated to
       // inside the text of a link. If the match is over the number of characters, it will be truncated to this length
       // by replacing the end of the string with a two period ellipsis ('..').
       truncate: {
@@ -81,8 +84,11 @@ exports.html = function (content) {
       },
 
       // Strip 'http://' or 'https://' and/or the 'www.' from the beginning of links.
-      // I.e.: `https://www.wikipedia.org/` => `<a href="https://www.wikipedia.org/">wikipedia.org</a>`
-      stripPrefix: true,
+      // I.e.: `https://www.wikipedia.org/` => `<a href="https://www.wikipedia.org/">www.wikipedia.org</a>`
+      stripPrefix: {
+        scheme: true,
+        www: false
+      },
 
       // Don't add target="_blank" because of https://mathiasbynens.github.io/rel-noopener/ attack.
       newWindow: false

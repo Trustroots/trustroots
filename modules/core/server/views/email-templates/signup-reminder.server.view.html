@@ -36,17 +36,11 @@
                                       <tr>
                                           <td valign="top" class="textContent">
 
-                                              <p>Hello {{userToName}}!</p>
-
-                                              {% if messageCount > 1 %}
-                                                <p>You have {{ messageCount }} unread messages from <strong><a href="{{urlUserFromProfile}}">{{userFromName}}</a></strong> at Trustroots.</p>
-                                              {% else %}
-                                                <p>You have one unread message from <strong><a href="{{urlUserFromProfile}}">{{userFromName}}</a></strong> at Trustroots.</p>
-                                              {% endif %}
-
-                                              {% for message in messages %}
-                                                {% include 'partials/message.server.view.html' with {'message': message.content, date: message.created} %}
-                                              {% endfor %}
+                                              <p>{{name}},</p>
+                                              <p>We haven't heard from you since you signed up to Trustroots.</p>
+                                              <p>Your profile will not be visible to others if you don't confirm your email address ({{email}}).</p>
+                                              <p>It's easy — just click on the link below.</p>
+                                              <p>Thank you very much for signing up with us!</p>
 
                                           </td>
                                       </tr>
@@ -66,6 +60,8 @@
   </tr>
   <!-- // MODULE ROW -->
 
-  {% include 'partials/button.server.view.html' with {'buttonUrl': urlReply, 'buttonTitle': 'Reply to ' + userFromName } %}
+  {% include 'partials/button.server.view.html' with {'buttonUrl': urlConfirm, 'buttonTitle': 'Confirm now'} %}
+
+  {% include 'partials/copypasteurl.server.view.html' with {'url': urlConfirmPlainText} %}
 
 {% endblock %}

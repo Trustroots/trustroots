@@ -13,10 +13,11 @@ trustroots:
    - /trustroots/node_modules
    - /trustroots/public
    - /trustroots/uploads
-  command: npm start
+  command: npm run start:docker
   links:
     - mongodb:mongodb
     - maildev:maildev
+    - influxdb:influxdb
   ports:
     - "3000:3000"
     - "5858:5858"
@@ -29,7 +30,6 @@ trustroots:
     - VIRTUAL_HOST=localhost,trustroots.dev
     - VIRTUAL_PORT=3000
 
-
 ## SMTP Server + Web Interface for viewing and testing emails during development.
 ## http://djfarrelly.github.io/MailDev/
 maildev:
@@ -37,10 +37,7 @@ maildev:
   container_name: maildev
   restart: always
   ports:
-    - "1080:80"
-  environment:
-    - VIRTUAL_HOST=trustroots.maildev
-    - VIRTUAL_PORT=80
+    - "1080:1080"
 
 ## Database container
 mongodb:
@@ -50,6 +47,20 @@ mongodb:
   command: "--smallfiles --logpath=/dev/null"
   ports:
     - "27017:27017"
+
+## InfluxDB container
+## https://github.com/tutumcloud/influxdb
+influxdb:
+  image: tutum/influxdb:latest
+  container_name: influxdb
+  restart: always
+  ports:
+    - "8083:8083"
+    - "8086:8086"
+  environment:
+    - ADMIN_USER=root
+    - INFLUXDB_INIT_PWD=root
+    - PRE_CREATE_DB=trustroots
 
 ## Nginx proxy
 ## See settings per host from ./scripts/docker/nginx/*
