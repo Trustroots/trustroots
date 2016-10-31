@@ -113,6 +113,9 @@ exports.create = function(req, res) {
   // Delete the _id property, otherwise Mongo will return a "Mod on _id not allowed" error
   delete upsertData._id;
 
+  // Remove reminder flag
+  upsertData.$unset = { reactivateReminderSent: 1 };
+
   // Do the upsert, which works like this: If no Offer document exists with
   // _id = offer.id, then create a new doc using upsertData.
   // Otherwise, update the existing doc with upsertData
