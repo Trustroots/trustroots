@@ -79,6 +79,7 @@ describe('ThreadStats Model', function () {
     threadStat.should.have.property('firstMessageLength');
     threadStat.should.have.property('firstReplyCreated', null);
     threadStat.should.have.property('firstReplyLength', null);
+    threadStat.should.have.property('firstReplyTime', null);
   });
   // the expected fields:
   // thread: id of the thread the messages belong to

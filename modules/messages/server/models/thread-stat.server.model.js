@@ -12,7 +12,8 @@ var mongoose = require('mongoose'),
 var ThreadStatSchema = new Schema({
   thread: {
     type: Schema.ObjectId,
-    ref: 'Thread'
+    ref: 'Thread',
+    unique: true
   },
   firstMessageUserFrom: {
     type: Schema.ObjectId,
@@ -33,6 +34,10 @@ var ThreadStatSchema = new Schema({
     default: null
   },
   firstReplyLength: {
+    type: Number,
+    default: null
+  },
+  firstReplyTime: {
     type: Number,
     default: null
   }
