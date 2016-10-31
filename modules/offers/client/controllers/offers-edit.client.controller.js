@@ -127,7 +127,7 @@
      * Center map to the address in query input
      */
     function searchAddress() {
-      if (vm.searchQuery !== '') {
+      if (vm.searchQuery !== '' && appSettings.mapbox && appSettings.mapbox.publicKey) {
         vm.searchQuerySearching = true;
 
         $http
