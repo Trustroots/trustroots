@@ -11,13 +11,14 @@ var path = require('path'),
     Thread = mongoose.model('Thread'),
     ThreadStat = mongoose.model('ThreadStat');
 
+var initiator,
+    receiver,
+    firstMessage,
+    firstReply,
+    initiatorMessage,
+    receiverMessage;
+
 describe('ThreadStat Creation & Updating Test', function () {
-  var initiator,
-      receiver,
-      firstMessage,
-      firstReply,
-      initiatorMessage,
-      receiverMessage;
   beforeEach(function () {
     // create means create without saving to database, unless explicit
     // create the initiator (User)
@@ -58,6 +59,7 @@ describe('ThreadStat Creation & Updating Test', function () {
       userTo: initiator._id,
       created: new Date('2016-01-02')
     });
+
     // create a message by initiator
     initiatorMessage = new Message({
       content: 'Message content',
@@ -74,8 +76,23 @@ describe('ThreadStat Creation & Updating Test', function () {
     });
   });
 
-  afterEach(function () {
+  afterEach(function (done) {
     // TODO clean the database
+    // clean User, Message, Thread, ThreadStat
+    async.parallel([
+      function (cb) {
+        User.remove().exec(cb);
+      },
+      function (cb) {
+        Message.remove().exec(cb);
+      },
+      function (cb) {
+        Thread.remove().exec(cb);
+      },
+      function (cb) {
+        ThreadStat.remove().exec(cb);
+      }
+    ], done);
   });
 
   describe('updateThreadStat', function () {
@@ -144,7 +161,7 @@ describe('ThreadStat Creation & Updating Test', function () {
               });
             },
 
-            //stats for the first reply
+            // stats for the first reply
             function (cb) {
               threadStatController.updateThreadStat(thread, firstReply, cb);
             },
@@ -153,14 +170,14 @@ describe('ThreadStat Creation & Updating Test', function () {
               try {
                 resp.should.equal('firstReply');
 
-                ThreadStat.findOne( { thread: thread._id }, cb);
+                ThreadStat.findOne({ thread: thread._id }, cb);
               } catch (e) {
                 cb(e);
               }
             },
 
             function (threadStat, cb) {
-              var ts = threadStat
+              var ts = threadStat;
               try {
                 ts.should.have.property('firstMessageUserFrom', initiator._id);
                 ts.should.have.property('firstMessageUserTo', receiver._id);
@@ -177,36 +194,255 @@ describe('ThreadStat Creation & Updating Test', function () {
               }
             }
 
-
-
-
-
-
           ], done);
-
-          /*
-
-                    ThreadStat.findOne({ thread: thread._id }, function (err, resp) {
-                      if (err) {
-                        return done(err);
-                      }
-
-                      try {
-                      } catch (e) {
-                        return done(e);
-                      }
-          */
         });
     });
 
     context('Other messages in Thread', function () {
-      it('[early message by the initiator] should not change the ThreadStat');
-      it('[later message by the initiator] should not change the ThreadStat');
-      it('[later message by the receiver] should not change the ThreadStat');
+      it('[another message by the initiator before reply] should not change the ThreadStat',
+        function (done) {
+          var thread = new Thread({
+            userFrom: initiator._id,
+            userTo: receiver._id,
+            message: firstMessage._id
+          });
+
+          async.waterfall([
+
+            // stats for the first message (preparation)
+            function (cb) {
+              threadStatController.updateThreadStat(thread, firstMessage, cb);
+            },
+
+            // save the first message to database
+            function (resp, cb) {
+              firstMessage.save(function (err) {
+                if (err) return cb(err);
+                cb();
+              });
+            },
+
+            // stats for the first reply
+            function (cb) {
+              threadStatController.updateThreadStat(thread, initiatorMessage, cb);
+            },
+
+            function (resp, cb) {
+              try {
+                resp.should.equal('other');
+
+                ThreadStat.findOne({ thread: thread._id }, cb);
+              } catch (e) {
+                cb(e);
+              }
+            },
+
+            function (threadStat, cb) {
+              var ts = threadStat;
+              try {
+                ts.should.have.property('firstMessageUserFrom', initiator._id);
+                ts.should.have.property('firstMessageUserTo', receiver._id);
+                ts.should.have.property('firstMessageCreated',
+                  firstMessage.created);
+                ts.should.have.property('firstReplyCreated', null);
+                ts.should.have.property('firstReplyLength', null);
+                ts.should.have.property('firstReplyTime', null);
+                return done();
+
+              } catch (e) {
+                if (e) return cb(e);
+              }
+            }
+
+          ], done);
+        });
+      it('[another message by the initiator after reply] should not change the ThreadStat',
+        function (done) {
+          var thread = new Thread({
+            userFrom: initiator._id,
+            userTo: receiver._id,
+            message: firstMessage._id
+          });
+
+          async.waterfall([
+
+            // create stats for the first message (preparation)
+            function (cb) {
+              threadStatController.updateThreadStat(thread, firstMessage, cb);
+            },
+
+            // save the first message to database (preparation)
+            function (resp, cb) {
+              firstMessage.save(function (err) {
+                if (err) return cb(err);
+                cb();
+              });
+            },
+
+            // update stats for the first reply
+            function (cb) {
+              threadStatController.updateThreadStat(thread, firstReply, cb);
+            },
+
+            // save the first reply
+            function (resp, cb) {
+              firstReply.save(function (err) {
+                if (err) return cb(err);
+                cb();
+              });
+            },
+
+            // update stats with the further initiator's message
+            function (cb) {
+              threadStatController.updateThreadStat(thread, initiatorMessage, cb);
+            },
+
+            // run tests
+            function (resp, cb) {
+              try {
+                resp.should.equal('other');
+
+                // find the ThreadStat to run tests on it
+                ThreadStat.findOne({ thread: thread._id }, cb);
+              } catch (e) {
+                cb(e);
+              }
+            },
+
+            function (threadStat, cb) {
+              var ts = threadStat;
+              try {
+                ts.should.have.property('firstMessageUserFrom', initiator._id);
+                ts.should.have.property('firstMessageUserTo', receiver._id);
+                ts.should.have.property('firstMessageCreated',
+                  firstMessage.created);
+                ts.should.have.property('firstReplyCreated', firstReply.created);
+                return done();
+
+              } catch (e) {
+                if (e) return cb(e);
+              }
+            }
+
+          ], done);
+        });
+      it('[later message by the receiver] should not change the ThreadStat',
+        function (done) {
+          var thread = new Thread({
+            userFrom: initiator._id,
+            userTo: receiver._id,
+            message: firstMessage._id
+          });
+
+          async.waterfall([
+
+            // stats for the first message (preparation)
+            function (cb) {
+              threadStatController.updateThreadStat(thread, firstMessage, cb);
+            },
+
+            // save the first message to database (preparation)
+            function (resp, cb) {
+              firstMessage.save(function (err) {
+                if (err) return cb(err);
+                cb();
+              });
+            },
+
+            // stats for the first reply
+            function (cb) {
+              threadStatController.updateThreadStat(thread, firstReply, cb);
+            },
+
+            // save the first reply
+            function (resp, cb) {
+              firstReply.save(function (err) {
+                if (err) return cb(err);
+                cb();
+              });
+            },
+
+            // stats for the further replier's message
+            function (cb) {
+              threadStatController.updateThreadStat(thread, receiverMessage, cb);
+            },
+
+            function (resp, cb) {
+              try {
+                resp.should.equal('other');
+
+                ThreadStat.findOne({ thread: thread._id }, cb);
+              } catch (e) {
+                cb(e);
+              }
+            },
+
+            function (threadStat, cb) {
+              var ts = threadStat;
+              try {
+                ts.should.have.property('firstMessageUserFrom', initiator._id);
+                ts.should.have.property('firstMessageUserTo', receiver._id);
+                ts.should.have.property('firstMessageCreated',
+                  firstMessage.created);
+                ts.should.have.property('firstReplyCreated', firstReply.created);
+                return done();
+
+              } catch (e) {
+                if (e) return cb(e);
+              }
+            }
+
+          ], done);
+        });
     });
 
-    context('Other existent messages but not the ThreadStat', function () {
-      it('should respond `historical` and do nothing');
+    context('Other messages exist but the ThreadStat doesn\'t', function () {
+      it('should respond `historic` and do nothing',
+        function (done) {
+          var thread = new Thread({
+            userFrom: initiator._id,
+            userTo: receiver._id,
+            message: firstMessage._id
+          });
+
+          async.waterfall([
+
+            // save the first message to database
+            function (cb) {
+              firstMessage.save(function (err) {
+                if (err) return cb(err);
+                cb();
+              });
+            },
+
+            // stats for the further receiver's message
+            function (cb) {
+              threadStatController.updateThreadStat(thread, firstReply, cb);
+            },
+
+            function (resp, cb) {
+              try {
+                resp.should.equal('historic');
+
+                ThreadStat.findOne({ thread: thread._id }, cb);
+              } catch (e) {
+                cb(e);
+              }
+            },
+
+            function (threadStat, cb) {
+              var ts = threadStat;
+              try {
+                should(ts).equal(null);
+                return done();
+
+              } catch (e) {
+                if (e) return cb(e);
+              }
+            }
+
+          ], done);
+        });
     });
   });
 });

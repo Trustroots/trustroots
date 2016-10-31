@@ -37,6 +37,7 @@ var ThreadStatSchema = new Schema({
     type: Number,
     default: null
   },
+  // how long did it take the receiver of the first message to reply to it
   firstReplyTime: {
     type: Number,
     default: null
