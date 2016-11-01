@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 var path = require('path'),
-    influx = require('influx'),
+    Influx = require('influx'),
     _ = require('lodash'),
     config = require(path.resolve('./config/config'));
 
@@ -23,12 +23,14 @@ exports.getClient = function(callback) {
     return callback(new Error('No InfluxDB configured.'));
   }
 
-  // check passed so we send configuration to influx()
-  callback(null, influx(config.influxdb.options));
+  // Init Influx client with configuration
+  var client = new Influx.InfluxDB(config.influxdb.options);
+
+  callback(null, client);
 };
 
 /**
- * Write point to InfluxDB
+ * Write measurement to InfluxDB
  *
  * fields - object of field key: value pairs. To save to influxdb.
  *   - key in camelCase
@@ -44,12 +46,12 @@ exports.getClient = function(callback) {
  * influxdb (camelCase)
  * @param {Object} fields - key: value pairs will be saved in influxdb as field
  * key: field value
- * @param {number|Date} [fields.time=new Date()] - time of measurement with precision ms
+ * @param {number|Date} [fields.time=new Date()] - time of measurement with precision nanosecond
  * @param {Object} tags - key: value pairs will be saved in influxdb as tag key:
  * tag value
  * @param {function} callback - expected to be like function (err, result) {}
  */
-exports.writePoint = function(measurementName, fields, tags, callback) {
+exports.writeMeasurement = function(measurementName, fields, tags, callback) {
 
   if (!measurementName || typeof measurementName !== 'string'
     || measurementName.length === 0) {
@@ -74,6 +76,12 @@ exports.writePoint = function(measurementName, fields, tags, callback) {
       return callback(err);
     }
 
-    client.writePoint(measurementName, fields, tags, callback);
+    client.writeMeasurement(measurementName, [
+      {
+        fields: fields,
+        tags: tags
+      }
+    ]);
+
   });
 };

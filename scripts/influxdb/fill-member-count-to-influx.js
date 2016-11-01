@@ -170,7 +170,7 @@ async.waterfall([
       // console.log('\n  -> TO INFLUX: ' + cumulativeUserCount + ' [+' + countGroup.count + '] (' + countGroup._id.year + '-' + countGroup._id.month + '-' + countGroup._id.day + ')')
 
       // processing and saving the point to database
-      influxService.writePoint(
+      influxService.writeMeasurement(
         'members',
         {
           count: parseInt(cumulativeUserCount),
