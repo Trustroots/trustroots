@@ -6,8 +6,8 @@ _These instructions are for installing locally. If you'd like to have containeri
 ## Prerequisites
 
 Make sure you have installed all these prerequisites:
-* [Node.js](http://www.nodejs.org/download/) ([previous versions](https://nodejs.org/en/download/releases/)) v5 or v6 and the NPM package manager. You can run multiple Node versions using [NVM](https://github.com/creationix/nvm).
-* [MongoDB](http://www.mongodb.org/downloads), version 2.6+ or 3.0+ (2.2 is too old, check by typing `mongod --version`)
+* [Node.js](https://nodejs.org/en/download/) v6 and the NPM package manager (`node --version`). You can run multiple Node versions using [NVM](https://github.com/creationix/nvm).
+* [MongoDB](http://www.mongodb.org/downloads) v3 (`mongod --version`).
 * [GraphicsMagick](http://www.graphicsmagick.org/). If you prefer [ImageMagick](http://www.imagemagick.org/) instead, change `imageProcessor` setting from `./configs/env/local.js` (see install step 2) to `imagemagic`. In Mac OS X, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) and do:
 ```
 brew install graphicsmagick
@@ -55,10 +55,11 @@ npm start
 
 Open [localhost:3000](http://localhost:3000) in your browser.
 
-Additionally, [maildev](http://danfarrelly.nyc/MailDev/) (dev email ui)
-will be available at [localhost:1080](http://localhost:3000) and
-[agendash](https://github.com/joeframbach/agendash) (background job dashboard)
+Additionally, [Maildev](http://danfarrelly.nyc/MailDev/) (dev email ui)
+will be available at [localhost:1080](http://localhost:1080) and
+[Agendash](https://github.com/joeframbach/agendash) (background job dashboard)
 at [localhost:1081](http://localhost:1081).
+
 
 ## Running & development
 
@@ -69,9 +70,10 @@ at [localhost:1081](http://localhost:1081).
 - Keep an eye on console in case of compiling errors.
 - [Read more](https://github.com/Trustroots/trustroots/wiki/Development)
 
-## Enable collecting statistics (optional)
 
-* 1. [Install InfluxDB](https://docs.influxdata.com/influxdb/latest/introduction/installation/) 0.9+ and run it (type `influxd`) at default port (8086)
+## Enable collecting statistics to InfluxDB (optional)
+
+* 1. [Install InfluxDB](https://docs.influxdata.com/influxdb/latest/introduction/installation/) v1.0+ and run it (type `influxd`)
 * 2. Add InfluxDB configuration to your `./config/env/local.js`:
 
     ```js
@@ -88,9 +90,10 @@ at [localhost:1081](http://localhost:1081).
     }
     ```
 
-* 3. Optionally to observe metrics, you can [install Grafana](http://docs.grafana.org/installation/), but you can also observe data through InfluxDB admin panel, too: [http://localhost:8083/](http://localhost:8083/)
+* 3. You can observe data through InfluxDB admin panel: [localhost:8083](http://localhost:8083/) or optionally [install Grafana](http://docs.grafana.org/installation/) and connect it to InfluxDB.
 
 * 4. [Read more](INFLUXDB.md) about the collected data and metrics
+
 
 ## Mock data
 
@@ -110,7 +113,7 @@ $ npm update          # Update NPM
 $ npm run migrate     # Migrate database up
 ```
 
-...or simply `bash scripts/update.sh` which does this all for you.
+...or simply `./scripts/update.sh` which does this all for you.
 
 
 ## Running tests
@@ -119,6 +122,7 @@ $ npm run migrate     # Migrate database up
 - `npm run test:client:watch` (run + watch for changes)
 - `npm run test:server`
 - `npm run test:server:watch` (run + watch for changes)
+
 
 ## Problems
 
