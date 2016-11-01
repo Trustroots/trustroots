@@ -349,7 +349,8 @@ exports.offerByUserId = function(req, res, next, userId) {
     offer.description = sanitizeHtml(offer.description, textProcessor.sanitizeOptions);
     offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
 
-    // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
+    // Make sure we return accurate location only for offer owner,
+    // others will see pre generated fuzzy location
     if (userId !== req.user.id) {
       offer.location = offer.locationFuzzy;
     }
@@ -397,13 +398,14 @@ exports.offerById = function(req, res, next, offerId) {
       offer.description = sanitizeHtml(offer.description, textProcessor.sanitizeOptions);
       offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
 
-      // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
-      if (req.user && offer.user !== req.user.id) {
+      // Make sure we return accurate location only for offer owner,
+      // others will see pre generated fuzzy location
+      if (offer.user !== req.user.id) {
         offer.location = offer.locationFuzzy;
       }
 
       // Filter out some fields from public object
-      offer = _.pick(offer, publicOfferFields);
+      offer = _.pick(offer, _.union(publicOfferFields, ['user']));
 
       req.offer = offer;
       next();
