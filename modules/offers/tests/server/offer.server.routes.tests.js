@@ -228,7 +228,7 @@ describe('Offer CRUD tests', function() {
       });
   });
 
-  it('should be able to read offers of other users when logged in', function(done) {
+  it('should be able to read offers of other users by user id when logged in', function(done) {
     agent.post('/api/auth/signin')
       // Logged in as `user1`
       .send(credentials)
@@ -255,6 +255,42 @@ describe('Offer CRUD tests', function() {
             should.not.exist(offerGetRes.body.locationFuzzy);
             should.not.exist(offerGetRes.body.updated);
             should.not.exist(offerGetRes.body.user);
+            should.not.exist(offerGetRes.body._id);
+
+            // Call the assertion callback
+            return done();
+          });
+
+      });
+  });
+
+  it('should be able to read offers of other users by offer id when logged in', function(done) {
+    agent.post('/api/auth/signin')
+      // Logged in as `user1`
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr) {
+        // Handle signin error
+        if (signinErr) return done(signinErr);
+
+        // Get a offer from the other user
+        agent.get('/api/offers/' + offer2._id)
+          .expect(200)
+          .end(function(offerGetErr, offerGetRes) {
+            // Handle offer get error
+            if (offerGetErr) return done(offerGetErr);
+
+            // Set assertions
+            offerGetRes.body.status.should.equal(offer2.status);
+            offerGetRes.body.description.should.equal(offer2.description);
+            offerGetRes.body.noOfferDescription.should.equal(offer2.noOfferDescription);
+            offerGetRes.body.maxGuests.should.equal(offer2.maxGuests);
+            offerGetRes.body.location.should.be.instanceof(Array).and.have.lengthOf(2);
+            offerGetRes.body.location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
+            offerGetRes.body.location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
+            offerGetRes.body.user.should.not.be.empty();
+            should.not.exist(offerGetRes.body.locationFuzzy);
+            should.not.exist(offerGetRes.body.updated);
             should.not.exist(offerGetRes.body._id);
 
             // Call the assertion callback
