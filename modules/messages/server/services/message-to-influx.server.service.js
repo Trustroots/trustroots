@@ -208,5 +208,5 @@ module.exports.process = function (message, callback) {
  * @param {influxCallback} callback - a callback that handles the response
  */
 module.exports.send = function (fields, tags, callback) {
-  return influxService.writePoint('messageSent', fields, tags, callback);
+  return influxService.writeMeasurement('messageSent', fields, tags, callback);
 };
