@@ -65,4 +65,41 @@ describe('Service: influx', function() {
       }
     });
   });
+
+  it('Writing point returns error with wrong time format (nanoseconds)', function(done) {
+    influxService.writeMeasurement('test', { value: 1, time: 1475985480231035600 }, { tag: 'tag' }, function(err) {
+      try {
+        err.message.should.equal('InfluxDB Service: expected `fields.time` to be `Date` object.');
+        return done();
+
+      } catch (e) {
+        return done(e);
+      }
+    });
+  });
+
+  it('Writing point returns error with wrong time format (milliseconds)', function(done) {
+    influxService.writeMeasurement('test', { value: 1, time: 1475985480231 }, { tag: 'tag' }, function(err) {
+      try {
+        err.message.should.equal('InfluxDB Service: expected `fields.time` to be `Date` object.');
+        return done();
+
+      } catch (e) {
+        return done(e);
+      }
+    });
+  });
+
+  it('Writing point returns error with wrong time format (string)', function(done) {
+    influxService.writeMeasurement('test', { value: 1, time: '2016-10-09T03:58:00.231035600Z' }, { tag: 'tag' }, function(err) {
+      try {
+        err.message.should.equal('InfluxDB Service: expected `fields.time` to be `Date` object.');
+        return done();
+
+      } catch (e) {
+        return done(e);
+      }
+    });
+  });
+
 });

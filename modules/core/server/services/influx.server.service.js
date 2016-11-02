@@ -66,6 +66,11 @@ exports.writeMeasurement = function(measurementName, fields, tags, callback) {
     return callback(new Error('InfluxDB Service: no `tags` defined.'));
   }
 
+  // Validate time: it should always be a `Date` object
+  if (fields.time && !_.isDate(fields.time)) {
+    return callback(new Error('InfluxDB Service: expected `fields.time` to be `Date` object.'));
+  }
+
   // Add current time to `fields` if it's missing
   if (!fields.time) {
     fields.time = new Date();
