@@ -24,6 +24,7 @@
     "build:dev": "gulp build:dev",
     "build:prod": "gulp build:prod",
     "fontello": "gulp fontello",
+    "dropdb": "gulp dropdb",
     "test": "gulp test",
     "test:client": "gulp test:client",
     "test:client:watch": "gulp test:client:watch",

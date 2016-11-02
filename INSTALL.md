@@ -103,6 +103,7 @@ There's a script that can generate mock user data. It's highly recommended you r
 2. It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
 3. To see the result, log in with your chosen username and password `password`.
 
+To drop your database, run: `npm run dropdb`
 
 ## Updating
 

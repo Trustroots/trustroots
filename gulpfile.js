@@ -396,6 +396,23 @@ gulp.task('karma:watch', function(done) {
   }, done).start();
 });
 
+// Drops the MongoDB database, used in e2e testing
+gulp.task('dropdb', function(done) {
+  // Use mongoose configuration
+  var mongoose = require('./config/lib/mongoose.js');
+
+  mongoose.connect(function(db) {
+    db.connection.db.dropDatabase(function(err) {
+      if (err) {
+        console.error(err);
+      } else {
+        console.log('Successfully dropped db: ', db.connection.db.databaseName);
+      }
+      db.connection.db.close(done);
+    });
+  });
+});
+
 // Analyse code for potential errors
 gulp.task('lint', function(done) {
   runSequence(['eslint', 'eslint-angular'], done);
@@ -418,15 +435,15 @@ gulp.task('clean', function(done) {
 
 // Run the project tests
 gulp.task('test', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', ['karma', 'mocha'], done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'dropdb', ['karma', 'mocha'], done);
 });
 
 gulp.task('test:server', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'mocha', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'dropdb', 'mocha', done);
 });
 
 gulp.task('test:server:no-lint', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'mocha', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'dropdb', 'mocha', done);
 });
 
 // Watch all server files for changes & run server tests (test:server) task on changes
@@ -435,11 +452,11 @@ gulp.task('test:server:watch', function(done) {
 });
 
 gulp.task('test:client', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'karma', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'dropdb', 'karma', done);
 });
 
 gulp.task('test:client:watch', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'karma:watch', done);
+  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'dropdb', 'karma:watch', done);
 });
 
 // Run the project in development mode
