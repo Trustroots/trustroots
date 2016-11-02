@@ -129,6 +129,7 @@
     "karma-phantomjs-launcher": "~1.0.1",
     "maildev": "~0.14.0",
     "mocha": "~3.1.2",
+    "nodemailer-stub-transport": "~1.1.0",
     "phantomjs-prebuilt": ">=2.1",
     "semver": "~5.3.0",
     "should": "~11.1.0",
