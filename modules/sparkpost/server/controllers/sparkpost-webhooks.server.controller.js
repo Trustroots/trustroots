@@ -58,7 +58,9 @@ exports.processAndSendMetrics = function(event, callback) {
   }
 
   var fields = {
-    time: new Date()
+    time: new Date(),
+    country: '',
+    campaignId: ''
   };
   var tags = {};
 
