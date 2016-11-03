@@ -105,6 +105,7 @@ There's a script that can generate mock user data. It's highly recommended you r
 
 To drop your database, run: `npm run dropdb`
 
+
 ## Updating
 
 Run these to get most recent version:
@@ -123,6 +124,8 @@ $ npm run migrate     # Migrate database up
 - `npm run test:client:watch` (run + watch for changes)
 - `npm run test:server`
 - `npm run test:server:watch` (run + watch for changes)
+
+To test JavaScript files with eslint, run `npm run lint`.
 
 
 ## Problems

@@ -25,6 +25,7 @@
     "build:prod": "gulp build:prod",
     "fontello": "gulp fontello",
     "dropdb": "gulp dropdb",
+    "lint": "gulp eslint",
     "test": "gulp test",
     "test:client": "gulp test:client",
     "test:client:watch": "gulp test:client:watch",
