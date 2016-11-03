@@ -42,6 +42,7 @@
     "async": "~2.1.2",
     "autolinker": "~1.2.0",
     "autoprefixer-core": "~6.0.1",
+    "basic-auth": "~1.0.4",
     "body-parser": "~1.15.2",
     "bower": "~1.7",
     "bson": "~0.5.2",
