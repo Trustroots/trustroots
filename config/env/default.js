@@ -33,6 +33,12 @@ module.exports = {
                    'edit', 'settings', 'username', 'user', 'demo', 'test', 'support', 'networks', 'profile', 'avatar', 'mini',
                    'photo', 'account', 'api', 'modify', 'feedback', 'security', 'accounts', 'tribe', 'tag', 'community'
                   ],
+  // SparkPost webhook API endpoint configuration (`/api/sparkpost/webhook`)
+  sparkpostWebhook: {
+    enabled: process.env.SPARKPOST_WEBHOOK_ENABLED || true,
+    username: process.env.SPARKPOST_WEBHOOK_USERNAME || 'sparkpost',
+    password: process.env.SPARKPOST_WEBHOOK_PASSWORD || 'sparkpost'
+  },
   influxdb: {
     enabled: false,
     options: {
