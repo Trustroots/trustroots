@@ -48,7 +48,14 @@
         Tribes
       </div>
       <div class="panel-body">
-        <div tr-tribes-list="profileCtrl.memberships.tribes.is" is-own-profile="::profileCtrl.profile._id === app.user._id"></div>
+
+        <div class="profile-tribes-common"
+             ng-if="::profileCtrl.profile._id !== app.user._id"
+             tr-tribes-in-common="profileCtrl.profile.member"></div>
+
+        <div tr-tribes-list="profileCtrl.memberships.tribes.is"
+             is-own-profile="::profileCtrl.profile._id === app.user._id"></div>
+
       </div>
     </div>
 

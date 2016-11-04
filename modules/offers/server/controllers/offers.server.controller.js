@@ -3,13 +3,17 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
+    async = require('async'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
+    tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     sanitizeHtml = require('sanitize-html'),
     mongoose = require('mongoose'),
-    Offer = mongoose.model('Offer');
+    Offer = mongoose.model('Offer'),
+    User = mongoose.model('User');
 
 /**
  * Create a fuzzy offset between specified distances
@@ -315,6 +319,8 @@ exports.offerByUserId = function(req, res, next, userId) {
       });
     }
 
+    // offer is a Mongo document, turn it into regular JS object
+    // so that we can modify it on the fly
     offer = offer.toObject();
 
     // Sanitize each outgoing offer's contents
@@ -325,12 +331,12 @@ exports.offerByUserId = function(req, res, next, userId) {
     if (userId !== req.user.id) {
       offer.location = offer.locationFuzzy;
     }
-    delete offer.locationFuzzy;
 
-    // Never send this field
-    delete offer.reactivateReminderSent;
+    // Pick fields to send out, leaves out e.g. `locationFuzzy` and `reactivateReminderSent`
+    offer = _.pick(offer, ['_id', 'description', 'location', 'maxGuests', 'noOfferDescription', 'status', 'updated', 'user']);
 
     req.offer = offer;
+
     next();
   });
 
@@ -354,18 +360,53 @@ exports.offerById = function(req, res, next, offerId) {
     });
   }
 
-  Offer.findById(offerId)
-    .populate('user', userHandler.userListingProfileFields)
-    .exec(function(err, offer) {
+  async.waterfall([
 
-      if (err) return next(err);
-      if (!offer) {
-        return res.status(404).send({
-          message: errorHandler.getErrorMessageByKey('not-found')
+    // Find offer
+    function(done) {
+      Offer.findById(offerId)
+        .populate('user', userHandler.userListingProfileFields)
+        .exec(function(err, offer) {
+
+          // No offer
+          if (err || !offer) {
+            return res.status(404).send({
+              message: errorHandler.getErrorMessageByKey('not-found')
+            });
+          }
+
+          // offer is a Mongo document, turn it into regular JS object
+          // so that we can modify it on the fly
+          offer = offer.toObject();
+
+          done(null, offer);
         });
-      }
-      offer = offer.toObject();
+    },
 
+    // Populate `tag` fields from objects at `offer.user.member` array
+    function(offer, done) {
+
+      // Nothing to populate
+      if (!offer.user.member && !offer.user.member.length) {
+        return done(null, offer);
+      }
+
+      User.populate(offer.user, {
+        path: 'member.tag',
+        select: tribesHandler.tribeFields,
+        model: 'Tag',
+        options: { sort: { count: -1 } }
+      }, function(err, user) {
+        // Overwrite old `offer.user` with new `user` object
+        // containing populated `member.tag` to `offer`
+        offer.user = user;
+        done(err, offer);
+      });
+
+    },
+
+    // Sanitize and continue
+    function(offer, done) {
       // Sanitize each outgoing offer's contents
       offer.description = sanitizeHtml(offer.description, textProcessor.sanitizeOptions);
       offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
@@ -374,13 +415,17 @@ exports.offerById = function(req, res, next, offerId) {
       if (req.user && offer.user !== req.user.id) {
         offer.location = offer.locationFuzzy;
       }
-      delete offer.locationFuzzy;
 
-      // Never send this field
-      delete offer.reactivateReminderSent;
+      // Pick fields to send out, leaves out e.g. `locationFuzzy` and `reactivateReminderSent`
+      offer = _.pick(offer, ['_id', 'description', 'location', 'maxGuests', 'noOfferDescription', 'status', 'updated', 'user']);
 
       req.offer = offer;
-      next();
-    });
+
+      done();
+    }
+
+  ], function(err) {
+    return next(err);
+  });
 
 };
