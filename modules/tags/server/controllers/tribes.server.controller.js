@@ -18,7 +18,8 @@ exports.tribeFields = [
   'color',
   'image_UUID',
   'attribution',
-  'attribution_url'
+  'attribution_url',
+  'tribe'
 ].join(' ');
 
 /**
