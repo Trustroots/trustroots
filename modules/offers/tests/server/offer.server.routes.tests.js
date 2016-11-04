@@ -245,6 +245,7 @@ describe('Offer CRUD tests', function() {
             if (offerGetErr) return done(offerGetErr);
 
             // Set assertions
+            offerGetRes.body._id.should.equal(offer2._id.toString());
             offerGetRes.body.status.should.equal(offer2.status);
             offerGetRes.body.description.should.equal(offer2.description);
             offerGetRes.body.noOfferDescription.should.equal(offer2.noOfferDescription);
@@ -255,7 +256,6 @@ describe('Offer CRUD tests', function() {
             should.not.exist(offerGetRes.body.locationFuzzy);
             should.not.exist(offerGetRes.body.updated);
             should.not.exist(offerGetRes.body.user);
-            should.not.exist(offerGetRes.body._id);
 
             // Call the assertion callback
             return done();
@@ -281,6 +281,7 @@ describe('Offer CRUD tests', function() {
             if (offerGetErr) return done(offerGetErr);
 
             // Set assertions
+            offerGetRes.body._id.should.equal(offer2._id.toString());
             offerGetRes.body.status.should.equal(offer2.status);
             offerGetRes.body.description.should.equal(offer2.description);
             offerGetRes.body.noOfferDescription.should.equal(offer2.noOfferDescription);
@@ -291,7 +292,6 @@ describe('Offer CRUD tests', function() {
             offerGetRes.body.user.should.not.be.empty();
             should.not.exist(offerGetRes.body.locationFuzzy);
             should.not.exist(offerGetRes.body.updated);
-            should.not.exist(offerGetRes.body._id);
 
             // Call the assertion callback
             return done();
@@ -435,6 +435,7 @@ describe('Offer CRUD tests', function() {
                 if (offerGetErr) return done(offerGetErr);
 
                 // Set assertions
+                offerGetRes.body._id.should.not.be.empty();
                 offerGetRes.body.status.should.equal(offer1.status);
                 offerGetRes.body.description.should.equal(offer1.description);
                 offerGetRes.body.noOfferDescription.should.equal(offer1.noOfferDescription);
@@ -445,7 +446,6 @@ describe('Offer CRUD tests', function() {
                 should.not.exist(offerGetRes.body.locationFuzzy);
                 should.not.exist(offerGetRes.body.updated);
                 should.not.exist(offerGetRes.body.user);
-                should.not.exist(offerGetRes.body._id);
 
                 // Call the assertion callback
                 return done();
