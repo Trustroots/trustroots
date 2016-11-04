@@ -14,6 +14,7 @@ var _ = require('lodash'),
 
 // Selected fields to return publicly for offers
 var publicOfferFields = [
+  '_id',
   'status',
   'description',
   'noOfferDescription',
