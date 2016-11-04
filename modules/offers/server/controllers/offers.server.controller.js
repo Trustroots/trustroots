@@ -5,7 +5,7 @@
  */
 var _ = require('lodash'),
     path = require('path'),
-    async = require('async'),
+        async = require('async'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
@@ -14,6 +14,16 @@ var _ = require('lodash'),
     mongoose = require('mongoose'),
     Offer = mongoose.model('Offer'),
     User = mongoose.model('User');
+
+// Selected fields to return publicly for offers
+var publicOfferFields = [
+  '_id',
+  'status',
+  'description',
+  'noOfferDescription',
+  'maxGuests',
+  'location'
+];
 
 /**
  * Create a fuzzy offset between specified distances
@@ -96,6 +106,13 @@ exports.create = function(req, res) {
     });
   }
 
+  // Missing required fields
+  if (!req.body.location) {
+    return res.status(400).send({
+      message: 'Missing offer location.'
+    });
+  }
+
   var offer = new Offer(req.body);
   offer.user = req.user;
 
@@ -117,6 +134,12 @@ exports.create = function(req, res) {
   // Delete the _id property, otherwise Mongo will return a "Mod on _id not allowed" error
   delete upsertData._id;
 
+  // Remove reminder flag
+  upsertData.$unset = { reactivateReminderSent: 1 };
+
+  // Having this present in update query would break `$unset`:ing this field
+  delete upsertData.reactivateReminderSent;
+
   // Do the upsert, which works like this: If no Offer document exists with
   // _id = offer.id, then create a new doc using upsertData.
   // Otherwise, update the existing doc with upsertData
@@ -125,15 +148,20 @@ exports.create = function(req, res) {
     user: upsertData.user
   },
   upsertData,
+  // Warning: To avoid inserting the same document more than once,
+  // only use `upsert:true` if the query field is uniquely indexed.
+  // This is not the case with our Schema.
   { upsert: true },
   function(err) {
     if (err) {
       return res.status(400).send({
         message: errorHandler.getErrorMessage(err)
       });
-    } else {
-      res.json(upsertData);
     }
+
+    res.json({
+      message: 'Offer saved.'
+    });
   });
 
 };
@@ -327,13 +355,14 @@ exports.offerByUserId = function(req, res, next, userId) {
     offer.description = sanitizeHtml(offer.description, textProcessor.sanitizeOptions);
     offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
 
-    // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
+    // Make sure we return accurate location only for offer owner,
+    // others will see pre generated fuzzy location
     if (userId !== req.user.id) {
       offer.location = offer.locationFuzzy;
     }
 
     // Pick fields to send out, leaves out e.g. `locationFuzzy` and `reactivateReminderSent`
-    offer = _.pick(offer, ['_id', 'description', 'location', 'maxGuests', 'noOfferDescription', 'status', 'updated', 'user']);
+    offer = _.pick(offer, publicOfferFields);
 
     req.offer = offer;
 
@@ -411,13 +440,14 @@ exports.offerById = function(req, res, next, offerId) {
       offer.description = sanitizeHtml(offer.description, textProcessor.sanitizeOptions);
       offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
 
-      // Make sure we return accurate location only for offer owner, others will see pre generated fuzzy location
-      if (req.user && offer.user !== req.user.id) {
+      // Make sure we return accurate location only for offer owner,
+      // others will see pre generated fuzzy location
+      if (offer.user !== req.user.id) {
         offer.location = offer.locationFuzzy;
       }
 
       // Pick fields to send out, leaves out e.g. `locationFuzzy` and `reactivateReminderSent`
-      offer = _.pick(offer, ['_id', 'description', 'location', 'maxGuests', 'noOfferDescription', 'status', 'updated', 'user']);
+      offer = _.pick(offer, _.union(publicOfferFields, ['user']));
 
       req.offer = offer;
 

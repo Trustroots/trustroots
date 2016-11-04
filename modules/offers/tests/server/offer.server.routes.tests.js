@@ -16,6 +16,7 @@ var should = require('should'),
 var app,
     agent,
     credentials,
+    credentials2,
     user1,
     user2,
     user3,
@@ -51,9 +52,15 @@ describe('Offer CRUD tests', function() {
   });
 
   beforeEach(function(doneBeforeEach) {
-    // Create userFrom credentials
+    // Create user credentials
     credentials = {
       username: 'loremipsum',
+      password: 'Password123!'
+    };
+
+    // Create user2 credentials
+    credentials2 = {
+      username: 'loremipsum2',
       password: 'Password123!'
     };
 
@@ -77,8 +84,8 @@ describe('Offer CRUD tests', function() {
       displayName: 'Full Name',
       email: 'test2@test.com',
       member: [],
-      username: credentials.username + '2',
-      password: credentials.password,
+      username: credentials2.username,
+      password: credentials2.password,
       provider: 'local',
       public: true
     });
@@ -305,7 +312,7 @@ describe('Offer CRUD tests', function() {
       });
   });
 
-  it('should be able to read offers of other users when logged in', function(done) {
+  it('should be able to read offers of other users by user id when logged in', function(done) {
     agent.post('/api/auth/signin')
       // Logged in as `user1`
       .send(credentials)
@@ -322,7 +329,7 @@ describe('Offer CRUD tests', function() {
             if (offerGetErr) return done(offerGetErr);
 
             // Set assertions
-            offerGetRes.body.user.should.equal(user2Id.toString());
+            offerGetRes.body._id.should.equal(offer2._id.toString());
             offerGetRes.body.status.should.equal(offer2.status);
             offerGetRes.body.description.should.equal(offer2.description);
             offerGetRes.body.noOfferDescription.should.equal(offer2.noOfferDescription);
@@ -330,8 +337,45 @@ describe('Offer CRUD tests', function() {
             offerGetRes.body.location.should.be.instanceof(Array).and.have.lengthOf(2);
             offerGetRes.body.location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
             offerGetRes.body.location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
-            offerGetRes.body.updated.should.not.be.empty();
             should.not.exist(offerGetRes.body.locationFuzzy);
+            should.not.exist(offerGetRes.body.updated);
+            should.not.exist(offerGetRes.body.user);
+
+            // Call the assertion callback
+            return done();
+          });
+
+      });
+  });
+
+  it('should be able to read offers of other users by offer id when logged in', function(done) {
+    agent.post('/api/auth/signin')
+      // Logged in as `user1`
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr) {
+        // Handle signin error
+        if (signinErr) return done(signinErr);
+
+        // Get a offer from the other user
+        agent.get('/api/offers/' + offer2._id)
+          .expect(200)
+          .end(function(offerGetErr, offerGetRes) {
+            // Handle offer get error
+            if (offerGetErr) return done(offerGetErr);
+
+            // Set assertions
+            offerGetRes.body._id.should.equal(offer2._id.toString());
+            offerGetRes.body.status.should.equal(offer2.status);
+            offerGetRes.body.description.should.equal(offer2.description);
+            offerGetRes.body.noOfferDescription.should.equal(offer2.noOfferDescription);
+            offerGetRes.body.maxGuests.should.equal(offer2.maxGuests);
+            offerGetRes.body.location.should.be.instanceof(Array).and.have.lengthOf(2);
+            offerGetRes.body.location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
+            offerGetRes.body.location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
+            offerGetRes.body.user.should.not.be.empty();
+            should.not.exist(offerGetRes.body.locationFuzzy);
+            should.not.exist(offerGetRes.body.updated);
 
             // Call the assertion callback
             return done();
@@ -365,6 +409,104 @@ describe('Offer CRUD tests', function() {
         agent.post('/api/offers')
           .send(offer1)
           .expect(200)
+          .end(function(offerSaveErr, offerSaveRes) {
+            // Handle offer save error
+            if (offerSaveErr) return done(offerSaveErr);
+
+            // Set assertions
+            offerSaveRes.body.message.should.equal('Offer saved.');
+
+            return done();
+          });
+      });
+  });
+
+  it('saving offer should remove reactivation flag field', function(done) {
+    agent.post('/api/auth/signin')
+      .send(credentials2)
+      .expect(200)
+      .end(function(signinErr) {
+        // Handle signin error
+        if (signinErr) return done(signinErr);
+
+        // Add field to offer
+        offer2.reactivateReminderSent = new Date();
+        offer2.save(function(offerSaveErr) {
+          // Handle offer save error
+          if (offerSaveErr) return done(offerSaveErr);
+
+          // Save a new offer
+          agent.post('/api/offers')
+            .send(offer2)
+            .expect(200)
+            .end(function(offerSaveErr) {
+              // Handle offer save error
+              if (offerSaveErr) return done(offerSaveErr);
+
+              Offer.findOne({
+                user: user2Id
+              }, function(err, offer) {
+                should.not.exist(offer.reactivateReminderSent);
+                return done(err);
+              });
+            });
+
+        });
+      });
+  });
+
+  it('should be able to save over existing offer', function(done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr) {
+        // Handle signin error
+        if (signinErr) return done(signinErr);
+
+        // Save a new offer
+        agent.post('/api/offers')
+          .send(offer1)
+          .expect(200)
+          .end(function(offerSaveErr) {
+            // Handle offer save error
+            if (offerSaveErr) return done(offerSaveErr);
+
+            var modifiedOffer = offer1;
+            modifiedOffer.description = 'modified';
+
+            // Save a new offer
+            agent.post('/api/offers')
+              .send(modifiedOffer)
+              .expect(200)
+              .end(function(offerSaveErr) {
+                // Handle offer save error
+                if (offerSaveErr) return done(offerSaveErr);
+
+                Offer.find({
+                  user: user1Id
+                }, function(err, offers) {
+                  offers.length.should.equal(1);
+                  offers[0].description.should.equal('modified');
+                  return done(err);
+                });
+              });
+
+          });
+      });
+  });
+
+  it('should be able to save offer if logged in and receive modifications', function(done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr) {
+        // Handle signin error
+        if (signinErr) return done(signinErr);
+
+        // Save a new offer
+        agent.post('/api/offers')
+          .send(offer1)
+          .expect(200)
           .end(function(offerSaveErr) {
             // Handle offer save error
             if (offerSaveErr) return done(offerSaveErr);
@@ -377,7 +519,7 @@ describe('Offer CRUD tests', function() {
                 if (offerGetErr) return done(offerGetErr);
 
                 // Set assertions
-                offerGetRes.body.user.should.equal(user1Id.toString());
+                offerGetRes.body._id.should.not.be.empty();
                 offerGetRes.body.status.should.equal(offer1.status);
                 offerGetRes.body.description.should.equal(offer1.description);
                 offerGetRes.body.noOfferDescription.should.equal(offer1.noOfferDescription);
@@ -385,7 +527,9 @@ describe('Offer CRUD tests', function() {
                 offerGetRes.body.location.should.be.instanceof(Array).and.have.lengthOf(2);
                 offerGetRes.body.location[0].should.be.approximately(offer1.location[0], 0.0000000000001);
                 offerGetRes.body.location[1].should.be.approximately(offer1.location[1], 0.0000000000001);
-                offerGetRes.body.updated.should.not.be.empty();
+                should.not.exist(offerGetRes.body.locationFuzzy);
+                should.not.exist(offerGetRes.body.updated);
+                should.not.exist(offerGetRes.body.user);
 
                 // Call the assertion callback
                 return done();
@@ -409,10 +553,45 @@ describe('Offer CRUD tests', function() {
         agent.post('/api/offers')
           .send(offerWithoutStatus)
           .expect(200)
+          .end(function(offerSaveErr) {
+            if (offerSaveErr) return done(offerSaveErr);
+
+            // Get the offer
+            agent.get('/api/offers-by/' + user1Id)
+              .expect(200)
+              .end(function(offerGetErr, offerGetRes) {
+                // Handle offer get error
+                if (offerGetErr) return done(offerGetErr);
+
+                // Set assertions
+                offerGetRes.body.status.should.equal('no');
+
+                // Call the assertion callback
+                return done();
+              });
+
+          });
+      });
+  });
+
+  it('should not be able to save offer without location', function(done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr) {
+        // Handle signin error
+        if (signinErr) return done(signinErr);
+
+        var offerWithoutLocation = offer1;
+        delete offerWithoutLocation.location;
+
+        // Save a new offer
+        agent.post('/api/offers')
+          .send(offerWithoutLocation)
+          .expect(400)
           .end(function(offerSaveErr, offerSaveRes) {
 
-            offerSaveRes.body.user._id.should.equal(user1Id.toString());
-            offerSaveRes.body.status.should.equal('no');
+            offerSaveRes.body.message.should.equal('Missing offer location.');
 
             // Call the assertion callback
             return done(offerSaveErr);

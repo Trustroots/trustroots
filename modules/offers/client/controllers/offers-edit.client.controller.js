@@ -6,7 +6,7 @@
     .controller('OffersEditController', OffersEditController);
 
   /* @ngInject */
-  function OffersEditController($http, $state, $stateParams, leafletBoundsHelpers, OffersService, Authentication, messageCenterService, MapLayersFactory, offer, appSettings, LocationService) {
+  function OffersEditController($http, $state, $stateParams, $analytics, leafletBoundsHelpers, OffersService, Authentication, messageCenterService, MapLayersFactory, offer, appSettings, LocationService) {
 
     // Default location for all TR maps,
     // Returns `{lat: Float, lng: Float, zoom: 4}`
@@ -114,6 +114,11 @@
       newOffer.$save(function() {
         // Done!
         vm.isLoading = false;
+        $analytics.eventTrack('offer-modified', {
+          category: 'offer.edit',
+          label: 'Modified offer',
+          value: vm.offer.status
+        });
         $state.go('profile.about', { username: Authentication.user.username });
       }, function(err) {
         vm.isLoading = false;
@@ -127,7 +132,7 @@
      * Center map to the address in query input
      */
     function searchAddress() {
-      if (vm.searchQuery !== '') {
+      if (vm.searchQuery !== '' && appSettings.mapbox && appSettings.mapbox.publicKey) {
         vm.searchQuerySearching = true;
 
         $http
