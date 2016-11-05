@@ -255,7 +255,7 @@ describe('Offer CRUD tests', function() {
             offerGetRes.body.location.should.be.instanceof(Array).and.have.lengthOf(2);
             offerGetRes.body.location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
             offerGetRes.body.location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
-            offerGetRes.body.updated.should.not.be.empty();
+            should.not.exist(offerGetRes.body.updated);
             should.not.exist(offerGetRes.body.locationFuzzy);
 
             // Call the assertion callback

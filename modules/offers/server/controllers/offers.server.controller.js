@@ -5,7 +5,7 @@
  */
 var _ = require('lodash'),
     path = require('path'),
-        async = require('async'),
+    async = require('async'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
