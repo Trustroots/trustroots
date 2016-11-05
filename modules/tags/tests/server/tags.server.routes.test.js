@@ -107,6 +107,7 @@ describe('Tag CRUD tests', function () {
       .end(function(tribesReadErr, tribesReadRes) {
 
         tribesReadRes.body.should.have.length(1);
+        tribesReadRes.body[0].tribe.should.equal(true);
         tribesReadRes.body[0].label.should.equal('Awesome Tribe');
         tribesReadRes.body[0].slug.should.equal('awesome-tribe');
         tribesReadRes.body[0].attribution.should.equal(_tribe.attribution);
@@ -120,7 +121,6 @@ describe('Tag CRUD tests', function () {
 
 
         // These are at the model, but aren't exposed
-        should.not.exist(tribesReadRes.body[0].tribe);
         should.not.exist(tribesReadRes.body[0].synonyms);
         should.not.exist(tribesReadRes.body[0].labelHistory);
         should.not.exist(tribesReadRes.body[0].slugHistory);
@@ -145,6 +145,7 @@ describe('Tag CRUD tests', function () {
           .end(function(tribesReadErr, tribesReadRes) {
 
             tribesReadRes.body.should.have.length(1);
+            tribesReadRes.body[0].tribe.should.equal(true);
             tribesReadRes.body[0].label.should.equal('Awesome Tribe');
             tribesReadRes.body[0].slug.should.equal('awesome-tribe');
             tribesReadRes.body[0].attribution.should.equal(_tribe.attribution);
@@ -158,7 +159,6 @@ describe('Tag CRUD tests', function () {
 
 
             // These are at the model, but aren't exposed
-            should.not.exist(tribesReadRes.body[0].tribe);
             should.not.exist(tribesReadRes.body[0].synonyms);
             should.not.exist(tribesReadRes.body[0].labelHistory);
             should.not.exist(tribesReadRes.body[0].slugHistory);

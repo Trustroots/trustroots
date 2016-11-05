@@ -73,7 +73,7 @@ exports.userMiniProfileFields = [
 ].join(' ');
 
 // Mini + a few fields we'll need at listings
-exports.userListingProfileFields = exports.userMiniProfileFields + ' birthdate gender tagline';
+exports.userListingProfileFields = exports.userMiniProfileFields + ' member birthdate gender tagline';
 
 /**
  * Middleware to validate+process avatar upload field
@@ -538,7 +538,7 @@ exports.userByUsername = function(req, res, next, username) {
         exports.userProfileFields + ' public')
         .populate({
           path: 'member.tag',
-          select: tribesHandler.tribeFields + ' tribe', // Loads `tribe` fields for both `tribe:true` and `tribe:false` objects
+          select: tribesHandler.tribeFields,
           model: 'Tag',
           options: { sort: { count: -1 } }
         })
@@ -804,7 +804,7 @@ exports.getUserMemberships = function(req, res) {
     .findById(req.user._id, 'member')
     .populate({
       path: 'member.tag',
-      select: tagsHandler.tagFields + ' ' + tribesHandler.tribeFields + ' tribe',
+      select: tagsHandler.tagFields + ' ' + tribesHandler.tribeFields,
       model: 'Tag',
       options: { sort: { count: -1 } }
     })

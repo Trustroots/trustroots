@@ -25,6 +25,7 @@ var app,
     user3Id,
     offer1,
     offer2,
+    offer2Id,
     offer3,
     tribe1,
     tribe2,
@@ -198,7 +199,8 @@ describe('Offer CRUD tests', function() {
       // Save hosting offer 2
       function(done) {
         offer2.user = user2Id;
-        offer2.save(function(err) {
+        offer2.save(function(err, offer2) {
+          offer2Id = offer2._id;
           done(err);
         });
       },
@@ -215,7 +217,89 @@ describe('Offer CRUD tests', function() {
     });
   });
 
-  it('should not be able to read offer if not logged in', function(done) {
+  it('should not be able to read offer by offer id if not logged in', function(done) {
+
+    agent.get('/api/offers/' + offer2Id)
+      .expect(403)
+      .end(function(offerSaveErr, offerSaveRes) {
+
+        offerSaveRes.body.message.should.equal('Forbidden.');
+
+        // Call the assertion callback
+        return done(offerSaveErr);
+      });
+  });
+
+  it('should be able to read offers of other users by offer id when logged in', function(done) {
+    agent.post('/api/auth/signin')
+      // Logged in as `user1`
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr) {
+        // Handle signin error
+        if (signinErr) return done(signinErr);
+
+        // Get a offer from the other user by offer id
+        agent.get('/api/offers/' + offer2Id)
+          .expect(200)
+          .end(function(offerGetErr, offerGetRes) {
+            // Handle offer get error
+            if (offerGetErr) return done(offerGetErr);
+
+            // Set assertions
+            offerGetRes.body.user._id.should.equal(user2Id.toString());
+            offerGetRes.body.status.should.equal(offer2.status);
+            offerGetRes.body.description.should.equal(offer2.description);
+            offerGetRes.body.noOfferDescription.should.equal(offer2.noOfferDescription);
+            offerGetRes.body.maxGuests.should.equal(offer2.maxGuests);
+            offerGetRes.body.location.should.be.instanceof(Array).and.have.lengthOf(2);
+            offerGetRes.body.location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
+            offerGetRes.body.location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
+            should.not.exist(offerGetRes.body.updated);
+            should.not.exist(offerGetRes.body.locationFuzzy);
+
+            // Call the assertion callback
+            return done();
+          });
+
+      });
+  });
+
+  it('should be able to read offers by id and get populated memberships array', function(done) {
+    agent.post('/api/auth/signin')
+      // Logged in as `user1`
+      .send(credentials)
+      .expect(200)
+      .end(function(signinErr) {
+        // Handle signin error
+        if (signinErr) return done(signinErr);
+
+        // Get a offer from the other user by offer id
+        agent.get('/api/offers/' + offer2Id)
+          .expect(200)
+          .end(function(offerGetErr, offerGetRes) {
+            // Handle offer get error
+            if (offerGetErr) return done(offerGetErr);
+
+            // Set assertions
+            offerGetRes.body.user.member.length.should.equal(1);
+            offerGetRes.body.user.member[0].relation.should.equal('is');
+            offerGetRes.body.user.member[0].since.should.not.be.empty();
+            offerGetRes.body.user.member[0].tag._id.should.equal(tribe2Id.toString());
+            offerGetRes.body.user.member[0].tag.tribe.should.equal(tribe2.tribe);
+            offerGetRes.body.user.member[0].tag.color.should.equal(tribe2.color);
+            offerGetRes.body.user.member[0].tag.count.should.equal(tribe2.count);
+            offerGetRes.body.user.member[0].tag.slug.should.equal(tribe2.slug);
+            offerGetRes.body.user.member[0].tag.label.should.equal(tribe2.label);
+
+            // Call the assertion callback
+            return done();
+          });
+
+      });
+  });
+
+  it('should not be able to read offer by user id if not logged in', function(done) {
 
     agent.get('/api/offers-by/' + user2Id)
       .expect(403)

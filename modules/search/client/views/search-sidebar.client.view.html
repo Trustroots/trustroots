@@ -88,6 +88,11 @@
           </div>
         </div>
 
+        <div class="search-result-tribes-common"
+             ng-if="search.offer.user.member.length"
+             tr-tribes-in-common="::search.offer.user.member">
+        </div>
+
       </div>
       <div class="search-result-languages" ng-if="search.offer.user.languages.length">
         <h4>Languages</h4>
