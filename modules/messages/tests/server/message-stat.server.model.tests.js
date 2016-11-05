@@ -7,21 +7,19 @@ var should = require('should'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
     Message = mongoose.model('Message'),
-    Thread = mongoose.model('Thread'),
-    ThreadStat = mongoose.model('ThreadStat');
+    MessageStat = mongoose.model('MessageStat');
 
 /**
  * Globals
  */
 var user0,
     user1,
-    thread,
     message;
 
 /**
  * Unit tests
  */
-describe('ThreadStats Model', function () {
+describe('MessageStats Model', function () {
   beforeEach(function(/* done */) {
 
     user0 = new User({
@@ -50,57 +48,47 @@ describe('ThreadStats Model', function () {
       userTo: user1._id,
       read: false
     });
-
-    thread = new Thread({
-      userFrom: user0._id,
-      userTo: user1._id,
-      message: message._id
-    });
   });
 
   afterEach(function (done) {
-    ThreadStat.remove().exec(done);
+    MessageStat.remove().exec(done);
   });
 
-  it('new ThreadStat should have specific fields', function () {
-    var threadStat = new ThreadStat({
-      thread: thread._id,
+  it('new MessageStat should have specific fields', function () {
+    var messageStat = new MessageStat({
       firstMessageUserFrom: user0._id,
       firstMessageUserTo: user1._id,
       firstMessageCreated: message.created,
       firstMessageLength: message.content.length
     });
 
-    threadStat.should.have.property('_id');
-    threadStat.should.have.property('thread');
-    threadStat.should.have.property('firstMessageUserFrom');
-    threadStat.should.have.property('firstMessageUserTo');
-    threadStat.should.have.property('firstMessageCreated');
-    threadStat.should.have.property('firstMessageLength');
-    threadStat.should.have.property('firstReplyCreated', null);
-    threadStat.should.have.property('firstReplyLength', null);
-    threadStat.should.have.property('firstReplyTime', null);
+    messageStat.should.have.property('_id');
+    messageStat.should.have.property('firstMessageUserFrom');
+    messageStat.should.have.property('firstMessageUserTo');
+    messageStat.should.have.property('firstMessageCreated');
+    messageStat.should.have.property('firstMessageLength');
+    messageStat.should.have.property('firstReplyCreated', null);
+    messageStat.should.have.property('firstReplyLength', null);
+    messageStat.should.have.property('timeToFirstReply', null);
   });
   // the expected fields:
-  // thread: id of the thread the messages belong to
   // firstMessageUserFrom: id of the first sender
   // firstMessageUserTo: id of the first receiver
   // firstMessageCreated: Date
   // firstMessageLength: number
   // firstReplyCreated: Date
   // firstReplyLength: number
-  // firstReplyTime: number
+  // timeToFirstReply: number
   // // messageCount: number (not now)
   it('should save without problems', function (done) {
-    var threadStat = new ThreadStat({
-      thread: thread._id,
+    var messageStat = new MessageStat({
       firstMessageUserFrom: user0._id,
       firstMessageUserTo: user1._id,
       firstMessageCreated: message.created,
       firstMessageLength: message.content.length
     });
 
-    threadStat.save(function (err) {
+    messageStat.save(function (err) {
       should.not.exist(err);
       return done();
     });

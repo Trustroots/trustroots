@@ -7,14 +7,9 @@ var mongoose = require('mongoose'),
     Schema = mongoose.Schema;
 
 /**
- * ThreadStat Schema
+ * MessageStat Schema
  */
-var ThreadStatSchema = new Schema({
-  thread: {
-    type: Schema.ObjectId,
-    ref: 'Thread',
-    unique: true
-  },
+var MessageStatSchema = new Schema({
   firstMessageUserFrom: {
     type: Schema.ObjectId,
     ref: 'User'
@@ -38,10 +33,10 @@ var ThreadStatSchema = new Schema({
     default: null
   },
   // how long did it take the receiver of the first message to reply to it
-  firstReplyTime: {
+  timeToFirstReply: {
     type: Number,
     default: null
   }
 });
 
-mongoose.model('ThreadStat', ThreadStatSchema);
+mongoose.model('MessageStat', MessageStatSchema);
