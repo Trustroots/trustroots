@@ -17,7 +17,7 @@ var initiator,
     initiatorMessage,
     receiverMessage;
 
-describe('MessageStat Creation & Updating Test', function () {
+describe.only('MessageStat Creation & Updating Test', function () {
   beforeEach(function () {
     // create means create without saving to database, unless explicit
     // create the initiator (User)
