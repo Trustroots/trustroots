@@ -21,7 +21,8 @@ exports.sendMessagesUnread = function(userFrom, userTo, notification, callback) 
 
   // URLs to use at email templates
   var urlUserFromProfile = url + '/profile/' + userFrom.username,
-      urlReply = url + '/messages/' + userFrom.username;
+      urlReply = url + '/messages/' + userFrom.username,
+      campaign = 'messages-unread';
 
   // Variables passed to email text/html templates
   var params = exports.addEmailBaseTemplateParams({
@@ -37,17 +38,18 @@ exports.sendMessagesUnread = function(userFrom, userTo, notification, callback) 
     urlReply: analyticsHandler.appendUTMParams(urlReply, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: 'messages-unread',
+      campaign: campaign,
       content: 'reply-to'
     }),
     urlUserFromProfilePlainText: urlUserFromProfile,
     urlUserFromProfile: analyticsHandler.appendUTMParams(urlUserFromProfile, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: 'messages-unread',
+      campaign: campaign,
       content: 'profile'
     }),
-    utmCampaign: 'messages-unread'
+    utmCampaign: campaign,
+    sparkpostCampaign: campaign
   });
 
   exports.renderEmailAndSend('messages-unread', params, callback);
@@ -55,7 +57,8 @@ exports.sendMessagesUnread = function(userFrom, userTo, notification, callback) 
 
 exports.sendConfirmContact = function(user, friend, contact, messageHTML, messageText, callback) {
   var meURL = url + '/profile/' + user.username,
-      urlConfirm = url + '/contact-confirm/' + contact._id;
+      urlConfirm = url + '/contact-confirm/' + contact._id,
+      campaign = 'confirm-contact';
 
   var params = exports.addEmailBaseTemplateParams({
     subject: 'Confirm contact',
@@ -68,34 +71,38 @@ exports.sendConfirmContact = function(user, friend, contact, messageHTML, messag
     meURL: analyticsHandler.appendUTMParams(meURL, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: 'confirm-contact',
+      campaign: campaign,
       content: 'profile'
     }),
     urlConfirmPlainText: urlConfirm,
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: 'confirm-contact',
+      campaign: campaign,
       content: 'confirm-contact'
     }),
-    utmCampaign: 'confirm-contact'
+    utmCampaign: campaign,
+    sparkpostCampaign: campaign
   });
 
   exports.renderEmailAndSend('confirm-contact', params, callback);
 };
 
 exports.sendResetPassword = function(user, callback) {
-  var urlConfirm = url + '/api/auth/reset/' + user.resetPasswordToken;
+  var urlConfirm = url + '/api/auth/reset/' + user.resetPasswordToken,
+      campaign = 'reset-password';
+
   var params = exports.addEmailBaseTemplateParams({
     subject: 'Password Reset',
     name: user.displayName,
     email: user.email,
-    utmCampaign: 'reset-password',
+    utmCampaign: campaign,
+    sparkpostCampaign: campaign,
     urlConfirmPlainText: urlConfirm,
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: 'reset-password'
+      campaign: campaign
     })
   });
   exports.renderEmailAndSend('reset-password', params, callback);
@@ -103,18 +110,20 @@ exports.sendResetPassword = function(user, callback) {
 
 exports.sendResetPasswordConfirm = function(user, callback) {
 
-  var urlResetPassword = url + '/password/forgot';
+  var urlResetPassword = url + '/password/forgot',
+      campaign = 'reset-password-confirm';
 
   var params = exports.addEmailBaseTemplateParams({
     subject: 'Your password has been changed',
     name: user.displayName,
     email: user.email,
-    utmCampaign: 'reset-password-confirm',
+    utmCampaign: campaign,
+    sparkpostCampaign: campaign,
     urlResetPasswordPlainText: urlResetPassword,
     urlResetPassword: analyticsHandler.appendUTMParams(urlResetPassword, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: 'reset-password-confirm'
+      campaign: campaign
     })
   });
   exports.renderEmailAndSend('reset-password-confirm', params, callback);
@@ -123,7 +132,7 @@ exports.sendResetPasswordConfirm = function(user, callback) {
 exports.sendChangeEmailConfirmation = function(user, callback) {
 
   var urlConfirm = url + '/confirm-email/' + user.emailToken,
-      utmCampaign = 'confirm-email';
+      campaign = 'confirm-email';
 
   var params = exports.addEmailBaseTemplateParams({
     subject: 'Confirm email change',
@@ -133,9 +142,10 @@ exports.sendChangeEmailConfirmation = function(user, callback) {
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: utmCampaign
+      campaign: campaign
     }),
-    utmCampaign: utmCampaign
+    utmCampaign: campaign,
+    sparkpostCampaign: campaign
   });
 
   exports.renderEmailAndSend('email-confirmation', params, callback);
@@ -144,7 +154,7 @@ exports.sendChangeEmailConfirmation = function(user, callback) {
 exports.sendSignupEmailConfirmation = function(user, callback) {
 
   var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup',
-      utmCampaign = 'confirm-email';
+      campaign = 'confirm-email';
 
   var params = exports.addEmailBaseTemplateParams({
     subject: 'Confirm Email',
@@ -154,9 +164,10 @@ exports.sendSignupEmailConfirmation = function(user, callback) {
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: utmCampaign
+      campaign: campaign
     }),
-    utmCampaign: utmCampaign
+    utmCampaign: campaign,
+    sparkpostCampaign: campaign
   });
 
   exports.renderEmailAndSend('signup', params, callback);
@@ -171,7 +182,8 @@ exports.sendSupportRequest = function(replyTo, supportRequest, callback) {
     replyTo: replyTo,
     subject: 'Support request',
     request: supportRequest,
-    skipHtmlTemplate: true // Don't render html template for this email
+    skipHtmlTemplate: true, // Don't render html template for this email
+    sparkpostCampaign: 'support-request'
   };
 
   exports.renderEmailAndSend('support-request', params, callback);
@@ -180,7 +192,7 @@ exports.sendSupportRequest = function(replyTo, supportRequest, callback) {
 exports.sendSignupEmailReminder = function(user, callback) {
 
   var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup',
-      utmCampaign = 'signup-reminder';
+      campaign = 'signup-reminder';
 
   var params = exports.addEmailBaseTemplateParams({
     subject: 'Complete your signup to Trustroots',
@@ -190,9 +202,10 @@ exports.sendSignupEmailReminder = function(user, callback) {
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: utmCampaign
+      campaign: campaign
     }),
-    utmCampaign: utmCampaign
+    utmCampaign: campaign,
+    sparkpostCampaign: campaign
   });
 
   exports.renderEmailAndSend('signup-reminder', params, callback);
@@ -200,11 +213,11 @@ exports.sendSignupEmailReminder = function(user, callback) {
 
 exports.sendReactivateHosts = function(user, callback) {
   var urlOffer = url + '/offer',
-      utmCampaign = 'reactivate-hosts',
+      campaign = 'reactivate-hosts',
       utmParams = {
         source: 'transactional-email',
         medium: 'email',
-        campaign: utmCampaign
+        campaign: campaign
       };
 
   var params = exports.addEmailBaseTemplateParams({
@@ -216,7 +229,8 @@ exports.sendReactivateHosts = function(user, callback) {
     urlOffer: analyticsHandler.appendUTMParams(urlOffer, utmParams),
     urlSurveyPlainText: config.surveyReactivateHosts || false,
     urlSurvey: config.surveyReactivateHosts ? analyticsHandler.appendUTMParams(config.surveyReactivateHosts, utmParams) : false,
-    utmCampaign: utmCampaign
+    utmCampaign: campaign,
+    sparkpostCampaign: campaign
   });
 
   exports.renderEmailAndSend('reactivate-hosts', params, callback);
@@ -300,10 +314,20 @@ exports.renderEmail = function(templateName, params, callback) {
       text: result.text
     };
     if (result.html) {
+      // Inline CSS with Juice
       email.html = juice(result.html);
     }
     if (params.replyTo) {
       email.replyTo = params.replyTo;
+    }
+    // Add SparkPost `campaign_id` to headers if available
+    // @link https://developers.sparkpost.com/api/smtp-api.html
+    if (params.sparkpostCampaign) {
+      email.headers = {
+        'X-MSYS-API': {
+          'campaign_id': params.sparkpostCampaign
+        }
+      };
     }
     callback(null, email);
   });
