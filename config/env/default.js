@@ -8,6 +8,8 @@
  * - default.js
  * - {development|production|test}.js
  * - local.js
+ *
+ * NOTE: Configs are deeply merged (like lodash's `_.merge()`).
  */
 
 module.exports = {
