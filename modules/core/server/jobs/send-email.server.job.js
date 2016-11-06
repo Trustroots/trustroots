@@ -4,7 +4,7 @@ var _ = require('lodash'),
     nodemailer = require('nodemailer'),
     path = require('path'),
     config = require(path.resolve('./config/config')),
-    log = require(path.resolve('./config/lib/logger')).log;
+    log = require(path.resolve('./config/lib/logger'));
 
 module.exports = function(job, done) {
   var smtpTransport = nodemailer.createTransport(config.mailer.options);
