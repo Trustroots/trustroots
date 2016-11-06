@@ -31,7 +31,7 @@ if (papertrailConfig.host && papertrailConfig.port) {
 // Log that the logger has been instantiated
 winston.log('info', 'Logger started #a5fKSK');
 // Add a console.log() to help debugging logger issues
-console.log('Logger just started #SQrUgw');
+// console.log('Logger just started #SQrUgw');
 
 // We export `winston.log` so we can use `logger('info', ...)` etc
 module.exports = winston.log;
