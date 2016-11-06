@@ -18,7 +18,7 @@ var papertrailConfig = _.get(config, 'log.papertrail');
 // Add the `logFormat()` function to the papertrail config
 papertrailConfig.logFormat = function(level, message) {
   return level + ': ' + message;
-}
+};
 
 // If there we have a host and port for papertrail, then configure it
 if (papertrailConfig.host && papertrailConfig.port) {
