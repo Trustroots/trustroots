@@ -13,19 +13,24 @@ module.exports = function(job, done) {
   var jobId = _.get(job, '_id');
 
   // Log that we're sending an email
-  log('debug', 'Starting `send email` job #wGcxmQ', { jobId });
+  log('debug', 'Starting `send email` job #wGcxmQ', { jobId: jobId });
 
   smtpTransport.sendMail(job.attrs.data, function(err) {
     smtpTransport.close(); // close the connection pool
 
     if (err) {
       // Log the failure to send the message
-      log('error', 'The `send email` job failed #VDKMbr', { jobId, err });
+      log('error', 'The `send email` job failed #VDKMbr', {
+        jobId: jobId,
+        error: err
+      });
 
       return done(err);
     } else {
       // Log the successful delivery of the message
-      log('info', 'Successfully finished `send email` job #4vO5Vt', { jobId });
+      log('info', 'Successfully finished `send email` job #4vO5Vt', {
+        jobId: jobId
+      });
 
       return done();
     }
