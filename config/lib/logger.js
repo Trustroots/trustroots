@@ -17,11 +17,10 @@ var papertrailConfig = _.get(config, 'log.papertrail');
 
 // If there we have a host and port for papertrail, then configure it
 if (papertrailConfig.host && papertrailConfig.port) {
-  // Instantiate the papertrail transport
-  var winstonPapertrail = new winston.transports.Papertrail(papertrailConfig);
-
-  // Add the papertrail transport to winston
-  winston.add(winstonPapertrail);
+  // Add and instantiate the papertrail transport
+  winston.add(winston.transports.Papertrail, papertrailConfig);
+  // NOTE: We don't instantiate the papertrail transport, the call to `.add()`
+  // does that on its own.
 }
 
 // Log that the logger has been instantiated
