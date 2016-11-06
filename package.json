@@ -116,6 +116,9 @@
     "speakingurl": "~10.0.0",
     "swig": "~1.4.2",
     "validator": "~6.1.0",
+    "winston": "~2.3.0",
+    "winston-papertrail": "~1.0.3",
+    "winston": "~2.3.0",
     "yargs": "~6.3.0"
   },
   "devDependencies": {
