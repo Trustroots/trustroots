@@ -24,5 +24,8 @@ if (papertrailConfig.host && papertrailConfig.port) {
   winston.add(winstonPapertrail);
 }
 
+// Log that the logger has been instantiated
+winston.log('info', 'Logger started #a5fKSK')
+
 // We export winston directly
 module.exports = winston;
