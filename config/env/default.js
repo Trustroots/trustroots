@@ -127,7 +127,7 @@ module.exports = {
       port: process.env.WINSTON_PORT || false,
       level: 'debug',
       program: 'production',
-      inlineMeta: true,
-    },
-  },
+      inlineMeta: true
+    }
+  }
 };
