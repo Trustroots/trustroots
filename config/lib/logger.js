@@ -7,10 +7,11 @@
 var path = require('path'),
     _ = require('lodash'),
     winston = require('winston'),
-    // Requiring `winston-papertrail` will expose
-    // `winston.transports.Papertrail`
-    paperTrail = require('winston-papertrail').Papertrail,
     config = require(path.resolve('./config/config'));
+
+// Requiring `winston-papertrail` will expose
+// `winston.transports.Papertrail`
+require('winston-papertrail').Papertrail;
 
 var papertrailConfig = _.get(config, 'log.papertrail');
 
