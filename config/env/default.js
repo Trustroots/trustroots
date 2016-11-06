@@ -119,5 +119,15 @@ module.exports = {
   googleAnalytics: {
     enabled: process.env.GA_ENABLED || false,
     code: process.env.GA_CODE || ''
-  }
+  },
+  log: {
+    papertrail: {
+      // If host & port are false, papertrail is disabled
+      host: process.env.WINSTON_HOST || false,
+      port: process.env.WINSTON_PORT || false,
+      level: 'debug',
+      program: 'production',
+      inlineMeta: true,
+    },
+  },
 };
