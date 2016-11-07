@@ -49,7 +49,8 @@ exports.updateMessageStat = function (message, callback) {
 
   async.waterfall([
 
-    // Get the MessageStat
+    // Get the MessageStat, we assume that only one MessageStat ever exists for
+    // each pair of users.
     function (done) {
       MessageStat.findOne({
         $or: [
@@ -67,19 +68,24 @@ exports.updateMessageStat = function (message, callback) {
       });
     },
 
+    // After searching for the MessageStat, next we take one of three actions:
+    // - No MessageStat found, create a new one with the first message
+    // - MessageStat found, no reply found, update the reply
+    // - Both first and reply found, do nothing, move on
     function (messageStat, done) {
       // If the MessageStat does already exist:
       if (!!messageStat) {
-        // Does it have a timeToFirstReply?
+        // Does this MessageStat have a first reply?
         if (!!messageStat.timeToFirstReply) {
           // Yes: Nothing to do, move on
           return done(null, 'other');
         } else {
-          // No:
+          // No, so the MessageStat exists, but doesn't have a first reply, so
+          // add the first reply now.
           findMessagesUpdateMessageStat(messageStat, done);
         }
       } else {
-        // If it does not exist:
+        // No MessageStat was found, let's create a new one
         findMessagesCreateMessageStat(done);
       }
     }
@@ -94,7 +100,7 @@ exports.updateMessageStat = function (message, callback) {
    */
   function findMessagesCreateMessageStat(cb) {
     async.waterfall([
-      // Find the first message
+      // Find the first message between these two users
       function (done) {
         Message.findOne({
           $or: [
@@ -108,13 +114,15 @@ exports.updateMessageStat = function (message, callback) {
             }
           ]
         })
+        // Sort by the `created` field and limit to 1 to find the first message
+        // sent or received between these two users
         .limit({ created: 1 })
         .exec(function (err, firstMessage) {
           return done(err, firstMessage);
         });
       },
 
-      // Create the MessageStat
+      // Create the MessageStat filling only the first message part
       function (firstMessage, done) {
         if (firstMessage) {
           return createMessageStat(firstMessage, done);
@@ -124,6 +132,9 @@ exports.updateMessageStat = function (message, callback) {
       },
 
       // Then do the same the search for firstReply from above
+      // We do this because we can't be sure that this process has been run on
+      // the first message between two users, so we check here if there is
+      // already a reply to fill in the missing data if it exists.
       function (messageStat, done) {
         findMessagesUpdateMessageStat(messageStat, done);
       },
@@ -147,10 +158,13 @@ exports.updateMessageStat = function (message, callback) {
     async.waterfall([
       function (done) {
         // Scan the list of messages to see if we find a firstReply
+        // We do that by searching for the first message that was from the
+        // recipient and to the sender, that will be the first reply.
         Message.findOne({
           userFrom: messageStat.firstMessageUserTo,
           userTo: messageStat.firstMessageUserFrom
         })
+        // Sort by `created` and limit to 1 to get the first reply by time
         .limit({ created: 1 })
         .exec(function (err, firstReply) {
           return done(err, firstReply);
