@@ -187,13 +187,22 @@ describe('Job: message unread', function() {
           messageUnreadJobHandler({}, function(err) {
             if (err) return done(err);
 
+            // Agenda sets jobs in random order, figure out order here
+            var user3Order = 1;
+            var userFromOrder = 0;
+            if (jobs[0].data.subject === _user3.displayName + ' wrote you from Trustroots') {
+              user3Order = 0;
+              userFromOrder = 1;
+            }
+
             jobs.length.should.equal(2);
-            jobs[0].data.subject.should.equal(_user3.displayName + ' wrote you from Trustroots');
-            jobs[1].data.subject.should.equal(_userFrom.displayName + ' wrote you from Trustroots');
-            jobs[0].data.to.address.should.equal(_userTo.email);
-            jobs[1].data.to.address.should.equal(_userTo.email);
+            jobs[user3Order].data.subject.should.equal(_user3.displayName + ' wrote you from Trustroots');
+            jobs[userFromOrder].data.subject.should.equal(_userFrom.displayName + ' wrote you from Trustroots');
+            jobs[user3Order].data.to.address.should.equal(_userTo.email);
+            jobs[userFromOrder].data.to.address.should.equal(_userTo.email);
             Message.find({}, function(err, messages) {
               if (err) return done(err);
+              messages.length.should.equal(2);
               messages[0].notified.should.equal(true);
               messages[1].notified.should.equal(true);
               done();
