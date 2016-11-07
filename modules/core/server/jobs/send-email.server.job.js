@@ -10,7 +10,7 @@ module.exports = function(job, done) {
   var smtpTransport = nodemailer.createTransport(config.mailer.options);
 
   // The agenda docs don't show the shape of `job` so we're guessing here...
-  var jobId = _.get(job, '_id');
+  var jobId = _.get(job, 'attrs._id');
 
   // Log that we're sending an email
   log('debug', 'Starting `send email` job #wGcxmQ', { jobId: jobId });

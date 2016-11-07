@@ -86,7 +86,8 @@ gulp.task('loadConfig', function(done) {
 gulp.task('nodemon', function(done) {
   return plugins.nodemon({
     script: 'server.js',
-    nodeArgs: ['--debug'],
+    // Default port is `5858`
+    nodeArgs: ['--debug=5858'],
     ext: 'js html',
     ignore: _.union(
       testAssets.tests.server,
@@ -109,7 +110,9 @@ gulp.task('nodemon', function(done) {
 gulp.task('nodemon:worker', function(done) {
   return plugins.nodemon({
     script: 'worker.js',
-    // nodeArgs: ['--debug'],
+    // Default port is `5858`, but because `nodemon` task is already using it
+    // we are defining different port for debugging here.
+    nodeArgs: ['--debug=5859'],
     ext: 'js',
     ignore: _.union(
       testAssets.tests.server,
