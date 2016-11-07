@@ -5,12 +5,15 @@
  */
 var _ = require('lodash'),
     path = require('path'),
-    messageToInfluxService = require(path.resolve('./modules/messages/server/services/message-to-influx.server.service')),
     async = require('async'),
     sanitizeHtml = require('sanitize-html'),
     paginate = require('express-paginate'),
     mongoose = require('mongoose'),
     config = require(path.resolve('./config/config')),
+    messageToInfluxService = require(path.resolve(
+      './modules/messages/server/services/message-to-influx.server.service')),
+    messageStatService = require(path.resolve(
+      './modules/messages/server/services/message-stat.server.service')),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
@@ -288,6 +291,16 @@ exports.send = function(req, res) {
     // are sent, what type of messages, etc.
     function (message, done) {
       messageToInfluxService.save(message, function () {
+        // do nothing
+      });
+
+      return done(null, message);
+    },
+
+    // Here we create or update the related MessageStat document in mongodb
+    // It serves to count the user's reply rate and reply time
+    function (message, done) {
+      messageStatService.updateMessageStat(message, function () {
         // do nothing
       });
 
