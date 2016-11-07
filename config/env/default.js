@@ -9,7 +9,7 @@
  * - {development|production|test}.js
  * - local.js
  *
- * NOTE: Configs are deeply merged (like lodash's `_.merge()`).
+ * NOTE: Configs are shallow copied (like `_.extend()`), not deeply copied.
  */
 
 module.exports = {
