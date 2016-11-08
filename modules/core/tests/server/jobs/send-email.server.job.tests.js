@@ -20,6 +20,7 @@ describe('job: send email', function() {
   it('will send an email', function(done) {
     var job = {
       attrs: {
+        // eslint-disable-next-line new-cap
         _id: mongoose.Types.ObjectId(),
         data: {
           to: {
