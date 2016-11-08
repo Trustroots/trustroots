@@ -3,8 +3,7 @@
 /**
  * Module dependencies.
  */
-var // should = require('should'),
-    mongoose = require('mongoose'),
+var mongoose = require('mongoose'),
     path = require('path'),
     request = require('supertest'),
     express = require(path.resolve('./config/lib/express'));
@@ -15,32 +14,39 @@ var // should = require('should'),
 var app,
     agent;
 
-describe('Testing exposing environment as a variable to layout', function () {
+describe('Configuration Tests:', function () {
 
-  ['development', 'production', 'test'].forEach(function(env) {
-    it('should expose environment set to ' + env, function (done) {
-      // Set env to development for this test
-      process.env.NODE_ENV = env;
+  describe('Testing exposing environment as a variable to layout', function () {
 
-      // Get application
-      app = express.init(mongoose);
-      agent = request.agent(app);
+    ['development', 'production', 'test'].forEach(function(env) {
+      it('should expose environment set to ' + env, function (done) {
+        // Set env to development for this test
+        process.env.NODE_ENV = env;
 
-      // Get rendered layout
-      agent.get('/')
-        .expect('Content-Type', 'text/html; charset=utf-8')
-        .expect(200)
-        .end(function (err, res) {
-          // Set env back to test
-          process.env.NODE_ENV = 'test';
-          // Handle errors
-          if (err) {
-            return done(err);
-          }
-          res.text.should.containEql('env = "' + env + '"');
-          return done();
-        });
+        // Get application
+        app = express.init(mongoose);
+        agent = request.agent(app);
+
+        // Get rendered layout
+        agent.get('/')
+          .expect('Content-Type', 'text/html; charset=utf-8')
+          .expect(200)
+          .end(function (err, res) {
+            // Handle errors
+            if (err) {
+              return done(err);
+            }
+            res.text.should.containEql('env = "' + env + '"');
+            return done();
+          });
+      });
     });
+
+    afterEach(function () {
+      // Set env back to test
+      process.env.NODE_ENV = 'test';
+    });
+
   });
 
 });
