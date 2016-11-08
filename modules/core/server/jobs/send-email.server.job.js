@@ -9,8 +9,9 @@ var _ = require('lodash'),
 module.exports = function(job, done) {
   var smtpTransport = nodemailer.createTransport(config.mailer.options);
 
-  // The agenda docs don't show the shape of `job` so we're guessing here...
-  var jobId = _.get(job, 'attrs._id');
+  // Get job id from Agenda job attributes
+  // Agenda stores Mongo `ObjectId` so turning that into a string here
+  var jobId = _.get(job, 'attrs._id').toString();
 
   // Log that we're sending an email
   log('debug', 'Starting `send email` job #wGcxmQ', { jobId: jobId });
