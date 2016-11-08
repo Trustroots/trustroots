@@ -1,6 +1,7 @@
 'use strict';
 
 var path = require('path'),
+    mongoose = require('mongoose'),
     testutils = require(path.resolve('./testutils'));
 
 /**
@@ -19,6 +20,7 @@ describe('job: send email', function() {
   it('will send an email', function(done) {
     var job = {
       attrs: {
+        _id: mongoose.Types.ObjectId(),
         data: {
           to: {
             name: 'foo',
