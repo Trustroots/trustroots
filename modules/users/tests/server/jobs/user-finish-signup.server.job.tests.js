@@ -98,6 +98,10 @@ describe('Job: user finish signup', function() {
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
       jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
+      ['html', 'text'].forEach(function(format) {
+        jobs[0].data[format].should.containEql('This is a reminder 1/3, after which we will stop sending you emails.');
+        jobs[0].data[format].should.containEql('4 hours ago');
+      });
 
       User.findOne({ email: _unConfirmedUser.email }, function(err, user) {
         if (err) return done(err);
@@ -121,6 +125,10 @@ describe('Job: user finish signup', function() {
         jobs[0].type.should.equal('send email');
         jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
         jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
+        ['html', 'text'].forEach(function(format) {
+          jobs[0].data[format].should.containEql('This is a reminder 2/3, after which we will stop sending you emails.');
+          jobs[0].data[format].should.containEql('4 hours ago');
+        });
 
         User.findOne({ email: _unConfirmedUser.email }, function(err, user) {
           if (err) return done(err);
@@ -143,8 +151,12 @@ describe('Job: user finish signup', function() {
 
         jobs.length.should.equal(1);
         jobs[0].type.should.equal('send email');
-        jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
+        jobs[0].data.subject.should.equal('Last change to complete your signup to Trustroots!');
         jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
+        ['html', 'text'].forEach(function(format) {
+          jobs[0].data[format].should.containEql('This is our last reminder, after which we will stop sending you emails.');
+          jobs[0].data[format].should.containEql('4 hours ago');
+        });
 
         User.findOne({ email: _unConfirmedUser.email }, function(err, user) {
           if (err) return done(err);
@@ -153,6 +165,21 @@ describe('Job: user finish signup', function() {
           done();
         });
 
+      });
+    });
+  });
+
+  it('Reminder emails should tell how long ago user signed up.', function(done) {
+    unConfirmedUser.created = moment().subtract(moment.duration({ 'days': 8 }));
+    unConfirmedUser.save(function(err) {
+      if (err) return done(err);
+      userFinishSignupJobHandler({}, function(err) {
+        if (err) return done(err);
+
+        ['html', 'text'].forEach(function(format) {
+          jobs[0].data[format].should.containEql('8 days ago');
+        });
+        done();
       });
     });
   });
