@@ -157,7 +157,7 @@ exports.oauthCallback = function(strategy) {
           return res.redirect('/signin');
         }
 
-        return res.redirect(redirectURL || '/profile/' + user.username + '/edit');
+        return res.redirect(redirectURL || '/profile/edit/networks');
       });
     })(req, res, next);
   };
@@ -187,7 +187,7 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
 
       // And save the user
       user.save(function(err) {
-        return done(err, user, '/profile/' + user.username);
+        return done(err, user, '/profile/edit/networks');
       });
     } else {
       return done(new Error('You are already connected using this network.'), user);
