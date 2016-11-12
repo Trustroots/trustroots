@@ -63,12 +63,7 @@
               <a href="https://twitter.com/share" class="twitter-share-button" data-text="Join to meet, host and get hosted by Trustroots Tribe {{::tribeCtrl.tribe.label}}." data-via="trustroots">Tweet</a>
               <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if (!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
             </span>
-            <span class="tribe-share" ng-if="tribeCtrl.tribe.label && app.user.additionalProvidersData.facebook">
-              <span id="fb_share"></span>
-              <script>
-                document.getElementById('fb_share').innerHTML = '<iframe src="https://www.facebook.com/plugins/share_button.php?href=' + encodeURIComponent(location.href) + '&layout=button&mobile_iframe=true&appId=' + (window.facebookAppId || '') + '&width=58&height=20" width="58" height="20" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true"></iframe>';
-              </script>
-            </span>
+            <div ng-if="tribeCtrl.tribe.label" tr-share-fb></div>
           </div>
 
           <!-- For non authenticated members -->

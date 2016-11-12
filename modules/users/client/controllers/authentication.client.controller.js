@@ -6,7 +6,7 @@
     .controller('AuthenticationController', AuthenticationController);
 
   /* @ngInject */
-  function AuthenticationController($scope, $rootScope, $http, $state, $stateParams, $analytics, Authentication, messageCenterService) {
+  function AuthenticationController($scope, $rootScope, $http, $state, $stateParams, $analytics, Authentication, messageCenterService, Facebook) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) $state.go('search.map');
@@ -41,6 +41,9 @@
             category: 'authentication',
             label: 'Login success'
           });
+
+          // Initialize FB SDK
+          Facebook.init();
 
           // Redirect to where we were left off before sign-in page
           // See modules/core/client/controllers/main.client.controller.js
