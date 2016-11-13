@@ -186,3 +186,117 @@ exports.updateMessageStat = function (message, callback) {
     ], cb);
   }
 };
+
+/**
+ * provided userId and the timestamp to which we count the statistics,
+ * the function will return reply rate and reply time of the user
+ * { replyRate, replyTime }
+ *
+ * @param {object} userId - id of the user (mongoose ObjectId)
+ * @param {number} timeNow - timestamp to which we count the statistics
+ *
+ * @TODO finish this JSDoc
+ */
+exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
+  var DAY = 24 * 3600 * 1000;
+
+  async.waterfall([
+    /**
+     * Get the data from the database
+     * get all MessageStat documents between timeNow and timeNow - 90 days
+     */
+    function (done) {
+      MessageStat.find({
+        firstMessageUserTo: userId,
+        firstMessageCreated: {
+          $lte: new Date(timeNow),
+          $gt: new Date(timeNow - 90 * DAY)
+        }
+      })
+      .sort({ firstMessageCreated: -1 })
+      .exec(function (err, resp) {
+        return done(err, resp);
+      });
+    },
+
+    /**
+     * Count the statistics
+     */
+    function (messageStats, done) {
+
+      /**
+       * Choose the MessageStats to use (as described above)
+       * if we have less than 10 stats in last 90 days since timeNow,
+       *    use all of them
+       * if we have less than 10 stats in last 30 days but more in last 90 days,
+       *    use last 10 stats
+       * if we have more than 30 messages in last 30 days,
+       *    use all from last 30 days
+       */
+      var chosenStats = (function (messageStats) {
+        // less than 10 in 90 days
+        if (messageStats.length < 10) {
+          return messageStats;
+
+        // 10th youngest messageStat is older than 30 days
+        } else if (messageStats[9].firstMessageCreated.getTime() < timeNow - 30 * DAY) {
+          return messageStats.splice(0, 10);
+
+        // otherwise we use all the messageStats within 30 days
+        } else {
+          return messageStats.filter(function (stat) {
+            return stat.firstMessageCreated.getTime() >= timeNow - 30 * DAY;
+          });
+        }
+      }(messageStats));
+
+      /* count the numbers for statistics
+       * if we have no messageStats
+       *    both replyRate and replyTime are null
+       * if we have no replies
+       *    replyRate is 0 and replyTime is null
+       * otherwise
+       *    replyRate is replied stats/all stats
+       *    replyTime is average (mean) reply time of replied stats [milliseconds]
+       */
+      var stats = (function (chosenStats) {
+
+        var repliedCount = 0, // amount of replies
+            allCount = chosenStats.length, // amount of first messages received
+            replyTimeCumulated = 0; // sum of the timeToFirstReply
+
+        // Collect the data from chosenStats
+        for (var i = 0, len = chosenStats.length; i < len; ++i) {
+          var stat = chosenStats[i];
+          if (typeof(stat.timeToFirstReply) === 'number') {
+            ++repliedCount;
+            replyTimeCumulated += stat.timeToFirstReply;
+          }
+        }
+
+        var replyRate,
+            replyTime;
+
+        if (allCount === 0) {
+          replyRate = null;
+          replyTime = null;
+        } else if (repliedCount === 0) {
+          replyRate = 0;
+          replyTime = null;
+        } else {
+          replyRate = repliedCount / allCount;
+          replyTime = replyTimeCumulated / repliedCount;
+        }
+
+        return { replyRate: replyRate, replyTime: replyTime };
+
+      }(chosenStats));
+
+      return done(null, stats);
+    }
+
+  ], function (err, stats) {
+    if (err) return callback(err);
+    callback(null, stats);
+  });
+};

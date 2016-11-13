@@ -16,10 +16,12 @@ var MessageStatSchema = new Schema({
   },
   firstMessageUserTo: {
     type: Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    index: true
   },
   firstMessageCreated: {
-    type: Date
+    type: Date,
+    index: true
   },
   firstMessageLength: {
     type: Number
