@@ -6,6 +6,7 @@
 var path = require('path'),
     async = require('async'),
     juice = require('juice'),
+    moment = require('moment'),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     render = require(path.resolve('./config/lib/render')),
     agenda = require(path.resolve('./config/lib/agenda')),
@@ -194,6 +195,11 @@ exports.sendSignupEmailReminder = function(user, callback) {
   var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup',
       campaign = 'signup-reminder';
 
+  // This email is a reminder number `n` to this user
+  // Set to `1` (first) if the field doesn't exist yet
+  // `publicReminderCount` contains number of reminders already sent to user
+  var reminderCount = user.publicReminderCount ? user.publicReminderCount + 1 : 1;
+
   var params = exports.addEmailBaseTemplateParams({
     subject: 'Complete your signup to Trustroots',
     name: user.displayName,
@@ -205,8 +211,16 @@ exports.sendSignupEmailReminder = function(user, callback) {
       campaign: campaign
     }),
     utmCampaign: campaign,
-    sparkpostCampaign: campaign
+    sparkpostCampaign: campaign,
+    reminderCount: reminderCount, // This email is a reminder number `n` to this user
+    reminderCountMax: config.limits.maxSignupReminders, // Max n of reminders system sends
+    timeAgo: moment(user.created).fromNow() // A string, e.g. `3 days ago`
   });
+
+  // This will be the last reminder, mention that at the email subject line
+  if ((user.publicReminderCount + 1) === config.limits.maxSignupReminders) {
+    params.subject = 'Last change to complete your signup to Trustroots!';
+  }
 
   exports.renderEmailAndSend('signup-reminder', params, callback);
 };

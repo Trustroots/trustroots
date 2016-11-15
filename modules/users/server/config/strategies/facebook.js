@@ -3,16 +3,26 @@
 /**
  * Module dependencies.
  */
-var passport = require('passport'),
+var _ = require('lodash'),
+    passport = require('passport'),
     FacebookStrategy = require('passport-facebook').Strategy,
     users = require('../../controllers/users.server.controller');
 
 module.exports = function(config) {
   // Use facebook strategy
+  var clientID = _.get(config, 'facebook.clientID');
+  var clientSecret = _.get(config, 'facebook.clientSecret');
+  var callbackURL = _.get(config, 'facebook.callbackURL');
+
+  // Don't configure Facebook strategy if missing configuration
+  if (!clientID || !clientSecret || !callbackURL) {
+    return;
+  }
+
   passport.use(new FacebookStrategy({
-    clientID: config.facebook.clientID,
-    clientSecret: config.facebook.clientSecret,
-    callbackURL: config.facebook.callbackURL,
+    clientID: clientID,
+    clientSecret: clientSecret,
+    callbackURL: callbackURL,
     profileFields: ['id', 'name', 'displayName', 'emails', 'photos'],
     passReqToCallback: true,
     enableProof: false
@@ -28,7 +38,7 @@ module.exports = function(config) {
       firstName: profile.name.givenName,
       lastName: profile.name.familyName,
       displayName: profile.displayName,
-      email: profile.emails[0].value,
+      email: profile.emails && profile.emails.length ? profile.emails[0].value : '',
       provider: 'facebook',
       providerIdentifierField: 'id',
       providerData: providerData

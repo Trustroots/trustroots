@@ -31,10 +31,16 @@ module.exports = function(app) {
   app.route('/api/auth/signout').get(users.signout);
 
   // Setting the facebook oauth routes
+  // See permissions:
+  // https://developers.facebook.com/docs/facebook-login/permissions
   app.route('/api/auth/facebook').all(usersPolicy.isAllowed)
     .get(passport.authenticate('facebook', {
-      scope: ['email']
-    }));
+      scope: [
+        'email',
+        'user_friends'
+      ]
+    }))
+    .put(users.updateFacebookOAuthToken);
   app.route('/api/auth/facebook/callback').all(usersPolicy.isAllowed)
     .get(users.oauthCallback('facebook'));
 

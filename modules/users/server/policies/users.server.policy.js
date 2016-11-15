@@ -66,7 +66,7 @@ exports.invokeRolesPolicies = function() {
       permissions: ['get']
     }, {
       resources: '/api/auth/facebook',
-      permissions: ['get']
+      permissions: ['get', 'put']
     }, {
       resources: '/api/auth/facebook/callback',
       permissions: ['get']
@@ -91,6 +91,7 @@ exports.isAllowed = function(req, res, next) {
 
   // Non-public profiles are invisible
   if (req.profile && !req.profile.public && req.user && !req.profile._id.equals(req.user._id)) {
+    console.log('Non-public profiles are invisible');
     return res.status(404).json({
       message: errorHandler.getErrorMessageByKey('not-found')
     });
@@ -98,6 +99,7 @@ exports.isAllowed = function(req, res, next) {
 
   // No profile browsing for non-public users
   if (req.profile && req.user && !req.user.public && !req.profile._id.equals(req.user._id)) {
+    console.log('No profile browsing for non-public users');
     return res.status(403).json({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
@@ -116,6 +118,7 @@ exports.isAllowed = function(req, res, next) {
         // Access granted! Invoke next middleware
         return next();
       } else {
+        console.log('->policy 403');
         return res.status(403).json({
           message: errorHandler.getErrorMessageByKey('forbidden')
         });
