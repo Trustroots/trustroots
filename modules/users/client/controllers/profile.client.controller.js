@@ -6,7 +6,7 @@
     .controller('ProfileController', ProfileController);
 
   /* @ngInject */
-  function ProfileController($scope, $stateParams, $state, $uibModal, $filter, Authentication, $timeout, profile, contact) {
+  function ProfileController($scope, $stateParams, $state, $uibModal, $filter, Authentication, $timeout, profile, contact, contacts) {
 
     // No user defined at URL, just redirect to user's own profile
     if (!$stateParams.username) {
@@ -17,6 +17,7 @@
     var vm = this;
     vm.profile = profile;
     vm.contact = contact;
+    vm.contacts = contacts;
 
     // Tags & Tribes
     // These are filled at with `initMemberships()` at `action()`
