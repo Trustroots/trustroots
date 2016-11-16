@@ -3,7 +3,12 @@
   'use strict';
 
   /**
-   * FB Share button for current URL
+   * FB share button for current URL
+   *
+   * Usage:
+   * ```
+   * <div tr-share-facebook></div>
+   * ```
    */
   angular
     .module('core')
@@ -40,6 +45,7 @@
 
       /**
        * Activate directive
+       * https://developers.facebook.com/docs/plugins/share-button
        */
       function activate() {
 
