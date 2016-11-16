@@ -127,6 +127,16 @@
                 });
               }
             });
+          },
+
+          // Contacts list is loaded only after profile is loaded, because we need the profile ID
+          contacts: function(ContactsListService, profile) {
+            return profile.$promise.then(function(profile) {
+              // Load contact
+              return ContactsListService.query({
+                listUserId: profile._id
+              });
+            });
           }
 
         },

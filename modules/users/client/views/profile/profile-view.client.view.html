@@ -32,7 +32,12 @@
       <li ui-sref-active="active"><a ui-sref="profile.overview">Overview</a></li>
       <li ui-sref-active="active"><a ui-sref="profile.about">About</a></li>
       <li ui-sref-active="active"><a ui-sref="profile.accommodation">Hosting</a></li>
-      <li ui-sref-active="active"><a ui-sref="profile.contacts">Contacts</a></li>
+      <li ui-sref-active="active" ng-if="profileCtrl.contacts.length">
+        <a ui-sref="profile.contacts">
+          Contacts
+          <span class="badge" ng-bind="profileCtrl.contacts.length"></span>
+        </a>
+      </li>
     </ul>
   </div>
 </nav>
@@ -125,7 +130,12 @@
             <div class="profile-tabs hidden-xs">
               <ul class="nav panel panel-default nav-pills nav-narrow nav-underline">
                 <li ui-sref-active="active"><a ui-sref="profile.about">About</a></li>
-                <li ui-sref-active="active"><a ui-sref="profile.contacts">Contacts</a></li>
+                <li ui-sref-active="active" ng-if="profileCtrl.contacts.length">
+                  <a ui-sref="profile.contacts">
+                    Contacts
+                    <span class="badge" ng-bind="profileCtrl.contacts.length"></span>
+                  </a>
+                </li>
               </ul>
             </div>
             <div ui-view></div>
