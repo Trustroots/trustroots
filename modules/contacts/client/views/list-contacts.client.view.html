@@ -12,16 +12,16 @@
       <h4 class="text-muted">
 
         <!-- Confirmed contacts -->
-        <span ng-if="(ContactsList.contacts | filter:{confirmed:true}).length === 1">
+        <span ng-if="(ContactsList.contacts | filter:{ confirmed: true }).length === 1">
           One contact
         </span>
-        <span ng-if="(ContactsList.contacts | filter:{confirmed:true}).length > 1">
-          {{ (ContactsList.contacts | filter:{confirmed:true}).length }} contacts
+        <span ng-if="(ContactsList.contacts | filter:{ confirmed: true }).length > 1">
+          {{ (ContactsList.contacts | filter:{ confirmed: true }).length }} contacts
         </span>
 
         <!-- Pending contacts -->
-        <small ng-if="(ContactsList.contacts | filter:{confirmed:false}).length > 0">
-          (additional {{ (ContactsList.contacts | filter:{confirmed:false}).length }} pending)
+        <small ng-if="(ContactsList.contacts | filter:{ confirmed: false }).length > 0">
+          (additional {{ (ContactsList.contacts | filter:{ confirmed: false }).length }} pending)
         </small>
 
       </h4>
@@ -34,33 +34,15 @@
     </div>
   </div>
 
+  <!-- Produce two rows, one for confirmed contacts and another for un-confirmed contacts -->
   <div class="row" ng-repeat="isConfirmed in [false, true]" ng-if="(ContactsList.contacts | filter:{confirmed:isConfirmed}).length">
     <div class="col-xs-12 col-sm-6"
          ng-repeat="contact in ContactsList.contacts | filter:ContactsList.searchText track by contact._id"
          ng-if="contact.confirmed === isConfirmed">
-      <div class="contacts-contact panel panel-default">
-        <div tr-avatar data-user="ContactsList.otherContact(profileCtrl.profile._id, contact)" data-size="128"></div>
-        <h4><a ui-sref="profile.about({username: ContactsList.otherContact(profileCtrl.profile._id, contact, 'username')})" ng-bind="ContactsList.otherContact(profileCtrl.profile._id, contact, 'displayName')"></a></h4>
-        <small class="text-muted">
-          <span ng-if="contact.confirmed !== undefined && contact.confirmed === true">Since</span>
-          <span ng-if="contact.confirmed !== undefined && contact.confirmed === false">Requested</span>
-          <time ng-bind="contact.created | date:'mediumDate'"></time>
-        </small>
-
-        <!-- Authenticated user requested -->
-        <div class="contact-confirm" ng-if="contact.confirmed !== undefined && contact.confirmed === false && contact.users[1]._id === app.user._id">
-          <small class="text-warning"><em>Contact request sent and pending.</em></small>
-          <a class="btn btn-xs btn-primary" tr-contact-remove="contact">Revoke Request</a>
-        </div>
-
-        <!-- Authenticated user is being asked -->
-        <div class="contact-confirm" ng-if="contact.confirmed !== undefined && contact.confirmed === false && contact.users[0]._id === app.user._id">
-          <small><em>You received a contact request.</em></small>
-          <a class="btn btn-xs btn-primary" ui-sref="contactConfirm({contactId: contact._id})">Confirm Request</a>
-          <a class="btn btn-xs btn-warn" tr-contact-remove="contact">Delete Request</a>
-        </div>
-
-      </div>
+      <div class="contacts-contact panel panel-default"
+           tr-contact-avatar-size="128"
+           tr-contact-profile-id="::profileCtrl.profile._id"
+           tr-contact="::contact"></div>
     </div>
   </div>
 
