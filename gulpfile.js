@@ -55,14 +55,13 @@ gulp.task('env:prod', function() {
 
 // Make sure local config file exists
 gulp.task('copyConfig', function(done) {
-  if (!fs.existsSync('config/env/local.js') ) {
+  if (!fs.existsSync('config/env/local.js')) {
     gulp
       .src('config/env/local.sample.js')
       .pipe(plugins.rename('local.js'))
       .pipe(gulp.dest('config/env/'));
-      done();
-  }
-  else {
+    done();
+  } else {
     done();
   }
 });
@@ -83,7 +82,7 @@ gulp.task('loadConfig', function(done) {
 });
 
 // Nodemon task
-gulp.task('nodemon', function(done) {
+gulp.task('nodemon', function() {
   return plugins.nodemon({
     script: 'server.js',
     // Default port is `5858`
@@ -107,7 +106,7 @@ gulp.task('nodemon', function(done) {
 });
 
 // Nodemon task
-gulp.task('nodemon:worker', function(done) {
+gulp.task('nodemon:worker', function() {
   return plugins.nodemon({
     script: 'worker.js',
     // Default port is `5858`, but because `nodemon` task is already using it
@@ -140,6 +139,7 @@ gulp.task('watch', function() {
   // Add watch rules
   gulp.watch(defaultAssets.server.views).on('change', plugins.refresh.changed);
   gulp.watch(defaultAssets.server.allJS, ['lint']).on('change', plugins.refresh.changed);
+  gulp.watch(defaultAssets.server.migrations, ['lint']).on('change', plugins.refresh.changed);
   gulp.watch(defaultAssets.server.fontelloConfig, ['fontello']);
   gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
 
@@ -160,7 +160,7 @@ gulp.task('watch:server:run-tests', function () {
   plugins.refresh.listen();
 
   // Add Server Test file rules
-  gulp.watch([testAssets.tests.server, defaultAssets.server.allJS], ['test:server:no-lint']).on('change', function (file) {
+  gulp.watch([testAssets.tests.server, defaultAssets.server.allJS, defaultAssets.server.migrations], ['test:server:no-lint']).on('change', function (file) {
     changedTestFiles = [];
 
     // iterate through server test glob patterns
@@ -182,7 +182,7 @@ gulp.task('watch:server:run-tests', function () {
 // ESLint JS linting task
 gulp.task('eslint', function() {
   var assets = _.union(
-    defaultAssets.server.gulpConfig,
+    [defaultAssets.server.gulpConfig, defaultAssets.server.migrations],
     defaultAssets.server.allJS,
     defaultAssets.client.js,
     testAssets.tests.server,
@@ -213,7 +213,7 @@ gulp.task('eslint-angular', function() {
 // JavaScript task
 gulp.task('scripts', ['loadConfig', 'templatecache', 'uibTemplatecache'], function() {
   var scriptFiles = _.union(assets.client.lib.js, assets.client.js);
-  return gulp.src( scriptFiles )
+  return gulp.src(scriptFiles)
     .pipe(plugins.ngAnnotate())
     .pipe(plugins.uglify({
       mangle: false
@@ -235,7 +235,6 @@ gulp.task('clean:css', function() {
 // CSS styles task
 gulp.task('styles', function() {
 
-  // In production mode:
   if (process.env.NODE_ENV === 'production') {
 
     var cssStream = gulp.src(defaultAssets.client.lib.css)
@@ -246,15 +245,16 @@ gulp.task('styles', function() {
         .pipe(plugins.less());
 
     // Combine CSS and LESS streams into one minified css file
+    // eslint-disable-next-line new-cap
     return MergeStream(lessStream, cssStream)
       .pipe(plugins.concat('application.css'))
       .pipe(plugins.autoprefixer())
-    	.pipe(plugins.csso())
-    	.pipe(plugins.rename({ suffix: '.min' }))
+      .pipe(plugins.csso())
+      .pipe(plugins.rename({ suffix: '.min' }))
       .pipe(gulp.dest('public/dist'));
-  }
-  // In development mode:
-  else {
+  } else {
+    // In non-production `NODE_ENV`
+
     // More verbose `less` errors
     var lessProcessor = plugins.less();
     lessProcessor.on('error', function(err) {
@@ -265,7 +265,7 @@ gulp.task('styles', function() {
       .pipe(plugins.concat('less-files.less'))
       .pipe(lessProcessor)
       .pipe(plugins.autoprefixer())
-    	.pipe(plugins.rename({ basename: 'application', extname: '.css' }))
+      .pipe(plugins.rename({ basename: 'application', extname: '.css' }))
       .pipe(gulp.dest('public/dist'))
       .pipe(plugins.refresh());
   }
@@ -292,8 +292,8 @@ gulp.task('uibTemplatecache', function() {
         templateFooter: '} })();'
       }));
 
-      // Combine with previouly processed templates
-      uibModulesStreams.add(moduleStream);
+    // Combine with previouly processed templates
+    uibModulesStreams.add(moduleStream);
   });
 
   // Output all tempaltes to one file
@@ -310,7 +310,7 @@ gulp.task('templatecache', function() {
     .pipe(plugins.templateCache('templates.js', {
       root: '/modules/',
       transformUrl: function(url) {
-	      return url.replace('/client', '');
+        return url.replace('/client', '');
       },
       module: 'core',
       templateHeader: '(function() { \'use strict\'; angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
@@ -321,12 +321,12 @@ gulp.task('templatecache', function() {
 });
 
 // Generate font icon files from Fontello.com
-gulp.task('fontello', function(done) {
+gulp.task('fontello', function() {
   return gulp.src(defaultAssets.server.fontelloConfig)
-    .pipe(plugins.fontello( {
-      font:       'font', // Destination dir for Fonts and Glyphs
-      css:        'css',  // Destination dir for CSS Styles,
-      assetsOnly: true    // extract from ZipFile only CSS Styles and Fonts exclude config.json, LICENSE.txt, README.txt and demo.html
+    .pipe(plugins.fontello({
+      font: 'font',     // Destination dir for Fonts and Glyphs
+      css: 'css',       // Destination dir for CSS Styles,
+      assetsOnly: true  // extract from ZipFile only CSS Styles and Fonts exclude config.json, LICENSE.txt, README.txt and demo.html
     }))
     .pipe(plugins.print())
     .pipe(gulp.dest('modules/core/client/fonts/fontello'))
