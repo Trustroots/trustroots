@@ -31,7 +31,8 @@
     "test:client:watch": "gulp test:client:watch",
     "test:server": "gulp test:server",
     "test:server:watch": "gulp test:server:watch",
-    "migrate": "migrate",
+    "migrate": "migrate up",
+    "migrate-down": "migrate down",
     "update": "npm install --quiet && npm prune && migrate",
     "postinstall": "bower install --allow-root && bower prune --allow-root",
     "agendash": "./scripts/agendash-dev"
