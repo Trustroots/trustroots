@@ -28,6 +28,9 @@ exports.invokeRolesPolicies = function() {
     }, {
       resources: '/api/contacts/:listUserId',
       permissions: ['get']
+    }, {
+      resources: '/api/contacts/:listUserId/common',
+      permissions: ['get']
     }]
   }, {
     roles: ['user'],
@@ -42,6 +45,9 @@ exports.invokeRolesPolicies = function() {
       permissions: ['get', 'put']
     }, {
       resources: '/api/contacts/:listUserId',
+      permissions: ['get']
+    }, {
+      resources: '/api/contacts/:listUserId/common',
       permissions: ['get']
     }]
   }]);

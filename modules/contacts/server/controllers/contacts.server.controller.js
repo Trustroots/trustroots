@@ -4,7 +4,8 @@
  * Module dependencies.
  */
 
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
@@ -280,6 +281,94 @@ exports.contactById = function(req, res, next, contactId) {
   } else {
     next();
   }
+};
+
+
+/**
+ * Contact list middleware for filtering only common contacts
+ * Takes already formed contact list and drops out contacts which aren't
+ * on currently authenticated user's contact list
+ */
+exports.filterByCommon = function(req, res, next) {
+
+  // No contacts to match, just continue
+  if (!req.contacts.length) {
+    return next();
+  }
+
+  // Get currently authenticated user's contact list
+  Contact.find({
+    $or: [
+      { userFrom: req.user._id },
+      { userTo: req.user._id }
+    ],
+    // Include only confirmed contacts
+    confirmed: true
+  }, {
+    // By default, the `_id` field is included in the results.
+    // Leave it out.
+    _id: 0,
+    // Return only `userFrom` & `userTo` fields
+    userFrom: 1,
+    userTo: 1,
+    test: '$userTo'
+  })
+  /*
+[ { _id: 582b39afdc026f1144750726,
+    __v: 0,
+    userFrom: 56fe9df12861d31fd6963ff7,
+    userTo: 544b7832f1bf94f007de9fe0,
+    confirmed: true,
+    created: 2016-11-15T16:37:03.559Z },
+  { _id: 582b3a4adc026f1144750727,
+    __v: 0,
+    userFrom: 5821afcf999c80c8b2a8b065,
+    userTo: 56fe9df12861d31fd6963ff7,
+    confirmed: true,
+    created: 2016-11-15T16:39:38.431Z } ]
+  */
+  // `distinct` returns chosen fields as an array
+  // .distinct('userFrom', function(err, authUserContacts) {
+  .exec(function(err, authUserContacts) {
+    if (err) {
+      return next(err);
+    }
+
+    // No contacts to match, just return empty array
+    if (!authUserContacts || !authUserContacts.length) {
+      req.contacts = [];
+      return next();
+    }
+
+    // Remodel authenticated user's contact list to array of user ids
+    var authUserContactUsers = [];
+    _.map(authUserContacts, function(contact) {
+      // Pick user id which isn't authenticated user themself
+      var userId = contact.userFrom.equals(req.user._id.valueOf()) ? contact.userTo : contact.userFrom;
+
+      // Ensure we have a list of string id's instead of Mongo ObjectId's
+      // Otherwise checking against this list fails using `indexOf()`
+      authUserContactUsers.push(userId.toString());
+    });
+
+    // Ensure we have a list of string id's instead of Mongo ObjectId's
+    // Otherwise checking if we have certain id in this list using `indexOf`
+    // becomes difficult.
+    // authUserContactUsers = _.map(authUserContactUsers, _.toString);
+
+    // We have both contact lists, do the matching
+    // @link https://lodash.com/docs/#filter
+    req.contacts = _.filter(req.contacts, function(contact) {
+
+      // Check if `contact.user._id` is also on list of authenticated user's
+      // contacts list. Returning truthy will let it trough to `req.contacts`,
+      // returning falsy will hold it back.
+      return authUserContactUsers.indexOf(contact.user._id.toString()) > -1;
+    });
+
+    next();
+  });
+
 };
 
 /**

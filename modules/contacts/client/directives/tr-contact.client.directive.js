@@ -24,7 +24,8 @@
       scope: {
         contact: '=trContact',
         profileId: '=trContactProfileId',
-        avatarSize: '@trContactAvatarSize'
+        avatarSize: '@trContactAvatarSize',
+        hideMeta: '=trContactHideMeta'
       },
       controller: trContactController,
       controllerAs: 'contactCtrl'
@@ -41,6 +42,9 @@
       vm.profileId = $scope.profileId;
       vm.avatarSize = $scope.avatarSize || 128;
       vm.user = Authentication.user;
+
+      // Hides meta info such as "connected since"
+      vm.hideMeta = $scope.hideMeta || false;
 
     }
   }

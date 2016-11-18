@@ -185,8 +185,8 @@ describe('Contact CRUD tests', function() {
       });
   });
 
-  it('should not be able to read contact list if not logged in', function(done) {
-    agent.get('/api/contacts/' + user2Id)
+  it('should not be able to read common contacts list if not logged in', function(done) {
+    agent.get('/api/contacts/' + user2Id + '/common')
       .expect(403)
       .end(function(contactSaveErr, contactSaveRes) {
 
@@ -346,6 +346,44 @@ describe('Contact CRUD tests', function() {
           contactsGetRes.body[connectionB].user.username.should.equal(user3.username);
           contactsGetRes.body[connectionB].userFrom.should.equal(user1Id.toString());
           contactsGetRes.body[connectionB].userTo.should.equal(user3Id.toString());
+
+          // Call the assertion callback
+          return done();
+        });
+    });
+
+    it('should be able to read my own common contacts list', function(done) {
+      // Get contacts from the authenticated user
+      agent.get('/api/contacts/' + user1Id + '/common')
+        .expect(200)
+        .end(function(contactsGetErr, contactsGetRes) {
+          // Handle contact get error
+          if (contactsGetErr) return done(contactsGetErr);
+
+          // Set assertions
+          contactsGetRes.body.length.should.equal(1);
+          contactsGetRes.body[0].userFrom.should.equal(user1Id.toString());
+          contactsGetRes.body[0].userTo.should.equal(user3Id.toString());
+          contactsGetRes.body[0].user._id.should.equal(user3Id.toString());
+
+          // Call the assertion callback
+          return done();
+        });
+    });
+
+    it('should be able to read common contacts list', function(done) {
+      // Get contacts from the other user
+      agent.get('/api/contacts/' + user2Id + '/common')
+        .expect(200)
+        .end(function(contactsGetErr, contactsGetRes) {
+          // Handle contact get error
+          if (contactsGetErr) return done(contactsGetErr);
+
+          // Set assertions
+          contactsGetRes.body.length.should.equal(1);
+          contactsGetRes.body[0].userFrom.should.equal(user2Id.toString());
+          contactsGetRes.body[0].userTo.should.equal(user3Id.toString());
+          contactsGetRes.body[0].user._id.should.equal(user3Id.toString());
 
           // Call the assertion callback
           return done();

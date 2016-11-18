@@ -7,7 +7,7 @@
     <a ui-sref="profile.about({username: contactCtrl.contact.user.username})"
        ng-bind="::contactCtrl.contact.user.displayName"></a>
   </h4>
-  <small class="text-muted">
+  <small class="text-muted" ng-if="::!contactCtrl.hideMeta">
     <span ng-if="::contactCtrl.contact.confirmed === true">Since</span>
     <span ng-if="::contactCtrl.contact.confirmed === false">Requested</span>
     <time ng-bind="::contactCtrl.contact.created | date:'mediumDate'"></time>
