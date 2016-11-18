@@ -55,7 +55,8 @@ describe('Contact Model Unit Tests:', function() {
 
         // Create connection between users
         contact = new Contact({
-          users: [user1Id, user2Id],
+          userFrom: user1Id,
+          userTo: user2Id,
           created: new Date(),
           confirmed: true
         });
@@ -77,8 +78,17 @@ describe('Contact Model Unit Tests:', function() {
       });
     });
 
-    it('should be able to show an error when try to save without users', function(done) {
-      contact.users = '';
+    it('should be able to show an error when try to save without `userFrom`', function(done) {
+      contact.userFrom = '';
+
+      contact.save(function(err) {
+        should.exist(err);
+        return done();
+      });
+    });
+
+    it('should be able to show an error when try to save without `userTo`', function(done) {
+      contact.userTo = '';
 
       contact.save(function(err) {
         should.exist(err);

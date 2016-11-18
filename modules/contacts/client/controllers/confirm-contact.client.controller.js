@@ -29,8 +29,8 @@
         if (vm.contact.confirmed === true) {
           vm.isConnected = true;
           vm.success = 'You two are already connected. Great!';
-        } else if (vm.contact.users[0]._id !== Authentication.user._id) { // [0] contains contact requester's id, [1] is the receiver
-          vm.error = 'You must wait until he/she confirms your connection.';
+        } else if (vm.contact.userTo._id !== Authentication.user._id) {
+          vm.error = 'You must wait until they confirm your connection.';
         }
       },
       // Error getting contact
@@ -49,7 +49,7 @@
         vm.success = 'You two are now connected!';
       }, function(errorResponse) {
         vm.isLoading = false;
-        vm.error = errorResponse.data.message;
+        vm.error = errorResponse.data.message || 'Something went wrong. Try again.';
       });
     }
 

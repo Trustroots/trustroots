@@ -32,7 +32,7 @@
       <li ui-sref-active="active"><a ui-sref="profile.overview">Overview</a></li>
       <li ui-sref-active="active"><a ui-sref="profile.about">About</a></li>
       <li ui-sref-active="active"><a ui-sref="profile.accommodation">Hosting</a></li>
-      <li ui-sref-active="active" ng-if="profileCtrl.contacts.length">
+      <li ui-sref-active="active" ng-if="profileCtrl.contacts.length || profileCtrl.profile._id === app.user._id">
         <a ui-sref="profile.contacts">
           Contacts
           <span class="badge" ng-bind="profileCtrl.contacts.length"></span>
@@ -68,7 +68,7 @@
   <div ng-if="profileCtrl.profile.username && profileCtrl.profile.$resolved">
 
     <!-- Confirm contact -->
-    <div class="row" ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id && !profileCtrl.contact.confirmed && profileCtrl.contact.users[0]._id === app.user._id">
+    <div class="row" ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id && !profileCtrl.contact.confirmed && profileCtrl.contact.userTo._id === app.user._id">
       <div class="col-xs-12 text-center">
         <ul class="list-inline">
           <li><strong>{{ ::profileCtrl.profile.displayName }}</strong> sent you a contact request</li>
@@ -130,7 +130,7 @@
             <div class="profile-tabs hidden-xs">
               <ul class="nav panel panel-default nav-pills nav-narrow nav-underline">
                 <li ui-sref-active="active"><a ui-sref="profile.about">About</a></li>
-                <li ui-sref-active="active" ng-if="profileCtrl.contacts.length">
+                <li ui-sref-active="active" ng-if="profileCtrl.contacts.length || profileCtrl.profile._id === app.user._id">
                   <a ui-sref="profile.contacts">
                     Contacts
                     <span class="badge" ng-bind="profileCtrl.contacts.length"></span>

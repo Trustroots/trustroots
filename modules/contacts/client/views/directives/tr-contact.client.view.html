@@ -1,33 +1,35 @@
 <div>
+
   <div tr-avatar
-       data-user="contactCtrl.otherContact(contactCtrl.profileId, contact)"
+       data-user="::contactCtrl.contact.user"
        data-size="{{::contactCtrl.avatarSize}}"></div>
   <h4>
-    <a ui-sref="profile.about({username: contactCtrl.otherContact(contactCtrl.profileId, contact, 'username')})"
-       ng-bind="::contactCtrl.otherContact(contactCtrl.profileId, contact, 'displayName')"></a>
+    <a ui-sref="profile.about({username: contactCtrl.contact.user.username})"
+       ng-bind="::contactCtrl.contact.user.displayName"></a>
   </h4>
   <small class="text-muted">
-    <span ng-if="::contactCtrl.contact.confirmed !== undefined && contactCtrl.contact.confirmed === true">Since</span>
-    <span ng-if="::contactCtrl.contact.confirmed !== undefined && contactCtrl.contact.confirmed === false">Requested</span>
+    <span ng-if="::contactCtrl.contact.confirmed === true">Since</span>
+    <span ng-if="::contactCtrl.contact.confirmed === false">Requested</span>
     <time ng-bind="::contactCtrl.contact.created | date:'mediumDate'"></time>
   </small>
 
-  <!-- Authenticated user requested -->
+  <!-- Authenticated user requested this connection -->
   <div class="contact-confirm"
-       ng-if="::contactCtrl.contact.confirmed !== undefined && contactCtrl.contact.confirmed === false && contactCtrl.contact.users[1]._id === app.user._id">
+       ng-if="::contactCtrl.contact.confirmed === false && contactCtrl.contact.userFrom === contactCtrl.user._id">
     <small class="text-warning"><em>Contact request sent and pending.</em></small>
     <a class="btn btn-xs btn-primary" tr-contact-remove="::contact">Revoke Request</a>
   </div>
 
-  <!-- Authenticated user is being asked -->
+  <!-- Authenticated user received this request -->
   <div class="contact-confirm"
-       ng-if="::contactCtrl.contact.confirmed !== undefined && contactCtrl.contact.confirmed === false && contactCtrl.contact.users[0]._id === app.user._id">
+       ng-if="::contactCtrl.contact.confirmed === false && contactCtrl.contact.userTo === contactCtrl.user._id">
     <small><em>You received a contact request.</em></small>
-    <a class="btn btn-xs btn-primary" ui-sref="contactConfirm({contactId: contactCtrl.contact._id})">
+    <a class="btn btn-xs btn-primary" ui-sref="contactConfirm({ contactId: contactCtrl.contact._id })">
       Confirm Request
     </a>
     <a class="btn btn-xs btn-warn" tr-contact-remove="contact">
       Delete Request
     </a>
   </div>
+
 </div>
