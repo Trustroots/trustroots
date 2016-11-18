@@ -3,7 +3,7 @@
 var path = require('path'),
     should = require('should'),
     async = require('async'),
-    messageStatController = require(path.resolve(
+    messageStatService = require(path.resolve(
       './modules/messages/server/services/message-stat.server.service')),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
@@ -16,6 +16,28 @@ var initiator,
     firstReply,
     initiatorMessage,
     receiverMessage;
+
+describe('Convert Message Statistics to human readable form', function () {
+  it('should convert null values correctly', function () {
+    var converted = messageStatService.formatStats({
+      replyRate: null,
+      replyTime: null
+    });
+
+    converted.should.have.property('replyRate', '');
+    converted.should.have.property('replyTime', '');
+  });
+
+  it('should convert finite values correctly', function () {
+    var converted = messageStatService.formatStats({
+      replyRate: 0.37631,
+      replyTime: 3600 * 1000 * 3.7
+    });
+
+    converted.should.have.property('replyRate', '38%');
+    converted.should.have.property('replyTime', '4 hours');
+  });
+});
 
 describe('Count Message Statistics of User', function () {
   var NOW = new Date('2002-02-20').getTime(); // an arbitrary date
@@ -110,7 +132,7 @@ describe('Count Message Statistics of User', function () {
   });
 
   it('[< 10 messages in last 90 days] should use 90 days', function (done) {
-    messageStatController.readMessageStatsOfUser(users[0]._id, NOW - 60 * DAY,
+    messageStatService.readMessageStatsOfUser(users[0]._id, NOW - 60 * DAY,
       function (err, stats) {
         if (err) return done(err);
         try {
@@ -124,7 +146,7 @@ describe('Count Message Statistics of User', function () {
   });
 
   it('[< 10 messages in last 30 days && > 10 in 90 d] should use last 10 messages', function (done) {
-    messageStatController.readMessageStatsOfUser(users[0]._id, NOW - 30 * DAY,
+    messageStatService.readMessageStatsOfUser(users[0]._id, NOW - 30 * DAY,
       function (err, stats) {
         // expected statistics values
         // out of last 10 messages, 4 are replied;
@@ -144,7 +166,7 @@ describe('Count Message Statistics of User', function () {
   });
 
   it('[> 10 messages in last 30 days] should use last 30 days', function (done) {
-    messageStatController.readMessageStatsOfUser(users[0]._id, NOW,
+    messageStatService.readMessageStatsOfUser(users[0]._id, NOW,
       function (err, stats) {
         // expected statistics values
         // out of last month 6/12 messages are replied; all within 2 days
@@ -163,7 +185,7 @@ describe('Count Message Statistics of User', function () {
   });
 
   it('[no messages] reply rate and time should be null', function (done) {
-    messageStatController.readMessageStatsOfUser(users[0]._id, NOW - 120 * DAY,
+    messageStatService.readMessageStatsOfUser(users[0]._id, NOW - 120 * DAY,
       function (err, stats) {
         if (err) return done(err);
         try {
@@ -177,7 +199,7 @@ describe('Count Message Statistics of User', function () {
   });
 
   it('[no replied messages] reply rate should be 0 and reply time null', function (done) {
-    messageStatController.readMessageStatsOfUser(users[0]._id, NOW - 90 * DAY,
+    messageStatService.readMessageStatsOfUser(users[0]._id, NOW - 90 * DAY,
       function (err, stats) {
         if (err) return done(err);
         try {
@@ -191,7 +213,7 @@ describe('Count Message Statistics of User', function () {
   });
 
   it('[some replied messages] reply rate and time should be a number', function (done) {
-    messageStatController.readMessageStatsOfUser(users[0]._id, NOW - 30 * DAY,
+    messageStatService.readMessageStatsOfUser(users[0]._id, NOW - 30 * DAY,
       function (err, stats) {
         if (err) return done(err);
         try {
@@ -297,7 +319,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // generate stats for the first message
             function (cb) {
-              messageStatController.updateMessageStat(firstMessage, cb);
+              messageStatService.updateMessageStat(firstMessage, cb);
             },
 
             // check that the response is correct and find the MessageStat
@@ -355,7 +377,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // stats for the first message (preparation)
             function (cb) {
-              messageStatController.updateMessageStat(firstMessage, cb);
+              messageStatService.updateMessageStat(firstMessage, cb);
             },
 
             // save the first reply to database
@@ -368,7 +390,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // stats for the first reply
             function (cb) {
-              messageStatController.updateMessageStat(firstReply, cb);
+              messageStatService.updateMessageStat(firstReply, cb);
             },
 
             function (resp, cb) {
@@ -429,7 +451,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // stats for the first message (preparation)
             function (cb) {
-              messageStatController.updateMessageStat(firstMessage, cb);
+              messageStatService.updateMessageStat(firstMessage, cb);
             },
 
             // save the first message to database
@@ -442,7 +464,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // stats for the second message
             function (cb) {
-              messageStatController.updateMessageStat(initiatorMessage, cb);
+              messageStatService.updateMessageStat(initiatorMessage, cb);
             },
 
             function (resp, cb) {
@@ -499,7 +521,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // create stats for the first message (preparation)
             function (cb) {
-              messageStatController.updateMessageStat(firstMessage, cb);
+              messageStatService.updateMessageStat(firstMessage, cb);
             },
 
             // save the first reply
@@ -512,7 +534,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // update stats for the first reply
             function (cb) {
-              messageStatController.updateMessageStat(firstReply, cb);
+              messageStatService.updateMessageStat(firstReply, cb);
             },
 
             // save another initiator message
@@ -525,7 +547,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // update stats with another initiator's message
             function (cb) {
-              messageStatController.updateMessageStat(initiatorMessage, cb);
+              messageStatService.updateMessageStat(initiatorMessage, cb);
             },
 
             // run tests
@@ -583,7 +605,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // stats for the first message (preparation)
             function (cb) {
-              messageStatController.updateMessageStat(firstMessage, cb);
+              messageStatService.updateMessageStat(firstMessage, cb);
             },
 
             // save the first reply
@@ -596,7 +618,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // stats for the first reply
             function (cb) {
-              messageStatController.updateMessageStat(firstReply, cb);
+              messageStatService.updateMessageStat(firstReply, cb);
             },
 
             // save the further receiver's message
@@ -609,7 +631,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // stats for the further receiver's message
             function (cb) {
-              messageStatController.updateMessageStat(receiverMessage, cb);
+              messageStatService.updateMessageStat(receiverMessage, cb);
             },
 
             function (resp, cb) {
@@ -675,7 +697,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // stats for the further receiver's message
             function (cb) {
-              messageStatController.updateMessageStat(firstReply, cb);
+              messageStatService.updateMessageStat(firstReply, cb);
             },
 
             function (resp, cb) {

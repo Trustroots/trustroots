@@ -2,6 +2,8 @@
 
 var async = require('async'),
     mongoose = require('mongoose'),
+    _ = require('lodash'),
+    moment = require('moment'),
     Message = mongoose.model('Message'),
     MessageStat = mongoose.model('MessageStat');
 
@@ -23,7 +25,8 @@ function createMessageStat(message, done) {
 }
 
 /**
- * update the MessageStat with a first reply information
+ * update the MessageStat document in database with information
+ * about the first reply
  */
 function addFirstReplyInfo (messageStat, message, done) {
   MessageStat.findOneAndUpdate({
@@ -299,4 +302,43 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
     if (err) return callback(err);
     callback(null, stats);
   });
+};
+
+/**
+ * Convert the { replyRate, replyTime } object returned from
+ * exports.readMessageStatsOfUser into a human readable form (strings)
+ * returns { replyRate: '..%', replyTime: '.. (minutes|hours|days|months)' }
+ * synchronous
+ *
+ * @param {Object} stats
+ * @param {number|null} stats.replyRate
+ * @param {number|null} stats.replyTime
+ * @returns {Object}
+ */
+exports.formatStats = function (stats) {
+  var replyRate = (_.isFinite(stats.replyRate))
+    ? Math.round(stats.replyRate * 100) + '%'
+    : '';
+
+  var replyTime = (_.isFinite(stats.replyTime))
+    ? moment.duration(stats.replyTime).humanize()
+    : '';
+
+  return { replyRate: replyRate, replyTime: replyTime };
+};
+
+exports.readFormattedMessageStatsOfUser = function (userId, timeNow, callback) {
+  async.waterfall([
+
+    // read message stats
+    function (done) {
+      exports.readMessageStatsOfUser(userId, timeNow, done);
+    },
+
+    // format message stats (this one is synchronous)
+    function (stats, done) {
+      var formatted = exports.formatStats(stats);
+      return done(null, formatted);
+    }
+  ], callback);
 };
