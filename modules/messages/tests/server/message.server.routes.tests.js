@@ -144,11 +144,11 @@ describe('Message CRUD tests', function() {
                 } else {
 
                   // Set assertions
-                  (thread[0].userFrom._id.toString()).should.equal(userFromId.toString());
-                  (thread[0].userTo._id.toString()).should.equal(userToId.toString());
-                  (thread[0].content).should.equal('Message content');
-                  (thread[0].notified).should.equal(false);
-                  (thread[0].read).should.equal(false);
+                  thread[0].userFrom._id.should.equal(userFromId.toString());
+                  thread[0].userTo._id.should.equal(userToId.toString());
+                  thread[0].content.should.equal('Message content');
+                  thread[0].read.should.equal(false);
+                  should.not.exist(thread[0].notified);
 
                   // Call the assertion callback
                   return done();
@@ -612,11 +612,11 @@ describe('Message CRUD tests', function() {
                 .end(function(messageSaveErr, messageSaveRes) {
 
                   // Set assertions
-                  (messageSaveRes.body.userFrom._id.toString()).should.equal(userFromId.toString());
-                  (messageSaveRes.body.userTo._id.toString()).should.equal(userToId.toString());
+                  messageSaveRes.body.userFrom._id.should.equal(userFromId.toString());
+                  messageSaveRes.body.userTo._id.should.equal(userToId.toString());
                   messageSaveRes.body.content.should.equal('Message content');
-                  messageSaveRes.body.notified.should.equal(false);
                   messageSaveRes.body.read.should.equal(false);
+                  should.not.exist(messageSaveRes.body.notified);
 
                   // Call the assertion callback
                   return done(messageSaveErr);

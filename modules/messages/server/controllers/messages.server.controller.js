@@ -59,7 +59,8 @@ exports.inbox = function(req, res) {
     {
       page: req.query.page || 1,
       limit: req.query.limit || 20,
-      sort: 'field -updated',
+      sort: '-updated',
+      select: '_id message read updated userFrom userTo',
       populate: {
         path: 'userFrom userTo message',
         select: 'content ' + userHandler.userMiniProfileFields
@@ -310,7 +311,10 @@ exports.send = function(req, res) {
     // We'll need some info about related users, populate some fields
     function(message, done) {
       message
-        .populate('userFrom', userHandler.userMiniProfileFields)
+        .populate({
+          path: 'userFrom',
+          select: userHandler.userMiniProfileFields
+        })
         .populate({
           path: 'userTo',
           select: userHandler.userMiniProfileFields
@@ -318,6 +322,12 @@ exports.send = function(req, res) {
           if (err) {
             return done(err);
           }
+
+          // Turn to object to be able to delete fields
+          message = message.toObject();
+
+          // Don't return this field
+          delete message.notified;
 
           // Finally return saved message
           return res.json(message);
@@ -376,7 +386,8 @@ exports.threadByUser = function(req, res, next, userId) {
         {
           page: req.query.page || 1,
           limit: req.query.limit || 20,
-          sort: 'field -created',
+          sort: '-created',
+          select: '_id content created read userFrom userTo',
           populate: {
             path: 'userFrom userTo',
             select: userHandler.userMiniProfileFields
