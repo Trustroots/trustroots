@@ -17,11 +17,13 @@ var ThreadSchema = new Schema({
   },
   userFrom: {
     type: Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    index: true
   },
   userTo: {
     type: Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    index: true
   },
   // This points to the latest message inn this thread
   message: {
@@ -33,6 +35,12 @@ var ThreadSchema = new Schema({
     default: false
   }
 });
+
+// This index is useful when searching Threads by both userFrom and userTo
+// Is probably not necessary thanks to Index Intersection
+// https://docs.mongodb.com/manual/core/index-intersection/#index-intersection-and-compound-indexes
+//
+// ThreadSchema.index({ userFrom: 1, userTo: -1 });
 
 ThreadSchema.plugin(mongoosePaginate);
 
