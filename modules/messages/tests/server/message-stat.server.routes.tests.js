@@ -100,7 +100,7 @@ describe('Display Message Statistics in User Route', function () {
 
   // clean the database after the tests
   after(function (done) {
-    // remove all User, Message, MessageStat
+    // remove all User, MessageStat
     async.parallel([
       function (cb) {
         User.remove().exec(cb);
@@ -136,6 +136,7 @@ describe('Display Message Statistics in User Route', function () {
 
   it('should show replyRate and replyTime in user\'s profile',
     function (done) {
+      // request a random user
       agent.get('/api/users/' + users[5].username)
         .expect(200)
         .end(function (err, resp) {
@@ -155,6 +156,7 @@ describe('Display Message Statistics in User Route', function () {
 
   it('[no messages] replyRate and replyTime should be \'\'',
     function (done) {
+      // user username2 has no MessageStats
       agent.get('/api/users/' + users[2].username)
         .expect(200)
         .end(function (err, resp) {
@@ -174,6 +176,7 @@ describe('Display Message Statistics in User Route', function () {
 
   it('[no replied messages] replyRate should be \'0%\' and replyTime \'\'',
     function (done) {
+      // user username1 has only unreplied MessageStats
       agent.get('/api/users/' + users[1].username)
         .expect(200)
         .end(function (err, resp) {
@@ -193,6 +196,7 @@ describe('Display Message Statistics in User Route', function () {
 
   it('[some replied messages] replyRate and replyTime should be strings with specific values',
     function (done) {
+      // user username0 has both replied and unreplied MessageStats
       agent.get('/api/users/' + users[0].username)
         .expect(200)
         .end(function (err, resp) {
