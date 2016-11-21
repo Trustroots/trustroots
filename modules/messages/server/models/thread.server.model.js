@@ -36,12 +36,6 @@ var ThreadSchema = new Schema({
   }
 });
 
-// This index is useful when searching Threads by both userFrom and userTo
-// Is probably not necessary thanks to Index Intersection
-// https://docs.mongodb.com/manual/core/index-intersection/#index-intersection-and-compound-indexes
-//
-// ThreadSchema.index({ userFrom: 1, userTo: -1 });
-
 ThreadSchema.plugin(mongoosePaginate);
 
 mongoose.model('Thread', ThreadSchema);
