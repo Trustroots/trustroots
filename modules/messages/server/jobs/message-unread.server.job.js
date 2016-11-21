@@ -17,165 +17,155 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+var path = require('path'),
+    log = require(path.resolve('./config/lib/logger')),
+    // emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+    config = require(path.resolve('./config/config')),
     async = require('async'),
     moment = require('moment'),
     mongoose = require('mongoose'),
     Message = mongoose.model('Message'),
-    User = mongoose.model('User');
+    // eslint-disable-next-line no-unused-vars
+    messageModels = require(path.resolve('./modules/messages/server/models/message.server.model'));
+    // User = mongoose.model('User');
 
 module.exports = function(job, agendaDone) {
+  console.log('Agenda unread messages');
   async.waterfall([
 
-    // Aggregate unread messages
+    // Find un-confirmed users
     function(done) {
+      console.log('Agenda unread messages, aggregate:');
 
-      // Ignore very recent messages and look for only older than 10 minutes
+      // Ignore very recently signed up users
+      // Returns date in the past
+      // Configuration object should be something like `{ 'minutes': 10 }`
       // Has to be a JS Date object, not a Moment object
-      var createdTimeAgo = moment().subtract(moment.duration({ 'minutes': 10 })).toDate();
+      // var createdTimeAgo = moment().subtract(moment.duration(config.limits.timeToFirstUnreadMessagesReminder)).toDate();
 
-      Message.aggregate([
-        {
-          $match: {
-            read: false,
-            notified: false,
-            created: { $lt: createdTimeAgo }
-          }
-        },
-        {
-          $group: {
+      // Ignore very recently reminded users
+      // Returns date in the past
+      // Configuration object should be something like `{ 'hours': 24 }`
+      // Has to be a JS Date object, not a Moment object
+      var remindedTimeAgo = moment().subtract(moment.duration(config.limits.timeToNextUnreadMessagesReminder)).toDate();
 
-            // Group separate emails
-            _id: {
-              'userTo': '$userTo',
-              'userFrom': '$userFrom'
+      var query = {
+        $match: {
+          read: false,
+          // created: { $lt: createdTimeAgo },
+          $and: [
+            {
+              // Limits number of reminder emails sent to configured amount
+              // Defaults to two when falsy or zero
+              notificationCount: { $lt: config.limits.maxUnreadMessagesReminders || 2 }
             },
-
-            // Collect unread messages count
-            total: { $sum: 1 },
-
-            // Collect message contents
-            messages: { $push: { id: '$_id', content: '$content' } }
-          }
+            {
+              $or: [
+                { notificationSent: { $lt: remindedTimeAgo } },
+                { notificationSent: { $exists: false } }
+              ]
+            }
+          ]
         }
-      ], function(err, notifications) {
-        done(err, notifications);
-      });
+      };
 
-    },
+      // Just the query
+      Message.aggregate([query], function(err, queryResults) {
 
-    // Fetch userTo and userFrom  email + displayName
-    function(notifications, done) {
+        console.log('queryResults (' + queryResults.length + '):');
+        console.log(queryResults);
+        console.log('');
+        console.log('');
 
-      var userIds = [];
+        // Real thing
+        Message.aggregate([
+          query,
+          {
+            $group: {
 
-      notifications.forEach(function(notification) {
-        // Collect user ids
-        userIds.push(notification._id.userTo, notification._id.userFrom);
-      });
+              // Group separate emails
+              _id: {
+                'userTo': '$userTo',
+                'userFrom': '$userFrom'
+              },
 
-      // Make sure we don't have huge list of dublicate user ids
-      // @link https://lodash.com/docs#uniq
-      userIds = _.uniq(userIds);
+              // Collect unread messages count
+              total: { $sum: 1 },
 
-      // Fetch email + displayName for all users involved
-      // Remember to add these values also userNotFound object (see below)
-      if (userIds.length > 0) {
-        User
-          .find({ '_id': { $in: userIds } }, 'email displayName username')
-          .exec(function(err, users) {
-
-            // Re-organise users into more handy array
-            var usersArr = [];
-            if (users) {
-              users.forEach(function(user) {
-                usersArr[user._id] = user;
-              });
+              // Collect message contents
+              messages: {
+                $push: {
+                  id: '$_id',
+                  content: '$content',
+                  notificationCount: '$notificationCount'
+                }
+              }
             }
-
-            done(err, usersArr, notifications);
-          });
-      } else {
-        done(null, [], notifications);
-      }
-    },
-
-    // Send emails
-    function(users, notifications, done) {
-
-      var notificationsToProcess = notifications.length;
-      var messageIds = [];
-
-      if (notificationsToProcess > 0) {
-
-        // Create a queue worker to send notifications in parallel
-        // Process at most 3 notifications at the same time
-        // @link https://github.com/caolan/async#queueworker-concurrency
-        var notificationsQueue = async.queue(function (notification, notificationCallback) {
-
-          var userTo = (users[notification._id.userTo.toString()]) ? users[notification._id.userTo.toString()] : false,
-              userFrom = (users[notification._id.userFrom.toString()]) ? users[notification._id.userFrom.toString()] : false;
-
-          // Collect message ids for updating documents to `notified:true` later
-          notification.messages.forEach(function(message) {
-            messageIds.push(message.id);
-          });
-
-          // If we don't have info about these users, they've been removed.
-          // Don't send notification mail in such case.
-          // Message will still be marked as notified.
-          if (!userFrom || !userTo) {
-            return notificationCallback(new Error('Could not find all users relevant for this message to notify about.'));
           }
+        ], function(err, notifications) {
+          console.log('notifications (' + notifications.length + '):');
+          console.log(require('util').inspect(notifications, false, null));
+          console.log('');
+          console.log('----------------');
+          console.log('');
+          done(err, notifications);
+        });
 
-          emailService.sendMessagesUnread(userFrom, userTo, notification, notificationCallback);
-
-        }, 5); // How many notifications to process simultaneously?
-
-        // Start processing notifications
-        notificationsQueue.push(notifications);
-
-        // Assign a final callback to work queue
-        // All notification jobs done, continue
-        notificationsQueue.drain = function(err) {
-          if (err) {
-            console.error('Sending message notification mails caused an error:');
-            console.error(err);
-          }
-          done(null, messageIds);
-        };
-      } else {
-        // No users to send emails to
-        done(null, []);
-      }
-
-    },
-
-    // Mark messages notified
-    function(messageIds, done) {
-
-      if (messageIds.length > 0) {
-        Message.update(
-          { _id: { '$in': messageIds } },
-          { $set: { notified: true } },
-          { multi: true },
-          function(err) {
-            if (err) {
-              console.error('Error while marking messages as notified.');
-              console.error(err);
-            }
-            done(err);
-          });
-      } else {
-        done(null);
-      }
+      });
 
     }
+/*
+    // Send emails
+    function(users, done) {
+      // No users to send emails to
+      if (!users.length) {
+        return done();
+      }
 
+      async.eachSeries(users, function(user, callback) {
+
+        emailService.sendSignupEmailReminder(user, function(err) {
+          if (err) {
+            return callback(err);
+          } else {
+            // Mark reminder sent and update the reminder count
+            User.findByIdAndUpdate(
+              user._id,
+              {
+                $set: {
+                  publicReminderSent: new Date()
+                },
+                // If the field does not exist, $inc creates the field
+                // and sets the field to the specified value.
+                $inc: {
+                  publicReminderCount: 1
+                }
+              },
+              function(err) {
+                if (err) {
+                  // Log the failure
+                  log('error', 'Failed to mark user\'s reminder sent. #JLfeo3', {
+                    error: err
+                  });
+                }
+                callback(err);
+              }
+            );
+          }
+        });
+      }, function(err) {
+        done(err);
+      });
+
+    }
+*/
   ], function(err) {
-    // Wrap it up
+    if (err) {
+      // Log the failure
+      log('error', 'Error while sending unread messages. #UJKFyf', {
+        error: err
+      });
+    }
     return agendaDone(err);
   });
 

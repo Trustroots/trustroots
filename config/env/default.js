@@ -62,7 +62,14 @@ module.exports = {
     maxProcessSignupReminders: 50,
     // How long we should wait before trying to reactivate "no" hosts?
     // Moment.js `duration` object literal http://momentjs.com/docs/#/durations/
-    timeToReactivateHosts: { days: 90 }
+    timeToReactivateHosts: { days: 90 },
+    // How many unread messages reminders to send before giving up
+    maxUnreadMessagesReminders: 2,
+    // How long before sending out first notification about unread messages
+    timeToFirstUnreadMessagesReminder: { minutes: 10 },
+    // How long after first notification before sending
+    // out next notification about unread messages
+    timeToNextUnreadMessagesReminder: { hours: 24 }
   },
   mailer: {
     from: process.env.MAILER_FROM || 'hello@trustroots.org',
