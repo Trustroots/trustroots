@@ -86,8 +86,8 @@ exports.updateMessageStat = function (message, callback) {
 
     // After searching for the MessageStat, next we take one of three actions:
     // - No MessageStat found, create a new one with the first message
-    // - MessageStat found, no reply found, update the reply
-    // - Both first and reply found, do nothing, move on
+    // - MessageStat found, no reply information saved, update the reply
+    // - Both first and reply information already saved, do nothing, move on
     function (messageStat, done) {
       // If the MessageStat does already exist:
       if (!!messageStat) {
@@ -302,15 +302,19 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
           }
         }
 
+        // count the replyRate and average replyTime from the chosen stats
         var replyRate,
             replyTime;
 
+        // no message stats
         if (allCount === 0) {
           replyRate = null;
           replyTime = null;
+        // no replied stats
         } else if (repliedCount === 0) {
           replyRate = 0;
           replyTime = null;
+        // some replied stats
         } else {
           replyRate = repliedCount / allCount;
           replyTime = replyTimeCumulated / repliedCount;
@@ -350,10 +354,14 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
  * @returns {Object}
  */
 exports.formatStats = function (stats) {
+
+  // if reply rate is a well-behaved number, we convert the fraction to %
   var replyRate = (_.isFinite(stats.replyRate))
     ? Math.round(stats.replyRate * 100) + '%'
     : '';
 
+  // if replyTime is a well-behaved number, we convert the milliseconds to
+  // a human readable string
   var replyTime = (_.isFinite(stats.replyTime))
     ? moment.duration(stats.replyTime).humanize()
     : '';
