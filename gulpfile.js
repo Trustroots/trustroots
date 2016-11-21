@@ -120,7 +120,7 @@ gulp.task('nodemon:worker', function() {
       ['modules/*/client/**', 'public/**', 'migrations/**', 'scripts/**', 'tmp/**', 'node_modules/**'],
       [defaultAssets.server.fontelloConfig, defaultAssets.server.gulpConfig]
     ),
-    watch: _.union(defaultAssets.server.workerJS, defaultAssets.server.config)
+    watch: _.union(defaultAssets.server.workerJS, defaultAssets.server.allJS, defaultAssets.server.config)
   })
   .on('crash', function () {
     console.error('[Worker] Script crashed.');
