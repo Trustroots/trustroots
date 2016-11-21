@@ -13,16 +13,19 @@ var messageStatSchema = new Schema({
   // The id of the user who wrote the first message of the thread
   firstMessageUserFrom: {
     type: Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    index: true
   },
   // The id of the user who received the first message of the thread
   firstMessageUserTo: {
     type: Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    index: true
   },
   // The Date when the first message was sent
   firstMessageCreated: {
-    type: Date
+    type: Date,
+    index: true
   },
   // The length of the first message
   firstMessageLength: {
@@ -50,14 +53,7 @@ var messageStatSchema = new Schema({
   }
 });
 
-
-// This index helps improve search for all the MessageStat documents when
-// counting the MessageStat in users' profile
-// Because we search stats of specific receiver of last 3 months
-messageStatSchema.index({ firstMessageUserTo: 1, firstMessageCreated: -1 });
-
-// This index helps search for a particular MessageStat document based on
-// the sender and receiver ids
+// ensure uniqueness of a MessageStat document per Thread (only in 1 direction)
 messageStatSchema.index({ firstMessageUserFrom: 1, firstMessageUserTo: -1 },
   { unique: true });
 
