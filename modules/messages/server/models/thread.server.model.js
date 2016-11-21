@@ -17,11 +17,13 @@ var ThreadSchema = new Schema({
   },
   userFrom: {
     type: Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    index: true
   },
   userTo: {
     type: Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    index: true
   },
   // This points to the latest message inn this thread
   message: {
