@@ -10,6 +10,16 @@
   <a tr-avatar data-user="profileCtrl.profile" data-size="256" data-link="false" class="hidden-xs" ng-click="profileCtrl.toggleAvatarModal()"></a>
   <div class="panel-body">
 
+    <!-- Reply Rate -->
+    <div class="profile-sidebar-section text-muted" ng-if="::(profileCtrl.profile.replyRate || profileCtrl.profile.replyTime)">
+      <span ng-if="::profileCtrl.profile.replyRate">
+        Reply rate {{ ::profileCtrl.profile.replyRate }}.
+      </span>
+      <span ng-if="::profileCtrl.profile.replyTime">
+        <br>Replies within {{ ::profileCtrl.profile.replyTime }}.
+      </span>
+    </div>
+
     <div class="profile-sidebar-section" ng-if="profileCtrl.profile.birthdate || profileCtrl.profile.gender">
       <span ng-if="profileCtrl.profile.birthdate" ng-bind="profileCtrl.profile.birthdate | ageyears"></span><span ng-if="profileCtrl.profile.birthdate && profileCtrl.profile.gender">, </span>
       <span ng-if="profileCtrl.profile.gender" ng-class="{ 'text-capitalize': !profileCtrl.profile.birthdate }">{{ profileCtrl.profile.gender }}.</span>

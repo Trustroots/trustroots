@@ -74,7 +74,8 @@ async.waterfall([
 
     // cursor for streaming from mongoDB
     var cursor = Message.find(searchMessagesParam)
-      .sort({ created: 1 }).cursor();
+      // .sort({ created: 1 })
+      .cursor();
 
     // preparation for async.doWhilst function
     //

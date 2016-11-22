@@ -2,6 +2,8 @@
 
 var async = require('async'),
     mongoose = require('mongoose'),
+    _ = require('lodash'),
+    moment = require('moment'),
     Message = mongoose.model('Message'),
     MessageStat = mongoose.model('MessageStat');
 
@@ -23,7 +25,8 @@ function createMessageStat(message, done) {
 }
 
 /**
- * update the MessageStat with a first reply information
+ * update the MessageStat document in database with information
+ * about the first reply
  */
 function addFirstReplyInfo (messageStat, message, done) {
   MessageStat.findOneAndUpdate({
@@ -42,8 +45,21 @@ function addFirstReplyInfo (messageStat, message, done) {
 }
 
 /**
+ * @callback updateStatCb
+ *
+ * @param {Error} err
+ * @param {String} response - ['first', 'firstReply', 'other']
+ *
+ */
+
+/**
  * Provided a Message, this function will create or update the
  * MessageStat belonging to the Message provided
+ *
+ * @param {Object} message
+ * @param {ObjectId} message.userFrom
+ * @param {ObjectId} message.userTo
+ * @param {updateStatCb} callback
  */
 exports.updateMessageStat = function (message, callback) {
 
@@ -70,8 +86,8 @@ exports.updateMessageStat = function (message, callback) {
 
     // After searching for the MessageStat, next we take one of three actions:
     // - No MessageStat found, create a new one with the first message
-    // - MessageStat found, no reply found, update the reply
-    // - Both first and reply found, do nothing, move on
+    // - MessageStat found, no reply information saved, update the reply
+    // - Both first and reply information already saved, do nothing, move on
     function (messageStat, done) {
       // If the MessageStat does already exist:
       if (!!messageStat) {
@@ -100,6 +116,7 @@ exports.updateMessageStat = function (message, callback) {
    */
   function findMessagesCreateMessageStat(cb) {
     async.waterfall([
+
       // Find the first message between these two users
       function (done) {
         Message.findOne({
@@ -114,9 +131,9 @@ exports.updateMessageStat = function (message, callback) {
             }
           ]
         })
-        // Sort by the `created` field and limit to 1 to find the first message
+        // Sort by the `created` field to find the first message
         // sent or received between these two users
-        .limit({ created: 1 })
+        .sort({ created: 1 })
         .exec(function (err, firstMessage) {
           return done(err, firstMessage);
         });
@@ -131,7 +148,7 @@ exports.updateMessageStat = function (message, callback) {
         }
       },
 
-      // Then do the same the search for firstReply from above
+      // Then do the same search for the firstReply from above
       // We do this because we can't be sure that this process has been run on
       // the first message between two users, so we check here if there is
       // already a reply to fill in the missing data if it exists.
@@ -145,7 +162,6 @@ exports.updateMessageStat = function (message, callback) {
         }
         return done(null, response);
       }
-
 
     ], cb);
   }
@@ -164,8 +180,8 @@ exports.updateMessageStat = function (message, callback) {
           userFrom: messageStat.firstMessageUserTo,
           userTo: messageStat.firstMessageUserFrom
         })
-        // Sort by `created` and limit to 1 to get the first reply by time
-        .limit({ created: 1 })
+        // Sort by `created` to get the *first* reply
+        .sort({ created: 1 })
         .exec(function (err, firstReply) {
           return done(err, firstReply);
         });
@@ -185,4 +201,200 @@ exports.updateMessageStat = function (message, callback) {
       }
     ], cb);
   }
+};
+
+/**
+ * @callback readStatsCb
+ *
+ * @param {Error} err
+ * @param {Object} stats
+ * @param {?number} stats.replyRate - the reply rate of the user.
+ *    Equals null when no messageStats found, otherwise number from interval
+ *    [0, 1] (replied/all)
+ * @param {?number} stats.replyTime - the average number of milliseconds
+ *    between the first message was sent and the first reply was sent.
+ *    Equals null when stats.replyRate is null or 0. Otherwise number.
+ */
+
+/**
+ * provided userId and the timestamp to which we count the statistics,
+ * the function will return reply rate and reply time of the user
+ * { replyRate, replyTime }
+ *
+ * @param {ObjectId} userId - id of the user (mongoose ObjectId)
+ * @param {number} timeNow - timestamp to which we count the statistics
+ * @param {readStatsCb} callback
+ */
+exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
+  var DAY = 24 * 3600 * 1000;
+
+  async.waterfall([
+    /**
+     * Get the data from the database
+     * get all MessageStat documents between timeNow and timeNow - 90 days
+     */
+    function (done) {
+      MessageStat.find({
+        firstMessageUserTo: userId,
+        firstMessageCreated: {
+          $lte: new Date(timeNow),
+          $gt: new Date(timeNow - 90 * DAY)
+        }
+      })
+      .sort({ firstMessageCreated: -1 })
+      .exec(function (err, resp) {
+        return done(err, resp);
+      });
+    },
+
+    /**
+     * Count the statistics
+     */
+    function (messageStats, done) {
+
+      /**
+       * Choose the MessageStats to use (as described above)
+       * if we have less than 10 stats in last 90 days since timeNow,
+       *    use all of them
+       * if we have less than 10 stats in last 30 days but more in last 90 days,
+       *    use last 10 stats
+       * if we have more than 10 messages in last 30 days,
+       *    use all from last 30 days
+       */
+      var chosenStats = (function (messageStats) {
+        // less than 10 in 90 days
+        if (messageStats.length < 10) {
+          return messageStats;
+
+        // 10th youngest messageStat is older than 30 days
+        } else if (messageStats[9].firstMessageCreated.getTime() < timeNow - 30 * DAY) {
+          return messageStats.splice(0, 10);
+
+        // otherwise we use all the messageStats within 30 days
+        } else {
+          return messageStats.filter(function (stat) {
+            return stat.firstMessageCreated.getTime() >= timeNow - 30 * DAY;
+          });
+        }
+      }(messageStats));
+
+      /* count the numbers for statistics
+       * if we have no messageStats
+       *    both replyRate and replyTime are null
+       * if we have no replies
+       *    replyRate is 0 and replyTime is null
+       * otherwise
+       *    replyRate is replied stats/all stats
+       *    replyTime is average (mean) reply time of replied stats [milliseconds]
+       */
+      var stats = (function (chosenStats) {
+
+        var repliedCount = 0, // amount of replies
+            allCount = chosenStats.length, // amount of first messages received
+            replyTimeCumulated = 0; // sum of the timeToFirstReply
+
+        // Collect the data from chosenStats
+        for (var i = 0, len = chosenStats.length; i < len; ++i) {
+          var stat = chosenStats[i];
+          if (typeof(stat.timeToFirstReply) === 'number') {
+            ++repliedCount;
+            replyTimeCumulated += stat.timeToFirstReply;
+          }
+        }
+
+        // count the replyRate and average replyTime from the chosen stats
+        var replyRate,
+            replyTime;
+
+        // no message stats
+        if (allCount === 0) {
+          replyRate = null;
+          replyTime = null;
+        // no replied stats
+        } else if (repliedCount === 0) {
+          replyRate = 0;
+          replyTime = null;
+        // some replied stats
+        } else {
+          replyRate = repliedCount / allCount;
+          replyTime = replyTimeCumulated / repliedCount;
+        }
+
+        return { replyRate: replyRate, replyTime: replyTime };
+
+      }(chosenStats));
+
+      return done(null, stats);
+    }
+
+  ], function (err, stats) {
+    if (err) return callback(err);
+    callback(null, stats);
+  });
+};
+
+
+/**
+ * A human readable form of reply statistics
+ * @typedef {Object} formattedStats
+ * @property {string} replyRate - % i.e. '43%', or empty string
+ * @property {string} replyTime - average replyTime in human readable form
+ *    number of seconds, minutes, hours, days, months or empty string
+ *    For the conversion see moment.duration().humanize() of momentjs library
+ */
+
+/**
+ * Convert the { replyRate, replyTime } object returned from
+ * exports.readMessageStatsOfUser into a human readable form (strings)
+ * synchronous
+ *
+ * @param {Object} stats
+ * @param {?number} stats.replyRate
+ * @param {?number} stats.replyTime
+ * @returns {Object}
+ */
+exports.formatStats = function (stats) {
+
+  // if reply rate is a well-behaved number, we convert the fraction to %
+  var replyRate = (_.isFinite(stats.replyRate))
+    ? Math.round(stats.replyRate * 100) + '%'
+    : '';
+
+  // if replyTime is a well-behaved number, we convert the milliseconds to
+  // a human readable string
+  var replyTime = (_.isFinite(stats.replyTime))
+    ? moment.duration(stats.replyTime).humanize()
+    : '';
+
+  return { replyRate: replyRate, replyTime: replyTime };
+};
+
+/**
+ * @callback readFormattedStatsCb
+ *
+ * @param {Error} err
+ * @param {formattedStats} stats
+ */
+
+/**
+ * bring together readMessageStatsOfUser and formatStats functions
+ *
+ * @param {ObjectId} userId - id of the user (mongoose ObjectId)
+ * @param {number} timeNow - timestamp to which we count the statistics
+ * @param {readFormattedStatsCb} callback
+ */
+exports.readFormattedMessageStatsOfUser = function (userId, timeNow, callback) {
+  async.waterfall([
+
+    // read message stats
+    function (done) {
+      exports.readMessageStatsOfUser(userId, timeNow, done);
+    },
+
+    // format message stats (this one is synchronous)
+    function (stats, done) {
+      var formatted = exports.formatStats(stats);
+      return done(null, formatted);
+    }
+  ], callback);
 };
