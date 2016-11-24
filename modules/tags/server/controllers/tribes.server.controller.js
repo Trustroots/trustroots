@@ -19,7 +19,8 @@ exports.tribeFields = [
   'image_UUID',
   'attribution',
   'attribution_url',
-  'tribe'
+  'tribe',
+  'description'
 ].join(' ');
 
 /**
