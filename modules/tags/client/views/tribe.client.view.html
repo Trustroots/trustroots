@@ -40,13 +40,16 @@
             <p class="lead tribe-pre">Tribe</p>
             <h2 class="font-brand-regular tribe-title" ng-bind="::tribeCtrl.tribe.label"></h2>
             <ng-pluralize
-              class="lead tribe-meta"
+              class="tribe-meta"
               count="tribeCtrl.tribe.count"
               when="{
                 '0': 'No members yet',
                 '1': 'One member',
-                'other': '{{tribeCtrl.tribe.count|number}} members'
+                'other': '{{tribeCtrl.tribe.count | number}} members'
               }"></ng-pluralize>
+            <div class="lead tribe-meta"
+                 ng-if="tribeCtrl.tribe.description"
+                 ng-bind="::tribeCtrl.tribe.description"></div>
             <br><br>
             <button class="btn btn-lg btn-primary tribe-join"
                     tr-tribe-join-button
@@ -83,7 +86,7 @@
               when="{
                 '0': 'No members yet',
                 '1': 'One member',
-                'other': '{{::tribeCtrl.tribe.count|number}} members'
+                'other': '{{::tribeCtrl.tribe.count | number}} members'
               }"></ng-pluralize>
             <br><br>
             <p class="lead tribe-intro">
