@@ -69,4 +69,6 @@
   </div>
 </div>
 
-<span tr-report-member="::profileCtrl.profile.username"></span>
+<span
+  ng-if="::app.user._id === profileCtrl.profile._id"
+  tr-report-member="::profileCtrl.profile.username"></span>
