@@ -4,7 +4,8 @@
   /**
    * Turn mongo date string into years
    *
-   * Input: '1986-05-30' or new Date(1986, 05, 30)
+   * Input: '1986-05-30' or new Date(1986, 04, 30)
+   * (00 - January, 04 - May in new Date())
    * Output: 28 years
    *
    * @link http://stackoverflow.com/a/24883386
