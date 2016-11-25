@@ -65,10 +65,7 @@ describe('User Model Unit Tests:', function() {
 
       _user.save(function (err) {
         should.not.exist(err);
-        _user.remove(function (err) {
-          should.not.exist(err);
-          done();
-        });
+        done();
       });
     });
 
@@ -79,10 +76,7 @@ describe('User Model Unit Tests:', function() {
       _user.save(function () {
         _user2.save(function (err) {
           should.exist(err);
-          _user.remove(function (err) {
-            should.not.exist(err);
-            done();
-          });
+          done();
         });
       });
     });
@@ -118,10 +112,7 @@ describe('User Model Unit Tests:', function() {
           should.not.exist(err);
           var passwordAfter = _user.password;
           passwordBefore.should.equal(passwordAfter);
-          _user.remove(function (err) {
-            should.not.exist(err);
-            done();
-          });
+          done();
         });
       });
     });
@@ -134,13 +125,7 @@ describe('User Model Unit Tests:', function() {
         should.not.exist(err);
         _user3.save(function(err) {
           should.not.exist(err);
-          _user3.remove(function(err) {
-            should.not.exist(err);
-            _user.remove(function(err) {
-              should.not.exist(err);
-              done();
-            });
-          });
+          done();
         });
       });
     });
