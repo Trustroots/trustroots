@@ -134,6 +134,10 @@ var TagSchema = new Schema({
     minlength: 12,
     trim: true,
     validate: [validateURL, 'Please fill a valid URL.']
+  },
+  description: {
+    type: String,
+    trim: true
   }
 });
 

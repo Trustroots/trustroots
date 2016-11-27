@@ -70,5 +70,5 @@
 </div>
 
 <span
-  ng-if="::app.user._id === profileCtrl.profile._id"
+  ng-if="::app.user._id !== profileCtrl.profile._id"
   tr-report-member="::profileCtrl.profile.username"></span>

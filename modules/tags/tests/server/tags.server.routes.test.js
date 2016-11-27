@@ -68,7 +68,8 @@ describe('Tag CRUD tests', function () {
       attribution: 'Photo credits',
       attribution_url: 'http://www.trustroots.org/team',
       image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
-      tribe: true
+      tribe: true,
+      description: 'Lorem ipsum.'
     };
 
     // Create a new non-public tribe
@@ -110,6 +111,7 @@ describe('Tag CRUD tests', function () {
         tribesReadRes.body[0].tribe.should.equal(true);
         tribesReadRes.body[0].label.should.equal('Awesome Tribe');
         tribesReadRes.body[0].slug.should.equal('awesome-tribe');
+        tribesReadRes.body[0].description.should.equal(_tribe.description);
         tribesReadRes.body[0].attribution.should.equal(_tribe.attribution);
         tribesReadRes.body[0].attribution_url.should.equal(_tribe.attribution_url);
         tribesReadRes.body[0].count.should.eql(0);
@@ -148,6 +150,7 @@ describe('Tag CRUD tests', function () {
             tribesReadRes.body[0].tribe.should.equal(true);
             tribesReadRes.body[0].label.should.equal('Awesome Tribe');
             tribesReadRes.body[0].slug.should.equal('awesome-tribe');
+            tribesReadRes.body[0].description.should.equal(_tribe.description);
             tribesReadRes.body[0].attribution.should.equal(_tribe.attribution);
             tribesReadRes.body[0].attribution_url.should.equal(_tribe.attribution_url);
             tribesReadRes.body[0].count.should.eql(0);
