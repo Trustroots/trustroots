@@ -10,6 +10,8 @@ var _ = require('lodash'),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
     tagsHandler = require(path.resolve('./modules/tags/server/controllers/tags.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+    messageStatService = require(path.resolve(
+      './modules/messages/server/services/message-stat.server.service')),
     config = require(path.resolve('./config/config')),
     async = require('async'),
     crypto = require('crypto'),
@@ -50,6 +52,8 @@ exports.userProfileFields = [
   'avatarSource',
   'avatarUploaded',
   'member',
+  'replyRate',
+  'replyTime',
   'extSitesBW', // BeWelcome username
   'extSitesCS', // CouchSurfing username
   'extSitesWS', // WarmShowers username
@@ -567,9 +571,33 @@ exports.userByUsername = function(req, res, next, username) {
     },
 
     // Sanitize & return profile
-    function(profile) {
+    function(profile, done) {
       req.profile = exports.sanitizeProfile(profile, req.user);
-      return next();
+      return done(null, profile);
+    },
+
+    // Read User's reply statistics and add them to req.profile
+    // We need to add it to req.profile, because profile is mongoose object and
+    // adding properties to it doesn't work
+    function(profile, done) {
+      // find the statistics
+      messageStatService.readFormattedMessageStatsOfUser(profile._id, Date.now(),
+        function (err, stats) {
+
+          // If we receive error, let's just continue.
+          // The stats are non-essential.
+          if (!err) {
+            // add replyRate and replyTime to req.profile
+            _.assign(req.profile, _.pick(stats, ['replyRate', 'replyTime']));
+          }
+
+          return done();
+        });
+    },
+
+    // Next Route
+    function () {
+      next();
     }
 
   ], function(err) {

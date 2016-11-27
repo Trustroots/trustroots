@@ -33,7 +33,7 @@ describe('Service: influx', function() {
   });
 
   it('Writing point returns error with no measurementName', function(done) {
-    influxService.writePoint(null, { value: 1 }, { tag: 'tag' }, function(err) {
+    influxService.writeMeasurement(null, { value: 1 }, { tag: 'tag' }, function(err) {
       try {
         err.message.should.equal('InfluxDB Service: no `measurementName` defined.');
         return done();
@@ -45,7 +45,7 @@ describe('Service: influx', function() {
   });
 
   it('Writing point returns error with no value', function(done) {
-    influxService.writePoint('test', null, { tag: 'tag' }, function(err) {
+    influxService.writeMeasurement('test', null, { tag: 'tag' }, function(err) {
       try {
         err.message.should.equal('InfluxDB Service: no `fields` defined.');
         return done();
@@ -56,7 +56,7 @@ describe('Service: influx', function() {
   });
 
   it('Writing point returns error with no tag', function(done) {
-    influxService.writePoint('test', { value: 1 }, null, function(err) {
+    influxService.writeMeasurement('test', { value: 1 }, null, function(err) {
       try {
         err.message.should.equal('InfluxDB Service: no `tags` defined.');
         return done();
@@ -65,4 +65,41 @@ describe('Service: influx', function() {
       }
     });
   });
+
+  it('Writing point returns error with wrong time format (nanoseconds)', function(done) {
+    influxService.writeMeasurement('test', { value: 1, time: 1475985480231035600 }, { tag: 'tag' }, function(err) {
+      try {
+        err.message.should.equal('InfluxDB Service: expected `fields.time` to be `Date` object.');
+        return done();
+
+      } catch (e) {
+        return done(e);
+      }
+    });
+  });
+
+  it('Writing point returns error with wrong time format (milliseconds)', function(done) {
+    influxService.writeMeasurement('test', { value: 1, time: 1475985480231 }, { tag: 'tag' }, function(err) {
+      try {
+        err.message.should.equal('InfluxDB Service: expected `fields.time` to be `Date` object.');
+        return done();
+
+      } catch (e) {
+        return done(e);
+      }
+    });
+  });
+
+  it('Writing point returns error with wrong time format (string)', function(done) {
+    influxService.writeMeasurement('test', { value: 1, time: '2016-10-09T03:58:00.231035600Z' }, { tag: 'tag' }, function(err) {
+      try {
+        err.message.should.equal('InfluxDB Service: expected `fields.time` to be `Date` object.');
+        return done();
+
+      } catch (e) {
+        return done(e);
+      }
+    });
+  });
+
 });

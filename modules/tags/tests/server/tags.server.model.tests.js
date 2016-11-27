@@ -72,10 +72,7 @@ describe('Tag Model Unit Tests:', function() {
         validator.isHexadecimal(_tag.color).should.equal(true);
         should.exist(_tag.created);
 
-        _tag.remove(function (err) {
-          should.not.exist(err);
-          done();
-        });
+        done();
       });
     });
 
@@ -86,10 +83,7 @@ describe('Tag Model Unit Tests:', function() {
       _tag.save(function () {
         _tag2.save(function (err) {
           should.exist(err);
-          _tag.remove(function (err) {
-            should.not.exist(err);
-            done();
-          });
+          done();
         });
       });
     });
@@ -105,10 +99,7 @@ describe('Tag Model Unit Tests:', function() {
           should.not.exist(err);
           var colorAfter = _tag.color;
           colorBefore.should.equal(colorAfter);
-          _tag.remove(function (err) {
-            should.not.exist(err);
-            done();
-          });
+          done();
         });
       });
     });
@@ -121,13 +112,7 @@ describe('Tag Model Unit Tests:', function() {
         should.not.exist(err);
         _tag3.save(function(err) {
           should.not.exist(err);
-          _tag3.remove(function(err) {
-            should.not.exist(err);
-            _tag.remove(function(err) {
-              should.not.exist(err);
-              done();
-            });
-          });
+          done();
         });
       });
     });
@@ -153,10 +138,7 @@ describe('Tag Model Unit Tests:', function() {
       _tag.save(function (err) {
         should.not.exist(err);
         _tag.slug.should.equal('hyvaa-paivaa-herra-huu');
-        _tag.remove(function (err) {
-          should.not.exist(err);
-          done();
-        });
+        done();
       });
     });
 
@@ -167,10 +149,7 @@ describe('Tag Model Unit Tests:', function() {
       _tag.save(function (err) {
         should.not.exist(err);
         _tag.slug.should.equal('unicode-love');
-        _tag.remove(function (err) {
-          should.not.exist(err);
-          done();
-        });
+        done();
       });
     });
 

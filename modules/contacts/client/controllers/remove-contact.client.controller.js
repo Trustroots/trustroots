@@ -15,18 +15,19 @@
 
     // Exposed to the view
     vm.isLoading = false;
+    vm.user = Authentication.user;
     vm.contact = contactToRemove;
     vm.removeContact = removeContact;
     vm.cancelContactRemoval = cancelContactRemoval;
 
     // Different confirm button label and modal title depending on situation
 
-    if (angular.isDefined(contactToRemove.confirmed) && contactToRemove.confirmed === false && Authentication.user._id === contactToRemove.users[1]._id) {
-      // User is cancelling a request
+    if (angular.isDefined(contactToRemove.confirmed) && contactToRemove.confirmed === false && Authentication.user._id === contactToRemove.userFrom) {
+      // User is cancelling a request they sent
       vm.labelConfirm = 'Yes, revoke request';
       vm.labelTitle = 'Revoke contact request?';
       vm.labelTime = 'Requested';
-    } else if (angular.isDefined(contactToRemove.confirmed) && contactToRemove.confirmed === false) {
+    } else if (angular.isDefined(contactToRemove.confirmed) && contactToRemove.confirmed === false && Authentication.user._id === contactToRemove.userTo) {
       // Decline received request
       vm.labelConfirm = 'Yes, decline request';
       vm.labelTitle = 'Decline contact request?';

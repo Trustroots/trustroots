@@ -22,7 +22,7 @@ module.exports = function (job, agendaDone) {
     }
 
     // Save to influx here
-    influxService.writePoint('members', { count: count }, { members: 'members' },
+    influxService.writeMeasurement('members', { count: count }, { members: 'members' },
       function (err, result) {
         if (err) {
           console.error('Daily statistics: failed writing to InfluxDB.');

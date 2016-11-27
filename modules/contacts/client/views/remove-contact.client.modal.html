@@ -6,41 +6,10 @@
 
     <div class="modal-body">
 
-      <div class="row contacts-connection">
-        <div class="col-xs-12 col-sm-5 contacts-connection-profile">
-          <!-- Avatar while loading -->
-          <div tr-avatar data-source="none" data-size="128" class="center-block" ng-if="!removeContactModal.contact && !removeContactModal.contact._id"></div>
-
-          <!-- Avatar after loaded -->
-          <div tr-avatar data-user="removeContactModal.contact.users[0]" data-size="128" class="center-block" ng-if="removeContactModal.contact && removeContactModal.contact._id"></div>
-
-          <h4 class="contacts-connection-name" ng-bind="removeContactModal.contact.users[0].displayName"></span>
-        </div>
-        <div class="hidden-xs col-sm-2">
-          <i class="icon-exchange icon-3x text-muted contacts-connection-divider"></i>
-        </div>
-        <div class="col-xs-12 col-sm-5 contacts-connection-profile">
-          <!-- Avatar while loading -->
-          <div tr-avatar data-source="none" data-size="128" class="center-block" ng-if="!removeContactModal.contact || !removeContactModal.contact._id"></div>
-
-          <!-- Avatar after loaded -->
-          <div tr-avatar data-user="removeContactModal.contact.users[1]" data-size="128" class="center-block" ng-if="removeContactModal.contact && removeContactModal.contact._id"></div>
-
-          <h4 class="contacts-connection-name" ng-bind="removeContactModal.contact.users[1].displayName"></h4>
-
-        </div>
-      </div><!-- /.row -->
-
-      <!-- Date -->
-      <div class="row">
-        <div class="col-xs-12 text-center text-muted">
-          <br>
-          <small>
-            {{ ::removeContactModal.labelTime }}
-            {{ ::removeContactModal.contact.created | date:'mediumDate' }}
-          </small>
-        </div>
-      </div><!-- /.row -->
+      <p>
+        {{ ::removeContactModal.labelTime }}
+        {{ ::removeContactModal.contact.created | date:'mediumDate' }}
+      </p>
 
     </div><!-- /.modal-body -->
 

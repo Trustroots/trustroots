@@ -77,7 +77,7 @@ describe('Job: user finish signup', function() {
   });
 
   it('Do not remind unconfirmed users <4 hours after their signup', function(done) {
-    unConfirmedUser.created = moment().subtract(moment.duration({ 'hours': 3 }));
+    unConfirmedUser.created = moment().subtract(moment.duration({ 'hours': 3, 'minutes': 58 }));
     unConfirmedUser.save(function(err) {
       if (err) return done(err);
 
@@ -180,6 +180,56 @@ describe('Job: user finish signup', function() {
           jobs[0].data[format].should.containEql('8 days ago');
         });
         done();
+      });
+    });
+  });
+
+  it('Do not remind unconfirmed users >4 hours after their signup again before >2 days has passed', function(done) {
+    // Run the job 1st time, sends notification
+    userFinishSignupJobHandler({}, function(err) {
+      if (err) return done(err);
+
+      // Run the same job 2nd time, should not send notification
+      userFinishSignupJobHandler({}, function(err) {
+        if (err) return done(err);
+
+        jobs.length.should.equal(1);
+        jobs[0].type.should.equal('send email');
+        jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
+
+        User.findOne({ email: _unConfirmedUser.email }, function(err, user) {
+          if (err) return done(err);
+          user.publicReminderCount.should.equal(1);
+          done();
+        });
+      });
+    });
+  });
+
+  it('Do not remind unconfirmed users >2 hours after their signup again before another >2 days has passed', function(done) {
+    unConfirmedUser.publicReminderCount = 1;
+    unConfirmedUser.publicReminderSent = moment().subtract(moment.duration({ 'days': 2 }));
+    unConfirmedUser.save(function(err) {
+      if (err) return done(err);
+
+      // Run the job 1st time, sends notification
+      userFinishSignupJobHandler({}, function(err) {
+        if (err) return done(err);
+
+        // Run the same job 2nd time, should not send notification
+        userFinishSignupJobHandler({}, function(err) {
+          if (err) return done(err);
+
+          jobs.length.should.equal(1);
+          jobs[0].type.should.equal('send email');
+          jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
+
+          User.findOne({ email: _unConfirmedUser.email }, function(err, user) {
+            if (err) return done(err);
+            user.publicReminderCount.should.equal(2);
+            done();
+          });
+        });
       });
     });
   });

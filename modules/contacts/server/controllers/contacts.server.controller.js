@@ -4,7 +4,8 @@
  * Module dependencies.
  */
 
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
@@ -39,8 +40,14 @@ exports.add = function(req, res) {
       // Check if contact already exists
       Contact.findOne({
         $or: [
-          { users: [req.body.friendUserId, req.user._id] },
-          { users: [req.user._id, req.body.friendUserId] }
+          {
+            userTo: req.body.friendUserId,
+            userFrom: req.user._id
+          },
+          {
+            userTo: req.user._id,
+            userFrom: req.body.friendUserId
+          }
         ]
       }).exec(function(err, existingContact) {
         if (err) return done(err);
@@ -77,12 +84,8 @@ exports.add = function(req, res) {
 
       contact = new Contact(req.body);
       contact.confirmed = false;
-      contact.users = [];
-      contact.users.push(req.body.friendUserId);
-      contact.users.push(req.user._id);
-      // Now:
-      // - contact.users[0] is receiving person
-      // - contact.users[1] is initiating person
+      contact.userFrom = req.user._id;
+      contact.userTo = req.body.friendUserId;
 
       done(null, messageHTML, messagePlain);
     },
@@ -156,7 +159,7 @@ exports.remove = function(req, res) {
 exports.confirm = function(req, res) {
 
   // Only receiving user can confirm user connections
-  if (!req.contact || !req.contact.users[0]._id.equals(req.user._id.valueOf())) {
+  if (!req.contact || !req.contact.userTo._id.equals(req.user._id.valueOf())) {
     return res.status(403).json({
       message: errorHandler.getErrorMessageByKey('forbidden')
     });
@@ -215,11 +218,17 @@ exports.contactByUserId = function(req, res, next, userId) {
   if (req.user && req.user.public) {
     Contact.findOne({
       $or: [
-        { users: [userId, req.user._id] },
-        { users: [req.user._id, userId] }
+        {
+          userTo: userId,
+          userFrom: req.user._id
+        },
+        {
+          userTo: req.user._id,
+          userFrom: userId
+        }
       ]
     })
-    .populate('users', userHandler.userMiniProfileFields)
+    .populate('userTo userFrom', userHandler.userMiniProfileFields)
     .exec(function(err, contact) {
 
       if (err) return next(err);
@@ -252,14 +261,14 @@ exports.contactById = function(req, res, next, contactId) {
 
   if (req.user && req.user.public) {
     Contact.findById(contactId)
-      .populate('users', userHandler.userMiniProfileFields)
+      .populate('userTo userFrom', userHandler.userMiniProfileFields)
       .exec(function(err, contact) {
         if (err) return next(err);
 
         // If nothing was found or neither of the user ID's match currently authenticated user's id, return 404
         if (!contact || !req.user || (
-            !contact.users[0]._id.equals(req.user._id.valueOf()) &&
-            !contact.users[1]._id.equals(req.user._id.valueOf())
+            !contact.userFrom._id.equals(req.user._id.valueOf()) &&
+            !contact.userTo._id.equals(req.user._id.valueOf())
         )) {
           return res.status(404).json({
             message: errorHandler.getErrorMessageByKey('not-found')
@@ -274,6 +283,94 @@ exports.contactById = function(req, res, next, contactId) {
   }
 };
 
+
+/**
+ * Contact list middleware for filtering only common contacts
+ * Takes already formed contact list and drops out contacts which aren't
+ * on currently authenticated user's contact list
+ */
+exports.filterByCommon = function(req, res, next) {
+
+  // No contacts to match, just continue
+  if (!req.contacts.length) {
+    return next();
+  }
+
+  // Get currently authenticated user's contact list
+  Contact.find({
+    $or: [
+      { userFrom: req.user._id },
+      { userTo: req.user._id }
+    ],
+    // Include only confirmed contacts
+    confirmed: true
+  }, {
+    // By default, the `_id` field is included in the results.
+    // Leave it out.
+    _id: 0,
+    // Return only `userFrom` & `userTo` fields
+    userFrom: 1,
+    userTo: 1,
+    test: '$userTo'
+  })
+  /*
+[ { _id: 582b39afdc026f1144750726,
+    __v: 0,
+    userFrom: 56fe9df12861d31fd6963ff7,
+    userTo: 544b7832f1bf94f007de9fe0,
+    confirmed: true,
+    created: 2016-11-15T16:37:03.559Z },
+  { _id: 582b3a4adc026f1144750727,
+    __v: 0,
+    userFrom: 5821afcf999c80c8b2a8b065,
+    userTo: 56fe9df12861d31fd6963ff7,
+    confirmed: true,
+    created: 2016-11-15T16:39:38.431Z } ]
+  */
+  // `distinct` returns chosen fields as an array
+  // .distinct('userFrom', function(err, authUserContacts) {
+  .exec(function(err, authUserContacts) {
+    if (err) {
+      return next(err);
+    }
+
+    // No contacts to match, just return empty array
+    if (!authUserContacts || !authUserContacts.length) {
+      req.contacts = [];
+      return next();
+    }
+
+    // Remodel authenticated user's contact list to array of user ids
+    var authUserContactUsers = [];
+    _.map(authUserContacts, function(contact) {
+      // Pick user id which isn't authenticated user themself
+      var userId = contact.userFrom.equals(req.user._id.valueOf()) ? contact.userTo : contact.userFrom;
+
+      // Ensure we have a list of string id's instead of Mongo ObjectId's
+      // Otherwise checking against this list fails using `indexOf()`
+      authUserContactUsers.push(userId.toString());
+    });
+
+    // Ensure we have a list of string id's instead of Mongo ObjectId's
+    // Otherwise checking if we have certain id in this list using `indexOf`
+    // becomes difficult.
+    // authUserContactUsers = _.map(authUserContactUsers, _.toString);
+
+    // We have both contact lists, do the matching
+    // @link https://lodash.com/docs/#filter
+    req.contacts = _.filter(req.contacts, function(contact) {
+
+      // Check if `contact.user._id` is also on list of authenticated user's
+      // contacts list. Returning truthy will let it trough to `req.contacts`,
+      // returning falsy will hold it back.
+      return authUserContactUsers.indexOf(contact.user._id.toString()) > -1;
+    });
+
+    next();
+  });
+
+};
+
 /**
  * Contact list middleware
  */
@@ -286,27 +383,98 @@ exports.contactListByUser = function(req, res, next, listUserId) {
     });
   }
 
-  var contactQuery = { users: listUserId, confirmed: true };
+  // Turn `listUserId` String into a Mongo ObjectId
+  listUserId = new mongoose.Types.ObjectId(listUserId);
 
-  // Remove 'confirmed=true' from queries if showing currently logged in user's listing
+  var contactQuery = {
+    $or: [
+      { userFrom: listUserId },
+      { userTo: listUserId }
+    ],
+    confirmed: true
+  };
+
+  // Remove `confirmed:true` requirement from queries if currently
+  // authenticated user is requesting their own contact list
   if (req.user && req.user._id.equals(listUserId)) {
     delete contactQuery.confirmed;
   }
 
-  Contact.find(contactQuery, 'users created confirmed')
-    .sort('-created')
-    // Populate users
-    .populate({
-      path: 'users',
-      // ...except don't populate user's own info for confirmed contacts. We don't need it dozen times there:
-      // match: { _id: { $ne: listUserId } },
-      select: userHandler.userMiniProfileFields
-    })
-    .exec(function(err, contacts) {
-      if (err) return next(err);
-      if (!contacts) return next(new Error('Failed to load contacts.'));
+  Contact.aggregate([
+    // Finds all documents where requested user id equals `userFrom` OR `userTo`
+    // Optionally limits to documents with `confirmed:true` only
+    { $match: contactQuery },
 
-      req.contacts = contacts;
-      next();
-    });
+    // Format results
+    {
+      $project: {
+        // Normal contact document fields here
+        _id: '$_id',
+        confirmed: '$confirmed',
+        created: '$created',
+        userFrom: '$userFrom',
+        userTo: '$userTo',
+        // Project a new `user` field, picking ID of either `userFrom` or `userTo` field,
+        // depending on which one equals to requested user. This is to avoid populating
+        // requested user's profile, as it would just repeat on every document.
+        user: {
+          $cond: {
+            if: { $eq: ['$userFrom', listUserId] },
+            then: '$userTo',
+            else: '$userFrom'
+          }
+        }
+      }
+    },
+
+    // Populate user field: receives whole document of user
+    {
+      $lookup: {
+        from: 'users', // collection to join
+        localField: 'user',
+        foreignField: '_id', // field(s) from the documents of the "from" collection
+        as: 'user' // output array field
+      }
+    },
+    // Because above `$lookup`s return and array with one user
+    // `[{userObject}]`, we have to unwind it back to `{userObject}`
+    { $unwind: '$user' },
+
+    // Another round of formating results as we now have `user` field populated
+    {
+      $project: {
+        // Normal contact document fields here
+        _id: '$_id',
+        confirmed: '$confirmed',
+        created: '$created',
+        userFrom: '$userFrom',
+        userTo: '$userTo',
+        // Project here fields for the user which isn't the user who's list
+        // we requested. I.e. "the other party"
+        user: {
+          // These should be fields listed at `userHandler.userMiniProfileFields`
+          _id: '$user._id',
+          updated: '$user.updated',
+          displayName: '$user.displayName',
+          username: '$user.username',
+          displayUsername: '$user.displayUsername',
+          avatarSource: '$user.avatarSource',
+          avatarUploaded: '$user.avatarUploaded',
+          emailHash: '$user.emailHash',
+          additionalProvidersData: {
+            facebook: {
+              id: '$user.additionalProvidersData.facebook.id'
+            }
+          }
+        }
+      }
+    }
+
+  ]).exec(function(err, contacts) {
+    if (err) return next(err);
+    if (!contacts) return next(new Error('Failed to load contacts.'));
+
+    req.contacts = contacts;
+    next();
+  });
 };

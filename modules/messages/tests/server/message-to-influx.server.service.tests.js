@@ -77,6 +77,10 @@ describe('Message to influx server service Unit Tests:', function() {
       async.waterfall([
 
         // defining the messages with some time difference
+        // @TODO the test should be refactored.
+        // the messages should have a constant given `created` time; It would
+        // enable precise testing and avoid the complexity of timeouts which is
+        // now
         function (done) {
           setTimeout(function () {
             message1to2 = new Message({
@@ -237,17 +241,19 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[every message] should give field with key `time` which is timestamp (integer) in specific range',
+    it('[every message] should give field with key `time` which is a Date in a specific range',
+      // @TODO the test should be rewriten to be more precise (see the todo near
+      // creating the testing messages)
       function (done) {
         messageToInfluxService.process(message1to2, function (err, fields) {
           if (err) return done(err);
           try {
             fields.should.have.property('time');
-            (typeof fields.time).should.be.exactly('number');
+            (fields.time).should.be.Date();
             // here we test wheter the number is between now and some not so
             // past time
-            (fields.time > 1400000000 * 1000).should.be.exactly(true);
-            (fields.time <= Date.now()).should.be.exactly(true);
+            (fields.time.getTime() > 1400000000 * 1000).should.be.exactly(true);
+            (fields.time.getTime() <= Date.now()).should.be.exactly(true);
             return done();
           } catch (err) {
             return done(err);

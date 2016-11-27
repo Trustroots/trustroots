@@ -5,12 +5,15 @@
  */
 var _ = require('lodash'),
     path = require('path'),
-    messageToInfluxService = require(path.resolve('./modules/messages/server/services/message-to-influx.server.service')),
     async = require('async'),
     sanitizeHtml = require('sanitize-html'),
     paginate = require('express-paginate'),
     mongoose = require('mongoose'),
     config = require(path.resolve('./config/config')),
+    messageToInfluxService = require(path.resolve(
+      './modules/messages/server/services/message-to-influx.server.service')),
+    messageStatService = require(path.resolve(
+      './modules/messages/server/services/message-stat.server.service')),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
@@ -56,7 +59,8 @@ exports.inbox = function(req, res) {
     {
       page: req.query.page || 1,
       limit: req.query.limit || 20,
-      sort: 'field -updated',
+      sort: '-updated',
+      select: '_id message read updated userFrom userTo',
       populate: {
         path: 'userFrom userTo message',
         select: 'content ' + userHandler.userMiniProfileFields
@@ -294,10 +298,23 @@ exports.send = function(req, res) {
       return done(null, message);
     },
 
+    // Here we create or update the related MessageStat document in mongodb
+    // It serves to count the user's reply rate and reply time
+    function (message, done) {
+      messageStatService.updateMessageStat(message, function () {
+        // do nothing
+      });
+
+      return done(null, message);
+    },
+
     // We'll need some info about related users, populate some fields
     function(message, done) {
       message
-        .populate('userFrom', userHandler.userMiniProfileFields)
+        .populate({
+          path: 'userFrom',
+          select: userHandler.userMiniProfileFields
+        })
         .populate({
           path: 'userTo',
           select: userHandler.userMiniProfileFields
@@ -305,6 +322,12 @@ exports.send = function(req, res) {
           if (err) {
             return done(err);
           }
+
+          // Turn to object to be able to delete fields
+          message = message.toObject();
+
+          // Don't return this field
+          delete message.notified;
 
           // Finally return saved message
           return res.json(message);
@@ -363,7 +386,8 @@ exports.threadByUser = function(req, res, next, userId) {
         {
           page: req.query.page || 1,
           limit: req.query.limit || 20,
-          sort: 'field -created',
+          sort: '-created',
+          select: '_id content created read userFrom userTo',
           populate: {
             path: 'userFrom userTo',
             select: userHandler.userMiniProfileFields

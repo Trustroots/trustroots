@@ -23,11 +23,13 @@ var MessageSchema = new Schema({
   },
   userFrom: {
     type: Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    index: true
   },
   userTo: {
     type: Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    index: true
   },
   read: {
     type: Boolean,

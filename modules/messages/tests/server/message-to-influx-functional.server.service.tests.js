@@ -18,9 +18,9 @@ var reachEventEmitter = new EventEmitter();
 
 // it will emit an event 'reachedInfluxdb' which should be caught in the tests
 
-// mocking the influxdb.writePoint()
+// mocking the influxdb.writeMeasurement()
 var influxdb = {
-  writePoint: function (measurement, fields, tags) {
+  writeMeasurement: function (measurement, fields, tags) {
     reachEventEmitter.emit('reachedInfluxdb', measurement, fields, tags);
   }
 };
@@ -157,14 +157,15 @@ describe('Message to influx server service Functional Test', function () {
 
       it('the data should have a proper format', function (done) {
         // we want to call the listener only once
-        reachEventEmitter.once('reachedInfluxdb', function (measurement, fields, tags) {
+        reachEventEmitter.once('reachedInfluxdb', function (measurement, points) {
           try {
             (measurement).should.equal('messageSent');
-            should.exist(fields);
-            should.exist(tags);
-            fields.should.have.property('messageLength');
-            tags.should.have.property('messageLengthType');
-            tags.should.have.property('position', 'first');
+            points.length.should.equal(1);
+            should.exist(points[0].fields);
+            should.exist(points[0].tags);
+            points[0].fields.should.have.property('messageLength');
+            points[0].tags.should.have.property('messageLengthType');
+            points[0].tags.should.have.property('position', 'first');
             return done();
           } catch (e) {
             return done(e);

@@ -59,9 +59,26 @@ You can now access these from your browser:
 - Type `docker-compose build --no-cache trustroots` to rebuild them to have fresh install.
 - When you do changes to any files, they get recompiled and the browser is refreshed. If this step feels too slow for your needs, it's because of Docker. This step is faster on local [install](INSTALL.md) so you might want to consider that.
 - Keep an eye on console in case of compiling errors.
-- To read and debug emails, open Maildev (http://YOUR_MACHINE_IP:1080 [OSX] or http://localhost:1080 [Linux]) in your browser. Mails won't leave your Docker container unless you configure mailer settings from `config/env/local.js` to use e.g. [SparkPost](https://www.sparkpost.com/) or [Gmail](https://support.google.com/a/answer/176600?hl=en).
-- To read and debug MongoDB use e.g. [Robomongo](https://robomongo.org/) to connect to your container's IP.
+- To read and debug emails, open Maildev [http://localhost:1080](http://localhost:1080) in your browser. Mails won't leave your Docker container unless you configure mailer settings from `config/env/local.js` to use e.g. [SparkPost](https://www.sparkpost.com/) or [Gmail](https://support.google.com/a/answer/176600?hl=en).
+- To read and debug MongoDB use e.g. [Robomongo](https://robomongo.org/) to connect to `localhost` on port `27017`.
+- To run any `npm` script root folder, just run `docker-compose run trustroots npm COMMAND_NAME`. App is installed to `/trustroots` folder inside the container but working directory is set so that any commands default to that folder.
 - [Read more](https://github.com/Trustroots/trustroots/wiki/Development)
+
+
+## Mock data
+
+There's a script that can generate mock user data. It's recommended you run this script after installation, that way you'll have something to look at.
+
+1. Run `docker-compose run trustroots node scripts/fillTestData.js 10000 adminusername` — that will create 10000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
+2. It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
+3. To see the result, log in with your chosen username and password `password123`.
+
+
+## Clean database
+To drop your database, run:
+```bash
+docker-compose run trustroots npm run dropdb
+```
 
 ### Upgrading
 

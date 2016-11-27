@@ -185,6 +185,7 @@ module.exports = {
     routes: ['modules/!(core)/server/routes/**/*.js', 'modules/core/server/routes/**/*.js'],
     config: 'modules/*/server/config/*.js',
     policies: 'modules/*/server/policies/*.js',
-    views: 'modules/*/server/views/*.html'
+    views: 'modules/*/server/views/*.html',
+    migrations: 'migrations/*.js'
   }
 };

@@ -14,7 +14,7 @@ var _ = require('lodash'),
     User = mongoose.model('User'),
     Offer = mongoose.model('Offer'),
     cities = JSON.parse(fs.readFileSync(path.resolve('./scripts/fillTestDataCities.json'), 'utf8')),
-    status = ["yes", "maybe"],
+    status = ['yes', 'maybe'],
     savedCounter = 0;
 
 console.log(chalk.white('--'));
@@ -28,10 +28,9 @@ var random = function (max) {
 var randomizeLoaction = function () {
   var random =  Math.random();
   if (random > 0.98) {
-    random = ((Math.random()-0.5)*Math.random()*4)-1;
-  }
-  else {
-    random = random/10000 - 0.00005;
+    random = ((Math.random() - 0.5) * Math.random() * 4) - 1;
+  } else {
+    random = random / 10000 - 0.00005;
   }
   return parseFloat(random.toFixed(5));
 };
@@ -91,7 +90,7 @@ var addOffer = function (id, index, max) {
       savedCounter++;
       if (savedCounter >= max) {
         console.log(chalk.green('Done with ' + max + ' test users!'));
-        console.log(chalk.white(''));// Reset to white
+        console.log(chalk.white('')); // Reset to white
         process.exit(0);
       }
     }
@@ -117,7 +116,7 @@ else {
     adminUser.displayName = adminUser.firstName + ' ' + adminUser.lastName;
     adminUser.provider = 'local';
     adminUser.email = 'admin+' + adminUsername + '@example.tld';
-    adminUser.password = 'password';
+    adminUser.password = 'password123';
     adminUser.username = adminUsername;
     adminUser.avatarSource = 'none';
     adminUser.public = true;

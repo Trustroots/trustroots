@@ -15,10 +15,11 @@
   {% if process.env.NODE_ENV === 'production' %}
     <link rel="stylesheet" href="/dist/application.min.css?c={{appSettings.commit}}">
   {% endif %}
-  {# Prefech some domains that are used for avatars #}
-  {# https://developer.mozilla.org/en-US/docs/Web/HTTP/Controlling_DNS_prefetching #}
+  {# Prefech some domains that are used for user avatars and tribe images #}
+  {# https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-DNS-Prefetch-Control #}
   <link rel="dns-prefetch" href="//graph.facebook.com">
   <link rel="dns-prefetch" href="//gravatar.com">
+  <link rel="dns-prefetch" href="//ucarecdn.com">
 
   {# Generic / Android / Firefox #}
   <meta name="description" content="{{description}}">

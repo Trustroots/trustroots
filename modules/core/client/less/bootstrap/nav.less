@@ -26,6 +26,16 @@
         font-weight: bold;
       }
     }
+
+    &.active .badge,
+    .badge {
+      background: transparent;
+      color: @gray-light;
+      border: 1px solid @gray-light;
+      font-weight: 200;
+      font-size: 11px;
+      line-height: 10px;
+    }
   }
 }
 
@@ -36,14 +46,15 @@
   > li {
     > a {
       border-bottom: 2px solid transparent;
-      border-radius: 0;
       &:hover,
       &:focus {
+        border-radius: 0;
         border-color: @link-hover-color;
       }
     }
     // Active state
     &.active > a {
+      border-radius: 0;
       &,
       &:hover,
       &:focus {

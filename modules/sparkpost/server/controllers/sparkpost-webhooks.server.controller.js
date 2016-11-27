@@ -147,7 +147,7 @@ exports.processAndSendMetrics = function(event, callback) {
     fields.time = new Date(parseInt(timestamp, 10) * 1000);
   }
 
-  influxService.writePoint('transactionalEmailEvent', fields, tags, callback);
+  influxService.writeMeasurement('transactionalEmailEvent', fields, tags, callback);
 };
 
 /**

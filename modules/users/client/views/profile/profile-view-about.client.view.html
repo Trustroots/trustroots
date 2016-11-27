@@ -42,6 +42,10 @@
     <!-- Offers -->
     <div class="hidden-xs" ng-if="profileCtrl.profile" ng-include="'/modules/offers/views/offers-view.client.view.html'"></div>
 
+    <!-- Contacts in common -->
+    <div ng-if="profileCtrl.profile._id !== app.user._id && profileCtrl.contacts.length"
+         tr-common-contacts="::profileCtrl.profile._id"></div>
+
     <!-- Tribes -->
     <div class="panel panel-default" ng-if="profileCtrl.profile._id === app.user._id || profileCtrl.memberships.tribes.is.length">
       <div class="panel-heading">

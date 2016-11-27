@@ -26,17 +26,6 @@ var Message = mongoose.model('Message');
  */
 
 /**
- * This is a callback for the exports.process
- *
- * @callback processMessageCallback
- * @param {error} error
- * @param {object} fields - object of field keys and values as they'll be saved
- * in influx
- * @param {object} tags - object of tag keys and values as they'll be saved in
- * influx
- */
-
-/**
  * this function is a shortcut for processing and sending the data to
  * influxService (which sends it to influxdb)
  * @param {object} message - a message object (as returned by mongoDB)
@@ -75,6 +64,17 @@ module.exports.save = function (message, callback) {
     }
   });
 };
+
+/**
+ * This is a callback for the exports.process
+ *
+ * @callback processMessageCallback
+ * @param {error} error
+ * @param {object} fields - object of field keys and values as they'll be saved
+ * in influx
+ * @param {object} tags - object of tag keys and values as they'll be saved in
+ * influx
+ */
 
 /**
  * this function gets some info about the message sent and then calls the callback
@@ -179,7 +179,7 @@ module.exports.process = function (message, callback) {
         userFrom: String(userFrom), // id of sender
         userTo: String(userTo), // id of receiver
         messageLength: msgLen, // length of the content
-        time: message.created.getTime() // creation timestamp (milliseconds)
+        time: message.created // creation time (Date)
       };
 
       // we measure the reply time only for the first replies (time since the
@@ -208,5 +208,5 @@ module.exports.process = function (message, callback) {
  * @param {influxCallback} callback - a callback that handles the response
  */
 module.exports.send = function (fields, tags, callback) {
-  return influxService.writePoint('messageSent', fields, tags, callback);
+  return influxService.writeMeasurement('messageSent', fields, tags, callback);
 };

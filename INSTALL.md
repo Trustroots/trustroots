@@ -99,11 +99,16 @@ at [localhost:1081](http://localhost:1081).
 
 There's a script that can generate mock user data. It's highly recommended you run this script after installation, that way you'll have something to look at.
 
-1. Run `node scripts/fillTestData.js 10000 username` — that will create 10000 users and hosting offers. Username is optional (a-z0-9) and will create an admin user with that username.
+1. Run `node scripts/fillTestData.js 10000 adminusername` — that will create 10000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
 2. It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
-3. To see the result, log in with your chosen username and password `password`.
+3. To see the result, log in with your chosen username and password `password123`.
 
-To drop your database, run: `npm run dropdb`
+
+## Clean database
+To drop your database, run:
+```bash
+npm run dropdb
+```
 
 
 ## Updating
