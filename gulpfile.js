@@ -350,7 +350,7 @@ gulp.task('selenium', plugins.shell.task('python ./scripts/selenium/test.py'));
 gulp.task('mocha', function(done) {
   // Open mongoose connections
   var mongoose = require('./config/lib/mongoose');
-  var agenda = require('./config/lib/agenda');
+  // var agenda = require('./config/lib/agenda');
   var testSuites = changedTestFiles.length ? changedTestFiles : testAssets.tests.server;
   var error;
 
