@@ -22,10 +22,19 @@ var db = mongoose.connect(config.db.uri, function(err) {
   }
 });
 
+// Calculate data based only on messages after X Date
+var messageQuery = {
+  created: {
+    $gt: new Date('2016-11-27')
+  }
+};
+// Calculate data based on all messages
+// var messageQuery = {};
+
 async.waterfall([
   // count all messages to be able to show progress
   function countAllMessages(done) {
-    Message.count().exec(function (err, messageNo) {
+    Message.count(messageQuery).exec(function (err, messageNo) {
       done(err, messageNo);
     })
   },
@@ -35,7 +44,7 @@ async.waterfall([
     console.log('streaming, processing and adding the messages to influx now\n');
 
     // cursor for streaming from mongoDB
-    var cursor = Message.find().cursor();
+    var cursor = Message.find(messageQuery).cursor();
 
     // preparation for async.doWhilst function
     //
@@ -117,5 +126,3 @@ async.waterfall([
 
   return; // all finished!
 });
-
-
