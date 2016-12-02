@@ -35,8 +35,8 @@
       return {
         template:
           '<div ng-switch="link" ng-cloak>' +
-          '  <img class="avatar avatar-{{ size }}" alt="" ng-switch-when="false" ng-src="{{avatar}}" draggable="false">' +
-          '  <a ng-switch-when="true" ui-sref="profile.about({username: user.username})"><img class="avatar avatar-{{ size }}" alt="" ng-class="avatar-{{ size }}" ng-src="{{avatar}}" draggable="false"></a>' +
+          '  <img class="avatar avatar-{{ size }} avatar-{{ source }}" alt="" ng-switch-when="false" ng-src="{{ avatar }}" draggable="false">' +
+          '  <a ng-switch-when="true" ui-sref="profile.about({username: user.username})"><img class="avatar avatar-{{ size }} avatar-{{ source }}" alt="" ng-class="avatar-{{ size }}" ng-src="{{ avatar }}" draggable="false"></a>' +
           '</div>',
         restrict: 'A',
         scope: {

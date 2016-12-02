@@ -7,9 +7,9 @@ var mongoose = require('mongoose'),
     config = require(path.resolve('./config/config')),
     User = mongoose.model('User'),
     EventEmitter = require('events'),
+    Promise = require('promise'),
     Message = mongoose.model('Message'),
-    influxService =
-  require(path.resolve('./modules/core/server/services/influx.server.service')),
+    influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
     originalGetClient = influxService.getClient;
 
 // this emitter will emit event 'reachedInfluxdb' with variables measurement,
@@ -19,9 +19,13 @@ var reachEventEmitter = new EventEmitter();
 // it will emit an event 'reachedInfluxdb' which should be caught in the tests
 
 // mocking the influxdb.writeMeasurement()
+//
 var influxdb = {
   writeMeasurement: function (measurement, fields, tags) {
-    reachEventEmitter.emit('reachedInfluxdb', measurement, fields, tags);
+    return new Promise(function (resolve) {
+      reachEventEmitter.emit('reachedInfluxdb', measurement, fields, tags);
+      resolve();
+    });
   }
 };
 
