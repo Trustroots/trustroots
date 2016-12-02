@@ -350,7 +350,7 @@ gulp.task('selenium', plugins.shell.task('python ./scripts/selenium/test.py'));
 gulp.task('mocha', function(done) {
   // Open mongoose connections
   var mongoose = require('./config/lib/mongoose');
-  // var agenda = require('./config/lib/agenda');
+  var agenda = require('./config/lib/agenda');
   var testSuites = changedTestFiles.length ? changedTestFiles : testAssets.tests.server;
   var error;
 
@@ -373,11 +373,11 @@ gulp.task('mocha', function(done) {
         // and pass the error state back to gulp
         // @todo: https://github.com/Trustroots/trustroots/issues/438
         // Mikael temporarily disabled this 11/2016 to fix crashing test-watching
-        // agenda._mdb.close(function() {
-        mongoose.disconnect(function() {
-          done(error);
+        agenda._mdb.close(function() {
+          mongoose.disconnect(function() {
+            done(error);
+          });
         });
-        // });
       });
   });
 
