@@ -30,17 +30,22 @@
     </div>
 
     <div class="profile-sidebar-section" ng-if="profileCtrl.profile.locationLiving">
-      <i class="icon-fw icon-building text-muted"></i> Lives in <a ui-sref="search.map({location: profileCtrl.profile.locationLiving})" ng-bind="profileCtrl.profile.locationLiving"></a>
+      <i class="icon-fw icon-building text-muted"></i>
+      Lives in <a ui-sref="search.map({location: profileCtrl.profile.locationLiving})"
+                  ng-bind="profileCtrl.profile.locationLiving"></a>
     </div>
 
     <div class="profile-sidebar-section" ng-if="profileCtrl.profile.locationFrom">
-      <i class="icon-fw icon-home text-muted"></i> From <a ui-sref="search.map({location: profileCtrl.profile.locationFrom})" ng-bind="profileCtrl.profile.locationFrom"></a>
+      <i class="icon-fw icon-home text-muted"></i>
+      From <a ui-sref="search.map({location: profileCtrl.profile.locationFrom})"
+              ng-bind="profileCtrl.profile.locationFrom"></a>
     </div>
 
     <div class="profile-sidebar-section" ng-if="profileCtrl.profile.languages.length">
       <h4>Languages</h4>
       <ul class="list-unstyled">
-        <li ng-repeat="code in profileCtrl.profile.languages track by code">{{ ::app.languageNames[code] || code }}</li>
+        <li ng-repeat="code in profileCtrl.profile.languages track by code"
+            ng-bind="::app.languageNames[code] || code"></li>
       </ul>
     </div>
 
@@ -49,11 +54,18 @@
       <ul class="social-profiles list-unstyled">
         <li class="social-profile" ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts()" ng-repeat="(providerName, providerData) in profileCtrl.profile.additionalProvidersData track by providerName">
           <i class="social-profile-icon icon-fw icon-lg icon-{{ ::providerName }}"></i>
-          <a class="social-profile-handle text-capitalize" ng-href="{{ ::profileCtrl.socialAccountLink(providerName, providerData) }}">{{ ::providerName }}</a>
+          <a rel="noopener"
+             class="social-profile-handle text-capitalize"
+             ng-href="{{ ::profileCtrl.socialAccountLink(providerName, providerData) }}"
+             ng-bind="::providerName"></a>
         </li>
         <li class="social-profile" ng-if="profileCtrl.profile.extSitesBW">
           <i class="social-profile-icon icon-fw icon-lg icon-bw"></i>
-          <a class="social-profile-handle" ng-href="http://www.bewelcome.org/members/{{ ::profileCtrl.profile.extSitesBW }}">BeWelcome</a>
+          <a rel="noopener"
+             class="social-profile-handle"
+             ng-href="http://www.bewelcome.org/members/{{ ::profileCtrl.profile.extSitesBW }}">
+            BeWelcome
+          </a>
         </li>
         <li class="social-profile" ng-if="profileCtrl.profile.extSitesCS">
           <i class="social-profile-icon icon-fw icon-lg icon-cs"></i>
@@ -61,11 +73,18 @@
           Link here has `rel="noreferrer"` because;
           https://github.com/Trustroots/trustroots/issues/464
           -->
-          <a rel="noreferrer" class="social-profile-handle" ng-href="https://www.couchsurfing.com/people/{{ ::profileCtrl.profile.extSitesCS }}">Couchsurfing</a>
+          <a rel="noreferrer"
+             class="social-profile-handle"
+             ng-href="https://www.couchsurfing.com/people/{{ ::profileCtrl.profile.extSitesCS }}">
+            Couchsurfing
+          </a>
         </li>
         <li class="social-profile" ng-if="profileCtrl.profile.extSitesWS">
           <i class="social-profile-icon icon-fw icon-lg icon-ws"></i>
-          <a class="social-profile-handle" ng-href="https://www.warmshowers.org/{{ ::(profileCtrl.isWarmshowersId() ? 'user' : 'users') }}/{{ ::profileCtrl.profile.extSitesWS }}">Warmshowers</a>
+          <a class="social-profile-handle"
+             ng-href="https://www.warmshowers.org/{{ ::(profileCtrl.isWarmshowersId() ? 'user' : 'users') }}/{{ ::profileCtrl.profile.extSitesWS }}">
+            Warmshowers
+          </a>
         </li>
       </ul>
     </div>
