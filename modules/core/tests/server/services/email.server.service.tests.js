@@ -275,7 +275,7 @@ describe('Service: email', function() {
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
       jobs[0].data.text.should.containEql('Your profile will not be visible to others if you don\'t confirm your email address (' + user.emailTemporary + ').');
-      jobs[0].data.text.should.containEql('/confirm-email/' + user.emailToken + '?signup');
+      jobs[0].data.text.should.containEql('/confirm-email/' + user.emailToken + '?signup=true');
       jobs[0].data.to.name.should.equal(user.displayName);
       jobs[0].data.to.address.should.equal(user.email);
       done();

@@ -16,6 +16,7 @@
 
           <div class="text-center form-group" ng-if="!confirmEmail.success">
 
+            <a ng-if="confirmEmail.email" href="mailto:{{ confirmEmail.email }}"><h4>{{ confirmEmail.email }}</h4></a>
             <p class="lead" ng-if="confirmEmail.signup">Confirm your email and make your profile visible to others.</p>
             <p class="lead" ng-if="!confirmEmail.signup">Confirm your email.</p>
 
