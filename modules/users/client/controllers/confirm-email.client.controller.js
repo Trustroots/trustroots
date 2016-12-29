@@ -6,7 +6,7 @@
     .controller('ConfirmEmailController', ConfirmEmailController);
 
   function getEmailFromToken(token) {
-    // old tokens have lenght 40 symbols
+    // old tokens have lenght 40 symbols. pullrequest #465
     if (token.length <= 40) {
       return null;
     }
