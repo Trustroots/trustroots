@@ -17,7 +17,7 @@ var _ = require('lodash'),
     basicAuth = require('basic-auth'),
     speakingurl = require('speakingurl'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
-    influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
+    influxService = require(path.resolve('./modules/stats/server/services/influx.server.service')),
     config = require(path.resolve('./config/config'));
 
 /**
@@ -147,7 +147,8 @@ exports.processAndSendMetrics = function(event, callback) {
     fields.time = new Date(parseInt(timestamp, 10) * 1000);
   }
 
-  influxService.writeMeasurement('transactionalEmailEvent', fields, tags, callback);
+  // @TODO remake to Stats API
+  influxService._writeMeasurement('transactionalEmailEvent', fields, tags, callback);
 };
 
 /**

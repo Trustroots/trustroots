@@ -26,50 +26,79 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    _ = require('lodash'),
-    config = require(path.resolve('./config/config'));
+var _ = require('lodash'),
+    // path = require('path'),
+    // config = require(path.resolve('./config/config')),
+    influxService = require('./influx.server.service.js'),
+    stathatService = require('./stathat.server.service.js');
 
 /**
   * Record a simple "count" stat
  */
-var count = function(name, count = 1, time) {
+function count(name, count, time) {
+  // count has a default value 1
+  count = count || 1;
+
   return stat({
     namespace: name,
     counts: {
-      count,
+      count: count
     },
-    time,
-  })
+    time: time
+  });
 }
 
 /**
  * Record a simple "value" stat
  */
-var value = function(name, value, time) {
+function value(name, value, time) {
   return stat({
     namespace: name,
     values: {
-      value,
-    }
-    time,
-  })
+      value: value
+    },
+    time: time
+  });
 }
 
 // Ensure that `stat` matches the required schema
-var validateStat = function(stat) {
+function validateStat(stat) {
+  console.log(stat);
   // We must have a value called namespace and it must be a string
   if (!_.isString(stat.namespace)) {
     // error
+    throw new Error('The namespace of the stats should be a string');
   }
 
   // We must have at least one of `counts` or `values`, or both
-  if (_.isUndefined(stats.counts) && _.isUndefined(stats.values)) {
+  if (_.isUndefined(stat.counts) && _.isUndefined(stat.values)) {
     // error
+    throw new Error('The stats should contain counts or values');
   }
 
   // Every key in `counts`, `values`, `meta`, and `tags` must be unique
-  // @TODO Implement this check
+  // We fetch all the keys and then compare length of their union with
+  // the sum of their lengths. If the lengths are equal, all keys are unique.
+  function areKeysUnique() {
+    // keys is an array of arrays of keys of all objects passed as arguments
+    // to the function
+    var keys = [];
+    var keyLength = 0;
+
+    for (var i = 0, len = arguments.length; i < len; i++) {
+      var currentKeys = _.keys(arguments[i]);
+      keys.push(currentKeys);
+      keyLength += currentKeys.length;
+    }
+
+    var unionKeys = _.union.apply(this, keys);
+
+    return keyLength === unionKeys.length;
+  }
+
+  if (!areKeysUnique(stat.counts, stat.values, stat.meta, stat.tags)) {
+    throw new Error('Every key of stat counts, values, meta and tags must be unique');
+  }
 }
 
 /**
@@ -127,16 +156,19 @@ stats.stat({
  * only be used one in any of the properties (`counts`, `values`, `tags`,
  * `meta`).
  */
-stat = function(stat) {
-  validateStat(stat) // Wrap in if() or make it throw depend on implementation
-  sendToInflux(stat)
-  sendToStathat(stat)
+function stat(stat) {
+  // validateStat will throw an error if invalid
+  validateStat(stat); // Wrap in if() or make it throw depend on implementation
+  // send the stat to InfluxDB
+  influxService.stat(stat);
+  // send the stat to Stathat
+  stathatService.stat(stat);
 }
 
 // Public exports
-exports.count = count
-exports.value = value
-exports.stat = stat
+exports.count = count;
+exports.value = value;
+exports.stat = stat;
 
 // Pseudo-private exports for tests
-exports._validateStat = validateStat
+exports._validateStat = validateStat;

@@ -10,8 +10,8 @@ var mongoose = require('mongoose'),
     config = require(path.resolve('./config/config')),
     User = mongoose.model('User'),
     Message = mongoose.model('Message'),
-    messageToInfluxService =
-  require(path.resolve('./modules/messages/server/services/message-to-influx.server.service'));
+    messageToStatsService =
+  require(path.resolve('./modules/messages/server/services/message-to-stats.server.service'));
 require('should');
 
 // for testing length of long or short messages
@@ -20,7 +20,7 @@ var longMessageMinimumLength = config.limits.longMessageMinimumLength;
 /**
  * Unit tests
  */
-describe('Message to influx server service Unit Tests:', function() {
+describe('Message to stats server service Unit Tests:', function() {
   var user1,
       user2;
 
@@ -61,7 +61,7 @@ describe('Message to influx server service Unit Tests:', function() {
     });
   });
 
-  describe('Testing messageToInfluxService.process(message)', function () {
+  describe('Testing messageToStatsService.process(message)', function () {
     // here we create some example messages
     var message1to2,
         message2to1,
@@ -138,10 +138,11 @@ describe('Message to influx server service Unit Tests:', function() {
 
     it('[first message] should give tag with key `position` and value `first`',
       function (done) {
-        messageToInfluxService.process(message1to2, function (err, fields, tags) {
+        messageToStatsService.process(message1to2, function (err, stat) {
           if (err) return done(err);
           try {
-            tags.should.have.property('position', 'first');
+            stat.should.have.property('tags');
+            stat.tags.should.have.property('position', 'first');
             return done();
           } catch (err) {
             return done(err);
@@ -151,10 +152,11 @@ describe('Message to influx server service Unit Tests:', function() {
 
     it('[first reply] should give tag with key `position` and value `firstReply`',
       function (done) {
-        messageToInfluxService.process(message2to1, function (err, fields, tags) {
+        messageToStatsService.process(message2to1, function (err, stat) {
           if (err) return done(err);
           try {
-            tags.should.have.property('position', 'firstReply');
+            stat.should.have.property('tags');
+            stat.tags.should.have.property('position', 'firstReply');
             return done();
           } catch (e) {
             return done(e);
@@ -162,13 +164,13 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[first reply] should give field with key `replyTime` > 0',
+    it('[first reply] should give value with key `timeToFirstReply` > 0',
       function (done) {
-        messageToInfluxService.process(message2to1, function (err, fields) {
+        messageToStatsService.process(message2to1, function (err, stat) {
           if (err) return done(err);
           try {
-            fields.should.have.property('replyTime');
-            (fields.replyTime).should.be.above(0);
+            stat.values.should.have.property('timeToFirstReply');
+            (stat.values.timeToFirstReply).should.be.above(0);
             return done();
           } catch (err) {
             return done(err);
@@ -178,10 +180,10 @@ describe('Message to influx server service Unit Tests:', function() {
 
     it('[not first position nor first reply] should give tag with key `position` and value `other`',
       function (done) {
-        messageToInfluxService.process(shortMessage, function (err, fields, tags) {
+        messageToStatsService.process(shortMessage, function (err, stat) {
           if (err) return done(err);
           try {
-            tags.should.have.property('position', 'other');
+            stat.tags.should.have.property('position', 'other');
             return done();
           } catch (err) {
             return done(err);
@@ -189,12 +191,12 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[short message] should give tag with key `messageLength` and value `short`',
+    it('[short message] stat should contain tag "messageLengthType": "short"',
       function (done) {
-        messageToInfluxService.process(shortMessage, function (err, fields, tags) {
+        messageToStatsService.process(shortMessage, function (err, stat) {
           if (err) return done(err);
           try {
-            tags.should.have.property('messageLengthType', 'short');
+            stat.tags.should.have.property('messageLengthType', 'short');
             return done();
           } catch (err) {
             return done(err);
@@ -202,12 +204,12 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[short message] should give tag with key `messageLength` and value `long`',
+    it('[short message] stat should contain tag "messageLengthType": "long"',
       function (done) {
-        messageToInfluxService.process(longMessage, function (err, fields, tags) {
+        messageToStatsService.process(longMessage, function (err, stat) {
           if (err) return done(err);
           try {
-            tags.should.have.property('messageLengthType', 'long');
+            stat.tags.should.have.property('messageLengthType', 'long');
             return done();
           } catch (err) {
             return done(err);
@@ -215,12 +217,12 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[not-first-reply message] should not give the key `replyTime`',
+    it('[not-first-reply message] stat should contain tag `timeToFirstReply`',
       function (done) {
-        messageToInfluxService.process(longMessage, function (err, fields) {
+        messageToStatsService.process(longMessage, function (err, stat) {
           if (err) return done(err);
           try {
-            fields.should.not.have.property('replyTime');
+            stat.should.not.have.property('timeToFirstReply');
             return done();
           } catch (err) {
             return done(err);
@@ -228,12 +230,12 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[every message] should give field with key `messageLength` and correct length as value',
+    it('[every message] stat should contain meta "messageLength" and a correct length as value',
       function (done) {
-        messageToInfluxService.process(message1to2, function (err, fields) {
+        messageToStatsService.process(message1to2, function (err, stat) {
           if (err) return done(err);
           try {
-            fields.should.have.property('messageLength', message1to2.content.length);
+            stat.meta.should.have.property('messageLength', message1to2.content.length);
             return done();
           } catch (err) {
             return done(err);
@@ -241,19 +243,19 @@ describe('Message to influx server service Unit Tests:', function() {
         });
       });
 
-    it('[every message] should give field with key `time` which is a Date in a specific range',
+    it('[every message] stat should contain "time" which is a Date in a specific range',
       // @TODO the test should be rewriten to be more precise (see the todo near
       // creating the testing messages)
       function (done) {
-        messageToInfluxService.process(message1to2, function (err, fields) {
+        messageToStatsService.process(message1to2, function (err, stat) {
           if (err) return done(err);
           try {
-            fields.should.have.property('time');
-            (fields.time).should.be.Date();
+            stat.should.have.property('time');
+            (stat.time).should.be.Date();
             // here we test wheter the number is between now and some not so
             // past time
-            (fields.time.getTime() > 1400000000 * 1000).should.be.exactly(true);
-            (fields.time.getTime() <= Date.now()).should.be.exactly(true);
+            (stat.time.getTime() > 1400000000 * 1000).should.be.exactly(true);
+            (stat.time.getTime() <= Date.now()).should.be.exactly(true);
             return done();
           } catch (err) {
             return done(err);

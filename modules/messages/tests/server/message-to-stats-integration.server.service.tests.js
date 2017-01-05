@@ -9,8 +9,8 @@ var mongoose = require('mongoose'),
     EventEmitter = require('events'),
     Promise = require('promise'),
     Message = mongoose.model('Message'),
-    influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
-    originalGetClient = influxService.getClient;
+    influxService = require(path.resolve('./modules/stats/server/services/influx.server.service')),
+    originalGetClient = influxService._getClient;
 
 // this emitter will emit event 'reachedInfluxdb' with variables measurement,
 // fields, tags when the influxdb mock is reached
@@ -30,20 +30,20 @@ var influxdb = {
 };
 
 // now replacing the getClient function, to return mocked influxdb
-influxService.getClient = function (callback) {
+influxService._getClient = function (callback) {
   callback(null, influxdb);
 };
 
-// now we require the controller, and the influxService.getClient is already
+// now we require the controller, and the influxService._getClient is already
 // mocked
 var messageController =
   require(path.resolve('./modules/messages/server/controllers/messages.server.controller'));
 
 
-describe('Message to influx server service Functional Test', function () {
+describe('Message to Stats API server service Integration Test', function () {
   // putting the influxService back to original at the end of tests
   after(function () {
-    influxService.getClient = originalGetClient;
+    influxService._getClient = originalGetClient;
   });
 
   var user1,
@@ -92,43 +92,44 @@ describe('Message to influx server service Functional Test', function () {
     });
   });
 
-  // send the new message, do it synchronously
-  // otherwise the event may be too early and miss the tests
-  // there should be no asynchronous beforeEach after this
-  // the tests themselves will wait for the event of reaching influxdb
-  beforeEach(function () {
+  context('when a new message is sent', function () {
 
-    // we're stubbing the express.response here
-    // (not sure if i use the mocking/stubbing terminology right)
-    function Res() {}
-    Res.prototype.status = function (statusCode) {
-      statusCode; // here we just satisfy eslint; may be used for something
-      // this.statusCode = statusCode; // use for debug
-      return this;
-    };
-    // we could do something on response, but we don't care
-    Res.prototype.send = function (response) {
-      // console.log(this.statusCode, response); // use for debug
-      response; // satisfy ESLint
-    };
-    Res.prototype.json = Res.prototype.send;
+    // send the new message, do it synchronously
+    // otherwise the event may be too early and miss the tests
+    // there should be no asynchronous beforeEach after this
+    // the tests themselves will wait for the event of reaching influxdb
+    beforeEach(function () {
 
-    var req = {
-      user: {
-        _id: user1._id
-      },
-      body: {
-        userTo: String(user2._id),
-        content: _.repeat('.', config.limits.longMessageMinimumLength - 1)
-      }
-    };
-    var res = new Res();
+      // we're stubbing the express.response here
+      // (not sure if i use the mocking/stubbing terminology right)
+      function Res() {}
+      Res.prototype.status = function (statusCode) {
+        statusCode; // here we just satisfy eslint; may be used for something
+        // this.statusCode = statusCode; // use for debug
+        return this;
+      };
+      // we could do something on response, but we don't care
+      Res.prototype.send = function (response) {
+        // console.log(this.statusCode, response); // use for debug
+        response; // satisfy ESLint
+      };
+      Res.prototype.json = Res.prototype.send;
 
-    // sending the message via controller
-    messageController.send(req, res);
-  });
+      var req = {
+        user: {
+          _id: user1._id
+        },
+        body: {
+          userTo: String(user2._id),
+          content: _.repeat('.', config.limits.longMessageMinimumLength - 1)
+        }
+      };
+      var res = new Res();
 
-  context('when a new message is saved', function () {
+      // sending the message via controller
+      messageController.send(req, res);
+    });
+
     context('when influxdb is enabled', function () {
 
       // setting the influxdb config
@@ -145,13 +146,14 @@ describe('Message to influx server service Functional Test', function () {
         };
       });
 
-      // unsetting the influxdb config
+      // reestablish the original influxdb config
       afterEach(function () {
         config.influxdb = originalInfluxConfig;
       });
 
       it('the data should reach the database', function (done) {
-        // we want to call the listener only once
+        // we want to call the listener when the influxdb is reached
+        // that means the test passed
         reachEventEmitter.once('reachedInfluxdb', function () {
           return done();
         });

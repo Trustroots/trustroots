@@ -7,7 +7,7 @@ var path = require('path'),
     async = require('async'),
     config = require(path.resolve('./config/config')),
     mongoose = require('mongoose'),
-    influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
+    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller'));
 
 // eslint complained here about unused variable => requiring without assignment
@@ -173,40 +173,46 @@ module.exports.process = function (message, callback) {
 
       var msgLenType = msgLen < config.limits.longMessageMinimumLength ? 'short' : 'long';
 
-      // values for influxdb
-      var fields = {
-        messageId: String(message._id),
-        userFrom: String(userFrom), // id of sender
-        userTo: String(userTo), // id of receiver
-        messageLength: msgLen, // length of the content
-        time: message.created // creation time (Date)
+      // values for stats
+      var statObject = {
+        namespace: 'messages',
+        counts: {
+          sent: 1
+        },
+        values: {},
+        tags: {
+          position: position, // position (first|firstReply|other)
+          messageLengthType: msgLenType // (short|long) content (shortness defined in a config)
+        },
+        meta: {
+          messageId: String(message._id),
+          userFrom: String(userFrom), // id of sender
+          userTo: String(userTo), // id of receiver
+          messageLength: msgLen // length of the content
+        },
+        time: message.created
       };
 
       // we measure the reply time only for the first replies (time since the
       // first message sent by the other user)
       if (isFirstReply) {
-        fields.replyTime = replyTime;
+        statObject.values.timeToFirstReply = replyTime;
       }
 
-      // tags for influxdb
-      var tags = {
-        position: position, // position (first|firstReply|other)
-        messageLengthType: msgLenType // (short|long) content (shortness defined in a config)
-      };
-
-      return done(null, fields, tags);
+      return done(null, statObject);
     }
   ], callback);
 };
 
 /**
- * this function sends the processed field tags and values to influxService
+ * this function sends the processed field tags and values to statService
  * @param {object} fields - object of field keys and values as expected by
  * influxService & influxdb
  * @param {object} tags - object of tag keys and values as expected by
  * influxService & influxdb
  * @param {influxCallback} callback - a callback that handles the response
  */
-module.exports.send = function (fields, tags, callback) {
-  return influxService.writeMeasurement('messageSent', fields, tags, callback);
+module.exports.send = function (statObject, callback) {
+
+  return statService.stat(statObject, callback);
 };

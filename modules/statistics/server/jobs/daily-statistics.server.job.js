@@ -8,7 +8,7 @@
  * Module dependencies.
  */
 var path = require('path'),
-    influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
+    influxService = require(path.resolve('./modules/stats/server/services/influx.server.service')),
     statistics = require(path.resolve('./modules/statistics/server/controllers/statistics.server.controller'));
 
 module.exports = function (job, agendaDone) {
@@ -22,7 +22,8 @@ module.exports = function (job, agendaDone) {
     }
 
     // Save to influx here
-    influxService.writeMeasurement('members', { count: count }, { members: 'members' },
+    // @TODO remake for a general Stats API
+    influxService._writeMeasurement('members', { count: count }, { members: 'members' },
       function (err, result) {
         if (err) {
           console.error('Daily statistics: failed writing to InfluxDB.');
