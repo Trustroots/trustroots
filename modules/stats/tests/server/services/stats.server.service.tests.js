@@ -7,7 +7,7 @@ var should = require('should'),
     influxService = require(path.resolve('./modules/stats/server/services/influx.server.service')),
     sinon = require('sinon');
 
-describe('General Stats API Service', function () {
+describe('General Stats API Service Unit Tests', function () {
   // replace the influx & stathat service stat() functions with fake version
 
   var sandbox;

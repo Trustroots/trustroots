@@ -27,6 +27,7 @@
  * Module dependencies.
  */
 var _ = require('lodash'),
+    async = require('async'),
     // path = require('path'),
     // config = require(path.resolve('./config/config')),
     influxService = require('./influx.server.service.js'),
@@ -203,25 +204,40 @@ function stat(stat, callback) {
   // send the stat to InfluxDB
   // send the stat to Stathat
   // let them both finish or fail and then report errors
-  influxService.stat(stat, function (influxErr) {
-    stathatService.stat(stat, function (stathatErr) {
-      if (influxErr || stathatErr) {
-        var finalErr = new Error('Writing to Influx or Stathat service failed.');
+  var influxErr,
+      stathatErr;
 
-        finalErr.errors = {
-          influx: influxErr,
-          stathat: stathatErr
-        };
-
-        return callback(finalErr);
-      }
-
-      return callback();
+  // the wrap functions put possible errors to closure variables and always succeed
+  function influxServiceStatWrap(stat, done) {
+    influxService.stat(stat, function (e) {
+      if (e) influxErr = e;
+      return done();
     });
+  }
+
+  function stathatServiceStatWrap(stat, done) {
+    stathatService.stat(stat, function (e) {
+      if (e) stathatErr = e;
+      return done();
+    });
+  }
+
+  async.applyEach([stathatServiceStatWrap, influxServiceStatWrap], stat, function (e) {
+    if (e) return callback(e); // this should not happen
+
+    if (influxErr || stathatErr) {
+      var finalErr = new Error('Writing to Influx or Stathat service failed.');
+
+      finalErr.errors = {
+        influx: influxErr,
+        stathat: stathatErr
+      };
+
+      return callback(finalErr);
+    }
+
+    return callback();
   });
-
-
-  // @TODO improve the callback!! make it go after we get responses from influxService & stathatService
 }
 
 // Public exports

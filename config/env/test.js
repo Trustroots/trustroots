@@ -33,6 +33,10 @@ module.exports = {
   influxdb: {
     enabled: false
   },
+  stathat: {
+    enabled: false,
+    key: ''
+  },
   mapbox: {
     // Mapbox is publicly exposed to the frontend
     user: process.env.MAPBOX_USERNAME || 'trustroots',

@@ -5,6 +5,7 @@
  */
 var path = require('path'),
     _ = require('lodash'),
+    async = require('async'),
     config = require(path.resolve('./config/config')),
     stathat = require('stathat');
 
@@ -20,10 +21,6 @@ var SEPARATOR = '.';
 if (!key) {
   console.error('No stathat key #LDoC3y');
 }
-
-// The stathat API accepts a callback, we pass an empty function for now
-// @TODO Improve stathat error handling
-var callback = function () {};
 
 // If `time` is a Date object, then return a unix timestamp (which is what
 // stathat wants to consume), otherwise, return the value unmodified.
@@ -41,14 +38,16 @@ var buildName = function () {
 };
 
 // Choose the correct stathat method and send the metric.
-var send = function(type, name, value, time) {
+var send = function(type, name, value, time, callback) {
+  // Get a fresh stathat key from `config` (maybe it was stubbed since the instantiation of this module)
+  var key = _.get(config, 'stathat.key', false);
   // If we don't have a stathat key, silently drop this stat
   if (!key) {
-    return;
+    return callback();
   }
 
   // Select the stathat method we want to use
-  var method = type === 'count' ? 'trackEZCount' : 'trackEZValue';
+  var method = (type === 'count') ? 'trackEZCount' : 'trackEZValue';
 
   // Build an array of arguments for the method's `.apply()` below
   var args = [key, name, value];
@@ -69,18 +68,23 @@ var send = function(type, name, value, time) {
 
 // Process one stat sending one value for the stat itself, and one value for
 // every tag.
-var sendStats = function(type, statName, statValue, tags, time) {
-  // Send a stat
-  send(type, statName, statValue, time);
+var sendStats = function(type, statName, statValue, tags, time, callback) {
 
-  // Iterate over the tags and send one stat per tag
-  _.forOwn(tags, function(tagValue, tagName) {
-    send(type, buildName(statName, tagName, tagValue), statValue, time);
+  // collect the statNames (the default one and the ones created from tags)
+  var statNames = [[statName]];
+  _.forOwn(tags, function (tagValue, tagName) {
+    statNames.push([buildName(statName, tagName, tagValue)]);
   });
+
+  asyncEachFinish(statNames, function (statName, done) {
+    send(type, statName, statValue, time, done);
+  }, callback);
+
 };
 
 // Take our custom `stat` object and send stat(s) to stathat
-var stat = function(stat) {
+var stat = function(stat, callback) {
+
   var namespace = stat.namespace;
   var tags = stat.tags;
   var counts = stat.counts;
@@ -88,16 +92,19 @@ var stat = function(stat) {
   var time = stat.time;
 
   // Iterate over the `counts`
+  var sendStatsParams = [];
   _.forOwn(counts, function(value, countName) {
     // Process this counter
-    sendStats('count', buildName(namespace, countName), value, tags, time);
+    sendStatsParams.push(['count', buildName(namespace, countName), value, tags, time]);
   });
 
   // Iterate over the `values`
   _.forOwn(values, function(value, valueName) {
     // Process this value
-    sendStats('value', buildName(namespace, valueName), value, tags, time);
+    sendStatsParams.push(['value', buildName(namespace, valueName), value, tags, time]);
   });
+
+  asyncEachFinish(sendStatsParams, sendStats, callback);
 };
 
 // Public exports
@@ -107,3 +114,44 @@ exports.stat = stat;
 exports._formatTime = formatTime;
 exports._buildName = buildName;
 exports._send = send;
+
+
+// we want the functionality of async.each, but we don't want to finish on error
+// we want to run iteratee on all coll's elements, collect the errors and
+// present them (if any) at the end
+// also coll should be array of arrays of arguments for iteratee
+function asyncEachFinish(coll, iteratee, callback) {
+  // collect errors here
+  var sendErrors = [];
+
+  function errorCollectingIteratee(args, done) {
+    var toRun = iteratee.bind.apply(iteratee, [null].concat(args));
+
+    toRun(function (e) {
+      // collect any errors to sendErrors array
+      if (e) {
+        e.args = args;
+        sendErrors.push(e);
+      }
+
+      return done();
+    });
+  }
+
+  function cb (e) {
+    if (e) return callback(e);
+
+    if (sendErrors.length > 0) {
+      var responseError = new Error('Collected ' + sendErrors.length + '/' + coll.length + 'failures. See property errors');
+
+      responseError.errors = sendErrors;
+
+      return callback(responseError);
+    }
+
+    return callback();
+  }
+
+  // iterate over all statNames and send each to stathat
+  async.each(coll, errorCollectingIteratee, cb);
+}
