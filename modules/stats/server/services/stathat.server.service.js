@@ -8,6 +8,9 @@ var path = require('path'),
     config = require(path.resolve('./config/config')),
     stathat = require('stathat');
 
+// send data to stathat.com over https (ecrypted)
+stathat.useHTTPS = true;
+
 // Get the stathat key from `config`
 var key = _.get(config, 'stathat.key', false);
 

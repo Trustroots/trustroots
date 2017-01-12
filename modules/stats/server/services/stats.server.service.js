@@ -34,46 +34,83 @@ var _ = require('lodash'),
 
 /**
   * Record a simple "count" stat
+  *
+  * count(name, ?count, ?time, callback)
  */
-function count(name, count, time) {
-  // count has a default value 1
-  count = count || 1;
+function count(name, count, time, callback) {
 
-  return stat({
+  // make the count optional and callback as the last argument
+  if (arguments.length === 2 && _.isFunction(count)) {
+    callback = count;
+    count = undefined;
+  }
+
+  // make the time optional and callback as the last argument
+  if (arguments.length === 3 && _.isFunction(time)) {
+    callback = time;
+    time = undefined;
+  }
+
+  // set the defaults
+  count = count || 1;
+  callback = callback || function () {};
+
+  var statObject = {
     namespace: name,
     counts: {
       count: count
-    },
-    time: time
-  });
+    }
+  };
+
+  if (time) { statObject.time = time; }
+
+  stat(statObject, callback);
 }
 
 /**
  * Record a simple "value" stat
+ * value(name, value, ?time, callback)
  */
-function value(name, value, time) {
-  return stat({
+function value(name, value, time, callback) {
+
+  // make the time optional
+  if (arguments.length === 3 && _.isFunction(time)) {
+    callback = time;
+    time = undefined;
+  }
+
+  // set default callback
+  callback = callback || function () {};
+
+  // construct and send the stat
+  var statObject = {
     namespace: name,
     values: {
       value: value
-    },
-    time: time
-  });
+    }
+  };
+
+  if (time) statObject.time = time;
+
+  stat(statObject, callback);
 }
 
 // Ensure that `stat` matches the required schema
 function validateStat(stat) {
-  console.log(stat);
   // We must have a value called namespace and it must be a string
   if (!_.isString(stat.namespace)) {
     // error
-    throw new Error('The namespace of the stats should be a string');
+    throw new Error('The stat.namespace should be a string');
   }
 
   // We must have at least one of `counts` or `values`, or both
-  if (_.isUndefined(stat.counts) && _.isUndefined(stat.values)) {
+  var isCountsAndValuesMissing = _.isUndefined(stat.counts) && _.isUndefined(stat.values);
+  // @TODO check that they are plain objects or undefined with _.isPlainObject()
+  // counts or values have to contain at least 1 property
+  var isCountsAndValuesEmpty = _.keys(stat.counts).length + _.keys(stat.values).length === 0;
+  if (isCountsAndValuesMissing || isCountsAndValuesEmpty) {
     // error
-    throw new Error('The stats should contain counts or values');
+    throw new Error('The stat should contain counts or values');
   }
 
   // Every key in `counts`, `values`, `meta`, and `tags` must be unique
@@ -156,13 +193,35 @@ stats.stat({
  * only be used one in any of the properties (`counts`, `values`, `tags`,
  * `meta`).
  */
-function stat(stat) {
+function stat(stat, callback) {
   // validateStat will throw an error if invalid
-  validateStat(stat); // Wrap in if() or make it throw depend on implementation
+  try {
+    validateStat(stat); // Wrap in if() or make it throw depend on implementation
+  } catch (e) {
+    return callback(e);
+  }
   // send the stat to InfluxDB
-  influxService.stat(stat);
   // send the stat to Stathat
-  stathatService.stat(stat);
+  // let them both finish or fail and then report errors
+  influxService.stat(stat, function (influxErr) {
+    stathatService.stat(stat, function (stathatErr) {
+      if (influxErr || stathatErr) {
+        var finalErr = new Error('Writing to Influx or Stathat service failed.');
+
+        finalErr.errors = {
+          influx: influxErr,
+          stathat: stathatErr
+        };
+
+        return callback(finalErr);
+      }
+
+      return callback();
+    });
+  });
+
+
+  // @TODO improve the callback!! make it go after we get responses from influxService & stathatService
 }
 
 // Public exports
