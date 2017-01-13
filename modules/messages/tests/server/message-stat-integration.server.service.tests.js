@@ -4,6 +4,7 @@ var mongoose = require('mongoose'),
     should = require('should'),
     path = require('path'),
     _ = require('lodash'),
+    sinon = require('sinon'),
     config = require(path.resolve('./config/config')),
     User = mongoose.model('User'),
     EventEmitter = require('events'),
@@ -15,23 +16,24 @@ var mongoose = require('mongoose'),
 
 describe('Integration of the MessageStat service', function () {
   // stubbing the updateMessageStat
-  var originalUpdateMessageStat,
-      reachEventEmitter;
+  var reachEventEmitter,
+      sandbox;
 
   before(function () {
     // this emitter will listen to reaching the updateMessageStat service
     reachEventEmitter = new EventEmitter();
-    // keep the original service to restore it later
-    originalUpdateMessageStat = messageStatService.updateMessageStat;
-    // the stubbing itself
-    messageStatService.updateMessageStat = function () {
+
+    sandbox = sinon.sandbox.create();
+
+    // stub the updateMessageStat to emit an event which we could catch in a test
+    sandbox.stub(messageStatService, 'updateMessageStat', function () {
       reachEventEmitter.emit('reachedUpdateMessageStat', arguments);
-    };
+    });
   });
 
   // reverting the stubbing of updateMessageStat
   after(function () {
-    messageStatService.updateMessageStat = originalUpdateMessageStat;
+    sandbox.restore();
   });
 
   // creating some users before each test

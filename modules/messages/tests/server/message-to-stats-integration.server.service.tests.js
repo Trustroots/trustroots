@@ -4,46 +4,39 @@ var mongoose = require('mongoose'),
     should = require('should'),
     path = require('path'),
     _ = require('lodash'),
+    sinon = require('sinon'),
     config = require(path.resolve('./config/config')),
     User = mongoose.model('User'),
     EventEmitter = require('events'),
+    influx = require('influx'),
     Promise = require('promise'),
     Message = mongoose.model('Message'),
-    influxService = require(path.resolve('./modules/stats/server/services/influx.server.service')),
-    originalGetClient = influxService._getClient;
-
-// this emitter will emit event 'reachedInfluxdb' with variables measurement,
-// fields, tags when the influxdb mock is reached
-var reachEventEmitter = new EventEmitter();
-
-// it will emit an event 'reachedInfluxdb' which should be caught in the tests
-
-// mocking the influxdb.writeMeasurement()
-//
-var influxdb = {
-  writeMeasurement: function (measurement, fields, tags) {
-    return new Promise(function (resolve) {
-      reachEventEmitter.emit('reachedInfluxdb', measurement, fields, tags);
-      resolve();
-    });
-  }
-};
-
-// now replacing the getClient function, to return mocked influxdb
-influxService._getClient = function (callback) {
-  callback(null, influxdb);
-};
-
-// now we require the controller, and the influxService._getClient is already
-// mocked
-var messageController =
+    messageController =
   require(path.resolve('./modules/messages/server/controllers/messages.server.controller'));
 
-
 describe('Message to Stats API server service Integration Test', function () {
-  // putting the influxService back to original at the end of tests
+  var reachEventEmitter,
+      sandbox;
+
+  before(function () {
+    sandbox = sinon.sandbox.create();
+
+    // this emitter will emit event 'reachedInfluxdb' with variables measurement,
+    // fields, tags when the influxdb stub is reached
+    reachEventEmitter = new EventEmitter();
+
+    // it will emit an event 'reachedInfluxdb' which should be caught in the tests
+    sandbox.stub(influx.InfluxDB.prototype, 'writeMeasurement', function (measurement, fields, tags) {
+      return new Promise(function (resolve) {
+        reachEventEmitter.emit('reachedInfluxdb', measurement, fields, tags);
+        resolve();
+      });
+    });
+  });
+
+  // back to the original
   after(function () {
-    influxService._getClient = originalGetClient;
+    sandbox.restore();
   });
 
   var user1,
