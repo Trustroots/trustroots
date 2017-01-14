@@ -46,7 +46,7 @@ var getClient = function(callback) {
  * @param {string} measurementName - measurement name as will be saved in
  * influxdb (camelCase)
  * @param {Object} fields - key: value pairs will be saved in influxdb as field
- * key: field value
+ * key: field value, if there is a time of measurement, put it to fields
  * @param {number|Date} [fields.time=new Date()] - time of measurement
  * @param {Object} tags - key: value pairs will be saved in influxdb as tag key:
  * tag value
@@ -82,11 +82,11 @@ var writeMeasurement = function(measurementName, fields, tags, callback) {
     return callback(new Error(errorMessage));
   }
 
+  /*
   if (!fields.time) {
     // Add current time to `fields` if it's missing
     fields.time = new Date().getTime();
   } else if (!_.isDate(fields.time)) {
-    // Validate time: it should always be a `Date` object
     errorMessage = 'InfluxDB Service: expected `fields.time` to be `Date` object. #f93jkh';
     // Log the failure
     log('error', errorMessage, {
@@ -98,6 +98,33 @@ var writeMeasurement = function(measurementName, fields, tags, callback) {
     // Turn Date object into an integer (ms precision)
     fields.time = fields.time.getTime();
   }
+  */
+
+  // the point is the IPoint we'll send to node-influx's writeMeasurement
+  var point = {
+    fields: fields,
+    tags: tags
+  };
+
+  // deal with the time
+  if (fields.time) {
+    // Validate time: it should always be a `Date` object
+    if (!_.isDate(fields.time)) {
+      errorMessage = 'InfluxDB Service: expected `fields.time` to be `Date` object. #f93jkh';
+      // Log the failure
+      log('error', errorMessage, {
+        measurement: measurementName,
+        time: fields.time
+      });
+
+      // callback with error
+      return callback(new Error(errorMessage));
+    }
+
+    // move the time (Date) from fields to point.timestamp
+    point.timestamp = fields.time;
+    delete fields.time;
+  }
 
   exports._getClient(function(err, client) {
     if (err) {
@@ -105,10 +132,7 @@ var writeMeasurement = function(measurementName, fields, tags, callback) {
     }
 
     client.writeMeasurement(measurementName, [
-      {
-        fields: fields,
-        tags: tags
-      }
+      point
     ])
     .then(function() {
       if (callback) callback();
@@ -131,7 +155,7 @@ var buildName = function () {
 };
 
 // Take our custom `stat` object and send a point to InfluxDB
-var stat = function(stat) {
+var stat = function(stat, callback) {
   var namespace = stat.namespace;
   var meta = stat.meta;
   var values = stat.values;
@@ -150,8 +174,7 @@ var stat = function(stat) {
     // value).
     var fields = _.extend({}, meta, values, timeExtend);
 
-    console.log('writeMeasurement', name, fields, tags);
-    writeMeasurement(name, fields, tags, function () {});
+    writeMeasurement(name, fields, tags, callback);
 
   });
 };

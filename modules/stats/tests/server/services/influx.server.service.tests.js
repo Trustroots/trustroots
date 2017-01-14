@@ -1,9 +1,10 @@
 'use strict';
 
-require('should');
-
 var path = require('path'),
+    should = require('should'),
     sinon = require('sinon'),
+    influx = require('influx'),
+    Promise = require('promise'),
     // influx = require('influx'),
     influxService = require(path.resolve('./modules/stats/server/services/influx.server.service')),
     config = require(path.resolve('./config/config'));
@@ -44,7 +45,26 @@ describe('Service: influx', function() {
       // sandboxing in sinon helps restore the spied/stubbed/mocked functions and parameters
       sandbox = sinon.sandbox.create();
 
-      sandbox.stub(config.influxdb, 'enabled', true);
+      // stub the config to enable influx
+      sandbox.stub(config, 'influxdb', {
+        enabled: true,
+        options: {  // options are here to pass validation. InfluxDB is stubbed.
+          host: 'example.com',
+          port: 9876,
+          protocol: 'https',
+          database: 'example'
+        }
+      });
+
+      // stub the influx.writeMeasurement method
+      sandbox.stub(influx.InfluxDB.prototype, 'writeMeasurement');
+
+      // and it returns a Promise
+      influx.InfluxDB.prototype.writeMeasurement.returns(
+        new Promise(function (resolve) {
+          process.nextTick(resolve());
+        })
+      );
     });
 
     afterEach(function () {
@@ -126,9 +146,83 @@ describe('Service: influx', function() {
     });
 
     context('valid data', function () {
-      it('should reach influx.writeMeasurement method with proper data');
+      it('should reach influx.writeMeasurement method with proper data', function (done) {
+        var validData = {
+          namespace: 'messages',
+          counts: {
+            sent: 1
+          },
+          values: {
+            timeToFirstReply: 27364
+          },
+          tags: {
+            position: 'firstMessage',
+            messageLengthType: 'long'
+          },
+          meta: {
+            messageId: 'aabbccddee',
+            messageLength: 345
+          }
+        };
 
-      it('[time provided as Date] should reach influx.writeMeasurement with properly formated and placed timestamp value (Date)');
-    });
-  });
+        influxService.stat(validData, function (e) {
+          if (e) return done(e);
+          try {
+            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
+
+            var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            should(points.length).eql(1);
+            var point = points[0];
+
+            should(measurement).eql('messageSent');
+            should(point).have.propertyByPath('fields', 'timeToFirstReply').eql(validData.values.timeToFirstReply);
+            should(point).have.propertyByPath('fields', 'messageId').eql(validData.meta.messageId);
+            should(point).have.propertyByPath('fields', 'messageLength').eql(validData.meta.messageLength);
+            should(point).have.propertyByPath('tags', 'position').eql(validData.tags.position);
+            should(point).have.propertyByPath('tags', 'messageLengthType').eql(validData.tags.messageLengthType);
+
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+      });
+
+      it('[time provided as Date] should reach influx.writeMeasurement with properly formated and placed timestamp value (Date)', function (done) {
+        var validData = {
+          namespace: 'messages',
+          counts: {
+            sent: 1
+          },
+          values: {
+            value: 334
+          },
+          time: new Date('2001-10-02')
+        };
+
+        influxService.stat(validData, function (e) {
+          if (e) return done(e);
+          try {
+            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
+
+            var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            should(points.length).eql(1);
+            var point = points[0];
+
+            should(measurement).eql('messageSent');
+            should(point).not.have.propertyByPath('fields', 'time');
+            should(point).have.property('timestamp', validData.time);
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+      });
+
+    }); // end of context 'valid data'
+
+  }); // end of context 'InfluxDB enabled'
+
 });
