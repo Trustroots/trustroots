@@ -179,6 +179,7 @@ describe('Service: influx', function() {
             should(point).have.propertyByPath('fields', 'timeToFirstReply').eql(validData.values.timeToFirstReply);
             should(point).have.propertyByPath('fields', 'messageId').eql(validData.meta.messageId);
             should(point).have.propertyByPath('fields', 'messageLength').eql(validData.meta.messageLength);
+            should(point).have.propertyByPath('fields', 'sent').eql(validData.counts.sent);
             should(point).have.propertyByPath('tags', 'position').eql(validData.tags.position);
             should(point).have.propertyByPath('tags', 'messageLengthType').eql(validData.tags.messageLengthType);
 

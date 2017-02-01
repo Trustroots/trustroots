@@ -149,10 +149,11 @@ var writeMeasurement = function(measurementName, fields, tags, callback) {
   });
 };
 
-var buildName = function () {
+/* var buildName = function () {
   arguments[0] = (arguments[0] === 'messages') ? arguments[0].slice(0, -1) : arguments[0];
   return _.camelCase(Array.prototype.slice.call(arguments).join(' '));
 };
+*/
 
 // Take our custom `stat` object and send a point to InfluxDB
 var stat = function(stat, callback) {
@@ -165,18 +166,17 @@ var stat = function(stat, callback) {
   // If stat contains a time, we need to add it
   var timeExtend = stat.time ? { time: stat.time } : {};
 
-  _.forOwn(counts, function (value, countName) {
+  // the name of the measurement.
+  // we rename 'messages' to stay compatible with older influxdb points
+  // TODO let's decide whether to keep the old name or make a new standard
+  var name = (namespace === 'messages') ? 'messageSent' : namespace;
 
-    var name = buildName(namespace, countName);
+  // InfluxDB handles complex, multi value data points, so we simply combine all
+  // of meta, values, counts, and then add the time (which InfluxDB accepts as a
+  // value).
+  var fields = _.extend({}, meta, values, counts, timeExtend);
 
-    // InfluxDB handles complex, multi value data points, so we simply combine all
-    // of meta, values, counts, and then add the time (which InfluxDB accepts as a
-    // value).
-    var fields = _.extend({}, meta, values, timeExtend);
-
-    writeMeasurement(name, fields, tags, callback);
-
-  });
+  writeMeasurement(name, fields, tags, callback);
 };
 
 // Public exports
