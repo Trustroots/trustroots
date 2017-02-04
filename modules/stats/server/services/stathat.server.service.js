@@ -84,6 +84,12 @@ var sendStats = function(type, statName, statValue, tags, time, callback) {
 
 // Take our custom `stat` object and send stat(s) to stathat
 var stat = function(stat, callback) {
+  // check that stathat is enabled
+  var isEnabled = _.get(config, 'stathat.enabled', false);
+
+  if (!isEnabled) {
+    return callback(new Error('Stathat is disabled.'));
+  }
 
   var namespace = stat.namespace;
   var tags = stat.tags;

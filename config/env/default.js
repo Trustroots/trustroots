@@ -52,6 +52,10 @@ module.exports = {
       database: 'trustroots'
     }
   },
+  stathat: {
+    enabled: false,
+    key: ''
+  },
   limits: {
     // Messages shorter than this will be tagged 'short' in influxdb,
     // otherwise 'long'

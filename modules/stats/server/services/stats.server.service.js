@@ -137,6 +137,22 @@ function validateStat(stat) {
   if (!areKeysUnique(stat.counts, stat.values, stat.meta, stat.tags)) {
     throw new Error('Every key of stat counts, values, meta and tags must be unique');
   }
+
+  // Every value in 'counts' and 'values' should be a number
+  var vals = _.concat(_.values(stat.counts), _.values(stat.values));
+
+  var areNumbers = _.every(vals, _.isNumber);
+
+  if (!areNumbers) {
+    throw new Error('Each of counts and values should be a number');
+  }
+
+  // time, if provided, should be of type Date
+  if (stat.hasOwnProperty('time')) {
+    if (!_.isDate(stat.time)) {
+      throw new Error('Time must be a Date object or not provided');
+    }
+  }
 }
 
 /**

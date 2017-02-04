@@ -31,7 +31,13 @@ module.exports = {
     description: 'Trustroots test environment.'
   },
   influxdb: {
-    enabled: false
+    enabled: false,
+    options: {
+      host: 'localhost',
+      port: 8086,
+      protocol: 'http',
+      database: 'trustroots-test'
+    }
   },
   stathat: {
     enabled: false,
