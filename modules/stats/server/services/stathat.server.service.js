@@ -87,8 +87,10 @@ var stat = function(stat, callback) {
   // check that stathat is enabled
   var isEnabled = _.get(config, 'stathat.enabled', false);
 
+  // if stathat is disabled, log the info and quit without failing
   if (!isEnabled) {
-    return callback(new Error('Stathat is disabled.'));
+    console.log('Stathat is disabled.');
+    return callback();
   }
 
   var namespace = stat.namespace;

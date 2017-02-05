@@ -157,6 +157,14 @@ var writeMeasurement = function(measurementName, fields, tags, callback) {
 
 // Take our custom `stat` object and send a point to InfluxDB
 var stat = function(stat, callback) {
+  var enabled = _.get(config, 'influxdb.enabled');
+
+  // when influxdb is disabled, log info and finish without error
+  if (!enabled) {
+    console.log('InfluxDB disabled');
+    return callback();
+  }
+
   var namespace = stat.namespace;
   var meta = stat.meta;
   var values = stat.values;

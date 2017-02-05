@@ -686,19 +686,18 @@ describe('Stat API integration tests', function () {
       sandbox.stub(config.influxdb, 'enabled', false);
     });
 
-    it('send only to stathat, call callback with error about disabled influx', function (done) {
+    it('send only to stathat, influx ignored without error', function (done) {
       statsService.stat({
         namespace: 'test',
         counts: {
           c: 1
         }
       }, function (e) {
+        if (e) return done(e);
         try {
-          should(e).be.Error();
-          should(e).have.property('errors');
-          should(e.errors.stathat).be.Undefined(); // eslint-disable-line new-cap
-          should(e.errors.influx).be.Error();
-          should(e.errors.influx).have.property('message', 'No InfluxDB configured.');
+          sinon.assert.callCount(influx.InfluxDB.prototype.writeMeasurement, 0);
+          sinon.assert.callCount(stathat.trackEZCount, 1);
+
           return done();
         } catch (e) {
           return done(e);
@@ -719,19 +718,18 @@ describe('Stat API integration tests', function () {
       sandbox.stub(config.influxdb, 'enabled', true);
     });
 
-    it('send only to influx, say about disabled stathat', function (done) {
+    it('send only to influx, stathat ignored without error', function (done) {
       statsService.stat({
         namespace: 'test',
         counts: {
           c: 1
         }
       }, function (e) {
+        if (e) return done(e);
         try {
-          should(e).be.Error();
-          should(e).have.property('errors');
-          should(e.errors.influx).be.Undefined(); // eslint-disable-line new-cap
-          should(e.errors.stathat).be.Error();
-          should(e.errors.stathat).have.property('message', 'Stathat is disabled.');
+          sinon.assert.callCount(influx.InfluxDB.prototype.writeMeasurement, 1);
+          sinon.assert.callCount(stathat.trackEZCount, 0);
+
           return done();
         } catch (e) {
           return done(e);
