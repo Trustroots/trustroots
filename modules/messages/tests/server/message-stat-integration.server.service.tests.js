@@ -22,7 +22,9 @@ describe('Integration of the MessageStat service', function () {
   before(function () {
     // this emitter will listen to reaching the updateMessageStat service
     reachEventEmitter = new EventEmitter();
+  });
 
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
 
     // stub the updateMessageStat to emit an event which we could catch in a test
@@ -32,7 +34,7 @@ describe('Integration of the MessageStat service', function () {
   });
 
   // reverting the stubbing of updateMessageStat
-  after(function () {
+  afterEach(function () {
     sandbox.restore();
   });
 
@@ -88,15 +90,13 @@ describe('Integration of the MessageStat service', function () {
 
       // we're stubbing the express.response here
       function Res() {}
-      Res.prototype.status = function (statusCode) {
-        statusCode; // here we just satisfy eslint; may be used for something
+      Res.prototype.status = function (statusCode) { // eslint-disable-line no-unused-vars
         // this.statusCode = statusCode; // use for debug
         return this;
       };
       // we could do something on response, but we don't care
-      Res.prototype.send = function (response) {
+      Res.prototype.send = function (response) { // eslint-disable-line no-unused-vars
         // console.log(this.statusCode, response); // use for debug
-        response; // satisfy ESLint
       };
       Res.prototype.json = Res.prototype.send;
 

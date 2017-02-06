@@ -1,4 +1,9 @@
 'use strict';
+
+// This service takes care of fetching and sending message statistics to stats api.
+// It is mainly used in message controller: A new statistics point is created
+// after a new message is sent.
+
 /**
  * Module dependencies.
  */
@@ -10,89 +15,121 @@ var path = require('path'),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller'));
 
-// eslint complained here about unused variable => requiring without assignment
 require(path.resolve('./modules/messages/server/models/message.server.model'));
 
 
 var Message = mongoose.model('Message');
 
+/**
+ * The object which stats api .stat method expects as parameter
+ * @typedef {Object} StatObject
+ * @property {string} namespace - the name, identifier of the stat point
+ * @property {Object} [counts] - object of a shape { <count1>: number, ... }
+ * We care about a sum of the numbers in statistics. At least one of counts or values must be provided.
+ * @property {Object} [values] - object of a shape { <value1>: number, ... }
+ * We care about an average of the numbers in statistics. At least one of counts or values must be provided.
+ * @property {Object} [tags] - object of a shape { <tag1>: string|number, ... }
+ * Tags separate stat points into subsets based on a limited amount of tag values
+ * There should be limited amount of tags with limited amount of possible values
+ * @property {Object} [meta] - object of a shape { <meta1>: string| number, ... }
+ * Meta contains non-essential data, which will be saved only to some stat services
+ * Meta will be saved into influx, not into stathat.
+ * All string values which are not tags should go to meta.
+ * @property {Date} [time] - time of the point if it is specified
+ *
+ * {
+ *   namespace: 'testStat',
+ *   counts: {
+ *     count1: 1,
+ *     count2: 3
+ *   },
+ *   values: {
+ *     value1: 3.51,
+ *     value2: 7.24
+ *   },
+ *   tags: {
+ *     tag1: 'value1',
+ *     tag2: 'value2'
+ *   },
+ *   meta: {
+ *     meta1: 'value1',
+ *     meta2: 12.5
+ *   },
+ *   time: new Date('1999-09-09 9:09:09.999')
+ * }
+ */
+
 
 /**
  * This is a callback for the asynchronous influx modules
- *
- * @callback influxCallback
+ * @callback statsCallback
  * @param {error} error
- * @param {string} response
  */
 
 /**
- * this function is a shortcut for processing and sending the data to
- * influxService (which sends it to influxdb)
+ * This function is a wrapper for processing a message's statistics and
+ * sending the data to Stats api.
  * @param {object} message - a message object (as returned by mongoDB)
- * @param {influxCallback} callback - a callback that handles the response
+ * @param {statsCallback} callback - a callback that handles the response
  */
 module.exports.save = function (message, callback) {
   async.waterfall([
-    // Check whether the influxDB is enabled. Be lazy and quit if disabled.
+    // Check whether at least one of statistics services (influxdb, stathat)
+    // is enabled.
+    // Quit if all are disabled. The further computation is not necessary.
     function (done) {
-      var isInfluxEnabled = _.get(config, 'influxdb.enabled');
-      if (isInfluxEnabled !== true) {
-        return done(new Error('influxDB is disabled'));
+      var areSomeStatsEnabled = _.get(config, 'influxdb.enabled') || _.get(config, 'stathat.enabled');
+      if (areSomeStatsEnabled !== true) {
+        return done(new Error('All stat services are disabled. Not creating a point for message statistics.'));
       }
       return done();
     },
 
     // Process the message provided
     function (done) {
-      module.exports.process(message, function (err, fields, tags) {
-        return done(err, fields, tags);
+      module.exports.process(message, function (err, statObject) {
+        return done(err, statObject);
       });
     },
 
     // Send the message provided to influxService
-    function (fields, tags, done) {
-      module.exports.send(fields, tags, function (err, response) {
-        return done(err, response);
+    function (statObject, done) {
+      module.exports.send(statObject, function (err) {
+        return done(err);
       });
     }
-  ], function (err, response) {
+  ], function (err) {
     if (err && (process.env.NODE_ENV === 'production')) {
       console.error(err);
     }
     if (typeof callback === 'function') {
-      return callback(err, response);
+      return callback(err);
     }
   });
 };
 
 /**
- * This is a callback for the exports.process
- *
  * @callback processMessageCallback
  * @param {error} error
- * @param {object} fields - object of field keys and values as they'll be saved
- * in influx
- * @param {object} tags - object of tag keys and values as they'll be saved in
- * influx
+ * @param {StatObject} statObject - data object to be sent to Stats API
  */
 
 /**
- * this function gets some info about the message sent and then calls the callback
- * with field and tag keys and values as they're expected in database
+ * The function collects data about the message provided and formats it to StatObject ready for Stats API
  * @param {object} message - a message object as returned by mongoDB
  * @param {processMessageCallback} callback
  */
 module.exports.process = function (message, callback) {
-  // some variables used later, filled inside waterfall
+  // declare some variables needed in multiple scopes of async.waterfall
   var isFirstMessage,
       isFirstReply;
 
   // fixing some strange filling of message data
   // (userFrom is not id but user object)
-  var userFrom = message.userFrom._id
+  var userFrom = (message.userFrom._id)
     ? message.userFrom._id
     : message.userFrom;
-  var userTo = message.userTo._id
+  var userTo = (message.userTo._id)
     ? message.userTo._id
     : message.userTo;
 
@@ -206,11 +243,8 @@ module.exports.process = function (message, callback) {
 
 /**
  * this function sends the processed field tags and values to statService
- * @param {object} fields - object of field keys and values as expected by
- * influxService & influxdb
- * @param {object} tags - object of tag keys and values as expected by
- * influxService & influxdb
- * @param {influxCallback} callback - a callback that handles the response
+ * @param {StatObject} statObject - data object to be sent to Stats API
+ * @param {statsCallback} callback - a callback that handles the response
  */
 module.exports.send = function (statObject, callback) {
 

@@ -6,8 +6,9 @@
 var path = require('path'),
     _ = require('lodash'),
     async = require('async'),
+    stathat = require('stathat'),
     config = require(path.resolve('./config/config')),
-    stathat = require('stathat');
+    log = require(path.resolve('./config/lib/logger'));
 
 // send data to stathat.com over https (ecrypted)
 stathat.useHTTPS = true;
@@ -19,25 +20,41 @@ var key = _.get(config, 'stathat.key', false);
 var SEPARATOR = '.';
 
 if (!key) {
-  console.error('No stathat key #LDoC3y');
+  log('error', 'No stathat key #LDoC3y');
 }
 
-// If `time` is a Date object, then return a unix timestamp (which is what
-// stathat wants to consume), otherwise, return the value unmodified.
+/**
+ * Format time. If `time` is a Date object, then return a unix timestamp
+ * (which is what stathat wants to consume), otherwise error.
+ * @param {Date} time
+ * @returns {number} - the given time converted to unix timestamp [seconds]
+ */
 var formatTime = function(time) {
   if (_.isDate(time)) {
     return time.getTime() / 1000;
   } else {
-    return time;
+    throw new Error('Time, if provided, needs to be a Date object');
   }
 };
 
-// Combine parts of a name with a separator
+/**
+ * Combine parts of a name with a separator
+ * @param {string} arguments - function accepts one or multiple strings
+ * @returns {string} - the built name (arguments separated by SEPARATOR)
+ */
 var buildName = function () {
   return Array.prototype.slice.call(arguments).join(SEPARATOR);
 };
 
-// Choose the correct stathat method and send the metric.
+/**
+ * Choose the correct stathat method and send the metric.
+ * @param {string} type - 'count' or 'value', select a stathat method
+ * @param {string} name - name of the metric
+ * @param {number} value - value of the metric
+ * @param {Date|undefined} time - time of the metric
+ * @param {Function} callback
+ * @returns void
+ */
 var send = function(type, name, value, time, callback) {
   // Get a fresh stathat key from `config` (maybe it was stubbed since the instantiation of this module)
   var key = _.get(config, 'stathat.key', false);
@@ -45,6 +62,9 @@ var send = function(type, name, value, time, callback) {
   if (!key) {
     return callback();
   }
+
+  // Available stathat methods:
+  // trackEZCount, trackEZValue, trackEZCountWithTime, trackEZValueWithTime
 
   // Select the stathat method we want to use
   var method = (type === 'count') ? 'trackEZCount' : 'trackEZValue';
@@ -66,8 +86,17 @@ var send = function(type, name, value, time, callback) {
   stathat[method].apply(stathat, args);
 };
 
-// Process one stat sending one value for the stat itself, and one value for
-// every tag.
+/**
+ * Create one metric untagged
+ * Create one metric for each tag provided
+ * We do it by attaching the tagname and value to the metric name using buildName()
+ * @param {string} type - 'count' or 'value', select a stathat method
+ * @param {string} statName - name of the metric
+ * @param {number} statValue - value of the metric
+ * @param {Object} tags - { tag1: 'value1', tag2: 'value2', ... }
+ * @param {Date|undefined} time - time of the metric
+ * @param {Function} callback
+ */
 var sendStats = function(type, statName, statValue, tags, time, callback) {
 
   // collect the statNames (the default one and the ones created from tags)
@@ -82,14 +111,23 @@ var sendStats = function(type, statName, statValue, tags, time, callback) {
 
 };
 
-// Take our custom `stat` object and send stat(s) to stathat
+/**
+ * Format the stat object to data points and send the data points to stathat
+ * @param {Object} stat
+ * @param {string} stat.namespace
+ * @param {Object} [stat.counts] - object of countName: <number> pairs
+ * @param {Object} [stat.values] - object of valueName: <number> pairs; at least
+ * one count or value must be provided
+ * @param {Object} [stat.tags] - object of tagname: <string|number> pairs
+ * @param {Date} [stat.time] - time of the data point
+ * @param {Function} callback
+ */
 var stat = function(stat, callback) {
-  // check that stathat is enabled
-  var isEnabled = _.get(config, 'stathat.enabled', false);
 
   // if stathat is disabled, log the info and quit without failing
+  var isEnabled = _.get(config, 'stathat.enabled', false);
   if (!isEnabled) {
-    console.log('Stathat is disabled.');
+    log('warn', 'Stathat is disabled.');
     return callback();
   }
 
@@ -124,14 +162,25 @@ exports._buildName = buildName;
 exports._send = send;
 
 
-// we want the functionality of async.each, but we don't want to finish on error
-// we want to run iteratee on all coll's elements, collect the errors and
-// present them (if any) at the end
-// also coll should be array of arrays of arguments for iteratee
+/**
+ * This is a wrapper of async.each, which modifies its behaviour:
+ * We want the functionality of async.each, but we don't want to finish on error.
+ * We want to run iteratee on all coll's elements, collect the errors and
+ * present them (if any) at the end.
+ * @param {Array<Array<any>>} coll -  array of arrays of arguments for iteratee
+ * @param {Function} iteratee -
+ * @param {Function} callback
+ */
 function asyncEachFinish(coll, iteratee, callback) {
   // collect errors here
   var sendErrors = [];
 
+  /**
+   * Calls the iteratee with an array of arguments.
+   * If an error occurs, pushes it to sendErrors array and doesn't fail.
+   * @param {Array<any>} args - array of arguments for iteratee
+   * @param {Function} done - callback function
+   */
   function errorCollectingIteratee(args, done) {
     var toRun = iteratee.bind.apply(iteratee, [null].concat(args));
 
@@ -146,6 +195,9 @@ function asyncEachFinish(coll, iteratee, callback) {
     });
   }
 
+  /**
+   * Collects the errors (if any) and calls callback.
+   */
   function cb (e) {
     if (e) return callback(e);
 
@@ -160,6 +212,6 @@ function asyncEachFinish(coll, iteratee, callback) {
     return callback();
   }
 
-  // iterate over all statNames and send each to stathat
+  // run async.each using the functions defined above
   async.each(coll, errorCollectingIteratee, cb);
 }

@@ -11,19 +11,24 @@ var path = require('path'),
 
 describe('Service: influx', function() {
 
+  // create sinon sandbox
+  var sandbox;
+  beforeEach(function () {
+    // sandboxing in sinon helps restore the spied/stubbed/mocked functions and parameters
+    sandbox = sinon.sandbox.create();
+  });
+
+  // restore the stubbed services in sandbox
+  afterEach(function () {
+    sandbox.restore();
+  });
+
+
   context('InfluxDB disabled', function () {
-    var sandbox;
 
     beforeEach(function () {
-      // sandboxing in sinon helps restore the spied/stubbed/mocked functions and parameters
-      sandbox = sinon.sandbox.create();
-
+      // disable influx
       sandbox.stub(config.influxdb, 'enabled', false);
-    });
-
-    afterEach(function () {
-      // restore the stubbed services
-      sandbox.restore();
     });
 
     it('Getting client returns error if no InfluxDB configured', function(done) {
@@ -39,11 +44,8 @@ describe('Service: influx', function() {
   });
 
   context('InfluxDB enabled', function () {
-    var sandbox;
 
     beforeEach(function () {
-      // sandboxing in sinon helps restore the spied/stubbed/mocked functions and parameters
-      sandbox = sinon.sandbox.create();
 
       // stub the config to enable influx
       sandbox.stub(config, 'influxdb', {
@@ -65,11 +67,6 @@ describe('Service: influx', function() {
           process.nextTick(resolve());
         })
       );
-    });
-
-    afterEach(function () {
-      // restore the stubbed services
-      sandbox.restore();
     });
 
     context('invalid data', function () {
@@ -143,7 +140,7 @@ describe('Service: influx', function() {
         });
       });
 
-    });
+    }); // end of context 'invalid data'
 
     context('valid data', function () {
       it('should reach influx.writeMeasurement method with proper data', function (done) {
@@ -175,13 +172,20 @@ describe('Service: influx', function() {
             should(points.length).eql(1);
             var point = points[0];
 
+            // check the validity of the stat object
             should(measurement).eql('messageSent');
-            should(point).have.propertyByPath('fields', 'timeToFirstReply').eql(validData.values.timeToFirstReply);
-            should(point).have.propertyByPath('fields', 'messageId').eql(validData.meta.messageId);
-            should(point).have.propertyByPath('fields', 'messageLength').eql(validData.meta.messageLength);
-            should(point).have.propertyByPath('fields', 'sent').eql(validData.counts.sent);
-            should(point).have.propertyByPath('tags', 'position').eql(validData.tags.position);
-            should(point).have.propertyByPath('tags', 'messageLengthType').eql(validData.tags.messageLengthType);
+            should(point).have.propertyByPath('fields', 'timeToFirstReply')
+              .eql(validData.values.timeToFirstReply);
+            should(point).have.propertyByPath('fields', 'messageId')
+              .eql(validData.meta.messageId);
+            should(point).have.propertyByPath('fields', 'messageLength')
+              .eql(validData.meta.messageLength);
+            should(point).have.propertyByPath('fields', 'sent')
+              .eql(validData.counts.sent);
+            should(point).have.propertyByPath('tags', 'position')
+              .eql(validData.tags.position);
+            should(point).have.propertyByPath('tags', 'messageLengthType')
+              .eql(validData.tags.messageLengthType);
 
             return done();
           } catch (e) {

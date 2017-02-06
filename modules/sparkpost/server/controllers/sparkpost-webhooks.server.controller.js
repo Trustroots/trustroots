@@ -43,7 +43,8 @@ exports.receiveBatch = function(req, res) {
     });
   }
 
-  async.map(req.body, exports.processAndSendMetrics, function() {
+  async.map(req.body, exports.processAndSendMetrics, function(err) { // eslint-disable-line no-unused-vars
+    // @TODO what should happen when writing to stats api errors?
     res.status(200).end();
   });
 };

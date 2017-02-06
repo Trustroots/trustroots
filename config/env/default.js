@@ -52,6 +52,8 @@ module.exports = {
       database: 'trustroots'
     }
   },
+  // Configuration of stathat.
+  // www.stathat.com is a tool/service for tracking statistics
   stathat: {
     enabled: false,
     key: ''

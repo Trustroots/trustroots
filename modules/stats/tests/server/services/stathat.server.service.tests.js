@@ -2,10 +2,11 @@
 
 var should = require('should'),
     path = require('path'),
-    stathatService = require(path.resolve('./modules/stats/server/services/stathat.server.service')),
-    config = require(path.resolve('./config/config')),
     stathat = require('stathat'),
-    sinon = require('sinon');
+    sinon = require('sinon'),
+    _ = require('lodash'),
+    stathatService = require(path.resolve('./modules/stats/server/services/stathat.server.service')),
+    config = require(path.resolve('./config/config'));
 
 describe('Stathat Service Unit Test', function () {
   // replace the stathat.trackEZ<Count|Value><WithTime> with stubs
@@ -164,16 +165,38 @@ describe('Stathat Service Unit Test', function () {
 
         sinon.assert.callCount(stathat.trackEZValueWithTime, 3);
 
-        var calledWith0 = stathat.trackEZValueWithTime.getCall(0).args;
-        // @TODO to use later
-        // var calledWith1 = stathat.trackEZValueWithTime.getCall(1).args;
-        // var calledWith2 = stathat.trackEZValueWithTime.getCall(2).args;
+        // array of arguments of each call to stathat
+        var calledWith = _.map(_.range(3), function (n) {
+          return stathat.trackEZValueWithTime.getCall(n).args;
+        });
 
-        should(calledWith0[0]).equal(config.stathat.key);
-        should(calledWith0[1]).equal(stat.namespace + '.value');
-        should(calledWith0[2]).equal(stat.values.value);
-        should(calledWith0[3]).equal(stat.time.getTime() / 1000);
-        should(calledWith0[4]).be.Function();
+        // group the argumets from calls to stathat by their position
+        // to test them in groups
+        var argmGroups = _.zip.apply(this, calledWith);
+
+        // test the arguments grouped by their position together
+        // test the arguments of all the calls to stathat
+        _.each(_.range(3), function (n) {
+          // 1st argument is stathat key
+          should(argmGroups[0][n]).equal(config.stathat.key);
+
+          // 2nd argument is a name
+          var defaultName = stat.namespace + '.value';
+          should(argmGroups[1]).containEql([
+            defaultName, // the default metric name
+            defaultName + '.first.foo', // the name with 1st tag
+            defaultName + '.second.bar' // the name with 2nd tag
+          ][n]);
+
+          // 3rd argument is a stat value
+          should(argmGroups[2][n]).equal(stat.values.value);
+
+          // 4th argument is a timestamp in seconds
+          should(argmGroups[3][n]).equal(stat.time.getTime() / 1000);
+
+          // 5th argument is a callback function
+          should(argmGroups[4][n]).be.Function();
+        });
 
         return done();
       });

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Task that collects daily statistics and sends them to InfluxDB
+ * Task that collects daily statistics and sends them to Stats API
  */
 
 /**
@@ -9,7 +9,8 @@
  */
 var path = require('path'),
     statsService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    statistics = require(path.resolve('./modules/statistics/server/controllers/statistics.server.controller'));
+    statistics = require(path.resolve('./modules/statistics/server/controllers/statistics.server.controller')),
+    log = require(path.resolve('./config/lib/logger'));
 
 module.exports = function (job, agendaDone) {
 
@@ -32,24 +33,22 @@ module.exports = function (job, agendaDone) {
       }
     }, function (err, result) { // eslint-disable-line no-unused-vars
       if (err) {
-        console.error('Daily statistics: failed writing to some endpoints.');
-
+        // if there exist stat-service specific errors, log them separately
         if (err.message === 'Writing to Influx or Stathat service failed.') {
           if (err.errors && err.errors.influx) {
-            console.error('Daily statistics: failed writing to influx');
-            console.error(err.errors.influx);
+            log('error', 'Daily statistics: failed writing to influx', err.errors.influx);
           }
           if (err.errors && err.errors.stathat) {
-            console.error('Daily statistics: failed writing to stathat');
-            console.error(err.errors.stathat);
+            log('error', 'Daily statistics: failed writing to stathat', err.errors.stathat);
           }
 
           // when the job fails writing to an endpoint, we probably don't want
           // to retry, because writing to the non-failing one would be duplicate
           // @TODO decide this better
-          err = null;
+          err = null; // don't fail
         } else {
-          console.error(err);
+          // log a general error
+          log('error', 'Daily statistics: failed writing to some endpoints.', err);
         }
       }
 

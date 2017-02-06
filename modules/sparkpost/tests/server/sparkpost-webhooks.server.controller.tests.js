@@ -47,17 +47,8 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     });
 
     // stub the stathat endpoints
-    sandbox.stub(stathat, 'trackEZCount');
-    stathat.trackEZCount.callsArgAsync(3);
-
     sandbox.stub(stathat, 'trackEZCountWithTime');
     stathat.trackEZCountWithTime.callsArgAsync(4);
-
-    sandbox.stub(stathat, 'trackEZValue');
-    stathat.trackEZValue.callsArgAsync(3);
-
-    sandbox.stub(stathat, 'trackEZValueWithTime');
-    stathat.trackEZValueWithTime.callsArgAsync(4);
   });
 
   var testEvent = {
@@ -99,7 +90,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
           var point = points[0];
 
           should(measurement).eql('transactionalEmailEvent');
-          // should(point).have.propertyByPath('fields', 'count').eql(1);
+          should(point).have.propertyByPath('fields', 'count').eql(1);
           should(point).have.propertyByPath('fields', 'country').eql('ABC');
           should(point).have.propertyByPath('fields', 'campaignId').eql('this-is-a-campaign-id');
           should(point).have.propertyByPath('tags', 'category').eql('message_event');

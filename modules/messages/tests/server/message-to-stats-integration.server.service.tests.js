@@ -19,11 +19,13 @@ describe('Message to Stats API server service Integration Test', function () {
       sandbox;
 
   before(function () {
-    sandbox = sinon.sandbox.create();
-
     // this emitter will emit event 'reachedInfluxdb' with variables measurement,
     // fields, tags when the influxdb stub is reached
     reachEventEmitter = new EventEmitter();
+  });
+
+  beforeEach(function () {
+    sandbox = sinon.sandbox.create();
 
     // it will emit an event 'reachedInfluxdb' which should be caught in the tests
     sandbox.stub(influx.InfluxDB.prototype, 'writeMeasurement', function (measurement, fields, tags) {
@@ -35,7 +37,7 @@ describe('Message to Stats API server service Integration Test', function () {
   });
 
   // back to the original
-  after(function () {
+  afterEach(function () {
     sandbox.restore();
   });
 
@@ -96,15 +98,13 @@ describe('Message to Stats API server service Integration Test', function () {
       // we're stubbing the express.response here
       // (not sure if i use the mocking/stubbing terminology right)
       function Res() {}
-      Res.prototype.status = function (statusCode) {
-        statusCode; // here we just satisfy eslint; may be used for something
+      Res.prototype.status = function (statusCode) { // eslint-disable-line no-unused-vars
         // this.statusCode = statusCode; // use for debug
         return this;
       };
       // we could do something on response, but we don't care
-      Res.prototype.send = function (response) {
+      Res.prototype.send = function (response) { // eslint-disable-line no-unused-vars
         // console.log(this.statusCode, response); // use for debug
-        response; // satisfy ESLint
       };
       Res.prototype.json = Res.prototype.send;
 
@@ -125,23 +125,15 @@ describe('Message to Stats API server service Integration Test', function () {
 
     context('when influxdb is enabled', function () {
 
-      // setting the influxdb config
-      var originalInfluxConfig = config.influxdb;
+      // stubbing the influxdb config
       beforeEach(function () {
-        config.influxdb = {
-          enabled: true,
-          options: {
-            host: 'localhost',
-            port: 4242,
-            protocol: 'http',
-            database: 'will-never-be-reached'
-          }
-        };
-      });
-
-      // reestablish the original influxdb config
-      afterEach(function () {
-        config.influxdb = originalInfluxConfig;
+        sandbox.stub(config.influxdb, 'enabled', true);
+        sandbox.stub(config.influxdb, 'options', {
+          host: 'localhost',
+          port: 4242,
+          protocol: 'http',
+          database: 'will-never-be-reached'
+        });
       });
 
       it('the data should reach the database', function (done) {
@@ -174,6 +166,7 @@ describe('Message to Stats API server service Integration Test', function () {
     });
 
     context('when influxdb is disabled', function () {
+      // @TODO possibly test with sinon
       // we don't see any way to test this
       // it('saving data to statistics should be silently ignored');
     });

@@ -34,9 +34,55 @@ var _ = require('lodash'),
     stathatService = require('./stathat.server.service.js');
 
 /**
+ * The object which stats api .stat method expects as parameter
+ * @typedef {Object} StatObject
+ * @property {string} namespace - the name, identifier of the stat point
+ * @property {Object} [counts] - object of a shape { <count1>: number, ... }
+ * We care about a sum of the numbers in statistics. At least one of counts or values must be provided.
+ * @property {Object} [values] - object of a shape { <value1>: number, ... }
+ * We care about an average of the numbers in statistics. At least one of counts or values must be provided.
+ * @property {Object} [tags] - object of a shape { <tag1>: string|number, ... }
+ * Tags separate stat points into subsets based on a limited amount of tag values
+ * There should be limited amount of tags with limited amount of possible values
+ * @property {Object} [meta] - object of a shape { <meta1>: string| number, ... }
+ * Meta contains non-essential data, which will be saved only to some stat services
+ * Meta will be saved into influx, not into stathat.
+ * All string values which are not tags should go to meta.
+ * @property {Date} [time] - time of the point if it is specified
+ *
+ * {
+ *   namespace: 'testStat',
+ *   counts: {
+ *     count1: 1,
+ *     count2: 3
+ *   },
+ *   values: {
+ *     value1: 3.51,
+ *     value2: 7.24
+ *   },
+ *   tags: {
+ *     tag1: 'value1',
+ *     tag2: 'value2'
+ *   },
+ *   meta: {
+ *     meta1: 'value1',
+ *     meta2: 12.5
+ *   },
+ *   time: new Date('1999-09-09 9:09:09.999')
+ * }
+ */
+
+/**
+ * @callback statCallback
+ * @param {Error} error
+ */
+
+/**
   * Record a simple "count" stat
-  *
-  * count(name, ?count, ?time, callback)
+  * @param {string} name - stat name
+  * @param {number} [count] - stat value, default 1
+  * @param {Date} [time]
+  * @param {statCallback} callback - last argument (2nd, 3rd or 4th)
  */
 function count(name, count, time, callback) {
 
@@ -69,8 +115,11 @@ function count(name, count, time, callback) {
 }
 
 /**
- * Record a simple "value" stat
- * value(name, value, ?time, callback)
+  * Record a simple "value" stat
+  * @param {string} name - stat name
+  * @param {number} value - stat value
+  * @param {Date} [time]
+  * @param {statCallback} callback - last argument (3rd or 4th)
  */
 function value(name, value, time, callback) {
 
@@ -96,7 +145,12 @@ function value(name, value, time, callback) {
   stat(statObject, callback);
 }
 
-// Ensure that `stat` matches the required schema
+/**
+ * Ensure that `stat` matches the required schema
+ * An error will be thrown if stat object is invalid
+ * @param {StatObject} stat - the stat object
+ * @returns {void}
+ */
 function validateStat(stat) {
   // We must have a value called namespace and it must be a string
   if (!_.isString(stat.namespace)) {
@@ -209,6 +263,9 @@ stats.stat({
  * NOTE: One of either `values` or `counts` must exist, and a single key should
  * only be used one in any of the properties (`counts`, `values`, `tags`,
  * `meta`).
+ *
+ * @param {StatObject} stat
+ * @param {statCallback} callback
  */
 function stat(stat, callback) {
   // validateStat will throw an error if invalid
@@ -223,7 +280,10 @@ function stat(stat, callback) {
   var influxErr,
       stathatErr;
 
-  // the wrap functions put possible errors to closure variables and always succeed
+  // The wrap functions keep the errors in influxErr and stathatErr
+  // and always finish without failing. Why? We want to finish all and report
+  // errors after all have finished or errored.
+  //
   function influxServiceStatWrap(stat, done) {
     influxService.stat(stat, function (e) {
       if (e) influxErr = e;

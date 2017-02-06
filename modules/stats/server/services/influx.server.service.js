@@ -33,31 +33,30 @@ var getClient = function(callback) {
 /**
  * Write measurement to InfluxDB
  *
- * fields - object of field key: value pairs. To save to influxdb.
+ * fields - object of field_key: value pairs. To save to influxdb.
  *   - key in camelCase
  *   - value - string or number (other options?)
  * You can specify time by passing a property called time (default: now)
  *   - time should always be Date object.
- * tags - object of tag key: value pairs. To save to influxdb
+ * tags - object of tag_key: value pairs. To save to influxdb
  *   - key in camelCase
  *   - value should be string or will be casted to string
  * don't forget to adjust the time precision accordingly. The default value is `ms`.
  *
  * @param {string} measurementName - measurement name as will be saved in
  * influxdb (camelCase)
- * @param {Object} fields - key: value pairs will be saved in influxdb as field
- * key: field value, if there is a time of measurement, put it to fields
+ * @param {Object} fields - key: value pairs to be saved in influxdb as fields
+ * @param {Date} [fields.time] - optional time of the measurement
  * @param {number|Date} [fields.time=new Date()] - time of measurement
- * @param {Object} tags - key: value pairs will be saved in influxdb as tag key:
- * tag value
+ * @param {Object} tags - key: value pairs will be saved in influxdb as tag_key:
+ * tag_value
  * @param {function} callback - expected to be like function (err, result) {}
  */
 var writeMeasurement = function(measurementName, fields, tags, callback) {
 
   var errorMessage;
 
-  if (!measurementName || typeof measurementName !== 'string'
-    || measurementName.length === 0) {
+  if (!measurementName || !_.isString(measurementName)) {
     errorMessage = 'InfluxDB Service: no `measurementName` defined. #ghi3kH';
     // Log the failure
     log('error', errorMessage);
@@ -81,24 +80,6 @@ var writeMeasurement = function(measurementName, fields, tags, callback) {
     });
     return callback(new Error(errorMessage));
   }
-
-  /*
-  if (!fields.time) {
-    // Add current time to `fields` if it's missing
-    fields.time = new Date().getTime();
-  } else if (!_.isDate(fields.time)) {
-    errorMessage = 'InfluxDB Service: expected `fields.time` to be `Date` object. #f93jkh';
-    // Log the failure
-    log('error', errorMessage, {
-      measurement: measurementName,
-      time: fields.time
-    });
-    return callback(new Error(errorMessage));
-  } else {
-    // Turn Date object into an integer (ms precision)
-    fields.time = fields.time.getTime();
-  }
-  */
 
   // the point is the IPoint we'll send to node-influx's writeMeasurement
   var point = {
@@ -135,7 +116,7 @@ var writeMeasurement = function(measurementName, fields, tags, callback) {
       point
     ])
     .then(function() {
-      if (callback) callback();
+      if (callback) return callback();
     })
     .catch(function(err) {
       // Log the failure
@@ -145,23 +126,65 @@ var writeMeasurement = function(measurementName, fields, tags, callback) {
         fields: fields,
         tags: tags
       });
+
+      return callback(err);
     });
   });
 };
 
-/* var buildName = function () {
-  arguments[0] = (arguments[0] === 'messages') ? arguments[0].slice(0, -1) : arguments[0];
-  return _.camelCase(Array.prototype.slice.call(arguments).join(' '));
-};
-*/
+/**
+ * The object which stats api .stat method expects as parameter
+ * @typedef {Object} StatObject
+ * @property {string} namespace - the name, identifier of the stat point
+ * @property {Object} [counts] - object of a shape { <count1>: number, ... }
+ * We care about a sum of the numbers in statistics. At least one of counts or values must be provided.
+ * @property {Object} [values] - object of a shape { <value1>: number, ... }
+ * We care about an average of the numbers in statistics. At least one of counts or values must be provided.
+ * @property {Object} [tags] - object of a shape { <tag1>: string|number, ... }
+ * Tags separate stat points into subsets based on a limited amount of tag values
+ * There should be limited amount of tags with limited amount of possible values
+ * @property {Object} [meta] - object of a shape { <meta1>: string| number, ... }
+ * Meta contains non-essential data, which will be saved only to some stat services
+ * Meta will be saved into influx, not into stathat.
+ * All string values which are not tags should go to meta.
+ * @property {Date} [time] - time of the point if it is specified
+ *
+ * {
+ *   namespace: 'testStat',
+ *   counts: {
+ *     count1: 1,
+ *     count2: 3
+ *   },
+ *   values: {
+ *     value1: 3.51,
+ *     value2: 7.24
+ *   },
+ *   tags: {
+ *     tag1: 'value1',
+ *     tag2: 'value2'
+ *   },
+ *   meta: {
+ *     meta1: 'value1',
+ *     meta2: 12.5
+ *   },
+ *   time: new Date('1999-09-09 9:09:09.999')
+ * }
+ */
 
-// Take our custom `stat` object and send a point to InfluxDB
+/**
+ * Take the `stat` object and format it for the writeMeasurement function
+ * The writeMeasurement function will finalize formatting the data to the form
+ * required by influxdb.writeMeasurement (IPoint).
+ * @param {StatObject} stat
+ * @param {Function} callback
+ *
+ */
 var stat = function(stat, callback) {
-  var enabled = _.get(config, 'influxdb.enabled');
 
   // when influxdb is disabled, log info and finish without error
+  var enabled = _.get(config, 'influxdb.enabled');
   if (!enabled) {
-    console.log('InfluxDB disabled');
+    log('warn', 'InfluxDB is disabled.');
     return callback();
   }
 
@@ -180,8 +203,9 @@ var stat = function(stat, callback) {
   var name = (namespace === 'messages') ? 'messageSent' : namespace;
 
   // InfluxDB handles complex, multi value data points, so we simply combine all
-  // of meta, values, counts, and then add the time (which InfluxDB accepts as a
-  // value).
+  // of meta, values, counts and time.
+  // We will move the time (optional) from (influx) IPoint.fields to
+  // IPoint.timestamp in the writeMeasurement function.
   var fields = _.extend({}, meta, values, counts, timeExtend);
 
   writeMeasurement(name, fields, tags, callback);
@@ -193,4 +217,3 @@ exports.stat = stat;
 // Pseudo-private exports for tests
 exports._getClient = getClient;
 exports._writeMeasurement = writeMeasurement;
-exports.writeMeasurement = writeMeasurement; // temporary: backward compatibility

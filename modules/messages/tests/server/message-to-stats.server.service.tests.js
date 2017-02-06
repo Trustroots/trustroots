@@ -141,8 +141,7 @@ describe('Message to stats server service Unit Tests:', function() {
         messageToStatsService.process(message1to2, function (err, stat) {
           if (err) return done(err);
           try {
-            stat.should.have.property('tags');
-            stat.tags.should.have.property('position', 'first');
+            stat.should.have.propertyByPath('tags', 'position').eql('first');
             return done();
           } catch (err) {
             return done(err);
@@ -155,8 +154,7 @@ describe('Message to stats server service Unit Tests:', function() {
         messageToStatsService.process(message2to1, function (err, stat) {
           if (err) return done(err);
           try {
-            stat.should.have.property('tags');
-            stat.tags.should.have.property('position', 'firstReply');
+            stat.should.have.propertyByPath('tags', 'position').eql('firstReply');
             return done();
           } catch (e) {
             return done(e);
@@ -169,8 +167,7 @@ describe('Message to stats server service Unit Tests:', function() {
         messageToStatsService.process(message2to1, function (err, stat) {
           if (err) return done(err);
           try {
-            stat.values.should.have.property('timeToFirstReply');
-            (stat.values.timeToFirstReply).should.be.above(0);
+            stat.should.have.propertyByPath('values', 'timeToFirstReply').above(0);
             return done();
           } catch (err) {
             return done(err);
@@ -183,7 +180,7 @@ describe('Message to stats server service Unit Tests:', function() {
         messageToStatsService.process(shortMessage, function (err, stat) {
           if (err) return done(err);
           try {
-            stat.tags.should.have.property('position', 'other');
+            stat.should.have.propertyByPath('tags', 'position').eql('other');
             return done();
           } catch (err) {
             return done(err);
@@ -196,7 +193,7 @@ describe('Message to stats server service Unit Tests:', function() {
         messageToStatsService.process(shortMessage, function (err, stat) {
           if (err) return done(err);
           try {
-            stat.tags.should.have.property('messageLengthType', 'short');
+            stat.should.have.propertyByPath('tags', 'messageLengthType').eql('short');
             return done();
           } catch (err) {
             return done(err);
@@ -209,7 +206,7 @@ describe('Message to stats server service Unit Tests:', function() {
         messageToStatsService.process(longMessage, function (err, stat) {
           if (err) return done(err);
           try {
-            stat.tags.should.have.property('messageLengthType', 'long');
+            stat.should.have.propertyByPath('tags', 'messageLengthType').eql('long');
             return done();
           } catch (err) {
             return done(err);
@@ -235,7 +232,7 @@ describe('Message to stats server service Unit Tests:', function() {
         messageToStatsService.process(message1to2, function (err, stat) {
           if (err) return done(err);
           try {
-            stat.meta.should.have.property('messageLength', message1to2.content.length);
+            stat.should.have.propertyByPath('meta', 'messageLength').eql(message1to2.content.length);
             return done();
           } catch (err) {
             return done(err);

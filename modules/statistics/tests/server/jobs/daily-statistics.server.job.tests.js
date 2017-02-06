@@ -47,17 +47,8 @@ describe('Daily Statistics Job - Unit Test', function () {
     });
 
     // stub the stathat endpoints
-    sandbox.stub(stathat, 'trackEZCount');
-    stathat.trackEZCount.callsArgAsync(3);
-
-    sandbox.stub(stathat, 'trackEZCountWithTime');
-    stathat.trackEZCountWithTime.callsArgAsync(4);
-
     sandbox.stub(stathat, 'trackEZValue');
     stathat.trackEZValue.callsArgAsync(3);
-
-    sandbox.stub(stathat, 'trackEZValueWithTime');
-    stathat.trackEZValueWithTime.callsArgAsync(4);
   });
 
   context('influxdb configured', function () {
