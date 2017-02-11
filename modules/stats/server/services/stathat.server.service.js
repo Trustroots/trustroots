@@ -80,11 +80,90 @@ var send = function(type, name, value, time, callback) {
   }
 
   // Add the callback to the arguments array
-  args.push(callback);
+  args.push(processResponse(callback));
 
   // Call the stathat method
   stathat[method].apply(stathat, args);
 };
+
+/**
+ * Stathat callback, the callback which stathat.trackEZ(Count|Value)[WithTime]
+ * expects as a last parameter
+ *
+ * @callback stathatCallback
+ * @param {number} code - the response code or 600
+ * @param {string} [errorMessage] - the error message, only if code === 600
+ * @param {Buffer} responseBody - the stathat response body
+ */
+
+/**
+ * Process the callback arguments from stathat, then call node-like callback
+ *
+ * According to https://github.com/FGRibreau/node-stathat/blob/29f18aa1dcb0b60bc945d94ba20f4e1c9d76fcca/main.js
+ * (which is hopefully the same as the npm stathat package)
+ * Stathat.prototype.postRequest(), the callback gets called with following
+ * argumets:
+ * on error: f(600, err.message, body)
+ * without error: f(response.statusCode, body)
+ * Therefore first we check arguments.length: 3 = error, 2 = no error
+ * On error & code 600 => push the error
+ * On code 2xx => Success
+ * On code 3xx => Redirect?? probably not happening
+ * On code 4xx => Client error: an error here. Log and fix.
+ * On code 5xx => Server error: Log and maybe TODO retry in the future.
+ *
+ * @param {Function} callback - callback with optional error as a first argument
+ * @returns {stathatCallback}
+ */
+function processResponse(callback) {
+  return function (code) {
+    var argLen = arguments.length;
+
+    // response body
+    var body;
+
+    try {
+      if (argLen === 3 && code === 600) {
+        body = arguments[2];
+        // take care of the error
+        var errorMessage = arguments[1];
+        throw new Error(errorMessage);
+      } else if (argLen === 2) {
+        body = arguments[1];
+
+        // check various response codes and log errors
+        var codeGroup = parseInt(code / 100, 10);
+
+        switch (codeGroup) {
+          case 2:
+            // OK, no error
+            break;
+          case 3:
+            // Redirect, unexpected.
+            throw new Error('Stathat responded with code 3xx (redirect) unexpectedly.');
+          case 4:
+            // Client error
+            throw new Error('Stathat responded with code 4xx (client error).');
+          case 5:
+            // Server error
+            throw new Error('Stathat responded with code 5xx (server error).');
+          default:
+            throw new Error('Stathat responded with unexpected status code.');
+        }
+      } else {
+        // this should not happen
+        throw new Error('Unexpected response from stathat.');
+      }
+    } catch (e) {
+      // collect any errors to sendErrors array
+      e.statusCode = code;
+      e.responseBody = body;
+      return callback(e);
+    }
+
+    return callback();
+  };
+}
 
 /**
  * Create one metric untagged
@@ -182,6 +261,7 @@ function asyncEachFinish(coll, iteratee, callback) {
    * @param {Function} done - callback function
    */
   function errorCollectingIteratee(args, done) {
+    // bind the iteratee's arguments to iteratee
     var toRun = iteratee.bind.apply(iteratee, [null].concat(args));
 
     toRun(function (e) {
@@ -202,7 +282,7 @@ function asyncEachFinish(coll, iteratee, callback) {
     if (e) return callback(e);
 
     if (sendErrors.length > 0) {
-      var responseError = new Error('Collected ' + sendErrors.length + '/' + coll.length + 'failures. See property errors');
+      var responseError = new Error('Collected ' + sendErrors.length + '/' + coll.length + ' failures. See property errors');
 
       responseError.errors = sendErrors;
 

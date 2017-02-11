@@ -49,16 +49,16 @@ describe('Stat API integration tests', function () {
 
     // stub the stathat endpoints
     sandbox.stub(stathat, 'trackEZCount');
-    stathat.trackEZCount.callsArgAsync(3);
+    stathat.trackEZCount.callsArgWithAsync(3, 200, null);
 
     sandbox.stub(stathat, 'trackEZCountWithTime');
-    stathat.trackEZCountWithTime.callsArgAsync(4);
+    stathat.trackEZCountWithTime.callsArgWithAsync(4, 200, null);
 
     sandbox.stub(stathat, 'trackEZValue');
-    stathat.trackEZValue.callsArgAsync(3);
+    stathat.trackEZValue.callsArgWithAsync(3, 200, null);
 
     sandbox.stub(stathat, 'trackEZValueWithTime');
-    stathat.trackEZValueWithTime.callsArgAsync(4);
+    stathat.trackEZValueWithTime.callsArgWithAsync(4, 200, null);
 
   });
 

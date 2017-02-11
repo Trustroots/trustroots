@@ -18,16 +18,16 @@ describe('Stathat Service Unit Test', function () {
 
     // stub the service dependencies
     sandbox.stub(stathat, 'trackEZCount');
-    stathat.trackEZCount.callsArgAsync(3);
+    stathat.trackEZCount.callsArgWithAsync(3, 200, null);
 
     sandbox.stub(stathat, 'trackEZCountWithTime');
-    stathat.trackEZCountWithTime.callsArgAsync(4);
+    stathat.trackEZCountWithTime.callsArgWithAsync(4, 200, null);
 
     sandbox.stub(stathat, 'trackEZValue');
-    stathat.trackEZValue.callsArgAsync(3);
+    stathat.trackEZValue.callsArgWithAsync(3, 200, null);
 
     sandbox.stub(stathat, 'trackEZValueWithTime');
-    stathat.trackEZValueWithTime.callsArgAsync(4);
+    stathat.trackEZValueWithTime.callsArgWithAsync(4, 200, null);
 
     // stub the config.stathat.key
     sandbox.stub(config.stathat, 'key', 'stathatkey');

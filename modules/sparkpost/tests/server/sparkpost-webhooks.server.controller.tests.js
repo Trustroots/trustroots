@@ -48,7 +48,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
 
     // stub the stathat endpoints
     sandbox.stub(stathat, 'trackEZCountWithTime');
-    stathat.trackEZCountWithTime.callsArgAsync(4);
+    stathat.trackEZCountWithTime.callsArgWithAsync(4, 200, null);
   });
 
   var testEvent = {
