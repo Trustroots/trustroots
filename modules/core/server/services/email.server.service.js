@@ -154,7 +154,7 @@ exports.sendChangeEmailConfirmation = function(user, callback) {
 
 exports.sendSignupEmailConfirmation = function(user, callback) {
 
-  var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup',
+  var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true',
       campaign = 'confirm-email';
 
   var params = exports.addEmailBaseTemplateParams({
@@ -192,7 +192,7 @@ exports.sendSupportRequest = function(replyTo, supportRequest, callback) {
 
 exports.sendSignupEmailReminder = function(user, callback) {
 
-  var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup',
+  var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true',
       campaign = 'signup-reminder';
 
   // This email is a reminder number `n` to this user

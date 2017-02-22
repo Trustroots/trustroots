@@ -18,6 +18,12 @@ var _ = require('lodash'),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
 
+var generateEmailToken = function (user, saltBuffer) {
+  var email = user.emailTemporary || user.email;
+  var buf = Buffer.concat([saltBuffer, new Buffer(email)]);
+  return buf.toString('hex');
+};
+
 /**
  * Signup
  */
@@ -39,13 +45,13 @@ exports.signup = function(req, res) {
     // Generate random token
     function(done) {
       crypto.randomBytes(20, function(err, buffer) {
-        var token = buffer.toString('hex');
-        done(err, token);
+        var salt = buffer;
+        done(err, salt);
       });
     },
 
     // Save user
-    function(token, done) {
+    function(salt, done) {
 
       // For security measurement we remove the roles from the `req.body` object
       delete req.body.roles;
@@ -58,7 +64,6 @@ exports.signup = function(req, res) {
       var user = new User(req.body);
 
       // Add missing user fields
-      user.emailToken = token;
       user.public = false;
       user.provider = 'local';
       user.displayName = user.firstName.trim() + ' ' + user.lastName.trim();
@@ -70,6 +75,8 @@ exports.signup = function(req, res) {
       // we'll have to have the email also at emailTemporary field
       // (from where it's then again moved to email field)
       user.emailTemporary = user.email;
+
+      user.emailToken = generateEmailToken(user, salt);
 
       // Then save the user
       user.save(function(err) {
@@ -547,23 +554,23 @@ exports.resendConfirmation = function(req, res) {
     function(done) {
       crypto.randomBytes(20, function(err, buffer) {
         if (err) return done(err);
-        done(null, buffer.toString('hex'));
+        done(null, buffer);
       });
     },
 
     // Save token
-    function(token, done) {
+    function(salt, done) {
       var user = req.user;
       user.updated = Date.now();
-      user.emailToken = token;
+      user.emailToken = generateEmailToken(user, salt);
       user.save(function(err) {
         if (err) return done(err);
-        done(null, token, user);
+        done(null, user);
       });
     },
 
     // Send email
-    function(token, user, done) {
+    function(user, done) {
       if (isEmailChange) {
         emailService.sendChangeEmailConfirmation(user, function(err) {
           done(err, user);
