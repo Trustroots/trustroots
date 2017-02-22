@@ -17,7 +17,7 @@ var _ = require('lodash'),
     basicAuth = require('basic-auth'),
     speakingurl = require('speakingurl'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
-    influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
+    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     config = require(path.resolve('./config/config'));
 
 /**
@@ -43,7 +43,8 @@ exports.receiveBatch = function(req, res) {
     });
   }
 
-  async.map(req.body, exports.processAndSendMetrics, function() {
+  async.map(req.body, exports.processAndSendMetrics, function(err) { // eslint-disable-line no-unused-vars
+    // @TODO what should happen when writing to stats api errors?
     res.status(200).end();
   });
 };
@@ -57,11 +58,13 @@ exports.processAndSendMetrics = function(event, callback) {
     return callback();
   }
 
-  var fields = {
-    time: new Date(),
+  // we changed fields to meta
+  // only numbers can be saved as count/value in stathat, so every string value must be either tag (saved) or meta (ignored)
+  var meta = {
     country: '',
     campaignId: ''
   };
+
   var tags = {};
 
   // Validate against these event categories
@@ -123,12 +126,12 @@ exports.processAndSendMetrics = function(event, callback) {
     return callback();
   }
 
-  // Add campaign id to fields if present
+  // Add campaign id to meta if present
   var campaignId = _.get(event, 'msys.' + eventCategory + '.campaign_id');
   if (_.isString(campaignId) && campaignId.length > 0) {
     // "Slugify" `campaignId` to ensure we don't get any carbage
     // Allows only `A-Za-z0-9_-`
-    fields.campaignId = speakingurl(campaignId, {
+    meta.campaignId = speakingurl(campaignId, {
       separator: '-', // char that replaces the whitespaces
       maintainCase: false, // don't maintain case
       truncate: 255 // truncate to 255 chars
@@ -138,16 +141,26 @@ exports.processAndSendMetrics = function(event, callback) {
   // Add country if present
   var country = _.get(event, 'msys.' + eventCategory + '.geo_ip.country');
   if (_.isString(country) && country.length > 0 && country.length <= 3) {
-    fields.country = country.replace(/\W/g, '').toUpperCase();
+    meta.country = country.replace(/\W/g, '').toUpperCase();
   }
+
+  var statObj = {
+    namespace: 'transactionalEmailEvent',
+    counts: {
+      count: 1
+    },
+    tags: tags,
+    meta: meta
+  };
 
   // Set `time` field to event's timestamp
   var timestamp = _.get(event, 'msys.' + eventCategory + '.timestamp');
   if (timestamp) {
-    fields.time = new Date(parseInt(timestamp, 10) * 1000);
+    statObj.time = new Date(parseInt(timestamp, 10) * 1000);
   }
 
-  influxService.writeMeasurement('transactionalEmailEvent', fields, tags, callback);
+  // send the stats via generalized stat api
+  statService.stat(statObj, callback);
 };
 
 /**

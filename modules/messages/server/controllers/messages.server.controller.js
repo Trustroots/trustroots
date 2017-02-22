@@ -10,8 +10,8 @@ var _ = require('lodash'),
     paginate = require('express-paginate'),
     mongoose = require('mongoose'),
     config = require(path.resolve('./config/config')),
-    messageToInfluxService = require(path.resolve(
-      './modules/messages/server/services/message-to-influx.server.service')),
+    messageToStatsService = require(path.resolve(
+      './modules/messages/server/services/message-to-stats.server.service')),
     messageStatService = require(path.resolve(
       './modules/messages/server/services/message-stat.server.service')),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
@@ -288,10 +288,10 @@ exports.send = function(req, res) {
       });
     },
 
-    // Here we send some metrics to InfluxDB to measure how many messages
+    // Here we send some metrics to Stats API to measure how many messages
     // are sent, what type of messages, etc.
     function (message, done) {
-      messageToInfluxService.save(message, function () {
+      messageToStatsService.save(message, function () {
         // do nothing
       });
 

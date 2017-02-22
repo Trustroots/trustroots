@@ -52,6 +52,12 @@ module.exports = {
       database: 'trustroots'
     }
   },
+  // Configuration of stathat.
+  // www.stathat.com is a tool/service for tracking statistics
+  stathat: {
+    enabled: false,
+    key: ''
+  },
   limits: {
     // Messages shorter than this will be tagged 'short' in influxdb,
     // otherwise 'long'

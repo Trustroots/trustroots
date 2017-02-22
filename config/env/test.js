@@ -31,7 +31,19 @@ module.exports = {
     description: 'Trustroots test environment.'
   },
   influxdb: {
-    enabled: false
+    enabled: false,
+    options: {
+      host: 'localhost',
+      port: 8086,
+      protocol: 'http',
+      database: 'trustroots-test'
+    }
+  },
+  // Configuration of stathat.
+  // www.stathat.com is a tool/service for tracking statistics
+  stathat: {
+    enabled: false,
+    key: ''
   },
   mapbox: {
     // Mapbox is publicly exposed to the frontend
