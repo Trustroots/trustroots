@@ -126,22 +126,31 @@ exports.signup = function(req, res) {
  */
 exports.signin = function(req, res, next) {
   passport.authenticate('local', function(err, user, info) {
-    if (err || !user) {
-      res.status(400).send(info);
-    } else {
-      // Remove sensitive data before login
-      user.password = undefined;
-      user.salt = undefined;
 
-      req.login(user, function(err) {
-        if (err) {
-          res.status(400).send(err);
-        } else {
-          user = profileHandler.sanitizeProfile(user);
-          res.json(user);
-        }
+    if (err || !user) {
+      return res.status(400).send(info);
+    }
+
+    // Don't let suspended users sign in
+    if (_.isArray(user.roles) && user.roles.indexOf('suspended') > -1) {
+      return res.status(403).send({
+        message: errorHandler.getErrorMessageByKey('suspended')
       });
     }
+
+    // Remove sensitive data before login
+    user.password = undefined;
+    user.salt = undefined;
+
+    req.login(user, function(err) {
+      if (err) {
+        res.status(400).send(err);
+      } else {
+        user = profileHandler.sanitizeProfile(user);
+        res.json(user);
+      }
+    });
+
   })(req, res, next);
 };
 

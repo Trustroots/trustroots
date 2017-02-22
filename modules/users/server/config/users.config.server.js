@@ -6,7 +6,8 @@
 var passport = require('passport'),
     User = require('mongoose').model('User'),
     path = require('path'),
-    config = require(path.resolve('./config/config'));
+    config = require(path.resolve('./config/config')),
+    usersSuspended = require(path.resolve('./modules/users/server/controllers/users-suspended.server.controller'));
 
 module.exports = function(app) {
   // Serialize sessions
@@ -31,4 +32,7 @@ module.exports = function(app) {
   // Add passport's middleware
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Handle logging out suspended users
+  app.use(usersSuspended.invalidateSuspendedSessions);
 };

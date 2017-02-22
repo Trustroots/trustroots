@@ -254,6 +254,69 @@ describe('User Model Unit Tests:', function() {
 
   });
 
+  describe('Roles Validation', function() {
+    it('should show error when trying to save with non-existing role', function(done) {
+      var _user = new User(user);
+
+      _user.roles = ['nope'];
+      _user.save(function(err) {
+        should.exist(err);
+        done();
+      });
+    });
+
+    it('should save without any roles', function(done) {
+      var _user = new User(user);
+
+      _user.roles = [];
+      _user.save(function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
+    it('should save with "user" role', function(done) {
+      var _user = new User(user);
+
+      _user.roles = ['user'];
+      _user.save(function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
+    it('should save with "admin" role', function(done) {
+      var _user = new User(user);
+
+      _user.roles = ['admin'];
+      _user.save(function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
+    it('should save with "suspended" role', function(done) {
+      var _user = new User(user);
+
+      _user.roles = ['suspended'];
+      _user.save(function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
+    it('should save with multiple roles', function(done) {
+      var _user = new User(user);
+
+      _user.roles = ['user', 'admin'];
+      _user.save(function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
+  });
+
   afterEach(function(done) {
     User.remove().exec(done);
   });
