@@ -281,6 +281,21 @@ describe('Job: user finish signup', function() {
     });
   });
 
+  it('Do not remind users with "suspended" role', function(done) {
+    unConfirmedUser.roles = ['suspended'];
+    unConfirmedUser.created = moment().subtract(moment.duration({ 'days': 8 }));
+    unConfirmedUser.save(function(err) {
+      if (err) return done(err);
+
+      userFinishSignupJobHandler({}, function(err) {
+        if (err) return done(err);
+        jobs.length.should.equal(0);
+        done();
+      });
+
+    });
+  });
+
   afterEach(function (done) {
     User.remove().exec(done);
   });
