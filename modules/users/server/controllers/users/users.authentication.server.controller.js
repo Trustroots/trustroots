@@ -18,6 +18,12 @@ var _ = require('lodash'),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
 
+var generateEmailToken = function (user, saltBuffer) {
+  var email = user.emailTemporary || user.email;
+  var buf = Buffer.concat([saltBuffer, new Buffer(email)]);
+  return buf.toString('hex');
+};
+
 /**
  * Signup
  */
@@ -39,13 +45,13 @@ exports.signup = function(req, res) {
     // Generate random token
     function(done) {
       crypto.randomBytes(20, function(err, buffer) {
-        var token = buffer.toString('hex');
-        done(err, token);
+        var salt = buffer;
+        done(err, salt);
       });
     },
 
     // Save user
-    function(token, done) {
+    function(salt, done) {
 
       // For security measurement we remove the roles from the `req.body` object
       delete req.body.roles;
@@ -58,7 +64,6 @@ exports.signup = function(req, res) {
       var user = new User(req.body);
 
       // Add missing user fields
-      user.emailToken = token;
       user.public = false;
       user.provider = 'local';
       user.displayName = user.firstName.trim() + ' ' + user.lastName.trim();
@@ -70,6 +75,8 @@ exports.signup = function(req, res) {
       // we'll have to have the email also at emailTemporary field
       // (from where it's then again moved to email field)
       user.emailTemporary = user.email;
+
+      user.emailToken = generateEmailToken(user, salt);
 
       // Then save the user
       user.save(function(err) {
@@ -119,22 +126,31 @@ exports.signup = function(req, res) {
  */
 exports.signin = function(req, res, next) {
   passport.authenticate('local', function(err, user, info) {
-    if (err || !user) {
-      res.status(400).send(info);
-    } else {
-      // Remove sensitive data before login
-      user.password = undefined;
-      user.salt = undefined;
 
-      req.login(user, function(err) {
-        if (err) {
-          res.status(400).send(err);
-        } else {
-          user = profileHandler.sanitizeProfile(user);
-          res.json(user);
-        }
+    if (err || !user) {
+      return res.status(400).send(info);
+    }
+
+    // Don't let suspended users sign in
+    if (_.isArray(user.roles) && user.roles.indexOf('suspended') > -1) {
+      return res.status(403).send({
+        message: errorHandler.getErrorMessageByKey('suspended')
       });
     }
+
+    // Remove sensitive data before login
+    user.password = undefined;
+    user.salt = undefined;
+
+    req.login(user, function(err) {
+      if (err) {
+        res.status(400).send(err);
+      } else {
+        user = profileHandler.sanitizeProfile(user);
+        res.json(user);
+      }
+    });
+
   })(req, res, next);
 };
 
@@ -547,23 +563,23 @@ exports.resendConfirmation = function(req, res) {
     function(done) {
       crypto.randomBytes(20, function(err, buffer) {
         if (err) return done(err);
-        done(null, buffer.toString('hex'));
+        done(null, buffer);
       });
     },
 
     // Save token
-    function(token, done) {
+    function(salt, done) {
       var user = req.user;
       user.updated = Date.now();
-      user.emailToken = token;
+      user.emailToken = generateEmailToken(user, salt);
       user.save(function(err) {
         if (err) return done(err);
-        done(null, token, user);
+        done(null, user);
       });
     },
 
     // Send email
-    function(token, user, done) {
+    function(user, done) {
       if (isEmailChange) {
         emailService.sendChangeEmailConfirmation(user, function(err) {
           done(err, user);

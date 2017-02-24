@@ -48,6 +48,13 @@
 
     <div class="extsites">
       <h4>Other hospitality networks</h4>
+      <!--
+      Note:
+        - links here have `rel="noopener"` because;
+          https://mathiasbynens.github.io/rel-noopener/
+        - CS link has `rel="noreferrer"` because;
+          https://github.com/Trustroots/trustroots/issues/464
+      -->
       <div class="form-group">
         <div class="input-group">
           <div class="input-group-addon">
@@ -88,7 +95,7 @@
           </label>
           <input id="extSitesCS" type="text" class="form-control" ng-model="profileEditNetworks.user.extSitesCS" ng-change="profileEdit.unsavedModifications=true" placeholder="your-username" aria-label="Couchsurfing username">
           <span class="input-group-btn" ng-if="profileEditNetworks.user.extSitesCS.length">
-            <a ng-href="https://www.couchsurfing.com/people/{{ profileEditNetworks.user.extSitesCS }}" target="_blank" class="btn btn-primary" role="button" rel="noopener"><small>Test</small></a>
+            <a ng-href="https://www.couchsurfing.com/people/{{ profileEditNetworks.user.extSitesCS }}" target="_blank" class="btn btn-primary" role="button" rel="noreferrer"><small>Test</small></a>
           </span>
         </div>
       </div>

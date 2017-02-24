@@ -323,6 +323,132 @@ describe('User CRUD tests', function () {
       });
   });
 
+  it('should not be able to login successfully if user has "suspended" role', function (done) {
+    user.roles = ['user', 'suspended'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(403)
+        .end(function (signinErr, signinRes) {
+
+          // Handle signin error
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          signinRes.body.message.should.equal('Your account has been suspended.');
+
+          return done();
+        });
+    });
+  });
+
+  it('should invalidate sessions of authenticated user with "suspended" role and return error for json requests', function (done) {
+
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        // Suspend user
+        user.roles = ['user', 'suspended'];
+        user.save(function (userSaveErr) {
+          if (userSaveErr) {
+            return done(userSaveErr);
+          }
+
+          // Load some json from API, get 403 suspended error
+          agent.get('/api/users/' + user.username)
+          .set('Accept', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(403)
+          .end(function (err, res) {
+            // Handle error
+            if (err) {
+              return done(err);
+            }
+
+            res.body.message.should.equal('Your account has been suspended.');
+
+            // Load some json from API again,
+            // get normal 403 forbidden error since session is now destroyed
+            agent.get('/api/users/' + user.username)
+            .expect(403)
+            .end(function (err, res) {
+              // Handle error
+              if (err) {
+                return done(err);
+              }
+
+              res.body.message.should.equal('Forbidden.');
+
+              return done();
+            });
+
+          });
+        });
+
+      });
+  });
+
+  it('should invalidate sessions of authenticated user with "suspended" role and return error page for text/html requests', function (done) {
+
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        // Suspend user
+        user.roles = ['user', 'suspended'];
+        user.save(function (userSaveErr) {
+          if (userSaveErr) {
+            return done(userSaveErr);
+          }
+
+          // Load html page
+          agent.get('/')
+          .set('Accept', 'text/html')
+          .expect('Content-Type', 'text/html; charset=utf-8')
+          .expect(403)
+          .end(function (err, res) {
+            // Handle error
+            if (err) {
+              return done(err);
+            }
+
+            // Note how we check for `res.text` instead of `res.body`
+            res.text.should.containEql('Your account has been suspended.');
+
+            // Load some html again,
+            // get normal 200 since session is now destroyed
+            agent.get('/')
+            .set('Accept', 'text/html')
+            .expect(200)
+            .end(function (err) {
+              // Handle error
+              if (err) {
+                return done(err);
+              }
+
+              return done();
+            });
+
+          });
+        });
+
+      });
+  });
+
   context('logged in as a confirmed user', function() {
 
     beforeEach(function(done) {

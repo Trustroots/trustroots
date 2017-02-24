@@ -20,6 +20,7 @@ exports.getErrorMessageByKey = function(key) {
     'unsupported-media-type': 'Unsupported Media Type.', // Status 415
     'bad-request': 'Bad request.', // Status 400
     'conflict': 'Conflict.', // Status 409
+    'suspended': 'Your account has been suspended.',
     'default': defaultErrorMessage
   };
 
