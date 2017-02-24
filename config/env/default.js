@@ -71,7 +71,7 @@ module.exports = {
     timeToReactivateHosts: { days: 90 }
   },
   mailer: {
-    from: process.env.MAILER_FROM || 'hello@trustroots.org',
+    from: process.env.MAILER_FROM || 'trustroots@localhost',
     options: {
       service: process.env.MAILER_SERVICE_PROVIDER || false,
       auth: {

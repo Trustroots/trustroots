@@ -22,7 +22,7 @@ module.exports = {
    * @link https://github.com/djfarrelly/MailDev
    */
   mailer: {
-    from: 'hello@trustroots.dev',
+    from: 'trustroots@localhost',
     options: {
       host: 'maildev',
       port: 25,
