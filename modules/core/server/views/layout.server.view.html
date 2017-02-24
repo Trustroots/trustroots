@@ -23,7 +23,7 @@
 
   {# Generic / Android / Firefox #}
   <meta name="description" content="{{description}}">
-  {% if googlePage !== "" %}<link rel="publisher" href="{{googlePage}}">{% endif %}
+  {% if googlePage %}<link rel="publisher" href="{{googlePage}}">{% endif %}
   <meta name="application-name" content="{{title}}">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#12b591">
@@ -49,8 +49,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
   {# Facebook #}
-  {% if facebookAppId !== "APP_ID" %}<meta property="fb:app_id" content="{{facebookAppId}}">{% endif %}
-  {% if facebookPage !== "" %}<meta property="article:publisher" content="{{facebookPage}}">{% endif %}
+  {% if facebookAppId %}<meta property="fb:app_id" content="{{facebookAppId}}">{% endif %}
+  {% if facebookPage %}<meta property="article:publisher" content="{{facebookPage}}">{% endif %}
   {% if tribe %}
     <meta property="og:title" content="Join {{tribe.label|striptags|addslashes}} on Trustroots">
     <meta property="og:description" content="Join to meet, host and get hosted by Trustroots Tribe {{tribe.label|striptags|addslashes}}. Trustroots is a travellers' community for sharing, hosting and getting people together.">
@@ -72,7 +72,7 @@
   <meta property="og:locale" content="en_GB">
 
   {# Twitter #}
-  {% if twitterUsername !== "" %}<meta name="twitter:site" content="{{twitterUsername}}">{% endif %}
+  {% if twitterUsername %}<meta name="twitter:site" content="{{twitterUsername}}">{% endif %}
   {% if tribe %}
     <meta name="twitter:title" content="Join {{tribe.label|striptags|addslashes}} on Trustroots">
     <meta name="twitter:description" content="Join to meet, host and get hosted by Trustroots Tribe {{tribe.label|striptags|addslashes}}. Trustroots is a travellers' community for sharing, hosting and getting people together.">
@@ -136,7 +136,7 @@
         title = "{{title}}",
         settings = {{ appSettings | json | safe }},
         languages = {{ languages | json | safe }},
-        {% if facebookAppId !== "APP_ID" %}facebookAppId = "{{facebookAppId}}",{% endif %}
+        {% if facebookAppId %}facebookAppId = "{{facebookAppId}}",{% endif %}
         env = "{{ env }}";
   </script>
 

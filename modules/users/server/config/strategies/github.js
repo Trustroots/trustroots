@@ -3,29 +3,41 @@
 /**
  * Module dependencies.
  */
-var passport = require('passport'),
+var _ = require('lodash'),
+    passport = require('passport'),
     GithubStrategy = require('passport-github').Strategy,
     users = require('../../controllers/users.server.controller');
 
 module.exports = function(config) {
-  // Use github strategy
+
+  // Get config parameters for the strategy
+  var clientID = _.get(config, 'github.clientID'),
+      clientSecret = _.get(config, 'github.clientSecret'),
+      callbackURL = _.get(config, 'github.callbackURL');
+
+  // Don't configure the strategy if missing configuration
+  if (!clientID || !clientSecret || !callbackURL) {
+    return;
+  }
+
+  // Use Github strategy
   passport.use(new GithubStrategy({
-    clientID: config.github.clientID,
-    clientSecret: config.github.clientSecret,
-    callbackURL: config.github.callbackURL,
+    clientID: clientID,
+    clientSecret: clientSecret,
+    callbackURL: callbackURL,
     passReqToCallback: true
   },
   function(req, accessToken, refreshToken, profile, done) {
     // Set the provider data and include tokens
-    var providerData = profile._json;
+    var providerData = profile._json || {};
     providerData.accessToken = accessToken;
     providerData.refreshToken = refreshToken;
 
     // Create the user OAuth profile
     var providerUserProfile = {
-      displayName: profile.displayName || profile.username,
-      email: (profile.emails && profile.emails.length) ? profile.emails[0].value : undefined,
-      username: profile.username,
+      displayName: profile.displayName || profile.username || undefined,
+      email: _.get(profile, 'emails[0].value', undefined),
+      username: profile.username || undefined,
       provider: 'github',
       providerIdentifierField: 'id',
       providerData: providerData
