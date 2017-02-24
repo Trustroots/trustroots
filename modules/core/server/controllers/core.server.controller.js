@@ -2,7 +2,8 @@
 
 var path = require('path'),
     errorHandler = require('./errors.server.controller'),
-    usersHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller'));
+    usersHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
+    log = require(path.resolve('./config/lib/logger'));
 
 /**
  * Render the main application page
@@ -42,4 +43,15 @@ exports.renderNotFound = function(req, res) {
       res.send(errorHandler.getErrorMessageByKey('not-found'));
     }
   });
+};
+
+/**
+ * Log received CSP violation report
+ * See `config/lib/express.js` and `initHelmetHeaders()` for more
+ */
+exports.receiveCSPViolationReport = function(req, res) {
+  log('warn', 'CSP violation report #ljeanw', {
+    report: req.body || 'No report available.'
+  });
+  res.status(204).json();
 };
