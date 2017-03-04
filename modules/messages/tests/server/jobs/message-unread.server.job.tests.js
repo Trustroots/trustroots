@@ -6,6 +6,7 @@
 var path = require('path'),
     // should = require('should'),
     moment = require('moment'),
+    sinon = require('sinon'),
     testutils = require(path.resolve('./testutils')),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
@@ -24,7 +25,7 @@ var userFrom,
     message,
     messageUnreadJobHandler;
 
-describe('Job: message unread', function() {
+describe.only('Job: message unread', function() {
 
   var jobs = testutils.catchJobs();
 
@@ -264,6 +265,58 @@ describe('Job: message unread', function() {
         });
       });
     });
+  });
+
+  context('further notifications configured', function () {
+
+    // keep a reference to sinon sandbox here
+    var sandbox;
+
+    beforeEach(function () {
+      // create the sinon sandbox to easily restore original state
+      // http://sinonjs.org/releases/v1.17.7/sandbox/
+      sandbox = sinon.sandbox.create();
+
+      // set the fake time with sinon
+      // http://sinonjs.org/releases/v1.17.7/fake-timers/
+      sandbox.useFakeTimers(1500000000000);
+    });
+
+    // restore the original state
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('Remind user again after a specified time #as438I', function(done) {
+      // update: message is created at the current time
+      message.created = new Date();
+      message.save(function(err) {
+        if (err) return done(err);
+
+        // wait for 10 minutes
+        sandbox.clock.tick(60 * 10 * 1000 + 1);
+
+        messageUnreadJobHandler({}, function(err) {
+          if (err) return done(err);
+
+          // check that the first reminder is sent
+          jobs.length.should.equal(1);
+
+          // wait for 24 hours
+          sandbox.clock.tick(24 * 3600 * 1000 - 10 * 60 * 1000);
+
+          messageUnreadJobHandler({}, function (err) {
+            if (err) return done(err);
+
+            // check that the second reminder is sent
+            jobs.length.should.equal(2);
+
+            return done();
+          });
+        });
+      });
+    });
+
   });
 
   afterEach(function (done) {
