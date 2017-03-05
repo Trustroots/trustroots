@@ -25,7 +25,7 @@ var userFrom,
     message,
     messageUnreadJobHandler;
 
-describe.only('Job: message unread', function() {
+describe('Job: message unread', function() {
 
   var jobs = testutils.catchJobs();
 
@@ -124,7 +124,7 @@ describe.only('Job: message unread', function() {
         jobs[0].data.to.address.should.equal(_userTo.email);
         Message.find({}, function(err, messages) {
           if (err) return done(err);
-          messages[0].notified.should.equal(true);
+          messages[0].notificationCount.should.equal(1);
           done();
         });
       });
@@ -151,7 +151,7 @@ describe.only('Job: message unread', function() {
           jobs[0].data.to.address.should.equal(_userTo.email);
           Message.find({}, function(err, messages) {
             if (err) return done(err);
-            messages[0].notified.should.equal(true);
+            messages[0].notificationCount.should.equal(1);
             done();
           });
         });
@@ -204,8 +204,8 @@ describe.only('Job: message unread', function() {
             Message.find({}, function(err, messages) {
               if (err) return done(err);
               messages.length.should.equal(2);
-              messages[0].notified.should.equal(true);
-              messages[1].notified.should.equal(true);
+              messages[0].notificationCount.should.equal(1);
+              messages[1].notificationCount.should.equal(1);
               done();
             });
           });
@@ -227,7 +227,7 @@ describe.only('Job: message unread', function() {
           jobs.length.should.equal(0);
           Message.find({}, function(err, messages) {
             if (err) return done(err);
-            messages[0].notified.should.equal(true);
+            messages[0].notificationCount.should.equal(1);
             done();
           });
         });
@@ -258,8 +258,8 @@ describe.only('Job: message unread', function() {
           jobs[0].data.to.address.should.equal(_userTo.email);
           Message.find({}, function(err, messages) {
             if (err) return done(err);
-            messages[0].notified.should.equal(true);
-            messages[1].notified.should.equal(true);
+            messages[0].notificationCount.should.equal(1);
+            messages[1].notificationCount.should.equal(1);
             done();
           });
         });

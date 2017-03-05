@@ -21,6 +21,7 @@ var _ = require('lodash'),
     path = require('path'),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     log = require(path.resolve('./config/lib/logger')),
+    config = require(path.resolve('./config/config')),
     async = require('async'),
     moment = require('moment'),
     mongoose = require('mongoose'),
@@ -28,20 +29,49 @@ var _ = require('lodash'),
     User = mongoose.model('User');
 
 module.exports = function(job, agendaDone) {
+
+  // here we expect an array of momentjs objects
+  // i.e. [{ minutes: 10 }, { hours: 24 }]
+  var remindersConfig = config.limits.unreadMessageReminders;
+
+  // sort the config from the earliest to the latest
+  var sortedConfig = _.sortBy(remindersConfig, function (timeSinceMessage) {
+    return moment.duration(timeSinceMessage).asMilliseconds();
+  });
+
+  // TODO check that the config has a proper format
+
+  // sendUnreadMessageReminders(remindersConfig[0], 0, agendaDone);
+  async.eachOfSeries(sortedConfig, sendUnreadMessageReminders, agendaDone);
+};
+
+/**
+ * // send the reminders about unread messages to various services
+ * @param {MomentObject} timePassed - the time object as momentjs would expect it, i.e. { 'minutes': 10 }
+ * @param {number} reminderPosition - is this the first reminder, or a further reminder?
+ * @param {Function} callback - a callback function
+ */
+function sendUnreadMessageReminders(timePassed, reminderPosition, callback) {
   async.waterfall([
 
     // Aggregate unread messages
     function(done) {
 
-      // Ignore very recent messages and look for only older than 10 minutes
+      // We want to remind user about messages, which remain unread for more than `timePassed`
+      // But only once for each `timePassed`
       // Has to be a JS Date object, not a Moment object
-      var createdTimeAgo = moment().subtract(moment.duration({ 'minutes': 10 })).toDate();
+      var createdTimeAgo = moment().subtract(moment.duration(timePassed)).toDate();
 
+      //
       Message.aggregate([
         {
           $match: {
             read: false,
-            notified: false,
+            // first reminder is sent when notificationCount is 0
+            // second reminder is sent when notificationCount is 0 or 1
+            // etc...
+            // TODO we'll need to start processing from the latest reminder, to avoid duplicate reminders when processing messages too late. Then after sending the latest reminder, the notificationCount will already be set i.e. from 0 to 2, so the earlier reminders won't be sent at all.
+            notificationCount: { $lte: reminderPosition },
             created: { $lt: createdTimeAgo }
           }
         },
@@ -58,7 +88,12 @@ module.exports = function(job, agendaDone) {
             total: { $sum: 1 },
 
             // Collect message contents
-            messages: { $push: { id: '$_id', content: '$content' } }
+            messages: { $push: { id: '$_id', content: '$content' } },
+
+            // did we already send some notifications for the last unseen message?
+            // the last unseen message has the minimum notification count
+            // we'll use the value to determine whether the notification is the first one, or not; to change wording of the reminder
+            notificationCount: { $min: '$notificationCount' }
           }
         }
       ], function(err, notifications) {
@@ -137,6 +172,7 @@ module.exports = function(job, agendaDone) {
         }
 
         // Process email notifications
+        console.log(notification);
         emailService.sendMessagesUnread(userFrom, userTo, notification, notificationCallback);
 
         // Process all types of notifications in series
@@ -171,7 +207,7 @@ module.exports = function(job, agendaDone) {
       };
     },
 
-    // Mark messages notified
+    // Update notificationCount of messages
     function(notifications, done) {
 
       // No notifications
@@ -195,13 +231,17 @@ module.exports = function(job, agendaDone) {
       if (messageIds.length === 0) {
         // Log the failure to send the notification
         log('warn', 'No messages to set notified. This probably should not happen. #hg38vs');
+  //
         return done(null);
       }
 
       // Update messages using ids
+      // The first reminder has position 0, so we want to set to 1
+      // The second reminder has position 1, so we want to set to 2
+      // TODO the messageCount is not strictly messageCount because this update allows setting 0 to 2 and sending just 1 notification.
       Message.update(
         { _id: { '$in': messageIds } },
-        { $set: { notified: true } },
+        { $set: { notificationCount: reminderPosition + 1 } },
         { multi: true },
         function(err) {
           if (err) {
@@ -218,7 +258,7 @@ module.exports = function(job, agendaDone) {
 
   ], function(err) {
     // Wrap it up
-    return agendaDone(err);
+    //
+    return callback(err);
   });
-
-};
+}
