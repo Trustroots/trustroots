@@ -35,11 +35,19 @@ var MessageSchema = new Schema({
     type: Boolean,
     default: false
   },
-  notified: {
-    type: Boolean,
-    default: false
+  /* Count and the latest date of notifications sent to `userTo`
+     about unread messages (`read:false`) */
+  notificationCount: {
+    type: Number,
+    default: 0,
+    required: true
+  },
+  notificationSent: {
+    type: Date
   }
 });
+
+MessageSchema.index({ read: 1, created: 1, notificationSent: 1 });
 
 MessageSchema.plugin(mongoosePaginate);
 
