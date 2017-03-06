@@ -112,7 +112,7 @@ function sendUnreadMessageReminders(reminder, callback) {
             total: { $sum: 1 },
 
             // Collect message contents
-            messages: { $push: { id: '$_id', content: '$content' } },
+            messages: { $push: { id: '$_id', content: '$content', created: '$created' } },
 
             // did we already send some notifications for the last unseen message?
             // the last unseen message has the minimum notification count
@@ -126,10 +126,13 @@ function sendUnreadMessageReminders(reminder, callback) {
 
     },
 
-    // If we're about to send non-first notification
-    // we want to see, whether it belongs to an unreplied thread.
-    // We send the further notifications only to unreplied threads.
-    // we save the value in boolean: notification.dontSend
+    /* If we're about to send non-first notification
+     * we want to see, whether it belongs to an unreplied thread.
+     * We send the further notifications only to unreplied threads.
+     * we save the value in boolean: notification.dontSend
+     *
+     * We also don't want to send it when it is too late (config.limits.unreadMessageRemindersTooLate)
+     */
     function(notifications, done) {
 
       // we pick only notifications which already have count > 0
@@ -146,7 +149,20 @@ function sendUnreadMessageReminders(reminder, callback) {
           userTo: notification._id.userFrom
         }, function(err, count) {
 
-          if (count > 0) {
+          var isThreadReplied = count > 0;
+
+          // find out whether it is too late to send the further notification
+          // we just wrap it to function for clearer organisation
+          var isTooLate = (function () {
+            var lastMessage = _.maxBy(notification.messages, function (msg) {
+              return msg.created;
+            });
+            var tooLate = config.limits.unreadMessageRemindersTooLate;
+            var tooOld = moment().subtract(moment.duration(tooLate)).toDate();
+            return lastMessage.created < tooOld;
+          }());
+
+          if (isThreadReplied || isTooLate) {
             notification.dontSend = true;
           }
 
