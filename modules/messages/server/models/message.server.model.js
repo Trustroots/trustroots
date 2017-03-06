@@ -41,9 +41,6 @@ var MessageSchema = new Schema({
     type: Number,
     default: 0,
     required: true
-  },
-  notificationSent: {
-    type: Date
   }
 });
 

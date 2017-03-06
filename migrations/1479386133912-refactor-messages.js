@@ -3,7 +3,6 @@
 /**
  * Refactors ...
  *
- * `notificationSent`
  * `notificationCount`
  */
 
@@ -12,11 +11,14 @@ var path = require('path'),
     mongooseService = require(path.resolve('./config/lib/mongoose')),
     mongoose = require('mongoose'),
     chalk = require('chalk'),
+    config = require(path.resolve('./config/config')),
     // eslint-disable-next-line no-unused-vars
     messageModels = require(path.resolve('./modules/messages/server/models/message.server.model')),
     Message = mongoose.model('Message');
 
 exports.up = function(next) {
+
+  var maxNotifications = config.limits.unreadMessageReminders.length;
 
   async.waterfall([
 
@@ -32,8 +34,7 @@ exports.up = function(next) {
     function(done) {
       Message
         .find({
-          notified: true,
-          notificationSent: { $exists: false }
+          notified: true
         })
         .exec(function (err, messages) {
           if (messages) {
@@ -62,13 +63,11 @@ exports.up = function(next) {
         // Must call `messageDone()` after done
         function(message, messageDone) {
           // Process message
-          var messageObject = message.toObject();
           Message.update(
             { _id: message._id },
             {
               $set: {
-                notificationSent: messageObject.created,
-                notificationCount: 2
+                notificationCount: maxNotifications
               },
               $unset: {
                 notified: ''
@@ -109,8 +108,7 @@ exports.up = function(next) {
     function(done) {
       Message
         .find({
-          notified: false,
-          notificationSent: { $exists: false }
+          notified: false
         })
         .exec(function (err, messages) {
           if (messages) {
