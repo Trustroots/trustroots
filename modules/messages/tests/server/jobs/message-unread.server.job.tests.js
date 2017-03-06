@@ -287,7 +287,7 @@ describe('Job: message unread', function() {
       sandbox.restore();
     });
 
-    it('Remind user again after a specified time #as438I', function(done) {
+    it('Remind user again after a specified time.', function (done) {
       // update: message is created at the current time
       message.created = new Date();
       message.save(function(err) {
@@ -317,7 +317,7 @@ describe('Job: message unread', function() {
       });
     });
 
-    it('Send only one notification for replied threads. #1oouT5', function(done) {
+    it('Send only one notification for replied threads.', function (done) {
       // send a message before in opposite direction
       var messageBefore = new Message({
         userFrom: _message.userTo, // opposite direction
@@ -353,7 +353,7 @@ describe('Job: message unread', function() {
             messageUnreadJobHandler({}, function (err) {
               if (err) return done(err);
 
-              // check that the second reminder is _not_ sent
+              // check that the second reminder _is not_ sent
               jobs.length.should.equal(1);
 
               return done();
@@ -365,7 +365,7 @@ describe('Job: message unread', function() {
 
     });
 
-    it('Send a further notification for unreplied threads. #hTH895', function(done) {
+    it('Send a further notification for unreplied threads.', function (done) {
       // send a message before in the same direction
       var messageBefore = new Message({
         userFrom: _message.userFrom,
@@ -413,7 +413,41 @@ describe('Job: message unread', function() {
 
     });
 
-    it('Let the further notification text be different from the first one.');
+    it('Let the further notification text be different from the first one.', function (done) {
+      // update: message is created at the current time
+      message.created = new Date();
+      message.save(function(err) {
+        if (err) return done(err);
+
+        // wait for 10 minutes
+        sandbox.clock.tick(60 * 10 * 1000 + 1);
+
+        messageUnreadJobHandler({}, function(err) {
+          if (err) return done(err);
+
+          // check that the first reminder is sent
+          jobs.length.should.equal(1);
+          // check the correctness of the content of the first reminder
+          jobs[0].data.subject.should.equal(_userFrom.displayName + ' wrote you from Trustroots');
+          jobs[0].data.to.address.should.equal(_userTo.email);
+
+          // wait for 24 hours
+          sandbox.clock.tick(24 * 3600 * 1000 - 10 * 60 * 1000);
+
+          messageUnreadJobHandler({}, function (err) {
+            if (err) return done(err);
+
+            // check that the second reminder is sent
+            jobs.length.should.equal(2);
+            // check the correctness of the content of the second reminder
+            jobs[1].data.subject.should.equal('You still have unread messages from ' + _userFrom.displayName + ' on Trustroots');
+            jobs[1].data.to.address.should.equal(_userTo.email);
+
+            return done();
+          });
+        });
+      });
+    });
 
     it('When we didn\'t send the first notification on time for some erroneous reason, send just one; not two of them at the same time.');
 
