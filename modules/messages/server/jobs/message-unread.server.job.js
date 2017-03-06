@@ -102,6 +102,37 @@ function sendUnreadMessageReminders(timePassed, reminderPosition, callback) {
 
     },
 
+    // If we're about to send non-first notification
+    // we want to see, whether it belongs to an unreplied thread.
+    // We send the further notifications only to unreplied threads.
+    // we save the value in boolean: notification.dontSend
+    function(notifications, done) {
+
+      // we pick only notifications which already have count > 0
+      // the first ones we want to send for sure, so we keep `notification.dontSend` undefined
+      var furtherNotifications = _.filter(notifications, function (notification) {
+        return notification.notificationCount > 0;
+      });
+
+      // check whether the thread is non-replied
+      async.eachSeries(furtherNotifications, function (notification, checkDone) {
+        // count messages in the other direction
+        Message.count({
+          userFrom: notification._id.userTo,
+          userTo: notification._id.userFrom
+        }, function(err, count) {
+
+          if (count > 0) {
+            notification.dontSend = true;
+          }
+
+          checkDone(err);
+        });
+      }, function (err) {
+        return done(err, notifications);
+      });
+    },
+
     // Fetch `userTo` and `userFrom`  email + displayName
     function(notifications, done) {
 
@@ -172,7 +203,13 @@ function sendUnreadMessageReminders(timePassed, reminderPosition, callback) {
         }
 
         // Process email notifications
-        console.log(notification);
+        //
+        // finish early if we don't want to send it
+        if (notification.dontSend === true) {
+          return notificationCallback();
+        }
+
+        // send the notifications
         emailService.sendMessagesUnread(userFrom, userTo, notification, notificationCallback);
 
         // Process all types of notifications in series

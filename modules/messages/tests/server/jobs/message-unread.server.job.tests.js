@@ -90,7 +90,7 @@ describe('Job: message unread', function() {
       userTo: userToId,
       content: 'a message',
       read: false,
-      notified: false
+      notificationCount: 0
     };
 
     message = new Message(_message);
@@ -316,6 +316,109 @@ describe('Job: message unread', function() {
         });
       });
     });
+
+    it('Send only one notification for replied threads. #1oouT5', function(done) {
+      // send a message before in opposite direction
+      var messageBefore = new Message({
+        userFrom: _message.userTo, // opposite direction
+        userTo: _message.userFrom,
+        content: 'a message before',
+        read: true,
+        notificationCount: 0
+      });
+
+      messageBefore.save(function (err) {
+        if (err) return done(err);
+
+        // wait a minute
+        sandbox.clock.tick(60000);
+
+        // update: message is created at the current time
+        message.created = new Date();
+        message.save(function(err) {
+          if (err) return done(err);
+
+          // wait for 10 minutes
+          sandbox.clock.tick(60 * 10 * 1000 + 1);
+
+          messageUnreadJobHandler({}, function(err) {
+            if (err) return done(err);
+
+            // check that the first reminder is sent
+            jobs.length.should.equal(1);
+
+            // wait for 24 hours
+            sandbox.clock.tick(24 * 3600 * 1000 - 10 * 60 * 1000);
+
+            messageUnreadJobHandler({}, function (err) {
+              if (err) return done(err);
+
+              // check that the second reminder is _not_ sent
+              jobs.length.should.equal(1);
+
+              return done();
+            });
+          });
+        });
+
+      });
+
+    });
+
+    it('Send a further notification for unreplied threads. #hTH895', function(done) {
+      // send a message before in the same direction
+      var messageBefore = new Message({
+        userFrom: _message.userFrom,
+        userTo: _message.userTo,
+        content: 'a message before',
+        read: true,
+        notificationCount: 0
+      });
+
+      messageBefore.save(function (err) {
+        if (err) return done(err);
+
+        // wait a minute
+        sandbox.clock.tick(60000);
+
+        // update: message is created at the current time
+        message.created = new Date();
+        message.save(function(err) {
+          if (err) return done(err);
+
+          // wait for 10 minutes
+          sandbox.clock.tick(60 * 10 * 1000 + 1);
+
+          messageUnreadJobHandler({}, function(err) {
+            if (err) return done(err);
+
+            // check that the first reminder is sent
+            jobs.length.should.equal(1);
+
+            // wait for 24 hours
+            sandbox.clock.tick(24 * 3600 * 1000 - 10 * 60 * 1000);
+
+            messageUnreadJobHandler({}, function (err) {
+              if (err) return done(err);
+
+              // check that the second reminder _is_ sent
+              jobs.length.should.equal(2);
+
+              return done();
+            });
+          });
+        });
+
+      });
+
+    });
+
+    it('Let the further notification text be different from the first one.');
+
+    it('When we didn\'t send the first notification on time for some erroneous reason, send just one; not two of them at the same time.');
+
+    it('Don\'t send further notification about very old messages.');
+
 
   });
 
