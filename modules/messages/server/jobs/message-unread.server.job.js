@@ -39,19 +39,43 @@ module.exports = function(job, agendaDone) {
     return moment.duration(timeSinceMessage).asMilliseconds();
   });
 
+  /* we run the reminders from the last to the first.
+   * that way we avoid duplicates when more reminders are pending
+   * i.e. when notificationCount is 0 and 24 hours already passed (maybe due to some agenda outage)
+   * we run the 2nd reminder first, the notificationCount is set to 2
+   * and the 1st reminder is not sent at all
+   *
+   * otherwise both reminders would be sent at the same time o_O
+   *
+   * hopefully there is not much harm in sending just one reminder in total
+   * this case shouldn't happen too often
+   */
+
+  var remappedConfig = _.reverse(_.map(sortedConfig, function (value, index) {
+    return {
+      order: index, // nth notification
+      delay: value // when to send the notification
+    };
+  }));
+
   // TODO check that the config has a proper format
 
   // sendUnreadMessageReminders(remindersConfig[0], 0, agendaDone);
-  async.eachOfSeries(sortedConfig, sendUnreadMessageReminders, agendaDone);
+  async.eachSeries(remappedConfig, sendUnreadMessageReminders, agendaDone);
 };
 
 /**
  * // send the reminders about unread messages to various services
- * @param {MomentObject} timePassed - the time object as momentjs would expect it, i.e. { 'minutes': 10 }
- * @param {number} reminderPosition - is this the first reminder, or a further reminder?
+ * @param {Object} reminder - info about the reminder
+ * @param {Object} reminder.delay - a time object as momentjs would expect it, i.e. { 'minutes': 10 }
+ * @param {number} reminder.order - which reminder are we sending: i.e. 0 for the first reminder, 5 for the sixth reminder
  * @param {Function} callback - a callback function
  */
-function sendUnreadMessageReminders(timePassed, reminderPosition, callback) {
+function sendUnreadMessageReminders(reminder, callback) {
+
+  var timePassed = reminder.delay;
+  var reminderPosition = reminder.order;
+
   async.waterfall([
 
     // Aggregate unread messages

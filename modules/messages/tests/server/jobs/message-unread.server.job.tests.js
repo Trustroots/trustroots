@@ -449,7 +449,26 @@ describe('Job: message unread', function() {
       });
     });
 
-    it('When we didn\'t send the first notification on time for some erroneous reason, send just one; not two of them at the same time.');
+    it('When we didn\'t send the first notification on time for some erroneous reason, send just one; not two of them at the same time.', function (done) {
+      // update: message is created at the current time
+      message.created = new Date();
+      message.save(function(err) {
+        if (err) return done(err);
+
+        // wait for 24 hours
+        sandbox.clock.tick(moment.duration({ hours: 24, milliseconds: 1 }).asMilliseconds());
+
+        messageUnreadJobHandler({}, function(err) {
+          if (err) return done(err);
+
+          // check that the first reminder is sent
+          jobs.length.should.equal(1);
+          jobs[0].data.subject.should.equal(_userFrom.displayName + ' wrote you from Trustroots');
+
+          return done();
+        });
+      });
+    });
 
     it('Don\'t send further notification about very old messages.');
 
