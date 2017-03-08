@@ -16,9 +16,10 @@ var path = require('path'),
     messageModels = require(path.resolve('./modules/messages/server/models/message.server.model')),
     Message = mongoose.model('Message');
 
+var maxNotifications = config.limits.unreadMessageReminders.length;
+
 exports.up = function(next) {
 
-  var maxNotifications = config.limits.unreadMessageReminders.length;
 
   async.waterfall([
 
@@ -30,152 +31,11 @@ exports.up = function(next) {
       });
     },
 
-    // Get all notified message documents
-    function(done) {
-      Message
-        .find({
-          notified: true
-        })
-        .exec(function (err, messages) {
-          if (messages) {
-            console.log('Found ' + messages.length + ' notified messages to process.');
-          }
-          done(err, messages);
-        });
-    },
+    // update the notified messages
+    processMessages.bind(this, true),
 
-    // Update each notified message document
-    function(messages, done) {
-
-      // No messages to process
-      if (!messages.length) {
-        console.log('No notified messages to process');
-        return done();
-      }
-
-      // Count how many messages we've processed
-      var counter = 0;
-
-      // `mapSeries` runs only a single async operation at a time
-      async.mapSeries(
-        messages,
-        // Iterate each message using this function
-        // Must call `messageDone()` after done
-        function(message, messageDone) {
-          // Process message
-          Message.update(
-            { _id: message._id },
-            {
-              $set: {
-                notificationCount: maxNotifications
-              },
-              $unset: {
-                notified: ''
-              }
-            },
-            {
-              // Mongoose will only update fields defined in the schema.
-              // However, you can override that default behavior by
-              // including the `strict:false` option
-              strict: false,
-              // Limits updates only to one document per update
-              multi: false
-            },
-            function(err, raw) {
-              // Succesfully saved this message
-              if (!err && raw.nModified === 1) {
-                counter++;
-              }
-              // Moves on to next one in array
-              messageDone(err);
-            }
-          );
-        },
-        // Final callback after all the messages are processed
-        function(err) {
-          if (err) {
-            console.error(err);
-          }
-          // All done
-          console.log('Processed ' + counter + ' of ' + messages.length + ' notified messages.');
-          done(err);
-        }
-      );
-    },
-
-
-    // Get all un-notified message documents
-    function(done) {
-      Message
-        .find({
-          notified: false
-        })
-        .exec(function (err, messages) {
-          if (messages) {
-            console.log('Found ' + messages.length + ' un-notified messages to process.');
-          }
-          done(err, messages);
-        });
-    },
-
-    // Update each un-notified message document
-    function(messages, done) {
-
-      // No messages to process
-      if (!messages.length) {
-        console.log('No un-notified messages to process');
-        return done();
-      }
-
-      // Count how many messages we've processed
-      var counter = 0;
-
-      // `mapSeries` runs only a single async operation at a time
-      async.mapSeries(
-        messages,
-        // Iterate each message using this function
-        // Must call `messageDone()` after done
-        function(message, messageDone) {
-          // Process message
-          Message.update(
-            { _id: message._id },
-            {
-              $set: {
-                notificationCount: 0
-              },
-              $unset: {
-                notified: ''
-              }
-            },
-            {
-              // Mongoose will only update fields defined in the schema.
-              // However, you can override that default behavior by
-              // including the `strict:false` option
-              strict: false,
-              // Limits updates only to one document per update
-              multi: false
-            },
-            function(err, raw) {
-              // Succesfully saved this message
-              if (!err && raw.nModified === 1) {
-                counter++;
-              }
-              // Moves on to next one in array
-              messageDone(err);
-            }
-          );
-        },
-        // Final callback after all the messages are processed
-        function(err) {
-          if (err) {
-            console.error(err);
-          }
-          // All done
-          console.log('Processed ' + counter + ' of ' + messages.length + ' un-notified messages.');
-          done(err);
-        }
-      );
-    }
+    // update the un-notified messages
+    processMessages.bind(this, false)
 
   ], function (err) {
     if (err) {
@@ -198,3 +58,77 @@ exports.down = function(next) {
   next();
 
 };
+
+function processMessages(processNotified, callback) {
+
+  // the function will log either 'notified' or 'un-notified'
+  var un = (processNotified) ? '' : 'un-';
+  async.waterfall([
+
+    // Count all (un)notified message documents
+    function (done) {
+      Message.count({ notified: processNotified }, function (err, total) {
+        if (err) return done(err);
+
+        var logMessage = (total > 0)
+          ? 'Found ' + total + ' ' + un + 'notified messages to process.'
+          : 'No ' + un + 'notified messages to process';
+
+        console.log(logMessage);
+
+        return done(null, total);
+      });
+    },
+
+    // Get all (un)notified message documents one by one and update them
+    function(total, done) {
+
+      // count the successfully updated messages
+      var counter = 0;
+
+      // find all the (un)notified messages
+      // http://mongoosejs.com/docs/api.html#querycursor-js
+      var cursor = Message.find({ notified: processNotified }).cursor();
+
+      // update each message one by one
+      // http://mongoosejs.com/docs/api.html#querycursor_QueryCursor-eachAsync
+      cursor.eachAsync(function (message) {
+        // Update the message, return a promise (that's what eachAsync expects)
+        // notified: true => notificationCount: 2
+        // notified: false => notificationCount: 0
+        return message.update(
+          {
+            $set: {
+              notificationCount: (processNotified) ? maxNotifications : 0
+            },
+            $unset: {
+              notified: ''
+            }
+          },
+          {
+            // Mongoose will only update fields defined in the schema.
+            // However, you can override that default behavior by
+            // including the `strict:false` option
+            strict: false,
+            // Limits updates only to one document per update
+            multi: false
+          })
+          .exec()
+          .then(function (raw) {
+            // Succesfully saved this message
+            if (raw.nModified === 1) {
+              counter++;
+            }
+          });
+      }, function (err) {
+
+        // All done
+        console.log('Processed ' + counter + ' of ' + total + ' ' + un + 'notified messages.');
+        // close the cursor
+        cursor.close(function (closingErr) {
+          return done(closingErr || err || null);
+        });
+      });
+    }
+  ], callback);
+}
