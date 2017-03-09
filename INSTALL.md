@@ -14,7 +14,7 @@ brew install graphicsmagick
 brew install imagemagick
 ```
 * [Git](https://git-scm.com/) (`git --version`, preinstalled on OSX)
-* Some of the NPM modules require compiling native code, which might require installing X-Code on OSX or `build-essential` and `make` on Linux.
+* Some of the NPM modules require compiling native code, which might require installing X-Code [Command line tools](https://railsapps.github.io/xcode-command-line-tools.html) on OSX or `build-essential` and `make` on Linux.
 
 
 ## Installing
