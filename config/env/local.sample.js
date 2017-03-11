@@ -13,6 +13,18 @@
 
 module.exports = {
 
+  /*
+  // Appears on top of every page for authenticated users.
+  // There's no way turning them off permanently,
+  // so remember to keep them visible only limited times.
+  siteAnnouncement: {
+    enabled: true,
+    // Can contain HTML
+    // You can access user object like this: `{{app.user.displayName}}`
+    message: 'Hey {{app.user.displayName}}!'
+  },
+  */
+
   // Uncomment if you have installed InfluxDB and would like to store collected statistics
   /*
   influxdb: {

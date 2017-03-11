@@ -17,6 +17,15 @@ module.exports = {
     title: 'Trustroots',
     description: 'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.'
   },
+  // Appears on top of every page for authenticated users.
+  // There's no way turning them off permanently,
+  // so remember to keep them visible only limited times.
+  siteAnnouncement: {
+    enabled: false,
+    // Can contain HTML
+    // You can access user object like this: `{{app.user.displayName}}`
+    message: ''
+  },
   maxUploadSize: process.env.MAX_UPLOAD_SIZE || 10 * 1024 * 1024, // 10MB. Remember to change this to Nginx configs as well
   imageProcessor: 'graphicsmagick', // graphicsmagick|imagemagick
   uploadTmpDir: './tmp/',
@@ -71,7 +80,7 @@ module.exports = {
     timeToReactivateHosts: { days: 90 }
   },
   mailer: {
-    from: process.env.MAILER_FROM || 'hello@trustroots.org',
+    from: process.env.MAILER_FROM || 'trustroots@localhost',
     options: {
       service: process.env.MAILER_SERVICE_PROVIDER || false,
       auth: {
@@ -99,27 +108,27 @@ module.exports = {
         legacy: false
       }
     },
-    user: process.env.MAPBOX_USERNAME || false,
-    publicKey: process.env.MAPBOX_ACCESS_TOKEN || false
+    user: process.env.MAPBOX_USERNAME || '',
+    publicKey: process.env.MAPBOX_ACCESS_TOKEN || ''
   },
   facebook: {
     page: process.env.FACEBOOK_PAGE || '',
-    clientID: process.env.FACEBOOK_ID || false,
-    clientSecret: process.env.FACEBOOK_SECRET || false,
+    clientID: process.env.FACEBOOK_ID || '',
+    clientSecret: process.env.FACEBOOK_SECRET || '',
     callbackURL: '/api/auth/facebook/callback'
   },
   twitter: {
-    username: process.env.TWITTER_USERNAME || 'USERNAME',
-    clientID: process.env.TWITTER_KEY || 'CONSUMER_KEY',
-    clientSecret: process.env.TWITTER_SECRET || 'CONSUMER_SECRET',
+    username: process.env.TWITTER_USERNAME || '',
+    clientID: process.env.TWITTER_KEY || '',
+    clientSecret: process.env.TWITTER_SECRET || '',
     callbackURL: '/api/auth/twitter/callback'
   },
   google: {
     page: process.env.GOOGLE_PAGE || ''
   },
   github: {
-    clientID: process.env.GITHUB_ID || 'APP_ID',
-    clientSecret: process.env.GITHUB_SECRET || 'APP_SECRET',
+    clientID: process.env.GITHUB_ID || '',
+    clientSecret: process.env.GITHUB_SECRET || '',
     callbackURL: '/api/auth/github/callback'
   },
   googleAnalytics: {

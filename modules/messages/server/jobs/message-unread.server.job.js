@@ -20,6 +20,7 @@
 var _ = require('lodash'),
     path = require('path'),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+    log = require(path.resolve('./config/lib/logger')),
     async = require('async'),
     moment = require('moment'),
     mongoose = require('mongoose'),
@@ -66,13 +67,13 @@ module.exports = function(job, agendaDone) {
 
     },
 
-    // Fetch userTo and userFrom  email + displayName
+    // Fetch `userTo` and `userFrom`  email + displayName
     function(notifications, done) {
 
       var userIds = [];
 
+      // Collect all user ids from notifications
       notifications.forEach(function(notification) {
-        // Collect user ids
         userIds.push(notification._id.userTo, notification._id.userFrom);
       });
 
@@ -84,93 +85,134 @@ module.exports = function(job, agendaDone) {
       // Remember to add these values also userNotFound object (see below)
       if (userIds.length > 0) {
         User
-          .find({ '_id': { $in: userIds } }, 'email displayName username')
+          .find(
+          { '_id': { $in: userIds } },
+          [
+            // Fields to get for each user:
+            'email',
+            'displayName',
+            'username'
+          ].join(' ')
+          )
           .exec(function(err, users) {
 
-            // Re-organise users into more handy array
-            var usersArr = [];
+            // Re-organise users into more handy array (`collectedUsers`)
+            var collectedUsers = {};
             if (users) {
               users.forEach(function(user) {
-                usersArr[user._id] = user;
+                // @link https://lodash.com/docs/#set
+                _.set(collectedUsers, user._id.toString(), user);
               });
             }
 
-            done(err, usersArr, notifications);
+            done(err, collectedUsers, notifications);
           });
       } else {
         done(null, [], notifications);
       }
     },
 
-    // Send emails
+    // Broadcast notifications
     function(users, notifications, done) {
 
-      var notificationsToProcess = notifications.length;
-      var messageIds = [];
-
-      if (notificationsToProcess > 0) {
-
-        // Create a queue worker to send notifications in parallel
-        // Process at most 3 notifications at the same time
-        // @link https://github.com/caolan/async#queueworker-concurrency
-        var notificationsQueue = async.queue(function (notification, notificationCallback) {
-
-          var userTo = (users[notification._id.userTo.toString()]) ? users[notification._id.userTo.toString()] : false,
-              userFrom = (users[notification._id.userFrom.toString()]) ? users[notification._id.userFrom.toString()] : false;
-
-          // Collect message ids for updating documents to `notified:true` later
-          notification.messages.forEach(function(message) {
-            messageIds.push(message.id);
-          });
-
-          // If we don't have info about these users, they've been removed.
-          // Don't send notification mail in such case.
-          // Message will still be marked as notified.
-          if (!userFrom || !userTo) {
-            return notificationCallback(new Error('Could not find all users relevant for this message to notify about.'));
-          }
-
-          emailService.sendMessagesUnread(userFrom, userTo, notification, notificationCallback);
-
-        }, 5); // How many notifications to process simultaneously?
-
-        // Start processing notifications
-        notificationsQueue.push(notifications);
-
-        // Assign a final callback to work queue
-        // All notification jobs done, continue
-        notificationsQueue.drain = function(err) {
-          if (err) {
-            console.error('Sending message notification mails caused an error:');
-            console.error(err);
-          }
-          done(null, messageIds);
-        };
-      } else {
-        // No users to send emails to
-        done(null, []);
+      // No users to send emails to
+      if (!notifications.length) {
+        return done(null, []);
       }
 
+      // Create a queue worker to send notifications in parallel
+      // Process at most 3 notifications at the same time
+      // @link https://github.com/caolan/async#queueworker-concurrency
+      var notificationsQueue = async.queue(function (notification, notificationCallback) {
+
+        // Get users for this notification
+        var userTo = _.get(users, notification._id.userTo.toString(), false),
+            userFrom = _.get(users, notification._id.userFrom.toString(), false);
+
+        // If we don't have info about these users, they've been removed.
+        // Don't send notification mail in such case.
+        // Message will still be marked as notified.
+        if (!userFrom || !userTo) {
+          return notificationCallback(new Error('Could not find all users relevant for this message to notify about.'));
+        }
+
+        // Process email notifications
+        emailService.sendMessagesUnread(userFrom, userTo, notification, notificationCallback);
+
+        // Process all types of notifications in series
+        // @link https://caolan.github.io/async/docs.html#series
+        // After all methods are done, calls `notificationCallback(err, res)`
+        /*
+        async.series({
+          email: function(callback) {
+            emailService.sendMessagesUnread(userFrom, userTo, notification, callback);
+          }
+          // More notification methods come here...
+        }, notificationCallback);
+        */
+
+      }, 5); // How many notifications to process simultaneously?
+
+      // Start processing notifications
+      notificationsQueue.push(notifications);
+
+      // Assign a final callback to work queue
+      // All notification jobs done, continue
+      notificationsQueue.drain = function(err) {
+        // Log detected error but don't stop processing this job because of it
+        // Otherwise this job might get stuck infinitely for some notification
+        if (err) {
+          // Log the failure to send the notification
+          log('error', 'Sending unread message notifications caused an error. #j38vax', {
+            error: err
+          });
+        }
+        done(null, notifications);
+      };
     },
 
     // Mark messages notified
-    function(messageIds, done) {
+    function(notifications, done) {
 
-      if (messageIds.length > 0) {
-        Message.update(
-          { _id: { '$in': messageIds } },
-          { $set: { notified: true } },
-          { multi: true },
-          function(err) {
-            if (err) {
-              console.error('Error while marking messages as notified.');
-              console.error(err);
-            }
-            done(err);
-          });
-      } else {
-        done(null);
+      // No notifications
+      if (notifications.length === 0) {
+        return done(null);
       }
+
+      // Holds ids of messages to be set `notified:true`
+      var messageIds = [];
+
+      // Collect message ids for updating documents to `notified:true` later
+      for (var i = 0, len = notifications.length; i < len; i++) {
+        if (notifications[i].messages) {
+          notifications[i].messages.forEach(function(message) {
+            messageIds.push(message.id);
+          });
+        }
+      }
+
+      // No message ids (shouldn't happen, but just in case)
+      if (messageIds.length === 0) {
+        // Log the failure to send the notification
+        log('warn', 'No messages to set notified. This probably should not happen. #hg38vs');
+        return done(null);
+      }
+
+      // Update messages using ids
+      Message.update(
+        { _id: { '$in': messageIds } },
+        { $set: { notified: true } },
+        { multi: true },
+        function(err) {
+          if (err) {
+            // Log the failure to send the notification
+            log('error', 'Error while marking messages as notified. #9ehvbn', {
+              error: err
+            });
+          }
+          // Now fail the job if error happens
+          done(err);
+        });
 
     }
 

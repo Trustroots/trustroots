@@ -3,28 +3,40 @@
 /**
  * Module dependencies.
  */
-var passport = require('passport'),
+var _ = require('lodash'),
+    passport = require('passport'),
     TwitterStrategy = require('passport-twitter').Strategy,
     users = require('../../controllers/users.server.controller');
 
 module.exports = function(config) {
-  // Use twitter strategy
+
+  // Get config parameters for the strategy
+  var clientID = _.get(config, 'twitter.clientID'),
+      clientSecret = _.get(config, 'twitter.clientSecret'),
+      callbackURL = _.get(config, 'twitter.callbackURL');
+
+  // Don't configure the strategy if missing configuration
+  if (!clientID || !clientSecret || !callbackURL) {
+    return;
+  }
+
+  // Use Twitter strategy
   passport.use(new TwitterStrategy({
-    consumerKey: config.twitter.clientID,
-    consumerSecret: config.twitter.clientSecret,
-    callbackURL: config.twitter.callbackURL,
+    consumerKey: clientID,
+    consumerSecret: clientSecret,
+    callbackURL: callbackURL,
     passReqToCallback: true
   },
   function(req, token, tokenSecret, profile, done) {
     // Set the provider data and include tokens
-    var providerData = profile._json;
+    var providerData = profile._json || {};
     providerData.token = token;
     providerData.tokenSecret = tokenSecret;
 
     // Create the user OAuth profile
     var providerUserProfile = {
-      displayName: profile.displayName,
-      username: profile.username,
+      displayName: _.get(profile, 'displayName', undefined),
+      username: _.get(profile, 'username', undefined),
       provider: 'twitter',
       providerIdentifierField: 'id_str',
       providerData: providerData

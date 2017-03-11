@@ -9,16 +9,17 @@ var _ = require('lodash'),
     users = require('../../controllers/users.server.controller');
 
 module.exports = function(config) {
-  // Use facebook strategy
-  var clientID = _.get(config, 'facebook.clientID');
-  var clientSecret = _.get(config, 'facebook.clientSecret');
-  var callbackURL = _.get(config, 'facebook.callbackURL');
+  // Get config parameters for the strategy
+  var clientID = _.get(config, 'facebook.clientID'),
+      clientSecret = _.get(config, 'facebook.clientSecret'),
+      callbackURL = _.get(config, 'facebook.callbackURL');
 
-  // Don't configure Facebook strategy if missing configuration
+  // Don't configure the strategy if missing configuration
   if (!clientID || !clientSecret || !callbackURL) {
     return;
   }
 
+  // Use facebook strategy
   passport.use(new FacebookStrategy({
     clientID: clientID,
     clientSecret: clientSecret,
@@ -35,10 +36,10 @@ module.exports = function(config) {
 
     // Create the user OAuth profile
     var providerUserProfile = {
-      firstName: profile.name.givenName,
-      lastName: profile.name.familyName,
-      displayName: profile.displayName,
-      email: profile.emails && profile.emails.length ? profile.emails[0].value : '',
+      firstName: _.get(profile, 'name.givenName', undefined),
+      lastName: _.get(profile, 'name.familyName', undefined),
+      displayName: profile.displayName || undefined,
+      email: _.get(profile, 'emails[0].value', undefined),
       provider: 'facebook',
       providerIdentifierField: 'id',
       providerData: providerData
