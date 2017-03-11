@@ -35,6 +35,14 @@
   }
 }
 
+// Push sidebar down a bit when sitewide announcements are visible.
+// See `modules/core/client/less/layout/site-announcement.less` for more.
+body.is-site-announcement-visible {
+  .search-sidebar {
+    top: @navbar-height + @site-announcement-height;
+  }
+}
+
 // "Clear selections" button for filters
 .search-sidebar-filters-clear {
   float: right;

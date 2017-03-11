@@ -17,6 +17,15 @@ module.exports = {
     title: 'Trustroots',
     description: 'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.'
   },
+  // Appears on top of every page for authenticated users.
+  // There's no way turning them off permanently,
+  // so remember to keep them visible only limited times.
+  siteAnnouncement: {
+    enabled: false,
+    // Can contain HTML
+    // You can access user object like this: `{{app.user.displayName}}`
+    message: ''
+  },
   maxUploadSize: process.env.MAX_UPLOAD_SIZE || 10 * 1024 * 1024, // 10MB. Remember to change this to Nginx configs as well
   imageProcessor: 'graphicsmagick', // graphicsmagick|imagemagick
   uploadTmpDir: './tmp/',
