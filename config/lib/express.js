@@ -43,6 +43,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.https = config.https;
   app.locals.appSettings.maxUploadSize = config.maxUploadSize;
   app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
+  app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
 
   if (process.env.NODE_ENV !== 'production') {
     app.locals.jsFiles = _.concat(config.files.client.js, 'dist/uib-templates.js');
