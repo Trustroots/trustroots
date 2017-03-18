@@ -8,6 +8,7 @@ var _ = require('lodash'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     profileHandler = require(path.resolve('./modules/users/server/controllers/users/users.profile.server.controller')),
+    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     facebook = require(path.resolve('./config/lib/facebook-api.js')),
     config = require(path.resolve('./config/config')),
     log = require(path.resolve('./config/lib/logger')),
@@ -34,9 +35,7 @@ exports.signup = function(req, res) {
     function(done) {
 
       if (!req.body.firstName || !req.body.lastName || !req.body.username || !req.body.password || !req.body.email) {
-        return res.status(400).send({
-          message: 'Please provide required fields.'
-        });
+        return done(new Error('Please provide required fields.'));
       }
 
       done();
@@ -80,11 +79,9 @@ exports.signup = function(req, res) {
 
       // Then save the user
       user.save(function(err) {
-        if (!err) {
-          // Remove sensitive data before login
-          user.password = undefined;
-          user.salt = undefined;
-        }
+        // Remove sensitive data before login
+        user.password = undefined;
+        user.salt = undefined;
 
         done(err, user);
 
@@ -102,21 +99,51 @@ exports.signup = function(req, res) {
     // Login
     function(user, done) {
       req.login(user, function(err) {
-        if (!err) {
-          // Remove sensitive data befor sending user
-          user = profileHandler.sanitizeProfile(user);
-          return res.json(user);
-        }
-        done(err);
+        // Remove sensitive data befor sending user
+        user = profileHandler.sanitizeProfile(user);
+
+        done(err, user);
       });
     }
 
-  ], function(err) {
+  ], function(err, user) {
+
+    var statsObject = {
+      namespace: 'signup',
+      counts: {
+        count: 1
+      },
+      tags: {}
+    };
+
+    // Signup process failed
     if (err) {
-      return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+
+      // Log the failure to signup
+      log('error', 'User signup failed. #fywghg', {
+        error: err
       });
+
+      // Send signup failure to stats servers
+      statsObject.tags.status = 'failed';
+      statService.stat(statsObject, function() {
+        // Send error to the API
+        res.status(400).send({
+          message: errorHandler.getErrorMessage(err)
+        });
+      });
+
+      return;
     }
+
+    // Signup process was successful
+
+    // Send signup success to stats servers
+    statsObject.tags.status = 'success';
+    statService.stat(statsObject, function() {
+      res.json(user || {});
+    });
+
   });
 };
 
@@ -125,30 +152,83 @@ exports.signup = function(req, res) {
  * Signin after passport authentication
  */
 exports.signin = function(req, res, next) {
+
+  var statsObject = {
+    namespace: 'signin',
+    counts: {
+      count: 1
+    },
+    tags: {}
+  };
+
   passport.authenticate('local', function(err, user, info) {
 
     if (err || !user) {
-      return res.status(400).send(info);
+      // Log the failure to signin
+      log('error', 'User signin failed. #3tfgbg-1', {
+        reason: 'Wrong credentials',
+        error: err || null
+      });
+
+      // Send signin failure to stats servers
+      statsObject.tags.status = 'failed:wrong-credentials';
+      statService.stat(statsObject, function() {
+
+        // Send error to the API
+        res.status(400).send(info);
+      });
+
+      return;
     }
 
     // Don't let suspended users sign in
     if (_.isArray(user.roles) && user.roles.indexOf('suspended') > -1) {
-      return res.status(403).send({
-        message: errorHandler.getErrorMessageByKey('suspended')
+      // Log the failure to signin
+      log('error', 'User signin failed. #3tfgbg-2', {
+        reason: 'Suspended user'
       });
-    }
 
-    // Remove sensitive data before login
-    user.password = undefined;
-    user.salt = undefined;
+      // Send signin failure to stats servers
+      statsObject.tags.status = 'failed:suspended';
+      statService.stat(statsObject, function() {
+
+        // Send error to the API
+        res.status(403).send({
+          message: errorHandler.getErrorMessageByKey('suspended')
+        });
+      });
+
+      return;
+    }
 
     req.login(user, function(err) {
       if (err) {
-        res.status(400).send(err);
-      } else {
+        // Log the failure to signin
+        log('error', 'User signin failed. #3tfgbg-3', {
+          reason: 'Login error',
+          error: err
+        });
+
+        // Send signin failure to stats servers
+        statsObject.tags.status = 'failed:other';
+        statService.stat(statsObject, function() {
+
+          // Send error to the API
+          res.status(400).send(err);
+        });
+
+        return;
+      }
+
+      // Send signin success to stats servers
+      statsObject.tags.status = 'success';
+      statService.stat(statsObject, function() {
+
+        // Remove sensitive data before sending out
         user = profileHandler.sanitizeProfile(user);
         res.json(user);
-      }
+      });
+
     });
 
   })(req, res, next);
