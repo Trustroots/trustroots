@@ -135,6 +135,11 @@ describe('Worker tests', function() {
     jobNames.should.containEql('send email');
   });
 
+  it('defines [send facebook notification] job', function() {
+    var jobNames = _.map(definedJobs, 'name');
+    jobNames.should.containEql('send facebook notification');
+  });
+
   it('defines [check unread messages] job', function() {
     var jobNames = _.map(definedJobs, 'name');
     jobNames.should.containEql('check unread messages');

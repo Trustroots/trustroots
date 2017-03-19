@@ -17,6 +17,12 @@ exports.start = function(options, callback) {
     );
 
     agenda.define(
+      'send facebook notification',
+      { priority: 'high', concurrency: 10 },
+      require(path.resolve('./modules/core/server/jobs/send-facebook-notification.server.job'))
+    );
+
+    agenda.define(
       'check unread messages',
       { lockLifetime: 10000 },
       require(path.resolve('./modules/messages/server/jobs/message-unread.server.job'))
@@ -42,7 +48,7 @@ exports.start = function(options, callback) {
 
     // Schedule job(s)
 
-    agenda.every('5 minutes', 'check unread messages');
+    agenda.every('30 seconds', 'check unread messages');
     agenda.every('24 hours', 'daily statistics');
     agenda.every('30 minutes', 'send signup reminders');
     agenda.every('30 minutes', 'reactivate hosts');
