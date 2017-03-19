@@ -112,7 +112,10 @@
 </head>
 <body class="ng-cloak"
       tr-window-blur="app.onWindowBlur()"
-      tr-window-focus="app.onWindowFocus()">
+      tr-window-focus="app.onWindowFocus()"
+      {% if siteAnnouncement.enabled && siteAnnouncement.message !== '' %}
+        ng-class="{ 'is-site-announcement-visible': app.user && !app.isSiteAnnouncementClosed }"
+      {% endif %}>
 
   <div id="tr-wrap">
 
@@ -122,6 +125,18 @@
 
     {# Flash messages #}
     <mc-messages></mc-messages>
+
+    {# Site wide notifications #}
+    {# Enabled from `local.js` config #}
+    {% if siteAnnouncement.enabled && siteAnnouncement.message !== '' %}
+      <div class="alert alert-success site-announcement" ng-if="app.user && !app.isSiteAnnouncementClosed">
+        {{siteAnnouncement.message}}
+        <a class="close"
+           ng-click="app.isSiteAnnouncementClosed = true;"
+           data-dismiss="alert"
+           aria-hidden="true">×</a>
+      </div>
+    {% endif %}
 
     <article class="content" id="tr-main" role="main">
       {% block content %}{% endblock %}

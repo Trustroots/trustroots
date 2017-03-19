@@ -74,8 +74,8 @@ module.exports = function(job, agendaDone) {
 
       var userIds = [];
 
+      // Collect all user ids from notifications
       notifications.forEach(function(notification) {
-        // Collect user ids
         userIds.push(notification._id.userTo, notification._id.userFrom);
       });
 
@@ -90,6 +90,7 @@ module.exports = function(job, agendaDone) {
           .find(
           { '_id': { $in: userIds } },
           [
+            // Fields to get for each user:
             'email',
             'displayName',
             'username',
@@ -100,12 +101,12 @@ module.exports = function(job, agendaDone) {
           )
           .exec(function(err, users) {
 
-            // Re-organise users into more handy array
+            // Re-organise users into more handy array (`collectedUsers`)
             var collectedUsers = {};
             if (users) {
               users.forEach(function(user) {
+                // @link https://lodash.com/docs/#set
                 // _.set(object, path, value)
-                // https://lodash.com/docs/#set
                 _.set(collectedUsers, user._id.toString(), user);
               });
             }
@@ -122,7 +123,7 @@ module.exports = function(job, agendaDone) {
 
       // No notifications
       if (!notifications.length) {
-        return done(null, notifications);
+        return done(null, []);
       }
 
       // Create a queue worker to send notifications in parallel
@@ -193,7 +194,7 @@ module.exports = function(job, agendaDone) {
       }
 
       // No message ids (shouldn't happen, but just in case)
-      if (messageIds.length === 0) {
+      if (!messageIds.length) {
         // Log the failure to send the notification
         log('warn', 'No messages to set notified. This probably should not happen. #hg38vs');
         return done(null);
