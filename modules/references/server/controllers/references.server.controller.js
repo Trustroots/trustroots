@@ -5,6 +5,8 @@
  */
 var path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
+    log = require(path.resolve('./config/lib/logger')),
     async = require('async'),
     mongoose = require('mongoose'),
     Message = mongoose.model('Message'),
@@ -78,21 +80,27 @@ exports.createReferenceThread = function(req, res) {
         },
         'userFrom userTo',
         function(err, message) {
-          if (!err && message) {
-            done(null, threadId, referenceUserTo);
-          } else {
-            console.log('Not allowed per message rules');
+          // Handle errors or non-existing thread
+          if (err || !message) {
+            // Log
+            log('error', 'Thread reference: Not allowed per message rules. #158472', {
+              error: err || null
+            });
+
             return res.status(403).send({
               message: 'Referenced person has not sent messages to to you.'
             });
           }
+
+          // All good, continue
+          done(null, threadId, referenceUserTo);
         }
       );
 
     },
 
     // Save referenceThread
-    function(threadId, referenceUserTo) {
+    function(threadId, referenceUserTo, done) {
 
       var referenceThread = new ReferenceThread(req.body);
 
@@ -102,13 +110,32 @@ exports.createReferenceThread = function(req, res) {
       referenceThread.created = new Date(); // Ensure user doesn't try to set this
 
       referenceThread.save(function(err, savedReferenceThread) {
+        // Handle errors
         if (err) {
           return res.status(400).send({
             message: errorHandler.getErrorMessage(err)
           });
-        } else {
-          return res.json(savedReferenceThread);
         }
+
+        // Send result to the API
+        res.json(savedReferenceThread);
+
+        // Send event to stats
+        // Doesn't care about already existing references for this thread
+        statService.stat({
+          namespace: 'thread-reference',
+          counts: {
+            count: 1
+          },
+          tags: {
+            // References are `yes` or `no`
+            // (defined at the `ReferenceThread` model)
+            reference: referenceThread.reference
+          }
+        }, function() {
+          done();
+        });
+
       });
     }
 
