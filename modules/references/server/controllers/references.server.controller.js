@@ -123,7 +123,7 @@ exports.createReferenceThread = function(req, res) {
         // Send event to stats
         // Doesn't care about already existing references for this thread
         statService.stat({
-          namespace: 'thread-reference',
+          namespace: 'threadReference',
           counts: {
             count: 1
           },
