@@ -113,9 +113,11 @@ module.exports = {
   },
   facebook: {
     page: process.env.FACEBOOK_PAGE || '',
-    clientID: process.env.FACEBOOK_ID || '',
-    clientSecret: process.env.FACEBOOK_SECRET || '',
-    callbackURL: '/api/auth/facebook/callback'
+    clientID: process.env.FACEBOOK_ID || false,
+    clientSecret: process.env.FACEBOOK_SECRET || false,
+    clientAccessToken: process.env.FACEBOOK_ACCESS_TOKEN || false,
+    callbackURL: '/api/auth/facebook/callback',
+    notificationsEnabled: process.env.FACEBOOK_NOTIFICATIONS_ENABLED || false
   },
   twitter: {
     username: process.env.TWITTER_USERNAME || '',
