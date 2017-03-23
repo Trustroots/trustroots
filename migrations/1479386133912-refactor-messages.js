@@ -21,9 +21,9 @@ var path = require('path'),
     messageModels = require(path.resolve('./modules/messages/server/models/message.server.model')),
     Message = mongoose.model('Message');
 
-    // define Promises for mongoose
-    // using native nodejs ES6 Promise here
-    mongoose.Promise = Promise;
+// define Promises for mongoose
+// using native nodejs ES6 Promise here
+mongoose.Promise = Promise;
 
 var maxNotifications = config.limits.unreadMessageReminders.length;
 
