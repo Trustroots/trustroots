@@ -1,9 +1,14 @@
 'use strict';
 
 /**
- * Refactors ...
+ * Refactors message schema (mongoose) to be able to send multiple notifications
+ * about unread messages.
+ * Removes `notified: boolean`, adds `notificationCount: number`
  *
- * `notificationCount`
+ * notified: false => notificationCount: 0
+ * notified: true => notificationCount: <amount of configured notifications (2)>
+ *
+ * notifications configured in config/env/default.js.limits.unreadMessageReminders
  */
 
 var path = require('path'),
@@ -15,6 +20,10 @@ var path = require('path'),
     // eslint-disable-next-line no-unused-vars
     messageModels = require(path.resolve('./modules/messages/server/models/message.server.model')),
     Message = mongoose.model('Message');
+
+    // define Promises for mongoose
+    // using native nodejs ES6 Promise here
+    mongoose.Promise = Promise;
 
 var maxNotifications = config.limits.unreadMessageReminders.length;
 
@@ -59,10 +68,19 @@ exports.down = function(next) {
 
 };
 
+/**
+ * Finds messages in database and updates them to the new schema
+ * Replaces notified: boolean with notificationCount: number
+ *
+ * @param {Boolean} processNotified - process notified (true) or unnotified (false) messages
+ * @param {Function} callback - node style callback function
+ */
 function processMessages(processNotified, callback) {
 
-  // the function will log either 'notified' or 'un-notified'
+  // log either 'notified' or 'un-notified'
+  // define the prefix here
   var un = (processNotified) ? '' : 'un-';
+
   async.waterfall([
 
     // Count all (un)notified message documents

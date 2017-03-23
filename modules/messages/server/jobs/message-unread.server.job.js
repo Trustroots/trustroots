@@ -11,6 +11,19 @@
  * notifications aren't sent.
  *
  * This whole task might be a bit memory intensive (aggregate specificly).
+ *
+ * Further notifications are sent if the message stays unread
+ * and belongs to an unreplied thread.
+ *
+ * Timing of the notifications is configured in config/env/default.js
+ * in property `limits.unreadMessageReminders`.
+ *
+ * The further notifications are not sent when too much time passed
+ * since the last unread message was sent.
+ * The time limit for further notifications is configured in config/env/default.js
+ * in property `limits.unreadMessageRemindersTooLate`.
+ *
+ * Note: we use terms `notification` and `reminder` as synonyms here
  */
 
 
@@ -30,7 +43,8 @@ var _ = require('lodash'),
 
 module.exports = function(job, agendaDone) {
 
-  // here we expect an array of momentjs objects
+  // read timing of notifications from config
+  // we expect an array of momentjs objects
   // i.e. [{ minutes: 10 }, { hours: 24 }]
   var remindersConfig = config.limits.unreadMessageReminders;
 
@@ -39,7 +53,8 @@ module.exports = function(job, agendaDone) {
     return moment.duration(timeSinceMessage).asMilliseconds();
   });
 
-  /* we run the reminders from the last to the first.
+  /*
+   * we run the reminders from the last to the first.
    * that way we avoid duplicates when more reminders are pending
    * i.e. when notificationCount is 0 and 24 hours already passed (maybe due to some agenda outage)
    * we run the 2nd reminder first, the notificationCount is set to 2
@@ -50,31 +65,31 @@ module.exports = function(job, agendaDone) {
    * hopefully there is not much harm in sending just one reminder in total
    * this case shouldn't happen too often
    */
-
   var remappedConfig = _.reverse(_.map(sortedConfig, function (value, index) {
+    // remapped config for nth notifications, more comfortable for further use
     return {
       order: index, // nth notification
-      delay: value // when to send the notification
+      timing: value // when to send the notification
     };
   }));
 
-  // TODO check that the config has a proper format
-
-  // sendUnreadMessageReminders(remindersConfig[0], 0, agendaDone);
+  // for every config, send the appropriate notifications
   async.eachSeries(remappedConfig, sendUnreadMessageReminders, agendaDone);
 };
 
 /**
- * // send the reminders about unread messages to various services
- * @param {Object} reminder - info about the reminder
- * @param {Object} reminder.delay - a time object as momentjs would expect it, i.e. { 'minutes': 10 }
- * @param {number} reminder.order - which reminder are we sending: i.e. 0 for the first reminder, 5 for the sixth reminder
+ * Send the reminders about unread messages to various services
+ * @param {Object} reminder - configuration for nth reminder
+ * @param {Object} reminder.timing - How much time must pass (since the last unread message) to send the nth reminder.
+ * A time object as momentjs would expect it, i.e. { 'minutes': 10 }
+ * @param {number} reminder.order - Order of the reminder. The reminder is nth.
+ * We start counting from 0. i.e. 3rd reminder has reminder.order: 2
  * @param {Function} callback - a callback function
  */
 function sendUnreadMessageReminders(reminder, callback) {
 
-  var timePassed = reminder.delay;
-  var reminderPosition = reminder.order;
+  var timePassed = reminder.timing;
+  var reminderOrder = reminder.order;
 
   async.waterfall([
 
@@ -82,11 +97,10 @@ function sendUnreadMessageReminders(reminder, callback) {
     function(done) {
 
       // We want to remind user about messages, which remain unread for more than `timePassed`
-      // But only once for each `timePassed`
       // Has to be a JS Date object, not a Moment object
       var createdTimeAgo = moment().subtract(moment.duration(timePassed)).toDate();
 
-      //
+      // Find all the unread messages which fit the reminder config requirements
       Message.aggregate([
         {
           $match: {
@@ -94,8 +108,7 @@ function sendUnreadMessageReminders(reminder, callback) {
             // first reminder is sent when notificationCount is 0
             // second reminder is sent when notificationCount is 0 or 1
             // etc...
-            // TODO we'll need to start processing from the latest reminder, to avoid duplicate reminders when processing messages too late. Then after sending the latest reminder, the notificationCount will already be set i.e. from 0 to 2, so the earlier reminders won't be sent at all.
-            notificationCount: { $lte: reminderPosition },
+            notificationCount: { $lte: reminderOrder },
             created: { $lt: createdTimeAgo }
           }
         },
@@ -126,7 +139,8 @@ function sendUnreadMessageReminders(reminder, callback) {
 
     },
 
-    /* If we're about to send non-first notification
+    /*
+     * If we're about to send non-first notification
      * we want to see, whether it belongs to an unreplied thread.
      * We send the further notifications only to unreplied threads.
      * we save the value in boolean: notification.dontSend
@@ -318,7 +332,7 @@ function sendUnreadMessageReminders(reminder, callback) {
       // TODO the messageCount is not strictly messageCount because this update allows setting 0 to 2 and sending just 1 notification.
       Message.update(
         { _id: { '$in': messageIds } },
-        { $set: { notificationCount: reminderPosition + 1 } },
+        { $set: { notificationCount: reminderOrder + 1 } },
         { multi: true },
         function(err) {
           if (err) {

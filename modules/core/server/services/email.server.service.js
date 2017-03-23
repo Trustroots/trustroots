@@ -17,7 +17,7 @@ var path = require('path'),
 
 exports.sendMessagesUnread = function(userFrom, userTo, notification, callback) {
 
-  // Is the notification first?
+  // Is the notification the first one?
   // If not, we send a different subject.
   var isFirst = !(notification.notificationCount > 0);
 
