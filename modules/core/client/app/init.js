@@ -53,8 +53,27 @@
 
   // Then define the init function for starting up the application
   angular.element(document).ready(function() {
+    /* eslint-disable angular/window-service */
+
+    // Escape from iframes if ordered to do so from URL.
+    // Targeted for jumping out of Facebook Canvas.
+    // Looks for `iframe_getaway` from URL parameters.
+    if (window.location.search && /iframe_getaway=true/.test(window.location.search)) {
+      // Open current URL to the same browser window, but on `_top` and
+      // without `iframe_getaway` parameter, thus escaping the iframe.
+      // Angular's `$window` nor `$location` services are not
+      // available here yet so relying on vanilla JS.
+      window.open(
+        window.location.origin +
+        window.location.pathname +
+        window.location.search.replace('iframe_getaway', 'iframe_cleaned'),
+        '_top'
+      );
+      // Don't bootstrap App, since we're reloading the page.
+      return;
+    }
+
     // Fixing facebook bug with redirect
-    // eslint-disable-next-line angular/window-service
     if (window.location.hash === '#_=_') window.location.hash = '';
 
     // Then init the app
@@ -63,6 +82,8 @@
     angular.bootstrap(document, [AppConfig.appModuleName], {
       strictDi: false
     });
+
+    /* eslint-enable angular/window-service */
   });
 
 }());

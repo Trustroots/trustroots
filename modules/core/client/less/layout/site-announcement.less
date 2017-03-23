@@ -1,0 +1,22 @@
+/**
+ * Styles for side wide announcement header
+ *
+ * See also core's `header.less` and search module less for more.
+ */
+body.is-site-announcement-visible {
+  padding-top: @site-announcement-height;
+
+  #tr-header {
+    top: @site-announcement-height;
+  }
+}
+
+.site-announcement {
+  position: fixed;
+  z-index: @zindex-navbar-fixed;
+  height: @site-announcement-height;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 0;
+}

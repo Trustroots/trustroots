@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" ng-controller="AppController as app">
+<html lang="en"
+      ng-controller="AppController as app"
+      {# Read more about `ng-csp`: https://docs.angularjs.org/api/ng/directive/ngCsp #}
+      ng-csp>
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -96,7 +99,7 @@
 
   {# Google Analytics #}
   {% if googleAnalytics.enabled === true %}
-  <script>
+  <script nonce="{{ nonce }}">
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
@@ -109,7 +112,10 @@
 </head>
 <body class="ng-cloak"
       tr-window-blur="app.onWindowBlur()"
-      tr-window-focus="app.onWindowFocus()">
+      tr-window-focus="app.onWindowFocus()"
+      {% if siteAnnouncement.enabled && siteAnnouncement.message !== '' %}
+        ng-class="{ 'is-site-announcement-visible': app.user && !app.isSiteAnnouncementClosed }"
+      {% endif %}>
 
   <div id="tr-wrap">
 
@@ -119,6 +125,18 @@
 
     {# Flash messages #}
     <mc-messages></mc-messages>
+
+    {# Site wide notifications #}
+    {# Enabled from `local.js` config #}
+    {% if siteAnnouncement.enabled && siteAnnouncement.message !== '' %}
+      <div class="alert alert-success site-announcement" ng-if="app.user && !app.isSiteAnnouncementClosed">
+        {{siteAnnouncement.message}}
+        <a class="close"
+           ng-click="app.isSiteAnnouncementClosed = true;"
+           data-dismiss="alert"
+           aria-hidden="true">×</a>
+      </div>
+    {% endif %}
 
     <article class="content" id="tr-main" role="main">
       {% block content %}{% endblock %}
@@ -131,7 +149,7 @@
   {% endblock %}
 
   {# Embedding constants coming from the backend #}
-  <script type="text/javascript">
+  <script nonce="{{ nonce }}">
     var user = {{ user | json | safe }},
         title = "{{title}}",
         settings = {{ appSettings | json | safe }},
@@ -141,13 +159,16 @@
   </script>
 
   {% if process.env.NODE_ENV === 'production' %}
-    <script type="text/javascript" src="/dist/application.min.js?c={{appSettings.commit}}"></script>
+    <script src="/dist/application.min.js?c={{appSettings.commit}}"
+            nonce="{{ nonce }}"></script>
     {% endif %}
 
   {% if process.env.NODE_ENV === 'development' %}
-  {% for jsFile in jsFiles %}<script type="text/javascript" src="/{{jsFile}}?c={{appSettings.commit}}"></script>
+  {% for jsFile in jsFiles %}
+    <script src="/{{jsFile}}?c={{appSettings.commit}}"
+            nonce="{{ nonce }}"></script>
   {% endfor %}
-  <script type="text/javascript">
+  <script nonce="{{ nonce }}">
     // Make sure we get livereload from the same host (IP/localhost/...)
     document.write('\x3Cscript type="text/javascript" src="//' + window.location.hostname + ':35729/livereload.js">\x3C/script>');
   </script>

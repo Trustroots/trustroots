@@ -32,6 +32,7 @@
  */
 var _ = require('lodash'),
     path = require('path'),
+    facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     log = require(path.resolve('./config/lib/logger')),
     config = require(path.resolve('./config/config')),
@@ -187,7 +188,7 @@ function sendUnreadMessageReminders(reminder, callback) {
       });
     },
 
-    // Fetch `userTo` and `userFrom`  email + displayName
+    // Fetch details for `userTo` and `userFrom`
     function(notifications, done) {
 
       var userIds = [];
@@ -211,7 +212,10 @@ function sendUnreadMessageReminders(reminder, callback) {
             // Fields to get for each user:
             'email',
             'displayName',
-            'username'
+            'username',
+            'additionalProvidersData.facebook.id',
+            'additionalProvidersData.facebook.accessToken',
+            'additionalProvidersData.facebook.accessTokenExpires'
           ].join(' ')
           )
           .exec(function(err, users) {
@@ -221,6 +225,7 @@ function sendUnreadMessageReminders(reminder, callback) {
             if (users) {
               users.forEach(function(user) {
                 // @link https://lodash.com/docs/#set
+                // _.set(object, path, value)
                 _.set(collectedUsers, user._id.toString(), user);
               });
             }
@@ -232,10 +237,10 @@ function sendUnreadMessageReminders(reminder, callback) {
       }
     },
 
-    // Broadcast notifications
+    // Send Notifications
     function(users, notifications, done) {
 
-      // No users to send emails to
+      // No notifications
       if (!notifications.length) {
         return done(null, []);
       }
@@ -245,7 +250,6 @@ function sendUnreadMessageReminders(reminder, callback) {
       // @link https://github.com/caolan/async#queueworker-concurrency
       var notificationsQueue = async.queue(function (notification, notificationCallback) {
 
-        // Get users for this notification
         var userTo = _.get(users, notification._id.userTo.toString(), false),
             userFrom = _.get(users, notification._id.userFrom.toString(), false);
 
@@ -253,7 +257,7 @@ function sendUnreadMessageReminders(reminder, callback) {
         // Don't send notification mail in such case.
         // Message will still be marked as notified.
         if (!userFrom || !userTo) {
-          return notificationCallback(new Error('Could not find all users relevant for this message to notify about.'));
+          return notificationCallback(new Error('Could not find all users relevant for this message to notify about. #j93bvs'));
         }
 
         // Process email notifications
@@ -266,17 +270,16 @@ function sendUnreadMessageReminders(reminder, callback) {
         // send the notifications
         emailService.sendMessagesUnread(userFrom, userTo, notification, notificationCallback);
 
-        // Process all types of notifications in series
-        // @link https://caolan.github.io/async/docs.html#series
-        // After all methods are done, calls `notificationCallback(err, res)`
-        /*
+        // Process first emails, then FB notifications
+        // After both are done, calls `notificationCallback(err, res)`
         async.series({
           email: function(callback) {
             emailService.sendMessagesUnread(userFrom, userTo, notification, callback);
+          },
+          facebook: function(callback) {
+            facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, callback);
           }
-          // More notification methods come here...
         }, notificationCallback);
-        */
 
       }, 5); // How many notifications to process simultaneously?
 
@@ -296,13 +299,14 @@ function sendUnreadMessageReminders(reminder, callback) {
         }
         done(null, notifications);
       };
+
     },
 
     // Update notificationCount of messages
     function(notifications, done) {
 
       // No notifications
-      if (notifications.length === 0) {
+      if (!notifications.length) {
         return done(null);
       }
 
@@ -319,7 +323,7 @@ function sendUnreadMessageReminders(reminder, callback) {
       }
 
       // No message ids (shouldn't happen, but just in case)
-      if (messageIds.length === 0) {
+      if (!messageIds.length) {
         // Log the failure to send the notification
         log('warn', 'No messages to set notified. This probably should not happen. #hg38vs');
   //

@@ -6,7 +6,7 @@ _These instructions are for installing locally. If you'd like to have containeri
 ## Prerequisites
 
 Make sure you have installed all these prerequisites:
-* [Node.js](https://nodejs.org/en/download/) v6 and the NPM package manager (`node --version`). You can run multiple Node versions using [NVM](https://github.com/creationix/nvm).
+* [Node.js](https://nodejs.org/en/download/) v6 (v7 might fail) and the NPM package manager (`node --version && npm --version`). You can run multiple Node versions using [NVM](https://github.com/creationix/nvm).
 * [MongoDB](http://www.mongodb.org/downloads) v3 (`mongod --version`).
 * [GraphicsMagick](http://www.graphicsmagick.org/). If you prefer [ImageMagick](http://www.imagemagick.org/) instead, change `imageProcessor` setting from `./configs/env/local.js` (see install step 2) to `imagemagic`. In Mac OS X, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) and do:
 ```
@@ -14,7 +14,7 @@ brew install graphicsmagick
 brew install imagemagick
 ```
 * [Git](https://git-scm.com/) (`git --version`, preinstalled on OSX)
-* Some of the NPM modules require compiling native code, which might require installing X-Code on OSX or `build-essential` and `make` on Linux.
+* Some of the NPM modules require compiling native code, which might require installing X-Code [Command line tools](https://railsapps.github.io/xcode-command-line-tools.html) on OSX or `build-essential` and `make` on Linux.
 
 
 ## Installing
