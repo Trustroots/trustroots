@@ -267,9 +267,6 @@ function sendUnreadMessageReminders(reminder, callback) {
           return notificationCallback();
         }
 
-        // send the notifications
-        emailService.sendMessagesUnread(userFrom, userTo, notification, notificationCallback);
-
         // Process first emails, then FB notifications
         // After both are done, calls `notificationCallback(err, res)`
         async.series({
