@@ -1,0 +1,29 @@
+<section class="board" tr-boards="'forestpath'">
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12 text-center">
+        <br><br>
+        <h2>Invite friends</h2>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container container-spacer">
+  <div class="row">
+    <div class="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8 text-center">
+
+        <p class="lead">Your code</p>
+
+        <input type="text"
+               class="form-control text-center input-lg font-brand-semibold text-uppercase"
+               value="{{ ::invite.getCode() }}">
+
+        <p class="text-muted font-brand-semibold">
+          <br><br>
+          <em>Valid for 24 hours</em>
+        </p>
+
+    </div>
+  </div><!-- /.row -->
+</section><!-- /.container -->

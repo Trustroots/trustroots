@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($rootScope, $http, $state, $stateParams, $uibModal, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService) {
+  function SignupController($rootScope, $log, $http, $state, $stateParams, $uibModal, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, appSettings, InvitationService) {
 
     // View Model
     var vm = this;
@@ -20,7 +20,30 @@
     vm.suggestedTribes = [];
     vm.suggestionsLimit = 3; // How many tribes suggested (including possible referred tribe)
 
+    // Variables for invitation feature
+    vm.invitationCode = 'PDAOZX';
+    vm.invitationCodeValid = false;
+    vm.validateInvitationCode = validateInvitationCode;
+
     activate();
+
+    /**
+     * Validate invitation code
+     */
+    function validateInvitationCode() {
+      $log.log('->validateInvitationCode');
+      $log.log(appSettings.inviteKey);
+      $log.log(vm.invitationCode.toLowerCase());
+
+      vm.invitationCodeValid = InvitationService.validateCode(
+        appSettings.inviteKey, // inviteKey
+        new Date(), // today
+        vm.invitationCode.toLowerCase() // code
+      );
+
+      $log.log(vm.invitationCodeValid);
+    }
+
 
     /**
      * Initalize controller
