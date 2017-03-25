@@ -331,7 +331,8 @@ module.exports.initHelmetHeaders = function (app) {
 
       // Lists valid endpoints for submission from `<form>` tags.
       formAction: [
-        '\'self\''
+        '\'self\'',
+        'trustroots.us9.list-manage.com'
       ],
 
       // specifies the sources that can embed the current page.
