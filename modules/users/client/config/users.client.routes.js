@@ -14,6 +14,7 @@
         templateUrl: '/modules/users/views/invite.client.view.html',
         controller: 'InviteController',
         controllerAs: 'invite',
+        requiresAuth: true,
         resolve: {
           // A string value resolves to a service
           SettingsService: 'SettingsService',
