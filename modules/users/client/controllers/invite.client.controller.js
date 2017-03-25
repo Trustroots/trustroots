@@ -16,7 +16,7 @@
 
     function getCode() {
       return InvitationService.dateToCode(
-        appSettings.inviteKey,
+        appSettings.invitation.key,
         new Date()
       );
     }

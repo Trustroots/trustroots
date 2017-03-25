@@ -1,35 +1,45 @@
 <section class="container container-spacer">
 
   <!-- Invitation form -->
-  <form class="signin form-horizontal" novalidate autocomplete="off">
-    <div style="row" ng-if="!signup.invitationCodeValid">
+  <div class="signin form-horizontal"
+       ng-if="app.appSettings.invitation.enabled && !signup.invitationCodeValid">
+    <div style="row">
 
       <div class="signup-form-step">
         <div class="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6 col-lg-offset-4 col-lg-4">
 
           <div class="row">
-            <div class="col-xs-12 text-center">
+            <div class="col-xs-12">
 
               <h3>Join Trustroots</h3>
 
-              <p class="font-brand-light">
-                Lorem ipsum holy invitation.
+              <p class="lead text-muted">
+                <br>
+                About invitation stuff here...
                 <br><br>
               </p>
 
-              <div class="form-group">
+              <div class="form-group"
+                   ng-class="{ 'has-error': signup.invitationCodeError }">
                 <div class="col-sm-9">
                   <input type="text"
-                         name="invitationCode"
                          placeholder="Invitation code"
+                         autocomplete="off"
                          class="form-control input-lg"
-                         ng-model="signup.invitationCode">
+                         ng-model="signup.invitationCode"
+                         aria-describedby="signup-invitation-code">
+                  <span id="signup-invitation-code"
+                        class="help-block"
+                        ng-if="signup.invitationCodeError">
+                    Invalid invitation code.<br>
+                    Codes are valid for 24 hours.
+                  </span>
                 </div>
                 <div class="col-sm-3">
                   <button class="btn btn-lg btn-primary"
                           ng-click="signup.validateInvitationCode()"
                           ng-disabled="!signup.invitationCode">
-                    Let me in
+                    Let me in!
                   </button>
                 </div>
               </div>
@@ -37,28 +47,50 @@
             </div>
           </div>
           <div class="row">
-            <div class="col-xs-12 lead text-muted">
-              <br>Alternatively...<br><br>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-xs-12 text-center">
+            <div class="col-xs-12">
 
-              <div class="form-group">
-                <div class="col-sm-9">
-                  <input type="text"
-                         name="invitationEmail"
-                         placeholder="Email"
-                         class="form-control input-lg"
-                         ng-model="signup.invitationEmail">
+              <p class="lead text-muted">
+                <br><br>
+                Alternatively you can join the waiting list.
+                <br><br>
+              </p>
+
+              <!-- Begin MailChimp Signup Form -->
+              <form action="//trustroots.us9.list-manage.com/subscribe/post?u=045d0d8a5a084e73a7dac7fa7&amp;id=43e1be1468"
+                    method="post"
+                    id="mc-embedded-subscribe-form"
+                    name="mc-embedded-subscribe-form"
+                    novalidate>
+
+                <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+                <div style="position: absolute; left: -5000px;" aria-hidden="true">
+                  <input type="text" name="b_045d0d8a5a084e73a7dac7fa7_43e1be1468" tabindex="-1" value="">
                 </div>
-                <div class="col-sm-3">
-                  <button class="btn btn-lg btn-primary"
-                          ng-disabled="!signup.invitationEmail">
-                    Foobar
-                  </button>
+
+                <div class="form-group">
+                  <div class="col-sm-9">
+                      <label for="mce-EMAIL" class="sr-only">Your email</label>
+                      <input type="email"
+                             value=""
+                             ng-model="signup.invitationEmail"
+                             name="EMAIL"
+                             class="form-control input-lg"
+                             id="mce-EMAIL"
+                             placeholder="Your email">
+                  </div>
+                  <div class="col-sm-3">
+                    <button type="submit"
+                            name="subscribe"
+                            id="mc-embedded-subscribe"
+                            class="btn btn-primary btn-lg"
+                            ng-disabled="!signup.invitationEmail">
+                      Join the waitinglist
+                    </button>
+                  </div>
                 </div>
-              </div>
+
+              </form>
+              <!--End mc_embed_signup-->
 
               </div>
             </div>
@@ -66,10 +98,14 @@
           </div>
         </div>
       </div>
-    </form>
+    </div>
     <!-- /Invitation form -->
 
-    <form name="userForm" class="signin form-horizontal" novalidate autocomplete="off" ng-if="signup.invitationCodeValid">
+    <form name="userForm"
+          class="signin form-horizontal"
+          novalidate
+          autocomplete="off"
+          ng-if="!app.appSettings.invitation.enabled || signup.invitationCodeValid">
 
       <div class="row">
         <div class="col-xs-12 text-center">
