@@ -27,6 +27,10 @@ Create a plain text version of the message.
 
     node generatePlainText.js > message.txt
 
+Then you need to add the plain text footer before sending it.
+
+    cat mass-email-footer.txt >> message.txt
+
 ## Update utm_campaign
 
 Change `utm_campaign` in both `message.txt` and `message.html` to be unique for
