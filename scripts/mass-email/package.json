@@ -13,6 +13,7 @@
     "inline-css": "^2.2.2"
   },
   "dependencies": {
-    "nedb": "^1.8.0"
+    "nedb": "^1.8.0",
+    "shortid": "^2.2.8"
   }
 }
