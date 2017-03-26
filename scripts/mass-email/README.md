@@ -16,6 +16,11 @@ Generate a combined HTML file like so
 
     node mergeAndInline.js > message.html
 
+## Optionally minify the HTML
+
+You can run the HTML through [a
+minifier](https://kangax.github.io/html-minifier/) if you like.
+
 ## Generate a plain text version
 
 Create a plain text version of the message.
