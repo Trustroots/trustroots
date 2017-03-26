@@ -89,6 +89,6 @@ const sendOneGroup = function(i, eachCb) {
     });
 };
 
-async.timesSeries(2500, sendOneGroup, err => {
+async.timesSeries(totalRuns, sendOneGroup, err => {
   console.log(new Date(), "FINISH", err);
 });
