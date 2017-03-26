@@ -22,6 +22,11 @@ Create a plain text version of the message.
 
     node generatePlainText.js > message.txt
 
+## Update utm_campaign
+
+Change `utm_campaign` in both `message.txt` and `message.html` to be unique for
+this email.
+
 ## Upload that template to sparkpost
 
 You need to be able to login to sparkpost for this.
