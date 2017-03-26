@@ -23,6 +23,7 @@ const interval = 60 * 1e3; // 1 minute
 // This should equal about 15k messages per day, which should keep us below our
 // SparkPost limit of 20k per day
 const usersPerApiCall = 10;
+const totalRuns = 5000;
 
 const userToRecipient = function(user) {
   return {
@@ -52,7 +53,11 @@ const sendOneGroup = function(i, eachCb) {
   const cursor = Users.find({ sentAt: { $exists: false } })
     .limit(usersPerApiCall)
     .exec((err, users) => {
-      // Send the actual emails
+      // If we've run out of users, stop here
+      if (users.length === 0) {
+        console.log(new Date(), "SUCCESS: All emails sent");
+        return eachCb("finished");
+      }
 
       // Build the recipients object
       const recipients = _.map(users, userToRecipient);
