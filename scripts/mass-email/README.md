@@ -57,3 +57,17 @@ Here's an example for the TEST DATA field.
   }
 }
 ```
+
+## Dump users, load data
+
+Dump users on the production server like:
+
+    mongoexport --db trust-roots --collection users --out users.json
+
+Grab that `users.json` file and drop it into a local `data/` directory in this
+directory on your machine.
+
+Run the `loadData.js` script to read that file and build a list of users to
+email into an `nedb` file.
+
+    node loadData.js

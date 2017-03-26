@@ -13,6 +13,6 @@
     "inline-css": "^2.2.2"
   },
   "dependencies": {
-    "node-persist": "^2.0.10"
+    "nedb": "^1.8.0"
   }
 }
