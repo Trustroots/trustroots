@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "nedb": "^1.8.0",
-    "shortid": "^2.2.8"
+    "shortid": "^2.2.8",
+    "sparkpost": "^2.1.2"
   }
 }
