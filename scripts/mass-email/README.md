@@ -53,7 +53,7 @@ Here's an example for the TEST DATA field.
 ```json
 {
   "substitution_data": {
-    "userToName": "Callum Macdonald"
+    "displayName": "Callum Macdonald"
   },
   "metadata": {},
   "options": {},
