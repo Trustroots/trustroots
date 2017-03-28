@@ -602,10 +602,38 @@ describe('User CRUD tests', function () {
             return done(err);
           }
 
+          res.body.message.should.be.equal('Password reset sent.');
+
           User.findOne({ username: user.username.toLowerCase() }, function(err, userRes) {
             userRes.resetPasswordToken.should.not.be.empty();
             should.exist(userRes.resetPasswordExpires);
-            res.body.message.should.be.equal('Password reset sent.');
+            return done();
+          });
+        });
+    });
+  });
+
+  it('forgot password should be able to reset password for user password reset request using uppercase username', function (done) {
+    user.roles = ['user'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent.post('/api/auth/forgot')
+        .send({
+          username: user.username.toUpperCase()
+        })
+        .expect(200)
+        .end(function (err, res) {
+          // Handle error
+          if (err) {
+            return done(err);
+          }
+
+          res.body.message.should.be.equal('Password reset sent.');
+
+          User.findOne({ username: user.username.toLowerCase() }, function(err, userRes) {
+            userRes.resetPasswordToken.should.not.be.empty();
+            should.exist(userRes.resetPasswordExpires);
             return done();
           });
         });
@@ -628,10 +656,38 @@ describe('User CRUD tests', function () {
             return done(err);
           }
 
+          res.body.message.should.be.equal('Password reset sent.');
+
           User.findOne({ email: user.email.toLowerCase() }, function(err, userRes) {
             userRes.resetPasswordToken.should.not.be.empty();
             should.exist(userRes.resetPasswordExpires);
-            res.body.message.should.be.equal('Password reset sent.');
+            return done();
+          });
+        });
+    });
+  });
+
+  it('forgot password should be able to reset password for user password reset request using uppercase email', function (done) {
+    user.roles = ['user'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent.post('/api/auth/forgot')
+        .send({
+          username: user.email.toUpperCase()
+        })
+        .expect(200)
+        .end(function (err, res) {
+          // Handle error
+          if (err) {
+            return done(err);
+          }
+
+          res.body.message.should.be.equal('Password reset sent.');
+
+          User.findOne({ email: user.email.toLowerCase() }, function(err, userRes) {
+            userRes.resetPasswordToken.should.not.be.empty();
+            should.exist(userRes.resetPasswordExpires);
             return done();
           });
         });
