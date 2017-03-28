@@ -10,6 +10,7 @@ var _ = require('lodash'),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
     tagsHandler = require(path.resolve('./modules/tags/server/controllers/tags.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     messageStatService = require(path.resolve(
       './modules/messages/server/services/message-stat.server.service')),
     config = require(path.resolve('./config/config')),
@@ -779,7 +780,7 @@ exports.modifyUserTag = function(req, res) {
     },
 
     // Done, output new tribe/tag + user objects
-    function(tag, user) {
+    function(tag, user, done) {
 
       // Preserver only public fields
       // Array of keys to preserve in tag/tribe before sending it to the frontend
@@ -793,10 +794,28 @@ exports.modifyUserTag = function(req, res) {
       message += (joining ? 'Joined' : 'Left');
       message += ' ' + ((tag && tag.tribe) ? 'tribe' : 'tag') + '.';
 
-      return res.send({
-        message: message,
-        tag: pickedTag,
-        user: user
+      statService.stat({
+        namespace: 'tagAction',
+        counts: {
+          count: joining ? 1 : -1
+        },
+        tags: {
+          type: tag.tribe ? 'tribe' : 'tag'
+        },
+        meta: {
+          slug: tag.slug
+        }
+      }, function() {
+
+        // Send response to API
+        res.send({
+          message: message,
+          tag: pickedTag,
+          user: user
+        });
+
+        done();
+
       });
     }
 
