@@ -7,6 +7,7 @@ var path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     async = require('async'),
     crypto = require('crypto'),
     mongoose = require('mongoose'),
@@ -17,6 +18,7 @@ var path = require('path'),
  */
 exports.forgot = function(req, res, next) {
   async.waterfall([
+
     // Generate random token
     function(done) {
       crypto.randomBytes(20, function(err, buffer) {
@@ -24,53 +26,89 @@ exports.forgot = function(req, res, next) {
         done(err, token);
       });
     },
+
     // Lookup user by username
     function(token, done) {
-      if (req.body.username) {
-        var username = req.body.username.toString().toLowerCase();
-        User.findOne({
-          $or: [
-            { username: username.toLowerCase() },
-            { email: username.toLowerCase() }
-          ]
-        }, '-salt -password', function(err, user) {
-          if (!user) {
-            return res.status(404).send({
-              message: 'We could not find an account with that username or email. Make sure you have it spelled correctly.'
-            });
-          } else {
-            user.resetPasswordToken = token;
-            user.resetPasswordExpires = Date.now() + (24 * 3600000); // 24 hours
 
-            user.save(function(err) {
-              done(err, user);
-            });
-          }
-        });
-      } else {
+      // Missing username, return error
+      if (!req.body.username) {
         return res.status(400).send({
           message: 'Please, we really need your username or email first...'
         });
       }
+
+      var userHandle = req.body.username.toString().toLowerCase();
+
+      User.findOne({
+        $or: [
+          { username: userHandle },
+          { email: userHandle }
+        ]
+      }, '-salt -password', function(err, user) {
+        if (!user) {
+
+          // Report failure to reset to stats
+          return statService.stat({
+            namespace: 'passwordReset',
+            counts: {
+              count: 1
+            },
+            tags: {
+              status: 'failed:noUser'
+            }
+          }, function() {
+            // Return failure
+            res.status(404).send({
+              message: 'We could not find an account with that username or email. Make sure you have it spelled correctly.'
+            });
+          });
+
+        } else {
+          user.resetPasswordToken = token;
+          user.resetPasswordExpires = Date.now() + (24 * 3600000); // 24 hours
+
+          user.save(function(err) {
+            done(err, user);
+          });
+        }
+      });
+
     },
 
     // Send email
     function(user) {
       emailService.sendResetPassword(user, function(err) {
-        if (!err) {
-          return res.send({
-            message: 'Password reset sent.'
-          });
-        } else {
+
+        // Stop on errors
+        if (err) {
           return res.status(400).send({
             message: 'Failure while sending recovery email to you. Please try again later.'
           });
         }
+
+        // Report successfull reset to stats
+        return statService.stat({
+          namespace: 'passwordReset',
+          counts: {
+            count: 1
+          },
+          tags: {
+            status: 'emailSent'
+          }
+        }, function() {
+          // Return success
+          res.send({
+            message: 'Password reset sent.'
+          });
+        });
+
       });
     }
 
   ], function(err) {
-    if (err) return next(err);
+    if (err) {
+      return next(err);
+    }
   });
 };
 
