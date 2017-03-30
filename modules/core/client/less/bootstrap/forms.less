@@ -25,6 +25,16 @@ input[type="color"] {
   // iOS tends to mess up form elements
   // @link http://stackoverflow.com/a/10757425/1984644
   -webkit-appearance: none;
+
+  // Hide Internet Explorer "x" from inputs
+  &::-ms-clear {
+    display: none;
+  }
+}
+
+// We have "reveal password" button via Angular directive already
+input[type="password"]::-ms-reveal {
+  display: none;
 }
 
 label {
