@@ -206,7 +206,6 @@ var stat = function(stat, callback) {
   // if stathat is disabled, log the info and quit without failing
   var isEnabled = _.get(config, 'stathat.enabled', false);
   if (!isEnabled) {
-    log('warn', 'Stathat is disabled.');
     return callback();
   }
 

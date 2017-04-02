@@ -184,7 +184,6 @@ var stat = function(stat, callback) {
   // when influxdb is disabled, log info and finish without error
   var enabled = _.get(config, 'influxdb.enabled');
   if (!enabled) {
-    log('warn', 'InfluxDB is disabled.');
     return callback();
   }
 
