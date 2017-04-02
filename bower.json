@@ -28,7 +28,8 @@
     "angular-locker": "~2.0.4",
     "medium-editor": "~5.22.1",
     "angular-confirm-modal": "~1.2.5",
-    "angulartics-google-analytics": "~0.3.0",
+    "angulartics": "~1.4.0",
+    "angulartics-google-analytics": "~0.4.0",
     "angulargrid": "~0.6.0",
     "leaflet-active-area": "#6f13cffe44faee56e8a089ff6ea6022465c257a9"
   },

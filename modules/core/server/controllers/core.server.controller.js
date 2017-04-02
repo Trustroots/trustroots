@@ -50,8 +50,10 @@ exports.renderNotFound = function(req, res) {
  * See `config/lib/express.js` and `initHelmetHeaders()` for more
  */
 exports.receiveCSPViolationReport = function(req, res) {
-  log('warn', 'CSP violation report #ljeanw', {
-    report: req.body || 'No report available.'
-  });
+  if (process.env.NODE_ENV !== 'test') {
+    log('warn', 'CSP violation report #ljeanw', {
+      report: req.body || 'No report available.'
+    });
+  }
   res.status(204).json();
 };
