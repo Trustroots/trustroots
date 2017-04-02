@@ -32,7 +32,7 @@ var User = mongoose.model('User');
 // Dry run?
 if (argv.dry) {
   console.log('---');
-  console.log('Dry run, this won\'t save anything to Influx!');
+  console.warn('Dry run, this won\'t save anything to Influx!');
   console.log('---');
 }
 
@@ -40,7 +40,7 @@ if (argv.dry) {
 var query = {
   created: {
     // The date when feature was pushed to production
-    $gt: new Date('2016-03-21 21:28:00')
+    $lt: new Date('2017-03-21T21:28:00')
   }
 };
 
@@ -61,6 +61,15 @@ async.waterfall([
   },
 
   function findAndProcess(count, done) {
+
+    // Nothing found
+    if (count === 0) {
+      console.log('---');
+      console.warn('No documents to process!');
+      console.log('---');
+      return done(null, 0, 0);
+    }
+
     console.log('Found ' + count + ' documents\n');
     console.log('Processing and adding the records to Influx now\n');
 
@@ -101,7 +110,7 @@ async.waterfall([
         }, callback);
       }
 
-    }, 5);
+    }, 5); // How many docs to process at once?
 
     // Get docs and start processing them
     User.find(query).exec(function (err, docs) {
@@ -111,19 +120,16 @@ async.waterfall([
     // Done with all docs
     q.drain = function() {
       if (progress === count) {
-        console.log('All items have been processed');
         return done(null, progress, count);
       }
     };
 
   }
 ], function (err, processedCount, totalCount) {
-  mongooseHelper.disconnect(function(disconnectErr) {
-    if (disconnectErr) {
-      console.log('Could not disconnect MongoDB.');
-      console.error(disconnectErr);
-    }
-  });
+  // finish writing the progress bar
+  process.stdout.clearLine();
+  process.stdout.cursorTo(0);
+  process.stdout.write((Math.floor(processedCount / totalCount * 100) || 100) + '% (' + processedCount + '/' + totalCount + ') (done)\n\n');
 
   if (err) {
     console.log('Error:');
@@ -131,12 +137,15 @@ async.waterfall([
     return;
   }
 
-  // finish writing the progress bar
-  process.stdout.clearLine();
-  process.stdout.cursorTo(0);
-  process.stdout.write(Math.floor(processedCount / totalCount * 100) + '% (' + processedCount + '/' + totalCount + ') (done)\n\n');
+  // Disconnect DB
+  mongooseHelper.disconnect(function(disconnectErr) {
+    if (disconnectErr) {
+      console.log('Could not disconnect MongoDB.');
+      console.error(disconnectErr);
+    }
 
-  console.log('All done!');
+    console.log('All done!');
+    process.exit(1);
+  });
 
-  return 1; // all finished!
 });
