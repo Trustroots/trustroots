@@ -268,6 +268,9 @@ module.exports.initHelmetHeaders = function (app) {
 
       // Defines the origins from which scripts can be loaded.
       scriptSrc: [
+        // IE Edge does not support `nonce`, thus we need `unsafe-inline`. :-(
+        // Using sha instead could work.
+        '\'unsafe-inline\'',
         '\'self\'',
         '*.facebook.com',
         '*.facebook.net',
