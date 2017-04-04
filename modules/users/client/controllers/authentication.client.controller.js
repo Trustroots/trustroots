@@ -18,6 +18,7 @@
     vm.signin = signin;
     vm.continue = ($stateParams.continue);
     vm.isLoading = false;
+    vm.authError = false;
 
     /**
      * Sign in
@@ -60,6 +61,7 @@
         },
         function(error) { // On error function
           vm.isLoading = false;
+          vm.authError = true;
           messageCenterService.add('danger', error.data.message || 'Something went wrong.');
           $analytics.eventTrack('login.failed', {
             category: 'authentication',
