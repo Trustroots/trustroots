@@ -6,7 +6,7 @@
     .controller('ForgotPasswordController', ForgotPasswordController);
 
   /* @ngInject */
-  function ForgotPasswordController($http) {
+  function ForgotPasswordController($http, $stateParams) {
 
     // ViewModel
     var vm = this;
@@ -15,7 +15,10 @@
     vm.success = null;
     vm.error = null;
     vm.isLoading = false;
-    vm.credentials = null;
+    vm.credentials = {
+      // Prefill input from URL if available
+      username: $stateParams.userhandle ? $stateParams.userhandle : ''
+    };
     vm.askForPasswordReset = askForPasswordReset;
 
     // Submit forgotten password account id

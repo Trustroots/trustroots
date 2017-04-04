@@ -280,7 +280,7 @@
 
       // Password reset
       state('forgot', {
-        url: '/password/forgot',
+        url: '/password/forgot?userhandle=',
         templateUrl: '/modules/users/views/password/forgot-password.client.view.html',
         footerTransparent: true,
         controller: 'ForgotPasswordController',
