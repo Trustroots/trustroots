@@ -13,6 +13,7 @@ var AppConfig = (function () {
     'ngTouch',
     'ngSanitize',
     'ngMessageFormat',
+    'ngCookies',
     'angulartics',
     'ui.router',
     'ui.bootstrap.dateparser',

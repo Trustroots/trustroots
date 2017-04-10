@@ -61,6 +61,7 @@
     "express-paginate": "~0.2.1",
     "express-session": "~1.14.0",
     "fbgraph": "~1.3.0",
+    "firebase-admin": "^4.2.0",
     "git-rev": "~0.2.1",
     "glob": "~7.1.1",
     "gm": "~1.23.0",

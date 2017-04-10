@@ -27,6 +27,7 @@ module.exports = {
         'public/lib/angular/angular.js',
         'public/lib/angular-aria/angular-aria.js',
         'public/lib/angular-resource/angular-resource.js',
+        'public/lib/angular-cookies/angular-cookies.js',
         'public/lib/angular-animate/angular-animate.js',
         'public/lib/angular-touch/angular-touch.js',
         'public/lib/angular-sanitize/angular-sanitize.js',
@@ -65,7 +66,11 @@ module.exports = {
         'public/lib/angular-mailcheck/angular-mailcheck.js',
         'public/lib/angular-locker/dist/angular-locker.js',
         'public/lib/angular-confirm-modal/angular-confirm.js',
-        'public/lib/angulargrid/angulargrid.js'
+        'public/lib/angulargrid/angulargrid.js',
+
+        // TODO: maybe just load async....
+        'public/lib/firebase/firebase-app.js',
+        'public/lib/firebase/firebase-messaging.js'
       ],
       less: [
         'public/lib/angular-trustpass/src/tr-trustpass.less',

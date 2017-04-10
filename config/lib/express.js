@@ -36,6 +36,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.twitterUsername = config.twitter.username;
   app.locals.facebookPage = config.facebook.page;
   app.locals.googlePage = config.google.page;
+  app.locals.fcmSenderId = config.fcm.senderId;
   app.locals.googleAnalytics = config.googleAnalytics;
   app.locals.languages = languages;
   app.locals.env = process.env.NODE_ENV;
@@ -319,7 +320,8 @@ module.exports.initHelmetHeaders = function (app) {
       // If not allowed the browser emulates a 400 HTTP status code.
       connectSrc: [
         '\'self\'',
-        'api.mapbox.com'
+        'api.mapbox.com',
+        'fcm.googleapis.com'
       ].concat(cspSrcDevelopment),
 
       // Allows control over Flash and other plugins.
@@ -346,6 +348,7 @@ module.exports.initHelmetHeaders = function (app) {
       // Defines valid sources for web workers and nested browsing contexts
       // loaded using elements such as `<frame>` and `<iframe>`
       childSrc: [
+        '\'self\'',
         '*.twitter.com',
         '*.facebook.com'
       ],

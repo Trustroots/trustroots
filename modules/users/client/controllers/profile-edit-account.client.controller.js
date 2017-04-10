@@ -6,7 +6,7 @@
     .controller('ProfileEditAccountController', ProfileEditAccountController);
 
   /* @ngInject */
-  function ProfileEditAccountController($http, Users, Authentication, messageCenterService) {
+  function ProfileEditAccountController($http, Users, Authentication, messageCenterService, push, $scope) {
 
     // ViewModel
     var vm = this;
@@ -25,6 +25,29 @@
     vm.currentPassword = '';
     vm.newPassword = '';
     vm.verifyPassword = '';
+
+    // Push notifications
+    vm.push = push;
+    vm.pushUpdate = pushUpdate;
+    vm.pushIsDisabled = pushIsDisabled;
+
+    $scope.$watch(function() {
+      return push.isEnabled;
+    }, function(val) {
+      vm.pushEnabled = val;
+    });
+
+    function pushUpdate() {
+      if (vm.pushEnabled) {
+        push.enable();
+      } else {
+        push.disable();
+      }
+    }
+
+    function pushIsDisabled() {
+      return push.isBusy || push.isBlocked || !push.isSupported;
+    }
 
     /**
      * Change user email
