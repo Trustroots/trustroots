@@ -277,7 +277,8 @@ var UserSchema = new Schema({
     type: [UserMemberSchema]
   },
   pushRegistration: {
-    type: [UserPushRegistrationSchema]
+    type: [UserPushRegistrationSchema],
+    default: []
   }
 });
 

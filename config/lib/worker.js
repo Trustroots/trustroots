@@ -23,6 +23,12 @@ exports.start = function(options, callback) {
     );
 
     agenda.define(
+      'send push message',
+      { priority: 'high', concurrency: 10 },
+      require(path.resolve('./modules/core/server/jobs/send-push-message.server.job'))
+    );
+
+    agenda.define(
       'check unread messages',
       { lockLifetime: 10000 },
       require(path.resolve('./modules/messages/server/jobs/message-unread.server.job'))

@@ -60,9 +60,9 @@
     return push;
 
     function getIsSupported() {
-      return $window.Notification &&
-             $window.navigator.serviceWorker &&
-             $window.PushManager;
+      return !!($window.Notification &&
+                $window.navigator.serviceWorker &&
+                $window.PushManager);
     }
 
     function getIsBlocked() {
@@ -180,9 +180,10 @@
         messaging.onTokenRefresh(setup);
 
         messaging.onMessage(function(payload) {
-          // ignore the title so it can be used where context of trustroots
-          // is not obvious
-          messageCenterService.add('success', payload.notification.body);
+          // eslint-disable-next-line no-new
+          new Notification(payload.notification.title, {
+            body: payload.notification.body
+          });
         });
 
         return messaging;
@@ -284,7 +285,8 @@
       // TODO: probably move to some config somewhere...
       var el = $window.document.querySelector('meta[property="fcm:sender_id"]');
       if (el && el.content) return el.content;
-      throw new Error('please set fcm.senderId config!');
+      if ($window.FCM_SENDER_ID) return $window.FCM_SENDER_ID;
+      throw new Error('please set fcm senderId config!');
     }
 
   }

@@ -20,6 +20,7 @@
 var _ = require('lodash'),
     path = require('path'),
     facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service')),
+    pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     log = require(path.resolve('./config/lib/logger')),
     async = require('async'),
@@ -37,7 +38,7 @@ module.exports = function(job, agendaDone) {
 
       // Ignore very recent messages and look for only older than 10 minutes
       // Has to be a JS Date object, not a Moment object
-      var createdTimeAgo = moment().subtract(moment.duration({ 'minutes': 10 })).toDate();
+      var createdTimeAgo = moment().subtract(moment.duration({ 'minutes': 1 })).toDate();
 
       Message.aggregate([
         {
@@ -94,6 +95,7 @@ module.exports = function(job, agendaDone) {
             'email',
             'displayName',
             'username',
+            'pushRegistration.token',
             'additionalProvidersData.facebook.id',
             'additionalProvidersData.facebook.accessToken',
             'additionalProvidersData.facebook.accessTokenExpires'
@@ -149,6 +151,9 @@ module.exports = function(job, agendaDone) {
           },
           facebook: function(callback) {
             facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, callback);
+          },
+          push: function(callback) {
+            pushService.notifyMessagesUnread(userFrom, userTo, notification, callback);
           }
         }, notificationCallback);
 

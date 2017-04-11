@@ -10,7 +10,7 @@ var _ = require('lodash'),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
     tagsHandler = require(path.resolve('./modules/tags/server/controllers/tags.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    pushNotificationService = require(path.resolve('./modules/core/server/services/push-notification.server.service')),
+    pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     messageStatService = require(path.resolve(
       './modules/messages/server/services/message-stat.server.service')),
@@ -980,8 +980,6 @@ exports.addPushRegistration = function(req, res) {
             token: token
           }
         }
-      }, {
-        safe: true // @link http://stackoverflow.com/a/4975054/1984644
       }).exec(function(err) {
         done(err);
       });
@@ -1000,7 +998,7 @@ exports.addPushRegistration = function(req, res) {
           }
         }
       }, {
-        safe: true // @link http://stackoverflow.com/a/4975054/1984644
+        new: true
       }).exec(function(err, updatedUser) {
         if (err) return done(err);
         user = updatedUser;
@@ -1008,44 +1006,19 @@ exports.addPushRegistration = function(req, res) {
       });
     },
 
-    // Notify the user+device we just added
+    // Notify the user we just added
 
     function(done) {
-      pushNotificationService.sendUserNotification(user, [token], {
-        notification: {
-          title: 'Trustroots',
-          body: 'We registered your ' + platform + ' push device!',
-          click_action: 'http://localhost:3000/profile/edit/account'
-        }
+      if (process.env.NODE_ENV === 'production') return done(); // only in dev...
+
+      pushService.sendUserNotification(user, {
+        title: 'Trustroots',
+        body: 'A ' + platform + ' push device was added!',
+        click_action: 'http://localhost:3000/profile/edit/account'
       }, function(err) {
         if (err) console.error(err); // don't stop on error
         done();
       });
-    },
-
-    // Notify the users other devices if they have any
-
-    function(done) {
-
-      var otherTokens = user.pushRegistration.filter(function(registration) {
-        return registration.token !== token;
-      }).map(function(registration) {
-        return registration.token;
-      });
-
-      if (otherTokens.length === 0) return done();
-
-      pushNotificationService.sendUserNotification(user, otherTokens, {
-        notification: {
-          title: 'Trustroots',
-          body: 'A ' + platform + ' push device was just added!',
-          click_action: 'http://localhost:3000/profile/edit/account'
-        }
-      }, function(err) {
-        if (err) console.error(err); // don't stop on error
-        done();
-      });
-
     }
 
   ], function(err) {
