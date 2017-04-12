@@ -7,11 +7,10 @@ env:
   - NODE_ENV=travis CXX="g++-4.8" CC="gcc-4.8"
 services:
   - mongodb
-addons:  
-  firefox: latest
 sudo: false
 # gcc 4.8 requires ubuntu-toolchain-r-test
 addons:
+  firefox: latest
   apt:
     sources:
     - ubuntu-toolchain-r-test
