@@ -38,7 +38,7 @@ module.exports = function(job, agendaDone) {
 
       // Ignore very recent messages and look for only older than 10 minutes
       // Has to be a JS Date object, not a Moment object
-      var createdTimeAgo = moment().subtract(moment.duration({ 'minutes': 1 })).toDate();
+      var createdTimeAgo = moment().subtract(moment.duration({ 'minutes': 10 })).toDate();
 
       Message.aggregate([
         {
