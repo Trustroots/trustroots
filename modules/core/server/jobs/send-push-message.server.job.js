@@ -24,8 +24,6 @@ module.exports = function(job, done) {
   // Log that we're sending an email
   log('debug', 'Starting `send push notification` job', { jobId: jobId });
 
-  log('info', 'PUSH JOB', { jobId: jobId, userId: userId, tokens: tokens, payload: payload });
-
   firebaseMessaging.sendToDevice(tokens, payload)
     .then(function(response) {
       var unregisteredTokens = [];

@@ -9,8 +9,6 @@ var _ = require('lodash'),
 
 exports.notifyMessagesUnread = function(userFrom, userTo, data, callback) {
 
-  console.log('PUSH', userTo, userTo.pushRegistration, data);
-
   if (_.get(userTo, 'pushRegistration', []).length === 0) return callback();
 
   var messageCount = data.messages.length;
