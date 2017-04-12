@@ -136,6 +136,10 @@ module.exports = {
   google: {
     page: process.env.GOOGLE_PAGE || ''
   },
+  fcm: {
+    senderId: process.env.FCM_SENDER_ID || '',
+    serviceAccount: false
+  },
   github: {
     clientID: process.env.GITHUB_ID || '',
     clientSecret: process.env.GITHUB_SECRET || '',
