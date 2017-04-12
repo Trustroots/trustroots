@@ -67,8 +67,6 @@ module.exports = {
         'public/lib/angular-locker/dist/angular-locker.js',
         'public/lib/angular-confirm-modal/angular-confirm.js',
         'public/lib/angulargrid/angulargrid.js',
-
-        // TODO: maybe just load async....
         'public/lib/firebase/firebase-app.js',
         'public/lib/firebase/firebase-messaging.js'
       ],
