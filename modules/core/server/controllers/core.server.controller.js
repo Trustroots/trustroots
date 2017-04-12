@@ -3,6 +3,7 @@
 var path = require('path'),
     errorHandler = require('./errors.server.controller'),
     usersHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
+    config = require(path.resolve('./config/config')),
     log = require(path.resolve('./config/lib/logger'));
 
 /**
@@ -56,4 +57,12 @@ exports.receiveCSPViolationReport = function(req, res) {
     });
   }
   res.status(204).json();
+};
+
+/**
+* Render javascript content containing service worker config.
+*/
+exports.renderServiceWorkerConfig = function(req, res) {
+  res.set('Content-Type', 'text/javascript')
+     .send('var FCM_SENDER_ID = ' + JSON.stringify(config.fcm.senderId) + ';\n');
 };
