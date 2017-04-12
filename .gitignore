@@ -44,7 +44,6 @@ maildev
 
 # Configs
 config/env/local.js
-firebase.json
 
 # Logs
 logs

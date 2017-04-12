@@ -1,10 +1,10 @@
 var path = require('path'),
     firebase = require('firebase-admin'),
-    // TODO: make this part of config somewhere...
-    firebaseConfig = require(path.resolve('./firebase.json'));
+    config = require(path.resolve('./config/config')),
+    serviceAccount = config.fcm.serviceAccount;
 
 firebase.initializeApp({
-  credential: firebase.credential.cert(firebaseConfig)
+  credential: firebase.credential.cert(serviceAccount)
 });
 
 module.exports = firebase.messaging();
