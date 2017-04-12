@@ -44,7 +44,8 @@
           Authentication.user = user;
           ProfileEditAccountController = $controller('ProfileEditAccountController', {
             messageCenterService: messageCenterService,
-            $scope: $rootScope.$new()
+            $scope: $rootScope.$new(),
+            push: {} // this ends up trying to load firebaseMessaging service otherwise
           });
           done();
         });
