@@ -129,13 +129,11 @@
       if (!messaging || !store.token) return;
       push.isBusy = true;
       return messaging.deleteToken(store.token).then(function() {
-        removeTokenFromServer(store.token).then(function() {
-          push.isBusy = false;
-          store.token = null;
-          push.isEnabled = false;
-        }).catch(function() {
-          push.isBusy = false;
-        });
+        return removeTokenFromServer(store.token);
+      }).then(function() {
+        push.isBusy = false;
+        store.token = null;
+        push.isEnabled = false;
       }).catch(function() {
         push.isBusy = false;
       });
@@ -156,8 +154,8 @@
     function getOrCreateWorker() {
       return getServiceWorkers().then(function(workers) {
         if (workers.length === 0) {
-          return $window.navigator.serviceWorker
-            .register(SERVICE_WORKER_PATH, { scope: SERVICE_WORKER_SCOPE });
+          return $q.when($window.navigator.serviceWorker
+            .register(SERVICE_WORKER_PATH, { scope: SERVICE_WORKER_SCOPE }));
         } else {
           return $q.resolve(workers[0]); // use first one available
         }

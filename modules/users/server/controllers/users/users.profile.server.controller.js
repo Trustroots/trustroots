@@ -877,45 +877,6 @@ exports.getUserMemberships = function(req, res) {
     });
 };
 
-/**
- * Remove all the push registrations
- */
-exports.removeAllPushRegistrations = function(req, res) {
-
-  if (!req.user) {
-    return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
-    });
-  }
-
-  var user = req.user;
-
-  var query = {
-    $set: {
-      pushRegistration: []
-    }
-  };
-
-  User.findByIdAndUpdate(user._id, query, {
-    safe: true, // @link http://stackoverflow.com/a/4975054/1984644
-    new: true // get the updated document in return
-  })
-  .exec(function(err, user) {
-    if (err) {
-      return res.status(400).send({
-        message: errorHandler.getErrorMessage(err) || 'Failed to add registration, please try again.'
-      });
-    } else {
-      // All Done!
-      return res.send({
-        message: 'Removed registrations.',
-        user: user
-      });
-    }
-  });
-
-};
-
 exports.removePushRegistration = function(req, res) {
 
   if (!req.user) {
