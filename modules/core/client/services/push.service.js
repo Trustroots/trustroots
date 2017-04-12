@@ -222,7 +222,7 @@
     }
 
     function getServiceWorkers() {
-      return $q.when(navigator.serviceWorker.getRegistrations()).then(function(registrations) {
+      return $q.when($window.navigator.serviceWorker.getRegistrations()).then(function(registrations) {
         var workers = [];
         registrations.forEach(function(worker) {
           if (worker.scope.endsWith(SERVICE_WORKER_SCOPE)) {
