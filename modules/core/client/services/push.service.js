@@ -234,6 +234,7 @@
     }
 
     function clearServiceWorkersIfNeeded() {
+      if (!push.isSupported) return;
       /*
         remove any service workers that are not needed
         we cannot do it before this as firebase throws a wobbly if it

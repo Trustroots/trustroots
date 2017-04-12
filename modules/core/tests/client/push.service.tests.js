@@ -13,7 +13,7 @@
 
     it('should exist', inject(function(push) {
       // TODO: try and test a bit more of this :)
-      expect(push.isSupported).toBe(true);
+      expect(push).toBeTruthy();
     }));
 
   });
