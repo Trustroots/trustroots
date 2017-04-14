@@ -1,19 +1,18 @@
 # humanstxt.org
-# https://www.trustroots.org/team
 # https://www.trustroots.org/foundation
+# https://www.trustroots.org/team
 
 # THE CORE TEAM
 
-    Mikael -- mikaelkorpela.fi
     Callum -- www.callum-macdonald.com
-    Kasper -- kasper.re
-    Natalia
     Carlos
+    Kasper -- kasper.re
+    Mikael -- mikaelkorpela.fi
+    Natalia
 
 # KUDOS!
-
-    John Wu
-    Rémi
-    Aurimas
-    BeWelcome Welen -project dudes
-    Original MEAN.js contributors
+    Contributors:
+      https://github.com/Trustroots/trustroots/graphs/contributors
+    MEAN.js contributors:
+      https://github.com/meanjs/mean/graphs/contributors
+    BeWelcome Welen -project
