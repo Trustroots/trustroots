@@ -29,12 +29,48 @@
          * Fire resize() at <html> so that jQuery-Waypoints wakes up and can thus
          * check what's visible on the screen and mark visible messages read.
          */
+
+        /**
+        * Scroll is disabled if you are reading a scrolled message & typing,
+        * its enabled when you are at the last message sent or if you
+        * are scrolling through scrolled messages
+        */
+        var scrollLock = false;
+
         elemThread.bind('scroll', function() {
+          var elemThreadCHeight = elemThread.prop('clientHeight'),
+              elemThreadScrollTop = elemThread.scrollTop(),
+              elemThreadSHeight = elemThread.prop('scrollHeight');
+
+          elemThread.on('mouseover', function() {
+            enableScroll();
+          });
+
+          elemReply.on('mouseover', function() {
+            // This condition can be tuned for how much page view can enable scroll
+            // console.log(elemThreadCHeight + ',' + elemThreadScrollTop + '=' + elemThreadSHeight);
+            if (elemThreadCHeight + elemThreadScrollTop === elemThreadSHeight) {
+              enableScroll();
+            } else {
+              disableScroll();
+            }
+          });
+
           if (onScrollTimeout) $timeout.cancel(onScrollTimeout);
           onScrollTimeout = $timeout(function() {
             elemHtml.resize();
           }, 300);
         });
+
+        function disableScroll() {
+          scrollLock = true;
+          elemThread.css({ overflow: 'hidden' });
+        }
+
+        function enableScroll() {
+          scrollLock = false;
+          elemThread.css({ overflow: 'auto' });
+        }
 
         /**
          * Timeout wrapper for refreshLayout() function
@@ -49,7 +85,9 @@
          * Scroll thread to bottom to show latest messages
          */
         var scrollToBottom = function() {
-          elemThread.scrollTop(elemThread[0].scrollHeight);
+          if (! scrollLock) {
+            elemThread.scrollTop(elemThread[0].scrollHeight);
+          }
         };
 
         /**
@@ -100,6 +138,11 @@
         /**
          * Listeners & event bindings
          */
+        scope.$on('threadMessageSend', function() {
+          enableScroll();
+          activateScrollToBottom();
+        });
+
         scope.$on('threadRefreshLayout', function() {
           activateRefreshLayout();
         });

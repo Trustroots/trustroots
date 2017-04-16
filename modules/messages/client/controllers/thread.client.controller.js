@@ -291,7 +291,12 @@
 
         // $timeout ensures scroll happens only after DOM has finished rendering
         $timeout(function() {
-          $scope.$broadcast('threadScrollToBottom');
+          // changing event as scroll should happen not at
+          // every char type as person would be looking at
+          // scroll history, but once he sends the message
+
+          // $scope.$broadcast('threadScrollToBottom');
+          $scope.$broadcast('threadMessageSend');
         });
 
       }, function(errorResponse) {
