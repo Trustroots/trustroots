@@ -42,11 +42,13 @@
               elemThreadScrollTop = elemThread.scrollTop(),
               elemThreadSHeight = elemThread.prop('scrollHeight');
 
-          elemThread.on('mouseover', function() {
-            enableScroll();
-          });
+          elemThread.on('touchstart', enableScroll);
+          elemThread.on('mouseover', enableScroll);
 
-          elemReply.on('mouseover', function() {
+          elemReply.on('touchstart', checkNLock);
+          elemReply.on('mouseover', checkNLock);
+
+          function checkNLock() {
             // This condition can be tuned for how much page view can enable scroll
             // console.log(elemThreadCHeight + ',' + elemThreadScrollTop + '=' + elemThreadSHeight);
             if (elemThreadCHeight + elemThreadScrollTop === elemThreadSHeight) {
@@ -54,7 +56,7 @@
             } else {
               disableScroll();
             }
-          });
+          }
 
           if (onScrollTimeout) $timeout.cancel(onScrollTimeout);
           onScrollTimeout = $timeout(function() {
@@ -70,6 +72,8 @@
         function enableScroll() {
           scrollLock = false;
           elemThread.css({ overflow: 'auto' });
+          var elemReplyContent = angular.element('#message-reply-content');
+          elemReplyContent.blur();
         }
 
         /**
