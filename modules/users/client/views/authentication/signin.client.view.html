@@ -30,14 +30,14 @@
               <div class="form-group">
                 <label for="password" class="sr-only">Password</label>
                 <div class="input-group">
-                  <input type="{{ showPassword ? 'text' : 'password' }}"
-                         required
-                         ng-disabled="auth.isLoading"
+                  <input required
                          id="password"
                          name="password"
+                         placeholder="Password"
                          class="form-control input-lg"
-                         ng-model="auth.credentials.password"
-                         placeholder="Password">
+                         ng-attr-type="{{ showPassword ? 'text' : 'password' }}"
+                         ng-disabled="auth.isLoading"
+                         ng-model="auth.credentials.password">
                   <span class="input-group-btn">
                     <a class="btn btn-lg btn-default btn-password-toggle"
                        role="button"
