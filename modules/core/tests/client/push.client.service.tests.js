@@ -7,6 +7,7 @@
   describe('Push Service Tests', function () {
 
     var $httpBackend;
+    var firebaseMessaging;
 
     var firebase = createFirebaseMock();
 
@@ -18,9 +19,10 @@
     var notifications = [];
 
     beforeEach(inject(function(
-      _$httpBackend_, $templateCache, $cookies, $window, Authentication) {
+      _$httpBackend_, $templateCache, $cookies, $window, Authentication, _firebaseMessaging_) {
 
       $httpBackend = _$httpBackend_;
+      firebaseMessaging = _firebaseMessaging_;
       $templateCache.put('/modules/pages/views/home.client.view.html', '');
       $templateCache.put('/modules/core/views/404.client.view.html', '');
       Authentication.user = {
@@ -28,6 +30,7 @@
       };
       $cookies.remove('tr.push');
       notifications.length = 0;
+      firebaseMessaging.shouldInitialize = false;
       $window.Notification = function(title, options) {
         notifications.push({ title: title, options: options });
       };
@@ -68,7 +71,7 @@
     }));
 
     it('will save to server during initialization if on but not present', inject(function(
-      push, firebaseMessaging, $cookies, Authentication) {
+      push, $cookies, Authentication) {
       if (!push.isSupported) return;
 
       var token = 'mynicetokenforinitializing';
