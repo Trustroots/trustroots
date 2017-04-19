@@ -7,6 +7,26 @@ var _ = require('lodash'),
     url = (config.https ? 'https' : 'http') + '://' + config.domain,
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller'));
 
+exports.notifyPushDeviceAdded = function(user, platform, callback) {
+
+  if (_.get(user, 'pushRegistration', []).length === 0) return callback();
+
+  var editAccountUrl = url + '/profile/edit/account';
+
+  var notification = {
+    title: 'Trustroots',
+    body: 'You just enabled Trustroots ' + platform + ' push notifications. Yay!',
+    click_action: analyticsHandler.appendUTMParams(editAccountUrl, {
+      source: 'push-notification',
+      medium: 'fcm',
+      campaign: 'device-added',
+      content: 'reply-to'
+    })
+  };
+
+  exports.sendUserNotification(user, notification, callback);
+};
+
 exports.notifyMessagesUnread = function(userFrom, userTo, data, callback) {
 
   if (_.get(userTo, 'pushRegistration', []).length === 0) return callback();

@@ -1,6 +1,8 @@
 'use strict';
 
 var path = require('path'),
+    config = require(path.resolve('./config/config')),
+    url = (config.https ? 'https' : 'http') + '://' + config.domain,
     testutils = require(path.resolve('./testutils'));
 
 describe('Service: push', function() {
@@ -51,6 +53,38 @@ describe('Service: push', function() {
 
   });
 
+  it('can send a new push device added notification', function(done) {
+
+    var user = {
+      _id: 15,
+      pushRegistration: [
+        {
+          token: 'abc'
+        }
+      ]
+    };
+
+    var platform = 'web';
+
+    pushService.notifyPushDeviceAdded(user, platform, function(err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      var job = jobs[0];
+
+      job.type.should.equal('send push message');
+
+      job.data.userId.should.equal(15);
+      job.data.tokens.should.deepEqual(['abc']);
+      job.data.payload.notification.title.should.equal('Trustroots');
+      job.data.payload.notification.body.should.equal('You just enabled Trustroots web push notifications. Yay!');
+      job.data.payload.notification.click_action.should
+        .equal(url + '/profile/edit/account?utm_source=push-notification&utm_medium=fcm&utm_campaign=device-added&utm_content=reply-to');
+
+      done();
+    });
+
+  });
+
   it('can send a messages unread notification', function(done) {
 
     var userFrom = {
@@ -82,7 +116,7 @@ describe('Service: push', function() {
       job.data.payload.notification.title.should.equal('Trustroots');
       job.data.payload.notification.body.should.equal('You have one unread message');
       job.data.payload.notification.click_action.should
-        .equal('http://localhost:3000/messages?utm_source=push-notification&utm_medium=fcm&utm_campaign=messages-unread&utm_content=reply-to');
+        .equal(url + '/messages?utm_source=push-notification&utm_medium=fcm&utm_campaign=messages-unread&utm_content=reply-to');
 
       done();
     });

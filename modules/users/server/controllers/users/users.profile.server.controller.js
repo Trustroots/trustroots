@@ -967,16 +967,10 @@ exports.addPushRegistration = function(req, res) {
       });
     },
 
-    // Notify the user we just added
+    // Notify the user we just added a device
 
     function(done) {
-      if (process.env.NODE_ENV === 'production') return done(); // only in dev...
-
-      pushService.sendUserNotification(user, {
-        title: 'Trustroots',
-        body: 'A ' + platform + ' push device was added!',
-        click_action: 'http://localhost:3000/profile/edit/account'
-      }, function(err) {
+      pushService.notifyPushDeviceAdded(user, platform, function(err) {
         if (err) console.error(err); // don't stop on error
         done();
       });
