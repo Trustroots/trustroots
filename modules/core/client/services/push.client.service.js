@@ -12,10 +12,10 @@
     messageCenterService,
     $http,
     $window,
-    $cookies,
+    locker,
     $q) {
 
-    var COOKIE_KEY = 'tr.push';
+    var LOCKER_KEY = 'tr.push';
 
     var push = {
       isSupported: getIsSupported(),
@@ -93,14 +93,14 @@
     }
 
     function loadEnabled() {
-      return $cookies.get(COOKIE_KEY) === 'on';
+      return locker.get(LOCKER_KEY) === 'on';
     }
 
     function saveEnabled(enabled) {
       if (enabled) {
-        $cookies.put(COOKIE_KEY, 'on');
+        locker.put(LOCKER_KEY, 'on');
       } else {
-        $cookies.remove(COOKIE_KEY);
+        locker.forget(LOCKER_KEY);
       }
       return enabled;
     }

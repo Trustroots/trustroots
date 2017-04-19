@@ -8,6 +8,7 @@
 
     var $httpBackend;
     var firebaseMessaging;
+    var locker;
 
     var firebase = createFirebaseMock();
 
@@ -19,16 +20,16 @@
     var notifications = [];
 
     beforeEach(inject(function(
-      _$httpBackend_, $templateCache, $cookies, $window, Authentication, _firebaseMessaging_) {
+      _$httpBackend_, $templateCache, _locker_, $window, Authentication, _firebaseMessaging_) {
 
       $httpBackend = _$httpBackend_;
+      locker = _locker_;
       firebaseMessaging = _firebaseMessaging_;
       $templateCache.put('/modules/pages/views/home.client.view.html', '');
       $templateCache.put('/modules/core/views/404.client.view.html', '');
       Authentication.user = {
         pushRegistration: []
       };
-      $cookies.remove('tr.push');
       notifications.length = 0;
       firebaseMessaging.shouldInitialize = false;
       $window.Notification = function(title, options) {
@@ -36,9 +37,9 @@
       };
     }));
 
-    afterEach(inject(function($cookies) {
-      $cookies.remove('tr.push');
-    }));
+    afterEach(function() {
+      locker.clean();
+    });
 
     afterEach(function() {
       $httpBackend.verifyNoOutstandingExpectation();
@@ -46,7 +47,7 @@
     });
 
     it('will save to server if enabled', inject(function(
-      push, Authentication, $cookies) {
+      push, Authentication) {
       if (!push.isSupported) return;
 
       var token = 'mynicetoken';
@@ -67,11 +68,11 @@
       expect(firebase.permissionGranted).toBe(true);
       expect(Authentication.user.pushRegistration.length).toBe(1);
       expect(Authentication.user.pushRegistration[0].token).toBe(token);
-      expect($cookies.get('tr.push')).toBe('on');
+      expect(locker.get('tr.push')).toBe('on');
     }));
 
     it('will save to server during initialization if on but not present', inject(function(
-      push, $cookies, Authentication) {
+      push, Authentication) {
       if (!push.isSupported) return;
 
       var token = 'mynicetokenforinitializing';
@@ -89,7 +90,7 @@
         });
 
       // if we turn it on...
-      $cookies.put('tr.push', 'on');
+      locker.put('tr.push', 'on');
       firebase.permissionGranted = true;
       firebase.token = token;
 
@@ -108,7 +109,7 @@
     }));
 
     it('can be disabled and will be removed from server', inject(function(
-      push, Authentication, $cookies, $rootScope) {
+      push, Authentication, locker, $rootScope) {
       if (!push.isSupported) return;
 
       var token = 'sometokenfordisabling';
@@ -129,7 +130,7 @@
 
       expect(firebase.requestPermissionCalled).toBe(0);
       expect(Authentication.user.pushRegistration.length).toBe(1);
-      expect($cookies.get('tr.push')).toBe('on');
+      expect(locker.get('tr.push')).toBe('on');
       expect(push.isEnabled).toBe(true);
 
       // ... now disable it again
@@ -145,7 +146,7 @@
       $httpBackend.flush();
 
       expect(Authentication.user.pushRegistration.length).toBe(0);
-      expect($cookies.get('tr.push')).toBeFalsy();
+      expect(locker.get('tr.push')).toBeFalsy();
       expect(firebase.deletedTokens.length).toBe(1);
       expect(firebase.deletedTokens[0]).toBe(token);
       expect(push.isEnabled).toBe(false);
@@ -153,7 +154,7 @@
     }));
 
     it('will not save to server if enabling and already registered', inject(function(
-      push, Authentication, $rootScope, $cookies) {
+      push, Authentication, $rootScope) {
       if (!push.isSupported) return;
 
       var token = 'sometoken';
@@ -167,7 +168,7 @@
       $rootScope.$apply();
       expect(firebase.requestPermissionCalled).toBe(0);
       expect(push.isEnabled).toBe(true);
-      expect($cookies.get('tr.push')).toBe('on');
+      expect(locker.get('tr.push')).toBe('on');
     }));
 
     it('should trigger a notification when a message is received', inject(function(push) {
