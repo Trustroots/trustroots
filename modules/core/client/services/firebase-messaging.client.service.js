@@ -6,11 +6,11 @@
     .factory('firebaseMessaging', firebaseMessaging);
 
   /* @ngInject */
-  function firebaseMessaging($window, $q, $timeout, SettingsFactory) {
+  function firebaseMessaging($window, $q, $timeout, SettingsService) {
 
-    var appSettings = SettingsFactory.get();
+    var appSettings = SettingsService.get();
 
-    var SENDER_ID = appSettings.fcmSenderId;
+    var SENDER_ID = appSettings && appSettings.fcmSenderId;
     var SERVICE_WORKER_PATH = '/push-messaging-sw.js';
     var SERVICE_WORKER_SCOPE = '/trustroots-push-messaging-scope';
 
