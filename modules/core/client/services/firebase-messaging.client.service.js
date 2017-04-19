@@ -6,9 +6,11 @@
     .factory('firebaseMessaging', firebaseMessaging);
 
   /* @ngInject */
-  function firebaseMessaging($window, $q, $timeout) {
+  function firebaseMessaging($window, $q, $timeout, SettingsFactory) {
 
-    var SENDER_ID = loadSenderId();
+    var appSettings = SettingsFactory.get();
+
+    var SENDER_ID = appSettings.fcmSenderId;
     var SERVICE_WORKER_PATH = '/push-messaging-sw.js';
     var SERVICE_WORKER_SCOPE = '/trustroots-push-messaging-scope';
 
@@ -68,14 +70,6 @@
           return worker.scope.endsWith(SERVICE_WORKER_SCOPE);
         });
       });
-    }
-
-    function loadSenderId() {
-      var el = $window.document.querySelector('meta[property="fcm:sender_id"]');
-      if (el && el.content) return el.content;
-      if ($window.FCM_SENDER_ID) return $window.FCM_SENDER_ID;
-      // throw new Error('please set fcm senderId config!');
-      // console.warn('please set fcm.senderId config!');
     }
 
     function getOrCreateWorker() {

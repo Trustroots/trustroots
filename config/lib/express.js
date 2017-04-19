@@ -36,7 +36,6 @@ module.exports.initLocalVariables = function (app) {
   app.locals.twitterUsername = config.twitter.username;
   app.locals.facebookPage = config.facebook.page;
   app.locals.googlePage = config.google.page;
-  app.locals.fcmSenderId = config.fcm.senderId;
   app.locals.googleAnalytics = config.googleAnalytics;
   app.locals.languages = languages;
   app.locals.env = process.env.NODE_ENV;
@@ -47,6 +46,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.maxUploadSize = config.maxUploadSize;
   app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
   app.locals.appSettings.invitation = config.invitation;
+  app.locals.appSettings.fcmSenderId = config.fcm.senderId;
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
 
   if (process.env.NODE_ENV !== 'production') {
