@@ -35,7 +35,8 @@ module.exports = {
       host: 'localhost',
       port: 1025,
       ignoreTLS: true,
-      auth: false
+      auth: false,
+      pool: true
     }
   }
 };

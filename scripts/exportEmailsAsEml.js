@@ -20,14 +20,13 @@ var path = require('path'),
     async = require('async'),
     chalk = require('chalk'),
     nodemailer = require('nodemailer'),
-    stubTransport = require('nodemailer-stub-transport'),
     config = require(path.resolve('./config/config')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
 
 // Default temp folder
 var tempFolder = (process.argv[2] == null) ? path.resolve('./tmp/renderedEmails') : process.argv[2];
 
-var transport = nodemailer.createTransport(stubTransport());
+var transport = nodemailer.createTransport({streamTransport:true, buffer:true});
 
 // Initialize script
 writeEmails();
@@ -52,7 +51,7 @@ function writeEml(templateName, params, callback) {
         return callback(err);
       }
 
-      var eml = info.response.toString();
+      var eml = info.message.toString();
       var filename = templateName + '.eml';
 
       // Store eml file to `tempFolder`
