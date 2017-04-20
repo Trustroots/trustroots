@@ -22,6 +22,9 @@ module.exports = function(app) {
   // Return a 404 for all undefined api, module or lib routes
   app.route('/:url(api|modules|lib|developers)/*').get(core.renderNotFound);
 
+  // Gives the service worker access to any config it needs
+  app.route('/config/sw.js').get(core.renderServiceWorkerConfig);
+
   // Define a tribes route to ensure we'll pass tribe object to index
   // Object is passed to layout at `core.renderIndex()`
   app.route('/tribes/:tribeSlug').get(core.renderIndex);

@@ -79,6 +79,12 @@ exports.invokeRolesPolicies = function() {
     }, {
       resources: '/api/users/memberships/:type?',
       permissions: ['post', 'get']
+    }, {
+      resources: '/api/users/push/registrations',
+      permissions: ['post']
+    }, {
+      resources: '/api/users/push/registrations/:token',
+      permissions: ['delete']
     }]
   }]);
 };

@@ -19,6 +19,12 @@ module.exports = function(app) {
     .get(users.getUserMemberships)
     .post(users.modifyUserTag);
 
+  app.route('/api/users/push/registrations').all(usersPolicy.isAllowed)
+    .post(users.addPushRegistration);
+
+  app.route('/api/users/push/registrations/:token').all(usersPolicy.isAllowed)
+    .delete(users.removePushRegistration);
+
   app.route('/api/users/mini/:userId').all(usersPolicy.isAllowed)
     .get(users.getMiniUser);
 

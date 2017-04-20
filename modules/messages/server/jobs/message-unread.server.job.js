@@ -20,6 +20,7 @@
 var _ = require('lodash'),
     path = require('path'),
     facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service')),
+    pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     log = require(path.resolve('./config/lib/logger')),
     async = require('async'),
@@ -94,6 +95,7 @@ module.exports = function(job, agendaDone) {
             'email',
             'displayName',
             'username',
+            'pushRegistration.token',
             'additionalProvidersData.facebook.id',
             'additionalProvidersData.facebook.accessToken',
             'additionalProvidersData.facebook.accessTokenExpires'
@@ -149,6 +151,9 @@ module.exports = function(job, agendaDone) {
           },
           facebook: function(callback) {
             facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, callback);
+          },
+          push: function(callback) {
+            pushService.notifyMessagesUnread(userFrom, userTo, notification, callback);
           }
         }, notificationCallback);
 

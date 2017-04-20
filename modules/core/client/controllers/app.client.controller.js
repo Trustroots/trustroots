@@ -9,7 +9,7 @@
     .controller('AppController', AppController);
 
   /* @ngInject */
-  function AppController($scope, $rootScope, $uibModal, $window, $state, $analytics, Authentication, SettingsFactory, Languages, locker, PollMessagesCount) {
+  function AppController($scope, $rootScope, $uibModal, $window, $state, $analytics, Authentication, SettingsFactory, Languages, locker, PollMessagesCount, push) {
 
     // ViewModel
     var vm = this;
@@ -185,8 +185,10 @@
       // @link https://github.com/tymondesigns/angular-locker#removing-items-from-locker
       locker.clean();
 
-      // Do the signout and refresh the page
-      $window.top.location.href = '/api/auth/signout';
+      push.disable().finally(function() {
+        // Do the signout and refresh the page
+        $window.top.location.href = '/api/auth/signout';
+      });
     }
 
 

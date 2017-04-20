@@ -79,6 +79,27 @@ var UserMemberSchema = new Schema({
 }, { _id: false });
 
 /**
+ * SubSchema for `User` schema's `pushRegistration` array
+ */
+var UserPushRegistrationSchema = new Schema({
+  platform: {
+    type: String,
+    enum: ['android', 'ios', 'web'],
+    required: true
+  },
+  token: {
+    type: String,
+    required: true
+  },
+  created: {
+    type: Date,
+    default: Date.now,
+    required: true
+  }
+}, { _id: false });
+
+
+/**
  * User Schema
  */
 var UserSchema = new Schema({
@@ -254,6 +275,10 @@ var UserSchema = new Schema({
   /* Tags & Tribes user is member of */
   member: {
     type: [UserMemberSchema]
+  },
+  pushRegistration: {
+    type: [UserPushRegistrationSchema],
+    default: []
   }
 });
 
