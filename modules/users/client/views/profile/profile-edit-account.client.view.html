@@ -75,6 +75,44 @@
 </div>
 <!-- /Email -->
 
+<!-- Notifications -->
+<div class="panel panel-default">
+  <div class="panel-heading">
+    Notifications
+  </div>
+  <div class="panel-body">
+
+    <form autocomplete="off">
+      <div class="form-horizontal">
+
+        <div class="form-group">
+          <label class="col-sm-3 text-right control-label">Push</label>
+          <div class="col-sm-9">
+
+            <div class="checkbox">
+              <label>
+                <input type="checkbox"
+                       name="browser"
+                       ng-model="profileEditAccount.pushEnabled"
+                       ng-disabled="profileEditAccount.pushIsDisabled()"
+                       ng-change="profileEditAccount.pushUpdate()">
+                Current web browser
+              </label>
+            </div>
+
+            <p class="help-block" ng-if="profileEditAccount.push.isSupported"><small>This will send notifications even when the website is closed.</small></p>
+            <p class="help-block" ng-if="!profileEditAccount.push.isSupported"><small>Your browser does not support push notifications.</small></p>
+            <p class="help-block" ng-if="profileEditAccount.push.isBlocked"><small><strong>Push notifications are blocked.</strong></small></p>
+
+          </div>
+        </div>
+
+      </div>
+    </form>
+  </div>
+</div>
+<!-- /Notifications -->
+
 <!-- Password -->
 <div class="panel panel-default">
   <div class="panel-heading">
@@ -136,7 +174,6 @@
   </div>
 </div>
 <!-- /Password -->
-
 
 <!-- Data liberation -->
 <div class="panel panel-default">

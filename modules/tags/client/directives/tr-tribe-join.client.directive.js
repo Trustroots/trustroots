@@ -88,9 +88,15 @@
             if (data.tag && data.user) {
               vm.isMember = true;
               data.tag.$resolved = true;
+
+              // Update tribe with new count
               $scope.tribe = data.tag;
+              $rootScope.$broadcast('tribeUpdated', data.tag);
+
+              // User model is updated with new tribe data
               Authentication.user = data.user;
               $rootScope.$broadcast('userUpdated');
+
               resolve(true);
             } else {
               toggleMembershipError();
@@ -135,9 +141,15 @@
                 // API success
                 vm.isMember = false;
                 data.tag.$resolved = true;
+
+                // Update tribe with new count
                 $scope.tribe = data.tag;
+                $rootScope.$broadcast('tribeUpdated', data.tag);
+
+                // User model is updated with new tribe data
                 Authentication.user = data.user;
                 $rootScope.$broadcast('userUpdated');
+
                 resolve(false);
               } else {
                 // API returned error

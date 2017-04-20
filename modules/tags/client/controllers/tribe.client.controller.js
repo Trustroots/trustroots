@@ -24,6 +24,11 @@
     // eslint-disable-next-line angular/controller-as
     $scope.tribe = tribe;
 
+    // Ensure tribe in view updates when directives modify it
+    $scope.$on('tribeUpdated', function(event, tribe) {
+      vm.tribe = tribe;
+    });
+
     /**
      * Go to tribe grid
      */

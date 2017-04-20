@@ -83,6 +83,15 @@
       strictDi: false
     });
 
+    // Register base service worker
+    // This is required by `manifest.json` so that
+    // the site can be added to the home screen.
+    // @link https://developers.google.com/web/fundamentals/getting-started/primers/service-workers#register_a_service_worker
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker
+        .register('/sw.js', { scope: '/' });
+    }
+
     /* eslint-enable angular/window-service */
   });
 

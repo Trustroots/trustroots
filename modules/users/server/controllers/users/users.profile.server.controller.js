@@ -10,6 +10,7 @@ var _ = require('lodash'),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
     tagsHandler = require(path.resolve('./modules/tags/server/controllers/tags.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+    pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     messageStatService = require(path.resolve(
       './modules/messages/server/services/message-stat.server.service')),
@@ -874,4 +875,125 @@ exports.getUserMemberships = function(req, res) {
 
       return res.send(memberships);
     });
+};
+
+exports.removePushRegistration = function(req, res) {
+
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  var user = req.user;
+  var token = req.params.token;
+
+  var query = {
+    $pull: {
+      pushRegistration: {
+        token: token
+      }
+    }
+  };
+
+  User.findByIdAndUpdate(user._id, query, {
+    safe: true, // @link http://stackoverflow.com/a/4975054/1984644
+    new: true // get the updated document in return
+  })
+  .exec(function(err, user) {
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err) || 'Failed to remove registration, please try again.'
+      });
+    } else {
+      return res.send({
+        message: 'Removed registration.',
+        user: user
+      });
+    }
+  });
+
+};
+
+/**
+ * Add push registration
+ */
+exports.addPushRegistration = function(req, res) {
+
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  var user = req.user;
+  var token = req.body.token;
+  var platform = req.body.platform;
+
+  async.waterfall([
+
+    // Remove any existing registrations for this token
+
+    function(done) {
+      User.findByIdAndUpdate(user._id, {
+        $pull: {
+          pushRegistration: {
+            token: token
+          }
+        }
+      }).exec(function(err) {
+        done(err);
+      });
+
+    },
+
+    // Add new registration
+
+    function(done) {
+      User.findByIdAndUpdate(user._id, {
+        $push: {
+          pushRegistration: {
+            platform: platform,
+            token: token,
+            created: Date.now()
+          }
+        }
+      }, {
+        new: true
+      }).exec(function(err, updatedUser) {
+        if (err) return done(err);
+        user = updatedUser;
+        done();
+      });
+    },
+
+    // Notify the user we just added a device
+
+    function(done) {
+      pushService.notifyPushDeviceAdded(user, platform, function(err) {
+        if (err) console.error(err); // don't stop on error
+        done();
+      });
+    }
+
+  ], function(err) {
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err) || 'Failed, please try again.'
+      });
+    } else {
+      User.findById(user._id).exec(function(err, user) {
+        if (err) {
+          return res.status(400).send({
+            message: errorHandler.getErrorMessage(err) || 'Failed to fetch user, please try again.'
+          });
+        }
+        return res.send({
+          message: 'Saved registration.',
+          user: user
+        });
+      });
+    }
+  });
+
 };

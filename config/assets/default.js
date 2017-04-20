@@ -65,7 +65,9 @@ module.exports = {
         'public/lib/angular-mailcheck/angular-mailcheck.js',
         'public/lib/angular-locker/dist/angular-locker.js',
         'public/lib/angular-confirm-modal/angular-confirm.js',
-        'public/lib/angulargrid/angulargrid.js'
+        'public/lib/angulargrid/angulargrid.js',
+        'public/lib/firebase/firebase-app.js',
+        'public/lib/firebase/firebase-messaging.js'
       ],
       less: [
         'public/lib/angular-trustpass/src/tr-trustpass.less',

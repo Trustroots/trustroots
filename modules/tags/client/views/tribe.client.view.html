@@ -82,11 +82,11 @@
             <h2 class="font-brand-regular tribe-title" ng-bind="::tribeCtrl.tribe.label"></h2>
             <ng-pluralize
               class="lead tribe-meta"
-              count="::tribeCtrl.tribe.count"
+              count="tribeCtrl.tribe.count"
               when="{
                 '0': 'No members yet',
                 '1': 'One member',
-                'other': '{{::tribeCtrl.tribe.count | number}} members'
+                'other': '{{tribeCtrl.tribe.count | number}} members'
               }"></ng-pluralize>
             <br><br>
             <p class="lead tribe-intro">

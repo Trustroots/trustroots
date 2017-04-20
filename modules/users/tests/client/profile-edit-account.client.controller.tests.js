@@ -40,10 +40,12 @@
     describe('Logged in user', function() {
 
       beforeEach(function(done) {
-        inject(function($controller) {
+        inject(function($controller, $rootScope) {
           Authentication.user = user;
           ProfileEditAccountController = $controller('ProfileEditAccountController', {
-            messageCenterService: messageCenterService
+            messageCenterService: messageCenterService,
+            $scope: $rootScope.$new(),
+            push: {} // this ends up trying to load firebaseMessaging service otherwise
           });
           done();
         });
