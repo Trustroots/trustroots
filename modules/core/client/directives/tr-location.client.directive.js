@@ -55,10 +55,10 @@
         });
 
         // Attach Angular UI Bootstrap TypeAhead
-        element.attr('typeahead-min-length', attr.typeaheadMinLength ? parseInt(attr.typeaheadMinLength, 10) : 3);
-        element.attr('typeahead-wait-ms', attr.typeaheadWaitMs ? parseInt(attr.typeaheadWaitMs, 10) : 300);
-        element.attr('typeahead-on-select', 'trLocation.onSelect($item, $model, $label, $event)');
-        element.attr('uib-typeahead', 'trTitle as address.trTitle for address in trLocation.searchSuggestions($viewValue)');
+        element.prop('typeahead-min-length', attr.typeaheadMinLength ? parseInt(attr.typeaheadMinLength, 10) : 3);
+        element.prop('typeahead-wait-ms', attr.typeaheadWaitMs ? parseInt(attr.typeaheadWaitMs, 10) : 300);
+        element.prop('typeahead-on-select', 'trLocation.onSelect($item, $model, $label, $event)');
+        element.prop('uib-typeahead', 'trTitle as address.trTitle for address in trLocation.searchSuggestions($viewValue)');
 
         // Stop infinite rendering on $compile
         element.removeAttr('tr-location');
