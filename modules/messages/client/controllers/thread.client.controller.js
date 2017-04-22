@@ -30,7 +30,8 @@
         syncReadTimer,
         flaggedAsRead = [],
         messageIdsInView = [],
-        editorContentChangedTimeout;
+        editorContentChangedTimeout,
+        hideQuickReplyPanel = true;
 
     // Make cache id unique for this user
     var cachePrefix = 'messages.thread.' + Authentication.user._id + '-' + $stateParams.username;
@@ -49,6 +50,7 @@
     vm.sendMessage = sendMessage;
     vm.moreMessages = moreMessages;
     vm.messageRead = messageRead;
+    vm.hideQuickReplyPanel = hideQuickReplyPanel;
     vm.editorContentChanged = editorContentChanged;
     vm.content = '';
 
@@ -80,6 +82,16 @@
 
           addMessages(data);
           vm.isInitialized = true;
+
+          vm.hideQuickReplyPanel = true;
+          if (data.length > 0) {
+
+            var firstMsg = data[data.length - 1];
+            if (Authentication.user._id !== firstMsg.userFrom._id) {
+              vm.hideQuickReplyPanel = false;
+              // console.log("hideQuickReplyPanel:" + vm.hideQuickReplyPanel);
+            }
+          }
 
           // Timeout makes sure thread-dimensions-directive has finished loading
           // and there would thus be something actually listening to these broadcasts:
@@ -251,19 +263,22 @@
       return read;
     }
 
-
     /**
      * Send a message
      */
-    function sendMessage() {
+    function sendMessage(msg) {
       vm.isSending = true;
 
       // Make sure the message isn't empty.
       // Sometimes we'll have some empty blocks due wysiwyg
-      if ($filter('plainTextLength')(vm.content) === 0) {
-        vm.isSending = false;
-        messageCenterService.add('warning', 'Please write a message first...');
-        return;
+      if (! msg) {
+        if ($filter('plainTextLength')(vm.content) === 0) {
+          vm.isSending = false;
+          messageCenterService.add('warning', 'Please write a message first...');
+          return;
+        }
+      } else {
+        vm.content = msg;
       }
 
       // eslint-disable-next-line new-cap

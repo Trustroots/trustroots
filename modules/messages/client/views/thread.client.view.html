@@ -105,7 +105,22 @@
       </threads>
       <!-- /Thread -->
 
+      <!-- quickreply -->
+      <div class="btn-toolbar" id="message-quick-reply" ng-hide="thread.hideQuickReplyPanel">
+          <button class="btn btn-success icon-ok" ng-click="thread.sendMessage('<b><i>'+app.appSettings.messages.msgCanHost+'</i></b>');">
+            {{app.appSettings.messages.msgCanHost}}
+          </button>
+          <button class="btn btn-danger icon-minus-squared-alt" ng-click="thread.sendMessage('<b><i>'+app.appSettings.messages.msgCannotHost+'</i></b>');">
+            {{app.appSettings.messages.msgCannotHost}}
+          </button>
+          <button class="btn btn-info icon-reply" ng-click="thread.hideQuickReplyPanel=true;">
+            {{app.appSettings.messages.msgWriteBack}}
+          </button>
+      </div>
+      <!-- quickreply -->
+
       <!-- Reply -->
+      <div>
       <form id="message-reply"
             name="messageForm"
             class="form-horizontal"
@@ -146,6 +161,7 @@
           </div>
         </div><!-- /.row -->
       </form>
+      </div>
       <!-- /Reply -->
 
     </div><!-- /.col-* -->
