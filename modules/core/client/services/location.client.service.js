@@ -129,8 +129,9 @@
       }
 
       return $http.get(
-        '//api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json'
+        'https://api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json'
         + '?access_token=' + appSettings.mapbox.publicKey
+        + '&language=en'
         + '&types=' + (types || 'country,region,place,locality,neighborhood'),
         {
           // Tells Angular-Loading-Bar to ignore this http request

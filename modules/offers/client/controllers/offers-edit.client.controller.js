@@ -135,8 +135,11 @@
       if (vm.searchQuery !== '' && appSettings.mapbox && appSettings.mapbox.publicKey) {
         vm.searchQuerySearching = true;
 
-        $http
-          .get('//api.mapbox.com/geocoding/v5/mapbox.places/' + vm.searchQuery + '.json?access_token=' + appSettings.mapbox.publicKey)
+        $http.get(
+            'https://api.mapbox.com/geocoding/v5/mapbox.places/' + vm.searchQuery + '.json'
+            + '?access_token=' + appSettings.mapbox.publicKey
+            + '&language=en'
+          )
           .then(function(response) {
 
             vm.searchQuerySearching = false;
