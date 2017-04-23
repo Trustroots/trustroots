@@ -1,0 +1,14 @@
+{% extends 'email.server.view.html' %}
+
+{% block content %}
+Hi {{name}}!
+
+It would really help us if you could forward this email to invite your friends to join Trustroots.
+
+The code is valid for 24 hours.
+To get a new code, see: {{urlInvitePlainText}}
+
+Invite code: {{inviteCode}}
+Signup here: {{urlSignupPlainText}}
+
+{% endblock %}

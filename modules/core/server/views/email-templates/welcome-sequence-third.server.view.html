@@ -1,0 +1,76 @@
+{% extends 'email.server.view.html' %}
+
+{% block content %}
+
+  <!-- MODULE ROW // -->
+  <tr>
+    <td align="center" valign="top">
+        <!-- CENTERING TABLE // -->
+          <!--
+            The centering table keeps the content
+              tables centered in the emailBody table,
+              in case its width is set to 100%.
+          -->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+                <td align="center" valign="top">
+                    <!-- FLEXIBLE CONTAINER // -->
+                      <!--
+                        The flexible container has a set width
+                          that gets overridden by the media query.
+                          Most content tables within can then be
+                          given 100% widths.
+                      -->
+                    <table border="0" cellpadding="0" cellspacing="0" width="600" class="flexibleContainer">
+                        <tr>
+                            <td align="center" valign="top" width="600" class="flexibleContainerCell">
+
+
+                                  <!-- CONTENT TABLE // -->
+                                  <!--
+                                    The content table is the first element
+                                      that's entirely separate from the structural
+                                      framework of the email.
+                                  -->
+                                  <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                      <tr>
+                                          <td valign="top" class="textContent">
+
+                                            <p>Hi {{name}}!</p>
+                                            <p>This is {{from.name}} from Trustroots Foundation. You signed up a little while ago and I just wanted to check back.</p>
+                                            {% if topic === 'fill-profile' %}
+                                              <p>
+                                                Your profile seems to be quite empty.
+                                                It would be very easy to take a short time to <a href="{{urlEditProfile}}">fill it out</a> and it would really make it easier for you to connect with people on Trustroots.
+                                              </p>
+                                            {% else %}
+                                              <p>
+                                                How has your experience with Trustroots been for you so far? I would be really glad to hear any feedback. You can just reply this email.
+                                              </p>
+                                            {% endif %}
+
+                                            <p>Check our <a href="https://ideas.trustroots.org">blog</a>, like our <a href="https://www.facebook.com/trustroots.org/?ref=welcome-email">Facebook page</a> and follow us on <a href="https://twitter.com/trustroots">Twitter</a> — it would really help us out!</p>
+
+                                            <p>
+                                              Happy traveling!<br/>
+                                              {{from.name}}
+                                            </p>
+                                          </td>
+                                      </tr>
+                                  </table>
+                                  <!-- // CONTENT TABLE -->
+
+
+                              </td>
+                          </tr>
+                      </table>
+                      <!-- // FLEXIBLE CONTAINER -->
+                  </td>
+              </tr>
+          </table>
+          <!-- // CENTERING TABLE -->
+      </td>
+  </tr>
+  <!-- // MODULE ROW -->
+
+{% endblock %}

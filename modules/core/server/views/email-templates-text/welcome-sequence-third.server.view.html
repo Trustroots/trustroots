@@ -1,0 +1,23 @@
+{% extends 'email.server.view.html' %}
+
+{% block content %}
+Hi {{name}}!
+
+This is {{from.name}} from Trustroots Foundation. You signed up a little while ago and I just wanted to check back.
+{% if topic === 'fill-profile' %}
+Your profile seems to be quite empty. It would be very easy to take a short time to fill it out and it would really make it easier for you to connect with people on Trustroots.
+
+Edit your profile: {{urlEditProfile}}
+{% else %}
+How has your experience with Trustroots been for you so far? I would be really glad to hear any feedback. Just reply this email.
+{% endif %}
+
+Check our blog, like our Facebook page and follow us on Twitter — it would really help us out!
+- https://ideas.trustroots.org
+- https://www.facebook.com/trustroots.org
+- https://twitter.com/trustroots
+
+Happy traveling!
+{{from.name}}
+
+{% endblock %}
