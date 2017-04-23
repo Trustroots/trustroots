@@ -22,6 +22,12 @@
       return date;
     };
 
+    var setTomorrow = function(d) {
+      var date = new Date(d.getTime())
+      date.setDate(date.getDate() + 1);
+      return date;
+    };
+
     var setYesterday = function(d) {
       var date = new Date(d.getTime())
       date.setDate(date.getDate() - 1);
@@ -79,6 +85,7 @@
     var validateCode = function(inviteKey, now, code) {
       return moment(now).isSame(codeToDate(inviteKey, code), 'day') ||
         moment(now).isSame(setYesterday(codeToDate(inviteKey, code)), 'day') ||
+        moment(now).isSame(setTomorrow(codeToDate(inviteKey, code)), 'day') ||
         moment(now).isSame(setYesterdayTwo(codeToDate(inviteKey, code)), 'day');
     };
 
