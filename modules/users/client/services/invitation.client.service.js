@@ -14,10 +14,11 @@
     // will not work any more.
 
     var setMidnight = function(date) {
-      date.setUTCHours(0);
-      date.setUTCMinutes(0);
-      date.setSeconds(0);
-      date.setMilliseconds(0);
+      // It's crucial we set these by UTC because we use the timestamp at
+      // midnight as an integer to create a code. If each timezone generated a
+      // different timestamp for midnight, then each timezone would create a
+      // different code which would only work in the same timezone.
+      date.setUTCHours(0, 0, 0, 0); // Sets hours, minutes, seconds, ms
       return date;
     };
 
