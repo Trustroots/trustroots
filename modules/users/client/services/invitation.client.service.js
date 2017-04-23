@@ -22,7 +22,8 @@
       return date;
     };
 
-    var setYesterday = function(date) {
+    var setYesterday = function(d) {
+      var date = new Date(d.getTime())
       date.setDate(date.getDate() - 1);
       return date;
     };
