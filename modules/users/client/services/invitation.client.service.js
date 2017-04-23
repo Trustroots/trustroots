@@ -73,13 +73,13 @@
 
     // Checks if a code is valid and returns boolean yes or no
     // `inviteKey` - should always be the same, an integer
-    // `today` - a date object, can be `new Date()`, time is ignored
+    // `now` - a date object, can be `new Date()`, time is ignored
     // `code` - a string representation of the invitation code
     // Returns boolean true if code is valid, false if not
-    var validateCode = function(inviteKey, today, code) {
-      today = setMidnight(today);
-      return moment(today).isSame(codeToDate(inviteKey, code), 'day') ||
-        moment(today).isSame(setYesterday(codeToDate(inviteKey, code)), 'day');
+    var validateCode = function(inviteKey, now, code) {
+      return moment(now).isSame(codeToDate(inviteKey, code), 'day') ||
+        moment(now).isSame(setYesterday(codeToDate(inviteKey, code)), 'day') ||
+        moment(now).isSame(setYesterdayTwo(codeToDate(inviteKey, code)), 'day');
     };
 
     // Return service
