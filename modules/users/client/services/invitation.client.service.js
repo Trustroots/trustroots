@@ -37,7 +37,7 @@
 
     // Take a date object and return an integer
     var dayToInt = function(d) {
-      return d.getTime() / 1e3;
+      return Math.floor(d.getTime() / 1e3);
     };
 
     // Take an integer and return a date object
