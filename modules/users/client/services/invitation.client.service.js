@@ -28,6 +28,13 @@
       return date;
     };
 
+    // Push the date 2 days back so it's the day before yesterday
+    var setYesterdayTwo = function(d) {
+      var date = new Date(d.getTime())
+      date.setDate(date.getDate() - 2);
+      return date;
+    };
+
     // Take a date object and return an integer
     var dayToInt = function(d) {
       return d.getTime() / 1e3;
