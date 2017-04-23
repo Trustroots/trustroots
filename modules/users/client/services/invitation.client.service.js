@@ -23,20 +23,20 @@
     };
 
     var setTomorrow = function(d) {
-      var date = new Date(d.getTime())
+      var date = new Date(d.getTime());
       date.setDate(date.getDate() + 1);
       return date;
     };
 
     var setYesterday = function(d) {
-      var date = new Date(d.getTime())
+      var date = new Date(d.getTime());
       date.setDate(date.getDate() - 1);
       return date;
     };
 
     // Push the date 2 days back so it's the day before yesterday
     var setYesterdayTwo = function(d) {
-      var date = new Date(d.getTime())
+      var date = new Date(d.getTime());
       date.setDate(date.getDate() - 2);
       return date;
     };
