@@ -24,7 +24,7 @@ exports.sendMessagesUnread = function(userFrom, userTo, notification, callback) 
   // Generate mail subject
   var mailSubject = (isFirst)
     ? userFrom.displayName + ' wrote you from Trustroots'
-    : 'You still have unread messages from ' + userFrom.displayName + ' on Trustroots';
+    : userFrom.displayName + ' is still waiting for a reply on Trustroots';
 
   // URLs to use at email templates
   var urlUserFromProfile = url + '/profile/' + userFrom.username,
