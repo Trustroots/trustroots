@@ -122,4 +122,43 @@ describe('Service: push', function() {
     });
   });
 
+  it('can have different text for a second messages unread notification', function(done) {
+
+    var userFrom = {
+      _id: 1,
+      displayName: 'Albert Einstein'
+    };
+
+    var userTo = {
+      _id: 5,
+      pushRegistration: [
+        {
+          token: '123'
+        }
+      ]
+    };
+
+    var data = {
+      notificationCount: 1,
+      messages: ['foo']
+    };
+
+    pushService.notifyMessagesUnread(userFrom, userTo, data, function(err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      var job = jobs[0];
+
+      job.type.should.equal('send push message');
+
+      job.data.userId.should.equal(5);
+      job.data.tokens.should.deepEqual(['123']);
+      job.data.payload.notification.title.should.equal('Trustroots');
+      job.data.payload.notification.body.should.equal(userFrom.displayName + ' is still waiting for a reply');
+      job.data.payload.notification.click_action.should
+        .equal(url + '/messages?utm_source=push-notification&utm_medium=fcm&utm_campaign=messages-unread&utm_content=reply-to');
+
+      done();
+    });
+  });
+
 });
