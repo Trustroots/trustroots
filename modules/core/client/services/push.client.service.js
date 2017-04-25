@@ -93,14 +93,16 @@
     }
 
     function loadEnabled() {
-      return locker.get(LOCKER_KEY) === 'on';
+      return locker.supported() && locker.get(LOCKER_KEY) === 'on';
     }
 
     function saveEnabled(enabled) {
-      if (enabled) {
-        locker.put(LOCKER_KEY, 'on');
-      } else {
-        locker.forget(LOCKER_KEY);
+      if (locker.supported()) {
+        if (enabled) {
+          locker.put(LOCKER_KEY, 'on');
+        } else {
+          locker.forget(LOCKER_KEY);
+        }
       }
       return enabled;
     }
