@@ -445,7 +445,7 @@ describe('Job: message unread', function() {
             // check that the second reminder is sent
             jobs.length.should.equal(2);
             // check the correctness of the content of the second reminder
-            jobs[1].data.subject.should.equal('You still have unread messages from ' + _userFrom.displayName + ' on Trustroots');
+            jobs[1].data.subject.should.equal(_userFrom.displayName + ' is still waiting for a reply on Trustroots');
             jobs[1].data.to.address.should.equal(_userTo.email);
 
             return done();
