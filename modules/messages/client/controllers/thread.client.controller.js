@@ -125,7 +125,9 @@
       $scope.$broadcast('threadScrollToBottom');
 
       // Save message to a cache (see sendMessage() where it's emptiet and vm-list for the getter)
-      locker.driver('session').put(cachePrefix, vm.content);
+      if (locker.supported()) {
+        locker.driver('session').put(cachePrefix, vm.content);
+      }
     }
 
     /**
@@ -279,7 +281,9 @@
         vm.isSending = false;
 
         // Remove message from cache
-        locker.driver('session').forget(cachePrefix);
+        if (locker.supported()) {
+          locker.driver('session').forget(cachePrefix);
+        }
 
         // Remove this when socket is back!
         vm.messages.unshift(response);
