@@ -55,6 +55,7 @@
     "cookie-parser": "~1.4.3",
     "del": "~2.2.1",
     "eslint": "~2.2.0",
+    "eslint-plugin-react": "~4.0.0",
     "eslint-config-airbnb": "~6.0.2",
     "eslint-plugin-angular": "~1.4.1",
     "express": "~4.14.0",

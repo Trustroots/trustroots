@@ -113,6 +113,11 @@
             ng-submit="thread.sendMessage()"
             ng-disabled="!thread.userTo._id">
         <div class="row">
+
+          <div class="col-xs-12" ng-show="thread.req.showReqSurfOpt">
+            <span>Check for Hosting Request :<input type="checkbox" ng-change="thread.req.reqModVisible();" ng-model="thread.req.reqSurfTicked"></span>
+          </div>
+
           <div class="col-xs-12">
             <div class="panel panel-default">
               <div id="message-reply-content"
@@ -157,5 +162,27 @@
     </div>
 
   </div><!-- /.row -->
+
+    <!--requestsurf-->
+    <div class="row" id="message-request" ng-show="(thread.req.showReqSurfOpt && thread.req.reqSurfTicked)">
+        <div class="col-xs-12">
+          <h5>Number of travellers & Request Dates of Travel</h5>
+        </div>
+        <div class="col-xs-4">
+          <div class="input-group">
+          <span type="button" class="btn btn-success icon-minus-squared-alt input-group-addon" id="people-plus" ng-click="thread.req.people(-1);"></span>
+          <input type="numbers" readonly size="1" id="people-count" class="form-control input-group-addon" min=1 max=99 ng-model="thread.req.peopleCount;" >
+          <span type="button" class="btn btn-success icon-plus-squared-alt input-group-addon" id="people-plus" ng-click="thread.req.people(1);"></span>
+          </div>
+        </div>
+        <div class="col-xs-4">
+            <input type="text" readonly class="form-control" id="in-from-date" placeholder="From Date" ng-model="thread.req.fromDateDisp" ng-click="thread.req.clickFromDate();" />
+            <div uib-datepicker id="cal-from-date" ng-model="thread.req.fromDate" class="well-xs" ng-hide="thread.req.hideFromDate" ng-change="thread.req.calFromDate();" datepicker-options="thread.req.dateOptions"></div>
+        </div>
+        <div class="col-xs-4">
+            <input type="text" readonly class="form-control" id="in-to-date" placeholder="To Date" ng-model="thread.req.toDateDisp" ng-click="thread.req.clickToDate();" />
+            <div uib-datepicker id="cal-to-date" ng-model="thread.req.toDate" class="well-xs" ng-hide="thread.req.hideToDate" ng-change="thread.req.calToDate();" datepicker-options="thread.req.dateOptions"></div>
+        </div>
+    </div> <!-- requestsurf -->
 
 </section><!-- /.container -->

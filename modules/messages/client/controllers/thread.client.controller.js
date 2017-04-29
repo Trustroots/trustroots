@@ -32,6 +32,12 @@
         messageIdsInView = [],
         editorContentChangedTimeout;
 
+    // Vars for Host Module
+    var fromDateDisp,
+        toDateDisp,
+        reqSurfTicked,
+        showReqSurfOpt;
+
     // Make cache id unique for this user
     var cachePrefix = 'messages.thread.' + Authentication.user._id + '-' + $stateParams.username;
 
@@ -51,6 +57,31 @@
     vm.messageRead = messageRead;
     vm.editorContentChanged = editorContentChanged;
     vm.content = '';
+
+    vm.req = {};
+    vm.req.reqSurfTicked = reqSurfTicked;
+    vm.req.showReqSurfOpt = showReqSurfOpt;
+    vm.req.hideFromDate = true;
+    vm.req.hideToDate = true;
+
+    vm.req.toDate = new Date();
+    vm.req.fromDateDisp = fromDateDisp;
+    vm.req.clickFromDate = clickFromDate;
+    vm.req.calFromDate = calFromDate;
+
+    vm.req.fromDate = new Date();
+    vm.req.toDateDisp = toDateDisp;
+    vm.req.clickToDate = clickToDate;
+    vm.req.calToDate = calToDate;
+    vm.req.dateOptions = { 'show-button-bar': 'true',
+                           'showWeeks': false,
+                           'close-text': 'Close'
+                         };
+
+    vm.req.people = people;
+    vm.req.peopleCount = 1;
+    vm.req.reqModVisible = reqModVisible;
+    vm.req.reqDispStr = reqDispStr;
 
     activate();
 
@@ -108,6 +139,122 @@
 
     }
 
+    // Request Module Functions separate out ? //
+
+    /**
+    * @fuction reqModVisible()
+    * handles the hosting request module which comes up
+    * visibility & module opacity are played with to
+    * ensure it come up smoothly
+    */
+    function reqModVisible() {
+      vm.req.reqSurfTicked = ! vm.req.reqSurfTicked;
+      var elemMsgReq = angular.element('#message-request');
+      if (! vm.req.reqSurfTicked) {
+        elemMsgReq.css({ 'opacity': '0' });
+      }
+
+      vm.req.reqSurfTicked = ! vm.req.reqSurfTicked;
+      $scope.$broadcast('threadRefreshLayout');
+
+      $timeout(function() {
+        elemMsgReq.css({ 'opacity': '1' });
+      }, 300);
+    }
+
+    /**
+    * @fuction people(count)
+    * helps with number of people travelling in host req
+    */
+    function people(count) {
+      vm.req.peopleCount += count;
+      if (vm.req.peopleCount <= 0
+            || vm.req.peopleCount > 100) {
+        vm.req.peopleCount = 1;
+      }
+    }
+
+    /**
+    * @function clickFromDate()
+    * gets called after calendar is selected
+    */
+    function clickFromDate() {
+      $scope.$broadcast('threadRefreshLayout');
+      vm.req.hideFromDate = false;
+      vm.req.hideToDate = true;
+    }
+
+    /**
+    * @function calFromDate()
+    * gets called after date is selected
+    */
+    function calFromDate() {
+      $scope.$broadcast('threadRefreshLayout');
+      vm.req.hideFromDate = true;
+      vm.req.fromDateDisp = $filter('date')(vm.req.fromDate, 'dd/MM/yyyy');
+    }
+
+
+    /**
+    * @function clickToDate()
+    * gets called after calendar is selected
+    */
+    function clickToDate() {
+      $scope.$broadcast('threadRefreshLayout');
+      vm.req.hideFromDate = true;
+      vm.req.hideToDate = false;
+
+    }
+
+    /**
+    * @function calToDate()
+    * gets called after date is selected
+    */
+    function calToDate() {
+      $scope.$broadcast('threadRefreshLayout');
+      vm.req.hideToDate = true;
+      vm.req.toDateDisp = $filter('date')(vm.req.toDate, 'dd/MM/yyyy');
+    }
+
+    /**
+    * @function reqDispStr()
+    * returns the hosting information string based
+    * on number of travellers & dates from/to
+    */
+    function reqDispStr() {
+      if (!vm.req.fromDateDisp ||
+            vm.req.fromDateDisp.length === 0) {
+        return '';
+      }
+
+      if (!vm.req.toDateDisp ||
+              vm.req.toDateDisp.length === 0) {
+        return '';
+      }
+
+      if (vm.req.peopleCount === 0) {
+        return '';
+      }
+
+      // Check if dates are from now to future not past
+      var dnow = new Date();
+      var curDiff = (dnow - vm.req.fromDate) / (24 * 3600);
+      if (curDiff >= 1) {
+        return '';
+      }
+
+      // if from < to
+      var diff = vm.req.toDate - vm.req.fromDate;
+      var dayDiff = diff / (24 * 3600);
+      if (diff < 0 || dayDiff < 1) {
+        return '';
+      }
+
+      return 'Hosting Request, for travelers: (' + vm.req.peopleCount
+              + ') from: ' + vm.req.fromDateDisp
+              + '  ~ ' + vm.req.toDateDisp;
+    }
+
     /**
      * When contents at the editor change, update layout
      */
@@ -143,6 +290,10 @@
      * Appends returned messages to model
      */
     function addMessages(data) {
+
+      if (data.length === 0) {
+        vm.req.showReqSurfOpt = true;
+      }
 
       // Loop trough received data (for loop is the fastest)
       for (var i = 0; i < data.length; i++) {
@@ -251,20 +402,37 @@
       return read;
     }
 
-
     /**
      * Send a message
      */
-    function sendMessage() {
+    function sendMessage(msg) {
       vm.isSending = true;
 
       // Make sure the message isn't empty.
       // Sometimes we'll have some empty blocks due wysiwyg
-      if ($filter('plainTextLength')(vm.content) === 0) {
-        vm.isSending = false;
-        messageCenterService.add('warning', 'Please write a message first...');
-        return;
+      if (! msg) {
+        if ($filter('plainTextLength')(vm.content) === 0) {
+          vm.isSending = false;
+          messageCenterService.add('warning', 'Please write a message first...');
+          return;
+        }
+      } else {
+        vm.content = msg;
       }
+
+      // Add host string to message //
+      if (vm.messages.length === 0 && vm.req.reqSurfTicked) {
+        var reqStr = reqDispStr();
+        if (reqStr.length === 0) {
+          vm.isSending = false;
+          messageCenterService.add('warning', 'Kindly enter Host Request information correctly...');
+          return;
+        }
+        vm.content = '<h5>' + reqDispStr() + '</h5><p></p>' + vm.content;
+        editorContentChanged();
+      }
+
+      vm.req.showReqSurfOpt = false;
 
       // eslint-disable-next-line new-cap
       var message = new vm.messageHandler.ajaxCall({

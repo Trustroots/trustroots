@@ -19,7 +19,9 @@ module.exports = {
         'modules/core/client/fonts/fontello/css/tricons-codes.css',
         'public/lib/angular-ui-bootstrap/src/position/position.css',
         'public/lib/angular-ui-bootstrap/src/typeahead/typeahead.css',
-        'public/lib/angular-ui-bootstrap/src/tooltip/tooltip.css'
+        'public/lib/angular-ui-bootstrap/src/tooltip/tooltip.css',
+        'public/lib/bootstrap/dist/css/bootstrap.min.css',
+        'public/lib/angular-ui-bootstrap/src/datepicker/datepicker.css'
       ],
       js: [
         // Non minified versions
@@ -30,12 +32,14 @@ module.exports = {
         'public/lib/angular-animate/angular-animate.js',
         'public/lib/angular-touch/angular-touch.js',
         'public/lib/angular-sanitize/angular-sanitize.js',
+        'public/lib/angular-bootstrap/ui-bootstrap-tpls.min.js',
         'public/lib/angular-message-format/angular-message-format.js',
         'public/lib/angulartics/src/angulartics.js',
         'public/lib/angular-ui-router/release/angular-ui-router.js',
         'public/lib/angular-ui-bootstrap/src/buttons/buttons.js',
         'public/lib/angular-ui-bootstrap/src/collapse/collapse.js',
         'public/lib/angular-ui-bootstrap/src/dateparser/dateparser.js',
+        'public/lib/angular-ui-bootstrap/src/datepicker/datepicker.js',
         'public/lib/angular-ui-bootstrap/src/debounce/debounce.js',
         'public/lib/angular-ui-bootstrap/src/dropdown/dropdown.js',
         'public/lib/angular-ui-bootstrap/src/modal/modal.js',

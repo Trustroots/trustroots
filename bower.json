@@ -32,7 +32,8 @@
     "angulartics-google-analytics": "~0.4.0",
     "angulargrid": "~0.6.0",
     "leaflet-active-area": "#6f13cffe44faee56e8a089ff6ea6022465c257a9",
-    "firebase": "^3.7.5"
+    "firebase": "^3.7.5",
+    "angular-ui-bootstrap-datetimepicker": "^2.5.0"
   },
   "resolutions": {
     "angular": "1.5.8",

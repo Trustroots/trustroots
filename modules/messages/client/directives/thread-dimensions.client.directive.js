@@ -86,6 +86,18 @@
           // container has 15px padding on both sides when window is bigger than screen-sm-max (768px)
           var elemContainerPadding = ($window.innerWidth < 768) ? -15 : 30;
 
+          var elemMsgReply = angular.element('#message-reply');
+          var elemBtnReply = angular.element('#messageReplySubmit');
+          var elemHostReq = angular.element('#message-request');
+
+          elemMsgReply.css({
+            bottom: elemHostReq.height()
+          });
+
+          elemBtnReply.css({
+            bottom: elemHostReq.height()
+          });
+
           elemThread.css({
             // container has 15px padding on both sides when window is bigger than screen-sm-max (768px)
             width: elemContainerWidth - elemContainerPadding,
