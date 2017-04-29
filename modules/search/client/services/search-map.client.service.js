@@ -70,18 +70,23 @@
      * Save map state to the cache
      */
     function cacheMapCenter(location) {
-      if (angular.isUndefined(location.lat) || angular.isUndefined(location.lng) || angular.isUndefined(location.zoom)) {
+      // Validate location
+      if (angular.isUndefined(location.lat) ||
+          angular.isUndefined(location.lng) ||
+          angular.isUndefined(location.zoom)) {
         $log.warn('Cannot cache location: missing coordinates or zoom.');
         return;
       }
 
-      //
-      locker.put(cachePrefix, {
-        'lat': location.lat,
-        'lng': location.lng,
-        'zoom': location.zoom,
-        'date': new Date()
-      });
+      // Store in cache
+      if (locker.supported()) {
+        locker.put(cachePrefix, {
+          'lat': location.lat,
+          'lng': location.lng,
+          'zoom': location.zoom,
+          'date': new Date()
+        });
+      }
     }
 
   }

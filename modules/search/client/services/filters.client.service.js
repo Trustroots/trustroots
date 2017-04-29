@@ -21,7 +21,7 @@
 
     // Look up for filters from cache.
     // Returns `defaultFilters` if nothing is found.
-    var filters = locker.get(cachePrefix, defaultFilters);
+    var filters = locker.supported() ? locker.get(cachePrefix, defaultFilters) : defaultFilters;
 
     // If cached filters were found, their structure might've been incomplete
     // `angular.extend` extends `filters` by copying own enumerable
@@ -62,7 +62,9 @@
       filters[filter] = content;
 
       // Cache whole filters object
-      locker.put(cachePrefix, filters);
+      if (locker.supported()) {
+        locker.put(cachePrefix, filters);
+      }
     }
 
   }

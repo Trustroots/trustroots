@@ -56,7 +56,10 @@ exports.notifyMessagesUnread = function(userFrom, userTo, notification, callback
     })
   };
 
-  exports.renderNotificationAndSend('messages-unread', params, callback);
+  // Use different templates for 1st and 2nd notification
+  var nth = !(notification.notificationCount > 0) ? 'first' : 'second';
+
+  exports.renderNotificationAndSend('messages-unread-' + nth, params, callback);
 };
 
 /**
