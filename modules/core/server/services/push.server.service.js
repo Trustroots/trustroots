@@ -33,12 +33,22 @@ exports.notifyMessagesUnread = function(userFrom, userTo, data, callback) {
 
   var messageCount = data.messages.length;
 
+  // Is the notification the first one?
+  // If not, we send a different message.
+  var isFirst = !(data.notificationCount > 0);
+
   var body;
 
-  if (messageCount > 1) {
-    body = 'You have ' + messageCount + ' unread messages';
+  if (isFirst) {
+    // First notification
+    if (messageCount > 1) {
+      body = 'You have ' + messageCount + ' unread messages';
+    } else {
+      body = 'You have one unread message';
+    }
   } else {
-    body = 'You have one unread message';
+    // Second notification
+    body = userFrom.displayName + ' is still waiting for a reply';
   }
 
   var messagesUrl = url + '/messages';

@@ -183,7 +183,9 @@
 
       // Clear out session/localstorage
       // @link https://github.com/tymondesigns/angular-locker#removing-items-from-locker
-      locker.clean();
+      if (locker.supported()) {
+        locker.clean();
+      }
 
       push.disable().finally(function() {
         // Do the signout and refresh the page
