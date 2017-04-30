@@ -33,10 +33,15 @@
         editorContentChangedTimeout;
 
     // Vars for Host Module
-    var fromDateDisp,
-        toDateDisp,
-        reqSurfTicked,
-        showReqSurfOpt;
+    // Its to be noted at this point these options don't
+    // use a persistant db but eventually for the right
+    // behaviour they should, but once UI is stabilized
+    // we can do it as a seperate task
+
+    var fromDateDisp,   // from date as shown on UI
+        toDateDisp,     // to date as shown on UI
+        reqSurfTicked,  // if host request checkbox is ticked
+        showReqSurfOpt; // if the request checkbox is to be displayed
 
     // Make cache id unique for this user
     var cachePrefix = 'messages.thread.' + Authentication.user._id + '-' + $stateParams.username;

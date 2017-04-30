@@ -90,6 +90,7 @@
           var elemBtnReply = angular.element('#messageReplySubmit');
           var elemHostReq = angular.element('#message-request');
 
+          // reply button pos has to be managed based on disply of host panel
           elemMsgReply.css({
             bottom: elemHostReq.height()
           });
