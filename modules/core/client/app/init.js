@@ -49,6 +49,11 @@
       $compileProvider.debugInfoEnabled(false);
     }
 
+    // Disable comment and css class directives
+    // @link https://docs.angularjs.org/guide/production#disable-comment-and-css-class-directives
+    $compileProvider.commentDirectivesEnabled(false);
+    $compileProvider.cssClassDirectivesEnabled(false);
+
   }
 
   // Then define the init function for starting up the application
