@@ -18,7 +18,7 @@ var _ = require('lodash'),
     async = require('async'),
     crypto = require('crypto'),
     sanitizeHtml = require('sanitize-html'),
-    mkdirp = require('mkdirp'),
+    mkdirRecursive = require('mkdir-recursive'),
     mongoose = require('mongoose'),
     multer = require('multer'),
     fs = require('fs'),
@@ -185,8 +185,11 @@ exports.avatarUpload = function (req, res) {
 
     // Ensure user's upload directory exists
     function(done) {
-      mkdirp(uploadDir, function (err) {
-        done(err);
+      mkdirRecursive.mkdir(uploadDir, function (err) {
+        if (err && err.code !== 'EEXIST') {
+          return done(err);
+        }
+        done();
       });
     },
 
