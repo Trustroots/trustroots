@@ -278,6 +278,7 @@ module.exports.initHelmetHeaders = function (app) {
         '*.fbcdn.net', // Facebook releated
         '*.twitter.com',
         '*.google-analytics.com',
+        '*.gstatic.com', // Google analytics related
         // Use `nonce` for `<script>` tags
         // Nonce is generated above at `initLocalVariables()` middleware
         // @link https://helmetjs.github.io/docs/csp/#generating-nonces
@@ -308,6 +309,7 @@ module.exports.initHelmetHeaders = function (app) {
         '*.fbcdn.net', // Facebook releated
         '*.twitter.com',
         '*.google-analytics.com',
+        '*.gstatic.com', // Google analytics related
         '*.g.doubleclick.net', // Google Analytics related
         'gravatar.com', // Gravatar (Wordpress)
         '*.wp.com', // Gravatar (Wordpress)
