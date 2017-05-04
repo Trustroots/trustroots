@@ -548,8 +548,11 @@ exports.userByUsername = function(req, res, next, username) {
         .populate({
           path: 'member.tag',
           select: tribesHandler.tribeFields,
-          model: 'Tag',
-          options: { sort: { count: -1 } }
+          model: 'Tag'
+          // Not possible at the moment due bug in Mongoose
+          // http://mongoosejs.com/docs/faq.html#populate_sort_order
+          // https://github.com/Automattic/mongoose/issues/2202
+          // options: { sort: { count: -1 } }
         })
         .exec(function(err, profile) {
           if (err) {
@@ -856,8 +859,11 @@ exports.getUserMemberships = function(req, res) {
     .populate({
       path: 'member.tag',
       select: tagsHandler.tagFields + ' ' + tribesHandler.tribeFields,
-      model: 'Tag',
-      options: { sort: { count: -1 } }
+      model: 'Tag'
+      // Not possible at the moment due bug in Mongoose
+      // http://mongoosejs.com/docs/faq.html#populate_sort_order
+      // https://github.com/Automattic/mongoose/issues/2202
+      // options: { sort: { count: -1 } }
     })
     .exec(function(err, profile) {
 

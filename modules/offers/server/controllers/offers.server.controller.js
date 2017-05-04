@@ -423,8 +423,11 @@ exports.offerById = function(req, res, next, offerId) {
       User.populate(offer.user, {
         path: 'member.tag',
         select: tribesHandler.tribeFields,
-        model: 'Tag',
-        options: { sort: { count: -1 } }
+        model: 'Tag'
+        // Not possible at the moment due bug in Mongoose
+        // http://mongoosejs.com/docs/faq.html#populate_sort_order
+        // https://github.com/Automattic/mongoose/issues/2202
+        // options: { sort: { count: -1 } }
       }, function(err, user) {
         // Overwrite old `offer.user` with new `user` object
         // containing populated `member.tag` to `offer`
