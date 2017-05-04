@@ -18,7 +18,7 @@ var _ = require('lodash'),
     async = require('async'),
     crypto = require('crypto'),
     sanitizeHtml = require('sanitize-html'),
-    mkdirp = require('mkdirp'),
+    mkdirRecursive = require('mkdir-recursive'),
     mongoose = require('mongoose'),
     multer = require('multer'),
     fs = require('fs'),
@@ -185,8 +185,11 @@ exports.avatarUpload = function (req, res) {
 
     // Ensure user's upload directory exists
     function(done) {
-      mkdirp(uploadDir, function (err) {
-        done(err);
+      mkdirRecursive.mkdir(uploadDir, function (err) {
+        if (err && err.code !== 'EEXIST') {
+          return done(err);
+        }
+        done();
       });
     },
 
@@ -545,8 +548,11 @@ exports.userByUsername = function(req, res, next, username) {
         .populate({
           path: 'member.tag',
           select: tribesHandler.tribeFields,
-          model: 'Tag',
-          options: { sort: { count: -1 } }
+          model: 'Tag'
+          // Not possible at the moment due bug in Mongoose
+          // http://mongoosejs.com/docs/faq.html#populate_sort_order
+          // https://github.com/Automattic/mongoose/issues/2202
+          // options: { sort: { count: -1 } }
         })
         .exec(function(err, profile) {
           if (err) {
@@ -853,8 +859,11 @@ exports.getUserMemberships = function(req, res) {
     .populate({
       path: 'member.tag',
       select: tagsHandler.tagFields + ' ' + tribesHandler.tribeFields,
-      model: 'Tag',
-      options: { sort: { count: -1 } }
+      model: 'Tag'
+      // Not possible at the moment due bug in Mongoose
+      // http://mongoosejs.com/docs/faq.html#populate_sort_order
+      // https://github.com/Automattic/mongoose/issues/2202
+      // options: { sort: { count: -1 } }
     })
     .exec(function(err, profile) {
 
