@@ -4,8 +4,10 @@
 // eslint-disable-next-line no-unused-vars
 var AppConfig = (function () {
   // Init module configuration options
+  // When testing, `window.env` is undefined, thus default to 'test'
   // eslint-disable-next-line angular/window-service
-  var appEnv = window.env || 'production';
+  var appEnv = window.env ? window.env : 'test';
+
   var appModuleName = 'trustroots';
   var appModuleVendorDependencies = [
     'ngResource',
@@ -45,9 +47,15 @@ var AppConfig = (function () {
    * @link https://github.com/angulartics/angulartics
    */
   if (appEnv === 'production') {
+    // @link https://github.com/angulartics/angulartics-google-analytics
     appModuleVendorDependencies.push('angulartics.google.analytics');
-  } else {
+  } else if (appEnv === 'development') {
+    // @link https://github.com/angulartics/angulartics/blob/master/src/angulartics-debug.js
     appModuleVendorDependencies.push('angulartics.debug');
+  } else {
+    // For "test" environment
+    // See `testutils/angulartics-null.testutil.js`
+    appModuleVendorDependencies.push('angulartics.null');
   }
 
   // Add a new vertical module
