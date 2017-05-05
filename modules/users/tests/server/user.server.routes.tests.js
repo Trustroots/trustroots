@@ -10,7 +10,7 @@ var should = require('should'),
     inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
     config = require(path.resolve('./config/config')),
     express = require(path.resolve('./config/lib/express')),
-    testutils = require(path.resolve('./testutils'));
+    testutils = require(path.resolve('./testutils/server.testutil'));
 
 /**
  * Globals
