@@ -3,7 +3,7 @@
 var path = require('path'),
     config = require(path.resolve('./config/config')),
     url = (config.https ? 'https' : 'http') + '://' + config.domain,
-    testutils = require(path.resolve('./testutils'));
+    testutils = require(path.resolve('./testutils/server.testutil'));
 
 describe('Service: push', function() {
 

@@ -2,7 +2,7 @@
 
 var path = require('path'),
     mongoose = require('mongoose'),
-    testutils = require(path.resolve('./testutils'));
+    testutils = require(path.resolve('./testutils/server.testutil'));
 
 /**
  * Globals
