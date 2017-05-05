@@ -38,7 +38,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.googlePage = config.google.page;
   app.locals.googleAnalytics = config.googleAnalytics;
   app.locals.languages = languages;
-  app.locals.env = process.env.NODE_ENV;
+  app.locals.env = (['development', 'test', 'production'].indexOf(process.env.NODE_ENV) > -1) ? process.env.NODE_ENV : 'development';
   app.locals.appSettings = config.app;
   app.locals.appSettings.mapbox = config.mapbox;
   app.locals.appSettings.time = new Date().toISOString();
@@ -49,6 +49,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.fcmSenderId = config.fcm.senderId;
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
 
+  // Assets
   if (process.env.NODE_ENV !== 'production') {
     app.locals.jsFiles = _.concat(config.files.client.js, 'dist/uib-templates.js');
     app.locals.cssFiles = _.map(config.files.client.css, function(file) { return file.replace('/client', ''); });
