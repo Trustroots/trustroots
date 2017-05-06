@@ -51,6 +51,7 @@ module.exports.initLocalVariables = function (app) {
 
   // Predefined to be localized
   app.locals.appSettings.messages = {
+    enableTemplates: true,  // display user defined template options
     msgCanHost: 'Yes, I can host!',
     msgCannotHost: 'Sorry, I can\'t host',
     msgWriteBack: 'Write back'

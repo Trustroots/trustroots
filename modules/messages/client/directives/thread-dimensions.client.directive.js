@@ -88,7 +88,7 @@
 
           var elemQuickReply = angular.element('#message-quick-reply');
 
-          var combinedHeight = elemReplyHeight + (elemQuickReply.height());
+          var combinedHeight = elemReplyHeight + (elemReplyHeight / 3);
 
           elemQuickReply.css({
             bottom: combinedHeight
@@ -98,7 +98,7 @@
             // container has 15px padding on both sides when window is bigger than screen-sm-max (768px)
             width: elemContainerWidth - elemContainerPadding,
             // Bottom part of the message thread should touch top part of textarea
-            bottom: combinedHeight + (combinedHeight / 8)
+            bottom: combinedHeight + elemQuickReply.height()
           });
 
           // Reply area has always padding 30 on the right

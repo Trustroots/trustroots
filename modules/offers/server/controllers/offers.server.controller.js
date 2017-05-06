@@ -20,6 +20,7 @@ var publicOfferFields = [
   '_id',
   'status',
   'description',
+  'templates',          // user defined templates, all in one object ?
   'noOfferDescription',
   'maxGuests',
   'location'
@@ -120,7 +121,7 @@ exports.create = function(req, res) {
   offer.locationFuzzy = fuzzyLocation(offer.location);
 
   // Sanitize contents coming from wysiwyg editors
-  ['description', 'noOfferDescription'].forEach(function(key) {
+  ['description', 'noOfferDescription', 'templates.directions'].forEach(function(key) {
     if (offer[key] && !textProcessor.isEmpty(offer[key])) {
       // Allow some HTML
       offer[key] = textProcessor.html(offer[key]);
@@ -354,6 +355,7 @@ exports.offerByUserId = function(req, res, next, userId) {
     // Sanitize each outgoing offer's contents
     offer.description = sanitizeHtml(offer.description, textProcessor.sanitizeOptions);
     offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
+    offer.templates.directions = sanitizeHtml(offer.templates.directions, textProcessor.sanitizeOptions);
 
     // Make sure we return accurate location only for offer owner,
     // others will see pre generated fuzzy location
@@ -439,6 +441,7 @@ exports.offerById = function(req, res, next, offerId) {
       // Sanitize each outgoing offer's contents
       offer.description = sanitizeHtml(offer.description, textProcessor.sanitizeOptions);
       offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
+      offer.templates.directions = sanitizeHtml(offer.templates.directions, textProcessor.sanitizeOptions);
 
       // Make sure we return accurate location only for offer owner,
       // others will see pre generated fuzzy location

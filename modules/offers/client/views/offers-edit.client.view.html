@@ -56,6 +56,17 @@
         </div>
       </div>
 
+      <!-- Directions to Host & Contact especially for quick accept  -->
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4>Contact & Directions: How to reach you (Non-Public)</h4>
+          <h5>You will have to explicity share this via chat on acceptance</h5>
+        </div>
+        <div class="panel-body">
+          <div class="offer-description" ng-class="{'is-not-empty': offer.templates.directions.length}" ng-hide="!offersEdit.offer" ng-model="offersEdit.offer.templates.directions" tr-editor tr-editor-options="::app.editorOptions" data-placeholder="at least 1.Contact Info 2.Address 3.Landmarks 4.Transportation..."></div>
+        </div>
+      </div>
+
       <!-- Location -->
       <div class="panel panel-default offer-panel-map">
 

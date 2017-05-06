@@ -15,7 +15,7 @@
     .controller('MessagesThreadController', MessagesThreadController);
 
   /* @ngInject */
-  function MessagesThreadController($rootScope, $scope, $stateParams, $state, $timeout, $filter, $analytics, Authentication, Messages, MessagesRead, messageCenterService, locker, userTo) {
+  function MessagesThreadController($rootScope, $scope, $stateParams, $state, $timeout, $filter, $analytics, Authentication, Messages, MessagesRead, messageCenterService, locker, userTo, OffersByService) {
 
     // Go back to inbox on these cases
     // - No recepient defined
@@ -52,6 +52,8 @@
     vm.messageRead = messageRead;
     vm.hideQuickReplyPanel = hideQuickReplyPanel;
     vm.editorContentChanged = editorContentChanged;
+    vm.templatesEnabled = true;
+    vm.sendTemplate = sendTemplate;
     vm.content = '';
 
     activate();
@@ -119,6 +121,37 @@
       });
 
     }
+
+    /** @function sendTemplate(templateName)
+     * Send a message template, may be all sending of all user defined
+     * templates can be done via a single point & single data structure
+     */
+
+    function sendTemplate(templateName) {
+      if (! vm.templatesEnabled) {
+        return;
+      }
+
+      OffersByService
+        .get({ 'userId': Authentication.user._id })
+        .$promise
+        .then(function(offer) {
+          var templates = offer.templates;
+          if (!templates) {
+            return;
+          }
+          var template = templates[templateName];
+          if (template) {
+            sendMessage(template);
+          }
+        })
+        .catch(function() {
+          // In case any thing goes wrong we keep quite and let users chat
+          // console.log('offer:' + template + 'for:' + Authentication.user._id);
+          // messageCenterService.add('danger', 'Sorry, something went wrong. Please try again.');
+        });
+    }
+
 
     /**
      * When contents at the editor change, update layout

@@ -107,6 +107,7 @@
         status: vm.offer.status,
         description: vm.offer.description,
         noOfferDescription: vm.offer.noOfferDescription,
+        templates: vm.offer.templates,  // user defined templates like directions
         location: [parseFloat(vm.mapCenter.lat), parseFloat(vm.mapCenter.lng)],
         maxGuests: parseInt(vm.offer.maxGuests, 10)
       });

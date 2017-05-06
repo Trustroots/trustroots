@@ -32,6 +32,11 @@ var OfferSchema = new Schema({
     max: 99,
     default: 1
   },
+  templates: {
+    type: Object,
+    default: { 'directions': '' },
+    trim: true
+  },
   // Actual location user has marked
   location: {
     type: [Number]
