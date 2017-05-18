@@ -19,6 +19,12 @@ module.exports = function(app) {
     .get(users.getUserMemberships)
     .post(users.modifyUserTag);
 
+  app.route('/api/users/invitecode').all(usersPolicy.isAllowed)
+    .get(users.getInviteCode);
+
+  app.route('/api/users/invitecode/:invitecode').all(usersPolicy.isAllowed)
+    .post(users.validateInviteCode);
+
   app.route('/api/users/push/registrations').all(usersPolicy.isAllowed)
     .post(users.addPushRegistration);
 

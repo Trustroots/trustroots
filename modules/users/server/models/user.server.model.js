@@ -265,6 +265,14 @@ var UserSchema = new Schema({
   publicReminderSent: {
     type: Date
   },
+  welcomeSequenceSent: {
+    type: Date
+  },
+  // Count on which welcome sequence step (onboarding emails) user is at
+  welcomeSequenceStep: {
+    type: Number,
+    default: 0
+  },
   /* For reset password */
   resetPasswordToken: {
     type: String

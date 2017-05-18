@@ -45,7 +45,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.https = config.https;
   app.locals.appSettings.maxUploadSize = config.maxUploadSize;
   app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
-  app.locals.appSettings.invitation = config.invitation;
+  app.locals.appSettings.invitationsEnabled = config.invitations.enabled;
   app.locals.appSettings.fcmSenderId = config.fcm.senderId;
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
 

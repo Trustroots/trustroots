@@ -52,12 +52,33 @@ exports.start = function(options, callback) {
       require(path.resolve('./modules/offers/server/jobs/reactivate-hosts.server.job'))
     );
 
+    agenda.define(
+      'welcome sequence first',
+      { lockLifetime: 10000, concurrency: 1 },
+      require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-first.server.job'))
+    );
+
+    agenda.define(
+      'welcome sequence second',
+      { lockLifetime: 10000, concurrency: 1 },
+      require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-second.server.job'))
+    );
+
+    agenda.define(
+      'welcome sequence third',
+      { lockLifetime: 10000, concurrency: 1 },
+      require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-third.server.job'))
+    );
+
     // Schedule job(s)
 
     agenda.every('30 seconds', 'check unread messages');
     agenda.every('24 hours', 'daily statistics');
     agenda.every('30 minutes', 'send signup reminders');
     agenda.every('30 minutes', 'reactivate hosts');
+    agenda.every('15 minutes', 'welcome sequence first');
+    agenda.every('60 minutes', 'welcome sequence second');
+    agenda.every('60 minutes', 'welcome sequence third');
 
     // Start worker
 

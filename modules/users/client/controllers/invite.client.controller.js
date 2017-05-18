@@ -6,20 +6,13 @@
     .controller('InviteController', InviteController);
 
   /* @ngInject */
-  function InviteController(InvitationService, appSettings) {
+  function InviteController(InvitationService) {
 
     // ViewModel
     var vm = this;
 
     // Exposed to the view
-    vm.getCode = getCode;
-
-    function getCode() {
-      return InvitationService.dateToCode(
-        appSettings.invitation.key,
-        new Date()
-      );
-    }
+    vm.invitation = InvitationService.get();
 
   }
 

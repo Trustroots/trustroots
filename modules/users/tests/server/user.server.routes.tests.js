@@ -7,6 +7,7 @@ var should = require('should'),
     semver = require('semver'),
     User = mongoose.model('User'),
     Tag = mongoose.model('Tag'),
+    inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
     config = require(path.resolve('./config/config')),
     express = require(path.resolve('./config/lib/express')),
     testutils = require(path.resolve('./testutils'));
@@ -1755,6 +1756,108 @@ describe('User CRUD tests', function () {
 
             return done();
           });
+      });
+  });
+
+  it('should be able to receive invite code when authenticated', function (done) {
+    agent.post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end(function (signinErr) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        agent.get('/api/users/invitecode')
+          .expect(200)
+          .end(function (userInviteCodeErr, userInviteCodeRes) {
+
+            // Handle joining tag error
+            if (userInviteCodeErr) {
+              return done(userInviteCodeErr);
+            }
+
+            // Get code from the service
+            var code = inviteCodeService.getCode();
+
+            // Service code should match to the one received via route
+            userInviteCodeRes.body.code.should.equal(code);
+
+            return done();
+          });
+      });
+  });
+
+  it('should not able to receive invite code when not authenticated', function (done) {
+
+    agent.get('/api/users/invitecode')
+      .expect(403)
+      .end(function (userInviteCodeErr, userInviteCodeRes) {
+
+        // Handle joining tag error
+        if (userInviteCodeErr) {
+          return done(userInviteCodeErr);
+        }
+
+        userInviteCodeRes.body.message.should.equal('Forbidden.');
+
+        return done();
+      });
+  });
+
+  it('should be able to validate invite code when not authenticated', function (done) {
+
+    var code = inviteCodeService.getCode();
+
+    agent.post('/api/users/invitecode/' + code)
+      .expect(200)
+      .end(function (userInviteCodeErr, userInviteCodeRes) {
+
+        // Handle joining tag error
+        if (userInviteCodeErr) {
+          return done(userInviteCodeErr);
+        }
+
+        userInviteCodeRes.body.valid.should.equal(true);
+
+        return done();
+      });
+  });
+
+  it('should be able to validate invite code in all caps', function (done) {
+
+    var code = inviteCodeService.getCode();
+
+    agent.post('/api/users/invitecode/' + code.toUpperCase())
+      .expect(200)
+      .end(function (userInviteCodeErr, userInviteCodeRes) {
+
+        // Handle joining tag error
+        if (userInviteCodeErr) {
+          return done(userInviteCodeErr);
+        }
+
+        userInviteCodeRes.body.valid.should.equal(true);
+
+        return done();
+      });
+  });
+
+  it('should be able to return false for invalid code', function (done) {
+
+    agent.post('/api/users/invitecode/INVALID')
+      .expect(200)
+      .end(function (userInviteCodeErr, userInviteCodeRes) {
+
+        // Handle joining tag error
+        if (userInviteCodeErr) {
+          return done(userInviteCodeErr);
+        }
+
+        userInviteCodeRes.body.valid.should.equal(false);
+
+        return done();
       });
   });
 

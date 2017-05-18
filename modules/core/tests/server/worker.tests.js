@@ -160,8 +160,23 @@ describe('Worker tests', function() {
     jobNames.should.containEql('reactivate hosts');
   });
 
+  it('defines [welcome sequence first] job', function() {
+    var jobNames = _.map(definedJobs, 'name');
+    jobNames.should.containEql('welcome sequence first');
+  });
+
+  it('defines [welcome sequence second] job', function() {
+    var jobNames = _.map(definedJobs, 'name');
+    jobNames.should.containEql('welcome sequence second');
+  });
+
+  it('defines [welcome sequence third] job', function() {
+    var jobNames = _.map(definedJobs, 'name');
+    jobNames.should.containEql('welcome sequence third');
+  });
+
   it('defines right number of repeating jobs', function() {
-    scheduledJobs.length.should.equal(4);
+    scheduledJobs.length.should.equal(7);
   });
 
   it('only schedules defined jobs', function() {

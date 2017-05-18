@@ -8,6 +8,8 @@ var path = require('path'),
     juice = require('juice'),
     moment = require('moment'),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
+    inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
+    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     render = require(path.resolve('./config/lib/render')),
     agenda = require(path.resolve('./config/lib/agenda')),
     config = require(path.resolve('./config/config')),
@@ -254,6 +256,117 @@ exports.sendReactivateHosts = function(user, callback) {
   });
 
   exports.renderEmailAndSend('reactivate-hosts', params, callback);
+};
+
+/**
+ * 1/3 welcome sequence email
+ */
+exports.sendWelcomeSequenceFirst = function(user, callback) {
+  var urlInvite = url + '/invite',
+      urlEditProfile = url + '/profile/edit',
+      campaign = 'welcome-sequence-first',
+      utmParams = {
+        source: 'transactional-email',
+        medium: 'email',
+        campaign: campaign
+      };
+
+  var params = exports.addEmailBaseTemplateParams({
+    subject: 'Welcome to Trustroots ' + user.firstName + '!',
+    from: {
+      // First welcome sequence email has more personal feeling to it:
+      name: 'Natalia',
+      // ...and uses our support email instead of "no-reply@":
+      address: config.supportEmail
+    },
+    firstName: user.firstName,
+    name: user.displayName,
+    email: user.email,
+    urlInvitePlainText: urlInvite,
+    urlInvite: analyticsHandler.appendUTMParams(urlInvite, utmParams),
+    urlEditProfilePlainText: urlEditProfile,
+    urlEditProfile: analyticsHandler.appendUTMParams(urlEditProfile, utmParams),
+    utmCampaign: campaign,
+    sparkpostCampaign: campaign
+  });
+
+  exports.renderEmailAndSend('welcome-sequence-first', params, callback);
+};
+
+/**
+ * 2/3 welcome sequence email
+ */
+exports.sendWelcomeSequenceSecond = function(user, callback) {
+  var signupLabel = config.domain + '/signup',
+      urlSignup = url + '/signup',
+      urlInvite = url + '/invite',
+      campaign = 'welcome-sequence-second',
+      utmParams = {
+        source: 'transactional-email',
+        medium: 'email',
+        campaign: campaign
+      };
+
+  var params = exports.addEmailBaseTemplateParams({
+    subject: 'Invite your friends to Trustroots',
+    firstName: user.firstName,
+    name: user.displayName,
+    email: user.email,
+    inviteCode: inviteCodeService.getCode(),
+    signupLabel: signupLabel,
+    urlInvitePlainText: urlInvite,
+    urlInvite: analyticsHandler.appendUTMParams(urlInvite, utmParams),
+    urlSignupPlainText: urlSignup,
+    urlSignup: analyticsHandler.appendUTMParams(urlSignup, utmParams),
+    utmCampaign: campaign,
+    sparkpostCampaign: campaign
+  });
+
+  exports.renderEmailAndSend('welcome-sequence-second', params, callback);
+};
+
+/**
+ * 3/3 welcome sequence email
+ */
+exports.sendWelcomeSequenceThird = function(user, callback) {
+
+  // Default topic for emails
+  var messageTopic = 'feedback';
+
+  // For members with empty profiles,
+  // remind them how important it is to fill their profile.
+  var descriptionLength = textProcessor.plainText(user.description, true).length;
+  if (descriptionLength < config.profileMinimumLength) {
+    messageTopic = 'fill-profile';
+  }
+
+  var urlEditProfile = url + '/profile/edit',
+      campaign = 'welcome-sequence-third' + '-' + messageTopic,
+      utmParams = {
+        source: 'transactional-email',
+        medium: 'email',
+        campaign: campaign
+      };
+
+  var params = exports.addEmailBaseTemplateParams({
+    subject: 'How is it going, ' + user.firstName + '?',
+    from: {
+      // Third welcome sequence email has more personal feeling to it:
+      name: 'Mikael',
+      // ...and uses our support email instead of "no-reply@":
+      address: config.supportEmail
+    },
+    firstName: user.firstName,
+    name: user.displayName,
+    email: user.email,
+    urlEditProfilePlainText: urlEditProfile,
+    urlEditProfile: analyticsHandler.appendUTMParams(urlEditProfile, utmParams),
+    utmCampaign: campaign,
+    sparkpostCampaign: campaign,
+    topic: messageTopic
+  });
+
+  exports.renderEmailAndSend('welcome-sequence-third', params, callback);
 };
 
 /**
