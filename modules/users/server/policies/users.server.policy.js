@@ -85,10 +85,21 @@ exports.invokeRolesPolicies = function() {
     }, {
       resources: '/api/users/push/registrations/:token',
       permissions: ['delete']
+    }, {
+      resources: '/api/users/invitecode',
+      permissions: ['get']
+    }, {
+      resources: '/api/users/invitecode/:invitecode',
+      permissions: ['post']
+    }]
+  }, {
+    roles: ['guest'],
+    allows: [{
+      resources: '/api/users/invitecode/:invitecode',
+      permissions: ['post']
     }]
   }]);
 };
-
 
 /**
  * Check If Users Policy Allows

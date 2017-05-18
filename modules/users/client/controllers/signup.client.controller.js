@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($rootScope, $http, $state, $stateParams, $uibModal, $analytics, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, appSettings, InvitationService) {
+  function SignupController($rootScope, $log, $http, $state, $stateParams, $uibModal, $analytics, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService) {
 
     // View Model
     var vm = this;
@@ -35,28 +35,45 @@
       vm.invitationCodeError = false;
 
       // Validate code
+      /*
       var valid = InvitationService.validateCode(
         appSettings.invitation.key, // inviteKey
         new Date(), // today
         vm.invitationCode.toLowerCase() // code
       );
+      */
+      InvitationService.post({
+        invitecode: vm.invitationCode
+      }).$promise.then(function(data) {
+        $log.log(data);
+        $log.log(data.valid);
 
-      // UI
-      vm.invitationCodeValid = valid;
-      vm.invitationCodeError = !valid;
+        // UI
+        vm.invitationCodeValid = data.valid;
+        vm.invitationCodeError = !data.valid;
 
-      // Analytics
-      if (valid) {
-        $analytics.eventTrack('invitationCode.valid', {
+        // Analytics
+        if (data.valid) {
+          $analytics.eventTrack('invitationCode.valid', {
+            category: 'invitation',
+            label: 'Valid invitation code entered'
+          });
+        } else {
+          $analytics.eventTrack('invitationCode.invalid', {
+            category: 'invitation',
+            label: 'Invalid invitation code entered'
+          });
+        }
+      }, function() {
+        vm.invitationCodeValid = false;
+        vm.invitationCodeError = true;
+        messageCenterService.add('danger', 'Something went wrong, try again.');
+        $analytics.eventTrack('invitationCode.failed', {
           category: 'invitation',
-          label: 'Valid invitation code entered'
+          label: 'Failed to validate invitation code'
         });
-      } else {
-        $analytics.eventTrack('invitationCode.invalid', {
-          category: 'invitation',
-          label: 'Invalid invitation code entered'
-        });
-      }
+      });
+
     }
 
 
