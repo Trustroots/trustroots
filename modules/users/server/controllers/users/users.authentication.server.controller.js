@@ -568,6 +568,8 @@ exports.confirmEmail = function(req, res) {
           },
           $set: {
             public: true,
+            // Welcome sequence emails are sent in time intervals
+            welcomeSequenceSent: new Date(),
             // Replace old email with new one
             email: user.emailTemporary,
             // @todo: this should be done at user.server.model.js

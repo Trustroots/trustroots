@@ -1,0 +1,21 @@
+{% extends 'email.server.view.html' %}
+
+{% block content %}
+Hi {{name}}!
+
+This is {{from.name}} from the Trustroots Foundation. Trustroots is an open, transparent, fun, and international sharing community. We believe in a world where people can trust each other.
+
+We are excited to have you here because that means one of our existing members trusted you to join in. You too can help trust grow by inviting your friends to our community from this page:
+
+<{{urlInvite}}>
+
+Please take a few minutes to fill out your profile:
+
+<{{urlEditProfile}}>
+
+This is the foundation of your experience in Trustroots.
+
+Happy trails!
+{{from.name}}
+
+{% endblock %}

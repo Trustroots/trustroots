@@ -90,7 +90,13 @@ module.exports = {
     // the maximum amount of reminders to send is defined by length of the array
     unreadMessageReminders: [{ minutes: 10 }, { hours: 24 }],
     // after what delay to stop sending further unread message reminders
-    unreadMessageRemindersTooLate: { days: 14 }
+    unreadMessageRemindersTooLate: { days: 14 },
+    // Time intervals between welcome sequence emails
+    welcomeSequence: {
+      first: { minutes: 0 },
+      second: { hours: 24 },
+      third: { days: 5 }
+    }
   },
   mailer: {
     from: process.env.MAILER_FROM || 'trustroots@localhost',

@@ -371,6 +371,8 @@ exports.update = function(req, res) {
       delete req.body.additionalProvidersData;
       delete req.body.publicReminderCount;
       delete req.body.publicReminderSent;
+      delete req.body.welcomeSequenceStep;
+      delete req.body.welcomeSequenceSent;
 
       // Merge existing user
       var user = req.user;
@@ -675,6 +677,8 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
   // This information is not sensitive, but isn't needed at frontend
   delete profile.publicReminderCount;
   delete profile.publicReminderSent;
+  delete profile.welcomeSequenceStep;
+  delete profile.welcomeSequenceSent;
 
   return profile;
 };
