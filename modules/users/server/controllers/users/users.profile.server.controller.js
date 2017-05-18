@@ -11,6 +11,7 @@ var _ = require('lodash'),
     tagsHandler = require(path.resolve('./modules/tags/server/controllers/tags.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
+    inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     messageStatService = require(path.resolve(
       './modules/messages/server/services/message-stat.server.service')),
@@ -1005,4 +1006,32 @@ exports.addPushRegistration = function(req, res) {
     }
   });
 
+};
+
+/**
+ * Get invitation code
+ */
+exports.getInviteCode = function(req, res) {
+
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  return res.send({
+    code: inviteCodeService.getCode()
+  });
+};
+
+/**
+ * Validate invitation code
+ */
+exports.validateInviteCode = function(req, res) {
+
+  var inviteCode = req.params.invitecode;
+
+  return res.send({
+    valid: inviteCode && inviteCodeService.validateCode(inviteCode.toLowerCase())
+  });
 };

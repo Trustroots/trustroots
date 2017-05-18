@@ -2,7 +2,7 @@
 
   <!-- Invitation form -->
   <div class="signin form-horizontal"
-       ng-if="app.appSettings.invitation.enabled && !signup.invitationCodeValid">
+       ng-if="app.appSettings.invitationsEnabled && !signup.invitationCodeValid">
     <div style="row">
 
       <div class="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6 col-lg-offset-3 col-lg-5">
@@ -95,7 +95,7 @@
         class="signin form-horizontal"
         novalidate
         autocomplete="off"
-        ng-if="!app.appSettings.invitation.enabled || signup.invitationCodeValid">
+        ng-if="!app.appSettings.invitationsEnabled || signup.invitationCodeValid">
 
       <div class="row">
         <div class="col-xs-12 text-center">
