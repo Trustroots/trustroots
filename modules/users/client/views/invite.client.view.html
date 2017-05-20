@@ -15,15 +15,42 @@
 
         <p class="lead">Your invitation code</p>
 
-        <input type="text"
+        <input id="invite" type="text"
                class="form-control text-center input-lg font-brand-semibold text-uppercase"
-               ng-attr-value="{{ ::invite.getCode() }}">
+               ng-attr-value="{{ ::invite.getCode() }}" readonly>
 
         <p class="text-muted font-brand-semibold">
           <br><br>
           Share your code consciously. Can you vouch for this person? Will they be a good fit for Trustroots?
           <br><br>
           Codes are valid for 24 hours.
+        </p>
+
+        <!-- Go to www.addthis.com/dashboard to customize your tools -->
+        <p>
+          <div ng-if="::invite.getCode() !== ''" >
+          <script type="text/javascript">
+            var code = document.getElementById("invite").value.toUpperCase();
+            var addthis_config = addthis_config||{};
+                addthis_config.ui_email_from = 'help@trustroots.org';
+                addthis_config.ui_email_note = 'Your invite code: ' + code + ' would be shared which can be used for signup with Trustroots at https://www.trustroots.org/signup';
+
+            var addthis_share = {
+              url: 'https://www.trustroots.org/signup',
+              title: 'Invite to join Trustroots',
+              description: 'You have been invited to join Trustroots, an invite only community for travelers. Your invite code to join Trustroots is:' + code,
+              email_template: 'new_template',
+              email_vars: { 'code': code, 'invitee': user.displayName },
+              passthrough: {
+                twitter: {
+                  text: 'You have been invited to join Trustroots. Your invite code: ' + code
+                }
+              }
+            };
+          </script>
+          </div>
+          <div class="addthis_inline_share_toolbox"></div>
+          <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-591c2040c6459c4a" async="async"></script>
         </p>
 
     </div>
