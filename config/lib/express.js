@@ -49,13 +49,6 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.fcmSenderId = config.fcm.senderId;
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
 
-  // Predefined to be localized
-  app.locals.appSettings.messages = {
-    msgCanHost: 'Yes, I can host!',
-    msgCannotHost: 'Sorry, I can\'t host',
-    msgWriteBack: 'Write back'
-  };
-
   if (process.env.NODE_ENV !== 'production') {
     app.locals.jsFiles = _.concat(config.files.client.js, 'dist/uib-templates.js');
     app.locals.cssFiles = _.map(config.files.client.css, function(file) { return file.replace('/client', ''); });

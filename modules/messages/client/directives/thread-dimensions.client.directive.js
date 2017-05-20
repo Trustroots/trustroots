@@ -23,7 +23,8 @@
         var elemThread = angular.element('#messages-thread'),
             elemReply = angular.element('#message-reply'),
             elemReplyHeight = elemReply.height(),
-            elemHtml = angular.element('html');
+            elemHtml = angular.element('html'),
+            elemQuickReply = angular.element('#message-quick-reply');
 
         /**
          * Fire resize() at <html> so that jQuery-Waypoints wakes up and can thus
@@ -85,8 +86,6 @@
 
           // container has 15px padding on both sides when window is bigger than screen-sm-max (768px)
           var elemContainerPadding = ($window.innerWidth < 768) ? -15 : 30;
-
-          var elemQuickReply = angular.element('#message-quick-reply');
 
           var combinedHeight = elemReplyHeight + (elemReplyHeight / 3);
 

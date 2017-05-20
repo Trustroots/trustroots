@@ -271,7 +271,7 @@
 
       // Make sure the message isn't empty.
       // Sometimes we'll have some empty blocks due wysiwyg
-      if (! msg) {
+      if (!msg) {
         if ($filter('plainTextLength')(vm.content) === 0) {
           vm.isSending = false;
           messageCenterService.add('warning', 'Please write a message first...');
