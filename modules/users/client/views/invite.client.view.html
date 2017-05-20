@@ -37,8 +37,8 @@
 
             var addthis_share = {
               url: 'https://www.trustroots.org/signup',
-              title: 'Invite to join Trustroots',
-              description: 'You have been invited to join Trustroots, an invite only community for travelers. Your invite code to join Trustroots is:' + code,
+              title: 'Invite by ' + user.displayName + ' to join Trustroots',
+              description: 'You have been invited to join Trustroots, an invite only community for travelers. Your invite code to join Trustroots is: ' + code,
               email_template: 'new_template',
               email_vars: { 'code': code, 'invitee': user.displayName },
               passthrough: {
