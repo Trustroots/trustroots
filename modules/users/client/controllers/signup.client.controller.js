@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($rootScope, $http, $state, $stateParams, $uibModal, $analytics, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, appSettings, InvitationService, $location) {
+  function SignupController($rootScope, $log, $http, $state, $stateParams, $uibModal, $analytics, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, appSettings, InvitationService) {
 
     // View Model
     var vm = this;
@@ -21,7 +21,7 @@
     vm.suggestionsLimit = 3; // How many tribes suggested (including possible referred tribe)
 
     // Variables for invitation feature
-    vm.invitationCode = $location.search().code;
+    vm.invitationCode = $stateParams.code || '';
     vm.invitationCodeValid = false;
     vm.invitationCodeError = false;
     vm.validateInvitationCode = validateInvitationCode;
@@ -35,13 +35,6 @@
       vm.invitationCodeError = false;
 
       // Validate code
-      /*
-      var valid = InvitationService.validateCode(
-        appSettings.invitation.key, // inviteKey
-        new Date(), // today
-        vm.invitationCode.toLowerCase() // code
-      );
-      */
       InvitationService.post({
         invitecode: vm.invitationCode
       }).$promise.then(function(data) {
@@ -81,6 +74,14 @@
      * Initalize controller
      */
     function activate() {
+
+      if (! Authentication.user && vm.invitationCode) {
+        validateInvitationCode(
+          appSettings.invitations.key, // inviteKey
+          new Date(), // today
+          vm.invitationCode.toLowerCase() // code
+        );
+      }
 
       // If user is already signed in then redirect to search page
       if (Authentication.user) {

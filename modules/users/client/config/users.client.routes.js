@@ -220,7 +220,7 @@
 
       // Auth routes
       state('signup', {
-        url: '/signup?tribe',
+        url: '/signup?tribe&code',
         templateUrl: '/modules/users/views/authentication/signup.client.view.html',
         controller: 'SignupController',
         controllerAs: 'signup',

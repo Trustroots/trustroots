@@ -29,7 +29,7 @@
 
         <!-- Go to www.addthis.com/dashboard to customize your tools -->
         <p>
-          <div ng-if="::invite.getCode() !== ''" >
+          <div ng-if="::invite.invitation.code">
           <script type="text/javascript">
             var code = document.getElementById("invite").value.toUpperCase();
             var addthis_config = addthis_config||{};
