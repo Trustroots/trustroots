@@ -34,17 +34,17 @@
             var code = document.getElementById("invite").value.toUpperCase();
             var addthis_config = addthis_config||{};
                 addthis_config.ui_email_from = 'help@trustroots.org';
-                addthis_config.ui_email_note = 'Your invite code: ' + code + ' would be shared which can be used for signup with Trustroots at https://www.trustroots.org/signup';
+                addthis_config.ui_email_note = 'Your invite code: ' + code + ' would be shared which can be used for signup with Trustroots at https://www.trustroots.org/signup?code=' + code;
 
             var addthis_share = {
-              url: 'https://www.trustroots.org/signup',
+              url: 'https://www.trustroots.org/signup?code=' + code,
               title: 'Invite by ' + user.displayName + ' to join Trustroots',
               description: 'You have been invited to join Trustroots, an invite only community for travelers. Your invite code to join Trustroots is: ' + code,
               email_template: 'new_template',
               email_vars: { 'code': code, 'invitee': user.displayName },
               passthrough: {
                 twitter: {
-                  text: 'You have been invited to join Trustroots. Your invite code: ' + code
+                  text: 'You have been invited to join Trustroots. Your invite code: ' + code + ' and url:'
                 }
               }
             };
