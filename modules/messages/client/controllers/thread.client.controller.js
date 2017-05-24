@@ -85,11 +85,9 @@
 
           vm.hideQuickReplyPanel = true;
           if (data.length > 0) {
-
-            var firstMsg = data[data.length - 1];
-            if (Authentication.user._id !== firstMsg.userFrom._id) {
+            var userReplied = checkAuthUserReplied(Authentication.user._id, data);
+            if (!userReplied) {
               vm.hideQuickReplyPanel = false;
-              // console.log("hideQuickReplyPanel:" + vm.hideQuickReplyPanel);
             }
           }
 
@@ -118,6 +116,19 @@
         }
       });
 
+    }
+
+    /**
+    *
+    * Check if Authenticated Receiver Replied to a request
+    */
+    function checkAuthUserReplied(authid, data) {
+      for (var i = 0; i < data.length; i++) {
+        if (authid === data[i].userFrom._id) {
+          return true;
+        }
+      }
+      return false;
     }
 
     /**
@@ -180,6 +191,8 @@
      */
     function moreMessages() {
       if (vm.messageHandler.nextPage && !vm.messageHandler.paginationTimeout) {
+
+        vm.hideQuickReplyPanel = true;
 
         if (!elemThread) elemThread = angular.element('#messages-thread');
 

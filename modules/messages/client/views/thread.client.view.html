@@ -107,8 +107,8 @@
 
       <!-- quickreply -->
       <div class="btn-toolbar" id="message-quick-reply" ng-hide="thread.hideQuickReplyPanel">
-          <button class="btn btn-sm btn-success" ng-click="thread.sendMessage('<p><b><i>Yes, I can host!</i></b></p>');">Yes, I can host!</button>
-          <button class="btn btn-sm btn-danger" ng-click="thread.sendMessage('<p><b><i>Sorry, I can\'t host</i></b></p>');">Sorry, I can't host</button>
+          <button class="btn btn-sm btn-success" ng-click="thread.sendMessage('<p><b><i>Yes, I can host!</i></b></p>');thread.hideQuickReplyPanel=true;">Yes, I can host!</button>
+          <button class="btn btn-sm btn-danger" ng-click="thread.sendMessage('<p><b><i>Sorry, I can\'t host</i></b></p>');thread.hideQuickReplyPanel=true;">Sorry, I can't host</button>
           <button class="btn btn-sm btn-info" ng-click="thread.hideQuickReplyPanel=true;">Write back</button>
       </div>
       <!-- quickreply -->
