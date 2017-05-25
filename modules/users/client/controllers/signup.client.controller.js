@@ -35,13 +35,6 @@
       vm.invitationCodeError = false;
 
       // Validate code
-      /*
-      var valid = InvitationService.validateCode(
-        appSettings.invitation.key, // inviteKey
-        new Date(), // today
-        vm.invitationCode.toLowerCase() // code
-      );
-      */
       InvitationService.post({
         invitecode: vm.invitationCode
       }).$promise.then(function(data) {
