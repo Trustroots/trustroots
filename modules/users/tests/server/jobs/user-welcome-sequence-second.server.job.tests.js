@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 var path = require('path'),
-    testutils = require(path.resolve('./testutils')),
+    testutils = require(path.resolve('./testutils/server.testutil')),
     config = require(path.resolve('./config/config')),
     moment = require('moment'),
     mongoose = require('mongoose'),

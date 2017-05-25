@@ -2,7 +2,7 @@
 
 var path = require('path'),
     should = require('should'),
-    testutils = require(path.resolve('./testutils')),
+    testutils = require(path.resolve('./testutils/server.testutil')),
     config = require(path.resolve('./config/config'));
 
 var emailService;
