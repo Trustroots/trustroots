@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($rootScope, $log, $http, $state, $stateParams, $uibModal, $analytics, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService) {
+  function SignupController($rootScope, $http, $state, $stateParams, $uibModal, $analytics, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService) {
 
     // View Model
     var vm = this;
@@ -38,8 +38,6 @@
       InvitationService.post({
         invitecode: vm.invitationCode
       }).$promise.then(function(data) {
-        $log.log(data);
-        $log.log(data.valid);
 
         // UI
         vm.invitationCodeValid = data.valid;
