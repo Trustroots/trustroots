@@ -6,7 +6,7 @@
 var _ = require('lodash'),
     path = require('path'),
     should = require('should'),
-    testutils = require(path.resolve('./testutils')),
+    testutils = require(path.resolve('./testutils/server.testutil')),
     config = require(path.resolve('./config/config')),
     moment = require('moment'),
     mongoose = require('mongoose'),

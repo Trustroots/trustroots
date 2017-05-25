@@ -1,7 +1,7 @@
 'use strict';
 
 var path = require('path'),
-    testutils = require(path.resolve('./testutils')),
+    testutils = require(path.resolve('./testutils/server.testutil')),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
 
