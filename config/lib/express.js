@@ -280,6 +280,7 @@ module.exports.initHelmetHeaders = function (app) {
         '*.google-analytics.com',
         '*.gstatic.com', // Google analytics related
         '*.addthis.com', // addthis.com social media sharing service
+        '*.addthisedge.com',
         // Use `nonce` for `<script>` tags
         // Nonce is generated above at `initLocalVariables()` middleware
         // @link https://helmetjs.github.io/docs/csp/#generating-nonces

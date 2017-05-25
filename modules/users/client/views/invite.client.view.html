@@ -15,10 +15,11 @@
 
         <p class="lead">Your invitation code</p>
 
-        <input id="invite" type="text"
+        <input id="tr-invite-code" type="text"
                class="form-control text-center input-lg font-brand-semibold text-uppercase"
                tr-select-on-click
-               ng-attr-value="{{ ::invite.invitation.code }}" readonly>
+               ng-attr-value="{{ ::invite.invitation.code }}" 
+               readonly>
 
         <p class="text-muted font-brand-semibold">
           <br><br>
@@ -31,20 +32,21 @@
         <p>
           <div ng-if="::invite.invitation.code">
           <script type="text/javascript">
-            var code = document.getElementById("invite").value.toUpperCase();
+            var code = document.getElementById("tr-invite-code").value.toUpperCase();
+            var signUpUrl = location.protocol + '//' + location.host + '/signup?code=' + code;
             var addthis_config = addthis_config||{};
                 addthis_config.ui_email_from = 'help@trustroots.org';
-                addthis_config.ui_email_note = 'Your invite code: ' + code + ' would be shared which can be used for signup with Trustroots at https://www.trustroots.org/signup?code=' + code;
+                addthis_config.ui_email_note = 'Your invite code: ' + code + ' would be shared which can be used for signup with Trustroots at ' + signUpUrl;
 
             var addthis_share = {
-              url: 'https://www.trustroots.org/signup?code=' + code,
+              url: signUpUrl,
               title: 'Invite by ' + user.displayName + ' to join Trustroots',
               description: 'You have been invited to join Trustroots, an invite only community for travelers. Your invite code to join Trustroots is: ' + code,
               email_template: 'new_template',
               email_vars: { 'code': code, 'invitee': user.displayName },
               passthrough: {
                 twitter: {
-                  text: 'You have been invited to join Trustroots. Your invite code: ' + code + ' and url:'
+                  text: 'You have been invited to join Trustroots. Your invite code: ' + code + ' and url:' 
                 }
               }
             };

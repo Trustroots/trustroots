@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($rootScope, $log, $http, $state, $stateParams, $uibModal, $analytics, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, appSettings, InvitationService) {
+  function SignupController($rootScope, $log, $http, $state, $stateParams, $uibModal, $analytics, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService) {
 
     // View Model
     var vm = this;
@@ -75,12 +75,8 @@
      */
     function activate() {
 
-      if (! Authentication.user && vm.invitationCode) {
-        validateInvitationCode(
-          appSettings.invitations.key, // inviteKey
-          new Date(), // today
-          vm.invitationCode.toLowerCase() // code
-        );
+      if (vm.invitationCode) {
+        validateInvitationCode();
       }
 
       // If user is already signed in then redirect to search page
