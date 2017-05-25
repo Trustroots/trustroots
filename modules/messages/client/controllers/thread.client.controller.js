@@ -30,7 +30,8 @@
         syncReadTimer,
         flaggedAsRead = [],
         messageIdsInView = [],
-        editorContentChangedTimeout;
+        editorContentChangedTimeout,
+        hideQuickReplyPanel = true;
 
     // Make cache id unique for this user
     var cachePrefix = 'messages.thread.' + Authentication.user._id + '-' + $stateParams.username;
@@ -49,6 +50,7 @@
     vm.sendMessage = sendMessage;
     vm.moreMessages = moreMessages;
     vm.messageRead = messageRead;
+    vm.hideQuickReplyPanel = hideQuickReplyPanel;
     vm.editorContentChanged = editorContentChanged;
     vm.content = '';
 
@@ -81,6 +83,14 @@
           addMessages(data);
           vm.isInitialized = true;
 
+          vm.hideQuickReplyPanel = true;
+          if (data.length > 0) {
+            var userReplied = checkAuthUserReplied(Authentication.user._id, data);
+            if (!userReplied) {
+              vm.hideQuickReplyPanel = false;
+            }
+          }
+
           // Timeout makes sure thread-dimensions-directive has finished loading
           // and there would thus be something actually listening to these broadcasts:
           $timeout(function() {
@@ -106,6 +116,19 @@
         }
       });
 
+    }
+
+    /**
+    *
+    * Check if Authenticated Receiver Replied to a request
+    */
+    function checkAuthUserReplied(authid, data) {
+      for (var i = 0; i < data.length; i++) {
+        if (authid === data[i].userFrom._id) {
+          return true;
+        }
+      }
+      return false;
     }
 
     /**
@@ -170,6 +193,8 @@
      */
     function moreMessages() {
       if (vm.messageHandler.nextPage && !vm.messageHandler.paginationTimeout) {
+
+        vm.hideQuickReplyPanel = true;
 
         if (!elemThread) elemThread = angular.element('#messages-thread');
 
@@ -253,19 +278,22 @@
       return read;
     }
 
-
     /**
      * Send a message
      */
-    function sendMessage() {
+    function sendMessage(msg) {
       vm.isSending = true;
 
       // Make sure the message isn't empty.
       // Sometimes we'll have some empty blocks due wysiwyg
-      if ($filter('plainTextLength')(vm.content) === 0) {
-        vm.isSending = false;
-        messageCenterService.add('warning', 'Please write a message first...');
-        return;
+      if (!msg) {
+        if ($filter('plainTextLength')(vm.content) === 0) {
+          vm.isSending = false;
+          messageCenterService.add('warning', 'Please write a message first...');
+          return;
+        }
+      } else {
+        vm.content = msg;
       }
 
       // eslint-disable-next-line new-cap
