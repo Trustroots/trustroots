@@ -30,8 +30,7 @@
         syncReadTimer,
         flaggedAsRead = [],
         messageIdsInView = [],
-        editorContentChangedTimeout,
-        hideQuickReplyPanel = true;
+        editorContentChangedTimeout;
 
     // Make cache id unique for this user
     var cachePrefix = 'messages.thread.' + Authentication.user._id + '-' + $stateParams.username;
@@ -50,7 +49,7 @@
     vm.sendMessage = sendMessage;
     vm.moreMessages = moreMessages;
     vm.messageRead = messageRead;
-    vm.hideQuickReplyPanel = hideQuickReplyPanel;
+    vm.isQuickReplyPanelHidden = true;
     vm.editorContentChanged = editorContentChanged;
     vm.content = '';
 
@@ -83,11 +82,10 @@
           addMessages(data);
           vm.isInitialized = true;
 
-          vm.hideQuickReplyPanel = true;
           if (data.length > 0) {
             var userReplied = checkAuthUserReplied(Authentication.user._id, data);
             if (!userReplied) {
-              vm.hideQuickReplyPanel = false;
+              vm.isQuickReplyPanelHidden = false;
             }
           }
 
@@ -194,7 +192,7 @@
     function moreMessages() {
       if (vm.messageHandler.nextPage && !vm.messageHandler.paginationTimeout) {
 
-        vm.hideQuickReplyPanel = true;
+        vm.isQuickReplyPanelHidden = true;
 
         if (!elemThread) elemThread = angular.element('#messages-thread');
 
