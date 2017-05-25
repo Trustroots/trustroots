@@ -98,6 +98,33 @@
       transition: all 2s linear 1s;
     }
   }
+
+  // "Yes, I can host!" messages
+  &.message-hosting-status-yes {
+    .panel-body {
+      color: @hosting-yes;
+    }
+    .panel {
+      border-color: @hosting-yes;
+      &:before {
+        border-left-color: @hosting-yes;
+      }
+    }
+  }
+
+  // "Sorry, I can't host" messages
+  &.message-hosting-status-no {
+    .panel-body {
+      color: @hosting-no;
+    }
+    .panel {
+      border-color: @hosting-no;
+      &:before {
+        border-left-color: @hosting-no;
+      }
+    }
+  }
+
   .divider {
     display: block;
     clear: both;
@@ -147,7 +174,7 @@
    transition: 0.2s linear all;
    opacity: 1;
   }
-}   
+}
 
 // Reply box
 #message-reply {
