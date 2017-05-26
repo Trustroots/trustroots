@@ -201,7 +201,7 @@ gulp.task('eslint', function() {
 });
 
 // ESLint JS linting task for Angular files
-gulp.task('eslint-angular', function() {
+gulp.task('eslint-angular', ['loadConfig'], function() {
   var lintAssets = _.union(
     // Don't lint dist and lib files when NODE_ENV=production
     ['!public/**/*'],
