@@ -8,7 +8,7 @@ var should = require('should'),
     Contact = mongoose.model('Contact'),
     express = require(path.resolve('./config/lib/express')),
     agenda = require(path.resolve('./config/lib/agenda')),
-    testutils = require(path.resolve('./testutils'));
+    testutils = require(path.resolve('./testutils/server.testutil'));
 
 
 /**

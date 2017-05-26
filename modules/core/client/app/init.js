@@ -49,6 +49,11 @@
       $compileProvider.debugInfoEnabled(false);
     }
 
+    // Disable comment and css class directives
+    // @link https://docs.angularjs.org/guide/production#disable-comment-and-css-class-directives
+    $compileProvider.commentDirectivesEnabled(false);
+    $compileProvider.cssClassDirectivesEnabled(false);
+
   }
 
   // Then define the init function for starting up the application
@@ -77,10 +82,9 @@
     if (window.location.hash === '#_=_') window.location.hash = '';
 
     // Then init the app
-    // @todo: turn strictDi true for production
-    // @link https://docs.angularjs.org/guide/production
+    // @link https://docs.angularjs.org/guide/production#strict-di-mode
     angular.bootstrap(document, [AppConfig.appModuleName], {
-      strictDi: false
+      strictDi: (AppConfig.appEnv === 'production')
     });
 
     // Register base service worker

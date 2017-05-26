@@ -76,12 +76,12 @@
 
         if (newUnreadCount > 0) {
           // Change favicon to special notification icon
-          favicon1xElem.attr('href', faviconPath + 'favicon-notification.png');
-          favicon2xElem.attr('href', faviconPath + 'favicon-notification@2x.png');
+          favicon1xElem.prop('href', faviconPath + 'favicon-notification.png');
+          favicon2xElem.prop('href', faviconPath + 'favicon-notification@2x.png');
         } else {
           // Change favicon back to normal
-          favicon1xElem.attr('href', faviconPath + 'favicon.png');
-          favicon2xElem.attr('href', faviconPath + 'favicon@2x.png');
+          favicon1xElem.prop('href', faviconPath + 'favicon.png');
+          favicon2xElem.prop('href', faviconPath + 'favicon@2x.png');
         }
       }
 
