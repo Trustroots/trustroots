@@ -43,13 +43,16 @@
     vm.userTo = userTo;
     vm.isSending = false;
     vm.isInitialized = false;
+    vm.isQuickReplyPanelHidden = true;
     vm.messages = [];
     vm.messageHandler = new Messages();
     vm.profileDescriptionLength = Authentication.user.description ? $filter('plainTextLength')(Authentication.user.description) : 0;
     vm.sendMessage = sendMessage;
     vm.moreMessages = moreMessages;
     vm.messageRead = messageRead;
-    vm.isQuickReplyPanelHidden = true;
+    vm.focusToWriting = focusToWriting;
+    vm.sendHostingReply = sendHostingReply;
+    vm.hostingReplyStatus = hostingReplyStatus;
     vm.editorContentChanged = editorContentChanged;
     vm.content = '';
 
@@ -114,6 +117,69 @@
         }
       });
 
+    }
+
+    /**
+     * Sends a predefined quickreply
+     *
+     * @param {String} reply - 'yes' for positive, 'no' for negative
+     */
+    function sendHostingReply(reply) {
+      vm.isQuickReplyPanelHidden = true;
+
+      var quickReplyMessage;
+
+      if (reply === 'yes') {
+        quickReplyMessage = 'Yes, I can host!';
+      } else {
+        quickReplyMessage = 'Sorry, I can\'t host';
+      }
+
+      // Send a normal message with predefined content
+      sendMessage(
+        // This attribute must be whitelisted in `sanitizeOptions` at
+        // `modules/core/server/controllers/text-processor.server.controller.js`
+        '<p data-hosting="' + reply + '">' +
+          '<b><i>' +
+            quickReplyMessage +
+          '</i></b>' +
+        '</p>'
+      );
+
+      $analytics.eventTrack('messages.hostingreply.' + reply, {
+        category: 'messages.hostingreply',
+        label: 'Message hosting hosting reply "' + reply + '"'
+      });
+    }
+
+    /**
+     * Set focus to message textfield and hide quickreply buttons
+     */
+    function focusToWriting() {
+      vm.isQuickReplyPanelHidden = true;
+      angular.element('#message-reply-content').focus();
+    }
+
+    /**
+     * Used to determine if message contains hosting request reply
+     *
+     * @param {String} messageContent - Message to be analysed
+     * @returns {String} - 'unknown' if it doesn't, 'yes' if it does and reply is positive, 'no' if it does and reply is negative
+     */
+    function hostingReplyStatus(messageContent) {
+
+      // Message has a hosting request reply and it's positive
+      if (messageContent.substr(0, 21) === '<p data-hosting=\"yes\"') {
+        return 'yes';
+      }
+
+      // Message has a hosting request reply and it's negative
+      if (messageContent.substr(0, 20) === '<p data-hosting=\"no\"') {
+        return 'no';
+      }
+
+      // Message doesn't have hosting request reply
+      return 'unknown';
     }
 
     /**

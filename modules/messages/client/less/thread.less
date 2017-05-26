@@ -100,7 +100,7 @@
   }
 
   // "Yes, I can host!" messages
-  &.message-hosting-status-yes {
+  &[ng-data-hosting="yes"] {
     .panel-body {
       color: @hosting-yes;
     }
@@ -113,7 +113,7 @@
   }
 
   // "Sorry, I can't host" messages
-  &.message-hosting-status-no {
+  &[ng-data-hosting="no"] {
     .panel-body {
       color: @hosting-no;
     }

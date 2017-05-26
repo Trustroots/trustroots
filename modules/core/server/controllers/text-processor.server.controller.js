@@ -17,7 +17,9 @@ var Autolinker = require('autolinker'),
 exports.sanitizeOptions = {
   allowedTags: ['p', 'br', 'b', 'i', 'em', 'strong', 'u', 'a', 'li', 'ul', 'blockquote'],
   allowedAttributes: {
-    'a': ['href']
+    'a': ['href'],
+    // Used for messages at `modules/messages/client/controllers/thread.client.controller.js`
+    'p': ['data-hosting']
     // We don't currently allow img itself, but this would make sense if we did:
     // 'img': [ 'src' ]
   },
