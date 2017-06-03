@@ -135,7 +135,7 @@
                    ng-if="thread.userTo._id && (thread.messages.length || thread.profileDescriptionLength >= app.appSettings.profileMinimumLength)"
                    ng-model="thread.content"
                    tr-editor
-                   tr-editor-options="::app.editorOptions"
+                   tr-editor-options="::app.editorOptionsThreadReply"
                    tr-editor-on-ctrl-enter="thread.sendMessage()"
                    data-placeholder="Write a message"
                    ng-change="thread.editorContentChanged()"></div>

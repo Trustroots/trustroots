@@ -107,6 +107,12 @@
       }
     };
 
+    vm.editorOptionsThreadReply = angular.copy(vm.editorOptions);
+    vm.editorOptionsThreadReply.paste = {
+      forcePlainText: false,
+      cleanPastedHTML: false
+    };
+
     activate();
 
     /**
