@@ -73,23 +73,23 @@ at [localhost:1081](http://localhost:1081).
 
 ## Enable FCM push notifications (optional)
 
-* 1. Create [FCM account](https://firebase.google.com/)
+1. Create [FCM account](https://firebase.google.com/)
 
-* 2. Go to [FCM console](https://console.firebase.google.com/) and create a new project
+2. Go to [FCM console](https://console.firebase.google.com/) and create a new project
 
-* 3. Open the project and hit small gear next to "Overview" at the sidebar so that you get to "project settings" page
+3. Open the project and hit small gear next to "Overview" at the sidebar so that you get to "project settings" page
 
-* 4. Choose choose "Cloud messaging" tab, copy "Sender ID" number
+4. Choose choose "Cloud messaging" tab, copy "Sender ID" number
 
-* 5. Choose choose "Service accounts" tab
-    
-* 4. Either "create new service account" via "Manage all service accounts" link or choose existing one from the list (for development "Firebase Admin SDK" accont is fine)
+5. Choose choose "Service accounts" tab
 
-* 5. "Generate new private key" button
+6. Either "create new service account" via "Manage all service accounts" link or choose existing one from the list (for development "Firebase Admin SDK" accont is fine)
 
-* 6. Choose "json" format and you'll get a file to download
+7. "Generate new private key" button
 
-* 7. Add contents from that file to your `./config/env/local.js`:
+8. Choose "json" format and you'll get a file to download
+
+9. Add contents from that file to your `./config/env/local.js`:
 
     ```js
     fcm: {
@@ -98,13 +98,14 @@ at [localhost:1081](http://localhost:1081).
     },
     ```
 
-* 8. To stop eslint complaining, you might need to convert double quotes to single quotes. (`"` → `'`)
+10. To stop eslint complaining, you might need to convert double quotes to single quotes. (`"` → `'`)
 
 
 ## Enable collecting statistics to InfluxDB (optional)
 
-* 1. [Install InfluxDB](https://docs.influxdata.com/influxdb/latest/introduction/installation/) v1.0+ and run it (type `influxd`)
-* 2. Add InfluxDB configuration to your `./config/env/local.js`:
+1. [Install InfluxDB](https://docs.influxdata.com/influxdb/latest/introduction/installation/) v1.0+ and run it (type `influxd`)
+
+2. Add InfluxDB configuration to your `./config/env/local.js`:
 
     ```js
     influxdb: {
@@ -120,9 +121,9 @@ at [localhost:1081](http://localhost:1081).
     }
     ```
 
-* 3. You can observe data through InfluxDB admin panel: [localhost:8083](http://localhost:8083/) or optionally [install Grafana](http://docs.grafana.org/installation/) and connect it to InfluxDB.
+3. You can observe data through InfluxDB admin panel: [localhost:8083](http://localhost:8083/) or optionally [install Grafana](http://docs.grafana.org/installation/) and connect it to InfluxDB.
 
-* 4. [Read more](INFLUXDB.md) about the collected data and metrics
+4. [Read more](INFLUXDB.md) about the collected data and metrics
 
 
 ## Mock data
