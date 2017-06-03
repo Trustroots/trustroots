@@ -8,6 +8,12 @@
   /* @ngInject */
   function SignupController($rootScope, $log, $http, $state, $stateParams, $uibModal, $analytics, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService) {
 
+    // If user is already signed in then redirect to search page
+    if (Authentication.user) {
+      $state.go('search.map');
+      return;
+    }
+
     // View Model
     var vm = this;
 
@@ -77,12 +83,6 @@
 
       if (vm.invitationCode) {
         validateInvitationCode();
-      }
-
-      // If user is already signed in then redirect to search page
-      if (Authentication.user) {
-        $state.go('search.map');
-        return;
       }
 
       // Fetch information about referred tribe

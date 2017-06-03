@@ -9,7 +9,10 @@
   function AuthenticationController($scope, $rootScope, $http, $state, $stateParams, $analytics, Authentication, messageCenterService, Facebook) {
 
     // If user is already signed in then redirect to search page
-    if (Authentication.user) $state.go('search.map');
+    if (Authentication.user) {
+      $state.go('search.map');
+      return;
+    }
 
     // View Model
     var vm = this;
