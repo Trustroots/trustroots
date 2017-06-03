@@ -71,6 +71,36 @@ at [localhost:1081](http://localhost:1081).
 - [Read more](https://github.com/Trustroots/trustroots/wiki/Development)
 
 
+## Enable FCM push notifications (optional)
+
+* 1. Create [FCM account](https://firebase.google.com/)
+
+* 2. Go to [FCM console](https://console.firebase.google.com/) and create a new project
+
+* 3. Open the project and hit small gear next to "Overview" at the sidebar so that you get to "project settings" page
+
+* 4. Choose choose "Cloud messaging" tab, copy "Sender ID" number
+
+* 5. Choose choose "Service accounts" tab
+    
+* 4. Either "create new service account" via "Manage all service accounts" link or choose existing one from the list (for development "Firebase Admin SDK" accont is fine)
+
+* 5. "Generate new private key" button
+
+* 6. Choose "json" format and you'll get a file to download
+
+* 7. Add contents from that file to your `./config/env/local.js`:
+
+    ```js
+    fcm: {
+      senderId: 'PASTE_YOUR_SENDER_ID_NUMBER_HERE',
+      serviceAccount: PASTE_YOUR_JSON_CONFIG_HERE
+    },
+    ```
+
+* 8. To stop eslint complaining, you might need to convert double quotes to single quotes. (`"` → `'`)
+
+
 ## Enable collecting statistics to InfluxDB (optional)
 
 * 1. [Install InfluxDB](https://docs.influxdata.com/influxdb/latest/introduction/installation/) v1.0+ and run it (type `influxd`)
