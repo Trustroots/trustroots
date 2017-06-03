@@ -18,42 +18,30 @@
         <input id="tr-invite-code" type="text"
                class="form-control text-center input-lg font-brand-semibold text-uppercase"
                tr-select-on-click
-               ng-attr-value="{{ ::invite.invitation.code }}" 
+               ng-attr-value="{{ ::invite.invitation.code }}"
                readonly>
 
-        <p class="text-muted font-brand-semibold">
-          <br><br>
-          Share your code consciously. Can you vouch for this person? Will they be a good fit for Trustroots?
-          <br><br>
-          Codes are valid for 24 hours.
-        </p>
+        <div ng-if="::invite.invitation.code">
 
-        <!-- Go to www.addthis.com/dashboard to customize your tools -->
-        <p>
-          <div ng-if="::invite.invitation.code">
-          <script type="text/javascript">
-            var code = document.getElementById("tr-invite-code").value.toUpperCase();
-            var signUpUrl = location.protocol + '//' + location.host + '/signup?code=' + code;
-            var addthis_config = addthis_config||{};
-                addthis_config.ui_email_from = 'help@trustroots.org';
-                addthis_config.ui_email_note = 'Your invite code: ' + code + ' would be shared which can be used for signup with Trustroots at ' + signUpUrl;
+          <br><br>
+          <h3>Send invite code to your friends now</h3>
+          <br>
+          <!--
+          <p class="text-muted font-brand-semibold">
+            Share your code consciously.<br>
+            Can you vouch for this person?
+            Will they be a good fit for Trustroots?
+          </p>
+          -->
 
-            var addthis_share = {
-              url: signUpUrl,
-              title: 'Invite by ' + user.displayName + ' to join Trustroots',
-              description: 'You have been invited to join Trustroots, an invite only community for travelers. Your invite code to join Trustroots is: ' + code,
-              email_template: 'new_template',
-              email_vars: { 'code': code, 'invitee': user.displayName },
-              passthrough: {
-                twitter: {
-                  text: 'You have been invited to join Trustroots. Your invite code: ' + code + ' and url:' 
-                }
-              }
-            };
-          </script>
-          </div>
+          <!-- Go to www.addthis.com/dashboard to customize your tools -->
           <div class="addthis_inline_share_toolbox"></div>
           <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-591c2040c6459c4a" async="async"></script>
+        </div>
+
+        <br>
+        <p class="text-muted font-brand-semibold">
+          Codes are valid for 24 hours.
         </p>
 
     </div>
