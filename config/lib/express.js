@@ -273,6 +273,9 @@ module.exports.initHelmetHeaders = function (app) {
         // IE Edge does not support `nonce`, thus we need `unsafe-inline`. :-(
         // Using sha instead could work.
         '\'unsafe-inline\'',
+        // Unfortunately Addthis scripts require `unstafe-eval`.
+        // As long as Addthis isn't used anymore, this can be removed.
+        '\'unsafe-eval\'',
         '\'self\'',
         '*.facebook.com',
         '*.facebook.net',
