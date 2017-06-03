@@ -43,6 +43,12 @@
             'host and meet each other.'
         };
 
+        // Configure AddThis to send GA data
+        // @link https://www.addthis.com/academy/integrating-with-google-analytics/
+        if ($window.gaId) {
+          $window.addthis_config.data_ga_property = $window.gaId;
+        }
+
         $window.addthis_share = {
           url: signUpUrl,
           title: Authentication.user.displayName + ' invites you to join Trustroots.org',
