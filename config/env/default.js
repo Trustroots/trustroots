@@ -22,7 +22,10 @@ module.exports = {
   invitations: {
     enabled: false,
     // Key salt
-    key: 62618893
+    key: 62618893,
+    // Id for the waiting list feature
+    // http://maitreapp.co
+    maitreId: 'MF930c37aeb3'
   },
 
   // Appears on top of every page for authenticated users.

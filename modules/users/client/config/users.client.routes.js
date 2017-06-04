@@ -220,7 +220,10 @@
 
       // Auth routes
       state('signup', {
-        url: '/signup?tribe&code',
+        // `tribe`: preload tribe in suggested tribes list
+        // `code`: prefill invite code
+        // `mwr` used by Matre app if invite list is enabled
+        url: '/signup?tribe&code&mwr',
         templateUrl: '/modules/users/views/authentication/signup.client.view.html',
         controller: 'SignupController',
         controllerAs: 'signup',
