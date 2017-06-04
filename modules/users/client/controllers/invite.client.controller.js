@@ -73,7 +73,9 @@
           url: signUpUrl,
           title: Authentication.user.displayName + ' invites you to join Trustroots.org',
           description: inviteTextGeneric,
-          media: domain + '/modules/core/img/og_image.jpg',
+          // Image used for sharing
+          // Image URL would be appended to "note" section in invite emails as well
+          // media: domain + '/modules/core/img/og_image.jpg',
           email_template: 'invite',
           email_vars: {
             'code': code,
