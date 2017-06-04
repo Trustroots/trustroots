@@ -37,15 +37,18 @@
         // Build full signup URL dynamically (including domain and path)
         var signUpUrl = domain + $state.href('signup', { code: invitation.code });
 
-        var inviteTextPersonal = 'Would you like to join me on Trustroots.org? ' +
-          'It\'s an invitation only travellers travellers community where we ' +
+        var inviteTextPersonal =
+          'Would you like to join me on Trustroots.org? ' +
+          'It\'s an invitation only travellers community where we ' +
           'host and meet each other.';
 
-        var inviteSingupUrlText = 'You can sign up at ' + signUpUrl + ' — link is valid for 24 hours.';
+        var inviteSingupUrlText =
+          'You can sign up at ' + signUpUrl +
+          ' (link is valid for 24 hours)';
 
         var inviteTextGeneric =
           'You have been invited to join Trustroots, an invite only ' +
-          'travellers community where we host and meet each other.' +
+          'travellers community where people host and meet each other.' +
           inviteSingupUrlText;
 
         // UI Configuration
