@@ -273,6 +273,9 @@ module.exports.initHelmetHeaders = function (app) {
         // IE Edge does not support `nonce`, thus we need `unsafe-inline`. :-(
         // Using sha instead could work.
         '\'unsafe-inline\'',
+        // Unfortunately Addthis scripts require `unstafe-eval`.
+        // As long as Addthis isn't used anymore, this can be removed.
+        '\'unsafe-eval\'',
         '\'self\'',
         '*.facebook.com',
         '*.facebook.net',
@@ -280,6 +283,8 @@ module.exports.initHelmetHeaders = function (app) {
         '*.twitter.com',
         '*.google-analytics.com',
         '*.gstatic.com', // Google analytics related
+        '*.addthis.com', // addthis.com social media sharing service
+        '*.addthisedge.com', // additional domain required by addthis.com
         // Use `nonce` for `<script>` tags
         // Nonce is generated above at `initLocalVariables()` middleware
         // @link https://helmetjs.github.io/docs/csp/#generating-nonces
@@ -353,7 +358,9 @@ module.exports.initHelmetHeaders = function (app) {
       childSrc: [
         '\'self\'',
         '*.twitter.com',
-        '*.facebook.com'
+        '*.facebook.com',
+        '*.addthis.com',
+        '*.addthisedge.com'
       ],
 
       // San

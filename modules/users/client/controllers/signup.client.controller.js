@@ -6,7 +6,13 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($rootScope, $http, $state, $stateParams, $uibModal, $analytics, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService) {
+  function SignupController($rootScope, $log, $http, $state, $stateParams, $uibModal, $analytics, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService) {
+
+    // If user is already signed in then redirect to search page
+    if (Authentication.user) {
+      $state.go('search.map');
+      return;
+    }
 
     // View Model
     var vm = this;
@@ -21,7 +27,7 @@
     vm.suggestionsLimit = 3; // How many tribes suggested (including possible referred tribe)
 
     // Variables for invitation feature
-    vm.invitationCode = '';
+    vm.invitationCode = $stateParams.code || '';
     vm.invitationCodeValid = false;
     vm.invitationCodeError = false;
     vm.validateInvitationCode = validateInvitationCode;
@@ -38,6 +44,8 @@
       InvitationService.post({
         invitecode: vm.invitationCode
       }).$promise.then(function(data) {
+        $log.log(data);
+        $log.log(data.valid);
 
         // UI
         vm.invitationCodeValid = data.valid;
@@ -73,10 +81,8 @@
      */
     function activate() {
 
-      // If user is already signed in then redirect to search page
-      if (Authentication.user) {
-        $state.go('search.map');
-        return;
+      if (vm.invitationCode) {
+        validateInvitationCode();
       }
 
       // Fetch information about referred tribe
