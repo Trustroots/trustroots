@@ -41,45 +41,19 @@
           </div>
         </div>
 
-        <p class="lead text-muted">
-          <br><br>
-          Don’t have an invite code? Join the waiting list below. We’ll let you know when we’re accepting applications again.
-          <br><br>
-        </p>
-
-        <!-- Begin MailChimp Signup Form -->
-        <form action="//trustroots.us9.list-manage.com/subscribe/post?u=045d0d8a5a084e73a7dac7fa7&amp;id=43e1be1468"
-              method="post"
-              id="mc-embedded-subscribe-form"
-              name="mc-embedded-subscribe-form"
-              novalidate>
-          <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
-          <div style="position: absolute; left: -5000px;" aria-hidden="true">
-            <input type="text" name="b_045d0d8a5a084e73a7dac7fa7_43e1be1468" tabindex="-1" value="">
-          </div>
-          <div class="form-group">
-            <div class="col-sm-9">
-                <label for="mce-EMAIL" class="sr-only">Your email</label>
-                <input type="email"
-                       value=""
-                       ng-model="signup.invitationEmail"
-                       name="EMAIL"
-                       class="form-control input-lg"
-                       id="mce-EMAIL"
-                       placeholder="Your email">
-            </div>
-            <div class="col-sm-3">
-              <button type="submit"
-                      name="subscribe"
-                      id="mc-embedded-subscribe"
-                      class="btn btn-primary btn-lg"
-                      ng-disabled="!signup.invitationEmail">
-                Join the waiting list
-              </button>
-            </div>
-          </div>
-        </form>
-        <!--End mc_embed_signup-->
+        <!-- Waiting list -->
+        <!-- https://maitreapp.co -->
+        <div ng-if="signup.isWaitingListEnabled">
+          <p class="lead text-muted">
+            <br><br>
+            No invite code? Trustroots is a trust network.
+            To join with friends, sign up to the waiting list
+            below and we’ll email you details.
+            <br><br>
+          </p>
+          <div data-maitre></div>
+        </div>
+        <!-- /Waiting list -->
 
         <p class="text-muted">
           <br><br>

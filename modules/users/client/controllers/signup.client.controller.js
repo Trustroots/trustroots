@@ -6,13 +6,15 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($rootScope, $log, $http, $state, $stateParams, $uibModal, $analytics, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService) {
+  function SignupController($rootScope, $log, $http, $state, $stateParams, $uibModal, $analytics, $window, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) {
       $state.go('search.map');
       return;
     }
+
+    var appSettings = SettingsFactory.get();
 
     // View Model
     var vm = this;
@@ -31,6 +33,7 @@
     vm.invitationCodeValid = false;
     vm.invitationCodeError = false;
     vm.validateInvitationCode = validateInvitationCode;
+    vm.isWaitingListEnabled = false;
 
     activate();
 
@@ -80,6 +83,33 @@
      * Initalize controller
      */
     function activate() {
+
+      // Signup waitinglist feature using Maitre app
+      if (appSettings.maitreId) {
+
+        vm.isWaitingListEnabled = true;
+
+        // Maitre configuration
+        // @link http://support.maitreapp.co/article/56-configuration
+        $window.Maitre = {
+          uuid: appSettings.maitreId,
+
+          // Show/hide name field in the form.
+          require_name: false,
+
+          // When "test_mode" is set to true,
+          // neither views nor registrations will be saved.
+          test_mode: Boolean($window.env !== 'production'),
+
+          // `true`: show list of waiting up users
+          // `false`: show number of waiting users
+          require_leaderboard: false
+        };
+
+        // Initialize Maitre app by appending script to the page
+        // Expects an element with `data-maitre` be present in DOM
+        angular.element('<script src="https://maitreapp.co/widget.js" async></script>').appendTo('body');
+      }
 
       if (vm.invitationCode) {
         validateInvitationCode();

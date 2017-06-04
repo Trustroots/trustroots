@@ -46,6 +46,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.maxUploadSize = config.maxUploadSize;
   app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
   app.locals.appSettings.invitationsEnabled = config.invitations.enabled;
+  app.locals.appSettings.maitreId = config.invitations.enabled ? config.invitations.maitreId : false;
   app.locals.appSettings.fcmSenderId = config.fcm.senderId;
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
 
@@ -285,6 +286,8 @@ module.exports.initHelmetHeaders = function (app) {
         '*.gstatic.com', // Google analytics related
         '*.addthis.com', // addthis.com social media sharing service
         '*.addthisedge.com', // additional domain required by addthis.com
+        'maitreapp.co', // Signup waiting list feature
+        'ajax.googleapis.com', // Used by Maitre app
         // Use `nonce` for `<script>` tags
         // Nonce is generated above at `initLocalVariables()` middleware
         // @link https://helmetjs.github.io/docs/csp/#generating-nonces
@@ -328,6 +331,7 @@ module.exports.initHelmetHeaders = function (app) {
       // If not allowed the browser emulates a 400 HTTP status code.
       connectSrc: [
         '\'self\'',
+        'maitreapp.co', // Signup waiting list feature
         'api.mapbox.com',
         'fcm.googleapis.com'
       ].concat(cspSrcDevelopment),
