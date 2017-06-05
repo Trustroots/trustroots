@@ -74,6 +74,9 @@ module.exports.initLocalVariables = function (app) {
     res.locals.host = protocol + '://' + req.hostname;
     res.locals.url = protocol + '://' + req.headers.host + req.originalUrl;
 
+    // https://expressjs.com/en/api.html#req.path
+    res.locals.canonicalUrl = res.locals.hostPort + req.path;
+
     next();
   });
 
