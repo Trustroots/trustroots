@@ -54,7 +54,6 @@
 
   {# Facebook #}
   {% if facebookAppId !== '' %}<meta property="fb:app_id" content="{{facebookAppId}}">{% endif %}
-  {% if facebookPage !== '' %}<meta property="article:publisher" content="{{facebookPage}}">{% endif %}
   {% if tribe %}
     <meta property="og:title" content="Join {{tribe.label|striptags|addslashes}} on Trustroots">
     <meta property="og:description" content="Join to meet, host and get hosted by Trustroots Tribe {{tribe.label|striptags|addslashes}}. Trustroots is a travellers' community for sharing, hosting and getting people together.">
