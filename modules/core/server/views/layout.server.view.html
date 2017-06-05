@@ -65,7 +65,11 @@
       <meta property="og:image" content="{{hostPort}}/modules/core/img/og_image.jpg">
     {% endif %}
   {% else %}
-    <meta property="og:title" content="{{title}}">
+    {% if invite %}
+      <meta property="og:title" content="Your friend invites you to join Trustroots!">
+    {% else %}
+      <meta property="og:title" content="{{title}}">
+    {% endif %}
     <meta property="og:description" content="{{description}}">
     <meta property="og:url" content="{{canonicalUrl}}">
     <meta property="og:image" content="{{hostPort}}/modules/core/img/og_image.jpg">

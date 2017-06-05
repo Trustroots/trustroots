@@ -25,6 +25,14 @@ exports.renderIndex = function(req, res) {
     renderVars.tribe = req.tribe;
   }
 
+  // Show different `og:` tags for signup pages
+  // https://expressjs.com/en/api.html#req.path
+  // `code`: invitation code link
+  // `mwr`: waiting list invitation link from Maitre Widget
+  if (req.path === '/signup' && (req.query.code || req.query.mwr)) {
+    renderVars.invite = true;
+  }
+
   res.render('modules/core/server/views/index', renderVars);
 };
 
