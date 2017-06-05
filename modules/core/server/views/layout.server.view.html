@@ -54,7 +54,6 @@
 
   {# Facebook #}
   {% if facebookAppId !== '' %}<meta property="fb:app_id" content="{{facebookAppId}}">{% endif %}
-  {% if facebookPage !== '' %}<meta property="article:publisher" content="{{facebookPage}}">{% endif %}
   {% if tribe %}
     <meta property="og:title" content="Join {{tribe.label|striptags|addslashes}} on Trustroots">
     <meta property="og:description" content="Join to meet, host and get hosted by Trustroots Tribe {{tribe.label|striptags|addslashes}}. Trustroots is a travellers' community for sharing, hosting and getting people together.">
@@ -66,9 +65,13 @@
       <meta property="og:image" content="{{hostPort}}/modules/core/img/og_image.jpg">
     {% endif %}
   {% else %}
-    <meta property="og:title" content="{{title}}">
+    {% if invite %}
+      <meta property="og:title" content="Your friend invites you to join Trustroots!">
+    {% else %}
+      <meta property="og:title" content="{{title}}">
+    {% endif %}
     <meta property="og:description" content="{{description}}">
-    <meta property="og:url" content="{{hostPort}}/">
+    <meta property="og:url" content="{{canonicalUrl}}">
     <meta property="og:image" content="{{hostPort}}/modules/core/img/og_image.jpg">
   {% endif %}
   <meta property="og:site_name" content="{{title}}">
