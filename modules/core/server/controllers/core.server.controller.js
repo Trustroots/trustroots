@@ -27,9 +27,7 @@ exports.renderIndex = function(req, res) {
 
   // Show different `og:` tags for signup pages
   // https://expressjs.com/en/api.html#req.path
-  // `code`: invitation code link
-  // `mwr`: waiting list invitation link from Maitre Widget
-  if (req.path === '/signup' && (req.query.code || req.query.mwr)) {
+  if (req.path === '/signup') {
     renderVars.invite = true;
   }
 
