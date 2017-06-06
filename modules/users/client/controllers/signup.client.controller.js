@@ -95,7 +95,7 @@
           uuid: appSettings.maitreId,
 
           // Show/hide name field in the form.
-          require_name: true,
+          require_name: false,
 
           // When "test_mode" is set to true,
           // neither views nor registrations will be saved.
