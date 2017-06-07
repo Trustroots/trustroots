@@ -680,6 +680,11 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
   delete profile.welcomeSequenceStep;
   delete profile.welcomeSequenceSent;
 
+  // Hide Mongoose document revision aka `versionKey`
+  // http://mongoosejs.com/docs/guide.html#versionKey
+  // http://aaronheckmann.tumblr.com/post/48943525537/mongoose-v3-part-1-versioning
+  delete profile.__v;
+
   return profile;
 };
 

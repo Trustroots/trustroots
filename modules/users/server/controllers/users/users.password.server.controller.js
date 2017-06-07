@@ -7,7 +7,9 @@ var path = require('path'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+    profileHandler = require(path.resolve('./modules/users/server/controllers/users/users.profile.server.controller')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
+    log = require(path.resolve('./config/lib/logger')),
     async = require('async'),
     crypto = require('crypto'),
     mongoose = require('mongoose'),
@@ -98,7 +100,7 @@ exports.forgot = function(req, res, next) {
         }, function() {
           // Return success
           res.send({
-            message: 'Password reset sent.'
+            message: 'We sent you an email with further instructions.'
           });
         });
 
@@ -157,54 +159,89 @@ exports.reset = function(req, res) {
           $gt: Date.now()
         }
       }, function(err, user) {
-        if (!err && user) {
-          if (passwordDetails.newPassword === passwordDetails.verifyPassword) {
-            user.password = passwordDetails.newPassword;
-            user.resetPasswordToken = undefined;
-            user.resetPasswordExpires = undefined;
 
-            user.save(function(err) {
-              if (err) {
-                return res.status(400).send({
-                  message: errorHandler.getErrorMessage(err)
-                });
-              } else {
-                req.login(user, function(err) {
-                  if (err) {
-                    return res.status(400).send(err);
-                  } else {
-                    done(err, user);
-                  }
-                });
-              }
-            });
-          } else {
-            return res.status(400).send({
-              message: 'Passwords do not match.'
-            });
-          }
-        } else {
+        // Can't find user (=invalid or expired token) or other error
+        if (err || !user) {
           return res.status(400).send({
             message: 'Password reset token is invalid or has expired.'
           });
         }
+
+        // Passwords don't match
+        if (passwordDetails.newPassword !== passwordDetails.verifyPassword) {
+          return res.status(400).send({
+            message: 'Passwords do not match.'
+          });
+        }
+
+        // Change password
+        user.password = passwordDetails.newPassword;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+
+        // Save user with new password
+        user.save(function(err) {
+
+          // Error saving user
+          if (err) {
+            return res.status(400).send({
+              message: 'Password reset failed.'
+            });
+          }
+
+          done(null, user);
+
+        });
+      });
+    },
+
+    // Authenticate
+    function(user, done) {
+      req.login(user, function(err) {
+        // Could not authenticate
+        if (err) {
+          // Log the failure
+          log('error', 'Authenticating user after password reset failed #910jj3', {
+            error: err
+          });
+
+          // Stop here
+          return done(err);
+        }
+
+        // All good, continue
+        done(null, user);
       });
     },
 
     // Send email
     function(user, done) {
-      emailService.sendResetPassword(user, done);
+      emailService.sendResetPasswordConfirm({
+        displayName: user.displayName,
+        email: user.email
+      }, function(err) {
+        // Just log errors, but don't mind about them
+        // as this is not critical step
+        if (err) {
+          // Log the failure to send the email
+          log('error', 'Sending notification about password reset failed #30lfbv', {
+            error: err
+          });
+        }
+
+        done(null, user);
+      });
     },
 
     // Return authenticated user
     function(user) {
-      return res.json(user);
+      return res.json(profileHandler.sanitizeProfile(user, user));
     }
 
   ], function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: 'Password reset failed.'
       });
     }
   });
