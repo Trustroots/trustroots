@@ -20,7 +20,7 @@ exports.getUsersCount = function(callback) {
       callback(err);
       return;
     }
-    callback(null, count || 0);
+    callback(null, parseInt(count, 10) || 0);
   });
 };
 
@@ -64,7 +64,7 @@ exports.getExternalSiteCount = function(site, callback) {
       callback(err);
       return;
     }
-    callback(null, count || 0);
+    callback(null, parseInt(count, 10) || 0);
   });
 };
 
@@ -129,10 +129,29 @@ exports.getNewsletterSubscriptionsCount = function(callback) {
       callback(err);
       return;
     }
-    callback(null, count || 0);
+    callback(null, parseInt(count, 10) || 0);
   });
 };
 
+/**
+ * Get count of registered push notifications
+ */
+exports.getPushRegistrationCount = function(callback) {
+  User.count({
+    public: true,
+    pushRegistration: {
+      $exists: true,
+      // `pushRegistration` array should not be empty
+      $not: { $size: 0 }
+    }
+  }, function(err, count) {
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, parseInt(count, 10) || 0);
+  });
+};
 
 /**
  * Get all statistics

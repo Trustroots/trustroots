@@ -12,7 +12,9 @@
         <p class="lead text-muted">
           <br>
           Trustroots is invitation only.
-          <a href="https://ideas.trustroots.org/2017/03/25/trustroots-goes-invitation-only/" class="text-muted">Read more</a>
+          <a ui-sref="faq.general({ '#': 'why-is-trustroots-invite-only' })" class="text-muted">
+            Read more
+          </a>
           <br><br>
         </p>
 
@@ -43,14 +45,28 @@
 
         <!-- Waiting list -->
         <!-- https://maitreapp.co -->
-        <div ng-if="signup.isWaitingListEnabled">
+        <div ng-if="signup.isWaitingListEnabled" id="waitinglist">
+
           <p class="lead text-muted">
             <br><br>
             No invite code? Trustroots is a trust network.
             To join with friends, sign up to the waiting list
             below and we’ll email you details.
-            <br><br>
           </p>
+
+          <br>
+
+          <!-- For folks who ended up here via waiting list invitation -->
+          <div ng-if="::signup.waitinglistInvitation"
+               class="alert alert-info"
+               role="alert">
+            <strong>Your friend is inviting you to join together with them:</strong>
+            just sign up to the waiting list below and we will count you in their group.
+            You can also start gathering your own group of friends.
+          </div>
+
+          <br>
+
           <div data-maitre></div>
         </div>
         <!-- /Waiting list -->

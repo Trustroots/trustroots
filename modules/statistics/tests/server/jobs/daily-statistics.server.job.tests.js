@@ -69,17 +69,29 @@ describe('Daily Statistics Job - Unit Test', function () {
 
         try {
           // test influx endpoint
-          sinon.assert.callCount(influx.InfluxDB.prototype.writeMeasurement, 1);
 
-          var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-          var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
-          should(points.length).eql(1);
-          var point = points[0];
+          // Called total 2 times, once per each stat call in job
+          sinon.assert.callCount(influx.InfluxDB.prototype.writeMeasurement, 2);
 
-          should(measurement).eql('members');
-          should(point).have.propertyByPath('fields', 'count').eql(0);
-          should(point).have.propertyByPath('tags', 'members').eql('members');
-          should(point).not.have.property('timestamp');
+          // Member count stat point
+          var memberMeasurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+          var memberPoints = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+          var memberPoint = memberPoints[0];
+          should(memberPoints.length).eql(1);
+          should(memberMeasurement).eql('members');
+          should(memberPoint).have.propertyByPath('fields', 'count').eql(0);
+          should(memberPoint).have.propertyByPath('tags', 'members').eql('members');
+          should(memberPoint).not.have.property('timestamp');
+
+          // Push registration count stat point
+          var pushMeasurement = influx.InfluxDB.prototype.writeMeasurement.getCall(1).args[0];
+          var pushPoints = influx.InfluxDB.prototype.writeMeasurement.getCall(1).args[1];
+          var pushPoint = pushPoints[0];
+          should(pushPoints.length).eql(1);
+          should(pushMeasurement).eql('pushRegistrations');
+          should(pushPoint).have.propertyByPath('fields', 'count').eql(0);
+          should(pushPoint).have.propertyByPath('tags', 'type').eql('all');
+          should(pushPoint).not.have.property('timestamp');
 
           return done();
         } catch (e) {
@@ -107,31 +119,50 @@ describe('Daily Statistics Job - Unit Test', function () {
 
         try {
           // test stathat endpoint
-          sinon.assert.callCount(stathat.trackEZValue, 2);
 
-          var calledWith = [
+          // Called total 4 times, twice per each stat call in job
+          sinon.assert.callCount(stathat.trackEZValue, 4);
+
+          // `getCall(0)` and `getCall(1)` contain calls for member count
+          var memberGroupedArgs = _.zip.apply(this, [
             stathat.trackEZValue.getCall(0).args,
             stathat.trackEZValue.getCall(1).args
-          ];
+          ]);
 
-          var groupedArgs = _.zip.apply(this, calledWith);
+          // `getCall(2)` and `getCall(3)` contain calls for push registration count
+          var pushGroupedArgs = _.zip.apply(this, [
+            stathat.trackEZValue.getCall(2).args,
+            stathat.trackEZValue.getCall(3).args
+          ]);
 
           // the first argument to the endpoint should be the stathat key
-          should(groupedArgs[0]).deepEqual([config.stathat.key, config.stathat.key]);
+          should(memberGroupedArgs[0]).deepEqual([config.stathat.key, config.stathat.key]);
+          should(pushGroupedArgs[0]).deepEqual([config.stathat.key, config.stathat.key]);
 
           // the 2nd argument to the endpoint should be the name
           _.forEach([
             'members.count',
             'members.count.members.members' // with the members tag
           ], function (value) {
-            should(groupedArgs[1]).containEql(value);
+            should(memberGroupedArgs[1]).containEql(value);
+          });
+
+          _.forEach([
+            'pushRegistrations.count',
+            'pushRegistrations.count.type.all' // with the members tag
+          ], function (value) {
+            should(pushGroupedArgs[1]).containEql(value);
           });
 
           // the 3rd argument to the endpoint should be a value (values)
-          should(groupedArgs[2]).deepEqual([0, 0]);
+          should(memberGroupedArgs[2]).deepEqual([0, 0]);
+          should(pushGroupedArgs[2]).deepEqual([0, 0]);
 
           // the 4th argument to the endpoint is a callback
-          _.forEach(groupedArgs[3], function (arg) {
+          _.forEach(memberGroupedArgs[3], function (arg) {
+            should(arg).be.Function();
+          });
+          _.forEach(pushGroupedArgs[3], function (arg) {
             should(arg).be.Function();
           });
 
