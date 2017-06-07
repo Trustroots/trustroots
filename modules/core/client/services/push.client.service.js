@@ -12,6 +12,7 @@
     messageCenterService,
     $http,
     $window,
+    $uibModal,
     locker,
     $q) {
 
@@ -88,8 +89,49 @@
       if (loadEnabled()) {
         return enable();
       } else {
+        askUser();
         return disable();
       }
+    }
+
+    /**
+     * Ask user if they want to turn push notifications on
+     */
+    function askUser() {
+      var pushAskedKey = LOCKER_KEY + '.asked';
+
+      // Do not ask if:
+      // - locker isn't supported (we can't store status)
+      // - we've asked already (stored with `locker`)
+      // - no authenticated user
+      if (!locker.supported() || locker.get(pushAskedKey) || !Authentication.user) {
+        return;
+      }
+
+      $uibModal.open({
+        templateUrl: '/modules/core/views/push-notification-question-modal.client.view.html',
+        controller: function($scope, $uibModalInstance) {
+          var vm = this;
+
+          // Yes! Turn push notifications on
+          vm.yes = function() {
+            // Enable push notifications
+            enable();
+
+            // Close modal
+            $uibModalInstance.dismiss();
+          };
+
+          // When modal is closed/dismissed
+          $scope.$on('modal.closing', function() {
+            // Store info that we've now asked and user reacted
+            locker.put(pushAskedKey, 'yes');
+          });
+
+        },
+        controllerAs: 'askPushNotificationsModal',
+        animation: true
+      });
     }
 
     function loadEnabled() {
