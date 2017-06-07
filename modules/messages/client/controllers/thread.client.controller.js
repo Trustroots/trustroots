@@ -86,7 +86,7 @@
           vm.isInitialized = true;
 
           if (data.length > 0) {
-            var userReplied = checkAuthUserReplied(Authentication.user._id, data);
+            var userReplied = checkAuthUserReplied(data);
             if (!userReplied) {
               vm.isQuickReplyPanelHidden = false;
             }
@@ -186,9 +186,9 @@
     *
     * Check if Authenticated Receiver Replied to a request
     */
-    function checkAuthUserReplied(authid, data) {
+    function checkAuthUserReplied(data) {
       for (var i = 0; i < data.length; i++) {
-        if (authid === data[i].userFrom._id) {
+        if (Authentication.user._id === data[i].userFrom._id) {
           return true;
         }
       }
@@ -356,20 +356,17 @@
           messageCenterService.add('warning', 'Please write a message first...');
           return;
         }
-      } else {
-        vm.content = msg;
       }
 
       // eslint-disable-next-line new-cap
       var message = new vm.messageHandler.ajaxCall({
-        content: vm.content,
+        content: msg,
         userTo: userTo._id,
         read: false
       });
 
       message.$save(function(response) {
 
-        vm.content = '';
         vm.isSending = false;
 
         // Remove message from cache

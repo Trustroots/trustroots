@@ -107,7 +107,9 @@
       <!-- /Thread -->
 
       <!-- quickreply -->
-      <div class="btn-toolbar" id="message-quick-reply" ng-hide="thread.isQuickReplyPanelHidden || thread.messageHandler.nextPage">
+      <div class="btn-toolbar"
+           id="message-quick-reply"
+           ng-hide="thread.isQuickReplyPanelHidden || thread.messageHandler.nextPage">
         <button class="btn btn-sm btn-hosting-yes" ng-click="thread.sendHostingReply('yes')">
           Yes, I can host!
         </button>
@@ -126,7 +128,7 @@
             name="messageForm"
             class="form-horizontal"
             novalidate
-            ng-submit="thread.sendMessage()"
+            ng-submit="thread.sendMessage(thread.content); thread.content = '';"
             ng-disabled="!thread.userTo._id">
         <div class="row">
           <div class="col-xs-12">
@@ -136,7 +138,7 @@
                    ng-model="thread.content"
                    tr-editor
                    tr-editor-options="::app.editorOptions"
-                   tr-editor-on-ctrl-enter="thread.sendMessage()"
+                   tr-editor-on-ctrl-enter="thread.sendMessage(thread.content); thread.content = '';"
                    data-placeholder="Write a message"
                    ng-change="thread.editorContentChanged()"></div>
               <div id="message-reply-content"
