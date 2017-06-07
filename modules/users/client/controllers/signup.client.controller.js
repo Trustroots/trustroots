@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($rootScope, $log, $http, $state, $stateParams, $location, $uibModal, $analytics, $window, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory) {
+  function SignupController($rootScope, $http, $state, $stateParams, $location, $uibModal, $analytics, $window, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) {
@@ -48,8 +48,6 @@
       InvitationService.post({
         invitecode: vm.invitationCode
       }).$promise.then(function(data) {
-        $log.log(data);
-        $log.log(data.valid);
 
         // UI
         vm.invitationCodeValid = data.valid;

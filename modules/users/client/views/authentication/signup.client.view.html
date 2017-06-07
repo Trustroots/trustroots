@@ -218,7 +218,10 @@
           <div class="form-group checkbox">
             <div class="col-sm-offset-4 col-sm-8">
               <label>
-                <input type="checkbox" name="newsletter" ng-model="signup.credentials.newsletter" ng-disabled="signup.isLoading">
+                <input type="checkbox"
+                       name="newsletter"
+                       ng-model="signup.credentials.newsletter"
+                       ng-disabled="signup.isLoading">
                 Subscribe to community news
               </label>
               <br><br>
@@ -236,7 +239,11 @@
               </p>
             </div>
             <div class="col-xs-4 visible-xs-block">
-              <a class="btn btn-default" ui-sref="rules" ng-click="signup.openRules($event);">Read rules</a>
+              <a class="btn btn-default"
+                 ui-sref="rules"
+                 ng-click="signup.openRules($event);">
+                Read rules
+              </a>
             </div>
           </div>
           <!-- /Rules -->
@@ -244,7 +251,12 @@
           <!-- Next -->
           <div class="text-center form-group">
             <br>
-            <button type="button" class="btn btn-lg btn-primary" ng-click="signup.submitSignup()" ng-disabled="userForm.$invalid" ng-bind="(!userForm.$invalid ? 'Next': 'Please fill in the form')"></button>
+            <button type="button"
+                    class="btn btn-lg btn-primary"
+                    ng-click="signup.submitSignup()"
+                    ng-disabled="userForm.$invalid"
+                    ng-bind="(!userForm.$invalid ? 'Next': 'Please fill in the form')">
+            </button>
             <br><br>
           </div>
 
@@ -279,7 +291,10 @@
               <button class="tribe-join" tr-tribe-join-button></button>
             </div>
           </div>
-          <p class="lead text-center" ng-if="signup.suggestedTribes && signup.suggestedTribes.length && tribe && tribe._id">Other suggested Tribes for you</p>
+          <p class="lead text-center"
+             ng-if="signup.suggestedTribes && signup.suggestedTribes.length && tribe && tribe._id">
+            Other suggested Tribes for you
+          </p>
 
           <p class="lead text-center" ng-if="signup.suggestedTribes && signup.suggestedTribes.length && !tribe">
             Join these popular Tribes?
@@ -309,11 +324,18 @@
             </li>
           </ul>
 
-          <p class="lead text-center">Joining Tribes helps you find likeminded Trustroots members and tells others what you're interested in.</p>
+          <p class="lead text-center">
+            Joining Tribes helps you find likeminded Trustroots
+            members and tells others what you're interested in.
+          </p>
 
           <div class="text-center form-group">
             <br><br>
-            <button class="btn btn-lg btn-primary" ng-click="signup.step = 3" ng-disabled="signup.isLoading">Next</button>
+            <button class="btn btn-lg btn-primary"
+                    ng-click="signup.step = 3"
+                    ng-disabled="signup.isLoading">
+              Next
+            </button>
             <br><br>
           </div>
 
