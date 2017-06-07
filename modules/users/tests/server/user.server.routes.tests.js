@@ -603,7 +603,7 @@ describe('User CRUD tests', function () {
             return done(err);
           }
 
-          res.body.message.should.be.equal('Password reset sent.');
+          res.body.message.should.be.equal('We sent you an email with further instructions.');
 
           User.findOne({ username: user.username.toLowerCase() }, function(err, userRes) {
             userRes.resetPasswordToken.should.not.be.empty();
@@ -630,7 +630,7 @@ describe('User CRUD tests', function () {
             return done(err);
           }
 
-          res.body.message.should.be.equal('Password reset sent.');
+          res.body.message.should.be.equal('We sent you an email with further instructions.');
 
           User.findOne({ username: user.username.toLowerCase() }, function(err, userRes) {
             userRes.resetPasswordToken.should.not.be.empty();
@@ -657,7 +657,7 @@ describe('User CRUD tests', function () {
             return done(err);
           }
 
-          res.body.message.should.be.equal('Password reset sent.');
+          res.body.message.should.be.equal('We sent you an email with further instructions.');
 
           User.findOne({ email: user.email.toLowerCase() }, function(err, userRes) {
             userRes.resetPasswordToken.should.not.be.empty();
@@ -684,7 +684,7 @@ describe('User CRUD tests', function () {
             return done(err);
           }
 
-          res.body.message.should.be.equal('Password reset sent.');
+          res.body.message.should.be.equal('We sent you an email with further instructions.');
 
           User.findOne({ email: user.email.toLowerCase() }, function(err, userRes) {
             userRes.resetPasswordToken.should.not.be.empty();
