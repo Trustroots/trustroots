@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($rootScope, $log, $http, $state, $stateParams, $uibModal, $analytics, $window, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory) {
+  function SignupController($rootScope, $log, $http, $state, $stateParams, $location, $uibModal, $analytics, $window, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) {
@@ -34,6 +34,7 @@
     vm.invitationCodeError = false;
     vm.validateInvitationCode = validateInvitationCode;
     vm.isWaitingListEnabled = false;
+    vm.waitinglistInvitation = Boolean($stateParams.mwr);
 
     activate();
 
@@ -88,6 +89,12 @@
       if (appSettings.maitreId) {
 
         vm.isWaitingListEnabled = true;
+
+        // If page was opened via waiting list invitation,
+        // scroll to the right place on page
+        if (vm.waitinglistInvitation) {
+          $location.hash('waitinglist');
+        }
 
         // Maitre configuration
         // @link http://support.maitreapp.co/article/56-configuration
