@@ -6,7 +6,7 @@
     .controller('AuthenticationController', AuthenticationController);
 
   /* @ngInject */
-  function AuthenticationController($scope, $rootScope, $http, $state, $stateParams, $analytics, Authentication, messageCenterService, Facebook) {
+  function AuthenticationController($scope, $rootScope, $http, $state, $stateParams, $analytics, Authentication, messageCenterService, Facebook, push) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) {
@@ -48,6 +48,11 @@
 
           // Initialize FB SDK
           Facebook.init();
+
+          // Initialize the push service if available
+          // It will check if user intended to enable push for this browser
+          // and setup the service-worker and backend registration accordingly
+          push.init();
 
           // Redirect to where we were left off before sign-in page
           // See modules/core/client/controllers/main.client.controller.js
