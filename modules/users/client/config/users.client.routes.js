@@ -229,6 +229,8 @@
         controllerAs: 'signup',
         footerTransparent: false,
         headerHidden: true,
+        // Don't reload ngView when URL parameters are changed
+        reloadOnSearch: false,
         resolve: {
           // A string value resolves to a service
           SettingsService: 'SettingsService',
