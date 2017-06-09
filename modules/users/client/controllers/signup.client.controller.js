@@ -19,6 +19,7 @@
     // View Model
     var vm = this;
 
+    // Exposed to the view
     vm.credentials = {};
     vm.step = 1;
     vm.isLoading = false;
@@ -36,46 +37,8 @@
     vm.isWaitingListEnabled = false;
     vm.waitinglistInvitation = Boolean($stateParams.mwr);
 
+    // Initialize controller
     activate();
-
-    /**
-     * Validate invitation code
-     */
-    function validateInvitationCode() {
-      vm.invitationCodeError = false;
-
-      // Validate code
-      InvitationService.post({
-        invitecode: vm.invitationCode
-      }).$promise.then(function(data) {
-
-        // UI
-        vm.invitationCodeValid = data.valid;
-        vm.invitationCodeError = !data.valid;
-
-        // Analytics
-        if (data.valid) {
-          $analytics.eventTrack('invitationCode.valid', {
-            category: 'invitation',
-            label: 'Valid invitation code entered'
-          });
-        } else {
-          $analytics.eventTrack('invitationCode.invalid', {
-            category: 'invitation',
-            label: 'Invalid invitation code entered'
-          });
-        }
-      }, function() {
-        vm.invitationCodeValid = false;
-        vm.invitationCodeError = true;
-        messageCenterService.add('danger', 'Something went wrong, try again.');
-        $analytics.eventTrack('invitationCode.failed', {
-          category: 'invitation',
-          label: 'Failed to validate invitation code'
-        });
-      });
-
-    }
 
 
     /**
@@ -83,64 +46,28 @@
      */
     function activate() {
 
-      // Signup waitinglist feature using Maitre app
-      if (appSettings.maitreId) {
-
-        // Either store `mwr` URL parameter to localStorage
-        // or pick it up from localStorage and put it back to URL
-        // `mwr` is a Maitre invite parameter
-        if (locker.supported()) {
-          var mwrLockerKey = 'tr.waitinglist.mwr';
-          // If `mwr` attribute is in the URL...
-          if ($stateParams.mwr) {
-            // ...store it in local storage
-            locker.put(mwrLockerKey, $stateParams.mwr);
-          // If previously stored `mwr` is available in locker...
-          } else if (locker.get(mwrLockerKey)) {
-            // ...put it back to the URL
-            // This route has `reloadOnSearch:false` configured so it won't
-            // reload the view
-            // See modules/users/client/config/users.client.routes.js
-            $location.search('mwr', locker.get(mwrLockerKey));
-          }
-        }
-
-        vm.isWaitingListEnabled = true;
-
-        // If page was opened via waiting list invitation,
-        // scroll to the right place on page
-        if (vm.waitinglistInvitation) {
-          $location.hash('waitinglist');
-        }
-
-        // Maitre configuration
-        // @link http://support.maitreapp.co/article/56-configuration
-        $window.Maitre = {
-          uuid: appSettings.maitreId,
-
-          // Show/hide name field in the form.
-          require_name: false,
-
-          // When "test_mode" is set to true,
-          // neither views nor registrations will be saved.
-          test_mode: Boolean($window.env !== 'production'),
-
-          // `true`: show list of waiting up users
-          // `false`: show number of waiting users
-          require_leaderboard: false
-        };
-
-        // Initialize Maitre app by appending script to the page
-        // Expects an element with `data-maitre` be present in DOM
-        angular.element('<script src="https://maitreapp.co/widget.js" async></script>').appendTo('body');
-      }
-
+      // If invitation code was passed to the page (via URL), validate it
       if (vm.invitationCode) {
         validateInvitationCode();
       }
 
-      // Fetch information about referred tribe
-      if ($stateParams.tribe && $stateParams.tribe !== '') {
+      // Signup waitinglist feature using Maitre app
+      if (appSettings.maitreId) {
+        initWaitingList();
+      }
+
+      // Get list of suggested tribes
+      initSuggstedTribes();
+    }
+
+    /**
+     * Initialize list of tribes to suggest
+     * Fetches information about a tribes we suggest at signup
+     * Includes specific tribe if it was refered as an URL param
+     */
+    function initSuggstedTribes() {
+      if ($stateParams.tribe) {
+        // Fetch information about referred tribe
         TribeService.get({
           tribeSlug: $stateParams.tribe
         })
@@ -153,11 +80,12 @@
             vm.suggestionsLimit--;
           }
 
-          // Fetch suggested tribes without this tribe
+          // Fetch suggested tribes list without this tribe
           getSuggestedTribes(tribe._id || null);
 
         });
       } else {
+        // Fetch suggested tribes list
         getSuggestedTribes();
       }
     }
@@ -228,6 +156,110 @@
     }
 
     /**
+     * Validate invitation code
+     * Invite code has to be present at `vm.invitationCode`
+     */
+    function validateInvitationCode() {
+      vm.invitationCodeError = false;
+
+      // Validate code
+      InvitationService.post({
+        invitecode: vm.invitationCode
+      }).$promise.then(function(data) {
+
+        // UI
+        vm.invitationCodeValid = data.valid;
+        vm.invitationCodeError = !data.valid;
+
+        // Analytics
+        if (data.valid) {
+          $analytics.eventTrack('invitationCode.valid', {
+            category: 'invitation',
+            label: 'Valid invitation code entered'
+          });
+        } else {
+          $analytics.eventTrack('invitationCode.invalid', {
+            category: 'invitation',
+            label: 'Invalid invitation code entered'
+          });
+        }
+      }, function() {
+        vm.invitationCodeValid = false;
+        vm.invitationCodeError = true;
+        messageCenterService.add('danger', 'Something went wrong, try again.');
+        $analytics.eventTrack('invitationCode.failed', {
+          category: 'invitation',
+          label: 'Failed to validate invitation code'
+        });
+      });
+
+    }
+
+    /**
+     * Initialize waiting list
+     * @link https://maitreapp.co
+     */
+    function initWaitingList() {
+
+      // Either store `mwr` URL parameter to localStorage
+      // or pick it up from localStorage and put it back to URL
+      // `mwr` is a Maitre invite parameter
+      if (locker.supported()) {
+        var mwrLockerKey = 'waitinglist.mwr';
+        // If `mwr` attribute is in the URL...
+        if ($stateParams.mwr) {
+          // ...store it in local storage
+          locker.put(mwrLockerKey, $stateParams.mwr);
+          $analytics.eventTrack('waitinglist.enabled', {
+            category: 'waitinglist',
+            label: 'Waiting list invitation code enabled'
+          });
+        // If previously stored `mwr` is available in locker...
+        } else if (locker.get(mwrLockerKey)) {
+          // ...put it back to the URL
+          // This route has `reloadOnSearch:false` configured so it won't
+          // reload the view
+          // See modules/users/client/config/users.client.routes.js
+          $location.search('mwr', locker.get(mwrLockerKey));
+          vm.waitinglistInvitation = true;
+          $analytics.eventTrack('waitinglist.re-enabled', {
+            category: 'waitinglist',
+            label: 'Waiting list invitation code re-enabled'
+          });
+        }
+      }
+
+      vm.isWaitingListEnabled = true;
+
+      // If page was opened via waiting list invitation,
+      // scroll to the right place on page
+      if (vm.waitinglistInvitation) {
+        $location.hash('waitinglist');
+      }
+
+      // Maitre configuration
+      // @link http://support.maitreapp.co/article/56-configuration
+      $window.Maitre = {
+        uuid: appSettings.maitreId,
+
+        // Show/hide name field in the form.
+        require_name: false,
+
+        // When "test_mode" is set to true,
+        // neither views nor registrations will be saved.
+        test_mode: Boolean($window.env !== 'production'),
+
+        // `true`: show list of waiting up users
+        // `false`: show number of waiting users
+        require_leaderboard: false
+      };
+
+      // Initialize Maitre app by appending script to the page
+      // Expects an element with `data-maitre` be present in DOM
+      angular.element('<script src="https://maitreapp.co/widget.js" async></script>').appendTo('body');
+    }
+
+    /**
      * Assign the response to the global user model
      *
      * @param user {object} User object to be put to Authentication
@@ -245,8 +277,16 @@
       if ($event) {
         $event.preventDefault();
       }
+
+      // Open modal
       $uibModal.open({
         templateUrl: '/modules/users/views/authentication/rules-modal.client.view.html'
+      });
+
+      // Record event to analytics
+      $analytics.eventTrack('signup.rules.open', {
+        category: 'signup',
+        label: 'Open rules from signup form'
       });
     }
 
