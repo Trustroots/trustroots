@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($rootScope, $http, $state, $stateParams, $location, $uibModal, $analytics, $window, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory) {
+  function SignupController($rootScope, $http, $state, $stateParams, $location, $uibModal, $analytics, $window, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory, locker) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) {
@@ -85,6 +85,25 @@
 
       // Signup waitinglist feature using Maitre app
       if (appSettings.maitreId) {
+
+        // Either store `mwr` URL parameter to localStorage
+        // or pick it up from localStorage and put it back to URL
+        // `mwr` is a Maitre invite parameter
+        if (locker.supported()) {
+          var mwrLockerKey = 'tr.waitinglist.mwr';
+          // If `mwr` attribute is in the URL...
+          if ($stateParams.mwr) {
+            // ...store it in local storage
+            locker.put(mwrLockerKey, $stateParams.mwr);
+          // If previously stored `mwr` is available in locker...
+          } else if (locker.get(mwrLockerKey)) {
+            // ...put it back to the URL
+            // This route has `reloadOnSearch:false` configured so it won't
+            // reload the view
+            // See modules/users/client/config/users.client.routes.js
+            $location.search('mwr', locker.get(mwrLockerKey));
+          }
+        }
 
         vm.isWaitingListEnabled = true;
 
