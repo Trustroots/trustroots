@@ -1,4 +1,4 @@
-(function () {
+(function (jQuery) {
   'use strict';
 
   angular
@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($rootScope, $http, $state, $stateParams, $location, $uibModal, $analytics, $window, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory, locker) {
+  function SignupController($rootScope, $http, $q, $state, $stateParams, $location, $uibModal, $analytics, $window, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory, locker) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) {
@@ -45,16 +45,12 @@
      * Initalize controller
      */
     function activate() {
-
       // If invitation code was passed to the page (via URL), validate it
-      if (vm.invitationCode) {
-        validateInvitationCode();
-      }
-
-      // Signup waitinglist feature using Maitre app
-      if (appSettings.maitreId) {
-        initWaitingList();
-      }
+      validateInvitationCode()
+        .finally(function() {
+          // Initialise waitinglist
+          initWaitingList();
+        });
 
       // Get list of suggested tribes
       initSuggstedTribes();
@@ -160,39 +156,54 @@
      * Invite code has to be present at `vm.invitationCode`
      */
     function validateInvitationCode() {
+      var deferred = $q.defer();
+
       vm.invitationCodeError = false;
 
-      // Validate code
-      InvitationService.post({
-        invitecode: vm.invitationCode
-      }).$promise.then(function(data) {
+      if (vm.invitationCode) {
+        // Validate code
+        InvitationService.post({
+          invitecode: vm.invitationCode
+        }).$promise.then(function(data) {
 
-        // UI
-        vm.invitationCodeValid = data.valid;
-        vm.invitationCodeError = !data.valid;
+          // UI
+          vm.invitationCodeValid = data.valid;
+          vm.invitationCodeError = !data.valid;
 
-        // Analytics
-        if (data.valid) {
-          $analytics.eventTrack('invitationCode.valid', {
+          // Resolve promise
+          deferred.resolve();
+
+          // Analytics
+          if (data.valid) {
+            $analytics.eventTrack('invitationCode.valid', {
+              category: 'invitation',
+              label: 'Valid invitation code entered'
+            });
+          } else {
+            $analytics.eventTrack('invitationCode.invalid', {
+              category: 'invitation',
+              label: 'Invalid invitation code entered'
+            });
+          }
+        }, function() {
+          vm.invitationCodeValid = false;
+          vm.invitationCodeError = true;
+
+          // Reject promise
+          deferred.reject();
+
+          messageCenterService.add('danger', 'Something went wrong, try again.');
+          $analytics.eventTrack('invitationCode.failed', {
             category: 'invitation',
-            label: 'Valid invitation code entered'
+            label: 'Failed to validate invitation code'
           });
-        } else {
-          $analytics.eventTrack('invitationCode.invalid', {
-            category: 'invitation',
-            label: 'Invalid invitation code entered'
-          });
-        }
-      }, function() {
-        vm.invitationCodeValid = false;
-        vm.invitationCodeError = true;
-        messageCenterService.add('danger', 'Something went wrong, try again.');
-        $analytics.eventTrack('invitationCode.failed', {
-          category: 'invitation',
-          label: 'Failed to validate invitation code'
         });
-      });
+      } else {
+        // No invite code available, just resolve promise
+        deferred.resolve();
+      }
 
+      return deferred.promise;
     }
 
     /**
@@ -200,6 +211,15 @@
      * @link https://maitreapp.co
      */
     function initWaitingList() {
+
+      // Don't proceed if no invitations enabled,
+      // or no Maitre id available
+      // or if valid invite code was already given
+      if (!appSettings.invitationsEnabled ||
+          !appSettings.maitreId ||
+          vm.invitationCodeValid) {
+        return;
+      }
 
       // Either store `mwr` URL parameter to localStorage
       // or pick it up from localStorage and put it back to URL
@@ -256,7 +276,19 @@
 
       // Initialize Maitre app by appending script to the page
       // Expects an element with `data-maitre` be present in DOM
-      angular.element('<script src="https://maitreapp.co/widget.js" async></script>').appendTo('body');
+      // https://api.jquery.com/jQuery.getScript/
+      jQuery.getScript('https://maitreapp.co/widget.js')
+        .fail(function() {
+          // If loadin the script fails, hide waiting list feature
+          vm.isWaitingListEnabled = false;
+
+          // Send event to analytics
+          $analytics.eventTrack('waitinglist.failed', {
+            category: 'waitinglist',
+            label: 'Waiting list script failed to load.'
+          });
+        });
+
     }
 
     /**
@@ -292,4 +324,4 @@
 
   }
 
-}());
+}(jQuery));
