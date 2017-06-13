@@ -5,6 +5,7 @@
  */
 var _ = require('lodash'),
     path = require('path'),
+    semver = require('semver'),
     defaultAssets = require('./config/assets/default'),
     testAssets = require('./config/assets/test'),
     gulp = require('gulp'),
@@ -83,10 +84,17 @@ gulp.task('loadConfig', function(done) {
 
 // Nodemon task
 gulp.task('nodemon', function() {
+
+  // Node.js v7 and newer use different debug argument
+  var debugArgument = semver.satisfies(process.versions.node, '>=7.0.0') ? '--inspect' : '--debug';
+
   return plugins.nodemon({
     script: 'server.js',
+    // Inspector integration allows attaching Chrome DevTools
+    // to Node.js instances for debugging and profiling
     // Default port is `5858`
-    nodeArgs: ['--debug=5858'],
+    // @link https://nodejs.org/api/debugger.html
+    nodeArgs: [debugArgument + '=5858'],
     ext: 'js html',
     ignore: _.union(
       testAssets.tests.server,
