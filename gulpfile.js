@@ -82,18 +82,18 @@ gulp.task('loadConfig', function(done) {
   done();
 });
 
-// Nodemon task
+// Nodemon task for server
 gulp.task('nodemon', function() {
 
   // Node.js v7 and newer use different debug argument
+  // Inspector integration allows attaching Chrome DevTools
+  // to Node.js instances for debugging and profiling
+  // @link https://nodejs.org/api/debugger.html
   var debugArgument = semver.satisfies(process.versions.node, '>=7.0.0') ? '--inspect' : '--debug';
 
   return plugins.nodemon({
     script: 'server.js',
-    // Inspector integration allows attaching Chrome DevTools
-    // to Node.js instances for debugging and profiling
     // Default port is `5858`
-    // @link https://nodejs.org/api/debugger.html
     nodeArgs: [debugArgument + '=5858'],
     ext: 'js html',
     ignore: _.union(
@@ -113,13 +113,20 @@ gulp.task('nodemon', function() {
   });
 });
 
-// Nodemon task
+// Nodemon task for worker
 gulp.task('nodemon:worker', function() {
+
+  // Node.js v7 and newer use different debug argument
+  // Inspector integration allows attaching Chrome DevTools
+  // to Node.js instances for debugging and profiling
+  // @link https://nodejs.org/api/debugger.html
+  var debugArgument = semver.satisfies(process.versions.node, '>=7.0.0') ? '--inspect' : '--debug';
+
   return plugins.nodemon({
     script: 'worker.js',
     // Default port is `5858`, but because `nodemon` task is already using it
     // we are defining different port for debugging here.
-    nodeArgs: ['--debug=5859'],
+    nodeArgs: [debugArgument + '=5859'],
     ext: 'js',
     ignore: _.union(
       testAssets.tests.server,
