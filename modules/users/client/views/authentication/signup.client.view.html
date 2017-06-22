@@ -178,8 +178,7 @@
                        ((userForm.username.$error.pattern && userForm.username.$dirty) ? 'Can only contain letters, numbers, periods, hyphens, and underscores.' : '')
                      }}"
                      tooltip-trigger="blur"
-                     tooltip-placement="top"
-                     tooltip-append-to-body="true">
+                     tooltip-placement="top">
             </div>
           </div>
           <div class="form-group" ng-class="{'has-error': userForm.email.$invalid && userForm.email.$dirty}">
@@ -195,8 +194,7 @@
                      ng-disabled="signup.isLoading"
                      uib-tooltip="{{ (userForm.email.$error.email && userForm.email.$dirty) ? 'Please give a valid email.' : ''}}"
                      tooltip-trigger="blur"
-                     tooltip-placement="top"
-                     tooltip-append-to-body="true">
+                     tooltip-placement="top">
                      <!-- Temporarily disabled due isolate scope errors with mailcheck:
                      tr-focustip="'We will not reveal this to anyone.'"> -->
             </div>

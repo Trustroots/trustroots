@@ -40,6 +40,7 @@ module.exports = {
         'public/lib/angular-ui-bootstrap/src/debounce/debounce.js',
         'public/lib/angular-ui-bootstrap/src/dropdown/dropdown.js',
         'public/lib/angular-ui-bootstrap/src/modal/modal.js',
+        'public/lib/angular-ui-bootstrap/src/multiMap/multiMap.js',
         'public/lib/angular-ui-bootstrap/src/popover/popover.js',
         'public/lib/angular-ui-bootstrap/src/position/position.js',
         'public/lib/angular-ui-bootstrap/src/progressbar/progressbar.js',

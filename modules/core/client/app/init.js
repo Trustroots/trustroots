@@ -12,7 +12,7 @@
     .config(initConfig);
 
   /* @ngInject */
-  function initConfig(lockerProvider, cfpLoadingBarProvider, $locationProvider, $urlMatcherFactoryProvider, $messageCenterServiceProvider, $compileProvider) {
+  function initConfig(lockerProvider, cfpLoadingBarProvider, $locationProvider, $urlMatcherFactoryProvider, $messageCenterServiceProvider, $compileProvider, $uibTooltipProvider) {
 
     // Setting HTML5 Location Mode
     $locationProvider.html5Mode({
@@ -53,6 +53,14 @@
     // @link https://docs.angularjs.org/guide/production#disable-comment-and-css-class-directives
     $compileProvider.commentDirectivesEnabled(false);
     $compileProvider.cssClassDirectivesEnabled(false);
+
+    // By default tooltips and popovers are appended to
+    // '$body' instead of the parent element
+    // @link https://angular-ui.github.io/bootstrap/#!#tooltip
+    // @link https://angular-ui.github.io/bootstrap/#!#popover
+    $uibTooltipProvider.options({
+      appendToBody: true
+    });
 
   }
 
