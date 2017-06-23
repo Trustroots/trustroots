@@ -3,6 +3,7 @@
 var path = require('path'),
     config = require('../config'),
     format = require('util').format,
+    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     MongoClient = require('mongodb').MongoClient;
 
 var agenda;
@@ -89,12 +90,40 @@ exports.start = function(options, callback) {
     // Start worker
 
     agenda.start();
+
     if (process.env.NODE_ENV !== 'test') {
       console.log('[Worker] Agenda started processing background jobs');
     }
 
     if (callback) callback();
 
+  });
+
+  // Log finished jobs
+  agenda.on('success', function(job) {
+    if (process.env.NODE_ENV !== 'test') {
+
+      var statsObject = {
+        namespace: 'agendaJob',
+        counts: {
+          count: 1
+        },
+        tags: {
+          name: job.attrs.name,
+          status: 'success',
+          failCount: job.attrs.failCount || 0
+        }
+      };
+
+      // Send job failure to stats servers
+      statService.stat(statsObject, function() {
+        // Log also to console
+        if (process.env.NODE_ENV !== 'test') {
+          console.log('[Worker] Agenda job [%s] %s finished.',
+            job.attrs.name, job.attrs._id);
+        }
+      });
+    }
   });
 
   // Error reporting and retry logic
@@ -116,11 +145,27 @@ exports.start = function(options, callback) {
       job.save();
     }
 
-    if (process.env.NODE_ENV !== 'test') {
-      console.error('[Worker] Agenda job [%s] %s failed with [%s] %s failCount:%s',
-        job.attrs.name, job.attrs._id, err.message || 'Unknown error', extraMessage, job.attrs.failCount);
-    }
+    var statsObject = {
+      namespace: 'agendaJob',
+      counts: {
+        count: 1
+      },
+      tags: {
+        name: job.attrs.name,
+        status: 'failed',
+        failCount: job.attrs.failCount || 0
+      }
+    };
 
+    // Send job failure to stats servers
+    statService.stat(statsObject, function() {
+      // Log also to console
+
+      if (process.env.NODE_ENV !== 'test') {
+        console.error('[Worker] Agenda job [%s] %s failed with [%s] %s failCount:%s',
+          job.attrs.name, job.attrs._id, err.message || 'Unknown error', extraMessage, job.attrs.failCount);
+      }
+    });
   });
 
   // Gracefully exit Agenda
@@ -133,7 +178,10 @@ exports.start = function(options, callback) {
  * See https://github.com/agenda/agenda/issues/410
  */
 exports.unlockAgendaJobs = function(callback) {
-  console.log('[Worker] Attempting to unlock locked Agenda jobs...');
+
+  if (process.env.NODE_ENV !== 'test') {
+    console.log('[Worker] Attempting to unlock locked Agenda jobs...');
+  }
 
   // Use connect method to connect to the server
   MongoClient.connect(config.db.uri, function(err, db) {
@@ -171,7 +219,9 @@ exports.unlockAgendaJobs = function(callback) {
       if (err) {
         console.error(err);
       }
-      console.log('[Worker] Unlocked %d Agenda jobs.', parseInt(numUnlocked, 10) || 0);
+      if (process.env.NODE_ENV !== 'test') {
+        console.log('[Worker] Unlocked %d Agenda jobs.', parseInt(numUnlocked, 10) || 0);
+      }
       db.close(callback);
     });
 
