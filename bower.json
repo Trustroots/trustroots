@@ -5,9 +5,9 @@
     "angular": "1.5.11",
     "angular-animate": "1.5.11",
     "angular-aria": "1.5.11",
-    "angular-ui-bootstrap": "1.3.3",
-    "angular-chosen-localytics": "~1.5.0",
-    "leaflet": "~0.7.7",
+    "angular-ui-bootstrap": "~2.5.0",
+    "angular-chosen-localytics": "~1.7.0",
+    "leaflet": "~1.0.3",
     "ui-leaflet": "~2.0.0",
     "angular-loading-bar": "~0.9.0",
     "angular-mailcheck": "~0.2.0",
@@ -20,7 +20,7 @@
     "angular-trustpass": "~0.4.0",
     "angular-ui-router": "~0.3.2",
     "angular-waypoints": "~2.0.0",
-    "bootstrap": "3.3.6",
+    "bootstrap": "3.3.7",
     "imagesloaded": "~4.1.0",
     "message-center": "~1.2.7",
     "ng-file-upload": "~12.0.4",
@@ -31,11 +31,11 @@
     "angulartics": "~1.4.0",
     "angulartics-google-analytics": "~0.4.0",
     "angulargrid": "~0.6.0",
-    "leaflet-active-area": "#6f13cffe44faee56e8a089ff6ea6022465c257a9",
+    "leaflet-active-area": "#f09574a3eb7fdce3a6778e4822955c6416415e43",
     "firebase": "^3.7.5"
   },
   "resolutions": {
     "angular": "1.5.11",
-    "leaflet": "0.7.x"
+    "leaflet": "1.x.x"
   }
 }

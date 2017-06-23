@@ -5,6 +5,7 @@
  */
 var _ = require('lodash'),
     path = require('path'),
+    semver = require('semver'),
     defaultAssets = require('./config/assets/default'),
     testAssets = require('./config/assets/test'),
     gulp = require('gulp'),
@@ -81,12 +82,19 @@ gulp.task('loadConfig', function(done) {
   done();
 });
 
-// Nodemon task
+// Nodemon task for server
 gulp.task('nodemon', function() {
+
+  // Node.js v7 and newer use different debug argument
+  // Inspector integration allows attaching Chrome DevTools
+  // to Node.js instances for debugging and profiling
+  // @link https://nodejs.org/api/debugger.html
+  var debugArgument = semver.satisfies(process.versions.node, '>=7.0.0') ? '--inspect' : '--debug';
+
   return plugins.nodemon({
     script: 'server.js',
     // Default port is `5858`
-    nodeArgs: ['--debug=5858'],
+    nodeArgs: [debugArgument + '=5858'],
     ext: 'js html',
     ignore: _.union(
       testAssets.tests.server,
@@ -105,13 +113,20 @@ gulp.task('nodemon', function() {
   });
 });
 
-// Nodemon task
+// Nodemon task for worker
 gulp.task('nodemon:worker', function() {
+
+  // Node.js v7 and newer use different debug argument
+  // Inspector integration allows attaching Chrome DevTools
+  // to Node.js instances for debugging and profiling
+  // @link https://nodejs.org/api/debugger.html
+  var debugArgument = semver.satisfies(process.versions.node, '>=7.0.0') ? '--inspect' : '--debug';
+
   return plugins.nodemon({
     script: 'worker.js',
     // Default port is `5858`, but because `nodemon` task is already using it
     // we are defining different port for debugging here.
-    nodeArgs: ['--debug=5859'],
+    nodeArgs: [debugArgument + '=5859'],
     ext: 'js',
     ignore: _.union(
       testAssets.tests.server,
@@ -383,8 +398,7 @@ gulp.task('mocha', function(done) {
       .on('end', function() {
         // When the tests are done, disconnect agenda/mongoose
         // and pass the error state back to gulp
-        // @todo: https://github.com/Trustroots/trustroots/issues/438
-        // Mikael temporarily disabled this 11/2016 to fix crashing test-watching
+        // @TODO: https://github.com/Trustroots/trustroots/issues/438
         agenda._mdb.close(function() {
           mongoose.disconnect(function() {
             done(error);

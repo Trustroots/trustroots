@@ -73,8 +73,7 @@
                        ng-disabled="support.isLoading"
                        uib-tooltip="{{ (supportForm.email.$error.email && supportForm.email.$dirty) ? 'Please give a valid email.' : ''}}"
                        tooltip-trigger="blur"
-                       tooltip-placement="top"
-                       tooltip-append-to-body="true">
+                       tooltip-placement="top">
                 <p ng-if="app.user" class="form-control-static" ng-bind="::app.user.email"></p>
               </div>
             </div>

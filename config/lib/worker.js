@@ -1,10 +1,16 @@
 'use strict';
 
 var path = require('path'),
+    config = require('../config'),
     format = require('util').format,
-    agenda = require(path.resolve('./config/lib/agenda'));
+    MongoClient = require('mongodb').MongoClient;
+
+var agenda;
 
 exports.start = function(options, callback) {
+
+  // Don't initialise Agenda outisde `start()`, because we might miss `ready` event otherwise.
+  agenda = require(path.resolve('./config/lib/agenda'));
 
   agenda.on('ready', function() {
 
@@ -72,7 +78,7 @@ exports.start = function(options, callback) {
 
     // Schedule job(s)
 
-    agenda.every('30 seconds', 'check unread messages');
+    agenda.every('5 minutes', 'check unread messages');
     agenda.every('24 hours', 'daily statistics');
     agenda.every('30 minutes', 'send signup reminders');
     agenda.every('30 minutes', 'reactivate hosts');
@@ -84,7 +90,7 @@ exports.start = function(options, callback) {
 
     agenda.start();
     if (process.env.NODE_ENV !== 'test') {
-      console.log('Agenda started processing background jobs');
+      console.log('[Worker] Agenda started processing background jobs');
     }
 
     if (callback) callback();
@@ -111,12 +117,65 @@ exports.start = function(options, callback) {
     }
 
     if (process.env.NODE_ENV !== 'test') {
-      console.error('Agenda job [%s] %s failed with [%s] %s failCount:%s',
+      console.error('[Worker] Agenda job [%s] %s failed with [%s] %s failCount:%s',
         job.attrs.name, job.attrs._id, err.message || 'Unknown error', extraMessage, job.attrs.failCount);
     }
 
   });
 
+  // Gracefully exit Agenda
+  process.on('SIGTERM', gracefulExit);
+  process.on('SIGINT', gracefulExit);
+};
+
+/**
+ * Attempt to unlock Agenda jobs that were stuck due server restart
+ * See https://github.com/agenda/agenda/issues/410
+ */
+exports.unlockAgendaJobs = function(callback) {
+  console.log('[Worker] Attempting to unlock locked Agenda jobs...');
+
+  // Use connect method to connect to the server
+  MongoClient.connect(config.db.uri, function(err, db) {
+    if (err) {
+      console.error(err);
+      return callback(err);
+    }
+
+  // agenda.on('ready', function() {
+
+    // Re-use Agenda's MongoDB connection
+    // var agendaJobs = agenda._mdb.collection('agendaJobs');
+
+    var agendaJobs = db.collection('agendaJobs');
+
+    agendaJobs.update({
+      lockedAt: {
+        $exists: true
+      },
+      lastFinishedAt: {
+        $exists: false
+      }
+    }, {
+      $unset: {
+        lockedAt: undefined,
+        lastModifiedBy: undefined,
+        lastRunAt: undefined
+      },
+      $set: {
+        nextRunAt: new Date()
+      }
+    }, {
+      multi: true
+    }, function (err, numUnlocked) {
+      if (err) {
+        console.error(err);
+      }
+      console.log('[Worker] Unlocked %d Agenda jobs.', parseInt(numUnlocked, 10) || 0);
+      db.close(callback);
+    });
+
+  });
 };
 
 function shouldRetry(err) {
@@ -130,4 +189,15 @@ function shouldRetry(err) {
 
 function secondsFromNowDate(seconds) {
   return new Date(new Date().getTime() + (seconds * 1000));
+}
+
+/**
+ * Gracefully exit Agenda
+ */
+function gracefulExit() {
+  console.log('[Worker] Stopping Agenda...');
+  agenda.stop(function() {
+    console.log('[Worker] Agenda stopped.');
+    process.exit(0);
+  });
 }

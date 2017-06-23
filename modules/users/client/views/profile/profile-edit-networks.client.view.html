@@ -58,7 +58,11 @@
       <div class="form-group">
         <div class="input-group">
           <div class="input-group-addon">
-            <a tabindex="0" class="icon-help cursor-help tr-help" popover-placement="bottom-left" popover-append-to-body="true" popover-trigger="mouseenter" uib-popover-template="'bwGuidePopover.html'"></a>
+            <a tabindex="0"
+               class="icon-help cursor-help tr-help"
+               popover-placement="bottom-left"
+               popover-trigger="'mouseenter'"
+               uib-popover-template="'bwGuidePopover.html'"></a>
             <script type="text/ng-template" id="bwGuidePopover.html">
               <div>
                 Go to your BeWelcome profile and copy the username from the address bar.
@@ -71,7 +75,13 @@
             <span class="hidden-xs">bewelcome.org/members/</span>
             <span class="visible-xs-inline">BeWelcome:</span>
           </label>
-          <input id="extSitesBW" type="text" class="form-control" ng-model="profileEditNetworks.user.extSitesBW" ng-change="profileEdit.unsavedModifications=true" placeholder="your-username" aria-label="BeWelcome username">
+          <input id="extSitesBW"
+                 type="text"
+                 class="form-control"
+                 ng-model="profileEditNetworks.user.extSitesBW"
+                 ng-change="profileEdit.unsavedModifications=true"
+                 placeholder="your-username"
+                 aria-label="BeWelcome username">
           <span class="input-group-btn" ng-if="profileEditNetworks.user.extSitesBW.length">
             <a ng-href="http://www.bewelcome.org/members/{{ profileEditNetworks.user.extSitesBW }}" target="_blank" class="btn btn-primary" role="button" rel="noopener"><small>Test</small></a>
           </span>
@@ -80,7 +90,11 @@
       <div class="form-group">
         <div class="input-group">
           <div class="input-group-addon">
-            <a tabindex="0" class="icon-help cursor-help tr-help" popover-placement="bottom-left" popover-append-to-body="true" popover-trigger="mouseenter"  uib-popover-template="'csGuidePopover.html'"></a>
+            <a tabindex="0"
+               class="icon-help cursor-help tr-help"
+               popover-placement="bottom-left"
+               popover-trigger="'mouseenter'"
+               uib-popover-template="'csGuidePopover.html'"></a>
             <script type="text/ng-template" id="csGuidePopover.html">
               <div>
                 Go to your "account and settings" page and copy your username.
@@ -93,7 +107,13 @@
             <span class="hidden-xs">couchsurfing.com/people/</span>
             <span class="visible-xs-inline">Couchsurfing:</span>
           </label>
-          <input id="extSitesCS" type="text" class="form-control" ng-model="profileEditNetworks.user.extSitesCS" ng-change="profileEdit.unsavedModifications=true" placeholder="your-username" aria-label="Couchsurfing username">
+          <input id="extSitesCS"
+                 type="text"
+                 class="form-control"
+                 ng-model="profileEditNetworks.user.extSitesCS"
+                 ng-change="profileEdit.unsavedModifications=true"
+                 placeholder="your-username"
+                 aria-label="Couchsurfing username">
           <span class="input-group-btn" ng-if="profileEditNetworks.user.extSitesCS.length">
             <a ng-href="https://www.couchsurfing.com/people/{{ profileEditNetworks.user.extSitesCS }}" target="_blank" class="btn btn-primary" role="button" rel="noreferrer"><small>Test</small></a>
           </span>
@@ -102,7 +122,11 @@
       <div class="form-group" ng-class="{'has-warning': profileEditNetworks.user.extSitesWS && !profileEditNetworks.isWarmshowersId()}">
         <div class="input-group">
           <div class="input-group-addon">
-            <a tabindex="0" class="icon-help cursor-help tr-help" popover-placement="bottom-left" popover-append-to-body="true" popover-trigger="mouseenter" uib-popover-template="'wsGuidePopover.html'"></a>
+            <a tabindex="0"
+               class="icon-help cursor-help tr-help"
+               popover-placement="bottom-left"
+               popover-trigger="'mouseenter'"
+               uib-popover-template="'wsGuidePopover.html'"></a>
             <script type="text/ng-template" id="wsGuidePopover.html">
               <div>
                 Edit your Warmshowers profile and copy your numeric user id from the address bar.
@@ -115,7 +139,13 @@
             <span class="hidden-xs">warmshowers.org/user/</span>
             <span class="visible-xs-inline">Warmshowers:</span>
           </label>
-          <input id="extSitesWS" type="text" class="form-control" ng-model="profileEditNetworks.user.extSitesWS" ng-change="profileEdit.unsavedModifications=true" placeholder="your-user-id" aria-label="Warmshowers user id">
+          <input id="extSitesWS"
+                 type="text"
+                 class="form-control"
+                 ng-model="profileEditNetworks.user.extSitesWS"
+                 ng-change="profileEdit.unsavedModifications=true"
+                 placeholder="your-user-id"
+                 aria-label="Warmshowers user id">
           <span class="input-group-btn" ng-if="profileEditNetworks.user.extSitesWS.length">
             <a ng-href="https://www.warmshowers.org/{{ !profileEditNetworks.isWarmshowersId() ? 'users' : 'user' }}/{{ profileEditNetworks.user.extSitesWS }}" target="_blank" class="btn btn-primary" role="button" rel="noopener"><small>Test</small></a>
           </span>

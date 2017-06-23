@@ -279,7 +279,7 @@
       // https://api.jquery.com/jQuery.getScript/
       jQuery.getScript('https://maitreapp.co/widget.js')
         .fail(function() {
-          // If loadin the script fails, hide waiting list feature
+          // If loading the script fails, hide waiting list feature
           vm.isWaitingListEnabled = false;
 
           // Send event to analytics

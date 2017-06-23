@@ -14,6 +14,7 @@ module.exports = {
       ],
       css: [
         'public/lib/angular/angular-csp.css', // https://docs.angularjs.org/api/ng/directive/ngCsp
+        'public/lib/leaflet/dist/leaflet.css',
         'public/lib/fontello/css/animation.css',
         'public/lib/medium-editor/dist/css/medium-editor.css',
         'modules/core/client/fonts/fontello/css/tricons-codes.css',
@@ -39,6 +40,7 @@ module.exports = {
         'public/lib/angular-ui-bootstrap/src/debounce/debounce.js',
         'public/lib/angular-ui-bootstrap/src/dropdown/dropdown.js',
         'public/lib/angular-ui-bootstrap/src/modal/modal.js',
+        'public/lib/angular-ui-bootstrap/src/multiMap/multiMap.js',
         'public/lib/angular-ui-bootstrap/src/popover/popover.js',
         'public/lib/angular-ui-bootstrap/src/position/position.js',
         'public/lib/angular-ui-bootstrap/src/progressbar/progressbar.js',
