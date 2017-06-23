@@ -398,8 +398,7 @@ gulp.task('mocha', function(done) {
       .on('end', function() {
         // When the tests are done, disconnect agenda/mongoose
         // and pass the error state back to gulp
-        // @todo: https://github.com/Trustroots/trustroots/issues/438
-        // Mikael temporarily disabled this 11/2016 to fix crashing test-watching
+        // @TODO: https://github.com/Trustroots/trustroots/issues/438
         agenda._mdb.close(function() {
           mongoose.disconnect(function() {
             done(error);
