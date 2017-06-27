@@ -105,15 +105,28 @@ exports.getCode = function() {
 /**
  * Checks if a code is valid and returns boolean yes or no.
  *
- * @param {String} code - a string representation of the invitation code
+ * @param {String} code - a lower case string representation of the invitation code
  * @return {Boolean} `true` if code is valid, `false` if not
  */
 exports.validateCode = function(code) {
 
-  var now = moment(new Date());
+  // No empty strings
+  if (!code) {
+    return false;
+  }
 
-  return now.isSame(codeToDate(code), 'day') ||
-    now.isSame(setYesterday(codeToDate(code)), 'day') ||
-    now.isSame(setTomorrow(codeToDate(code)), 'day') ||
-    now.isSame(setYesterdayTwo(codeToDate(code)), 'day');
+  // Validate against "always valid codes" list
+  if (config.invitations.alwaysValidCodes &&
+      config.invitations.alwaysValidCodes.length &&
+      config.invitations.alwaysValidCodes.indexOf(code) > -1) {
+    return true;
+  }
+
+  var now = moment(new Date()),
+      codeDate = codeToDate(code);
+
+  return now.isSame(codeDate, 'day') ||
+    now.isSame(setYesterday(codeDate), 'day') ||
+    now.isSame(setTomorrow(codeDate), 'day') ||
+    now.isSame(setYesterdayTwo(codeDate), 'day');
 };
