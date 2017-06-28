@@ -1144,7 +1144,6 @@ describe('User CRUD tests', function () {
 
         agent.post('/api/users-avatar')
           .attach('avatar', './modules/users/tests/server/img/avatar.jpg')
-          .send(credentials)
           .expect(200)
           .end(function (userInfoErr, userInfoRes) {
             // Handle change profile picture error
@@ -1171,7 +1170,6 @@ describe('User CRUD tests', function () {
 
         agent.post('/api/users-avatar')
           .attach('avatar', './modules/users/tests/server/img/avatar.gif')
-          .send(credentials)
           .expect(200)
           .end(function (userInfoErr, userInfoRes) {
             // Handle change profile picture error
@@ -1198,7 +1196,6 @@ describe('User CRUD tests', function () {
 
         agent.post('/api/users-avatar')
           .attach('avatar', './modules/users/tests/server/img/avatar.png')
-          .send(credentials)
           .expect(200)
           .end(function (userInfoErr, userInfoRes) {
             // Handle change profile picture error
@@ -1225,7 +1222,6 @@ describe('User CRUD tests', function () {
 
         agent.post('/api/users-avatar')
           .attach('fieldThatDoesntWork', './modules/users/tests/server/img/avatar.jpg')
-          .send(credentials)
           .expect(400)
           .end(function (userInfoErr, userInfoRes) {
             userInfoRes.body.message.should.equal('Missing `avatar` field from the API call.');
@@ -1246,7 +1242,6 @@ describe('User CRUD tests', function () {
 
         agent.post('/api/users-avatar')
           .attach('avatar', './modules/users/tests/server/img/test.pdf')
-          .send(credentials)
           .expect(415)
           .end(function (userInfoErr, userInfoRes) {
 
@@ -1274,7 +1269,6 @@ describe('User CRUD tests', function () {
 
         agent.post('/api/users-avatar')
           .attach('avatar', './modules/users/tests/server/img/test-actually-pdf-looks-like-jpg.jpg')
-          .send(credentials)
           .expect(415)
           .end(function (userInfoErr, userInfoRes) {
 
@@ -1302,7 +1296,6 @@ describe('User CRUD tests', function () {
 
         agent.post('/api/users-avatar')
           .attach('avatar', './modules/users/tests/server/img/test.svg')
-          .send(credentials)
           .expect(415)
           .end(function (userInfoErr, userInfoRes) {
 
@@ -1330,7 +1323,6 @@ describe('User CRUD tests', function () {
 
         agent.post('/api/users-avatar')
           .attach('avatar', './modules/users/tests/server/img/this-is-text-file.jpg')
-          .send(credentials)
           .expect(415) // 415: Unsupported Media Type.
           .end(function (userInfoErr, userInfoRes) {
 
@@ -1358,7 +1350,6 @@ describe('User CRUD tests', function () {
 
         agent.post('/api/users-avatar')
           .attach('avatar', './modules/users/tests/server/img/too-big-file.png')
-          .send(credentials)
           .expect(413)
           .end(function (userInfoErr, userInfoRes) {
 
