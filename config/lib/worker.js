@@ -169,8 +169,7 @@ exports.start = function(options, callback) {
   });
 
   // Gracefully exit Agenda
-  process.on('SIGTERM', gracefulExit);
-  process.on('SIGINT', gracefulExit);
+  addExitListeners();
 };
 
 /**
@@ -228,17 +227,20 @@ exports.unlockAgendaJobs = function(callback) {
   });
 };
 
-function shouldRetry(err) {
+/**
+ * Used for testing
+ */
+exports.removeExitListeners = function() {
+  process.removeListener('SIGTERM', gracefulExit);
+  process.removeListener('SIGINT', gracefulExit);
+};
 
-  // Retry on connection errors as they may just be temporary
-  if (/(ECONNRESET|ECONNREFUSED)/.test(err.message)) {
-    return true;
-  }
-  return false;
-}
-
-function secondsFromNowDate(seconds) {
-  return new Date(new Date().getTime() + (seconds * 1000));
+/**
+ * Adds listeners to allow Agenda exit gracefully
+ */
+function addExitListeners() {
+  process.on('SIGTERM', gracefulExit);
+  process.on('SIGINT', gracefulExit);
 }
 
 /**
@@ -250,4 +252,17 @@ function gracefulExit() {
     console.log('[Worker] Agenda stopped.');
     process.exit(0);
   });
+}
+
+function shouldRetry(err) {
+
+  // Retry on connection errors as they may just be temporary
+  if (/(ECONNRESET|ECONNREFUSED)/.test(err.message)) {
+    return true;
+  }
+  return false;
+}
+
+function secondsFromNowDate(seconds) {
+  return new Date(new Date().getTime() + (seconds * 1000));
 }

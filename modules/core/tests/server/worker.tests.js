@@ -60,6 +60,7 @@ describe('Worker tests', function() {
 
   afterEach(function() {
     sandbox.restore();
+    worker.removeExitListeners();
   });
 
   beforeEach(function(done) {
