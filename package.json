@@ -62,6 +62,7 @@
     "eslint": "~2.2.0",
     "eslint-config-airbnb": "~6.0.2",
     "eslint-plugin-angular": "~2.4.2",
+    "expect-ct": "~0.1.0",
     "express": "~4.15.3",
     "express-paginate": "~0.2.1",
     "express-session": "~1.15.3",

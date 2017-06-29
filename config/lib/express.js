@@ -18,6 +18,7 @@ var _ = require('lodash'),
     methodOverride = require('method-override'),
     cookieParser = require('cookie-parser'),
     helmet = require('helmet'),
+    expectCt = require('expect-ct'),
     flash = require('connect-flash'),
     render = require('./render'),
     git = require('git-rev'),
@@ -415,6 +416,16 @@ module.exports.initHelmetHeaders = function (app) {
   // @link https://helmetjs.github.io/docs/frameguard/
   // @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
   app.use(helmet.frameguard(frameguardOptions));
+
+  // Sets Expect-CT header
+  // @link https://helmetjs.github.io/docs/expect-ct/
+  // @link https://scotthelme.co.uk/a-new-security-header-expect-ct/
+
+  app.use(expectCt({
+    enforce: false,
+    maxAge: 30,
+    reportUri: (config.https === true ? 'https' : 'http') + '://' + config.domain + '/api/report-expect-ct-violation'
+  }));
 
   // Adds some small XSS protections
   // @link https://helmetjs.github.io/docs/xss-filter/
