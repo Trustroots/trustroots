@@ -7,7 +7,7 @@
     "angular-aria": "1.5.11",
     "angular-ui-bootstrap": "~2.5.0",
     "angular-chosen-localytics": "~1.7.0",
-    "leaflet": "~1.0.3",
+    "leaflet": "~1.1.0",
     "ui-leaflet": "~2.0.0",
     "angular-loading-bar": "~0.9.0",
     "angular-mailcheck": "~0.2.0",
