@@ -28,7 +28,7 @@ describe('Message to Stats API server service Integration Test', function () {
     sandbox = sinon.sandbox.create();
 
     // it will emit an event 'reachedInfluxdb' which should be caught in the tests
-    sandbox.stub(influx.InfluxDB.prototype, 'writeMeasurement', function (measurement, fields, tags) {
+    sandbox.stub(influx.InfluxDB.prototype, 'writeMeasurement').callsFake(function (measurement, fields, tags) {
       return new Promise(function (resolve) {
         reachEventEmitter.emit('reachedInfluxdb', measurement, fields, tags);
         resolve();
@@ -127,8 +127,8 @@ describe('Message to Stats API server service Integration Test', function () {
 
       // stubbing the influxdb config
       beforeEach(function () {
-        sandbox.stub(config.influxdb, 'enabled', true);
-        sandbox.stub(config.influxdb, 'options', {
+        sandbox.stub(config.influxdb, 'enabled').value(true);
+        sandbox.stub(config.influxdb, 'options').value({
           host: 'localhost',
           port: 4242,
           protocol: 'http',

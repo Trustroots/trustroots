@@ -40,7 +40,7 @@ describe('Stat API integration tests', function () {
     );
 
     // provide config options for influxdb
-    sandbox.stub(config.influxdb, 'options', {
+    sandbox.stub(config.influxdb, 'options').value({
       host: 'localhost',
       port: 8086,
       protocol: 'http',
@@ -66,13 +66,13 @@ describe('Stat API integration tests', function () {
   context('endpoints enabled', function () {
     beforeEach(function () {
       // stub the config.stathat.key
-      sandbox.stub(config.stathat, 'key', 'stathatkey');
+      sandbox.stub(config.stathat, 'key').value('stathatkey');
 
       // stub enable stathat in config
-      sandbox.stub(config.stathat, 'enabled', true);
+      sandbox.stub(config.stathat, 'enabled').value(true);
 
       // stub enable influx in config
-      sandbox.stub(config.influxdb, 'enabled', true);
+      sandbox.stub(config.influxdb, 'enabled').value(true);
     });
 
     context('valid data', function () {
@@ -677,13 +677,13 @@ describe('Stat API integration tests', function () {
   context('influx disabled', function () {
     beforeEach(function () {
       // stub the config.stathat.key
-      sandbox.stub(config.stathat, 'key', 'stathatkey');
+      sandbox.stub(config.stathat, 'key').value('stathatkey');
 
       // stub enable stathat in config
-      sandbox.stub(config.stathat, 'enabled', true);
+      sandbox.stub(config.stathat, 'enabled').value(true);
 
       // stub enable influx in config
-      sandbox.stub(config.influxdb, 'enabled', false);
+      sandbox.stub(config.influxdb, 'enabled').value(false);
     });
 
     it('send only to stathat, influx ignored without error', function (done) {
@@ -709,13 +709,13 @@ describe('Stat API integration tests', function () {
   context('stathat disabled', function () {
     beforeEach(function () {
       // stub the config.stathat.key
-      sandbox.stub(config.stathat, 'key', 'stathatkey');
+      sandbox.stub(config.stathat, 'key').value('stathatkey');
 
       // stub enable stathat in config
-      sandbox.stub(config.stathat, 'enabled', false);
+      sandbox.stub(config.stathat, 'enabled').value(false);
 
       // stub enable influx in config
-      sandbox.stub(config.influxdb, 'enabled', true);
+      sandbox.stub(config.influxdb, 'enabled').value(true);
     });
 
     it('send only to influx, stathat ignored without error', function (done) {

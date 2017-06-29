@@ -17,23 +17,19 @@ describe('Stathat Service Unit Test', function () {
     sandbox = sinon.sandbox.create();
 
     // stub the service dependencies
-    sandbox.stub(stathat, 'trackEZCount');
-    stathat.trackEZCount.callsArgWithAsync(3, 200, null);
+    sandbox.stub(stathat, 'trackEZCount').callsArgWithAsync(3, 200, null);
 
-    sandbox.stub(stathat, 'trackEZCountWithTime');
-    stathat.trackEZCountWithTime.callsArgWithAsync(4, 200, null);
+    sandbox.stub(stathat, 'trackEZCountWithTime').callsArgWithAsync(4, 200, null);
 
-    sandbox.stub(stathat, 'trackEZValue');
-    stathat.trackEZValue.callsArgWithAsync(3, 200, null);
+    sandbox.stub(stathat, 'trackEZValue').callsArgWithAsync(3, 200, null);
 
-    sandbox.stub(stathat, 'trackEZValueWithTime');
-    stathat.trackEZValueWithTime.callsArgWithAsync(4, 200, null);
+    sandbox.stub(stathat, 'trackEZValueWithTime').callsArgWithAsync(4, 200, null);
 
     // stub the config.stathat.key
-    sandbox.stub(config.stathat, 'key', 'stathatkey');
+    sandbox.stub(config.stathat, 'key').value('stathatkey');
 
     // stub enable stathat in config
-    sandbox.stub(config.stathat, 'enabled', true);
+    sandbox.stub(config.stathat, 'enabled').value(true);
 
   });
 

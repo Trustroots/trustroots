@@ -28,7 +28,7 @@ describe('Service: influx', function() {
 
     beforeEach(function () {
       // disable influx
-      sandbox.stub(config.influxdb, 'enabled', false);
+      sandbox.stub(config.influxdb, 'enabled').value(false);
     });
 
     it('Getting client returns error if no InfluxDB configured', function(done) {
@@ -48,7 +48,7 @@ describe('Service: influx', function() {
     beforeEach(function () {
 
       // stub the config to enable influx
-      sandbox.stub(config, 'influxdb', {
+      sandbox.stub(config, 'influxdb').value({
         enabled: true,
         options: {  // options are here to pass validation. InfluxDB is stubbed.
           host: 'example.com',
