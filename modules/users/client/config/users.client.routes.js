@@ -18,9 +18,14 @@
         resolve: {
           // A string value resolves to a service
           SettingsService: 'SettingsService',
+          InvitationService: 'InvitationService',
 
           appSettings: function(SettingsService) {
             return SettingsService.get();
+          },
+
+          invitation: function(InvitationService) {
+            return InvitationService.get();
           }
         },
         data: {

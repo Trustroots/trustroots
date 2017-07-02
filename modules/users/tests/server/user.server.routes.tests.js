@@ -1852,6 +1852,14 @@ describe('User CRUD tests', function () {
       });
   });
 
+  it('should be able to redirect to correct page using short invite URL', function (done) {
+
+    agent.get('/c/CODE')
+      .expect(301)
+      .expect('Location', '/signup?code=CODE')
+      .end(done);
+  });
+
   afterEach(function (done) {
     User.remove().exec(function() {
       Tag.remove().exec(done);

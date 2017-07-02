@@ -4,7 +4,6 @@
       <div class="col-xs-12 text-center">
         <br><br>
         <h2>Invite friends</h2>
-        <p class="lead">Help trust grow</p>
       </div>
     </div>
   </div>
@@ -15,21 +14,24 @@
     <div class="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8 text-center"
          ng-if="::invite.invitation.code">
 
-      <p class="lead">Your invitation code</p>
+      <p class="lead">
+        Trustroots is invite only.<br>
+        Help us grow by sharing your invitation link:
+      </p>
 
       <input id="tr-invite-code" type="text"
-             class="form-control text-center input-lg font-brand-semibold text-uppercase"
+             class="form-control text-center input-lg font-brand-semibold"
              tr-select-on-click
-             ng-attr-value="{{ ::invite.invitation.code }}"
+             ng-attr-value="{{ invite.signUpUrl }}"
              readonly>
 
       <br>
       <p class="text-muted font-brand-semibold">
-        Codes are valid for 24 hours.
+        Invite links are valid for 24 hours.
       </p>
 
       <br>
-      <h3>Send invite code to your friends now</h3>
+      <h3>Send invite link to your friends now</h3>
       <br>
       <!--
       <p class="text-muted font-brand-semibold">
