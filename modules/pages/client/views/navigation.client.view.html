@@ -1,0 +1,81 @@
+<div class="list-group container-spacer font-brand-regular">
+
+  <a class="list-group-item page-navigation-profile" ui-sref="profile.about({ username: app.user.username })">
+    <div tr-avatar data-user="app.user" link="false" size="64"></div>
+    <h4 class="list-group-item-heading" ng-bind="::app.user.displayName"></h4>
+    <p class="list-group-item-text text-muted">View your profile</p>
+  </a>
+
+  <a ui-sref="profile-edit.about" class="list-group-item">
+    Edit profile
+  </a>
+
+  <a ui-sref="offer" class="list-group-item">
+    Hosting status
+  </a>
+
+  <a ui-sref="profile-edit.account" class="list-group-item">
+    Account
+  </a>
+
+  <a ui-sref="profile.contacts({ username: app.user.username })" class="list-group-item">
+    Contacts
+  </a>
+
+  <a ng-if="::app.appSettings.invitationsEnabled"
+     ui-sref="invite"
+     class="list-group-item">
+    Invite Friends
+    <span class="label label-primary">New!</span>
+  </a>
+
+  <a href="/api/auth/signout"
+     target="_top"
+     class="list-group-item">
+    <i class="icon-sign-out icon-fw icon-lg"></i>
+    Sign out
+  </a>
+</div>
+
+<div class="container">
+  <h5 class="text-uppercase text-muted">Help &amp; information</h5>
+</div>
+
+<div class="list-group font-brand-regular">
+  <a class="list-group-item" ui-sref="home">About</a>
+  <a class="list-group-item" ui-sref="support">Contact &amp; Support</a>
+  <a class="list-group-item" ui-sref="faq.general">FAQ</a>
+  <a class="list-group-item" href="https://ideas.trustroots.org/">Blog</a>
+  <a class="list-group-item" ui-sref="media">Media</a>
+  <a class="list-group-item" ui-sref="privacy">Privacy</a>
+  <a class="list-group-item" ui-sref="rules">Rules</a>
+  <a class="list-group-item" ui-sref="team">Team</a>
+  <a class="list-group-item" ui-sref="foundation">Foundation</a>
+  <a class="list-group-item" ui-sref="volunteering">Volunteering</a>
+</div>
+
+<div class="container font-brand-regular">
+  <ul class="list-inline text-center">
+    <li>
+      <a href="https://www.facebook.com/trustroots.org"
+         class="btn btn-link"
+         aria-label="Trustroots at Facebook">
+        Facebook
+      </a>
+    </li>
+    <li>
+      <a href="https://twitter.com/trustroots"
+         class="btn btn-link"
+         aria-label="Trustroots at Twitter">
+        Twitter
+      </a>
+    </li>
+    <li>
+      <a href="https://github.com/Trustroots/trustroots/tree/2be5539"
+         class="btn btn-link"
+         aria-label="Currently deployed code at GitHub">
+        GitHub
+      </a>
+    </li>
+  </ul>
+</div>

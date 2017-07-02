@@ -2,25 +2,61 @@
  * Header
  */
 #tr-header {
-  width: 100%;
-  height: @navbar-height;
-  clear: both;
   .font-brand-regular();
   color: @navbar-default-color;
+
   .navbar {
-    .box-shadow(0 0 8px rgba(0,0,0,0.1));
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
   }
+
   .navbar-brand {
     padding-top: 6px;
   }
+
+  .navbar-nav {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
   .nav {
+
+    // Fix, because we don't have normal Bootstrap collapsable menu
+    > li {
+      float: left;
+    }
+
     a {
       text-shadow: 1px 1px 1px rgba(0,0,0,.3);
     }
+
     .dropdown-menu {
       a {
         text-shadow: none;
       }
+    }
+
+    // On mobile navi icons are highlighted differently
+    @media (max-width: @grid-float-breakpoint-max) {
+      a {
+        color: darken(@brand-primary, 15%);
+        text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.3);
+        font-size: 18px;
+      }
+      > li.active a {
+        color: #fff;
+        text-shadow: none;
+      }
+    }
+
+  }
+
+  .nav-header-primary {
+    float: right;
+
+    @media (max-width: @grid-float-breakpoint-max) {
+      float: none;
+      display: flex;
+      justify-content: space-between;
     }
   }
 
@@ -44,25 +80,6 @@
     }
 
   }
-
-  /* Mobile navbar */
-  .navbar-collapse {
-    background: @brand-primary;
-  }
-
-  /* Header breaks due the logo width => Show only the "tree" version for very narrow screens. */
-  .logo-tree {
-    display: none;
-  }
-  @media (max-width: 280px) {
-    .logo-text {
-      display: none;
-    }
-    .logo-tree {
-      display: block;
-    }
-  }
-
 }
 
 /* Welcome-header for non-authenticated users */

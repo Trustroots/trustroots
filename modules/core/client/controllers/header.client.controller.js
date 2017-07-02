@@ -13,26 +13,19 @@
 
     // Exposed
     vm.$state = $state;
-    vm.isCollapsed = false;
-    vm.isHidden = false;
-    vm.toggleCollapsibleMenu = toggleCollapsibleMenu;
-
-    function toggleCollapsibleMenu() {
-      vm.isCollapsed = !vm.isCollapsed;
-    }
+    vm.isHeaderHidden = false;
 
     activate();
 
+    /**
+     * Initialize controller
+     */
     function activate() {
 
       // Perform actions at page change
       $scope.$on('$stateChangeSuccess', function(event, toState) {
-
-        // Collapsing the menu after navigation
-        vm.isCollapsed = false;
-
         // Hide header at certain pages
-        vm.isHidden = (angular.isDefined(toState.headerHidden) && toState.headerHidden === true);
+        vm.isHeaderHidden = (angular.isDefined(toState.headerHidden) && toState.headerHidden === true);
       });
     }
 
