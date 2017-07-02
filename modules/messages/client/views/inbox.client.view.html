@@ -4,17 +4,70 @@
   <div ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
 </section>
 
-<section class="container container-spacer" ng-if="app.user.public === true">
-
-  <div class="row">
-    <div class="col-xs-12">
-
-      <!-- Other threads -->
-      <h4>Conversations</h4>
-
-      <div class="panel panel-default panel-threadlist panel-threadlist-threads panel-xs-no_margin table-responsive">
+<section class="container-spacer" ng-if="app.user.public === true">
 
         <!-- Threads -->
+        <ul class="list-group threadlist">
+          <li class="list-group-item threadlist-thread"
+              ng-repeat="thread in inbox.threads | orderBy:'updated':true track by thread._id"
+              ng-init="thread.with = inbox.otherParticipant(thread)"
+              ng-class="{ 'threadlist-thread-unread': !thread.read }">
+            <div class="media" ng-click="inbox.openThread(thread.with)">
+              <div class="media-left">
+                <a ui-sref="messageThread({ username: thread.with.username })">
+                  <div tr-avatar
+                       data-user="thread.with"
+                       data-size="32"
+                       data-link="false"
+                       class="media-object"></div>
+                </a>
+              </div>
+              <div class="media-body">
+                <a ui-sref="messageThread({ username: thread.with.username })">
+
+                  <small class="text-muted pull-right">
+                    <i class="icon-reply"
+                       ng-if="::thread.userFrom._id === app.user._id"
+                       uib-tooltip="You replied"
+                       tooltip-placement="left"></i>
+
+                    <span tr-time="::thread.updated"
+                          tr-time-tooltip-placement="left"></span>
+                  </small>
+
+                  <span ng-bind="::thread.with.displayName || 'Unknown member'"></span>
+                  <br>
+
+                  <span class="text-muted threadlist-thread-excerpt" ng-bind-html="::thread.message.excerpt || '…'"></span>
+
+                </a>
+              </div>
+            </div>
+          </li>
+        </ul>
+        <!-- /Threads -->
+
+
+        <!-- Errors -->
+        <div class="text-center"
+             ng-if="inbox.messageHandler.resolved === false && inbox.messageHandler.nextPage">
+          <strong class="text-danger">
+            Whoops! Something went wrong.
+          </strong>
+          <button class="btn btn-warning btn-md" ng-click="inbox.moreMessages(true)">
+            <span class="icon-refresh"></span>
+            Retry
+          </button>
+        </div>
+        <!-- /Errors -->
+
+        <!-- No threads -->
+        <div class="content-empty" ng-if="inbox.messageHandler.resolved && !inbox.threads.length">
+          <i class="icon-3x icon-messages-alt"></i>
+          <h4>No conversations yet.</h4>
+        </div>
+        <!-- /No threads -->
+<!--
         <table class="table table-condensed table-hover table-threadlist table-threadlist-threads" ng-if="inbox.threads.length">
           <tbody>
 
@@ -39,35 +92,23 @@
               <td class="ago col-xs-3 col-md-2" tr-time="::thread.updated" tr-time-tooltip-placement="left"></td>
             </tr>
 
-            <!-- Pagination Error -->
             <tr class="pagination" ng-if="inbox.messageHandler.resolved === false && inbox.messageHandler.nextPage">
             <td class="text-center" colspan="3">
               <div class="text-danger">
                 Whoops! Something went wrong.
               </div>
-              <!-- Retry button -->
               <button class="btn btn-warning btn-md" ng-click="inbox.moreMessages(true)">
                 <span class="icon-refresh"></span>
                 Retry
               </button>
             </td>
             </tr>
-            <!-- /Pagination Error -->
 
           </tbody>
         </table>
-        <!-- /Threads -->
+-->
 
-        <!-- No threads -->
-        <div class="content-empty" ng-if="inbox.messageHandler.resolved && !inbox.threads.length">
-          <i class="icon-3x icon-messages-alt"></i>
-          <h4>No conversations yet.</h4>
-        </div>
-        <!-- /No threads -->
 
-      </div><!-- /.panel -->
-    </div><!-- /.col-* -->
-  </div><!-- /.row -->
 
   <!-- pagination waypoint -->
   <div zum-waypoint="inbox.waypoints"
@@ -81,4 +122,4 @@
          {{ inbox.moreMessages(inbox.waypoints.scroll.down) }}
   </div>
 
-</section><!-- /.container -->
+</section>
