@@ -66,12 +66,14 @@
           'guitarcamper': {
             // Permission granted for Trustroots (asked by Mikael Korpela)
             'name': 'Guillaume Ohz',
-            'file': 'go-camper.jpg'
+            'file': 'go-camper.jpg',
+            'url': 'https://soundcloud.com/feather-drug'
           },
           'maroccomap': {
             // Permission granted for Trustroots (asked by Mikael Korpela)
             'name': 'Guillaume Ohz',
-            'file': 'go-maroccomap.jpg'
+            'file': 'go-maroccomap.jpg',
+            'url': 'https://soundcloud.com/feather-drug'
           },
           'rainbowpeople': {
             // Permission granted for Trustroots (asked by Mikael Korpela)
