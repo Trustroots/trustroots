@@ -25,6 +25,9 @@
     vm.onWindowFocus = onWindowFocus;
     vm.photoCredits = {};
     vm.photoCreditsCount = 0;
+    vm.isFooterHidden = false;
+    vm.isHeaderHidden = false;
+    vm.isAboutPage = false;
 
     /**
      * Handle the window blur event
@@ -173,7 +176,16 @@
       /**
        * After page change
        */
-      $scope.$on('$stateChangeSuccess', function() {
+      $scope.$on('$stateChangeSuccess', function(event, toState) {
+
+        // Footer is hidden on these pages
+        vm.isFooterHidden = (angular.isDefined(toState.footerHidden) && toState.footerHidden === true);
+
+        // Header is hidden on these pages
+        vm.isHeaderHidden = (angular.isDefined(toState.headerHidden) && toState.headerHidden === true);
+
+        // Indicate we are browsing primary landing page
+        vm.isHomePage = toState.name === 'home';
 
         // Reset photo copyrights on each page change
         // trBoards directive hits in after this and we'll fill this with potential photo credits

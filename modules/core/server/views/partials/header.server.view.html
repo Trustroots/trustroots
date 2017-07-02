@@ -1,125 +1,122 @@
-<div ng-controller="HeaderController as header"
-     ng-hide="header.isHeaderHidden">
+<header id="tr-header"
+        role="banner"
+        class="navbar navbar-default navbar-fixed-top hidden-print"
+        ng-hide="app.isHeaderHidden">
 
-  <header id="tr-header"
-          role="banner"
-          class="navbar navbar-default navbar-fixed-top hidden-print">
+  <!-- Header for non-authenticated users -->
+  <div class="container" ng-if="!app.user">
+    <nav class="header-welcome" role="navigation">
+      <p class="header-welcome-text">New to Trustroots?</p>
+      <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
+      <small class="header-welcome-divider">or</small>
+      <a ui-sref="signin" class="btn btn-default">Login</a>
+      <a ui-sref="home" class="btn btn-link header-more-text" ng-if="!app.isHomePage">
+        <span class="hidden-xs">Read more</span>
+        <span class="visible-xs-inline">About</span>
+      </a>
+    </nav>
+  </div>
+  <!-- /Header for non-authenticated users -->
 
-    <!-- Header for non-authenticated users -->
-    <div class="container" ng-if="!app.user">
-      <nav class="header-welcome" role="navigation">
-        <p class="header-welcome-text">New to Trustroots?</p>
-        <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
-        <small class="header-welcome-divider">or</small>
-        <a ui-sref="signin" class="btn btn-default">Login</a>
-        <a ui-sref="home" class="btn btn-link header-more-text" ng-if="!header.$state.is('home')">
-          <span class="hidden-xs">Read more</span>
-          <span class="visible-xs-inline">About</span>
-        </a>
-      </nav>
+  <!-- Header for authenticated users -->
+  <div class="container" ng-if="app.user">
+
+    <div class="navbar-header">
+      <a ng-click="app.goHome()" class="navbar-brand hidden-xs">
+        <img src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="177" height="31" />
+      </a>
     </div>
-    <!-- /Header for non-authenticated users -->
 
-    <!-- Header for authenticated users -->
-    <div class="container" ng-if="app.user">
-
-      <div class="navbar-header">
-        <a ng-click="app.goHome()" class="navbar-brand hidden-xs">
-          <img src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="177" height="31" />
+    <ul class="nav navbar-nav hidden-xs">
+      <li class="hidden-xs dropdown" uib-dropdown>
+        <a class="dropdown-toggle cursor-pointer" uib-dropdown-toggle>
+          Help
         </a>
-      </div>
+        <ul class="dropdown-menu">
+          {% include 'about-links.server.view.html' %}
+        </ul>
+      </li>
+    </ul>
 
-      <ul class="nav navbar-nav hidden-xs">
-        <li class="hidden-xs dropdown" uib-dropdown>
-          <a class="dropdown-toggle cursor-pointer" uib-dropdown-toggle>
-            Help
-          </a>
-          <ul class="dropdown-menu">
-            {% include 'about-links.server.view.html' %}
-          </ul>
-        </li>
-      </ul>
+    <ul class="nav navbar-nav nav-header-primary">
+      <li ng-if="::app.appSettings.invitationsEnabled" ui-sref-active="active">
+        <a ui-sref="invite">
+          <i class="icon-share icon-fw icon-lg"></i>
+          <span class="hidden-xs">Invite Friends</span>
+        </a>
+      </li>
+      <li ui-sref-active="active">
+        <a ui-sref="tribes.list">
+          <i class="icon-tribes icon-fw icon-lg"></i>
+          <span class="hidden-xs">Tribes</span>
+        </a>
+      </li>
+      <li ui-sref-active="active">
+        <a ui-sref="search.map">
+          <i class="icon-search icon-fw icon-lg"></i>
+          <span class="hidden-xs">Map</span>
+        </a>
+      </li>
+      <li ui-sref-active="active">
+        <a ui-sref="inbox">
+          <i class="icon-messages icon-fw icon-lg"></i>
+          <span messages-unread-count></span>
+        </a>
+      </li>
+      <li class="dropdown dropdown-user hidden-xs" uib-dropdown>
+        <a class="dropdown-toggle cursor-pointer" uib-dropdown-toggle aria-label="Me">
+          <div tr-avatar data-user="app.user" link="false" size="24"></div>
+          <span class="visible-xs-inline">
+            <i class="icon-user icon-fw icon-lg"></i>
+            {% raw %}{{ app.user.displayName }}{% endraw %}
+          </span>
+          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-right">
+          <li role="presentation" class="dropdown-header">{% raw %}{{ app.user.displayName }}{% endraw %}</li>
+          <li role="presentation" class="divider"></li>
 
-      <ul class="nav navbar-nav nav-header-primary">
-        <li ng-if="::app.appSettings.invitationsEnabled" ui-sref-active="active">
-          <a ui-sref="invite">
-            <i class="icon-share icon-fw icon-lg"></i>
-            <span class="hidden-xs">Invite Friends</span>
-          </a>
-        </li>
-        <li ui-sref-active="active">
-          <a ui-sref="tribes.list">
-            <i class="icon-tribes icon-fw icon-lg"></i>
-            <span class="hidden-xs">Tribes</span>
-          </a>
-        </li>
-        <li ui-sref-active="active">
-          <a ui-sref="search.map">
-            <i class="icon-search icon-fw icon-lg"></i>
-            <span class="hidden-xs">Map</span>
-          </a>
-        </li>
-        <li ui-sref-active="active">
-          <a ui-sref="inbox">
-            <i class="icon-messages icon-fw icon-lg"></i>
-            <span messages-unread-count></span>
-          </a>
-        </li>
-        <li class="dropdown dropdown-user hidden-xs" uib-dropdown>
-          <a class="dropdown-toggle cursor-pointer" uib-dropdown-toggle aria-label="Me">
-            <div tr-avatar data-user="app.user" link="false" size="24"></div>
-            <span class="visible-xs-inline">
-              <i class="icon-user icon-fw icon-lg"></i>
-              {% raw %}{{ app.user.displayName }}{% endraw %}
-            </span>
-            <b class="caret"></b>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-right">
-            <li role="presentation" class="dropdown-header">{% raw %}{{ app.user.displayName }}{% endraw %}</li>
-            <li role="presentation" class="divider"></li>
+          <li ui-sref-active="active">
+            <a ui-sref="profile.about({username: app.user.username})">
+              My profile
+            </a>
+          </li>
+          <li ui-sref-active="active">
+            <a ui-sref="profile-edit.about">
+              Edit profile
+            </a>
+          </li>
+          <li ui-sref-active="active">
+            <a ui-sref="offer">
+              Hosting status
+            </a>
+          </li>
+          <li ui-sref-active="active">
+            <a ui-sref="profile-edit.account">
+              Account
+            </a>
+          </li>
+          <li ui-sref-active="active">
+            <a ui-sref="profile.contacts({ username: app.user.username })">
+              Contacts
+            </a>
+          </li>
+          <li role="presentation" class="divider"></li>
+          <li>
+            <a ng-click="app.signout($event)" href="/api/auth/signout" target="_top">
+              Sign out
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li ui-sref-active="active" class="visible-xs-block">
+        <a ui-sref="navigation">
+          <i class="icon-menu icon-fw icon-lg"></i>
+        </a>
+      </li>
+    </ul>
 
-            <li ui-sref-active="active">
-              <a ui-sref="profile.about({username: app.user.username})">
-                My profile
-              </a>
-            </li>
-            <li ui-sref-active="active">
-              <a ui-sref="profile-edit.about">
-                Edit profile
-              </a>
-            </li>
-            <li ui-sref-active="active">
-              <a ui-sref="offer">
-                Hosting status
-              </a>
-            </li>
-            <li ui-sref-active="active">
-              <a ui-sref="profile-edit.account">
-                Account
-              </a>
-            </li>
-            <li ui-sref-active="active">
-              <a ui-sref="profile.contacts({ username: app.user.username })">
-                Contacts
-              </a>
-            </li>
-            <li role="presentation" class="divider"></li>
-            <li>
-              <a ng-click="app.signout($event)" href="/api/auth/signout" target="_top">
-                Sign out
-              </a>
-            </li>
-          </ul>
-        </li>
-        <li ui-sref-active="active" class="visible-xs-block">
-          <a ui-sref="navigation">
-            <i class="icon-menu icon-fw icon-lg"></i>
-          </a>
-        </li>
-      </ul>
+  </div>
+  <!-- /Header for authenticated users -->
 
-    </div>
-    <!-- /Header for authenticated users -->
-
-  </header>
-</div>
+</header>

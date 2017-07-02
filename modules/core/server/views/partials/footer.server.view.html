@@ -1,8 +1,7 @@
 <footer id="tr-footer"
         role="contentinfo"
         class="container hidden-print hidden-xs"
-        ng-if="!footer.isHidden"
-        ng-controller="FooterController as footer">
+        ng-if="!app.isFooterHidden">
   <div class="row">
     <div class="col-xs-12" itemscope itemtype="http://schema.org/Organization">
       <a ui-sref="foundation" itemprop="name">

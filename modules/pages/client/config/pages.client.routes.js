@@ -132,6 +132,7 @@
       // Redirect to home:
       state('about', {
         url: '/about',
+        footerHidden: true,
         controller:
           /* @ngInject */
           function($state) {
