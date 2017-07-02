@@ -33,7 +33,7 @@
           $location.protocol() +
           '://' +
           $location.host() +
-          ($location.port() === '80' || $location.port() === '443' ? '' : ':' + $location.port());
+          ($location.port() === 80 || $location.port() === 443 ? '' : ':' + $location.port());
 
         // Build full signup URL dynamically (including domain and path)
         vm.signUpUrl = domain + '/c/' + code;
