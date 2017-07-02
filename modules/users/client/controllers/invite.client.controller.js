@@ -28,16 +28,21 @@
 
         var code = invitation.code.toUpperCase();
 
-        // Build full domain dynamically
+        // Build domain(+port) dynamically
         var domain =
-          $location.protocol() +
-          '://' +
           $location.host() +
           ($location.port() === 80 || $location.port() === 443 ? '' : ':' + $location.port());
 
-        // Build full signup URL dynamically (including domain and path)
-        vm.signUpUrl = domain + '/c/' + code;
-        // To get full URL without shortcode:
+        // Build shortened invite URL dynamically (including domain and path, but not protocol)
+        var signUpUrl = domain + '/c/' + code;
+
+        // Domain, path and protocol
+        var signupUrlWithProtocol = $location.protocol() + '://' + signUpUrl;
+
+        // Expose to the view
+        vm.signUpUrl = signUpUrl;
+
+        // To get full signup page path, use:
         // $state.href('signup', { code: code });
 
         var inviteTextPersonal =
@@ -46,7 +51,7 @@
           'host and meet each other.';
 
         var inviteSingupUrlText =
-          'You can sign up at ' + vm.signUpUrl +
+          'You can sign up at ' + signupUrlWithProtocol +
           ' (link is valid for 24 hours)';
 
         var inviteTextGeneric =
@@ -73,7 +78,7 @@
         // Sharing Configuration
         // https://www.addthis.com/academy/the-addthis_share-variable/
         $window.addthis_share = {
-          url: vm.signUpUrl,
+          url: signupUrlWithProtocol,
           title: Authentication.user.displayName + ' invites you to join Trustroots.org',
           description: inviteTextGeneric,
           // Image used for sharing
