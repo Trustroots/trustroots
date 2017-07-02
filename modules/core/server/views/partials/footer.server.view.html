@@ -1,44 +1,42 @@
-<footer id="tr-footer" role="contentinfo" class="hidden-print hidden-xs" ng-class="{ 'footer-transparent footer-sticky' : footer.isTransparent }" ng-hide="footer.isHidden" ng-controller="FooterController as footer">
-  <hr>
-  <div class="container">
-    <div class="row">
-      <nav class="col-xs-8" role="navigation">
-        <ul class="list-inline">
-          {% include 'about-links.server.view.html' %}
-        </ul>
-      </nav>
-      <nav class="col-xs-4 text-right" role="navigation">
-        <ul class="list-inline">
-          <li class="photo-credits"
-              ng-if="app.photoCreditsCount">
-            <span tr-board-credits></span>
-          </li>
-          <li>
-            <a href="https://www.facebook.com/trustroots.org"
-               aria-label="Trustroots at Facebook">
-              Facebook
-            </a>
-          </li>
-          <li>
-            <a href="https://twitter.com/trustroots"
-               aria-label="Trustroots at Twitter">
-              Twitter
-            </a>
-          </li>
-          <li>
-            {% if appSettings.commit %}
-            <a href="https://github.com/Trustroots/trustroots/tree/{{ appSettings.commit }}"
-               uib-tooltip="Currently deployed code at GitHub"
-               aria-label="Currently deployed code at GitHub">
-            {% else %}
-            <a href="https://github.com/Trustroots/trustroots"
-               aria-label="Trustroots at GitHub">
-            {% endif %}
-              GitHub
-            </a>
-          </li>
-        </ul>
-      </nav>
-    </div><!-- /.row -->
-  </div><!-- /.container -->
+<footer id="tr-footer"
+        role="contentinfo"
+        class="container hidden-print hidden-xs"
+        ng-if="!app.isFooterHidden">
+  <div class="row">
+    <div class="col-xs-12" itemscope itemtype="http://schema.org/Organization">
+      <a ui-sref="foundation" itemprop="name">
+        Trustroots Foundation
+      </a>
+
+      <ul class="list-inline text-center">
+        <li>
+          <a href="https://www.facebook.com/trustroots.org"
+             aria-label="Trustroots at Facebook">
+            Facebook
+          </a>
+        </li>
+        <li>
+          <a href="https://twitter.com/trustroots"
+             aria-label="Trustroots at Twitter">
+            Twitter
+          </a>
+        </li>
+        <li>
+          {% if appSettings.commit %}
+          <a href="https://github.com/Trustroots/trustroots/tree/{{ appSettings.commit }}"
+             uib-tooltip="Currently deployed code at GitHub"
+             aria-label="Currently deployed code at GitHub">
+          {% else %}
+          <a href="https://github.com/Trustroots/trustroots"
+             aria-label="Trustroots at GitHub">
+          {% endif %}
+            GitHub
+          </a>
+        </li>
+      </ul>
+
+      <span ng-if="app.photoCreditsCount" tr-board-credits></span>
+
+    </div>
+  </div>
 </footer>

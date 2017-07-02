@@ -18,6 +18,7 @@ var _ = require('lodash'),
     methodOverride = require('method-override'),
     cookieParser = require('cookie-parser'),
     helmet = require('helmet'),
+    expectCt = require('expect-ct'),
     flash = require('connect-flash'),
     render = require('./render'),
     git = require('git-rev'),
@@ -199,8 +200,6 @@ module.exports.initModulesConfiguration = function (app, db) {
  * https://helmetjs.github.io/docs/
  */
 module.exports.initHelmetHeaders = function (app) {
-  // Use helmet to secure Express headers
-  var SIX_MONTHS = 15778476000;
 
   /**
    * X-Frame protection ("frameguard") default options.
@@ -418,6 +417,16 @@ module.exports.initHelmetHeaders = function (app) {
   // @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
   app.use(helmet.frameguard(frameguardOptions));
 
+  // Sets Expect-CT header
+  // @link https://helmetjs.github.io/docs/expect-ct/
+  // @link https://scotthelme.co.uk/a-new-security-header-expect-ct/
+
+  app.use(expectCt({
+    enforce: false,
+    maxAge: 30,
+    reportUri: (config.https === true ? 'https' : 'http') + '://' + config.domain + '/api/report-expect-ct-violation'
+  }));
+
   // Adds some small XSS protections
   // @link https://helmetjs.github.io/docs/xss-filter/
   app.use(helmet.xssFilter());
@@ -431,10 +440,10 @@ module.exports.initHelmetHeaders = function (app) {
   app.use(helmet.ieNoOpen());
 
   // Remove the X-Powered-By header
+  app.disable('x-powered-by');
+  // Also possible from Helmet:
   // @link https://helmetjs.github.io/docs/hide-powered-by/
-  app.use(helmet.hidePoweredBy());
-  // Also possible from Express:
-  // app.disable('x-powered-by');
+  // app.use(helmet.hidePoweredBy());
 
   // HTTP Strict Transport Security
   // This only works if your site actually has HTTPS.
@@ -442,7 +451,7 @@ module.exports.initHelmetHeaders = function (app) {
   // it will just tell HTTPS users to stick around
   // @link https://helmetjs.github.io/docs/hsts/
   app.use(helmet.hsts({
-    maxAge: SIX_MONTHS, // Must be at least 18 weeks to be approved by Google
+    maxAge: 15778476, // 6 months in seconds. Must be at least 18 weeks to be approved by Google
     includeSubDomains: false, // Must be enabled to be approved by Google
     force: true
   }));

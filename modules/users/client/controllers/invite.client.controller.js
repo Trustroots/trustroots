@@ -6,13 +6,14 @@
     .controller('InviteController', InviteController);
 
   /* @ngInject */
-  function InviteController(InvitationService, Authentication, $window, $location, $timeout, $state) {
+  function InviteController(InvitationService, Authentication, $window, $location, $timeout, $state, invitation) {
 
     // ViewModel
     var vm = this;
 
     // Exposed to the view
-    vm.invitation = InvitationService.get();
+    vm.invitation = invitation;
+    vm.signUpUrl = '';
 
     configureAddThis();
 
@@ -32,10 +33,12 @@
           $location.protocol() +
           '://' +
           $location.host() +
-          ($location.port() === '80' || $location.port() === '443' ? '' : ':' + $location.port());
+          ($location.port() === 80 || $location.port() === 443 ? '' : ':' + $location.port());
 
         // Build full signup URL dynamically (including domain and path)
-        var signUpUrl = domain + $state.href('signup', { code: invitation.code });
+        vm.signUpUrl = domain + '/c/' + code;
+        // To get full URL without shortcode:
+        // $state.href('signup', { code: code });
 
         var inviteTextPersonal =
           'Would you like to join me on Trustroots.org? ' +
@@ -43,7 +46,7 @@
           'host and meet each other.';
 
         var inviteSingupUrlText =
-          'You can sign up at ' + signUpUrl +
+          'You can sign up at ' + vm.signUpUrl +
           ' (link is valid for 24 hours)';
 
         var inviteTextGeneric =
@@ -70,7 +73,7 @@
         // Sharing Configuration
         // https://www.addthis.com/academy/the-addthis_share-variable/
         $window.addthis_share = {
-          url: signUpUrl,
+          url: vm.signUpUrl,
           title: Authentication.user.displayName + ' invites you to join Trustroots.org',
           description: inviteTextGeneric,
           // Image used for sharing

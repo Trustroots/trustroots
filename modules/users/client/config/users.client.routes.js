@@ -18,9 +18,14 @@
         resolve: {
           // A string value resolves to a service
           SettingsService: 'SettingsService',
+          InvitationService: 'InvitationService',
 
           appSettings: function(SettingsService) {
             return SettingsService.get();
+          },
+
+          invitation: function(InvitationService) {
+            return InvitationService.get();
           }
         },
         data: {
@@ -33,7 +38,6 @@
         url: '/welcome',
         templateUrl: '/modules/users/views/authentication/welcome.client.view.html',
         requiresAuth: true,
-        footerTransparent: true,
         data: {
           pageTitle: 'Welcome'
         }
@@ -227,8 +231,8 @@
         templateUrl: '/modules/users/views/authentication/signup.client.view.html',
         controller: 'SignupController',
         controllerAs: 'signup',
-        footerTransparent: false,
         headerHidden: true,
+        footerHidden: true,
         // Don't reload ngView when URL parameters are changed
         reloadOnSearch: false,
         resolve: {
@@ -248,8 +252,8 @@
         templateUrl: '/modules/users/views/authentication/signin.client.view.html',
         controller: 'AuthenticationController',
         controllerAs: 'auth',
-        footerTransparent: true,
         headerHidden: true,
+        footerHidden: true,
         resolve: {
           // A string value resolves to a service
           SettingsService: 'SettingsService',
@@ -265,7 +269,6 @@
       state('confirm-email', {
         url: '/confirm-email/:token?signup',
         templateUrl: '/modules/users/views/authentication/confirm-email.client.view.html',
-        footerTransparent: true,
         requiresAuth: false,
         controller: 'ConfirmEmailController',
         controllerAs: 'confirmEmail',
@@ -276,7 +279,6 @@
       state('confirm-email-invalid', {
         url: '/confirm-email-invalid',
         templateUrl: '/modules/users/views/authentication/confirm-email-invalid.client.view.html',
-        footerTransparent: true,
         requiresAuth: false,
         data: {
           pageTitle: 'Confirm email invalid'
@@ -287,9 +289,9 @@
       state('forgot', {
         url: '/password/forgot?userhandle=',
         templateUrl: '/modules/users/views/password/forgot-password.client.view.html',
-        footerTransparent: true,
         controller: 'ForgotPasswordController',
         controllerAs: 'forgotPassword',
+        footerHidden: true,
         data: {
           pageTitle: 'Reset password'
         }
@@ -297,7 +299,7 @@
       state('reset-invalid', {
         url: '/password/reset/invalid',
         templateUrl: '/modules/users/views/password/reset-password-invalid.client.view.html',
-        footerTransparent: true,
+        footerHidden: true,
         data: {
           pageTitle: 'Reset password'
         }
@@ -305,7 +307,7 @@
       state('reset-success', {
         url: '/password/reset/success',
         templateUrl: '/modules/users/views/password/reset-password-success.client.view.html',
-        footerTransparent: true,
+        footerHidden: true,
         data: {
           pageTitle: 'Reset password'
         }
@@ -313,7 +315,7 @@
       state('reset', {
         url: '/password/reset/:token',
         templateUrl: '/modules/users/views/password/reset-password.client.view.html',
-        footerTransparent: true,
+        footerHidden: true,
         controller: 'ResetPasswordController',
         controllerAs: 'resetPassword',
         data: {

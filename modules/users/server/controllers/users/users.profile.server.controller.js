@@ -1018,6 +1018,14 @@ exports.addPushRegistration = function(req, res) {
 };
 
 /**
+ * Redirect invite short URLs
+ */
+exports.redirectInviteShortUrl = function(req, res) {
+  console.log('->redirectInviteShortUrl');
+  return res.redirect(301, '/signup?code=' + _.get(req, 'params.code', ''));
+};
+
+/**
  * Get invitation code
  */
 exports.getInviteCode = function(req, res) {

@@ -3,6 +3,7 @@
 var path = require('path'),
     errorHandler = require('./errors.server.controller'),
     usersHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
+    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     config = require(path.resolve('./config/config')),
     log = require(path.resolve('./config/lib/logger'));
 
@@ -59,7 +60,22 @@ exports.renderNotFound = function(req, res) {
 exports.receiveCSPViolationReport = function(req, res) {
   if (process.env.NODE_ENV !== 'test') {
     log('warn', 'CSP violation report #ljeanw', {
-      report: req.body || 'No report available.'
+      report: req.body ? textProcessor.html(req.body) : 'No report available.'
+    });
+  }
+  res.status(204).json();
+};
+
+/**
+ * Log received CT report
+ * See `config/lib/express.js` and `initHelmetHeaders()` for more
+ * @link https://helmetjs.github.io/docs/expect-ct/
+ * @link https://scotthelme.co.uk/a-new-security-header-expect-ct/
+ */
+exports.receiveExpectCTViolationReport = function(req, res) {
+  if (process.env.NODE_ENV !== 'test') {
+    log('warn', 'Expect-CT violation report #3hg8ha', {
+      report: req.body ? textProcessor.html(req.body) : 'No report available.'
     });
   }
   res.status(204).json();

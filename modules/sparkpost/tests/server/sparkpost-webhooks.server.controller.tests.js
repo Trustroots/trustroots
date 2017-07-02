@@ -39,7 +39,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     );
 
     // provide config options for influxdb
-    sandbox.stub(config.influxdb, 'options', {
+    sandbox.stub(config.influxdb, 'options').value({
       host: 'localhost',
       port: 8086,
       protocol: 'http',
@@ -70,10 +70,10 @@ describe('Sparkpost Webhooks - Integration Test', function () {
       // sandbox.stub(config.stathat, 'key', 'stathatkey');
 
       // stub enable stathat in config
-      sandbox.stub(config.stathat, 'enabled', false);
+      sandbox.stub(config.stathat, 'enabled').value(false);
 
       // stub enable influx in config
-      sandbox.stub(config.influxdb, 'enabled', true);
+      sandbox.stub(config.influxdb, 'enabled').value(true);
     });
 
     it('should reach the influxdb with data in correct format', function (done) {
@@ -109,13 +109,13 @@ describe('Sparkpost Webhooks - Integration Test', function () {
   context('stathat configured', function () {
     beforeEach(function () {
       // stub the config.stathat.key
-      sandbox.stub(config.stathat, 'key', 'stathatkey');
+      sandbox.stub(config.stathat, 'key').value('stathatkey');
 
       // stub enable stathat in config
-      sandbox.stub(config.stathat, 'enabled', true);
+      sandbox.stub(config.stathat, 'enabled').value(true);
 
       // stub enable influx in config
-      sandbox.stub(config.influxdb, 'enabled', false);
+      sandbox.stub(config.influxdb, 'enabled').value(false);
     });
 
     it('should reach stathat with data in correct format', function (done) {

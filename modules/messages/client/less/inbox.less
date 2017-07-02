@@ -1,114 +1,41 @@
 /**
  * Threads list (inbox)
  */
-.table-threadlist {
-  border-top: 2px solid @brand-primary;
-  margin-bottom: 0;
-  /*
-  thead,
-  tfoot,
-  */
-  tbody {
-    > tr.thread {
 
-      /*
-        We're using CSS transitions for when
-        the enter and move events are triggered
-        for the element that has the .thread
-        class
-      */
-      &.ng-enter,
-      &.ng-move {
-        transition: 0.5s linear all;
-        background: @brand-primary;
-      }
+.threadlist {
+  max-width: @screen-xs-max;
+  margin: 0 auto;
 
-      /*
-       The ng-enter-active and ng-move-active
-       are where the transition destination properties
-       are set so that the animation knows what to
-       animate.
-      */
-      &.ng-enter.ng-enter-active,
-      &.ng-move.ng-move-active {
-        background: transparent;
-      }
+}
 
-      &.thread-unread {
-        > td {
-          font-weight: bold;
-          /*
-          &.time-to,
-          &.time-from {
-            // Make to/from not bolded to emphasize time
-            font-weight: normal;
-            time {
-              font-weight: bold;
-            }
-          }
-          */
-        }
-      }
-      > td {
-        vertical-align: middle;
-        position: inherit;
-        a {
-          color: @text-color;
-          text-decoration: none;
-        }
-        &.thread-summary {
-          .indicators {
-            font-size: @font-size-small;
-            color: @gray;
-          }
-          .thread-excerpt {
-            // https://developer.mozilla.org/en-US/docs/Web/CSS/word-wrap
-            word-wrap: break-word;
-            // http://getbootstrap.com/css/#less-mixins-truncating
-            .text-overflow();
-          }
-          @media (max-width: @screen-sm-max) {
-            .thread-excerpt {
-              max-width: 300px;
-              display: inline-block;
-            }
-          }
-          @media (max-width: @screen-xs-max) {
-            .thread-excerpt {
-              max-width: 100px;
-            }
-          }
-        }
-        &.thread-author {
-          .avatar {
-            margin-right: 3px;
-          }
-        }
-        &, * {
-          .cursor-pointer();
-        }
-      }
+.threadlist-thread {
+
+  &.threadlist-thread-unread {
+    font-weight: bold;
+    time {
+      color: @brand-primary;
     }
   }
-}
 
-.panel-threadlist {
-  .content-empty {
-    margin: 40px 0;
+  a, a:hover, a:active {
+    text-decoration: none;
+    color: @text-color;
+  }
+
+  &, * {
+    .cursor-pointer();
   }
 }
 
-.panel-threadlist-requests_finalized,
-.panel-threadlist-requests_pending {
-  margin-bottom: 35px;
-}
+.threadlist-thread-excerpt {
+  display: inline-block;
+  max-width: 350px;
+  // https://developer.mozilla.org/en-US/docs/Web/CSS/word-wrap
+  word-wrap: break-word;
+  // http://getbootstrap.com/css/#less-mixins-truncating
+  .text-overflow();
 
-.panel-xs-no_margin {
   @media (max-width: @screen-xs-max) {
-    margin-left: -15px;
-    margin-right: -15px;
-    &.table-responsive {
-      width: auto;
-    }
+    max-width: 200px;
   }
 }

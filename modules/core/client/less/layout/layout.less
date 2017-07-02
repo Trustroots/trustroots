@@ -45,56 +45,56 @@ body {
 }
 
 // Horizontal divider with "rainbow" color reel
- hr {
-   position: relative;
-   height: .15em;
-   margin: 40px auto;
-   padding: 0;
-   border: 0;
-   overflow: hidden;
-   background: @color-reel-3;
-   &:before {
-     content: '';
-     display: block;
-     position: absolute;
-     top: 0;
-     left: 0;
-     height: .15em;
-     width: 10em;
-     background: @brand-primary;
+hr {
+  position: relative;
+  height: .15em;
+  margin: 40px auto;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  background: @color-reel-3;
+  &:before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: .15em;
+    width: 10em;
+    background: @brand-primary;
 
-     // Rainbow style hr
-     box-shadow:
-       10em 0 0 0 @color-reel-0,
-       20em 0 0 0 @color-reel-1,
-       30em 0 0 0 @color-reel-2,
-       40em 0 0 0 @color-reel-3,
-       50em 0 0 0 @color-reel-4,
-       60em 0 0 0 @color-reel-3,
-       70em 0 0 0 @color-reel-2,
-       80em 0 0 0 @color-reel-1;
-   }
-   &.hr-white {
-     background: #fff;
-     &:before {
-       background: #fff;
-       box-shadow: none;
+    // Rainbow style hr
+    box-shadow:
+      10em 0 0 0 @color-reel-0,
+      20em 0 0 0 @color-reel-1,
+      30em 0 0 0 @color-reel-2,
+      40em 0 0 0 @color-reel-3,
+      50em 0 0 0 @color-reel-4,
+      60em 0 0 0 @color-reel-3,
+      70em 0 0 0 @color-reel-2,
+      80em 0 0 0 @color-reel-1;
+  }
+  &.hr-white {
+    background: #fff;
+    &:before {
+      background: #fff;
+      box-shadow: none;
+    }
+  }
+  &.hr-gray {
+    background: @gray-lighter;
+    &:before {
+      background: @gray-lighter;
+      box-shadow: none;
      }
-   }
-   &.hr-gray {
-     background: @gray-lighter;
-     &:before {
-       background: @gray-lighter;
-       box-shadow: none;
-     }
-   }
-   &.hr-xs {
-     width: 10%
-   }
-   &.hr-tight {
-     margin: 20px auto;
-   }
- }
+  }
+  &.hr-xs {
+    width: 10%
+  }
+  &.hr-tight {
+    margin: 20px auto;
+  }
+}
 
 /**
  * Main content area. Everything else except header and footer.
@@ -106,11 +106,4 @@ body {
   @media (max-width: @screen-xs-max) {
     padding-bottom:  @article-padding-bottom-xs;
   }
-}
-
-/**
- * Everything else, except footer, is wrapped inside this
- */
-#tr-wrap {
-  min-height: 100%;
 }

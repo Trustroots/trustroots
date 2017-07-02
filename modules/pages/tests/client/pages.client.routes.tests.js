@@ -268,6 +268,31 @@
         });
       });
 
+      describe('Mobile Navigation Route', function () {
+        var mainstate;
+        beforeEach(inject(function ($state, $templateCache) {
+          // Test expected GET request
+          $templateCache.put('/modules/pages/views/navigation.client.view.html', '');
+          mainstate = $state.get('navigation');
+        }));
+
+        it('Should have the correct URL', function () {
+          expect(mainstate.url).toEqual('/navigation');
+        });
+
+        it('Should not be abstract', function () {
+          expect(mainstate.abstract).toBe(undefined);
+        });
+
+        it('Should have templateUrl', function () {
+          expect(mainstate.templateUrl).toBe('/modules/pages/views/navigation.client.view.html');
+        });
+
+        it('Should require authentication', function () {
+          expect(mainstate.requiresAuth).toBe(true);
+        });
+      });
+
     });
   });
 

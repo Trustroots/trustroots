@@ -11,6 +11,15 @@
     // Remember to update `./public/sitemap.xml`
 
     $stateProvider.
+      state('navigation', {
+        url: '/navigation',
+        templateUrl: '/modules/pages/views/navigation.client.view.html',
+        requiresAuth: true,
+        footerHidden: true,
+        data: {
+          pageTitle: 'Navigation'
+        }
+      }).
       state('rules', {
         url: '/rules',
         templateUrl: '/modules/pages/views/rules.client.view.html',
@@ -123,6 +132,7 @@
       // Redirect to home:
       state('about', {
         url: '/about',
+        footerHidden: true,
         controller:
           /* @ngInject */
           function($state) {

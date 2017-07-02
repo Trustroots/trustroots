@@ -18,69 +18,75 @@
 </url>
 
 <url>
+  <loc>https://www.trustroots.org/guide</loc>
+  <changefreq>daily</changefreq>
+  <priority>0.90</priority>
+</url>
+
+<url>
   <loc>https://www.trustroots.org/faq</loc>
   <changefreq>daily</changefreq>
-  <priority>0.80</priority>
+  <priority>0.90</priority>
 </url>
 
 <url>
   <loc>https://www.trustroots.org/faq/foundation</loc>
   <changefreq>daily</changefreq>
-  <priority>0.80</priority>
+  <priority>0.90</priority>
 </url>
 
 <url>
   <loc>https://www.trustroots.org/faq/tribes</loc>
   <changefreq>daily</changefreq>
-  <priority>0.80</priority>
+  <priority>0.90</priority>
 </url>
 
 <url>
   <loc>https://www.trustroots.org/faq/technology</loc>
   <changefreq>daily</changefreq>
-  <priority>0.80</priority>
+  <priority>0.90</priority>
 </url>
 
 <url>
   <loc>https://www.trustroots.org/media</loc>
   <changefreq>daily</changefreq>
-  <priority>0.80</priority>
+  <priority>0.90</priority>
 </url>
 
 <url>
   <loc>https://www.trustroots.org/privacy</loc>
   <changefreq>daily</changefreq>
-  <priority>0.80</priority>
+  <priority>0.90</priority>
 </url>
 
 <url>
   <loc>https://www.trustroots.org/rules</loc>
   <changefreq>daily</changefreq>
-  <priority>0.80</priority>
+  <priority>0.90</priority>
 </url>
 
 <url>
   <loc>https://www.trustroots.org/team</loc>
   <changefreq>daily</changefreq>
-  <priority>0.80</priority>
+  <priority>0.90</priority>
 </url>
 
 <url>
   <loc>https://www.trustroots.org/foundation</loc>
   <changefreq>daily</changefreq>
-  <priority>0.80</priority>
+  <priority>0.90</priority>
 </url>
 
 <url>
   <loc>https://www.trustroots.org/volunteering</loc>
   <changefreq>daily</changefreq>
-  <priority>0.80</priority>
+  <priority>0.90</priority>
 </url>
 
 <url>
   <loc>https://www.trustroots.org/statistics</loc>
   <changefreq>daily</changefreq>
-  <priority>0.80</priority>
+  <priority>0.90</priority>
 </url>
 
 </urlset>

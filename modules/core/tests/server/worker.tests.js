@@ -29,12 +29,12 @@ describe('Worker tests', function() {
 
     // Stub out all of agendas functionality as we are not testing agenda
 
-    sandbox.stub(agenda, 'start');
+    sandbox.stub(agenda, 'start').callsFake(function() { });
 
     // Pass through agenda.on('ready')
     // Save handler for agenda.on('fail')
 
-    sandbox.stub(agenda, 'on', function(name, fn) {
+    sandbox.stub(agenda, 'on').callsFake(function(name, fn) {
       if (name === 'ready') {
         process.nextTick(fn);
       } else if (name === 'fail') {
@@ -44,11 +44,11 @@ describe('Worker tests', function() {
 
     // Collect calls to agenda.define() and agenda.every()
 
-    sandbox.stub(agenda, 'define', function(name, options, fn) {
+    sandbox.stub(agenda, 'define').callsFake(function(name, options, fn) {
       definedJobs.push({ name: name, options: options, fn: fn });
     });
 
-    sandbox.stub(agenda, 'every', function(repeat, name) {
+    sandbox.stub(agenda, 'every').callsFake(function(repeat, name) {
       scheduledJobs.push({ repeat: repeat, name: name });
     });
 
@@ -60,6 +60,7 @@ describe('Worker tests', function() {
 
   afterEach(function() {
     sandbox.restore();
+    worker.removeExitListeners();
   });
 
   beforeEach(function(done) {

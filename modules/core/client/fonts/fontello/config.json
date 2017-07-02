@@ -335,6 +335,18 @@
       "css": "sliders",
       "code": 61918,
       "src": "fontawesome"
+    },
+    {
+      "uid": "2cfb3f2b46b34a1790aec0aa846297b6",
+      "css": "menu",
+      "code": 59442,
+      "src": "entypo"
+    },
+    {
+      "uid": "91426c82d94428a33353e495418435e3",
+      "css": "share",
+      "code": 59443,
+      "src": "entypo"
     }
   ]
 }
