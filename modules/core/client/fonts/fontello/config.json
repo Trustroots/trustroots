@@ -223,12 +223,6 @@
       "src": "fontawesome"
     },
     {
-      "uid": "ebffa4e734c8379ffee4fbfe49264d94",
-      "css": "lifebuoy",
-      "code": 59424,
-      "src": "fontawesome"
-    },
-    {
       "uid": "4743b088aa95d6f3b6b990e770d3b647",
       "css": "facebook",
       "code": 59425,
@@ -238,12 +232,6 @@
       "uid": "0ece9a12de796b8411f868d582bee678",
       "css": "github",
       "code": 59426,
-      "src": "fontawesome"
-    },
-    {
-      "uid": "f0cf7db1b03cb65adc450aa3bdaf8c4d",
-      "css": "google",
-      "code": 59427,
       "src": "fontawesome"
     },
     {
@@ -319,12 +307,6 @@
       "src": "fontawesome"
     },
     {
-      "uid": "7ad4d2306ebda8452e5e3eff3cd8241c",
-      "css": "thumbs-up",
-      "code": 59440,
-      "src": "entypo"
-    },
-    {
       "uid": "e36d581e4f2844db345bddc205d15dda",
       "css": "tribes",
       "code": 59441,
@@ -347,6 +329,12 @@
       "css": "share",
       "code": 59443,
       "src": "entypo"
+    },
+    {
+      "uid": "dc3f1d5b1d006f7f7b3b6295eccab9da",
+      "css": "camera",
+      "code": 59424,
+      "src": "fontawesome"
     }
   ]
 }
