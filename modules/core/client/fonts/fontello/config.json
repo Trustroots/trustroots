@@ -329,6 +329,12 @@
       "css": "share",
       "code": 59443,
       "src": "entypo"
+    },
+    {
+      "uid": "dc3f1d5b1d006f7f7b3b6295eccab9da",
+      "css": "camera",
+      "code": 59424,
+      "src": "fontawesome"
     }
   ]
 }
