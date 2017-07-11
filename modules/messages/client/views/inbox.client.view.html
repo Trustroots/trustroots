@@ -68,6 +68,7 @@
   <!-- /No threads -->
 
   <!-- pagination waypoint -->
+  <!--
   <div zum-waypoint="inbox.waypoints"
        offset="200px"
        up="scroll.up"
@@ -77,4 +78,12 @@
          <tr-spinner size="sm"></tr-spinner>
          {{ inbox.moreMessages(inbox.waypoints.scroll.down) }}
   </div>
+  -->
+
+  <button class="btn btn-primary btn-lg center-block"
+          ng-if="inbox.messageHandler.nextPage && inbox.messageHandler.resolved && !inbox.messageHandler.paginationTimeout"
+          ng-click="inbox.moreMessages(true)">
+    More messages
+  </button>
+
 </section>
