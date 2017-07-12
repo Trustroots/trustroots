@@ -201,7 +201,7 @@
       background: @gray-lighter;
     }
     #message-reply-content {
-      .transition(~"border-color ease-in-out .15s, box-shadow ease-in-out .15s");
+      transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
       font-size: @font-size-base;
       line-height: @line-height-base;
       padding: @padding-base-vertical @padding-base-horizontal;
@@ -215,7 +215,7 @@
       resize: none;
       &:focus {
         outline: none;
-        .box-shadow(none);
+        box-shadow: none;
         border-color: @brand-primary;
       }
       &:after {

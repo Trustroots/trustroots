@@ -19,7 +19,7 @@ input[type="color"] {
   // Focus state
   &:focus {
     border-color: lighten(@brand-primary, 50%);
-    .box-shadow(0 0 3px lighten(@brand-primary, 50%));
+    box-shadow: 0 0 3px lighten(@brand-primary, 50%);
   }
 
   // iOS tends to mess up form elements
@@ -58,7 +58,7 @@ label + .checkbox {
 .has-error .form-control:focus,
 .form-control.ng-dirty.ng-invalid {
   border-color: @brand-danger;
-  .box-shadow(0 0 3px lighten(@brand-danger, 50%));
+  box-shadow: 0 0 3px lighten(@brand-danger, 50%);
 }
 
 /**
@@ -73,9 +73,9 @@ label + .checkbox {
   color: @gray-light;
   &.ng-hide-add.ng-hide-add-active,
   &.ng-hide-remove.ng-hide-remove-active {
-    .transition-property(all);
-    .transition-timing-function(cubic-bezier(0.1, 0.57, 0.1, 1));
-    .transition-duration(300ms);
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.1, 0.57, 0.1, 1);
+    transition-duration: 300ms;
   }
   &.ng-hide {
     line-height: 0;
