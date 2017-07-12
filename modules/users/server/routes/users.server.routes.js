@@ -10,7 +10,12 @@ module.exports = function(app) {
 
   // Setting up the users profile api
   app.route('/api/users').all(usersPolicy.isAllowed)
+    .delete(users.initializeRemoveProfile)
     .put(users.update);
+
+  // Confirm user removal
+  app.route('/api/users/remove/:token').all(usersPolicy.isAllowed)
+    .delete(users.removeProfile);
 
   app.route('/api/users-avatar').all(usersPolicy.isAllowed)
     .post(users.avatarUploadField, users.avatarUpload);

@@ -4,11 +4,10 @@
  * Module dependencies.
  */
 var usersPolicy = require('../policies/users.server.policy'),
+    users = require('../controllers/users.server.controller'),
     passport = require('passport');
 
 module.exports = function(app) {
-  // User Routes
-  var users = require('../controllers/users.server.controller');
 
   // Confirm users email
   app.route('/api/auth/confirm-email/:token')

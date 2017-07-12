@@ -42,7 +42,10 @@ exports.invokeRolesPolicies = function() {
     roles: ['user'],
     allows: [{
       resources: '/api/users',
-      permissions: ['put']
+      permissions: ['put', 'delete']
+    }, {
+      resources: '/api/users/remove/:token',
+      permissions: ['delete']
     }, {
       resources: '/api/users/:username',
       permissions: ['get']
@@ -124,7 +127,7 @@ exports.isAllowed = function(req, res, next) {
   var roles = (req.user && req.user.roles) ? req.user.roles : ['guest'];
   acl.areAnyRolesAllowed(roles, req.route.path, req.method.toLowerCase(), function(err, isAllowed) {
     if (err) {
-      // An authorization error occurred.
+      // An authorization error occurred
       return res.status(500).json({
         message: 'Unexpected authorization error'
       });

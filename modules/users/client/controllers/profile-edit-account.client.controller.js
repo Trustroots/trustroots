@@ -18,8 +18,13 @@
     vm.updateUserSubscriptions = updateUserSubscriptions;
     vm.updatingUserSubscriptions = false;
     vm.changeUserPassword = changeUserPassword;
-    vm.removalConfirm = false;
     vm.user = Authentication.user;
+
+    // Related to profile removal
+    vm.removeProfileConfirm = false;
+    vm.removeProfileLoading = false;
+    vm.removeProfileInitialized = '';
+    vm.removeProfile = removeProfile;
 
     // Related to password reset
     vm.changeUserPasswordLoading = false;
@@ -134,6 +139,27 @@
         }
       );
 
+    }
+
+    function removeProfile() {
+      if (!vm.removeProfileConfirm) {
+        return;
+      }
+
+      vm.removeProfileLoading = true;
+
+      new Users(Authentication.user).$delete()
+        .then(function(response) {
+          vm.removeProfileInitialized = response.message || 'Success.';
+        })
+        .catch(function(response) {
+          vm.removeProfileLoading = false;
+          messageCenterService.add(
+            'danger',
+            response.message || 'Something went wrong while initializing profile removal, try again.',
+            { timeout: 10000 }
+          );
+        });
     }
 
   }

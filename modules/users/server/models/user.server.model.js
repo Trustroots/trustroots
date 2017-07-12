@@ -281,6 +281,13 @@ var UserSchema = new Schema({
   resetPasswordExpires: {
     type: Date
   },
+  /* For removing the profile */
+  removeProfileToken: {
+    type: String
+  },
+  removeProfileExpires: {
+    type: Date
+  },
   /* Tags & Tribes user is member of */
   member: {
     type: [UserMemberSchema]
