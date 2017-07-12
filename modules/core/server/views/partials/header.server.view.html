@@ -22,7 +22,9 @@
   <div class="container" ng-if="app.user">
 
     <div class="navbar-header">
-      <a ng-click="app.goHome()" class="navbar-brand hidden-xs">
+      <a ng-click="app.goHome()"
+         class="navbar-brand hidden-xs"
+         aria-label="Trustroots">
         <img src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="177" height="31" />
       </a>
     </div>
@@ -30,35 +32,45 @@
     <ul class="nav navbar-nav hidden-xs">
       <li class="hidden-xs dropdown" uib-dropdown>
         <a class="dropdown-toggle cursor-pointer" uib-dropdown-toggle>
-          Help
+          Info &amp; Support
         </a>
         <ul class="dropdown-menu">
-          {% include 'about-links.server.view.html' %}
+          <li ui-sref-active="active"><a ui-sref="home">About</a></li>
+          <li ui-sref-active="active"><a ui-sref="support">Contact &amp; Support</a></li>
+          <li ui-sref-active="active"><a ui-sref="faq.general">FAQ</a></li>
+          <li><a href="https://ideas.trustroots.org/">Blog</a></li>
+          <li><a href="https://shop.trustroots.org/">Shop</a></li>
+          <li ui-sref-active="active"><a ui-sref="media">Media</a></li>
+          <li ui-sref-active="active"><a ui-sref="privacy">Privacy</a></li>
+          <li ui-sref-active="active"><a ui-sref="rules">Rules</a></li>
+          <li ui-sref-active="active"><a ui-sref="team">Team</a></li>
+          <li ui-sref-active="active"><a ui-sref="foundation">Foundation</a></li>
+          <li ui-sref-active="active"><a ui-sref="volunteering">Volunteering</a></li>
         </ul>
       </li>
     </ul>
 
     <ul class="nav navbar-nav nav-header-primary">
       <li ng-if="::app.appSettings.invitationsEnabled" ui-sref-active="active">
-        <a ui-sref="invite">
+        <a ui-sref="invite" aria-label="Invite friends">
           <i class="icon-share icon-fw icon-lg"></i>
           <span class="hidden-xs">Invite Friends</span>
         </a>
       </li>
       <li ui-sref-active="active">
-        <a ui-sref="tribes.list">
+        <a ui-sref="tribes.list" aria-label="Tribes">
           <i class="icon-tribes icon-fw icon-lg"></i>
           <span class="hidden-xs">Tribes</span>
         </a>
       </li>
       <li ui-sref-active="active">
-        <a ui-sref="search.map">
+        <a ui-sref="search.map" aria-label="Map">
           <i class="icon-search icon-fw icon-lg"></i>
           <span class="hidden-xs">Map</span>
         </a>
       </li>
       <li ui-sref-active="active">
-        <a ui-sref="inbox">
+        <a ui-sref="inbox" aria-label="Messages">
           <i class="icon-messages icon-fw icon-lg"></i>
           <span messages-unread-count></span>
         </a>
@@ -110,7 +122,7 @@
         </ul>
       </li>
       <li ui-sref-active="active" class="visible-xs-block">
-        <a ui-sref="navigation">
+        <a ui-sref="navigation" aria-label="My profile, info and support">
           <i class="icon-menu icon-fw icon-lg"></i>
         </a>
       </li>
