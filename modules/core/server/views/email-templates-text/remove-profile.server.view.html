@@ -1,0 +1,14 @@
+{% extends 'email.server.view.html' %}
+
+{% block content %}
+Hey {{name}}!
+
+Someone (probably you) requested removing your Trustroots account.
+
+If you did not request this, just ignore this email. We'll keep your account safe.
+
+Please click the link below to confirm your profile removal. The link is valid for one hour.
+
+<{{urlConfirmPlainText}}>
+
+{% endblock %}

@@ -321,6 +321,20 @@
         data: {
           pageTitle: 'Reset password'
         }
+      }).
+
+      // Profile removal
+      state('remove', {
+        url: '/remove/:token',
+        templateUrl: '/modules/users/views/profile/remove.client.view.html',
+        footerTransparent: true,
+        headerHidden: true,
+        requiresAuth: true,
+        controller: 'RemoveProfileController',
+        controllerAs: 'removeProfile',
+        data: {
+          pageTitle: 'Remove profile'
+        }
       });
   }
 
