@@ -41,7 +41,7 @@ module.exports = function (karmaConfig) {
 
     // Level of logging
     // Possible values: karmaConfig.LOG_DISABLE || karmaConfig.LOG_ERROR || karmaConfig.LOG_WARN || karmaConfig.LOG_INFO || karmaConfig.LOG_DEBUG
-    logLevel: karmaConfig.LOG_DEBUG,
+    logLevel: karmaConfig.LOG_INFO,
 
     // Enable / disable watching file and executing tests whenever any file changes
     autoWatch: true,
