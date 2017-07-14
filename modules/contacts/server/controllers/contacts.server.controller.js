@@ -152,6 +152,21 @@ exports.remove = function(req, res) {
   });
 };
 
+/**
+ * Clear all contacts by user id
+ */
+exports.removeAllByUserId = function(userId, callback) {
+  Contact.remove({
+    $or: [
+      { userTo: userId },
+      { userFrom: userId }
+    ]
+  }, function(err) {
+    if (callback) {
+      callback(err);
+    }
+  });
+};
 
 /**
  * Confirm (i.e. update) contact

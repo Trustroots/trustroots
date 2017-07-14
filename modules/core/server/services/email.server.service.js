@@ -117,7 +117,7 @@ exports.sendRemoveProfile = function(user, callback) {
   exports.renderEmailAndSend('remove-profile', params, callback);
 };
 
-exports.sendResetPasswordConfirm = function(user, callback) {
+exports.sendRemoveProfileConfirm = function(user, callback) {
   var campaign = 'remove-profile-confirm';
 
   var params = exports.addEmailBaseTemplateParams({
