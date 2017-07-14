@@ -372,6 +372,8 @@ exports.update = function(req, res) {
       delete req.body.password;
       delete req.body.resetPasswordToken;
       delete req.body.resetPasswordExpires;
+      delete req.body.removeProfileToken;
+      delete req.body.removeProfileExpires;
       delete req.body.additionalProvidersData;
       delete req.body.publicReminderCount;
       delete req.body.publicReminderSent;
@@ -615,7 +617,7 @@ exports.removeProfile = function(req, res) {
     // Send email
     function(user, done) {
       console.log('->send confirmation');
-      emailService.sendRemoveProfileConfirm({
+      emailService.sendRemoveProfileConfirmed({
         displayName: user.displayName,
         email: user.email
       }, function(err) {
@@ -1097,6 +1099,9 @@ exports.getUserMemberships = function(req, res) {
     });
 };
 
+/**
+ * Remove push registration
+ */
 exports.removePushRegistration = function(req, res) {
 
   if (!req.user) {

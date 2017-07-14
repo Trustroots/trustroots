@@ -98,11 +98,11 @@ exports.sendConfirmContact = function(user, friend, contact, messageHTML, messag
 };
 
 exports.sendRemoveProfile = function(user, callback) {
-  var urlConfirm = url + '/api/profile/remove/' + user.removeProfileToken,
+  var urlConfirm = url + '/remove/' + user.removeProfileToken,
       campaign = 'remove-profile';
 
   var params = exports.addEmailBaseTemplateParams({
-    subject: 'Remove profile',
+    subject: 'Confirm removing your Trustroots profile',
     name: user.displayName,
     email: user.email,
     utmCampaign: campaign,
@@ -117,8 +117,8 @@ exports.sendRemoveProfile = function(user, callback) {
   exports.renderEmailAndSend('remove-profile', params, callback);
 };
 
-exports.sendRemoveProfileConfirm = function(user, callback) {
-  var campaign = 'remove-profile-confirm';
+exports.sendRemoveProfileConfirmed = function(user, callback) {
+  var campaign = 'remove-profile-confirmed';
 
   var params = exports.addEmailBaseTemplateParams({
     subject: 'Your Trustroots profile has been removed',
@@ -127,7 +127,7 @@ exports.sendRemoveProfileConfirm = function(user, callback) {
     utmCampaign: campaign,
     sparkpostCampaign: campaign
   });
-  exports.renderEmailAndSend('remove-profile-confirm', params, callback);
+  exports.renderEmailAndSend('remove-profile-confirmed', params, callback);
 };
 
 exports.sendResetPassword = function(user, callback) {

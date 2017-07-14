@@ -39,7 +39,7 @@
                                               <p>Hey {{name}}!</p>
                                               <p>Someone (probably you) requested removing your Trustroots account.</p>
                                               <p>If you did not request this, just ignore this email. We'll keep your account safe.</p>
-                                              <p>Please click the link below to confirm your profile removal. The link is valid for one hour.</p>
+                                              <p>Please click the link below to confirm your profile removal. The link is valid for 24 hours.</p>
 
                                           </td>
                                       </tr>
@@ -59,7 +59,7 @@
   </tr>
   <!-- // MODULE ROW -->
 
-  {% include 'partials/button.server.view.html' with {'buttonUrl': urlConfirm, 'buttonTitle': 'Confirm'} %}
+  {% include 'partials/button.server.view.html' with {'buttonUrl': urlConfirm, 'buttonTitle': 'Confirm removing my profile'} %}
 
   {% include 'partials/copypasteurl.server.view.html' with {'url': urlConfirmPlainText} %}
 
