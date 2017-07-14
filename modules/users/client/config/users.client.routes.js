@@ -327,7 +327,7 @@
       state('remove', {
         url: '/remove/:token',
         templateUrl: '/modules/users/views/profile/remove.client.view.html',
-        footerTransparent: true,
+        footerHidden: true,
         headerHidden: true,
         requiresAuth: true,
         controller: 'RemoveProfileController',
