@@ -24,8 +24,7 @@ var _ = require('lodash'),
     git = require('git-rev'),
     path = require('path'),
     paginate = require('express-paginate'),
-    uuid = require('uuid'),
-    lastSeenController = require(path.resolve('./modules/users/server/controllers/lastseen.server.controller'));
+    uuid = require('uuid');
 
 /**
  * Initialize local variables
@@ -191,6 +190,7 @@ module.exports.initSession = function (app, db) {
  * Wire in user last seen middleware
  */
 module.exports.initLastSeen = function (app) {
+  var lastSeenController = require(path.resolve('./modules/users/server/controllers/lastseen.server.controller'));
   app.use(lastSeenController);
 };
 
