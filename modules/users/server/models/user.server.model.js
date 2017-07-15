@@ -84,7 +84,8 @@ var UserMemberSchema = new Schema({
 var UserPushRegistrationSchema = new Schema({
   platform: {
     type: String,
-    enum: ['android', 'ios', 'web'],
+    // android, ios, web → Firebase; expo → Exponent
+    enum: ['android', 'ios', 'web', 'expo'],
     required: true
   },
   token: {
