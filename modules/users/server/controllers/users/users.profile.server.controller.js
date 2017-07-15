@@ -542,15 +542,21 @@ exports.initializeRemoveProfile = function(req, res) {
 
 
 /**
- * Remove profile POST from email token
+ * Remove profile DELETE from email token
  */
 exports.removeProfile = function(req, res) {
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
   async.waterfall([
 
     // Validate token
     function(done) {
-      console.log('->validate token: ' + req.params.token);
       User.findOne({
+        _id: req.user._id,
         removeProfileToken: req.params.token,
         removeProfileExpires: {
           $gt: Date.now()
@@ -570,7 +576,7 @@ exports.removeProfile = function(req, res) {
 
     // Remove profile
     function(user, done) {
-      console.log('->remove profile');
+      console.log('->remove profile: ' + user.username);
       User.findOneAndRemove({
         _id: user._id
       }, function(err) {
