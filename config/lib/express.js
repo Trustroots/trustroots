@@ -537,7 +537,6 @@ module.exports.init = function (db) {
   // Initialize modules server authorization policies
   this.initModulesServerPolicies(app);
 
-  // TODO where to place it so the req.user would be populated already?
   // Initialize last seen middleware
   this.initLastSeen(app);
 
