@@ -2,6 +2,7 @@
 
 var path = require('path'),
     firebaseMessaging = require(path.resolve('./config/lib/firebase-messaging')),
+    exponentNotifications = require(path.resolve('./config/lib/exponent-notifications')),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
     log = require(path.resolve('./config/lib/logger'));
@@ -68,8 +69,11 @@ module.exports = function(job, done) {
       .catch(function() { reject(); });
   });
 
-  // wait for push service to finish
-  firebasePushPromise
+  // push to Exponent
+  var exponentPushPromise = exponentNotifications.sendToDevice(exponentTokens, notification);
+
+  // wait for all push services to finish
+  Promise.all([firebasePushPromise, exponentPushPromise])
     .then(function() {
       process.nextTick(function() {
         log('info', 'Successfully finished `send push message` job', {
