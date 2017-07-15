@@ -24,7 +24,8 @@ var _ = require('lodash'),
     git = require('git-rev'),
     path = require('path'),
     paginate = require('express-paginate'),
-    uuid = require('uuid');
+    uuid = require('uuid'),
+    lastSeenController = require(path.resolve('./modules/core/server/controllers/lastseen.server.controller'));
 
 /**
  * Initialize local variables
@@ -184,6 +185,13 @@ module.exports.initSession = function (app, db) {
       collection: config.sessionCollection
     })
   }));
+};
+
+/**
+ * Wire in user last seen middleware
+ */
+module.exports.initLastSeen = function (app) {
+  app.use(lastSeenController);
 };
 
 /**
@@ -528,6 +536,10 @@ module.exports.init = function (db) {
 
   // Initialize modules server authorization policies
   this.initModulesServerPolicies(app);
+
+  // TODO where to place it so the req.user would be populated already?
+  // Initialize last seen middleware
+  this.initLastSeen(app);
 
   // Initialize modules server routes
   this.initModulesServerRoutes(app);
