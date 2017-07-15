@@ -25,7 +25,7 @@ var _ = require('lodash'),
     path = require('path'),
     paginate = require('express-paginate'),
     uuid = require('uuid'),
-    lastSeenController = require(path.resolve('./modules/core/server/controllers/lastseen.server.controller'));
+    lastSeenController = require(path.resolve('./modules/users/server/controllers/lastseen.server.controller'));
 
 /**
  * Initialize local variables
