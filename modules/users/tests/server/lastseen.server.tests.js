@@ -90,8 +90,6 @@ describe('Last seen', function () {
 
     it('should update the last seen date of logged user when accessing api', function (done) {
       // Read statistics
-      //
-      // TODO decide which requests should update lastseen and which not
       sandbox.clock.tick(20);
       agent.get('/api/messages')
         .expect(200)

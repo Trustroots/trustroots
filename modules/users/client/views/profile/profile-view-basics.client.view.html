@@ -29,7 +29,7 @@
       Member since <time ng-bind="profileCtrl.profile.created | date:'mediumDate'"></time>
     </div>
 
-    <div class="profile-sidebar-section" ng-if="profileCtrl.profile.seen">
+    <div class="profile-sidebar-section" ng-if="::profileCtrl.profile.seen">
       Online <span tr-time="profileCtrl.profile.seen"></span>
     </div>
 
