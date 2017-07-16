@@ -21,6 +21,94 @@ var _ = require('lodash'),
     Thread = mongoose.model('Thread'),
     User = mongoose.model('User');
 
+// Allowed fields of message object to be set over API
+var messageFields = [
+  '_id',
+  'content',
+  'created',
+  'read',
+  'userFrom',
+  'userTo'
+].join(' ');
+
+// Allowed fields of thread object to be set over API
+var threadFields = [
+  '_id',
+  'message',
+  'read',
+  'updated',
+  'userFrom',
+  'userTo'
+].join(' ');
+
+/**
+ * Sanitize message content field
+ * @param {Array} messages - list of messages to go trough
+ */
+function sanitizeMessages(messages) {
+
+  if (!messages || !messages.length) {
+    return [];
+  }
+
+  var messagesCleaned = [];
+
+  // Sanitize each outgoing message's contents
+  messages.forEach(function(message) {
+    message.content = sanitizeHtml(message.content, textProcessor.sanitizeOptions);
+    messagesCleaned.push(message);
+  });
+
+  return messagesCleaned;
+}
+
+function sanitizeThreads(threads, authenticatedUserId) {
+
+  if (!threads || !threads.length) {
+    return [];
+  }
+
+  // Sanitize each outgoing thread
+  var threadsCleaned = [];
+
+  threads.forEach(function(thread) {
+
+    // Threads need just excerpt
+    thread = thread.toObject();
+
+    // Clean message content from html + clean all whitespace + shorten
+    if (thread.message) {
+      thread.message.excerpt = thread.message.content ? textProcessor.plainText(thread.message.content, true).substring(0, 100).trim() + ' …' : '…';
+      delete thread.message.content;
+    } else {
+      // Ensure this works even if messages couldn't be found for some reason
+      thread.message = {
+        excerpt: '…'
+      };
+    }
+
+    // If latest message in the thread was from current user, show
+    // it as read - sender obviously read his/her own message
+    if (thread.userFrom && thread.userFrom._id && thread.userFrom._id.toString() === authenticatedUserId.toString()) {
+      thread.read = true;
+    }
+
+    threadsCleaned.push(thread);
+
+    // If users weren't populated, they were removed.
+    // Don't return thread at all at this point.
+    //
+    // @todo:
+    // Return thread but with placeholder user and old user's ID
+    // With ID we could fetch the message thread — now all we could
+    // show is this line at inbox but not actual messages
+    // if (thread.userTo && thread.userFrom) {
+    //   threadsCleaned.push(thread);
+    // }
+  });
+
+  return threadsCleaned;
+}
 
 /**
  * Constructs link headers for pagination
@@ -60,7 +148,7 @@ exports.inbox = function(req, res) {
       page: req.query.page || 1,
       limit: req.query.limit || 20,
       sort: '-updated',
-      select: '_id message read updated userFrom userTo',
+      select: threadFields,
       populate: {
         path: 'userFrom userTo message',
         select: 'content ' + userHandler.userMiniProfileFields
@@ -74,48 +162,12 @@ exports.inbox = function(req, res) {
         });
       } else {
 
-        // Sanitize each outgoing thread
-        var threadsCleaned = [];
-        if (data.docs.length > 0) {
-          data.docs.forEach(function(thread) {
-
-            // Threads need just excerpt
-            thread = thread.toObject();
-
-            // Clean message content from html + clean all whitespace + shorten
-            if (thread.message) {
-              thread.message.excerpt = thread.message.content ? textProcessor.plainText(thread.message.content, true).substring(0, 100).trim() + ' …' : '…';
-              delete thread.message.content;
-            } else {
-              // Ensure this works even if messages couldn't be found for some reason
-              thread.message = {
-                excerpt: '…'
-              };
-            }
-
-            // If latest message in the thread was from current user, show
-            // it as read - sender obviously read his/her own message
-            if (thread.userFrom && thread.userFrom._id && thread.userFrom._id.toString() === req.user._id.toString()) {
-              thread.read = true;
-            }
-
-            // If users weren't populated, they were removed.
-            // Don't return thread at all at this point.
-            //
-            // @todo:
-            // Return thread but with placeholder user and old user's ID
-            // With ID we could fetch the message thread — now all we could
-            // show is this line at inbox but not actual messages
-            if (thread.userTo && thread.userFrom) {
-              threadsCleaned.push(thread);
-            }
-          });
-        }
+        var threads = sanitizeThreads(data.docs, req.user._id);
 
         // Pass pagination data to construct link header
         setLinkHeader(req, res, data.pages);
 
-        res.json(threadsCleaned);
+        res.json(threads);
       }
     }
   );
@@ -387,7 +439,7 @@ exports.threadByUser = function(req, res, next, userId) {
           page: req.query.page || 1,
           limit: req.query.limit || 20,
           sort: '-created',
-          select: '_id content created read userFrom userTo',
+          select: messageFields,
           populate: {
             path: 'userFrom userTo',
             select: userHandler.userMiniProfileFields
@@ -416,17 +468,7 @@ exports.threadByUser = function(req, res, next, userId) {
     // Sanitize messages and return them for the API
     function(messages, done) {
 
-      var messagesCleaned = [];
-
-      if (messages && messages.length > 0) {
-        // Sanitize each outgoing message's contents
-        messages.forEach(function(message) {
-          message.content = sanitizeHtml(message.content, textProcessor.sanitizeOptions);
-          messagesCleaned.push(message);
-        });
-      }
-
-      req.messages = messagesCleaned;
+      req.messages = sanitizeMessages(messages || []);
 
       done(null);
     },
@@ -557,5 +599,86 @@ exports.messagesCount = function(req, res) {
       });
     }
     return res.json({ unread: unreadCount ? parseInt(unreadCount, 10) : 0 });
+  });
+};
+
+/**
+ * Sync endpoint used by mobile messenger
+ */
+exports.sync = function(req, res) {
+
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  var data = {
+    messages: [],
+    users: []
+  };
+
+  async.waterfall([
+
+    // Find messages
+    function(done) {
+      Message
+        .find({
+          $or: [
+            { userFrom: req.user._id },
+            { userTo: req.user._id }
+          ]
+        })
+        .sort({ created: -1 })
+        .select(messageFields)
+        .exec(function(err, messages) {
+          messages = (!err && messages) ? sanitizeMessages(messages) : [];
+
+          data.messages = _.groupBy(messages,
+            function(row) {
+
+              if (row.userTo === req.user._id) {
+                return row.userFrom;
+              }
+              return row.userTo;
+            });
+
+          done(err);
+        });
+    },
+
+    // Collect users
+    function(done) {
+
+      // Pick user ids from messages dictionary
+      var userIds = _.keys(data.messages);
+
+      // Add currently authenticated user's id to above list
+      userIds.push(req.user._id.toString());
+
+      // Get objects for users based on above user ids
+      User.find({
+        _id: {
+          $in: userIds
+        }
+      })
+      .select(userHandler.userMiniProfileFields)
+      .exec(function(err, users) {
+        data.users = users;
+        done(err);
+      });
+    },
+
+    // Return the package
+    function() {
+      return res.json(data);
+    }
+
+  ], function(err) {
+    if (err) {
+      return res.status(400).send({
+        message: errorHandler.getErrorMessage(err)
+      });
+    }
   });
 };
