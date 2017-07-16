@@ -1,12 +1,17 @@
 'use strict';
 
 var fs = require('fs'),
+    async = require('async'),
     should = require('should'),
+    sinon = require('sinon'),
     request = require('supertest'),
     path = require('path'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
     Contact = mongoose.model('Contact'),
+    Message = mongoose.model('Message'),
+    Offer = mongoose.model('Offer'),
+    Tag = mongoose.model('Tag'),
     config = require(path.resolve('./config/config')),
     express = require(path.resolve('./config/lib/express')),
     testutils = require(path.resolve('./testutils/server.testutil'));
@@ -18,6 +23,7 @@ var app,
     agent,
     credentials_a,
     credentials_b,
+    sandbox,
     user_a,
     _user_a,
     user_b,
@@ -36,6 +42,16 @@ describe('User removal CRUD tests', function () {
     agent = request.agent(app);
 
     done();
+  });
+
+  // initialize sinon
+  beforeEach(function () {
+    sandbox = sinon.sandbox.create();
+    sandbox.useFakeTimers(1500 * 1000 * 1000 * 1000, 'Date');
+  });
+
+  afterEach(function () {
+    sandbox.restore();
   });
 
   // Create an user A
@@ -479,25 +495,128 @@ describe('User removal CRUD tests', function () {
     });
   });
 
-  it('should remove profile images', function (done) {
+  context('logged in & valid token', function () {
 
-    user_a.removeProfileExpires = Date.now() + (24 * 3600000);
-    user_a.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
+    function sendDeleteRequest(cb) {
+      agent.del('/api/users/remove/' + user_a.removeProfileToken)
+        .expect(200)
+        .end(function (deleteErr) {
+          cb(deleteErr);
+        });
+    }
 
-    user_a.save(function (err, savedUser) {
-      should.not.exist(err);
+    var userC;
 
+    // sign in
+    beforeEach(function (done) {
       agent.post('/api/auth/signin')
         .send(credentials_a)
         .expect(200)
-        .end(function (signinErr, signinRes) {
+        .end(function (signinErr) {
           // Handle signin error
-          if (signinErr) {
-            return done(signinErr);
-          }
+          return done(signinErr);
+        });
+    });
 
-          // Each user has their own folder for avatars
-          var uploadDir = path.resolve(config.uploadDir) + '/' + signinRes.body._id + '/avatar'; // No trailing slash
+    // save removeToken for user a
+    beforeEach(function (done) {
+      user_a.removeProfileExpires = Date.now() + (24 * 3600000);
+      user_a.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
+
+      user_a.save(done);
+    });
+
+    // Create an offer for the user
+    beforeEach(function (done) {
+      var offer = new Offer({
+        user: user_a._id
+      });
+
+      offer.save(done);
+    });
+
+    // create a 3rd user
+    beforeEach(function (done) {
+      userC = new User({
+        public: true,
+        firstName: 'Full',
+        lastName: 'Name C',
+        displayName: 'Full Name C',
+        email: 'user_c@example.com',
+        username: 'userc',
+        displayUsername: 'userc',
+        password: '**********asdfasdf',
+        provider: 'local'
+      });
+
+      userC.save(done);
+    });
+
+    // add contacts between the users
+    beforeEach(function (done) {
+      var contactAB = new Contact({
+        userFrom: user_a._id,
+        userTo: user_b._id,
+        confirmed: true
+      });
+
+      var contactBC = new Contact({
+        userFrom: user_b._id,
+        userTo: userC._id,
+        confirmed: true
+      });
+
+      var contactCA = new Contact({
+        userFrom: userC._id,
+        userTo: user_a._id,
+        confirmed: false
+      });
+
+      async.each([contactAB, contactBC, contactCA], function (contact, cb) {
+        contact.save(cb);
+      }, done);
+    });
+
+    it('should remove profile images', function (done) {
+
+      // Each user has their own folder for avatars
+      var uploadDir = path.resolve(config.uploadDir) + '/' + user_a._id + '/avatar'; // No trailing slash
+
+      // Avatar should now exist
+      console.log('testing: ' + uploadDir);
+      if (fs.existsSync(uploadDir)) {
+        console.log('Exists');
+      } else {
+        console.log('does not exist');
+      }
+
+      // Ensure file doesn't exist before
+      /*
+      fs.unlink(uploadDir, function (unlinkErr) {
+        if (unlinkErr) {
+          return done(unlinkErr);
+        }
+
+        // Avatar should now exist
+        console.log('testing: ' + uploadDir);
+        if (fs.existsSync(uploadDir)) {
+          console.log('Exists');
+        } else {
+          console.log('does not exist');
+        }
+
+      });
+      */
+
+      // Upload avatar image
+      agent.post('/api/users-avatar')
+        .attach('avatar', './modules/users/tests/server/img/avatar.png')
+        .expect(200)
+        .end(function (userInfoErr) {
+          // Handle change profile picture error
+          if (userInfoErr) {
+            return done(userInfoErr);
+          }
 
           // Avatar should now exist
           console.log('testing: ' + uploadDir);
@@ -507,71 +626,289 @@ describe('User removal CRUD tests', function () {
             console.log('does not exist');
           }
 
-          // Ensure file doesn't exist before
-          /*
-          fs.unlink(uploadDir, function (unlinkErr) {
-            if (unlinkErr) {
-              return done(unlinkErr);
-            }
-
-            // Avatar should now exist
-            console.log('testing: ' + uploadDir);
-            if (fs.existsSync(uploadDir)) {
-              console.log('Exists');
-            } else {
-              console.log('does not exist');
-            }
-
-          });
-          */
-
-          // Upload avatar image
-          agent.post('/api/users-avatar')
-            .attach('avatar', './modules/users/tests/server/img/avatar.png')
+          agent.del('/api/users/remove/' + user_a.removeProfileToken)
             .expect(200)
-            .end(function (userInfoErr) {
-              // Handle change profile picture error
-              if (userInfoErr) {
-                return done(userInfoErr);
+            .end(function (deleteErr, deleteRes) {
+              // Handle signup error
+              if (deleteErr) {
+                return done(deleteErr);
               }
 
-              // Avatar should now exist
-              console.log('testing: ' + uploadDir);
-              if (fs.existsSync(uploadDir)) {
-                console.log('Exists');
-              } else {
-                console.log('does not exist');
-              }
+              deleteRes.body.message.should.equal('Your profile has been removed.');
 
-              agent.del('/api/users/remove/' + savedUser.removeProfileToken)
-                .expect(200)
-                .end(function (deleteErr, deleteRes) {
-                  // Handle signup error
-                  if (deleteErr) {
-                    return done(deleteErr);
-                  }
+              // Avatar should not exist anymore
+              User.findById(user_a._id, function(findUsersErr, findUser) {
+                if (findUsersErr) {
+                  return done(findUsersErr);
+                }
 
-                  deleteRes.body.message.should.equal('Your profile has been removed.');
+                should.not.exist(findUser);
 
-                  // Avatar should not exist anymore
-                  User.findById(savedUser._id, function(findUsersErr, findUser) {
-                    if (findUsersErr) {
-                      return done(findUsersErr);
-                    }
-
-                    should.not.exist(findUser);
-
-                    done();
-                  });
-                });
+                done();
+              });
             });
         });
     });
+
+    it('should mark all messages to the removed user as notified', function (done) {
+      async.waterfall([
+        // create some unnotified messages between the users
+        function (cb) {
+          var messageAB = new Message({
+            content: 'Message content',
+            userFrom: user_a._id,
+            userTo: user_b._id,
+            read: false
+          });
+
+          var messageBA = new Message({
+            content: 'Message content',
+            userFrom: user_b._id,
+            userTo: user_a._id,
+            read: false
+          });
+
+          async.each([messageAB, messageBA], function (msg, callback) {
+            msg.save(callback);
+          }, cb);
+        },
+
+        sendDeleteRequest,
+
+        // check that the messages to the removed user are notificationCount: 2
+        function (cb) {
+          Message.findOne({ userTo: user_a._id }, function (err, msg) {
+            try {
+              should(msg.notificationCount).eql(2);
+              cb();
+            } catch (e) {
+              cb(e);
+            }
+          });
+        }
+
+      ], done);
+    });
+
+    it('should keep messages from the removed user untouched', function (done) {
+
+      async.waterfall([
+        // create some unnotified messages between the users
+        function (cb) {
+          var messageAB = new Message({
+            content: 'Message content',
+            userFrom: user_a._id,
+            userTo: user_b._id,
+            read: false
+          });
+
+          var messageBA = new Message({
+            content: 'Message content',
+            userFrom: user_b._id,
+            userTo: user_a._id,
+            read: false
+          });
+
+          async.each([messageAB, messageBA], function (msg, callback) {
+            msg.save(callback);
+          }, cb);
+        },
+
+        sendDeleteRequest,
+
+        // check that the messages to the removed user are notificationCount: 2
+        function (cb) {
+          Message.findOne({ userFrom: user_a._id }, function (err, msg) {
+            try {
+              should(msg.notificationCount).eql(0);
+              cb();
+            } catch (e) {
+              cb(e);
+            }
+          });
+        }
+
+      ], done);
+    });
+
+    it('should subtract 1 from tags.count for each tribe user is member of', function (done) {
+
+      var tribeA,
+          tribeB;
+
+      async.waterfall([
+        // Create some tribes
+        function (cb) {
+          tribeA = new Tag({
+            label: 'Tribe A',
+            attribution: 'Photo credits',
+            attribution_url: 'http://www.trustroots.org/team',
+            image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
+            tribe: true,
+            description: 'Lorem ipsum.',
+            count: 5
+          });
+
+          tribeB = new Tag({
+            label: 'Tribe B',
+            attribution: 'Photo credits',
+            attribution_url: 'http://www.trustroots.org/team2',
+            image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6d',
+            tribe: true,
+            description: 'Lorem ipsum.',
+            count: 5
+          });
+
+          async.each([tribeA, tribeB], function (tribe, callback) {
+            tribe.save(callback);
+          }, cb);
+        },
+
+        // join the tribeA with the removed user
+        function (cb) {
+          agent.post('/api/users/memberships')
+            .send({
+              id: tribeA._id,
+              relation: 'is'
+            })
+            .expect(200)
+            .end(function (err) {
+              cb(err);
+            });
+        },
+
+        // now the tagA should have count 6
+        function (cb) {
+          Tag.findById(tribeA._id, function (err, tribe) {
+            try {
+              should(tribe.count).eql(6);
+              cb();
+            } catch (e) {
+              cb(e);
+            }
+          });
+        },
+
+        sendDeleteRequest,
+
+        // tagA should have lower count by 1 (5 -> 6 -> 5 now)
+        function (cb) {
+          Tag.findById(tribeA._id, function (err, tribe) {
+            try {
+              should(tribe.count).eql(5);
+              cb();
+            } catch (e) {
+              cb(e);
+            }
+          });
+        },
+
+        // tagB should have count 5 all the time
+        function (cb) {
+          Tag.findById(tribeB._id, function (err, tribe) {
+            try {
+              should(tribe.count).eql(5);
+              cb();
+            } catch (e) {
+              cb(e);
+            }
+          });
+        }
+
+      ], done);
+    });
+
+    it('should remove hosting offer of the user', function (done) {
+      async.waterfall([
+        // at the beginning 1 offer should exist in database
+        function (cb) {
+          Offer.find({ user: user_a._id }, function (err, offer) {
+            try {
+              should(offer).length(1);
+              cb();
+            } catch (e) {
+              cb(e);
+            }
+          });
+        },
+
+        // send the delete request
+        function (cb) {
+          agent.del('/api/users/remove/' + user_a.removeProfileToken)
+            .expect(200)
+            .end(function (deleteErr) {
+              cb(deleteErr);
+            });
+        },
+
+        // now the offer shouldn't be there
+        function (cb) {
+          Offer.find({ user: user_a._id }, function (err, offers) {
+            try {
+              should(offers).length(0);
+              cb();
+            } catch (e) {
+              cb(e);
+            }
+          });
+        }
+      ], done);
+    });
+
+    it('should remove contacts of the user', function (done) {
+      async.waterfall([
+
+        // 3 contacts should exist
+        function (cb) {
+          Contact.find().exec(function (err, contacts) {
+            cb(null, contacts);
+          });
+        },
+        function (contacts, cb) {
+          try {
+            should(contacts).length(3);
+            cb();
+          } catch (e) {
+            cb(e);
+          }
+        },
+
+        // deletion request
+        function (cb) {
+          agent.del('/api/users/remove/' + user_a.removeProfileToken)
+            .expect(200)
+            .end(function (err) {
+              cb(err);
+            });
+        },
+
+        // only 1 contact should exist now (the one between users B and C)
+        function (cb) {
+          Contact.find().exec(function (err, contacts) {
+            cb(null, contacts);
+          });
+        },
+
+        function (contacts, cb) {
+          try {
+            should(contacts).length(1);
+            cb();
+          } catch (e) {
+            cb(e);
+          }
+        }
+
+      ], done);
+    });
+
   });
 
+
   afterEach(function (done) {
-    User.remove().exec(function() {
-      Contact.remove().exec(done);
-    });
+    var collectionsToClear = [User, Contact, Message, Offer, Tag];
+
+    async.each(collectionsToClear, function (collection, cb) {
+      collection.remove().exec(cb);
+    }, done);
   });
 });

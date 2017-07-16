@@ -762,3 +762,14 @@ exports.sync = function(req, res) {
     }
   });
 };
+
+/**
+ * Mark all the messages of which the user with given userId is receiver notified (notificationCount: 2)
+ * @param {string} userId
+ * @param {function} callback - function (?error) {}
+ */
+exports.markAllMessagesToUserNotified = function (userId, callback) {
+  Message.update({ userTo: userId }, { notificationCount: 2 }, function (err) {
+    callback(err);
+  });
+};

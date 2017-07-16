@@ -9,6 +9,7 @@ var _ = require('lodash'),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
     contactHandler = require(path.resolve('./modules/contacts/server/controllers/contacts.server.controller')),
+    messageHandler = require(path.resolve('./modules/messages/server/controllers/messages.server.controller')),
     offerHandler = require(path.resolve('./modules/offers/server/controllers/offers.server.controller')),
     tagsHandler = require(path.resolve('./modules/tags/server/controllers/tags.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
@@ -609,6 +610,22 @@ exports.removeProfile = function(req, res) {
     },
 
     // Mark all messages sent _to_ that user as `notified:true` (so that unread-messages doesn't pick them up anymore). Leave messages _from_ that user as is.
+    function (user, done) {
+      messageHandler.markAllMessagesToUserNotified(user._id, function (err) {
+        return done(err, user);
+      });
+    },
+
+    // Subtract 1 from all the tribes.count of which user is member
+    function (user, done) {
+      // tagsHandler.editCount(tagId, -1, callback);
+      async.each(user.member, function (relation, cb) {
+        // change the count of every tag (tribe) user is member of
+        tagsHandler.editCount(relation.tag, -1, cb);
+      }, function (err) {
+        done(err, user);
+      });
+    },
 
     // Remove uploaded images
     function(user, done) {
