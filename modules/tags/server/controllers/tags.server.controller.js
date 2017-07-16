@@ -92,3 +92,12 @@ exports.tagBySlug = function(req, res, next, slug) {
 
   return next();
 };
+
+/**
+ * @param {string} tagId - the id of the tribe/tag
+ * @param {number} difference - how much to add or remove (negative) from the tag.count?
+ * @param {function} callback
+ */
+exports.editCount = function (tagId, difference, callback) {
+  Tag.findByIdAndUpdate(tagId, { $inc: { count: difference } }, callback);
+};
