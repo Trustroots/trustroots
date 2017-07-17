@@ -12,6 +12,7 @@ module.exports = function (app) {
 
   // Setting up the users profile api
   app.route('/api/users').all(usersPolicy.isAllowed)
+    .get(userProfile.search)
     .delete(userProfile.initializeRemoveProfile)
     .put(userProfile.update);
 

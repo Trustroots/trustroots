@@ -1468,3 +1468,19 @@ function isUserMemberOfTribe(user, tribeId) {
     return membership.tribe.equals(tribeId);
   }));
 }
+
+/*
+ * This middleware sends response with an array of found users
+ * We assume that req.query.search exists
+ */
+exports.search = function (req, res, next) {
+  if (!_.has(req.query, 'search')) {
+    return next();
+  }
+  var queryString = req.query.search;
+
+  User.find({ username: new RegExp('^' + queryString) }).exec(function (err, users) {
+    if (err) return next(err);
+    return res.send(users);
+  });
+};
