@@ -8,6 +8,7 @@ var _ = require('lodash'),
     async = require('async'),
     sanitizeHtml = require('sanitize-html'),
     paginate = require('express-paginate'),
+    moment = require('moment'),
     mongoose = require('mongoose'),
     config = require(path.resolve('./config/config')),
     messageToStatsService = require(path.resolve(
@@ -44,6 +45,7 @@ var threadFields = [
 /**
  * Sanitize message content field
  * @param {Array} messages - list of messages to go trough
+ * @returns {Array}
  */
 function sanitizeMessages(messages) {
 
@@ -62,6 +64,12 @@ function sanitizeMessages(messages) {
   return messagesCleaned;
 }
 
+/**
+ * Sanitize threads
+ * @param {Array} threads - list of threads to go trough
+ * @param {ObjectId} authenticatedUserId - ID of currently authenticated user
+ * @returns {Array}
+ */
 function sanitizeThreads(threads, authenticatedUserId) {
 
   if (!threads || !threads.length) {
@@ -613,6 +621,7 @@ exports.sync = function(req, res) {
     });
   }
 
+  // Root object to be sent out from this API endpoint
   var data = {
     messages: [],
     users: []
@@ -622,26 +631,91 @@ exports.sync = function(req, res) {
 
     // Find messages
     function(done) {
-      Message
-        .find({
-          $or: [
-            { userFrom: req.user._id },
-            { userTo: req.user._id }
+
+      // Validate and construct date filters
+      var dateFrom,
+          dateTo,
+          queryDate = {};
+
+      if (_.has(req, 'query.dateFrom')) {
+        dateFrom = moment(req.query.dateFrom);
+
+        // Validate `dateFrom`
+        if (!dateFrom.isValid()) {
+          return res.status(400).send({
+            message: 'Invalid `dateFrom`.'
+          });
+        }
+
+        // Append dateFrom to date query
+        _.set(queryDate, 'created.$gt', dateFrom.toDate());
+      }
+
+      if (_.has(req, 'query.dateTo')) {
+        dateTo = moment(req.query.dateTo);
+        // Validate `dateTo`
+        if (!dateTo.isValid()) {
+          return res.status(400).send({
+            message: 'Invalid `dateTo`.'
+          });
+        }
+
+        // Append dateTo to date query
+        _.set(queryDate, 'created.$lt', dateTo.toDate());
+      }
+
+      // Validate correct order of dates
+      if (dateFrom && dateTo && dateFrom.isAfter(dateTo)) {
+        return res.status(400).send({
+          message: 'Invalid dates: `dateFrom` cannot be later than `dateTo`'
+        });
+      }
+
+      // Construct final Mongo query
+      var query;
+
+      // This is always part of the query
+      var queryUsers = {
+        $or: [
+          { userFrom: req.user._id },
+          { userTo: req.user._id }
+        ]
+      };
+
+      // Filter only by user or also by date?
+      if (_.has(queryDate, 'created')) {
+        // Construct query with date limits
+        query = {
+          $and: [
+            queryUsers,
+            queryDate
           ]
-        })
+        };
+      } else {
+        // Construct query without date limit
+        query = queryUsers;
+      }
+
+      // Run the query
+      Message
+        .find(query)
         .sort({ created: -1 })
         .select(messageFields)
         .exec(function(err, messages) {
-          messages = (!err && messages) ? sanitizeMessages(messages) : [];
+          if (err) {
+            return done(err);
+          }
 
-          data.messages = _.groupBy(messages,
-            function(row) {
+          // Sanitize messages
+          messages = sanitizeMessages(messages);
 
-              if (row.userTo === req.user._id) {
-                return row.userFrom;
-              }
-              return row.userTo;
-            });
+          // Re-group messages by users
+          data.messages = _.groupBy(messages, function(row) {
+            if (row.userTo === req.user._id) {
+              return row.userFrom;
+            }
+            return row.userTo;
+          });
 
           done(err);
         });
