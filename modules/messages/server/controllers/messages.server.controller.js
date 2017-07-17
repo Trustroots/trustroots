@@ -709,26 +709,32 @@ exports.sync = function(req, res) {
           // Sanitize messages
           messages = sanitizeMessages(messages);
 
+          // Collect user ids
+          var userIds = [];
+
           // Re-group messages by users
           data.messages = _.groupBy(messages, function(row) {
+
+            // Collect user id
+            userIds.push(row.userTo.toString());
+            userIds.push(row.userFrom.toString());
+
+            // Determines key of the group
             if (row.userTo === req.user._id) {
               return row.userFrom;
             }
             return row.userTo;
           });
 
-          done(err);
+          // Ensure we have only one of each user ids
+          userIds = _.uniq(userIds);
+
+          done(err, userIds);
         });
     },
 
     // Collect users
-    function(done) {
-
-      // Pick user ids from messages dictionary
-      var userIds = _.keys(data.messages);
-
-      // Add currently authenticated user's id to above list
-      userIds.push(req.user._id.toString());
+    function(userIds, done) {
 
       // Get objects for users based on above user ids
       User.find({
