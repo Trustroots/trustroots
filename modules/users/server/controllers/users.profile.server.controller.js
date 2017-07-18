@@ -1474,22 +1474,30 @@ function isUserMemberOfTribe(user, tribeId) {
  * We assume that req.query.search exists
  */
 exports.search = function (req, res, next) {
+
+  // check that the search string is provided
   if (!_.has(req.query, 'search')) {
     return next();
   }
-  var queryString = _.escapeRegExp(req.query.search);
 
-  if (queryString.length < 3) {
+  // validate the query string
+  if (req.query.search.length < 3) {
     return res.status(400).end();
   }
 
+
+  // build the regexp for the query
+  // match at the beginning of the strings, case insensitive
+  var queryString = _.escapeRegExp(req.query.search);
   var queryRegexp = new RegExp('^' + queryString, 'i');
 
+  // perform the search
   User
     .find({ $and: [
-      { public: true },
+      { public: true }, // only public users
       {
         $or: [
+          // search in the following fields
           { username: queryRegexp },
           { firstName: queryRegexp },
           { lastName: queryRegexp },
@@ -1497,9 +1505,11 @@ exports.search = function (req, res, next) {
         ]
       }
     ] })
+    // select only the right profile properties
     .select(exports.userMiniProfileFields + ' -_id')
     // todo what to choose for sorting?
     .sort({ username: 1 })
+    // limit the amount of found users (config)
     .limit(config.limits.userSearchLimit)
     .exec(function (err, users) {
       if (err) return next(err);
