@@ -1,14 +1,23 @@
+'use strict';
+
 var request = require('supertest'),
     async = require('async'),
+    _ = require('lodash'),
     path = require('path'),
+    sinon = require('sinon'),
     mongoose = require('mongoose'),
     should = require('should'),
     User = mongoose.model('User'),
-    express = require(path.resolve('./config/lib/express'));
+    express = require(path.resolve('./config/lib/express')),
+    config = require(path.resolve('./config/config')),
+    userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller'));
 
 describe('Search users: GET /users?search=string', function () {
 
-  var agent;
+  var agent,
+      sandbox;
+
+  var limit = 9;
 
   // initialize the testing environment
   before(function() {
@@ -24,6 +33,16 @@ describe('Search users: GET /users?search=string', function () {
     }, done);
   });
 
+  beforeEach(function () {
+    sandbox = sinon.sandbox.create();
+
+    sandbox.stub(config.limits, 'userSearchLimit').value(limit);
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
 
   function createUsers(users, callback) {
     var createdUsers = [];
@@ -33,12 +52,13 @@ describe('Search users: GET /users?search=string', function () {
         firstName: user.firstName || 'firstName' + index,
         lastName: user.lastName || 'lastName' + index,
         get email() { return this.username + '@example.com'; },
-        displayName: 'Full Name',
+        get displayName() { return this.firstName + ' ' + this.lastName; },
         get emailTemporary() { return this.email; },
         emailToken: 'initial email token',
         get displayUsername() { return this.username; },
         password: user.password || '******password',
-        provider: 'local'
+        provider: 'local',
+        public: _.has(user, 'public') ? user.public : true
       });
 
       createdUsers.push(createdUser);
@@ -50,7 +70,11 @@ describe('Search users: GET /users?search=string', function () {
 
 
   context('not logged in', function () {
-    it('Forbidden 403');
+    it('Forbidden 403', function (done) {
+      agent.get('/api/users?search=aaaBc')
+        .expect(403)
+        .end(done);
+    });
   });
 
   context('logged in', function () {
@@ -104,7 +128,7 @@ describe('Search users: GET /users?search=string', function () {
               });
           },
 
-          // check that we found the users starting with asd
+          // check that we found the users
           function (foundUsers, cb) {
 
             should(foundUsers).length(3);
@@ -113,18 +137,296 @@ describe('Search users: GET /users?search=string', function () {
           }
         ], done);
       });
-      it('[some given names matched] return array of users');
-      it('[some family names matched] return array of users');
-      it('[none matched] return empty array');
-      it('the user data should have fields from miniProfile');
-      it('[many users matched] limit the amount (5-10, config)');
-      it('search is case insensitive');
-      it('return only active users');
+
+      it('[some given names matched] return array of users', function (done) {
+        async.waterfall([
+
+          // create some users
+          function (cb) {
+            createUsers([
+              { firstName: 'qwer' },
+              { firstName: 'qwera' },
+              { firstName: 'qwery' },
+              { firstName: 'qwert' },
+              { firstName: 'qwe' },
+              { firstName: 'sqweruyo' }
+            ], cb);
+          },
+
+          // search
+          function (users, cb) {
+            agent.get('/api/users?search=qwer')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body);
+              });
+          },
+
+          // check that we found the users
+          function (foundUsers, cb) {
+
+            should(foundUsers).length(4);
+
+            cb();
+          }
+        ], done);
+      });
+
+      it('[some family names matched] return array of users', function (done) {
+        async.waterfall([
+
+          // create some users
+          function (cb) {
+            createUsers([
+              { lastName: 'zxcvbna' },
+              { lastName: 'zxcvbnrya' },
+              { lastName: 'zxcvboa' },
+              { lastName: 'zxcvbny' },
+              { lastName: 'zxcvb' },
+              { lastName: 'zxcvba' },
+              { lastName: 'xcvz' },
+              { lastName: 'asdia' },
+              { lastName: 'hasdfg' }
+            ], cb);
+          },
+
+          // search
+          function (users, cb) {
+            agent.get('/api/users?search=zxcvb')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body);
+              });
+          },
+
+          // check that we found the users
+          function (foundUsers, cb) {
+
+            should(foundUsers).length(6);
+
+            cb();
+          }
+        ], done);
+      });
+
+      it('[full names matched] return array of users', function (done) {
+        async.waterfall([
+
+          // create some users
+          function (cb) {
+            createUsers([
+              { firstName: 'jacob', lastName: 'alia' },
+              { firstName: 'jacob', lastName: 'alib' },
+              { firstName: 'jAcob', lastName: 'alic' },
+              { firstName: 'jaCob', lastName: 'alid' },
+              { firstName: 'jacob', lastName: 'aliE' },
+              { firstName: 'jacob', lastName: 'alIf' },
+              { firstName: 'jacob', lastName: 'alg' }
+            ], cb);
+          },
+
+          // search
+          function (users, cb) {
+            agent.get('/api/users?search=jacob+aLi')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body);
+              });
+          },
+
+          // check that we found the users
+          function (foundUsers, cb) {
+
+            should(foundUsers).length(6);
+
+            cb();
+          }
+        ], done);
+      });
+
+      it('[none matched] return empty array', function (done) {
+        async.waterfall([
+
+          // create some users
+          function (cb) {
+            createUsers([
+              { lastName: 'zxcvbna' },
+              { username: 'zxcvba' },
+              { firstName: 'xcvz' },
+              { lastName: 'asdia' },
+              { username: 'hasdfg' }
+            ], cb);
+          },
+
+          // search
+          function (users, cb) {
+            agent.get('/api/users?search=aeiou')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body);
+              });
+          },
+
+          // check that we found the users
+          function (foundUsers, cb) {
+
+            should(foundUsers).length(0);
+
+            cb();
+          }
+        ], done);
+      });
+
+      it('the user data should have only fields from miniProfile', function (done) {
+        async.waterfall([
+
+          // create some users
+          function (cb) {
+            createUsers([
+              { username: 'aaaaaaa' }
+            ], cb);
+          },
+
+          // search
+          function (users, cb) {
+            agent.get('/api/users?search=aaa')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body);
+              });
+          },
+
+          // check that we found the users
+          function (foundUsers, cb) {
+
+            should(foundUsers).length(1);
+
+            var expectedFields = userHandler.userMiniProfileFields.split(' ');
+            var actualFields = _.keys(foundUsers[0]);
+
+            var unexpectedFields = _.difference(actualFields, expectedFields);
+
+            should(unexpectedFields).length(0);
+
+            cb();
+          }
+        ], done);
+      });
+
+      it('[many users matched] limit the amount (5-10, config)', function (done) {
+        async.waterfall([
+
+          // create some users
+          function (cb) {
+            createUsers([
+              { username: 'aaaaaaaa' },
+              { firstName: 'aaaaaaa' },
+              { lastName: 'aaaaaaa' },
+              { username: 'aaaaaaa' },
+              { username: 'aaaaaaaaab' },
+              { username: 'aaaaaaaba' },
+              { firstName: 'aaaaaaa' },
+              { lastName: 'aaaaaaac' },
+              { firstName: 'aaaaaaa' },
+              { lastName: 'aaaaaaa' },
+              { firstName: 'aaaaaaa' },
+              { lastName: 'aaaaaaa' }
+            ], cb);
+          },
+
+          // search
+          function (users, cb) {
+            agent.get('/api/users?search=aaa')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body);
+              });
+          },
+
+          // check that we found the users
+          function (foundUsers, cb) {
+
+            should(foundUsers).length(limit);
+
+            cb();
+          }
+        ], done);
+      });
+
+      it('search is case insensitive', function (done) {
+        async.waterfall([
+
+          // create some users
+          function (cb) {
+            createUsers([
+              { username: 'aaabcdef' },
+              { firstName: 'aAabCd' },
+              { lastName: 'aaABCc' },
+              { username: 'aabc' }
+            ], cb);
+          },
+
+          // search
+          function (users, cb) {
+            agent.get('/api/users?search=aaaBc')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body);
+              });
+          },
+
+          // check that we found the users
+          function (foundUsers, cb) {
+
+            should(foundUsers).length(3);
+
+            cb();
+          }
+        ], done);
+      });
+
+      it('return only public users', function (done) {
+        async.waterfall([
+
+          // create some users
+          function (cb) {
+            createUsers([
+              { username: 'aaabcdef', public: true },
+              { firstName: 'aAabCd', public: false },
+              { lastName: 'aaABCc', public: false },
+              { username: 'aabc', public: true } // this one is not matched
+            ], cb);
+          },
+
+          // search
+          function (users, cb) {
+            agent.get('/api/users?search=aaaBc')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body);
+              });
+          },
+
+          // check that we found the users
+          function (foundUsers, cb) {
+
+            should(foundUsers).length(1);
+
+            cb();
+          }
+        ], done);
+      });
     });
 
     context('invalid request', function () {
-      it('[query string is less than 3 characters long] respond with 400');
-      it('[query string contains invalid characters] respond with 400');
+      it('[query string is less than 3 characters long] respond with 400', function (done) {
+        agent.get('/api/users?search=aa')
+          .expect(400)
+          .end(function (err) {
+            // @TODO test the error message
+            done(err);
+          });
+      });
     });
   });
 });

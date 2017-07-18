@@ -1477,10 +1477,32 @@ exports.search = function (req, res, next) {
   if (!_.has(req.query, 'search')) {
     return next();
   }
-  var queryString = req.query.search;
+  var queryString = _.escapeRegExp(req.query.search);
 
-  User.find({ username: new RegExp('^' + queryString) }).exec(function (err, users) {
-    if (err) return next(err);
-    return res.send(users);
-  });
+  if (queryString.length < 3) {
+    return res.status(400).end();
+  }
+
+  var queryRegexp = new RegExp('^' + queryString, 'i');
+
+  User
+    .find({ $and: [
+      { public: true },
+      {
+        $or: [
+          { username: queryRegexp },
+          { firstName: queryRegexp },
+          { lastName: queryRegexp },
+          { displayName: queryRegexp }
+        ]
+      }
+    ] })
+    .select(exports.userMiniProfileFields + ' -_id')
+    // todo what to choose for sorting?
+    .sort({ username: 1 })
+    .limit(config.limits.userSearchLimit)
+    .exec(function (err, users) {
+      if (err) return next(err);
+      return res.send(users);
+    });
 };
