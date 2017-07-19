@@ -331,4 +331,42 @@ describe('Service: email', function() {
     });
   });
 
+  it('emails should have "do not reply" note when sending from default email', function(done) {
+    var params = emailService.addEmailBaseTemplateParams({
+      subject: 'test',
+      name: 'test',
+      email: 'test@example.com',
+      utmCampaign: 'test',
+      urlConfirmPlainText: '#',
+      urlConfirm: '#'
+      // Ommiting `from` affects rendering of template's footer
+      // from: 'test@example.com'
+    });
+
+    emailService.renderEmail('reset-password', params, function(err, email) {
+      if (err) return done(err);
+      email.text.should.containEql('Remember, I\'m just a little mail robot. Don\'t reply this email directly.');
+      done();
+    });
+  });
+
+  it('emails should not have "do not reply" note when sending from custom email', function(done) {
+    var params = emailService.addEmailBaseTemplateParams({
+      subject: 'test',
+      name: 'test',
+      email: 'test@example.com',
+      utmCampaign: 'test',
+      urlConfirmPlainText: '#',
+      urlConfirm: '#',
+      // Adding `from` affects rendering of template's footer
+      from: 'test@example.com'
+    });
+
+    emailService.renderEmail('reset-password', params, function(err, email) {
+      if (err) return done(err);
+      email.text.should.not.containEql('Remember, I\'m just a little mail robot. Don\'t reply this email directly.');
+      done();
+    });
+  });
+
 });
