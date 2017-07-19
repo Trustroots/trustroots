@@ -272,12 +272,30 @@
                                                               <tr>
                                                                   <td valign="top" class="footerContent">
                                                                       <p>
-                                                                        Remember, I'm just a little mail robot. Don't reply this email directly.<br>
-                                                                        {% if supportUrl %}<a href="{{supportUrl}}">Contact us</a> if you want to talk to a human.{% endif %}
-                                                                        <br/><br/>
+                                                                        THIS->{{from}}
+                                                                        {% if from %}
+                                                                          {% if supportUrl %}
+                                                                            <a href="{{supportUrl}}">Contact us</a>
+                                                                            <br/><br/>
+                                                                          {% endif %}
+                                                                        {% else %}
+                                                                          Remember, I'm just a little mail robot. Don't reply this email directly.<br>
+                                                                          {% if supportUrl %}
+                                                                            <a href="{{supportUrl}}">Contact us</a> if you want to talk to a human.
+                                                                          {% endif %}
+                                                                          <br/><br/>
+                                                                        {% endif %}
+
                                                                         You are receiving this email because you have an active account on Trustroots.
+
                                                                         <br/><br/>
-                                                                        {% if footerUrl %}<a href="{{footerUrl}}">{% endif %}Trustroots Foundation{% if footerUrl %}</a>{% endif %}<br>
+
+                                                                        {% if footerUrl %}<a href="{{footerUrl}}">{% endif %}
+                                                                          Trustroots Foundation
+                                                                        {% if footerUrl %}</a>{% endif %}
+
+                                                                        <br>
+
                                                                         Carpenter Court 1 Maple Road, Bramhall, Stockport, Cheshire, United Kingdom, SK7 2DH
                                                                       </p>
                                                                   </td>

@@ -30,7 +30,11 @@
 
       <!-- User watching their own profile and it's too short -->
       <div class="panel-footer" ng-if="app.user._id === profileCtrl.profile._id && (!profileCtrl.profile.description || (profileCtrl.profile.description|plainTextLength) < app.appSettings.profileMinimumLength)">
-        Your profile description should be longer so that you can send messages. <a ui-sref="profile-edit.about">Fill your profile</a>
+        <p class="lead">
+          Your profile description should be longer so that you can send messages.
+          <br><br>
+          <a ui-sref="profile-edit.about" class="btn btn-primary">Fill your profile</a>
+        </p>
       </div>
     </div>
     <!-- /About me -->

@@ -187,6 +187,14 @@ module.exports.initSession = function (app, db) {
 };
 
 /**
+ * Wire in user last seen middleware
+ */
+module.exports.initLastSeen = function (app) {
+  var lastSeenController = require(path.resolve('./modules/users/server/controllers/lastseen.server.controller'));
+  app.use(lastSeenController);
+};
+
+/**
  * Invoke modules server configuration
  */
 module.exports.initModulesConfiguration = function (app, db) {
@@ -528,6 +536,9 @@ module.exports.init = function (db) {
 
   // Initialize modules server authorization policies
   this.initModulesServerPolicies(app);
+
+  // Initialize last seen middleware
+  this.initLastSeen(app);
 
   // Initialize modules server routes
   this.initModulesServerRoutes(app);

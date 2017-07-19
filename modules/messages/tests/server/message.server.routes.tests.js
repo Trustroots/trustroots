@@ -5,6 +5,7 @@ var _ = require('lodash'),
     async = require('async'),
     request = require('supertest'),
     path = require('path'),
+    moment = require('moment'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
     Message = mongoose.model('Message'),
@@ -728,6 +729,224 @@ describe('Message CRUD tests', function() {
 
                   // Call the assertion callback
                   return done(countReadErr);
+                });
+            });
+        });
+      });
+    });
+
+  });
+
+  it('should not be able to read sync endpoint if not logged in', function(done) {
+    agent.get('/api/messages-sync')
+      .expect(403)
+      .end(function(messageSaveErr, messageSaveRes) {
+
+        messageSaveRes.body.message.should.equal('Forbidden.');
+
+        // Call the assertion callback
+        return done(messageSaveErr);
+      });
+  });
+
+  it('should be able to read sync endpoint and show messages sent from currently authenticated user', function(done) {
+
+    // Save message to this user from other user
+    var newMessage1 = new Message({
+      content: 'One',
+      userFrom: userFromId,
+      userTo: userToId,
+      created: moment('2016-06-06 19:00:00.174Z').toDate(),
+      read: false,
+      notified: true
+    });
+    var newMessage2 = new Message({
+      content: 'Two',
+      userFrom: userFromId,
+      userTo: userToId,
+      created: moment('2016-06-06 19:00:00.174Z').add(30, 'minutes').toDate(),
+      read: false,
+      notified: true
+    });
+
+    newMessage1.save(function(newMessage1Err) {
+
+      // Handle save error
+      if (newMessage1Err) return done(newMessage1Err);
+
+      newMessage2.save(function(newMessage2Err, newMessage2Res) {
+
+        // Handle save error
+        if (newMessage2Err) return done(newMessage2Err);
+
+        var newThread = new Thread({
+          userFrom: userFromId,
+          userTo: userToId,
+          updated: moment('2016-06-06 19:00:00.174Z').add(30, 'minutes').toDate(),
+          message: newMessage2Res._id,
+          read: false
+        });
+
+        newThread.save(function(newThreadErr) {
+
+          // Handle save error
+          if (newThreadErr) return done(newThreadErr);
+
+          // Sign in
+          agent.post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function(signinErr) {
+              // Handle signin error
+              if (signinErr) return done(signinErr);
+
+              agent.get('/api/messages-sync')
+                .expect(200)
+                .end(function(syncReadErr, syncReadRes) {
+
+                  should.not.exist(syncReadRes.body.messages[userFromId.toString()]);
+
+                  var messages = syncReadRes.body.messages[userToId.toString()];
+
+                  messages.length.should.equal(2);
+
+                  should.exist(messages[0]._id);
+                  should.exist(messages[0].created);
+                  messages[0].read.should.equal(false);
+                  messages[0].userTo.should.equal(userToId.toString());
+                  messages[0].userFrom.should.equal(userFromId.toString());
+                  messages[0].content.should.equal('Two');
+
+                  should.exist(messages[1]._id);
+                  should.exist(messages[1].created);
+                  messages[1].read.should.equal(false);
+                  messages[1].userTo.should.equal(userToId.toString());
+                  messages[1].userFrom.should.equal(userFromId.toString());
+                  messages[1].content.should.equal('One');
+
+                  var users = syncReadRes.body.users;
+
+                  users.length.should.equal(2);
+
+                  users[0]._id.should.equal(userFromId.toString());
+                  users[0].username.should.equal(userFrom.username);
+                  should.exist(users[0].emailHash);
+                  should.exist(users[0].displayName);
+                  should.exist(users[0].avatarUploaded);
+                  should.exist(users[0].avatarSource);
+
+                  users[1]._id.should.equal(userToId.toString());
+                  users[1].username.should.equal(userTo.username);
+                  should.exist(users[1].emailHash);
+                  should.exist(users[1].displayName);
+                  should.exist(users[1].avatarUploaded);
+                  should.exist(users[1].avatarSource);
+
+                  // Call the assertion callback
+                  return done(syncReadErr);
+                });
+            });
+        });
+      });
+    });
+
+  });
+
+  it('should be able to read sync endpoint and show messages sent to currently authenticated user', function(done) {
+
+    // Save message to this user from other user
+    var newMessage1 = new Message({
+      content: 'One',
+      userFrom: userToId,
+      userTo: userFromId,
+      created: moment('2016-06-06 19:00:00.174Z').toDate(),
+      read: false,
+      notified: true
+    });
+    var newMessage2 = new Message({
+      content: 'Two',
+      userFrom: userToId,
+      userTo: userFromId,
+      created: moment('2016-06-06 19:00:00.174Z').add(30, 'minutes').toDate(),
+      read: false,
+      notified: true
+    });
+
+    newMessage1.save(function(newMessage1Err) {
+
+      // Handle save error
+      if (newMessage1Err) return done(newMessage1Err);
+
+      newMessage2.save(function(newMessage2Err, newMessage2Res) {
+
+        // Handle save error
+        if (newMessage2Err) return done(newMessage2Err);
+
+        var newThread = new Thread({
+          userFrom: userToId,
+          userTo: userFromId,
+          updated: new Date(),
+          message: newMessage2Res._id,
+          read: false
+        });
+
+        newThread.save(function(newThreadErr) {
+
+          // Handle save error
+          if (newThreadErr) return done(newThreadErr);
+
+          // Sign in
+          agent.post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function(signinErr) {
+              // Handle signin error
+              if (signinErr) return done(signinErr);
+
+              agent.get('/api/messages-sync')
+                .expect(200)
+                .end(function(syncReadErr, syncReadRes) {
+
+                  should.not.exist(syncReadRes.body.messages[userToId.toString()]);
+
+                  var messages = syncReadRes.body.messages[userFromId.toString()];
+
+                  messages.length.should.equal(2);
+
+                  should.exist(messages[0]._id);
+                  should.exist(messages[0].created);
+                  messages[0].read.should.equal(false);
+                  messages[0].userFrom.should.equal(userToId.toString());
+                  messages[0].userTo.should.equal(userFromId.toString());
+                  messages[0].content.should.equal('Two');
+
+                  should.exist(messages[1]._id);
+                  should.exist(messages[1].created);
+                  messages[1].read.should.equal(false);
+                  messages[1].userFrom.should.equal(userToId.toString());
+                  messages[1].userTo.should.equal(userFromId.toString());
+                  messages[1].content.should.equal('One');
+
+                  var users = syncReadRes.body.users;
+
+                  users.length.should.equal(2);
+
+                  users[0]._id.should.equal(userFromId.toString());
+                  users[0].username.should.equal(userFrom.username);
+                  should.exist(users[0].emailHash);
+                  should.exist(users[0].displayName);
+                  should.exist(users[0].avatarUploaded);
+                  should.exist(users[0].avatarSource);
+
+                  users[1]._id.should.equal(userToId.toString());
+                  users[1].username.should.equal(userTo.username);
+                  should.exist(users[1].emailHash);
+                  should.exist(users[1].displayName);
+                  should.exist(users[1].avatarUploaded);
+                  should.exist(users[1].avatarSource);
+
+                  // Call the assertion callback
+                  return done(syncReadErr);
                 });
             });
         });

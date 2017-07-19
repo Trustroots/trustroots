@@ -1,3 +1,3 @@
 #!/bin/bash
 
-$(npm bin)/agendash --db=mongodb://localhost/trustroots-dev --collection=agendaJobs --port=1081
+"$(npm bin)/agendash" --db=mongodb://localhost/trustroots-dev --collection=agendaJobs --port=1081

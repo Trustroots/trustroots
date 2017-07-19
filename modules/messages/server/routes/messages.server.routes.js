@@ -21,6 +21,9 @@ module.exports = function(app) {
   app.route('/api/messages-count').all(messagesPolicy.isAllowed)
     .get(messages.messagesCount);
 
+  app.route('/api/messages-sync').all(messagesPolicy.isAllowed)
+    .get(messages.sync);
+
   // Finish by binding the message middleware
   app.param('messageUserId', messages.threadByUser);
 };

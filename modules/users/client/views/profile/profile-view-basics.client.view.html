@@ -29,6 +29,10 @@
       Member since <time ng-bind="profileCtrl.profile.created | date:'mediumDate'"></time>
     </div>
 
+    <div class="profile-sidebar-section" ng-if="::profileCtrl.profile.seen">
+      Online <span tr-time="profileCtrl.profile.seen"></span>
+    </div>
+
     <div class="profile-sidebar-section" ng-if="profileCtrl.profile.locationLiving">
       <i class="icon-fw icon-building text-muted"></i>
       Lives in <a ui-sref="search.map({location: profileCtrl.profile.locationLiving})"

@@ -28,6 +28,9 @@ exports.invokeRolesPolicies = function() {
     }, {
       resources: '/api/messages-count',
       permissions: []
+    }, {
+      resources: '/api/messages-sync',
+      permissions: []
     }]
   }, {
     roles: ['user'],
@@ -42,6 +45,9 @@ exports.invokeRolesPolicies = function() {
       permissions: ['post']
     }, {
       resources: '/api/messages-count',
+      permissions: ['get']
+    }, {
+      resources: '/api/messages-sync',
       permissions: ['get']
     }]
   }]);
