@@ -21,8 +21,7 @@ var _ = require('lodash'),
       rename: {
         'gulp-angular-templatecache': 'templateCache'
       }
-    }),
-    KarmaServer = require('karma').Server;
+    });
 
 // Local settings
 var changedTestFiles = [];
@@ -412,6 +411,7 @@ gulp.task('mocha', function(done) {
 
 // Karma test runner task
 gulp.task('karma', function(done) {
+  var KarmaServer = require('karma').Server;
   new KarmaServer({
     configFile: __dirname + '/karma.conf.js'
   }, done).start();
@@ -419,6 +419,7 @@ gulp.task('karma', function(done) {
 
 // Karma test runner task - watch mode
 gulp.task('karma:watch', function(done) {
+  var KarmaServer = require('karma').Server;
   new KarmaServer({
     configFile: __dirname + '/karma.conf.js',
     singleRun: false
