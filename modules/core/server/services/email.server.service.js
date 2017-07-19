@@ -297,8 +297,9 @@ exports.sendWelcomeSequenceFirst = function(user, callback) {
  * 2/3 welcome sequence email
  */
 exports.sendWelcomeSequenceSecond = function(user, callback) {
-  var signupLabel = config.domain + '/signup',
-      urlSignup = url + '/signup',
+  var inviteCode = inviteCodeService.getCode(),
+      signupLabel = config.domain + '/c/' + inviteCode,
+      urlSignup = url + '/c/' + inviteCode,
       urlInvite = url + '/invite',
       campaign = 'welcome-sequence-second',
       utmParams = {
@@ -312,7 +313,6 @@ exports.sendWelcomeSequenceSecond = function(user, callback) {
     firstName: user.firstName,
     name: user.displayName,
     email: user.email,
-    inviteCode: inviteCodeService.getCode(),
     signupLabel: signupLabel,
     urlInvitePlainText: urlInvite,
     urlInvite: analyticsHandler.appendUTMParams(urlInvite, utmParams),
