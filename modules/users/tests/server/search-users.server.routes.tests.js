@@ -422,8 +422,9 @@ describe('Search users: GET /users?search=string', function () {
       it('[query string is less than 3 characters long] respond with 400', function (done) {
         agent.get('/api/users?search=aa')
           .expect(400)
-          .end(function (err) {
-            // @TODO test the error message
+          .end(function (err, res) {
+            should(res.body.message).eql('Bad request.');
+            should(res.body.detail).eql('Query string should be at least 3 characters long.');
             done(err);
           });
       });
