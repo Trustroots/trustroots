@@ -15,7 +15,7 @@ exports.notifyPushDeviceAdded = function(user, platform, callback) {
 
   var notification = {
     title: 'Trustroots',
-    body: 'You just enabled Trustroots ' + platform + ' push notifications. Yay!',
+    body: 'You just enabled Trustroots ' + platform.replace('expo', 'mobile') + ' push notifications. Yay!',
     click_action: analyticsHandler.appendUTMParams(editAccountUrl, {
       source: 'push-notification',
       medium: 'fcm',
@@ -69,16 +69,10 @@ exports.notifyMessagesUnread = function(userFrom, userTo, data, callback) {
 
 exports.sendUserNotification = function(user, notification, callback) {
 
-  var tokens = _.get(user, 'pushRegistration', []).map(function(reg) {
-    return reg.token;
-  });
-
   var data = {
     userId: user._id,
-    tokens: tokens,
-    payload: {
-      notification: notification
-    }
+    pushServices: user.pushRegistration,
+    notification: notification
   };
 
   agenda.now('send push message', data, callback);

@@ -18,11 +18,9 @@ describe('job: send push message', function() {
   });
 
   it('will send a push', function(done) {
-    var payload = {
-      notification: {
-        title: 'a title',
-        body: 'a body'
-      }
+    var notification = {
+      title: 'a title',
+      body: 'a body'
     };
     var job = {
       attrs: {
@@ -31,8 +29,11 @@ describe('job: send push message', function() {
         data: {
           // eslint-disable-next-line new-cap
           userId: mongoose.Types.ObjectId().toString(),
-          tokens: ['123', '456'],
-          payload: payload
+          pushServices: [
+            { token: '123' },
+            { token: '456' }
+          ],
+          notification: notification
         }
       }
     };
@@ -41,7 +42,7 @@ describe('job: send push message', function() {
       messages.length.should.equal(1);
       var message = messages[0];
       message.tokens.should.deepEqual(['123', '456']);
-      message.payload.should.deepEqual(payload);
+      message.payload.should.deepEqual({ notification: notification });
       done();
     });
   });
@@ -89,11 +90,9 @@ describe('job: send push message', function() {
     });
 
     it('removes user tokens if they are invalid', function(done) {
-      var payload = {
-        notification: {
-          title: 'a title',
-          body: 'a body'
-        }
+      var notification = {
+        title: 'a title',
+        body: 'a body'
       };
       var job = {
         attrs: {
@@ -101,8 +100,12 @@ describe('job: send push message', function() {
           _id: mongoose.Types.ObjectId(),
           data: {
             userId: user._id.toString(),
-            tokens: ['123', '456', 'toberemoved'],
-            payload: payload
+            pushServices: [
+              { token: '123' },
+              { token: '456' },
+              { token: 'toberemoved' }
+            ],
+            notification: notification
           }
         }
       };
@@ -111,7 +114,7 @@ describe('job: send push message', function() {
         messages.length.should.equal(1);
         var message = messages[0];
         message.tokens.should.deepEqual(['123', '456', 'toberemoved']);
-        message.payload.should.deepEqual(payload);
+        message.payload.should.deepEqual({ notification: notification });
         User.findOne(user._id, function(err, updatedUser) {
           if (err) return done(err);
           user.pushRegistration.length.should.equal(3);

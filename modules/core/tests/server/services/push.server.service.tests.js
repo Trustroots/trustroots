@@ -43,10 +43,10 @@ describe('Service: push', function() {
       job.type.should.equal('send push message');
 
       job.data.userId.should.equal(5);
-      job.data.tokens.should.deepEqual(['123', '456']);
-      job.data.payload.notification.title.should.equal('a nice title');
-      job.data.payload.notification.body.should.equal('a nice body');
-      job.data.payload.notification.click_action.should.equal('http://example.com');
+      job.data.pushServices.should.deepEqual(user.pushRegistration);
+      job.data.notification.title.should.equal('a nice title');
+      job.data.notification.body.should.equal('a nice body');
+      job.data.notification.click_action.should.equal('http://example.com');
 
       done(err);
     });
@@ -74,10 +74,10 @@ describe('Service: push', function() {
       job.type.should.equal('send push message');
 
       job.data.userId.should.equal(15);
-      job.data.tokens.should.deepEqual(['abc']);
-      job.data.payload.notification.title.should.equal('Trustroots');
-      job.data.payload.notification.body.should.equal('You just enabled Trustroots web push notifications. Yay!');
-      job.data.payload.notification.click_action.should
+      job.data.pushServices.should.deepEqual(user.pushRegistration);
+      job.data.notification.title.should.equal('Trustroots');
+      job.data.notification.body.should.equal('You just enabled Trustroots web push notifications. Yay!');
+      job.data.notification.click_action.should
         .equal(url + '/profile/edit/account?utm_source=push-notification&utm_medium=fcm&utm_campaign=device-added&utm_content=reply-to');
 
       done();
@@ -112,10 +112,10 @@ describe('Service: push', function() {
       job.type.should.equal('send push message');
 
       job.data.userId.should.equal(5);
-      job.data.tokens.should.deepEqual(['123']);
-      job.data.payload.notification.title.should.equal('Trustroots');
-      job.data.payload.notification.body.should.equal('You have one unread message');
-      job.data.payload.notification.click_action.should
+      job.data.pushServices.should.deepEqual(userTo.pushRegistration);
+      job.data.notification.title.should.equal('Trustroots');
+      job.data.notification.body.should.equal('You have one unread message');
+      job.data.notification.click_action.should
         .equal(url + '/messages?utm_source=push-notification&utm_medium=fcm&utm_campaign=messages-unread&utm_content=reply-to');
 
       done();
@@ -151,10 +151,10 @@ describe('Service: push', function() {
       job.type.should.equal('send push message');
 
       job.data.userId.should.equal(5);
-      job.data.tokens.should.deepEqual(['123']);
-      job.data.payload.notification.title.should.equal('Trustroots');
-      job.data.payload.notification.body.should.equal(userFrom.displayName + ' is still waiting for a reply');
-      job.data.payload.notification.click_action.should
+      job.data.pushServices.should.deepEqual(userTo.pushRegistration);
+      job.data.notification.title.should.equal('Trustroots');
+      job.data.notification.body.should.equal(userFrom.displayName + ' is still waiting for a reply');
+      job.data.notification.click_action.should
         .equal(url + '/messages?utm_source=push-notification&utm_medium=fcm&utm_campaign=messages-unread&utm_content=reply-to');
 
       done();
