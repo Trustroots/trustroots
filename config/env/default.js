@@ -103,7 +103,7 @@ module.exports = {
     welcomeSequence: {
       first: { minutes: 0 },
       second: { hours: 24 },
-      third: { days: 5 }
+      third: { days: 14 }
     }
   },
   mailer: {
