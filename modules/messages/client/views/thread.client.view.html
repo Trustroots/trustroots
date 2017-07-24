@@ -17,6 +17,21 @@
       <!-- Thread -->
       <threads id="messages-thread" moremessages="thread.moreMessages()">
 
+        <!-- User profile mobile view -->
+        <div class="message">
+          <div class="col-xs-12 col-sm-11">
+            <div class="message-recipient panel panel-default visible-xs">
+              <a class="panel-body" ui-sref="profile.about({username: thread.userTo.username})">
+                <div tr-avatar data-size="32" data-link="false" data-user="::thread.userTo"></div>
+                <h4>
+                  {{ thread.userTo.displayName }}
+                </h4>
+                <small class="text-muted">@{{ thread.userTo.displayUsername || thread.userTo.username }}</small>
+              </a>
+            </div>
+          </div>
+        </div>
+
         <!-- Pagination error -->
         <div class="divider divider-first" ng-if="thread.messageHandler.resolved === false && thread.messageHandler.nextPage">
           <div class="panel panel-danger">
