@@ -1045,9 +1045,23 @@ exports.getInviteCode = function(req, res) {
  */
 exports.validateInviteCode = function(req, res) {
 
-  var inviteCode = req.params.invitecode;
+  var inviteCode = _.get(req.params, 'invitecode', false);
 
-  return res.send({
-    valid: inviteCode && inviteCodeService.validateCode(inviteCode.toLowerCase())
+  var inviteCodeValid = inviteCode && inviteCodeService.validateCode(inviteCode.toLowerCase());
+
+  // Send validation result to stats
+  statService.stat({
+    namespace: 'inviteCodeValidation',
+    counts: {
+      count: 1
+    },
+    tags: {
+      valid: inviteCodeValid ? 'yes' : 'no'
+    }
+  }, function() {
+    // Send validation out to API
+    return res.send({
+      valid: inviteCodeValid
+    });
   });
 };
