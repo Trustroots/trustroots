@@ -97,6 +97,9 @@ exports.sendConfirmContact = function(user, friend, contact, messageHTML, messag
   exports.renderEmailAndSend('confirm-contact', params, callback);
 };
 
+/**
+ * Email with a token to initialize removing a user
+ */
 exports.sendRemoveProfile = function(user, callback) {
   var urlConfirm = url + '/remove/' + user.removeProfileToken,
       campaign = 'remove-profile';
@@ -117,6 +120,9 @@ exports.sendRemoveProfile = function(user, callback) {
   exports.renderEmailAndSend('remove-profile', params, callback);
 };
 
+/**
+ * Email confirmation that user was removed
+ */
 exports.sendRemoveProfileConfirmed = function(user, callback) {
   var campaign = 'remove-profile-confirmed';
 

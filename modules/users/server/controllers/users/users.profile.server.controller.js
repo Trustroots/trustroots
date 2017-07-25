@@ -577,7 +577,6 @@ exports.removeProfile = function(req, res) {
 
     // Remove profile
     function(user, done) {
-      console.log('->remove profile: ' + user.username);
       User.findOneAndRemove({
         _id: user._id
       }, function(err) {
@@ -587,7 +586,6 @@ exports.removeProfile = function(req, res) {
 
     // Remove offers
     function(user, done) {
-      console.log('->remove offers');
       offerHandler.removeAllByUserId(user._id, function(err) {
         if (err) {
           console.log('Error when removing all contacts by user ID. #j93hdd');
@@ -599,7 +597,6 @@ exports.removeProfile = function(req, res) {
 
     // Remove contacts
     function(user, done) {
-      console.log('->remove contacts');
       contactHandler.removeAllByUserId(user._id, function(err) {
         if (err) {
           console.log('Error when removing all contacts by user ID. #j93hdd');
@@ -629,7 +626,6 @@ exports.removeProfile = function(req, res) {
 
     // Remove uploaded images
     function(user, done) {
-      console.log('->remove images');
       // All user's uploads are under their own folder
       del(path.resolve(config.uploadDir) + '/' + user._id)
         .then(function() {
@@ -639,7 +635,6 @@ exports.removeProfile = function(req, res) {
 
     // Send email
     function(user, done) {
-      console.log('->send confirmation');
       emailService.sendRemoveProfileConfirmed({
         displayName: user.displayName,
         email: user.email
@@ -659,7 +654,6 @@ exports.removeProfile = function(req, res) {
 
     // Done
     function() {
-      console.log('->remove done!');
       return res.json({
         message: 'Your profile has been removed.'
       });
