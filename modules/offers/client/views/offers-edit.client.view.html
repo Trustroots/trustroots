@@ -20,16 +20,47 @@
         <div class="panel-body">
           <div class="row">
             <div class="col-xs-6">
-              <h4>Can you host?</h4>
-              <div class="btn-group">
-                <label class="btn btn-lg btn-hosting btn-hosting-yes" ng-model="offersEdit.offer.status" uib-btn-radio="'yes'"><span>Yes</span></label>
-                <label class="btn btn-lg btn-hosting btn-hosting-maybe" ng-model="offersEdit.offer.status" uib-btn-radio="'maybe'"><span>Maybe</span></label>
-                <label class="btn btn-lg btn-hosting btn-hosting-no" ng-model="offersEdit.offer.status" uib-btn-radio="'no'"><span>No</span></label>
+              <h4 id="offerStatus">Can you host?</h4>
+              <div class="btn-group"
+                   role="radiogroup"
+                   aria-labelledby="offerStatus">
+                <label class="btn btn-lg btn-hosting btn-hosting-yes"
+                       ng-model="offersEdit.offer.status"
+                       role="radio"
+                       aria-checked="{{ offersEdit.offer.status === 'yes' }}"
+                       uib-btn-radio="'yes'">
+                  <span>Yes</span>
+                </label>
+                <label class="btn btn-lg btn-hosting btn-hosting-maybe"
+                       ng-model="offersEdit.offer.status"
+                       role="radio"
+                       aria-checked="{{ offersEdit.offer.status === 'maybe' }}"
+                       uib-btn-radio="'maybe'">
+                  <span>Maybe</span>
+                </label>
+                <label class="btn btn-lg btn-hosting btn-hosting-no"
+                       ng-model="offersEdit.offer.status"
+                       role="radio"
+                       aria-checked="{{ offersEdit.offer.status === 'no' }}"
+                       uib-btn-radio="'no'">
+                  <span>No</span>
+                </label>
               </div>
             </div>
             <div class="col-xs-6">
-              <h4>How many guests at most?</h4>
-              <input type="number" ng-disabled="!offersEdit.offer" ng-model="offersEdit.offer.maxGuests" class="form-control input-lg offer-maxguests" maxlength="2" min="1" max="99" size="2" step="1" pattern="[0-9]{1,2}">
+              <h4 id="maxGuests">How many guests at most?</h4>
+              <input type="number"
+                     aria-labelledby="maxGuests"
+                     aria-required="true"
+                     ng-disabled="!offersEdit.offer"
+                     ng-model="offersEdit.offer.maxGuests"
+                     class="form-control input-lg offer-maxguests"
+                     maxlength="2"
+                     min="1"
+                     max="99"
+                     size="2"
+                     step="1"
+                     pattern="[0-9]{1,2}">
             </div>
           </div><!-- /.row -->
         </div>
@@ -37,21 +68,41 @@
 
       <div class="panel panel-default" ng-if="offersEdit.offer.status === 'no'">
         <div class="panel-heading">
-          <h4>Tell others why you can't host... <small class="text-muted pull-right">(optional)</small></h4>
+          <h4 id="noOfferDescriptionLabel">
+            Tell others why you can't host...
+            <small class="text-muted pull-right" aria-hidden="true">(optional)</small>
+          </h4>
         </div>
         <div class="panel-body">
-          <div class="offer-nodescription" ng-class="{'is-not-empty': offersEdit.offer.noOfferDescription.length}" ng-model="offersEdit.offer.noOfferDescription" tr-editor tr-editor-options="::app.editorOptions" data-placeholder="Write here..."></div>
+          <div class="offer-nodescription"
+               aria-labelledby="noOfferDescriptionLabel"
+               aria-required="false"
+               ng-class="{ 'is-not-empty': offersEdit.offer.noOfferDescription.length }"
+               ng-model="offersEdit.offer.noOfferDescription"
+               tr-editor
+               tr-editor-options="::app.editorOptions"
+               data-placeholder="Write here..."></div>
         </div>
       </div>
 
       <div class="panel panel-default">
         <div class="panel-heading">
-          <h4>Tell about your home and hosting possibilities</h4>
+          <h4 id="offerDescriptionLabel">Tell about your home and hosting possibilities</h4>
         </div>
         <div class="panel-body">
-          <div class="offer-description" ng-class="{'is-not-empty': offer.description.length}" ng-hide="!offersEdit.offer" ng-model="offersEdit.offer.description" tr-editor tr-editor-options="::app.editorOptions" data-placeholder="Write here..."></div>
+          <div class="offer-description"
+               aria-labelledby="offerDescriptionLabel"
+               aria-describedby="noOfferDescriptionDescription"
+               aria-required="false"
+               ng-class="{ 'is-not-empty': offer.description.length }"
+               ng-hide="!offersEdit.offer" ng-model="offersEdit.offer.description"
+               tr-editor
+               tr-editor-options="::app.editorOptions"
+               data-placeholder="Write here..."></div>
         </div>
-        <div class="panel-footer text-muted" ng-show="offersEdit.offer.description && offersEdit.offer.status === 'no'">
+        <div id="noOfferDescriptionDescription"
+             class="panel-footer text-muted"
+             ng-show="offersEdit.offer.description && offersEdit.offer.status === 'no'">
           <small>This description will be held here but won't be public until you can host again.</small>
         </div>
       </div>
@@ -59,25 +110,43 @@
       <!-- Location -->
       <div class="panel panel-default offer-panel-map">
 
-        <div class="alert alert-info offer-map-guide" role="alert" ng-if="offersEdit.firstTimeAround">
-          <p class="lead">
-            <strong>Set your hosting location on the map.</strong>
+        <div class="alert alert-info offer-map-guide"
+             role="dialog"
+             aria-labelledby="firstTimeAroundLabel"
+             aria-describedby="firstTimeAroundDescription"
+             ng-if="offersEdit.firstTimeAround">
+          <p class="lead" role="document">
+            <strong id="firstTimeAroundLabel">Set your hosting location on the map.</strong>
             <br><br>
-            Zoom in and drag the map below to place the marker over your home.
+            <span aria-hidden="true">Zoom in and drag the map below to place the marker over your home.</span>
             <br><br>
-            Your exact location won't be revealed to others; the location is publicly randomized by a couple of hundred meters.
+            <span id="firstTimeAroundDescription">
+              Your exact location won't be revealed to others; the location is publicly randomized by a couple of hundred meters.
+            </span>
             <br><br>
-            <button type="button" class="btn btn-lg btn-info" ng-click="offersEdit.firstTimeAround = false">Got it!</button>
+            <button type="button"
+                    class="btn btn-lg btn-info"
+                    data-dismiss="dialog"
+                    aria-label="Close information dialog about hosting location map"
+                    ng-click="offersEdit.firstTimeAround = false">
+              Got it!
+            </button>
           </p>
         </div>
 
         <div class="panel-body">
 
-          <p>Zoom in and drag the map below to place the marker over your home. The location is publicly randomized by a couple hunderd meters.</p>
+          <p id="offerLocation">
+            Zoom in and drag the map below to place the marker over your home.
+            The location is publicly randomized by a couple hunderd meters.
+          </p>
 
           <!-- Search location -->
           <div class="form-group offer-map-location-search" ng-if="::app.appSettings.mapbox.publicKey">
-            <label for="search-query" class="sr-only">Search for places on the map</label>
+            <label for="search-query"
+                   class="sr-only">
+              Search for places on the map
+            </label>
             <input type="text"
                    id="search-query"
                    class="form-control"
@@ -92,20 +161,40 @@
         </div>
 
         <div class="offer-map">
-          <leaflet lf-center="offersEdit.mapCenter" layers="offersEdit.mapLayers" bounds="offersEdit.mapBounds" defaults="offersEdit.mapDefaults" id="offer-add-location-canvas"></leaflet>
-          <div class="offer-location-overlay" ng-class="{'hosting-yes': offersEdit.offer.status === 'yes', 'hosting-maybe': offersEdit.offer.status === 'maybe'}"></div>
+          <leaflet lf-center="offersEdit.mapCenter"
+                   layers="offersEdit.mapLayers"
+                   bounds="offersEdit.mapBounds"
+                   defaults="offersEdit.mapDefaults"
+                   aria-describedby="offerLocation"
+                   id="offer-add-location-canvas"></leaflet>
+          <div class="offer-location-overlay"
+               ng-class="{
+                 'hosting-yes': offersEdit.offer.status === 'yes',
+                 'hosting-maybe': offersEdit.offer.status === 'maybe'
+               }"></div>
         </div>
 
       </div>
       <!-- /Location -->
 
       <p class="text-center" ng-if="offersEdit.offer">
-        <button type="submit" class="btn btn-lg btn-primary" ng-disabled="offersEdit.isLoading">
-          <span ng-show="offersEdit.offer.status !== 'no'">Start hosting</span>
-          <span ng-show="offersEdit.offer.status === 'no'">Stop hosting</span>
+        <button type="submit"
+                class="btn btn-lg btn-primary"
+                ng-disabled="offersEdit.isLoading">
+          <span ng-show="offersEdit.offer.status !== 'no'">
+            Start hosting
+          </span>
+          <span ng-show="offersEdit.offer.status === 'no'">
+            Stop hosting
+          </span>
         </button>
         <br><br>
-        <a ui-sref="profile.about({username: app.user.username})" class="text-muted">Cancel</a>
+        <a ui-sref="profile.about({username: app.user.username})"
+           tabindex="0"
+           class="text-muted"
+           role="button">
+          Cancel
+        </a>
       </p>
 
     </div><!-- /.col-* -->

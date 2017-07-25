@@ -4,10 +4,12 @@
   <div ng-if="app.user.public === false" ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
 
   <!-- Loading first init -->
-  <div class="divider divider-first text-muted text-center" ng-if="app.user.public && !thread.isInitialized">
+  <div class="divider divider-first text-muted text-center"
+       ng-if="app.user.public && !thread.isInitialized">
+    <!-- tr-spinner will have `aria-busy` etc -->
     <tr-spinner size="xs"></tr-spinner>
     <br><br>
-    <small>Wait a moment...</small>
+    <small aria-hidden="true">Wait a moment...</small>
   </div>
 
   <div class="row" ng-if="app.user.public && thread.isInitialized">

@@ -1,6 +1,10 @@
 <div ng-controller="ContactsListController as ContactsList">
 
-  <div class="content-wait" ng-if="!ContactsList.contacts || !ContactsList.contacts.$resolved">
+  <div class="content-wait"
+       role="alertdialog"
+       aria-busy="true"
+       aria-live="assertive"
+       ng-if="!ContactsList.contacts || !ContactsList.contacts.$resolved">
     <small>Wait a moment...</small>
   </div>
 

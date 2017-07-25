@@ -45,12 +45,18 @@
 <section class="container container-spacer profile-view">
 
   <!-- Loading -->
-  <div class="row content-wait" ng-if="profileCtrl.profile && !profileCtrl.profile.$resolved">
+  <div class="row content-wait"
+       role="alertdialog"
+       aria-busy="true"
+       aria-live="assertive"
+       ng-if="profileCtrl.profile && !profileCtrl.profile.$resolved">
     <small>Wait a moment...</small>
   </div>
 
   <!-- Couldn't find profile... -->
-  <div class="row text-center" ng-if="!profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public !== false">
+  <div class="row text-center"
+       aria-role="alert"
+       ng-if="!profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public !== false">
     <h1>Don't panic!</h1>
     <em class="lead">User does not exist.</em>
     <br><br>
@@ -58,7 +64,9 @@
   </div>
 
   <!-- Own profile is non-public -->
-  <div class="row text-center" ng-if="app.user.username === profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public === false">
+  <div class="row text-center"
+       aria-role="alert"
+       ng-if="app.user.username === profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public === false">
     <em class="lead">Note that your profile will not be visible to others until you confirm your email.</em>
     <p>If you didn't receive the message, check your spam folder or resend it via <a ui-sref="profile-edit.account">email settings</a>.</p>
     <hr>
@@ -68,12 +76,28 @@
   <div ng-if="profileCtrl.profile.username && profileCtrl.profile.$resolved">
 
     <!-- Confirm contact -->
-    <div class="row" ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id && !profileCtrl.contact.confirmed && profileCtrl.contact.userTo._id === app.user._id">
+    <div class="row"
+         aria-role="alertdialog"
+         aria-labeledby="confirmContactDialogLabel"
+         ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id && !profileCtrl.contact.confirmed && profileCtrl.contact.userTo._id === app.user._id">
       <div class="col-xs-12 text-center">
         <ul class="list-inline">
-          <li><strong>{{ ::profileCtrl.profile.displayName }}</strong> sent you a contact request</li>
-          <li><a class="btn btn-sm btn-primary" ui-sref="contactConfirm({contactId: profileCtrl.contact._id})">Confirm Request</a></li>
-          <li><a class="btn btn-sm btn-danger" tr-contact-remove="profileCtrl.contact">Delete Request</a></li>
+          <li id="confirmContactDialogLabel">
+            <strong ng-bind="::profileCtrl.profile.displayName"></strong>
+            sent you a contact request
+          </li>
+          <li>
+            <a class="btn btn-sm btn-primary"
+               ui-sref="contactConfirm({contactId: profileCtrl.contact._id})">
+              Confirm Request
+            </a>
+          </li>
+          <li>
+            <a class="btn btn-sm btn-danger"
+               tr-contact-remove="profileCtrl.contact">
+              Delete Request
+            </a>
+          </li>
         </ul>
         <hr>
       </div>

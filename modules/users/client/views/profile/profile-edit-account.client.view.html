@@ -163,8 +163,15 @@
         <div class="form-group">
           <div class="col-sm-push-3 col-sm-9">
             <button type="submit" class="btn btn-large btn-primary" ng-disabled="changeUserPasswordLoading">
-              <span ng-hide="profileEditAccount.changeUserPasswordLoading">Change Password</span>
-              <span ng-show="profileEditAccount.changeUserPasswordLoading">Wait a moment...</span>
+              <span ng-hide="profileEditAccount.changeUserPasswordLoading">
+                Change Password
+              </span>
+              <span ng-show="profileEditAccount.changeUserPasswordLoading"
+                    role="alertdialog"
+                    aria-busy="true"
+                    aria-live="assertive">
+                Wait a moment...
+              </span>
             </button>
           </div>
         </div>
