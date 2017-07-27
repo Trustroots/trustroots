@@ -11,13 +11,11 @@ var _ = require('lodash'),
     moment = require('moment'),
     mongoose = require('mongoose'),
     config = require(path.resolve('./config/config')),
-    messageToStatsService = require(path.resolve(
-      './modules/messages/server/services/message-to-stats.server.service')),
-    messageStatService = require(path.resolve(
-      './modules/messages/server/services/message-stat.server.service')),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
-    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
-    userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
+    messageToStatsService = require(path.resolve('./modules/messages/server/services/message-to-stats.server.service')),
+    messageStatService = require(path.resolve('./modules/messages/server/services/message-stat.server.service')),
+    errorService = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    textProcessorService = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    userProfileController = require(path.resolve('./modules/users/server/controllers/users/users.profile.server.controller')),
     Message = mongoose.model('Message'),
     Thread = mongoose.model('Thread'),
     User = mongoose.model('User');
@@ -57,7 +55,7 @@ function sanitizeMessages(messages) {
 
   // Sanitize each outgoing message's contents
   messages.forEach(function(message) {
-    message.content = sanitizeHtml(message.content, textProcessor.sanitizeOptions);
+    message.content = sanitizeHtml(message.content, textProcessorService.sanitizeOptions);
     messagesCleaned.push(message);
   });
 
@@ -86,7 +84,7 @@ function sanitizeThreads(threads, authenticatedUserId) {
 
     // Clean message content from html + clean all whitespace + shorten
     if (thread.message) {
-      thread.message.excerpt = thread.message.content ? textProcessor.plainText(thread.message.content, true).substring(0, 100).trim() + ' …' : '…';
+      thread.message.excerpt = thread.message.content ? textProcessorService.plainText(thread.message.content, true).substring(0, 100).trim() + ' …' : '…';
       delete thread.message.content;
     } else {
       // Ensure this works even if messages couldn't be found for some reason
@@ -140,7 +138,7 @@ exports.inbox = function(req, res) {
   // No user
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -159,14 +157,14 @@ exports.inbox = function(req, res) {
       select: threadFields,
       populate: {
         path: 'userFrom userTo message',
-        select: 'content ' + userHandler.userMiniProfileFields
+        select: 'content ' + userProfileController.userMiniProfileFields
       }
     },
     function(err, data) {
 
       if (err) {
         return res.status(400).send({
-          message: errorHandler.getErrorMessage(err)
+          message: errorService.getErrorMessage(err)
         });
       } else {
 
@@ -189,7 +187,7 @@ exports.send = function(req, res) {
   // No user
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -203,7 +201,7 @@ exports.send = function(req, res) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
     return res.status(400).send({
-      message: errorHandler.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id')
     });
   }
 
@@ -215,7 +213,7 @@ exports.send = function(req, res) {
   }
 
   // No content or test if content is actually empty (when html is stripped out)
-  if (!req.body.content || textProcessor.isEmpty(req.body.content)) {
+  if (!req.body.content || textProcessorService.isEmpty(req.body.content)) {
     return res.status(400).send({
       message: 'Please write a message.'
     });
@@ -268,7 +266,7 @@ exports.send = function(req, res) {
             return done(err);
           }
 
-          var descriptionLength = (sender.description) ? textProcessor.plainText(sender.description).length : 0;
+          var descriptionLength = (sender.description) ? textProcessorService.plainText(sender.description).length : 0;
 
           // If the sender has too empty description, return an error
           if (descriptionLength < config.profileMinimumLength) {
@@ -295,7 +293,7 @@ exports.send = function(req, res) {
       var message = new Message(req.body);
 
       // Allow some HTML
-      message.content = textProcessor.html(message.content);
+      message.content = textProcessorService.html(message.content);
 
       message.userFrom = req.user;
       message.read = false;
@@ -373,11 +371,11 @@ exports.send = function(req, res) {
       message
         .populate({
           path: 'userFrom',
-          select: userHandler.userMiniProfileFields
+          select: userProfileController.userMiniProfileFields
         })
         .populate({
           path: 'userTo',
-          select: userHandler.userMiniProfileFields
+          select: userProfileController.userMiniProfileFields
         }, function(err, message) {
           if (err) {
             return done(err);
@@ -398,7 +396,7 @@ exports.send = function(req, res) {
   ], function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     }
   });
@@ -425,14 +423,14 @@ exports.threadByUser = function(req, res, next, userId) {
 
       if (!req.user) {
         return res.status(403).send({
-          message: errorHandler.getErrorMessageByKey('forbidden')
+          message: errorService.getErrorMessageByKey('forbidden')
         });
       }
 
       // Not user id or its not a valid ObjectId
       if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         return res.status(400).send({
-          message: errorHandler.getErrorMessageByKey('invalid-id')
+          message: errorService.getErrorMessageByKey('invalid-id')
         });
       }
 
@@ -450,7 +448,7 @@ exports.threadByUser = function(req, res, next, userId) {
           select: messageFields,
           populate: {
             path: 'userFrom userTo',
-            select: userHandler.userMiniProfileFields
+            select: userProfileController.userMiniProfileFields
           }
         },
         function(err, data) {
@@ -525,7 +523,7 @@ exports.threadByUser = function(req, res, next, userId) {
   ], function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     } else {
       return next();
@@ -543,7 +541,7 @@ exports.markRead = function(req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -575,7 +573,7 @@ exports.markRead = function(req, res) {
     function (err) {
       if (err) {
         return res.status(400).send({
-          message: errorHandler.getErrorMessage(err)
+          message: errorService.getErrorMessage(err)
         });
       } else {
         res.status(200).send();
@@ -593,7 +591,7 @@ exports.messagesCount = function(req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -603,7 +601,7 @@ exports.messagesCount = function(req, res) {
   }, function(err, unreadCount) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     }
     return res.json({ unread: unreadCount ? parseInt(unreadCount, 10) : 0 });
@@ -617,7 +615,7 @@ exports.sync = function(req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -742,7 +740,7 @@ exports.sync = function(req, res) {
           $in: userIds
         }
       })
-      .select(userHandler.userMiniProfileFields)
+      .select(userProfileController.userMiniProfileFields)
       .exec(function(err, users) {
         data.users = users;
         done(err);
@@ -757,7 +755,7 @@ exports.sync = function(req, res) {
   ], function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     }
   });
