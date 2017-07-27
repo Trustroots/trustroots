@@ -163,8 +163,15 @@
         <div class="form-group">
           <div class="col-sm-push-3 col-sm-9">
             <button type="submit" class="btn btn-large btn-primary" ng-disabled="changeUserPasswordLoading">
-              <span ng-hide="profileEditAccount.changeUserPasswordLoading">Change Password</span>
-              <span ng-show="profileEditAccount.changeUserPasswordLoading">Wait a moment...</span>
+              <span ng-hide="profileEditAccount.changeUserPasswordLoading">
+                Change Password
+              </span>
+              <span ng-show="profileEditAccount.changeUserPasswordLoading"
+                    role="alertdialog"
+                    aria-busy="true"
+                    aria-live="assertive">
+                Wait a moment...
+              </span>
             </button>
           </div>
         </div>
@@ -228,17 +235,33 @@
     Remove your account
   </div>
   <div class="panel-body">
+
+    <div class="alert alert-success text-center"
+         role="alert"
+         ng-if="profileEditAccount.removeProfileInitialized"
+         ng-bind="profileEditAccount.removeProfileInitialized"></div>
+
+    <form ng-submit="profileEditAccount.removeProfile()"
+          autocomplete="off"
+          ng-if="!profileEditAccount.removeProfileInitialized">
       <div class="checkbox">
         <label>
-          <input type="checkbox" ng-model="profileEditAccount.removalConfirm">
+          <input type="checkbox"
+                 required
+                 ng-model="profileEditAccount.removeProfileConfirm">
           I understand this cannot be undone
         </label>
       </div>
       <div class="form-group">
         <br>
-        <a class="btn btn-danger" ng-disabled="!profileEditAccount.removalConfirm" ng-href="{{ profileEditAccount.removalConfirm ? 'https://ideas.trustroots.org/account-removal/' : '#' }}">Yes, remove my account permanently</a>
+        <button class="btn btn-danger"
+                type="submit"
+                ng-disabled="!profileEditAccount.removeProfileConfirm || profileEditAccount.removeProfileLoading">
+          Yes, remove my account permanently
+        </button>
         <br>
       </div>
+    </form>
 
   </div>
 </div>

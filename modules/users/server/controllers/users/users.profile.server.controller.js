@@ -8,11 +8,16 @@ var _ = require('lodash'),
     errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
+    contactHandler = require(path.resolve('./modules/contacts/server/controllers/contacts.server.controller')),
+    messageHandler = require(path.resolve('./modules/messages/server/controllers/messages.server.controller')),
+    offerHandler = require(path.resolve('./modules/offers/server/controllers/offers.server.controller')),
     tagsHandler = require(path.resolve('./modules/tags/server/controllers/tags.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
     inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
+    log = require(path.resolve('./config/lib/logger')),
+    del = require('del'),
     messageStatService = require(path.resolve(
       './modules/messages/server/services/message-stat.server.service')),
     config = require(path.resolve('./config/config')),
@@ -368,6 +373,8 @@ exports.update = function(req, res) {
       delete req.body.password;
       delete req.body.resetPasswordToken;
       delete req.body.resetPasswordExpires;
+      delete req.body.removeProfileToken;
+      delete req.body.removeProfileExpires;
       delete req.body.additionalProvidersData;
       delete req.body.publicReminderCount;
       delete req.body.publicReminderSent;
@@ -450,6 +457,217 @@ exports.update = function(req, res) {
     }
   });
 };
+
+
+/**
+ * Initialize profile removal
+ */
+exports.initializeRemoveProfile = function(req, res) {
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  async.waterfall([
+
+    // Generate random token
+    function(done) {
+      crypto.randomBytes(20, function(err, buffer) {
+        var token = buffer.toString('hex');
+        done(err, token);
+      });
+    },
+
+    // Set token
+    function(token, done) {
+
+      // Token expires in 24 hours
+      var tokenExpires = Date.now() + (24 * 3600000);
+
+      User.findOneAndUpdate(
+        { _id: req.user._id },
+        {
+          $set: {
+            removeProfileToken: token,
+            removeProfileExpires: tokenExpires
+          }
+        },
+        {
+          // Return updated user document
+          new: true
+        },
+        function (err, user) {
+          done(err, user);
+        });
+    },
+
+    // Send email
+    function(user) {
+      emailService.sendRemoveProfile(user, function(err) {
+
+        // Stop on errors
+        if (err) {
+          return res.status(400).send({
+            message: 'Failure while sending confirmation email to you. Please try again later.'
+          });
+        }
+
+        // Report successfull reset to stats
+        return statService.stat({
+          namespace: 'profileRemoval',
+          counts: {
+            count: 1
+          },
+          tags: {
+            status: 'emailSent'
+          }
+        }, function() {
+          // Return success
+          res.send({
+            message: 'We sent you an email with further instructions.'
+          });
+        });
+
+      });
+    }
+
+  ], function(err) {
+    if (err) {
+      return res.status(400).send({
+        message: 'Removing your profile failed.'
+      });
+    }
+  });
+};
+
+
+/**
+ * Remove profile DELETE from email token
+ */
+exports.removeProfile = function(req, res) {
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorHandler.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  async.waterfall([
+
+    // Validate token
+    function(done) {
+      User.findOne({
+        _id: req.user._id,
+        removeProfileToken: req.params.token,
+        removeProfileExpires: {
+          $gt: Date.now()
+        }
+      }, function(err, user) {
+
+        // Can't find user (=invalid or expired token) or other error
+        if (err || !user) {
+          return res.status(400).send({
+            message: 'Profile remove token is invalid or has expired.'
+          });
+        }
+
+        done(null, user);
+      });
+    },
+
+    // Remove profile
+    function(user, done) {
+      User.findOneAndRemove({
+        _id: user._id
+      }, function(err) {
+        done(err, user);
+      });
+    },
+
+    // Remove offers
+    function(user, done) {
+      offerHandler.removeAllByUserId(user._id, function(err) {
+        if (err) {
+          console.log('Error when removing all contacts by user ID. #j93hdd');
+          console.error(err);
+        }
+        done(null, user);
+      });
+    },
+
+    // Remove contacts
+    function(user, done) {
+      contactHandler.removeAllByUserId(user._id, function(err) {
+        if (err) {
+          console.log('Error when removing all contacts by user ID. #j93hdd');
+          console.error(err);
+        }
+        done(null, user);
+      });
+    },
+
+    // Mark all messages sent _to_ that user as `notified:true` (so that unread-messages doesn't pick them up anymore). Leave messages _from_ that user as is.
+    function (user, done) {
+      messageHandler.markAllMessagesToUserNotified(user._id, function (err) {
+        return done(err, user);
+      });
+    },
+
+    // Subtract 1 from all the tribes.count of which user is member
+    function (user, done) {
+      // tagsHandler.editCount(tagId, -1, callback);
+      async.each(user.member, function (relation, cb) {
+        // change the count of every tag (tribe) user is member of
+        tagsHandler.editCount(relation.tag, -1, cb);
+      }, function (err) {
+        done(err, user);
+      });
+    },
+
+    // Remove uploaded images
+    function(user, done) {
+      // All user's uploads are under their own folder
+      del(path.resolve(config.uploadDir) + '/' + user._id)
+        .then(function() {
+          done(null, user);
+        });
+    },
+
+    // Send email
+    function(user, done) {
+      emailService.sendRemoveProfileConfirmed({
+        displayName: user.displayName,
+        email: user.email
+      }, function(err) {
+        // Just log errors, but don't mind about them
+        // as this is not critical step
+        if (err) {
+          // Log the failure to send the email
+          log('error', 'Sending confirmation email about successfull profile removal failed #289hhs', {
+            error: err
+          });
+        }
+
+        done();
+      });
+    },
+
+    // Done
+    function() {
+      return res.json({
+        message: 'Your profile has been removed.'
+      });
+    }
+
+  ], function(err) {
+    if (err) {
+      return res.status(400).send({
+        message: 'Removing your profile failed.'
+      });
+    }
+  });
+};
+
 
 /**
  * Show the profile of the user
@@ -670,6 +888,8 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
   //   as it would otherwise send authenticated user's profile "as is"
   delete profile.resetPasswordToken;
   delete profile.resetPasswordExpires;
+  delete profile.removeProfileToken;
+  delete profile.removeProfileExpires;
   delete profile.emailToken;
   delete profile.password;
   delete profile.salt;
@@ -896,6 +1116,9 @@ exports.getUserMemberships = function(req, res) {
     });
 };
 
+/**
+ * Remove push registration
+ */
 exports.removePushRegistration = function(req, res) {
 
   if (!req.user) {
@@ -1045,9 +1268,23 @@ exports.getInviteCode = function(req, res) {
  */
 exports.validateInviteCode = function(req, res) {
 
-  var inviteCode = req.params.invitecode;
+  var inviteCode = _.get(req.params, 'invitecode', false);
 
-  return res.send({
-    valid: inviteCode && inviteCodeService.validateCode(inviteCode.toLowerCase())
+  var inviteCodeValid = inviteCode && inviteCodeService.validateCode(inviteCode.toLowerCase());
+
+  // Send validation result to stats
+  statService.stat({
+    namespace: 'inviteCodeValidation',
+    counts: {
+      count: 1
+    },
+    tags: {
+      valid: inviteCodeValid ? 'yes' : 'no'
+    }
+  }, function() {
+    // Send validation out to API
+    return res.send({
+      valid: inviteCodeValid
+    });
   });
 };

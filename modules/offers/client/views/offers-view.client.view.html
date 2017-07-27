@@ -32,15 +32,24 @@
     </div>
     <!-- Button for other profiles -->
     <a class="btn btn-sm pull-right btn-hosting btn-hosting-yes"
+       aria-label="Hosting status: {{ ::offersView.hostingStatusLabel(offersView.offer.status) }}"
        ng-if="app.user._id !== profileCtrl.profile._id && (offersView.offer && offersView.offer.$resolved && offersView.offer.status && app.user.public)"
        ui-sref="messageThread({username: profileCtrl.profile.username})"
-       ng-class="{'btn-hosting-yes': offersView.offer.status === 'yes', 'btn-hosting-maybe': offersView.offer.status === 'maybe', 'btn-hosting-no': (!offersView.offer || offersView.offer.status === 'no')}">
+       ng-class="{
+         'btn-hosting-yes': offersView.offer.status === 'yes',
+         'btn-hosting-maybe': offersView.offer.status === 'maybe',
+         'btn-hosting-no': (!offersView.offer || offersView.offer.status === 'no')
+       }">
       {{ ::offersView.hostingStatusLabel(offersView.offer.status) }}
     </a>
   </div>
 
   <!-- Show while offer is loading -->
-  <div class="panel-body text-center text-muted" ng-show="!offersView.offer || !offersView.offer.$resolved">
+  <div class="panel-body text-center text-muted"
+       role="alertdialog"
+       aria-busy="true"
+       aria-live="assertive"
+       ng-show="!offersView.offer || !offersView.offer.$resolved">
     <small>Wait a moment...</small>
   </div>
 
@@ -71,7 +80,12 @@
       </div>
 
       <p class="offer-restrictions">
-        <small class="pull-right" ng-show="offersView.offer.description && app.user._id === profileCtrl.profile._id"><a ui-sref="offer" class="text-muted">edit</a></small>
+        <small class="pull-right"
+               ng-show="offersView.offer.description && app.user._id === profileCtrl.profile._id">
+          <a ui-sref="offer"
+             class="text-muted"
+             aria-label="Edit hosting offer">edit</a>
+        </small>
         {{offersView.offer.maxGuests, plural, offset:1
             =0    {No guests.}
             =1    {At most one guest.}

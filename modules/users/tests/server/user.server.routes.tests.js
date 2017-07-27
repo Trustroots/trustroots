@@ -104,7 +104,7 @@ describe('User CRUD tests', function () {
       .send(_user)
       .expect(200)
       .end(function (signupErr, signupRes) {
-        // Handle signpu error
+        // Handle signup error
         if (signupErr) {
           return done(signupErr);
         }
@@ -143,7 +143,7 @@ describe('User CRUD tests', function () {
       .send(_user)
       .expect(200)
       .end(function (signupErr, signupRes) {
-        // Handle signpu error
+        // Handle signup error
         if (signupErr) {
           return done(signupErr);
         }
@@ -215,7 +215,7 @@ describe('User CRUD tests', function () {
       .send(_user)
       .expect(200)
       .end(function (signupErr, signupRes) {
-        // Handle signpu error
+        // Handle signup error
         if (signupErr) {
           return done(signupErr);
         }

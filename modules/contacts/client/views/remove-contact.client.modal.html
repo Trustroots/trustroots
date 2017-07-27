@@ -17,7 +17,12 @@
       <button class="btn btn-link" ng-click="removeContactModal.cancelContactRemoval()" ng-disabled="removeContactModal.isLoading">Cancel</button>
       <button class="btn btn-primary" ng-click="removeContactModal.removeContact();" ng-disabled="removeContactModal.isLoading">
         <span ng-if="!removeContactModal.isLoading">{{ ::removeContactModal.labelConfirm }}</span>
-        <span ng-if="removeContactModal.isLoading">Wait a moment...</span>
+        <span ng-if="removeContactModal.isLoading"
+              role="alertdialog"
+              aria-busy="true"
+              aria-live="assertive">
+          Wait a moment...
+        </span>
       </button>
     </div>
   </div>

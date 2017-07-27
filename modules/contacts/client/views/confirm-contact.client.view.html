@@ -48,8 +48,15 @@
 
         <div class="text-center" ng-if="contactConfirm.contact && !contactConfirm.isConnected && !contactConfirm.isWrongCode && contactConfirm.contact.userTo._id === app.user._id">
           <button type="submit" class="btn btn-lg btn-primary" ng-disabled="contactConfirm.isLoading">
-            <span ng-if="!contactConfirm.isLoading">Confirm contact</span>
-            <span ng-if="contactConfirm.isLoading">Wait a moment...</span>
+            <span ng-if="!contactConfirm.isLoading">
+              Confirm contact
+            </span>
+            <span ng-if="contactConfirm.isLoading"
+                  role="alertdialog"
+                  aria-busy="true"
+                  aria-live="assertive">
+              Wait a moment...
+            </span>
           </button>
           <br><br>
           <a ui-sref="profile.about({username: contactConfirm.contact.userTo.username})" class="text-muted">Cancel</a>

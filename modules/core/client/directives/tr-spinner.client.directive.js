@@ -10,9 +10,24 @@
       restrict: 'E',
       link: function(scope, element, attrs) {
 
+        // @link https://haltersweb.github.io/Accessibility/svg.html
         function generateSVGMarkup(size, square, stroke) {
-          return '<svg class="spinner spinner-' + size + '" width="' + square + 'px" height="' + square + 'px" viewBox="0 0 ' + (square + 1) + ' ' + (square + 1) + '" xmlns="http://www.w3.org/2000/svg">' +
-                 '  <circle class="spinner-path" fill="none" stroke-width="' + stroke + '" stroke-linecap="round" cx="' + ((square + 1) / 2) + '" cy="' + ((square + 1) / 2) + '" r="' + (((square + 1) / 2) - stroke) + '"></circle>' +
+          return '<svg class="spinner spinner-' + size + '"' +
+                 '  width="' + square + 'px"' +
+                 '  height="' + square + 'px"' +
+                 '  viewBox="0 0 ' + (square + 1) + ' ' + (square + 1) + '"' +
+                 '  role="alertdialog"' +
+                 '  aria-busy="true"' +
+                 '  aria-live="assertive"' +
+                 '  aria-label="Loading, please wait."' +
+                 '  xmlns="http://www.w3.org/2000/svg">' +
+                 '  <circle class="spinner-path"' +
+                 '          fill="none"' +
+                 '          stroke-width="' + stroke + '"' +
+                 '          stroke-linecap="round"' +
+                 '          cx="' + ((square + 1) / 2) + '"' +
+                 '          cy="' + ((square + 1) / 2) + '"' +
+                 '          r="' + (((square + 1) / 2) - stroke) + '"></circle>' +
                  '</svg>';
         }
 

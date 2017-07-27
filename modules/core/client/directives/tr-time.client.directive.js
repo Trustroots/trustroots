@@ -31,7 +31,7 @@
     return {
       restrict: 'A',
       replace: false,
-      template: '<time ng-click="toggleMode($event)">' +
+      template: '<time ng-click="toggleMode($event)" aria-label="Change time presentation">' +
                   '<span ng-if="timeModeAgo" am-time-ago="::sourceTime" uib-tooltip="{{ ::sourceTime | date:\'medium\' }}" tooltip-placement="{{ ::tooltipPlacement }}"></span>' +
                   '<span ng-if="!timeModeAgo">{{ ::sourceTime | date:\'medium\' }}</span>' +
                 '</time>',
