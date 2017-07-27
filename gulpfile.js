@@ -465,15 +465,15 @@ gulp.task('clean', function(done) {
 
 // Run the project tests
 gulp.task('test', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'karma', 'mocha', done);
+  runSequence('env:test', 'dropdb', 'copyConfig', 'makeUploadsDir', 'lint', 'karma', 'mocha', done);
 });
 
 gulp.task('test:server', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'mocha', done);
+  runSequence('env:test', 'dropdb', 'copyConfig', 'makeUploadsDir', 'lint', 'mocha', done);
 });
 
 gulp.task('test:server:no-lint', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'mocha', done);
+  runSequence('env:test', 'dropdb', 'copyConfig', 'makeUploadsDir', 'mocha', done);
 });
 
 // Watch all server files for changes & run server tests (test:server) task on changes
@@ -482,11 +482,11 @@ gulp.task('test:server:watch', function(done) {
 });
 
 gulp.task('test:client', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'karma', done);
+  runSequence('env:test', 'dropdb', 'copyConfig', 'makeUploadsDir', 'lint', 'karma', done);
 });
 
 gulp.task('test:client:watch', function(done) {
-  runSequence('env:test', 'copyConfig', 'makeUploadsDir', 'lint', 'karma:watch', done);
+  runSequence('env:test', 'dropdb', 'copyConfig', 'makeUploadsDir', 'lint', 'karma:watch', done);
 });
 
 // Run the project in development mode
