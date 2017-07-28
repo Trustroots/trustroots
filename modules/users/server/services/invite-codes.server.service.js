@@ -103,6 +103,23 @@ exports.getCode = function() {
 };
 
 /**
+ * Validate against "always valid codes" list
+ *
+ * @param {String} code - a lower case string representation of the invitation code
+ * @return {Boolean} `true` if code is in predefined list, `false` if not
+ */
+exports.isPredefined = function(code) {
+  if (code &&
+      config.invitations.alwaysValidCodes &&
+      config.invitations.alwaysValidCodes.length &&
+      config.invitations.alwaysValidCodes.indexOf(code) > -1) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
  * Checks if a code is valid and returns boolean yes or no.
  *
  * @param {String} code - a lower case string representation of the invitation code
@@ -116,9 +133,7 @@ exports.validateCode = function(code) {
   }
 
   // Validate against "always valid codes" list
-  if (config.invitations.alwaysValidCodes &&
-      config.invitations.alwaysValidCodes.length &&
-      config.invitations.alwaysValidCodes.indexOf(code) > -1) {
+  if (exports.isPredefined(code)) {
     return true;
   }
 

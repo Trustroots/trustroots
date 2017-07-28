@@ -28,7 +28,7 @@ module.exports = {
     maitreId: 'MF930c37aeb3',
     // These codes are always valid
     // ONLY lower case
-    alwaysValidCodes: ['foobar']
+    alwaysValidCodes: ['trustroots']
   },
 
   // Appears on top of every page for authenticated users.

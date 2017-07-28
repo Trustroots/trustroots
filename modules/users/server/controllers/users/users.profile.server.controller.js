@@ -1270,18 +1270,34 @@ exports.validateInviteCode = function(req, res) {
 
   var inviteCode = _.get(req.params, 'invitecode', false);
 
+  // Is invite code valid
   var inviteCodeValid = inviteCode && inviteCodeService.validateCode(inviteCode.toLowerCase());
 
-  // Send validation result to stats
-  statService.stat({
+  // Is code in predefined invite codes list?
+  var isPredefined = inviteCodeValid && inviteCodeService.isPredefined(inviteCode.toLowerCase());
+
+  // Object for statistics
+  var stats = {
     namespace: 'inviteCodeValidation',
     counts: {
       count: 1
     },
     tags: {
-      valid: inviteCodeValid ? 'yes' : 'no'
-    }
-  }, function() {
+      valid: inviteCodeValid ? 'yes' : 'no',
+      isPredefined: isPredefined ? 'yes' : 'no'
+    },
+    meta: { }
+  };
+
+  // Store predefined codes to stats
+  if (isPredefined) {
+    stats.meta.code = inviteCode.toLowerCase();
+  }
+
+  console.log(stats);
+
+  // Send validation result to stats
+  statService.stat(stats, function() {
     // Send validation out to API
     return res.send({
       valid: inviteCodeValid
