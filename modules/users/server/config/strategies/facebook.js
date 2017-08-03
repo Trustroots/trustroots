@@ -26,21 +26,19 @@ module.exports = function(config) {
     callbackURL: callbackURL,
     // Available fields:
     // @link https://developers.facebook.com/docs/graph-api/reference/user/
+    // Validate fields using Graph explorer (`/me?fields=id,name,...`):
+    // @link https://developers.facebook.com/tools/explorer/
     profileFields: [
       'id',
-      'emails',
       'email',
       'name',
       'first_name',
       'last_name',
       'hometown',
-      'locations',
       'about',
       'gender',
-      'last_name',
       'languages',
       'link',
-      'displayName',
       'photos',
       'picture'
     ],

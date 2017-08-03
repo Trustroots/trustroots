@@ -21,7 +21,7 @@ var fbClientID = _.get(config, 'facebook.clientID'),
  * @link https://developers.facebook.com/docs/apps/versions
  * @link https://developers.facebook.com/docs/apps/changelog
  */
-fbgraph.setVersion('2.8');
+fbgraph.setVersion('2.10');
 
 /**
  * Graph Authentication
