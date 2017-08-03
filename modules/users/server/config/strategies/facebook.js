@@ -24,7 +24,26 @@ module.exports = function(config) {
     clientID: clientID,
     clientSecret: clientSecret,
     callbackURL: callbackURL,
-    profileFields: ['id', 'name', 'displayName', 'emails', 'photos'],
+    // Available fields:
+    // @link https://developers.facebook.com/docs/graph-api/reference/user/
+    profileFields: [
+      'id',
+      'emails',
+      'email',
+      'name',
+      'first_name',
+      'last_name',
+      'hometown',
+      'locations',
+      'about',
+      'gender',
+      'last_name',
+      'languages',
+      'link',
+      'displayName',
+      'photos',
+      'picture'
+    ],
     passReqToCallback: true,
     enableProof: false
   },
