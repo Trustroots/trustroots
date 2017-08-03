@@ -53,10 +53,10 @@ module.exports = function(config) {
 
     // Create the user OAuth profile
     var providerUserProfile = {
-      firstName: _.get(profile, 'name.givenName', undefined),
-      lastName: _.get(profile, 'name.familyName', undefined),
-      displayName: profile.displayName || undefined,
-      email: _.get(profile, 'emails[0].value', undefined),
+      firstName: _.get(profile, 'name.first_name', undefined),
+      lastName: _.get(profile, 'name.last_name', undefined),
+      displayName: _.get(profile, 'name', undefined),
+      email: _.get(profile, 'email', undefined),
       provider: 'facebook',
       providerIdentifierField: 'id',
       providerData: providerData
