@@ -27,11 +27,35 @@
     vm.windowHeight = angular.element('html').height() - headerHeight;
 
     // Load front page's landing photos
-    // @todo, move part of this logic data to the DB
+    // @TODO Move part of this logic data to the DB
     if ($stateParams.tribe && ['hitchhikers', 'dumpster-divers', 'punks'].indexOf($stateParams.tribe) > -1) {
-      vm.boards = ['rainbowpeople', 'hitchroad', 'desertgirl', 'hitchgirl1', 'hitchgirl2'];
+      // Photos for these 3 tribes
+      vm.boards = [
+        'rainbowpeople',
+        'hitchroad',
+        'desertgirl',
+        'hitchgirl1',
+        'hitchgirl2',
+        'hitchtruck'
+      ];
     } else {
-      vm.boards = Authentication.user ? ['woman-bridge', 'wavewatching'] : ['woman-bridge', 'rainbowpeople', 'hitchroad', 'hitchgirl1', 'wavewatching'];
+      vm.boards = Authentication.user ?
+        // Photos for authenticated users
+        [
+          'woman-bridge',
+          'wavewatching',
+          'sahara-backpacker'
+        ] :
+        // Photos for non-authenticated users
+        [
+          'woman-bridge',
+          'rainbowpeople',
+          'hitchroad',
+          'hitchgirl1',
+          'wavewatching',
+          'sahara-backpacker',
+          'hitchtruck'
+        ];
     }
 
     // Load suggested tribes
