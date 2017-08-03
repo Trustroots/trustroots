@@ -5,9 +5,9 @@
  */
 var _ = require('lodash'),
     path = require('path'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    profileHandler = require(path.resolve('./modules/users/server/controllers/users/users.profile.server.controller')),
+    profileHandler = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     facebook = require(path.resolve('./config/lib/facebook-api.js')),
     config = require(path.resolve('./config/config')),
@@ -129,7 +129,7 @@ exports.signup = function(req, res) {
       statService.stat(statsObject, function() {
         // Send error to the API
         res.status(400).send({
-          message: errorHandler.getErrorMessage(err)
+          message: errorService.getErrorMessage(err)
         });
       });
 
@@ -194,7 +194,7 @@ exports.signin = function(req, res, next) {
 
         // Send error to the API
         res.status(403).send({
-          message: errorHandler.getErrorMessageByKey('suspended')
+          message: errorService.getErrorMessageByKey('suspended')
         });
       });
 
@@ -302,7 +302,7 @@ exports.removeOAuthProvider = function(req, res) {
   // Return error if no user
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -328,7 +328,7 @@ exports.removeOAuthProvider = function(req, res) {
     user.save(function(err) {
       if (err) {
         return res.status(400).send({
-          message: errorHandler.getErrorMessage(err)
+          message: errorService.getErrorMessage(err)
         });
       } else {
         req.login(user, function(err) {
@@ -359,7 +359,7 @@ exports.updateFacebookOAuthToken = function(req, res) {
   // No authenticated user
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -374,7 +374,7 @@ exports.updateFacebookOAuthToken = function(req, res) {
       requestedFbUserId: req.body.userID
     });
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -385,7 +385,7 @@ exports.updateFacebookOAuthToken = function(req, res) {
       requestedFbUserId: req.body.userID
     });
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -423,7 +423,7 @@ exports.updateFacebookOAuthToken = function(req, res) {
   ], function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     }
 
@@ -462,7 +462,7 @@ exports.extendFBAccessToken = function(shortAccessToken, callback) {
   // Return error if Facebook connection isn't configured
   if (!fbClientID || !fbClientSecret) {
     log('error', 'No Facebook client configured when attemping to extend FB access token #FKeo2k');
-    return callback(new Error(errorHandler.getErrorMessageByKey('default')), {});
+    return callback(new Error(errorService.getErrorMessageByKey('default')), {});
   }
 
   facebook.extendAccessToken({
@@ -485,7 +485,7 @@ exports.extendFBAccessToken = function(shortAccessToken, callback) {
       log('error', 'Missing extended Facebook access token from response. #jlkFLl', {
         response: accessTokenResponse
       });
-      return callback(new Error(errorHandler.getErrorMessageByKey('default')), {});
+      return callback(new Error(errorService.getErrorMessageByKey('default')), {});
     }
 
     // Callback's response object
@@ -608,7 +608,7 @@ exports.confirmEmail = function(req, res) {
   ], function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     }
   });
@@ -621,7 +621,7 @@ exports.resendConfirmation = function(req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -682,7 +682,7 @@ exports.resendConfirmation = function(req, res) {
   ], function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     }
   });

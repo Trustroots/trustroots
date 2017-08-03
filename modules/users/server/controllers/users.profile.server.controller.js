@@ -5,7 +5,7 @@
  */
 var _ = require('lodash'),
     path = require('path'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
     contactHandler = require(path.resolve('./modules/contacts/server/controllers/contacts.server.controller')),
@@ -118,7 +118,7 @@ exports.avatarUploadField = function (req, res, next) {
       if (err.code && err.code === 'UNSUPPORTED_MEDIA_TYPE') {
         // Unsupported media type -error
         // This error is generated from ./config/lib/multer.js
-        errorMessage = errorHandler.getErrorMessageByKey('unsupported-media-type');
+        errorMessage = errorService.getErrorMessageByKey('unsupported-media-type');
         errorStatus = 415;
       } else if (err.code && err.code === 'LIMIT_FILE_SIZE') {
         // Too big file
@@ -131,7 +131,7 @@ exports.avatarUploadField = function (req, res, next) {
         errorStatus = 400;
       } else {
         // Any other error
-        errorMessage = errorHandler.getErrorMessageByKey('default');
+        errorMessage = errorService.getErrorMessageByKey('default');
         errorStatus = 400;
       }
 
@@ -153,7 +153,7 @@ exports.avatarUpload = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -161,7 +161,7 @@ exports.avatarUpload = function (req, res) {
   // See `users.server.routes.js` for more details.
   if (!req.file || !req.file.path) {
     return res.status(422).send({
-      message: errorHandler.getErrorMessageByKey('unprocessable-entity')
+      message: errorService.getErrorMessageByKey('unprocessable-entity')
     });
   }
 
@@ -182,7 +182,7 @@ exports.avatarUpload = function (req, res) {
       magic.detectFile(req.file.path, function(err, result) {
         if (err || (result && multerConfig.validMimeTypes.indexOf(result) === -1)) {
           return res.status(415).send({
-            message: errorHandler.getErrorMessageByKey('unsupported-media-type')
+            message: errorService.getErrorMessageByKey('unsupported-media-type')
           });
         }
         done(err);
@@ -277,7 +277,7 @@ exports.avatarUpload = function (req, res) {
   ], function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err) || 'Failed to process image, please try again.'
+        message: errorService.getErrorMessage(err) || 'Failed to process image, please try again.'
       });
     } else {
       // All Done!
@@ -295,7 +295,7 @@ exports.update = function(req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -452,7 +452,7 @@ exports.update = function(req, res) {
   ], function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     }
   });
@@ -465,7 +465,7 @@ exports.update = function(req, res) {
 exports.initializeRemoveProfile = function(req, res) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -548,7 +548,7 @@ exports.initializeRemoveProfile = function(req, res) {
 exports.removeProfile = function(req, res) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -714,7 +714,7 @@ exports.userMiniByID = function(req, res, next, userId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
-      message: errorHandler.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id')
     });
   }
 
@@ -728,7 +728,7 @@ exports.userMiniByID = function(req, res, next, userId) {
     // No such user
     if (!profile || !profile.public) {
       return res.status(404).send({
-        message: errorHandler.getErrorMessageByKey('not-found')
+        message: errorService.getErrorMessageByKey('not-found')
       });
     }
 
@@ -746,7 +746,7 @@ exports.userByUsername = function(req, res, next, username) {
   // Require user
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -782,7 +782,7 @@ exports.userByUsername = function(req, res, next, username) {
           } else if (!profile) {
             // No such user
             return res.status(404).send({
-              message: errorHandler.getErrorMessageByKey('not-found')
+              message: errorService.getErrorMessageByKey('not-found')
             });
           } else if ((profile && req.user) && req.user._id.equals(profile._id)) {
             // User's own profile, okay to send with public value in it
@@ -790,7 +790,7 @@ exports.userByUsername = function(req, res, next, username) {
           } else if ((profile && req.user) && (!req.user._id.equals(profile._id) && !profile.public)) {
             // Not own profile and not public
             return res.status(404).send({
-              message: errorHandler.getErrorMessageByKey('not-found')
+              message: errorService.getErrorMessageByKey('not-found')
             });
           } else {
             // Transform profile into object so that we can add new fields to it
@@ -923,13 +923,13 @@ exports.modifyUserTag = function(req, res) {
   // Not a valid ObjectId
   if (!req.body.id || !mongoose.Types.ObjectId.isValid(req.body.id)) {
     return res.status(400).send({
-      message: errorHandler.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id')
     });
   }
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -950,7 +950,7 @@ exports.modifyUserTag = function(req, res) {
       // Return error if "is joining + is a member" OR "is leaving + isn't a member"
       if ((isMember && joining) || (!isMember && !joining)) {
         return res.status(409).send({
-          message: errorHandler.getErrorMessageByKey('conflict')
+          message: errorService.getErrorMessageByKey('conflict')
         });
       } else {
         done(null);
@@ -972,7 +972,7 @@ exports.modifyUserTag = function(req, res) {
         // Tag by id `req.body.id` didn't exist
         if (!tag || !tag._id) {
           return res.status(400).send({
-            message: errorHandler.getErrorMessageByKey('bad-request')
+            message: errorService.getErrorMessageByKey('bad-request')
           });
         }
 
@@ -1074,7 +1074,7 @@ exports.getUserMemberships = function(req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -1123,7 +1123,7 @@ exports.removePushRegistration = function(req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -1145,7 +1145,7 @@ exports.removePushRegistration = function(req, res) {
   .exec(function(err, user) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err) || 'Failed to remove registration, please try again.'
+        message: errorService.getErrorMessage(err) || 'Failed to remove registration, please try again.'
       });
     } else {
       return res.send({
@@ -1164,7 +1164,7 @@ exports.addPushRegistration = function(req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -1203,7 +1203,9 @@ exports.addPushRegistration = function(req, res) {
       }, {
         new: true
       }).exec(function(err, updatedUser) {
-        if (err) return done(err);
+        if (err) {
+          return done(err);
+        }
         user = updatedUser;
         done();
       });
@@ -1213,7 +1215,9 @@ exports.addPushRegistration = function(req, res) {
 
     function(done) {
       pushService.notifyPushDeviceAdded(user, platform, function(err) {
-        if (err) console.error(err); // don't stop on error
+        if (err) {
+          console.error(err); // don't stop on error
+        }
         done();
       });
     }
@@ -1221,13 +1225,13 @@ exports.addPushRegistration = function(req, res) {
   ], function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err) || 'Failed, please try again.'
+        message: errorService.getErrorMessage(err) || 'Failed, please try again.'
       });
     } else {
       User.findById(user._id).exec(function(err, user) {
         if (err) {
           return res.status(400).send({
-            message: errorHandler.getErrorMessage(err) || 'Failed to fetch user, please try again.'
+            message: errorService.getErrorMessage(err) || 'Failed to fetch user, please try again.'
           });
         }
         return res.send({
@@ -1254,7 +1258,7 @@ exports.getInviteCode = function(req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -1293,8 +1297,6 @@ exports.validateInviteCode = function(req, res) {
   if (isPredefined) {
     stats.meta.code = inviteCode.toLowerCase();
   }
-
-  console.log(stats);
 
   // Send validation result to stats
   statService.stat(stats, function() {

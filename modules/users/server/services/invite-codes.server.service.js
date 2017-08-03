@@ -1,6 +1,7 @@
 'use strict';
 
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
     moment = require('moment'),
     config = require(path.resolve('./config/config'));
 
@@ -109,10 +110,7 @@ exports.getCode = function() {
  * @return {Boolean} `true` if code is in predefined list, `false` if not
  */
 exports.isPredefined = function(code) {
-  if (code &&
-      config.invitations.alwaysValidCodes &&
-      config.invitations.alwaysValidCodes.length &&
-      config.invitations.alwaysValidCodes.indexOf(code) > -1) {
+  if (code && _.indexOf(config.invitations.alwaysValidCodes, code) > -1) {
     return true;
   }
 

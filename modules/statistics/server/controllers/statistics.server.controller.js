@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 var path = require('path'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     async = require('async'),
     git = require('git-rev'),
     mongoose = require('mongoose'),
@@ -283,7 +283,7 @@ exports.getPublicStatistics = function(req, res) {
   function(err) {
     if (err) {
       res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     }
   });

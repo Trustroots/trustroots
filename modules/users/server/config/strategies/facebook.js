@@ -6,7 +6,7 @@
 var _ = require('lodash'),
     passport = require('passport'),
     FacebookStrategy = require('passport-facebook').Strategy,
-    users = require('../../controllers/users.server.controller');
+    usersAuthentication = require('../../controllers/users.authentication.server.controller');
 
 module.exports = function(config) {
   // Get config parameters for the strategy
@@ -46,6 +46,6 @@ module.exports = function(config) {
     };
 
     // Save the user OAuth profile
-    users.saveOAuthUserProfile(req, providerUserProfile, done);
+    usersAuthentication.saveOAuthUserProfile(req, providerUserProfile, done);
   }));
 };

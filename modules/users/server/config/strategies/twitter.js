@@ -6,7 +6,7 @@
 var _ = require('lodash'),
     passport = require('passport'),
     TwitterStrategy = require('passport-twitter').Strategy,
-    users = require('../../controllers/users.server.controller');
+    usersAuthentication = require('../../controllers/users.authentication.server.controller');
 
 module.exports = function(config) {
 
@@ -43,6 +43,6 @@ module.exports = function(config) {
     };
 
     // Save the user OAuth profile
-    users.saveOAuthUserProfile(req, providerUserProfile, done);
+    usersAuthentication.saveOAuthUserProfile(req, providerUserProfile, done);
   }));
 };

@@ -5,7 +5,7 @@
  */
 var acl = require('acl'),
     path = require('path'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller'));
+    errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
 
 // Using the memory backend
 acl = new acl(new acl.memoryBackend());
@@ -112,14 +112,14 @@ exports.isAllowed = function(req, res, next) {
   // Non-public profiles are invisible
   if (req.profile && !req.profile.public && req.user && !req.profile._id.equals(req.user._id)) {
     return res.status(404).json({
-      message: errorHandler.getErrorMessageByKey('not-found')
+      message: errorService.getErrorMessageByKey('not-found')
     });
   }
 
   // No profile browsing for non-public users
   if (req.profile && req.user && !req.user.public && !req.profile._id.equals(req.user._id)) {
     return res.status(403).json({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -137,7 +137,7 @@ exports.isAllowed = function(req, res, next) {
         return next();
       } else {
         return res.status(403).json({
-          message: errorHandler.getErrorMessageByKey('forbidden')
+          message: errorService.getErrorMessageByKey('forbidden')
         });
       }
     }

@@ -1,3 +1,8 @@
+'use strict';
+
+/**
+ * Module dependencies.
+ */
 var mongoose = require('mongoose'),
     moment = require('moment'),
     path = require('path'),

@@ -13,9 +13,9 @@ var _ = require('lodash'),
     config = require(path.resolve('./config/config')),
     messageToStatsService = require(path.resolve('./modules/messages/server/services/message-to-stats.server.service')),
     messageStatService = require(path.resolve('./modules/messages/server/services/message-stat.server.service')),
-    errorService = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     textProcessorService = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
-    userProfileController = require(path.resolve('./modules/users/server/controllers/users/users.profile.server.controller')),
+    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     Message = mongoose.model('Message'),
     Thread = mongoose.model('Thread'),
     User = mongoose.model('User');
@@ -157,7 +157,7 @@ exports.inbox = function(req, res) {
       select: threadFields,
       populate: {
         path: 'userFrom userTo message',
-        select: 'content ' + userProfileController.userMiniProfileFields
+        select: 'content ' + userProfile.userMiniProfileFields
       }
     },
     function(err, data) {
@@ -371,11 +371,11 @@ exports.send = function(req, res) {
       message
         .populate({
           path: 'userFrom',
-          select: userProfileController.userMiniProfileFields
+          select: userProfile.userMiniProfileFields
         })
         .populate({
           path: 'userTo',
-          select: userProfileController.userMiniProfileFields
+          select: userProfile.userMiniProfileFields
         }, function(err, message) {
           if (err) {
             return done(err);
@@ -448,7 +448,7 @@ exports.threadByUser = function(req, res, next, userId) {
           select: messageFields,
           populate: {
             path: 'userFrom userTo',
-            select: userProfileController.userMiniProfileFields
+            select: userProfile.userMiniProfileFields
           }
         },
         function(err, data) {
@@ -740,7 +740,7 @@ exports.sync = function(req, res) {
           $in: userIds
         }
       })
-      .select(userProfileController.userMiniProfileFields)
+      .select(userProfile.userMiniProfileFields)
       .exec(function(err, users) {
         data.users = users;
         done(err);

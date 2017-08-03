@@ -5,7 +5,7 @@
  */
 var acl = require('acl'),
     path = require('path'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller'));
+    errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
 
 // Using the memory backend
 acl = new acl(new acl.memoryBackend());
@@ -50,7 +50,7 @@ exports.isAllowed = function(req, res, next) {
   // No offers for non-authenticated nor for authenticated but un-published users
   if (!req.user || (req.user && !req.user.public)) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -74,7 +74,7 @@ exports.isAllowed = function(req, res, next) {
         return next();
       } else {
         return res.status(403).json({
-          message: errorHandler.getErrorMessageByKey('forbidden')
+          message: errorService.getErrorMessageByKey('forbidden')
         });
       }
     }

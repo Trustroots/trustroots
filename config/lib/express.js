@@ -5,7 +5,7 @@
  */
 var _ = require('lodash'),
     config = require('../config'),
-    errorHandler = require('../../modules/core/server/controllers/errors.server.controller'),
+    errorService = require('../../modules/core/server/services/error.server.service'),
     facebookNotificationService = require('../../modules/core/server/services/facebook-notification.server.service'),
     languages = require('../languages/languages.json'),
     express = require('express'),
@@ -190,7 +190,7 @@ module.exports.initSession = function (app, db) {
  * Wire in user last seen middleware
  */
 module.exports.initLastSeen = function (app) {
-  var lastSeenController = require(path.resolve('./modules/users/server/controllers/lastseen.server.controller'));
+  var lastSeenController = require(path.resolve('./modules/users/server/controllers/users.lastseen.server.controller'));
   app.use(lastSeenController);
 };
 
@@ -503,7 +503,7 @@ module.exports.initModulesServerRoutes = function (app) {
  * Configure error handling
  */
 module.exports.initErrorRoutes = function (app) {
-  app.use(errorHandler.errorResponse);
+  app.use(errorService.errorResponse);
 };
 
 /**

@@ -78,7 +78,9 @@ describe('Offer Model Unit Tests:', function() {
     it('should be able to show an error when try to save without location', function(done) {
       offer.location = '';
 
-      offer.save(function(err) {
+      offer.save(function(err, res) {
+        console.log(err);
+        console.log(res);
         should.exist(err);
         return done();
       });

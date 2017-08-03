@@ -16,7 +16,7 @@ var _ = require('lodash'),
     async = require('async'),
     basicAuth = require('basic-auth'),
     speakingurl = require('speakingurl'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     config = require(path.resolve('./config/config'));
 
@@ -39,7 +39,7 @@ var _ = require('lodash'),
 exports.receiveBatch = function(req, res) {
   if (!_.isArray(req.body) || !req.body.length) {
     return res.status(400).send({
-      message: errorHandler.getErrorMessageByKey('bad-request')
+      message: errorService.getErrorMessageByKey('bad-request')
     });
   }
 
