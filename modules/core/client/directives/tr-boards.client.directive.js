@@ -141,6 +141,20 @@
             'license': 'CC',
             'license_url': 'https://unsplash.com/license',
             'file': 'mh-woman-bridge.jpg'
+          },
+          'sahara-backpacker': {
+            'name': 'Azer Koçulu',
+            'url': 'http://azer.bike/',
+            'license': 'CC',
+            'license_url': 'https://unsplash.com/license',
+            'file': 'ak-sahara.jpg'
+          },
+          'hitchtruck': {
+            'name': 'Nova Togatorop',
+            'url': 'http://novatogatorop.com/',
+            'license': 'CC',
+            'license_url': 'https://unsplash.com/license',
+            'file': 'nt-hitchtruck.jpg'
           }
         };
 
