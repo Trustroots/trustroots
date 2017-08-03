@@ -4,6 +4,8 @@ Trustroots Docker containers are excellent for getting into development quickly.
 
 Development with Docker might be little bit slower than running Mongo+NodeJS+NPM directly at your computer, but saves you from installing and configuring all the required dependencies.
 
+_Note that we are not keeping too close eye on Docker setup so things might break unexpectedly. Feel free to help us maintain the docker setup!_
+
 
 ## Prerequisites
 

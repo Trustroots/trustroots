@@ -4,49 +4,51 @@
  * Module dependencies.
  */
 var usersPolicy = require('../policies/users.server.policy'),
-    users = require('../controllers/users.server.controller');
+    userProfile = require('../controllers/users.profile.server.controller'),
+    userPassword = require('../controllers/users.password.server.controller'),
+    userAuthentication = require('../controllers/users.authentication.server.controller');
 
 module.exports = function(app) {
 
   // Setting up the users profile api
   app.route('/api/users').all(usersPolicy.isAllowed)
-    .delete(users.initializeRemoveProfile)
-    .put(users.update);
+    .delete(userProfile.initializeRemoveProfile)
+    .put(userProfile.update);
 
   // Confirm user removal
   app.route('/api/users/remove/:token').all(usersPolicy.isAllowed)
-    .delete(users.removeProfile);
+    .delete(userProfile.removeProfile);
 
   app.route('/api/users-avatar').all(usersPolicy.isAllowed)
-    .post(users.avatarUploadField, users.avatarUpload);
+    .post(userProfile.avatarUploadField, userProfile.avatarUpload);
 
   app.route('/api/users/memberships/:type?').all(usersPolicy.isAllowed)
-    .get(users.getUserMemberships)
-    .post(users.modifyUserTag);
+    .get(userProfile.getUserMemberships)
+    .post(userProfile.modifyUserTag);
 
   app.route('/api/users/invitecode').all(usersPolicy.isAllowed)
-    .get(users.getInviteCode);
+    .get(userProfile.getInviteCode);
 
   app.route('/api/users/invitecode/:invitecode').all(usersPolicy.isAllowed)
-    .post(users.validateInviteCode);
+    .post(userProfile.validateInviteCode);
 
   app.route('/api/users/push/registrations').all(usersPolicy.isAllowed)
-    .post(users.addPushRegistration);
+    .post(userProfile.addPushRegistration);
 
   app.route('/api/users/push/registrations/:token').all(usersPolicy.isAllowed)
-    .delete(users.removePushRegistration);
+    .delete(userProfile.removePushRegistration);
 
   app.route('/api/users/mini/:userId').all(usersPolicy.isAllowed)
-    .get(users.getMiniUser);
+    .get(userProfile.getMiniUser);
 
-  app.route('/api/users/accounts/:provider').delete(users.removeOAuthProvider);
+  app.route('/api/users/accounts/:provider').delete(userAuthentication.removeOAuthProvider);
 
-  app.route('/api/users/password').post(users.changePassword);
+  app.route('/api/users/password').post(userPassword.changePassword);
 
   app.route('/api/users/:username').all(usersPolicy.isAllowed)
-    .get(users.getUser);
+    .get(userProfile.getUser);
 
   // Finish by binding the user middleware
-  app.param('userId', users.userMiniByID);
-  app.param('username', users.userByUsername);
+  app.param('userId', userProfile.userMiniByID);
+  app.param('username', userProfile.userByUsername);
 };

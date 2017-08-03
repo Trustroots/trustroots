@@ -1,8 +1,8 @@
 'use strict';
 
 var path = require('path'),
-    errorHandler = require('./errors.server.controller'),
-    usersHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
+    errorService = require('../services/error.server.service'),
+    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     config = require(path.resolve('./config/config')),
     log = require(path.resolve('./config/lib/logger'));
@@ -18,7 +18,7 @@ exports.renderIndex = function(req, res) {
 
   // Expose user
   if (req.user) {
-    renderVars.user = usersHandler.sanitizeProfile(req.user, req.user);
+    renderVars.user = userProfile.sanitizeProfile(req.user, req.user);
   }
 
   // Expose tribe (when browsing `/tribes/tribe-name`)
@@ -45,10 +45,10 @@ exports.renderNotFound = function(req, res) {
       res.render('modules/core/server/views/404');
     },
     'application/json': function() {
-      res.json({ message: errorHandler.getErrorMessageByKey('not-found') });
+      res.json({ message: errorService.getErrorMessageByKey('not-found') });
     },
     'default': function() {
-      res.send(errorHandler.getErrorMessageByKey('not-found'));
+      res.send(errorService.getErrorMessageByKey('not-found'));
     }
   });
 };

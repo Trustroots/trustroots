@@ -10,7 +10,7 @@ var request = require('supertest'),
     config = require(path.resolve('./config/config')),
     express = require(path.resolve('./config/lib/express'));
 
-describe('Last seen', function () {
+describe('User last seen CRUD tests', function () {
   /**
    * Globals
    */

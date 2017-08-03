@@ -4,10 +4,10 @@
  * Module dependencies.
  */
 var path = require('path'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    profileHandler = require(path.resolve('./modules/users/server/controllers/users/users.profile.server.controller')),
+    profileHandler = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     log = require(path.resolve('./config/lib/logger')),
     async = require('async'),
@@ -260,7 +260,7 @@ exports.changePassword = function(req, res) {
       // Return error if no user
       if (!req.user) {
         return res.status(403).send({
-          message: errorHandler.getErrorMessageByKey('forbidden')
+          message: errorService.getErrorMessageByKey('forbidden')
         });
       }
 
@@ -329,7 +329,7 @@ exports.changePassword = function(req, res) {
   ], function(err) {
     if (err) {
       res.status(err.status || 400).send({
-        message: err.message || errorHandler.getErrorMessageByKey('default')
+        message: err.message || errorService.getErrorMessageByKey('default')
       });
     }
   });

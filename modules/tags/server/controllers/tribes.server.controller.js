@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 var path = require('path'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     paginate = require('express-paginate'),
     mongoose = require('mongoose'),
     Tag = mongoose.model('Tag');
@@ -55,7 +55,7 @@ exports.listTribes = function(req, res) {
     function(err, data) {
       if (err) {
         return res.status(400).send({
-          message: errorHandler.getErrorMessage(err)
+          message: errorService.getErrorMessage(err)
         });
       } else {
         // Pass pagination data to construct link header
@@ -89,7 +89,7 @@ exports.tribeBySlug = function(req, res, next, slug) {
   .exec(function(err, tribe) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     } else {
       req.tribe = tribe;

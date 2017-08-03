@@ -10,7 +10,7 @@ module.exports = function(app) {
   // Root routing
   var core = require('../controllers/core.server.controller'),
       path = require('path'),
-      users = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
+      userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
       tribes = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller'));
 
   // CSP Violations
@@ -38,7 +38,7 @@ module.exports = function(app) {
   app.route('/tribes/:tribeSlug').get(core.renderIndex);
 
   // Short URL for invite codes
-  app.route('/c/:code').get(users.redirectInviteShortUrl);
+  app.route('/c/:code').get(userProfile.redirectInviteShortUrl);
 
   // Define application route
   app.route('/*').get(core.renderIndex);

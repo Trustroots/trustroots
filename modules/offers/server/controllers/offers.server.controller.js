@@ -6,8 +6,8 @@
 var _ = require('lodash'),
     path = require('path'),
     async = require('async'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
-    userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
+    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
+    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     sanitizeHtml = require('sanitize-html'),
@@ -102,7 +102,7 @@ exports.create = function(req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -155,7 +155,7 @@ exports.create = function(req, res) {
   function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     }
 
@@ -174,14 +174,14 @@ exports.list = function(req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
   // Missing bounding box query parameters
   if (!req.query.southWestLat || !req.query.southWestLng || !req.query.northEastLat || !req.query.northEastLng) {
     return res.status(400).send({
-      message: errorHandler.getErrorMessageByKey('default')
+      message: errorService.getErrorMessageByKey('default')
     });
   }
 
@@ -253,7 +253,7 @@ exports.list = function(req, res) {
 
     if (!isTribeFilterValid) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessageByKey('invalid-id')
+        message: errorService.getErrorMessageByKey('invalid-id')
       });
     }
 
@@ -300,7 +300,7 @@ exports.list = function(req, res) {
   Offer.aggregate(query).exec(function(err, offers) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     } else {
 
@@ -323,14 +323,14 @@ exports.offerByUserId = function(req, res, next, userId) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
-      message: errorHandler.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id')
     });
   }
 
@@ -343,7 +343,7 @@ exports.offerByUserId = function(req, res, next, userId) {
     if (err) return next(err);
     if (!offer) {
       return res.status(404).send({
-        message: errorHandler.getErrorMessageByKey('not-found')
+        message: errorService.getErrorMessageByKey('not-found')
       });
     }
 
@@ -378,14 +378,14 @@ exports.offerById = function(req, res, next, offerId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(offerId)) {
     return res.status(400).send({
-      message: errorHandler.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id')
     });
   }
 
   // Require user
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -394,13 +394,13 @@ exports.offerById = function(req, res, next, offerId) {
     // Find offer
     function(done) {
       Offer.findById(offerId)
-        .populate('user', userHandler.userListingProfileFields)
+        .populate('user', userProfile.userListingProfileFields)
         .exec(function(err, offer) {
 
           // No offer
           if (err || !offer) {
             return res.status(404).send({
-              message: errorHandler.getErrorMessageByKey('not-found')
+              message: errorService.getErrorMessageByKey('not-found')
             });
           }
 

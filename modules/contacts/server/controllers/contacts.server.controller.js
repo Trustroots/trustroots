@@ -6,10 +6,10 @@
 
 var _ = require('lodash'),
     path = require('path'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller')),
+    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     sanitizeHtml = require('sanitize-html'),
     htmlToText = require('html-to-text'),
     async = require('async'),
@@ -33,7 +33,7 @@ exports.add = function(req, res) {
       // Not a valid ObjectId
       if (!mongoose.Types.ObjectId.isValid(req.body.friendUserId)) {
         return res.status(400).json({
-          message: errorHandler.getErrorMessageByKey('invalid-id')
+          message: errorService.getErrorMessageByKey('invalid-id')
         });
       }
 
@@ -55,7 +55,7 @@ exports.add = function(req, res) {
         if (existingContact) {
           // Contact already exists!
           return res.status(409).json({
-            message: errorHandler.getErrorMessageByKey('conflict'),
+            message: errorService.getErrorMessageByKey('conflict'),
             confirmed: existingContact.confirmed
           });
         }
@@ -121,12 +121,12 @@ exports.add = function(req, res) {
       if (contact) {
         contact.remove(function() {
           return res.status(400).send({
-            message: errorHandler.getErrorMessage(err)
+            message: errorService.getErrorMessage(err)
           });
         });
       } else {
         return res.status(400).send({
-          message: errorHandler.getErrorMessage(err)
+          message: errorService.getErrorMessage(err)
         });
       }
     }
@@ -144,7 +144,7 @@ exports.remove = function(req, res) {
   contact.remove(function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     } else {
       res.json(contact);
@@ -176,7 +176,7 @@ exports.confirm = function(req, res) {
   // Only receiving user can confirm user connections
   if (!req.contact || !req.contact.userTo._id.equals(req.user._id.valueOf())) {
     return res.status(403).json({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -187,7 +187,7 @@ exports.confirm = function(req, res) {
   contact.save(function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     } else {
       res.json(contact);
@@ -219,14 +219,14 @@ exports.contactByUserId = function(req, res, next, userId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json({
-      message: errorHandler.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id')
     });
   }
 
   // User's own profile, don't bother hitting the DB
   if (req.user && req.user._id === userId) {
     return res.status(400).json({
-      message: errorHandler.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id')
     });
   }
 
@@ -243,13 +243,13 @@ exports.contactByUserId = function(req, res, next, userId) {
         }
       ]
     })
-    .populate('userTo userFrom', userHandler.userMiniProfileFields)
+    .populate('userTo userFrom', userProfile.userMiniProfileFields)
     .exec(function(err, contact) {
 
       if (err) return next(err);
       if (!contact) {
         return res.status(404).json({
-          message: errorHandler.getErrorMessageByKey('not-found')
+          message: errorService.getErrorMessageByKey('not-found')
         });
       }
 
@@ -270,13 +270,13 @@ exports.contactById = function(req, res, next, contactId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(contactId)) {
     return res.status(400).json({
-      message: errorHandler.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id')
     });
   }
 
   if (req.user && req.user.public) {
     Contact.findById(contactId)
-      .populate('userTo userFrom', userHandler.userMiniProfileFields)
+      .populate('userTo userFrom', userProfile.userMiniProfileFields)
       .exec(function(err, contact) {
         if (err) return next(err);
 
@@ -286,7 +286,7 @@ exports.contactById = function(req, res, next, contactId) {
             !contact.userTo._id.equals(req.user._id.valueOf())
         )) {
           return res.status(404).json({
-            message: errorHandler.getErrorMessageByKey('not-found')
+            message: errorService.getErrorMessageByKey('not-found')
           });
         }
 
@@ -394,7 +394,7 @@ exports.contactListByUser = function(req, res, next, listUserId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(listUserId)) {
     return res.status(400).json({
-      message: errorHandler.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id')
     });
   }
 
@@ -467,7 +467,7 @@ exports.contactListByUser = function(req, res, next, listUserId) {
         // Project here fields for the user which isn't the user who's list
         // we requested. I.e. "the other party"
         user: {
-          // These should be fields listed at `userHandler.userMiniProfileFields`
+          // These should be fields listed at `userProfile.userMiniProfileFields`
           _id: '$user._id',
           updated: '$user.updated',
           displayName: '$user.displayName',

@@ -1764,7 +1764,7 @@ describe('User CRUD tests', function () {
           .expect(200)
           .end(function (userInviteCodeErr, userInviteCodeRes) {
 
-            // Handle joining tag error
+            // Handle error
             if (userInviteCodeErr) {
               return done(userInviteCodeErr);
             }
@@ -1786,7 +1786,7 @@ describe('User CRUD tests', function () {
       .expect(403)
       .end(function (userInviteCodeErr, userInviteCodeRes) {
 
-        // Handle joining tag error
+        // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
         }
@@ -1805,7 +1805,7 @@ describe('User CRUD tests', function () {
       .expect(200)
       .end(function (userInviteCodeErr, userInviteCodeRes) {
 
-        // Handle joining tag error
+        // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
         }
@@ -1824,7 +1824,7 @@ describe('User CRUD tests', function () {
       .expect(200)
       .end(function (userInviteCodeErr, userInviteCodeRes) {
 
-        // Handle joining tag error
+        // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
         }
@@ -1841,12 +1841,31 @@ describe('User CRUD tests', function () {
       .expect(200)
       .end(function (userInviteCodeErr, userInviteCodeRes) {
 
-        // Handle joining tag error
+        // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
         }
 
         userInviteCodeRes.body.valid.should.equal(false);
+
+        return done();
+      });
+  });
+
+  it('should be able to validate invite code from predefined list', function (done) {
+
+    var code = 'trustroots'; // Defined at `./configs/env/default.js`
+
+    agent.post('/api/users/invitecode/' + code)
+      .expect(200)
+      .end(function (userInviteCodeErr, userInviteCodeRes) {
+
+        // Handle error
+        if (userInviteCodeErr) {
+          return done(userInviteCodeErr);
+        }
+
+        userInviteCodeRes.body.valid.should.equal(true);
 
         return done();
       });

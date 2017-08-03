@@ -5,7 +5,7 @@
  */
 var _ = require('lodash'),
     path = require('path'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller'));
+    errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
 
 /**
  * Handle invalidating sessions of suspended users
@@ -23,7 +23,7 @@ exports.invalidateSuspendedSessions = function(req, res, next) {
     return req.session.destroy(function() {
 
       // A short one-liner
-      var suspendedMessage = errorHandler.getErrorMessageByKey('suspended');
+      var suspendedMessage = errorService.getErrorMessageByKey('suspended');
 
       // Do content negotiation and return a message
       // https://expressjs.com/en/api.html#res.format

@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 var path = require('path'),
-    errorHandler = require(path.resolve('./modules/core/server/controllers/errors.server.controller')),
+    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     mongoose = require('mongoose'),
     Tag = mongoose.model('Tag');
 
@@ -22,13 +22,13 @@ exports.tagFields = [
 exports.createTag = function(req, res) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorHandler.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
   // @todo
   return res.status(403).send({
-    message: errorHandler.getErrorMessageByKey('forbidden')
+    message: errorService.getErrorMessageByKey('forbidden')
   });
 };
 
@@ -52,7 +52,7 @@ exports.listTags = function(req, res) {
   .exec(function(err, tribes) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     } else {
       res.json(tribes);
@@ -83,7 +83,7 @@ exports.tagBySlug = function(req, res, next, slug) {
   .exec(function(err, tag) {
     if (err) {
       return res.status(400).send({
-        message: errorHandler.getErrorMessage(err)
+        message: errorService.getErrorMessage(err)
       });
     } else {
       req.tag = tag;

@@ -1,9 +1,13 @@
-# [Trustroots.org](https://www.trustroots.org/)
+<h1 align="center">
+	<br>
+	<br>
+	<a href="https://www.trustroots.org/"><img width="200" src="https://cdn.rawgit.com/Trustroots/trustroots/master/modules/core/client/img/logo/color.svg" alt="Trustroots"></a>
+	<br>
+	<br>
+	<br>
+</h1>
 
-_Travellers' community. Sharing, hosting and getting people together._
-
-![Trustroots logo](https://raw.githubusercontent.com/Trustroots/trustroots/master/modules/core/client/img/icons/android/192.png)
-
+> _Travellers' community. Sharing, hosting and getting people together._
 
 ## Volunteering
 
