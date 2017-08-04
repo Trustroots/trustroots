@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 var path = require('path'),
-    config = require(path.resolve('./config/config')),
+    authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service')),
     crypto = require('crypto'),
     mongoose = require('mongoose'),
     uniqueValidation = require('mongoose-beautiful-unique-validation'),
@@ -36,22 +36,9 @@ var validatePassword = function(password) {
 
 /**
  * A Validation function for username
- * - at least 3 characters
- * - only a-z0-9_-.
- * - contain at least one alphanumeric character
- * - not in list of illegal usernames
- * - no consecutive dots: "." ok, ".." nope
- * - not begin or end with "."
  */
-
 var validateUsername = function(username) {
-  var usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/,
-      dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/;
-  return (
-    this.provider !== 'local' ||
-    (username && usernameRegex.test(username) && config.illegalStrings.indexOf(username) < 0) &&
-    dotsRegex.test(username)
-  );
+  return this.provider !== 'local' || authenticationService.validateUsername(username);
 };
 
 /**

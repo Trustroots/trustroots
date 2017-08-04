@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($rootScope, $http, $q, $state, $stateParams, $location, $uibModal, $analytics, $window, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory, locker) {
+  function SignupController($rootScope, $http, $q, $state, $stateParams, $location, $uibModal, $analytics, $window, $timeout, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory, locker) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) {
@@ -24,6 +24,7 @@
     vm.step = 1;
     vm.isLoading = false;
     vm.submitSignup = submitSignup;
+    vm.getUsernameValidationError = getUsernameValidationError;
     vm.openRules = openRules;
     vm.tribe = null;
     vm.suggestedTribes = [];
@@ -36,6 +37,8 @@
     vm.validateInvitationCode = validateInvitationCode;
     vm.isWaitingListEnabled = false;
     vm.waitinglistInvitation = Boolean($stateParams.mwr);
+    vm.usernameMinlength = 3;
+    vm.usernameMaxlength = 34;
 
     // Initialize controller
     activate();
@@ -54,6 +57,42 @@
 
       // Get list of suggested tribes
       initSuggstedTribes();
+    }
+
+    /**
+     * Parse $error and return a string
+     * @param {Object} usernameModel - Angular model for username form input
+     * @returns {String} error text
+     */
+    function getUsernameValidationError(usernameModel) {
+
+      if (!usernameModel || !usernameModel.$dirty || usernameModel.$valid) {
+        return '';
+      }
+
+      var err = usernameModel.$error || {};
+
+      if (err.required || usernameModel.$usernameValue === '') {
+        return 'Username is required.';
+      }
+
+      if (err.maxlength) {
+        return 'Too long, maximum length is ' + vm.usernameMaxlength + ' characters.';
+      }
+
+      if (err.minlength) {
+        return 'Too short, minumum length is ' + vm.usernameMinlength + ' characters.';
+      }
+
+      if (err.pattern) {
+        return 'Invalid username.';
+      }
+
+      if (err.username) {
+        return 'This username is already in use.';
+      }
+
+      return 'Invalid username.';
     }
 
     /**

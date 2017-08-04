@@ -175,18 +175,17 @@
                      name="username"
                      autocapitalize="off"
                      class="form-control input-lg"
-                     ng-model="signup.credentials.username"
-                     ng-pattern="/^(?=.*[0-9A-Za-z])[0-9A-Za-z.\-_]{3,34}$/"
                      ng-disabled="signup.isLoading"
-                     ng-minlength="3"
-                     ng-maxlength="34"
-                     tr-focustip="'Can only contain letters, numbers, periods, hyphens, and underscores and cannot be longer than 34 characters and has to be at least 3 characters long. Most people choose to use their first name, last name, nickname, or some combination of those with initials. Choose wisely.'"
-                     uib-tooltip="{{
-                       ((userForm.username.$error.minlength && userForm.username.$dirty) ? 'At least 3 characters long. ' : '') +
-                       ((userForm.username.$error.maxlength && userForm.username.$dirty) ? 'Cannot be longer than 34 characters. ' : '') +
-                       ((userForm.username.$error.pattern && userForm.username.$dirty) ? 'Can only contain letters, numbers, periods, hyphens, and underscores.' : '')
-                     }}"
-                     tooltip-trigger="blur"
+                     ng-model="signup.credentials.username"
+                     ng-minlength="::signup.usernameMinlength"
+                     ng-maxlength="::signup.usernameMaxlength"
+                     ng-pattern="/^(?=.*[0-9A-Za-z])[0-9A-Za-z.\-_]{3,34}$/"
+                     tr-validate-username
+                     tr-focustip="'Can contain only letters, numbers, periods, hyphens, and underscores.<br>3—34 characters long.'"
+                     tooltip-is-open="!userForm.username.$pending && userForm.username.$dirty && !userForm.username.$valid"
+                     uib-tooltip="{{signup.getUsernameValidationError(userForm.username)}}"
+                     tooltip-popup-delay="500"
+                     tooltip-trigger="'none'"
                      tooltip-placement="top">
             </div>
           </div>
