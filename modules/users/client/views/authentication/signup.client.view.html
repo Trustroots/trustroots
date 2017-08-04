@@ -210,14 +210,50 @@
           <div class="form-group" ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}">
             <label for="password" class="col-sm-4 control-label">Password</label>
             <div class="col-sm-8">
-              <input type="password"
-                     required
-                     id="password"
-                     name="password"
+              <div class="input-group">
+                <input required
+                       id="password"
+                       name="password"
+                       class="form-control input-lg"
+                       tooltip-is-open="!userForm.password.$pending && userForm.password.$dirty && !userForm.password.$valid"
+                       uib-tooltip="Minimum length 8 characters."
+                       tooltip-popup-delay="500"
+                       tooltip-trigger="'none'"
+                       tooltip-placement="top"
+                       ng-attr-type="{{ showPassword ? 'text' : 'password' }}"
+                       ng-model="signup.credentials.password"
+                       ng-minlength="8"
+                       ng-disabled="signup.isLoading">
+                <span class="input-group-btn">
+                  <a class="btn btn-lg btn-default btn-password-toggle"
+                     role="button"
+                     aria-label="Toggle password visibility"
+                     ng-click="showPassword = !showPassword">
+                    <i class="icon-lg"
+                      ng-class="{
+                        'icon-eye': !showPassword,
+                        'icon-eye-off': showPassword
+                      }"></i>
+                  </a>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="form-group" ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}">
+            <label for="verifyPassword" class="col-sm-4 control-label">Repeat password</label>
+            <div class="col-sm-8">
+              <input required
+                     id="verifyPassword"
+                     name="verifyPassword"
                      class="form-control input-lg"
-                     ng-model="signup.credentials.password"
-                     ng-minlength="8"
-                     tr-trustpass="{ special: false, number: false, lowercase: false, uppercase: false, messageDone: 'Your password is secure and you are good to go!' }"
+                     tr-confirm-password="signup.credentials.password"
+                     tooltip-is-open="!userForm.verifyPassword.$pending && userForm.verifyPassword.$dirty && !userForm.verifyPassword.$valid"
+                     uib-tooltip="Passwords don't match."
+                     tooltip-popup-delay="500"
+                     tooltip-trigger="'none'"
+                     tooltip-placement="top"
+                     ng-attr-type="{{ showPassword ? 'text' : 'password' }}"
+                     ng-model="verifyPassword"
                      ng-disabled="signup.isLoading">
             </div>
           </div>
