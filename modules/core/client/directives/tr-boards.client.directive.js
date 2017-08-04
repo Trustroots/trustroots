@@ -143,8 +143,8 @@
             'file': 'mh-woman-bridge.jpg'
           },
           'sahara-backpacker': {
-            'name': 'Azer Koçulu',
-            'url': 'http://azer.bike/',
+            'name': 'Nova Togatorop',
+            'url': 'http://novatogatorop.com/',
             'license': 'CC',
             'license_url': 'https://unsplash.com/license',
             'file': 'ak-sahara.jpg'
