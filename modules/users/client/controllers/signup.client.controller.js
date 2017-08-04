@@ -28,7 +28,6 @@
     vm.openRules = openRules;
     vm.tribe = null;
     vm.suggestedTribes = [];
-    vm.suggestionsLimit = 3; // How many tribes suggested (including possible referred tribe)
 
     // Variables for invitation feature
     vm.invitationCode = $stateParams.code || '';
@@ -39,6 +38,7 @@
     vm.waitinglistInvitation = Boolean($stateParams.mwr);
     vm.usernameMinlength = 3;
     vm.usernameMaxlength = 34;
+    vm.suggestedTribesLimit = 3;
 
     // Initialize controller
     activate();
@@ -111,8 +111,6 @@
           // Got it
           if (tribe._id) {
             vm.tribe = tribe;
-            // Show one less suggestion since we have referred tribe
-            vm.suggestionsLimit--;
           }
 
           // Fetch suggested tribes list without this tribe
@@ -132,8 +130,7 @@
      */
     function getSuggestedTribes(withoutTribeId) {
       TribesService.query({
-        // If we have referred tribe, load one extra suggestion in case we load referred tribe among suggestions
-        limit: (vm.tribe ? (parseInt(vm.suggestionsLimit + 1, 10)) : vm.suggestionsLimit)
+        limit: 20
       },
       function(tribes) {
         var suggestedTribes = [];

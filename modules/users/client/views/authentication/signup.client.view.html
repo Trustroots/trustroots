@@ -344,13 +344,13 @@
 
           <ul class="list-unstyled tribe-suggestions-list" ng-if="signup.suggestedTribes && signup.suggestedTribes.length">
             <li class="panel tribe tribe-image"
-                ng-repeat="tribe in ::signup.suggestedTribes | limitTo:signup.suggestionsLimit track by tribe._id"
+                ng-repeat="tribe in signup.suggestedTribes | limitTo:signup.suggestedTribesLimit track by tribe._id"
                 tr-tribe-styles="{{::tribe}}"
                 tr-tribe-styles-dimensions="906x240"
                 tr-tribe-styles-quality="lightest"
                 tr-tribe-styles-progressive="yes"
                 tr-tribe-join>
-             <div class="tribe-content" ng-class="{'is-image': tribe.image_UUID}">
+             <div class="tribe-content" ng-class="{ 'is-image': tribe.image_UUID }">
                <div>
                  <h3 class="tribe-label" ng-bind="::tribe.label"></h3>
                  <div class="tribe-meta">
@@ -365,6 +365,14 @@
              </div>
             </li>
           </ul>
+
+          <button class="btn btn-default center-block"
+                  ng-if="signup.suggestedTribesLimit < signup.suggestedTribes.length"
+                  ng-click="signup.suggestedTribesLimit = signup.suggestedTribesLimit + 3">
+            See more tribes
+          </button>
+
+          <br>
 
           <p class="lead text-center">
             Joining Tribes helps you find likeminded Trustroots
