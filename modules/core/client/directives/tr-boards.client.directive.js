@@ -142,6 +142,13 @@
             'license_url': 'https://unsplash.com/license',
             'file': 'mh-woman-bridge.jpg'
           },
+          'sahara': {
+            'name': 'Nova Togatorop',
+            'url': 'http://novatogatorop.com/',
+            'license': 'CC',
+            'license_url': 'https://unsplash.com/license',
+            'file': 'sahara.jpg'
+          },
           'sahara-backpacker': {
             'name': 'Nova Togatorop',
             'url': 'http://novatogatorop.com/',

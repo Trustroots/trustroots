@@ -27,8 +27,11 @@ module.exports = function(app) {
 
   // Setting up the users authentication api
   app.route('/api/auth/signup').post(userAuthentication.signup);
+  app.route('/api/auth/signup/validate').post(userAuthentication.signupValidation);
   app.route('/api/auth/signin').post(userAuthentication.signin);
   app.route('/api/auth/signout').get(userAuthentication.signout);
+
+  // Validate username
 
   // Setting the facebook oauth routes
   // See permissions:

@@ -1,22 +1,16 @@
-<section class="container board container-fullscreen" tr-boards="'bokeh'">
+<section class="container board container-fullscreen" tr-boards="'sahara'">
   <div class="middle-wrapper middle-wrapper-horizontal">
     <div class="middle-content">
 
       <div class="row">
-        <div class="col-xs-12 text-center">
-          <img class="hidden-xs" src="/modules/core/img/tree-color.svg" alt="Trustroots" width="120" height="120" />
-          <img class="visible-xs-inline-block" src="/modules/core/img/tree-color.svg" alt="Trustroots" width="80" height="80" />
-          <br><br>
-          <p class="lead" ng-show="auth.continue">Sign in to continue.</p>
-        </div>
-        <div class="col-xs-offset-2 col-xs-8 col-sm-offset-4 col-sm-4 col-lg-offset-5 col-lg-2">
+        <div class="col-xs-12 col-sm-offset-4 col-sm-4 col-lg-offset-5 col-lg-2">
           <form name="signinForm"
                 class="form-auth"
                 autocomplete="off"
                 ng-submit="auth.signin()" >
             <fieldset>
               <div class="form-group">
-                <label for="username" class="sr-only">Email or username</label>
+                <label for="username" class="lead">Email or username</label>
                 <input type="text"
                        autocapitalize="off"
                        required
@@ -28,7 +22,7 @@
                        ng-disabled="auth.isLoading">
               </div>
               <div class="form-group">
-                <label for="password" class="sr-only">Password</label>
+                <label for="password" class="lead">Password</label>
                 <div class="input-group">
                   <input required
                          id="password"
@@ -52,11 +46,20 @@
                   </span>
                 </div>
               </div>
+              <a ui-sref="forgot({ userhandle: auth.credentials.username })"
+                 class="btn btn-inverse"
+                 ng-class="{ 'btn-lg btn-block': auth.authError }">
+                Forgot?
+                <span ng-if="auth.authError">Recover your password</span>
+              </a>
               <div class="text-center form-group">
+                <br><br>
                 <button type="submit"
                         class="btn btn-default btn-lg"
                         ng-disabled="auth.isLoading">
-                  <span ng-if="!auth.isLoading">Login</span>
+                  <span ng-if="!auth.isLoading">
+                    {{ auth.continue ? 'Sign in to continue' : 'Login' }}
+                  </span>
                   <span ng-if="auth.isLoading">Wait...</span>
                 </button>
               </div>
@@ -67,22 +70,11 @@
       <div class="row">
         <div class="col-xs-12 text-center text-white">
           <p>
-            <br>
-            <a ui-sref="forgot({
-              userhandle: auth.credentials.username
-            })"
-               class="btn btn-link"
-               ng-class="{
-                'btn-sm': !auth.authError,
-                'btn-lg': auth.authError
-               }">
-              Forgot your password?
-            </a><br>
-            <a ui-sref="signup" class="btn btn-link btn-sm">Become a member</a>
+            <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
           </p>
           <p class="visible-xs-block">
             <br>
-            <a ui-sref="home" class="btn btn-inverse">Back home</a>
+            <a ui-sref="home" class="btn btn-link">Back home</a>
           </p>
         </div>
       </div><!-- .row-->

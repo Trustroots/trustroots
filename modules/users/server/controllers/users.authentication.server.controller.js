@@ -7,7 +7,8 @@ var _ = require('lodash'),
     path = require('path'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    profileHandler = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
+    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
+    authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     facebook = require(path.resolve('./config/lib/facebook-api.js')),
     config = require(path.resolve('./config/config')),
@@ -18,12 +19,6 @@ var _ = require('lodash'),
     crypto = require('crypto'),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
-
-var generateEmailToken = function (user, saltBuffer) {
-  var email = user.emailTemporary || user.email;
-  var buf = Buffer.concat([saltBuffer, new Buffer(email)]);
-  return buf.toString('hex');
-};
 
 /**
  * Signup
@@ -75,7 +70,7 @@ exports.signup = function(req, res) {
       // (from where it's then again moved to email field)
       user.emailTemporary = user.email;
 
-      user.emailToken = generateEmailToken(user, salt);
+      user.emailToken = authenticationService.generateEmailToken(user, salt);
 
       // Then save the user
       user.save(function(err) {
@@ -100,7 +95,7 @@ exports.signup = function(req, res) {
     function(user, done) {
       req.login(user, function(err) {
         // Remove sensitive data befor sending user
-        user = profileHandler.sanitizeProfile(user);
+        user = userProfile.sanitizeProfile(user);
 
         done(err, user);
       });
@@ -147,6 +142,91 @@ exports.signup = function(req, res) {
   });
 };
 
+/**
+ * Signup validation
+ */
+exports.signupValidation = function(req, res) {
+
+  var username = String(req.body.username || '').toLowerCase();
+
+  async.waterfall([
+
+    // Validate username
+    function(done) {
+
+      // Check if we have the required data before hitting more strict validations
+      if (!username) {
+        return done(new Error('Please provide required `username` field.'), 'username-missing');
+      }
+
+      // Is username reserved?
+      // You can modify the list from `config/env/default.js`
+      if (authenticationService.isUsernameReserved(username)) {
+        return done(new Error('Username is not available.'), 'username-not-available-reserved');
+      }
+
+      // Is username valid?
+      if (!authenticationService.validateUsername(username)) {
+        return done(new Error('Username is in invalid format.'), 'username-invalid');
+      }
+
+      done();
+    },
+
+    // Check username availability against database
+    function(done) {
+      User.findOne({
+        username: username
+      }, function(err, user) {
+        if (user) {
+          return done(new Error('Username is not available.'), 'username-not-available');
+        }
+
+        done();
+      });
+    }
+
+  ], function(err, errorCode) {
+
+    var statsObject = {
+      namespace: 'signup-validation',
+      counts: {
+        count: 1
+      },
+      tags: {}
+    };
+
+    // Signup validation failed
+    if (err) {
+
+      // Send signup validation failure to stats servers
+      statsObject.tags.status = 'failed';
+      statsObject.tags.reason = errorCode || 'other';
+      statService.stat(statsObject, function() {
+        // Send error to the API
+        // HTTP status "200 OK"
+        res.status(200).send({
+          valid: false,
+          error: errorCode || 'other',
+          message: err.message || errorService.getErrorMessage(err)
+        });
+      });
+
+      return;
+    }
+
+    // Signup validation was successful
+
+    // Send signup validation success to stats servers
+    statsObject.tags.status = 'success';
+    statService.stat(statsObject, function() {
+      res.status(200).send({
+        valid: true
+      });
+    });
+
+  });
+};
 
 /**
  * Signin after passport authentication
@@ -225,7 +305,7 @@ exports.signin = function(req, res, next) {
       statService.stat(statsObject, function() {
 
         // Remove sensitive data before sending out
-        user = profileHandler.sanitizeProfile(user);
+        user = userProfile.sanitizeProfile(user);
         res.json(user);
       });
 
@@ -653,7 +733,7 @@ exports.resendConfirmation = function(req, res) {
     function(salt, done) {
       var user = req.user;
       user.updated = Date.now();
-      user.emailToken = generateEmailToken(user, salt);
+      user.emailToken = authenticationService.generateEmailToken(user, salt);
       user.save(function(err) {
         if (err) return done(err);
         done(null, user);
