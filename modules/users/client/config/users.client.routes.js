@@ -38,6 +38,7 @@
         url: '/welcome',
         templateUrl: '/modules/users/views/authentication/welcome.client.view.html',
         requiresAuth: true,
+        footerHidden: true,
         data: {
           pageTitle: 'Welcome'
         }

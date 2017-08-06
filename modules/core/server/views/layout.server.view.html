@@ -128,21 +128,26 @@
     {% endblock %}
 
     {# Flash messages #}
-    <mc-messages></mc-messages>
+    <mc-messages aria-live="polite" role="status"></mc-messages>
 
     {# Site wide notifications #}
     {# Enabled from `local.js` config #}
     {% if siteAnnouncement.enabled && siteAnnouncement.message !== '' %}
-      <div class="alert alert-success site-announcement" ng-if="app.user && !app.isSiteAnnouncementClosed">
-        {{siteAnnouncement.message}}
+      <div class="alert alert-success site-announcement"
+           ng-if="app.user && !app.isSiteAnnouncementClosed"
+           aria-label="Site announcement"
+           role="dialog">
+        <div aria-role="document" tabindex="0">
+          {{siteAnnouncement.message}}
+        </div>
         <a class="close"
            ng-click="app.isSiteAnnouncementClosed = true;"
            data-dismiss="alert"
-           aria-hidden="true">×</a>
+           aria-label="Hide site announcement">×</a>
       </div>
     {% endif %}
 
-    <article class="content" id="tr-main" role="main">
+    <article class="content" id="tr-main" role="main" tabindex="0">
       {% block content %}{% endblock %}
     </article>
 

@@ -1,17 +1,39 @@
 <!-- Avatar+Name for mobile screens -->
-<div class="text-center visible-xs-block">
-  <a tr-avatar data-user="profileCtrl.profile" data-size="512" data-link="false" class="visible-xs-block avatar-circle" ng-click="profileCtrl.biggerAvatar = !profileCtrl.biggerAvatar" ng-class="{'profile-avatar-lg': profileCtrl.biggerAvatar}"></a>
-  <h2 class="profile-name" ng-show="profileCtrl.profile.displayName" ng-bind="profileCtrl.profile.displayName"></h2><br>
-  <h4 class="profile-username">@{{ profileCtrl.profile.displayUsername || profileCtrl.profile.username }}</h4><br>
-  <p class="profile-tagline" ng-show="profileCtrl.profile.tagline" ng-bind="profileCtrl.profile.tagline"></p>
+<div class="text-center visible-xs-block" role="dialog">
+  <a tr-avatar
+     data-user="profileCtrl.profile"
+     data-size="512"
+     data-link="false"
+     class="visible-xs-block avatar-circle"
+     ng-click="profileCtrl.biggerAvatar = !profileCtrl.biggerAvatar"
+     ng-class="{'profile-avatar-lg': profileCtrl.biggerAvatar}"
+     aria-hidden="true"></a>
+  <h2 class="profile-name"
+      ng-show="profileCtrl.profile.displayName"
+      ng-bind="profileCtrl.profile.displayName"></h2>
+  <br>
+  <h4 class="profile-username">
+    @{{ profileCtrl.profile.displayUsername || profileCtrl.profile.username }}
+  </h4>
+  <br>
+  <p class="profile-tagline"
+     ng-show="profileCtrl.profile.tagline"
+     ng-bind="profileCtrl.profile.tagline"></p>
 </div>
 
 <div class="panel panel-default profile-overview">
-  <a tr-avatar data-user="profileCtrl.profile" data-size="256" data-link="false" class="hidden-xs" ng-click="profileCtrl.toggleAvatarModal()"></a>
+  <a tr-avatar
+     data-user="profileCtrl.profile"
+     data-size="256"
+     data-link="false"
+     class="hidden-xs"
+     ng-click="profileCtrl.toggleAvatarModal()"
+     aria-hidden="true"></a>
   <div class="panel-body">
 
     <!-- Reply Rate -->
-    <div class="profile-sidebar-section text-muted" ng-if="::(profileCtrl.profile.replyRate || profileCtrl.profile.replyTime)">
+    <div class="profile-sidebar-section text-muted"
+         ng-if="::(profileCtrl.profile.replyRate || profileCtrl.profile.replyTime)">
       <span ng-if="::profileCtrl.profile.replyRate">
         Reply rate {{ ::profileCtrl.profile.replyRate }}.
       </span>
@@ -46,16 +68,17 @@
     </div>
 
     <div class="profile-sidebar-section" ng-if="profileCtrl.profile.languages.length">
-      <h4>Languages</h4>
-      <ul class="list-unstyled">
+      <h4 id="profile-languages">Languages</h4>
+      <ul class="list-unstyled" aria-describedby="profile-languages">
         <li ng-repeat="code in profileCtrl.profile.languages track by code"
             ng-bind="::app.languageNames[code] || code"></li>
       </ul>
     </div>
 
     <div class="profile-sidebar-section" ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts() || profileCtrl.profile.extSitesBW || profileCtrl.profile.extSitesCS || profileCtrl.profile.extSitesWS">
-      <h4>Elsewhere</h4>
-      <ul class="social-profiles list-unstyled">
+      <h4 id="profile-networks" aria-label="Member in other networks">Elsewhere</h4>
+      <ul class="social-profiles list-unstyled"
+          aria-describedby="profile-networks">
         <li class="social-profile" ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts()" ng-repeat="(providerName, providerData) in profileCtrl.profile.additionalProvidersData track by providerName">
           <i class="social-profile-icon icon-fw icon-lg icon-{{ ::providerName }}"></i>
           <a rel="noopener"
@@ -98,4 +121,5 @@
 
 <span
   ng-if="::app.user._id !== profileCtrl.profile._id"
-  tr-report-member="::profileCtrl.profile.username"></span>
+  tr-report-member="::profileCtrl.profile.username"
+  ng-attr-title="Report member {{::profileCtrl.profile.username}} to support"></span>

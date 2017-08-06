@@ -205,8 +205,12 @@
       status = (status === 'yes') ? 'yes' : 'maybe';
       return L.icon({
         iconUrl: '/modules/core/img/map/marker-icon-' + status + '.svg',
-        iconSize: [markerIconSize, markerIconSize], // size of the icon
-        iconAnchor: [markerIconSize / 2, markerIconSize / 2] // point of the icon which will correspond to marker's location
+        // Size of the icon:
+        iconSize: [markerIconSize, markerIconSize],
+        // Point of the icon which will correspond to marker's location:
+        iconAnchor: [markerIconSize / 2, markerIconSize / 2],
+        // Accessibility
+        ariaLabel: status + ' host map marker'
       });
     }
 

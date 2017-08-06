@@ -21,7 +21,7 @@
       restrict: 'A',
       replace: true,
       scope: true,
-      template: '<span class="notification-badge" ng-show="unread > 0" ng-bind="unread"></span>',
+      template: '<span class="notification-badge" ng-show="unread > 0" ng-bind="unread" aria-label="{{unread}} unread messages" tabindex="0"></span>',
       link: link
     };
 
