@@ -51,7 +51,7 @@
           },
           'sierranevada': {
             'name': 'Simona',
-            'url': 'http://www.wanderlust.lt',
+            'url': 'https://www.wanderlust.lt',
             'license': 'CC',
             'license_url': 'https://creativecommons.org/licenses/by-nc-nd/4.0/',
             'file': 'ss-sierranevada.jpg'

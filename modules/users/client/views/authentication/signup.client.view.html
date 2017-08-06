@@ -367,9 +367,9 @@
           </ul>
 
           <button class="btn btn-default center-block"
-                  ng-if="signup.suggestedTribesLimit < signup.suggestedTribes.length"
+                  ng-disabled="signup.suggestedTribesLimit >= signup.suggestedTribes.length"
                   ng-click="signup.suggestedTribesLimit = signup.suggestedTribesLimit + 3">
-            See more tribes
+            Show more tribes
           </button>
 
           <br>

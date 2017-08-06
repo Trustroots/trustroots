@@ -5,12 +5,15 @@
 
   <!-- Header for non-authenticated users -->
   <div class="container" ng-if="!app.user">
-    <nav class="header-welcome" role="navigation">
+    <nav class="header-welcome" aria-label="Page navigation">
       <p class="header-welcome-text">New to Trustroots?</p>
       <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
-      <small class="header-welcome-divider">or</small>
+      <small class="header-welcome-divider" aria-hidden="true">or</small>
       <a ui-sref="signin" class="btn btn-default">Login</a>
-      <a ui-sref="home" class="btn btn-link header-more-text" ng-if="!app.isHomePage">
+      <a ui-sref="home"
+         class="btn btn-link header-more-text"
+         ng-if="!app.isHomePage"
+         aria-label="Read more about Trustroots">
         <span class="hidden-xs">Read more</span>
         <span class="visible-xs-inline">About</span>
       </a>
@@ -24,27 +27,32 @@
     <div class="navbar-header">
       <a ng-click="app.goHome()"
          class="navbar-brand hidden-xs"
-         aria-label="Trustroots">
+         aria-hidden="true">
         <img src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="177" height="31" />
       </a>
     </div>
 
     <ul class="nav navbar-nav hidden-xs">
       <li class="hidden-xs dropdown" uib-dropdown>
-        <a class="dropdown-toggle cursor-pointer" uib-dropdown-toggle>
+        <a class="dropdown-toggle cursor-pointer"
+           uib-dropdown-toggle
+           tabindex="0"
+           role="button"
+           aria-haspopup="true"
+           aria-expanded="false">
           Info &amp; Support
         </a>
-        <ul class="dropdown-menu">
+        <ul class="dropdown-menu" aria-label="submenu">>
           <li ui-sref-active="active"><a ui-sref="home">About</a></li>
           <li ui-sref-active="active"><a ui-sref="support">Contact &amp; Support</a></li>
           <li ui-sref-active="active"><a ui-sref="faq.general">FAQ</a></li>
           <li><a href="https://ideas.trustroots.org/">Blog</a></li>
           <li><a href="https://shop.trustroots.org/">Shop</a></li>
           <li ui-sref-active="active"><a ui-sref="media">Media</a></li>
-          <li ui-sref-active="active"><a ui-sref="privacy">Privacy</a></li>
+          <li ui-sref-active="active"><a ui-sref="privacy" aria-label="Privacy Policy">Privacy</a></li>
           <li ui-sref-active="active"><a ui-sref="rules">Rules</a></li>
           <li ui-sref-active="active"><a ui-sref="team">Team</a></li>
-          <li ui-sref-active="active"><a ui-sref="foundation">Foundation</a></li>
+          <li ui-sref-active="active"><a ui-sref="foundation" aria-label="Trustroots Foundation">Foundation</a></li>
           <li ui-sref-active="active"><a ui-sref="volunteering">Volunteering</a></li>
         </ul>
       </li>
@@ -76,18 +84,24 @@
         </a>
       </li>
       <li class="dropdown dropdown-user hidden-xs" uib-dropdown>
-        <a class="dropdown-toggle cursor-pointer" uib-dropdown-toggle aria-label="Me">
-          <div tr-avatar data-user="app.user" link="false" size="24"></div>
-          <span class="visible-xs-inline">
+        <a class="dropdown-toggle cursor-pointer"
+           role="button"
+           uib-dropdown-toggle
+           aria-label="My profile"
+           tabindex="0"
+           aria-haspopup="true">
+          <div tr-avatar data-user="app.user" link="false" size="24" role="presentation"></div>
+          <span class="visible-xs-inline" aria-hidden="true">
             <i class="icon-user icon-fw icon-lg"></i>
             {% raw %}{{ app.user.displayName }}{% endraw %}
           </span>
-          <b class="caret"></b>
+          <b class="caret" role="presentation"></b>
         </a>
-        <ul class="dropdown-menu dropdown-menu-right">
-          <li role="presentation" class="dropdown-header">{% raw %}{{ app.user.displayName }}{% endraw %}</li>
-          <li role="presentation" class="divider"></li>
-
+        <ul class="dropdown-menu dropdown-menu-right" aria-label="submenu">
+          <li role="presentation" class="dropdown-header" aria-hidden="true">
+            {% raw %}{{ app.user.displayName }}{% endraw %}
+          </li>
+          <li class="divider" role="presentation"></li>
           <li ui-sref-active="active">
             <a ui-sref="profile.about({username: app.user.username})">
               My profile

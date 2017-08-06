@@ -3,10 +3,10 @@
   <div class="col-md-6">
 
     <!-- About me -->
-    <div class="panel panel-default">
-      <div class="panel-heading">
+    <section class="panel panel-default">
+      <header class="panel-heading">
         About me
-      </div>
+      </header>
       <div class="panel-body">
 
         <!-- Short descriptions -->
@@ -22,21 +22,23 @@
         </div>
 
         <!-- If no description, show deep thoughts... -->
-        <blockquote class="profile-quote" ng-if="!profileCtrl.profile.description || profileCtrl.profile.description === ''">
+        <blockquote class="profile-quote"
+                    ng-if="!profileCtrl.profile.description || profileCtrl.profile.description === ''"
+                    aria-label="Member has not written description about themself.">
           “Everyone is necessarily the hero of his own life story.”
         </blockquote>
 
       </div>
 
       <!-- User watching their own profile and it's too short -->
-      <div class="panel-footer" ng-if="app.user._id === profileCtrl.profile._id && (!profileCtrl.profile.description || (profileCtrl.profile.description|plainTextLength) < app.appSettings.profileMinimumLength)">
+      <footer class="panel-footer" ng-if="app.user._id === profileCtrl.profile._id && (!profileCtrl.profile.description || (profileCtrl.profile.description|plainTextLength) < app.appSettings.profileMinimumLength)">
         <p class="lead">
           Your profile description should be longer so that you can send messages.
           <br><br>
           <a ui-sref="profile-edit.about" class="btn btn-primary">Fill your profile</a>
         </p>
-      </div>
-    </div>
+      </footer>
+    </section>
     <!-- /About me -->
 
   </div>
@@ -44,17 +46,19 @@
   <div class="col-md-6">
 
     <!-- Offers -->
-    <div class="hidden-xs" ng-if="profileCtrl.profile" ng-include="'/modules/offers/views/offers-view.client.view.html'"></div>
+    <div class="hidden-xs"
+         ng-if="profileCtrl.profile"
+         ng-include="'/modules/offers/views/offers-view.client.view.html'"></div>
 
     <!-- Contacts in common -->
     <div ng-if="profileCtrl.profile._id !== app.user._id && profileCtrl.contacts.length"
          tr-common-contacts="::profileCtrl.profile._id"></div>
 
     <!-- Tribes -->
-    <div class="panel panel-default" ng-if="profileCtrl.profile._id === app.user._id || profileCtrl.memberships.tribes.is.length">
-      <div class="panel-heading">
+    <section class="panel panel-default" ng-if="profileCtrl.profile._id === app.user._id || profileCtrl.memberships.tribes.is.length">
+      <header class="panel-heading">
         Tribes
-      </div>
+      </header>
       <div class="panel-body">
 
         <div class="profile-tribes-common"
@@ -65,7 +69,7 @@
              is-own-profile="::profileCtrl.profile._id === app.user._id"></div>
 
       </div>
-    </div>
+    </section>
 
   </div>
 

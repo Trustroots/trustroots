@@ -83,7 +83,9 @@
                  placeholder="your-username"
                  aria-label="BeWelcome username">
           <span class="input-group-btn" ng-if="profileEditNetworks.user.extSitesBW.length">
-            <a ng-href="http://www.bewelcome.org/members/{{ profileEditNetworks.user.extSitesBW }}" target="_blank" class="btn btn-primary" role="button" rel="noopener"><small>Test</small></a>
+            <a ng-href="https://www.bewelcome.org/members/{{ profileEditNetworks.user.extSitesBW }}" target="_blank" class="btn btn-primary" role="button" rel="noopener">
+              <small>Test</small>
+            </a>
           </span>
         </div>
       </div>
@@ -115,7 +117,9 @@
                  placeholder="your-username"
                  aria-label="Couchsurfing username">
           <span class="input-group-btn" ng-if="profileEditNetworks.user.extSitesCS.length">
-            <a ng-href="https://www.couchsurfing.com/people/{{ profileEditNetworks.user.extSitesCS }}" target="_blank" class="btn btn-primary" role="button" rel="noreferrer"><small>Test</small></a>
+            <a ng-href="https://www.couchsurfing.com/people/{{ profileEditNetworks.user.extSitesCS }}" target="_blank" class="btn btn-primary" role="button" rel="noreferrer">
+              <small>Test</small>
+            </a>
           </span>
         </div>
       </div>
@@ -147,7 +151,9 @@
                  placeholder="your-user-id"
                  aria-label="Warmshowers user id">
           <span class="input-group-btn" ng-if="profileEditNetworks.user.extSitesWS.length">
-            <a ng-href="https://www.warmshowers.org/{{ !profileEditNetworks.isWarmshowersId() ? 'users' : 'user' }}/{{ profileEditNetworks.user.extSitesWS }}" target="_blank" class="btn btn-primary" role="button" rel="noopener"><small>Test</small></a>
+            <a ng-href="https://www.warmshowers.org/{{ !profileEditNetworks.isWarmshowersId() ? 'users' : 'user' }}/{{ profileEditNetworks.user.extSitesWS }}" target="_blank" class="btn btn-primary" role="button" rel="noopener">
+              <small>Test</small>
+            </a>
           </span>
         </div>
         <p class="help-block text-warning" ng-if="profileEditNetworks.user.extSitesWS && !profileEditNetworks.isWarmshowersId()">This should be your <strong>numeric user id</strong>, not username.</p>
