@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "acl": "~0.4.10",
-    "agenda": "~0.9.1",
+    "agenda": "~0.10.0",
     "async": "~2.5.0",
     "autolinker": "~1.4.3",
     "autoprefixer": "~7.1.2",
