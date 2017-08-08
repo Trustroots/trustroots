@@ -1,0 +1,99 @@
+<div class="search-sidebar-results">
+
+  <div class="content-empty text-muted text-center"
+       ng-if="!search.offer && !search.loadingOffer">
+    <br><br>
+    <em>Choose something from the map.</em>
+  </div>
+
+  <!-- Profile loading -->
+  <div class="search-result panel panel-default panel-loading" ng-if="!search.offer && search.loadingOffer">
+    <div class="panel-body">
+      <div tr-avatar data-size="32" data-link="false" data-source="none"></div>
+      <h4>
+        ███ ███
+        <small class="text-muted">@███</small>
+      </h4>
+      <div class="search-result-meta">
+        █ ███, ███.
+      </div>
+      <div class="search-result-tagline">
+        █████ █████ ████
+      </div>
+      <div class="search-result-hosting">
+        <span class="search-result-label">Hosting:</span>
+        <span class="label">██</span>
+        <div class="search-result-description">██████ █████ █████</div>
+      </div>
+      <div class="search-result-languages">
+        <h4>Languages</h4>
+        <ul class="list-inline">
+          <li>████</li>
+          <li>████</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <!-- /Profile loading -->
+
+  <!-- Profile -->
+  <div class="search-result panel panel-default" ng-if="search.offer && !search.loadingOffer">
+    <a class="panel-body" ui-sref="profile.about({username: search.offer.user.username})">
+      <div tr-avatar data-size="32" data-link="false" data-user="::search.offer.user"></div>
+      <h4>
+        {{ ::search.offer.user.displayName }}
+        <small class="text-muted">@{{ ::search.offer.user.displayUsername || search.offer.user.username }}</small>
+      </h4>
+      <div class="search-result-meta">
+        <span ng-if="search.offer.user.birthdate" ng-bind="search.offer.user.birthdate | ageyears"></span><span ng-if="search.offer.user.birthdate && search.offer.user.gender">, </span>
+        <span ng-if="search.offer.user.gender" ng-class="{ 'text-capitalize': !search.offer.user.birthdate }">{{ ::search.offer.user.gender }}.</span>
+      </div>
+      <div class="search-result-tagline" ng-if="search.offer.user.tagline" ng-bind="search.offer.user.tagline"></div>
+      <div class="search-result-hosting">
+        <div class="search-result-label" ng-if="search.offer.type === 'host'">
+          Hosting:
+          <span class="label"
+                ng-class="{ 'btn-offer-hosting-yes': search.offer.status === 'yes', 'btn-offer-hosting-maybe': search.offer.status === 'maybe' }"
+                ng-bind="search.offer.status"></span>
+        </div>
+        <div class="search-result-label" ng-if="search.offer.type === 'meet'">
+          <span class="label btn-offer-meet">Meet</span>
+        </div>
+
+        <!-- Short descriptions -->
+        <div class="search-result-description"
+             ng-if="search.offer.description && search.offer.description.length < 1000"
+             ng-bind-html="::search.offer.description | trustedHtml"></div>
+
+        <!-- Long descriptions -->
+        <div class="search-result-description" ng-if="search.offer.description && search.offer.description.length >= 1000">
+          <div class="panel-more-wrap">
+            <div ng-bind-html="::search.offer.description | limitTo:1000 | trustedHtml" class="panel-more-excerpt"></div>
+            <div class="panel-more-fade">Show more...</div>
+          </div>
+        </div>
+
+        <div class="search-result-tribes-common"
+             ng-if="search.offer.user.member.length"
+             tr-tribes-in-common="::search.offer.user.member">
+        </div>
+
+      </div>
+      <div class="search-result-languages" ng-if="search.offer.user.languages.length">
+        <h4>Languages</h4>
+        <ul class="list-inline">
+          <li ng-repeat="code in ::search.offer.user.languages track by code">{{ ::app.languageNames[code] || code }}</li>
+        </ul>
+      </div>
+    </a>
+  </div>
+  <!-- /Profile -->
+
+  <!-- Sidebar closing toggle for small screens -->
+  <button type="button"
+          class="btn btn-action btn-primary visible-xs-block search-sidebar-close"
+          ng-click="search.toggleSidebar()">
+    Back to map
+  </button>
+
+</div>

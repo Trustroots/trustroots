@@ -77,6 +77,23 @@
             pageTitle: 'Edit profile'
           }
         }).
+        state('profile-edit.locations', {
+          url: '/locations',
+          templateUrl: '/modules/users/views/profile/profile-edit-locations.client.view.html',
+          controller: 'ProfileEditLocationsController',
+          controllerAs: 'profileEditLocations',
+          requiresAuth: true,
+          resolve: {
+            // A string value resolves to a service
+            SettingsService: 'SettingsService',
+            appSettings: function(SettingsService) {
+              return SettingsService.get();
+            }
+          },
+          data: {
+            pageTitle: 'Edit your locations'
+          }
+        }).
         state('profile-edit.photo', {
           url: '/photo',
           templateUrl: '/modules/users/views/profile/profile-edit-photo.client.view.html',
@@ -179,11 +196,20 @@
         }).
         state('profile.accommodation', {
           url: '/accommodation',
-          templateUrl: '/modules/offers/views/offers-view.client.view.html',
+          templateUrl: '/modules/offers/views/offer-host-view.client.view.html',
           requiresAuth: true,
           noScrollingTop: true,
           data: {
             pageTitle: 'Profile accommodation'
+          }
+        }).
+        state('profile.meet', {
+          url: '/meet',
+          templateUrl: '/modules/offers/views/offer-host-view.client.view.html',
+          requiresAuth: true,
+          noScrollingTop: true,
+          data: {
+            pageTitle: 'Profile meet'
           }
         }).
         state('profile.overview', {

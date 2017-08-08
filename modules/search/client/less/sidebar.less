@@ -25,6 +25,20 @@
     right: auto;
     bottom: 0;
   }
+
+  // Active tab
+  .nav-tabs.nav-justified > .active > a {
+    border-bottom-color: @brand-primary;
+  }
+
+  // Tabs are hidden on small screens
+  // They are controlled via view controller JS instead
+  @media (max-width: @screen-xs-max) {
+    .nav-tabs {
+      display: none;
+    }
+  }
+
   // On small screens, don't show filters when offer is open
   &.is-offer-open {
     @media (max-width: @screen-xs-max) {
@@ -40,17 +54,6 @@
 body.is-site-announcement-visible {
   .search-sidebar {
     top: @navbar-height + @site-announcement-height;
-  }
-}
-
-// "Clear selections" button for filters
-.search-sidebar-filters-clear {
-  float: right;
-  @media (max-width: @screen-xs-max) {
-    float: none;
-    clear: both;
-    width: 100%;
-    margin: 10px 0 20px 0;
   }
 }
 
@@ -171,4 +174,13 @@ body.is-site-announcement-visible {
   a {
     color: @text-color;
   }
+}
+
+// Sidebar close toggle for small screens under filters and under profile
+.search-sidebar-close {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
 }

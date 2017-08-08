@@ -36,7 +36,7 @@ exports.invokeRolesPolicies = function() {
       permissions: ['get']
     }, {
       resources: '/api/offers/:offerId',
-      permissions: ['get']
+      permissions: ['get', 'put', 'delete']
     }]
   }]);
 };

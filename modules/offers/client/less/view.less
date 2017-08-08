@@ -2,19 +2,40 @@
  * View offer
  */
 .offer-view {
-  .offer-location {
-    width: 100%;
-    height: 300px;
-  }
-  .offer-restrictions {
-    border-top: 1px solid @gray-lighter;
-    padding-top: 10px;
-    margin-top: 10px;
-  }
   .panel-heading > .dropdown .dropdown-toggle {
     color: #fff;
   }
   .leaflet-marker-icon {
     outline: none;
+  }
+}
+
+.offer-location {
+  width: 100%;
+  height: 300px;
+}
+
+.offer-restrictions {
+  border-top: 1px solid @gray-lighter;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.dropdown-menu {
+  a.offer-hosting-yes:hover {
+    background: @offer-hosting-yes;
+    color: #fff;
+  }
+  a.offer-hosting-maybe:hover {
+    background: @offer-hosting-maybe;
+    color: #fff;
+  }
+  a.offer-hosting-no:hover {
+    background: @offer-hosting-no;
+    color: #fff;
+  }
+  a.offer-meet:hover {
+    background: @offer-meet;
+    color: #fff;
   }
 }

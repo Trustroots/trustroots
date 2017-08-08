@@ -13,6 +13,9 @@ module.exports = function(app) {
       userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
       tribes = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller'));
 
+  // Gives the service worker access to any config it needs
+  app.route('/config/sw.js').get(core.renderServiceWorkerConfig);
+
   // CSP Violations
   // Note: If you’re using a CSRF module like csurf, you might have problems
   // handling these violations without a valid CSRF token. The fix is to put
@@ -29,9 +32,6 @@ module.exports = function(app) {
 
   // Return a 404 for all undefined api, module or lib routes
   app.route('/:url(api|modules|lib|developers)/*').get(core.renderNotFound);
-
-  // Gives the service worker access to any config it needs
-  app.route('/config/sw.js').get(core.renderServiceWorkerConfig);
 
   // Define a tribes route to ensure we'll pass tribe object to index
   // Object is passed to layout at `core.renderIndex()`

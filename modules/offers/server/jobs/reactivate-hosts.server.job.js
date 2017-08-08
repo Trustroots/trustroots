@@ -32,6 +32,7 @@ module.exports = function(job, agendaDone) {
 
       Offer
         .find({
+          type: 'host',
           status: 'no',
           updated: {
             $lt: updatedTimeAgo

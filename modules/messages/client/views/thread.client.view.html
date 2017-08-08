@@ -127,13 +127,13 @@
       <div class="btn-toolbar"
            id="message-quick-reply"
            ng-hide="thread.isQuickReplyPanelHidden || thread.messageHandler.nextPage">
-        <button class="btn btn-sm btn-hosting-yes" ng-click="thread.sendHostingReply('yes')">
+        <button class="btn btn-sm btn-offer-hosting-yes" ng-click="thread.sendHostingReply('yes')">
           Yes, I can host!
         </button>
-        <button class="btn btn-sm btn-hosting-no" ng-click="thread.sendHostingReply('no')">
+        <button class="btn btn-sm btn-offer-hosting-no" ng-click="thread.sendHostingReply('no')">
           Sorry, I can't host
         </button>
-        <button class="btn btn-sm btn-hosting-traveling" ng-click="thread.focusToWriting()">
+        <button class="btn btn-sm btn-offer-meet" ng-click="thread.focusToWriting()">
           Write back
         </button>
       </div>
