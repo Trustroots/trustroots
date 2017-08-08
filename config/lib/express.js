@@ -180,7 +180,7 @@ module.exports.initSession = function (app, db) {
       maxAge: 2419200000 // (in milliseconds) 28 days
     },
     store: new MongoStore({
-      mongooseConnection: db.connection,
+      db: db,
       collection: config.sessionCollection
     })
   }));
@@ -197,9 +197,9 @@ module.exports.initLastSeen = function (app) {
 /**
  * Invoke modules server configuration
  */
-module.exports.initModulesConfiguration = function (app, db) {
+module.exports.initModulesConfiguration = function (app) {
   config.files.server.configs.forEach(function (configPath) {
-    require(path.resolve(configPath))(app, db);
+    require(path.resolve(configPath))(app);
   });
 };
 

@@ -4,16 +4,16 @@
  * Module dependencies.
  */
 var config = require('../config'),
-    mongoose = require('./mongoose'),
+    mongooseService = require('./mongoose'),
     express = require('./express'),
     chalk = require('chalk');
 
-// Initialize Models
-mongoose.loadModels();
-
 module.exports.init = function init(callback) {
+  mongooseService.connect(function (db) {
 
-  mongoose.connect(function (db) {
+    // Initialize Models
+    mongooseService.loadModels();
+
     // Initialize express
     var app = express.init(db);
     if (callback) callback(app, db, config);
@@ -22,9 +22,7 @@ module.exports.init = function init(callback) {
 
 module.exports.start = function start(callback) {
 
-  var _this = this;
-
-  _this.init(function (app, db, config) {
+  this.init(function (app, db, config) {
 
     // Start the app by listening on <port> at <host>
     app.listen(config.port, config.host, function () {
@@ -51,7 +49,9 @@ module.exports.start = function start(callback) {
       console.log(chalk.white('Trustroots is up and running now.'));
       console.log('');
 
-      if (callback) callback(app, db, config);
+      if (callback) {
+        callback(app, db, config);
+      }
     });
 
   });

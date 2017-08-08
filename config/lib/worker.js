@@ -1,10 +1,9 @@
 'use strict';
 
 var path = require('path'),
-    config = require('../config'),
     format = require('util').format,
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    MongoClient = require('mongodb').MongoClient;
+    mongooseService = require('./mongoose');
 
 var agenda;
 
@@ -95,7 +94,9 @@ exports.start = function(options, callback) {
       console.log('[Worker] Agenda started processing background jobs');
     }
 
-    if (callback) callback();
+    if (callback) {
+      callback();
+    }
 
   });
 
@@ -183,11 +184,7 @@ exports.unlockAgendaJobs = function(callback) {
   }
 
   // Use connect method to connect to the server
-  MongoClient.connect(config.db.uri, function(err, db) {
-    if (err) {
-      console.error(err);
-      return callback(err);
-    }
+  mongooseService.connect(function (db) {
 
   // agenda.on('ready', function() {
 
@@ -221,10 +218,10 @@ exports.unlockAgendaJobs = function(callback) {
       if (process.env.NODE_ENV !== 'test') {
         console.log('[Worker] Unlocked %d Agenda jobs.', parseInt(numUnlocked, 10) || 0);
       }
-      db.close(callback);
+      mongooseService.disconnect(callback, 'Worker');
     });
 
-  });
+  }, 'Worker');
 };
 
 /**
@@ -255,7 +252,6 @@ function gracefulExit() {
 }
 
 function shouldRetry(err) {
-
   // Retry on connection errors as they may just be temporary
   if (/(ECONNRESET|ECONNREFUSED)/.test(err.message)) {
     return true;

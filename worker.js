@@ -6,28 +6,33 @@
  * Worker main entry file
  */
 var async = require('async'),
-    mongoose = require('./config/lib/mongoose'),
+    mongooseService = require('./config/lib/mongoose'),
     worker = require('./config/lib/worker');
 
 async.waterfall([
-
-  // Bootstrap db connection
-  function(done) {
-    mongoose.connect(function() {
-      done();
-    });
-  },
-
-  // Load models
-  function(done) {
-    mongoose.loadModels(done);
-  },
 
   // Clean out database
   function(done) {
     // Attempt to unlock jobs that were stuck due server restart
     // See https://github.com/agenda/agenda/issues/410
     worker.unlockAgendaJobs(done);
+  },
+
+  // Bootstrap db connection
+  function(done) {
+    mongooseService.connect(function() {
+      done();
+    }, 'Worker');
+  },
+
+  // Load models
+  function(done) {
+    mongooseService.loadModels(function(err) {
+      if (err) {
+        console.error('[Worker] Failed to load database models.');
+      }
+      done();
+    }, 'Worker');
   },
 
   function() {
