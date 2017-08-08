@@ -1,6 +1,6 @@
 <!-- Top Navigation for small screens -->
 <!-- When looking at own profile -->
-<nav class="navbar navbar-white navbar-fixed-top visible-xs-block profile-navbar-mobile" ng-if="app.user._id === profileCtrl.profile._id">
+<nav class="navbar navbar-white navbar-fixed-top navbar-fixed-top-below visible-xs-block" ng-if="app.user._id === profileCtrl.profile._id">
   <div class="container">
     <ul class="nav navbar-nav" role="navigation">
       <li><a ui-sref="profile-edit.about">Edit your profile</a></li>
@@ -10,7 +10,7 @@
 
 <!-- Top Navigation for small screens -->
 <!-- When looking at somebody else's profile -->
-<nav class="navbar navbar-white navbar-fixed-top visible-xs-block profile-navbar-mobile" ng-if="app.user._id !== profileCtrl.profile._id">
+<nav class="navbar navbar-white navbar-fixed-top navbar-fixed-top-below visible-xs-block" ng-if="app.user._id !== profileCtrl.profile._id">
   <div class="container">
     <ul class="nav navbar-nav" role="toolbar" aria-label="Profile actions">
       <li>
@@ -42,7 +42,7 @@
 </nav>
 
 <!-- Bottom Navigation for small screens -->
-<nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block profile-navbar-mobile">
+<nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block">
   <div class="container">
     <ul class="nav navbar-nav" role="tablist">
       <li ui-sref-active="active" role="presentation">

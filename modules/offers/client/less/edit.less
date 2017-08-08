@@ -2,15 +2,61 @@
  * Edit offer
  */
 
- @offer-map-height: 400px;
+@offer-map-height: 400px;
+@offer-map-height-xs: 220px;
+
+.offer-tabs {
+  @media (max-width: @screen-xs) {
+    margin-top: @navbar-height;
+  }
+  .nav-tabs {
+    @media (max-width: @screen-xs) {
+      position: fixed;
+      z-index: @zindex-navbar-fixed;
+      top: @navbar-height;
+      left: 0;
+      right: 0;
+      margin: 0;
+    }
+    @media (min-width: @screen-sm-min) {
+      margin-bottom: 30px;
+    }
+    border: 0;
+    background-color: #fff;
+    .nav-item {
+      @media (min-width: @screen-sm-min) {
+        font-size: @font-size-large;
+      }
+      a {
+        border: 0;
+      }
+      &.active a {
+        color: #fff;
+        background-color: @gray-light;
+        border: 0;
+      }
+    }
+  }
+}
+
 
 .offers-edit {
-  .page-header {
-    margin-top: 10px;
+  @media (max-width: @screen-xs) {
+    // At footer we'll place fixed navigation,
+    // ensure we have space for it
+    margin-bottom: @navbar-height;
   }
   .offer-map {
     position: relative;
     height: @offer-map-height;
+    @media (max-width: @screen-xs) {
+      position: fixed;
+      z-index: @zindex-navbar-fixed;
+      bottom: (@navbar-height + 4px);
+      left: 0;
+      right: 0;
+      height: @offer-map-height-xs;
+    }
   }
   #offer-add-location-canvas {
     position: absolute;
@@ -28,17 +74,20 @@
     // @link https://github.com/Leaflet/Leaflet/blob/master/dist/leaflet.css#L93
     z-index: 600;
     // Vignetting shadow, darker from sides and bright from the middle:
-    box-shadow: inset 0 0 (@offer-map-height*0.55) rgba(0,0,0,0.45);
+    box-shadow: inset 0 0 (@offer-map-height * 0.45) rgba(0,0,0,0.45);
     // Allows dragging the map trough element:
     pointer-events: none;
     // Position icon to half the container minus distance to the icon's pointer:
     background-position: 50% ( (@offer-map-height / 2) - 38px );
+    @media (max-width: @screen-xs) {
+      background-position: 50% ( (@offer-map-height-xs / 2) - 38px );
+    }
     background-repeat: no-repeat;
     .img-retina("/modules/core/img/map/marker-locator.png", "/modules/core/img/map/marker-locator@2x.png", 56px, 41px);
-    &.hosting-yes {
+    &.offer-hosting-yes {
       .img-retina("/modules/core/img/map/marker-locator-yes.png", "/modules/core/img/map/marker-locator-yes@2x.png", 56px, 41px);
     }
-    &.hosting-maybe {
+    &.offer-hosting-maybe {
       .img-retina("/modules/core/img/map/marker-locator-maybe.png", "/modules/core/img/map/marker-locator-maybe@2x.png", 56px, 41px);
     }
   }
@@ -59,12 +108,14 @@
   .offer-description {
     font-size: @font-size-large;
   }
-  .btn-group > .btn-hosting {
+  .btn-group > .btn-offer-hosting {
     &, &:hover {
       border-color: transparent;
     }
     span {
       border-bottom: 2px solid transparent;
+      padding: 1px 2px;
+      margin: 0 5px;
     }
     &.active {
       span {
@@ -83,21 +134,5 @@
 .offer-maxguests {
   @media (max-width: @screen-xs) {
     margin-top: 40px;
-  }
-  .input-group {
-    max-width: 200px;
-    @media (max-width: @screen-xs) {
-      margin: 0 auto;
-    }
-    input {
-      margin: 0 1px;
-      font-size: 28px;
-      line-height: 28px;
-      &,
-      &::-webkit-inner-spin-button,
-      &::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-      }
-    }
   }
 }

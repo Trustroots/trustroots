@@ -28,7 +28,8 @@
       <a ng-click="app.goHome()"
          class="navbar-brand hidden-xs"
          aria-hidden="true">
-        <img src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="177" height="31" />
+        <img class="hidden-xs hidden-sm" src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="177" height="31" />
+        <img class="hidden-md hidden-lg" src="/modules/core/img/tree-white.svg" alt="Trustroots" width="31" height="31" />
       </a>
     </div>
 
@@ -52,26 +53,37 @@
     <ul class="nav navbar-nav nav-header-primary">
       <li ng-if="::app.appSettings.invitationsEnabled" ui-sref-active="active">
         <a ui-sref="invite" aria-label="Invite friends">
-          <i class="icon-share icon-fw icon-lg hidden-sm"></i>
+          <i class="icon-share icon-fw icon-lg visible-xs-block"></i>
           <span class="hidden-xs">Invite Friends</span>
         </a>
       </li>
       <li ui-sref-active="active">
         <a ui-sref="tribes.list" aria-label="Tribes">
-          <i class="icon-tribes icon-fw icon-lg hidden-sm"></i>
+          <i class="icon-tribes icon-fw icon-lg visible-xs-block"></i>
           <span class="hidden-xs">Tribes</span>
         </a>
       </li>
       <li ui-sref-active="active">
         <a ui-sref="search.map" aria-label="Map">
-          <i class="icon-search icon-fw icon-lg hidden-sm"></i>
-          <span class="hidden-xs">Map</span>
+          <i class="icon-search icon-fw icon-lg visible-xs-block"></i>
+          <span class="hidden-xs">Search</span>
         </a>
       </li>
       <li ui-sref-active="active">
         <a ui-sref="inbox" aria-label="Messages">
-          <i class="icon-messages icon-fw icon-lg"></i>
+          <i class="icon-messages icon-fw icon-lg visible-xs-block"></i>
+          <span class="hidden-xs">Messages</span>
           <span messages-unread-count></span>
+        </a>
+      </li>
+      <li ui-sref-active="active" class="hidden-xs">
+        <a ui-sref="offer.host.edit" aria-label="Host">
+          <span class="hidden-xs">Host</span>
+        </a>
+      </li>
+      <li ui-sref-active="active" class="hidden-xs">
+        <a ui-sref="offer.meet.list" aria-label="Meet">
+          <span class="hidden-xs">Meet</span>
         </a>
       </li>
       <li class="dropdown dropdown-user hidden-xs" uib-dropdown>
@@ -101,11 +113,6 @@
           <li ui-sref-active="active">
             <a ui-sref="profile-edit.about">
               Edit profile
-            </a>
-          </li>
-          <li ui-sref-active="active">
-            <a ui-sref="offer">
-              Hosting status
             </a>
           </li>
           <li ui-sref-active="active">

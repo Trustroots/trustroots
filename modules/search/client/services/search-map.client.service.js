@@ -16,7 +16,7 @@
     var defaultLocation = LocationService.getDefaultLocation(6);
 
     // Make cache id unique for this user
-    var cachePrefix = (Authentication.user) ? 'search.mapCenter.' + Authentication.user._id : 'search.mapCenter';
+    var cachePrefix = Authentication.user ? 'search.mapCenter.' + Authentication.user._id : 'search.mapCenter';
 
     var service = {
       getMapCenter: getMapCenter,

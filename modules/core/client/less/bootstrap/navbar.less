@@ -2,3 +2,41 @@
   background: #fff;
   border-color: @gray-lighter;
 }
+
+// Navigation meant mostly for mobile clients
+.navbar-fixed-top-below,
+.navbar-fixed-bottom {
+  border-radius: 0;
+  .container {
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .navbar-nav {
+    float: left;
+    margin: 0;
+    > li {
+      float: left;
+       > a,
+       > button {
+        padding: 10px 10px;
+        line-height: @line-height-large;
+      }
+      .badge {
+        background: transparent;
+        color: @navbar-default-color;
+        border: 1px solid @navbar-default-color;
+      }
+    }
+  }
+  .nav-justified > li > a {
+    margin-bottom: 0;
+  }
+}
+
+// Navbar which is fixed to top but below main navbar
+// (which is also fixed to top)
+.navbar-fixed-top-below {
+  top: @navbar-height;
+  z-index: @zindex-navbar-fixed;
+}

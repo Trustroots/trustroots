@@ -6,7 +6,7 @@
     .controller('SearchMapController', SearchMapController);
 
   /* @ngInject */
-  function SearchMapController($scope, $stateParams, $timeout, $analytics, $window, OffersService, Authentication, leafletData, messageCenterService, MapLayersFactory, SearchMapService, FiltersService) {
+  function SearchMapController($scope, $stateParams, $timeout, $analytics, $window, OffersService, Authentication, leafletData, messageCenterService, MapLayersFactory, MapMarkersFactory, SearchMapService, FiltersService) {
 
     // `search-map-canvas` is id of <leaflet> element
     var mapId = 'search-map-canvas';
@@ -14,9 +14,6 @@
     // Prefix for Leaflet events
     // @link https://github.com/angular-ui/ui-leaflet/commit/d22b3f0
     var listenerPrefix = 'leafletDirectiveMap.' + mapId;
-
-    // Size of the map icon in pixels (bigger for smaller screens)
-    var markerIconSize = $window.innerWidth < 768 ? 30 : 20;
 
     // ViewModel
     var vm = this;
@@ -26,17 +23,10 @@
     vm.mapLayerstyle = 'street';
     vm.notFound = false;
     vm.mapCenter = false;
-    vm.currentSelection = {
-      weight: 2,
-      color: '#989898',
-      fillColor: '#b1b1b1',
-      fillOpacity: 0.5,
-      latlngs: { lat: 0, lng: 0 },
-      radius: 500, // Meters
-      type: 'circle',
-      layer: 'selectedOffers',
-      clickable: false
-    };
+    vm.currentSelection = MapMarkersFactory.getOfferCircle({
+      layer: 'selectedOffers'
+    });
+
     vm.mapMinimumZoom = 4;
     vm.mapBounds = {};
     vm.mapLayers = {
@@ -137,19 +127,32 @@
 
       // Setting up the marker and click event
       vm.pruneCluster.PrepareLeafletMarker = function(leafletMarker, data) {
-        leafletMarker.on('click', function() {
-          $scope.$emit('search.loadingOffer');
-          OffersService
-            .get({ offerId: data.offerId })
-            .$promise
-            .then(function(offer) {
-              previewOffer(offer);
-            })
-            .catch(function() {
-              messageCenterService.add('danger', 'Sorry, something went wrong. Please try again.');
-            });
-        });
-        leafletMarker.setIcon(data.icon);
+
+        // Set offer icon if not set yet
+        if (!leafletMarker.options.iconSet) {
+          leafletMarker.setIcon(data.icon);
+          leafletMarker.options.iconSet = true;
+        }
+
+        // Handle click events
+        if (!leafletMarker.listens('click')) {
+          leafletMarker.on('click', function($event) {
+
+            $scope.$emit('search.loadingOffer');
+
+            // Load offer details
+            OffersService
+              .get({ offerId: data.offerId })
+              .$promise
+              .then(function(offer) {
+                previewOffer(offer, false, $event);
+              })
+              .catch(function() {
+                closeOffer();
+                messageCenterService.add('danger', 'Something went wrong. Make sure you are connected to internet and try again. ');
+              });
+          });
+        }
       };
 
       // Initializing either location search or offer
@@ -167,17 +170,27 @@
     /**
      * Open hosting offer
      */
-    function previewOffer(offer, center) {
+    function previewOffer(offer, reCenterMap, $event) {
       if (offer.location) {
         // Let parent controller handle setting this to scope
         $scope.$emit('search.previewOffer', offer);
 
-        vm.currentSelection.latlngs = offer.location;
+        // Position circle
+        // If (click) event was passed to us, use coordinates from that.
+        // This is because on map the dot is always at `fuzzyLocation`, but for
+        // `offer` we have real location when user is owner of that `offer`.
+        // Otherwise circle would be off for user's own markers.
+        vm.currentSelection.latlngs = $event && $event.latlng ? $event.latlng : offer.location;
+
+        // Make circle visible
         vm.mapLayers.overlays.selectedOffers.visible = true;
-        if (center) {
+
+        // Re-position map
+        if (reCenterMap) {
           vm.mapCenter = {
-            lat: offer.location[0],
-            lng: offer.location[1],
+            // See above explanation for using `$event` coordinates
+            lat: $event && $event.latlng ? $event.latlng.lat : offer.location[0],
+            lng: $event && $event.latlng ? $event.latlng.lng : offer.location[1],
             zoom: 13
           };
         }
@@ -195,23 +208,6 @@
     function closeOffer() {
       vm.mapLayers.overlays.selectedOffers.visible = false;
       $scope.$emit('search.closeOffer');
-    }
-
-    /**
-     * Return constructed icon
-     * @link http://leafletjs.com/reference.html#icon
-     */
-    function markerIcon(status) {
-      status = (status === 'yes') ? 'yes' : 'maybe';
-      return L.icon({
-        iconUrl: '/modules/core/img/map/marker-icon-' + status + '.svg',
-        // Size of the icon:
-        iconSize: [markerIconSize, markerIconSize],
-        // Point of the icon which will correspond to marker's location:
-        iconAnchor: [markerIconSize / 2, markerIconSize / 2],
-        // Accessibility
-        ariaLabel: status + ' host map marker'
-      });
     }
 
     /**
@@ -258,6 +254,8 @@
         vm.lastZoom = vm.mapCenter.zoom;
 
         // API Call
+        // @TODO: cancel any pending queries:
+        // @link https://code.angularjs.org/1.5.11/docs/api/ngResource/service/$resource#cancelling-requests
         OffersService.query({
           northEastLng: vm.mapLastBounds.northEastLng,
           northEastLat: vm.mapLastBounds.northEastLat,
@@ -277,8 +275,10 @@
               offers[i].location[0],
               offers[i].location[1]
             );
-            marker.data.icon = markerIcon(offers[i].status);
+
+            marker.data.icon = MapMarkersFactory.getIcon(offers[i]);
             marker.data.offerId = offers[i]._id;
+
             // Register markers
             // eslint-disable-next-line new-cap
             vm.pruneCluster.RegisterMarker(marker);

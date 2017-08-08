@@ -564,8 +564,9 @@ exports.removeProfile = function(req, res) {
     function(user, done) {
       offerHandler.removeAllByUserId(user._id, function(err) {
         if (err) {
-          console.log('Error when removing all contacts by user ID. #j93hdd');
-          console.error(err);
+          log('error', 'Error when removing all offers by user ID. #rj393', {
+            error: err
+          });
         }
         done(null, user);
       });
@@ -575,8 +576,9 @@ exports.removeProfile = function(req, res) {
     function(user, done) {
       contactHandler.removeAllByUserId(user._id, function(err) {
         if (err) {
-          console.log('Error when removing all contacts by user ID. #j93hdd');
-          console.error(err);
+          log('error', 'Error when removing all contacts by user ID. #j93hdd', {
+            error: err
+          });
         }
         done(null, user);
       });

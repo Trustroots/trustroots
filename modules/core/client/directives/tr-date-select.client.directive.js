@@ -14,7 +14,7 @@
    * @link http://momentjs.com/
    *
    */
-  angular.module('users')
+  angular.module('core')
 
     .run(['$templateCache', function ($templateCache) {
 
@@ -46,6 +46,7 @@
         },
         require: 'ngModel',
         scope: {
+          disabled: '=ngDisabled',
           selectClass: '@trSelectClass'
         },
 

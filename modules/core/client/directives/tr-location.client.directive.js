@@ -4,6 +4,9 @@
   /**
    * Directive to extend <input> to have location auto suggestions
    *
+   * Based on Typeahead (ui.bootstrap.typeahead)
+   * @link http://angular-ui.github.io/bootstrap/#!#typeahead
+   *
    * Usage:
    * `<input type="text" tr-location>`
    *
@@ -31,7 +34,6 @@
       scope: {
         value: '=ngModel',
         // `?` makes these optional
-        trLocationInit: '=?',
         trLocationChange: '=?',
         trLocationNotfound: '=?',
         trLocationCenter: '=?',
@@ -41,7 +43,7 @@
       link: function (scope, element, attr, ngModel) {
 
         // Event handler to stop submitting the surrounding form
-        element.bind('keydown keypress', function($event) {
+        element.bind('keydown keypress focus', function($event) {
           scope.trLocationNotfound = false;
 
           // On enter
@@ -55,6 +57,7 @@
         });
 
         // Attach Angular UI Bootstrap TypeAhead
+        // @link http://angular-ui.github.io/bootstrap/#!#typeahead
         element.attr('typeahead-min-length', attr.typeaheadMinLength ? parseInt(attr.typeaheadMinLength, 10) : 3);
         element.attr('typeahead-wait-ms', attr.typeaheadWaitMs ? parseInt(attr.typeaheadWaitMs, 10) : 300);
         element.attr('typeahead-on-select', 'trLocation.onSelect($item, $model, $label, $event)');
@@ -86,11 +89,12 @@
         activate();
 
         function activate() {
+
           // If directive has init value, use it to search a location
-          if (angular.isDefined($scope.trLocationInit) && angular.isString($scope.trLocationInit)) {
+          if (angular.isDefined($scope.value) && angular.isString($scope.value) && $scope.value) {
             // If location is found, don't show suggestions list but activate first found result
             $scope.skipSuggestions = true;
-            searchSuggestions($scope.trLocationInit);
+            searchSuggestions($scope.value);
           }
         }
 

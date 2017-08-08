@@ -6,7 +6,7 @@
     .controller('SearchController', SearchController);
 
   /* @ngInject */
-  function SearchController($scope, $window, $analytics, $stateParams, offer, tribe, Authentication, FiltersService, messageCenterService) {
+  function SearchController($scope, $window, $analytics, $stateParams, $timeout, offer, tribe, Authentication, FiltersService, messageCenterService) {
 
     // ViewModel
     var vm = this;
@@ -19,7 +19,14 @@
     vm.offer = offer || false;
     vm.filters = FiltersService.get();
     vm.toggleSidebar = toggleSidebar;
+    vm.closeSidebar = closeSidebar;
+    vm.openSidebar = openSidebar;
     vm.onPlaceSearch = onPlaceSearch;
+    vm.openSearchPlaceInput = openSearchPlaceInput;
+    vm.sidebarTab = 'filters';
+
+    // Visibility toggle for search place input on small screens
+    vm.isPlaceSearchVisible = false;
 
     // Init search from the URL, `tr-location` directive attached
     // to search input will take care of the rest.
@@ -27,7 +34,7 @@
     // coming from Hitchwiki/Nomadwiki/Trashwiki work
     // @link https://github.com/Hitchwiki/hitchwiki/issues/61
     // @link https://github.com/Trustroots/trustroots/issues/113
-    vm.initializeSearch = ($stateParams.location && $stateParams.location !== '') ? $stateParams.location.replace('_', ' ', 'g') : false;
+    vm.searchQuery = ($stateParams.location) ? $stateParams.location.replace('_', ' ', 'g').replace('+', ' ', 'g') : '';
 
     activate();
 
@@ -40,6 +47,23 @@
         vm.filters.tribes = [tribe._id];
         FiltersService.set('tribes', [tribe._id]);
       }
+
+      // Watch for changes at types filters
+      $scope.$watchCollection('search.filters.types', function(newTypesFilters, oldTypesFilters) {
+        if (!angular.equals(newTypesFilters, oldTypesFilters)) {
+          // Save new value to cache
+          FiltersService.set('types', newTypesFilters);
+          // Close possible open offers
+          if (vm.offer) {
+            vm.offer = false;
+            // Tells `SearchMapController` and `SearchSidebarController`
+            // to close anything offer related
+            $scope.$broadcast('search.closeOffer');
+          }
+          // Tells map controller to reset markers
+          $scope.$broadcast('search.resetMarkers');
+        }
+      });
 
       // Watch for changes at tribes filters
       $scope.$watchCollection('search.filters.tribes', function(newTribeFilters, oldTribeFilters) {
@@ -66,10 +90,11 @@
       $scope.$on('search.previewOffer', function(event, offer) {
         vm.offer = offer;
         vm.loadingOffer = false;
-        vm.isSidebarOpen = true;
+        openSidebar('results');
       });
       $scope.$on('search.closeOffer', function() {
         vm.offer = false;
+        vm.loadingOffer = false;
       });
 
       // Initializing either location search or offer
@@ -85,9 +110,25 @@
     }
 
     /**
+     * Open search place input on small screens
+     */
+    function openSearchPlaceInput() {
+      vm.isPlaceSearchVisible = true;
+
+      closeSidebar();
+
+      $timeout(function() {
+        // Focus to search input
+        angular.element('#search-query').focus();
+      });
+    }
+
+    /**
      * Broadcast information about changed search location
      */
     function onPlaceSearch(data, type) {
+      vm.isPlaceSearchVisible = false;
+
       if (data && type === 'center') {
         $scope.$broadcast('search.mapCenter', data);
       } else if (data && type === 'bounds') {
@@ -95,11 +136,41 @@
       }
     }
 
-    function toggleSidebar() {
-      vm.isSidebarOpen = !vm.isSidebarOpen;
-      // Closing sidebar, close offer
-      if (!vm.isSidebarOpen) {
-        $scope.$broadcast('search.closeOffer');
+    /**
+     * Toggles search results / filters sidebar
+     */
+    function toggleSidebar(activeTab) {
+      if (vm.isSidebarOpen) {
+        closeSidebar(activeTab);
+      } else {
+        openSidebar(activeTab);
+      }
+    }
+
+    /**
+     * Close search results / filters sidebar
+     */
+    function closeSidebar(activeTab) {
+      vm.isSidebarOpen = false;
+
+      // Close offer(s)
+      $scope.$broadcast('search.closeOffer');
+
+      // Activate specific tab
+      if (activeTab) {
+        vm.sidebarTab = activeTab;
+      }
+    }
+
+    /**
+     * Open search results / filters sidebar
+     */
+    function openSidebar(activeTab) {
+      vm.isSidebarOpen = true;
+
+      // Activate specific tab
+      if (activeTab) {
+        vm.sidebarTab = activeTab;
       }
     }
 

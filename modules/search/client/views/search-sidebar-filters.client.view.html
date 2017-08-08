@@ -1,0 +1,40 @@
+<div class="search-sidebar-section search-sidebar-filters">
+
+  <!-- Offer type filter -->
+  <div role="group" aria-label="Hosts or people to meet?">
+    <h4>Hosts or people to meet?</h4>
+    <div tr-types-toggle="search.filters.types"></div>
+  </div>
+  <!-- /Offer type filter -->
+
+  <br><br>
+
+  <!-- Tribes type filter -->
+  <div role="group" aria-label="Filter by tribes">
+    <div class="row">
+      <div class="col-xs-6">
+        <h4>Filter by tribes</h4>
+      </div>
+      <div class="col-xs-6 text-right">
+        <button type="button"
+             class="btn btn-default search-sidebar-filters-clear"
+             ng-click="search.filters.tribes = [];"
+             ng-disabled="!search.filters.tribes.length">
+          All tribes
+        </button>
+      </div>
+    </div>
+
+    <div tr-my-tribes-toggle="search.filters.tribes"></div>
+    <div tr-tribes-toggle="search.filters.tribes"></div>
+  </div>
+  <!-- Tribes type filter -->
+
+  <!-- Sidebar closing toggle for small screens -->
+  <button type="button"
+          class="btn btn-action btn-primary visible-xs-block search-sidebar-close"
+          ng-click="search.toggleSidebar()">
+    Back to map
+  </button>
+
+</div>

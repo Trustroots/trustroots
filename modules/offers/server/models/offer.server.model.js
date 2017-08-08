@@ -94,10 +94,15 @@ var setLocation = function(value) {
  * Offers Schema
  */
 var OfferSchema = new Schema({
+  type: {
+    type: String,
+    enum: ['host', 'meet'],
+    default: 'meet'
+  },
   status: {
     type: String,
     enum: ['yes', 'maybe', 'no'],
-    default: 'no'
+    default: 'yes'
   },
   description: {
     type: String,
@@ -133,6 +138,13 @@ var OfferSchema = new Schema({
   updated: {
     type: Date,
     default: Date.now
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  validUntil: {
+    type: Date
   },
   user: {
     type: Schema.ObjectId,
