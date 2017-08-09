@@ -19,9 +19,9 @@
   ],
   "scripts": {
     "prestart": "if [ ! -d node_modules ]; then npm install --quiet; fi",
-    "start": "concurrently --raw --kill-others 'gulp' 'gulp worker:dev' 'maildev' './scripts/agendash-dev'",
-    "start:docker": "npm run prestart && concurrently --raw --kill-others 'gulp --skipBower' 'gulp worker:dev'",
-    "start:skipBower": "concurrently --raw --kill-others 'gulp --skipBower' 'gulp worker:dev' 'maildev' './scripts/agendash-dev'",
+    "start": "concurrently --raw --kill-others --kill-others-on-fail 'gulp' 'npm run start:worker' 'maildev' 'npm run agendash'",
+    "start:docker": "npm run prestart && concurrently --raw --kill-others --kill-others-on-fail 'gulp --skipBower' 'npm run start:worker'",
+    "start:skipBower": "concurrently --raw --kill-others --kill-others-on-fail 'gulp --skipBower' 'npm run start:worker' 'maildev' 'npm run agendash'",
     "start:prod": "gulp prod",
     "start:worker": "gulp worker:dev",
     "start:worker:prod": "gulp worker:prod",
