@@ -46,6 +46,7 @@
       }
     }
   }
+
   .leaflet-container {
     left: 0;
     right: 0;
@@ -56,32 +57,13 @@
     top: @navbar-height;
     bottom: 0;
 
-    // Move some controllers to different places from their initial corners
-    /*
-    @media (max-width: @screen-xs-max) {
-      // Zoom control on botton-right instead at small screens
-      .leaflet-top.leaflet-left {
-        left: auto;
-        top: auto;
-        bottom: 0;
-        right: 0;
-        .leaflet-control {
-          margin: 0 @search-controls-gap-mobile @search-controls-gap-mobile 0;
-        }
-      }
-      // Attribution control
-      .leaflet-bottom.leaflet-right {
-        right: 70px;
-      }
-      // Layer switch
-      .leaflet-bottom.leaflet-left {
-        .leaflet-control {
-          margin: 0 0 @search-controls-gap-mobile @search-controls-gap-mobile;
-        }
+    .leaflet-control-zoom {
+      @media (max-width: @screen-xs-max) and (min-height: 400px) {
+        margin-bottom: 60%;
       }
     }
-    */
   }
+
   // Push map down a bit when sitewide announcements are visible.
   // See `modules/core/client/less/layout/site-announcement.less` for more.
   body.is-site-announcement-visible {

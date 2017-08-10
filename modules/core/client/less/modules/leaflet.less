@@ -19,7 +19,7 @@
 
 */
 .leaflet-zoom-anim .leaflet-zoom-animated {
-  transition-property: @map-zoom-transition;
+  .transition-transform(@map-zoom-transition);
 }
 
 .leaflet-top,
@@ -210,6 +210,11 @@
   }
   .improve-map {
     font-weight: bold;
+
+    // Hide improve map links on small screens
+    @media (max-width: @screen-sm-max) {
+      display: none;
+    }
   }
   &:hover {
     visibility: visible;
@@ -247,5 +252,24 @@
   .leaflet-control-layers-selector {
     margin: 0 8px 0px 0;
     padding: 0;
+  }
+}
+
+// Smaller margins for controls from map edge on small screens
+@media (max-width: @screen-sm-max) {
+  .leaflet-left .leaflet-control {
+    margin-left: 5px;
+  }
+
+  .leaflet-right .leaflet-control {
+    margin-right: 5px;
+  }
+
+  .leaflet-bottom .leaflet-control {
+    margin-bottom: 5px;
+  }
+
+  .leaflet-top .leaflet-control {
+    margin-top: 5px;
   }
 }
