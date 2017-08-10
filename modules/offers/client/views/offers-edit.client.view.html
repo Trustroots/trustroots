@@ -16,10 +16,10 @@
         <em>Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.</em>
       </p>
 
-      <div class="panel panel-default">
+      <div class="panel panel-default offer-meta">
         <div class="panel-body">
           <div class="row">
-            <div class="col-xs-6">
+            <div class="col-xs-12 col-sm-6">
               <h4 id="offerStatus">Can you host?</h4>
               <div class="btn-group"
                    role="radiogroup"
@@ -47,20 +47,44 @@
                 </label>
               </div>
             </div>
-            <div class="col-xs-6">
-              <h4 id="maxGuests">How many guests at most?</h4>
-              <input type="number"
-                     aria-labelledby="maxGuests"
-                     aria-required="true"
-                     ng-disabled="!offersEdit.offer"
-                     ng-model="offersEdit.offer.maxGuests"
-                     class="form-control input-lg offer-maxguests"
-                     maxlength="2"
-                     min="1"
-                     max="99"
-                     size="2"
-                     step="1"
-                     pattern="[0-9]{1,2}">
+            <div class="col-xs-12 col-sm-6">
+
+              <div class="offer-maxguests">
+                <h4 id="maxGuests">How many guests at most?</h4>
+                <div class="input-group">
+                  <span class="input-group-btn">
+                    <button type="button"
+                            class="btn btn-lg btn-inverse-primary font-brand-semibold"
+                            ng-click="offersEdit.offer.maxGuests = offersEdit.offer.maxGuests - 1"
+                            ng-disabled="offersEdit.offer.maxGuests <= 1"
+                            aria-hidden="true">
+                      −
+                    </button>
+                  </span>
+                  <input type="number"
+                         aria-labelledby="maxGuests"
+                         aria-required="true"
+                         ng-disabled="!offersEdit.offer"
+                         ng-model="offersEdit.offer.maxGuests"
+                         class="form-control input-lg input-plain text-center font-brand-regular"
+                         maxlength="2"
+                         min="1"
+                         max="99"
+                         size="2"
+                         step="1"
+                         pattern="[0-9]{1,2}">
+                  <span class="input-group-btn">
+                    <button type="button"
+                            class="btn btn-lg btn-inverse-primary font-brand-semibold"
+                            ng-click="offersEdit.offer.maxGuests = offersEdit.offer.maxGuests + 1"
+                            ng-disabled="offersEdit.offer.maxGuests >= 99"
+                            aria-hidden="true">
+                      +
+                    </button>
+                  </span>
+                </div>
+              </div>
+
             </div>
           </div><!-- /.row -->
         </div>
@@ -181,17 +205,11 @@
         <button type="submit"
                 class="btn btn-lg btn-primary"
                 ng-disabled="offersEdit.isLoading">
-          <span ng-show="offersEdit.offer.status !== 'no'">
-            Start hosting
-          </span>
-          <span ng-show="offersEdit.offer.status === 'no'">
-            Stop hosting
-          </span>
+          Save and Exit
         </button>
-        <br><br>
         <a ui-sref="profile.about({username: app.user.username})"
            tabindex="0"
-           class="text-muted"
+           class="btn btn-lg btn-link"
            role="button">
           Cancel
         </a>

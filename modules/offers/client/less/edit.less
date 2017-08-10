@@ -55,9 +55,6 @@
   .offer-map-location-search {
     margin-bottom: 0;
   }
-  .offer-maxguests {
-    max-width: 80px;
-  }
   .offer-nodescription,
   .offer-description {
     font-size: @font-size-large;
@@ -74,12 +71,33 @@
         border-color: #fff;
       }
     }
+  }
+}
+
+.offer-meta {
+  @media (max-width: @screen-xs) {
+    text-align: center;
+  }
+}
+
+.offer-maxguests {
+  @media (max-width: @screen-xs) {
+    margin-top: 40px;
+  }
+  .input-group {
+    max-width: 200px;
     @media (max-width: @screen-xs) {
-      clear: both;
-      width: 100%;
-      margin-left: 0;
-      margin-right: 0;
-      border-radius: 0;
+      margin: 0 auto;
+    }
+    input {
+      margin: 0 1px;
+      font-size: 28px;
+      line-height: 28px;
+      &,
+      &::-webkit-inner-spin-button,
+      &::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+      }
     }
   }
 }

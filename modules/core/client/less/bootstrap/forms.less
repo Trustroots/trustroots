@@ -83,3 +83,14 @@ label + .checkbox {
     padding: 0;
   }
 }
+
+// Input without any borders and other visual cues
+.input-plain {
+  border-color: transparent;
+  background: transparent;
+  color: @text-color;
+  &, &:focus, &:active {
+    box-shadow: none;
+    outline: none;
+  }
+}
