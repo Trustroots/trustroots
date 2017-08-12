@@ -3,7 +3,8 @@
 /**
  * Module dependencies.
  */
-var Autolinker = require('autolinker'),
+var _ = require('lodash'),
+    Autolinker = require('autolinker'),
     sanitizeHtml = require('sanitize-html');
 
 /**
@@ -105,14 +106,12 @@ exports.html = function (content) {
 /**
  * Check if string has content even when html and whitespace is stripped away
  *
- * @return boolean true when empty, false when it has content.
+ * @link https://lodash.com/docs/#isEmpty
+ *
+ * @return {Boolean} `true` when empty, `false` when it has content.
  */
-exports.isEmpty = function (content) {
-  return (
-    typeof content !== 'string' ||
-    content.length === 0 ||
-    sanitizeHtml(content, { allowedTags: [] }).replace(/&nbsp;/g, ' ').trim() === ''
-  );
+exports.isEmpty = function (value) {
+  return _.isEmpty(exports.plainText(value));
 };
 
 
@@ -120,10 +119,15 @@ exports.isEmpty = function (content) {
  * Strip all HTML out of text
  *
  * @link https://github.com/punkave/sanitize-html
+ * @returns {String}
  */
 exports.plainText = function (content, cleanWhitespace) {
 
-  if (typeof content === 'string' && content.length > 0) {
+  // Force string
+  // @link https://lodash.com/docs/4.17.4#toString
+  content = _.toString(content);
+
+  if (content.length > 0) {
 
     // No HTML allowed
     content = sanitizeHtml(content, { allowedTags: [] });
@@ -135,7 +139,6 @@ exports.plainText = function (content, cleanWhitespace) {
 
     // Replace "&nbsp;" and trim
     content = content.replace(/&nbsp;/g, ' ').trim();
-
   }
 
   return content;
