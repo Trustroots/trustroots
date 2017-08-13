@@ -3,8 +3,31 @@
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
+var _ = require('lodash'),
+    mongoose = require('mongoose'),
     Schema = mongoose.Schema;
+
+/**
+ * A Validation function for local strategy properties
+ *
+ * @param {Array} property - Expects location coordinates in an array
+ * @returns {Boolean} true on success, false on failure.
+ */
+var validateLocation = function(property) {
+  return (
+    // Has to be an Array with 2 Numbers
+    _.isArray(property) &&
+    property.length === 2 &&
+
+    // Latitude
+    _.isFinite(property[0]) &&
+    _.inRange(property[0], -90, 90) &&
+
+    // Longitude
+    _.isFinite(property[1]) &&
+    _.inRange(property[1], -180, 180)
+  );
+};
 
 /**
  * Offers Schema
@@ -34,7 +57,9 @@ var OfferSchema = new Schema({
   },
   // Actual location user has marked
   location: {
-    type: [Number]
+    type: [Number],
+    required: true,
+    validate: [validateLocation, 'Invalid coordinates for location.']
   },
   // This is sent publicly to frontend;
   // some 50-200m fuzzy presentation of actual location

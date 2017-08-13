@@ -710,7 +710,8 @@ describe('User removal CRUD tests', function () {
         // Create an offer for the user
         function (cb) {
           var offer = new Offer({
-            user: userA._id
+            user: userA._id,
+            location: [0, 0]
           });
 
           offer.save(function (err) { cb(err); });

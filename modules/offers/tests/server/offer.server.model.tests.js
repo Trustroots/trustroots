@@ -75,15 +75,62 @@ describe('Offer Model Unit Tests:', function() {
       });
     });
 
-    it('should be able to show an error when try to save without location', function(done) {
-      offer.location = '';
+    describe('Location Validation', function() {
 
-      offer.save(function(err, res) {
-        console.log(err);
-        console.log(res);
-        should.exist(err);
-        return done();
+      it('should be able to show an error when try to save with empty array location', function(done) {
+        offer.location = [];
+
+        offer.save(function(err) {
+          should.exist(err);
+          return done();
+        });
       });
+
+      it('should be able to show an error when try to save with coordinates outside lat/lon scale', function(done) {
+        offer.location = [10000.0, 32.0];
+
+        offer.save(function(err) {
+          should.exist(err);
+          return done();
+        });
+      });
+
+      it('should be able to show an error when try to save location with too few coordinate values', function(done) {
+        offer.location = [60.1];
+
+        offer.save(function(err) {
+          should.exist(err);
+          return done();
+        });
+      });
+
+      it('should be able to show an error when try to save location with too many coordinate values', function(done) {
+        offer.location = [60.1, 24.1, 24.1];
+
+        offer.save(function(err) {
+          should.exist(err);
+          return done();
+        });
+      });
+
+      it('should be able to save with correct coordinates (integer)', function(done) {
+        offer.location = [60, 24];
+
+        offer.save(function(err) {
+          should.not.exist(err);
+          return done();
+        });
+      });
+
+      it('should be able to save with correct coordinates (float)', function(done) {
+        offer.location = [60.192059, 24.945831];
+
+        offer.save(function(err) {
+          should.not.exist(err);
+          return done();
+        });
+      });
+
     });
 
   });
