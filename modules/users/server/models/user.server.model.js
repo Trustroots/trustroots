@@ -3,7 +3,9 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
+    languages = require(path.resolve('./config/languages/languages.json')),
     authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service')),
     crypto = require('crypto'),
     mongoose = require('mongoose'),
@@ -144,7 +146,8 @@ var UserSchema = new Schema({
   },
   languages: {
     type: [{
-      type: String
+      type: String,
+      enum: _.keys(languages)
     }],
     default: []
   },
