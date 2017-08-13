@@ -40,20 +40,11 @@
            role="button"
            aria-haspopup="true"
            aria-expanded="false">
-          Info &amp; Support
+          Support
         </a>
-        <ul class="dropdown-menu" aria-label="submenu">>
-          <li ui-sref-active="active"><a ui-sref="home">About</a></li>
-          <li ui-sref-active="active"><a ui-sref="support">Contact &amp; Support</a></li>
+        <ul class="dropdown-menu" aria-label="submenu">
           <li ui-sref-active="active"><a ui-sref="faq.general">FAQ</a></li>
-          <li><a href="https://ideas.trustroots.org/">Blog</a></li>
-          <li><a href="https://shop.trustroots.org/">Shop</a></li>
-          <li ui-sref-active="active"><a ui-sref="media">Media</a></li>
-          <li ui-sref-active="active"><a ui-sref="privacy" aria-label="Privacy Policy">Privacy</a></li>
-          <li ui-sref-active="active"><a ui-sref="rules">Rules</a></li>
-          <li ui-sref-active="active"><a ui-sref="team">Team</a></li>
-          <li ui-sref-active="active"><a ui-sref="foundation" aria-label="Trustroots Foundation">Foundation</a></li>
-          <li ui-sref-active="active"><a ui-sref="volunteering">Volunteering</a></li>
+          <li ui-sref-active="active"><a ui-sref="support">Contact us</a></li>
         </ul>
       </li>
     </ul>
@@ -118,20 +109,32 @@
             </a>
           </li>
           <li ui-sref-active="active">
-            <a ui-sref="profile-edit.account">
-              Account
-            </a>
-          </li>
-          <li ui-sref-active="active">
             <a ui-sref="profile.contacts({ username: app.user.username })">
               Contacts
             </a>
           </li>
           <li role="presentation" class="divider"></li>
+          <li ui-sref-active="active">
+            <a ui-sref="profile-edit.account">
+              Account
+            </a>
+          </li>
           <li>
             <a ng-click="app.signout($event)" href="/api/auth/signout" target="_top">
               Sign out
             </a>
+          </li>
+          <li role="presentation" class="divider"></li>
+          <li class="small text-muted dropdown-meta text-center font-brand-regular">
+            <ul class="list-inline">
+              <li><a class="text-muted" ui-sref="home">About</a></li>
+              <li><a class="text-muted" href="https://ideas.trustroots.org/">Blog</a></li>
+              <li><a class="text-muted" href="https://shop.trustroots.org/">Shop</a></li>
+              <li><a class="text-muted" ui-sref="media">Media</a></li>
+              <li><a class="text-muted" ui-sref="foundation" aria-label="Trustroots Foundation">Foundation</a></li>
+              <li><a class="text-muted" ui-sref="privacy" aria-label="Privacy Policy">Privacy</a></li>
+              <li><a class="text-muted" ui-sref="rules">Rules</a></li>
+            </ul>
           </li>
         </ul>
       </li>

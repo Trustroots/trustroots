@@ -14,10 +14,6 @@
     Hosting status
   </a>
 
-  <a ui-sref="profile-edit.account" class="list-group-item">
-    Account
-  </a>
-
   <a ui-sref="profile.contacts({ username: app.user.username })" class="list-group-item">
     Contacts
   </a>
@@ -27,6 +23,10 @@
      class="list-group-item">
     Invite Friends
     <span class="label label-primary">New!</span>
+  </a>
+
+  <a ui-sref="profile-edit.account" class="list-group-item">
+    Account
   </a>
 
   <a href="/api/auth/signout"
@@ -42,17 +42,15 @@
 </div>
 
 <div class="list-group font-brand-regular">
-  <a class="list-group-item" ui-sref="home">About</a>
   <a class="list-group-item" ui-sref="support">Contact &amp; Support</a>
   <a class="list-group-item" ui-sref="faq.general">FAQ</a>
+  <a class="list-group-item" ui-sref="home">About</a>
   <a class="list-group-item" href="https://ideas.trustroots.org/">Blog</a>
   <a class="list-group-item" href="https://shop.trustroots.org/">Shop</a>
   <a class="list-group-item" ui-sref="media">Media</a>
+  <a class="list-group-item" ui-sref="foundation">Foundation</a>
   <a class="list-group-item" ui-sref="privacy">Privacy</a>
   <a class="list-group-item" ui-sref="rules">Rules</a>
-  <a class="list-group-item" ui-sref="team">Team</a>
-  <a class="list-group-item" ui-sref="foundation">Foundation</a>
-  <a class="list-group-item" ui-sref="volunteering">Volunteering</a>
 </div>
 
 <div class="container font-brand-regular">
