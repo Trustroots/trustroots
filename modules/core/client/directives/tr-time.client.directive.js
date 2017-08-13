@@ -14,13 +14,18 @@
    * @link http://momentjs.com/docs/
    * @link https://github.com/urish/angular-moment
    *
-   * Usage:
+   * Basic usage:
    * <time tr-time="Date object or String"></time>
    *
-   * Or:
+   * Adjust tooltip:
    * <time tr-time="Date object or String" tr-time-tooltip-placement="bottom"></time>
    *
    * Tooltip attribute is passed on to UI-Bootstrap directive
+   *
+   * Pass time format:
+   * <time tr-time="Date object or String" tr-time-format="'mediumDate'"></time>
+   *
+   * See formats: https://docs.angularjs.org/api/ng/filter/date
    */
   angular
     .module('core')
@@ -32,12 +37,13 @@
       restrict: 'A',
       replace: false,
       template: '<time ng-click="toggleMode($event)" aria-label="Change time presentation">' +
-                  '<span ng-if="timeModeAgo" am-time-ago="::sourceTime" uib-tooltip="{{ ::sourceTime | date:\'medium\' }}" tooltip-placement="{{ ::tooltipPlacement }}"></span>' +
-                  '<span ng-if="!timeModeAgo">{{ ::sourceTime | date:\'medium\' }}</span>' +
+                  '<span ng-if="timeModeAgo" am-time-ago="::sourceTime" uib-tooltip="{{ ::sourceTime | date:trTimeFormat }}" tooltip-placement="{{ ::tooltipPlacement }}"></span>' +
+                  '<span ng-if="!timeModeAgo">{{ ::sourceTime | date:trTimeFormat }}</span>' +
                 '</time>',
       scope: {
         trTime: '@',
-        trTimeTooltipPlacement: '@'
+        trTimeTooltipPlacement: '@',
+        trTimeFormat: '=?' // `?` makes it optional
       },
       link: function(scope, element, attrs) {
 
@@ -45,6 +51,10 @@
           $log.warn('No time passed for tr-time directive.');
           return;
         }
+
+        // Default to 'medium' time format, see formats:
+        // @link https://docs.angularjs.org/api/ng/filter/date
+        scope.trTimeFormat = scope.trTimeFormat || 'medium';
 
         // Set tooltip placement, default to 'bottom'
         scope.tooltipPlacement = scope.trTimeTooltipPlacement || 'bottom';
