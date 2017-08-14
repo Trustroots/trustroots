@@ -91,7 +91,6 @@
     "gulp-shell": "~0.6.3",
     "gulp-sourcemaps": "~2.6.0",
     "gulp-uglify": "~3.0.0",
-    "gulp-util": "~3.0.7",
     "helmet": "~3.8.0",
     "html-to-text": "~3.3.0",
     "influx": "~5.0.7",
