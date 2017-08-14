@@ -33,7 +33,6 @@ var environmentAssets,
 
 gulp.task('bower', function(done) {
   if (argv.skipBower) {
-    plugins.util.log('Bower task skipped.');
     return done();
   }
   return plugins.bower();
