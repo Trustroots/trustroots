@@ -27,6 +27,7 @@ var app,
     offer2,
     offer2Id,
     offer3,
+    offer3Id,
     tribe1,
     tribe2,
     tribe1Id,
@@ -207,7 +208,8 @@ describe('Offer CRUD tests', function() {
       // Save hosting offer 3
       function(done) {
         offer3.user = user3Id;
-        offer3.save(function(err) {
+        offer3.save(function(err, offer3) {
+          offer3Id = offer3._id;
           done(err);
         });
       }
@@ -632,26 +634,25 @@ describe('Offer CRUD tests', function() {
             // MongoDb returns these in random order, figure out order here
             var user2Order = 1;
             var user3Order = 0;
-            if (offersGetRes.body[0].user === user2Id.toString()) {
+            if (offersGetRes.body[0]._id === offer2Id.toString()) {
               user2Order = 0;
               user3Order = 1;
             }
 
             // Set assertions
             offersGetRes.body.length.should.equal(2);
-
             offersGetRes.body[user2Order].status.should.equal(offer2.status);
             offersGetRes.body[user2Order].location.should.be.instanceof(Array).and.have.lengthOf(2);
             offersGetRes.body[user2Order].location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
             offersGetRes.body[user2Order].location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
-            offersGetRes.body[user2Order]._id.should.not.be.empty();
+            offersGetRes.body[user2Order]._id.should.equal(offer2Id.toString());
             should.not.exist(offersGetRes.body[user2Order].locationFuzzy);
 
             offersGetRes.body[user3Order].status.should.equal(offer3.status);
             offersGetRes.body[user3Order].location.should.be.instanceof(Array).and.have.lengthOf(2);
             offersGetRes.body[user3Order].location[0].should.be.approximately(offer3.locationFuzzy[0], 0.0000000000001);
             offersGetRes.body[user3Order].location[1].should.be.approximately(offer3.locationFuzzy[1], 0.0000000000001);
-            offersGetRes.body[user3Order]._id.should.not.be.empty();
+            offersGetRes.body[user3Order]._id.should.equal(offer3Id.toString());
             should.not.exist(offersGetRes.body[user3Order].locationFuzzy);
 
             // Call the assertion callback
@@ -684,7 +685,7 @@ describe('Offer CRUD tests', function() {
             offersGetRes.body[0].location.should.be.instanceof(Array).and.have.lengthOf(2);
             offersGetRes.body[0].location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
             offersGetRes.body[0].location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
-            offersGetRes.body[0]._id.should.not.be.empty();
+            offersGetRes.body[0]._id.should.equal(offer2Id.toString());
             should.not.exist(offersGetRes.body[0].locationFuzzy);
 
             // Call the assertion callback
@@ -753,7 +754,7 @@ describe('Offer CRUD tests', function() {
             // MongoDb returns these in random order, figure out order here
             var user2Order = 1;
             var user3Order = 0;
-            if (offersGetRes.body[0].user === user2Id.toString()) {
+            if (offersGetRes.body[0]._id === offer2Id.toString()) {
               user2Order = 0;
               user3Order = 1;
             }
@@ -763,7 +764,7 @@ describe('Offer CRUD tests', function() {
             offersGetRes.body[user2Order].location.should.be.instanceof(Array).and.have.lengthOf(2);
             offersGetRes.body[user2Order].location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
             offersGetRes.body[user2Order].location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
-            offersGetRes.body[user2Order]._id.should.not.be.empty();
+            offersGetRes.body[user2Order]._id.should.equal(offer2Id.toString());
             should.not.exist(offersGetRes.body[user2Order].locationFuzzy);
 
             // User 3 offer
@@ -771,7 +772,7 @@ describe('Offer CRUD tests', function() {
             offersGetRes.body[user3Order].location.should.be.instanceof(Array).and.have.lengthOf(2);
             offersGetRes.body[user3Order].location[0].should.be.approximately(offer3.locationFuzzy[0], 0.0000000000001);
             offersGetRes.body[user3Order].location[1].should.be.approximately(offer3.locationFuzzy[1], 0.0000000000001);
-            offersGetRes.body[user3Order]._id.should.not.be.empty();
+            offersGetRes.body[user3Order]._id.should.equal(offer3Id.toString());
             should.not.exist(offersGetRes.body[user3Order].locationFuzzy);
 
             // Call the assertion callback

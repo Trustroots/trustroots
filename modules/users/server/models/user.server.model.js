@@ -5,8 +5,10 @@
  */
 var _ = require('lodash'),
     path = require('path'),
+    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     languages = require(path.resolve('./config/languages/languages.json')),
     authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service')),
+    textService = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
     crypto = require('crypto'),
     mongoose = require('mongoose'),
     uniqueValidation = require('mongoose-beautiful-unique-validation'),
@@ -41,6 +43,10 @@ var validatePassword = function(password) {
  */
 var validateUsername = function(username) {
   return this.provider !== 'local' || authenticationService.validateUsername(username);
+};
+
+var setPlainTextField = function(value) {
+  return textProcessor.plainText(value, true);
 };
 
 /**
@@ -95,20 +101,19 @@ var UserPushRegistrationSchema = new Schema({
 var UserSchema = new Schema({
   firstName: {
     type: String,
-    trim: true,
     default: '',
-    validate: [validateLocalStrategyProperty, 'Please fill in your first name']
+    validate: [validateLocalStrategyProperty, 'Please fill in your first name'],
+    set: setPlainTextField
   },
   lastName: {
     type: String,
-    trim: true,
     default: '',
-    validate: [validateLocalStrategyProperty, 'Please fill in your last name']
+    validate: [validateLocalStrategyProperty, 'Please fill in your last name'],
+    set: setPlainTextField
   },
-  /* This is (currently) generated in users.profile.server.controller.js */
+  /* This is (currently) generated in `users.profile.server.controller.js` */
   displayName: {
-    type: String,
-    trim: true
+    type: String
   },
   email: {
     type: String,
@@ -129,12 +134,12 @@ var UserSchema = new Schema({
   tagline: {
     type: String,
     default: '',
-    trim: true
+    set: setPlainTextField
   },
   description: {
     type: String,
     default: '',
-    trim: true
+    set: textService.html
   },
   birthdate: {
     type: Date
@@ -152,10 +157,12 @@ var UserSchema = new Schema({
     default: []
   },
   locationLiving: {
-    type: String
+    type: String,
+    set: setPlainTextField
   },
   locationFrom: {
-    type: String
+    type: String,
+    set: setPlainTextField
   },
   // Lowercase enforced username
   username: {
@@ -169,22 +176,26 @@ var UserSchema = new Schema({
   // Stores unaltered original username
   displayUsername: {
     type: String,
-    trim: true
+    trim: true,
+    set: setPlainTextField
   },
   // Bewelcome.org username
   extSitesBW: {
     type: String,
-    trim: true
+    trim: true,
+    set: setPlainTextField
   },
   // Couchsurfing.com username
   extSitesCS: {
     type: String,
-    trim: true
+    trim: true,
+    set: setPlainTextField
   },
   // Warmshowers.org username
   extSitesWS: {
     type: String,
-    trim: true
+    trim: true,
+    set: setPlainTextField
   },
   password: {
     type: String,
@@ -201,7 +212,8 @@ var UserSchema = new Schema({
      Trustroots, comes from boilerplate. Will be removed one day. */
   provider: {
     type: String,
-    required: true
+    required: true,
+    default: 'local'
   },
   /* Facebook, Twitter etc data is stored here. */
   providerData: {},

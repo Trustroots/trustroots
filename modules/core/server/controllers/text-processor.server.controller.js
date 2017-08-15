@@ -49,55 +49,70 @@ exports.sanitizeOptions = {
  * - trim empty space from ends
  *
  * @link https://github.com/punkave/sanitize-html
+ *
+ * @param {String} content - String to be sanitized
+ * @returns {String}
  */
 exports.html = function (content) {
 
-  if (typeof content === 'string' && content.length > 0) {
+  // @link https://lodash.com/docs/4.17.4#toString
+  content = _.toString(content);
 
-    // Replace "&nbsp;", "<p><br></p>" and trim
-    content = content.replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim();
-
-    // Some html is allowed at description
-    content = sanitizeHtml(content, exports.sanitizeOptions);
-
-    // Turn URLs/emails/phonenumbers into links
-    // @link https://github.com/gregjacobs/Autolinker.js
-    content = Autolinker.link(content, {
-      // Don't auto-link mention handles (@username)
-      mention: false,
-
-      // Don't auto-link hashtags (#tag)
-      hashtag: false,
-
-      // Auto-link emails
-      email: true,
-
-      // Auto-link URLs
-      urls: true,
-
-      // Auto-link phone numbers
-      phone: true,
-
-      // A number for how many characters long URLs/emails/handles/hashtags should be truncated to
-      // inside the text of a link. If the match is over the number of characters, it will be truncated to this length
-      // by replacing the end of the string with a two period ellipsis ('..').
-      truncate: {
-        length: 150,
-        location: 'middle' // end|middle|smart
-      },
-
-      // Strip 'http://' or 'https://' and/or the 'www.' from the beginning of links.
-      // I.e.: `https://www.wikipedia.org/` => `<a href="https://www.wikipedia.org/">www.wikipedia.org</a>`
-      stripPrefix: {
-        scheme: true,
-        www: false
-      },
-
-      // Don't add target="_blank" because of https://mathiasbynens.github.io/rel-noopener/ attack.
-      newWindow: false
-    });
-
+  // Don't bother with empty strings
+  if (!content) {
+    return '';
   }
+
+  // Replace "&nbsp;", "<p><br></p>" and trim
+  // This will catch most of the actually empty strings
+  content = content.replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim();
+
+  if (!content || exports.isEmpty(content)) {
+    // If content is actually empty without html (e.g. `<p><br></p>`)
+    // Set it really to be empty string
+    return '';
+  }
+
+  // Some html is allowed
+  content = sanitizeHtml(content, exports.sanitizeOptions);
+
+  // Turn URLs/emails/phonenumbers into links
+  // @link https://github.com/gregjacobs/Autolinker.js
+  content = Autolinker.link(content, {
+    // Don't auto-link mention handles (@username)
+    mention: false,
+
+    // Don't auto-link hashtags (#tag)
+    hashtag: false,
+
+    // Auto-link emails
+    email: true,
+
+    // Auto-link URLs
+    urls: true,
+
+    // Auto-link phone numbers
+    phone: true,
+
+    // A number for how many characters long URLs/emails/handles/hashtags should be truncated to
+    // inside the text of a link. If the match is over the number of characters, it will be truncated to this length
+    // by replacing the end of the string with a two period ellipsis ('..').
+    truncate: {
+      length: 150,
+      location: 'middle' // end|middle|smart
+    },
+
+    // Strip 'http://' or 'https://' and/or the 'www.' from the beginning of links.
+    // I.e.: `https://www.wikipedia.org/` => `<a href="https://www.wikipedia.org/">www.wikipedia.org</a>`
+    stripPrefix: {
+      scheme: true,
+      www: false
+    },
+
+    // Don't add target="_blank" because of rel-noopener attack.
+    // @link https://mathiasbynens.github.io/rel-noopener/
+    newWindow: false
+  });
 
   return content;
 };
@@ -108,6 +123,7 @@ exports.html = function (content) {
  *
  * @link https://lodash.com/docs/#isEmpty
  *
+ * @param {String} value - String to be evaluated
  * @return {Boolean} `true` when empty, `false` when it has content.
  */
 exports.isEmpty = function (value) {
@@ -119,6 +135,8 @@ exports.isEmpty = function (value) {
  * Strip all HTML out of text
  *
  * @link https://github.com/punkave/sanitize-html
+ * @param {String} content - Content to be stripped from html
+ * @param {Boolean} cleanWhitespace
  * @returns {String}
  */
 exports.plainText = function (content, cleanWhitespace) {
@@ -127,19 +145,21 @@ exports.plainText = function (content, cleanWhitespace) {
   // @link https://lodash.com/docs/4.17.4#toString
   content = _.toString(content);
 
-  if (content.length > 0) {
-
-    // No HTML allowed
-    content = sanitizeHtml(content, { allowedTags: [] });
-
-    // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
-    if (cleanWhitespace === true) {
-      content = content.replace(/\s/g, ' ');
-    }
-
-    // Replace "&nbsp;" and trim
-    content = content.replace(/&nbsp;/g, ' ').trim();
+  // Don't bother with empty strings
+  if (!content) {
+    return '';
   }
+
+  // No HTML allowed
+  content = sanitizeHtml(content, { allowedTags: [] });
+
+  // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
+  if (cleanWhitespace === true) {
+    content = content.replace(/\s/g, ' ');
+  }
+
+  // Replace "&nbsp;" and trim
+  content = content.replace(/&nbsp;/g, ' ').trim();
 
   return content;
 };
