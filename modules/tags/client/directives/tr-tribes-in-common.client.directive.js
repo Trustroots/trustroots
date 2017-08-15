@@ -40,12 +40,14 @@
         var tribesInCommon = [];
 
         // Loop all memberships (tags & tribes)
-        angular.forEach($scope.trTribesInCommon, function(membership) {
-          // If it's tribe and authenticated user has it as well, add to list
-          if (membership.tag.tribe === true && Authentication.user.memberIds.indexOf(membership.tag._id) > -1) {
-            tribesInCommon.push(membership);
-          }
-        });
+        if ($scope.trTribesInCommon) {
+          angular.forEach($scope.trTribesInCommon, function(membership) {
+            // If it's tribe and authenticated user has it as well, add to list
+            if (membership.tag.tribe === true && Authentication.user.memberIds.indexOf(membership.tag._id) > -1) {
+              tribesInCommon.push(membership);
+            }
+          });
+        }
 
         vm.memberships = tribesInCommon;
       }
