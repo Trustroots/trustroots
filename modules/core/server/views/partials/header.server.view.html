@@ -28,7 +28,8 @@
       <a ng-click="app.goHome()"
          class="navbar-brand hidden-xs"
          aria-hidden="true">
-        <img src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="177" height="31" />
+        <img class="hidden-xs hidden-sm" src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="177" height="31" />
+        <img class="hidden-md hidden-lg" src="/modules/core/img/tree-white.svg" alt="Trustroots" width="31" height="31" />
       </a>
     </div>
 
@@ -40,20 +41,11 @@
            role="button"
            aria-haspopup="true"
            aria-expanded="false">
-          Info &amp; Support
+          Support
         </a>
-        <ul class="dropdown-menu" aria-label="submenu">>
-          <li ui-sref-active="active"><a ui-sref="home">About</a></li>
-          <li ui-sref-active="active"><a ui-sref="support">Contact &amp; Support</a></li>
+        <ul class="dropdown-menu" aria-label="submenu">
           <li ui-sref-active="active"><a ui-sref="faq.general">FAQ</a></li>
-          <li><a href="https://ideas.trustroots.org/">Blog</a></li>
-          <li><a href="https://shop.trustroots.org/">Shop</a></li>
-          <li ui-sref-active="active"><a ui-sref="media">Media</a></li>
-          <li ui-sref-active="active"><a ui-sref="privacy" aria-label="Privacy Policy">Privacy</a></li>
-          <li ui-sref-active="active"><a ui-sref="rules">Rules</a></li>
-          <li ui-sref-active="active"><a ui-sref="team">Team</a></li>
-          <li ui-sref-active="active"><a ui-sref="foundation" aria-label="Trustroots Foundation">Foundation</a></li>
-          <li ui-sref-active="active"><a ui-sref="volunteering">Volunteering</a></li>
+          <li ui-sref-active="active"><a ui-sref="support">Contact us</a></li>
         </ul>
       </li>
     </ul>
@@ -61,26 +53,37 @@
     <ul class="nav navbar-nav nav-header-primary">
       <li ng-if="::app.appSettings.invitationsEnabled" ui-sref-active="active">
         <a ui-sref="invite" aria-label="Invite friends">
-          <i class="icon-share icon-fw icon-lg hidden-sm"></i>
+          <i class="icon-share icon-fw icon-lg visible-xs-block"></i>
           <span class="hidden-xs">Invite Friends</span>
         </a>
       </li>
       <li ui-sref-active="active">
         <a ui-sref="tribes.list" aria-label="Tribes">
-          <i class="icon-tribes icon-fw icon-lg hidden-sm"></i>
+          <i class="icon-tribes icon-fw icon-lg visible-xs-block"></i>
           <span class="hidden-xs">Tribes</span>
         </a>
       </li>
       <li ui-sref-active="active">
         <a ui-sref="search.map" aria-label="Map">
-          <i class="icon-search icon-fw icon-lg hidden-sm"></i>
-          <span class="hidden-xs">Map</span>
+          <i class="icon-search icon-fw icon-lg visible-xs-block"></i>
+          <span class="hidden-xs">Search</span>
         </a>
       </li>
       <li ui-sref-active="active">
         <a ui-sref="inbox" aria-label="Messages">
-          <i class="icon-messages icon-fw icon-lg"></i>
+          <i class="icon-messages icon-fw icon-lg visible-xs-block"></i>
+          <span class="hidden-xs">Messages</span>
           <span messages-unread-count></span>
+        </a>
+      </li>
+      <li ui-sref-active="active" class="hidden-xs">
+        <a ui-sref="offer.host.edit" aria-label="Host">
+          <span class="hidden-xs">Host</span>
+        </a>
+      </li>
+      <li ui-sref-active="active" class="hidden-xs">
+        <a ui-sref="offer.meet.list" aria-label="Meet">
+          <span class="hidden-xs">Meet</span>
         </a>
       </li>
       <li class="dropdown dropdown-user hidden-xs" uib-dropdown>
@@ -113,25 +116,32 @@
             </a>
           </li>
           <li ui-sref-active="active">
-            <a ui-sref="offer">
-              Hosting status
-            </a>
-          </li>
-          <li ui-sref-active="active">
-            <a ui-sref="profile-edit.account">
-              Account
-            </a>
-          </li>
-          <li ui-sref-active="active">
             <a ui-sref="profile.contacts({ username: app.user.username })">
               Contacts
             </a>
           </li>
           <li role="presentation" class="divider"></li>
+          <li ui-sref-active="active">
+            <a ui-sref="profile-edit.account">
+              Account
+            </a>
+          </li>
           <li>
             <a ng-click="app.signout($event)" href="/api/auth/signout" target="_top">
               Sign out
             </a>
+          </li>
+          <li role="presentation" class="divider"></li>
+          <li class="small text-muted dropdown-meta text-center font-brand-regular">
+            <ul class="list-inline">
+              <li><a class="text-muted" ui-sref="home">About</a></li>
+              <li><a class="text-muted" href="https://ideas.trustroots.org/">Blog</a></li>
+              <li><a class="text-muted" href="https://shop.trustroots.org/">Shop</a></li>
+              <li><a class="text-muted" ui-sref="media">Media</a></li>
+              <li><a class="text-muted" ui-sref="foundation" aria-label="Trustroots Foundation">Foundation</a></li>
+              <li><a class="text-muted" ui-sref="privacy" aria-label="Privacy Policy">Privacy</a></li>
+              <li><a class="text-muted" ui-sref="rules">Rules</a></li>
+            </ul>
           </li>
         </ul>
       </li>

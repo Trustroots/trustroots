@@ -392,30 +392,6 @@ exports.update = function(req, res) {
         user.emailTemporary = email;
       }
 
-      // Sanitize string contents
-      // `description` field is allowed to contain some html
-      ['description',
-       'tagline',
-       'firstName',
-       'lastName',
-       'locationLiving',
-       'locationFrom',
-       'extSitesBW',
-       'extSitesCS',
-       'extSitesWS'
-      ].forEach(function(key) {
-        if (user[key] && key === 'description') {
-          // Allow some HTML
-          user[key] = textProcessor.html(user[key]);
-        } else if (user[key]) {
-          // Clean out all HTML
-          user[key] = textProcessor.plainText(user[key], true);
-        }
-      });
-
-      // Generate display name
-      user.displayName = user.firstName + ' ' + user.lastName;
-
       user.save(function(err) {
         if (!err) {
           req.login(user, function(err) {
@@ -588,8 +564,9 @@ exports.removeProfile = function(req, res) {
     function(user, done) {
       offerHandler.removeAllByUserId(user._id, function(err) {
         if (err) {
-          console.log('Error when removing all contacts by user ID. #j93hdd');
-          console.error(err);
+          log('error', 'Error when removing all offers by user ID. #rj393', {
+            error: err
+          });
         }
         done(null, user);
       });
@@ -599,8 +576,9 @@ exports.removeProfile = function(req, res) {
     function(user, done) {
       contactHandler.removeAllByUserId(user._id, function(err) {
         if (err) {
-          console.log('Error when removing all contacts by user ID. #j93hdd');
-          console.error(err);
+          log('error', 'Error when removing all contacts by user ID. #j93hdd', {
+            error: err
+          });
         }
         done(null, user);
       });

@@ -20,7 +20,7 @@ body {
 }
 
 .container-spacer {
-  margin-top: (@navbar-height + @grid-gutter-width);
+  margin-top: (@navbar-height + 30px);
 }
 
 .container-fullscreen {
@@ -102,6 +102,7 @@ hr {
 #tr-main {
   clear: both;
   overflow: auto;
+  outline: none;
   padding-bottom: @article-padding-bottom;
   @media (max-width: @screen-xs-max) {
     padding-bottom:  @article-padding-bottom-xs;

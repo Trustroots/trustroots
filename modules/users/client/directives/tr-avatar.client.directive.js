@@ -36,8 +36,8 @@
         template:
           '<div ng-switch="link" ng-cloak>' +
           '  <img class="avatar avatar-{{ size }} avatar-{{ source }}" ' +
-          '       alt="Profile image for {{ ::user.displayName }}"' +
-          '       role="presentation"' +
+          '       alt=""' +
+          '       aria-hidden="true"' +
           '       ng-switch-when="false"' +
           '       ng-src="{{ avatar }}"' +
           '       draggable="false">' +
@@ -45,8 +45,8 @@
           '     ui-sref="profile.about({username: user.username})"' +
           '     aria-label="Open user profile for {{ ::user.displayName }}">' +
           '    <img class="avatar avatar-{{ size }} avatar-{{ source }}"' +
-          '         alt="Profile image for {{ ::user.displayName }}"' +
-          '         role="presentation"' +
+          '         alt=""' +
+          '         aria-hidden="true"' +
           '         ng-class="avatar-{{ size }}"' +
           '         ng-src="{{ avatar }}"' +
           '         draggable="false"></a>' +

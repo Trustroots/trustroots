@@ -1,11 +1,11 @@
 @font-face {
   font-family: 'tricons';
-  src: url('../font/tricons.eot?93571381');
-  src: url('../font/tricons.eot?93571381#iefix') format('embedded-opentype'),
-       url('../font/tricons.woff2?93571381') format('woff2'),
-       url('../font/tricons.woff?93571381') format('woff'),
-       url('../font/tricons.ttf?93571381') format('truetype'),
-       url('../font/tricons.svg?93571381#tricons') format('svg');
+  src: url('../font/tricons.eot?83122918');
+  src: url('../font/tricons.eot?83122918#iefix') format('embedded-opentype'),
+       url('../font/tricons.woff2?83122918') format('woff2'),
+       url('../font/tricons.woff?83122918') format('woff'),
+       url('../font/tricons.ttf?83122918') format('truetype'),
+       url('../font/tricons.svg?83122918#tricons') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -15,7 +15,7 @@
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   @font-face {
     font-family: 'tricons';
-    src: url('../font/tricons.svg?93571381#tricons') format('svg');
+    src: url('../font/tricons.svg?83122918#tricons') format('svg');
   }
 }
 */
@@ -90,6 +90,7 @@
 .icon-camera:before { content: '\e820'; } /* '' */
 .icon-facebook:before { content: '\e821'; } /* '' */
 .icon-github:before { content: '\e822'; } /* '' */
+.icon-globe:before { content: '\e823'; } /* '' */
 .icon-linkedin:before { content: '\e824'; } /* '' */
 .icon-twitter:before { content: '\e825'; } /* '' */
 .icon-user:before { content: '\e826'; } /* '' */
@@ -102,7 +103,10 @@
 .icon-info:before { content: '\e82d'; } /* '' */
 .icon-invalid:before { content: '\e82e'; } /* '' */
 .icon-plus:before { content: '\e82f'; } /* '' */
+.icon-cog:before { content: '\e830'; } /* '' */
 .icon-tribes:before { content: '\e831'; } /* '' */
 .icon-menu:before { content: '\e832'; } /* '' */
 .icon-share:before { content: '\e833'; } /* '' */
+.icon-minus:before { content: '\e834'; } /* '' */
+.icon-sofa:before { content: '\e835'; } /* '' */
 .icon-sliders:before { content: '\f1de'; } /* '' */

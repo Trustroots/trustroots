@@ -317,6 +317,40 @@ describe('User Model Unit Tests:', function() {
 
   });
 
+  describe('Language Validation', function() {
+
+    it('should show error when trying to save with non-existing language code', function(done) {
+      var _user = new User(user);
+
+      _user.languages = ['nope'];
+      _user.save(function(err) {
+        should.exist(err);
+        done();
+      });
+    });
+
+    it('should save without any languages', function(done) {
+      var _user = new User(user);
+
+      _user.languages = [];
+      _user.save(function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
+    it('should save with valid language codes', function(done) {
+      var _user = new User(user);
+
+      _user.languages = ['fin', 'iso_639_3-vsi'];
+      _user.save(function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
+  });
+
   afterEach(function(done) {
     User.remove().exec(done);
   });

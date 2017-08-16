@@ -33,7 +33,6 @@ var environmentAssets,
 
 gulp.task('bower', function(done) {
   if (argv.skipBower) {
-    plugins.util.log('Bower task skipped.');
     return done();
   }
   return plugins.bower();
@@ -239,7 +238,7 @@ gulp.task('scripts', ['loadConfig', 'templatecache', 'uibTemplatecache'], functi
   return gulp.src(scriptFiles)
     .pipe(plugins.ngAnnotate())
     .pipe(plugins.uglify({
-      mangle: false
+      mangle: true
     }))
     .pipe(plugins.concat('application.min.js'))
     .pipe(gulp.dest('public/dist'));

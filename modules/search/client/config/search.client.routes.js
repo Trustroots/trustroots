@@ -10,7 +10,11 @@
 
     $stateProvider.
       state('search', {
-        url: '/search?location?offer?tribe',
+        url: '/search?' + [
+          'location',
+          'offer',
+          'tribe'
+        ].join('?'),
         templateUrl: '/modules/search/views/search.client.view.html',
         abstract: true,
         requiresAuth: true,

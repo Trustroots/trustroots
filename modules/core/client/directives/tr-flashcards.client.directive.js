@@ -34,7 +34,7 @@
           title: 'Tell a little bit about yourself',
           content: 'You\'re much more likely to get a positive response if you have written a bit about yourself.'
         }, {
-          title: 'Explain them why you are choosing them',
+          title: 'Explain to them why you are choosing them',
           content: '...explaining that you are interested in meeting them, not just looking for free accommodation.'
         }, {
           title: 'Tell your host why you\'re on a trip',

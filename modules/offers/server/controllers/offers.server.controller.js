@@ -8,9 +8,11 @@ var _ = require('lodash'),
     async = require('async'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
-    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    tribes = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
+    textService = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    log = require(path.resolve('./config/lib/logger')),
     sanitizeHtml = require('sanitize-html'),
+    moment = require('moment'),
     mongoose = require('mongoose'),
     Offer = mongoose.model('Offer'),
     User = mongoose.model('User');
@@ -18,62 +20,24 @@ var _ = require('lodash'),
 // Selected fields to return publicly for offers
 var publicOfferFields = [
   '_id',
+  'type',
+  'status',
+  'user',
+  'description',
+  'noOfferDescription',
+  'maxGuests',
+  'location',
+  'validUntil'
+];
+
+// Offer fields users can modify
+var allowedOfferFields = [
   'status',
   'description',
   'noOfferDescription',
   'maxGuests',
   'location'
 ];
-
-/**
- * Create a fuzzy offset between specified distances
- * @param {Number} minimum - Minimal distance
- * @param {Number} maximum - Maximal distance
- * @returns {Array<Number>} - array of length 2 (horizontal and vertical offset)
- */
-function fuzzyOffset(minimum, maximum) {
-  // Please note that Math.random() is not cryptographically secure.
-  // For this purpose it's probably ok, but can be improved i.e. with node crypto module.
-  if (maximum < minimum) throw new Error('maximum must be greater than minimum');
-  var difference = maximum - minimum;
-  var randomDistance = Math.floor(difference * Math.random() + minimum); // Distance will be from interval [minimum, maximum)
-  var randomDirection = 2 * Math.PI * Math.random(); // Random direction is from interval [0, 2*PI) radians
-
-  var horizontal = randomDistance * Math.cos(randomDirection);
-  var vertical = randomDistance * Math.sin(randomDirection);
-
-  return [horizontal, vertical]; // The order doesn't matter here
-}
-
-/**
- * Create a fuzzy location
- * Will create an alternative lat,lng by shifting location 100-200 meters to random direction
- * @link http://gis.stackexchange.com/a/2980
- */
-function fuzzyLocation(location) {
-
-  // Offsets in meters, random between 100-200 meters to random direction
-  var offset = fuzzyOffset(100, 200);
-  var dn = offset[0];
-  var de = offset[1];
-
-  // Position, decimal degrees
-  var lat = location[0];
-  var lng = location[1];
-
-  // Earth’s radius, sphere
-  var Radius = 6378137;
-
-  // Coordinate offsets in radians
-  var dLat = dn / Radius;
-  var dLng = de / (Radius * Math.cos(Math.PI * lat / 180));
-
-  // OffsetPosition, decimal degrees
-  var latO = lat + dLat * 180 / Math.PI;
-  var lngO = lng + dLng * 180 / Math.PI;
-
-  return [latO, lngO];
-}
 
 /**
  * Parse filters object from json string
@@ -96,6 +60,76 @@ function parseFiltersString(filtersString) {
 }
 
 /**
+ * Sanitize offer fields
+ */
+function sanitizeOffer(offer, authenticatedUserId, alwaysFuzzyLocation) {
+  // offer is a Mongo document, turn it into regular JS object
+  // so that we can modify it on the fly
+  offer = offer.toObject();
+
+  // Sanitize each outgoing offer's contents
+  // Offers are already sanitized when they go into the database,
+  // but this is more lightweight sanitization just in case we've changed
+  // our sanitization settings since we stored this data. And just in case.
+  if (!_.isUndefined(offer.description)) {
+    offer.description = sanitizeHtml(offer.description, textService.sanitizeOptions);
+  }
+  if (!_.isUndefined(offer.noOfferDescription)) {
+    offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textService.sanitizeOptions);
+  }
+
+  // Make sure we return accurate location only for offer owner,
+  // others will see pre generated fuzzy location
+  if (alwaysFuzzyLocation || !authenticatedUserId || !authenticatedUserId.equals((offer.user._id || offer.user))) {
+    offer.location = offer.locationFuzzy;
+  }
+
+  // Pick fields to send out, leaves out e.g. `locationFuzzy` and `reactivateReminderSent`
+  offer = _.pick(offer, publicOfferFields);
+
+  return offer;
+}
+
+/**
+ * Validate latitude/longitude coordinates
+ *
+ * @param {Float} coordinate - Expects latitude or longitude coordinate
+ * @param {String} type - Either `lat` or `lng`, anything else fails the test.
+ * @returns {Boolean} true on success, false on failure.
+ */
+function isValidCoordinate(coordinate, type) {
+
+  if (_.isUndefined(coordinate) || !type || !_.isFinite(coordinate)) {
+    return false;
+  }
+
+  // Test latitude range
+  if (type === 'lat') {
+    return _.inRange(coordinate, -90, 90);
+  }
+
+  // Test longitude range
+  if (type === 'lng') {
+    return _.inRange(coordinate, -180, 180);
+  }
+
+  return false;
+}
+
+/**
+ * Validate offer type
+ *
+ * @param {String} type - Offer type ("host" or "meet")
+ * @returns {Boolean} true on success, false on failure.
+ */
+function isValidOfferType(type) {
+  // Get list of valid offer types directly from Mongoose Schema
+  var validOfferTypes = Offer.schema.path('type').enumValues || [];
+
+  return type && validOfferTypes.indexOf(type) > -1;
+}
+
+/**
  * Create (or update if exists) a Offer
  */
 exports.create = function(req, res) {
@@ -106,6 +140,13 @@ exports.create = function(req, res) {
     });
   }
 
+  // Validate type
+  if (!req.body.type || !isValidOfferType(req.body.type)) {
+    return res.status(400).send({
+      message: 'Missing or invalid offer type.'
+    });
+  }
+
   // Missing required fields
   if (!req.body.location) {
     return res.status(400).send({
@@ -113,49 +154,28 @@ exports.create = function(req, res) {
     });
   }
 
-  var offer = new Offer(req.body);
-  offer.user = req.user;
+  // Create new offer by filtering out what users can modify
+  // When creating an offer, we allow type field
+  var offer = new Offer(_.pick(req.body, _.concat(allowedOfferFields, 'type')));
 
-  // Save Fuzzy location
-  offer.locationFuzzy = fuzzyLocation(offer.location);
+  offer.user = req.user._id;
 
-  // Sanitize contents coming from wysiwyg editors
-  ['description', 'noOfferDescription'].forEach(function(key) {
-    if (offer[key] && !textProcessor.isEmpty(offer[key])) {
-      // Allow some HTML
-      offer[key] = textProcessor.html(offer[key]);
-    }
-  });
+  // Any other type but `host` offers expire within a month
+  if (!offer.type || offer.type !== 'host') {
+    offer.validUntil = moment().add(30, 'day').toDate();
+  }
 
-  // Convert the Model instance to a simple object using Model's 'toObject' function
-  // to prevent weirdness like infinite looping...
-  var upsertData = offer.toObject();
-
-  // Delete the _id property, otherwise Mongo will return a "Mod on _id not allowed" error
-  delete upsertData._id;
-
-  // Remove reminder flag
-  upsertData.$unset = { reactivateReminderSent: 1 };
-
-  // Having this present in update query would break `$unset`:ing this field
-  delete upsertData.reactivateReminderSent;
+  // Update timestamp
+  offer.updated = new Date();
 
   // Do the upsert, which works like this: If no Offer document exists with
   // _id = offer.id, then create a new doc using upsertData.
   // Otherwise, update the existing doc with upsertData
   // @link http://stackoverflow.com/a/7855281
-  Offer.update({
-    user: upsertData.user
-  },
-  upsertData,
-  // Warning: To avoid inserting the same document more than once,
-  // only use `upsert:true` if the query field is uniquely indexed.
-  // This is not the case with our Schema.
-  { upsert: true },
-  function(err) {
+  offer.save(function(err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: 'Failed to save offer.'
       });
     }
 
@@ -166,6 +186,115 @@ exports.create = function(req, res) {
 
 };
 
+/**
+ * Update an Offer
+ */
+exports.update = function(req, res) {
+
+  async.waterfall([
+
+    // Validate
+    function(done) {
+
+      if (!req.user) {
+        return res.status(403).send({
+          message: errorService.getErrorMessageByKey('forbidden')
+        });
+      }
+
+      // Missing required fields
+      if (!req.body.location) {
+        return res.status(400).send({
+          message: 'Missing offer location.'
+        });
+      }
+
+      // Attempting to change offer type yelds error
+      if (req.body.type && req.body.type !== req.offer.type) {
+        return res.status(400).send({
+          message: 'You cannot update offer type.'
+        });
+      }
+
+      done();
+    },
+
+    // Create offer object and modify it
+    function(done) {
+
+      // Pick only fields user is allowed to modify
+      var offerModifications = _.pick(req.body, allowedOfferFields);
+
+      // Extend offer in request (picked by `offerById` middleware earlier)
+      var offer = _.extend(req.offer, offerModifications);
+
+      // Any other type but `host` offers expire within a month
+      if (req.offer.type !== 'host') {
+        offer.validUntil = moment().add(30, 'day').toDate();
+      }
+
+      // Update timestamp
+      offer.updated = new Date();
+
+      // Reset reactivate reminders
+      // Setting this to undefined will remove the field
+      offer.set('reactivateReminderSent', undefined);
+
+      done(null, offer);
+    },
+
+    // Save offer
+    function(offer, done) {
+      offer.save(function(err) {
+        done(err);
+      });
+    },
+
+    // Done!
+    function() {
+      return res.json({
+        message: 'Offer updated.'
+      });
+    }
+
+  ], function(err) {
+    if (err) {
+      return res.status(400).send({
+        message: errorService.getErrorMessage(err)
+      });
+    }
+  });
+
+};
+
+
+/**
+ * Delete an Offer
+ */
+exports.delete = function(req, res) {
+
+  // User can remove only their own offers
+  if (!req.user || !req.offer.user._id.equals(req.user._id)) {
+    return res.status(403).send({
+      message: errorService.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  Offer.findOneAndRemove({
+    _id: req.offer._id,
+    user: req.user._id
+  }, function(err) {
+    if (err) {
+      return res.status(400).send({
+        message: errorService.getErrorMessage(err)
+      });
+    }
+
+    res.json({
+      message: 'Offer removed.'
+    });
+  });
+};
 
 /**
  * List of Offers
@@ -178,10 +307,28 @@ exports.list = function(req, res) {
     });
   }
 
-  // Missing bounding box query parameters
-  if (!req.query.southWestLat || !req.query.southWestLng || !req.query.northEastLat || !req.query.northEastLng) {
+  // Validate required bounding box query parameters
+  var coordinateKeys = ['southWestLat', 'southWestLng', 'northEastLat', 'northEastLng'];
+  var isCoordinatesValid = _.every(coordinateKeys, function(coordinateKey) {
+
+    // Get query string from query
+    // If there is no query string (`req.query`), it is the empty object, `{}`.
+    // Note that `parseFloat()` for non numbers will return `Nan`,
+    // which will fail validation in `isValidCoordinate()`
+    var coordinate = parseFloat(_.get(req.query, coordinateKey, false));
+
+    // Gets either `lat` or `lng`
+    var coordinateType = coordinateKey.substr(-3).toLowerCase();
+
+    // Validate
+    return isValidCoordinate(coordinate, coordinateType);
+  });
+
+  // Stop if any found invalid coordinate
+  if (!isCoordinatesValid) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('default')
+      message: 'Invalid or missing coordinate. ' +
+        'Required coordinates: ' + coordinateKeys.join(', ') + '.'
     });
   }
 
@@ -217,38 +364,77 @@ exports.list = function(req, res) {
   }];
 
   // Status filter
+  // Note that `type:meet` are currently all `status:yes`
   query.push({
     $match: {
       $or: [
         { status: 'yes' },
-        { status: 'maybe' }
+        { status: 'maybe' },
+        { status: { $exists: false } }
       ]
     }
   });
 
-  // Rest of the filters are based on user schema
+  // Don't return outdated offers
   query.push({
-    $lookup: {
-      from: 'users',
-      localField: 'user',
-      foreignField: '_id',
-      as: 'user'
+    $match: {
+      $or: [
+        { validUntil: { $gte: new Date() } },
+        { validUntil: { $exists: false } }
+      ]
     }
   });
-  // Because above `$lookup` returns and array with one user
-  // `[{userObject}]`, we have to unwind it back to `{userObject}`
-  query.push({
-    $unwind: '$user'
-  });
+
+  // Types filter
+  if (_.has(filters, 'types') && _.isArray(filters.types) && filters.types.length > 0) {
+
+    // Accept only valid values, ignore the rest
+    // @link https://lodash.com/docs/#filter
+    var filterTypes = _.filter(filters.types, function(type) {
+      return isValidOfferType(type);
+    });
+
+    // If we still have types left, apply the filter
+    if (filterTypes.length) {
+      query.push({
+        $match: {
+          type: {
+            $in: filterTypes
+          }
+        }
+      });
+    }
+  }
+
+  // Rest of the filters are based on user schema
+  // @TODO do this query only when we actually need it.
+  if (_.has(filters, 'tribes') && _.isArray(filters.tribes) && filters.tribes.length > 0) {
+    query.push({
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user'
+      }
+    });
+    // Because above `$lookup` returns an array with one user
+    // `[{userObject}]`, we have to unwind it back to `{userObject}`
+    query.push({
+      $unwind: '$user'
+    });
+  }
 
   // Tribes filter
-  if (filters && filters.tribes && filters.tribes.length > 0) {
+  if (_.has(filters, 'tribes') && _.isArray(filters.tribes) && filters.tribes.length > 0) {
 
     var tribeQueries = [];
 
     var isTribeFilterValid = filters.tribes.every(function(tribeId) {
       // Return failure if tribe id is invalid, otherwise add id to query array
-      return mongoose.Types.ObjectId.isValid(tribeId) && tribeQueries.push({ 'user.member.tag': new mongoose.Types.ObjectId(tribeId) });
+      return mongoose.Types.ObjectId.isValid(tribeId) &&
+             tribeQueries.push({
+               'user.member.tag': new mongoose.Types.ObjectId(tribeId)
+             });
     });
 
     if (!isTribeFilterValid) {
@@ -275,19 +461,12 @@ exports.list = function(req, res) {
   }
 
   // Pick fields to receive
-  /**
-   * Could return something like this here already (so no need to refactor at frontend):
-   *
-   * lat: marker.locationFuzzy[0],
-   * lng: marker.locationFuzzy[1],
-   * user: marker.user,
-   * icon: $scope.icons[marker.status]
-   */
   query.push({
     $project: {
       _id: '$_id',
       location: '$locationFuzzy',
-      status: '$status'
+      status: '$status',
+      type: '$type'
       /*
       user: {
         _id: '$user._id',
@@ -297,95 +476,141 @@ exports.list = function(req, res) {
     }
   });
 
-  Offer.aggregate(query).exec(function(err, offers) {
-    if (err) {
+  Offer
+    .aggregate(query)
+    .exec()
+    .then(function(offers) {
+      res.json(offers);
+    }, function(err) {
+      // Log the failure
+      log('error', 'Querying for offers caused an error. #g28fb1', {
+        error: err
+      });
       return res.status(400).send({
         message: errorService.getErrorMessage(err)
       });
-    } else {
-
-      res.json(offers);
-    }
-  });
+    });
 };
 
 
 /**
- * Show the current Offer
+ * Return offers
  */
-exports.read = function(req, res) {
-  res.json(req.offer || {});
+exports.listOffersByUser = function(req, res) {
+  res.json(req.offers || []);
 };
 
+/**
+ * Return an offer
+ */
+exports.getOffer = function(req, res) {
+  // Sanitize offer before returning it
+  var offer = sanitizeOffer(req.offer || {}, req.user._id);
+
+  res.json(offer);
+};
 
 // Offer reading middleware
-exports.offerByUserId = function(req, res, next, userId) {
+exports.offersByUserId = function(req, res, next, userId) {
 
+  // Authenticated user required
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
-  // Not a valid ObjectId
+  // Validate userId is valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('invalid-id')
     });
   }
 
-  Offer.findOne({
-    user: userId
-  })
-  .exec(function(err, offer) {
+  // Database query
+  var query = {
+    user: userId,
+    $or: [
+      { validUntil: { $gte: new Date() } },
+      { validUntil: { $exists: false } }
+    ]
+  };
+
+  // Validate optional type parameter
+  if (_.has(req.query, 'types')) {
+
+    // Get list of valid offer types directly from Mongoose Schema
+    var validOfferTypes = Offer.schema.path('type').enumValues;
+
+    // Ensure we have array of type(s)
+    // 3rd parameter sets max limit for array length,
+    // ensuring users can't send insanely long arrays for our queries
+    var queryTypes = _.split(req.query.types, ',', validOfferTypes.length);
+
+    queryTypes.forEach(function(paramType) {
+      // Return failure if type is invalid, otherwise add type to query array
+      if (paramType && validOfferTypes.indexOf(paramType) > -1) {
+        // Returns array length if other types exist already in db query,
+        // otherwise returns `0`
+        var i = (_.get(query, 'type.$in') || []).length;
+        // Add type to db query array
+        // Results with `query`:
+        // ```
+        // {
+        //   user: userId,
+        //   type: {
+        //     $in: [
+        //       'host',
+        //       ...
+        //     ]
+        //   }
+        // }
+        // ```
+        _.set(query, 'type.$in[' + i + ']', paramType);
+      } else {
+        console.info('Ignored invalid offer type: ' + textService.plainText(paramType));
+      }
+    });
+
+  }
+
+  // Get offers
+  Offer.find(query, function(err, offers) {
 
     // Errors
-    if (err) return next(err);
-    if (!offer) {
+    if (err) {
+      return next(err);
+    }
+
+    if (!offers || !offers.length) {
       return res.status(404).send({
         message: errorService.getErrorMessageByKey('not-found')
       });
     }
 
-    // offer is a Mongo document, turn it into regular JS object
-    // so that we can modify it on the fly
-    offer = offer.toObject();
-
-    // Sanitize each outgoing offer's contents
-    offer.description = sanitizeHtml(offer.description, textProcessor.sanitizeOptions);
-    offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
-
-    // Make sure we return accurate location only for offer owner,
-    // others will see pre generated fuzzy location
-    if (userId !== req.user.id) {
-      offer.location = offer.locationFuzzy;
-    }
-
-    // Pick fields to send out, leaves out e.g. `locationFuzzy` and `reactivateReminderSent`
-    offer = _.pick(offer, publicOfferFields);
-
-    req.offer = offer;
+    // Sanitize offers
+    req.offers = _.map(offers, function(offer) {
+      return sanitizeOffer(offer, req.user._id);
+    });
 
     next();
   });
 
 };
 
-
 // Offer reading middleware
 exports.offerById = function(req, res, next, offerId) {
+  // Require user
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorService.getErrorMessageByKey('forbidden')
+    });
+  }
 
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(offerId)) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('invalid-id')
-    });
-  }
-
-  // Require user
-  if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
@@ -404,10 +629,6 @@ exports.offerById = function(req, res, next, offerId) {
             });
           }
 
-          // offer is a Mongo document, turn it into regular JS object
-          // so that we can modify it on the fly
-          offer = offer.toObject();
-
           done(null, offer);
         });
     },
@@ -422,7 +643,7 @@ exports.offerById = function(req, res, next, offerId) {
 
       User.populate(offer.user, {
         path: 'member.tag',
-        select: tribesHandler.tribeFields,
+        select: tribes.tribeFields,
         model: 'Tag'
         // Not possible at the moment due bug in Mongoose
         // http://mongoosejs.com/docs/faq.html#populate_sort_order
@@ -437,20 +658,8 @@ exports.offerById = function(req, res, next, offerId) {
 
     },
 
-    // Sanitize and continue
+    // Continue
     function(offer, done) {
-      // Sanitize each outgoing offer's contents
-      offer.description = sanitizeHtml(offer.description, textProcessor.sanitizeOptions);
-      offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textProcessor.sanitizeOptions);
-
-      // Make sure we return accurate location only for offer owner,
-      // others will see pre generated fuzzy location
-      if (offer.user !== req.user.id) {
-        offer.location = offer.locationFuzzy;
-      }
-
-      // Pick fields to send out, leaves out e.g. `locationFuzzy` and `reactivateReminderSent`
-      offer = _.pick(offer, _.union(publicOfferFields, ['user']));
 
       req.offer = offer;
 
@@ -458,6 +667,9 @@ exports.offerById = function(req, res, next, offerId) {
     }
 
   ], function(err) {
+    if (err) {
+      console.error(err);
+    }
     return next(err);
   });
 

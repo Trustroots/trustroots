@@ -1,3 +1,15 @@
+
+// For mobile
+.dropdown-menu {
+  font-size: 15px;
+  > li > a {
+    padding: 10px 20px;
+    // Let text flow to multiple lines
+    white-space: normal;
+  }
+}
+
+// For larger screens
 @media (min-width: @grid-float-breakpoint) {
 
   // Bigger dropdown links
@@ -11,6 +23,16 @@
     font-size: 14px;
     > li > a {
       padding: 6px 20px;
+      // Don't let text flow to multiple lines
+      white-space: nowrap;
     }
+  }
+}
+
+// Section full of small links inside dropdown menu
+.dropdown-meta {
+  padding: 0 10px;
+  .active {
+    font-weight: bold;
   }
 }
