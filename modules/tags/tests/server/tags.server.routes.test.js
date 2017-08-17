@@ -115,18 +115,18 @@ describe('Tag CRUD tests', function () {
         tribesReadRes.body[0].attribution.should.equal(_tribe.attribution);
         tribesReadRes.body[0].attribution_url.should.equal(_tribe.attribution_url);
         tribesReadRes.body[0].count.should.eql(0);
+        tribesReadRes.body[0].new.should.equal(true); // Virtual field
+        should.exist(tribesReadRes.body[0].created);
         should.exist(tribesReadRes.body[0]._id);
 
         // `color` and `image_UUID` are published only for tribes
         should.exist(tribesReadRes.body[0].color);
         tribesReadRes.body[0].image_UUID.should.equal(_tribe.image_UUID);
 
-
         // These are at the model, but aren't exposed
         should.not.exist(tribesReadRes.body[0].synonyms);
         should.not.exist(tribesReadRes.body[0].labelHistory);
         should.not.exist(tribesReadRes.body[0].slugHistory);
-        should.not.exist(tribesReadRes.body[0].created);
 
         // Call the assertion callback
         return done(tribesReadErr);
@@ -153,19 +153,19 @@ describe('Tag CRUD tests', function () {
             tribesReadRes.body[0].description.should.equal(_tribe.description);
             tribesReadRes.body[0].attribution.should.equal(_tribe.attribution);
             tribesReadRes.body[0].attribution_url.should.equal(_tribe.attribution_url);
+            tribesReadRes.body[0].new.should.equal(true); // Virtual field
             tribesReadRes.body[0].count.should.eql(0);
+            should.exist(tribesReadRes.body[0].created);
             should.exist(tribesReadRes.body[0]._id);
 
             // `color` and `image_UUID` are published only for tribes
             should.exist(tribesReadRes.body[0].color);
             tribesReadRes.body[0].image_UUID.should.equal(_tribe.image_UUID);
 
-
             // These are at the model, but aren't exposed
             should.not.exist(tribesReadRes.body[0].synonyms);
             should.not.exist(tribesReadRes.body[0].labelHistory);
             should.not.exist(tribesReadRes.body[0].slugHistory);
-            should.not.exist(tribesReadRes.body[0].created);
 
             // Call the assertion callback
             return done(tribesReadErr);

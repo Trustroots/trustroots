@@ -33,6 +33,11 @@
             tr-tribe-styles-progressive="yes"
             tr-tribe-join>
           <a ng-click="tribeJoinDirective.openTribe()" class="tribe-link">
+            <span ng-if="::tribe.new" class="tribe-new" aria-hidden="true">
+              <span class="label label-primary">
+                New tribe!
+              </span>
+            </span>
             <div class="tribe-content" ng-class="{'is-image': tribe.image_UUID}">
               <h3 class="font-brand-light tribe-label" ng-bind="::tribe.label"></h3>
               <ng-pluralize

@@ -20,7 +20,8 @@ exports.tribeFields = [
   'attribution',
   'attribution_url',
   'tribe',
-  'description'
+  'description',
+  'created'
 ].join(' ');
 
 /**
