@@ -275,7 +275,7 @@ describe('Offer CRUD tests', function() {
               offerGetRes.body.location.should.be.instanceof(Array).and.have.lengthOf(2);
               offerGetRes.body.location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
               offerGetRes.body.location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
-              should.not.exist(offerGetRes.body.updated);
+              offerGetRes.body.updated.should.not.be.empty();
               should.not.exist(offerGetRes.body.locationFuzzy);
 
               // Call the assertion callback
@@ -311,43 +311,6 @@ describe('Offer CRUD tests', function() {
               offerGetRes.body.user.member[0].tag.count.should.equal(tribe2.count);
               offerGetRes.body.user.member[0].tag.slug.should.equal(tribe2.slug);
               offerGetRes.body.user.member[0].tag.label.should.equal(tribe2.label);
-
-              // Call the assertion callback
-              return done();
-            });
-
-        });
-    });
-
-    it('should be able to read offers of other users by offer id when authenticated', function(done) {
-      agent.post('/api/auth/signin')
-        // authenticated as `user1`
-        .send(credentials)
-        .expect(200)
-        .end(function(signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-
-          // Get a offer from the other user
-          agent.get('/api/offers/' + offer2Id)
-            .expect(200)
-            .end(function(offerGetErr, offerGetRes) {
-              // Handle offer get error
-              if (offerGetErr) return done(offerGetErr);
-
-              // Set assertions
-              offerGetRes.body._id.should.equal(offer2._id.toString());
-              offerGetRes.body.status.should.equal(offer2.status);
-              offerGetRes.body.description.should.equal(offer2.description);
-              offerGetRes.body.noOfferDescription.should.equal(offer2.noOfferDescription);
-              offerGetRes.body.maxGuests.should.equal(offer2.maxGuests);
-              offerGetRes.body.location.should.be.instanceof(Array).and.have.lengthOf(2);
-              offerGetRes.body.location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
-              offerGetRes.body.location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
-              offerGetRes.body.user.should.not.be.empty();
-              offerGetRes.body.updated.should.not.be.empty();
-              should.not.exist(offerGetRes.body.locationFuzzy);
-              should.not.exist(offerGetRes.body.created);
 
               // Call the assertion callback
               return done();

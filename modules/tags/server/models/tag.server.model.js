@@ -6,6 +6,7 @@
 var path = require('path'),
     config = require(path.resolve('./config/config')),
     mongoose = require('mongoose'),
+    moment = require('moment'),
     mongoosePaginate = require('mongoose-paginate'),
     uniqueValidation = require('mongoose-beautiful-unique-validation'),
     integerValidator = require('mongoose-integer'),
@@ -113,7 +114,8 @@ var TagSchema = new Schema({
     required: true
   },
   modified: {
-    type: Date
+    type: Date,
+    default: Date.now
   },
   public: {
     type: Boolean,
@@ -139,6 +141,28 @@ var TagSchema = new Schema({
     type: String,
     trim: true
   }
+});
+
+/**
+ * Ensure virtual fields get pass `doc.toObject()`
+ * "If you use toJSON() or toObject() (or use JSON.stringify()
+ *   on a mongoose document) mongoose will not include virtuals
+ *   by default. Pass { virtuals: true } to either toObject() or toJSON()."
+ * @link http://mongoosejs.com/docs/guide.html#virtuals
+ */
+TagSchema.set('toJSON', { getters: true });
+
+/**
+ * Create a field `new` based on field `created`
+ *
+ * @link http://mongoosejs.com/docs/guide.html#virtuals
+ */
+TagSchema.virtual('new').get(function () {
+  // Set comparison date to 30 days ago from now
+  var newLimit = moment().subtract(60, 'day');
+
+  // Is `created` defined and after comparison date?
+  return typeof this.created !== 'undefined' && moment(this.created).isAfter(newLimit);
 });
 
 /**
