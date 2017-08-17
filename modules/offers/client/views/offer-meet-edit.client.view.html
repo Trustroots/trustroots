@@ -81,7 +81,8 @@
         </div>
 
         <div class="offer-map">
-          <leaflet defaults="offer.mapDefaults"
+          <leaflet ng-if="offerHostEdit.offerTab === 1"
+                   defaults="offer.mapDefaults"
                    layers="offer.mapLayers"
                    lf-center="offerMeet.mapCenter"
                    aria-describedby="offerLocation"
