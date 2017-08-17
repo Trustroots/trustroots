@@ -73,6 +73,12 @@
           </div>
         </div>
 
+        <div ng-if="search.offer.type === 'meet' && search.offer.updated"
+             class="text-muted">
+          Updated <span tr-time="search.offer.updated" tr-time-format="'mediumDate'"></span>
+        </div>
+
+
         <div class="search-result-tribes-common"
              ng-if="search.offer.user.member.length"
              tr-tribes-in-common="::search.offer.user.member">

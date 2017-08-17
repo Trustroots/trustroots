@@ -345,8 +345,8 @@ describe('Offer CRUD tests', function() {
               offerGetRes.body.location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
               offerGetRes.body.location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
               offerGetRes.body.user.should.not.be.empty();
+              offerGetRes.body.updated.should.not.be.empty();
               should.not.exist(offerGetRes.body.locationFuzzy);
-              should.not.exist(offerGetRes.body.updated);
               should.not.exist(offerGetRes.body.created);
 
               // Call the assertion callback
@@ -401,8 +401,8 @@ describe('Offer CRUD tests', function() {
               offerGetRes.body[0].location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
               offerGetRes.body[0].location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
               offerGetRes.body[0].user.should.equal(offer2.user.toString());
+              offerGetRes.body[0].updated.should.not.be.empty();
               should.not.exist(offerGetRes.body[0].locationFuzzy);
-              should.not.exist(offerGetRes.body[0].updated);
               should.not.exist(offerGetRes.body[0].created);
 
               // Call the assertion callback
@@ -608,8 +608,8 @@ describe('Offer CRUD tests', function() {
                   offerGetRes.body[0].location[0].should.be.approximately(offer1.location[0], 0.0000000000001);
                   offerGetRes.body[0].location[1].should.be.approximately(offer1.location[1], 0.0000000000001);
                   offerGetRes.body[0].user.should.equal(user1Id.toString());
+                  offerGetRes.body[0].updated.should.not.be.empty();
                   should.not.exist(offerGetRes.body[0].locationFuzzy);
-                  should.not.exist(offerGetRes.body[0].updated);
 
                   // Call the assertion callback
                   return done();

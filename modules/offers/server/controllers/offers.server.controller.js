@@ -27,6 +27,7 @@ var publicOfferFields = [
   'noOfferDescription',
   'maxGuests',
   'location',
+  'updated',
   'validUntil'
 ];
 
@@ -504,10 +505,65 @@ exports.listOffersByUser = function(req, res) {
  * Return an offer
  */
 exports.getOffer = function(req, res) {
-  // Sanitize offer before returning it
-  var offer = sanitizeOffer(req.offer || {}, req.user._id);
 
-  res.json(offer);
+  async.waterfall([
+
+    function(done) {
+
+      // Don't proceed if offer doesn't have user
+      if (!req.offer || !req.offer.user || !req.offer.location) {
+        return res.status(404).send({
+          message: errorService.getErrorMessageByKey('not-found')
+        });
+      }
+
+      done(null, req.offer);
+    },
+
+    // Populate `tag` fields from objects at `offer.user.member` array
+    function(offer, done) {
+
+      // Nothing to populate
+      if (!offer.user.member && !offer.user.member.length) {
+        return done(null, offer);
+      }
+
+      User.populate(offer.user, {
+        path: 'member.tag',
+        select: tribes.tribeFields,
+        model: 'Tag'
+        // Not possible at the moment due bug in Mongoose
+        // http://mongoosejs.com/docs/faq.html#populate_sort_order
+        // https://github.com/Automattic/mongoose/issues/2202
+        // options: { sort: { count: -1 } }
+      }, function(err, user) {
+        // Overwrite old `offer.user` with new `user` object
+        // containing populated `member.tag` to `offer`
+        offer.user = user;
+        done(err, offer);
+      });
+
+    },
+
+    function(offer) {
+      // Sanitize offer before returning it
+      var offer = sanitizeOffer(offer, req.user._id);
+
+      res.json(offer);
+    }
+
+  ], function(err) {
+    if (err) {
+      // Something's wrong and we weren't prepared for itx
+      log('error', 'Failed to load offer. #g34gss', {
+        error: err
+      });
+      return res.status(400).send({
+        message: errorService.getErrorMessageByKey('default')
+      });
+    }
+  });
+
 };
 
 // Offer reading middleware
@@ -623,6 +679,12 @@ exports.offerById = function(req, res, next, offerId) {
         .exec(function(err, offer) {
 
           // No offer
+          if (err) {
+            log('error', 'Getting offer by id caused an error. #2kg3g3', {
+              error: err
+            });
+          }
+
           if (err || !offer) {
             return res.status(404).send({
               message: errorService.getErrorMessageByKey('not-found')
@@ -631,31 +693,6 @@ exports.offerById = function(req, res, next, offerId) {
 
           done(null, offer);
         });
-    },
-
-    // Populate `tag` fields from objects at `offer.user.member` array
-    function(offer, done) {
-
-      // Nothing to populate
-      if (!offer.user.member && !offer.user.member.length) {
-        return done(null, offer);
-      }
-
-      User.populate(offer.user, {
-        path: 'member.tag',
-        select: tribes.tribeFields,
-        model: 'Tag'
-        // Not possible at the moment due bug in Mongoose
-        // http://mongoosejs.com/docs/faq.html#populate_sort_order
-        // https://github.com/Automattic/mongoose/issues/2202
-        // options: { sort: { count: -1 } }
-      }, function(err, user) {
-        // Overwrite old `offer.user` with new `user` object
-        // containing populated `member.tag` to `offer`
-        offer.user = user;
-        done(err, offer);
-      });
-
     },
 
     // Continue
@@ -668,7 +705,9 @@ exports.offerById = function(req, res, next, offerId) {
 
   ], function(err) {
     if (err) {
-      console.error(err);
+      log('error', 'Getting offer by id caused an error. #g34gj3', {
+        error: err
+      });
     }
     return next(err);
   });
