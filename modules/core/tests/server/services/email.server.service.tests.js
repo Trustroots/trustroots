@@ -301,6 +301,23 @@ describe('Service: email', function() {
     });
   });
 
+  it('plain text emails should not contain html or html entities', function(done) {
+    var supportRequest = {
+      message: '> Foo &amp; <p>foo<br />bar</p> <script>alert()</script>bar'
+    };
+    var replyTo = {
+      email: 'replyto@test.com'
+    };
+    emailService.sendSupportRequest(replyTo, supportRequest, function(err) {
+      if (err) return done(err);
+
+      jobs[0].data.text.should.containEql('> Foo & foobar bar');
+      jobs[0].data.text.should.not.containEql('script');
+
+      done();
+    });
+  });
+
   it('emails should have inline css styles', function(done) {
     var params = emailService.addEmailBaseTemplateParams({
       subject: 'test',

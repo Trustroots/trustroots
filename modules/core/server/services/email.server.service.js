@@ -7,6 +7,7 @@ var path = require('path'),
     async = require('async'),
     juice = require('juice'),
     moment = require('moment'),
+    autolinker = require('autolinker'),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
     textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
@@ -476,6 +477,23 @@ exports.renderEmail = function(templateName, params, callback) {
     });
   }, function(err, result) {
     if (err) return callback(err);
+
+    // Clean out html entities (like &gt;) from plain text emails
+    result.text = textProcessor.plainText(result.text);
+
+    // Wrap links with `<` and `>` from plain text emails
+    result.text = autolinker.link(result.text, {
+      urls: true,
+      email: false,
+      phone: false,
+      mention: false,
+      hashtag: false,
+      stripPrefix: false,
+      replaceFn: function(match) {
+        return '<' + match.getAnchorHref() + '>';
+      }
+    });
+
     var email = {
       to: {
         name: params.name,
