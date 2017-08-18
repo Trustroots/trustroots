@@ -5,7 +5,8 @@
  */
 var _ = require('lodash'),
     Autolinker = require('autolinker'),
-    sanitizeHtml = require('sanitize-html');
+    sanitizeHtml = require('sanitize-html'),
+    he = require('he');
 
 /**
  * Rules for sanitizing texts coming in and out
@@ -132,7 +133,7 @@ exports.isEmpty = function (value) {
 
 
 /**
- * Strip all HTML out of text
+ * Strip all HTML tags and html entities out of a text
  *
  * @link https://github.com/punkave/sanitize-html
  * @param {String} content - Content to be stripped from html
@@ -150,16 +151,22 @@ exports.plainText = function (content, cleanWhitespace) {
     return '';
   }
 
-  // No HTML allowed
+  /*
+   * Sanitize HTML tags AND HTML entities out
+   * Decoding twice might look weird, but it's there for reason:
+   * to stop html entity attacks.
+   */
+  content = he.decode(content);
   content = sanitizeHtml(content, { allowedTags: [] });
+  content = he.decode(content);
 
   // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
   if (cleanWhitespace === true) {
     content = content.replace(/\s/g, ' ');
   }
 
-  // Replace "&nbsp;" and trim
-  content = content.replace(/&nbsp;/g, ' ').trim();
+  // Trim
+  content = content.trim();
 
   return content;
 };

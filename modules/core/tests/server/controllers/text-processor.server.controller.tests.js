@@ -151,8 +151,24 @@ describe('Text processor tests', function() {
     });
 
     it('Should strip trailing empty space', function() {
-      var testString = textProcessor.html('foo  	');
+      var testString = textProcessor.plainText('   foo  	');
       testString.should.equal('foo');
     });
+
+    it('Should not leave html entity codes', function() {
+      var testString = textProcessor.plainText('> foo & ©');
+      testString.should.equal('> foo & ©');
+    });
+
+    it('Should clean out html entity codes in safe way', function() {
+      var testString = textProcessor.plainText('&lt;p&gt;alert();&lt;/p&gt;<p>hello & and < moi &#8230;</p>');
+      testString.should.equal('alert();hello & and < moi …');
+    });
+
+    it('Should clean out html entity codes, even without ;', function() {
+      var testString = textProcessor.plainText('foo&ampbar');
+      testString.should.equal('foo&bar');
+    });
+
   });
 });
