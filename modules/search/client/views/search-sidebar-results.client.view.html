@@ -37,7 +37,8 @@
   <!-- /Profile loading -->
 
   <!-- Profile -->
-  <div class="search-result panel panel-default" ng-if="search.offer && !search.loadingOffer">
+  <div class="search-result panel panel-default"
+       ng-if="search.offer && !search.loadingOffer">
     <a class="panel-body" ui-sref="profile.about({username: search.offer.user.username})">
       <div tr-avatar data-size="32" data-link="false" data-user="::search.offer.user"></div>
       <h4>
@@ -45,39 +46,59 @@
         <small class="text-muted">@{{ ::search.offer.user.displayUsername || search.offer.user.username }}</small>
       </h4>
       <div class="search-result-meta">
-        <span ng-if="search.offer.user.birthdate" ng-bind="search.offer.user.birthdate | ageyears"></span><span ng-if="search.offer.user.birthdate && search.offer.user.gender">, </span>
-        <span ng-if="search.offer.user.gender" ng-class="{ 'text-capitalize': !search.offer.user.birthdate }">{{ ::search.offer.user.gender }}.</span>
+        <span ng-if="search.offer.user.birthdate"
+              ng-bind="search.offer.user.birthdate | ageyears"></span><span ng-if="search.offer.user.birthdate && search.offer.user.gender">, </span>
+        <span ng-if="search.offer.user.gender"
+              ng-class="{ 'text-capitalize': !search.offer.user.birthdate }">
+              {{ ::search.offer.user.gender }}.
+        </span>
       </div>
-      <div class="search-result-tagline" ng-if="search.offer.user.tagline" ng-bind="search.offer.user.tagline"></div>
+      <div class="search-result-tagline"
+           ng-if="::search.offer.user.tagline"
+           ng-bind="::search.offer.user.tagline"></div>
       <div class="search-result-hosting">
-        <div class="search-result-label" ng-if="search.offer.type === 'host'">
+        <div class="search-result-label"
+             ng-if="search.offer.type === 'host'">
           Hosting:
           <span class="label"
-                ng-class="{ 'btn-offer-hosting-yes': search.offer.status === 'yes', 'btn-offer-hosting-maybe': search.offer.status === 'maybe' }"
-                ng-bind="search.offer.status"></span>
+                ng-bind="search.offer.status"
+                ng-class="{
+                  'btn-offer-hosting-yes': search.offer.status === 'yes',
+                  'btn-offer-hosting-maybe': search.offer.status === 'maybe'
+                }"></span>
         </div>
         <div class="search-result-label" ng-if="search.offer.type === 'meet'">
           <span class="label btn-offer-meet">Meet</span>
         </div>
 
-        <!-- Short descriptions -->
+        <!-- Short descriptions for 'host' offers -->
         <div class="search-result-description"
-             ng-if="search.offer.description && search.offer.description.length < 1000"
+             ng-if="search.offer.description && search.offer.description.length < 1000 && search.offer.type === 'host'"
              ng-bind-html="::search.offer.description | trustedHtml"></div>
 
-        <!-- Long descriptions -->
-        <div class="search-result-description" ng-if="search.offer.description && search.offer.description.length >= 1000">
+        <!-- Long descriptions for 'host' offers -->
+        <div class="search-result-description"
+             ng-if="earch.offer.description && search.offer.description.length >= 1000 && search.offer.type === 'host'">
           <div class="panel-more-wrap">
-            <div ng-bind-html="::search.offer.description | limitTo:1000 | trustedHtml" class="panel-more-excerpt"></div>
-            <div class="panel-more-fade">Show more...</div>
+            <div class="panel-more-excerpt"
+                 ng-bind-html="::search.offer.description | limitTo:1000 | trustedHtml"></div>
+            <div class="panel-more-fade">
+              Show more...
+            </div>
           </div>
         </div>
 
-        <div ng-if="search.offer.type === 'meet' && search.offer.updated"
+        <!-- Complete descriptions for 'meet' offers -->
+        <!-- Meet offers aren't currently visible at profile,
+             so we need complete description here. -->
+         <div class="search-result-description"
+              ng-if="search.offer.description && search.offer.type === 'meet'"
+              ng-bind-html="::search.offer.description | trustedHtml"></div>
+
+        <div ng-if="::search.offer.type === 'meet' && search.offer.updated"
              class="text-muted">
           Updated <span tr-time="search.offer.updated" tr-time-format="'mediumDate'"></span>
         </div>
-
 
         <div class="search-result-tribes-common"
              ng-if="search.offer.user.member.length"
@@ -88,7 +109,8 @@
       <div class="search-result-languages" ng-if="search.offer.user.languages.length">
         <h4>Languages</h4>
         <ul class="list-inline">
-          <li ng-repeat="code in ::search.offer.user.languages track by code">{{ ::app.languageNames[code] || code }}</li>
+          <li ng-repeat="code in ::search.offer.user.languages track by code"
+              ng-bind="::app.languageNames[code] || code"></li>
         </ul>
       </div>
     </a>

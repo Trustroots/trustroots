@@ -81,6 +81,7 @@
   {# Twitter #}
   {% if twitterUsername %}<meta name="twitter:site" content="{{twitterUsername}}">{% endif %}
   {% if tribe %}
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Join {{tribe.label|striptags|addslashes}} on Trustroots">
     <meta name="twitter:description" content="Join to meet, host and get hosted by Trustroots Tribe {{tribe.label|striptags|addslashes}}. Trustroots is a travellers' community for sharing, hosting and getting people together.">
     <meta name="twitter:url" content="{{hostPort}}/tribes/{{tribe.slug}}">
