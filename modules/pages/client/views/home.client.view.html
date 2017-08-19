@@ -5,25 +5,29 @@
 
       <div class="row">
         <div class="col-xs-12 col-sm-8 col-sm-offset-2">
-          <img class="home-logo hidden-xs center-block" src="/modules/core/img/logo/white.svg" alt="Trustroots" width="210" height="210">
-          <img class="home-logo visible-xs-block center-block" src="/modules/core/img/logo/white.svg" alt="Trustroots" width="130" height="130">
+          <img class="home-logo hidden-xs center-block" src="/modules/core/img/logo/white.svg" alt="Trustroots" width="210" height="210" aria-hidden="true">
+          <img class="home-logo visible-xs-block center-block" src="/modules/core/img/logo/white.svg" alt="Trustroots" width="130" height="130" aria-hidden="true">
           <h1 class="sr-only">Trustroots</h1>
 
           <!-- For non authenticated -->
-          <div ng-if="!app.user">
+          <div ng-if="::!app.user">
             <h3 class="home-tagline">Travellers' community</h3>
             <h4 class="home-subtagline">Sharing, hosting and getting people together.</h4>
-            <a ui-sref="signup" class="btn btn-lg btn-default home-join hidden-xs">Join Trustroots</a>
+            <a ui-sref="signup" class="btn btn-action btn-default home-join hidden-xs">
+              Join Trustroots
+            </a>
           </div>
 
           <!-- For authenticated -->
-          <div ng-if="app.user">
+          <div ng-if="::app.user">
             <h3 class="home-tagline-auth">
               Hi {{ ::app.user.displayName }}!<br>
               Being able to rely on strangers, on communities, on trust, are values that are worth preserving. Go travel & spread the word!
             </h3>
             <a ui-sref="profile-edit.about" class="btn btn-lg btn-default home-join hidden-xs">Fill your profile</a>
-            <a ui-sref="search.map" class="btn btn-lg btn-default home-join hidden-xs">Find members</a>
+            <a ui-sref="search.map" class="btn btn-lg btn-default home-join hidden-xs">
+              Find members
+            </a>
           </div>
 
           <div class="home-down"><i class="icon-down"></i></div>
@@ -136,7 +140,7 @@
     <div class="row">
       <div class="col-md-offset-3 col-md-6 text-center lead font-brand-light">
         <div ng-include="'/modules/pages/views/manifesto-text.client.partial.html'"></div>
-        <p ng-if="!app.user">
+        <p ng-if="::!app.user">
           <br><br>
           <a ui-sref="signup" class="btn btn-lg btn-action btn-inverse">Join Trustroots</a>
         </p>

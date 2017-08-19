@@ -142,12 +142,19 @@
             'license_url': 'https://unsplash.com/license',
             'file': 'mh-woman-bridge.jpg'
           },
-          'sahara': {
-            'name': 'Nova Togatorop',
-            'url': 'http://novatogatorop.com/',
+          'nordiclights': {
+            'name': 'Vincent Guth',
+            'url': 'https://unsplash.com/photos/62V7ntlKgL8',
             'license': 'CC',
             'license_url': 'https://unsplash.com/license',
-            'file': 'sahara.jpg'
+            'file': 'nordic-lights.jpg'
+          },
+          'jungleroad': {
+            'name': 'Dean Johns',
+            'url': 'https://unsplash.com/photos/MgZWbdCKcGg',
+            'license': 'CC',
+            'license_url': 'https://unsplash.com/license',
+            'file': 'jungleroad.jpg'
           },
           'sahara-backpacker': {
             'name': 'Nova Togatorop',

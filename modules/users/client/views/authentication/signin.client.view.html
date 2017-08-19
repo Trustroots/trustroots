@@ -1,4 +1,4 @@
-<section class="container board container-fullscreen" tr-boards="'sahara'">
+<section class="container board container-fullscreen" tr-boards="['nordiclights', 'jungleroad']">
   <div class="middle-wrapper middle-wrapper-horizontal">
     <div class="middle-content">
 
@@ -55,7 +55,7 @@
               <div class="text-center form-group">
                 <br><br>
                 <button type="submit"
-                        class="btn btn-default btn-lg"
+                        class="btn btn-default btn-action"
                         ng-disabled="auth.isLoading">
                   <span ng-if="!auth.isLoading">
                     {{ auth.continue ? 'Sign in to continue' : 'Login' }}
@@ -67,17 +67,35 @@
           </form>
         </div>
       </div><!-- .row-->
-      <div class="row">
+
+      <!-- For bigger screens -->
+      <div class="row hidden-xs">
         <div class="col-xs-12 text-center text-white">
           <p>
-            <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
-          </p>
-          <p class="visible-xs-block">
             <br>
-            <a ui-sref="home" class="btn btn-link">Back home</a>
+            <a ui-sref="home" class="btn btn-inverse">Back home</a>
+            <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
           </p>
         </div>
       </div><!-- .row-->
+
+      <!-- For smaller screens -->
+      <nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block">
+        <div class="container">
+          <ul class="nav navbar-nav nav-justified" role="toolbar" aria-label="Profile actions">
+          <li>
+            <a ui-sref="home" aria-label="Go to home page">
+              Back home
+            </a>
+          </li>
+            <li class="pull-right">
+              <a ui-sref="signup" aria-label="Sign up">
+                Become a member
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
 
     </div>
   </div>

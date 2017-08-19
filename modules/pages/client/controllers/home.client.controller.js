@@ -7,10 +7,24 @@
     .controller('HomeController', HomeController);
 
   /* @ngInject */
-  function HomeRunBlock($location, Authentication) {
+  function HomeRunBlock($location, $window, $state, Authentication) {
     // When landing to frontpage as authenticated user, redirect to search
     if (Authentication.user && $location.path() === '/') {
       $location.path('/search');
+    }
+
+    /**
+     * When the site is wrapped on mobile,
+     * we have these global variables in use:
+     *
+     * {Boolean} isMobileApp
+     * {String} mobileVersion
+     * {String} mobilePlatform
+     * {String} mobileDeviceName
+     * {String} mobileDeviceYearClass
+     */
+    if ($window.isMobileApp) {
+      $location.path('/signin');
     }
   }
 
