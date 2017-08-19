@@ -37,7 +37,8 @@
 
   <!-- List of meetings -->
   <div class="panel panel-default"
-       ng-repeat="offer in offerListMeet.offers | orderBy: 'validUntil' track by offer._id">
+       ng-repeat="offer in offerListMeet.offers | orderBy:'-validUntil' track by offer._id"
+       ng-attr-id="offer-{{::offer._id}}">
     <div class="panel-body">
 
       <!-- The map -->
