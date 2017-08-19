@@ -61,7 +61,7 @@
     "del": "~3.0.0",
     "eslint-plugin-angular": "~3.0.2",
     "expect-ct": "~0.1.0",
-    "exponent-server-sdk": "^2.3.1",
+    "expo-server-sdk": "~2.3.1",
     "express": "~4.15.3",
     "express-paginate": "~0.3.0",
     "express-session": "~1.15.3",

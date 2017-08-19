@@ -1,6 +1,6 @@
 'use strict';
 
-var Expo = require('exponent-server-sdk');
+var Expo = require('expo-server-sdk');
 
 // to check if something is a push token
 exports.isPushToken = Expo.isExponentPushToken;
