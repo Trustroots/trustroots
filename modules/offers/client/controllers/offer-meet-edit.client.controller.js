@@ -58,13 +58,23 @@
       offer.description = vm.offer.description;
       offer.location = [parseFloat(vm.mapCenter.lat), parseFloat(vm.mapCenter.lng)];
 
+      var offerId = offer._id || false;
+
       offer.$update(function() {
         // Done!
         $analytics.eventTrack('offer-modified', {
           category: 'offer.meet.update',
           label: 'Updated meet offer'
         });
-        $state.go('offer.meet.list');
+
+        // If offer already has id, add it to URL
+        // $state will then scroll to it:
+        // that's useful if there are multiple offers on the list.
+        if (offerId) {
+          $state.go('offer.meet.list', { '#': 'offer-' + offerId });
+        } else {
+          $state.go('offer.meet.list');
+        }
       }, function(err) {
         var errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
         messageCenterService.add('danger', errorMessage);
