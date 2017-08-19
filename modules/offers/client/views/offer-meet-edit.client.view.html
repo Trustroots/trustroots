@@ -64,10 +64,13 @@
           </p>
 
           <!-- Search location -->
-          <div class="form-group offer-map-location-search" ng-if="::app.appSettings.mapbox.publicKey">
+          <div class="form-group has-feedback offer-map-location-search" ng-if="::app.appSettings.mapbox.publicKey">
             <label for="search-query" class="sr-only">
               Search for places on the map
             </label>
+            <span class="form-control-feedback visible-xs-inline" aria-hidden="true">
+              <span class="icon-search icon-lg text-muted"></span>
+            </span>
             <input type="text"
                    id="search-query"
                    class="form-control input-lg"
