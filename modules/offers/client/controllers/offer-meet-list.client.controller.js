@@ -33,7 +33,7 @@
           return $header.length ? ($header.height() + 5) : 50;
         }
         $anchorScroll();
-      }, 10);
+      }, 500);
     }
 
     /**
