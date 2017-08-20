@@ -14,7 +14,7 @@ var _ = require('lodash'),
     messageToStatsService = require(path.resolve('./modules/messages/server/services/message-to-stats.server.service')),
     messageStatService = require(path.resolve('./modules/messages/server/services/message-stat.server.service')),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    textProcessorService = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    textServiceService = require(path.resolve('./modules/core/server/services/text.server.service')),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     Message = mongoose.model('Message'),
     Thread = mongoose.model('Thread'),
@@ -55,7 +55,7 @@ function sanitizeMessages(messages) {
 
   // Sanitize each outgoing message's contents
   messages.forEach(function(message) {
-    message.content = sanitizeHtml(message.content, textProcessorService.sanitizeOptions);
+    message.content = sanitizeHtml(message.content, textServiceService.sanitizeOptions);
     messagesCleaned.push(message);
   });
 
@@ -84,7 +84,7 @@ function sanitizeThreads(threads, authenticatedUserId) {
 
     // Clean message content from html + clean all whitespace + shorten
     if (thread.message) {
-      thread.message.excerpt = thread.message.content ? textProcessorService.plainText(thread.message.content, true).substring(0, 100).trim() + ' …' : '…';
+      thread.message.excerpt = thread.message.content ? textServiceService.plainText(thread.message.content, true).substring(0, 100).trim() + ' …' : '…';
       delete thread.message.content;
     } else {
       // Ensure this works even if messages couldn't be found for some reason
@@ -213,7 +213,7 @@ exports.send = function(req, res) {
   }
 
   // No content or test if content is actually empty (when html is stripped out)
-  if (!req.body.content || textProcessorService.isEmpty(req.body.content)) {
+  if (!req.body.content || textServiceService.isEmpty(req.body.content)) {
     return res.status(400).send({
       message: 'Please write a message.'
     });
@@ -266,7 +266,7 @@ exports.send = function(req, res) {
             return done(err);
           }
 
-          var descriptionLength = (sender.description) ? textProcessorService.plainText(sender.description).length : 0;
+          var descriptionLength = (sender.description) ? textServiceService.plainText(sender.description).length : 0;
 
           // If the sender has too empty description, return an error
           if (descriptionLength < config.profileMinimumLength) {
@@ -293,7 +293,7 @@ exports.send = function(req, res) {
       var message = new Message(req.body);
 
       // Allow some HTML
-      message.content = textProcessorService.html(message.content);
+      message.content = textServiceService.html(message.content);
 
       message.userFrom = req.user;
       message.read = false;

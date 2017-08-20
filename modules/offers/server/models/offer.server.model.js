@@ -6,7 +6,7 @@
 var _ = require('lodash'),
     path = require('path'),
     mongoose = require('mongoose'),
-    textService = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     Schema = mongoose.Schema;
 
 /**

@@ -807,6 +807,36 @@ describe('Offer CRUD tests', function() {
         });
     });
 
+    it('should be able to use + in front of positive coordinates', function(done) {
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function(signinErr) {
+          // Handle signin error
+          if (signinErr) return done(signinErr);
+
+          // Get offers (in Niger)
+          agent.get('/api/offers' +
+              '?northEastLat=+55.31212135084999' +
+              '&northEastLng=+18.73318142361111' +
+              '&southWestLat=+44.66407507240992' +
+              '&southWestLng=+3.689914279513889'
+            )
+            .expect(200)
+            .end(function(offersGetErr, offersGetRes) {
+              // Handle offer get error
+              if (offersGetErr) return done(offersGetErr);
+
+              // Set assertions
+              offersGetRes.body.length.should.equal(2);
+
+              // Call the assertion callback
+              return done();
+            });
+
+        });
+    });
+
     it('should return error when missing bounding box parameter', function(done) {
       agent.post('/api/auth/signin')
         .send(credentials)
@@ -827,7 +857,7 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should return error with invalid bounding box parameter (too large coordinate)', function(done) {
+    it('should return error with invalid bounding box parameter (too large coordinate without decimals)', function(done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
@@ -838,6 +868,69 @@ describe('Offer CRUD tests', function() {
           // Missing `southWestLng` paramter
           agent.get('/api/offers' +
               '?northEastLat=1000' +
+              '&northEastLng=25.598493303571427' +
+              '&southWestLat=-20.49068931208608' +
+              '&southWestLng=-12.986188616071427'
+            )
+            .expect(400)
+            .end(done);
+
+        });
+    });
+
+    it('should return error with invalid bounding box parameter (too large coordinate with decimals)', function(done) {
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function(signinErr) {
+          // Handle signin error
+          if (signinErr) return done(signinErr);
+
+          // Missing `southWestLng` paramter
+          agent.get('/api/offers' +
+              '?northEastLat=1000.5984' +
+              '&northEastLng=25.598493303571427' +
+              '&southWestLat=-20.49068931208608' +
+              '&southWestLng=-12.986188616071427'
+            )
+            .expect(400)
+            .end(done);
+
+        });
+    });
+
+    it('should return error with invalid bounding box parameter (too many decimals)', function(done) {
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function(signinErr) {
+          // Handle signin error
+          if (signinErr) return done(signinErr);
+
+          // Missing `southWestLng` paramter
+          agent.get('/api/offers' +
+              '?northEastLat=25.1111111111111116' + // testing with 16 digits, 15 is allowed limit
+              '&northEastLng=25.598493303571427' +
+              '&southWestLat=-20.49068931208608' +
+              '&southWestLng=-12.986188616071427'
+            )
+            .expect(400)
+            .end(done);
+
+        });
+    });
+
+    it('should return error with invalid bounding box parameter (non numbers after decimal limit)', function(done) {
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function(signinErr) {
+          // Handle signin error
+          if (signinErr) return done(signinErr);
+
+          // Missing `southWestLng` paramter
+          agent.get('/api/offers' +
+              '?northEastLat=25.111111111111111foo' + // `foo` starts at 16, 15 is the limit
               '&northEastLng=25.598493303571427' +
               '&southWestLat=-20.49068931208608' +
               '&southWestLng=-12.986188616071427'

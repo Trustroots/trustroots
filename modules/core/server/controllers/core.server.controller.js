@@ -3,7 +3,7 @@
 var path = require('path'),
     errorService = require('../services/error.server.service'),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     config = require(path.resolve('./config/config')),
     log = require(path.resolve('./config/lib/logger'));
 
@@ -60,7 +60,7 @@ exports.renderNotFound = function(req, res) {
 exports.receiveCSPViolationReport = function(req, res) {
   if (process.env.NODE_ENV !== 'test') {
     log('warn', 'CSP violation report #ljeanw', {
-      report: req.body ? textProcessor.html(req.body) : 'No report available.'
+      report: req.body ? textService.html(req.body) : 'No report available.'
     });
   }
   res.status(204).json();
@@ -75,7 +75,7 @@ exports.receiveCSPViolationReport = function(req, res) {
 exports.receiveExpectCTViolationReport = function(req, res) {
   if (process.env.NODE_ENV !== 'test') {
     log('warn', 'Expect-CT violation report #3hg8ha', {
-      report: req.body ? textProcessor.html(req.body) : 'No report available.'
+      report: req.body ? textService.html(req.body) : 'No report available.'
     });
   }
   res.status(204).json();

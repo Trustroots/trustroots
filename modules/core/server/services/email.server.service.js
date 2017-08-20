@@ -10,7 +10,7 @@ var path = require('path'),
     autolinker = require('autolinker'),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
-    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     render = require(path.resolve('./config/lib/render')),
     agenda = require(path.resolve('./config/lib/agenda')),
     config = require(path.resolve('./config/config')),
@@ -375,7 +375,7 @@ exports.sendWelcomeSequenceThird = function(user, callback) {
 
   // For members with empty profiles,
   // remind them how important it is to fill their profile.
-  var descriptionLength = textProcessor.plainText(user.description, true).length;
+  var descriptionLength = textService.plainText(user.description, true).length;
   if (descriptionLength < config.profileMinimumLength) {
     messageTopic = 'fill-profile';
   }
@@ -479,7 +479,7 @@ exports.renderEmail = function(templateName, params, callback) {
     if (err) return callback(err);
 
     // Clean out html entities (like &gt;) from plain text emails
-    result.text = textProcessor.plainText(result.text);
+    result.text = textService.plainText(result.text);
 
     // Wrap links with `<` and `>` from plain text emails
     result.text = autolinker.link(result.text, {

@@ -121,64 +121,6 @@ describe('Service: email', function() {
     });
   });
 
-  context('confirm contact', function() {
-
-    var user = {
-      displayName: 'test user',
-      email: 'test@test.com'
-    };
-    var friend = {
-      displayName: 'friend user',
-      email: 'friend@test.com'
-    };
-    var contact = {
-      _id: 'somecontactid'
-    };
-    var messageHTML = '<span>nice custom message</span>';
-    var messageText = 'plain message';
-
-    beforeEach(function(done) {
-      emailService.sendConfirmContact(user, friend, contact, messageHTML, messageText, done);
-    });
-
-    it('creates a [send email] job', function() {
-      jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-    });
-
-    it('sends to the correct recipient', function() {
-      jobs[0].data.to.name.should.equal(friend.displayName);
-      jobs[0].data.to.address.should.equal(friend.email);
-    });
-
-    it('sets the subject', function() {
-      jobs[0].data.subject.should.equal('Confirm contact');
-    });
-
-    it('contains the user and friends name', function() {
-      jobs[0].data.html.should.containEql(user.displayName);
-      jobs[0].data.html.should.containEql(friend.displayName);
-      jobs[0].data.text.should.containEql(user.displayName);
-      jobs[0].data.text.should.containEql(friend.displayName);
-    });
-
-    it('sets the custom message', function() {
-      jobs[0].data.html.should.containEql(messageHTML);
-      jobs[0].data.text.should.containEql(messageText);
-    });
-
-    it('contains the correct message', function() {
-      jobs[0].data.html.should.containEql(user.displayName + '</a> would like to connect with you on Trustroots.');
-      jobs[0].data.text.should.containEql(user.displayName + ' would like to connect with you on Trustroots.');
-    });
-
-    it('contains the contact confirm url', function() {
-      jobs[0].data.html.should.containEql('/contact-confirm/' + contact._id);
-      jobs[0].data.text.should.containEql('/contact-confirm/' + contact._id);
-    });
-
-  });
-
   it('can send messages unread email', function(done) {
     var userFrom = {
       _id: 'from-user-id',
@@ -282,42 +224,6 @@ describe('Service: email', function() {
     });
   });
 
-  it('should be able to render text-only emails', function(done) {
-    var params = emailService.addEmailBaseTemplateParams({
-      subject: 'test',
-      name: 'test',
-      email: 'test@test.com',
-      utmCampaign: 'test',
-      urlConfirmPlainText: '#',
-      urlConfirm: '#',
-      skipHtmlTemplate: true
-    });
-
-    emailService.renderEmail('reset-password', params, function(err, email) {
-      if (err) return done(err);
-      should.exist(email.text);
-      should.not.exist(email.html);
-      done();
-    });
-  });
-
-  it('plain text emails should not contain html or html entities', function(done) {
-    var supportRequest = {
-      message: '> Foo &amp; <p>foo<br />bar</p> <script>alert()</script>bar'
-    };
-    var replyTo = {
-      email: 'replyto@test.com'
-    };
-    emailService.sendSupportRequest(replyTo, supportRequest, function(err) {
-      if (err) return done(err);
-
-      jobs[0].data.text.should.containEql('> Foo & foobar bar');
-      jobs[0].data.text.should.not.containEql('script');
-
-      done();
-    });
-  });
-
   it('emails should have inline css styles', function(done) {
     var params = emailService.addEmailBaseTemplateParams({
       subject: 'test',
@@ -384,6 +290,105 @@ describe('Service: email', function() {
       email.text.should.not.containEql('Remember, I\'m just a little mail robot. Don\'t reply this email directly.');
       done();
     });
+  });
+
+  describe('Plain text emails', function() {
+
+    it('should be able to render text-only emails', function(done) {
+      var params = emailService.addEmailBaseTemplateParams({
+        subject: 'test',
+        name: 'test',
+        email: 'test@test.com',
+        utmCampaign: 'test',
+        urlConfirmPlainText: '#',
+        urlConfirm: '#',
+        skipHtmlTemplate: true
+      });
+
+      emailService.renderEmail('reset-password', params, function(err, email) {
+        if (err) return done(err);
+        should.exist(email.text);
+        should.not.exist(email.html);
+        done();
+      });
+    });
+
+    it('plain text emails should not contain html or html entities', function(done) {
+      var params = {
+        skipHtmlTemplate: true, // Don't render html template for this email
+        request: {
+          message: '> Foo &amp; <p>foo<br />bar</p> <script>alert()</script>bar'
+        },
+        subject: 'test'
+      };
+      emailService.renderEmail('support-request', params, function(err, email) {
+        if (err) return done(err);
+
+        email.text.should.containEql('> Foo & foobar bar');
+        email.text.should.not.containEql('script');
+
+        done();
+      });
+    });
+
+  });
+
+  context('Confirm contact email', function() {
+
+    var user = {
+      displayName: 'test user',
+      email: 'test@test.com'
+    };
+    var friend = {
+      displayName: 'friend user',
+      email: 'friend@test.com'
+    };
+    var contact = {
+      _id: 'somecontactid'
+    };
+    var messageHTML = '<span>nice custom message</span>';
+    var messageText = 'plain message';
+
+    beforeEach(function(done) {
+      emailService.sendConfirmContact(user, friend, contact, messageHTML, messageText, done);
+    });
+
+    it('creates a [send email] job', function() {
+      jobs.length.should.equal(1);
+      jobs[0].type.should.equal('send email');
+    });
+
+    it('sends to the correct recipient', function() {
+      jobs[0].data.to.name.should.equal(friend.displayName);
+      jobs[0].data.to.address.should.equal(friend.email);
+    });
+
+    it('sets the subject', function() {
+      jobs[0].data.subject.should.equal('Confirm contact');
+    });
+
+    it('contains the user and friends name', function() {
+      jobs[0].data.html.should.containEql(user.displayName);
+      jobs[0].data.html.should.containEql(friend.displayName);
+      jobs[0].data.text.should.containEql(user.displayName);
+      jobs[0].data.text.should.containEql(friend.displayName);
+    });
+
+    it('sets the custom message', function() {
+      jobs[0].data.html.should.containEql(messageHTML);
+      jobs[0].data.text.should.containEql(messageText);
+    });
+
+    it('contains the correct message', function() {
+      jobs[0].data.html.should.containEql(user.displayName + '</a> would like to connect with you on Trustroots.');
+      jobs[0].data.text.should.containEql(user.displayName + ' would like to connect with you on Trustroots.');
+    });
+
+    it('contains the contact confirm url', function() {
+      jobs[0].data.html.should.containEql('/contact-confirm/' + contact._id);
+      jobs[0].data.text.should.containEql('/contact-confirm/' + contact._id);
+    });
+
   });
 
 });
