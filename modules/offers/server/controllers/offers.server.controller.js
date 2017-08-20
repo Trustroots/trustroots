@@ -93,6 +93,7 @@ function sanitizeOffer(offer, authenticatedUserId, alwaysFuzzyLocation) {
 
 /**
  * Validate latitude/longitude coordinates
+ * @TODO: overly complex
  *
  * @param {Float} coordinate - Expects latitude or longitude coordinate
  * @param {String} type - Either `lat` or `lng`, anything else fails the test.
@@ -100,21 +101,43 @@ function sanitizeOffer(offer, authenticatedUserId, alwaysFuzzyLocation) {
  */
 function isValidCoordinate(coordinate, type) {
 
-  if (_.isUndefined(coordinate) || !type || !_.isFinite(coordinate)) {
+  // Validate that parameters are defined
+  if (_.isUndefined(coordinate) || _.isUndefined(type)) {
     return false;
   }
 
+  // Ensure coordinate is finite number
+  if (!_.isFinite(parseFloat(coordinate))) {
+    return false;
+  }
+
+  var range;
   // Test latitude range
   if (type === 'lat') {
-    return _.inRange(coordinate, -90, 90);
+    range = 90;
   }
-
   // Test longitude range
-  if (type === 'lng') {
-    return _.inRange(coordinate, -180, 180);
+  else if (type === 'lng') {
+    range = 180;
+  } else {
+    // `type` wasn't `lat` nor `lng` => fail
+    return false;
   }
 
-  return false;
+  // Quick check for range (`-90 to 90` or `-180 to 180`)
+  // This is done again at regexp but regexp doesn't catch ranges for non-floats
+  if (!_.inRange(coordinate, -Math.abs(range), range)) {
+    return false;
+  }
+
+  // How long coordinate digits are allowed?
+  var length = 15;
+
+  // Test with regexp
+  var regexp = new RegExp('^(\\+|-)?(\\d\.\\d{1,' + length + '}|[1-8]\\d\.\\d{1,' + length + '}|' + range + '\\.0{1,' + length + '})$');
+
+  var valid = regexp.test(coordinate);
+  return valid;
 }
 
 /**
@@ -314,9 +337,15 @@ exports.list = function(req, res) {
 
     // Get query string from query
     // If there is no query string (`req.query`), it is the empty object, `{}`.
-    // Note that `parseFloat()` for non numbers will return `Nan`,
-    // which will fail validation in `isValidCoordinate()`
-    var coordinate = parseFloat(_.get(req.query, coordinateKey, false));
+    var coordinate = _.get(req.query, coordinateKey, false);
+
+    // Trim string coordinates
+    // This is because when using `+` in front of a coordinate,
+    // it'll translate to empty space which would fail validation
+    // Before querying database, we'll anyway turn coordinate into Float
+    if (typeof coordinate === 'string') {
+      coordinate = coordinate.trim();
+    }
 
     // Gets either `lat` or `lng`
     var coordinateType = coordinateKey.substr(-3).toLowerCase();
@@ -356,8 +385,8 @@ exports.list = function(req, res) {
           // http://docs.mongodb.org/manual/reference/operator/query/box
           // -> It's latitude first as in the database, not longitude first as in the documentation
           $box: [
-            [Number(req.query.southWestLat), Number(req.query.southWestLng)],
-            [Number(req.query.northEastLat), Number(req.query.northEastLng)]
+            [parseFloat(req.query.southWestLat), parseFloat(req.query.southWestLng)],
+            [parseFloat(req.query.northEastLat), parseFloat(req.query.northEastLng)]
           ]
         }
       }
