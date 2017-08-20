@@ -5,10 +5,10 @@
  */
 var _ = require('lodash'),
     path = require('path'),
-    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     languages = require(path.resolve('./config/languages/languages.json')),
     authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service')),
-    textService = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     crypto = require('crypto'),
     mongoose = require('mongoose'),
     uniqueValidation = require('mongoose-beautiful-unique-validation'),
@@ -46,7 +46,7 @@ var validateUsername = function(username) {
 };
 
 var setPlainTextField = function(value) {
-  return textProcessor.plainText(value, true);
+  return textService.plainText(value, true);
 };
 
 /**

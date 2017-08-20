@@ -1,7 +1,7 @@
 'use strict';
 
 var path = require('path'),
-    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller'));
+    textService = require(path.resolve('./modules/core/server/services/text.server.service'));
 
 require('should');
 
@@ -33,53 +33,53 @@ describe('Text processor tests', function() {
 
   describe('Sanitize', function() {
     it('Should strip trailing empty space', function() {
-      var testString = textProcessor.html('foo  	');
+      var testString = textService.html('foo  	');
       testString.should.equal('foo');
     });
 
     it('Should not link mentions', function() {
-      var testString = textProcessor.html('foo @trustroots bar');
+      var testString = textService.html('foo @trustroots bar');
       testString.should.equal('foo @trustroots bar');
     });
 
     it('Should not link #hashtags', function() {
-      var testString = textProcessor.html('foo #trustroots bar');
+      var testString = textService.html('foo #trustroots bar');
       testString.should.equal('foo #trustroots bar');
     });
 
     it('Should link phone numbers', function() {
-      var testString = textProcessor.html('foo (555)666-7777 bar');
+      var testString = textService.html('foo (555)666-7777 bar');
       testString.should.equal('foo <a href="tel:5556667777">(555)666-7777</a> bar');
     });
 
 
     it('Should link email addresses', function() {
-      var testString = textProcessor.html('foo foo@example.com bar');
+      var testString = textService.html('foo foo@example.com bar');
       testString.should.equal('foo <a href="mailto:foo@example.com">foo@example.com</a> bar');
     });
 
     it('Should remove https:// from link contents and keep it at href', function() {
-      var testString = textProcessor.html('foo https://www.trustroots.org bar');
+      var testString = textService.html('foo https://www.trustroots.org bar');
       testString.should.equal('foo <a href="https://www.trustroots.org">www.trustroots.org</a> bar');
     });
 
     it('Should remove http:// from link contents and keep it at href', function() {
-      var testString = textProcessor.html('foo http://www.trustroots.org bar');
+      var testString = textService.html('foo http://www.trustroots.org bar');
       testString.should.equal('foo <a href="http://www.trustroots.org">www.trustroots.org</a> bar');
     });
 
     it('Should strip trailing slash from links', function() {
-      var testString = textProcessor.html('foo http://www.trustroots.org/faq/ bar');
+      var testString = textService.html('foo http://www.trustroots.org/faq/ bar');
       testString.should.equal('foo <a href="http://www.trustroots.org/faq/">www.trustroots.org/faq</a> bar');
     });
 
     it('Replace &nbsp; with empty spaces', function() {
-      var testString = textProcessor.html('foo&nbsp;bar');
+      var testString = textService.html('foo&nbsp;bar');
       testString.should.equal('foo bar');
     });
 
     it('Replace <p><br></p> with empty spaces', function() {
-      var testString = textProcessor.html('foo<p><br></p>bar');
+      var testString = textService.html('foo<p><br></p>bar');
       testString.should.equal('foo bar');
     });
 
@@ -102,7 +102,7 @@ describe('Text processor tests', function() {
         '<p>unclosed tag</p>' +
         '<p>foo<br />bar</p>';
 
-      var testString = textProcessor.html(htmlString);
+      var testString = textService.html(htmlString);
       testString.should.equal(htmlOutput);
     });
   });
@@ -110,27 +110,27 @@ describe('Text processor tests', function() {
   describe('Test for empty strings', function() {
 
     it('Should return true for an empty string', function() {
-      var testString = textProcessor.isEmpty('');
+      var testString = textService.isEmpty('');
       testString.should.equal(true);
     });
 
     it('Should return false for an non-empty string', function() {
-      var testString = textProcessor.isEmpty('Hey!');
+      var testString = textService.isEmpty('Hey!');
       testString.should.equal(false);
     });
 
     it('Should return true for a string containing only spaces and tabs', function() {
-      var testString = textProcessor.isEmpty('  	');
+      var testString = textService.isEmpty('  	');
       testString.should.equal(true);
     });
 
     it('Should return true for string containing only html tags', function() {
-      var testString = textProcessor.isEmpty('<p><br></p>');
+      var testString = textService.isEmpty('<p><br></p>');
       testString.should.equal(true);
     });
 
     it('Should return true for string containing only &nbsp;', function() {
-      var testString = textProcessor.isEmpty('&nbsp;&nbsp;');
+      var testString = textService.isEmpty('&nbsp;&nbsp;');
       testString.should.equal(true);
     });
   });
@@ -138,7 +138,7 @@ describe('Text processor tests', function() {
   describe('Plain text', function() {
 
     it('Remove all html tags from a string', function() {
-      var testString = textProcessor.plainText(htmlString);
+      var testString = textService.plainText(htmlString);
       var htmlOutput = 'Foofoofoofoofoofoolinku with paramsh1h2h3h4h5h6 unclosed tagfoobar';
       testString.should.equal(htmlOutput);
     });
@@ -146,27 +146,27 @@ describe('Text processor tests', function() {
     it('Remove all html tags and odd empty spaces from a string', function() {
       var htmlInput = '4-spaces:    4-tabs:				4-newlines:\n\n\n\n- end';
       var htmlOutput = '4-spaces:    4-tabs:    4-newlines:    - end';
-      var testString = textProcessor.plainText(htmlInput, true);
+      var testString = textService.plainText(htmlInput, true);
       testString.should.equal(htmlOutput);
     });
 
     it('Should strip trailing empty space', function() {
-      var testString = textProcessor.plainText('   foo  	');
+      var testString = textService.plainText('   foo  	');
       testString.should.equal('foo');
     });
 
     it('Should not leave html entity codes', function() {
-      var testString = textProcessor.plainText('> foo & ©');
+      var testString = textService.plainText('> foo & ©');
       testString.should.equal('> foo & ©');
     });
 
     it('Should clean out html entity codes in safe way', function() {
-      var testString = textProcessor.plainText('&lt;p&gt;alert();&lt;/p&gt;<p>hello & and < moi &#8230;</p>');
+      var testString = textService.plainText('&lt;p&gt;alert();&lt;/p&gt;<p>hello & and < moi &#8230;</p>');
       testString.should.equal('alert();hello & and < moi …');
     });
 
     it('Should clean out html entity codes, even without ;', function() {
-      var testString = textProcessor.plainText('foo&ampbar');
+      var testString = textService.plainText('foo&ampbar');
       testString.should.equal('foo&bar');
     });
 

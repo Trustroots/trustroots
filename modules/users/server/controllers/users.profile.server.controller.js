@@ -6,7 +6,7 @@
 var _ = require('lodash'),
     path = require('path'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
     contactHandler = require(path.resolve('./modules/contacts/server/controllers/contacts.server.controller')),
     messageHandler = require(path.resolve('./modules/messages/server/controllers/messages.server.controller')),
@@ -830,7 +830,7 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
   profile = profile.toObject();
 
   // We're sanitizing this already on saving/updating the profile, but here we do it again just in case.
-  if (profile.description) profile.description = sanitizeHtml(profile.description, textProcessor.sanitizeOptions);
+  if (profile.description) profile.description = sanitizeHtml(profile.description, textService.sanitizeOptions);
 
   // Remove tribes/tags without reference object (= they've been deleted from tags table)
   if (profile.member && profile.member.length > 0) {

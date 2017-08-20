@@ -20,7 +20,8 @@ exports.sanitizeOptions = {
   allowedTags: ['p', 'br', 'b', 'i', 'em', 'strong', 'u', 'a', 'li', 'ul', 'blockquote'],
   allowedAttributes: {
     'a': ['href'],
-    // Used for messages at `modules/messages/client/controllers/thread.client.controller.js`
+    // Used for messages text
+    // at `modules/messages/client/controllers/thread.client.controller.js`
     'p': ['data-hosting']
     // We don't currently allow img itself, but this would make sense if we did:
     // 'img': [ 'src' ]
@@ -40,7 +41,7 @@ exports.sanitizeOptions = {
   },
   selfClosing: ['img', 'br'],
   // URL schemes we permit
-  allowedSchemes: ['http', 'https', 'ftp', 'mailto', 'tel', 'irc']
+  allowedSchemes: ['http', 'https', 'ftp', 'mailto', 'tel', 'irc', 'geo']
 };
 
 

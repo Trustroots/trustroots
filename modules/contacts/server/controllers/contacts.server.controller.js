@@ -7,7 +7,7 @@
 var _ = require('lodash'),
     path = require('path'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     sanitizeHtml = require('sanitize-html'),
@@ -71,7 +71,7 @@ exports.add = function(req, res) {
       var messageHTML = false;
       var messagePlain = false;
       if (req.body.message && req.body.message !== '') {
-        messageHTML = sanitizeHtml(req.body.message, textProcessor.sanitizeOptions);
+        messageHTML = sanitizeHtml(req.body.message, textService.sanitizeOptions);
         messagePlain = htmlToText.fromString(req.body.message, { wordwrap: 80 });
       }
       delete req.body.message;

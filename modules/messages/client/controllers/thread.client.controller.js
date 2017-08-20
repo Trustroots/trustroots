@@ -138,7 +138,7 @@
       // Send a normal message with predefined content
       sendMessage(
         // This attribute must be whitelisted in `sanitizeOptions` at
-        // `modules/core/server/controllers/text-processor.server.controller.js`
+        // `modules/core/server/services/text.server.service.js`
         '<p data-hosting="' + reply + '">' +
           '<b><i>' +
             quickReplyMessage +
