@@ -17,14 +17,24 @@ var _ = require('lodash'),
  * @link https://github.com/punkave/sanitize-html
  */
 exports.sanitizeOptions = {
-  allowedTags: ['p', 'br', 'b', 'i', 'em', 'strong', 'u', 'a', 'li', 'ul', 'blockquote'],
+  allowedTags: [
+    'p',
+    'br',
+    'b',
+    'i',
+    'em',
+    'strong',
+    'u',
+    'a',
+    'li',
+    'ul',
+    'blockquote'
+  ],
   allowedAttributes: {
     'a': ['href'],
     // Used for messages text
     // at `modules/messages/client/controllers/thread.client.controller.js`
     'p': ['data-hosting']
-    // We don't currently allow img itself, but this would make sense if we did:
-    // 'img': [ 'src' ]
   },
   // If we would allow class attributes, you can limit which classes are allowed:
   // allowedClasses: {
@@ -35,13 +45,34 @@ exports.sanitizeOptions = {
     'strong': 'b',
     'em': 'i'
   },
-  // Don't allow empty <a> tags, such as: "<a href="http://trustroots.org"></a>"
   exclusiveFilter: function(frame) {
-    return frame.tag === 'a' && !frame.text.trim();
+    // Don't allow empty <a> tags, such as:
+    // - `<a href="http://trustroots.org"></a>`
+    // - `<a>http://trustroots.org</a>`
+    if (frame.tag === 'a' && (!frame.text.trim() || !_.has(frame, 'attribs.href'))) {
+      return true;
+    }
+
+    return false;
   },
-  selfClosing: ['img', 'br'],
+  selfClosing: ['br'],
   // URL schemes we permit
-  allowedSchemes: ['http', 'https', 'ftp', 'mailto', 'tel', 'irc', 'geo']
+  allowProtocolRelative: true, // Allows `//www.example.com`
+  allowedSchemesByTag: {
+    a: [
+      'http',
+      'https',
+      'ftp',
+      'sftp',
+      'tel',
+      'mailto',
+      'geo',
+      'irc',
+      'ge0', // Maps.me
+      'tg', // Telegram
+      'xmpp' // XMPP/Jabber
+    ]
+  }
 };
 
 
@@ -74,9 +105,6 @@ exports.html = function (content) {
     // Set it really to be empty string
     return '';
   }
-
-  // Some html is allowed
-  content = sanitizeHtml(content, exports.sanitizeOptions);
 
   // Turn URLs/emails/phonenumbers into links
   // @link https://github.com/gregjacobs/Autolinker.js
@@ -116,6 +144,9 @@ exports.html = function (content) {
     newWindow: false
   });
 
+  // Some html is allowed
+  content = sanitizeHtml(content, exports.sanitizeOptions);
+
   return content;
 };
 
@@ -152,6 +183,9 @@ exports.plainText = function (content, cleanWhitespace) {
     return '';
   }
 
+  // Replace HTML breaklines
+  content = content.replace(/<br\s*[\/]?>/gi, '\n');
+
   /*
    * Sanitize HTML tags AND HTML entities out
    * Decoding twice might look weird, but it's there for reason:
@@ -161,7 +195,8 @@ exports.plainText = function (content, cleanWhitespace) {
   content = sanitizeHtml(content, { allowedTags: [] });
   content = he.decode(content);
 
-  // Remove white space. Matches a single white space character, including space, tab, form feed, line feed.
+  // Remove white space.
+  // Matches a single white space character, including space, tab, form feed, line feed.
   if (cleanWhitespace === true) {
     content = content.replace(/\s/g, ' ');
   }
