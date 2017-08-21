@@ -131,7 +131,7 @@ function isValidCoordinate(coordinate, type) {
   }
 
   // How long coordinate digits are allowed?
-  var length = 15;
+  var length = 30;
 
   // Test with regexp
   var regexp = new RegExp('^(\\+|-)?(\\d\.\\d{1,' + length + '}|[1-8]\\d\.\\d{1,' + length + '}|' + range + '\\.0{1,' + length + '})$');
