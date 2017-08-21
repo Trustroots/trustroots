@@ -1,4 +1,4 @@
-<section class="board" tr-boards="'forestpath'">
+<section class="board" tr-boards="'nordiclights'">
   <div class="container">
     <div class="row">
       <div class="col-xs-12 text-center">
@@ -69,4 +69,19 @@
 
   </div><!-- /.container -->
 
+</section>
+
+<!-- Manifesto -->
+<section class="board board-primary board-inset" tr-boards="'jungleroad'" id="manifesto">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-offset-3 col-md-6 text-center lead font-brand-light">
+        <div ng-include="'/modules/pages/views/manifesto-text.client.partial.html'"></div>
+        <p ng-if="::!app.user">
+          <br><br>
+          <a ui-sref="signup" class="btn btn-lg btn-action btn-inverse">Join Trustroots</a>
+        </p>
+      </div>
+    </div>
+  </div>
 </section>
