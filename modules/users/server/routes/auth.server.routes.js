@@ -39,6 +39,7 @@ module.exports = function(app) {
   app.route('/api/auth/facebook').all(usersPolicy.isAllowed)
     .get(passport.authenticate('facebook', {
       scope: [
+        'public_profile',
         'email',
         'user_friends'
       ]
