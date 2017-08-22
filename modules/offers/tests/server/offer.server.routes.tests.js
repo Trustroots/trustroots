@@ -909,7 +909,7 @@ describe('Offer CRUD tests', function() {
 
           // Missing `southWestLng` paramter
           agent.get('/api/offers' +
-              '?northEastLat=25.1111111111111116' + // testing with 16 digits, 15 is allowed limit
+              '?northEastLat=25.' + '1'.repeat(30) + '2' + // testing with 31 digits, 30 is allowed limit
               '&northEastLng=25.598493303571427' +
               '&southWestLat=-20.49068931208608' +
               '&southWestLng=-12.986188616071427'
@@ -930,7 +930,7 @@ describe('Offer CRUD tests', function() {
 
           // Missing `southWestLng` paramter
           agent.get('/api/offers' +
-              '?northEastLat=25.111111111111111foo' + // `foo` starts at 16, 15 is the limit
+              '?northEastLat=25.' + '1'.repeat(30) + 'foo' + // `foo` starts at 31, 30 is the limit
               '&northEastLng=25.598493303571427' +
               '&southWestLat=-20.49068931208608' +
               '&southWestLng=-12.986188616071427'
