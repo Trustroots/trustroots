@@ -56,7 +56,11 @@ module.exports = function(app) {
 
   // Setting the github oauth routes
   app.route('/api/auth/github').all(usersPolicy.isAllowed)
-    .get(passport.authenticate('github'));
+    .get(passport.authenticate('github', {
+      scope: [
+        'user:email'
+      ]
+    }));
   app.route('/api/auth/github/callback').all(usersPolicy.isAllowed)
     .get(userAuthentication.oauthCallback('github'));
 
