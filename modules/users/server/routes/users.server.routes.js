@@ -8,7 +8,7 @@ var usersPolicy = require('../policies/users.server.policy'),
     userPassword = require('../controllers/users.password.server.controller'),
     userAuthentication = require('../controllers/users.authentication.server.controller');
 
-module.exports = function(app) {
+module.exports = function (app) {
 
   // Setting up the users profile api
   app.route('/api/users').all(usersPolicy.isAllowed)

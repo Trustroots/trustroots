@@ -20,7 +20,7 @@ var path = require('path'),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
 
-module.exports = function(job, agendaDone) {
+module.exports = function (job, agendaDone) {
 
   // Ignore very recently confirmed (i.e. signed up) users
   var emailConfirmedTimeAgo = moment().subtract(moment.duration(config.limits.welcomeSequence.first));
@@ -28,7 +28,7 @@ module.exports = function(job, agendaDone) {
   async.waterfall([
 
     // Find un-welcomed users
-    function(done) {
+    function (done) {
 
       User
         .find({
@@ -52,22 +52,22 @@ module.exports = function(job, agendaDone) {
         // Limit stops any crazy amounts of emails being processed at once
         // the rest would be processed in next round.
         .limit(50)
-        .exec(function(err, users) {
+        .exec(function (err, users) {
           done(err, users);
         });
 
     },
 
     // Send emails
-    function(users, done) {
+    function (users, done) {
       // No users to send emails to
       if (!users.length) {
         return done();
       }
 
-      async.eachSeries(users, function(user, callback) {
+      async.eachSeries(users, function (user, callback) {
 
-        emailService.sendWelcomeSequenceFirst(user, function(err) {
+        emailService.sendWelcomeSequenceFirst(user, function (err) {
           if (err) {
             console.error('Failed to send welcome sequence email 1/3.');
             return callback(err);
@@ -85,7 +85,7 @@ module.exports = function(job, agendaDone) {
                   welcomeSequenceStep: 1
                 }
               },
-              function(err) {
+              function (err) {
                 if (err) {
                   console.error('Failed to update user\'s `onboardingStepsDone`.');
                 }
@@ -94,13 +94,13 @@ module.exports = function(job, agendaDone) {
             );
           }
         });
-      }, function(err) {
+      }, function (err) {
         done(err);
       });
 
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       console.error(err);
     }

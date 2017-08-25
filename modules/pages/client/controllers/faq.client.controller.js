@@ -22,7 +22,7 @@
     function activate() {
 
       // Follow on which FAQ category we are at
-      $scope.$on('$stateChangeSuccess', function() {
+      $scope.$on('$stateChangeSuccess', function () {
         if ($state.current.name.substr(0, 4) === 'faq.') {
           vm.category = $state.current.name.replace('faq.', '');
           canSidebarBeSticky();
@@ -30,7 +30,7 @@
       });
 
       // Act when hash changes
-      $scope.$on('$locationChangeSuccess', function() {
+      $scope.$on('$locationChangeSuccess', function () {
         if ($location.hash() !== '') {
           highlightQuestion($location.hash());
         }
@@ -39,7 +39,7 @@
       // Determine sidebar's stickiness
       canSidebarBeSticky();
 
-      $timeout(function() {
+      $timeout(function () {
 
         // If hash is present on initial page load, open it
         if ($location.hash() !== '') {
@@ -60,7 +60,7 @@
      * don't let it stick
      */
     function canSidebarBeSticky() {
-      $timeout(function() {
+      $timeout(function () {
         if ($window.innerHeight <= angular.element('#faq-sidebar').height()) {
           vm.allowStickySidebar = false;
         }
@@ -77,7 +77,7 @@
       // Animation time at CSS is 1000ms
       if ($el.length) {
         $el.addClass('faq-question-flash');
-        $timeout(function() {
+        $timeout(function () {
           $el.removeClass('faq-question-flash');
         }, 1010);
       }

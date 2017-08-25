@@ -20,7 +20,7 @@
     /**
      * When contact removal modal signals that the contact was removed, remove it from this list as well
      */
-    $scope.$on('contactRemoved', function(event, removedContact) {
+    $scope.$on('contactRemoved', function (event, removedContact) {
       vm.contacts.splice(vm.contacts.indexOf(removedContact), 1);
     });
 

@@ -16,7 +16,7 @@ var path = require('path'),
 /**
  * Create a new thread reference
  */
-exports.createReferenceThread = function(req, res) {
+exports.createReferenceThread = function (req, res) {
 
   if (!req.user || (req.user && !req.user.public)) {
     return res.status(403).send({
@@ -35,7 +35,7 @@ exports.createReferenceThread = function(req, res) {
 
     // Make sure referenced thread exists and that UserFrom is participating in it
     // Figure out userTo-id (i.e. don't trust the client)
-    function(done) {
+    function (done) {
 
       Thread.findOne(
         {
@@ -45,7 +45,7 @@ exports.createReferenceThread = function(req, res) {
           ]
         },
         'userTo userFrom',
-        function(err, thread) {
+        function (err, thread) {
 
           if (err || !thread) {
             return res.status(400).send({
@@ -71,7 +71,7 @@ exports.createReferenceThread = function(req, res) {
     },
 
     // Make sure targeted user has actually sent messages to user who is leaving the reference
-    function(threadId, referenceUserTo, done) {
+    function (threadId, referenceUserTo, done) {
 
       Message.findOne(
         {
@@ -79,7 +79,7 @@ exports.createReferenceThread = function(req, res) {
           userTo: req.user._id
         },
         'userFrom userTo',
-        function(err, message) {
+        function (err, message) {
           // Handle errors or non-existing thread
           if (err || !message) {
             // Log
@@ -100,7 +100,7 @@ exports.createReferenceThread = function(req, res) {
     },
 
     // Save referenceThread
-    function(threadId, referenceUserTo, done) {
+    function (threadId, referenceUserTo, done) {
 
       var referenceThread = new ReferenceThread(req.body);
 
@@ -109,7 +109,7 @@ exports.createReferenceThread = function(req, res) {
       referenceThread.userTo = referenceUserTo;
       referenceThread.created = new Date(); // Ensure user doesn't try to set this
 
-      referenceThread.save(function(err, savedReferenceThread) {
+      referenceThread.save(function (err, savedReferenceThread) {
         // Handle errors
         if (err) {
           return res.status(400).send({
@@ -132,14 +132,14 @@ exports.createReferenceThread = function(req, res) {
             // (defined at the `ReferenceThread` model)
             reference: referenceThread.reference
           }
-        }, function() {
+        }, function () {
           done();
         });
 
       });
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       return res.status(400).send({
         message: errorService.getErrorMessage(err)
@@ -153,13 +153,13 @@ exports.createReferenceThread = function(req, res) {
 /**
  * Show the current Offer
  */
-exports.readReferenceThread = function(req, res) {
+exports.readReferenceThread = function (req, res) {
   res.json(req.referenceThread || {});
 };
 
 
 // Reference Thread reading middleware
-exports.readReferenceThreadById = function(req, res, next, userToId) {
+exports.readReferenceThreadById = function (req, res, next, userToId) {
 
   // Check if user is authenticated
   if (!req.user) {
@@ -178,33 +178,33 @@ exports.readReferenceThreadById = function(req, res, next, userToId) {
   async.waterfall([
 
     // Check if we have refference thread stored
-    function(done) {
+    function (done) {
       ReferenceThread.findOne({
         userTo: userToId,
         userFrom: req.user._id // Ensure we get only references we are allowed to read
       })
-      .sort('-created') // Latest first
-      .exec(function(err, referenceThread) {
-        if (err) return done(err);
+        .sort('-created') // Latest first
+        .exec(function (err, referenceThread) {
+          if (err) return done(err);
 
-        // Found, move on to the next middleware
-        if (referenceThread) {
-          req.referenceThread = referenceThread;
-          return next();
-        } else {
+          // Found, move on to the next middleware
+          if (referenceThread) {
+            req.referenceThread = referenceThread;
+            return next();
+          } else {
           // No existing reference thread found, move on to do more checks
-          done(null);
-        }
-      });
+            done(null);
+          }
+        });
     },
 
     // Since no pre-existing reference thread found,
     // check if authenticated user would be allowed to send reference to this user at all
-    function(done) {
+    function (done) {
       Message.findOne({
         userFrom: userToId,
         userTo: req.user._id
-      }, function(err, message) {
+      }, function (err, message) {
         if (err) return done(err);
 
         // Return 404, but also let client know if we would allow creating a referenceThread
@@ -215,7 +215,7 @@ exports.readReferenceThreadById = function(req, res, next, userToId) {
       });
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       return next(err);
     }

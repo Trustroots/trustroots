@@ -74,7 +74,7 @@
       scope: {
         trEditorOptions: '='
       },
-      link: function(scope, iElement, iAttrs, ngModel) {
+      link: function (scope, iElement, iAttrs, ngModel) {
 
         var angularIElement = angular.element(iElement);
 
@@ -83,7 +83,7 @@
         // Global MediumEditor
         ngModel.editor = new MediumEditor(iElement, scope.trEditorOptions);
 
-        ngModel.$render = function() {
+        ngModel.$render = function () {
           iElement.html(ngModel.$viewValue || '');
 
           var placeholder = ngModel.editor.getExtensionByName('placeholder');
@@ -92,7 +92,7 @@
           }
         };
 
-        ngModel.$isEmpty = function(value) {
+        ngModel.$isEmpty = function (value) {
           if (/[<>]/.test(value)) {
             return toInnerText(value).length === 0;
           } else if (value) {
@@ -117,7 +117,7 @@
           });
         }
 
-        scope.$watch('trEditorOptions', function(trEditorOptions) {
+        scope.$watch('trEditorOptions', function (trEditorOptions) {
           ngModel.editor.init(iElement, trEditorOptions);
         });
       }

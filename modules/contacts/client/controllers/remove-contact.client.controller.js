@@ -45,7 +45,7 @@
       // contact comes from the parent link()
       Contact.delete({ contactId: contactToRemove._id },
         // Success
-        function() {
+        function () {
 
           // Let other controllers know that this was removed, so that they can react
           $rootScope.$broadcast('contactRemoved', contactToRemove);
@@ -53,7 +53,7 @@
           $uibModalInstance.dismiss('cancel');
         },
         // Error
-        function() {
+        function () {
           vm.isLoading = false;
           $uibModalInstance.dismiss('cancel');
           messageCenterService.add('danger', 'Oops! Something went wrong. Try again later.', { timeout: 7000 });

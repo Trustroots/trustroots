@@ -28,7 +28,7 @@
 
 // TODO: Clean this out (deprecated)
 
-(function() {
+(function () {
   'use strict';
 
   angular

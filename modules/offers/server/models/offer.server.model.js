@@ -65,7 +65,7 @@ function getFuzzyLocation(location) {
  * @param {Array} property - Expects location coordinates in an array
  * @returns {Boolean} true on success, false on failure.
  */
-var validateLocation = function(property) {
+var validateLocation = function (property) {
   return (
     // Has to be an Array with 2 Numbers
     _.isArray(property) &&
@@ -85,7 +85,7 @@ var validateLocation = function(property) {
  * When `location` is modified, set also `locationFuzzy`
  * Keeps `location` unaltered.
  */
-var setLocation = function(value) {
+var setLocation = function (value) {
   this.locationFuzzy = getFuzzyLocation(value);
   return value;
 };

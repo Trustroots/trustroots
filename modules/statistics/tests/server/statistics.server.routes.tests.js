@@ -22,9 +22,9 @@ var app,
 /**
  * Statistics routes tests
  */
-describe('Statistics CRUD tests', function() {
+describe('Statistics CRUD tests', function () {
 
-  before(function(done) {
+  before(function (done) {
     // Get application
     app = express.init(mongoose);
     agent = request.agent(app);
@@ -103,23 +103,23 @@ describe('Statistics CRUD tests', function() {
     };
 
     // Save users and offers to the test db
-    user1.save(function(err, user1res) {
+    user1.save(function (err, user1res) {
       should.not.exist(err);
       offer.user = user1res._id;
       offer.status = 'yes';
-      new Offer(offer).save(function(err) {
+      new Offer(offer).save(function (err) {
         should.not.exist(err);
-        user2.save(function(err, user2res) {
+        user2.save(function (err, user2res) {
           should.not.exist(err);
           offer.user = user2res._id;
           offer.status = 'maybe';
-          new Offer(offer).save(function(err) {
+          new Offer(offer).save(function (err) {
             should.not.exist(err);
-            user3.save(function(err, user3res) {
+            user3.save(function (err, user3res) {
               should.not.exist(err);
               offer.user = user3res._id;
               offer.status = 'no';
-              new Offer(offer).save(function(err) {
+              new Offer(offer).save(function (err) {
                 should.not.exist(err);
                 return done();
               });
@@ -131,12 +131,12 @@ describe('Statistics CRUD tests', function() {
 
   });
 
-  it('should be able to read statistics when not logged in', function(done) {
+  it('should be able to read statistics when not logged in', function (done) {
 
     // Read statistics
     agent.get('/api/statistics')
       .expect(200)
-      .end(function(statsReadErr, statsReadRes) {
+      .end(function (statsReadErr, statsReadRes) {
 
         statsReadRes.body.connected.bewelcome.should.equal(1);
         statsReadRes.body.connected.couchsurfing.should.equal(2);
@@ -158,18 +158,18 @@ describe('Statistics CRUD tests', function() {
       });
   });
 
-  it('should be able to read statistics when logged in', function(done) {
+  it('should be able to read statistics when logged in', function (done) {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Read statistics
         agent.get('/api/statistics')
           .expect(200)
-          .end(function(statsReadErr, statsReadRes) {
+          .end(function (statsReadErr, statsReadRes) {
 
             statsReadRes.body.connected.bewelcome.should.equal(1);
             statsReadRes.body.connected.couchsurfing.should.equal(2);
@@ -193,9 +193,9 @@ describe('Statistics CRUD tests', function() {
       });
   });
 
-  after(function(done) {
+  after(function (done) {
     // Clean out
-    User.remove().exec(function() {
+    User.remove().exec(function () {
       Offer.remove().exec(done);
     });
   });

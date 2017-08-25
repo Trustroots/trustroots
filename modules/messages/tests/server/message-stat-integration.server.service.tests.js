@@ -42,7 +42,7 @@ describe('Integration of the MessageStat service', function () {
   var user1,
       user2;
 
-  beforeEach(function(done) {
+  beforeEach(function (done) {
 
     user1 = new User({
       firstName: 'Full',
@@ -68,9 +68,9 @@ describe('Integration of the MessageStat service', function () {
     });
 
     // save those users to mongoDB
-    user1.save(function(err) {
+    user1.save(function (err) {
       if (err) return done(err);
-      user2.save(function(err) {
+      user2.save(function (err) {
         if (err) return done(err);
         done();
       });
@@ -78,8 +78,8 @@ describe('Integration of the MessageStat service', function () {
   });
 
   // after each test removing all the messages and users (cleaning the database)
-  afterEach(function(done) {
-    Message.remove().exec(function() {
+  afterEach(function (done) {
+    Message.remove().exec(function () {
       User.remove().exec(done);
     });
   });

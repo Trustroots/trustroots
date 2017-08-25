@@ -16,12 +16,12 @@
     return {
       restrict: 'A',
       require: 'ngModel',
-      link: function(scope, elem, attr, ngModel) {
+      link: function (scope, elem, attr, ngModel) {
 
         var minlength = angular.isDefined(attr.minlength) ? attr.minlength : 1;
 
         // function(modelValue, viewValue) {
-        ngModel.$asyncValidators.username = function(modelValue) {
+        ngModel.$asyncValidators.username = function (modelValue) {
 
           var deferred = $q.defer();
 
@@ -31,12 +31,12 @@
               $timeout.cancel(delayedUsernameValidation);
             }
 
-            delayedUsernameValidation = $timeout(function() {
+            delayedUsernameValidation = $timeout(function () {
               delayedUsernameValidation = false;
               SignupValidation
                 .post({ username: modelValue })
                 .$promise
-                .then(function(results) {
+                .then(function (results) {
                   if (results && !results.valid) {
                     // Got result and it's negative
                     deferred.reject();

@@ -32,20 +32,20 @@ function randomHex() {
  * - not in list of illegal labels
  * - not begin or end with "."
  */
-var validateLabel = function(label) {
+var validateLabel = function (label) {
   return (label &&
           label.match(/[a-z]/) && // Should have at least one a-zA-Z (non case-insensitive regex)
           config.illegalStrings.indexOf(label.trim().toLowerCase()) < 0 &&
           label.charAt(0) !== '.' && // Don't start with `.`
           label.slice(-1) !== '.' // Don't end with `.`
-         );
+  );
 };
 
 /**
  * Validation function for `TagSchema.attribution_url`
  * @link https://www.npmjs.com/package/validator#validators
  */
-var validateURL = function(url) {
+var validateURL = function (url) {
   return !url || validator.isURL(url, {
     protocols: ['http', 'https'],
     require_tld: true,
@@ -63,7 +63,7 @@ var validateURL = function(url) {
  * @link https://en.wikipedia.org/wiki/Universally_unique_identifier#Variants_and_Versions
  * @link https://www.npmjs.com/package/validator#validators
  */
-var validateUUID = function(uuid) {
+var validateUUID = function (uuid) {
   return !uuid || validator.isUUID(uuid, 4);
 };
 
@@ -175,7 +175,7 @@ TagSchema.virtual('new').get(function () {
  */
 TagSchema.plugin(urlslugs('label', {
   field: 'slug',
-  generator: function(string) {
+  generator: function (string) {
     return speakingurl(string, {
       separator: '-', // char that replaces the whitespaces
       maintainCase: false, // maintain case (true, convert all chars to lower case (false)

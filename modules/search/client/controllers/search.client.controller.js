@@ -49,7 +49,7 @@
       }
 
       // Watch for changes at types filters
-      $scope.$watchCollection('search.filters.types', function(newTypesFilters, oldTypesFilters) {
+      $scope.$watchCollection('search.filters.types', function (newTypesFilters, oldTypesFilters) {
         if (!angular.equals(newTypesFilters, oldTypesFilters)) {
           // Save new value to cache
           FiltersService.set('types', newTypesFilters);
@@ -66,7 +66,7 @@
       });
 
       // Watch for changes at tribes filters
-      $scope.$watchCollection('search.filters.tribes', function(newTribeFilters, oldTribeFilters) {
+      $scope.$watchCollection('search.filters.tribes', function (newTribeFilters, oldTribeFilters) {
         if (!angular.equals(newTribeFilters, oldTribeFilters)) {
           // Save new value to cache
           FiltersService.set('tribes', newTribeFilters);
@@ -83,16 +83,16 @@
       });
 
       // `SearchMap` controller sends these signals down to this controller
-      $scope.$on('search.loadingOffer', function() {
+      $scope.$on('search.loadingOffer', function () {
         vm.offer = false;
         vm.loadingOffer = true;
       });
-      $scope.$on('search.previewOffer', function(event, offer) {
+      $scope.$on('search.previewOffer', function (event, offer) {
         vm.offer = offer;
         vm.loadingOffer = false;
         openSidebar('results');
       });
-      $scope.$on('search.closeOffer', function() {
+      $scope.$on('search.closeOffer', function () {
         vm.offer = false;
         vm.loadingOffer = false;
       });
@@ -117,7 +117,7 @@
 
       closeSidebar();
 
-      $timeout(function() {
+      $timeout(function () {
         // Focus to search input
         angular.element('#search-query').focus();
       });

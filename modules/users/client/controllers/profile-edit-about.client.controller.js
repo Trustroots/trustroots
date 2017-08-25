@@ -24,9 +24,9 @@
     // - Remove `http(s)://`
     // - Highlight username part
     vm.profileURL = $state
-                      .href('profile', { username: vm.user.username }, { absolute: true })
-                      .replace(/^(https?):\/\//, '')
-                      .replace(vm.user.username, '<strong>' + vm.user.username + '</strong>');
+      .href('profile', { username: vm.user.username }, { absolute: true })
+      .replace(/^(https?):\/\//, '')
+      .replace(vm.user.username, '<strong>' + vm.user.username + '</strong>');
 
     // Format user language list for Chosen selector
     decodeUserLanguages();
@@ -44,7 +44,7 @@
     function decodeUserLanguages() {
       var langs_arr = [];
       if (vm.user && vm.user.languages) {
-        vm.user.languages.forEach(function(key) {
+        vm.user.languages.forEach(function (key) {
           langs_arr[langs_arr.length] = { key: key, name: vm.languages[key] };
         });
       }
@@ -54,7 +54,7 @@
       if (!vm.user) return;
 
       var langs_arr = [];
-      vm.userLanguages.forEach(function(lang) {
+      vm.userLanguages.forEach(function (lang) {
         langs_arr[langs_arr.length] = lang.key;
       });
       vm.user.languages = langs_arr;
@@ -66,11 +66,11 @@
     function updateUserProfile(isValid) {
       encodeUserLanguages();
       if (isValid) {
-        vm.user.$update(function(response) {
+        vm.user.$update(function (response) {
           Authentication.user = response;
           $scope.$emit('userUpdated');
           messageCenterService.add('success', 'Profile updated.');
-        }, function(response) {
+        }, function (response) {
           messageCenterService.add('danger', response.data.message || 'Something went wrong. Please try again!', { timeout: 10000 });
         });
       } else {

@@ -28,7 +28,7 @@ function createMessageStat(message, done) {
  * update the MessageStat document in database with information
  * about the first reply
  */
-function addFirstReplyInfo (messageStat, message, done) {
+function addFirstReplyInfo(messageStat, message, done) {
   MessageStat.findOneAndUpdate({
     firstMessageUserFrom: message.userTo,
     firstMessageUserTo: message.userFrom,
@@ -41,7 +41,7 @@ function addFirstReplyInfo (messageStat, message, done) {
         - messageStat.firstMessageCreated.getTime()
     }
   })
-  .exec(done);
+    .exec(done);
 }
 
 /**
@@ -133,10 +133,10 @@ exports.updateMessageStat = function (message, callback) {
         })
         // Sort by the `created` field to find the first message
         // sent or received between these two users
-        .sort({ created: 1 })
-        .exec(function (err, firstMessage) {
-          return done(err, firstMessage);
-        });
+          .sort({ created: 1 })
+          .exec(function (err, firstMessage) {
+            return done(err, firstMessage);
+          });
       },
 
       // Create the MessageStat filling only the first message part
@@ -181,10 +181,10 @@ exports.updateMessageStat = function (message, callback) {
           userTo: messageStat.firstMessageUserFrom
         })
         // Sort by `created` to get the *first* reply
-        .sort({ created: 1 })
-        .exec(function (err, firstReply) {
-          return done(err, firstReply);
-        });
+          .sort({ created: 1 })
+          .exec(function (err, firstReply) {
+            return done(err, firstReply);
+          });
       },
 
       function (firstReply, done) {
@@ -241,10 +241,10 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
           $gt: new Date(timeNow - 90 * DAY)
         }
       })
-      .sort({ firstMessageCreated: -1 })
-      .exec(function (err, resp) {
-        return done(err, resp);
-      });
+        .sort({ firstMessageCreated: -1 })
+        .exec(function (err, resp) {
+          return done(err, resp);
+        });
     },
 
     /**

@@ -50,7 +50,7 @@
           selectClass: '@trSelectClass'
         },
 
-        link: function(scope, elem, attrs, ngModel) {
+        link: function (scope, elem, attrs, ngModel) {
           scope.val = {};
 
           var min = scope.min = moment(attrs.min || '1900-01-01');
@@ -81,7 +81,7 @@
             }
           });
 
-          function updateMonthOptions () {
+          function updateMonthOptions() {
             // Values begin at 1 to permit easier boolean testing
             scope.months = [];
 
@@ -102,7 +102,7 @@
             }
           }
 
-          function updateDateOptions () {
+          function updateDateOptions() {
             var minDate,
                 maxDate;
 
@@ -131,7 +131,7 @@
           }
 
           // ngModel -> view
-          ngModel.$render = function() {
+          ngModel.$render = function () {
             if (!ngModel.$viewValue) return;
 
             var m = moment(new Date(ngModel.$viewValue));

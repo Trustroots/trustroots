@@ -65,7 +65,7 @@
         return;
       }
       isPolling = true;
-      MessagesCount.get(function(data) {
+      MessagesCount.get(function (data) {
         isPolling = false;
 
         var newUnreadCount = (data && data.unread) ? parseInt(data.unread, 10) : 0;

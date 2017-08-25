@@ -18,19 +18,19 @@ var path = require('path'),
 /**
  * Forgot for reset password (forgot POST)
  */
-exports.forgot = function(req, res, next) {
+exports.forgot = function (req, res, next) {
   async.waterfall([
 
     // Generate random token
-    function(done) {
-      crypto.randomBytes(20, function(err, buffer) {
+    function (done) {
+      crypto.randomBytes(20, function (err, buffer) {
         var token = buffer.toString('hex');
         done(err, token);
       });
     },
 
     // Lookup user by username
-    function(token, done) {
+    function (token, done) {
 
       // Missing username, return error
       if (!req.body.username) {
@@ -46,7 +46,7 @@ exports.forgot = function(req, res, next) {
           { username: userHandle },
           { email: userHandle }
         ]
-      }, '-salt -password', function(err, user) {
+      }, '-salt -password', function (err, user) {
         if (!user) {
 
           // Report failure to reset to stats
@@ -58,7 +58,7 @@ exports.forgot = function(req, res, next) {
             tags: {
               status: 'failed:noUser'
             }
-          }, function() {
+          }, function () {
             // Return failure
             res.status(404).send({
               message: 'We could not find an account with that username or email. Make sure you have it spelled correctly.'
@@ -69,7 +69,7 @@ exports.forgot = function(req, res, next) {
           user.resetPasswordToken = token;
           user.resetPasswordExpires = Date.now() + (24 * 3600000); // 24 hours
 
-          user.save(function(err) {
+          user.save(function (err) {
             done(err, user);
           });
         }
@@ -78,8 +78,8 @@ exports.forgot = function(req, res, next) {
     },
 
     // Send email
-    function(user) {
-      emailService.sendResetPassword(user, function(err) {
+    function (user) {
+      emailService.sendResetPassword(user, function (err) {
 
         // Stop on errors
         if (err) {
@@ -97,7 +97,7 @@ exports.forgot = function(req, res, next) {
           tags: {
             status: 'emailSent'
           }
-        }, function() {
+        }, function () {
           // Return success
           res.send({
             message: 'We sent you an email with further instructions.'
@@ -107,7 +107,7 @@ exports.forgot = function(req, res, next) {
       });
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       return next(err);
     }
@@ -117,13 +117,13 @@ exports.forgot = function(req, res, next) {
 /**
  * Reset password GET from email token
  */
-exports.validateResetToken = function(req, res) {
+exports.validateResetToken = function (req, res) {
   User.findOne({
     resetPasswordToken: req.params.token,
     resetPasswordExpires: {
       $gt: Date.now()
     }
-  }, function(err, user) {
+  }, function (err, user) {
     if (!user) {
       return res.redirect('/password/reset/invalid');
     }
@@ -146,19 +146,19 @@ exports.validateResetToken = function(req, res) {
 /**
  * Reset password POST from email token
  */
-exports.reset = function(req, res) {
+exports.reset = function (req, res) {
   // Init Variables
   var passwordDetails = req.body;
 
   async.waterfall([
 
-    function(done) {
+    function (done) {
       User.findOne({
         resetPasswordToken: req.params.token,
         resetPasswordExpires: {
           $gt: Date.now()
         }
-      }, function(err, user) {
+      }, function (err, user) {
 
         // Can't find user (=invalid or expired token) or other error
         if (err || !user) {
@@ -180,7 +180,7 @@ exports.reset = function(req, res) {
         user.resetPasswordExpires = undefined;
 
         // Save user with new password
-        user.save(function(err) {
+        user.save(function (err) {
 
           // Error saving user
           if (err) {
@@ -196,8 +196,8 @@ exports.reset = function(req, res) {
     },
 
     // Authenticate
-    function(user, done) {
-      req.login(user, function(err) {
+    function (user, done) {
+      req.login(user, function (err) {
         // Could not authenticate
         if (err) {
           // Log the failure
@@ -215,11 +215,11 @@ exports.reset = function(req, res) {
     },
 
     // Send email
-    function(user, done) {
+    function (user, done) {
       emailService.sendResetPasswordConfirm({
         displayName: user.displayName,
         email: user.email
-      }, function(err) {
+      }, function (err) {
         // Just log errors, but don't mind about them
         // as this is not critical step
         if (err) {
@@ -234,11 +234,11 @@ exports.reset = function(req, res) {
     },
 
     // Return authenticated user
-    function(user) {
+    function (user) {
       return res.json(profileHandler.sanitizeProfile(user, user));
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       return res.status(400).send({
         message: 'Password reset failed.'
@@ -250,12 +250,12 @@ exports.reset = function(req, res) {
 /**
  * Change Password
  */
-exports.changePassword = function(req, res) {
+exports.changePassword = function (req, res) {
 
   async.waterfall([
 
     // Some simple validations before proceeding
-    function(done) {
+    function (done) {
 
       // Return error if no user
       if (!req.user) {
@@ -279,14 +279,14 @@ exports.changePassword = function(req, res) {
     },
 
     // Find currently logged in user
-    function(done) {
-      User.findById(req.user.id, function(err, user) {
+    function (done) {
+      User.findById(req.user.id, function (err, user) {
         done(err, user);
       });
     },
 
     // Authenticate with old password to check if it was correct
-    function(user, done) {
+    function (user, done) {
       if (user.authenticate(req.body.currentPassword)) {
         done(null, user);
       } else {
@@ -295,20 +295,20 @@ exports.changePassword = function(req, res) {
     },
 
     // Save user with new password
-    function(user, done) {
+    function (user, done) {
 
       user.password = req.body.newPassword;
 
-      user.save(function(err) {
+      user.save(function (err) {
         done(err, user);
       });
 
     },
 
     // Login again and return new user
-    function(user, done) {
+    function (user, done) {
 
-      req.login(user, function(err) {
+      req.login(user, function (err) {
         if (err) return done(err);
         done(null, user);
       });
@@ -316,8 +316,8 @@ exports.changePassword = function(req, res) {
     },
 
     // Send email
-    function(user, done) {
-      emailService.sendResetPasswordConfirm(user, function(err) {
+    function (user, done) {
+      emailService.sendResetPasswordConfirm(user, function (err) {
         if (err) return done(err);
         return res.send({
           user: user,
@@ -326,7 +326,7 @@ exports.changePassword = function(req, res) {
       });
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       res.status(err.status || 400).send({
         message: err.message || errorService.getErrorMessageByKey('default')

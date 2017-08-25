@@ -19,7 +19,7 @@
     .filter('plainTextLength', plainTextLengthFilter);
 
   function plainTextLengthFilter() {
-    return function(string) {
+    return function (string) {
       return string && angular.isString(string) ? String(string).replace(/&nbsp;/g, ' ').replace(/<[^>]+>/gm, '').trim().length : 0;
     };
   }

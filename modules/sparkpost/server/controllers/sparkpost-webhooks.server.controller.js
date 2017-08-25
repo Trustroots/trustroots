@@ -36,14 +36,14 @@ var _ = require('lodash'),
  *
  * @todo Prevent processing duplicate batches.
  */
-exports.receiveBatch = function(req, res) {
+exports.receiveBatch = function (req, res) {
   if (!_.isArray(req.body) || !req.body.length) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('bad-request')
     });
   }
 
-  async.map(req.body, exports.processAndSendMetrics, function(err) { // eslint-disable-line no-unused-vars
+  async.map(req.body, exports.processAndSendMetrics, function (err) { // eslint-disable-line no-unused-vars
     // @TODO what should happen when writing to stats api errors?
     res.status(200).end();
   });
@@ -52,7 +52,7 @@ exports.receiveBatch = function(req, res) {
 /**
  * Process event and send it to InfluxDB
  */
-exports.processAndSendMetrics = function(event, callback) {
+exports.processAndSendMetrics = function (event, callback) {
   // When adding a webhook, Sparkpost sends us `[{"msys":{}}]`
   if (!event.hasOwnProperty('msys') || _.isEmpty(event.msys)) {
     return callback();
@@ -109,13 +109,13 @@ exports.processAndSendMetrics = function(event, callback) {
   var eventType = _.get(event, 'msys.' + eventCategory + '.type');
 
   // Validate event category
-  tags.category = _.find(eventCategories, function(category) {
+  tags.category = _.find(eventCategories, function (category) {
     // Returns first match from array
     return category === eventCategory;
   });
 
   // Validate event type
-  tags.type = _.find(eventTypes, function(type) {
+  tags.type = _.find(eventTypes, function (type) {
     // Returns first match from array
     return type === eventType;
   });
@@ -166,7 +166,7 @@ exports.processAndSendMetrics = function(event, callback) {
 /**
  * Basic authentication middleware
  */
-exports.basicAuthenticate = function(req, res, next) {
+exports.basicAuthenticate = function (req, res, next) {
 
   // Get the basic auth credentials from the request.
   // The Authorization header is parsed and if the header is invalid,

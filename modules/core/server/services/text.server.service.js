@@ -45,7 +45,7 @@ exports.sanitizeOptions = {
     'strong': 'b',
     'em': 'i'
   },
-  exclusiveFilter: function(frame) {
+  exclusiveFilter: function (frame) {
     // Don't allow empty <a> tags, such as:
     // - `<a href="http://trustroots.org"></a>`
     // - `<a>http://trustroots.org</a>`

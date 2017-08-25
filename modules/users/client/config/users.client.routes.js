@@ -20,11 +20,11 @@
           SettingsService: 'SettingsService',
           InvitationService: 'InvitationService',
 
-          appSettings: function(SettingsService) {
+          appSettings: function (SettingsService) {
             return SettingsService.get();
           },
 
-          invitation: function(InvitationService) {
+          invitation: function (InvitationService) {
             return InvitationService.get();
           }
         },
@@ -51,7 +51,7 @@
         requiresAuth: true,
         controller:
           /* @ngInject */
-          function($state) {
+          function ($state) {
             $state.go('profile-edit.account');
           },
         controllerAs: 'profileSettings',
@@ -67,70 +67,70 @@
         controller: 'ProfileEditController',
         controllerAs: 'profileEdit'
       }).
-        state('profile-edit.about', {
-          url: '',
-          templateUrl: '/modules/users/views/profile/profile-edit-about.client.view.html',
-          controller: 'ProfileEditAboutController',
-          controllerAs: 'profileEditAbout',
-          requiresAuth: true,
-          data: {
-            pageTitle: 'Edit profile'
+      state('profile-edit.about', {
+        url: '',
+        templateUrl: '/modules/users/views/profile/profile-edit-about.client.view.html',
+        controller: 'ProfileEditAboutController',
+        controllerAs: 'profileEditAbout',
+        requiresAuth: true,
+        data: {
+          pageTitle: 'Edit profile'
+        }
+      }).
+      state('profile-edit.locations', {
+        url: '/locations',
+        templateUrl: '/modules/users/views/profile/profile-edit-locations.client.view.html',
+        controller: 'ProfileEditLocationsController',
+        controllerAs: 'profileEditLocations',
+        requiresAuth: true,
+        resolve: {
+          // A string value resolves to a service
+          SettingsService: 'SettingsService',
+          appSettings: function (SettingsService) {
+            return SettingsService.get();
           }
-        }).
-        state('profile-edit.locations', {
-          url: '/locations',
-          templateUrl: '/modules/users/views/profile/profile-edit-locations.client.view.html',
-          controller: 'ProfileEditLocationsController',
-          controllerAs: 'profileEditLocations',
-          requiresAuth: true,
-          resolve: {
-            // A string value resolves to a service
-            SettingsService: 'SettingsService',
-            appSettings: function(SettingsService) {
-              return SettingsService.get();
-            }
-          },
-          data: {
-            pageTitle: 'Edit your locations'
+        },
+        data: {
+          pageTitle: 'Edit your locations'
+        }
+      }).
+      state('profile-edit.photo', {
+        url: '/photo',
+        templateUrl: '/modules/users/views/profile/profile-edit-photo.client.view.html',
+        controller: 'ProfileEditPhotoController',
+        controllerAs: 'profileEditPhoto',
+        requiresAuth: true,
+        resolve: {
+          // A string value resolves to a service
+          SettingsService: 'SettingsService',
+          appSettings: function (SettingsService) {
+            return SettingsService.get();
           }
-        }).
-        state('profile-edit.photo', {
-          url: '/photo',
-          templateUrl: '/modules/users/views/profile/profile-edit-photo.client.view.html',
-          controller: 'ProfileEditPhotoController',
-          controllerAs: 'profileEditPhoto',
-          requiresAuth: true,
-          resolve: {
-            // A string value resolves to a service
-            SettingsService: 'SettingsService',
-            appSettings: function(SettingsService) {
-              return SettingsService.get();
-            }
-          },
-          data: {
-            pageTitle: 'Edit profile photo'
-          }
-        }).
-        state('profile-edit.networks', {
-          url: '/networks',
-          templateUrl: '/modules/users/views/profile/profile-edit-networks.client.view.html',
-          controller: 'ProfileEditNetworksController',
-          controllerAs: 'profileEditNetworks',
-          requiresAuth: true,
-          data: {
-            pageTitle: 'Edit Profile networks'
-          }
-        }).
-        state('profile-edit.account', {
-          url: '/account',
-          templateUrl: '/modules/users/views/profile/profile-edit-account.client.view.html',
-          controller: 'ProfileEditAccountController',
-          controllerAs: 'profileEditAccount',
-          requiresAuth: true,
-          data: {
-            pageTitle: 'Account'
-          }
-        }).
+        },
+        data: {
+          pageTitle: 'Edit profile photo'
+        }
+      }).
+      state('profile-edit.networks', {
+        url: '/networks',
+        templateUrl: '/modules/users/views/profile/profile-edit-networks.client.view.html',
+        controller: 'ProfileEditNetworksController',
+        controllerAs: 'profileEditNetworks',
+        requiresAuth: true,
+        data: {
+          pageTitle: 'Edit Profile networks'
+        }
+      }).
+      state('profile-edit.account', {
+        url: '/account',
+        templateUrl: '/modules/users/views/profile/profile-edit-account.client.view.html',
+        controller: 'ProfileEditAccountController',
+        controllerAs: 'profileEditAccount',
+        requiresAuth: true,
+        data: {
+          pageTitle: 'Account'
+        }
+      }).
 
       state('profile', {
         url: '/profile/:username',
@@ -145,19 +145,19 @@
           ContactByService: 'ContactByService',
           SettingsService: 'SettingsService',
 
-          appSettings: function(SettingsService) {
+          appSettings: function (SettingsService) {
             return SettingsService.get();
           },
 
-          profile: function(UserProfilesService, $stateParams) {
+          profile: function (UserProfilesService, $stateParams) {
             return UserProfilesService.get({
               username: $stateParams.username
             });
           },
 
           // Contact is loaded only after profile is loaded, because we need the profile ID
-          contact: function(ContactByService, profile, Authentication) {
-            return profile.$promise.then(function(profile) {
+          contact: function (ContactByService, profile, Authentication) {
+            return profile.$promise.then(function (profile) {
               if (Authentication.user && Authentication.user._id === profile._id) {
                 // No profile found or looking at own profile: no need to load contact
                 return;
@@ -171,8 +171,8 @@
           },
 
           // Contacts list is loaded only after profile is loaded, because we need the profile ID
-          contacts: function(ContactsListService, profile) {
-            return profile.$promise.then(function(profile) {
+          contacts: function (ContactsListService, profile) {
+            return profile.$promise.then(function (profile) {
               // Load contact
               return ContactsListService.query({
                 listUserId: profile._id
@@ -185,60 +185,60 @@
           pageTitle: 'Profile'
         }
       }).
-        state('profile.about', {
-          url: '',
-          templateUrl: '/modules/users/views/profile/profile-view-about.client.view.html',
-          requiresAuth: true,
-          noScrollingTop: true,
-          data: {
-            pageTitle: 'Profile'
-          }
-        }).
-        state('profile.accommodation', {
-          url: '/accommodation',
-          templateUrl: '/modules/offers/views/offer-host-view.client.view.html',
-          requiresAuth: true,
-          noScrollingTop: true,
-          data: {
-            pageTitle: 'Profile accommodation'
-          }
-        }).
-        state('profile.meet', {
-          url: '/meet',
-          templateUrl: '/modules/offers/views/offer-host-view.client.view.html',
-          requiresAuth: true,
-          noScrollingTop: true,
-          data: {
-            pageTitle: 'Profile meet'
-          }
-        }).
-        state('profile.overview', {
-          url: '/overview',
-          templateUrl: '/modules/users/views/profile/profile-view-basics.client.view.html',
-          requiresAuth: true,
-          noScrollingTop: true,
-          data: {
-            pageTitle: 'Profile overview'
-          }
-        }).
-        state('profile.contacts', {
-          url: '/contacts',
-          templateUrl: '/modules/contacts/views/list-contacts.client.view.html',
-          requiresAuth: true,
-          noScrollingTop: true,
-          data: {
-            pageTitle: 'Profile contacts'
-          }
-        }).
-        state('profile.tribes', {
-          url: '/tribes',
-          templateUrl: '/modules/users/views/profile/profile-view-tribes.client.view.html',
-          requiresAuth: true,
-          noScrollingTop: true,
-          data: {
-            pageTitle: 'Profile tribes'
-          }
-        }).
+      state('profile.about', {
+        url: '',
+        templateUrl: '/modules/users/views/profile/profile-view-about.client.view.html',
+        requiresAuth: true,
+        noScrollingTop: true,
+        data: {
+          pageTitle: 'Profile'
+        }
+      }).
+      state('profile.accommodation', {
+        url: '/accommodation',
+        templateUrl: '/modules/offers/views/offer-host-view.client.view.html',
+        requiresAuth: true,
+        noScrollingTop: true,
+        data: {
+          pageTitle: 'Profile accommodation'
+        }
+      }).
+      state('profile.meet', {
+        url: '/meet',
+        templateUrl: '/modules/offers/views/offer-host-view.client.view.html',
+        requiresAuth: true,
+        noScrollingTop: true,
+        data: {
+          pageTitle: 'Profile meet'
+        }
+      }).
+      state('profile.overview', {
+        url: '/overview',
+        templateUrl: '/modules/users/views/profile/profile-view-basics.client.view.html',
+        requiresAuth: true,
+        noScrollingTop: true,
+        data: {
+          pageTitle: 'Profile overview'
+        }
+      }).
+      state('profile.contacts', {
+        url: '/contacts',
+        templateUrl: '/modules/contacts/views/list-contacts.client.view.html',
+        requiresAuth: true,
+        noScrollingTop: true,
+        data: {
+          pageTitle: 'Profile contacts'
+        }
+      }).
+      state('profile.tribes', {
+        url: '/tribes',
+        templateUrl: '/modules/users/views/profile/profile-view-tribes.client.view.html',
+        requiresAuth: true,
+        noScrollingTop: true,
+        data: {
+          pageTitle: 'Profile tribes'
+        }
+      }).
 
       // When attempting to look at profile as non-authenticated user
       state('profile-signup', {
@@ -266,7 +266,7 @@
           // A string value resolves to a service
           SettingsService: 'SettingsService',
 
-          appSettings: function(SettingsService) {
+          appSettings: function (SettingsService) {
             return SettingsService.get();
           }
         },
@@ -285,7 +285,7 @@
           // A string value resolves to a service
           SettingsService: 'SettingsService',
 
-          appSettings: function(SettingsService) {
+          appSettings: function (SettingsService) {
             return SettingsService.get();
           }
         },

@@ -11,9 +11,9 @@
     // Config HTTP Error Handling
     // Set the httpProvider "not authorized" interceptor
     $httpProvider.interceptors.push(['$q', '$location', 'Authentication',
-      function($q, $location, Authentication) {
+      function ($q, $location, Authentication) {
         return {
-          responseError: function(rejection) {
+          responseError: function (rejection) {
             switch (rejection.status) {
               case 401:
                 // Deauthenticate the global user

@@ -14,8 +14,8 @@ var path = require('path'),
 /**
  * Get count of all public users
  */
-exports.getUsersCount = function(callback) {
-  User.count({ public: true }, function(err, count) {
+exports.getUsersCount = function (callback) {
+  User.count({ public: true }, function (err, count) {
     if (err) {
       callback(err);
       return;
@@ -27,7 +27,7 @@ exports.getUsersCount = function(callback) {
 /**
  * Get count of all public users
  */
-exports.getExternalSiteCount = function(site, callback) {
+exports.getExternalSiteCount = function (site, callback) {
   var validSites = ['bewelcome', 'couchsurfing', 'warmshowers', 'facebook', 'twitter', 'github'];
 
   // Validate site
@@ -59,7 +59,7 @@ exports.getExternalSiteCount = function(site, callback) {
       break;
   }
 
-  User.count(query, function(err, count) {
+  User.count(query, function (err, count) {
     if (err) {
       callback(err);
       return;
@@ -72,14 +72,14 @@ exports.getExternalSiteCount = function(site, callback) {
  * Get count of hosting offers
  * Callback will be called with Object `{ yes: Int, maybe: Int }`
  */
-exports.getOffersCount = function(callback) {
+exports.getOffersCount = function (callback) {
   Offer.aggregate({
     $group: {
       _id: '$status',
       count: { $sum: 1 }
     }
   },
-  function(err, counters) {
+  function (err, counters) {
     if (err) {
       callback(err);
       return;
@@ -106,7 +106,7 @@ exports.getOffersCount = function(callback) {
       maybe: 0
     };
     if (counters && counters.length > 0) {
-      counters.forEach(function(counter) {
+      counters.forEach(function (counter) {
         if (['yes', 'maybe'].indexOf(counter._id) !== -1) {
           values[counter._id] = counter.count || 0;
         }
@@ -119,12 +119,12 @@ exports.getOffersCount = function(callback) {
 /**
  * Get count of newsletter subscriptions
  */
-exports.getNewsletterSubscriptionsCount = function(callback) {
+exports.getNewsletterSubscriptionsCount = function (callback) {
   User.count({
     newsletter: true,
     public: true
   },
-  function(err, count) {
+  function (err, count) {
     if (err) {
       callback(err);
       return;
@@ -136,7 +136,7 @@ exports.getNewsletterSubscriptionsCount = function(callback) {
 /**
  * Get count of registered push notifications
  */
-exports.getPushRegistrationCount = function(callback) {
+exports.getPushRegistrationCount = function (callback) {
   User.count({
     public: true,
     pushRegistration: {
@@ -144,7 +144,7 @@ exports.getPushRegistrationCount = function(callback) {
       // `pushRegistration` array should not be empty
       $not: { $size: 0 }
     }
-  }, function(err, count) {
+  }, function (err, count) {
     if (err) {
       callback(err);
       return;
@@ -156,7 +156,7 @@ exports.getPushRegistrationCount = function(callback) {
 /**
  * Get all statistics
  */
-exports.getPublicStatistics = function(req, res) {
+exports.getPublicStatistics = function (req, res) {
 
   req.statistics = {
     connected: {},
@@ -166,8 +166,8 @@ exports.getPublicStatistics = function(req, res) {
   async.waterfall([
 
     // Total users
-    function(done) {
-      exports.getUsersCount(function(err, count) {
+    function (done) {
+      exports.getUsersCount(function (err, count) {
         if (err) {
           return done(err);
         }
@@ -177,8 +177,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // External sites - BeWelcome
-    function(done) {
-      exports.getExternalSiteCount('bewelcome', function(err, count) {
+    function (done) {
+      exports.getExternalSiteCount('bewelcome', function (err, count) {
         if (err) {
           return done(err);
         }
@@ -188,8 +188,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // External sites - Couchsurfing
-    function(done) {
-      exports.getExternalSiteCount('couchsurfing', function(err, count) {
+    function (done) {
+      exports.getExternalSiteCount('couchsurfing', function (err, count) {
         if (err) {
           return done(err);
         }
@@ -199,8 +199,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // External sites - Warmshowers
-    function(done) {
-      exports.getExternalSiteCount('warmshowers', function(err, count) {
+    function (done) {
+      exports.getExternalSiteCount('warmshowers', function (err, count) {
         if (err) {
           return done(err);
         }
@@ -210,8 +210,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // External sites - Facebook
-    function(done) {
-      exports.getExternalSiteCount('facebook', function(err, count) {
+    function (done) {
+      exports.getExternalSiteCount('facebook', function (err, count) {
         if (err) {
           return done(err);
         }
@@ -221,8 +221,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // External sites - Twitter
-    function(done) {
-      exports.getExternalSiteCount('twitter', function(err, count) {
+    function (done) {
+      exports.getExternalSiteCount('twitter', function (err, count) {
         if (err) {
           return done(err);
         }
@@ -232,8 +232,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // External sites - GitHub
-    function(done) {
-      exports.getExternalSiteCount('github', function(err, count) {
+    function (done) {
+      exports.getExternalSiteCount('github', function (err, count) {
         if (err) {
           return done(err);
         }
@@ -243,8 +243,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // Newsletter subscribers
-    function(done) {
-      exports.getNewsletterSubscriptionsCount(function(err, count) {
+    function (done) {
+      exports.getNewsletterSubscriptionsCount(function (err, count) {
         if (err) {
           return done(err);
         }
@@ -254,8 +254,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // Hosting stats
-    function(done) {
-      exports.getOffersCount(function(err, counter) {
+    function (done) {
+      exports.getOffersCount(function (err, counter) {
         if (err) {
           return done(err);
         }
@@ -267,7 +267,7 @@ exports.getPublicStatistics = function(req, res) {
 
     // Returns: 'git rev-parse HEAD'
     // @link https://www.npmjs.com/package/git-rev
-    function(done) {
+    function (done) {
       git.long(function (hash) {
         req.statistics.commit = hash || '';
         done(null);
@@ -275,12 +275,12 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // Done!
-    function() {
+    function () {
       return res.json(req.statistics);
     }
 
   ],
-  function(err) {
+  function (err) {
     if (err) {
       res.status(400).send({
         message: errorService.getErrorMessage(err)

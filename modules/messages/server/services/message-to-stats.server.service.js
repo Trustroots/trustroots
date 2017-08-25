@@ -148,8 +148,8 @@ module.exports.process = function (message, callback) {
           }
         ]
       })
-      .sort({ created: 1 })
-      .exec(done);
+        .sort({ created: 1 })
+        .exec(done);
     },
 
     function readFirstReply(firstMessage, done) {
@@ -174,10 +174,10 @@ module.exports.process = function (message, callback) {
           userTo: firstMessage.userFrom,
           userFrom: firstMessage.userTo
         })
-        .sort({ created: 1 })
-        .exec(function (err, firstReply) {
-          return done(err, firstMessage, firstReply);
-        });
+          .sort({ created: 1 })
+          .exec(function (err, firstReply) {
+            return done(err, firstMessage, firstReply);
+          });
       } else {
         return done(null, firstMessage, null);
       }

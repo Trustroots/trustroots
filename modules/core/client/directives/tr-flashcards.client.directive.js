@@ -25,7 +25,7 @@
                 '  <p class="tr-flashcards-title" ng-bind="::flashTitle"></p>' +
                 '  <p class="tr-flashcards-content" ng-bind="::flashContent"></p>' +
                 '</a>',
-      link: function(scope) {
+      link: function (scope) {
 
         var flashcards = [{
           title: 'Make sure your profile is complete',

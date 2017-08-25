@@ -21,7 +21,7 @@ var _ = require('lodash'),
     agenda = require(path.resolve('./config/lib/agenda')),
     templateDir = path.resolve('./modules/core/server/views/facebook-notifications');
 
-exports.notifyMessagesUnread = function(userFrom, userTo, notification, callback) {
+exports.notifyMessagesUnread = function (userFrom, userTo, notification, callback) {
 
   // Lodash works better with native objects rather than Mongo objects
   userFrom = userFrom.toObject();
@@ -65,7 +65,7 @@ exports.notifyMessagesUnread = function(userFrom, userTo, notification, callback
 /**
  * Are Facebook notifications enabled?
  */
-exports.isNotificationsEnabled = function() {
+exports.isNotificationsEnabled = function () {
   return _.has(config, 'facebook.clientID') &&
          _.has(config, 'facebook.clientSecret') &&
          _.get(config, 'facebook.notificationsEnabled');
@@ -75,16 +75,16 @@ exports.isNotificationsEnabled = function() {
  * Can user be notified via Facebook?
  * Requires Facebook connection to be present with `id` and `accessToken` params
  */
-exports.canNotifyUser = function(user) {
+exports.canNotifyUser = function (user) {
   return _.has(user, 'additionalProvidersData.facebook.id') &&
          _.has(user, 'additionalProvidersData.facebook.accessToken');
 };
 
-exports.renderNotification = function(templateName, params, callback) {
+exports.renderNotification = function (templateName, params, callback) {
 
   var templatePath = path.join(templateDir, templateName + '.server.view.html');
 
-  render(templatePath, params, function(err, renderedTemplate) {
+  render(templatePath, params, function (err, renderedTemplate) {
     if (err) return callback(err);
 
     // Remove white space
@@ -100,7 +100,7 @@ exports.renderNotification = function(templateName, params, callback) {
     // there are promises inside render(), need to execute callback in
     // nextTick() so callback can safely throw exceptions
     // see https://github.com/caolan/async/issues/1150
-    async.nextTick(function() {
+    async.nextTick(function () {
       if (err) return callback(err);
 
       // Params passed on for the Agenda job
@@ -114,8 +114,8 @@ exports.renderNotification = function(templateName, params, callback) {
   });
 };
 
-exports.renderNotificationAndSend = function(templateName, params, callback) {
-  exports.renderNotification(templateName, params, function(err, notification) {
+exports.renderNotificationAndSend = function (templateName, params, callback) {
+  exports.renderNotification(templateName, params, function (err, notification) {
     if (err) return callback(err);
     // Add to Agenda queue
     agenda.now('send facebook notification', notification, callback);

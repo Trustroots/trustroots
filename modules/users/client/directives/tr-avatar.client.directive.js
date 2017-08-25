@@ -26,7 +26,7 @@
    * </pre>
    */
   angular.module('users').directive('trAvatar', ['$location',
-    function($location) {
+    function ($location) {
 
       // Options
       var defaultSize = 256,
@@ -55,7 +55,7 @@
         scope: {
           user: '=user'
         },
-        controller: ['$scope', function($scope) {
+        controller: ['$scope', function ($scope) {
 
           $scope.avatar = defaultAvatar;
           $scope.size = defaultSize;
@@ -112,11 +112,11 @@
             }
           } // determineSource()
 
-          $scope.$watch('user.avatarSource', function() {
+          $scope.$watch('user.avatarSource', function () {
             determineSource();
           });
 
-          $scope.$watch('user.updated', function() {
+          $scope.$watch('user.updated', function () {
             determineSource();
           });
 

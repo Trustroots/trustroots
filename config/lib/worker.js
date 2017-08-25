@@ -8,12 +8,12 @@ var path = require('path'),
 
 var agenda;
 
-exports.start = function(options, callback) {
+exports.start = function (options, callback) {
 
   // Don't initialise Agenda outisde `start()`, because we might miss `ready` event otherwise.
   agenda = require(path.resolve('./config/lib/agenda'));
 
-  agenda.on('ready', function() {
+  agenda.on('ready', function () {
 
     // Define jobs
 
@@ -100,7 +100,7 @@ exports.start = function(options, callback) {
   });
 
   // Log finished jobs
-  agenda.on('success', function(job) {
+  agenda.on('success', function (job) {
     if (process.env.NODE_ENV !== 'test') {
 
       var statsObject = {
@@ -116,7 +116,7 @@ exports.start = function(options, callback) {
       };
 
       // Send job failure to stats servers
-      statService.stat(statsObject, function() {
+      statService.stat(statsObject, function () {
         // Log also to console
         if (process.env.NODE_ENV !== 'test') {
           console.log('[Worker] Agenda job [%s] %s finished.',
@@ -127,7 +127,7 @@ exports.start = function(options, callback) {
   });
 
   // Error reporting and retry logic
-  agenda.on('fail', function(err, job) {
+  agenda.on('fail', function (err, job) {
 
     var extraMessage = '';
 
@@ -158,7 +158,7 @@ exports.start = function(options, callback) {
     };
 
     // Send job failure to stats servers
-    statService.stat(statsObject, function() {
+    statService.stat(statsObject, function () {
       // Log also to console
 
       if (process.env.NODE_ENV !== 'test') {
@@ -176,20 +176,20 @@ exports.start = function(options, callback) {
  * Attempt to unlock Agenda jobs that were stuck due server restart
  * See https://github.com/agenda/agenda/issues/410
  */
-exports.unlockAgendaJobs = function(callback) {
+exports.unlockAgendaJobs = function (callback) {
 
   if (process.env.NODE_ENV !== 'test') {
     console.log('[Worker] Attempting to unlock locked Agenda jobs...');
   }
 
   // Use connect method to connect to the server
-  MongoClient.connect(config.db.uri, function(err, db) {
+  MongoClient.connect(config.db.uri, function (err, db) {
     if (err) {
       console.error(err);
       return callback(err);
     }
 
-  // agenda.on('ready', function() {
+    // agenda.on('ready', function() {
 
     // Re-use Agenda's MongoDB connection
     // var agendaJobs = agenda._mdb.collection('agendaJobs');
@@ -230,7 +230,7 @@ exports.unlockAgendaJobs = function(callback) {
 /**
  * Used for testing
  */
-exports.removeExitListeners = function() {
+exports.removeExitListeners = function () {
   process.removeListener('SIGTERM', gracefulExit);
   process.removeListener('SIGINT', gracefulExit);
 };
@@ -248,7 +248,7 @@ function addExitListeners() {
  */
 function gracefulExit() {
   console.log('[Worker] Stopping Agenda...');
-  agenda.stop(function() {
+  agenda.stop(function () {
     console.log('[Worker] Agenda stopped.');
     process.exit(0);
   });

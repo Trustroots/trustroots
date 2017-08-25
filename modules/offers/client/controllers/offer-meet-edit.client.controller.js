@@ -27,7 +27,7 @@
     function activate() {
 
       // Make sure offer is there
-      offer.$promise.then(function() {
+      offer.$promise.then(function () {
 
         vm.offer = offer;
 
@@ -40,7 +40,7 @@
 
       },
       // Could not load offer
-      function() {
+      function () {
         vm.offer = false;
       });
 
@@ -60,7 +60,7 @@
 
       var offerId = offer._id || false;
 
-      offer.$update(function() {
+      offer.$update(function () {
         // Done!
         $analytics.eventTrack('offer-modified', {
           category: 'offer.meet.update',
@@ -75,10 +75,10 @@
         } else {
           $state.go('offer.meet.list');
         }
-      }, function(err) {
+      }, function (err) {
         var errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
         messageCenterService.add('danger', errorMessage);
-      }).finally(function() {
+      }).finally(function () {
         vm.isLoading = false;
       });
 

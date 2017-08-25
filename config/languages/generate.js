@@ -119,7 +119,7 @@ function collectLanguages() {
   var languagesOrig = require('./languages_orig.json'),
       languagesNew = {};
 
-  _.forEach(languagesOrig, function(language) {
+  _.forEach(languagesOrig, function (language) {
 
     // Pick a key
     // Most of the time `iso_639_2b` is what we need but it's not always available
@@ -164,7 +164,7 @@ function generate(targetFile) {
   var languages = collectLanguages(),
       languagesString = JSON.stringify(languages);
 
-  fs.writeFile(targetFile, languagesString, function(err) {
+  fs.writeFile(targetFile, languagesString, function (err) {
     if (err) {
       console.error('Failed saving languages to file `' + targetFile + '`');
       console.error(err);

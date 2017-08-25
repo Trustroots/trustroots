@@ -6,7 +6,7 @@
 var path = require('path'),
     facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service'));
 
-module.exports = function(app) {
+module.exports = function (app) {
   // Root routing
   var core = require('../controllers/core.server.controller'),
       path = require('path'),

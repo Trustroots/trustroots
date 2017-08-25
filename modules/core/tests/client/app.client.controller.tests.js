@@ -32,7 +32,7 @@
 
       // Mock settings
       SettingsFactory = {
-        get: function() {
+        get: function () {
           return {};
         }
       };
@@ -40,7 +40,7 @@
 
       // Mock languages
       Languages = {
-        get: function() {
+        get: function () {
           return {};
         }
       };

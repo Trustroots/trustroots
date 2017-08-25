@@ -18,7 +18,7 @@ var path = require('path'),
  * Globals
  */
 
-describe('Migration of Messages: notified => notificationCount', function() {
+describe('Migration of Messages: notified => notificationCount', function () {
 
   var users;
 
@@ -38,7 +38,7 @@ describe('Migration of Messages: notified => notificationCount', function() {
 
   // delete all the users and messages
   afterEach(function (done) {
-    User.remove().exec(function(err) {
+    User.remove().exec(function (err) {
       if (err) return done(err);
       Message.remove().exec(done);
     });

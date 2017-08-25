@@ -39,7 +39,7 @@
       };
 
       // Make sure offer is there
-      offers.$promise.then(function() {
+      offers.$promise.then(function () {
 
         if (angular.isArray(offers) && offers.length) {
           vm.offer = new OffersService(angular.extend(defaultOfferConfig, offers[0]));
@@ -54,7 +54,7 @@
 
 
       },
-      function(err) {
+      function (err) {
 
         // No previous offer, fill in defaults
         if (err && err.status === 404) {
@@ -77,10 +77,10 @@
 
       })
       // Always execute this on both error and success
-      .finally(function() {
-        setStatusByURL();
-        vm.isLoading = false;
-      });
+        .finally(function () {
+          setStatusByURL();
+          vm.isLoading = false;
+        });
 
     }
 
@@ -90,8 +90,8 @@
      * tile positions properly until it's visible in DOM
      */
     function invalidateMapSize() {
-      $timeout(function() {
-        leafletData.getMap().then(function(map) {
+      $timeout(function () {
+        leafletData.getMap().then(function (map) {
           // @link http://leafletjs.com/reference-1.2.0.html#map-invalidatesize
           map.invalidateSize(false);
         });

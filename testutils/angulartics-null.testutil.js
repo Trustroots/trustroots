@@ -12,20 +12,20 @@
    * @name angulartics.null
    */
   angular.module('angulartics.null', ['angulartics'])
-  .config(['$analyticsProvider', function ($analyticsProvider) {
+    .config(['$analyticsProvider', function ($analyticsProvider) {
 
-    /* eslint-disable no-use-before-define */
+      /* eslint-disable no-use-before-define */
 
-    $analyticsProvider.registerPageTrack(function() {
-      // Do nothing, don't even pollute console.log
-    });
+      $analyticsProvider.registerPageTrack(function () {
+        // Do nothing, don't even pollute console.log
+      });
 
-    $analyticsProvider.registerEventTrack(function() {
-      // Do nothing, don't even pollute console.log
-    });
+      $analyticsProvider.registerEventTrack(function () {
+        // Do nothing, don't even pollute console.log
+      });
 
-    /* eslint-enable no-use-before-define */
+      /* eslint-enable no-use-before-define */
 
-  }]);
+    }]);
 
 }(angular));

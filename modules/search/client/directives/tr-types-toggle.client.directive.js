@@ -63,7 +63,7 @@
        */
       function activate() {
         if ($scope.types && $scope.types.length) {
-          angular.forEach($scope.types, function(type) {
+          angular.forEach($scope.types, function (type) {
             vm.toggles[type] = true;
           });
         }
@@ -75,7 +75,7 @@
        */
       function onToggleChange() {
         var types = [];
-        angular.forEach(vm.toggles, function(active, type) {
+        angular.forEach(vm.toggles, function (active, type) {
           if (active) {
             types.push(type);
           }
@@ -103,7 +103,7 @@
           vm.toggles = {};
           if (newTypes && newTypes.length) {
             // Loop trough new values and set toggles on for requested types
-            angular.forEach(newTypes, function(type) {
+            angular.forEach(newTypes, function (type) {
               vm.toggles[type.id] = true;
             });
           }

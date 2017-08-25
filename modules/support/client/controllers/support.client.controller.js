@@ -52,10 +52,10 @@
 
       var supportRequest = new SupportService(vm.request);
 
-      supportRequest.$save(function() {
+      supportRequest.$save(function () {
         vm.success = true;
         vm.isLoading = false;
-      }, function(err) {
+      }, function (err) {
         vm.isLoading = false;
         messageCenterService.add('danger', err.message || 'Something went wrong. Please try again.', { timeout: 20000 });
       });

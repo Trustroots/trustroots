@@ -38,7 +38,7 @@
       $window.fbAsyncInit = fbAsyncInit;
 
       // Initialize the `<script>`
-      (function(d) {
+      (function (d) {
         var js,
             id = 'facebook-jssdk',
             fjs = d.getElementsByTagName('script')[0];

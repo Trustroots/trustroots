@@ -44,7 +44,7 @@ module.exports = function (job, agendaDone) {
     },
 
     // Get number of users who have push notifications enabled
-    function(done) {
+    function (done) {
       statistics.getPushRegistrationCount(function (err, pushRegistrationCount) {
         if (err) {
           log('error', 'Daily statistics: failed fetching push registration count.', err);
@@ -65,7 +65,7 @@ module.exports = function (job, agendaDone) {
       });
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       log('error', 'Daily statistics error', err);
     }

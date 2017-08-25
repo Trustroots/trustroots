@@ -30,53 +30,53 @@
       vm.isLoading = true;
 
       $http.post('/api/auth/signin', vm.credentials)
-      .then(
-        function(response) { // On success function
-          vm.isLoading = false;
+        .then(
+          function (response) { // On success function
+            vm.isLoading = false;
 
-          // If successful we assign the data to the global user model
-          Authentication.user = response.data;
-          $scope.$emit('userUpdated');
+            // If successful we assign the data to the global user model
+            Authentication.user = response.data;
+            $scope.$emit('userUpdated');
 
-          // Attach user to $analytics calls from now on
-          $analytics.setUsername(Authentication.user._id);
+            // Attach user to $analytics calls from now on
+            $analytics.setUsername(Authentication.user._id);
 
-          $analytics.eventTrack('login.success', {
-            category: 'authentication',
-            label: 'Login success'
-          });
+            $analytics.eventTrack('login.success', {
+              category: 'authentication',
+              label: 'Login success'
+            });
 
-          // Initialize FB SDK
-          Facebook.init();
+            // Initialize FB SDK
+            Facebook.init();
 
-          // Initialize the push service if available
-          // It will check if user intended to enable push for this browser
-          // and setup the service-worker and backend registration accordingly
-          push.init();
+            // Initialize the push service if available
+            // It will check if user intended to enable push for this browser
+            // and setup the service-worker and backend registration accordingly
+            push.init();
 
-          // Redirect to where we were left off before sign-in page
-          // See modules/core/client/controllers/main.client.controller.js
-          if (vm.continue) {
-            var stateTo = $rootScope.signinState || 'search',
-                stateToParams = $rootScope.signinStateParams || {};
-            delete $rootScope.signinState;
-            delete $rootScope.signinStateParams;
-            $state.go(stateTo, stateToParams);
-          } else {
+            // Redirect to where we were left off before sign-in page
+            // See modules/core/client/controllers/main.client.controller.js
+            if (vm.continue) {
+              var stateTo = $rootScope.signinState || 'search',
+                  stateToParams = $rootScope.signinStateParams || {};
+              delete $rootScope.signinState;
+              delete $rootScope.signinStateParams;
+              $state.go(stateTo, stateToParams);
+            } else {
             // Redirect to the search page
-            $state.go('search.map');
+              $state.go('search.map');
+            }
+          },
+          function (error) { // On error function
+            vm.isLoading = false;
+            vm.authError = true;
+            messageCenterService.add('danger', error.data.message || 'Something went wrong.');
+            $analytics.eventTrack('login.failed', {
+              category: 'authentication',
+              label: 'Login failed'
+            });
           }
-        },
-        function(error) { // On error function
-          vm.isLoading = false;
-          vm.authError = true;
-          messageCenterService.add('danger', error.data.message || 'Something went wrong.');
-          $analytics.eventTrack('login.failed', {
-            category: 'authentication',
-            label: 'Login failed'
-          });
-        }
-      );
+        );
     }
 
   }

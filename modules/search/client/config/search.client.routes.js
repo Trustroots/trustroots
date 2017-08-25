@@ -25,7 +25,7 @@
 
           // A string value resolves to a service
           OffersService: 'OffersService',
-          offer: function($stateParams, OffersService) {
+          offer: function ($stateParams, OffersService) {
             if ($stateParams.offer && $stateParams.offer.length === 24) {
               return OffersService.get({
                 offerId: $stateParams.offer
@@ -37,7 +37,7 @@
 
           // A string value resolves to a service
           TribeService: 'TribeService',
-          tribe: function(TribeService, $stateParams) {
+          tribe: function (TribeService, $stateParams) {
             if ($stateParams.tribe && $stateParams.tribe.length) {
               return TribeService.get({
                 tribeSlug: $stateParams.tribe

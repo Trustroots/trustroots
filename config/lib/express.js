@@ -54,7 +54,7 @@ module.exports.initLocalVariables = function (app) {
   // Assets
   if (process.env.NODE_ENV !== 'production') {
     app.locals.jsFiles = _.concat(config.files.client.js, 'dist/uib-templates.js');
-    app.locals.cssFiles = _.map(config.files.client.css, function(file) { return file.replace('/client', ''); });
+    app.locals.cssFiles = _.map(config.files.client.css, function (file) { return file.replace('/client', ''); });
   }
 
   // Get 'git rev-parse --short HEAD' (the latest git commit hash) to use as a cache buster
