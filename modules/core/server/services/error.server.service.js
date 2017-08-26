@@ -84,7 +84,7 @@ exports.errorResponse = function (err, req, res, next) {
   // Do content negotiation and return a message
   return res.status(err.status || 500).format({
     'text/html': function () {
-      res.render('modules/core/server/views/500');
+      res.render('500.server.view.html');
     },
     'application/json': function () {
       res.json(errorResponse);

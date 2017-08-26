@@ -14,9 +14,7 @@ var path = require('path'),
     render = require(path.resolve('./config/lib/render')),
     agenda = require(path.resolve('./config/lib/agenda')),
     config = require(path.resolve('./config/config')),
-    url = (config.https ? 'https' : 'http') + '://' + config.domain,
-    htmlTemplateDir = path.resolve('./modules/core/server/views/email-templates'),
-    textTemplateDir = path.resolve('./modules/core/server/views/email-templates-text');
+    url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
 exports.sendMessagesUnread = function (userFrom, userTo, notification, callback) {
 
@@ -456,10 +454,12 @@ exports.renderEmail = function (templateName, params, callback) {
 
   var templatePaths = {};
 
-  templatePaths.text = path.join(textTemplateDir, templateName + '.server.view.html');
+  // `./modules/core/server/views/email-templates-text`
+  templatePaths.text = path.join('email-templates-text', templateName + '.server.view.html');
 
   if (!params.skipHtmlTemplate) {
-    templatePaths.html = path.join(htmlTemplateDir, templateName + '.server.view.html');
+    // `./modules/core/server/views/email-templates`
+    templatePaths.html = path.join('email-templates', templateName + '.server.view.html');
   }
 
   // Rendering in parallel leads to an error. maybe because

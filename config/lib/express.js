@@ -20,7 +20,7 @@ var _ = require('lodash'),
     helmet = require('helmet'),
     expectCt = require('expect-ct'),
     flash = require('connect-flash'),
-    render = require('./render'),
+    nunjucks = require('nunjucks'),
     git = require('git-rev'),
     path = require('path'),
     paginate = require('express-paginate'),
@@ -148,12 +148,27 @@ module.exports.initMiddleware = function (app) {
  * Configure view engine
  */
 module.exports.initViewEngine = function (app) {
+
+  // Set Nunjucks as the template engine
+  // https://mozilla.github.io/nunjucks/
+  nunjucks.configure('./modules/core/server/views', {
+    express: app,
+    watch: false,
+    noCache: true
+  });
+
+  // app.engine('nunjucks', nunjucks);
+  app.set('view engine', 'html');
+  app.set('views', './modules/core/server/views');
+
+  /*
   // Set swig as the template engine
   app.engine('server.view.html', render);
 
   // Set views path and view engine
   app.set('view engine', 'server.view.html');
   app.set('views', './');
+  */
 };
 
 /**

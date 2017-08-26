@@ -1,4 +1,4 @@
-{% extends 'email.server.view.html' %}
+{% extends './email.server.view.html' %}
 
 {% block content %}
 
@@ -63,8 +63,10 @@
   </tr>
   <!-- // MODULE ROW -->
 
-  {% include 'partials/button.server.view.html' with {'buttonUrl': urlConfirm, 'buttonTitle': 'See connection'} %}
+  {% from "./partials/button.server.view.html" import button %}
+  {{ button(urlConfirm, 'See connection') }} %}
 
-  {% include 'partials/copypasteurl.server.view.html' with {'url': urlConfirmPlainText} %}
+  {% from "./partials/copypasteurl.server.view.html" import copyPasteUrl %}
+  {{ copyPasteUrl(urlConfirmPlainText) }}
 
-{% endblock %}
+{% endblock content %}

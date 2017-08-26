@@ -1,4 +1,4 @@
-{% extends 'email.server.view.html' %}
+{% extends './email.server.view.html' %}
 
 {% block content %}
 
@@ -44,8 +44,9 @@
                                                 <p>You have one unread message from <strong><a href="{{urlUserFromProfile}}">{{userFromName}}</a></strong> at Trustroots.</p>
                                               {% endif %}
 
+                                              {% from "./partials/message.server.view.html" import message %}
                                               {% for message in messages %}
-                                                {% include 'partials/message.server.view.html' with {'message': message.content, date: message.created} %}
+                                                {{ message(message.content) }} %}
                                               {% endfor %}
 
                                           </td>
@@ -66,6 +67,7 @@
   </tr>
   <!-- // MODULE ROW -->
 
-  {% include 'partials/button.server.view.html' with {'buttonUrl': urlReply, 'buttonTitle': 'Reply to ' + userFromName } %}
+  {% from "./partials/button.server.view.html" import button %}
+  {{ button(urlReply, 'Reply to ' + userFromName) }} %}
 
-{% endblock %}
+{% endblock content %}

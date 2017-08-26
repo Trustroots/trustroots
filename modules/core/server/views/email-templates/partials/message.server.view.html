@@ -1,14 +1,18 @@
 {#
- # Message template, usage:
+ # Message macro, usage:
  #
- # {% include 'partials/message.server.view.html' with {'message': 'Lorem ipsum dolor sit amet!'} %}
+ ### {% include 'partials/message.server.view.html' with {'message': 'Lorem ipsum dolor sit amet!'} %}
+ #
+ # Read more about import/macros:
+ # https://mozilla.github.io/nunjucks/templating.html#import
  #
  # Based on:
  # @link https://raw.githubusercontent.com/TomFrankly/mailchimp-responsive-template/master/Responsive%20Basic%20Chopped%20and%20Screwed.html
  # License: @link http://creativecommons.org/licenses/by-sa/3.0/
  #}
 
-{% if message %}
+{% macro message(content) %}
+{% if content %}
   <!-- MODULE ROW // -->
   <tr>
     <td align="center" valign="top">
@@ -29,7 +33,7 @@
                                                   <tr>
                                                       <td valign="top" class="textContent">
 
-                                                          {{ message | safe }}
+                                                          {{ content | safe }}
 
                                                       </td>
                                                   </tr>

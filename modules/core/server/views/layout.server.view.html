@@ -10,12 +10,12 @@
   <title tr-page-title>{% if tribe %}{{ tribe.label | striptags }} - Trustroots Tribe{% else %}{{ title }}{% endif %}</title>
   <base href="/">
   <meta name="fragment" content="!">
-  {% if process.env.NODE_ENV === 'development' %}
+  {% if env === 'development' %}
     {% for cssFile in cssFiles %}<link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}">
     {% endfor %}
     <link rel="stylesheet" href="/dist/application.css?c={{appSettings.commit}}">
   {% endif %}
-  {% if process.env.NODE_ENV === 'production' %}
+  {% if env === 'production' %}
     <link rel="stylesheet" href="/dist/application.min.css?c={{appSettings.commit}}">
   {% endif %}
   {# Prefech some domains that are used for user avatars and tribe images #}
@@ -118,14 +118,14 @@
 <body ng-cloak
       tr-window-blur="app.onWindowBlur()"
       tr-window-focus="app.onWindowFocus()"
-      {% if siteAnnouncement.enabled && siteAnnouncement.message !== '' %}
+      {% if siteAnnouncement.enabled %}
         ng-class="{ 'is-site-announcement-visible': app.user && !app.isSiteAnnouncementClosed }"
       {% endif %}>
 
   <div id="tr-wrap">
 
     {% block header %}
-      {% include 'partials/header.server.view.html' %}
+      {% include './partials/header.server.view.html' %}
     {% endblock %}
 
     {# Flash messages #}
@@ -133,7 +133,7 @@
 
     {# Site wide notifications #}
     {# Enabled from `local.js` config #}
-    {% if siteAnnouncement.enabled && siteAnnouncement.message !== '' %}
+    {% if siteAnnouncement.enabled %}
       <div class="alert alert-success site-announcement"
            ng-if="app.user && !app.isSiteAnnouncementClosed"
            aria-label="Site announcement"
@@ -155,26 +155,26 @@
   </div>
 
   {% block footer %}
-    {% include 'partials/footer.server.view.html' %}
+    {% include './partials/footer.server.view.html' %}
   {% endblock %}
 
   {# Embedding constants coming from the backend #}
   <script nonce="{{ nonce }}">
-    var user = {{ user | json | safe }},
+    var user = {{ user | dump | safe }},
         title = "{{title}}",
-        settings = {{ appSettings | json | safe }},
-        languages = {{ languages | json | safe }},
+        settings = {{ appSettings | dump | safe }},
+        languages = {{ languages | dump | safe }},
         {% if facebookAppId !== '' %}facebookAppId = "{{facebookAppId}}",{% endif %}
         {% if googleAnalytics.enabled %}gaId = "{{googleAnalytics.code}}",{% endif %}
         env = "{{ env }}";
   </script>
 
-  {% if process.env.NODE_ENV === 'production' %}
+  {% if env === 'production' %}
     <script src="/dist/application.min.js?c={{appSettings.commit}}"
             nonce="{{ nonce }}"></script>
-    {% endif %}
+  {% endif %}
 
-  {% if process.env.NODE_ENV === 'development' %}
+  {% if env === 'development' %}
   {% for jsFile in jsFiles %}
     <script src="/{{jsFile}}?c={{appSettings.commit}}"
             nonce="{{ nonce }}"></script>

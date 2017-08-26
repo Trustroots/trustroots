@@ -30,7 +30,7 @@ exports.invalidateSuspendedSessions = function (req, res, next) {
       res.status(403).format({
         // For HTML calls send "suspended" html view
         'text/html': function () {
-          res.render('modules/core/server/views/suspended', {
+          res.render('suspended.server.view.html', {
             message: suspendedMessage
           });
         },
