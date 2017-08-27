@@ -126,7 +126,7 @@
 
     {% block header %}
       {% include './partials/header.server.view.html' %}
-    {% endblock %}
+    {% endblock header %}
 
     {# Flash messages #}
     <mc-messages aria-live="polite" role="status"></mc-messages>
@@ -149,14 +149,14 @@
     {% endif %}
 
     <article class="content" id="tr-main" role="main" tabindex="0">
-      {% block content %}{% endblock %}
+      {% block content %}{% endblock content %}
     </article>
 
   </div>
 
   {% block footer %}
     {% include './partials/footer.server.view.html' %}
-  {% endblock %}
+  {% endblock footer %}
 
   {# Embedding constants coming from the backend #}
   <script nonce="{{ nonce }}">
