@@ -46,7 +46,7 @@
 
                                               {% from "./partials/message.server.view.html" import message %}
                                               {% for message in messages %}
-                                                {{ message(message.content) }} %}
+                                                {{ messagePreview(message.content) }}
                                               {% endfor %}
 
                                           </td>
@@ -68,6 +68,6 @@
   <!-- // MODULE ROW -->
 
   {% from "./partials/button.server.view.html" import button %}
-  {{ button(urlReply, 'Reply to ' + userFromName) }} %}
+  {{ button(urlReply, 'Reply to ' + userFromName) }}
 
 {% endblock content %}
