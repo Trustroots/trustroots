@@ -70,12 +70,9 @@ describe('Service: facebook notifications', function () {
   });
 
   it('should not allow rendered templates to be longer than 180 characters', function (done) {
-    // FB templates are asumed to be in directory:
-    // `./modules/core/server/views/facebook-notifications`
-    // Come down with `../` to `/core` directory and refer to test template.
-    var templateName = '/../../../tests/server/services/facebook-notification-test-template';
-
-    facebookNotificationService.renderNotification(templateName, {}, function (err, res) {
+    // FB templates are in directory:
+    // `./modules/core/server/views/facebook-notifications/`
+    facebookNotificationService.renderNotification('test', {}, function (err, res) {
       if (err) return done(err);
 
       // Set assertions
@@ -118,6 +115,9 @@ describe('Service: facebook notifications', function () {
         jobs[0].data.template.should.equal('You have one unread message at Trustroots.');
         jobs[0].data.href.should.containEql('messages/' + userFrom.username + '?iframe_getaway=true');
 
+        // The Graph API accepts a maximum of 180 characters in the message field.
+        jobs[0].data.template.length.should.be.belowOrEqual(180);
+
         done();
       });
     });
@@ -151,6 +151,9 @@ describe('Service: facebook notifications', function () {
         // Set assertions
         jobs[0].data.template.should.equal('You have one unread message from @[' + userFrom.additionalProvidersData.facebook.id + '] at Trustroots.');
 
+        // The Graph API accepts a maximum of 180 characters in the message field.
+        jobs[0].data.template.length.should.be.belowOrEqual(180);
+
         done();
       });
     });
@@ -183,8 +186,11 @@ describe('Service: facebook notifications', function () {
         jobs[0].data.messageCount.should.equal(1);
         jobs[0].data.toUserFacebookId.should.equal(userTo.additionalProvidersData.facebook.id);
         jobs[0].data.fromUserFacebookId.should.equal(false);
-        jobs[0].data.template.should.equal('Someone is still waiting for a reply on Trustroots.');
+        jobs[0].data.template.should.equal('Someone is still waiting for your reply on Trustroots.');
         jobs[0].data.href.should.containEql('messages/' + userFrom.username + '?iframe_getaway=true');
+
+        // The Graph API accepts a maximum of 180 characters in the message field.
+        jobs[0].data.template.length.should.be.belowOrEqual(180);
 
         done();
       });

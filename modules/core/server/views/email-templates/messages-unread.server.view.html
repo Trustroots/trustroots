@@ -44,7 +44,7 @@
                                                 <p>You have one unread message from <strong><a href="{{urlUserFromProfile}}">{{userFromName}}</a></strong> at Trustroots.</p>
                                               {% endif %}
 
-                                              {% from "./partials/message.server.view.html" import message %}
+                                              {% from "./partials/message.server.view.html" import messagePreview %}
                                               {% for message in messages %}
                                                 {{ messagePreview(message.content) }}
                                               {% endfor %}

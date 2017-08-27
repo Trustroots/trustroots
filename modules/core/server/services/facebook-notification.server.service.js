@@ -18,8 +18,7 @@ var _ = require('lodash'),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     config = require(path.resolve('./config/config')),
     render = require(path.resolve('./config/lib/render')),
-    agenda = require(path.resolve('./config/lib/agenda')),
-    templateDir = path.resolve('./modules/core/server/views/facebook-notifications');
+    agenda = require(path.resolve('./config/lib/agenda'));
 
 exports.notifyMessagesUnread = function (userFrom, userTo, notification, callback) {
 
@@ -82,7 +81,7 @@ exports.canNotifyUser = function (user) {
 
 exports.renderNotification = function (templateName, params, callback) {
 
-  var templatePath = path.join(templateDir, templateName + '.server.view.html');
+  var templatePath = path.resolve('./modules/core/server/views/facebook-notifications/' + templateName + '.server.view.html');
 
   render(templatePath, params, function (err, renderedTemplate) {
     if (err) return callback(err);
