@@ -1,13 +1,17 @@
 {#
  # Button template, usage:
  #
- # {% include 'partials/button.server.view.html' with {'buttonUrl': 'http://example.tld/', 'buttonTitle': 'Click me!'} %}
+ # {% from "./partials/button.server.view.html" import button %}
+ # {{ button('https://www.example.com', 'Button label') }}
+ #
+ # You can also use variables in place of strings.
  #
  # Based on:
  # @link https://raw.githubusercontent.com/TomFrankly/mailchimp-responsive-template/master/Responsive%20Basic%20Chopped%20and%20Screwed.html
  # License: @link http://creativecommons.org/licenses/by-sa/3.0/
  #}
-{% if buttonUrl && buttonTitle %}
+{% macro button(buttonUrl, buttonTitle='Click here') %}
+{% if buttonUrl %}
 
   <!-- MODULE ROW // -->
   <tr>
@@ -53,3 +57,4 @@
   <!-- // MODULE ROW -->
 
 {% endif %}
+{% endmacro %}

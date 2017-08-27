@@ -1,4 +1,4 @@
-{% extends 'email.server.view.html' %}
+{% extends './email.server.view.html' %}
 
 {% block content %}
 Hey {{name}}!
@@ -9,4 +9,4 @@ If you didn't make this request, you can ignore this email.
 
 {{urlConfirmPlainText}}
 
-{% endblock %}
+{% endblock content %}

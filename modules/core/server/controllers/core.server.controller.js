@@ -32,7 +32,7 @@ exports.renderIndex = function (req, res) {
     renderVars.invite = true;
   }
 
-  res.render('modules/core/server/views/index', renderVars);
+  res.render('index.server.view.html', renderVars);
 };
 
 /**
@@ -42,7 +42,7 @@ exports.renderIndex = function (req, res) {
 exports.renderNotFound = function (req, res) {
   res.status(404).format({
     'text/html': function () {
-      res.render('modules/core/server/views/404');
+      res.render('404.server.view.html');
     },
     'application/json': function () {
       res.json({ message: errorService.getErrorMessageByKey('not-found') });
