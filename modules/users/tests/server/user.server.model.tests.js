@@ -81,6 +81,44 @@ describe('User Model Unit Tests:', function () {
       });
     });
 
+    it('should be able to generate displayName when saving user', function (done) {
+      var _user = new User(user);
+
+      _user.firstName = 'Test';
+      _user.save(function (err, savedUser) {
+
+        if (err) return done(err);
+
+        savedUser.firstName.should.equal('Test');
+        savedUser.lastName.should.equal('Name');
+        savedUser.displayName.should.equal('Test Name');
+
+        done();
+      });
+    });
+
+    it('should be able to generate displayName when updating user', function (done) {
+      var _user = new User(user);
+
+      // Create user
+      _user.save(function (err) {
+        if (err) return done(err);
+
+        // Re-save the user we just created, but with new first name
+        _user.firstName = 'Test';
+        _user.save(function (err, savedUser2) {
+          if (err) return done(err);
+
+          savedUser2.firstName.should.equal('Test');
+          savedUser2.lastName.should.equal('Name');
+          savedUser2.displayName.should.equal('Test Name');
+
+          done();
+        });
+
+      });
+    });
+
     it('should be able to show an error when try to save without first name', function (done) {
       var _user = new User(user);
 

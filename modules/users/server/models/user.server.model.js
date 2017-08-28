@@ -94,24 +94,23 @@ var UserPushRegistrationSchema = new Schema({
   }
 }, { _id: false });
 
-
 /**
  * User Schema
  */
 var UserSchema = new Schema({
   firstName: {
     type: String,
-    default: '',
+    required: true,
     validate: [validateLocalStrategyProperty, 'Please fill in your first name'],
     set: setPlainTextField
   },
   lastName: {
     type: String,
-    default: '',
+    required: true,
     validate: [validateLocalStrategyProperty, 'Please fill in your last name'],
     set: setPlainTextField
   },
-  /* This is (currently) generated in `users.profile.server.controller.js` */
+  /* This is generated in Schema pre-save hook below */
   displayName: {
     type: String
   },
@@ -312,6 +311,11 @@ UserSchema.pre('save', function (next) {
   // Pre-cached email hash to use with Gravatar
   if (this.email && this.isModified('email') && this.email !== '') {
     this.emailHash = crypto.createHash('md5').update(this.email.trim().toLowerCase()).digest('hex');
+  }
+
+  // Generate `displayName`
+  if (this.isModified('firstName') || this.isModified('lastName')) {
+    this.displayName = this.firstName + ' ' + this.lastName;
   }
 
   next();
