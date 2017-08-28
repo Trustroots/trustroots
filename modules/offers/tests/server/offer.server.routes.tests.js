@@ -36,11 +36,41 @@ var app,
     tribe1Id,
     tribe2Id;
 
-var queryBoundingBox =
-  '?northEastLat=55.31212135084999' +
-  '&northEastLng=18.73318142361111' +
-  '&southWestLat=44.66407507240992' +
-  '&southWestLng=3.689914279513889';
+var testLocations = {
+  'Europe': {
+    queryBoundingBox:
+      '?northEastLat=55.31212135084999' +
+      '&northEastLng=18.73318142361111' +
+      '&southWestLat=44.66407507240992' +
+      '&southWestLng=3.689914279513889',
+    location: [52.48556355813466, 13.489011526107788]
+  },
+  'China': {
+    queryBoundingBox:
+      '?northEastLat=68.58321725728176' +
+      '&northEastLng=151.23828125000003' +
+      '&southWestLat=-3.9332268264771106' +
+      '&southWestLng=61.63281250000001',
+    location: [34.632532, 103.767519]
+  },
+  'US': {
+    queryBoundingBox:
+      '?northEastLat=70.1061015189654' +
+      '&northEastLng=-48.44921875000001' +
+      '&southWestLat=0.021065118766989688' +
+      '&southWestLng=-138.05468750000003',
+    location: [40.514402, -88.990735]
+  },
+  'NorthPole': {
+    queryBoundingBox:
+      '?northEastLat=89.99703020040681' +
+      '&northEastLng=145.61328125000003' +
+      '&southWestLat=78.02765497223292' +
+      '&southWestLng=56.00781250000001',
+    location: [81.827033, 58.231746]
+  }
+};
+
 
 /**
  * Offer routes tests
@@ -113,7 +143,7 @@ describe('Offer CRUD tests', function () {
       description: '<p>1 I can host! :)</p>',
       noOfferDescription: '<p>1 I cannot host... :(</p>',
       maxGuests: 5,
-      location: [52.48556355813466, 13.489011526107788]
+      location: testLocations.Europe.location
     };
 
     offer2 = new Offer({
@@ -123,8 +153,7 @@ describe('Offer CRUD tests', function () {
       noOfferDescription: '<p>2 I cannot host... :(</p>',
       maxGuests: 3,
       updated: new Date(),
-      location: [52.498981209298776, 13.418329954147339],
-      locationFuzzy: [52.50155039101136, 13.42255019882177]
+      location: [52.498981209298776, 13.418329954147339]
     });
 
     offer3 = new Offer({
@@ -134,8 +163,7 @@ describe('Offer CRUD tests', function () {
       noOfferDescription: '<p>3 I cannot host... :(</p>',
       maxGuests: 1,
       updated: new Date(),
-      location: [52.498981209298775, 13.418329954147338],
-      locationFuzzy: [52.50155039101134, 13.42255019882175]
+      location: [52.498981209298775, 13.418329954147338]
     });
 
     offerMeet = new Offer({
@@ -143,8 +171,7 @@ describe('Offer CRUD tests', function () {
       description: '<p>Dinner party!</p>',
       validUntil: moment().add(30, 'day').toDate(),
       updated: new Date(),
-      location: [52.498981209298887, 13.418329954147449],
-      locationFuzzy: [52.50155039101246, 13.42255019882288]
+      location: [52.498981209298887, 13.418329954147449]
     });
 
     tribe1 = new Tag({
@@ -857,7 +884,7 @@ describe('Offer CRUD tests', function () {
         });
     });
 
-    it('should return error with invalid bounding box parameter (too large coordinate without decimals)', function (done) {
+    it('should return error with invalid bounding box parameter (string after decimals)', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
@@ -867,70 +894,7 @@ describe('Offer CRUD tests', function () {
 
           // Missing `southWestLng` paramter
           agent.get('/api/offers' +
-              '?northEastLat=1000' +
-              '&northEastLng=25.598493303571427' +
-              '&southWestLat=-20.49068931208608' +
-              '&southWestLng=-12.986188616071427'
-          )
-            .expect(400)
-            .end(done);
-
-        });
-    });
-
-    it('should return error with invalid bounding box parameter (too large coordinate with decimals)', function (done) {
-      agent.post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-
-          // Missing `southWestLng` paramter
-          agent.get('/api/offers' +
-              '?northEastLat=1000.5984' +
-              '&northEastLng=25.598493303571427' +
-              '&southWestLat=-20.49068931208608' +
-              '&southWestLng=-12.986188616071427'
-          )
-            .expect(400)
-            .end(done);
-
-        });
-    });
-
-    it('should return error with invalid bounding box parameter (too many decimals)', function (done) {
-      agent.post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-
-          // Missing `southWestLng` paramter
-          agent.get('/api/offers' +
-              '?northEastLat=25.' + '1'.repeat(30) + '2' + // testing with 31 digits, 30 is allowed limit
-              '&northEastLng=25.598493303571427' +
-              '&southWestLat=-20.49068931208608' +
-              '&southWestLng=-12.986188616071427'
-          )
-            .expect(400)
-            .end(done);
-
-        });
-    });
-
-    it('should return error with invalid bounding box parameter (non numbers after decimal limit)', function (done) {
-      agent.post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-
-          // Missing `southWestLng` paramter
-          agent.get('/api/offers' +
-              '?northEastLat=25.' + '1'.repeat(30) + 'foo' + // `foo` starts at 31, 30 is the limit
+              '?northEastLat=25.' + '1'.repeat(30) + 'foo' + // `foo` starts at 31
               '&northEastLng=25.598493303571427' +
               '&southWestLat=-20.49068931208608' +
               '&southWestLng=-12.986188616071427'
@@ -964,7 +928,7 @@ describe('Offer CRUD tests', function () {
 
     it('should not be able to get list of offers from an area if not authenticated', function (done) {
       // Get offers (around Berlin)
-      agent.get('/api/offers' + queryBoundingBox)
+      agent.get('/api/offers' + testLocations.Europe.queryBoundingBox)
         .expect(403)
         .end(function (offersGetErr, offersGetRes) {
           // Handle offer get error
@@ -977,7 +941,7 @@ describe('Offer CRUD tests', function () {
         });
     });
 
-    it('should be able to get list of offers from an area', function (done) {
+    it('should be able to get list of offers from an area (Europe)', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
@@ -986,7 +950,7 @@ describe('Offer CRUD tests', function () {
           if (signinErr) return done(signinErr);
 
           // Get offers (around Berlin)
-          agent.get('/api/offers' + queryBoundingBox)
+          agent.get('/api/offers' + testLocations.Europe.queryBoundingBox)
             .expect(200)
             .end(function (offersGetErr, offersGetRes) {
               // Handle offer get error
@@ -1022,6 +986,52 @@ describe('Offer CRUD tests', function () {
         });
     });
 
+    // Tests different regions in the globe (Asia, USA, North Pole etc)
+    _.forEach(testLocations, function (testLocation, area) {
+      it('should be able to get offer from an area (' + area + ')', function (done) {
+
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
+
+            // Clean out the DB from other offers
+            Offer.remove().exec(function () {
+
+              // Create new offer to target location
+              var testLocationOffer = new Offer(offer1);
+              testLocationOffer.location = testLocation.location;
+
+              testLocationOffer.save(function (saveErr, saveRes) {
+                if (saveErr) return done(saveErr);
+
+                // Get offers (around Berlin)
+                agent.get('/api/offers' + testLocation.queryBoundingBox)
+                  .expect(200)
+                  .end(function (offersGetErr, offersGetRes) {
+                    // Handle offer get error
+                    if (offersGetErr) return done(offersGetErr);
+
+                    // Set assertions
+                    offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(1);
+                    offersGetRes.body[0]._id.should.equal(saveRes._id.toString());
+                    offersGetRes.body[0].location[0].should.be.approximately(testLocation.location[0], 0.01);
+                    offersGetRes.body[0].location[1].should.be.approximately(testLocation.location[1], 0.01);
+
+                    // Call the assertion callback
+                    return done();
+                  });
+
+              });
+
+            });
+
+          });
+      });
+    });
+
     it('should include both meet and host offers when getting a list of offers from an area', function (done) {
 
       offerMeet.save(function (saveErr) {
@@ -1036,7 +1046,7 @@ describe('Offer CRUD tests', function () {
             if (signinErr) return done(signinErr);
 
             // Get offers (around Berlin)
-            agent.get('/api/offers' + queryBoundingBox)
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox)
               .expect(200)
               .end(function (offersGetErr, offersGetRes) {
                 // Handle offer get error
@@ -1079,7 +1089,7 @@ describe('Offer CRUD tests', function () {
             if (signinErr) return done(signinErr);
 
             // Get offers (around Berlin)
-            agent.get('/api/offers' + queryBoundingBox)
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox)
               .expect(200)
               .end(function (offersGetErr, offersGetRes) {
                 // Handle offer get error
@@ -1118,7 +1128,7 @@ describe('Offer CRUD tests', function () {
               var filters = {
                 types: ['host']
               };
-              agent.get('/api/offers' + queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+              agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
                 .expect(200)
                 .end(function (offersGetErr, offersGetRes) {
                   // Handle offer get error
@@ -1160,7 +1170,7 @@ describe('Offer CRUD tests', function () {
               var filters = {
                 types: ['meet']
               };
-              agent.get('/api/offers' + queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+              agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
                 .expect(200)
                 .end(function (offersGetErr, offersGetRes) {
                   // Handle offer get error
@@ -1193,7 +1203,7 @@ describe('Offer CRUD tests', function () {
               var filters = {
                 types: ['foobar']
               };
-              agent.get('/api/offers' + queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+              agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
                 .expect(200)
                 .end(function (offersGetErr, offersGetRes) {
                   // Handle offer get error
@@ -1234,7 +1244,7 @@ describe('Offer CRUD tests', function () {
             var filters = {
               tribes: [tribe2Id]
             };
-            agent.get('/api/offers' + queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
               .expect(200)
               .end(function (offersGetErr, offersGetRes) {
                 // Handle offer get error
@@ -1272,7 +1282,7 @@ describe('Offer CRUD tests', function () {
               var filters = {
                 tribes: [tribe1Id, tribe2Id]
               };
-              agent.get('/api/offers' + queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+              agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
                 .expect(200)
                 .end(function (offersGetErr, offersGetRes) {
                   // Handle offer get error
@@ -1305,7 +1315,7 @@ describe('Offer CRUD tests', function () {
             var filters = {
               tribes: [tribe1Id, tribe2Id]
             };
-            agent.get('/api/offers' + queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
               .expect(200)
               .end(function (offersGetErr, offersGetRes) {
                 // Handle offer get error
@@ -1354,7 +1364,7 @@ describe('Offer CRUD tests', function () {
             // Handle signin error
             if (signinErr) return done(signinErr);
 
-            agent.get('/api/offers' + queryBoundingBox + '&filters=&types=')
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=&types=')
               .expect(200)
               .end(function (offersGetErr, offersGetRes) {
                 // Handle offer get error
@@ -1377,7 +1387,7 @@ describe('Offer CRUD tests', function () {
             // Handle signin error
             if (signinErr) return done(signinErr);
 
-            agent.get('/api/offers' + queryBoundingBox + '&filters={wrong}')
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters={wrong}')
               .expect(400)
               .end(function (offersGetErr, offersGetRes) {
                 // Handle offer get error

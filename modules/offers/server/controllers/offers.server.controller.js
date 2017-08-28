@@ -93,51 +93,31 @@ function sanitizeOffer(offer, authenticatedUserId, alwaysFuzzyLocation) {
 
 /**
  * Validate latitude/longitude coordinates
- * @TODO: overly complex
+ *
+ * Tests for float, but doesn't care about valid lat/lon ranges
+ *
+ * Valid:
+ * 150
+ * 14.1
+ * +3.4
+ * -3.4
+ * 10000
+ *
+ * Invalid:
+ * 14.
+ * 12foo
+ * 12,2
+ * 3.33.33
  *
  * @param {Float} coordinate - Expects latitude or longitude coordinate
- * @param {String} type - Either `lat` or `lng`, anything else fails the test.
  * @returns {Boolean} true on success, false on failure.
  */
-function isValidCoordinate(coordinate, type) {
+function isValidCoordinate(coordinate) {
+  var regexp = /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/;
 
-  // Validate that parameters are defined
-  if (_.isUndefined(coordinate) || _.isUndefined(type)) {
-    return false;
-  }
-
-  // Ensure coordinate is finite number
-  if (!_.isFinite(parseFloat(coordinate))) {
-    return false;
-  }
-
-  var range;
-  // Test latitude range
-  if (type === 'lat') {
-    range = 90;
-  }
-  // Test longitude range
-  else if (type === 'lng') {
-    range = 180;
-  } else {
-    // `type` wasn't `lat` nor `lng` => fail
-    return false;
-  }
-
-  // Quick check for range (`-90 to 90` or `-180 to 180`)
-  // This is done again at regexp but regexp doesn't catch ranges for non-floats
-  if (!_.inRange(coordinate, -Math.abs(range), range)) {
-    return false;
-  }
-
-  // How long coordinate digits are allowed?
-  var length = 30;
-
-  // Test with regexp
-  var regexp = new RegExp('^(\\+|-)?(\\d\.\\d{1,' + length + '}|[1-8]\\d\.\\d{1,' + length + '}|' + range + '\\.0{1,' + length + '})$');
-
-  var valid = regexp.test(coordinate);
-  return valid;
+  return !_.isUndefined(coordinate) &&
+         _.isFinite(parseFloat(coordinate)) &&
+         regexp.test(coordinate);
 }
 
 /**
@@ -347,11 +327,8 @@ exports.list = function (req, res) {
       coordinate = coordinate.trim();
     }
 
-    // Gets either `lat` or `lng`
-    var coordinateType = coordinateKey.substr(-3).toLowerCase();
-
     // Validate
-    return isValidCoordinate(coordinate, coordinateType);
+    return isValidCoordinate(coordinate);
   });
 
   // Stop if any found invalid coordinate
