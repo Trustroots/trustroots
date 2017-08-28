@@ -19,7 +19,7 @@
     var appSettings = SettingsFactory.get();
 
     // Is Mapbox configuration available
-    var isMapboxAvailable = (appSettings.mapbox && angular.isObject(appSettings.mapbox.maps) && angular.isString(appSettings.mapbox.user) && angular.isString(appSettings.mapbox.publicKey));
+    var isMapboxAvailable = (appSettings.mapbox && angular.isObject(appSettings.mapbox.maps) && appSettings.mapbox.user && appSettings.mapbox.publicKey);
 
     // Location for "improve this map"-links
     var location = LocationService.getDefaultLocation(3);
