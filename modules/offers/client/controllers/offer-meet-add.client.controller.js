@@ -40,7 +40,7 @@
         location: [parseFloat(vm.mapCenter.lat), parseFloat(vm.mapCenter.lng)]
       });
 
-      newOffer.$save(function() {
+      newOffer.$save(function () {
         // Done!
         vm.isLoading = false;
         $analytics.eventTrack('offer-modified', {
@@ -48,7 +48,7 @@
           label: 'Added meet offer'
         });
         $state.go('offer.meet.list');
-      }, function(err) {
+      }, function (err) {
         vm.isLoading = false;
         var errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
         messageCenterService.add('danger', errorMessage);

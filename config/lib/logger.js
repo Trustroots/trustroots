@@ -16,7 +16,7 @@ require('winston-papertrail').Papertrail;
 var papertrailConfig = _.get(config, 'log.papertrail');
 
 // Add the `logFormat()` function to the papertrail config
-papertrailConfig.logFormat = function(level, message) {
+papertrailConfig.logFormat = function (level, message) {
   return level + ': ' + message;
 };
 

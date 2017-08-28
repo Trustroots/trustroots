@@ -8,7 +8,7 @@ var usersPolicy = require('../policies/users.server.policy'),
     userPassword = require('../controllers/users.password.server.controller'),
     passport = require('passport');
 
-module.exports = function(app) {
+module.exports = function (app) {
 
   // Confirm users email
   app.route('/api/auth/confirm-email/:token')

@@ -6,7 +6,7 @@
 var offersPolicy = require('../policies/offers.server.policy'),
     offers = require('../controllers/offers.server.controller');
 
-module.exports = function(app) {
+module.exports = function (app) {
 
   app.route('/api/offers-by/:offerUserId').all(offersPolicy.isAllowed)
     .get(offers.listOffersByUser);

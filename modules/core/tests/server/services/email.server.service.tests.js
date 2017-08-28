@@ -7,29 +7,29 @@ var path = require('path'),
 
 var emailService;
 
-describe('Service: email', function() {
+describe('Service: email', function () {
 
   var jobs = testutils.catchJobs();
 
-  before(function() {
+  before(function () {
     emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
   });
 
-  it('can send signup email confirmation', function(done) {
+  it('can send signup email confirmation', function (done) {
     var user = {
       displayName: 'test user',
       email: 'test@test.com',
       emailTemporary: 'test@test.com',
       emailToken: 'emailtoken'
     };
-    emailService.sendSignupEmailConfirmation(user, function(err) {
+    emailService.sendSignupEmailConfirmation(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal('Confirm Email');
       jobs[0].data.to.name.should.equal(user.displayName);
       jobs[0].data.to.address.should.equal(user.emailTemporary);
-      ['html', 'text'].forEach(function(format) {
+      ['html', 'text'].forEach(function (format) {
         jobs[0].data[format].should.containEql('Thank you very much for signing up with us.');
         jobs[0].data[format].should.containEql('Confirm your email address (' + user.emailTemporary + ') to complete your Trustroots account.');
         jobs[0].data[format].should.containEql('/confirm-email/' + user.emailToken);
@@ -38,21 +38,21 @@ describe('Service: email', function() {
     });
   });
 
-  it('can send change email confirmation', function(done) {
+  it('can send change email confirmation', function (done) {
     var user = {
       displayName: 'test user',
       email: 'test@test.com',
       emailTemporary: 'test-change@test.com',
       emailToken: 'emailtoken'
     };
-    emailService.sendChangeEmailConfirmation(user, function(err) {
+    emailService.sendChangeEmailConfirmation(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal('Confirm email change');
       jobs[0].data.to.name.should.equal(user.displayName);
       jobs[0].data.to.address.should.equal(user.emailTemporary);
-      ['html', 'text'].forEach(function(format) {
+      ['html', 'text'].forEach(function (format) {
         jobs[0].data[format].should.containEql('You initiated an email change at Trustroots.');
         jobs[0].data[format].should.containEql('Please click the confirmation link below to confirm your new email address: ' + user.emailTemporary);
       });
@@ -60,18 +60,18 @@ describe('Service: email', function() {
     });
   });
 
-  it('can send password reset email', function(done) {
+  it('can send password reset email', function (done) {
     var user = {
       displayName: 'test user',
       email: 'test@test.com',
       resetPasswordToken: 'SOMETOKEN'
     };
-    emailService.sendResetPassword(user, function(err) {
+    emailService.sendResetPassword(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal('Password Reset');
-      ['html', 'text'].forEach(function(format) {
+      ['html', 'text'].forEach(function (format) {
         jobs[0].data[format].should.containEql(user.resetPasswordToken);
         jobs[0].data[format].should.containEql('/api/auth/reset/' + user.resetPasswordToken);
       });
@@ -81,13 +81,13 @@ describe('Service: email', function() {
     });
   });
 
-  it('can send password reset confirm email', function(done) {
+  it('can send password reset confirm email', function (done) {
     var user = {
       displayName: 'test user',
       email: 'test@test.com',
       emailToken: 'emailtoken'
     };
-    emailService.sendResetPasswordConfirm(user, function(err) {
+    emailService.sendResetPasswordConfirm(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
@@ -98,7 +98,7 @@ describe('Service: email', function() {
     });
   });
 
-  it('can send host reactivation email', function(done) {
+  it('can send host reactivation email', function (done) {
     var urlOffer = (config.https ? 'https' : 'http') + '://' + config.domain + '/offer';
     var user = {
       firstName: 'first',
@@ -106,7 +106,7 @@ describe('Service: email', function() {
       displayName: 'first last',
       email: 'test@test.com'
     };
-    emailService.sendReactivateHosts(user, function(err) {
+    emailService.sendReactivateHosts(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
@@ -121,7 +121,7 @@ describe('Service: email', function() {
     });
   });
 
-  it('can send messages unread email', function(done) {
+  it('can send messages unread email', function (done) {
     var userFrom = {
       _id: 'from-user-id',
       username: 'userfrom',
@@ -142,13 +142,13 @@ describe('Service: email', function() {
         }
       ]
     };
-    emailService.sendMessagesUnread(userFrom, userTo, notification, function(err) {
+    emailService.sendMessagesUnread(userFrom, userTo, notification, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal(userFrom.displayName + ' wrote you from Trustroots');
       jobs[0].data.text.should.containEql('You have one unread message from ' + userFrom.displayName + ' at Trustroots.');
-      notification.messages.forEach(function(notification) {
+      notification.messages.forEach(function (notification) {
         jobs[0].data.text.should.containEql(notification.content);
       });
       jobs[0].data.text.should.containEql('/messages/' + userFrom.username);
@@ -160,7 +160,7 @@ describe('Service: email', function() {
     });
   });
 
-  it('can send support request email', function(done) {
+  it('can send support request email', function (done) {
     var supportRequest = {
       message: 'test-support-message',
       username: 'joedoe',
@@ -177,7 +177,7 @@ describe('Service: email', function() {
     var replyTo = {
       email: 'replyto@test.com'
     };
-    emailService.sendSupportRequest(replyTo, supportRequest, function(err) {
+    emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
@@ -202,7 +202,7 @@ describe('Service: email', function() {
     });
   });
 
-  it('can send signup reminder email', function(done) {
+  it('can send signup reminder email', function (done) {
     var user = {
       _id: 'user-id',
       username: 'username',
@@ -211,7 +211,7 @@ describe('Service: email', function() {
       emailTemporary: 'email@test.com',
       emailToken: 'email-token'
     };
-    emailService.sendSignupEmailReminder(user, function(err) {
+    emailService.sendSignupEmailReminder(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
@@ -224,7 +224,7 @@ describe('Service: email', function() {
     });
   });
 
-  it('emails should have inline css styles', function(done) {
+  it('emails should have inline css styles', function (done) {
     var params = emailService.addEmailBaseTemplateParams({
       subject: 'test',
       name: 'test',
@@ -234,27 +234,27 @@ describe('Service: email', function() {
       urlConfirm: '#'
     });
 
-    emailService.renderEmail('reset-password', params, function(err, email) {
+    emailService.renderEmail('reset-password', params, function (err, email) {
       if (err) return done(err);
       email.html.should.containEql('<body style=');
       done();
     });
   });
 
-  it('emails should have Sparkpost `campaign_id` header', function(done) {
+  it('emails should have Sparkpost `campaign_id` header', function (done) {
     var user = {
       displayName: 'test user',
       email: 'test@test.com',
       emailToken: 'emailtoken'
     };
-    emailService.sendResetPasswordConfirm(user, function(err) {
+    emailService.sendResetPasswordConfirm(user, function (err) {
       if (err) return done(err);
       jobs[0].data.headers.should.deepEqual({ 'X-MSYS-API': { campaign_id: 'reset-password-confirm' } });
       done();
     });
   });
 
-  it('emails should have "do not reply" note when sending from default email', function(done) {
+  it('emails should have "do not reply" note when sending from default email', function (done) {
     var params = emailService.addEmailBaseTemplateParams({
       subject: 'test',
       name: 'test',
@@ -266,14 +266,14 @@ describe('Service: email', function() {
       // from: 'test@example.com'
     });
 
-    emailService.renderEmail('reset-password', params, function(err, email) {
+    emailService.renderEmail('reset-password', params, function (err, email) {
       if (err) return done(err);
       email.text.should.containEql('Remember, I\'m just a little mail robot. Don\'t reply this email directly.');
       done();
     });
   });
 
-  it('emails should not have "do not reply" note when sending from custom email', function(done) {
+  it('emails should not have "do not reply" note when sending from custom email', function (done) {
     var params = emailService.addEmailBaseTemplateParams({
       subject: 'test',
       name: 'test',
@@ -285,16 +285,16 @@ describe('Service: email', function() {
       from: 'test@example.com'
     });
 
-    emailService.renderEmail('reset-password', params, function(err, email) {
+    emailService.renderEmail('reset-password', params, function (err, email) {
       if (err) return done(err);
       email.text.should.not.containEql('Remember, I\'m just a little mail robot. Don\'t reply this email directly.');
       done();
     });
   });
 
-  describe('Plain text emails', function() {
+  describe('Plain text emails', function () {
 
-    it('should be able to render text-only emails', function(done) {
+    it('should be able to render text-only emails', function (done) {
       var params = emailService.addEmailBaseTemplateParams({
         subject: 'test',
         name: 'test',
@@ -305,7 +305,7 @@ describe('Service: email', function() {
         skipHtmlTemplate: true
       });
 
-      emailService.renderEmail('reset-password', params, function(err, email) {
+      emailService.renderEmail('reset-password', params, function (err, email) {
         if (err) return done(err);
         should.exist(email.text);
         should.not.exist(email.html);
@@ -313,7 +313,7 @@ describe('Service: email', function() {
       });
     });
 
-    it('plain text emails should not contain html or html entities', function(done) {
+    it('plain text emails should not contain html or html entities', function (done) {
       var params = {
         skipHtmlTemplate: true, // Don't render html template for this email
         request: {
@@ -321,7 +321,7 @@ describe('Service: email', function() {
         },
         subject: 'test'
       };
-      emailService.renderEmail('support-request', params, function(err, email) {
+      emailService.renderEmail('support-request', params, function (err, email) {
         if (err) return done(err);
 
         email.text.should.containEql('> Foo & foobar bar');
@@ -333,7 +333,7 @@ describe('Service: email', function() {
 
   });
 
-  context('Confirm contact email', function() {
+  context('Confirm contact email', function () {
 
     var user = {
       displayName: 'test user',
@@ -349,42 +349,42 @@ describe('Service: email', function() {
     var messageHTML = '<span>nice custom message</span>';
     var messageText = 'plain message';
 
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       emailService.sendConfirmContact(user, friend, contact, messageHTML, messageText, done);
     });
 
-    it('creates a [send email] job', function() {
+    it('creates a [send email] job', function () {
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
     });
 
-    it('sends to the correct recipient', function() {
+    it('sends to the correct recipient', function () {
       jobs[0].data.to.name.should.equal(friend.displayName);
       jobs[0].data.to.address.should.equal(friend.email);
     });
 
-    it('sets the subject', function() {
+    it('sets the subject', function () {
       jobs[0].data.subject.should.equal('Confirm contact');
     });
 
-    it('contains the user and friends name', function() {
+    it('contains the user and friends name', function () {
       jobs[0].data.html.should.containEql(user.displayName);
       jobs[0].data.html.should.containEql(friend.displayName);
       jobs[0].data.text.should.containEql(user.displayName);
       jobs[0].data.text.should.containEql(friend.displayName);
     });
 
-    it('sets the custom message', function() {
+    it('sets the custom message', function () {
       jobs[0].data.html.should.containEql(messageHTML);
       jobs[0].data.text.should.containEql(messageText);
     });
 
-    it('contains the correct message', function() {
+    it('contains the correct message', function () {
       jobs[0].data.html.should.containEql(user.displayName + '</a> would like to connect with you on Trustroots.');
       jobs[0].data.text.should.containEql(user.displayName + ' would like to connect with you on Trustroots.');
     });
 
-    it('contains the contact confirm url', function() {
+    it('contains the contact confirm url', function () {
       jobs[0].data.html.should.containEql('/contact-confirm/' + contact._id);
       jobs[0].data.text.should.containEql('/contact-confirm/' + contact._id);
     });

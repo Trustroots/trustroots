@@ -100,12 +100,12 @@ describe('Tag CRUD tests', function () {
     });
   });
 
-  it('should be able to read tribes when not logged in', function(done) {
+  it('should be able to read tribes when not logged in', function (done) {
 
     // Read tribes
     agent.get('/api/tribes')
       .expect(200)
-      .end(function(tribesReadErr, tribesReadRes) {
+      .end(function (tribesReadErr, tribesReadRes) {
 
         tribesReadRes.body.should.have.length(1);
         tribesReadRes.body[0].tribe.should.equal(true);
@@ -133,18 +133,18 @@ describe('Tag CRUD tests', function () {
       });
   });
 
-  it('should be able to read tribes when logged in', function(done) {
+  it('should be able to read tribes when logged in', function (done) {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Read tribes
         agent.get('/api/tribes')
           .expect(200)
-          .end(function(tribesReadErr, tribesReadRes) {
+          .end(function (tribesReadErr, tribesReadRes) {
 
             tribesReadRes.body.should.have.length(1);
             tribesReadRes.body[0].tribe.should.equal(true);
@@ -174,7 +174,7 @@ describe('Tag CRUD tests', function () {
       });
   });
 
-  it('should be able to read only 2 most popular tribes', function(done) {
+  it('should be able to read only 2 most popular tribes', function (done) {
 
     // Create more tribes
     var tribe1 = new Tag(_tribe);
@@ -201,7 +201,7 @@ describe('Tag CRUD tests', function () {
             // Read tribes
             agent.get('/api/tribes?limit=2') // defaults to `&page=1`
               .expect(200)
-              .end(function(tribesReadErr, tribesReadRes) {
+              .end(function (tribesReadErr, tribesReadRes) {
 
                 tribesReadRes.body.should.have.length(2);
                 tribesReadRes.body[0].label.should.equal('Tribe 1');
@@ -217,7 +217,7 @@ describe('Tag CRUD tests', function () {
 
   });
 
-  it('should be able to read only 2 second popular tribes', function(done) {
+  it('should be able to read only 2 second popular tribes', function (done) {
 
     // Create more tribes
     var tribe1 = new Tag(_tribe);
@@ -244,7 +244,7 @@ describe('Tag CRUD tests', function () {
             // Read tribes
             agent.get('/api/tribes?limit=2&page=2')
               .expect(200)
-              .end(function(tribesReadErr, tribesReadRes) {
+              .end(function (tribesReadErr, tribesReadRes) {
 
                 tribesReadRes.body.should.have.length(2);
                 tribesReadRes.body[0].label.should.equal('Tribe 3');
@@ -260,12 +260,12 @@ describe('Tag CRUD tests', function () {
 
   });
 
-  it('should be able to read tags when not logged in', function(done) {
+  it('should be able to read tags when not logged in', function (done) {
 
     // Read tags
     agent.get('/api/tags')
       .expect(200)
-      .end(function(tagsReadErr, tagsReadRes) {
+      .end(function (tagsReadErr, tagsReadRes) {
 
         tagsReadRes.body.should.have.length(1);
         tagsReadRes.body[0].label.should.equal('Awesome Tag');
@@ -291,18 +291,18 @@ describe('Tag CRUD tests', function () {
       });
   });
 
-  it('should be able to read tags when logged in', function(done) {
+  it('should be able to read tags when logged in', function (done) {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Read tags
         agent.get('/api/tags')
           .expect(200)
-          .end(function(tagsReadErr, tagsReadRes) {
+          .end(function (tagsReadErr, tagsReadRes) {
 
             tagsReadRes.body.should.have.length(1);
             tagsReadRes.body[0].label.should.equal('Awesome Tag');
@@ -331,7 +331,7 @@ describe('Tag CRUD tests', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(function() {
+    User.remove().exec(function () {
       Tag.remove().exec(done);
     });
   });

@@ -54,7 +54,7 @@
        */
       function activate() {
         if ($scope.tribeIds && $scope.tribeIds.length) {
-          angular.forEach($scope.tribeIds, function(tribeId) {
+          angular.forEach($scope.tribeIds, function (tribeId) {
             vm.toggles[tribeId] = true;
           });
         }
@@ -66,7 +66,7 @@
        */
       function onToggleChange() {
         var TribeIds = [];
-        angular.forEach(vm.toggles, function(active, tribeId) {
+        angular.forEach(vm.toggles, function (active, tribeId) {
           if (active) TribeIds.push(tribeId);
         });
         // Tell tribeIds $watch that we changed `$scope.TribeIds`
@@ -92,7 +92,7 @@
           vm.toggles = {};
           if (newTribeIds && newTribeIds.length) {
             // Loop trough new values and set toggles on for requested tribes
-            angular.forEach(newTribeIds, function(tribeId) {
+            angular.forEach(newTribeIds, function (tribeId) {
               vm.toggles[tribeId] = true;
             });
           }

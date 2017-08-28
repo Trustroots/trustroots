@@ -36,7 +36,7 @@
         activate();
       } else {
         // FB API was not ready, wait for the ready event
-        var watch = $rootScope.$on('facebookReady', function() {
+        var watch = $rootScope.$on('facebookReady', function () {
           activate();
           // Removes watch:
           watch();

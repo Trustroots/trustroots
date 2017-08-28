@@ -10,7 +10,7 @@ var defaultErrorMessage = 'Snap! Something went wrong. If this keeps happening, 
  * @param key String Message key
  * @return String Error message
  */
-exports.getErrorMessageByKey = function(key) {
+exports.getErrorMessageByKey = function (key) {
 
   var errorMessages = {
     'not-found': 'Not found.',
@@ -34,7 +34,7 @@ exports.getErrorMessageByKey = function(key) {
  * @param status Int Valid HTTP status code
  * @return Error
  */
-exports.getNewError = function(key, status) {
+exports.getNewError = function (key, status) {
 
   var message = this.getErrorMessageByKey(key),
       err = new Error(message);
@@ -49,7 +49,7 @@ exports.getNewError = function(key, status) {
  * @param err Error
  * @return String Error message
  */
-exports.getErrorMessage = function(err) {
+exports.getErrorMessage = function (err) {
   var message = false;
 
   for (var errName in err.errors) {
@@ -62,7 +62,7 @@ exports.getErrorMessage = function(err) {
 /**
  * Error responses middleware
  */
-exports.errorResponse = function(err, req, res, next) {
+exports.errorResponse = function (err, req, res, next) {
 
   // If the error object doesn't exists
   if (!err) return next();
@@ -83,13 +83,13 @@ exports.errorResponse = function(err, req, res, next) {
 
   // Do content negotiation and return a message
   return res.status(err.status || 500).format({
-    'text/html': function() {
-      res.render('modules/core/server/views/500');
+    'text/html': function () {
+      res.render('500.server.view.html');
     },
-    'application/json': function() {
+    'application/json': function () {
       res.json(errorResponse);
     },
-    'default': function() {
+    'default': function () {
       res.send(errorResponse.message);
     }
   });

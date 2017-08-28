@@ -24,7 +24,7 @@
     function configureAddThis() {
 
       // Ensure we have code and continue only then
-      vm.invitation.$promise.then(function(invitation) {
+      vm.invitation.$promise.then(function (invitation) {
 
         var code = invitation.code.toUpperCase();
 

@@ -36,18 +36,48 @@ var app,
     tribe1Id,
     tribe2Id;
 
-var queryBoundingBox =
-  '?northEastLat=55.31212135084999' +
-  '&northEastLng=18.73318142361111' +
-  '&southWestLat=44.66407507240992' +
-  '&southWestLng=3.689914279513889';
+var testLocations = {
+  'Europe': {
+    queryBoundingBox:
+      '?northEastLat=55.31212135084999' +
+      '&northEastLng=18.73318142361111' +
+      '&southWestLat=44.66407507240992' +
+      '&southWestLng=3.689914279513889',
+    location: [52.48556355813466, 13.489011526107788]
+  },
+  'China': {
+    queryBoundingBox:
+      '?northEastLat=68.58321725728176' +
+      '&northEastLng=151.23828125000003' +
+      '&southWestLat=-3.9332268264771106' +
+      '&southWestLng=61.63281250000001',
+    location: [34.632532, 103.767519]
+  },
+  'US': {
+    queryBoundingBox:
+      '?northEastLat=70.1061015189654' +
+      '&northEastLng=-48.44921875000001' +
+      '&southWestLat=0.021065118766989688' +
+      '&southWestLng=-138.05468750000003',
+    location: [40.514402, -88.990735]
+  },
+  'NorthPole': {
+    queryBoundingBox:
+      '?northEastLat=89.99703020040681' +
+      '&northEastLng=145.61328125000003' +
+      '&southWestLat=78.02765497223292' +
+      '&southWestLng=56.00781250000001',
+    location: [81.827033, 58.231746]
+  }
+};
+
 
 /**
  * Offer routes tests
  */
-describe('Offer CRUD tests', function() {
+describe('Offer CRUD tests', function () {
 
-  before(function(done) {
+  before(function (done) {
     // Get application
     app = express.init(mongoose);
     agent = request.agent(app);
@@ -55,7 +85,7 @@ describe('Offer CRUD tests', function() {
     done();
   });
 
-  beforeEach(function(doneBeforeEach) {
+  beforeEach(function (doneBeforeEach) {
     // Create user credentials
     credentials = {
       username: 'loremipsum',
@@ -113,7 +143,7 @@ describe('Offer CRUD tests', function() {
       description: '<p>1 I can host! :)</p>',
       noOfferDescription: '<p>1 I cannot host... :(</p>',
       maxGuests: 5,
-      location: [52.48556355813466, 13.489011526107788]
+      location: testLocations.Europe.location
     };
 
     offer2 = new Offer({
@@ -123,8 +153,7 @@ describe('Offer CRUD tests', function() {
       noOfferDescription: '<p>2 I cannot host... :(</p>',
       maxGuests: 3,
       updated: new Date(),
-      location: [52.498981209298776, 13.418329954147339],
-      locationFuzzy: [52.50155039101136, 13.42255019882177]
+      location: [52.498981209298776, 13.418329954147339]
     });
 
     offer3 = new Offer({
@@ -134,8 +163,7 @@ describe('Offer CRUD tests', function() {
       noOfferDescription: '<p>3 I cannot host... :(</p>',
       maxGuests: 1,
       updated: new Date(),
-      location: [52.498981209298775, 13.418329954147338],
-      locationFuzzy: [52.50155039101134, 13.42255019882175]
+      location: [52.498981209298775, 13.418329954147338]
     });
 
     offerMeet = new Offer({
@@ -143,8 +171,7 @@ describe('Offer CRUD tests', function() {
       description: '<p>Dinner party!</p>',
       validUntil: moment().add(30, 'day').toDate(),
       updated: new Date(),
-      location: [52.498981209298887, 13.418329954147449],
-      locationFuzzy: [52.50155039101246, 13.42255019882288]
+      location: [52.498981209298887, 13.418329954147449]
     });
 
     tribe1 = new Tag({
@@ -168,80 +195,80 @@ describe('Offer CRUD tests', function() {
     // Save data to the test db
     async.waterfall([
       // Save tribe 1
-      function(done) {
-        tribe1.save(function(err, tribe1) {
+      function (done) {
+        tribe1.save(function (err, tribe1) {
           tribe1Id = tribe1._id;
           done(err);
         });
       },
       // Save tribe 2
-      function(done) {
-        tribe2.save(function(err, tribe2) {
+      function (done) {
+        tribe2.save(function (err, tribe2) {
           tribe2Id = tribe2._id;
           done(err);
         });
       },
       // Save user 1 (without tribe membership)
-      function(done) {
-        user1.save(function(err, user1res) {
+      function (done) {
+        user1.save(function (err, user1res) {
           user1Id = user1res._id;
           done(err);
         });
       },
       // Save user 2 (with tribe membership)
-      function(done) {
+      function (done) {
         user2.member = [{
           tag: tribe2Id,
           since: new Date(),
           relation: 'is'
         }];
-        user2.save(function(err, user2res) {
+        user2.save(function (err, user2res) {
           user2Id = user2res._id;
           done(err);
         });
       },
       // Save user 3 (with tribe membership)
-      function(done) {
+      function (done) {
         user3.member = [{
           tag: tribe1Id,
           since: new Date(),
           relation: 'is'
         }];
-        user3.save(function(err, user3res) {
+        user3.save(function (err, user3res) {
           user3Id = user3res._id;
           return done(err);
         });
       },
       // Save hosting offer 2
-      function(done) {
+      function (done) {
         offer2.user = user2Id;
-        offer2.save(function(err, offer2) {
+        offer2.save(function (err, offer2) {
           offer2Id = offer2._id;
           done(err);
         });
       },
       // Save hosting offer 3
-      function(done) {
+      function (done) {
         offer3.user = user3Id;
-        offer3.save(function(err, offer3) {
+        offer3.save(function (err, offer3) {
           offer3Id = offer3._id;
           done(err);
         });
       }
-    ], function(err) {
+    ], function (err) {
       should.not.exist(err);
       doneBeforeEach(err);
     });
   });
 
 
-  describe('Read offer by offer id:', function() {
+  describe('Read offer by offer id:', function () {
 
-    it('should not be able to read offer by offer id if not authenticated', function(done) {
+    it('should not be able to read offer by offer id if not authenticated', function (done) {
 
       agent.get('/api/offers/' + offer2Id)
         .expect(403)
-        .end(function(offerSaveErr, offerSaveRes) {
+        .end(function (offerSaveErr, offerSaveRes) {
 
           offerSaveRes.body.message.should.equal('Forbidden.');
 
@@ -250,19 +277,19 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should be able to read offers of other users by offer id when authenticated', function(done) {
+    it('should be able to read offers of other users by offer id when authenticated', function (done) {
       agent.post('/api/auth/signin')
         // authenticated as `user1`
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
           // Get a offer from the other user by offer id
           agent.get('/api/offers/' + offer2Id)
             .expect(200)
-            .end(function(offerGetErr, offerGetRes) {
+            .end(function (offerGetErr, offerGetRes) {
               // Handle offer get error
               if (offerGetErr) return done(offerGetErr);
 
@@ -285,19 +312,19 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should be able to read offers by id and get populated memberships array', function(done) {
+    it('should be able to read offers by id and get populated memberships array', function (done) {
       agent.post('/api/auth/signin')
         // authenticated as `user1`
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
           // Get a offer from the other user by offer id
           agent.get('/api/offers/' + offer2Id)
             .expect(200)
-            .end(function(offerGetErr, offerGetRes) {
+            .end(function (offerGetErr, offerGetRes) {
               // Handle offer get error
               if (offerGetErr) return done(offerGetErr);
 
@@ -321,13 +348,13 @@ describe('Offer CRUD tests', function() {
 
   });
 
-  describe('Read offer by user id:', function() {
+  describe('Read offer by user id:', function () {
 
-    it('should not be able to read offer by user id if not authenticated', function(done) {
+    it('should not be able to read offer by user id if not authenticated', function (done) {
 
       agent.get('/api/offers-by/' + user2Id)
         .expect(403)
-        .end(function(offerSaveErr, offerSaveRes) {
+        .end(function (offerSaveErr, offerSaveRes) {
 
           offerSaveRes.body.message.should.equal('Forbidden.');
 
@@ -336,19 +363,19 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should be able to read offers of other users by user id when authenticated', function(done) {
+    it('should be able to read offers of other users by user id when authenticated', function (done) {
       agent.post('/api/auth/signin')
         // authenticated as `user1`
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
           // Get a offer from the other user
           agent.get('/api/offers-by/' + user2Id)
             .expect(200)
-            .end(function(offerGetErr, offerGetRes) {
+            .end(function (offerGetErr, offerGetRes) {
               // Handle offer get error
               if (offerGetErr) return done(offerGetErr);
 
@@ -377,11 +404,11 @@ describe('Offer CRUD tests', function() {
 
   });
 
-  describe('Deleting offer', function() {
-    it('should not be able to delete offer if not authenticated', function(done) {
+  describe('Deleting offer', function () {
+    it('should not be able to delete offer if not authenticated', function (done) {
       agent.delete('/api/offers')
         .expect(403)
-        .end(function(offerSaveErr, offerSaveRes) {
+        .end(function (offerSaveErr, offerSaveRes) {
 
           offerSaveRes.body.message.should.equal('Forbidden.');
 
@@ -390,11 +417,11 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should not be able to delete offer of other user', function(done) {
+    it('should not be able to delete offer of other user', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -402,13 +429,13 @@ describe('Offer CRUD tests', function() {
           agent.delete('/api/offers/' + offer2Id)
             .send(offer2)
             .expect(403)
-            .end(function(offerSaveErr) {
+            .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
 
               Offer.findOne({
                 _id: offer2Id
-              }, function(err, offer) {
+              }, function (err, offer) {
                 should.not.exist(err);
                 should.exist(offer);
                 return done();
@@ -418,11 +445,11 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should be able to delete offer if authenticated', function(done) {
+    it('should be able to delete offer if authenticated', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials2)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -430,13 +457,13 @@ describe('Offer CRUD tests', function() {
           agent.delete('/api/offers/' + offer2Id)
             .send(offer2)
             .expect(200)
-            .end(function(offerSaveErr) {
+            .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
 
               Offer.findOne({
                 _id: offer2Id
-              }, function(err, offer) {
+              }, function (err, offer) {
                 should.not.exist(err);
                 should.not.exist(offer);
                 return done();
@@ -448,13 +475,13 @@ describe('Offer CRUD tests', function() {
 
   });
 
-  describe('Creating offer', function() {
+  describe('Creating offer', function () {
 
-    it('should not be able to save offer if not authenticated', function(done) {
+    it('should not be able to save offer if not authenticated', function (done) {
       agent.post('/api/offers')
         .send(offer1)
         .expect(403)
-        .end(function(offerSaveErr, offerSaveRes) {
+        .end(function (offerSaveErr, offerSaveRes) {
 
           offerSaveRes.body.message.should.equal('Forbidden.');
 
@@ -463,11 +490,11 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should be able to create offer if authenticated', function(done) {
+    it('should be able to create offer if authenticated', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -475,7 +502,7 @@ describe('Offer CRUD tests', function() {
           agent.post('/api/offers')
             .send(offer1)
             .expect(200)
-            .end(function(offerSaveErr, offerSaveRes) {
+            .end(function (offerSaveErr, offerSaveRes) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
 
@@ -487,11 +514,11 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should not able to change offer type when updating offer', function(done) {
+    it('should not able to change offer type when updating offer', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -499,14 +526,14 @@ describe('Offer CRUD tests', function() {
           agent.post('/api/offers')
             .send(offer1)
             .expect(200)
-            .end(function(offerSaveErr) {
+            .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
 
               // Get id for offer we just saved
               Offer.findOne({
                 user: user1Id
-              }, function(offerFindErr, offer) {
+              }, function (offerFindErr, offer) {
                 // Handle error
                 if (offerFindErr) return done(offerFindErr);
 
@@ -518,7 +545,7 @@ describe('Offer CRUD tests', function() {
                 agent.put('/api/offers/' + offer._id)
                   .send(modifiedOffer)
                   .expect(400)
-                  .end(function(offerSaveErr, offerSaveRes) {
+                  .end(function (offerSaveErr, offerSaveRes) {
                     // Handle offer save error
                     if (offerSaveErr) return done(offerSaveErr);
 
@@ -526,7 +553,7 @@ describe('Offer CRUD tests', function() {
 
                     Offer.find({
                       user: user1Id
-                    }, function(err, offers) {
+                    }, function (err, offers) {
                       offers.length.should.equal(1);
                       offers[0].type.should.equal('host');
                       return done(err);
@@ -537,11 +564,11 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should be able to create offer if authenticated', function(done) {
+    it('should be able to create offer if authenticated', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -549,14 +576,14 @@ describe('Offer CRUD tests', function() {
           agent.post('/api/offers')
             .send(offer1)
             .expect(200)
-            .end(function(offerSaveErr) {
+            .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
 
               // Get a offer
               agent.get('/api/offers-by/' + user1Id)
                 .expect(200)
-                .end(function(offerGetErr, offerGetRes) {
+                .end(function (offerGetErr, offerGetRes) {
                   // Handle offer get error
                   if (offerGetErr) return done(offerGetErr);
 
@@ -581,11 +608,11 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should be able to create offer without status and status should default to "yes"', function(done) {
+    it('should be able to create offer without status and status should default to "yes"', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -596,13 +623,13 @@ describe('Offer CRUD tests', function() {
           agent.post('/api/offers')
             .send(offerWithoutStatus)
             .expect(200)
-            .end(function(offerSaveErr) {
+            .end(function (offerSaveErr) {
               if (offerSaveErr) return done(offerSaveErr);
 
               // Get the offer
               agent.get('/api/offers-by/' + user1Id)
                 .expect(200)
-                .end(function(offerGetErr, offerGetRes) {
+                .end(function (offerGetErr, offerGetRes) {
                   // Handle offer get error
                   if (offerGetErr) return done(offerGetErr);
 
@@ -617,11 +644,11 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should not be able to create offer without type', function(done) {
+    it('should not be able to create offer without type', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -632,7 +659,7 @@ describe('Offer CRUD tests', function() {
           agent.post('/api/offers')
             .send(offerWithoutType)
             .expect(400)
-            .end(function(offerSaveErr, offerSaveRes) {
+            .end(function (offerSaveErr, offerSaveRes) {
               if (offerSaveErr) return done(offerSaveErr);
 
               offerSaveRes.body.message.should.equal('Missing or invalid offer type.');
@@ -642,11 +669,11 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should not be able to create offer without location', function(done) {
+    it('should not be able to create offer without location', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -657,7 +684,7 @@ describe('Offer CRUD tests', function() {
           agent.post('/api/offers')
             .send(offerWithoutLocation)
             .expect(400)
-            .end(function(offerSaveErr, offerSaveRes) {
+            .end(function (offerSaveErr, offerSaveRes) {
 
               offerSaveRes.body.message.should.equal('Missing offer location.');
 
@@ -669,13 +696,13 @@ describe('Offer CRUD tests', function() {
 
   });
 
-  describe('Updating offer', function() {
+  describe('Updating offer', function () {
 
-    it('should not be able to update offer if not authenticated', function(done) {
+    it('should not be able to update offer if not authenticated', function (done) {
       agent.put('/api/offers/' + offer2Id)
         .send(offer2)
         .expect(403)
-        .end(function(offerSaveErr, offerSaveRes) {
+        .end(function (offerSaveErr, offerSaveRes) {
 
           offerSaveRes.body.message.should.equal('Forbidden.');
 
@@ -684,11 +711,11 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should be able to update existing offer', function(done) {
+    it('should be able to update existing offer', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -696,14 +723,14 @@ describe('Offer CRUD tests', function() {
           agent.post('/api/offers')
             .send(offer1)
             .expect(200)
-            .end(function(offerSaveErr) {
+            .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
 
               // Get id for offer we just saved
               Offer.findOne({
                 user: user1Id
-              }, function(offerFindErr, offer) {
+              }, function (offerFindErr, offer) {
                 // Handle error
                 if (offerFindErr) return done(offerFindErr);
 
@@ -718,7 +745,7 @@ describe('Offer CRUD tests', function() {
                 agent.put('/api/offers/' + offer._id)
                   .send(offer)
                   .expect(200)
-                  .end(function(offerPutErr, offerPutRes) {
+                  .end(function (offerPutErr, offerPutRes) {
                     // Handle offer put error
                     if (offerPutErr) return done(offerPutErr);
 
@@ -726,7 +753,7 @@ describe('Offer CRUD tests', function() {
 
                     Offer.findOne({
                       _id: offer._id
-                    }, function(err, offerNew) {
+                    }, function (err, offerNew) {
                       offerNew.description.should.equal('MODIFIED');
                       offerNew.noOfferDescription.should.equal('MODIFIED');
                       offerNew.updated.should.not.equal(previousUpdated);
@@ -738,17 +765,17 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should remove reactivation flag field when updating offer', function(done) {
+    it('should remove reactivation flag field when updating offer', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials2)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
           // Add field to offer
           offer2.reactivateReminderSent = new Date();
-          offer2.save(function(offerSaveErr, offerSavedRes) {
+          offer2.save(function (offerSaveErr, offerSavedRes) {
             // Handle offer save error
             if (offerSaveErr) return done(offerSaveErr);
 
@@ -756,13 +783,13 @@ describe('Offer CRUD tests', function() {
             agent.put('/api/offers/' + offerSavedRes._id)
               .send(offer2)
               .expect(200)
-              .end(function(offerSaveErr) {
+              .end(function (offerSaveErr) {
                 // Handle offer save error
                 if (offerSaveErr) return done(offerSaveErr);
 
                 Offer.findOne({
                   user: user2Id
-                }, function(err, offer) {
+                }, function (err, offer) {
                   should.not.exist(offer.reactivateReminderSent);
                   return done(err);
                 });
@@ -775,13 +802,13 @@ describe('Offer CRUD tests', function() {
   });
 
 
-  describe('Search offers', function() {
+  describe('Search offers', function () {
 
-    it('should be able to get empty list from an area where there are no offers', function(done) {
+    it('should be able to get empty list from an area where there are no offers', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -791,9 +818,9 @@ describe('Offer CRUD tests', function() {
               '&northEastLng=25.598493303571427' +
               '&southWestLat=-20.49068931208608' +
               '&southWestLng=-12.986188616071427'
-            )
+          )
             .expect(200)
-            .end(function(offersGetErr, offersGetRes) {
+            .end(function (offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
 
@@ -807,11 +834,11 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should be able to use + in front of positive coordinates', function(done) {
+    it('should be able to use + in front of positive coordinates', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -821,9 +848,9 @@ describe('Offer CRUD tests', function() {
               '&northEastLng=+18.73318142361111' +
               '&southWestLat=+44.66407507240992' +
               '&southWestLng=+3.689914279513889'
-            )
+          )
             .expect(200)
-            .end(function(offersGetErr, offersGetRes) {
+            .end(function (offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
 
@@ -837,11 +864,11 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should return error when missing bounding box parameter', function(done) {
+    it('should return error when missing bounding box parameter', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -850,102 +877,39 @@ describe('Offer CRUD tests', function() {
               '?northEastLat=32.89472514359572' +
               '&northEastLng=25.598493303571427' +
               '&southWestLat=-20.49068931208608'
-            )
+          )
             .expect(400)
             .end(done);
 
         });
     });
 
-    it('should return error with invalid bounding box parameter (too large coordinate without decimals)', function(done) {
+    it('should return error with invalid bounding box parameter (string after decimals)', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
           // Missing `southWestLng` paramter
           agent.get('/api/offers' +
-              '?northEastLat=1000' +
+              '?northEastLat=25.' + '1'.repeat(30) + 'foo' + // `foo` starts at 31
               '&northEastLng=25.598493303571427' +
               '&southWestLat=-20.49068931208608' +
               '&southWestLng=-12.986188616071427'
-            )
+          )
             .expect(400)
             .end(done);
 
         });
     });
 
-    it('should return error with invalid bounding box parameter (too large coordinate with decimals)', function(done) {
+    it('should return error with invalid bounding box parameter (string instead of coordinate)', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-
-          // Missing `southWestLng` paramter
-          agent.get('/api/offers' +
-              '?northEastLat=1000.5984' +
-              '&northEastLng=25.598493303571427' +
-              '&southWestLat=-20.49068931208608' +
-              '&southWestLng=-12.986188616071427'
-            )
-            .expect(400)
-            .end(done);
-
-        });
-    });
-
-    it('should return error with invalid bounding box parameter (too many decimals)', function(done) {
-      agent.post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function(signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-
-          // Missing `southWestLng` paramter
-          agent.get('/api/offers' +
-              '?northEastLat=25.' + '1'.repeat(30) + '2' + // testing with 31 digits, 30 is allowed limit
-              '&northEastLng=25.598493303571427' +
-              '&southWestLat=-20.49068931208608' +
-              '&southWestLng=-12.986188616071427'
-            )
-            .expect(400)
-            .end(done);
-
-        });
-    });
-
-    it('should return error with invalid bounding box parameter (non numbers after decimal limit)', function(done) {
-      agent.post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function(signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-
-          // Missing `southWestLng` paramter
-          agent.get('/api/offers' +
-              '?northEastLat=25.' + '1'.repeat(30) + 'foo' + // `foo` starts at 31, 30 is the limit
-              '&northEastLng=25.598493303571427' +
-              '&southWestLat=-20.49068931208608' +
-              '&southWestLng=-12.986188616071427'
-            )
-            .expect(400)
-            .end(done);
-
-        });
-    });
-
-    it('should return error with invalid bounding box parameter (string instead of coordinate)', function(done) {
-      agent.post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -955,18 +919,18 @@ describe('Offer CRUD tests', function() {
               '&northEastLng=25.598493303571427' +
               '&southWestLat=-20.49068931208608' +
               '&southWestLng=-12.986188616071427'
-            )
+          )
             .expect(400)
             .end(done);
 
         });
     });
 
-    it('should not be able to get list of offers from an area if not authenticated', function(done) {
+    it('should not be able to get list of offers from an area if not authenticated', function (done) {
       // Get offers (around Berlin)
-      agent.get('/api/offers' + queryBoundingBox)
+      agent.get('/api/offers' + testLocations.Europe.queryBoundingBox)
         .expect(403)
-        .end(function(offersGetErr, offersGetRes) {
+        .end(function (offersGetErr, offersGetRes) {
           // Handle offer get error
           if (offersGetErr) return done(offersGetErr);
 
@@ -977,18 +941,18 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should be able to get list of offers from an area', function(done) {
+    it('should be able to get list of offers from an area (Europe)', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
           // Get offers (around Berlin)
-          agent.get('/api/offers' + queryBoundingBox)
+          agent.get('/api/offers' + testLocations.Europe.queryBoundingBox)
             .expect(200)
-            .end(function(offersGetErr, offersGetRes) {
+            .end(function (offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
 
@@ -1022,23 +986,69 @@ describe('Offer CRUD tests', function() {
         });
     });
 
-    it('should include both meet and host offers when getting a list of offers from an area', function(done) {
+    // Tests different regions in the globe (Asia, USA, North Pole etc)
+    _.forEach(testLocations, function (testLocation, area) {
+      it('should be able to get offer from an area (' + area + ')', function (done) {
 
-      offerMeet.save(function(saveErr) {
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
+
+            // Clean out the DB from other offers
+            Offer.remove().exec(function () {
+
+              // Create new offer to target location
+              var testLocationOffer = new Offer(offer1);
+              testLocationOffer.location = testLocation.location;
+
+              testLocationOffer.save(function (saveErr, saveRes) {
+                if (saveErr) return done(saveErr);
+
+                // Get offers (around Berlin)
+                agent.get('/api/offers' + testLocation.queryBoundingBox)
+                  .expect(200)
+                  .end(function (offersGetErr, offersGetRes) {
+                    // Handle offer get error
+                    if (offersGetErr) return done(offersGetErr);
+
+                    // Set assertions
+                    offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(1);
+                    offersGetRes.body[0]._id.should.equal(saveRes._id.toString());
+                    offersGetRes.body[0].location[0].should.be.approximately(testLocation.location[0], 0.01);
+                    offersGetRes.body[0].location[1].should.be.approximately(testLocation.location[1], 0.01);
+
+                    // Call the assertion callback
+                    return done();
+                  });
+
+              });
+
+            });
+
+          });
+      });
+    });
+
+    it('should include both meet and host offers when getting a list of offers from an area', function (done) {
+
+      offerMeet.save(function (saveErr) {
         // Handle save error
         if (saveErr) return done(saveErr);
 
         agent.post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function(signinErr) {
+          .end(function (signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
 
             // Get offers (around Berlin)
-            agent.get('/api/offers' + queryBoundingBox)
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox)
               .expect(200)
-              .end(function(offersGetErr, offersGetRes) {
+              .end(function (offersGetErr, offersGetRes) {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
 
@@ -1048,7 +1058,7 @@ describe('Offer CRUD tests', function() {
 
                 // Count different offer types
                 // This produces `{'host': 2, 'meet': 1}`
-                var count = _.countBy(offersGetRes.body, function(offer) {
+                var count = _.countBy(offersGetRes.body, function (offer) {
                   return offer.type;
                 });
 
@@ -1062,26 +1072,26 @@ describe('Offer CRUD tests', function() {
       });
     });
 
-    it('should not include outdated meet offers when getting a list of offers from an area', function(done) {
+    it('should not include outdated meet offers when getting a list of offers from an area', function (done) {
 
       // Set date to past
       offerMeet.validUntil = moment().subtract(1, 'minute').toDate();
 
-      offerMeet.save(function(saveErr) {
+      offerMeet.save(function (saveErr) {
         // Handle save error
         if (saveErr) return done(saveErr);
 
         agent.post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function(signinErr) {
+          .end(function (signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
 
             // Get offers (around Berlin)
-            agent.get('/api/offers' + queryBoundingBox)
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox)
               .expect(200)
-              .end(function(offersGetErr, offersGetRes) {
+              .end(function (offersGetErr, offersGetRes) {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
 
@@ -1100,17 +1110,17 @@ describe('Offer CRUD tests', function() {
       });
     });
 
-    describe('Search offers by "types" filter', function() {
+    describe('Search offers by "types" filter', function () {
 
-      it('should be able to get list of offers from an area filtered by type "host"', function(done) {
-        offerMeet.save(function(saveErr) {
+      it('should be able to get list of offers from an area filtered by type "host"', function (done) {
+        offerMeet.save(function (saveErr) {
           // Handle save error
           if (saveErr) return done(saveErr);
 
           agent.post('/api/auth/signin')
             .send(credentials)
             .expect(200)
-            .end(function(signinErr) {
+            .end(function (signinErr) {
               // Handle signin error
               if (signinErr) return done(signinErr);
 
@@ -1118,9 +1128,9 @@ describe('Offer CRUD tests', function() {
               var filters = {
                 types: ['host']
               };
-              agent.get('/api/offers' + queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+              agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
                 .expect(200)
-                .end(function(offersGetErr, offersGetRes) {
+                .end(function (offersGetErr, offersGetRes) {
                   // Handle offer get error
                   if (offersGetErr) return done(offersGetErr);
 
@@ -1144,15 +1154,15 @@ describe('Offer CRUD tests', function() {
         });
       });
 
-      it('should be able to get list of offers from an area filtered by type "meet"', function(done) {
-        offerMeet.save(function(saveErr) {
+      it('should be able to get list of offers from an area filtered by type "meet"', function (done) {
+        offerMeet.save(function (saveErr) {
           // Handle save error
           if (saveErr) return done(saveErr);
 
           agent.post('/api/auth/signin')
             .send(credentials)
             .expect(200)
-            .end(function(signinErr) {
+            .end(function (signinErr) {
               // Handle signin error
               if (signinErr) return done(signinErr);
 
@@ -1160,9 +1170,9 @@ describe('Offer CRUD tests', function() {
               var filters = {
                 types: ['meet']
               };
-              agent.get('/api/offers' + queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+              agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
                 .expect(200)
-                .end(function(offersGetErr, offersGetRes) {
+                .end(function (offersGetErr, offersGetRes) {
                   // Handle offer get error
                   if (offersGetErr) return done(offersGetErr);
 
@@ -1177,15 +1187,15 @@ describe('Offer CRUD tests', function() {
         });
       });
 
-      it('should be able to get list of offers from an area filtered by non existing type', function(done) {
-        offerMeet.save(function(saveErr) {
+      it('should be able to get list of offers from an area filtered by non existing type', function (done) {
+        offerMeet.save(function (saveErr) {
           // Handle save error
           if (saveErr) return done(saveErr);
 
           agent.post('/api/auth/signin')
             .send(credentials)
             .expect(200)
-            .end(function(signinErr) {
+            .end(function (signinErr) {
               // Handle signin error
               if (signinErr) return done(signinErr);
 
@@ -1193,9 +1203,9 @@ describe('Offer CRUD tests', function() {
               var filters = {
                 types: ['foobar']
               };
-              agent.get('/api/offers' + queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+              agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
                 .expect(200)
-                .end(function(offersGetErr, offersGetRes) {
+                .end(function (offersGetErr, offersGetRes) {
                   // Handle offer get error
                   if (offersGetErr) return done(offersGetErr);
 
@@ -1204,7 +1214,7 @@ describe('Offer CRUD tests', function() {
 
                   // Count different offer types
                   // This produces `{'host': 2, 'meet': 1}`
-                  var count = _.countBy(offersGetRes.body, function(offer) {
+                  var count = _.countBy(offersGetRes.body, function (offer) {
                     return offer.type;
                   });
 
@@ -1220,13 +1230,13 @@ describe('Offer CRUD tests', function() {
 
     });
 
-    describe('Search offers by "tribes" filter', function() {
+    describe('Search offers by "tribes" filter', function () {
 
-      it('should be able to get list of offers from an area filtered by one tribe', function(done) {
+      it('should be able to get list of offers from an area filtered by one tribe', function (done) {
         agent.post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function(signinErr) {
+          .end(function (signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
 
@@ -1234,9 +1244,9 @@ describe('Offer CRUD tests', function() {
             var filters = {
               tribes: [tribe2Id]
             };
-            agent.get('/api/offers' + queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
               .expect(200)
-              .end(function(offersGetErr, offersGetRes) {
+              .end(function (offersGetErr, offersGetRes) {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
 
@@ -1256,7 +1266,7 @@ describe('Offer CRUD tests', function() {
           });
       });
 
-      it('should be able to get list of offers from an area filtered by tribes and not get tribe-less offers', function(done) {
+      it('should be able to get list of offers from an area filtered by tribes and not get tribe-less offers', function (done) {
         user3.member = [];
         user3.save(function (err, user3res) {
           should.not.exist(err);
@@ -1264,7 +1274,7 @@ describe('Offer CRUD tests', function() {
           agent.post('/api/auth/signin')
             .send(credentials)
             .expect(200)
-            .end(function(signinErr) {
+            .end(function (signinErr) {
               // Handle signin error
               if (signinErr) return done(signinErr);
 
@@ -1272,9 +1282,9 @@ describe('Offer CRUD tests', function() {
               var filters = {
                 tribes: [tribe1Id, tribe2Id]
               };
-              agent.get('/api/offers' + queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+              agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
                 .expect(200)
-                .end(function(offersGetErr, offersGetRes) {
+                .end(function (offersGetErr, offersGetRes) {
                   // Handle offer get error
                   if (offersGetErr) return done(offersGetErr);
 
@@ -1293,11 +1303,11 @@ describe('Offer CRUD tests', function() {
         });
       });
 
-      it('should be able to get list of offers from an area filtered by many tribes', function(done) {
+      it('should be able to get list of offers from an area filtered by many tribes', function (done) {
         agent.post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function(signinErr) {
+          .end(function (signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
 
@@ -1305,9 +1315,9 @@ describe('Offer CRUD tests', function() {
             var filters = {
               tribes: [tribe1Id, tribe2Id]
             };
-            agent.get('/api/offers' + queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
               .expect(200)
-              .end(function(offersGetErr, offersGetRes) {
+              .end(function (offersGetErr, offersGetRes) {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
 
@@ -1346,17 +1356,17 @@ describe('Offer CRUD tests', function() {
           });
       });
 
-      it('should be able able to send empty filter request', function(done) {
+      it('should be able able to send empty filter request', function (done) {
         agent.post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function(signinErr) {
+          .end(function (signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
 
-            agent.get('/api/offers' + queryBoundingBox + '&filters=&types=')
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=&types=')
               .expect(200)
-              .end(function(offersGetErr, offersGetRes) {
+              .end(function (offersGetErr, offersGetRes) {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
 
@@ -1369,17 +1379,17 @@ describe('Offer CRUD tests', function() {
           });
       });
 
-      it('should not be able to send non-json filter request', function(done) {
+      it('should not be able to send non-json filter request', function (done) {
         agent.post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function(signinErr) {
+          .end(function (signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
 
-            agent.get('/api/offers' + queryBoundingBox + '&filters={wrong}')
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters={wrong}')
               .expect(400)
-              .end(function(offersGetErr, offersGetRes) {
+              .end(function (offersGetErr, offersGetRes) {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
 
@@ -1397,10 +1407,10 @@ describe('Offer CRUD tests', function() {
 
   });
 
-  afterEach(function(done) {
+  afterEach(function (done) {
     // Uggggly pyramid revenge!
-    User.remove().exec(function() {
-      Tag.remove().exec(function() {
+    User.remove().exec(function () {
+      Tag.remove().exec(function () {
         Offer.remove().exec(done);
       });
     });

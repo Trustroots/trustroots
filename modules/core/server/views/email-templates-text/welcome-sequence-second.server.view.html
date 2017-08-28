@@ -1,4 +1,4 @@
-{% extends 'email.server.view.html' %}
+{% extends './email.server.view.html' %}
 
 {% block content %}
 Hi {{name}}!
@@ -10,4 +10,4 @@ To get a new code, see: {{urlInvitePlainText}}
 
 Invite link: {{urlSignupPlainText}}
 
-{% endblock %}
+{% endblock content %}

@@ -93,7 +93,7 @@ describe('User last seen CRUD tests', function () {
       sandbox.clock.tick(20);
       agent.get('/api/messages')
         .expect(200)
-        .end(function(err) {
+        .end(function (err) {
           if (err) return done(err);
 
           // read user from database
@@ -124,7 +124,7 @@ describe('User last seen CRUD tests', function () {
       // update for the first time, OK
       agent.get('/api/messages')
         .expect(200)
-        .end(function() {
+        .end(function () {
           // read user from database
           User.findOne({ username: username }, function (err, user) {
             try {

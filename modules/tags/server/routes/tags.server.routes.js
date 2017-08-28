@@ -7,7 +7,7 @@ var tagsPolicy = require('../policies/tags.server.policy'),
     tribes = require('../controllers/tribes.server.controller'),
     tags = require('../controllers/tags.server.controller');
 
-module.exports = function(app) {
+module.exports = function (app) {
 
   app.route('/api/tags').all(tagsPolicy.isAllowed)
     .post(tags.createTag)

@@ -111,7 +111,7 @@
        */
       function activate() {
         // Toggle marker/circle visible/hidden depending on zoom level
-        $scope.$watch('trOfferLocation.mapCenter.zoom', function(newZoomValue) {
+        $scope.$watch('trOfferLocation.mapCenter.zoom', function (newZoomValue) {
           vm.mapLayers.overlays.locationPath.visible = newZoomValue >= 12;
           vm.mapLayers.overlays.locationMarker.visible = newZoomValue < 12;
         });

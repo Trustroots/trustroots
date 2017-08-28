@@ -54,7 +54,7 @@
      * Automatically clears cache after retreiving object from cache
      */
     function get(options) {
-      return $q(function(resolve, reject) {
+      return $q(function (resolve, reject) {
         if (angular.isUndefined(options) || angular.isUndefined(options.tribeSlug) || !angular.isString(options.tribeSlug)) {
           $log.error('Missing tribeSlug');
           reject();
@@ -67,12 +67,12 @@
           Tribe.get({
             tribeSlug: options.tribeSlug
           }).$promise
-          .then(function(tribe) {
-            resolve(tribe);
-          })
-          .catch(function() {
-            reject();
-          });
+            .then(function (tribe) {
+              resolve(tribe);
+            })
+            .catch(function () {
+              reject();
+            });
         }
       });
     }

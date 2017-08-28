@@ -43,7 +43,7 @@
       link: function (scope, element, attr, ngModel) {
 
         // Event handler to stop submitting the surrounding form
-        element.bind('keydown keypress focus', function($event) {
+        element.bind('keydown keypress focus', function ($event) {
           scope.trLocationNotfound = false;
 
           // On enter
@@ -70,14 +70,14 @@
 
         // Without this input value would be left empty due $compile
         // @todo: any better way of handling this?
-        $timeout(function() {
+        $timeout(function () {
           ngModel.$setViewValue(scope.value);
           ngModel.$render();
         });
 
       },
       controllerAs: 'trLocation',
-      controller: function($scope, $timeout) {
+      controller: function ($scope, $timeout) {
 
         // View Model
         var vm = this;
@@ -103,7 +103,7 @@
          */
         function searchSuggestions(query) {
           $scope.trLocationNotfound = false;
-          return LocationService.suggestions(query).then(function(suggestions) {
+          return LocationService.suggestions(query).then(function (suggestions) {
             // Enter was pressed before we got these results, thus just pick first
             if ($scope.skipSuggestions) {
               $scope.skipSuggestions = false;
@@ -127,7 +127,7 @@
          * When selecting autosuggested location
          */
         function onSelect($item, $model, $label) {
-          $timeout(function() {
+          $timeout(function () {
             $scope.value = $label;
           });
           locate($item);

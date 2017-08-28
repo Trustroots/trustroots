@@ -19,7 +19,7 @@
     vm.openThread = openThread;
 
     // Fetches first page of messages
-    vm.messageHandler.fetchMessages().$promise.then(function(data) {
+    vm.messageHandler.fetchMessages().$promise.then(function (data) {
       addMessages(data);
     });
 
@@ -32,7 +32,7 @@
 
     // Appends returned messages to model
     function addMessages(data) {
-      angular.forEach(data, function(msg) {
+      angular.forEach(data, function (msg) {
         vm.threads.unshift(msg);
       });
     }
@@ -43,7 +43,7 @@
      */
     function moreMessages(waypointsDown) {
       if (vm.messageHandler.nextPage && waypointsDown) {
-        vm.messageHandler.fetchMessages().$promise.then(function(data) {
+        vm.messageHandler.fetchMessages().$promise.then(function (data) {
           addMessages(data);
         });
 

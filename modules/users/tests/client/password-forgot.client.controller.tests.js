@@ -1,8 +1,8 @@
-(function() {
+(function () {
   'use strict';
 
   // Authentication controller Spec
-  describe('ForgotPasswordController', function() {
+  describe('ForgotPasswordController', function () {
     // Initialize global variables
     var $scope,
         $httpBackend,
@@ -32,8 +32,8 @@
     // Load the main application module
     beforeEach(module(AppConfig.appModuleName));
 
-    describe('Logged out user', function() {
-      beforeEach(inject(function($controller, $rootScope, _$window_, _$httpBackend_, _$location_, _Authentication_) {
+    describe('Logged out user', function () {
+      beforeEach(inject(function ($controller, $rootScope, _$window_, _$httpBackend_, _$location_, _Authentication_) {
         // Set a new global $scope
         $scope = $rootScope.$new();
 
@@ -51,23 +51,23 @@
         });
       }));
 
-      it('should not redirect to home', function() {
+      it('should not redirect to home', function () {
         expect($location.path).not.toHaveBeenCalledWith('/');
       });
 
-      describe('askForPasswordReset', function() {
+      describe('askForPasswordReset', function () {
         var credentials = {
           username: 'test',
           password: 'test'
         };
-        beforeEach(function() {
+        beforeEach(function () {
           // Test expected GET request
           $httpBackend.when('GET', '/modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
           $scope.vm.credentials = credentials;
           Authentication.user = null;
         });
 
-        it('should clear $scope.vm.success and $scope.vm.error', function() {
+        it('should clear $scope.vm.success and $scope.vm.error', function () {
 
           $scope.vm.success = 'test';
           $scope.vm.error = 'test';
@@ -77,9 +77,9 @@
           expect($scope.vm.error).toBeNull();
         });
 
-        describe('POST error', function() {
+        describe('POST error', function () {
           var errorMessage = 'No account with that username has been found';
-          beforeEach(function() {
+          beforeEach(function () {
 
             // Test expected GET request
             $httpBackend.when('GET', '/modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
@@ -92,18 +92,18 @@
             $httpBackend.flush();
           });
 
-          it('should not clear form', function() {
+          it('should not clear form', function () {
             expect($scope.vm.credentials).not.toBe(null);
           });
 
-          it('should set error to response message', function() {
+          it('should set error to response message', function () {
             expect($scope.vm.error).toBe(errorMessage);
           });
         });
 
-        describe('POST success', function() {
+        describe('POST success', function () {
           var successMessage = 'An email has been sent to the provided email with further instructions.';
-          beforeEach(function() {
+          beforeEach(function () {
 
             // Test expected requests
             $httpBackend.when('GET', '/modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
@@ -116,11 +116,11 @@
             $httpBackend.flush();
           });
 
-          it('should clear form', function() {
+          it('should clear form', function () {
             expect($scope.vm.credentials).toBe(null);
           });
 
-          it('should set success to response message', function() {
+          it('should set success to response message', function () {
             expect($scope.vm.success).toBe(successMessage);
           });
         });

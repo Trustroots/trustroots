@@ -51,16 +51,16 @@
      */
     function removeUserSocialAccount(provider) {
       $http.delete('/api/users/accounts/' + provider)
-      .then(
-        function(response) { // On success function
-          messageCenterService.add('success', 'Succesfully disconnected from ' + provider);
-          vm.user = Authentication.user = response.data;
-          $scope.$emit('userUpdated');
-        },
-        function(response) { // On error function
-          messageCenterService.add('danger', response.data.message || 'Something went wrong. Try again or contact us to disconnect your profile.', { timeout: 10000 });
-        }
-      );
+        .then(
+          function (response) { // On success function
+            messageCenterService.add('success', 'Succesfully disconnected from ' + provider);
+            vm.user = Authentication.user = response.data;
+            $scope.$emit('userUpdated');
+          },
+          function (response) { // On error function
+            messageCenterService.add('danger', response.data.message || 'Something went wrong. Try again or contact us to disconnect your profile.', { timeout: 10000 });
+          }
+        );
     }
 
     /**
@@ -68,11 +68,11 @@
      */
     function updateUserProfile(isValid) {
       if (isValid) {
-        vm.user.$update(function(response) {
+        vm.user.$update(function (response) {
           Authentication.user = response;
           $scope.$emit('userUpdated');
           messageCenterService.add('success', 'Hospitality networks updated.');
-        }, function(response) {
+        }, function (response) {
           messageCenterService.add('danger', response.data.message || 'Something went wrong. Please try again!', { timeout: 10000 });
         });
       } else {

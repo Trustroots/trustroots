@@ -27,7 +27,7 @@
     });
 
     angular.extend(Offer.prototype, {
-      createOrUpdate: function() {
+      createOrUpdate: function () {
         var offer = this;
         return createOrUpdate(offer);
       }

@@ -9,9 +9,9 @@ var config = require('../config'),
     mongoose = require('mongoose');
 
 // Load the mongoose models
-module.exports.loadModels = function(callback) {
+module.exports.loadModels = function (callback) {
   // Globbing model files
-  config.files.server.models.forEach(function(modelPath) {
+  config.files.server.models.forEach(function (modelPath) {
     require(path.resolve(modelPath));
   });
 
@@ -19,7 +19,7 @@ module.exports.loadModels = function(callback) {
 };
 
 // Initialize Mongoose
-module.exports.connect = function(callback) {
+module.exports.connect = function (callback) {
   var _this = this;
 
   // Use native promises
@@ -44,8 +44,8 @@ module.exports.connect = function(callback) {
   });
 };
 
-module.exports.disconnect = function(callback) {
-  mongoose.disconnect(function(err) {
+module.exports.disconnect = function (callback) {
+  mongoose.disconnect(function (err) {
     console.info(chalk.yellow('Disconnected from MongoDB.'));
     callback(err);
   });

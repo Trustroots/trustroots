@@ -7,7 +7,7 @@ var _ = require('lodash'),
     url = (config.https ? 'https' : 'http') + '://' + config.domain,
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller'));
 
-exports.notifyPushDeviceAdded = function(user, platform, callback) {
+exports.notifyPushDeviceAdded = function (user, platform, callback) {
 
   if (_.get(user, 'pushRegistration', []).length === 0) return callback();
 
@@ -27,7 +27,7 @@ exports.notifyPushDeviceAdded = function(user, platform, callback) {
   exports.sendUserNotification(user, notification, callback);
 };
 
-exports.notifyMessagesUnread = function(userFrom, userTo, data, callback) {
+exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
 
   if (_.get(userTo, 'pushRegistration', []).length === 0) return callback();
 
@@ -67,7 +67,7 @@ exports.notifyMessagesUnread = function(userFrom, userTo, data, callback) {
   exports.sendUserNotification(userTo, notification, callback);
 };
 
-exports.sendUserNotification = function(user, notification, callback) {
+exports.sendUserNotification = function (user, notification, callback) {
 
   var data = {
     userId: user._id,

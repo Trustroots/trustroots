@@ -10,7 +10,7 @@ var path = require('path'),
 /**
  * Render the main application page
  */
-exports.renderIndex = function(req, res) {
+exports.renderIndex = function (req, res) {
 
   var renderVars = {
     user: null
@@ -32,22 +32,22 @@ exports.renderIndex = function(req, res) {
     renderVars.invite = true;
   }
 
-  res.render('modules/core/server/views/index', renderVars);
+  res.render('index.server.view.html', renderVars);
 };
 
 /**
  * Render the server not found responses
  * Performs content-negotiation on the Accept HTTP header
  */
-exports.renderNotFound = function(req, res) {
+exports.renderNotFound = function (req, res) {
   res.status(404).format({
-    'text/html': function() {
-      res.render('modules/core/server/views/404');
+    'text/html': function () {
+      res.render('404.server.view.html');
     },
-    'application/json': function() {
+    'application/json': function () {
       res.json({ message: errorService.getErrorMessageByKey('not-found') });
     },
-    'default': function() {
+    'default': function () {
       res.send(errorService.getErrorMessageByKey('not-found'));
     }
   });
@@ -57,7 +57,7 @@ exports.renderNotFound = function(req, res) {
  * Log received CSP violation report
  * See `config/lib/express.js` and `initHelmetHeaders()` for more
  */
-exports.receiveCSPViolationReport = function(req, res) {
+exports.receiveCSPViolationReport = function (req, res) {
   if (process.env.NODE_ENV !== 'test') {
     log('warn', 'CSP violation report #ljeanw', {
       report: req.body ? textService.html(req.body) : 'No report available.'
@@ -72,7 +72,7 @@ exports.receiveCSPViolationReport = function(req, res) {
  * @link https://helmetjs.github.io/docs/expect-ct/
  * @link https://scotthelme.co.uk/a-new-security-header-expect-ct/
  */
-exports.receiveExpectCTViolationReport = function(req, res) {
+exports.receiveExpectCTViolationReport = function (req, res) {
   if (process.env.NODE_ENV !== 'test') {
     log('warn', 'Expect-CT violation report #3hg8ha', {
       report: req.body ? textService.html(req.body) : 'No report available.'
@@ -84,7 +84,7 @@ exports.receiveExpectCTViolationReport = function(req, res) {
 /**
 * Render javascript content containing service worker config.
 */
-exports.renderServiceWorkerConfig = function(req, res) {
+exports.renderServiceWorkerConfig = function (req, res) {
   res.set('Content-Type', 'text/javascript')
-     .send('var FCM_SENDER_ID = ' + JSON.stringify(config.fcm.senderId) + ';\n');
+    .send('var FCM_SENDER_ID = ' + JSON.stringify(config.fcm.senderId) + ';\n');
 };

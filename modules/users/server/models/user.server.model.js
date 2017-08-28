@@ -20,32 +20,32 @@ var passwordMinLength = 8;
 /**
  * A Validation function for local strategy properties
  */
-var validateLocalStrategyProperty = function(property) {
+var validateLocalStrategyProperty = function (property) {
   return ((this.provider !== 'local' && !this.updated) || property.length);
 };
 
 /**
  * A Validation function for local strategy email
  */
-var validateLocalStrategyEmail = function(email) {
+var validateLocalStrategyEmail = function (email) {
   return ((this.provider !== 'local' && !this.updated) || validator.isEmail(email));
 };
 
 /**
  * A Validation function for password
  */
-var validatePassword = function(password) {
+var validatePassword = function (password) {
   return password && validator.isLength(password, passwordMinLength);
 };
 
 /**
  * A Validation function for username
  */
-var validateUsername = function(username) {
+var validateUsername = function (username) {
   return this.provider !== 'local' || authenticationService.validateUsername(username);
 };
 
-var setPlainTextField = function(value) {
+var setPlainTextField = function (value) {
   return textService.plainText(value, true);
 };
 
@@ -94,24 +94,23 @@ var UserPushRegistrationSchema = new Schema({
   }
 }, { _id: false });
 
-
 /**
  * User Schema
  */
 var UserSchema = new Schema({
   firstName: {
     type: String,
-    default: '',
+    required: true,
     validate: [validateLocalStrategyProperty, 'Please fill in your first name'],
     set: setPlainTextField
   },
   lastName: {
     type: String,
-    default: '',
+    required: true,
     validate: [validateLocalStrategyProperty, 'Please fill in your last name'],
     set: setPlainTextField
   },
-  /* This is (currently) generated in `users.profile.server.controller.js` */
+  /* This is generated in Schema pre-save hook below */
   displayName: {
     type: String
   },
@@ -303,7 +302,7 @@ var UserSchema = new Schema({
 /**
  * Hook a pre save method to hash the password
  */
-UserSchema.pre('save', function(next) {
+UserSchema.pre('save', function (next) {
   if (this.password && this.isModified('password') && this.password.length >= passwordMinLength) {
     this.salt = crypto.randomBytes(16).toString('base64');
     this.password = this.hashPassword(this.password);
@@ -314,13 +313,18 @@ UserSchema.pre('save', function(next) {
     this.emailHash = crypto.createHash('md5').update(this.email.trim().toLowerCase()).digest('hex');
   }
 
+  // Generate `displayName`
+  if (this.isModified('firstName') || this.isModified('lastName')) {
+    this.displayName = this.firstName + ' ' + this.lastName;
+  }
+
   next();
 });
 
 /**
  * Create instance method for hashing a password
  */
-UserSchema.methods.hashPassword = function(password) {
+UserSchema.methods.hashPassword = function (password) {
   if (this.salt && password) {
     return crypto.pbkdf2Sync(password, new Buffer(this.salt, 'base64'), 10000, 64, 'SHA1').toString('base64');
   } else {
@@ -331,7 +335,7 @@ UserSchema.methods.hashPassword = function(password) {
 /**
  * Create instance method for authenticating user
  */
-UserSchema.methods.authenticate = function(password) {
+UserSchema.methods.authenticate = function (password) {
   return this.password === this.hashPassword(password);
 };
 

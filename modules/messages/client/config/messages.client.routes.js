@@ -32,12 +32,12 @@
           UserProfilesService: 'UserProfilesService',
           SettingsService: 'SettingsService',
 
-          userTo: function(UserProfilesService, $stateParams) {
+          userTo: function (UserProfilesService, $stateParams) {
             return UserProfilesService.get({
               username: $stateParams.username
             });
           },
-          appSettings: function(SettingsService) {
+          appSettings: function (SettingsService) {
             return SettingsService.get();
           }
         },

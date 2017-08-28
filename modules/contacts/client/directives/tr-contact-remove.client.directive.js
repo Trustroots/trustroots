@@ -15,7 +15,7 @@
       scope: {
         contactToRemove: '=trContactRemove'
       },
-      link: function(scope, element) {
+      link: function (scope, element) {
 
         function openModal() {
           $uibModal.open({

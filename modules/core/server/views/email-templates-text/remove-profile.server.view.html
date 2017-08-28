@@ -1,4 +1,4 @@
-{% extends 'email.server.view.html' %}
+{% extends './email.server.view.html' %}
 
 {% block content %}
 Hey {{name}}!
@@ -11,4 +11,4 @@ Please click the link below to confirm your profile removal. The link is valid f
 
 {{urlConfirmPlainText}}
 
-{% endblock %}
+{% endblock content %}

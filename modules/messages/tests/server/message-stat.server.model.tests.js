@@ -20,7 +20,7 @@ var user0,
  * Unit tests
  */
 describe('MessageStats Model', function () {
-  beforeEach(function(/* done */) {
+  beforeEach(function (/* done */) {
 
     user0 = new User({
       firstName: 'Full',

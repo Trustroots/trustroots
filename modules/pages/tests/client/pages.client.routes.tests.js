@@ -9,7 +9,7 @@
     // Disable $urlRouterProvider transitions
     // You should comment this out if you want to test route transitions (e.g. "adding trailing slash"-test)
     // See http://stackoverflow.com/a/26613169/1984644 for more
-    beforeEach(module(function($urlRouterProvider) {
+    beforeEach(module(function ($urlRouterProvider) {
       $urlRouterProvider.deferIntercept();
     }));
 

@@ -14,7 +14,7 @@ var path = require('path'),
 /**
  * Send support request to our support systems
  */
-exports.supportRequest = function(req, res) {
+exports.supportRequest = function (req, res) {
 
   // Prepare support request variables for the email template
   var supportRequestData = {
@@ -61,14 +61,14 @@ exports.supportRequest = function(req, res) {
   var supportRequest = new SupportRequest(storedSupportRequestData);
 
   // Save support request to db
-  supportRequest.save(function(err) {
+  supportRequest.save(function (err) {
     if (err) {
       console.error('Failed storing support request to the DB:');
       console.error(err);
     }
 
     // Send email
-    emailService.sendSupportRequest(replyTo, supportRequestData, function(emailServiceErr) {
+    emailService.sendSupportRequest(replyTo, supportRequestData, function (emailServiceErr) {
       if (emailServiceErr) {
         console.error('Support request error:');
         console.error(emailServiceErr);

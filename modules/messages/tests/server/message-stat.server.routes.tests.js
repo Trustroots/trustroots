@@ -19,7 +19,7 @@ describe('Display Message Statistics in User Route', function () {
 
   var password = 'password123';
 
-  before(function(done) {
+  before(function (done) {
     // Get application
     var app = express.init(mongoose);
     agent = request.agent(app);

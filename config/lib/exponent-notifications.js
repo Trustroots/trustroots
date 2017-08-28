@@ -15,7 +15,7 @@ exports.sendToDevice = function sendToDevice(tokens, notification) {
   var pushPromises = [];
 
   // iterate over tokens
-  tokens.forEach(function(token) {
+  tokens.forEach(function (token) {
     // dispatch push notification and save returned Promise
     pushPromises.push(expo.sendPushNotificationsAsync([{
       // Exponent target device token

@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  describe('ContactAddController', function() {
+  describe('ContactAddController', function () {
     // Initialize global variables
     var $httpBackend,
         Authentication,
@@ -25,13 +25,13 @@
     };
 
     // Load the main application module
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       module(AppConfig.appModuleName);
       done();
     });
 
-    beforeEach(function(done) {
-      inject(function($templateCache, _$httpBackend_, _Authentication_, _UsersMini_, _ContactByService_) {
+    beforeEach(function (done) {
+      inject(function ($templateCache, _$httpBackend_, _Authentication_, _UsersMini_, _ContactByService_) {
         $httpBackend = _$httpBackend_;
         Authentication = _Authentication_;
         UsersMini = _UsersMini_;
@@ -42,15 +42,15 @@
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       $httpBackend.verifyNoOutstandingExpectation();
       $httpBackend.verifyNoOutstandingRequest();
     });
 
-    describe('logged in', function() {
+    describe('logged in', function () {
 
-      beforeEach(function(done) {
-        inject(function($controller) {
+      beforeEach(function (done) {
+        inject(function ($controller) {
 
           Authentication.user = user1;
 
@@ -65,66 +65,66 @@
         });
       });
 
-      describe('when user does not exist', function() {
+      describe('when user does not exist', function () {
 
-        beforeEach(function() {
+        beforeEach(function () {
           $httpBackend.expect('GET', '/api/users/mini/user2').respond(404);
           $httpBackend.expect('GET', '/api/contact-by/user2').respond(404);
         });
 
-        it('displays an error message', function() {
+        it('displays an error message', function () {
           $httpBackend.flush();
           expect(ContactAddController.error).toBe('User does not exist.');
         });
 
       });
 
-      describe('when user exists', function() {
+      describe('when user exists', function () {
 
-        beforeEach(function() {
+        beforeEach(function () {
           $httpBackend.expect('GET', '/api/users/mini/user2').respond(200, user2);
         });
 
-        describe('when unconfirmed contact exists', function() {
+        describe('when unconfirmed contact exists', function () {
 
-          beforeEach(function() {
+          beforeEach(function () {
             $httpBackend.expect('GET', '/api/contact-by/user2').respond(200, { confirmed: false });
           });
 
-          it('displays a success message', function() {
+          it('displays a success message', function () {
             $httpBackend.flush();
             expect(ContactAddController.success).toBe('Connection already initiated; now it has to be confirmed.');
           });
 
         });
 
-        describe('when confirmed contact exists', function() {
+        describe('when confirmed contact exists', function () {
 
-          beforeEach(function() {
+          beforeEach(function () {
             $httpBackend.expect('GET', '/api/contact-by/user2').respond(200, { confirmed: true });
           });
 
-          it('Shows a nice message when the contact is confirmed', function() {
+          it('Shows a nice message when the contact is confirmed', function () {
             $httpBackend.flush();
             expect(ContactAddController.success).toBe('You two are already connected. Great!');
           });
 
         });
 
-        describe('when no contact exists', function() {
+        describe('when no contact exists', function () {
 
-          beforeEach(function() {
+          beforeEach(function () {
             $httpBackend.expect('GET', '/api/contact-by/user2').respond(404);
           });
 
-          it('will make contact request', function() {
+          it('will make contact request', function () {
             $httpBackend.expect('POST', '/api/contact', contactRequest).respond(200);
             ContactAddController.add();
             $httpBackend.flush();
             expect(ContactAddController.success).toBe('Done! We sent an email to your contact and he/she still needs to confirm it.');
           });
 
-          it('will make contact request with custom message', function() {
+          it('will make contact request with custom message', function () {
             var customMessage = 'my custom message';
             ContactAddController.contact.message = customMessage;
             $httpBackend.expect('POST', '/api/contact', { friendUserId: user2._id, message: customMessage }).respond(200);
@@ -134,13 +134,13 @@
           });
 
 
-          describe('when unconfirmed contact conflict', function() {
+          describe('when unconfirmed contact conflict', function () {
 
-            beforeEach(function() {
+            beforeEach(function () {
               $httpBackend.expect('POST', '/api/contact', contactRequest).respond(409, { confirmed: false });
             });
 
-            it('displays a confirmation waiting success message', function() {
+            it('displays a confirmation waiting success message', function () {
               ContactAddController.add();
               $httpBackend.flush();
               expect(ContactAddController.success).toBe('Connection already initiated; now it has to be confirmed.');
@@ -148,13 +148,13 @@
 
           });
 
-          describe('with confirmed contact conflict', function() {
+          describe('with confirmed contact conflict', function () {
 
-            beforeEach(function() {
+            beforeEach(function () {
               $httpBackend.expect('POST', '/api/contact', contactRequest).respond(409, { confirmed: true });
             });
 
-            it('displays an already connected success message', function() {
+            it('displays an already connected success message', function () {
               ContactAddController.add();
               $httpBackend.flush();
               expect(ContactAddController.success).toBe('You two are already connected. Great!');

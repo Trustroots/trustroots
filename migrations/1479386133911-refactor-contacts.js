@@ -15,20 +15,20 @@ var path = require('path'),
     contactModels = require(path.resolve('./modules/contacts/server/models/contacts.server.model')),
     Contact = mongoose.model('Contact');
 
-exports.up = function(next) {
+exports.up = function (next) {
 
   async.waterfall([
 
     // Bootstrap db connection
-    function(done) {
-      mongooseService.connect(function() {
+    function (done) {
+      mongooseService.connect(function () {
         console.log(chalk.green('Connected to MongoDB.'));
         done();
       });
     },
 
     // Get all contact documents
-    function(done) {
+    function (done) {
       Contact
         .find({ users: { $exists: true } })
         .exec(function (err, contacts) {
@@ -40,7 +40,7 @@ exports.up = function(next) {
     },
 
     // Update each contact document
-    function(contacts, done) {
+    function (contacts, done) {
 
       // No contacts to process
       if (!contacts.length) {
@@ -56,7 +56,7 @@ exports.up = function(next) {
         contacts,
         // Iterate each contact using this function
         // Must call `contactDone()` after done
-        function(contact, contactDone) {
+        function (contact, contactDone) {
           // Process contact
           var contactObject = contact.toObject();
           Contact.update(
@@ -79,7 +79,7 @@ exports.up = function(next) {
               // Limits updates only to one document per update
               multi: false
             },
-            function(err, raw) {
+            function (err, raw) {
               // Succesfully saved this contact
               if (!err && raw.nModified === 1) {
                 counter++;
@@ -90,7 +90,7 @@ exports.up = function(next) {
           );
         },
         // Final callback after all the contacts are processed
-        function(err) {
+        function (err) {
           if (err) {
             console.error(err);
           }
@@ -106,7 +106,7 @@ exports.up = function(next) {
       console.error(err);
     }
     // Disconnect before exiting
-    mongooseService.disconnect(function(mongooseErr) {
+    mongooseService.disconnect(function (mongooseErr) {
       if (mongooseErr) {
         console.error(mongooseErr);
       }
@@ -116,20 +116,20 @@ exports.up = function(next) {
 
 };
 
-exports.down = function(next) {
+exports.down = function (next) {
 
   async.waterfall([
 
     // Bootstrap db connection
-    function(done) {
-      mongooseService.connect(function() {
+    function (done) {
+      mongooseService.connect(function () {
         console.log(chalk.green('Connected to MongoDB.'));
         done();
       });
     },
 
     // Get all contact documents
-    function(done) {
+    function (done) {
       Contact
         .find({ users: { $exists: false } })
         .limit(5)
@@ -142,7 +142,7 @@ exports.down = function(next) {
     },
 
     // Update each contact document
-    function(contacts, done) {
+    function (contacts, done) {
 
       // No contacts to process
       if (!contacts.length) {
@@ -159,7 +159,7 @@ exports.down = function(next) {
       console.error(err);
     }
     // Disconnect before exiting
-    mongooseService.disconnect(function(mongooseErr) {
+    mongooseService.disconnect(function (mongooseErr) {
       if (mongooseErr) {
         console.error(mongooseErr);
       }

@@ -20,9 +20,9 @@ var user1,
 /**
  * Unit tests
  */
-describe('Contact Model Unit Tests:', function() {
+describe('Contact Model Unit Tests:', function () {
 
-  beforeEach(function(done) {
+  beforeEach(function (done) {
 
     user1 = new User({
       firstName: 'Full',
@@ -45,11 +45,11 @@ describe('Contact Model Unit Tests:', function() {
     });
 
     // Create users
-    user1.save(function(user1Err, user1Res) {
+    user1.save(function (user1Err, user1Res) {
 
       user1Id = user1Res._id;
 
-      user2.save(function(user2Err, user2Res) {
+      user2.save(function (user2Err, user2Res) {
 
         user2Id = user2Res._id;
 
@@ -69,28 +69,28 @@ describe('Contact Model Unit Tests:', function() {
 
   });
 
-  describe('Method Save', function() {
-    it('should be able to save without problems', function(done) {
+  describe('Method Save', function () {
+    it('should be able to save without problems', function (done) {
 
-      contact.save(function(err) {
+      contact.save(function (err) {
         should.not.exist(err);
         return done();
       });
     });
 
-    it('should be able to show an error when try to save without `userFrom`', function(done) {
+    it('should be able to show an error when try to save without `userFrom`', function (done) {
       contact.userFrom = '';
 
-      contact.save(function(err) {
+      contact.save(function (err) {
         should.exist(err);
         return done();
       });
     });
 
-    it('should be able to show an error when try to save without `userTo`', function(done) {
+    it('should be able to show an error when try to save without `userTo`', function (done) {
       contact.userTo = '';
 
-      contact.save(function(err) {
+      contact.save(function (err) {
         should.exist(err);
         return done();
       });
@@ -98,8 +98,8 @@ describe('Contact Model Unit Tests:', function() {
 
   });
 
-  afterEach(function(done) {
-    Contact.remove().exec(function() {
+  afterEach(function (done) {
+    Contact.remove().exec(function () {
       User.remove().exec(done);
     });
   });

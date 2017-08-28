@@ -20,13 +20,13 @@
           ContactByService: 'ContactByService',
           UsersMini: 'UsersMini',
 
-          existingContact: function(ContactByService, $stateParams) {
+          existingContact: function (ContactByService, $stateParams) {
             return ContactByService.get({
               userId: $stateParams.userId
             });
           },
 
-          friend: function(UsersMini, $stateParams) {
+          friend: function (UsersMini, $stateParams) {
             return UsersMini.get({
               userId: $stateParams.userId
             });
@@ -46,7 +46,7 @@
           // A string value resolves to a service
           ContactByService: 'Contact',
 
-          contact: function(Contact, $stateParams) {
+          contact: function (Contact, $stateParams) {
             return Contact.get({
               contactId: $stateParams.contactId
             });

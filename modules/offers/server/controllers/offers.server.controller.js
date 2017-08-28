@@ -93,51 +93,31 @@ function sanitizeOffer(offer, authenticatedUserId, alwaysFuzzyLocation) {
 
 /**
  * Validate latitude/longitude coordinates
- * @TODO: overly complex
+ *
+ * Tests for float, but doesn't care about valid lat/lon ranges
+ *
+ * Valid:
+ * 150
+ * 14.1
+ * +3.4
+ * -3.4
+ * 10000
+ *
+ * Invalid:
+ * 14.
+ * 12foo
+ * 12,2
+ * 3.33.33
  *
  * @param {Float} coordinate - Expects latitude or longitude coordinate
- * @param {String} type - Either `lat` or `lng`, anything else fails the test.
  * @returns {Boolean} true on success, false on failure.
  */
-function isValidCoordinate(coordinate, type) {
+function isValidCoordinate(coordinate) {
+  var regexp = /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/;
 
-  // Validate that parameters are defined
-  if (_.isUndefined(coordinate) || _.isUndefined(type)) {
-    return false;
-  }
-
-  // Ensure coordinate is finite number
-  if (!_.isFinite(parseFloat(coordinate))) {
-    return false;
-  }
-
-  var range;
-  // Test latitude range
-  if (type === 'lat') {
-    range = 90;
-  }
-  // Test longitude range
-  else if (type === 'lng') {
-    range = 180;
-  } else {
-    // `type` wasn't `lat` nor `lng` => fail
-    return false;
-  }
-
-  // Quick check for range (`-90 to 90` or `-180 to 180`)
-  // This is done again at regexp but regexp doesn't catch ranges for non-floats
-  if (!_.inRange(coordinate, -Math.abs(range), range)) {
-    return false;
-  }
-
-  // How long coordinate digits are allowed?
-  var length = 30;
-
-  // Test with regexp
-  var regexp = new RegExp('^(\\+|-)?(\\d\.\\d{1,' + length + '}|[1-8]\\d\.\\d{1,' + length + '}|' + range + '\\.0{1,' + length + '})$');
-
-  var valid = regexp.test(coordinate);
-  return valid;
+  return !_.isUndefined(coordinate) &&
+         _.isFinite(parseFloat(coordinate)) &&
+         regexp.test(coordinate);
 }
 
 /**
@@ -156,7 +136,7 @@ function isValidOfferType(type) {
 /**
  * Create (or update if exists) a Offer
  */
-exports.create = function(req, res) {
+exports.create = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
@@ -196,7 +176,7 @@ exports.create = function(req, res) {
   // _id = offer.id, then create a new doc using upsertData.
   // Otherwise, update the existing doc with upsertData
   // @link http://stackoverflow.com/a/7855281
-  offer.save(function(err) {
+  offer.save(function (err) {
     if (err) {
       return res.status(400).send({
         message: 'Failed to save offer.'
@@ -213,12 +193,12 @@ exports.create = function(req, res) {
 /**
  * Update an Offer
  */
-exports.update = function(req, res) {
+exports.update = function (req, res) {
 
   async.waterfall([
 
     // Validate
-    function(done) {
+    function (done) {
 
       if (!req.user) {
         return res.status(403).send({
@@ -244,7 +224,7 @@ exports.update = function(req, res) {
     },
 
     // Create offer object and modify it
-    function(done) {
+    function (done) {
 
       // Pick only fields user is allowed to modify
       var offerModifications = _.pick(req.body, allowedOfferFields);
@@ -268,20 +248,20 @@ exports.update = function(req, res) {
     },
 
     // Save offer
-    function(offer, done) {
-      offer.save(function(err) {
+    function (offer, done) {
+      offer.save(function (err) {
         done(err);
       });
     },
 
     // Done!
-    function() {
+    function () {
       return res.json({
         message: 'Offer updated.'
       });
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       return res.status(400).send({
         message: errorService.getErrorMessage(err)
@@ -295,7 +275,7 @@ exports.update = function(req, res) {
 /**
  * Delete an Offer
  */
-exports.delete = function(req, res) {
+exports.delete = function (req, res) {
 
   // User can remove only their own offers
   if (!req.user || !req.offer.user._id.equals(req.user._id)) {
@@ -307,7 +287,7 @@ exports.delete = function(req, res) {
   Offer.findOneAndRemove({
     _id: req.offer._id,
     user: req.user._id
-  }, function(err) {
+  }, function (err) {
     if (err) {
       return res.status(400).send({
         message: errorService.getErrorMessage(err)
@@ -323,7 +303,7 @@ exports.delete = function(req, res) {
 /**
  * List of Offers
  */
-exports.list = function(req, res) {
+exports.list = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
@@ -333,7 +313,7 @@ exports.list = function(req, res) {
 
   // Validate required bounding box query parameters
   var coordinateKeys = ['southWestLat', 'southWestLng', 'northEastLat', 'northEastLng'];
-  var isCoordinatesValid = _.every(coordinateKeys, function(coordinateKey) {
+  var isCoordinatesValid = _.every(coordinateKeys, function (coordinateKey) {
 
     // Get query string from query
     // If there is no query string (`req.query`), it is the empty object, `{}`.
@@ -347,11 +327,8 @@ exports.list = function(req, res) {
       coordinate = coordinate.trim();
     }
 
-    // Gets either `lat` or `lng`
-    var coordinateType = coordinateKey.substr(-3).toLowerCase();
-
     // Validate
-    return isValidCoordinate(coordinate, coordinateType);
+    return isValidCoordinate(coordinate);
   });
 
   // Stop if any found invalid coordinate
@@ -420,7 +397,7 @@ exports.list = function(req, res) {
 
     // Accept only valid values, ignore the rest
     // @link https://lodash.com/docs/#filter
-    var filterTypes = _.filter(filters.types, function(type) {
+    var filterTypes = _.filter(filters.types, function (type) {
       return isValidOfferType(type);
     });
 
@@ -459,7 +436,7 @@ exports.list = function(req, res) {
 
     var tribeQueries = [];
 
-    var isTribeFilterValid = filters.tribes.every(function(tribeId) {
+    var isTribeFilterValid = filters.tribes.every(function (tribeId) {
       // Return failure if tribe id is invalid, otherwise add id to query array
       return mongoose.Types.ObjectId.isValid(tribeId) &&
              tribeQueries.push({
@@ -509,9 +486,9 @@ exports.list = function(req, res) {
   Offer
     .aggregate(query)
     .exec()
-    .then(function(offers) {
+    .then(function (offers) {
       res.json(offers);
-    }, function(err) {
+    }, function (err) {
       // Log the failure
       log('error', 'Querying for offers caused an error. #g28fb1', {
         error: err
@@ -526,18 +503,18 @@ exports.list = function(req, res) {
 /**
  * Return offers
  */
-exports.listOffersByUser = function(req, res) {
+exports.listOffersByUser = function (req, res) {
   res.json(req.offers || []);
 };
 
 /**
  * Return an offer
  */
-exports.getOffer = function(req, res) {
+exports.getOffer = function (req, res) {
 
   async.waterfall([
 
-    function(done) {
+    function (done) {
 
       // Don't proceed if offer doesn't have user
       if (!req.offer || !req.offer.user || !req.offer.location) {
@@ -550,7 +527,7 @@ exports.getOffer = function(req, res) {
     },
 
     // Populate `tag` fields from objects at `offer.user.member` array
-    function(offer, done) {
+    function (offer, done) {
 
       // Nothing to populate
       if (!offer.user.member && !offer.user.member.length) {
@@ -565,7 +542,7 @@ exports.getOffer = function(req, res) {
         // http://mongoosejs.com/docs/faq.html#populate_sort_order
         // https://github.com/Automattic/mongoose/issues/2202
         // options: { sort: { count: -1 } }
-      }, function(err, user) {
+      }, function (err, user) {
         // Overwrite old `offer.user` with new `user` object
         // containing populated `member.tag` to `offer`
         offer.user = user;
@@ -574,14 +551,14 @@ exports.getOffer = function(req, res) {
 
     },
 
-    function(offer) {
+    function (offer) {
       // Sanitize offer before returning it
       var offer = sanitizeOffer(offer, req.user._id);
 
       res.json(offer);
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       // Something's wrong and we weren't prepared for itx
       log('error', 'Failed to load offer. #g34gss', {
@@ -596,7 +573,7 @@ exports.getOffer = function(req, res) {
 };
 
 // Offer reading middleware
-exports.offersByUserId = function(req, res, next, userId) {
+exports.offersByUserId = function (req, res, next, userId) {
 
   // Authenticated user required
   if (!req.user) {
@@ -632,7 +609,7 @@ exports.offersByUserId = function(req, res, next, userId) {
     // ensuring users can't send insanely long arrays for our queries
     var queryTypes = _.split(req.query.types, ',', validOfferTypes.length);
 
-    queryTypes.forEach(function(paramType) {
+    queryTypes.forEach(function (paramType) {
       // Return failure if type is invalid, otherwise add type to query array
       if (paramType && validOfferTypes.indexOf(paramType) > -1) {
         // Returns array length if other types exist already in db query,
@@ -660,7 +637,7 @@ exports.offersByUserId = function(req, res, next, userId) {
   }
 
   // Get offers
-  Offer.find(query, function(err, offers) {
+  Offer.find(query, function (err, offers) {
 
     // Errors
     if (err) {
@@ -674,7 +651,7 @@ exports.offersByUserId = function(req, res, next, userId) {
     }
 
     // Sanitize offers
-    req.offers = _.map(offers, function(offer) {
+    req.offers = _.map(offers, function (offer) {
       return sanitizeOffer(offer, req.user._id);
     });
 
@@ -684,7 +661,7 @@ exports.offersByUserId = function(req, res, next, userId) {
 };
 
 // Offer reading middleware
-exports.offerById = function(req, res, next, offerId) {
+exports.offerById = function (req, res, next, offerId) {
   // Require user
   if (!req.user) {
     return res.status(403).send({
@@ -702,10 +679,10 @@ exports.offerById = function(req, res, next, offerId) {
   async.waterfall([
 
     // Find offer
-    function(done) {
+    function (done) {
       Offer.findById(offerId)
         .populate('user', userProfile.userListingProfileFields)
-        .exec(function(err, offer) {
+        .exec(function (err, offer) {
 
           // No offer
           if (err) {
@@ -725,14 +702,14 @@ exports.offerById = function(req, res, next, offerId) {
     },
 
     // Continue
-    function(offer, done) {
+    function (offer, done) {
 
       req.offer = offer;
 
       done();
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       log('error', 'Getting offer by id caused an error. #g34gj3', {
         error: err
@@ -746,10 +723,10 @@ exports.offerById = function(req, res, next, offerId) {
 /**
  * Clear all offers by user id
  */
-exports.removeAllByUserId = function(userId, callback) {
+exports.removeAllByUserId = function (userId, callback) {
   Offer.remove({
     user: userId
-  }, function(err) {
+  }, function (err) {
     if (callback) {
       callback(err);
     }

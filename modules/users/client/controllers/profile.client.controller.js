@@ -46,7 +46,7 @@
         // If we're on small screens, direct to `overview` tab instead
         if ($state.current.name === 'profile.about') {
           // Timeout ensures `ui-sref-active=""` gets updated at the templates
-          $timeout(function() {
+          $timeout(function () {
             $state.go('profile.overview', { username: profile.username });
           });
         }
@@ -65,7 +65,7 @@
        * When contact removal modal signals that the contact was removed, remove it from this scope as well
        * @todo: any better way to keep vm.contact $resolved but wipe out the actual content?
        */
-      $scope.$on('contactRemoved', function() {
+      $scope.$on('contactRemoved', function () {
         delete vm.contact._id;
       });
     }
@@ -111,10 +111,10 @@
     function toggleAvatarModal() {
       $uibModal.open({
         template: '<a tr-avatar data-user="avatarModal.profile" data-size="512" data-link="false" ng-click="avatarModal.close()"></a>',
-        controller: function($scope, $uibModalInstance, profile) {
+        controller: function ($scope, $uibModalInstance, profile) {
           var vm = this;
           vm.profile = profile;
-          vm.close = function() {
+          vm.close = function () {
             $uibModalInstance.dismiss('cancel');
           };
         },
@@ -122,7 +122,7 @@
         animation: true,
         windowClass: 'modal-avatar',
         resolve: {
-          profile: function() {
+          profile: function () {
             return vm.profile;
           }
         }

@@ -8,7 +8,7 @@ var _ = require('lodash'),
     TwitterStrategy = require('passport-twitter').Strategy,
     usersAuthentication = require('../../controllers/users.authentication.server.controller');
 
-module.exports = function(config) {
+module.exports = function (config) {
 
   // Get config parameters for the strategy
   var clientID = _.get(config, 'twitter.clientID'),
@@ -27,7 +27,7 @@ module.exports = function(config) {
     callbackURL: callbackURL,
     passReqToCallback: true
   },
-  function(req, token, tokenSecret, profile, done) {
+  function (req, token, tokenSecret, profile, done) {
     // Set the provider data and include tokens
     var providerData = profile._json || {};
     providerData.token = token;

@@ -13,7 +13,7 @@ acl = new acl(new acl.memoryBackend());
 /**
  * Invoke Users Permissions
  */
-exports.invokeRolesPolicies = function() {
+exports.invokeRolesPolicies = function () {
   acl.allow([{
     roles: ['admin'],
     allows: [{
@@ -107,7 +107,7 @@ exports.invokeRolesPolicies = function() {
 /**
  * Check If Users Policy Allows
  */
-exports.isAllowed = function(req, res, next) {
+exports.isAllowed = function (req, res, next) {
 
   // Non-public profiles are invisible
   if (req.profile && !req.profile.public && req.user && !req.profile._id.equals(req.user._id)) {
@@ -125,7 +125,7 @@ exports.isAllowed = function(req, res, next) {
 
   // Check for user roles
   var roles = (req.user && req.user.roles) ? req.user.roles : ['guest'];
-  acl.areAnyRolesAllowed(roles, req.route.path, req.method.toLowerCase(), function(err, isAllowed) {
+  acl.areAnyRolesAllowed(roles, req.route.path, req.method.toLowerCase(), function (err, isAllowed) {
     if (err) {
       // An authorization error occurred
       return res.status(500).json({

@@ -6,7 +6,7 @@
 var referencesPolicy = require('../policies/references.server.policy'),
     references = require('../controllers/references.server.controller');
 
-module.exports = function(app) {
+module.exports = function (app) {
 
   app.route('/api/references/threads/:userToId').all(referencesPolicy.isAllowed)
     .get(references.readReferenceThread);

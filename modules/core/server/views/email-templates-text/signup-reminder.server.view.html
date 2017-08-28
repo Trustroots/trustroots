@@ -1,4 +1,4 @@
-{% extends 'email.server.view.html' %}
+{% extends './email.server.view.html' %}
 
 {% block content %}
 {{name}},
@@ -17,4 +17,4 @@ This is our last reminder, after which we will stop sending you emails.
 This is a reminder {{reminderCount}}/{{reminderCountMax}}, after which we will stop sending you emails.
 {% endif %}
 
-{% endblock %}
+{% endblock content %}

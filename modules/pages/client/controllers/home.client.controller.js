@@ -55,11 +55,11 @@
     } else {
       vm.boards = Authentication.user ?
         // Photos for authenticated users
-        [
-          'woman-bridge',
-          'wavewatching',
-          'sahara-backpacker'
-        ] :
+  [
+    'woman-bridge',
+    'wavewatching',
+    'sahara-backpacker'
+  ] :
         // Photos for non-authenticated users
         [
           'woman-bridge',
@@ -75,13 +75,13 @@
     // Load suggested tribes
     vm.tribes = TribesService.query({
       limit: 3
-    }, function() {
+    }, function () {
       // Got those three tribes, now fetch one more if requested
       if ($stateParams.tribe && $stateParams.tribe !== '') {
 
         // Loop trough tribes to see if requested tribe is already there, and simply move it to be first
         var foundTribeFromArray = false;
-        angular.forEach(vm.tribes, function(tribe) {
+        angular.forEach(vm.tribes, function (tribe) {
           if (tribe.slug === $stateParams.tribe) {
             foundTribeFromArray = true;
           }
@@ -90,7 +90,7 @@
           vm.tribe = TribeService.get({
             tribeSlug: $stateParams.tribe
           });
-          vm.tribe.then(function(tribe) {
+          vm.tribe.then(function (tribe) {
             // If tribe was found, put it to the beginning of `vm.tribes` array
             if (tribe && tribe._id) {
               vm.tribes.unshift(tribe);

@@ -62,30 +62,35 @@ function getFuzzyLocation(location) {
 /**
  * A Validation function for local strategy properties
  *
- * @param {Array} property - Expects location coordinates in an array
+ * @param {Array} coordinates - Expects location coordinates in an array: [lat, lon]
  * @returns {Boolean} true on success, false on failure.
  */
-var validateLocation = function(property) {
-  return (
-    // Has to be an Array with 2 Numbers
-    _.isArray(property) &&
-    property.length === 2 &&
+var validateLocation = function (coordinates) {
 
-    // Latitude
-    _.isFinite(property[0]) &&
-    _.inRange(property[0], -90, 90) &&
+  if (!_.isArray(coordinates) || coordinates.length !== 2) {
+    return false;
+  }
 
-    // Longitude
-    _.isFinite(property[1]) &&
-    _.inRange(property[1], -180, 180)
-  );
+  if (!_.isFinite(coordinates[0]) || !_.isFinite(coordinates[1])) {
+    return false;
+  }
+
+  // Test latitude range (-90—+90)
+  // Maximum length of digits after `.` is 30
+  var latRegexp = /^\(?[+-]?(90(\.0+)?|[1-8]?\d(\.\d{1,30})?)$/;
+
+  // Test longitude range (-180—+180)
+  // Maximum length of digits after `.` is 30
+  var lonRegexp = /^\s?[+-]?(180(\.0+)?|1[0-7]\d(\.\d+)?|\d{1,2}(\.\d{1,30})?)\)?$/;
+
+  return latRegexp.test(coordinates[0]) && lonRegexp.test(coordinates[1]);
 };
 
 /**
  * When `location` is modified, set also `locationFuzzy`
  * Keeps `location` unaltered.
  */
-var setLocation = function(value) {
+var setLocation = function (value) {
   this.locationFuzzy = getFuzzyLocation(value);
   return value;
 };

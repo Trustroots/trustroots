@@ -19,7 +19,7 @@ exports.tagFields = [
 /**
  * Crate a tag
  */
-exports.createTag = function(req, res) {
+exports.createTag = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden')
@@ -35,7 +35,7 @@ exports.createTag = function(req, res) {
 /**
  * List all tags
  */
-exports.listTags = function(req, res) {
+exports.listTags = function (req, res) {
 
   Tag.find(
     {
@@ -49,28 +49,28 @@ exports.listTags = function(req, res) {
       }
     }
   )
-  .exec(function(err, tribes) {
-    if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err)
-      });
-    } else {
-      res.json(tribes);
-    }
-  });
+    .exec(function (err, tribes) {
+      if (err) {
+        return res.status(400).send({
+          message: errorService.getErrorMessage(err)
+        });
+      } else {
+        res.json(tribes);
+      }
+    });
 };
 
 /**
  * Return tag
  */
-exports.getTag = function(req, res) {
+exports.getTag = function (req, res) {
   res.json(req.tag || {});
 };
 
 /**
  * Tag middleware
  */
-exports.tagBySlug = function(req, res, next, slug) {
+exports.tagBySlug = function (req, res, next, slug) {
 
   Tag.findOne(
     {
@@ -80,15 +80,15 @@ exports.tagBySlug = function(req, res, next, slug) {
     },
     exports.tagFields
   )
-  .exec(function(err, tag) {
-    if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err)
-      });
-    } else {
-      req.tag = tag;
-    }
-  });
+    .exec(function (err, tag) {
+      if (err) {
+        return res.status(400).send({
+          message: errorService.getErrorMessage(err)
+        });
+      } else {
+        req.tag = tag;
+      }
+    });
 
   return next();
 };

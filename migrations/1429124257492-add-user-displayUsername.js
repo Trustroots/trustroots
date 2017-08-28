@@ -12,35 +12,35 @@ var path = require('path'),
     userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
     User = mongoose.model('User');
 
-exports.up = function(next) {
-  mongooseService.connect(function() {
+exports.up = function (next) {
+  mongooseService.connect(function () {
     console.log(chalk.green('Connected to MongoDB.'));
     try {
       // Works fine for small db, but for bigger use snapshot()
       // http://docs.mongodb.org/manual/reference/method/cursor.snapshot/
       User
-        .find({ displayUsername: { $exists: false } }, function(err, users) {
+        .find({ displayUsername: { $exists: false } }, function (err, users) {
           users.forEach(function (e) {
             User.findByIdAndUpdate(
               e._id,
               { $set: { displayUsername: e.username } }
             ).exec();
           });
-          mongooseService.disconnect(function() {
+          mongooseService.disconnect(function () {
             next();
           });
         });
     } catch (err) {
       console.log(chalk.red(err));
-      mongooseService.disconnect(function() {
+      mongooseService.disconnect(function () {
         next();
       });
     }
   });
 };
 
-exports.down = function(next) {
-  mongooseService.connect(function() {
+exports.down = function (next) {
+  mongooseService.connect(function () {
     console.log(chalk.green('Connected to MongoDB.'));
     User.update(
       { displayUsername: { $exists: true } },
@@ -55,7 +55,7 @@ exports.down = function(next) {
         console.log('Affected rows:');
         console.log(numberAffected);
         console.log('');
-        mongooseService.disconnect(function() {
+        mongooseService.disconnect(function () {
           next();
         });
       });

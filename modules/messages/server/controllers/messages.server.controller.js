@@ -54,7 +54,7 @@ function sanitizeMessages(messages) {
   var messagesCleaned = [];
 
   // Sanitize each outgoing message's contents
-  messages.forEach(function(message) {
+  messages.forEach(function (message) {
     message.content = sanitizeHtml(message.content, textServiceService.sanitizeOptions);
     messagesCleaned.push(message);
   });
@@ -77,7 +77,7 @@ function sanitizeThreads(threads, authenticatedUserId) {
   // Sanitize each outgoing thread
   var threadsCleaned = [];
 
-  threads.forEach(function(thread) {
+  threads.forEach(function (thread) {
 
     // Threads need just excerpt
     thread = thread.toObject();
@@ -119,7 +119,7 @@ function sanitizeThreads(threads, authenticatedUserId) {
 /**
  * Constructs link headers for pagination
  */
-var setLinkHeader = function(req, res, pageCount) {
+var setLinkHeader = function (req, res, pageCount) {
   if (paginate.hasNextPages(req)(pageCount)) {
     var url = (config.https ? 'https' : 'http') + '://' + config.domain;
     var nextPage = url + res.locals.paginate.href({ page: req.query.page + 1 });
@@ -133,7 +133,7 @@ var setLinkHeader = function(req, res, pageCount) {
 /**
  * List of threads aka inbox
  */
-exports.inbox = function(req, res) {
+exports.inbox = function (req, res) {
 
   // No user
   if (!req.user) {
@@ -160,7 +160,7 @@ exports.inbox = function(req, res) {
         select: 'content ' + userProfile.userMiniProfileFields
       }
     },
-    function(err, data) {
+    function (err, data) {
 
       if (err) {
         return res.status(400).send({
@@ -182,7 +182,7 @@ exports.inbox = function(req, res) {
 /**
  * Send a message
  */
-exports.send = function(req, res) {
+exports.send = function (req, res) {
 
   // No user
   if (!req.user) {
@@ -222,8 +222,8 @@ exports.send = function(req, res) {
   async.waterfall([
 
     // Check receiver
-    function(done) {
-      User.findById(req.body.userTo, 'public').exec(function(err, receiver) {
+    function (done) {
+      User.findById(req.body.userTo, 'public').exec(function (err, receiver) {
         // If we were unable to find the receiver, return the error and stop here
         if (err || !receiver || !receiver.public) {
           return res.status(404).send({
@@ -235,7 +235,7 @@ exports.send = function(req, res) {
     },
 
     // Check if this is first message to this thread (=does the thread object exist?)
-    function(done) {
+    function (done) {
       Thread.findOne({
         // User id's can be either way around in thread handle, so we gotta test for both situations
         $or: [
@@ -249,18 +249,18 @@ exports.send = function(req, res) {
           }
         ]
       },
-      function(err, thread) {
+      function (err, thread) {
         done(err, thread);
       });
     },
 
     // Check sender's profile isn't empty If it was first message
     // If the sending user has an empty profile, reject the message
-    function(thread, done) {
+    function (thread, done) {
       // If this was first message to the thread
       if (!thread) {
 
-        User.findById(req.user._id, 'description').exec(function(err, sender) {
+        User.findById(req.user._id, 'description').exec(function (err, sender) {
           // Handle errors
           if (err) {
             return done(err);
@@ -288,7 +288,7 @@ exports.send = function(req, res) {
     },
 
     // Save message
-    function(done) {
+    function (done) {
 
       var message = new Message(req.body);
 
@@ -299,14 +299,14 @@ exports.send = function(req, res) {
       message.read = false;
       message.notified = false;
 
-      message.save(function(err, message) {
+      message.save(function (err, message) {
         done(err, message);
       });
 
     },
 
     // Create/upgrade Thread handle between these two users
-    function(message, done) {
+    function (message, done) {
 
       var thread = new Thread();
       thread.updated = Date.now();
@@ -341,7 +341,7 @@ exports.send = function(req, res) {
       },
       upsertData,
       { upsert: true },
-      function(err) {
+      function (err) {
         done(err, message);
       });
     },
@@ -367,7 +367,7 @@ exports.send = function(req, res) {
     },
 
     // We'll need some info about related users, populate some fields
-    function(message, done) {
+    function (message, done) {
       message
         .populate({
           path: 'userFrom',
@@ -376,7 +376,7 @@ exports.send = function(req, res) {
         .populate({
           path: 'userTo',
           select: userProfile.userMiniProfileFields
-        }, function(err, message) {
+        }, function (err, message) {
           if (err) {
             return done(err);
           }
@@ -393,7 +393,7 @@ exports.send = function(req, res) {
     }
 
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       return res.status(400).send({
         message: errorService.getErrorMessage(err)
@@ -407,19 +407,19 @@ exports.send = function(req, res) {
 /**
  * Thread of messages
  */
-exports.thread = function(req, res) {
+exports.thread = function (req, res) {
   res.json(req.messages || []);
 };
 
 /**
  * Thread middleware
  */
-exports.threadByUser = function(req, res, next, userId) {
+exports.threadByUser = function (req, res, next, userId) {
 
   async.waterfall([
 
     // Find messages
-    function(done) {
+    function (done) {
 
       if (!req.user) {
         return res.status(403).send({
@@ -451,7 +451,7 @@ exports.threadByUser = function(req, res, next, userId) {
             select: userProfile.userMiniProfileFields
           }
         },
-        function(err, data) {
+        function (err, data) {
           if (err) {
             return done(err);
           }
@@ -472,7 +472,7 @@ exports.threadByUser = function(req, res, next, userId) {
     },
 
     // Sanitize messages and return them for the API
-    function(messages, done) {
+    function (messages, done) {
 
       req.messages = sanitizeMessages(messages || []);
 
@@ -484,7 +484,7 @@ exports.threadByUser = function(req, res, next, userId) {
      * @todo: mark it read:true only when it was read:false,
      * now it performs write each time thread is opened
      */
-    function(done) {
+    function (done) {
 
       if (req.messages && req.messages.length > 0) {
 
@@ -505,7 +505,7 @@ exports.threadByUser = function(req, res, next, userId) {
             {
               multi: false
             },
-            function(err) {
+            function (err) {
               done(err);
             }
           );
@@ -520,7 +520,7 @@ exports.threadByUser = function(req, res, next, userId) {
 
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       return res.status(400).send({
         message: errorService.getErrorMessage(err)
@@ -537,7 +537,7 @@ exports.threadByUser = function(req, res, next, userId) {
  * Mark set of messages as read
  * Works only for currently logged in user's messages
  */
-exports.markRead = function(req, res) {
+exports.markRead = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
@@ -548,7 +548,7 @@ exports.markRead = function(req, res) {
   var messages = [];
 
   // Produce an array of messages to be updated
-  req.body.messageIds.forEach(function(messageId) {
+  req.body.messageIds.forEach(function (messageId) {
     messages.push({
       _id: messageId,
       // read: false,
@@ -587,7 +587,7 @@ exports.markRead = function(req, res) {
 /**
  * Get unread message count for currently logged in user
  */
-exports.messagesCount = function(req, res) {
+exports.messagesCount = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
@@ -598,7 +598,7 @@ exports.messagesCount = function(req, res) {
   Thread.count({
     read: false,
     userTo: req.user._id
-  }, function(err, unreadCount) {
+  }, function (err, unreadCount) {
     if (err) {
       return res.status(400).send({
         message: errorService.getErrorMessage(err)
@@ -611,7 +611,7 @@ exports.messagesCount = function(req, res) {
 /**
  * Sync endpoint used by mobile messenger
  */
-exports.sync = function(req, res) {
+exports.sync = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
@@ -628,7 +628,7 @@ exports.sync = function(req, res) {
   async.waterfall([
 
     // Find messages
-    function(done) {
+    function (done) {
 
       // Validate and construct date filters
       var dateFrom,
@@ -699,7 +699,7 @@ exports.sync = function(req, res) {
         .find(query)
         .sort({ created: -1 })
         .select(messageFields)
-        .exec(function(err, messages) {
+        .exec(function (err, messages) {
           if (err) {
             return done(err);
           }
@@ -711,7 +711,7 @@ exports.sync = function(req, res) {
           var userIds = [];
 
           // Re-group messages by users
-          data.messages = _.groupBy(messages, function(row) {
+          data.messages = _.groupBy(messages, function (row) {
 
             // Collect user id
             userIds.push(row.userTo.toString());
@@ -732,7 +732,7 @@ exports.sync = function(req, res) {
     },
 
     // Collect users
-    function(userIds, done) {
+    function (userIds, done) {
 
       // Get objects for users based on above user ids
       User.find({
@@ -740,19 +740,19 @@ exports.sync = function(req, res) {
           $in: userIds
         }
       })
-      .select(userProfile.userMiniProfileFields)
-      .exec(function(err, users) {
-        data.users = users;
-        done(err);
-      });
+        .select(userProfile.userMiniProfileFields)
+        .exec(function (err, users) {
+          data.users = users;
+          done(err);
+        });
     },
 
     // Return the package
-    function() {
+    function () {
       return res.json(data);
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       return res.status(400).send({
         message: errorService.getErrorMessage(err)

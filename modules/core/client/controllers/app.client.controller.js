@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   /**
@@ -120,7 +120,7 @@
       /**
        * Show "service unavailable" badge if http interceptor sends us this signal
        */
-      $rootScope.$on('serviceUnavailable', function() {
+      $rootScope.$on('serviceUnavailable', function () {
         $uibModal.open({
           ariaLabelledBy: 'Service unavailable',
           template:
@@ -140,14 +140,14 @@
       /**
        * Snif and apply user changes
        */
-      $scope.$on('userUpdated', function() {
+      $scope.$on('userUpdated', function () {
         vm.user = Authentication.user;
       });
 
       /**
        * Before page change
        */
-      $scope.$on('$stateChangeStart', function(event, toState, toParams) {
+      $scope.$on('$stateChangeStart', function (event, toState, toParams) {
 
         // Redirect to login page if no user
         if (toState.requiresAuth && !Authentication.user) {
@@ -176,7 +176,7 @@
       /**
        * After page change
        */
-      $scope.$on('$stateChangeSuccess', function(event, toState) {
+      $scope.$on('$stateChangeSuccess', function (event, toState) {
 
         // Footer is hidden on these pages
         vm.isFooterHidden = (angular.isDefined(toState.footerHidden) && toState.footerHidden === true);
@@ -199,7 +199,7 @@
       /**
        * Sniff and apply photo credit changes
        */
-      $scope.$on('photoCreditsUpdated', function(scope, photo) {
+      $scope.$on('photoCreditsUpdated', function (scope, photo) {
         angular.extend(vm.photoCredits, photo);
         vm.photoCreditsCount++;
       });
@@ -236,7 +236,7 @@
         locker.clean();
       }
 
-      push.disable().finally(function() {
+      push.disable().finally(function () {
         // Do the signout and refresh the page
         $window.top.location.href = '/api/auth/signout';
       });

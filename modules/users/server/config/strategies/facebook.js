@@ -8,7 +8,7 @@ var _ = require('lodash'),
     FacebookStrategy = require('passport-facebook').Strategy,
     usersAuthentication = require('../../controllers/users.authentication.server.controller');
 
-module.exports = function(config) {
+module.exports = function (config) {
   // Get config parameters for the strategy
   var clientID = _.get(config, 'facebook.clientID'),
       clientSecret = _.get(config, 'facebook.clientSecret'),
@@ -45,7 +45,7 @@ module.exports = function(config) {
     passReqToCallback: true,
     enableProof: false
   },
-  function(req, accessToken, refreshToken, profile, done) {
+  function (req, accessToken, refreshToken, profile, done) {
     // Set the provider data and include tokens
     var providerData = profile._json;
     providerData.accessToken = accessToken;

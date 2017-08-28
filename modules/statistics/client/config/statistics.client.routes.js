@@ -17,7 +17,7 @@
         resolve: {
           // A string value resolves to a service
           SettingsService: 'Statistics',
-          statisticsData: function(Statistics) {
+          statisticsData: function (Statistics) {
             return Statistics.get();
           }
         },

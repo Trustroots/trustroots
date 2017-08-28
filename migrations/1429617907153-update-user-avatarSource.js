@@ -12,9 +12,9 @@ var path = require('path'),
     userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
     User = mongoose.model('User');
 
-exports.up = function(next) {
+exports.up = function (next) {
 
-  mongooseService.connect(function() {
+  mongooseService.connect(function () {
     console.log(chalk.green('Connected to MongoDB.'));
     User.update(
       { avatarSource: 'locale' },
@@ -29,15 +29,15 @@ exports.up = function(next) {
         console.log('Affected rows:');
         console.log(numberAffected);
         console.log('');
-        mongooseService.disconnect(function() {
+        mongooseService.disconnect(function () {
           next();
         });
       });
   });
 };
 
-exports.down = function(next) {
-  mongooseService.connect(function() {
+exports.down = function (next) {
+  mongooseService.connect(function () {
     console.log(chalk.green('Connected to MongoDB.'));
     User.update(
       { avatarSource: 'local' },
@@ -52,7 +52,7 @@ exports.down = function(next) {
         console.log('Affected rows:');
         console.log(numberAffected);
         console.log('');
-        mongooseService.disconnect(function() {
+        mongooseService.disconnect(function () {
           next();
         });
       });

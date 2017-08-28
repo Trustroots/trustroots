@@ -27,14 +27,14 @@ mongoose.Promise = Promise;
 
 var maxNotifications = config.limits.unreadMessageReminders.length;
 
-exports.up = function(next) {
+exports.up = function (next) {
 
 
   async.waterfall([
 
     // Bootstrap db connection
-    function(done) {
-      mongooseService.connect(function() {
+    function (done) {
+      mongooseService.connect(function () {
         console.log(chalk.green('Connected to MongoDB.'));
         done();
       });
@@ -51,7 +51,7 @@ exports.up = function(next) {
       console.error(err);
     }
     // Disconnect before exiting
-    mongooseService.disconnect(function(mongooseErr) {
+    mongooseService.disconnect(function (mongooseErr) {
       if (mongooseErr) {
         console.error(mongooseErr);
       }
@@ -62,7 +62,7 @@ exports.up = function(next) {
 };
 
 
-exports.down = function(next) {
+exports.down = function (next) {
 
   next();
 
@@ -99,7 +99,7 @@ function processMessages(processNotified, callback) {
     },
 
     // Get all (un)notified message documents one by one and update them
-    function(total, done) {
+    function (total, done) {
 
       // count the successfully updated messages
       var counter = 0;

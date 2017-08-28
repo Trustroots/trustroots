@@ -19,7 +19,7 @@
 
     var notifications = [];
 
-    beforeEach(inject(function(
+    beforeEach(inject(function (
       _$httpBackend_, $templateCache, _locker_, $window, Authentication, _firebaseMessaging_) {
 
       $httpBackend = _$httpBackend_;
@@ -32,21 +32,21 @@
       };
       notifications.length = 0;
       firebaseMessaging.shouldInitialize = false;
-      $window.Notification = function(title, options) {
+      $window.Notification = function (title, options) {
         notifications.push({ title: title, options: options });
       };
     }));
 
-    afterEach(function() {
+    afterEach(function () {
       locker.clean();
     });
 
-    afterEach(function() {
+    afterEach(function () {
       $httpBackend.verifyNoOutstandingExpectation();
       $httpBackend.verifyNoOutstandingRequest();
     });
 
-    it('will save to server if enabled', inject(function(
+    it('will save to server if enabled', inject(function (
       push, Authentication) {
       if (!push.isSupported) return;
 
@@ -71,7 +71,7 @@
       expect(locker.get('tr.push')).toBe('on');
     }));
 
-    it('will save to server during initialization if on but not present', inject(function(
+    it('will save to server during initialization if on but not present', inject(function (
       push, Authentication) {
       if (!push.isSupported) return;
 
@@ -108,7 +108,7 @@
       expect(Authentication.user.pushRegistration[0].token).toBe(token);
     }));
 
-    it('can be disabled and will be removed from server', inject(function(
+    it('can be disabled and will be removed from server', inject(function (
       push, Authentication, locker, $rootScope) {
       if (!push.isSupported) return;
 
@@ -153,7 +153,7 @@
 
     }));
 
-    it('will not save to server if enabling and already registered', inject(function(
+    it('will not save to server if enabling and already registered', inject(function (
       push, Authentication, $rootScope) {
       if (!push.isSupported) return;
 
@@ -171,7 +171,7 @@
       expect(locker.get('tr.push')).toBe('on');
     }));
 
-    it('should trigger a notification when a message is received', inject(function(push) {
+    it('should trigger a notification when a message is received', inject(function (push) {
       if (!push.isSupported) return;
       firebase.triggerOnMessage({
         notification: {
@@ -196,16 +196,16 @@
       reset: reset,
       moduleName: 'firebaseMessagingMock',
 
-      triggerOnMessage: function() {
+      triggerOnMessage: function () {
         var args = arguments;
-        onMessageCallbacks.forEach(function(fn) {
+        onMessageCallbacks.forEach(function (fn) {
           fn.apply(null, args);
         });
       },
 
-      triggerOnTokenRefresh: function() {
+      triggerOnTokenRefresh: function () {
         var args = arguments;
-        onTokenRefreshCallbacks.forEach(function(fn) {
+        onTokenRefreshCallbacks.forEach(function (fn) {
           fn.apply(null, args);
         });
       }
@@ -231,29 +231,29 @@
       return {
         name: 'fcm-mock',
         shouldInitialize: false, // means core does not set it up for us
-        getToken: function() {
+        getToken: function () {
           if (firebase.permissionGranted) {
             return $q.resolve(firebase.token);
           } else {
             return $q.resolve(null);
           }
         },
-        requestPermission: function() {
+        requestPermission: function () {
           firebase.permissionGranted = true;
           firebase.requestPermissionCalled++;
           return $q.resolve();
         },
-        deleteToken: function(token) {
+        deleteToken: function (token) {
           firebase.deletedTokens.push(token);
           return $q.resolve();
         },
-        onTokenRefresh: function(fn) {
+        onTokenRefresh: function (fn) {
           onTokenRefreshCallbacks.push(fn);
         },
-        onMessage: function(fn) {
+        onMessage: function (fn) {
           onMessageCallbacks.push(fn);
         },
-        removeServiceWorker: function() {
+        removeServiceWorker: function () {
           firebase.removeServiceWorkerCalled++;
         }
       };

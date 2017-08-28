@@ -1,19 +1,19 @@
-(function() {
+(function () {
   'use strict';
 
   // Authentication controller Spec
-  describe('AuthenticationController', function() {
+  describe('AuthenticationController', function () {
     // Initialize global variables
     var AuthenticationController,
         $httpBackend,
         $state,
         Authentication;
 
-    beforeEach(function() {
+    beforeEach(function () {
       jasmine.addMatchers({
-        toEqualData: function() {
+        toEqualData: function () {
           return {
-            compare: function(actual, expected) {
+            compare: function (actual, expected) {
               return {
                 pass: angular.equals(actual, expected)
               };
@@ -36,7 +36,7 @@
       // The injector ignores leading and trailing underscores here (i.e. _$httpBackend_).
       // This allows us to inject a service but then attach it to a variable
       // with the same name as the service.
-      beforeEach(inject(function($controller, $injector, $rootScope, _$httpBackend_, _$state_, _Authentication_) {
+      beforeEach(inject(function ($controller, $injector, $rootScope, _$httpBackend_, _$state_, _Authentication_) {
         // Set a new global $scope
         $scope = $rootScope.$new();
 
@@ -54,8 +54,8 @@
         $scope.vm = AuthenticationController;
       }));
 
-      describe('AuthenticationController.signin()', function() {
-        it('should login with a correct user and password', function() {
+      describe('AuthenticationController.signin()', function () {
+        it('should login with a correct user and password', function () {
 
           // Test expected GET request
           $httpBackend.when('POST', '/api/auth/signin').respond(200, 'Fred');
@@ -71,7 +71,7 @@
           expect(Authentication.user).toEqual('Fred');
         });
 
-        it('should fail to log in with nothing', function() {
+        it('should fail to log in with nothing', function () {
 
           // Test expected POST request
           $httpBackend.expectPOST('/api/auth/signin').respond(400, {

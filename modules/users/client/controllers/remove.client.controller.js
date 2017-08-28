@@ -24,10 +24,10 @@
       vm.state = 'loading';
 
       Users.deleteWithToken($stateParams.token)
-        .then(function() {
+        .then(function () {
           vm.state = 'success';
         })
-        .catch(function() {
+        .catch(function () {
           vm.state = 'failure';
         });
     }
@@ -36,10 +36,10 @@
     function resendConfirmation() {
       vm.resendConfirmationLoading = true;
       new Users(Authentication.user).$delete()
-        .then(function(response) {
+        .then(function (response) {
           vm.removeProfileInitialized = response.message || 'Success.';
         })
-        .catch(function(response) {
+        .catch(function (response) {
           vm.removeProfileLoading = false;
           messageCenterService.add(
             'danger',

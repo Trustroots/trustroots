@@ -50,7 +50,7 @@
     function activate() {
       // If invitation code was passed to the page (via URL), validate it
       validateInvitationCode()
-        .finally(function() {
+        .finally(function () {
           // Initialise waitinglist
           initWaitingList();
         });
@@ -106,17 +106,17 @@
         TribeService.get({
           tribeSlug: $stateParams.tribe
         })
-        .then(function(tribe) {
+          .then(function (tribe) {
 
           // Got it
-          if (tribe._id) {
-            vm.tribe = tribe;
-          }
+            if (tribe._id) {
+              vm.tribe = tribe;
+            }
 
-          // Fetch suggested tribes list without this tribe
-          getSuggestedTribes(tribe._id || null);
+            // Fetch suggested tribes list without this tribe
+            getSuggestedTribes(tribe._id || null);
 
-        });
+          });
       } else {
         // Fetch suggested tribes list
         getSuggestedTribes();
@@ -132,13 +132,13 @@
       TribesService.query({
         limit: 20
       },
-      function(tribes) {
+      function (tribes) {
         var suggestedTribes = [];
 
         // Make sure to remove referred tribe from suggested tribes so that we won't have dublicates
         // We'll always show 2 or 3 of these at the frontend depending on if referred tribe is shown.
         if (withoutTribeId) {
-          angular.forEach(tribes, function(suggestedTribe) {
+          angular.forEach(tribes, function (suggestedTribe) {
             if (suggestedTribe._id !== withoutTribeId) {
               // eslint-disable-next-line angular/controller-as-vm
               this.push(suggestedTribe);
@@ -160,7 +160,7 @@
       $http
         .post('/api/auth/signup', vm.credentials)
         .then(
-          function(newUser) { // On success function
+          function (newUser) { // On success function
 
             // If there is referred tribe, add user to that next up
             if (vm.tribe && vm.tribe._id) {
@@ -168,7 +168,7 @@
                 id: vm.tribe._id,
                 relation: 'is'
               },
-              function(data) {
+              function (data) {
                 updateUser(data.user || newUser.data);
                 vm.isLoading = false;
                 vm.step = 2;
@@ -180,7 +180,7 @@
               vm.step = 2;
             }
           },
-          function(error) { // On error function
+          function (error) { // On error function
             vm.isLoading = false;
             messageCenterService.add('danger', error.data.message || 'Something went wrong.');
           }
@@ -200,7 +200,7 @@
         // Validate code
         InvitationService.post({
           invitecode: vm.invitationCode
-        }).$promise.then(function(data) {
+        }).$promise.then(function (data) {
 
           // UI
           vm.invitationCodeValid = data.valid;
@@ -221,7 +221,7 @@
               label: 'Invalid invitation code entered'
             });
           }
-        }, function() {
+        }, function () {
           vm.invitationCodeValid = false;
           vm.invitationCodeError = true;
 
@@ -314,7 +314,7 @@
       // Expects an element with `data-maitre` be present in DOM
       // https://api.jquery.com/jQuery.getScript/
       jQuery.getScript('https://maitreapp.co/widget.js')
-        .fail(function() {
+        .fail(function () {
           // If loading the script fails, hide waiting list feature
           vm.isWaitingListEnabled = false;
 

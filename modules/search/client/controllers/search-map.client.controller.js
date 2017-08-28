@@ -85,12 +85,12 @@
     function activate() {
 
       // Set map's initial location
-      SearchMapService.getMapCenter().then(function(mapCenter) {
+      SearchMapService.getMapCenter().then(function (mapCenter) {
         vm.mapCenter = mapCenter;
       });
 
       // Wait for Leaflet object
-      leafletData.getMap(mapId).then(function(map) {
+      leafletData.getMap(mapId).then(function (map) {
 
         // Add attribution controller
         map.addControl(L.control.attribution({
@@ -110,7 +110,7 @@
       $scope.$on(listenerPrefix + '.click', closeOffer);
 
       // If offer gets closed elsewhere
-      $scope.$on('search.closeOffer', function() {
+      $scope.$on('search.closeOffer', function () {
         vm.mapLayers.overlays.selectedOffers.visible = false;
 
         // Set history state + URL without reloading the view
@@ -118,10 +118,10 @@
       });
 
       // Listen to new map location values from other controllers
-      $scope.$on('search.mapCenter', function(event, mapCenter) {
+      $scope.$on('search.mapCenter', function (event, mapCenter) {
         vm.mapCenter = mapCenter;
       });
-      $scope.$on('search.mapBounds', function(event, mapBounds) {
+      $scope.$on('search.mapBounds', function (event, mapBounds) {
         vm.mapBounds = mapBounds;
       });
 
@@ -129,7 +129,7 @@
       $scope.$on('search.resetMarkers', resetMarkers);
 
       // Setting up the marker and click event
-      vm.pruneCluster.PrepareLeafletMarker = function(leafletMarker, data) {
+      vm.pruneCluster.PrepareLeafletMarker = function (leafletMarker, data) {
 
         // Set offer icon if not set yet
         if (!leafletMarker.options.iconSet) {
@@ -139,7 +139,7 @@
 
         // Handle click events
         if (!leafletMarker.listens('click')) {
-          leafletMarker.on('click', function($event) {
+          leafletMarker.on('click', function ($event) {
 
             $scope.$emit('search.loadingOffer');
 
@@ -147,10 +147,10 @@
             OffersService
               .get({ offerId: data.offerId })
               .$promise
-              .then(function(offer) {
+              .then(function (offer) {
                 previewOffer(offer, false, $event);
               })
-              .catch(function() {
+              .catch(function () {
                 closeOffer();
                 messageCenterService.add('danger', 'Something went wrong. Make sure you are connected to internet and try again. ');
               });
@@ -163,7 +163,7 @@
       if ($stateParams.offer && $scope.$parent.search.offer) {
         $scope.$parent.search.offer
           .$promise
-          .then(function(offer) {
+          .then(function (offer) {
             previewOffer(offer, true);
           });
       }
@@ -284,7 +284,7 @@
           southWestLng: vm.mapLastBounds.southWestLng,
           southWestLat: vm.mapLastBounds.southWestLat,
           filters: FiltersService.get()
-        }, function(offers) {
+        }, function (offers) {
 
           // Remove last markers
           // eslint-disable-next-line new-cap
@@ -309,7 +309,7 @@
           // Update markers
           // eslint-disable-next-line new-cap
           vm.pruneCluster.ProcessView();
-        }, function() {
+        }, function () {
           messageCenterService.add('danger', 'Sorry, something went wrong. Please try again.');
         });
       }
@@ -319,13 +319,13 @@
      * When Leaflet map has loaded
      */
     function onLeafletLoad() {
-      leafletData.getMap(mapId).then(function(map) {
+      leafletData.getMap(mapId).then(function (map) {
         map.addLayer(vm.pruneCluster);
       });
 
       // If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
       if (vm.mapCenter.zoom > vm.mapMinimumZoom) {
-        var loadMarkers = function() {
+        var loadMarkers = function () {
           if (angular.isDefined(vm.mapBounds.northEast)) {
             getMarkers();
           } else {
@@ -374,7 +374,7 @@
       // Determine currently selected baselayer style 'TRStyle' has to be
       // set when defining layers. Possible values are: street, satellite
       // Defaults to street
-      $timeout(function() {
+      $timeout(function () {
         vm.mapLayerstyle = (layer.leafletEvent.layer.options.TRStyle) ? layer.leafletEvent.layer.options.TRStyle : 'streets';
       });
     }
