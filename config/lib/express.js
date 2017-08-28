@@ -160,15 +160,6 @@ module.exports.initViewEngine = function (app) {
   // app.engine('nunjucks', nunjucks);
   app.set('view engine', 'html');
   app.set('views', './modules/core/server/views');
-
-  /*
-  // Set swig as the template engine
-  app.engine('server.view.html', render);
-
-  // Set views path and view engine
-  app.set('view engine', 'server.view.html');
-  app.set('views', './');
-  */
 };
 
 /**
