@@ -196,7 +196,7 @@
       }).
       state('profile.accommodation', {
         url: '/accommodation',
-        templateUrl: '/modules/offers/views/offer-host-view.client.view.html',
+        templateUrl: '/modules/users/views/profile/profile-view-accommodation.client.view.html',
         requiresAuth: true,
         noScrollingTop: true,
         data: {
