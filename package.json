@@ -108,7 +108,7 @@
     "mongoose-url-slugs": "~1.0.0",
     "morgan": "~1.8.1",
     "multer": "~1.3.0",
-    "nodemailer": "~4.0.1",
+    "nodemailer": "~4.1.0",
     "nunjucks": "~3.0.1",
     "passport": "~0.4.0",
     "passport-facebook": "~2.1.1",

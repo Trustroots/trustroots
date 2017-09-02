@@ -67,7 +67,7 @@ var testLocations = {
       '&northEastLng=145.61328125000003' +
       '&southWestLat=78.02765497223292' +
       '&southWestLng=56.00781250000001',
-    location: [81.827033, 58.231746]
+    location: [80.912670, 79.732320]
   }
 };
 

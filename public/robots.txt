@@ -1,5 +1,4 @@
-# robotstxt.org/
-
+Sitemap: https://www.trustroots.org/sitemap.xml
 User-agent: *
 Disallow: /?_escaped_fragment_=/profile/
 Disallow: /profile/
