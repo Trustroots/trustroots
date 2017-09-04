@@ -905,7 +905,8 @@ describe('Offer CRUD tests', function () {
 
       offerMeet.save(function (offerMeetErr, offerMeetSaved) {
         // Handle save error
-        if (offerMeetErr) ret
+        if (offerMeetErr) return done(offerMeetErr);
+
         moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
 
         agent.post('/api/auth/signin')
@@ -921,7 +922,7 @@ describe('Offer CRUD tests', function () {
             agent.put('/api/offers/' + offerMeetSaved._id)
               .send(offerMeet)
               .expect(200)
-              .end(function (offerPutErr, offerPutRes) {
+              .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
 
@@ -947,7 +948,8 @@ describe('Offer CRUD tests', function () {
 
       offerMeet.save(function (offerMeetErr, offerMeetSaved) {
         // Handle save error
-        if (offerMeetErr) ret
+        if (offerMeetErr) return done(offerMeetErr);
+
         moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
 
         agent.post('/api/auth/signin')
@@ -961,7 +963,7 @@ describe('Offer CRUD tests', function () {
             agent.put('/api/offers/' + offerMeetSaved._id)
               .send(offerMeet)
               .expect(200)
-              .end(function (offerPutErr, offerPutRes) {
+              .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
 
@@ -989,7 +991,8 @@ describe('Offer CRUD tests', function () {
 
       offerMeet.save(function (offerMeetErr, offerMeetSaved) {
         // Handle save error
-        if (offerMeetErr) ret
+        if (offerMeetErr) return done(offerMeetErr);
+
         moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
 
         agent.post('/api/auth/signin')
@@ -1005,7 +1008,7 @@ describe('Offer CRUD tests', function () {
             agent.put('/api/offers/' + offerMeetSaved._id)
               .send(offerMeet)
               .expect(200)
-              .end(function (offerPutErr, offerPutRes) {
+              .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
 
@@ -1034,7 +1037,8 @@ describe('Offer CRUD tests', function () {
 
       offerMeet.save(function (offerMeetErr, offerMeetSaved) {
         // Handle save error
-        if (offerMeetErr) ret
+        if (offerMeetErr) return done(offerMeetErr);
+
         moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
 
         agent.post('/api/auth/signin')
@@ -1050,7 +1054,7 @@ describe('Offer CRUD tests', function () {
             agent.put('/api/offers/' + offerMeetSaved._id)
               .send(offerMeet)
               .expect(200)
-              .end(function (offerPutErr, offerPutRes) {
+              .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
 
