@@ -6,7 +6,7 @@
     .controller('OfferMeetEditController', OfferMeetEditController);
 
   /* @ngInject */
-  function OfferMeetEditController($window, $timeout, $http, $state, $stateParams, $analytics, leafletData, OffersService, Authentication, messageCenterService, offer, defaultLocation) {
+  function OfferMeetEditController($window, $timeout, $http, $state, $stateParams, $analytics, moment, leafletData, OffersService, Authentication, messageCenterService, offer, defaultLocation) {
 
     // ViewModel
     var vm = this;
@@ -18,7 +18,6 @@
     vm.mapCenter = defaultLocation;
     vm.isLoading = false;
 
-
     activate();
 
     /**
@@ -29,12 +28,17 @@
       // Make sure offer is there
       offer.$promise.then(function () {
 
+        // Turn string date into a date object so that we can modify it
+        if (offer.validUntil) {
+          offer.validUntil = moment(offer.validUntil).toDate();
+        }
+
         vm.offer = offer;
 
-        // Populate map if user ralready has an offer
+        // Populate map
         if (vm.offer && vm.offer.location) {
-          vm.mapCenter.lat = parseFloat(vm.offer.location[0]);
-          vm.mapCenter.lng = parseFloat(vm.offer.location[1]);
+          vm.mapCenter.lat = parseFloat(vm.offer.location[0]) || 0;
+          vm.mapCenter.lng = parseFloat(vm.offer.location[1]) || 0;
           vm.mapCenter.zoom = 16;
         }
 

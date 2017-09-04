@@ -20,9 +20,9 @@
         <div class="col-xs-12 col-sm-6 col-sm-push-6 text-center">
           <div class="icon-users icon-3x text-muted hidden-xs"></div>
           <p class="lead">
-            <strong>Traveling? Organising an event? Just making a dinner and would like to invite people over?</strong>
+            <strong>Travelling? Organising an event? Just making a dinner and would like to invite people over?</strong>
             <br><br>
-            Meetups stay visible on map for one month unless removed.
+            Meetups stay visible on map at most one month.
           </p>
         </div>
         <div class="col-xs-12 col-sm-6 col-sm-pull-6">
@@ -42,6 +42,29 @@
                    tr-editor
                    tr-editor-options="::app.editorOptions"
                    data-placeholder="Write here..."></div>
+            </div>
+          </div>
+
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h4 id="offerVisibilityLabel">
+                How long should this be visible?
+              </h4>
+            </div>
+            <div class="panel-body text-center">
+
+              <div tr-offer-valid-until="offerMeet.offer.validUntil"></div>
+
+              <br><br>
+
+              <p class="lead">
+                Visible until {{ offerMeet.offer.validUntil | date:'mediumDate' }}
+              </p>
+
+              <small class="text-muted">
+                You can set visibility at most one month ahead.
+              </small>
+
             </div>
           </div>
 

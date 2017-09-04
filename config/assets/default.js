@@ -5,6 +5,7 @@ module.exports = {
     lib: {
       // Load Angular-UI-Bootstrap module templates for these modules:
       uibModuleTemplates: [
+        'datepicker',
         'modal',
         'popover',
         'progressbar',
@@ -18,6 +19,7 @@ module.exports = {
         'public/lib/fontello/css/animation.css',
         'public/lib/medium-editor/dist/css/medium-editor.css',
         'modules/core/client/fonts/fontello/css/tricons-codes.css',
+        'public/lib/angular-ui-bootstrap/src/datepicker/datepicker.css',
         'public/lib/angular-ui-bootstrap/src/position/position.css',
         'public/lib/angular-ui-bootstrap/src/typeahead/typeahead.css',
         'public/lib/angular-ui-bootstrap/src/tooltip/tooltip.css'
@@ -37,8 +39,10 @@ module.exports = {
         'public/lib/angular-ui-bootstrap/src/buttons/buttons.js',
         'public/lib/angular-ui-bootstrap/src/collapse/collapse.js',
         'public/lib/angular-ui-bootstrap/src/dateparser/dateparser.js',
+        'public/lib/angular-ui-bootstrap/src/datepicker/datepicker.js',
         'public/lib/angular-ui-bootstrap/src/debounce/debounce.js',
         'public/lib/angular-ui-bootstrap/src/dropdown/dropdown.js',
+        'public/lib/angular-ui-bootstrap/src/isClass/isClass.js',
         'public/lib/angular-ui-bootstrap/src/modal/modal.js',
         'public/lib/angular-ui-bootstrap/src/multiMap/multiMap.js',
         'public/lib/angular-ui-bootstrap/src/popover/popover.js',
@@ -116,7 +120,6 @@ module.exports = {
         'public/lib/bootstrap/less/mixins/nav-vertical-align.less',
         'public/lib/bootstrap/less/mixins/grid-framework.less',
         'public/lib/bootstrap/less/mixins/grid.less',
-
 
         // Reset and dependencies
         'public/lib/bootstrap/less/normalize.less',
