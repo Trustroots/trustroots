@@ -49,6 +49,9 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.invitationsEnabled = config.invitations.enabled;
   app.locals.appSettings.maitreId = config.invitations.enabled ? config.invitations.maitreId : false;
   app.locals.appSettings.fcmSenderId = config.fcm.senderId;
+  app.locals.appSettings.limits = {
+    maxOfferValidFromNow: config.limits.maxOfferValidFromNow
+  };
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
 
   // Assets

@@ -104,7 +104,9 @@ module.exports = {
       first: { minutes: 0 },
       second: { hours: 24 },
       third: { days: 14 }
-    }
+    },
+    // Up to how many days in future can meet offers be visible
+    maxOfferValidFromNow: { days: 30 }
   },
   mailer: {
     from: process.env.MAILER_FROM || 'trustroots@localhost',

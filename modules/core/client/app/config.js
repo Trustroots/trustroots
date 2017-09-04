@@ -27,6 +27,7 @@ var AppConfig = (function () {
     'ui.bootstrap.tabs',
     'ui.bootstrap.tooltip',
     'ui.bootstrap.typeahead',
+    'ui.bootstrap.datepicker',
     'angularMoment',
     'nemLogging',
     'ui-leaflet',

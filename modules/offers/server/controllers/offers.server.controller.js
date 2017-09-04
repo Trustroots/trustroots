@@ -6,6 +6,7 @@
 var _ = require('lodash'),
     path = require('path'),
     async = require('async'),
+    config = require(path.resolve('./config/config')),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     tribes = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
@@ -37,7 +38,8 @@ var allowedOfferFields = [
   'description',
   'noOfferDescription',
   'maxGuests',
-  'location'
+  'location',
+  'validUntil'
 ];
 
 /**
@@ -134,6 +136,48 @@ function isValidOfferType(type) {
 }
 
 /**
+ * Validate date range for `validUntil`. Date has to be between now and 31 days from now.
+ *
+ * https://momentjs.com/docs/#/parsing/
+ *
+ * @param {Date|String} validUntil - Date object or ISO 8601 date string accepted by Moment.js parsing
+ * @return {Boolean} True on valid, False on invalid
+ */
+function isValidUntil(validUntil) {
+
+  var zeroTime = {
+    'hours': 0,
+    'minutes': 0,
+    'seconds': 0,
+    'millisecond': 0
+  };
+
+  // Input date
+  var validUntil = moment(validUntil);
+
+  // Validate input date
+  if (!validUntil.isValid()) {
+    return false;
+  }
+
+  // Set input time to midnight
+  validUntil = validUntil.set(zeroTime);
+
+  // Maximum valid date
+  var maxDate = moment()
+    .add(config.limits.maxOfferValidFromNow || { days: 30 })
+    // Add one extra day just to accommodate oddities from timezones
+    .add(1, 'days')
+    .set(zeroTime);
+
+  // Minimum valid date
+  var minDate = moment().set(zeroTime);
+
+  // Validate range
+  return validUntil.isAfter(minDate) && validUntil.isBefore(maxDate);
+}
+
+/**
  * Create (or update if exists) a Offer
  */
 exports.create = function (req, res) {
@@ -158,16 +202,26 @@ exports.create = function (req, res) {
     });
   }
 
+  // Host offers don't expire
+  if (req.body.type === 'host') {
+    delete req.body.validUntil;
+  }
+
+  // Meet offers can expire at most within a month
+  if (!req.body.type || req.body.type !== 'host') {
+    if (req.body.validUntil && isValidUntil(req.body.validUntil)) {
+      req.body.validUntil = moment(req.body.validUntil).toDate();
+    } else {
+      // Defaults to one month from now
+      req.body.validUntil = moment().add(config.limits.maxOfferValidFromNow).toDate();
+    }
+  }
+
   // Create new offer by filtering out what users can modify
   // When creating an offer, we allow type field
   var offer = new Offer(_.pick(req.body, _.concat(allowedOfferFields, 'type')));
 
   offer.user = req.user._id;
-
-  // Any other type but `host` offers expire within a month
-  if (!offer.type || offer.type !== 'host') {
-    offer.validUntil = moment().add(30, 'day').toDate();
-  }
 
   // Update timestamp
   offer.updated = new Date();
@@ -226,16 +280,26 @@ exports.update = function (req, res) {
     // Create offer object and modify it
     function (done) {
 
+      // Host offers don't expire
+      if (req.offer.type === 'host') {
+        delete req.body.validUntil;
+      }
+
+      // Meet offers can expire at most within a month
+      if (req.offer.type !== 'host') {
+        if (req.body.validUntil && isValidUntil(req.body.validUntil)) {
+          req.body.validUntil = moment(req.body.validUntil).toDate();
+        } else {
+          // Defaults to one month from now
+          req.body.validUntil = moment().add(config.limits.maxOfferValidFromNow).toDate();
+        }
+      }
+
       // Pick only fields user is allowed to modify
       var offerModifications = _.pick(req.body, allowedOfferFields);
 
       // Extend offer in request (picked by `offerById` middleware earlier)
       var offer = _.extend(req.offer, offerModifications);
-
-      // Any other type but `host` offers expire within a month
-      if (req.offer.type !== 'host') {
-        offer.validUntil = moment().add(30, 'day').toDate();
-      }
 
       // Update timestamp
       offer.updated = new Date();

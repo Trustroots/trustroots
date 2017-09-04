@@ -514,56 +514,6 @@ describe('Offer CRUD tests', function () {
         });
     });
 
-    it('should not able to change offer type when updating offer', function (done) {
-      agent.post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-
-          // Save a new offer
-          agent.post('/api/offers')
-            .send(offer1)
-            .expect(200)
-            .end(function (offerSaveErr) {
-              // Handle offer save error
-              if (offerSaveErr) return done(offerSaveErr);
-
-              // Get id for offer we just saved
-              Offer.findOne({
-                user: user1Id
-              }, function (offerFindErr, offer) {
-                // Handle error
-                if (offerFindErr) return done(offerFindErr);
-
-                // Modify offer
-                var modifiedOffer = offer1;
-                modifiedOffer.type = 'meet';
-
-                // Update offer
-                agent.put('/api/offers/' + offer._id)
-                  .send(modifiedOffer)
-                  .expect(400)
-                  .end(function (offerSaveErr, offerSaveRes) {
-                    // Handle offer save error
-                    if (offerSaveErr) return done(offerSaveErr);
-
-                    offerSaveRes.body.message.should.equal('You cannot update offer type.');
-
-                    Offer.find({
-                      user: user1Id
-                    }, function (err, offers) {
-                      offers.length.should.equal(1);
-                      offers[0].type.should.equal('host');
-                      return done(err);
-                    });
-                  });
-              });
-            });
-        });
-    });
-
     it('should be able to create offer if authenticated', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
@@ -694,7 +644,136 @@ describe('Offer CRUD tests', function () {
         });
     });
 
+    it('should be able to set `validUntil`', function (done) {
+
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          // Handle signin error
+          if (signinErr) return done(signinErr);
+
+          offerMeet.validUntil = moment().add(5, 'days').toDate();
+
+          // Post offer
+          agent.post('/api/offers')
+            .send(offerMeet)
+            .expect(200)
+            .end(function (offerPostErr) {
+              // Handle offer post error
+              if (offerPostErr) return done(offerPostErr);
+
+              agent.get('/api/offers-by/' + user1Id)
+                .expect(200)
+                .end(function (offersByErr, offers) {
+                  if (offersByErr) return done(offersByErr);
+
+                  moment(offers.body[0].validUntil).diff(moment(), 'days').should.equal(4);
+
+                  return done();
+                });
+            });
+        });
+    });
+
+    it('should default to 30 days from now when trying to set `validUntil` to past', function (done) {
+
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          // Handle signin error
+          if (signinErr) return done(signinErr);
+
+          offerMeet.validUntil = moment().subtract(5, 'days').toDate();
+
+          // Post offer
+          agent.post('/api/offers')
+            .send(offerMeet)
+            .expect(200)
+            .end(function (offerPostErr) {
+              // Handle offer post error
+              if (offerPostErr) return done(offerPostErr);
+
+              agent.get('/api/offers-by/' + user1Id)
+                .expect(200)
+                .end(function (offersByErr, offers) {
+                  if (offersByErr) return done(offersByErr);
+
+                  moment(offers.body[0].validUntil).diff(moment(), 'days').should.equal(29);
+
+                  return done();
+                });
+            });
+        });
+    });
+
+    it('should default to 30 days from now when trying to set `validUntil` to over 30 days from now', function (done) {
+
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          // Handle signin error
+          if (signinErr) return done(signinErr);
+
+          offerMeet.validUntil = moment().add(32, 'days').toDate();
+
+          // Post offer
+          agent.post('/api/offers')
+            .send(offerMeet)
+            .expect(200)
+            .end(function (offerPostErr) {
+              // Handle offer post error
+              if (offerPostErr) return done(offerPostErr);
+
+              agent.get('/api/offers-by/' + user1Id)
+                .expect(200)
+                .end(function (offersByErr, offers) {
+                  if (offersByErr) return done(offersByErr);
+
+                  moment(offers.body[0].validUntil).diff(moment(), 'days').should.equal(29);
+
+                  return done();
+                });
+            });
+        });
+    });
+
+    it('should default to 30 days from now when not explicitly setting `validUntil`', function (done) {
+
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          // Handle signin error
+          if (signinErr) return done(signinErr);
+
+          delete offerMeet.validUntil;
+
+          // Post offer
+          agent.post('/api/offers')
+            .send(offerMeet)
+            .expect(200)
+            .end(function (offerPostErr) {
+              // Handle offer post error
+              if (offerPostErr) return done(offerPostErr);
+
+              agent.get('/api/offers-by/' + user1Id)
+                .expect(200)
+                .end(function (offersByErr, offers) {
+                  if (offersByErr) return done(offersByErr);
+
+                  moment(offers.body[0].validUntil).diff(moment(), 'days').should.equal(29);
+
+                  return done();
+                });
+            });
+        });
+    });
+
   });
+
 
   describe('Updating offer', function () {
 
@@ -763,6 +842,234 @@ describe('Offer CRUD tests', function () {
               });
             });
         });
+    });
+
+    it('should not able to change offer type when updating offer', function (done) {
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          // Handle signin error
+          if (signinErr) return done(signinErr);
+
+          // Save a new offer
+          agent.post('/api/offers')
+            .send(offer1)
+            .expect(200)
+            .end(function (offerSaveErr) {
+              // Handle offer save error
+              if (offerSaveErr) return done(offerSaveErr);
+
+              // Get id for offer we just saved
+              Offer.findOne({
+                user: user1Id
+              }, function (offerFindErr, offer) {
+                // Handle error
+                if (offerFindErr) return done(offerFindErr);
+
+                // Modify offer
+                var modifiedOffer = offer1;
+                modifiedOffer.type = 'meet';
+
+                // Update offer
+                agent.put('/api/offers/' + offer._id)
+                  .send(modifiedOffer)
+                  .expect(400)
+                  .end(function (offerSaveErr, offerSaveRes) {
+                    // Handle offer save error
+                    if (offerSaveErr) return done(offerSaveErr);
+
+                    offerSaveRes.body.message.should.equal('You cannot update offer type.');
+
+                    Offer.find({
+                      user: user1Id
+                    }, function (err, offers) {
+                      offers.length.should.equal(1);
+                      offers[0].type.should.equal('host');
+                      return done(err);
+                    });
+                  });
+              });
+            });
+        });
+    });
+
+    it('should be able to update `validUntil` value to 31 days from now', function (done) {
+
+      var now = moment();
+      var fromNow1 = moment().add(2, 'days');
+      var fromNow2 = moment().add(31, 'days');
+
+      offerMeet.user = user1Id;
+      offerMeet.validUntil = fromNow1.toDate();
+
+      offerMeet.save(function (offerMeetErr, offerMeetSaved) {
+        // Handle save error
+        if (offerMeetErr) return done(offerMeetErr);
+
+        moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
+
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
+
+            offerMeet.validUntil = fromNow2.toDate();
+
+            // Update offer
+            agent.put('/api/offers/' + offerMeetSaved._id)
+              .send(offerMeet)
+              .expect(200)
+              .end(function (offerPutErr) {
+                // Handle offer put error
+                if (offerPutErr) return done(offerPutErr);
+
+                Offer.findOne({
+                  _id: offerMeetSaved._id
+                }, function (err, offerNew) {
+
+                  moment(offerNew.validUntil).diff(now, 'days').should.equal(30);
+
+                  return done(err);
+                });
+              });
+          });
+      });
+    });
+
+    it('should be keep `validUntil` value to previously saved when updating offer', function (done) {
+
+      var now = moment();
+
+      offerMeet.user = user1Id;
+      offerMeet.validUntil = moment().add(2, 'days');
+
+      offerMeet.save(function (offerMeetErr, offerMeetSaved) {
+        // Handle save error
+        if (offerMeetErr) return done(offerMeetErr);
+
+        moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
+
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
+
+            // Update offer
+            agent.put('/api/offers/' + offerMeetSaved._id)
+              .send(offerMeet)
+              .expect(200)
+              .end(function (offerPutErr) {
+                // Handle offer put error
+                if (offerPutErr) return done(offerPutErr);
+
+                Offer.findOne({
+                  _id: offerMeetSaved._id
+                }, function (err, offerNew) {
+
+                  moment(offerNew.validUntil).diff(now, 'days').should.equal(2);
+
+                  return done(err);
+                });
+              });
+          });
+      });
+    });
+
+    it('should default to 30 days from now when attempting to set `validUntil` value to over 30 days from now', function (done) {
+
+      var now = moment();
+      var fromNow1 = moment().add(2, 'days');
+      var fromNow2 = moment().add(32, 'days');
+
+      offerMeet.user = user1Id;
+      offerMeet.validUntil = fromNow1.toDate();
+
+      offerMeet.save(function (offerMeetErr, offerMeetSaved) {
+        // Handle save error
+        if (offerMeetErr) return done(offerMeetErr);
+
+        moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
+
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
+
+            offerMeet.validUntil = fromNow2.toDate();
+
+            // Update offer
+            agent.put('/api/offers/' + offerMeetSaved._id)
+              .send(offerMeet)
+              .expect(200)
+              .end(function (offerPutErr) {
+                // Handle offer put error
+                if (offerPutErr) return done(offerPutErr);
+
+                Offer.findOne({
+                  _id: offerMeetSaved._id
+                }, function (err, offerNew) {
+
+                  // We set it to 32, but it should default to 30 days
+                  moment(offerNew.validUntil).diff(now, 'days').should.equal(30);
+
+                  return done(err);
+                });
+              });
+          });
+      });
+    });
+
+    it('should default to 30 days from now when attempting to set `validUntil` value to past', function (done) {
+
+      var now = moment();
+      var fromNow1 = moment().add(2, 'days');
+      var fromNow2 = moment().subtract(1, 'days');
+
+      offerMeet.user = user1Id;
+      offerMeet.validUntil = fromNow1.toDate();
+
+      offerMeet.save(function (offerMeetErr, offerMeetSaved) {
+        // Handle save error
+        if (offerMeetErr) return done(offerMeetErr);
+
+        moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
+
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
+
+            offerMeet.validUntil = fromNow2.toDate();
+
+            // Update offer
+            agent.put('/api/offers/' + offerMeetSaved._id)
+              .send(offerMeet)
+              .expect(200)
+              .end(function (offerPutErr) {
+                // Handle offer put error
+                if (offerPutErr) return done(offerPutErr);
+
+                Offer.findOne({
+                  _id: offerMeetSaved._id
+                }, function (err, offerNew) {
+
+                  // We set it to -2 days, but it should default to 30 days
+                  moment(offerNew.validUntil).diff(now, 'days').should.equal(30);
+
+                  return done(err);
+                });
+              });
+          });
+      });
     });
 
     it('should remove reactivation flag field when updating offer', function (done) {

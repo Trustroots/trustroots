@@ -6,7 +6,7 @@
     .controller('OfferMeetAddController', OfferMeetAddController);
 
   /* @ngInject */
-  function OfferMeetAddController($window, $timeout, $http, $state, $stateParams, $analytics, leafletData, OffersService, Authentication, messageCenterService, defaultLocation) {
+  function OfferMeetAddController($scope, $window, $timeout, $http, $state, $stateParams, $analytics, leafletData, OffersService, Authentication, messageCenterService, defaultLocation) {
 
     // ViewModel
     var vm = this;
@@ -16,6 +16,7 @@
     vm.offer = {};
     vm.editOffer = editOffer;
     vm.mapCenter = defaultLocation;
+    vm.isCalendarVisible = false;
     vm.isLoading = false;
     vm.newOffer = false;
 
@@ -37,7 +38,8 @@
       var newOffer = new OffersService({
         type: 'meet',
         description: vm.offer.description,
-        location: [parseFloat(vm.mapCenter.lat), parseFloat(vm.mapCenter.lng)]
+        location: [parseFloat(vm.mapCenter.lat), parseFloat(vm.mapCenter.lng)],
+        validUntil: vm.offer.validUntil
       });
 
       newOffer.$save(function () {
