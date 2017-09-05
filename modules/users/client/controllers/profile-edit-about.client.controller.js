@@ -6,7 +6,7 @@
     .controller('ProfileEditAboutController', ProfileEditAboutController);
 
   /* @ngInject */
-  function ProfileEditAboutController($scope, $state, Languages, Users, Authentication, messageCenterService) {
+  function ProfileEditAboutController($scope, $state, Users, Authentication, messageCenterService) {
 
     // ViewModel
     var vm = this;
@@ -15,10 +15,8 @@
     // Prevents changes remaining here when cancelling profile editing.
     vm.user = new Users(Authentication.user);
 
-    // Exposed
+    // Exposed to view
     vm.updateUserProfile = updateUserProfile;
-    vm.languages = Languages.get('array');
-    vm.userLanguages = [];
 
     // Get profile URL, i.e. `www.trustroots.org/profile/username`
     // - Remove `http(s)://`
@@ -28,43 +26,10 @@
       .replace(/^(https?):\/\//, '')
       .replace(vm.user.username, '<strong>' + vm.user.username + '</strong>');
 
-    // Format user language list for Chosen selector
-    decodeUserLanguages();
-
-    /*
-     * Language selector
-     * Selectors expects language list to be in format:
-     *   [{ "key": "fre", "name": "French" }, { "key": "ger", "name": "German" }]
-     * but user.languages contains just codes:
-     *   ['fre', 'ger']
-     *
-     * decodeUserLanguages() formats array for Chosen selector
-     * encodeUserLanguages() formats array back to user.languages format
-     */
-    function decodeUserLanguages() {
-      var langs_arr = [];
-      if (vm.user && vm.user.languages) {
-        vm.user.languages.forEach(function (key) {
-          langs_arr[langs_arr.length] = { key: key, name: vm.languages[key] };
-        });
-      }
-      vm.userLanguages = langs_arr;
-    }
-    function encodeUserLanguages() {
-      if (!vm.user) return;
-
-      var langs_arr = [];
-      vm.userLanguages.forEach(function (lang) {
-        langs_arr[langs_arr.length] = lang.key;
-      });
-      vm.user.languages = langs_arr;
-    }
-
     /**
      * Update a user profile
      */
     function updateUserProfile(isValid) {
-      encodeUserLanguages();
       if (isValid) {
         vm.user.$update(function (response) {
           Authentication.user = response;
