@@ -68,8 +68,9 @@
     // `code` - a string representation of the invitation code
     // Returns boolean true if code is valid, false if not
     var validateCode = function(inviteKey, today, code) {
-      return moment(today).isSame(codeToDate(code), "day") ||
-        moment(today).isSame(setYesterday(codeToDate(code)), "day");
+      var date = codeToDate(code);
+      return moment(today).isSame(date, 'day') ||
+        moment(setYesterday(today)).isSame(date, 'day');
     };
 
     // Return service
