@@ -1324,8 +1324,8 @@ describe('Offer CRUD tests', function () {
                     // Set assertions
                     offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(1);
                     offersGetRes.body[0]._id.should.equal(saveRes._id.toString());
-                    offersGetRes.body[0].location[0].should.be.approximately(testLocation.location[0], 0.01);
-                    offersGetRes.body[0].location[1].should.be.approximately(testLocation.location[1], 0.01);
+                    offersGetRes.body[0].location[0].should.be.approximately(testLocation.location[0], 0.1);
+                    offersGetRes.body[0].location[1].should.be.approximately(testLocation.location[1], 0.1);
 
                     // Call the assertion callback
                     return done();
