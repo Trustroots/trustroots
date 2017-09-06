@@ -404,8 +404,8 @@ exports.list = function (req, res) {
   }
 
   // Parse filters
-  var filters;
-  if (req.query.filters && req.query.filters !== '') {
+  var filters = {};
+  if (req.query.filters) {
     filters = parseFiltersString(req.query.filters);
 
     // Could not parse filters json string into object
@@ -414,8 +414,11 @@ exports.list = function (req, res) {
         message: 'Could not parse filters.'
       });
     }
-
   }
+
+  filters.hasFilter = function (filterType) {
+    return _.has(this, filterType) && _.isArray(this[filterType]) && this[filterType].length > 0;
+  };
 
   // Basic query has always bounding box
   var query = [{
@@ -457,7 +460,7 @@ exports.list = function (req, res) {
   });
 
   // Types filter
-  if (_.has(filters, 'types') && _.isArray(filters.types) && filters.types.length > 0) {
+  if (filters.hasFilter('types')) {
 
     // Accept only valid values, ignore the rest
     // @link https://lodash.com/docs/#filter
@@ -477,9 +480,8 @@ exports.list = function (req, res) {
     }
   }
 
-  // Rest of the filters are based on user schema
-  // @TODO do this query only when we actually need it.
-  if (_.has(filters, 'tribes') && _.isArray(filters.tribes) && filters.tribes.length > 0) {
+  // Some of the filters are based on `user` schema
+  if (filters.hasFilter('tribes')) {
     query.push({
       $lookup: {
         from: 'users',
@@ -496,7 +498,7 @@ exports.list = function (req, res) {
   }
 
   // Tribes filter
-  if (_.has(filters, 'tribes') && _.isArray(filters.tribes) && filters.tribes.length > 0) {
+  if (filters.hasFilter('tribes')) {
 
     var tribeQueries = [];
 
@@ -538,12 +540,6 @@ exports.list = function (req, res) {
       location: '$locationFuzzy',
       status: '$status',
       type: '$type'
-      /*
-      user: {
-        _id: '$user._id',
-        member: '$user.member'
-      }
-      */
     }
   });
 
@@ -594,7 +590,7 @@ exports.getOffer = function (req, res) {
     function (offer, done) {
 
       // Nothing to populate
-      if (!offer.user.member && !offer.user.member.length) {
+      if (!offer.user.member && offer.user.member.length === 0) {
         return done(null, offer);
       }
 
@@ -708,7 +704,7 @@ exports.offersByUserId = function (req, res, next, userId) {
       return next(err);
     }
 
-    if (!offers || !offers.length) {
+    if (!offers || offers.length === 0) {
       return res.status(404).send({
         message: errorService.getErrorMessageByKey('not-found')
       });
