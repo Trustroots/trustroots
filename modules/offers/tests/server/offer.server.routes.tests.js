@@ -120,6 +120,7 @@ describe('Offer CRUD tests', function () {
       member: [],
       username: credentials2.username,
       password: credentials2.password,
+      languages: ['fin', 'ita'],
       provider: 'local',
       public: true
     });
@@ -132,6 +133,7 @@ describe('Offer CRUD tests', function () {
       email: 'test3@test.com',
       username: credentials.username + '3',
       password: credentials.password,
+      languages: ['ita'],
       provider: 'local',
       public: true
     });
@@ -1533,6 +1535,78 @@ describe('Offer CRUD tests', function () {
                 });
             });
         });
+      });
+
+    });
+
+    describe('Search offers by "languages" filter', function () {
+
+      it('should be able to get list of offers from an area filtered by one language and ignore users by other language', function (done) {
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
+
+            // Get offers (around Berlin)
+            var filters = {
+              languages: ['fin']
+            };
+
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+              .expect(200)
+              .end(function (offersGetErr, offersGetRes) {
+                // Handle offer get error
+                if (offersGetErr) return done(offersGetErr);
+
+                // Set assertions
+                offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(1);
+                offersGetRes.body[0]._id.should.equal(offer2._id.toString());
+
+                // Call the assertion callback
+                return done();
+              });
+          });
+      });
+
+      it('should be able to get list of offers from an area filtered by multiple languages', function (done) {
+
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
+
+            // Get offers (around Berlin)
+            var filters = {
+              languages: ['fin', 'ita']
+            };
+
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+              .expect(200)
+              .end(function (offersGetErr, offersGetRes) {
+                // Handle offer get error
+                if (offersGetErr) return done(offersGetErr);
+
+                // MongoDb returns these in random order, figure out order here
+                var user2Order = 1;
+                var user3Order = 0;
+                if (offersGetRes.body[0]._id === offer2Id.toString()) {
+                  user2Order = 0;
+                  user3Order = 1;
+                }
+
+                // Set assertions
+                offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(2);
+                offersGetRes.body[user2Order]._id.should.equal(offer2._id.toString());
+                offersGetRes.body[user3Order]._id.should.equal(offer3._id.toString());
+
+                // Call the assertion callback
+                return done();
+              });
+          });
       });
 
     });
