@@ -21,9 +21,8 @@
     vm.suggestionsLimit = 3; // How many tribes suggested (including possible referred tribe)
 
     // Variables for invitation feature
-    vm.invitationCode = '';
+    vm.invitationCode = 'PDAOZX';
     vm.invitationCodeValid = false;
-    vm.invitationCodeError = false;
     vm.validateInvitationCode = validateInvitationCode;
 
     activate();
@@ -32,16 +31,11 @@
      * Validate invitation code
      */
     function validateInvitationCode() {
-      vm.invitationCodeError = false;
-
-      var valid = InvitationService.validateCode(
-        appSettings.invitation.key, // inviteKey
+      vm.invitationCodeValid = InvitationService.validateCode(
+        appSettings.inviteKey, // inviteKey
         new Date(), // today
         vm.invitationCode.toLowerCase() // code
       );
-
-      vm.invitationCodeValid = valid;
-      vm.invitationCodeError = !valid;
     }
 
 
