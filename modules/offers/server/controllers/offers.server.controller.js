@@ -481,7 +481,7 @@ exports.list = function (req, res) {
   }
 
   // Some of the filters are based on `user` schema
-  if (filters.hasFilter('tribes')) {
+  if (filters.hasFilter('languages') || filters.hasFilter('tribes')) {
     query.push({
       $lookup: {
         from: 'users',
@@ -495,6 +495,32 @@ exports.list = function (req, res) {
     query.push({
       $unwind: '$user'
     });
+  }
+
+  // Languages filter
+  if (filters.hasFilter('languages')) {
+
+    var languages = require(path.resolve('./config/languages/languages.json'));
+
+    // Above json `languages` object contains language names, but we need just keys.
+    languages = _.keys(languages);
+
+    // Accept only valid language codes, ignore the rest
+    // @link https://lodash.com/docs/#filter
+    var filterLanguages = _.filter(filters.languages, function (language) {
+      return _.indexOf(languages, language) > -1;
+    });
+
+    // If we still have languages left, apply the filter
+    if (filterLanguages.length > 0) {
+      query.push({
+        $match: {
+          'user.languages': {
+            $in: filterLanguages
+          }
+        }
+      });
+    }
   }
 
   // Tribes filter

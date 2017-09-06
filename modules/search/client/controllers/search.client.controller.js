@@ -23,6 +23,7 @@
     vm.openSidebar = openSidebar;
     vm.onPlaceSearch = onPlaceSearch;
     vm.openSearchPlaceInput = openSearchPlaceInput;
+    vm.onLanguageFiltersChange = onLanguageFiltersChange;
     vm.sidebarTab = 'filters';
 
     // Visibility toggle for search place input on small screens
@@ -53,15 +54,7 @@
         if (!angular.equals(newTypesFilters, oldTypesFilters)) {
           // Save new value to cache
           FiltersService.set('types', newTypesFilters);
-          // Close possible open offers
-          if (vm.offer) {
-            vm.offer = false;
-            // Tells `SearchMapController` and `SearchSidebarController`
-            // to close anything offer related
-            $scope.$broadcast('search.closeOffer');
-          }
-          // Tells map controller to reset markers
-          $scope.$broadcast('search.resetMarkers');
+          onFiltersUpdated();
         }
       });
 
@@ -70,15 +63,7 @@
         if (!angular.equals(newTribeFilters, oldTribeFilters)) {
           // Save new value to cache
           FiltersService.set('tribes', newTribeFilters);
-          // Close possible open offers
-          if (vm.offer) {
-            vm.offer = false;
-            // Tells `SearchMapController` and `SearchSidebarController`
-            // to close anything offer related
-            $scope.$broadcast('search.closeOffer');
-          }
-          // Tells map controller to reset markers
-          $scope.$broadcast('search.resetMarkers');
+          onFiltersUpdated();
         }
       });
 
@@ -107,6 +92,35 @@
         });
       }
 
+    }
+
+    /**
+     * Fired for changes at languages filters
+     */
+    function onLanguageFiltersChange() {
+      // `vm.filters.languages` is still out of sync at this point,
+      // but in next cycle after `$timeout` we have updated version.
+      $timeout(function () {
+        // Save new value to cache
+        FiltersService.set('languages', vm.filters.languages || []);
+
+        onFiltersUpdated();
+      });
+    }
+
+    /**
+     * Closes offer when filters are changed and updates the map
+     */
+    function onFiltersUpdated() {
+      // Close possible open offers
+      if (vm.offer) {
+        vm.offer = false;
+        // Tells `SearchMapController` and `SearchSidebarController`
+        // to close anything offer related
+        $scope.$broadcast('search.closeOffer');
+      }
+      // Tells map controller to reset markers
+      $scope.$broadcast('search.resetMarkers');
     }
 
     /**
