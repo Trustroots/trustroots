@@ -9,24 +9,6 @@
   function UsersRoutes($stateProvider) {
 
     $stateProvider.
-      state('invite', {
-        url: '/invite',
-        templateUrl: '/modules/users/views/invite.client.view.html',
-        controller: 'InviteController',
-        controllerAs: 'invite',
-        resolve: {
-          // A string value resolves to a service
-          SettingsService: 'SettingsService',
-
-          appSettings: function(SettingsService) {
-            return SettingsService.get();
-          }
-        },
-        data: {
-          pageTitle: 'Invite friends'
-        }
-      }).
-
       // Users state routing
       state('welcome', {
         url: '/welcome',
@@ -225,14 +207,6 @@
         controllerAs: 'signup',
         footerTransparent: false,
         headerHidden: true,
-        resolve: {
-          // A string value resolves to a service
-          SettingsService: 'SettingsService',
-
-          appSettings: function(SettingsService) {
-            return SettingsService.get();
-          }
-        },
         data: {
           pageTitle: 'Sign up'
         }

@@ -15,8 +15,7 @@
 module.exports = {
   app: {
     title: 'Trustroots',
-    description: 'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.',
-    inviteKey: 62618893
+    description: 'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.'
   },
   // Appears on top of every page for authenticated users.
   // There's no way turning them off permanently,
