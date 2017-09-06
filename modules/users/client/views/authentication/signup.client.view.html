@@ -74,33 +74,23 @@
       <div class="row">
         <div class="col-xs-12 text-center">
           <h3>Join Trustroots</h3>
-          <p class="font-brand-light signup-tribe"
-             ng-show="signup.tribe && signup.tribe._id && signup.step < 3">
+          <p class="font-brand-light signup-tribe" ng-show="signup.tribe && signup.tribe._id && signup.step < 3">
             + Tribe {{::signup.tribe.label}}
           </p>
           <div class="signup-steps">
 
-            <div ng-class="{
-                   'signup-step-active font-brand-semibold': signup.step === 1,
-                   'font-brand-light': signup.step !== 1
-                 }">
-              <div class="signup-step-indicator">1</div>
+            <div class="font-brand-regular" ng-class="{'signup-step-active font-brand-semibold': signup.step === 1}"><!-- ng-click="signup.step = 1;">-->
+              <div class="signup-step-indicator font-brand-light">1</div>
               Info
             </div>
             <div class="signup-step-line"></div>
-            <div ng-class="{
-                   'signup-step-active font-brand-semibold': signup.step === 2,
-                   'font-brand-light': signup.step !== 2
-                 }">
-              <div class="signup-step-indicator">2</div>
+            <div class="font-brand-regular" ng-class="{'signup-step-active font-brand-semibold': signup.step === 2}">
+              <div class="signup-step-indicator font-brand-light">2</div>
               Tribes
             </div>
             <div class="signup-step-line"></div>
-            <div ng-class="{
-                   'signup-step-active font-brand-semibold': signup.step === 3,
-                   'font-brand-light': signup.step !== 3
-                 }">
-              <div class="signup-step-indicator">3</div>
+            <div class="font-brand-regular" ng-class="{'signup-step-active font-brand-semibold': signup.step === 3}">
+              <div class="signup-step-indicator font-brand-light">3</div>
               Done
             </div>
 
