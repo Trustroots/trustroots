@@ -154,7 +154,7 @@ describe('Configuration Tests:', function () {
                 // The user we just created should be exposed
                 res.text.should.containEql('user = {"_id":"' + userId + '",');
 
-                return done();
+                Tag.remove().exec(done);
               });
           });
       });
