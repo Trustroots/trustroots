@@ -26,7 +26,17 @@ module.exports.connect = function (callback) {
   // You could use any ES6 promise constructor here, e.g. `bluebird`
   mongoose.Promise = global.Promise;
 
-  var db = mongoose.connect(config.db.uri, function (err) {
+  // Options for Native MongoDB connection
+  // https://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
+  // http://mongoosejs.com/docs/connections.html
+  var mongoConnectionOptions = {
+    server: {
+      // Never stop reconnecting
+      reconnectTries: Number.MAX_VALUE
+    }
+  };
+
+  var db = mongoose.connect(config.db.uri, mongoConnectionOptions, function (err) {
     // Log Error
     if (err) {
       console.error(chalk.red('Could not connect to MongoDB!'));
