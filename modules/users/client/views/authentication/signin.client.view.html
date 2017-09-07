@@ -3,7 +3,7 @@
     <div class="middle-content">
 
       <div class="row">
-        <div class="col-xs-12 col-sm-offset-4 col-sm-4 col-lg-offset-5 col-lg-2">
+        <div class="col-xs-12 col-sm-offset-3 col-sm-6 col-md-offset-4 col-md-4">
           <form name="signinForm"
                 class="form-auth"
                 autocomplete="off"
@@ -50,7 +50,9 @@
                  class="btn btn-inverse"
                  ng-class="{ 'btn-lg btn-block': auth.authError }">
                 Forgot?
-                <span ng-if="auth.authError">Recover your password</span>
+                <span ng-if="auth.authError" class="hidden-xs">
+                  Recover your password
+                </span>
               </a>
               <div class="text-center form-group">
                 <br><br>
