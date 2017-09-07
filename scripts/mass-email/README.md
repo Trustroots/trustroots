@@ -85,7 +85,7 @@ email into an `nedb` file.
 
 Some things to note about SparkPost.
 
-* SparkPost limit free accounts to 20k sends per day
+* SparkPost limit free accounts to ~~20k sends per day~~. Update: https://www.sparkpost.com/blog/updated-service-plans/
 * As of March 2017 we send about 200 messages per day
 * If we hit the limit, all emails get rejected not queued
 * This script should aim to send max 15k emails per 24h period
