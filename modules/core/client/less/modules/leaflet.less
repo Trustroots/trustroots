@@ -175,6 +175,28 @@
 
 .leaflet-container .leaflet-control-scale {
   font-size: @font-size-small;
+  font-family: @font-family-brand-regular;
+}
+
+// Scale control next to zoom floats next to zoom buttons,
+// not under it like by default
+.leaflet-control-scale {
+  clear: left;
+  margin: 40px 20px 0 0;
+
+  // Zoom buttons are slightly bigger so we need slightly bigger gap
+  @media (max-width: @screen-sm-max) {
+    margin-top: 60px;
+  }
+
+  // Hide improve map links on small screens
+  @media (max-width: @screen-xs-max) {
+    position: fixed;
+    bottom: 5px;
+    right: 5px;
+    margin: 0;
+  }
+
 }
 
 .leaflet-touch {

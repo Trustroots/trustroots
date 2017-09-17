@@ -41,11 +41,10 @@
     };
     vm.mapDefaults = {
       attributionControl: false, // Adding this manually below
+      zoomControl: false, // Adding this manually below
       keyboard: true,
       worldCopyJump: true,
-      zoomControlPosition: 'bottomright',
       controls: {
-        scale: true,
         layers: {
           visible: true,
           position: 'bottomleft',
@@ -92,7 +91,17 @@
       // Wait for Leaflet object
       leafletData.getMap(mapId).then(function (map) {
 
-        // Add attribution controller
+        // Add map scale
+        map.addControl(L.control.scale({
+          position: 'bottomright'
+        }));
+
+        // Add map zoom control (+/- buttons)
+        map.addControl(L.control.zoom({
+          position: 'bottomright'
+        }));
+
+        // Add map attribution
         map.addControl(L.control.attribution({
           position: 'bottomright',
           prefix: ''
