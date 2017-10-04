@@ -141,10 +141,6 @@ describe('Text processor tests', function () {
           'in': 'sftp://example.com',
           'out': '<a href="sftp://example.com">sftp://example.com</a>'
         }, {
-          'scheme': 'mailto',
-          'in': 'mailto:test@example.com',
-          'out': '<a href="mailto:mailto:test@example.com">mailto:test@example.com</a>'
-        }, {
           'scheme': 'irc',
           'in': 'irc://example.com:80/channel?key',
           'out': '<a href="irc://example.com:80/channel?key">irc://example.com:80/channel?key</a>'
@@ -156,10 +152,6 @@ describe('Text processor tests', function () {
           'scheme': 'tg (Telegram)',
           'in': 'tg://resolve?domain=trustroots',
           'out': '<a href="tg://resolve?domain=trustroots">tg://resolve?domain=trustroots</a>'
-        }, {
-          'scheme': 'xmpp (XMPP/Jabber)',
-          'in': 'xmpp:user@example.com',
-          'out': '<a href="mailto:xmpp:user@example.com">xmpp:user@example.com</a>'
         }].forEach(function (schemeTest) {
           it('Should autolink whitelisted URL scheme: ' + schemeTest.scheme, function () {
             var testString = textService.html(schemeTest.in);

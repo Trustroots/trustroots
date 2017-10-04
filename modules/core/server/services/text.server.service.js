@@ -69,8 +69,7 @@ exports.sanitizeOptions = {
       'geo',
       'irc',
       'ge0', // Maps.me
-      'tg', // Telegram
-      'xmpp' // XMPP/Jabber
+      'tg' // Telegram
     ]
   }
 };
