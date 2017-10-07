@@ -35,7 +35,6 @@ module.exports = function (config) {
       'last_name',
       'name',
       'gender',
-      'location',
       'link',
       'picture'
     ],
