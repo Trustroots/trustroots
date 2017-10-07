@@ -4,9 +4,11 @@
  * Module dependencies.
  */
 var _ = require('lodash'),
+    path = require('path'),
     passport = require('passport'),
     FacebookStrategy = require('passport-facebook').Strategy,
-    usersAuthentication = require('../../controllers/users.authentication.server.controller');
+    usersAuthentication = require('../../controllers/users.authentication.server.controller'),
+    log = require(path.resolve('./config/lib/logger'));
 
 module.exports = function (config) {
   // Get config parameters for the strategy
@@ -16,6 +18,11 @@ module.exports = function (config) {
 
   // Don't configure the strategy if missing configuration
   if (!clientID || !clientSecret || !callbackURL) {
+    log('error', 'Cannot configure Facebook strategy due missing configuration #38h1jv', {
+      clientIDExists: Boolean(clientID),
+      clientSecretExists: Boolean(clientSecret),
+      callbackURLExists: Boolean(callbackURL)
+    });
     return;
   }
 
