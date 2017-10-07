@@ -33,7 +33,6 @@ module.exports = function (config) {
       'email',
       'first_name',
       'last_name',
-      'name',
       'gender',
       'link',
       'picture'
