@@ -9,6 +9,10 @@
    *
    * Or from many:
    * <div tr-boards="['imageid1', 'imageid2']">
+   *
+   * To stop cover image being set for small screens (<= 480px width),
+   * use `tr-boards-ignore-small` attribute.
+   *
    */
   angular
     .module('core')
@@ -22,7 +26,12 @@
       scope: {
         trBoards: '='
       },
-      link: function (scope, elem) {
+      link: function (scope, elem, attrs) {
+
+        // Don't set background images for mobile screens if defined so via attribute
+        if (angular.isDefined(attrs.trBoardsIgnoreSmall) && $window.innerWidth <= 480) {
+          return;
+        }
 
         // If requested photo is missing or request is invalid, rely on this photo
         var defaultPhoto = 'bokeh';

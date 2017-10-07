@@ -29,19 +29,17 @@
   }
 
   /* @ngInject */
-  function HomeController($stateParams, Authentication, TribesService, TribeService) {
+  function HomeController($stateParams, $window, Authentication, TribesService, TribeService) {
 
     var headerHeight = angular.element('#tr-header').height() || 0;
 
     // View model
     var vm = this;
-    vm.tribesLoaded = false;
 
     // Exposed to the view
-    vm.windowHeight = angular.element('html').height() - headerHeight;
+    vm.boardHeight = $window.innerWidth <= 480 && $window.innerHeight < 700 ? 400 : $window.innerHeight - headerHeight - 10;
 
     // Load front page's landing photos
-    // @TODO Move part of this logic data to the DB
     if ($stateParams.tribe && ['hitchhikers', 'dumpster-divers', 'punks'].indexOf($stateParams.tribe) > -1) {
       // Photos for these 3 tribes
       vm.boards = [
@@ -53,23 +51,25 @@
         'hitchtruck'
       ];
     } else {
-      vm.boards = Authentication.user ?
-        // Photos for authenticated users
-  [
-    'woman-bridge',
-    'wavewatching',
-    'sahara-backpacker'
-  ] :
-        // Photos for non-authenticated users
-        [
-          'woman-bridge',
-          'rainbowpeople',
-          'hitchroad',
-          'hitchgirl1',
-          'wavewatching',
-          'sahara-backpacker',
-          'hitchtruck'
-        ];
+      vm.boards = [
+        'woman-bridge',
+        'rainbowpeople',
+        'hitchroad',
+        'hitchgirl1',
+        'wavewatching',
+        'sahara-backpacker',
+        'hitchtruck'
+      ];
+    }
+
+    function isTribeLoaded(tribeSlug) {
+      angular.forEach(vm.tribes, function (tribe) {
+        if (tribe.slug === tribeSlug) {
+          return true;
+        }
+      });
+
+      return false;
     }
 
     // Load suggested tribes
@@ -77,32 +77,15 @@
       limit: 3
     }, function () {
       // Got those three tribes, now fetch one more if requested
-      if ($stateParams.tribe && $stateParams.tribe !== '') {
-
-        // Loop trough tribes to see if requested tribe is already there, and simply move it to be first
-        var foundTribeFromArray = false;
-        angular.forEach(vm.tribes, function (tribe) {
-          if (tribe.slug === $stateParams.tribe) {
-            foundTribeFromArray = true;
+      if ($stateParams.tribe && !isTribeLoaded($stateParams.tribe)) {
+        TribeService.get({
+          tribeSlug: $stateParams.tribe
+        }).then(function (tribe) {
+          // If tribe was found, put it to the beginning of `vm.tribes` array
+          if (tribe && tribe._id) {
+            vm.tribes.unshift(tribe);
           }
         });
-        if (!foundTribeFromArray) {
-          vm.tribe = TribeService.get({
-            tribeSlug: $stateParams.tribe
-          });
-          vm.tribe.then(function (tribe) {
-            // If tribe was found, put it to the beginning of `vm.tribes` array
-            if (tribe && tribe._id) {
-              vm.tribes.unshift(tribe);
-            }
-            vm.tribesLoaded = true;
-          });
-        } else {
-          vm.tribesLoaded = true;
-        }
-
-      } else {
-        vm.tribesLoaded = true;
       }
     });
 
