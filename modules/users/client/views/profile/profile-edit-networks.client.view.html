@@ -10,35 +10,56 @@
                 !profileEditNetworks.isConnectedSocialAccount('twitter') ||
                 !profileEditNetworks.isConnectedSocialAccount('github')">
       <h4>Connect to</h4>
-      <div class="btn-group btn-group-lg" role="group" aria-label="...">
-          <a class="btn btn-default social-profile-handle"
-             ng-repeat="providerName in ['facebook', 'twitter', 'github'] track by providerName"
-             ng-if="!profileEditNetworks.isConnectedSocialAccount(providerName)"
-             ng-href="/api/auth/{{::providerName}}" target="_top">
-            <i class="social-profile-icon icon-lg icon-{{::providerName}}"></i>
-            <span class="text-capitalize">{{::providerName}}</span>
+      <ul class="list-unstyled social-profiles">
+        <li class="social-profile"
+            ng-repeat="providerName in ['facebook', 'twitter', 'github'] track by providerName"
+            ng-if="!profileEditNetworks.isConnectedSocialAccount(providerName)">
+          <i class="icon-lg icon-{{::providerName}} social-profile-icon"></i>
+          <a class="btn btn-default text-capitalize social-profile-handle"
+             target="_top"
+             ng-href="/api/auth/{{::providerName}}"
+             ng-data-aria-label="Connect your profile to {{::providerName}}">
+            {{::providerName}}
           </a>
-      </div>
+        </li>
+      </ul>
       <br><br>
     </div>
 
     <div ng-if="profileEditNetworks.hasConnectedAdditionalSocialAccounts()">
-      <h4>Already connected</h4>
-      <ul class="social-profiles list-unstyled">
-        <li class="social-profile" ng-repeat="(providerName, providerData) in profileEditNetworks.user.additionalProvidersData track by providerName" ng-class="{'social-profile-active': profileEditNetworks.removingSocialAccount === providerName}">
-          <i class="social-profile-icon icon-fw icon-lg icon-{{::providerName}}"></i>
+      <h4>Connected to networks</h4>
+      <ul class="list-unstyled social-profiles">
+        <li class="social-profile"
+            ng-repeat="(providerName, providerData) in profileEditNetworks.user.additionalProvidersData track by providerName"
+            ng-class="{
+              'bg-danger social-profile-active': profileEditNetworks.removingSocialAccount === providerName
+            }">
+          <i class="icon-fw icon-lg icon-{{::providerName}} social-profile-icon"></i>
 
           <!-- Connection name -->
-          <a class="social-profile-handle" ng-click="profileEditNetworks.removingSocialAccount = providerName" ng-if="profileEditNetworks.removingSocialAccount !== providerName">
-            <span class="text-capitalize">{{::providerName}}</span>
-            <small>(disconnect)</small>
-          </a>
+          <button class="btn btn-default text-capitalize social-profile-handle"
+                  type="button"
+                  ng-click="profileEditNetworks.removingSocialAccount = providerName"
+                  ng-if="profileEditNetworks.removingSocialAccount !== providerName"
+                  ng-data-aria-label="Disconnect your profile from {{::providerName}}">
+            {{::providerName}}
+            (disconnect)
+          </button>
 
           <!-- Confirm disconnecting -->
-          <span class="social-profile-remove" ng-if="profileEditNetworks.removingSocialAccount === providerName">
-            Disconnect from <span class="text-capitalize">{{::providerName}}</span>?
-            <a class="btn btn-xs btn-primary" ng-click="profileEditNetworks.removeUserSocialAccount(providerName)">Yes</a>
-            <a class="btn btn-xs btn-inverse" ng-click="profileEditNetworks.removingSocialAccount = false">Cancel</a>
+          <span class="text-danger"
+                ng-if="profileEditNetworks.removingSocialAccount === providerName">
+            Disconnect from <span class="text-capitalize" ng-bind="::providerName"></span>?<br>
+            <button class="btn btn-danger"
+                    type="button"
+                    ng-click="profileEditNetworks.removeUserSocialAccount(providerName)">
+              Yes, disconnect
+            </button>
+            <button class="btn btn-link"
+                    type="button"
+                    ng-click="profileEditNetworks.removingSocialAccount = false">
+              Cancel
+            </button>
           </span>
 
         </li>

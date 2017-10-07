@@ -327,16 +327,34 @@ exports.signout = function (req, res) {
  */
 exports.oauthCallback = function (strategy) {
   return function (req, res, next) {
+
+    var defaultRedirectUrl = '/profile/edit/networks';
+
     passport.authenticate(strategy, function (err, user, redirectURL) {
-      if (err || !user) {
+      if (err) {
+        log('error', 'oAuth callback error #h3hg82', {
+          strategy: strategy,
+          err: err
+        });
+        return res.redirect(defaultRedirectUrl);
+      }
+
+      if (!user) {
+        log('error', 'oAuth callback requires authenticated user #g82bff', {
+          strategy: strategy
+        });
         return res.redirect('/signin');
       }
+
       req.login(user, function (err) {
         if (err) {
+          log('error', 'oAuth callback failed to login user #h2bgff', {
+            strategy: strategy
+          });
           return res.redirect('/signin');
         }
 
-        return res.redirect(redirectURL || '/profile/edit/networks');
+        return res.redirect(redirectURL || defaultRedirectUrl);
       });
     })(req, res, next);
   };
