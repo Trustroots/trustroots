@@ -542,8 +542,21 @@ exports.removeProfile = function (req, res) {
 
         // Can't find user (=invalid or expired token) or other error
         if (err || !user) {
-          return res.status(400).send({
-            message: 'Profile remove token is invalid or has expired.'
+
+          // Report failure to stats
+          return statService.stat({
+            namespace: 'profileRemoval',
+            counts: {
+              count: 1
+            },
+            tags: {
+              status: 'failed'
+            }
+          }, function () {
+            // Return failure
+            return res.status(400).send({
+              message: 'Profile remove token is invalid or has expired.'
+            });
           });
         }
 
@@ -632,15 +645,40 @@ exports.removeProfile = function (req, res) {
 
     // Done
     function () {
-      return res.json({
-        message: 'Your profile has been removed.'
+
+      // Report successfull removal to stats
+      return statService.stat({
+        namespace: 'profileRemoval',
+        counts: {
+          count: 1
+        },
+        tags: {
+          status: 'removed'
+        }
+      }, function () {
+        // Return success
+        return res.json({
+          message: 'Your profile has been removed.'
+        });
       });
     }
 
   ], function (err) {
     if (err) {
-      return res.status(400).send({
-        message: 'Removing your profile failed.'
+      // Report failure to stats
+      return statService.stat({
+        namespace: 'profileRemoval',
+        counts: {
+          count: 1
+        },
+        tags: {
+          status: 'failed'
+        }
+      }, function () {
+        // Return failure
+        return res.status(400).send({
+          message: 'Removing your profile failed.'
+        });
       });
     }
   });

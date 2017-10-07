@@ -31,15 +31,11 @@ module.exports = function (config) {
     profileFields: [
       'id',
       'email',
-      'name',
       'first_name',
       'last_name',
-      'hometown',
-      'about',
+      'name',
       'gender',
-      'languages',
       'link',
-      'photos',
       'picture'
     ],
     passReqToCallback: true,
