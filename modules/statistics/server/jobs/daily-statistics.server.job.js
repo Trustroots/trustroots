@@ -34,7 +34,7 @@ module.exports = function (job, agendaDone) {
         writeDailyStat({
           namespace: 'members',
           values: {
-            count: userCount
+            count: parseInt(userCount, 10)
           },
           tags: {
             members: 'members'
@@ -55,13 +55,61 @@ module.exports = function (job, agendaDone) {
         writeDailyStat({
           namespace: 'pushRegistrations',
           values: {
-            count: pushRegistrationCount
+            count: parseInt(pushRegistrationCount, 10)
           },
           tags: {
             type: 'all'
           }
         }, done);
 
+      });
+    },
+
+    // Hosting offer count
+    function (done) {
+
+      statistics.getHostOffersCount(function (err, hostOfferCounts) {
+        if (err) {
+          log('error', 'Daily statistics: failed fetching hosting offer counts.', err);
+          return done();
+        }
+
+        // Write numbers to stats
+        async.eachSeries(hostOfferCounts, function (offerCount, doneStatus) {
+          writeDailyStat({
+            namespace: 'offers',
+            values: {
+              count: parseInt(offerCount.count, 10)
+            },
+            tags: {
+              type: 'host',
+              status: String(offerCount._id) // `yes|maybe|no`
+            }
+          }, doneStatus);
+        }, done);
+
+      });
+    },
+
+    // Meet offer count
+    function (done) {
+
+      statistics.getMeetOffersCount(function (err, meetOfferCount) {
+        if (err) {
+          log('error', 'Daily statistics: failed fetching user count.', err);
+          return done();
+        }
+
+        // Write number to stats
+        writeDailyStat({
+          namespace: 'offers',
+          values: {
+            count: parseInt(meetOfferCount, 10)
+          },
+          tags: {
+            type: 'meet'
+          }
+        }, done);
       });
     }
 
