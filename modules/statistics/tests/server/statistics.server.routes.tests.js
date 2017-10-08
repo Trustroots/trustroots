@@ -97,6 +97,7 @@ describe('Statistics CRUD tests', function () {
       description: '',
       noOfferDescription: '',
       maxGuests: 1,
+      type: 'host',
       updated: new Date(),
       location: [52.498981209298776, 13.418329954147339],
       locationFuzzy: [52.50155039101136, 13.42255019882177]
