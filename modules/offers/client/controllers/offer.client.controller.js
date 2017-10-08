@@ -22,7 +22,7 @@
           // @link http://leafletjs.com/reference-1.2.0.html#map-invalidatesize
           map.invalidateSize(false);
         });
-      });
+      }, 300);
     }
 
     // Leaflet
