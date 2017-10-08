@@ -11,7 +11,7 @@
                 !profileEditNetworks.isConnectedSocialAccount('github')">
       <h4>Connect to</h4>
       <ul class="list-unstyled social-profiles">
-        <li class="social-profile"
+        <li class="social-profile social-profile-connect"
             ng-repeat="providerName in ['facebook', 'twitter', 'github'] track by providerName"
             ng-if="!profileEditNetworks.isConnectedSocialAccount(providerName)">
           <i class="icon-lg icon-{{::providerName}} social-profile-icon"></i>
@@ -29,7 +29,7 @@
     <div ng-if="profileEditNetworks.hasConnectedAdditionalSocialAccounts()">
       <h4>Connected to networks</h4>
       <ul class="list-unstyled social-profiles">
-        <li class="social-profile"
+        <li class="social-profile social-profile-connect"
             ng-repeat="(providerName, providerData) in profileEditNetworks.user.additionalProvidersData track by providerName"
             ng-class="{
               'bg-danger social-profile-active': profileEditNetworks.removingSocialAccount === providerName

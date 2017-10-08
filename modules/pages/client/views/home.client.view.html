@@ -1,5 +1,9 @@
 
-<section class="board container home-intro" tr-boards="::home.boards" ng-style="{height: home.windowHeight}">
+<section class="board board-primary container home-intro"
+         ng-if="::!app.user"
+         tr-boards="::home.boards"
+         tr-boards-ignore-small
+         ng-style="{ height: home.boardHeight }">
   <div class="middle-wrapper middle-wrapper-horizontal">
     <div class="middle-content">
 
@@ -8,30 +12,14 @@
           <img class="home-logo hidden-xs center-block" src="/modules/core/img/logo/white.svg" alt="Trustroots" width="210" height="210" aria-hidden="true">
           <img class="home-logo visible-xs-block center-block" src="/modules/core/img/logo/white.svg" alt="Trustroots" width="130" height="130" aria-hidden="true">
           <h1 class="sr-only">Trustroots</h1>
-
-          <!-- For non authenticated -->
-          <div ng-if="::!app.user">
-            <h3 class="home-tagline">Travellers' community</h3>
-            <h4 class="home-subtagline">Sharing, hosting and getting people together.</h4>
-            <a ui-sref="signup" class="btn btn-action btn-default home-join hidden-xs">
-              Join Trustroots
-            </a>
+          <h3 class="home-tagline">Travellers' community</h3>
+          <h4 class="home-subtagline">Sharing, hosting and getting people together.</h4>
+          <a ui-sref="signup" class="btn btn-action btn-default home-join hidden-xs">
+            Join Trustroots
+          </a>
+          <div class="home-down hidden-xs">
+            <i class="icon-down"></i>
           </div>
-
-          <!-- For authenticated -->
-          <div ng-if="::app.user">
-            <h3 class="home-tagline-auth">
-              Hi {{ ::app.user.displayName }}!<br>
-              Being able to rely on strangers, on communities, on trust, are values that are worth preserving. Go travel & spread the word!
-            </h3>
-            <a ui-sref="profile-edit.about" class="btn btn-lg btn-default home-join hidden-xs">Fill your profile</a>
-            <a ui-sref="search.map" class="btn btn-lg btn-default home-join hidden-xs">
-              Find members
-            </a>
-          </div>
-
-          <div class="home-down"><i class="icon-down"></i></div>
-
         </div>
       </div><!-- .row -->
     </div>
@@ -50,7 +38,7 @@
         <p class="font-brand-light">
           Have a look! Travel anywhere and easily find great people who want to meet you as well. See where other travellers are and help each other out, whether through welcoming them to your home, sharing your stories or becoming friends.
           <br><br>
-          Trustroots is already over 26,000 members strong!
+          Trustroots is over <a ui-sref="statistics">27,000 members</a> strong!
         </p>
       </div>
       <div class="col-md-7">
@@ -93,7 +81,7 @@
 </section>
 
 <!-- Tribes -->
-<section class="home-how" ng-if="home.tribesLoaded">
+<section class="home-how">
   <div class="container">
     <div class="row">
       <div class="col-xs-10 col-xs-push-1 col-sm-3 col-sm-push-6">
@@ -109,7 +97,7 @@
       <div class="col-xs-12 visible-xs tribes-xs">
         <a ui-sref="tribes.tribe({tribe: tribe.slug})"
            class="img-circle tribe-xs tribe-image"
-           ng-repeat="tribe in ::home.tribes | limitTo:3 track by tribe._id"
+           ng-repeat="tribe in home.tribes | limitTo:3 track by tribe._id"
            tr-tribe-styles="{{::tribe}}"
            tr-tribe-styles-dimensions="520x520"
            tr-tribe-styles-quality="lightest"
@@ -119,8 +107,8 @@
         </a>
       </div>
       <div class="col-sm-3 hidden-xs"
-           ng-class="{'col-sm-pull-3': !$last}"
-           ng-repeat="tribe in ::home.tribes | limitTo:3 track by tribe._id">
+           ng-class="{ 'col-sm-pull-3': !$last }"
+           ng-repeat="tribe in home.tribes | limitTo:3 track by tribe._id">
         <div class="img-circle tribe tribe-image"
              tr-tribe-styles="{{::tribe}}"
              tr-tribe-join>
@@ -135,7 +123,9 @@
 </section>
 
 <!-- Manifesto -->
-<section class="board board-primary board-inset" tr-boards="'mountainforest'" id="manifesto">
+<section class="board board-primary board-inset"
+         tr-boards="'mountainforest'"
+         id="manifesto">
   <div class="container">
     <div class="row">
       <div class="col-md-offset-3 col-md-6 text-center lead font-brand-light">

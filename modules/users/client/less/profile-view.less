@@ -22,37 +22,11 @@
 .profile-actions {
   text-align: right;
   .profile-edit-help {
-    line-height: 32px; //About the height of the 'edit' button
+    line-height: 32px; // About the height of the 'edit' button
   }
   .nav {
     float: right;
   }
-  /*
-  @media (max-width: @screen-sm-max) {
-    text-align: left;
-    .profile-edit-help {
-      float: right;
-    }
-    .nav {
-      float: none;
-    }
-  }
-  @media (max-width: @screen-xs-max) {
-    .navbar();
-    .navbar-default();
-    .navbar-fixed-top();
-    top: @navbar-height;
-    .btn {
-      margin-top: 4px;
-    }
-    .profile-editor-cancel {
-      float: right;
-    }
-    .profile-editor-save {
-      float: left;
-    }
-  }
-  */
 }
 
 .profile-name,
@@ -182,17 +156,18 @@
   margin-top: 5px;
   margin-bottom: 10px;
   .social-profile-icon {
+    speak: none;
     color: @gray-light;
+    margin-left: -34px;
     filter: grayscale(100%);
     -webkit-filter: grayscale(100%);
   }
   .social-profile {
     padding: 4px 4px 4px 34px;
     margin: 0;
-    line-height: 33px;
 
-    .social-profile-icon {
-      margin-left: -30px;
+    &.social-profile-connect {
+      line-height: 33px;
     }
 
     .social-profile-handle {
@@ -210,6 +185,7 @@
         &.icon-twitter { color: #00aced; }
         &.icon-facebook { color: #3b5998; }
         &.icon-github { color: #333; }
+        &.icon-warmshowers { color: #007071; }
       }
     }
   }
