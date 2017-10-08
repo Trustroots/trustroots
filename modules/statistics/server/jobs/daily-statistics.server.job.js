@@ -111,6 +111,42 @@ module.exports = function (job, agendaDone) {
           }
         }, done);
       });
+    },
+
+    // Connected to networks counters
+    function (done) {
+
+      var networks = [
+        'couchsurfing',
+        'warmshowers',
+        'bewelcome',
+        'facebook',
+        'twitter',
+        'github'
+      ];
+
+      // Loop trough each network in series
+      async.eachSeries(networks, function (networkName, doneNetwork) {
+        // Get count for this network
+        statistics.getExternalSiteCount(networkName, function (err, count) {
+          if (err) {
+            log('error', 'Daily statistics: failed fetching network "' + networkName + '" count.', err);
+            return doneNetwork(err);
+          }
+
+          // Write number to stats
+          writeDailyStat({
+            namespace: 'membersInNetworks',
+            values: {
+              count: parseInt(count, 10)
+            },
+            tags: {
+              network: networkName
+            }
+          }, doneNetwork);
+        });
+      }, done);
+
     }
 
   ], function (err) {
