@@ -69,6 +69,19 @@ exports.getExternalSiteCount = function (site, callback) {
 };
 
 /**
+ * Get count of all public users
+ */
+exports.getMeetOffersCount = function (callback) {
+  Offer.count({ type: 'meet' }, function (err, count) {
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, parseInt(count, 10) || 0);
+  });
+};
+
+/**
  * Get count of hosting offers
  * Callback will be called with Object `{ yes: Int, maybe: Int, no: Int }`
  */
