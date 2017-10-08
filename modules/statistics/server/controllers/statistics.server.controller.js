@@ -69,16 +69,38 @@ exports.getExternalSiteCount = function (site, callback) {
 };
 
 /**
- * Get count of hosting offers
- * Callback will be called with Object `{ yes: Int, maybe: Int }`
+ * Get count of all public users
  */
-exports.getOffersCount = function (callback) {
-  Offer.aggregate({
-    $group: {
-      _id: '$status',
-      count: { $sum: 1 }
+exports.getMeetOffersCount = function (callback) {
+  Offer.count({ type: 'meet' }, function (err, count) {
+    if (err) {
+      callback(err);
+      return;
     }
-  },
+    callback(null, parseInt(count, 10) || 0);
+  });
+};
+
+/**
+ * Get count of hosting offers
+ * Callback will be called with Object `{ yes: Int, maybe: Int, no: Int }`
+ */
+exports.getHostOffersCount = function (callback) {
+  Offer.aggregate([
+    {
+      $match: {
+        type: 'host'
+      }
+    },
+    {
+      $group: {
+        _id: '$status',
+        count: {
+          $sum: 1
+        }
+      }
+    }
+  ],
   function (err, counters) {
     if (err) {
       callback(err);
@@ -103,15 +125,18 @@ exports.getOffersCount = function (callback) {
     // ]
     var values = {
       yes: 0,
-      maybe: 0
+      maybe: 0,
+      no: 0
     };
+
     if (counters && counters.length > 0) {
       counters.forEach(function (counter) {
-        if (['yes', 'maybe'].indexOf(counter._id) !== -1) {
+        if (['yes', 'maybe', 'no'].indexOf(counter._id) !== -1) {
           values[counter._id] = counter.count || 0;
         }
       });
     }
+
     callback(null, values);
   });
 };
@@ -255,7 +280,7 @@ exports.getPublicStatistics = function (req, res) {
 
     // Hosting stats
     function (done) {
-      exports.getOffersCount(function (err, counter) {
+      exports.getHostOffersCount(function (err, counter) {
         if (err) {
           return done(err);
         }
