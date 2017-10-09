@@ -62,7 +62,17 @@
 }
 
 .panel-disabled {
-  opacity: 0.4;
+  background-color: rgba(255, 255, 255, .4);
+  .panel-body,
+  .panel-footer,
+  .panel-heading {
+    opacity: 0.4;
+  }
+  // Ares inside disabled panels which are normally visible
+  // Apply this only to .panel-{body|footer|heading}
+  .panel-disabled-highlighted {
+    opacity: 1;
+  }
 }
 
 .panel-loading {
