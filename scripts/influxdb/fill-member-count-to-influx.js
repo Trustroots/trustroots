@@ -2,25 +2,24 @@
 
 var _ = require('lodash'),
     path = require('path'),
-    chalk = require('chalk'),
     async = require('async'),
     moment = require('moment'),
-    config = require(path.resolve('./config/config')),
     mongooseService = require(path.resolve('./config/lib/mongoose')),
     mongoose = require('mongoose'),
-    influxService = require(path.resolve('./modules/core/server/services/influx.server.service')),
-    userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
-    User = mongoose.model('User');
+    statsService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+
+require(path.resolve('./modules/users/server/models/user.server.model'));
+var User = mongoose.model('User');
 
 var cumulativeUserCount = 0;
 
-var aggregateGrouping = { $group : {
+var aggregateGrouping = { $group: {
   // _id : { month: { $month: "$created" }, day: { $dayOfMonth: "$created" }, year: { $year: "$created" }  },
-  _id : {
-    month: { $month: "$created" },
-    day: { $dayOfMonth: "$created" },
-    year: { $year: "$created" },
-    dayOfYear: { $dayOfYear: "$created" }
+  _id: {
+    month: { $month: '$created' },
+    day: { $dayOfMonth: '$created' },
+    year: { $year: '$created' },
+    dayOfYear: { $dayOfYear: '$created' }
   },
   count: { $sum: 1 }
 } };
@@ -29,30 +28,30 @@ var whereQuery = {
   public: true,
   created: { $lt: new Date('2016-10-11T00:00:00Z') }
 };
-var aggregateMatch = { $match : whereQuery };
-var aggregateSort = { $sort : { '_id.year': 1, '_id.month': 1, '_id.day': 1 } };
+var aggregateMatch = { $match: whereQuery };
+var aggregateSort = { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } };
 
-var enumerateDaysBetweenDates = function(startDate, endDate) {
-    var dates = [];
+var enumerateDaysBetweenDates = function (startDate, endDate) {
+  var dates = [];
 
-    var currDate = moment(startDate).clone().startOf('day').add(1, 'day');
-    var lastDate = moment(endDate).clone().startOf('day').add(1, 'day');
+  var currDate = moment(startDate).clone().startOf('day').add(1, 'day');
+  var lastDate = moment(endDate).clone().startOf('day').add(1, 'day');
 
-    while(currDate.add('days', 1).diff(lastDate) < 0) {
-        // console.log(currDate.toDate());
-        dates.push(currDate.clone().toDate());
-    }
+  while (currDate.add(1, 'days').diff(lastDate) < 0) {
+    // console.log(currDate.toDate());
+    dates.push(currDate.clone().toDate());
+  }
 
-    return dates;
+  return dates;
 };
 
 
 async.waterfall([
 
   // Bootstrap db connection
-  function(done) {
+  function (done) {
     console.log('Connecting to Mongodb...');
-    mongooseService.connect(function(db) {
+    mongooseService.connect(function () {
       console.log('Connected to Mongodb.');
       done(null);
     });
@@ -73,20 +72,20 @@ async.waterfall([
   },
   */
 
-  function(done) {
+  function (done) {
     User.find(whereQuery).count().exec(function (err, usersCount) {
       console.log('Found ' + usersCount + ' users currently in the DB.\n');
       done(err, usersCount);
     });
   },
 
-  function(usersCount, done) {
+  function (usersCount, done) {
     // Aggregate from mongodb
     User.aggregate([
       aggregateMatch,
       aggregateGrouping,
       aggregateSort
-    ], function(err, cursor) {
+    ], function (err, cursor) {
       done(err, cursor, usersCount);
     });
 
@@ -114,7 +113,7 @@ async.waterfall([
         var endDate = new Date(group._id.year, group._id.month-1, group._id.day);
         var prevDayDiffArr = enumerateDaysBetweenDates(startDate, endDate);
 
-        prevDayDiffArr.forEach(function(date) {
+        prevDayDiffArr.forEach(function (date) {
           dates.push({
             _id: {
               year: date.getFullYear(),
@@ -137,7 +136,7 @@ async.waterfall([
 
       callback();
 
-    }, function(err) {
+    }, function (err) {
       return done(err, dates, dates.length, usersCount);
     });
   },
@@ -149,8 +148,7 @@ async.waterfall([
     //
     // settings how often the progress will be printed to console
     // every PROGRESS_INTERVAL %
-    const PROGRESS_INTERVAL = 0.1; // percent
-    var keepGoing = true;
+    var PROGRESS_INTERVAL = 0.1; // percent
     var progress = 0; // progress counter
 
     // getting the next message from mongodb
@@ -170,27 +168,30 @@ async.waterfall([
       // console.log('\n  -> TO INFLUX: ' + cumulativeUserCount + ' [+' + countGroup.count + '] (' + countGroup._id.year + '-' + countGroup._id.month + '-' + countGroup._id.day + ')')
 
       // processing and saving the point to database
-      influxService.writeMeasurement(
-        'members',
+      statsService.stat(
         {
-          count: parseInt(cumulativeUserCount),
+          namespace: 'test_members',
+          values: {
+            count: parseInt(cumulativeUserCount, 10)
+          },
+          tags: {
+            members: 'members'
+          },
           // JavaScript counts months from 0 to 11. January is 0. December is 11.
-          time: new Date(parseInt(countGroup._id.year), parseInt(countGroup._id.month) - 1, parseInt(countGroup._id.day))
+          time: new Date(parseInt(countGroup._id.year, 10), parseInt(countGroup._id.month, 10) - 1, parseInt(countGroup._id.day, 10))
         },
-        { members: 'members' },
-        function (err, result) {
-          if (err) return callback(err);
-          return callback();
+        function (err) {
+          return callback(err);
         }
       );
 
-      }, function(err) {
-        return done(err, progress, daysCount, usersCount);
-      });
+    }, function (err, result) { // eslint-disable-line no-unused-vars
+      return done(err, progress, daysCount, usersCount);
+    });
   },
 
   // finish writing the progress bar
-  function(progress, daysCount, usersCount, done) {
+  function (progress, daysCount, usersCount, done) {
     process.stdout.clearLine();
     process.stdout.cursorTo(0);
     process.stdout.write(
@@ -203,15 +204,15 @@ async.waterfall([
   },
 
   // Disconnect DB
-  function(done) {
+  function (done) {
     console.log('\nDisconnecting from Mongodb...');
-    mongooseService.disconnect(function(err) {
+    mongooseService.disconnect(function (err) {
       done(err);
     });
   }
 
 ], function (err) {
-  if(err) {
+  if (err) {
     console.error('\nError:');
     console.error(err);
   }
