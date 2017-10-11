@@ -19,7 +19,8 @@
                        class="form-control input-lg"
                        placeholder="Email or username"
                        ng-model="auth.credentials.username"
-                       ng-disabled="auth.isLoading">
+                       ng-disabled="auth.isLoading"
+                       tabindex="1">
               </div>
               <div class="form-group">
                 <label for="password" class="lead">Password</label>
@@ -31,7 +32,8 @@
                          class="form-control input-lg"
                          ng-attr-type="{{ showPassword ? 'text' : 'password' }}"
                          ng-disabled="auth.isLoading"
-                         ng-model="auth.credentials.password">
+                         ng-model="auth.credentials.password"
+                         tabindex="2">
                   <span class="input-group-btn">
                     <a class="btn btn-lg btn-default btn-password-toggle"
                        role="button"
@@ -48,7 +50,8 @@
               </div>
               <a ui-sref="forgot({ userhandle: auth.credentials.username })"
                  class="btn btn-inverse"
-                 ng-class="{ 'btn-lg btn-block': auth.authError }">
+                 ng-class="{ 'btn-lg btn-block': auth.authError }"
+                 tabindex="4">
                 Forgot?
                 <span ng-if="auth.authError" class="hidden-xs">
                   Recover your password
@@ -58,7 +61,8 @@
                 <br><br>
                 <button type="submit"
                         class="btn btn-default btn-action"
-                        ng-disabled="auth.isLoading">
+                        ng-disabled="auth.isLoading"
+                        tabindex="3">
                   <span ng-if="!auth.isLoading">
                     {{ auth.continue ? 'Sign in to continue' : 'Login' }}
                   </span>
