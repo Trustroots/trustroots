@@ -20,7 +20,8 @@
 
   <button type="submit"
           class="btn btn-lg btn-inverse-primary pull-right hidden-xs"
-          ng-disabled="offerHostEdit.isLoading">
+          ng-disabled="offerHostEdit.isLoading"
+          aria-hidden="true">
     Save and Exit
   </button>
 
@@ -108,7 +109,7 @@
 
         </div>
         <div class="col-xs-12 col-sm-6 text-center hidden-xs">
-          <div class="icon-sofa icon-3x text-muted"></div>
+          <div class="icon-sofa icon-3x text-muted" aria-hidden="true"></div>
           <h3>Host Trustroots members</h3>
           <p class="lead">
             <em>Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.</em>
@@ -247,13 +248,15 @@
     <button ng-if="offerHostEdit.offerTab > 0"
        type="button"
        class="btn btn-action btn-link"
+       aria-label="Previous section"
        ng-click="offerHostEdit.offerTab = offerHostEdit.offerTab - 1">
-      <span class="icon-left"></span>
+      <span class="icon-left" aria-hidden="true"></span>
       Back
     </button>
     <button ng-if="(offerHostEdit.offer.status !== 'no' && offerHostEdit.offerTab < 2) || offerHostEdit.offerTab < 1"
        type="button"
        class="btn btn-action btn-primary"
+       aria-label="Next section"
        ng-click="offerHostEdit.offerTab = offerHostEdit.offerTab + 1">
       Next
     </button>
@@ -261,6 +264,7 @@
     <button ng-if="offerHostEdit.offerTab === 2 || (offerHostEdit.offer.status === 'no' && offerHostEdit.offerTab === 1)"
        type="submit"
        class="btn btn-action btn-primary"
+       aria-label="Finish editing and save"
        ng-disabled="offerHostEdit.isLoading">
       Finish
     </button>
@@ -274,8 +278,9 @@
           <button ng-if="offerHostEdit.offerTab > 0"
              type="button"
              class="btn btn-lg btn-primary"
+             aria-label="Previous section"
              ng-click="offerHostEdit.offerTab = offerHostEdit.offerTab - 1">
-            <span class="icon-left"></span>
+            <span class="icon-left" aria-hidden="true"></span>
             Back
           </button>
         </li>
@@ -283,17 +288,19 @@
           <button ng-if="(offerHostEdit.offer.status !== 'no' && offerHostEdit.offerTab < 2) || offerHostEdit.offerTab < 1"
              type="button"
              class="btn btn-lg btn-primary"
+             aria-label="Next section"
              ng-click="offerHostEdit.offerTab = offerHostEdit.offerTab + 1">
             Next
-            <span class="icon-right"></span>
+            <span class="icon-right" aria-hiddne="true"></span>
           </button>
           <!-- For last tab -->
           <button ng-if="offerHostEdit.offerTab === 2 || (offerHostEdit.offer.status === 'no' && offerHostEdit.offerTab === 1)"
              type="submit"
              class="btn btn-lg btn-primary"
+             aria-label="Finish editing and save"
              ng-disabled="offerHostEdit.isLoading">
             Finish
-            <span class="icon-ok"></span>
+            <span class="icon-ok" aria-hidden="true"></span>
           </button>
         </li>
       </ul>

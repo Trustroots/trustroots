@@ -6,6 +6,7 @@
            id="search-query"
            class="form-control input-lg"
            placeholder="Search places"
+           tabindex="0"
            ng-model="search.searchQuery"
            tr-location
            tr-location-change="search.onPlaceSearch"
@@ -18,7 +19,8 @@
               ng-click="search.searchQuery = ''"
               uib-tooltip="Clear search"
               tooltip-enable="::search.screenWidth >= 768"
-              tooltip-placement="bottom">
+              tooltip-placement="bottom"
+              aria-label="Clear location search">
         <i class="icon-close"></i>
       </button>
     </span>

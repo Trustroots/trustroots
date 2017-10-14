@@ -5,7 +5,9 @@
       <h3>Your meetups</h3>
     </div>
     <div class="col-xs-12 col-sm-2 text-right">
-      <a ui-sref="offer.meet.add" class="btn btn-lg btn-primary">
+      <a ui-sref="offer.meet.add"
+         class="btn btn-lg btn-primary"
+         aria-label="Add new meet offer">
         Add new
       </a>
     </div>
@@ -87,14 +89,16 @@
         </a>
         &nbsp;
         <a ui-sref="offer.meet.edit({ offerId: offer._id })"
-           class="btn btn-inverse-primary">
+           class="btn btn-inverse-primary"
+           aria-label="Modify this meet offer">
           Modify
         </a>
         &nbsp;
         <button role="button"
            ng-disabled="offerListMeet.isLoading"
            ng-click="offerListMeet.remove(offer)"
-           class="btn btn-inverse-primary">
+           class="btn btn-inverse-primary"
+           aria-label="Remove this meet offer">
           Remove
         </button>
       </div>

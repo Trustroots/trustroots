@@ -45,7 +45,7 @@
        ng-if="app.user && app.user.public">
     <button class="btn btn-link"
             ng-click="search.toggleSidebar()"
-            aria-label="{{ search.isSidebarOpen ? 'Hide search' : 'Open search' }}"
+            aria-label="{{ search.isSidebarOpen ? 'Hide search filters' : 'Open search filters' }}"
             uib-tooltip="{{ search.isSidebarOpen ? 'Collapse side panel' : 'Open side panel' }}"
             tooltip-enable="::searchSidebar.screenWidth >= 768"
             tooltip-placement="right">
@@ -57,12 +57,12 @@
     </button>
   </div>
 
-  <div class="search-sidebar"
+  <aside class="search-sidebar"
        ui-view="sidebar"
        ng-if="app.user.public"
        ng-show="search.isSidebarOpen"
        ng-class="{
          'is-offer-open': search.offer || search.loadingOffer
-       }"></div>
+       }"></aside>
 
 </section>

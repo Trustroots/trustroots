@@ -7,14 +7,14 @@
 <!-- Tabs are hidden on small screens -->
 <uib-tabset active="search.sidebarTab" justified="true">
   <uib-tab index="'filters'">
-    <uib-tab-heading>
+    <uib-tab-heading aria-label="Search filters {{ search.sidebarTab === 'filters' ? ' (active now)' : '' }}">
       <i class="icon-sliders"></i>
       Filters
     </uib-tab-heading>
     <div ng-include="'/modules/search/views/search-sidebar-filters.client.view.html'"></div>
   </uib-tab>
   <uib-tab index="'results'">
-    <uib-tab-heading>
+    <uib-tab-heading aria-label="Selected search results {{ search.sidebarTab === 'results' ? ' (active now)' : '' }}">
       Results
     </uib-tab-heading>
     <div ng-include="'/modules/search/views/search-sidebar-results.client.view.html'"></div>
