@@ -3,8 +3,10 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
+    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     async = require('async'),
     git = require('git-rev'),
     mongoose = require('mongoose'),
@@ -312,4 +314,65 @@ exports.getPublicStatistics = function (req, res) {
       });
     }
   });
+};
+
+/**
+ * Collect statistics
+ *
+ * Mobile apps should show "App needs update" if this route returns headers:
+ * ```
+ * {
+ *   'x-tr-update-needed': 'Custom message to show to user.'
+ * }
+ * ```
+ */
+exports.collectStatistics = function (req, res) {
+
+  var collection = String(_.get(req, 'body.collection', ''));
+
+  var validCollections = ['mobileAppInit'];
+
+  var updateMsg = 'You should update Trustroots app or otherwise it will not continue functioning.';
+
+  if (!_.has(req, 'body.stats') || !_.isObject(req.body.stats)) {
+    res
+      .header('x-tr-update-needed', updateMsg)
+      .status(400)
+      .send({
+        message: 'Missing or invalid `stats`.'
+      });
+  }
+
+  if (!collection || validCollections.indexOf(collection) === -1) {
+    res
+      .header('x-tr-update-needed', updateMsg)
+      .status(400)
+      .send({
+        message: 'Missing or invalid `collection`.'
+      });
+  }
+
+  if (collection === 'mobileAppInit') {
+
+    // Object for statistics
+    var stats = {
+      namespace: 'mobileAppInit',
+      counts: {
+        count: 1
+      },
+      tags: {
+        version: String(_.get(req, 'body.stats.version', 'unknown')),
+        deviceYearClass: String(_.get(req, 'body.stats.deviceYearClass', 'unknown'))
+      },
+      meta: {
+        os: String(_.get(req, 'body.stats.os', 'unknown')),
+        expoVersion: String(_.get(req, 'body.stats.expoVersion', 'unknown'))
+      }
+    };
+
+    // Send validation result to stats
+    statService.stat(stats, function () {
+      return res.json({ 'message': 'OK' });
+    });
+  }
 };
