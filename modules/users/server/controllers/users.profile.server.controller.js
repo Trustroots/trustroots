@@ -858,6 +858,10 @@ exports.userByUsername = function (req, res, next, username) {
  * - Collects tribe and tag id's into one simple array
  * - Removes tag and tribe references that don't exist anymore (i.e. they are removed from `tags` table but reference ID remains in the user's table)
  * - Sanitize description in case
+ *
+ * @param {Object} profile - User profile to sanitize
+ * @param {Object} authenticatedUser - Currently authenticated user profile. Allows some fields if this matches to `profile`
+ * @return {Object} Sanitized profile.
  */
 exports.sanitizeProfile = function (profile, authenticatedUser) {
   if (!profile) {
@@ -1166,12 +1170,13 @@ exports.removePushRegistration = function (req, res) {
       } else {
         return res.send({
           message: 'Removed registration.',
-          user: user
+          user: exports.sanitizeProfile(user, user)
         });
       }
     });
 
 };
+
 
 /**
  * Add push registration
@@ -1185,8 +1190,26 @@ exports.addPushRegistration = function (req, res) {
   }
 
   var user = req.user;
-  var token = req.body.token;
-  var platform = req.body.platform;
+  var token = String(_.get(req, 'body.token', ''));
+  var platform = String(_.get(req, 'body.platform', ''));
+  var deviceId = String(_.get(req, 'body.deviceId', ''));
+  var doNotNotify = Boolean(_.get(req, 'body.doNotNotify', false));
+
+  if (!token) {
+    return res.status(400).send({
+      message: 'Token is invalid or missing.'
+    });
+  }
+
+  // PushRegistration is a sub-schema at User schema, thus we need to dig deeper in to get `enumValues`
+  // Will contain array of string values, e.g. `['android', 'ios', 'web']`
+  var validPlatforms = User.schema.path('pushRegistration').schema.path('platform').enumValues || [];
+
+  if (!platform || validPlatforms.indexOf(platform) === -1) {
+    return res.status(400).send({
+      message: 'Platform is invalid or missing.'
+    });
+  }
 
   async.waterfall([
 
@@ -1208,13 +1231,19 @@ exports.addPushRegistration = function (req, res) {
     // Add new registration
 
     function (done) {
+      var registration = {
+        platform: platform,
+        token: token,
+        created: Date.now()
+      };
+
+      if (deviceId) {
+        registration.deviceId = deviceId;
+      }
+
       User.findByIdAndUpdate(user._id, {
         $push: {
-          pushRegistration: {
-            platform: platform,
-            token: token,
-            created: Date.now()
-          }
+          pushRegistration: registration
         }
       }, {
         new: true
@@ -1230,9 +1259,17 @@ exports.addPushRegistration = function (req, res) {
     // Notify the user we just added a device
 
     function (done) {
+      // Don't notify if in request we asked to be silent
+      if (doNotNotify) {
+        return done();
+      }
+
       pushService.notifyPushDeviceAdded(user, platform, function (err) {
         if (err) {
-          console.error(err); // don't stop on error
+          // don't stop on error, but log it
+          log('error', 'Error when sending push notification about added device. #9hsdff', {
+            error: err
+          });
         }
         done();
       });
@@ -1252,7 +1289,7 @@ exports.addPushRegistration = function (req, res) {
         }
         return res.send({
           message: 'Saved registration.',
-          user: user
+          user: exports.sanitizeProfile(user, user)
         });
       });
     }
