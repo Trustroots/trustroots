@@ -26,6 +26,16 @@ module.exports = function (job, done) {
   // Log that we're sending a notification
   log('debug', 'Starting `send push notification` job', { jobId: jobId });
 
+  // Validate notification
+  if (!notification.body || !notification.click_action) {
+    log('error', '`send push notification` job cannot send notification due missing required `body` or `click_action` values #zqo8bf', {
+      jobId: jobId
+    });
+
+    // Don't return error, as we're not going to let Agenda attempt this job again
+    return done();
+  }
+
   // tokens for Firebase and Exponent
   var firebaseTokens = [],
       exponentTokens = [];

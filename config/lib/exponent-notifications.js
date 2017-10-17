@@ -29,14 +29,6 @@ exports.sendToDevice = function sendToDevice(tokens, notification) {
       return;
     }
 
-    // dispatch push notification and save returned Promise
-    if (!notification.body || !notification.click_action) {
-      log('error', 'Missing notification `body` or `click_action` #zqo8bf', {
-        token: token
-      });
-      return;
-    }
-
     // Construct a message
     // @link https://docs.expo.io/versions/latest/guides/push-notifications.html#message-format
     notifications.push({
@@ -74,12 +66,12 @@ exports.sendToDevice = function sendToDevice(tokens, notification) {
       * The title to display in the notification. On iOS this is displayed only
       * on Apple Watch.
       */
-      title: notification.title || notification.body,
+      title: notification.title || notification.body || '',
 
       /**
        * The message to display in the notification
        */
-      body: notification.body,
+      body: notification.body || '',
 
       /**
        * A JSON object delivered to your app. It may be up to about 4KiB; the total

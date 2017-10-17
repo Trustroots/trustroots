@@ -85,8 +85,7 @@ var UserPushRegistrationSchema = new Schema({
   },
   token: {
     type: String,
-    required: true,
-    unique: 'Token exists already.'
+    required: true
   },
   created: {
     type: Date,
@@ -95,8 +94,7 @@ var UserPushRegistrationSchema = new Schema({
   },
   deviceId: {
     type: String,
-    trim: true,
-    required: false
+    trim: true
   }
 }, { _id: false });
 
