@@ -76,7 +76,7 @@ describe('Service: push', function () {
       job.data.userId.should.equal(15);
       job.data.pushServices.should.deepEqual(user.pushRegistration);
       job.data.notification.title.should.equal('Trustroots');
-      job.data.notification.body.should.equal('You just enabled Trustroots web push notifications. Yay!');
+      job.data.notification.body.should.equal('You just enabled Trustroots desktop notifications. Yay!');
       job.data.notification.click_action.should
         .equal(url + '/profile/edit/account?utm_source=push-notification&utm_medium=fcm&utm_campaign=device-added&utm_content=reply-to');
 

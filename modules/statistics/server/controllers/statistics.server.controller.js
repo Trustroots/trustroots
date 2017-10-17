@@ -361,11 +361,16 @@ exports.collectStatistics = function (req, res) {
         count: 1
       },
       tags: {
+        // Trustroots app version (e.g. "0.2.0")
         version: String(_.get(req, 'body.stats.version', 'unknown')),
+        // Device year class, e.g. "2012"
+        // @link https://github.com/facebook/device-year-class
         deviceYearClass: String(_.get(req, 'body.stats.deviceYearClass', 'unknown'))
       },
       meta: {
+        // Device OS (e.g. "android")
         os: String(_.get(req, 'body.stats.os', 'unknown')),
+        // Expo SDK version
         expoVersion: String(_.get(req, 'body.stats.expoVersion', 'unknown'))
       }
     };
