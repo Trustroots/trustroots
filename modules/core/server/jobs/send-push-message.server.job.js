@@ -1,6 +1,7 @@
 'use strict';
 
 var path = require('path'),
+    async = require('async'),
     firebaseMessaging = require(path.resolve('./config/lib/firebase-messaging')),
     exponentNotifications = require(path.resolve('./config/lib/exponent-notifications')),
     mongoose = require('mongoose'),
@@ -29,20 +30,30 @@ module.exports = function (job, done) {
   var firebaseTokens = [],
       exponentTokens = [];
 
-  // sort push tokens by cloud service
+  // Sort push tokens by cloud service
   pushServices.forEach(function (pushService) {
-    if (pushService.platform === 'expo') {
-      exponentTokens.push(pushService.token);
-    } else {
-      // tokens with platforms 'web', 'android' and 'ios' belong to Firebase
-      firebaseTokens.push(pushService.token);
+    switch (String(pushService.platform)) {
+      case 'ios':
+      case 'android':
+      case 'web':
+        // tokens with platforms 'web', 'android' and 'ios' belong to Firebase
+        firebaseTokens.push(pushService.token);
+        break;
+      case 'expo':
+        exponentTokens.push(pushService.token);
+        break;
+      default:
+        log('error', 'The `send push notification` job cannot process notification due missing platform value. #f932hf', {
+          jobId: jobId
+        });
     }
   });
 
   // push to Firebase
   var firebasePushPromise = new Promise(function (resolve, reject) {
     // any Firebase tokens to push to?
-    if (!firebaseTokens) {
+    if (firebaseTokens.length === 0) {
+      log('debug', '`send push notification` job could not find Firebase tokens.', { jobId: jobId });
       // if not, mark as done
       resolve();
       return;
@@ -66,35 +77,43 @@ module.exports = function (job, done) {
           resolve();
         }
       })
-      .catch(function () { reject(); });
+      .catch(function (err) {
+        reject(err);
+      });
   });
 
   // push to Exponent
   var exponentPushPromise = exponentNotifications.sendToDevice(exponentTokens, notification);
 
-  // wait for all push services to finish
-  Promise.all([firebasePushPromise, exponentPushPromise])
-    .then(function () {
-      process.nextTick(function () {
-        log('info', 'Successfully finished `send push message` job', {
-          jobId: jobId
-        });
-        return done();
+  // Wait for all push services to finish
+  // `Promise.all` is rejected if any of the elements are rejected:
+  // Thus we use `async.reflect()`, which wraps the async function in another
+  // function that always completes with a result object, even when it errors.
+  Promise.all([
+    async.reflect(firebasePushPromise),
+    async.reflect(exponentPushPromise)
+  ]).then(function () {
+    process.nextTick(function () {
+      log('info', 'Successfully finished `send push message` job', {
+        jobId: jobId
       });
-    })
-    .catch(function (err) {
-      process.nextTick(function () {
-        log('error', 'The `send push notification` job failed', {
-          jobId: jobId,
-          error: err
-        });
-        return done(new Error('Failed to send push message.'));
-      });
+      return done();
     });
+  }).catch(function (err) {
+    process.nextTick(function () {
+      log('error', 'The `send push notification` job failed', {
+        jobId: jobId,
+        error: err
+      });
+      return done(new Error('Failed to send push message.'));
+    });
+  });
 };
 
 function removeUserPushTokens(userId, tokens, callback) {
-  if (!tokens || tokens.length === 0) return callback();
+  if (!tokens || tokens.length === 0) {
+    return callback();
+  }
 
   var query = {
     $pull: {
@@ -107,7 +126,11 @@ function removeUserPushTokens(userId, tokens, callback) {
   };
 
   User.findByIdAndUpdate(userId, query).exec(function (err) {
-    if (err) console.error('error removing tokens', err);
+    if (err) {
+      log('error', 'The `send push notification` job failed to remove invalid tokens from user. #gj932f', {
+        err: err
+      });
+    }
     callback(err);
   });
 

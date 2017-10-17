@@ -210,11 +210,14 @@ function sendUnreadMessageReminders(reminder, callback) {
           .find(
             { '_id': { $in: userIds } },
             [
-            // Fields to get for each user:
+              // Fields to get for each user:
               'email',
               'displayName',
               'username',
+              // Used for web/mobile push notifications:
               'pushRegistration.token',
+              'pushRegistration.platform',
+              // Used for FB notifications:
               'additionalProvidersData.facebook.id',
               'additionalProvidersData.facebook.accessToken',
               'additionalProvidersData.facebook.accessTokenExpires'
