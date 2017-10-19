@@ -20,7 +20,91 @@ describe('job: send push message', function () {
   it('will send a push', function (done) {
     var notification = {
       title: 'a title',
+      body: 'a body',
+      click_action: 'http://example.com'
+    };
+    var job = {
+      attrs: {
+        // eslint-disable-next-line new-cap
+        _id: mongoose.Types.ObjectId(),
+        data: {
+          // eslint-disable-next-line new-cap
+          userId: mongoose.Types.ObjectId().toString(),
+          pushServices: [
+            { platform: 'web', token: '123' },
+            { platform: 'web', token: '456' }
+          ],
+          notification: notification
+        }
+      }
+    };
+    sendPushJobHandler(job, function (err) {
+      if (err) return done(err);
+      messages.length.should.equal(1);
+      var message = messages[0];
+      message.tokens.should.deepEqual(['123', '456']);
+      message.payload.should.deepEqual({ notification: notification });
+      done();
+    });
+  });
+
+  it('will not send a push when notification is missing "click_action"', function (done) {
+    var notification = {
+      title: 'a title',
       body: 'a body'
+    };
+    var job = {
+      attrs: {
+        // eslint-disable-next-line new-cap
+        _id: mongoose.Types.ObjectId(),
+        data: {
+          // eslint-disable-next-line new-cap
+          userId: mongoose.Types.ObjectId().toString(),
+          pushServices: [
+            { platform: 'web', token: '123' }
+          ],
+          notification: notification
+        }
+      }
+    };
+    sendPushJobHandler(job, function (err) {
+      if (err) return done(err);
+      messages.length.should.equal(0);
+      done();
+    });
+  });
+
+  it('will not send a push when notification is missing "body"', function (done) {
+    var notification = {
+      title: 'a title',
+      click_action: 'http://example.com'
+    };
+    var job = {
+      attrs: {
+        // eslint-disable-next-line new-cap
+        _id: mongoose.Types.ObjectId(),
+        data: {
+          // eslint-disable-next-line new-cap
+          userId: mongoose.Types.ObjectId().toString(),
+          pushServices: [
+            { platform: 'web', token: '123' }
+          ],
+          notification: notification
+        }
+      }
+    };
+    sendPushJobHandler(job, function (err) {
+      if (err) return done(err);
+      messages.length.should.equal(0);
+      done();
+    });
+  });
+
+  it('will not send a push when platform is missing', function (done) {
+    var notification = {
+      title: 'a title',
+      body: 'a body',
+      click_action: 'http://example.com'
     };
     var job = {
       attrs: {
@@ -39,10 +123,35 @@ describe('job: send push message', function () {
     };
     sendPushJobHandler(job, function (err) {
       if (err) return done(err);
-      messages.length.should.equal(1);
-      var message = messages[0];
-      message.tokens.should.deepEqual(['123', '456']);
-      message.payload.should.deepEqual({ notification: notification });
+      messages.length.should.equal(0);
+      done();
+    });
+  });
+
+  it('will not send a push when platform is invalid', function (done) {
+    var notification = {
+      title: 'a title',
+      body: 'a body',
+      click_action: 'http://example.com'
+    };
+    var job = {
+      attrs: {
+        // eslint-disable-next-line new-cap
+        _id: mongoose.Types.ObjectId(),
+        data: {
+          // eslint-disable-next-line new-cap
+          userId: mongoose.Types.ObjectId().toString(),
+          pushServices: [
+            { platform: 'INVALID', token: '123' },
+            { platform: 'INVALID', token: '456' }
+          ],
+          notification: notification
+        }
+      }
+    };
+    sendPushJobHandler(job, function (err) {
+      if (err) return done(err);
+      messages.length.should.equal(0);
       done();
     });
   });
@@ -78,8 +187,9 @@ describe('job: send push message', function () {
 
     beforeEach(function (done) {
       User.create(userParams, function (err, newUser) {
-        if (err) console.log('FFFFFF', err);
-        if (err) return done(err);
+        if (err) {
+          return done(err);
+        }
         user = newUser;
         done();
       });
@@ -92,7 +202,8 @@ describe('job: send push message', function () {
     it('removes user tokens if they are invalid', function (done) {
       var notification = {
         title: 'a title',
-        body: 'a body'
+        body: 'a body',
+        click_action: 'http://example.com'
       };
       var job = {
         attrs: {
@@ -101,9 +212,9 @@ describe('job: send push message', function () {
           data: {
             userId: user._id.toString(),
             pushServices: [
-              { token: '123' },
-              { token: '456' },
-              { token: 'toberemoved' }
+              { platform: 'web', token: '123' },
+              { platform: 'web', token: '456' },
+              { platform: 'web', token: 'toberemoved' }
             ],
             notification: notification
           }

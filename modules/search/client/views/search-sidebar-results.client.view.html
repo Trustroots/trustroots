@@ -1,14 +1,19 @@
-<div class="search-sidebar-results">
+<section class="search-sidebar-results">
 
-  <div class="content-empty text-muted text-center"
+  <section class="content-empty text-muted text-center"
+       tabindex="0"
+       aria-live="polite"
+       aria-label="Search results: nothing selected, please choose offers from the map to load them here."
        ng-if="!search.offer && !search.loadingOffer">
     <br><br>
     <em>Choose something from the map.</em>
-  </div>
+  </section>
 
   <!-- Profile loading -->
-  <div class="search-result panel panel-default panel-loading" ng-if="!search.offer && search.loadingOffer">
-    <div class="panel-body">
+  <div class="search-result panel panel-default panel-loading"
+       aria-live="polite"
+       ng-if="!search.offer && search.loadingOffer">
+    <div class="panel-body" aria-hidden="true">
       <div tr-avatar data-size="32" data-link="false" data-source="none"></div>
       <h4>
         ███ ███
@@ -38,12 +43,17 @@
 
   <!-- Profile -->
   <div class="search-result panel panel-default"
-       ng-if="search.offer && !search.loadingOffer">
+       ng-if="search.offer && !search.loadingOffer"
+       aria-live="polite"
+
+       aria-relevant="additions removals">
     <a class="panel-body" ui-sref="profile.about({username: search.offer.user.username})">
       <div tr-avatar data-size="32" data-link="false" data-user="::search.offer.user"></div>
       <h4>
         {{ ::search.offer.user.displayName }}
-        <small class="text-muted">@{{ ::search.offer.user.displayUsername || search.offer.user.username }}</small>
+        <small class="text-muted">
+          @{{ ::search.offer.user.displayUsername || search.offer.user.username }}
+        </small>
       </h4>
       <div class="search-result-meta">
         <span ng-if="search.offer.user.birthdate"
@@ -58,17 +68,23 @@
            ng-bind="::search.offer.user.tagline"></div>
       <div class="search-result-hosting">
         <div class="search-result-label"
-             ng-if="search.offer.type === 'host'">
+             ng-if="search.offer.type === 'host'"
+             aria-label="Hosting offer: {{::search.offer.status}}">
           Hosting:
           <span class="label"
                 ng-bind="search.offer.status"
+                aria-hidden="true"
                 ng-class="{
                   'btn-offer-hosting-yes': search.offer.status === 'yes',
                   'btn-offer-hosting-maybe': search.offer.status === 'maybe'
                 }"></span>
         </div>
-        <div class="search-result-label" ng-if="search.offer.type === 'meet'">
-          <span class="label btn-offer-meet">Meet</span>
+        <div class="search-result-label"
+             aria-label="Meet offer"
+             ng-if="search.offer.type === 'meet'">
+          <span class="label btn-offer-meet">
+            Meet
+          </span>
         </div>
 
         <!-- Short descriptions for 'host' offers -->
@@ -82,7 +98,8 @@
           <div class="panel-more-wrap">
             <div class="panel-more-excerpt"
                  ng-bind-html="::search.offer.description | limitTo:1000 | trustedHtml"></div>
-            <div class="panel-more-fade">
+            <div class="panel-more-fade"
+                 aria-label="Open profile to see the rest of the description">
               Show more...
             </div>
           </div>
@@ -124,4 +141,4 @@
     Back to map
   </button>
 
-</div>
+</section>

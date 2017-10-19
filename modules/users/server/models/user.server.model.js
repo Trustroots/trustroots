@@ -91,6 +91,10 @@ var UserPushRegistrationSchema = new Schema({
     type: Date,
     default: Date.now,
     required: true
+  },
+  deviceId: {
+    type: String,
+    trim: true
   }
 }, { _id: false });
 

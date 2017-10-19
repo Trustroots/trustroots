@@ -10,6 +10,7 @@ var AppConfig = (function () {
 
   var appModuleName = 'trustroots';
   var appModuleVendorDependencies = [
+    'ngAria',
     'ngResource',
     'ngAnimate',
     'ngTouch',

@@ -9,7 +9,21 @@
     .controller('AppController', AppController);
 
   /* @ngInject */
-  function AppController($scope, $rootScope, $uibModal, $window, $state, $analytics, Authentication, SettingsFactory, Languages, locker, PollMessagesCount, push) {
+  function AppController(
+    $location,
+    $scope,
+    $rootScope,
+    $uibModal,
+    $window,
+    $state,
+    $analytics,
+    Authentication,
+    SettingsFactory,
+    Languages,
+    locker,
+    PollMessagesCount,
+    push,
+    trNativeAppBridge) {
 
     // ViewModel
     var vm = this;
@@ -240,6 +254,14 @@
         // Do the signout and refresh the page
         $window.top.location.href = '/api/auth/signout';
       });
+
+      // This will tell Mobile apps wrapping the site to disable push notifications at the device
+      if (typeof $window.postMessage === 'function') {
+        $window.postMessage('unAuthenticated', $location.protocol() + '://' + $location.host());
+      }
+
+      // Signal native mobile app we've unauthenticated
+      trNativeAppBridge.signalUnAuthenticated();
     }
 
 

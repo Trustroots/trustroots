@@ -8,6 +8,7 @@
 
   <button type="submit"
           class="btn btn-lg btn-inverse-primary pull-right hidden-xs"
+          aria-hidden="true"
           ng-disabled="offerMeet.isLoading">
     Save and Exit
   </button>
@@ -128,6 +129,7 @@
     <button ng-if="offerMeet.offerTab > 0"
        type="button"
        class="btn btn-action btn-link"
+       aria-label="Previous section"
        ng-click="offerMeet.offerTab = offerMeet.offerTab - 1">
       <span class="icon-left"></span>
       Back
@@ -135,6 +137,7 @@
     <button ng-if="offerMeet.offerTab < 1"
        type="button"
        class="btn btn-action btn-primary"
+       aria-label="Next section"
        ng-click="offerMeet.offerTab = offerMeet.offerTab + 1">
       Next
     </button>
@@ -142,6 +145,7 @@
     <button ng-if="offerMeet.offerTab === 1"
        type="submit"
        class="btn btn-action btn-primary"
+       aria-label="Finish editing and save"
        ng-disabled="offerMeet.isLoading">
       Finish
     </button>
@@ -155,12 +159,14 @@
           <a ng-if="offerMeet.offerTab === 0"
              type="button"
              class="btn btn-lg btn-primary"
+             aria-label="Cancel adding a meet offer"
              ui-sref="offer.meet.list">
             Cancel
           </a>
           <button ng-if="offerMeet.offerTab >= 1"
              type="button"
              class="btn btn-lg btn-primary"
+             aria-label="Previous section"
              ng-click="offerMeet.offerTab = offerMeet.offerTab - 1">
             <span class="icon-left"></span>
             Back
@@ -170,6 +176,7 @@
           <button ng-if="offerMeet.offerTab < 1"
              type="button"
              class="btn btn-lg btn-primary"
+             aria-label="Next section"
              ng-click="offerMeet.offerTab = offerMeet.offerTab + 1">
             Next
             <span class="icon-right"></span>
@@ -178,6 +185,7 @@
           <button ng-if="offerMeet.offerTab === 1"
              type="submit"
              class="btn btn-lg btn-primary"
+             aria-label="Finish editing and save"
              ng-disabled="offerMeet.isLoading">
             Finish
             <span class="icon-ok"></span>

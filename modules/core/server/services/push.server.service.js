@@ -13,9 +13,24 @@ exports.notifyPushDeviceAdded = function (user, platform, callback) {
 
   var editAccountUrl = url + '/profile/edit/account';
 
+  function platformVerbal(platform) {
+    switch (platform) {
+      case 'web':
+        return 'desktop'
+      case 'expo':
+        return 'mobile';
+      case 'ios':
+        return 'mobile';
+      case 'android':
+        return 'mobile';
+      default:
+        return platform;
+    }
+  }
+
   var notification = {
     title: 'Trustroots',
-    body: 'You just enabled Trustroots ' + platform.replace('expo', 'mobile') + ' push notifications. Yay!',
+    body: 'You just enabled Trustroots ' + platformVerbal(platform) + ' notifications. Yay!',
     click_action: analyticsHandler.appendUTMParams(editAccountUrl, {
       source: 'push-notification',
       medium: 'fcm',
@@ -29,9 +44,12 @@ exports.notifyPushDeviceAdded = function (user, platform, callback) {
 
 exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
 
-  if (_.get(userTo, 'pushRegistration', []).length === 0) return callback();
+  // User does not have push registrations
+  if (_.get(userTo, 'pushRegistration', []).length === 0) {
+    return callback();
+  }
 
-  var messageCount = data.messages.length;
+  var messageCount = _.get(data, 'messages', []).length;
 
   // Is the notification the first one?
   // If not, we send a different message.

@@ -60,7 +60,7 @@
     "del": "~3.0.0",
     "eslint-plugin-angular": "~3.1.1",
     "expect-ct": "~0.1.0",
-    "expo-server-sdk": "~2.3.1",
+    "expo-server-sdk": "~2.3.3",
     "express": "~4.16.1",
     "express-paginate": "~0.3.0",
     "express-session": "~1.15.6",

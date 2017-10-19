@@ -3,9 +3,13 @@
         class="navbar navbar-default navbar-fixed-top hidden-print"
         ng-hide="app.isHeaderHidden">
 
+  <a class="btn btn-default sr-only sr-only-focusable sr-helper" href="#tr-main">
+    Skip to main content
+  </a>
+
   <!-- Header for non-authenticated users -->
   <div class="container" ng-if="!app.user">
-    <nav class="header-welcome" aria-label="Page navigation">
+    <nav class="header-welcome" aria-label="Page navigation" role="navigation">
       <p class="header-welcome-text">New to Trustroots?</p>
       <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
       <small class="header-welcome-divider" aria-hidden="true">or</small>
@@ -22,7 +26,7 @@
   <!-- /Header for non-authenticated users -->
 
   <!-- Header for authenticated users -->
-  <div class="container" ng-if="app.user">
+  <div class="container" ng-if="app.user" role="navigation">
 
     <div class="navbar-header">
       <a ng-click="app.goHome()"
@@ -44,8 +48,14 @@
           Support
         </a>
         <ul class="dropdown-menu" aria-label="submenu">
-          <li ui-sref-active="active"><a ui-sref="faq.general">FAQ</a></li>
-          <li ui-sref-active="active"><a ui-sref="support">Contact us</a></li>
+          <li ui-sref-active="active">
+            <a ui-sref="faq.general" aria-label="Frequently Asked Questions">
+              FAQ
+            </a>
+          </li>
+          <li ui-sref-active="active">
+            <a ui-sref="support">Contact us</a>
+          </li>
         </ul>
       </li>
     </ul>
@@ -64,7 +74,7 @@
         </a>
       </li>
       <li ui-sref-active="active">
-        <a ui-sref="search.map" aria-label="Map">
+        <a ui-sref="search.map" aria-label="Search hosts">
           <i class="icon-search icon-fw icon-lg visible-xs-block"></i>
           <span class="hidden-xs">Search</span>
         </a>
@@ -77,12 +87,12 @@
         </a>
       </li>
       <li ui-sref-active="active" class="hidden-xs">
-        <a ui-sref="offer.host.edit" aria-label="Host">
+        <a ui-sref="offer.host.edit" aria-label="Offer to host">
           <span class="hidden-xs">Host</span>
         </a>
       </li>
       <li ui-sref-active="active" class="hidden-xs">
-        <a ui-sref="offer.meet.list" aria-label="Meet">
+        <a ui-sref="offer.meet.list" aria-label="Offer to meet">
           <span class="hidden-xs">Meet</span>
         </a>
       </li>
