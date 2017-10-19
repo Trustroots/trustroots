@@ -9,6 +9,7 @@ var _ = require('lodash'),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     async = require('async'),
     git = require('git-rev'),
+    semver = require('semver'),
     mongoose = require('mongoose'),
     Offer = mongoose.model('Offer'),
     User = mongoose.model('User');
@@ -354,6 +355,9 @@ exports.collectStatistics = function (req, res) {
 
   if (collection === 'mobileAppInit') {
 
+    var appVersion = String(_.get(req, 'body.stats.version', 'unknown'));
+    var needsUpdate = semver.satisfies(appVersion, '< 1.0.0');
+
     // Object for statistics
     var stats = {
       namespace: 'mobileAppInit',
@@ -362,7 +366,7 @@ exports.collectStatistics = function (req, res) {
       },
       tags: {
         // Trustroots app version (e.g. "0.2.0")
-        version: String(_.get(req, 'body.stats.version', 'unknown')),
+        version: appVersion,
         // Device year class, e.g. "2012"
         // @link https://github.com/facebook/device-year-class
         deviceYearClass: String(_.get(req, 'body.stats.deviceYearClass', 'unknown'))
@@ -377,6 +381,12 @@ exports.collectStatistics = function (req, res) {
 
     // Send validation result to stats
     statService.stat(stats, function () {
+
+      // Add update header if app version so requires
+      if (needsUpdate) {
+        return res.header('x-tr-update-needed', updateMsg).json({ 'message': updateMsg });
+      }
+
       return res.json({ 'message': 'OK' });
     });
   }
