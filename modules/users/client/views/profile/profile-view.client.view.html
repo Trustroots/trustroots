@@ -1,6 +1,7 @@
 <!-- Top Navigation for small screens -->
 <!-- When looking at own profile -->
-<nav class="navbar navbar-white navbar-fixed-top navbar-fixed-top-below visible-xs-block" ng-if="app.user._id === profileCtrl.profile._id">
+<nav class="navbar navbar-white navbar-fixed-top navbar-fixed-top-below visible-xs-block"
+     ng-if="app.user._id === profileCtrl.profile._id">
   <div class="container">
     <ul class="nav navbar-nav" role="navigation">
       <li><a ui-sref="profile-edit.about">Edit your profile</a></li>
@@ -10,7 +11,8 @@
 
 <!-- Top Navigation for small screens -->
 <!-- When looking at somebody else's profile -->
-<nav class="navbar navbar-white navbar-fixed-top navbar-fixed-top-below visible-xs-block" ng-if="app.user._id !== profileCtrl.profile._id">
+<nav class="navbar navbar-white navbar-fixed-top navbar-fixed-top-below visible-xs-block"
+     ng-if="app.user._id !== profileCtrl.profile._id">
   <div class="container">
     <ul class="nav navbar-nav" role="toolbar" aria-label="Profile actions">
       <li>
@@ -42,7 +44,7 @@
 </nav>
 
 <!-- Bottom Navigation for small screens -->
-<nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block">
+<nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block" role="navigation">
   <div class="container">
     <ul class="nav navbar-nav" role="tablist">
       <li ui-sref-active="active" role="presentation">
@@ -133,16 +135,28 @@
 
         <div class="row hidden-xs">
           <div class="col-md-6">
-              <h2 class="profile-name" ng-if="profileCtrl.profile.displayName" ng-bind="profileCtrl.profile.displayName"></h2>
-              <h4 class="text-muted profile-username" ng-if="profileCtrl.profile.username">@{{ profileCtrl.profile.displayUsername || profileCtrl.profile.username }}</h4>
-              <div class="profile-tagline" ng-if="profileCtrl.profile.tagline" ng-bind="profileCtrl.profile.tagline"></div>
+              <h2 class="profile-name"
+                  ng-if="profileCtrl.profile.displayName"
+                  ng-bind="profileCtrl.profile.displayName"></h2>
+              <h4 class="text-muted profile-username"
+                  ng-if="profileCtrl.profile.username">
+                @{{ profileCtrl.profile.displayUsername || profileCtrl.profile.username }}
+              </h4>
+              <div class="profile-tagline"
+                   ng-if="profileCtrl.profile.tagline"
+                   ng-bind="profileCtrl.profile.tagline"></div>
           </div>
 
           <!-- When looking at own profile -->
-          <div class="col-md-6 profile-actions" ng-if="app.user._id === profileCtrl.profile._id">
-            <small class="profile-edit-help text-muted hidden-xs">This is your profile as others see it.</small>
+          <div class="col-md-6 profile-actions"
+               ng-if="app.user._id === profileCtrl.profile._id">
+            <small class="profile-edit-help text-muted hidden-xs">
+              This is your profile as others see it.
+            </small>
             &nbsp;
-            <a ui-sref="profile-edit.about" class="btn btn-primary">Edit your profile</a>
+            <a ui-sref="profile-edit.about" class="btn btn-primary">
+              Edit your profile
+            </a>
           </div>
 
           <!-- When looking at somebody else's profile -->
@@ -155,7 +169,9 @@
                 </a>
               </li>
               <li>
-                <a class="btn btn-link" ui-sref="contactAdd({userId: profileCtrl.profile._id})" ng-if="profileCtrl.contact.$resolved && !profileCtrl.contact._id">
+                <a class="btn btn-link"
+                   ui-sref="contactAdd({userId: profileCtrl.profile._id})"
+                   ng-if="profileCtrl.contact.$resolved && !profileCtrl.contact._id">
                   <i class="icon-plus-squared-alt"></i>
                   Add contact
                 </a>
@@ -163,8 +179,16 @@
                    ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id"
                    tr-contact-remove="profileCtrl.contact">
                   <i class="icon-minus-squared-alt"></i>
-                  <span ng-if="profileCtrl.contact.confirmed" uib-tooltip="Contacts since {{ ::profileCtrl.contact.created | date:'mediumDate' }}" tooltip-placement="bottom">Remove contact</span>
-                  <span ng-if="!profileCtrl.contact.confirmed" uib-tooltip="Request sent {{ ::profileCtrl.contact.created | date:'mediumDate' }}" tooltip-placement="bottom">Delete contact request</span>
+                  <span ng-if="profileCtrl.contact.confirmed"
+                        uib-tooltip="Contacts since {{ ::profileCtrl.contact.created | date:'mediumDate' }}"
+                        tooltip-placement="bottom">
+                    Remove contact
+                  </span>
+                  <span ng-if="!profileCtrl.contact.confirmed"
+                        uib-tooltip="Request sent {{ ::profileCtrl.contact.created | date:'mediumDate' }}"
+                        tooltip-placement="bottom">
+                    Delete contact request
+                  </span>
                 </a>
               </li>
             </ul>
@@ -173,13 +197,22 @@
         <!-- Profile tabs -->
         <div class="row">
           <div class="col-xs-12">
-            <div class="profile-tabs hidden-xs">
-              <ul class="nav panel panel-default nav-pills nav-narrow nav-underline">
-                <li ui-sref-active="active"><a ui-sref="profile.about">About</a></li>
-                <li ui-sref-active="active" ng-if="profileCtrl.contacts.length || profileCtrl.profile._id === app.user._id">
-                  <a ui-sref="profile.contacts">
-                    Contacts
-                    <span class="badge" ng-bind="profileCtrl.contacts.length"></span>
+            <div class="profile-tabs hidden-xs" role="navigation">
+              <ul class="nav panel panel-default nav-pills nav-narrow nav-underline" role="tablist">
+                <li ui-sref-active="active" role="presentation">
+                  <a ui-sref="profile.about" role="tab">About</a>
+                </li>
+                <li ui-sref-active="active"
+                    ng-if="profileCtrl.contacts.length || profileCtrl.profile._id === app.user._id"
+                    role="presentation">
+                  <a ui-sref="profile.contacts" role="tab">
+                    <span aria-hidden="true">Contacts</span>
+                    <span class="badge"
+                          aria-hidden="true"
+                          ng-bind="profileCtrl.contacts.length"></span>
+                    <span class="sr-only">
+                      {{profileCtrl.contacts.length}} Contacts
+                    </span>
                   </a>
                 </li>
               </ul>
@@ -193,6 +226,6 @@
 
     </div><!-- /.row -->
 
-  </div>
+  </div><!-- /Profile -->
 
 </section><!-- /.container -->

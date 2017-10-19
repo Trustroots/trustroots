@@ -9,7 +9,7 @@
 
   <!-- Header for non-authenticated users -->
   <div class="container" ng-if="!app.user">
-    <nav class="header-welcome" aria-label="Page navigation">
+    <nav class="header-welcome" aria-label="Page navigation" role="navigation">
       <p class="header-welcome-text">New to Trustroots?</p>
       <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
       <small class="header-welcome-divider" aria-hidden="true">or</small>
@@ -26,7 +26,7 @@
   <!-- /Header for non-authenticated users -->
 
   <!-- Header for authenticated users -->
-  <div class="container" ng-if="app.user">
+  <div class="container" ng-if="app.user" role="navigation">
 
     <div class="navbar-header">
       <a ng-click="app.goHome()"
