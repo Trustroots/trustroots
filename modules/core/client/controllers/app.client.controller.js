@@ -9,7 +9,21 @@
     .controller('AppController', AppController);
 
   /* @ngInject */
-  function AppController($location, $scope, $rootScope, $uibModal, $window, $state, $analytics, Authentication, SettingsFactory, Languages, locker, PollMessagesCount, push) {
+  function AppController(
+    $location,
+    $scope,
+    $rootScope,
+    $uibModal,
+    $window,
+    $state,
+    $analytics,
+    Authentication,
+    SettingsFactory,
+    Languages,
+    locker,
+    PollMessagesCount,
+    push,
+    trNativeAppBridge) {
 
     // ViewModel
     var vm = this;
@@ -245,6 +259,9 @@
       if (typeof $window.postMessage === 'function') {
         $window.postMessage('unAuthenticated', $location.protocol() + '://' + $location.host());
       }
+
+      // Signal native mobile app we've unauthenticated
+      trNativeAppBridge.signalUnAuthenticated();
     }
 
 
