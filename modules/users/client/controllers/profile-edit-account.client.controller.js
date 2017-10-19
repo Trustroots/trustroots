@@ -7,7 +7,7 @@
 
   /* @ngInject */
   function ProfileEditAccountController(
-    $http, Users, Authentication, messageCenterService, push, $scope) {
+    $http, Users, Authentication, messageCenterService, push, $scope, trNativeAppBridge) {
 
     // ViewModel
     var vm = this;
@@ -37,11 +37,23 @@
     vm.pushUpdate = pushUpdate;
     vm.pushIsDisabled = pushIsDisabled;
 
-    $scope.$watch(function () {
-      return push.isEnabled;
-    }, function (val) {
-      vm.pushEnabled = val;
-    });
+    vm.isNativeMobileApp = false;
+
+    activate();
+
+    // Activate controller
+    function activate() {
+      trNativeAppBridge.isNativeMobileApp().then(function (res) {
+        vm.pushIsDisabled = true;
+        vm.isNativeMobileApp = res;
+      });
+
+      $scope.$watch(function () {
+        return push.isEnabled;
+      }, function (val) {
+        vm.pushEnabled = val;
+      });
+    }
 
     function pushUpdate() {
       if (vm.pushEnabled) {

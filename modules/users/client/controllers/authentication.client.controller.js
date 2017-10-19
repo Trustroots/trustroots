@@ -6,7 +6,7 @@
     .controller('AuthenticationController', AuthenticationController);
 
   /* @ngInject */
-  function AuthenticationController($window, $scope, $rootScope, $http, $state, $location, $stateParams, $analytics, Authentication, messageCenterService, Facebook, push) {
+  function AuthenticationController($window, $scope, $rootScope, $http, $state, $location, $stateParams, $analytics, Authentication, messageCenterService, Facebook, push, trNativeAppBridge) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) {
@@ -54,10 +54,8 @@
             // and setup the service-worker and backend registration accordingly
             push.init();
 
-            // This will tell Mobile apps wrapping the site to disable push notifications at the device
-            if (typeof $window.postMessage === 'function') {
-              $window.postMessage('authenticated', $location.protocol() + '://' + $location.host());
-            }
+            // Signal native mobile app we've authenticated
+            trNativeAppBridge.signalAuthenticated();
 
             // Redirect to where we were left off before sign-in page
             // See modules/core/client/controllers/main.client.controller.js
