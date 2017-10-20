@@ -11,9 +11,6 @@
     {
       "platform": "play",
       "id": "org.trustroots.trustrootsApp"
-    },
-    {
-      "platform": "web"
     }
   ],
   "icons": [{
