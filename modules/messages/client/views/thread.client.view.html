@@ -28,7 +28,9 @@
                 <h4>
                   {{ thread.userTo.displayName }}
                 </h4>
-                <small class="text-muted">@{{ thread.userTo.displayUsername || thread.userTo.username }}</small>
+                <small class="text-muted">
+                  @{{ thread.userTo.displayUsername || thread.userTo.username }}
+                </small>
               </a>
             </div>
           </div>
@@ -87,20 +89,27 @@
                up="scroll.up"
                down="scroll.down"
                ng-data-hosting="{{::thread.hostingReplyStatus(message.content)}}"
-               ng-class="{ 'message-unread': !thread.messageRead(message, thread.waypoints.scroll.up, thread.waypoints.scroll.down),
-                           'message-sender-other': app.user._id !== message.userFrom._id,
-                         }">
+               ng-class="{
+                 'message-unread': !thread.messageRead(message, thread.waypoints.scroll.up, thread.waypoints.scroll.down),
+                 'message-sender-other': app.user._id !== message.userFrom._id,
+              }">
 
             <!-- Discussion started -->
-            <div class="col-xs-12 divider divider-first text-muted" ng-if="$first && !thread.messageHandler.nextPage">
-              <small> Conversation started {{ thread.messages[(thread.messages.length-1)].created | date:'mediumDate' }}</small>
+            <div class="col-xs-12 divider divider-first text-muted"
+                 ng-if="$first && !thread.messageHandler.nextPage">
+              <small>
+                Conversation started
+                {{ thread.messages[(thread.messages.length-1)].created | date:'mediumDate' }}
+              </small>
             </div>
 
             <div class="col-xs-12 col-sm-11">
 
               <div class="message-meta">
                 <span ng-if="app.user._id === message.userFrom._id">You</span>
-                <a ng-if="app.user._id !== message.userFrom._id" ui-sref="profile.about({ username: message.userFrom.username })">{{::message.userFrom.displayName}}</a>
+                <a ng-if="app.user._id !== message.userFrom._id"
+                   ui-sref="profile.about({ username: message.userFrom.username })"
+                   ng-bind="::message.userFrom.displayName"></a>
                 —
                 <span tr-time="message.created"></span>
               </div>
