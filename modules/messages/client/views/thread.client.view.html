@@ -93,7 +93,7 @@
 
             <!-- Discussion started -->
             <div class="col-xs-12 divider divider-first text-muted" ng-if="$first && !thread.messageHandler.nextPage">
-              <small>Conversation started {{ ::thread.messages[0].created | date:'mediumDate' }}</small>
+              <small> Conversation started {{ thread.messages[(thread.messages.length-1)].created | date:'mediumDate' }}</small>
             </div>
 
             <div class="col-xs-12 col-sm-11">
