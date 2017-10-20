@@ -330,9 +330,10 @@ module.exports.initHelmetHeaders = function (app) {
       // Defines the origins from which images can be loaded.
       imgSrc: [
         '\'self\'',
-        '*.tiles.mapbox.com',
-        'api.mapbox.com',
-        '*.tile.openstreetmap.org',
+        '*.tiles.mapbox.com', // Map tiles
+        'api.mapbox.com', // Map tiles/Geocoding
+        '*.tile.openstreetmap.org', // Map tiles
+        '*.vis.earthdata.nasa.gov', // Map tiles
         '*.facebook.com',
         '*.fbcdn.net', // Facebook releated
         '*.twitter.com',
