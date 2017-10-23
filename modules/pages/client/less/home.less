@@ -41,6 +41,13 @@
   line-height: 40px;
 }
 
+// App Store / Play Store buttons
+@media (max-width: @screen-sm-max) {
+  .home-apps .btn {
+    .button-size(@padding-base-vertical; @padding-base-horizontal; @font-size-base; @line-height-base; @btn-border-radius-base);
+  }
+}
+
 // Note `max-height` here instead of max-width
 @media screen and (max-height: 700px) {
   .home-logo,
