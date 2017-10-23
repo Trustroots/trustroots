@@ -17,7 +17,6 @@
           <a ui-sref="signup" class="btn btn-action btn-default home-join hidden-xs">
             Join Trustroots now
           </a>
-          <br><br>
           <div class="home-apps">
             <a href="https://play.google.com/store/apps/details?id=org.trustroots.trustrootsApp"
                rel="noopener"
@@ -147,7 +146,7 @@
         <div ng-include="'/modules/pages/views/manifesto-text.client.partial.html'"></div>
         <p ng-if="::!app.user">
           <br><br>
-          <a ui-sref="signup" class="btn btn-lg btn-action btn-inverse">Join Trustroots</a>
+          <a ui-sref="signup" class="btn btn-lg btn-action btn-default">Join Trustroots</a>
         </p>
       </div>
     </div>
@@ -187,6 +186,22 @@
     </div>
 
     <div class="row text-center">
+      <hr class="hr-white hr-xs" />
+
+      <div class="home-apps">
+        <a href="https://play.google.com/store/apps/details?id=org.trustroots.trustrootsApp"
+           rel="noopener"
+           class="btn btn-lg btn-default">
+          <i class="icon-android"></i>
+          Play Store
+        </a>
+        <a href="https://ideas.trustroots.org/please-let-know-ios-app-comes-out/"
+           rel="noopener"
+           class="btn btn-lg btn-default">
+          <i class="icon-apple"></i>
+          App Store
+        </a>
+      </div>
 
       <ul class="list-inline home-footer-some">
         <li>
