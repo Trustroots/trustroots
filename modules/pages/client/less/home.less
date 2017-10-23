@@ -42,9 +42,13 @@
 }
 
 // App Store / Play Store buttons
-@media (max-width: @screen-sm-max) {
-  .home-apps .btn {
-    .button-size(@padding-base-vertical; @padding-base-horizontal; @font-size-base; @line-height-base; @btn-border-radius-base);
+.home-apps {
+  margin-top: 25px;
+  .btn {
+    @media (max-width: @screen-sm-max) {
+      .button-size(@padding-base-vertical; @padding-base-horizontal; @font-size-base; @line-height-base; @btn-border-radius-base);
+    }
+    margin: 0 5px;
   }
 }
 
