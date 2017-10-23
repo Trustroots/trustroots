@@ -9,17 +9,27 @@
 
   <!-- Header for non-authenticated users -->
   <div class="container" ng-if="!app.user">
-    <nav class="header-welcome" aria-label="Page navigation" role="navigation">
-      <p class="header-welcome-text">New to Trustroots?</p>
-      <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
-      <small class="header-welcome-divider" aria-hidden="true">or</small>
-      <a ui-sref="signin" class="btn btn-default">Login</a>
+    <nav class="header-welcome text-center" aria-label="Page navigation" role="navigation">
+      <span class="header-welcome-text hidden-xs">New to Trustroots?</span>
+      <a ui-sref="signup" class="btn btn-lg btn-inverse" ng-if="app.isHomePage">
+        Become a member
+      </a>
+      <a ui-sref="signup" class="btn btn-lg btn-inverse" ng-if="!app.isHomePage">
+        <span class="visible-xs-inline">
+          Join
+        </span>
+        <span class="hidden-xs">
+          Become a member
+        </span>
+      </a>
+      <a ui-sref="signin" class="btn btn-lg btn-default">
+        Login
+      </a>
       <a ui-sref="home"
          class="btn btn-link header-more-text"
          ng-if="!app.isHomePage"
          aria-label="Read more about Trustroots">
-        <span class="hidden-xs">Read more</span>
-        <span class="visible-xs-inline">About</span>
+        Read more
       </a>
     </nav>
   </div>
