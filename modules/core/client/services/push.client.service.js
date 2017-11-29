@@ -200,11 +200,7 @@
     }
 
     function userHasToken(token) {
-      if (!Authentication.user) {
-        return false;
-      }
-
-      return !!(Authentication.user.pushRegistration).find(function (registration) {
+      return !!Authentication.user.pushRegistration.find(function (registration) {
         return registration.token === token;
       });
     }
