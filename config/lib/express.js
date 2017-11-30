@@ -339,6 +339,7 @@ module.exports.initHelmetHeaders = function (app) {
         '*.twitter.com',
         '*.google-analytics.com',
         '*.gstatic.com', // Google analytics related
+        '*.googleusercontent.com', // Google CDN. Android app related.
         '*.g.doubleclick.net', // Google Analytics related
         'gravatar.com', // Gravatar (Wordpress)
         '*.wp.com', // Gravatar (Wordpress)
