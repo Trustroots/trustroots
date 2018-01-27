@@ -13,9 +13,11 @@
     "npm": ">=3.0.0"
   },
   "browserslist": [
-    "> 1%",
     "last 2 versions",
-    "not ie <= 9"
+    "Safari >= 10",
+    "iOS >= 10",
+    "not ie <= 10",
+    "> 1%"
   ],
   "scripts": {
     "prestart": "if [ ! -d node_modules ]; then npm install --quiet; fi",
