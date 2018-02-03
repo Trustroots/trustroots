@@ -134,33 +134,36 @@
       <div class="col-sm-9">
 
         <div class="row hidden-xs">
-          <div class="col-md-6">
-              <h2 class="profile-name"
-                  ng-if="profileCtrl.profile.displayName"
-                  ng-bind="profileCtrl.profile.displayName"></h2>
-              <h4 class="text-muted profile-username"
-                  ng-if="profileCtrl.profile.username">
-                @{{ profileCtrl.profile.displayUsername || profileCtrl.profile.username }}
-              </h4>
-              <div class="profile-tagline"
-                   ng-if="profileCtrl.profile.tagline"
-                   ng-bind="profileCtrl.profile.tagline"></div>
-          </div>
+          <div class="col-xs-12">
+            <h2 class="profile-name"
+                ng-if="profileCtrl.profile.displayName"
+                ng-bind="profileCtrl.profile.displayName">
+            </h2>
 
-          <!-- When looking at own profile -->
-          <div class="col-md-6 profile-actions"
+            <h4 class="text-muted profile-username"
+                ng-if="profileCtrl.profile.username">
+              @{{ profileCtrl.profile.displayUsername || profileCtrl.profile.username }}
+            </h4>
+
+            <a ui-sref="profile-edit.about"
+               class="btn btn-primary pull-right"
                ng-if="app.user._id === profileCtrl.profile._id">
-            <small class="profile-edit-help text-muted hidden-xs">
-              This is your profile as others see it.
-            </small>
-            &nbsp;
-            <a ui-sref="profile-edit.about" class="btn btn-primary">
               Edit your profile
             </a>
+
+            <div class="profile-tagline"
+                 ng-if="profileCtrl.profile.tagline"
+                 ng-bind="profileCtrl.profile.tagline">
+            </div>
           </div>
 
+        </div>
+
+        <!-- Profile actions -->
+        <div class="row hidden-xs">
+
           <!-- When looking at somebody else's profile -->
-          <div class="col-md-6 profile-actions" ng-if="app.user._id !== profileCtrl.profile._id">
+          <div class="col-xs-12" ng-if="app.user._id !== profileCtrl.profile._id">
             <ul class="nav nav-pills nav-narrow" role="navigation">
               <li>
                 <a ui-sref="messageThread({username: profileCtrl.profile.username})" class="btn btn-link">
@@ -194,7 +197,8 @@
             </ul>
           </div>
         </div>
-        <!-- Profile tabs -->
+
+        <!-- Profile content tabs -->
         <div class="row">
           <div class="col-xs-12">
             <div class="profile-tabs hidden-xs" role="navigation">

@@ -6,6 +6,8 @@
 var path = require('path'),
     textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
+    log = require(path.resolve('./config/lib/logger')),
     config = require(path.resolve('./config/config')),
     mongoose = require('mongoose'),
     SupportRequest = mongoose.model('SupportRequest'),
@@ -61,24 +63,42 @@ exports.supportRequest = function (req, res) {
   var supportRequest = new SupportRequest(storedSupportRequestData);
 
   // Save support request to db
-  supportRequest.save(function (err) {
-    if (err) {
-      console.error('Failed storing support request to the DB:');
-      console.error(err);
+  supportRequest.save(function (dbErr) {
+    if (dbErr) {
+      log('error', 'Failed storing support request to the DB. #39ghsa', {
+        error: dbErr
+      });
     }
 
     // Send email
     emailService.sendSupportRequest(replyTo, supportRequestData, function (emailServiceErr) {
       if (emailServiceErr) {
-        console.error('Support request error:');
-        console.error(emailServiceErr);
+        log('error', 'Failed sending support request via email. #49ghsd', {
+          error: emailServiceErr
+        });
+
         return res.status(400).send({
           message: 'Failure while sending your support request. Please try again.'
         });
       }
 
-      return res.json({
+      res.json({
         message: 'Support request sent.'
+      });
+
+      var statsObject = {
+        namespace: 'supportRequest',
+        counts: {
+          count: 1
+        },
+        tags: {
+          authenticated: supportRequestData.authenticated,
+          type: supportRequestData.reportMember ? 'reportMember' : 'normal'
+        }
+      };
+
+      statService.stat(statsObject, function () {
+        log('info', 'Support request processed and recorded to stats. #2hfsgh');
       });
     });
   });
