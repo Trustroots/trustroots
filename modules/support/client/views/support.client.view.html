@@ -28,7 +28,15 @@
             <div class="form-group" ng-if="support.request.reportMember">
               <label class="col-sm-2 control-label">Reporting member</label>
               <div class="col-sm-10">
-                <p class="form-control-static" ng-bind="::support.request.reportMember"></p>
+                <p class="form-control-static">
+                  <strong ng-bind="::support.request.reportMember"></strong>
+                </p>
+                <p class="form-control-static">
+                  <em>
+                    If you or someone you know have witnessed or been a victim
+                    of a crime, please report it to the police immediately.
+                  </em>
+                </p>
               </div>
             </div>
 
@@ -39,7 +47,6 @@
                 <textarea class="form-control input-lg" rows="7" id="message" required ng-disabled="support.isLoading" ng-model="support.request.message"></textarea>
                 <span class="help-block">
                   Please write in English if possible.<br>
-                  <small>(We can also deal with safety related issues in German, Dutch, Finnish, French and Spanish.)</small>
                 </span>
               </div>
             </div>
@@ -103,7 +110,7 @@
         </em></p>
         <p>
           <br><br>
-          You could continue to <a ng-click="app.goHome()">home</a> or check our <a ui-sref="faq.general">FAQ</a>.
+          You could continue to <a ng-click="app.goHome()">home</a> or see <a ui-sref="faq.general">frequently asked questions</a>.
         </p>
       </div>
 
@@ -111,9 +118,9 @@
     </div><!-- /.col-* -->
     <div class="col-xs-12 col-md-4 col-lg-5">
       <h3>See also</h3>
-      <ul class="list-unstyled">
+      <ul class="list-unstyled lead">
         <li><a ui-sref="faq.general">Frequently asked questions</a></li>
-        <li><a href="https://ideas.trustroots.org/account-removal/">Removing your account</a></li>
+        <li><a ui-sref="profile-edit.account({ '#': 'remove' })">Removing your account</a></li>
         <li><a ui-sref="volunteering">Become a volunteer</a> and make a difference!</li>
       </ul>
     </div>
