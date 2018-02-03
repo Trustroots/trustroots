@@ -75,7 +75,13 @@ exports.getExternalSiteCount = function (site, callback) {
  * Get count of all public users
  */
 exports.getMeetOffersCount = function (callback) {
-  Offer.count({ type: 'meet' }, function (err, count) {
+  Offer.count({
+    type: 'meet',
+    $or: [
+      { validUntil: { $gte: new Date() } },
+      { validUntil: { $exists: false } }
+    ]
+  }, function (err, count) {
     if (err) {
       callback(err);
       return;
