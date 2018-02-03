@@ -13,7 +13,7 @@
    * userToId: feedback receiver's id
    */
   angular
-    .module('references')
+    .module('references-thread')
     .directive('trReferenceThread', trReferenceThreadDirective);
 
   /* @ngInject */
@@ -21,7 +21,7 @@
     var directive = {
       restrict: 'A',
       replace: true,
-      templateUrl: '/modules/references/views/directives/tr-reference-thread.client.view.html',
+      templateUrl: '/modules/references-thread/views/directives/tr-reference-thread.client.view.html',
       scope: {
         trReferenceThread: '='
       },
