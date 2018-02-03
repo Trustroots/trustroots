@@ -96,7 +96,7 @@ module.exports = function (job, agendaDone) {
 
       statistics.getMeetOffersCount(function (err, meetOfferCount) {
         if (err) {
-          log('error', 'Daily statistics: failed fetching user count.', err);
+          log('error', 'Daily statistics: failed fetching meet count.', err);
           return done();
         }
 
