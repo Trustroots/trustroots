@@ -1,10 +1,10 @@
 (function () {
   'use strict';
 
-  // Offers service used for communicating with the offers REST endpoints
-  // Read offer by offerId
+  // Reference thread service used for communicating with the REST endpoints
+  // Read reference by userToId
   angular
-    .module('references')
+    .module('references-thread')
     .factory('ReferenceThreadService', ReferenceThreadService);
 
   /* @ngInject */
