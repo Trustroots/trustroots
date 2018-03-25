@@ -43,7 +43,8 @@
     "migrate-down": "migrate down",
     "update": "npm install --quiet && npm prune && migrate",
     "postinstall": "bower install --allow-root && bower prune --allow-root",
-    "agendash": "./scripts/agendash-dev"
+    "agendash": "./scripts/agendash-dev",
+    "agenda-maintenance": "node ./scripts/db-maintenance/archive-done-agenda-jobs.js"
   },
   "dependencies": {
     "acl": "~0.4.11",
