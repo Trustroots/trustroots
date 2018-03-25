@@ -46,7 +46,13 @@ function countTotals(done) {
       console.log('Target count: ' + targetCount);
       console.log('Total: ' + (sourceCount + targetCount) + '\n');
       done();
+    }, function (err) {
+      console.log('Could not get count of documents in target collection: ' + targetCollectionName);
+      console.error(err);
     });
+  }, function (err) {
+    console.log('Could not get count of documents in source collection: ' + sourceCollectionName);
+    console.error(err);
   });
 }
 
@@ -144,17 +150,6 @@ async.waterfall([
 
   // process docs
   function (cursor, done) {
-    if (total <= 0) {
-      if (cursor) {
-        cursor.close().then(function () {
-          done();
-        });
-        return;
-      }
-      return done();
-    }
-
-    console.log('Processing ' + total + ' docs...\n');
 
     // preparation for async.doWhilst function
     //
@@ -215,17 +210,35 @@ async.waterfall([
     }
 
     // callback for the end of the script
-    function finish(err) {
+    function processDocsFinish(finihsErr) {
+      if (finihsErr) {
+        console.error(finihsErr);
+      }
+
       cursor.close().then(function () {
-        return done(err, progress);
+        console.log('\nCursor closed.');
+        done(null, progress);
+      }, function (err) {
+        console.log('\nFailed to close cursor at the end of the script:');
+        console.error(err);
+        done(null, progress);
       });
+      return;
     }
 
-    async.doWhilst(processNext, testKeepGoing, finish);
+    // No docs to process, exit early
+    if (total <= 0) {
+      console.log('\nNo docs to process.');
+      return processDocsFinish();
+    }
+
+    console.log('\nProcessing ' + total + ' docs...');
+
+    async.doWhilst(processNext, testKeepGoing, processDocsFinish);
   },
 
   // Show how many docs each collection has currently
-  function (done, progress) {
+  function (progress, done) {
     if (total <= 0) {
       return done();
     }
@@ -245,13 +258,16 @@ async.waterfall([
   // Disconnect
   if (dbConnection) {
     console.log('Closing db...');
-    dbConnection.close().then(function (err) {
-      if (err) {
-        return console.log('\nFailed to disconnect DB');
-      }
+    dbConnection.close().then(function () {
       console.log('\nDisconnected from MongoDB');
+      process.exit(0);
+    }, function (err) {
+      console.log('\nFailed to disconnect DB:');
+      console.error(err);
+      process.exit(0);
     });
+  } else {
+    console.log('DB already closed.');
+    process.exit(0);
   }
-
-  process.exit(0);
 });
