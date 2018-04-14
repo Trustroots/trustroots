@@ -3,8 +3,7 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    config = require('../config'),
+var config = require('../config'),
     chalk = require('chalk'),
     path = require('path'),
     mongoose = require('mongoose');
@@ -29,10 +28,8 @@ module.exports.connect = function(callback, logprefix) {
   // Use native promises
   mongoose.Promise = global.Promise;
 
-  var options = _.merge(config.db.options || {}, { useMongoClient: true });
-
   mongoose
-    .connect(config.db.uri, options)
+    .connect(config.db.uri, config.db.options)
     .then(function (connection) {
       console.log(chalk.green(formatLogPrefix(logprefix) + 'Connected to MongoDB'));
 

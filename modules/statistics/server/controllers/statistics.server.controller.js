@@ -73,13 +73,13 @@ exports.getExternalSiteCount = function(site, callback) {
  * Callback will be called with Object `{ yes: Int, maybe: Int }`
  */
 exports.getOffersCount = function(callback) {
-  Offer.aggregate({
+  Offer.aggregate([{
     $group: {
       _id: '$status',
       count: { $sum: 1 }
     }
-  },
-  function(err, counters) {
+  }])
+  .exec(function(err, counters) {
     if (err) {
       callback(err);
       return;
