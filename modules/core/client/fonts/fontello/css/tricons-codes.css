@@ -34,6 +34,7 @@
 .icon-camera:before { content: '\e820'; } /* '' */
 .icon-facebook:before { content: '\e821'; } /* '' */
 .icon-github:before { content: '\e822'; } /* '' */
+.icon-globe:before { content: '\e823'; } /* '' */
 .icon-linkedin:before { content: '\e824'; } /* '' */
 .icon-twitter:before { content: '\e825'; } /* '' */
 .icon-user:before { content: '\e826'; } /* '' */
@@ -46,7 +47,14 @@
 .icon-info:before { content: '\e82d'; } /* '' */
 .icon-invalid:before { content: '\e82e'; } /* '' */
 .icon-plus:before { content: '\e82f'; } /* '' */
+.icon-cog:before { content: '\e830'; } /* '' */
 .icon-tribes:before { content: '\e831'; } /* '' */
 .icon-menu:before { content: '\e832'; } /* '' */
 .icon-share:before { content: '\e833'; } /* '' */
+.icon-minus:before { content: '\e834'; } /* '' */
+.icon-sofa:before { content: '\e835'; } /* '' */
+.icon-warmshowers:before { content: '\e836'; } /* '' */
+.icon-android:before { content: '\e837'; } /* '' */
+.icon-instagram:before { content: '\f16d'; } /* '' */
+.icon-apple:before { content: '\f179'; } /* '' */
 .icon-sliders:before { content: '\f1de'; } /* '' */

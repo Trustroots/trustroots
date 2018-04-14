@@ -1,7 +1,7 @@
-(function() {
+(function () {
   'use strict';
 
-  describe('ProfileEditAccountController', function() {
+  describe('ProfileEditAccountController', function () {
 
     var ProfileEditAccountController,
         $httpBackend,
@@ -17,7 +17,7 @@
     // Load the main application module
     beforeEach(module(AppConfig.appModuleName));
 
-    beforeEach(inject(function(
+    beforeEach(inject(function (
       $templateCache,
       _$httpBackend_,
       _Authentication_,
@@ -32,15 +32,15 @@
       $templateCache.put('/modules/pages/views/home.client.view.html', '');
     }));
 
-    afterEach(function() {
+    afterEach(function () {
       $httpBackend.verifyNoOutstandingExpectation();
       $httpBackend.verifyNoOutstandingRequest();
     });
 
-    describe('Logged in user', function() {
+    describe('Logged in user', function () {
 
-      beforeEach(function(done) {
-        inject(function($controller, $rootScope) {
+      beforeEach(function (done) {
+        inject(function ($controller, $rootScope) {
           Authentication.user = user;
           ProfileEditAccountController = $controller('ProfileEditAccountController', {
             messageCenterService: messageCenterService,
@@ -51,9 +51,9 @@
         });
       });
 
-      describe('change email address', function() {
+      describe('change email address', function () {
 
-        it('can update email address', function() {
+        it('can update email address', function () {
           ProfileEditAccountController.user.emailTemporary = 'new@email.com';
           var expectedPutData = {
             _id: 'user',
@@ -69,7 +69,7 @@
           );
         });
 
-        it('can show an error message during failure', function() {
+        it('can show an error message during failure', function () {
           ProfileEditAccountController.user.emailTemporary = 'new@email.com';
           $httpBackend.expect('PUT', '/api/users').respond(500);
           ProfileEditAccountController.updateUserEmail();
@@ -77,7 +77,7 @@
           expect(ProfileEditAccountController.emailError).toEqual('Something went wrong.');
         });
 
-        it('can show a custom error message during failure', function() {
+        it('can show a custom error message during failure', function () {
           ProfileEditAccountController.user.emailTemporary = 'new@email.com';
           $httpBackend.expect('PUT', '/api/users').respond(400, { message: 'custom error' });
           ProfileEditAccountController.updateUserEmail();
@@ -87,9 +87,9 @@
 
       });
 
-      describe('resend email confirmation', function() {
+      describe('resend email confirmation', function () {
 
-        it('can resend email', function() {
+        it('can resend email', function () {
           $httpBackend.expect('POST', '/api/auth/resend-confirmation').respond(200);
           ProfileEditAccountController.resendUserEmailConfirm();
           $httpBackend.flush();
@@ -99,7 +99,7 @@
           );
         });
 
-        it('can show an error message during failure', function() {
+        it('can show an error message during failure', function () {
           $httpBackend.expect('POST', '/api/auth/resend-confirmation').respond(500);
           ProfileEditAccountController.resendUserEmailConfirm();
           $httpBackend.flush();
@@ -109,7 +109,7 @@
           );
         });
 
-        it('can show an custom error message during failure', function() {
+        it('can show an custom error message during failure', function () {
           $httpBackend.expect('POST', '/api/auth/resend-confirmation').respond(400, {
             message: 'my custom error'
           });

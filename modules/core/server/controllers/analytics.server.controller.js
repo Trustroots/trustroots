@@ -49,7 +49,7 @@ var url = require('url');
  * @link http://nodejs.org/api/url.html#url_url_format_urlobj
  *
  */
-exports.appendUTMParams = function(trackUrl, utmParams) {
+exports.appendUTMParams = function (trackUrl, utmParams) {
   if (!trackUrl || !utmParams || !utmParams.source || !utmParams.medium || !utmParams.campaign) {
     console.error('utmTrackify() missing one of the required variables:');
     console.error('- trackUrl: ' + trackUrl);

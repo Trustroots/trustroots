@@ -31,19 +31,19 @@
     };
 
     function getToken() {
-      return initMessaging().then(function(messaging) {
+      return initMessaging().then(function (messaging) {
         return messaging.getToken();
       });
     }
 
     function requestPermission() {
-      return initMessaging().then(function(messaging) {
+      return initMessaging().then(function (messaging) {
         return messaging.requestPermission();
       });
     }
 
     function deleteToken(token) {
-      return initMessaging().then(function(messaging) {
+      return initMessaging().then(function (messaging) {
         return messaging.deleteToken(token);
       });
     }
@@ -57,23 +57,23 @@
     }
 
     function removeServiceWorker() {
-      return getServiceWorkers().then(function(workers) {
-        workers.forEach(function(worker) {
+      return getServiceWorkers().then(function (workers) {
+        workers.forEach(function (worker) {
           worker.unregister();
         });
       });
     }
 
     function getServiceWorkers() {
-      return $q.when($window.navigator.serviceWorker.getRegistrations()).then(function(registrations) {
-        return registrations.filter(function(worker) {
+      return $q.when($window.navigator.serviceWorker.getRegistrations()).then(function (registrations) {
+        return registrations.filter(function (worker) {
           return worker.scope.endsWith(SERVICE_WORKER_SCOPE);
         });
       });
     }
 
     function getOrCreateWorker() {
-      return getServiceWorkers().then(function(workers) {
+      return getServiceWorkers().then(function (workers) {
         if (workers.length === 0) {
           return $q.when($window.navigator.serviceWorker
             .register(SERVICE_WORKER_PATH, { scope: SERVICE_WORKER_SCOPE }));
@@ -90,7 +90,7 @@
 
       if (_messaging) return $q.resolve(_messaging);
 
-      return getOrCreateWorker().then(function(worker) {
+      return getOrCreateWorker().then(function (worker) {
 
         // got initialized since call to create worker...
         if (_messaging) return _messaging;
@@ -103,16 +103,16 @@
 
         _messaging.useServiceWorker(worker);
 
-        _messaging.onTokenRefresh(function() {
+        _messaging.onTokenRefresh(function () {
           var args = arguments;
-          onTokenRefreshCallbacks.forEach(function(fn) {
+          onTokenRefreshCallbacks.forEach(function (fn) {
             fn.apply(null, args);
           });
         });
 
-        _messaging.onMessage(function() {
+        _messaging.onMessage(function () {
           var args = arguments;
-          onMessageCallbacks.forEach(function(fn) {
+          onMessageCallbacks.forEach(function (fn) {
             fn.apply(null, args);
           });
         });
@@ -129,10 +129,10 @@
     function angularize(messaging) {
 
       function wrapCallback(fn) {
-        return function(callback) {
-          fn.call(messaging, function() {
+        return function (callback) {
+          fn.call(messaging, function () {
             var args = arguments;
-            $timeout(function() {
+            $timeout(function () {
               callback.apply(null, args);
             });
           });
@@ -140,7 +140,7 @@
       }
 
       function wrapFunction(fn) {
-        return function() {
+        return function () {
           return $q.when(fn.apply(messaging, arguments));
         };
       }

@@ -7,15 +7,15 @@ var path = require('path'),
 
 var facebookNotificationService;
 
-describe('Service: facebook notifications', function() {
+describe('Service: facebook notifications', function () {
 
   var jobs = testutils.catchJobs();
 
-  before(function() {
+  before(function () {
     facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service'));
   });
 
-  it('should not send notification to user whos FB id is missing', function(done) {
+  it('should not send notification to user whos FB id is missing', function (done) {
     // Service expects to receive Mongo objects, thus `new User()` here
     var userFrom = new User({
       username: 'usernameFrom'
@@ -32,7 +32,7 @@ describe('Service: facebook notifications', function() {
         { message: 1 }
       ]
     };
-    facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function(err) {
+    facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function (err) {
       if (err) return done(err);
 
       // Set assertions
@@ -42,7 +42,7 @@ describe('Service: facebook notifications', function() {
     });
   });
 
-  it('should not send notification to user whos FB access token is missing', function(done) {
+  it('should not send notification to user whos FB access token is missing', function (done) {
     // Service expects to receive Mongo objects, thus `new User()` here
     var userFrom = new User({
       username: 'usernameFrom'
@@ -59,7 +59,7 @@ describe('Service: facebook notifications', function() {
         { message: 1 }
       ]
     };
-    facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function(err) {
+    facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function (err) {
       if (err) return done(err);
 
       // Set assertions
@@ -69,13 +69,10 @@ describe('Service: facebook notifications', function() {
     });
   });
 
-  it('should not allow rendered templates to be longer than 180 characters', function(done) {
-    // FB templates are asumed to be in directory:
-    // `./modules/core/server/views/facebook-notifications`
-    // Come down with `../` to `/core` directory and refer to test template.
-    var templateName = '/../../../tests/server/services/facebook-notification-test-template';
-
-    facebookNotificationService.renderNotification(templateName, {}, function(err, res) {
+  it('should not allow rendered templates to be longer than 180 characters', function (done) {
+    // FB templates are in directory:
+    // `./modules/core/server/views/facebook-notifications/`
+    facebookNotificationService.renderNotification('test', {}, function (err, res) {
       if (err) return done(err);
 
       // Set assertions
@@ -86,9 +83,9 @@ describe('Service: facebook notifications', function() {
     });
   });
 
-  describe('unread messages notifications', function() {
+  describe('unread messages notifications', function () {
 
-    it('can send unread messages notification', function(done) {
+    it('can send unread messages notification', function (done) {
       // Service expects to receive Mongo objects, thus `new User()` here
       var userFrom = new User({
         username: 'usernameFrom'
@@ -106,7 +103,7 @@ describe('Service: facebook notifications', function() {
           { message: 1 }
         ]
       };
-      facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function(err) {
+      facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function (err) {
         if (err) return done(err);
 
         // Set assertions
@@ -118,11 +115,14 @@ describe('Service: facebook notifications', function() {
         jobs[0].data.template.should.equal('You have one unread message at Trustroots.');
         jobs[0].data.href.should.containEql('messages/' + userFrom.username + '?iframe_getaway=true');
 
+        // The Graph API accepts a maximum of 180 characters in the message field.
+        jobs[0].data.template.length.should.be.belowOrEqual(180);
+
         done();
       });
     });
 
-    it('can refer to Facebook id of an user who sent the message that initiated the notification', function(done) {
+    it('can refer to Facebook id of an user who sent the message that initiated the notification', function (done) {
       // Service expects to receive Mongo objects, thus `new User()` here
       var userFrom = new User({
         username: 'usernameFrom',
@@ -145,17 +145,20 @@ describe('Service: facebook notifications', function() {
           { message: 1 }
         ]
       };
-      facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function(err) {
+      facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function (err) {
         if (err) return done(err);
 
         // Set assertions
         jobs[0].data.template.should.equal('You have one unread message from @[' + userFrom.additionalProvidersData.facebook.id + '] at Trustroots.');
 
+        // The Graph API accepts a maximum of 180 characters in the message field.
+        jobs[0].data.template.length.should.be.belowOrEqual(180);
+
         done();
       });
     });
 
-    it('can have different template for 2nd notification', function(done) {
+    it('can have different template for 2nd notification', function (done) {
       // Service expects to receive Mongo objects, thus `new User()` here
       var userFrom = new User({
         username: 'usernameFrom'
@@ -174,7 +177,7 @@ describe('Service: facebook notifications', function() {
           { message: 1 }
         ]
       };
-      facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function(err) {
+      facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function (err) {
         if (err) return done(err);
 
         // Set assertions
@@ -183,14 +186,17 @@ describe('Service: facebook notifications', function() {
         jobs[0].data.messageCount.should.equal(1);
         jobs[0].data.toUserFacebookId.should.equal(userTo.additionalProvidersData.facebook.id);
         jobs[0].data.fromUserFacebookId.should.equal(false);
-        jobs[0].data.template.should.equal('Someone is still waiting for a reply on Trustroots.');
+        jobs[0].data.template.should.equal('Someone is still waiting for your reply on Trustroots.');
         jobs[0].data.href.should.containEql('messages/' + userFrom.username + '?iframe_getaway=true');
+
+        // The Graph API accepts a maximum of 180 characters in the message field.
+        jobs[0].data.template.length.should.be.belowOrEqual(180);
 
         done();
       });
     });
 
-    it('should mention how many unread messages user has', function(done) {
+    it('should mention how many unread messages user has', function (done) {
       // Service expects to receive Mongo objects, thus `new User()` here
       var userFrom = new User({
         username: 'usernameFrom'
@@ -210,7 +216,7 @@ describe('Service: facebook notifications', function() {
           { message: 3 }
         ]
       };
-      facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function(err) {
+      facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function (err) {
         if (err) return done(err);
 
         // Set assertions

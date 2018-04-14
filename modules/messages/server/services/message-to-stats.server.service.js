@@ -13,7 +13,7 @@ var path = require('path'),
     config = require(path.resolve('./config/config')),
     mongoose = require('mongoose'),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller'));
+    textService = require(path.resolve('./modules/core/server/services/text.server.service'));
 
 require(path.resolve('./modules/messages/server/models/message.server.model'));
 
@@ -148,8 +148,8 @@ module.exports.process = function (message, callback) {
           }
         ]
       })
-      .sort({ created: 1 })
-      .exec(done);
+        .sort({ created: 1 })
+        .exec(done);
     },
 
     function readFirstReply(firstMessage, done) {
@@ -174,10 +174,10 @@ module.exports.process = function (message, callback) {
           userTo: firstMessage.userFrom,
           userFrom: firstMessage.userTo
         })
-        .sort({ created: 1 })
-        .exec(function (err, firstReply) {
-          return done(err, firstMessage, firstReply);
-        });
+          .sort({ created: 1 })
+          .exec(function (err, firstReply) {
+            return done(err, firstMessage, firstReply);
+          });
       } else {
         return done(null, firstMessage, null);
       }
@@ -195,7 +195,7 @@ module.exports.process = function (message, callback) {
 
       // count length of the message
       // excluding html tags and multiple whitespace characters
-      var msgLen = textProcessor.plainText(message.content, true).length;
+      var msgLen = textService.plainText(message.content, true).length;
 
 
       // message position in the thread

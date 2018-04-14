@@ -20,7 +20,7 @@
   function trSwitchDirective() {
     return {
       restrict: 'A',
-      link: function(scope, elem, attrs) {
+      link: function (scope, elem, attrs) {
 
         elem.addClass('tr-switch');
 

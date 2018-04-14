@@ -72,20 +72,6 @@
               </div>
 
               <div class="form-group">
-                <label for="location-living" class="col-sm-3 text-right control-label">Where You Live</label>
-                <div class="col-sm-9 col-md-7 col-lg-6">
-                  <input type="text" class="form-control" placeholder="City, Country" id="location-living" tr-location ng-model="profileEditAbout.user.locationLiving" ng-change="profileEdit.unsavedModifications=true">
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="location-from" class="col-sm-3 text-right control-label">Where You From</label>
-                <div class="col-sm-9 col-md-7 col-lg-6">
-                  <input type="text" class="form-control" placeholder="City, Country" id="location-from" tr-location tr-location-center="profileEditAbout.test" ng-model="profileEditAbout.user.locationFrom" ng-change="profileEdit.unsavedModifications=true">
-                </div>
-              </div>
-
-              <div class="form-group">
                 <label for="gender" class="col-sm-3 text-right control-label">I Am</label>
                 <div class="col-sm-9 col-md-7 col-lg-6">
                   <select class="form-control" id="gender" ng-model="profileEditAbout.user.gender" ng-change="profileEdit.unsavedModifications=true">
@@ -135,22 +121,14 @@
               </div>
 
               <div class="form-group">
-                <label class="col-sm-3 text-right control-label" for="languages">Languages</label>
+                <label class="col-sm-3 text-right control-label" id="label-languages">Languages</label>
                 <div class="col-sm-9 col-md-7 col-lg-6">
-                  <select multiple chosen
-                    id="languages"
-                    class="form-control"
-                    placeholder-text-multiple="'Type to search...'"
-                    no-results-text="'Not found: '"
-                    search-contains="true"
-                    ng-model="profileEditAbout.userLanguages"
-                    ng-change="profileEdit.unsavedModifications=true"
-                    ng-options="language.name for language in profileEditAbout.languages track by language.key">
-                  </select>
+                  <div tr-languages="profileEditAbout.user.languages"
+                       ng-change="profileEdit.unsavedModifications = true"
+                       aria-labelledby="label-languages"></div>
                   <p class="help-block">Add languages you speak.</p>
                 </div>
               </div>
-
 
               <div class="form-group">
                 <label for="username" class="col-sm-3 text-right control-label">Username</label>

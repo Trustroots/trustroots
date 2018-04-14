@@ -25,7 +25,7 @@
   input {
     display: none;
   }
-  /* The slider */
+  // The slider
   .toggle {
     position: absolute;
     top: 0;
@@ -46,6 +46,7 @@
       border-radius: 50%;
     }
   }
+
   input:checked + .toggle {
     background-color: @btn-primary-bg;
     &:before {
@@ -56,7 +57,12 @@
   input:focus + .toggle {
     box-shadow: 0 0 1px @btn-primary-bg;
   }
+
+  input:disabled + .toggle {
+    opacity: 0.5;
+  }
 }
+
 .tr-switch-right {
   padding-right: (@switch-md-width + @switch-space-to-label);
   padding-left: 0;

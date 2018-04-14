@@ -138,9 +138,9 @@
           // @link https://github.com/chieffancypants/angular-loading-bar#ignoring-particular-xhr-requests
           ignoreLoadingBar: true
         })
-        .then(function(response) {
+        .then(function (response) {
           if (response.status === 200 && response.data.features && response.data.features.length > 0) {
-            return response.data.features.map(function(geolocation) {
+            return response.data.features.map(function (geolocation) {
               geolocation.trTitle = shortTitle(geolocation);
               return geolocation;
             });

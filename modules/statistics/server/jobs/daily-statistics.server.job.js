@@ -34,7 +34,7 @@ module.exports = function (job, agendaDone) {
         writeDailyStat({
           namespace: 'members',
           values: {
-            count: userCount
+            count: parseInt(userCount, 10)
           },
           tags: {
             members: 'members'
@@ -44,7 +44,7 @@ module.exports = function (job, agendaDone) {
     },
 
     // Get number of users who have push notifications enabled
-    function(done) {
+    function (done) {
       statistics.getPushRegistrationCount(function (err, pushRegistrationCount) {
         if (err) {
           log('error', 'Daily statistics: failed fetching push registration count.', err);
@@ -55,7 +55,7 @@ module.exports = function (job, agendaDone) {
         writeDailyStat({
           namespace: 'pushRegistrations',
           values: {
-            count: pushRegistrationCount
+            count: parseInt(pushRegistrationCount, 10)
           },
           tags: {
             type: 'all'
@@ -63,9 +63,93 @@ module.exports = function (job, agendaDone) {
         }, done);
 
       });
+    },
+
+    // Hosting offer count
+    function (done) {
+
+      statistics.getHostOffersCount(function (err, hostOfferCounts) {
+        if (err) {
+          log('error', 'Daily statistics: failed fetching hosting offer counts.', err);
+          return done();
+        }
+
+        // Write numbers to stats
+        async.eachSeries(hostOfferCounts, function (offerCount, doneStatus) {
+          writeDailyStat({
+            namespace: 'offers',
+            values: {
+              count: parseInt(offerCount.count, 10)
+            },
+            tags: {
+              type: 'host',
+              status: String(offerCount._id) // `yes|maybe|no`
+            }
+          }, doneStatus);
+        }, done);
+
+      });
+    },
+
+    // Meet offer count
+    function (done) {
+
+      statistics.getMeetOffersCount(function (err, meetOfferCount) {
+        if (err) {
+          log('error', 'Daily statistics: failed fetching meet count.', err);
+          return done();
+        }
+
+        // Write number to stats
+        writeDailyStat({
+          namespace: 'offers',
+          values: {
+            count: parseInt(meetOfferCount, 10)
+          },
+          tags: {
+            type: 'meet'
+          }
+        }, done);
+      });
+    },
+
+    // Connected to networks counters
+    function (done) {
+
+      var networks = [
+        'couchsurfing',
+        'warmshowers',
+        'bewelcome',
+        'facebook',
+        'twitter',
+        'github'
+      ];
+
+      // Loop trough each network in series
+      async.eachSeries(networks, function (networkName, doneNetwork) {
+        // Get count for this network
+        statistics.getExternalSiteCount(networkName, function (err, count) {
+          if (err) {
+            log('error', 'Daily statistics: failed fetching network "' + networkName + '" count.', err);
+            return doneNetwork(err);
+          }
+
+          // Write number to stats
+          writeDailyStat({
+            namespace: 'membersInNetworks',
+            values: {
+              count: parseInt(count, 10)
+            },
+            tags: {
+              network: networkName
+            }
+          }, doneNetwork);
+        });
+      }, done);
+
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       log('error', 'Daily statistics error', err);
     }

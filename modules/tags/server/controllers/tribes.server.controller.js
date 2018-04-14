@@ -20,13 +20,14 @@ exports.tribeFields = [
   'attribution',
   'attribution_url',
   'tribe',
-  'description'
+  'description',
+  'created'
 ].join(' ');
 
 /**
  * Constructs link headers for pagination
  */
-var setLinkHeader = function(req, res, pageCount) {
+var setLinkHeader = function (req, res, pageCount) {
   if (paginate.hasNextPages(req)(pageCount)) {
     var nextPage = { page: req.query.page + 1 };
     var linkHead = '<' + req.protocol + ':' + res.locals.url.slice(0, -1) + res.locals.paginate.href(nextPage) + '>; rel="next"';
@@ -37,7 +38,7 @@ var setLinkHeader = function(req, res, pageCount) {
 /**
  * List all tribes
  */
-exports.listTribes = function(req, res) {
+exports.listTribes = function (req, res) {
 
   Tag.paginate(
     {
@@ -52,7 +53,7 @@ exports.listTribes = function(req, res) {
       },
       select: exports.tribeFields
     },
-    function(err, data) {
+    function (err, data) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err)
@@ -70,14 +71,14 @@ exports.listTribes = function(req, res) {
 /**
  * Return tribe
  */
-exports.getTribe = function(req, res) {
+exports.getTribe = function (req, res) {
   res.json(req.tribe || {});
 };
 
 /**
  * Tribe middleware
  */
-exports.tribeBySlug = function(req, res, next, slug) {
+exports.tribeBySlug = function (req, res, next, slug) {
   Tag.findOne(
     {
       public: true,
@@ -86,14 +87,14 @@ exports.tribeBySlug = function(req, res, next, slug) {
     },
     exports.tribeFields
   )
-  .exec(function(err, tribe) {
-    if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err)
-      });
-    } else {
-      req.tribe = tribe;
-      return next();
-    }
-  });
+    .exec(function (err, tribe) {
+      if (err) {
+        return res.status(400).send({
+          message: errorService.getErrorMessage(err)
+        });
+      } else {
+        req.tribe = tribe;
+        return next();
+      }
+    });
 };

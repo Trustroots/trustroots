@@ -29,7 +29,7 @@ if (!key) {
  * @param {Date} time
  * @returns {number} - the given time converted to unix timestamp [seconds]
  */
-var formatTime = function(time) {
+var formatTime = function (time) {
   if (_.isDate(time)) {
     return time.getTime() / 1000;
   } else {
@@ -55,7 +55,7 @@ var buildName = function () {
  * @param {Function} callback
  * @returns void
  */
-var send = function(type, name, value, time, callback) {
+var send = function (type, name, value, time, callback) {
   // Get a fresh stathat key from `config` (maybe it was stubbed since the instantiation of this module)
   var key = _.get(config, 'stathat.key', false);
   // If we don't have a stathat key, silently drop this stat
@@ -176,7 +176,7 @@ function processResponse(callback) {
  * @param {Date|undefined} time - time of the metric
  * @param {Function} callback
  */
-var sendStats = function(type, statName, statValue, tags, time, callback) {
+var sendStats = function (type, statName, statValue, tags, time, callback) {
 
   // collect the statNames (the default one and the ones created from tags)
   var statNames = [[statName]];
@@ -201,7 +201,7 @@ var sendStats = function(type, statName, statValue, tags, time, callback) {
  * @param {Date} [stat.time] - time of the data point
  * @param {Function} callback
  */
-var stat = function(stat, callback) {
+var stat = function (stat, callback) {
 
   // if stathat is disabled, log the info and quit without failing
   var isEnabled = _.get(config, 'stathat.enabled', false);
@@ -217,13 +217,13 @@ var stat = function(stat, callback) {
 
   // Iterate over the `counts`
   var sendStatsParams = [];
-  _.forOwn(counts, function(value, countName) {
+  _.forOwn(counts, function (value, countName) {
     // Process this counter
     sendStatsParams.push(['count', buildName(namespace, countName), value, tags, time]);
   });
 
   // Iterate over the `values`
-  _.forOwn(values, function(value, valueName) {
+  _.forOwn(values, function (value, valueName) {
     // Process this value
     sendStatsParams.push(['value', buildName(namespace, valueName), value, tags, time]);
   });
@@ -277,7 +277,7 @@ function asyncEachFinish(coll, iteratee, callback) {
   /**
    * Collects the errors (if any) and calls callback.
    */
-  function cb (e) {
+  function cb(e) {
     if (e) return callback(e);
 
     if (sendErrors.length > 0) {

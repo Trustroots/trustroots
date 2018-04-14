@@ -22,7 +22,7 @@ var _ = require('lodash'),
     helmet = require('helmet'),
     expectCt = require('expect-ct'),
     flash = require('connect-flash'),
-    render = require('./render'),
+    nunjucks = require('nunjucks'),
     git = require('git-rev'),
     path = require('path'),
     paginate = require('express-paginate'),
@@ -52,12 +52,15 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.invitationsEnabled = config.invitations.enabled;
   app.locals.appSettings.maitreId = config.invitations.enabled ? config.invitations.maitreId : false;
   app.locals.appSettings.fcmSenderId = config.fcm.senderId;
+  app.locals.appSettings.limits = {
+    maxOfferValidFromNow: config.limits.maxOfferValidFromNow
+  };
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
 
   // Assets
   if (process.env.NODE_ENV !== 'production') {
     app.locals.jsFiles = _.concat(config.files.client.js, 'dist/uib-templates.js');
-    app.locals.cssFiles = _.map(config.files.client.css, function(file) { return file.replace('/client', ''); });
+    app.locals.cssFiles = _.map(config.files.client.css, function (file) { return file.replace('/client', ''); });
   }
 
   // Get 'git rev-parse --short HEAD' (the latest git commit hash) to use as a cache buster
@@ -152,12 +155,18 @@ module.exports.initMiddleware = function (app) {
  */
 module.exports.initViewEngine = function (app) {
   debug('Initialize view engine');
-  // Set swig as the template engine
-  app.engine('server.view.html', render);
 
-  // Set views path and view engine
-  app.set('view engine', 'server.view.html');
-  app.set('views', './');
+  // Set Nunjucks as the template engine
+  // https://mozilla.github.io/nunjucks/
+  nunjucks.configure('./modules/core/server/views', {
+    express: app,
+    watch: false,
+    noCache: true
+  });
+
+  // app.engine('nunjucks', nunjucks);
+  app.set('view engine', 'html');
+  app.set('views', './modules/core/server/views');
 };
 
 /**
@@ -330,14 +339,16 @@ module.exports.initHelmetHeaders = function (app) {
       // Defines the origins from which images can be loaded.
       imgSrc: [
         '\'self\'',
-        '*.tiles.mapbox.com',
-        'api.mapbox.com',
-        '*.tile.openstreetmap.org',
+        '*.tiles.mapbox.com', // Map tiles
+        'api.mapbox.com', // Map tiles/Geocoding
+        '*.tile.openstreetmap.org', // Map tiles
+        '*.vis.earthdata.nasa.gov', // Map tiles
         '*.facebook.com',
         '*.fbcdn.net', // Facebook releated
         '*.twitter.com',
         '*.google-analytics.com',
         '*.gstatic.com', // Google analytics related
+        '*.googleusercontent.com', // Google CDN. Android app related.
         '*.g.doubleclick.net', // Google Analytics related
         'gravatar.com', // Gravatar (Wordpress)
         '*.wp.com', // Gravatar (Wordpress)

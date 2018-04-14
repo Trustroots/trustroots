@@ -3,8 +3,12 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
+    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
+    languages = require(path.resolve('./config/languages/languages.json')),
     authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service')),
+    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     crypto = require('crypto'),
     mongoose = require('mongoose'),
     uniqueValidation = require('mongoose-beautiful-unique-validation'),
@@ -16,29 +20,33 @@ var passwordMinLength = 8;
 /**
  * A Validation function for local strategy properties
  */
-var validateLocalStrategyProperty = function(property) {
+var validateLocalStrategyProperty = function (property) {
   return ((this.provider !== 'local' && !this.updated) || property.length);
 };
 
 /**
  * A Validation function for local strategy email
  */
-var validateLocalStrategyEmail = function(email) {
+var validateLocalStrategyEmail = function (email) {
   return ((this.provider !== 'local' && !this.updated) || validator.isEmail(email));
 };
 
 /**
  * A Validation function for password
  */
-var validatePassword = function(password) {
+var validatePassword = function (password) {
   return password && validator.isLength(password, passwordMinLength);
 };
 
 /**
  * A Validation function for username
  */
-var validateUsername = function(username) {
+var validateUsername = function (username) {
   return this.provider !== 'local' || authenticationService.validateUsername(username);
+};
+
+var setPlainTextField = function (value) {
+  return textService.plainText(value, true);
 };
 
 /**
@@ -83,9 +91,12 @@ var UserPushRegistrationSchema = new Schema({
     type: Date,
     default: Date.now,
     required: true
+  },
+  deviceId: {
+    type: String,
+    trim: true
   }
 }, { _id: false });
-
 
 /**
  * User Schema
@@ -93,20 +104,19 @@ var UserPushRegistrationSchema = new Schema({
 var UserSchema = new Schema({
   firstName: {
     type: String,
-    trim: true,
-    default: '',
-    validate: [validateLocalStrategyProperty, 'Please fill in your first name']
+    required: true,
+    validate: [validateLocalStrategyProperty, 'Please fill in your first name'],
+    set: setPlainTextField
   },
   lastName: {
     type: String,
-    trim: true,
-    default: '',
-    validate: [validateLocalStrategyProperty, 'Please fill in your last name']
+    required: true,
+    validate: [validateLocalStrategyProperty, 'Please fill in your last name'],
+    set: setPlainTextField
   },
-  /* This is (currently) generated in users.profile.server.controller.js */
+  /* This is generated in Schema pre-save hook below */
   displayName: {
-    type: String,
-    trim: true
+    type: String
   },
   email: {
     type: String,
@@ -127,12 +137,12 @@ var UserSchema = new Schema({
   tagline: {
     type: String,
     default: '',
-    trim: true
+    set: setPlainTextField
   },
   description: {
     type: String,
     default: '',
-    trim: true
+    set: textService.html
   },
   birthdate: {
     type: Date
@@ -144,15 +154,18 @@ var UserSchema = new Schema({
   },
   languages: {
     type: [{
-      type: String
+      type: String,
+      enum: _.keys(languages)
     }],
     default: []
   },
   locationLiving: {
-    type: String
+    type: String,
+    set: setPlainTextField
   },
   locationFrom: {
-    type: String
+    type: String,
+    set: setPlainTextField
   },
   // Lowercase enforced username
   username: {
@@ -166,22 +179,26 @@ var UserSchema = new Schema({
   // Stores unaltered original username
   displayUsername: {
     type: String,
-    trim: true
+    trim: true,
+    set: setPlainTextField
   },
   // Bewelcome.org username
   extSitesBW: {
     type: String,
-    trim: true
+    trim: true,
+    set: setPlainTextField
   },
   // Couchsurfing.com username
   extSitesCS: {
     type: String,
-    trim: true
+    trim: true,
+    set: setPlainTextField
   },
   // Warmshowers.org username
   extSitesWS: {
     type: String,
-    trim: true
+    trim: true,
+    set: setPlainTextField
   },
   password: {
     type: String,
@@ -198,7 +215,8 @@ var UserSchema = new Schema({
      Trustroots, comes from boilerplate. Will be removed one day. */
   provider: {
     type: String,
-    required: true
+    required: true,
+    default: 'local'
   },
   /* Facebook, Twitter etc data is stored here. */
   providerData: {},
@@ -288,7 +306,7 @@ var UserSchema = new Schema({
 /**
  * Hook a pre save method to hash the password
  */
-UserSchema.pre('save', function(next) {
+UserSchema.pre('save', function (next) {
   if (this.password && this.isModified('password') && this.password.length >= passwordMinLength) {
     this.salt = crypto.randomBytes(16).toString('base64');
     this.password = this.hashPassword(this.password);
@@ -299,13 +317,18 @@ UserSchema.pre('save', function(next) {
     this.emailHash = crypto.createHash('md5').update(this.email.trim().toLowerCase()).digest('hex');
   }
 
+  // Generate `displayName`
+  if (this.isModified('firstName') || this.isModified('lastName')) {
+    this.displayName = this.firstName + ' ' + this.lastName;
+  }
+
   next();
 });
 
 /**
  * Create instance method for hashing a password
  */
-UserSchema.methods.hashPassword = function(password) {
+UserSchema.methods.hashPassword = function (password) {
   if (this.salt && password) {
     return crypto.pbkdf2Sync(password, new Buffer(this.salt, 'base64'), 10000, 64, 'SHA1').toString('base64');
   } else {
@@ -316,7 +339,7 @@ UserSchema.methods.hashPassword = function(password) {
 /**
  * Create instance method for authenticating user
  */
-UserSchema.methods.authenticate = function(password) {
+UserSchema.methods.authenticate = function (password) {
   return this.password === this.hashPassword(password);
 };
 

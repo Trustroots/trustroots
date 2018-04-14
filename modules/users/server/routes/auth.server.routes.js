@@ -8,7 +8,7 @@ var usersPolicy = require('../policies/users.server.policy'),
     userPassword = require('../controllers/users.password.server.controller'),
     passport = require('passport');
 
-module.exports = function(app) {
+module.exports = function (app) {
 
   // Confirm users email
   app.route('/api/auth/confirm-email/:token')
@@ -39,6 +39,7 @@ module.exports = function(app) {
   app.route('/api/auth/facebook').all(usersPolicy.isAllowed)
     .get(passport.authenticate('facebook', {
       scope: [
+        'public_profile',
         'email',
         'user_friends'
       ]
@@ -55,7 +56,11 @@ module.exports = function(app) {
 
   // Setting the github oauth routes
   app.route('/api/auth/github').all(usersPolicy.isAllowed)
-    .get(passport.authenticate('github'));
+    .get(passport.authenticate('github', {
+      scope: [
+        'user:email'
+      ]
+    }));
   app.route('/api/auth/github/callback').all(usersPolicy.isAllowed)
     .get(userAuthentication.oauthCallback('github'));
 

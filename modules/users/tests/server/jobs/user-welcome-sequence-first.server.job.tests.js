@@ -23,11 +23,11 @@ var unConfirmedUser,
     timeLimit,
     timePast;
 
-describe('Job: welcome sequence, first email', function() {
+describe('Job: welcome sequence, first email', function () {
 
   var jobs = testutils.catchJobs();
 
-  before(function() {
+  before(function () {
     userWelcomeSequenceFirstJobHandler = require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-first.server.job'));
     userWelcomeSequenceSecondJobHandler = require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-second.server.job'));
     userWelcomeSequenceThirdJobHandler = require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-third.server.job'));
@@ -94,11 +94,11 @@ describe('Job: welcome sequence, first email', function() {
     confirmedUser.save(done);
   });
 
-  it('Do not send welcome sequence emails to unconfirmed users', function(done) {
-    unConfirmedUser.save(function(err) {
+  it('Do not send welcome sequence emails to unconfirmed users', function (done) {
+    unConfirmedUser.save(function (err) {
       if (err) return done(err);
 
-      userWelcomeSequenceFirstJobHandler({}, function(err) {
+      userWelcomeSequenceFirstJobHandler({}, function (err) {
         if (err) return done(err);
         // Confirmed user received welcome email, unconfirmed didn't
         jobs.length.should.equal(1);
@@ -110,12 +110,12 @@ describe('Job: welcome sequence, first email', function() {
     });
   });
 
-  it('Do not send second and third welcome sequence email when everyone is on step 1', function(done) {
+  it('Do not send second and third welcome sequence email when everyone is on step 1', function (done) {
     // Run second welcome sequence email job
-    userWelcomeSequenceSecondJobHandler({}, function(err) {
+    userWelcomeSequenceSecondJobHandler({}, function (err) {
       if (err) return done(err);
       // Run third welcome sequence email job
-      userWelcomeSequenceThirdJobHandler({}, function(err) {
+      userWelcomeSequenceThirdJobHandler({}, function (err) {
         if (err) return done(err);
 
         // Nobody shouldn't received email
@@ -125,12 +125,12 @@ describe('Job: welcome sequence, first email', function() {
     });
   });
 
-  it('Do not send welcome sequence emails to suspended users', function(done) {
+  it('Do not send welcome sequence emails to suspended users', function (done) {
     confirmedUser.roles = ['suspended'];
-    confirmedUser.save(function(err) {
+    confirmedUser.save(function (err) {
       if (err) return done(err);
 
-      userWelcomeSequenceFirstJobHandler({}, function(err) {
+      userWelcomeSequenceFirstJobHandler({}, function (err) {
         if (err) return done(err);
         // Confirmed who is suspended, did not receive welcome email
         // Unconfirmed user didn't receive it neither

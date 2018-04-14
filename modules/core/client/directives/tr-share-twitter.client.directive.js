@@ -76,7 +76,7 @@
        */
       function initTwitterJS() {
 
-        $window.twttr = (function(d, s, id) {
+        $window.twttr = (function (d, s, id) {
           var js,
               fjs = d.getElementsByTagName(s)[0],
               t = $window.twttr || {};
@@ -87,7 +87,7 @@
           fjs.parentNode.insertBefore(js, fjs);
 
           t._e = [];
-          t.ready = function(f) {
+          t.ready = function (f) {
             t._e.push(f);
           };
 

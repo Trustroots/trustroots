@@ -32,7 +32,7 @@
        * Fetches messages and sets up pagination environment
        * Takes additional query params passed in as key , value pairs
        */
-      fetchMessages: function(param) {
+      fetchMessages: function (param) {
 
         var that = this;
         var query = (this.nextPage) ? angular.extend(this.nextPage, param) : param;
@@ -43,13 +43,13 @@
           return this.ajaxCall.query(
             query,
             // Successful callback
-            function(data, headers) {
+            function (data, headers) {
               that.nextPage = that.parseHeaders(headers().link);
               that.resolved = true;
               that.paginationTimeout = false;
             },
             // Error callback
-            function() {
+            function () {
               that.paginationTimeout = false;
               that.resolved = false;
             }

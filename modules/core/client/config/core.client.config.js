@@ -15,7 +15,7 @@
   /* @ngInject */
   function CoreServiceUnavailable($q, $rootScope) {
     return {
-      responseError: function(rejection) {
+      responseError: function (rejection) {
         if (rejection.status === 503) {
           $rootScope.$broadcast('serviceUnavailable');
         }

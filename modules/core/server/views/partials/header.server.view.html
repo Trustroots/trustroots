@@ -3,32 +3,39 @@
         class="navbar navbar-default navbar-fixed-top hidden-print"
         ng-hide="app.isHeaderHidden">
 
+  <a class="btn btn-default sr-only sr-only-focusable sr-helper" href="#tr-main">
+    Skip to main content
+  </a>
+
   <!-- Header for non-authenticated users -->
   <div class="container" ng-if="!app.user">
-    <nav class="header-welcome" aria-label="Page navigation">
-      <p class="header-welcome-text">New to Trustroots?</p>
-      <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
-      <small class="header-welcome-divider" aria-hidden="true">or</small>
-      <a ui-sref="signin" class="btn btn-default">Login</a>
+    <nav class="header-welcome text-center" aria-label="Page navigation" role="navigation">
+      <span class="header-welcome-text hidden-xs">New to Trustroots?</span>
+      <a ui-sref="signup" class="btn btn-lg btn-default">
+        Join
+      </a>
+      <a ui-sref="signin" class="btn btn-lg btn-inverse">
+        Login
+      </a>
       <a ui-sref="home"
          class="btn btn-link header-more-text"
          ng-if="!app.isHomePage"
          aria-label="Read more about Trustroots">
-        <span class="hidden-xs">Read more</span>
-        <span class="visible-xs-inline">About</span>
+        Read more
       </a>
     </nav>
   </div>
   <!-- /Header for non-authenticated users -->
 
   <!-- Header for authenticated users -->
-  <div class="container" ng-if="app.user">
+  <div class="container" ng-if="app.user" role="navigation">
 
     <div class="navbar-header">
       <a ng-click="app.goHome()"
          class="navbar-brand hidden-xs"
          aria-hidden="true">
-        <img src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="177" height="31" />
+        <img class="hidden-xs hidden-sm" src="/modules/core/img/logo/horizontal-white.svg" alt="Trustroots" width="177" height="31" />
+        <img class="hidden-md hidden-lg" src="/modules/core/img/tree-white.svg" alt="Trustroots" width="31" height="31" />
       </a>
     </div>
 
@@ -40,20 +47,17 @@
            role="button"
            aria-haspopup="true"
            aria-expanded="false">
-          Info &amp; Support
+          Support
         </a>
-        <ul class="dropdown-menu" aria-label="submenu">>
-          <li ui-sref-active="active"><a ui-sref="home">About</a></li>
-          <li ui-sref-active="active"><a ui-sref="support">Contact &amp; Support</a></li>
-          <li ui-sref-active="active"><a ui-sref="faq.general">FAQ</a></li>
-          <li><a href="https://ideas.trustroots.org/">Blog</a></li>
-          <li><a href="https://shop.trustroots.org/">Shop</a></li>
-          <li ui-sref-active="active"><a ui-sref="media">Media</a></li>
-          <li ui-sref-active="active"><a ui-sref="privacy" aria-label="Privacy Policy">Privacy</a></li>
-          <li ui-sref-active="active"><a ui-sref="rules">Rules</a></li>
-          <li ui-sref-active="active"><a ui-sref="team">Team</a></li>
-          <li ui-sref-active="active"><a ui-sref="foundation" aria-label="Trustroots Foundation">Foundation</a></li>
-          <li ui-sref-active="active"><a ui-sref="volunteering">Volunteering</a></li>
+        <ul class="dropdown-menu" aria-label="submenu">
+          <li ui-sref-active="active">
+            <a ui-sref="faq.general" aria-label="Frequently Asked Questions">
+              FAQ
+            </a>
+          </li>
+          <li ui-sref-active="active">
+            <a ui-sref="support">Contact us</a>
+          </li>
         </ul>
       </li>
     </ul>
@@ -61,26 +65,37 @@
     <ul class="nav navbar-nav nav-header-primary">
       <li ng-if="::app.appSettings.invitationsEnabled" ui-sref-active="active">
         <a ui-sref="invite" aria-label="Invite friends">
-          <i class="icon-share icon-fw icon-lg hidden-sm"></i>
+          <i class="icon-share icon-fw icon-lg visible-xs-block"></i>
           <span class="hidden-xs">Invite Friends</span>
         </a>
       </li>
       <li ui-sref-active="active">
         <a ui-sref="tribes.list" aria-label="Tribes">
-          <i class="icon-tribes icon-fw icon-lg hidden-sm"></i>
+          <i class="icon-tribes icon-fw icon-lg visible-xs-block"></i>
           <span class="hidden-xs">Tribes</span>
         </a>
       </li>
       <li ui-sref-active="active">
-        <a ui-sref="search.map" aria-label="Map">
-          <i class="icon-search icon-fw icon-lg hidden-sm"></i>
-          <span class="hidden-xs">Map</span>
+        <a ui-sref="search.map" aria-label="Search hosts">
+          <i class="icon-search icon-fw icon-lg visible-xs-block"></i>
+          <span class="hidden-xs">Search</span>
         </a>
       </li>
       <li ui-sref-active="active">
         <a ui-sref="inbox" aria-label="Messages">
-          <i class="icon-messages icon-fw icon-lg"></i>
+          <i class="icon-messages icon-fw icon-lg visible-xs-block"></i>
+          <span class="hidden-xs">Messages</span>
           <span messages-unread-count></span>
+        </a>
+      </li>
+      <li ui-sref-active="active" class="hidden-xs">
+        <a ui-sref="offer.host.edit" aria-label="Offer to host">
+          <span class="hidden-xs">Host</span>
+        </a>
+      </li>
+      <li ui-sref-active="active" class="hidden-xs">
+        <a ui-sref="offer.meet.list" aria-label="Offer to meet">
+          <span class="hidden-xs">Meet</span>
         </a>
       </li>
       <li class="dropdown dropdown-user hidden-xs" uib-dropdown>
@@ -113,25 +128,59 @@
             </a>
           </li>
           <li ui-sref-active="active">
-            <a ui-sref="offer">
-              Hosting status
-            </a>
-          </li>
-          <li ui-sref-active="active">
-            <a ui-sref="profile-edit.account">
-              Account
-            </a>
-          </li>
-          <li ui-sref-active="active">
             <a ui-sref="profile.contacts({ username: app.user.username })">
               Contacts
             </a>
           </li>
           <li role="presentation" class="divider"></li>
+          <li ui-sref-active="active">
+            <a ui-sref="profile-edit.account">
+              Account
+            </a>
+          </li>
           <li>
             <a ng-click="app.signout($event)" href="/api/auth/signout" target="_top">
               Sign out
             </a>
+          </li>
+          <li role="presentation" class="divider"></li>
+          <li class="small text-muted dropdown-meta text-center font-brand-regular">
+            <ul class="list-inline">
+              <li><a class="text-muted" ui-sref="home">About</a></li>
+              <li><a class="text-muted" href="https://ideas.trustroots.org/">Blog</a></li>
+              <li><a class="text-muted" href="https://shop.trustroots.org/">Shop</a></li>
+              <li><a class="text-muted" ui-sref="media">Media</a></li>
+              <li><a class="text-muted" ui-sref="foundation" aria-label="Trustroots Foundation">Foundation</a></li>
+              <li><a class="text-muted" ui-sref="privacy" aria-label="Privacy Policy">Privacy</a></li>
+              <li><a class="text-muted" ui-sref="rules">Rules</a></li>
+            </ul>
+          </li>
+          <li role="presentation" class="divider"></li>
+          <li class="small text-muted dropdown-meta text-center font-brand-regular">
+            <ul class="list-inline">
+              <!-- Social media links -->
+              <li>
+                <a href="https://www.facebook.com/trustroots.org"
+                   class="text-muted"
+                   aria-label="Trustroots at Facebook">
+                  Facebook
+                </a>
+              </li>
+              <li>
+                <a href="https://twitter.com/trustroots"
+                   class="text-muted"
+                   aria-label="Trustroots at Twitter">
+                  Twitter
+                </a>
+              </li>
+              <li>
+                <a href="https://www.instagram.com/trustroots_org/"
+                   class="text-muted"
+                   aria-label="Trustroots at Instagram">
+                  Instagram
+                </a>
+              </li>
+            </ul>
           </li>
         </ul>
       </li>

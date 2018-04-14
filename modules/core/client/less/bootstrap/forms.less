@@ -83,3 +83,43 @@ label + .checkbox {
     padding: 0;
   }
 }
+
+// Input without any borders and other visual cues
+.input-plain {
+  border-color: transparent;
+  background: transparent;
+  color: @text-color;
+  &, &:focus, &:active {
+    box-shadow: none;
+    outline: none;
+  }
+}
+
+// A special group to build mobile friendly number stepper controllers
+// [-][number][+]
+.input-group-stepper {
+  max-width: 200px;
+  @media (max-width: @screen-xs) {
+    margin: 0 auto;
+  }
+  .btn {
+    &, &:focus {
+      outline: none;
+    }
+  }
+  input {
+    margin: 0 1px;
+    font-size: 28px;
+    line-height: 28px;
+    // Leave number input clickable but hide special appearance
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+    }
+    &:focus {
+      box-shadow: none;
+      border-color: transparent;
+      color: @brand-primary;
+    }
+  }
+}

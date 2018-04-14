@@ -3,10 +3,13 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
+    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     async = require('async'),
     git = require('git-rev'),
+    semver = require('semver'),
     mongoose = require('mongoose'),
     Offer = mongoose.model('Offer'),
     User = mongoose.model('User');
@@ -14,8 +17,8 @@ var path = require('path'),
 /**
  * Get count of all public users
  */
-exports.getUsersCount = function(callback) {
-  User.count({ public: true }, function(err, count) {
+exports.getUsersCount = function (callback) {
+  User.count({ public: true }, function (err, count) {
     if (err) {
       callback(err);
       return;
@@ -27,7 +30,7 @@ exports.getUsersCount = function(callback) {
 /**
  * Get count of all public users
  */
-exports.getExternalSiteCount = function(site, callback) {
+exports.getExternalSiteCount = function (site, callback) {
   var validSites = ['bewelcome', 'couchsurfing', 'warmshowers', 'facebook', 'twitter', 'github'];
 
   // Validate site
@@ -59,7 +62,26 @@ exports.getExternalSiteCount = function(site, callback) {
       break;
   }
 
-  User.count(query, function(err, count) {
+  User.count(query, function (err, count) {
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, parseInt(count, 10) || 0);
+  });
+};
+
+/**
+ * Get count of all public users
+ */
+exports.getMeetOffersCount = function (callback) {
+  Offer.count({
+    type: 'meet',
+    $or: [
+      { validUntil: { $gte: new Date() } },
+      { validUntil: { $exists: false } }
+    ]
+  }, function (err, count) {
     if (err) {
       callback(err);
       return;
@@ -70,16 +92,25 @@ exports.getExternalSiteCount = function(site, callback) {
 
 /**
  * Get count of hosting offers
- * Callback will be called with Object `{ yes: Int, maybe: Int }`
+ * Callback will be called with Object `{ yes: Int, maybe: Int, no: Int }`
  */
-exports.getOffersCount = function(callback) {
-  Offer.aggregate([{
-    $group: {
-      _id: '$status',
-      count: { $sum: 1 }
+exports.getHostOffersCount = function (callback) {
+  Offer.aggregate([
+    {
+      $match: {
+        type: 'host'
+      }
+    },
+    {
+      $group: {
+        _id: '$status',
+        count: {
+          $sum: 1
+        }
+      }
     }
-  }])
-  .exec(function(err, counters) {
+  ],
+  function (err, counters) {
     if (err) {
       callback(err);
       return;
@@ -103,15 +134,18 @@ exports.getOffersCount = function(callback) {
     // ]
     var values = {
       yes: 0,
-      maybe: 0
+      maybe: 0,
+      no: 0
     };
+
     if (counters && counters.length > 0) {
-      counters.forEach(function(counter) {
-        if (['yes', 'maybe'].indexOf(counter._id) !== -1) {
+      counters.forEach(function (counter) {
+        if (['yes', 'maybe', 'no'].indexOf(counter._id) !== -1) {
           values[counter._id] = counter.count || 0;
         }
       });
     }
+
     callback(null, values);
   });
 };
@@ -119,12 +153,12 @@ exports.getOffersCount = function(callback) {
 /**
  * Get count of newsletter subscriptions
  */
-exports.getNewsletterSubscriptionsCount = function(callback) {
+exports.getNewsletterSubscriptionsCount = function (callback) {
   User.count({
     newsletter: true,
     public: true
   },
-  function(err, count) {
+  function (err, count) {
     if (err) {
       callback(err);
       return;
@@ -136,7 +170,7 @@ exports.getNewsletterSubscriptionsCount = function(callback) {
 /**
  * Get count of registered push notifications
  */
-exports.getPushRegistrationCount = function(callback) {
+exports.getPushRegistrationCount = function (callback) {
   User.count({
     public: true,
     pushRegistration: {
@@ -144,7 +178,7 @@ exports.getPushRegistrationCount = function(callback) {
       // `pushRegistration` array should not be empty
       $not: { $size: 0 }
     }
-  }, function(err, count) {
+  }, function (err, count) {
     if (err) {
       callback(err);
       return;
@@ -156,7 +190,7 @@ exports.getPushRegistrationCount = function(callback) {
 /**
  * Get all statistics
  */
-exports.getPublicStatistics = function(req, res) {
+exports.getPublicStatistics = function (req, res) {
 
   req.statistics = {
     connected: {},
@@ -166,8 +200,8 @@ exports.getPublicStatistics = function(req, res) {
   async.waterfall([
 
     // Total users
-    function(done) {
-      exports.getUsersCount(function(err, count) {
+    function (done) {
+      exports.getUsersCount(function (err, count) {
         if (err) {
           return done(err);
         }
@@ -177,8 +211,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // External sites - BeWelcome
-    function(done) {
-      exports.getExternalSiteCount('bewelcome', function(err, count) {
+    function (done) {
+      exports.getExternalSiteCount('bewelcome', function (err, count) {
         if (err) {
           return done(err);
         }
@@ -188,8 +222,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // External sites - Couchsurfing
-    function(done) {
-      exports.getExternalSiteCount('couchsurfing', function(err, count) {
+    function (done) {
+      exports.getExternalSiteCount('couchsurfing', function (err, count) {
         if (err) {
           return done(err);
         }
@@ -199,8 +233,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // External sites - Warmshowers
-    function(done) {
-      exports.getExternalSiteCount('warmshowers', function(err, count) {
+    function (done) {
+      exports.getExternalSiteCount('warmshowers', function (err, count) {
         if (err) {
           return done(err);
         }
@@ -210,8 +244,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // External sites - Facebook
-    function(done) {
-      exports.getExternalSiteCount('facebook', function(err, count) {
+    function (done) {
+      exports.getExternalSiteCount('facebook', function (err, count) {
         if (err) {
           return done(err);
         }
@@ -221,8 +255,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // External sites - Twitter
-    function(done) {
-      exports.getExternalSiteCount('twitter', function(err, count) {
+    function (done) {
+      exports.getExternalSiteCount('twitter', function (err, count) {
         if (err) {
           return done(err);
         }
@@ -232,8 +266,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // External sites - GitHub
-    function(done) {
-      exports.getExternalSiteCount('github', function(err, count) {
+    function (done) {
+      exports.getExternalSiteCount('github', function (err, count) {
         if (err) {
           return done(err);
         }
@@ -243,8 +277,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // Newsletter subscribers
-    function(done) {
-      exports.getNewsletterSubscriptionsCount(function(err, count) {
+    function (done) {
+      exports.getNewsletterSubscriptionsCount(function (err, count) {
         if (err) {
           return done(err);
         }
@@ -254,8 +288,8 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // Hosting stats
-    function(done) {
-      exports.getOffersCount(function(err, counter) {
+    function (done) {
+      exports.getHostOffersCount(function (err, counter) {
         if (err) {
           return done(err);
         }
@@ -267,7 +301,7 @@ exports.getPublicStatistics = function(req, res) {
 
     // Returns: 'git rev-parse HEAD'
     // @link https://www.npmjs.com/package/git-rev
-    function(done) {
+    function (done) {
       git.long(function (hash) {
         req.statistics.commit = hash || '';
         done(null);
@@ -275,16 +309,91 @@ exports.getPublicStatistics = function(req, res) {
     },
 
     // Done!
-    function() {
+    function () {
       return res.json(req.statistics);
     }
 
   ],
-  function(err) {
+  function (err) {
     if (err) {
       res.status(400).send({
         message: errorService.getErrorMessage(err)
       });
     }
   });
+};
+
+/**
+ * Collect statistics
+ *
+ * Mobile apps should show "App needs update" if this route returns headers:
+ * ```
+ * {
+ *   'x-tr-update-needed': 'Custom message to show to user.'
+ * }
+ * ```
+ */
+exports.collectStatistics = function (req, res) {
+
+  var collection = String(_.get(req, 'body.collection', ''));
+
+  var validCollections = ['mobileAppInit'];
+
+  var updateMsg = 'You should update Trustroots app or otherwise it will not continue functioning.';
+
+  if (!_.has(req, 'body.stats') || !_.isObject(req.body.stats)) {
+    res
+      .header('x-tr-update-needed', updateMsg)
+      .status(400)
+      .send({
+        message: 'Missing or invalid `stats`.'
+      });
+  }
+
+  if (!collection || validCollections.indexOf(collection) === -1) {
+    res
+      .header('x-tr-update-needed', updateMsg)
+      .status(400)
+      .send({
+        message: 'Missing or invalid `collection`.'
+      });
+  }
+
+  if (collection === 'mobileAppInit') {
+
+    var appVersion = String(_.get(req, 'body.stats.version', 'unknown'));
+    var needsUpdate = semver.satisfies(appVersion, '< 1.0.0');
+
+    // Object for statistics
+    var stats = {
+      namespace: 'mobileAppInit',
+      counts: {
+        count: 1
+      },
+      tags: {
+        // Trustroots app version (e.g. "0.2.0")
+        version: appVersion,
+        // Device year class, e.g. "2012"
+        // @link https://github.com/facebook/device-year-class
+        deviceYearClass: String(_.get(req, 'body.stats.deviceYearClass', 'unknown'))
+      },
+      meta: {
+        // Device OS (e.g. "android")
+        os: String(_.get(req, 'body.stats.os', 'unknown')),
+        // Expo SDK version
+        expoVersion: String(_.get(req, 'body.stats.expoVersion', 'unknown'))
+      }
+    };
+
+    // Send validation result to stats
+    statService.stat(stats, function () {
+
+      // Add update header if app version so requires
+      if (needsUpdate) {
+        return res.header('x-tr-update-needed', updateMsg).json({ 'message': updateMsg });
+      }
+
+      return res.json({ 'message': 'OK' });
+    });
+  }
 };

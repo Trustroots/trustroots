@@ -10,6 +10,7 @@ var AppConfig = (function () {
 
   var appModuleName = 'trustroots';
   var appModuleVendorDependencies = [
+    'ngAria',
     'ngResource',
     'ngAnimate',
     'ngTouch',
@@ -27,6 +28,7 @@ var AppConfig = (function () {
     'ui.bootstrap.tabs',
     'ui.bootstrap.tooltip',
     'ui.bootstrap.typeahead',
+    'ui.bootstrap.datepicker',
     'angularMoment',
     'nemLogging',
     'ui-leaflet',
@@ -59,7 +61,7 @@ var AppConfig = (function () {
   }
 
   // Add a new vertical module
-  var registerModule = function(moduleName, dependencies) {
+  var registerModule = function (moduleName, dependencies) {
     // Create angular module
     angular.module(moduleName, dependencies || []);
 

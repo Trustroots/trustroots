@@ -19,7 +19,7 @@
     var appSettings = SettingsFactory.get();
 
     // Is Mapbox configuration available
-    var isMapboxAvailable = (appSettings.mapbox && angular.isObject(appSettings.mapbox.maps) && angular.isString(appSettings.mapbox.user) && angular.isString(appSettings.mapbox.publicKey));
+    var isMapboxAvailable = (appSettings.mapbox && angular.isObject(appSettings.mapbox.maps) && appSettings.mapbox.user && appSettings.mapbox.publicKey);
 
     // Location for "improve this map"-links
     var location = LocationService.getDefaultLocation(3);
@@ -47,7 +47,7 @@
           token: appSettings.mapbox.publicKey
         },
         layerOptions: {
-          attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank">© Mapbox © OpenStreetMap</a>',
+          attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank" rel="noopener">© Mapbox © OpenStreetMap</a>',
           continuousWorld: true,
           TRStyle: TRStyle || 'streets' // Not native Leaflet key, required by our layer switch
         }
@@ -72,12 +72,15 @@
       }
 
       // Add feedback link to attribution info
-      layer.layerOptions.attribution += ' <a href="https://www.mapbox.com/map-feedback/#' +
-                                            feedbackLayer + '/' +
-                                            location.lng + '/' +
-                                            location.lat + '/' +
-                                            location.zoom + '" target="_blank" class="improve-map">Improve the underlying map</a>';
-
+      layer.layerOptions.attribution +=
+        ' <a href="https://www.mapbox.com/map-feedback/#' +
+        feedbackLayer + '/' +
+        location.lng + '/' +
+        location.lat + '/' +
+        location.zoom + '" ' +
+        'target="_blank" rel="noopener" class="improve-map">' +
+        'Improve the underlying map' +
+        '</a>';
 
       return layer;
     }
@@ -114,7 +117,14 @@
           url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
           layerOptions: {
             subdomains: ['a', 'b', 'c'],
-            attribution: '<a href="https://www.openstreetmap.org/" target="_blank">© OpenStreetMap</a> <a href="https://www.openstreetmap.org/login#map=' + location.zoom + '/' + location.lat + '/' + location.lng + '" target="_blank" class="improve-map">Improve the underlying map</a>',
+            attribution:
+              '<a href="https://www.openstreetmap.org/" target="_blank" ' +
+              'rel="noopener">© OpenStreetMap</a> ' +
+              '<a href="https://www.openstreetmap.org/login#map=' +
+              location.zoom + '/' + location.lat + '/' + location.lng +
+              '" target="_blank" class="improve-map">' +
+              'Improve the underlying map' +
+              '</a>',
             continuousWorld: true,
             TRStyle: 'streets' // Not native Leaflet key, required by our layer switch
           }
@@ -139,10 +149,10 @@
           url: '//map1{s}.vis.earthdata.nasa.gov/wmts-webmerc/{layer}/default/{time}/{tileMatrixSet}/{z}/{y}/{x}.jpg',
           layerOptions: {
             layer: 'MODIS_Terra_CorrectedReflectance_TrueColor',
-            tileMatrixSet: 'GoogleMapsCompatible_Level9',
-            time: '2014-12-23',
+            tileMatrixSet: 'GoogleMapsCompatible_Level13',
+            time: '2017-08-22',
             subdomains: ['a', 'b', 'c'],
-            attribution: '<a href="https://wiki.earthdata.nasa.gov/display/GIBS" target="_blank">© NASA Earth Data</a>',
+            attribution: '<a href="https://wiki.earthdata.nasa.gov/display/GIBS" target="_blank" rel="noopener">© NASA Earth Data</a>',
             noWrap: true,
             continuousWorld: true,
             tileSize: 256,

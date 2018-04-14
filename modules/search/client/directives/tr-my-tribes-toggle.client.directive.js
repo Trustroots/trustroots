@@ -48,7 +48,7 @@
        * Receives an array of tribes id's from outside the directive
        * and switches this toggle off
        */
-      $scope.$watchCollection('tribeIds', function() {
+      $scope.$watchCollection('tribeIds', function () {
         if (toggled) {
           toggled = false;
           return;
@@ -67,7 +67,7 @@
           type: 'tribe'
         })
           .$promise
-          .then(function(userTribes) {
+          .then(function (userTribes) {
 
             vm.initialized = true;
 
@@ -77,12 +77,12 @@
 
             // Fill `vm.userTribes` array with ids of tribes
             var tribeIds = [];
-            angular.forEach(userTribes, function(tribe) {
+            angular.forEach(userTribes, function (tribe) {
               tribeIds.push(tribe.tag._id);
             });
             vm.userTribes = tribeIds;
           })
-          .catch(function() {
+          .catch(function () {
             vm.initialized = true;
           });
 

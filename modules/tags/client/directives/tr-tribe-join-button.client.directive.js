@@ -46,7 +46,7 @@
       /**
        * Toggle membership
        */
-      scope.toggleMembership = function() {
+      scope.toggleMembership = function () {
         scope.isLoading = true;
 
         // If user is not authenticated, redirect them to signup page
@@ -61,10 +61,10 @@
         }
 
         // Do the actual updating
-        parentCtrl.toggleMembership().then(function(isMember) {
+        parentCtrl.toggleMembership().then(function (isMember) {
           scope.isLoading = false;
           scope.isMember = isMember;
-        }, function(isMember) {
+        }, function (isMember) {
           scope.isLoading = false;
           scope.isMember = isMember;
         });

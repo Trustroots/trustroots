@@ -84,12 +84,12 @@
 
 /* Welcome-header for non-authenticated users */
 .header-welcome {
-  text-align: center;
-  padding: 5px 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 0;
   .header-more-text,
   .header-welcome-text {
-    display: inline-block;
-    padding: 0;
     font-size: 18px;
     .font-brand-light();
   }
@@ -99,15 +99,5 @@
   .header-welcome-text,
   .btn {
     margin: 0 10px;
-  }
-  // Text is visible only for bigger screen sizes
-  @media (max-width: 490px) {
-    .header-welcome-text,
-    .header-welcome-divider {
-      display: none;
-    }
-    .btn {
-      margin: 0 5px;
-    }
   }
 }

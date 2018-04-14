@@ -26,7 +26,7 @@
    * </pre>
    */
   angular.module('users').directive('trAvatar', ['$location',
-    function($location) {
+    function ($location) {
 
       // Options
       var defaultSize = 256,
@@ -36,8 +36,8 @@
         template:
           '<div ng-switch="link" ng-cloak>' +
           '  <img class="avatar avatar-{{ size }} avatar-{{ source }}" ' +
-          '       alt="Profile image for {{ ::user.displayName }}"' +
-          '       role="presentation"' +
+          '       alt=""' +
+          '       aria-hidden="true"' +
           '       ng-switch-when="false"' +
           '       ng-src="{{ avatar }}"' +
           '       draggable="false">' +
@@ -45,8 +45,8 @@
           '     ui-sref="profile.about({username: user.username})"' +
           '     aria-label="Open user profile for {{ ::user.displayName }}">' +
           '    <img class="avatar avatar-{{ size }} avatar-{{ source }}"' +
-          '         alt="Profile image for {{ ::user.displayName }}"' +
-          '         role="presentation"' +
+          '         alt=""' +
+          '         aria-hidden="true"' +
           '         ng-class="avatar-{{ size }}"' +
           '         ng-src="{{ avatar }}"' +
           '         draggable="false"></a>' +
@@ -55,7 +55,7 @@
         scope: {
           user: '=user'
         },
-        controller: ['$scope', function($scope) {
+        controller: ['$scope', function ($scope) {
 
           $scope.avatar = defaultAvatar;
           $scope.size = defaultSize;
@@ -112,11 +112,11 @@
             }
           } // determineSource()
 
-          $scope.$watch('user.avatarSource', function() {
+          $scope.$watch('user.avatarSource', function () {
             determineSource();
           });
 
-          $scope.$watch('user.updated', function() {
+          $scope.$watch('user.updated', function () {
             determineSource();
           });
 

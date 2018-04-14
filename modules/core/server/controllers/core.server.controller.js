@@ -3,7 +3,7 @@
 var path = require('path'),
     errorService = require('../services/error.server.service'),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     config = require(path.resolve('./config/config')),
     log = require(path.resolve('./config/lib/logger')),
     debug = require('debug')('tr:core:controller');
@@ -11,7 +11,7 @@ var path = require('path'),
 /**
  * Render the main application page
  */
-exports.renderIndex = function(req, res) {
+exports.renderIndex = function (req, res) {
   debug('Render index page');
 
   var renderVars = {
@@ -37,24 +37,24 @@ exports.renderIndex = function(req, res) {
     renderVars.invite = true;
   }
 
-  res.render('modules/core/server/views/index', renderVars);
+  res.render('index.server.view.html', renderVars);
 };
 
 /**
  * Render the server not found responses
  * Performs content-negotiation on the Accept HTTP header
  */
-exports.renderNotFound = function(req, res) {
+exports.renderNotFound = function (req, res) {
   debug('Render not found page');
 
   res.status(404).format({
-    'text/html': function() {
-      res.render('modules/core/server/views/404');
+    'text/html': function () {
+      res.render('404.server.view.html');
     },
-    'application/json': function() {
+    'application/json': function () {
       res.json({ message: errorService.getErrorMessageByKey('not-found') });
     },
-    'default': function() {
+    'default': function () {
       res.send(errorService.getErrorMessageByKey('not-found'));
     }
   });
@@ -64,12 +64,12 @@ exports.renderNotFound = function(req, res) {
  * Log received CSP violation report
  * See `config/lib/express.js` and `initHelmetHeaders()` for more
  */
-exports.receiveCSPViolationReport = function(req, res) {
+exports.receiveCSPViolationReport = function (req, res) {
   debug('Received CSP violation report');
 
   if (process.env.NODE_ENV !== 'test') {
     log('warn', 'CSP violation report #ljeanw', {
-      report: req.body ? textProcessor.html(req.body) : 'No report available.'
+      report: req.body ? textService.plainText(JSON.stringify(req.body)) : 'No report available.'
     });
   }
   res.status(204).json();
@@ -81,11 +81,11 @@ exports.receiveCSPViolationReport = function(req, res) {
  * @link https://helmetjs.github.io/docs/expect-ct/
  * @link https://scotthelme.co.uk/a-new-security-header-expect-ct/
  */
-exports.receiveExpectCTViolationReport = function(req, res) {
+exports.receiveExpectCTViolationReport = function (req, res) {
   debug('Received Expect-CT violation report');
   if (process.env.NODE_ENV !== 'test') {
     log('warn', 'Expect-CT violation report #3hg8ha', {
-      report: req.body ? textProcessor.html(req.body) : 'No report available.'
+      report: req.body ? textService.plainText(JSON.stringify(req.body)) : 'No report available.'
     });
   }
   res.status(204).json();
@@ -94,7 +94,7 @@ exports.receiveExpectCTViolationReport = function(req, res) {
 /**
 * Render javascript content containing service worker config.
 */
-exports.renderServiceWorkerConfig = function(req, res) {
+exports.renderServiceWorkerConfig = function (req, res) {
   debug('Render service worker config');
   res.set('Content-Type', 'text/javascript')
     .send('var FCM_SENDER_ID = ' + JSON.stringify(config.fcm.senderId) + ';\n');

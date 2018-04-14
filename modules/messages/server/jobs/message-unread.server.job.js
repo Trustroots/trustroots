@@ -43,7 +43,7 @@ var _ = require('lodash'),
     Message = mongoose.model('Message'),
     User = mongoose.model('User');
 
-module.exports = function(job, agendaDone) {
+module.exports = function (job, agendaDone) {
 
   // read timing of notifications from config
   // we expect an array of momentjs objects
@@ -96,7 +96,7 @@ function sendUnreadMessageReminders(reminder, callback) {
   async.waterfall([
 
     // Aggregate unread messages
-    function(done) {
+    function (done) {
 
       // We want to remind user about messages, which remain unread for more than `timePassed`
       // Has to be a JS Date object, not a Moment object
@@ -135,7 +135,7 @@ function sendUnreadMessageReminders(reminder, callback) {
             notificationCount: { $min: '$notificationCount' }
           }
         }
-      ], function(err, notifications) {
+      ], function (err, notifications) {
         done(err, notifications);
       });
 
@@ -149,7 +149,7 @@ function sendUnreadMessageReminders(reminder, callback) {
      *
      * We also don't want to send it when it is too late (config.limits.unreadMessageRemindersTooLate)
      */
-    function(notifications, done) {
+    function (notifications, done) {
 
       // we pick only notifications which already have count > 0
       // the first ones we want to send for sure, so we keep `notification.dontSend` undefined
@@ -163,7 +163,7 @@ function sendUnreadMessageReminders(reminder, callback) {
         Message.count({
           userFrom: notification._id.userTo,
           userTo: notification._id.userFrom
-        }, function(err, count) {
+        }, function (err, count) {
 
           var isThreadReplied = count > 0;
 
@@ -190,12 +190,12 @@ function sendUnreadMessageReminders(reminder, callback) {
     },
 
     // Fetch details for `userTo` and `userFrom`
-    function(notifications, done) {
+    function (notifications, done) {
 
       var userIds = [];
 
       // Collect all user ids from notifications
-      notifications.forEach(function(notification) {
+      notifications.forEach(function (notification) {
         userIds.push(notification._id.userTo, notification._id.userFrom);
       });
 
@@ -208,24 +208,27 @@ function sendUnreadMessageReminders(reminder, callback) {
       if (userIds.length > 0) {
         User
           .find(
-          { '_id': { $in: userIds } },
-          [
-            // Fields to get for each user:
-            'email',
-            'displayName',
-            'username',
-            'pushRegistration.token',
-            'additionalProvidersData.facebook.id',
-            'additionalProvidersData.facebook.accessToken',
-            'additionalProvidersData.facebook.accessTokenExpires'
-          ].join(' ')
+            { '_id': { $in: userIds } },
+            [
+              // Fields to get for each user:
+              'email',
+              'displayName',
+              'username',
+              // Used for web/mobile push notifications:
+              'pushRegistration.token',
+              'pushRegistration.platform',
+              // Used for FB notifications:
+              'additionalProvidersData.facebook.id',
+              'additionalProvidersData.facebook.accessToken',
+              'additionalProvidersData.facebook.accessTokenExpires'
+            ].join(' ')
           )
-          .exec(function(err, users) {
+          .exec(function (err, users) {
 
             // Re-organise users into more handy array (`collectedUsers`)
             var collectedUsers = {};
             if (users) {
-              users.forEach(function(user) {
+              users.forEach(function (user) {
                 // @link https://lodash.com/docs/#set
                 // _.set(object, path, value)
                 _.set(collectedUsers, user._id.toString(), user);
@@ -240,7 +243,7 @@ function sendUnreadMessageReminders(reminder, callback) {
     },
 
     // Send Notifications
-    function(users, notifications, done) {
+    function (users, notifications, done) {
 
       // No notifications
       if (!notifications.length) {
@@ -272,13 +275,13 @@ function sendUnreadMessageReminders(reminder, callback) {
         // Process first emails, then FB notifications
         // After both are done, calls `notificationCallback(err, res)`
         async.series({
-          email: function(callback) {
+          email: function (callback) {
             emailService.sendMessagesUnread(userFrom, userTo, notification, callback);
           },
-          facebook: function(callback) {
+          facebook: function (callback) {
             facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, callback);
           },
-          push: function(callback) {
+          push: function (callback) {
             pushService.notifyMessagesUnread(userFrom, userTo, notification, callback);
           }
         }, notificationCallback);
@@ -290,7 +293,7 @@ function sendUnreadMessageReminders(reminder, callback) {
 
       // Assign a final callback to work queue
       // All notification jobs done, continue
-      notificationsQueue.drain = function(err) {
+      notificationsQueue.drain = function (err) {
         // Log detected error but don't stop processing this job because of it
         // Otherwise this job might get stuck infinitely for some notification
         if (err) {
@@ -305,7 +308,7 @@ function sendUnreadMessageReminders(reminder, callback) {
     },
 
     // Update notificationCount of messages
-    function(notifications, done) {
+    function (notifications, done) {
 
       // No notifications
       if (!notifications.length) {
@@ -318,7 +321,7 @@ function sendUnreadMessageReminders(reminder, callback) {
       // Collect message ids for updating documents to `notified:true` later
       for (var i = 0, len = notifications.length; i < len; i++) {
         if (notifications[i].messages) {
-          notifications[i].messages.forEach(function(message) {
+          notifications[i].messages.forEach(function (message) {
             messageIds.push(message.id);
           });
         }
@@ -328,7 +331,7 @@ function sendUnreadMessageReminders(reminder, callback) {
       if (!messageIds.length) {
         // Log the failure to send the notification
         log('warn', 'No messages to set notified. This probably should not happen. #hg38vs');
-  //
+        //
         return done(null);
       }
 
@@ -340,7 +343,7 @@ function sendUnreadMessageReminders(reminder, callback) {
         { _id: { '$in': messageIds } },
         { $set: { notificationCount: reminderOrder + 1 } },
         { multi: true },
-        function(err) {
+        function (err) {
           if (err) {
             // Log the failure to send the notification
             log('error', 'Error while marking messages as notified. #9ehvbn', {
@@ -353,7 +356,7 @@ function sendUnreadMessageReminders(reminder, callback) {
 
     }
 
-  ], function(err) {
+  ], function (err) {
     // Wrap it up
     //
     return callback(err);

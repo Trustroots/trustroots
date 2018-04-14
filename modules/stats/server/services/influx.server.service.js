@@ -12,7 +12,7 @@ var path = require('path'),
 /**
  * Get InfluxDB Client
  */
-var getClient = function(callback) {
+var getClient = function (callback) {
 
   // Check that influxdb is enabled and that we have a host and database value.
   var enabled = _.get(config, 'influxdb.enabled');
@@ -52,7 +52,7 @@ var getClient = function(callback) {
  * tag_value
  * @param {function} callback - expected to be like function (err, result) {}
  */
-var writeMeasurement = function(measurementName, fields, tags, callback) {
+var writeMeasurement = function (measurementName, fields, tags, callback) {
 
   var errorMessage;
 
@@ -107,7 +107,7 @@ var writeMeasurement = function(measurementName, fields, tags, callback) {
     delete fields.time;
   }
 
-  exports._getClient(function(err, client) {
+  exports._getClient(function (err, client) {
     if (err) {
       return callback(err);
     }
@@ -115,20 +115,20 @@ var writeMeasurement = function(measurementName, fields, tags, callback) {
     client.writeMeasurement(measurementName, [
       point
     ])
-    .then(function() {
-      if (callback) return callback();
-    })
-    .catch(function(err) {
+      .then(function () {
+        if (callback) return callback();
+      })
+      .catch(function (err) {
       // Log the failure
-      log('error', 'InfluxDB Service: Error while writing to InfluxDB #fj38hh', {
-        error: err,
-        measurement: measurementName,
-        fields: fields,
-        tags: tags
-      });
+        log('error', 'InfluxDB Service: Error while writing to InfluxDB #fj38hh', {
+          error: err,
+          measurement: measurementName,
+          fields: fields,
+          tags: tags
+        });
 
-      return callback(err);
-    });
+        return callback(err);
+      });
   });
 };
 
@@ -179,7 +179,7 @@ var writeMeasurement = function(measurementName, fields, tags, callback) {
  * @param {Function} callback
  *
  */
-var stat = function(stat, callback) {
+var stat = function (stat, callback) {
 
   // when influxdb is disabled, log info and finish without error
   var enabled = _.get(config, 'influxdb.enabled');

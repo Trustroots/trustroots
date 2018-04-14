@@ -16,7 +16,7 @@
     var defaultLocation = LocationService.getDefaultLocation(6);
 
     // Make cache id unique for this user
-    var cachePrefix = (Authentication.user) ? 'search.mapCenter.' + Authentication.user._id : 'search.mapCenter';
+    var cachePrefix = Authentication.user ? 'search.mapCenter.' + Authentication.user._id : 'search.mapCenter';
 
     var service = {
       getMapCenter: getMapCenter,
@@ -29,7 +29,7 @@
      * Return map location from cache or fallback to default location
      */
     function getMapCenter() {
-      return $q(function(resolve) {
+      return $q(function (resolve) {
 
         // Is local/sessionStorage supported? This might fail in browser's incognito mode
         if (locker.supported()) {

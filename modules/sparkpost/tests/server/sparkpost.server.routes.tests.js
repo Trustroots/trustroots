@@ -16,11 +16,11 @@ var app,
 /**
  * Sparkpost routes tests
  */
-describe('Sparkpost CRUD tests', function() {
+describe('Sparkpost CRUD tests', function () {
 
-  describe('Webhook endpoint', function() {
+  describe('Webhook endpoint', function () {
 
-    before(function(done) {
+    before(function (done) {
       // Get application
       app = express.init(mongoose.connection.db);
       agent = request.agent(app);
@@ -41,16 +41,16 @@ describe('Sparkpost CRUD tests', function() {
       done();
     });
 
-    it('Should not be able to request using GET method', function(done) {
+    it('Should not be able to request using GET method', function (done) {
       agent.get('/api/sparkpost/webhook')
         .expect(404)
         .end(done);
     });
 
-    it('Should not be allowed to access endpoint without credentials', function(done) {
+    it('Should not be allowed to access endpoint without credentials', function (done) {
       agent.post('/api/sparkpost/webhook')
         .expect(401)
-        .end(function(err, res) {
+        .end(function (err, res) {
 
           res.headers['www-authenticate'].should.equal('Basic realm="Knock Knock"');
           res.body.message.should.equal('Access denied');
@@ -60,14 +60,14 @@ describe('Sparkpost CRUD tests', function() {
         });
     });
 
-    it('Should not be allowed to access endpoint with wrong credentials', function(done) {
+    it('Should not be allowed to access endpoint with wrong credentials', function (done) {
       agent.post('/api/sparkpost/webhook')
         .auth('wrong', 'wrong')
         .expect(401)
         .end(done);
     });
 
-    it('Should be allowed to access endpoint with credentials', function(done) {
+    it('Should be allowed to access endpoint with credentials', function (done) {
       agent.post('/api/sparkpost/webhook')
         .auth(config.sparkpostWebhook.username, config.sparkpostWebhook.password)
         .send(events)

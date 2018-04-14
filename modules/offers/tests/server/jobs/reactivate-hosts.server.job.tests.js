@@ -17,15 +17,15 @@ var path = require('path'),
  */
 var user,
     _user,
-    offer,
-    _offer,
+    offerHost,
+    _offerHost,
     reactivateHostsJobHandler;
 
-describe('Job: reactivate members with hosting offer status set to "no"', function() {
+describe('Job: reactivate members with hosting offer status set to "no"', function () {
 
   var jobs = testutils.catchJobs();
 
-  before(function() {
+  before(function () {
     reactivateHostsJobHandler = require(path.resolve('./modules/offers/server/jobs/reactivate-hosts.server.job'));
   });
 
@@ -54,7 +54,8 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
   // Create a hosting offer
   beforeEach(function (done) {
 
-    _offer = {
+    _offerHost = {
+      type: 'host',
       user: user._id,
       status: 'no',
       description: '<p>I can host! :)</p>',
@@ -65,18 +66,18 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       locationFuzzy: [52.50155039101136, 13.42255019882177]
     };
 
-    offer = new Offer(_offer);
+    offerHost = new Offer(_offerHost);
 
     // Save offer to the test db
-    offer.save(done);
+    offerHost.save(done);
   });
 
-  it('Send reactivation email for offers modified longer than configured limit ago', function(done) {
+  it('Send reactivation email for offers modified longer than configured limit ago', function (done) {
 
     // This should not be there before notifications are sent
-    should.not.exist(offer.reactivateReminderSent);
+    should.not.exist(offerHost.reactivateReminderSent);
 
-    reactivateHostsJobHandler({}, function(err) {
+    reactivateHostsJobHandler({}, function (err) {
       if (err) return done(err);
 
       jobs.length.should.equal(1);
@@ -84,7 +85,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       jobs[0].data.subject.should.equal(_user.firstName + ', start hosting on Trustroots again?');
       jobs[0].data.to.address.should.equal(_user.email);
 
-      Offer.findOne({ user: user._id }, function(err, offerRes) {
+      Offer.findOne({ user: user._id }, function (err, offerRes) {
         if (err) return done(err);
         should.exist(offerRes.reactivateReminderSent);
         done();
@@ -93,16 +94,16 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     });
   });
 
-  it('Send reactivation email for un-confirmed profiles', function(done) {
+  it('Send reactivation email for un-confirmed profiles', function (done) {
 
     // This should not be there before notifications are sent
-    should.not.exist(offer.reactivateReminderSent);
+    should.not.exist(offerHost.reactivateReminderSent);
 
     user.public = false;
-    user.save(function(err) {
+    user.save(function (err) {
       if (err) return done(err);
 
-      reactivateHostsJobHandler({}, function(err) {
+      reactivateHostsJobHandler({}, function (err) {
         if (err) return done(err);
 
         jobs.length.should.equal(1);
@@ -110,7 +111,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
         jobs[0].data.subject.should.equal(_user.firstName + ', start hosting on Trustroots again?');
         jobs[0].data.to.address.should.equal(_user.email);
 
-        Offer.findOne({ user: user._id }, function(err, offerRes) {
+        Offer.findOne({ user: user._id }, function (err, offerRes) {
           if (err) return done(err);
           should.exist(offerRes.reactivateReminderSent);
           done();
@@ -119,11 +120,11 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     });
   });
 
-  it('Do not send reactivation email for offers modified less than configured limit ago', function(done) {
-    offer.updated = new Date();
-    offer.save(function(err) {
+  it('Do not send reactivation email for offers modified less than configured limit ago', function (done) {
+    offerHost.updated = new Date();
+    offerHost.save(function (err) {
       if (err) return done(err);
-      reactivateHostsJobHandler({}, function(err) {
+      reactivateHostsJobHandler({}, function (err) {
         if (err) return done(err);
         jobs.length.should.equal(0);
         done();
@@ -131,8 +132,74 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     });
   });
 
+  it('Do not send reactivation email for "yes" hosting offers', function (done) {
+    offerHost.status = 'yes';
+    offerHost.save(function (err) {
+      if (err) return done(err);
+      reactivateHostsJobHandler({}, function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(0);
+        done();
+      });
+    });
+  });
+
+  it('Do not send reactivation email for "maybe" hosting offers', function (done) {
+    offerHost.status = 'maybe';
+    offerHost.save(function (err) {
+      if (err) return done(err);
+      reactivateHostsJobHandler({}, function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(0);
+        done();
+      });
+    });
+  });
+
+  it('Do not send reactivation email for hosting offers without status', function (done) {
+    offerHost.status = undefined;
+    offerHost.save(function (err) {
+      if (err) return done(err);
+      reactivateHostsJobHandler({}, function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(0);
+        done();
+      });
+    });
+  });
+
+  it('Do not send reactivation email for non-hosting offers', function (done) {
+    var _offerMeet = {
+      type: 'meet',
+      user: user._id,
+      updated: moment().subtract(moment.duration(config.limits.timeToReactivateHosts)),
+      location: [52.498981209298776, 13.418329954147339],
+      locationFuzzy: [52.50155039101136, 13.42255019882177]
+    };
+
+    var offerMeet = new Offer(_offerMeet);
+
+    // Save meet offer to db
+    offerMeet.save(function (err) {
+      if (err) return done(err);
+
+      // Remove host offer as we don't want it to interfer with this test
+      offerHost.remove(function (err) {
+        if (err) return done(err);
+
+        reactivateHostsJobHandler({}, function (err) {
+          if (err) return done(err);
+          jobs.length.should.equal(0);
+          done();
+        });
+
+      });
+
+    });
+  });
+
   afterEach(function (done) {
-    Offer.remove().exec(function() {
+    Offer.remove().exec(function () {
       User.remove().exec(done);
     });
   });

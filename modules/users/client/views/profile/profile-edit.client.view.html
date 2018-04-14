@@ -1,18 +1,31 @@
 <!-- Navigation for small screens -->
-<nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block profile-navbar-mobile">
+<nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block">
   <div class="container">
     <ul class="nav navbar-nav" role="toolbar" aria-label="Profile actions">
       <li ui-sref-active="active">
-        <a ui-sref="profile-edit.about">Profile</a>
+        <a ui-sref="profile-edit.about" aria-label="Profile">
+          <i class="icon-user icon-2x" role="presentation"></i>
+        </a>
       </li>
       <li ui-sref-active="active">
-        <a ui-sref="profile-edit.photo">Photo</a>
+        <a ui-sref="profile-edit.locations" aria-label="Locations">
+          <i class="icon-globe icon-2x" role="presentation"></i>
+        </a>
       </li>
       <li ui-sref-active="active">
-        <a ui-sref="profile-edit.networks">Networks</a>
+        <a ui-sref="profile-edit.photo" aria-label="Photo">
+          <i class="icon-picture-change icon-2x" role="presentation"></i>
+        </a>
       </li>
       <li ui-sref-active="active">
-        <a ui-sref="profile-edit.account">Account</a>
+        <a ui-sref="profile-edit.networks" aria-label="Networks">
+          <i class="icon-link icon-2x" role="presentation"></i>
+        </a>
+      </li>
+      <li ui-sref-active="active">
+        <a ui-sref="profile-edit.account" aria-label="Account">
+          <i class="icon-cog icon-2x" role="presentation"></i>
+        </a>
       </li>
     </ul>
   </div>
@@ -28,6 +41,9 @@
           aria-label="Profile actions">
         <li ui-sref-active="active">
           <a ui-sref="profile-edit.about">Edit profile</a>
+        </li>
+        <li ui-sref-active="active">
+          <a ui-sref="profile-edit.locations">Locations</a>
         </li>
         <li ui-sref-active="active">
           <a ui-sref="profile-edit.photo">Photo</a>

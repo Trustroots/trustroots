@@ -17,7 +17,7 @@
       scope: {
         profile: '='
       },
-      controller: ['$scope', 'Languages', function($scope, Languages) {
+      controller: ['$scope', 'Languages', function ($scope, Languages) {
 
         $scope.languageNames = Languages.get('object');
 

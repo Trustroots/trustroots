@@ -33,11 +33,11 @@ var app,
 /**
  * Contact routes tests
  */
-describe('Contact CRUD tests', function() {
+describe('Contact CRUD tests', function () {
 
   var jobs = testutils.catchJobs();
 
-  before(function(done) {
+  before(function (done) {
     // Get application
     app = express.init(mongoose.connection.db);
     agent = request.agent(app);
@@ -45,7 +45,7 @@ describe('Contact CRUD tests', function() {
     done();
   });
 
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     // Create userFrom credentials
     credentials = {
       username: 'loremipsum',
@@ -127,19 +127,19 @@ describe('Contact CRUD tests', function() {
     });
 
     // Save user to the test db
-    user1.save(function(err, user1SaveRes) {
+    user1.save(function (err, user1SaveRes) {
       should.not.exist(err);
       user1Id = user1SaveRes._id;
       user1 = user1SaveRes;
-      user2.save(function(err, user2SaveRes) {
+      user2.save(function (err, user2SaveRes) {
         should.not.exist(err);
         user2Id = user2SaveRes._id;
         user2 = user2SaveRes;
-        user3.save(function(err, user3SaveRes) {
+        user3.save(function (err, user3SaveRes) {
           should.not.exist(err);
           user3Id = user3SaveRes._id;
           user3 = user3SaveRes;
-          user4.save(function(err, user4SaveRes) {
+          user4.save(function (err, user4SaveRes) {
             should.not.exist(err);
             user4Id = user4SaveRes._id;
             user4 = user4SaveRes;
@@ -156,12 +156,12 @@ describe('Contact CRUD tests', function() {
             contact3.userFrom = user1Id;
             contact3.userTo = user3Id;
 
-            contact1.save(function(err, contact1SaveRes) {
+            contact1.save(function (err, contact1SaveRes) {
               should.not.exist(err);
               contact1Id = contact1SaveRes._id;
-              contact2.save(function(err) {
+              contact2.save(function (err) {
                 should.not.exist(err);
-                contact3.save(function(err) {
+                contact3.save(function (err) {
                   should.not.exist(err);
                   return done();
                 });
@@ -173,10 +173,10 @@ describe('Contact CRUD tests', function() {
     });
   });
 
-  it('should not be able to read contact list if not logged in', function(done) {
+  it('should not be able to read contact list if not logged in', function (done) {
     agent.get('/api/contacts/' + user2Id)
       .expect(403)
-      .end(function(contactsReadErr, contactsReadRes) {
+      .end(function (contactsReadErr, contactsReadRes) {
 
         contactsReadRes.body.message.should.equal('Forbidden.');
 
@@ -185,10 +185,10 @@ describe('Contact CRUD tests', function() {
       });
   });
 
-  it('should not be able to read common contacts list if not logged in', function(done) {
+  it('should not be able to read common contacts list if not logged in', function (done) {
     agent.get('/api/contacts/' + user2Id + '/common')
       .expect(403)
-      .end(function(contactSaveErr, contactSaveRes) {
+      .end(function (contactSaveErr, contactSaveRes) {
 
         contactSaveRes.body.message.should.equal('Forbidden.');
 
@@ -197,10 +197,10 @@ describe('Contact CRUD tests', function() {
       });
   });
 
-  it('should not be able to delete contact if not logged in', function(done) {
+  it('should not be able to delete contact if not logged in', function (done) {
     agent.delete('/api/contact/' + contact1Id)
       .expect(403)
-      .end(function(contactDelErr, contactDelRes) {
+      .end(function (contactDelErr, contactDelRes) {
         // Handle contact del error
         if (contactDelErr) return done(contactDelErr);
 
@@ -211,24 +211,24 @@ describe('Contact CRUD tests', function() {
       });
   });
 
-  context('logged in', function() {
+  context('logged in', function () {
 
-    beforeEach(function(done) {
+    beforeEach(function (done) {
 
       agent.post('/api/auth/signin')
         .send(credentials) // = user 1
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           done(signinErr);
         });
 
     });
 
-    it('should be able to get a contact by user id', function(done) {
+    it('should be able to get a contact by user id', function (done) {
       // Get the contact for User1 -> User2 : Contact1
       agent.get('/api/contact-by/' + user2Id)
         .expect(200)
-        .end(function(contactByErr, contactByRes) {
+        .end(function (contactByErr, contactByRes) {
           // Handle contact by error
           if (contactByErr) return done(contactByErr);
 
@@ -247,11 +247,11 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    it('should be able to read contact list and get correct fields for user', function(done) {
+    it('should be able to read contact list and get correct fields for user', function (done) {
       // Get contacts from the other user
       agent.get('/api/contacts/' + user3Id)
         .expect(200)
-        .end(function(contactsGetErr, contactsGetRes) {
+        .end(function (contactsGetErr, contactsGetRes) {
           // Handle contact get error
           if (contactsGetErr) return done(contactsGetErr);
 
@@ -274,11 +274,11 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    it('should be able to read contact list of other users', function(done) {
+    it('should be able to read contact list of other users', function (done) {
       // Get contacts from the other user
       agent.get('/api/contacts/' + user3Id)
         .expect(200)
-        .end(function(contactsGetErr, contactsGetRes) {
+        .end(function (contactsGetErr, contactsGetRes) {
           // Handle contact get error
           if (contactsGetErr) return done(contactsGetErr);
 
@@ -313,11 +313,11 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    it('should be able to read own contact list and see unconfirmed contacts', function(done) {
+    it('should be able to read own contact list and see unconfirmed contacts', function (done) {
       // Get contacts from the other user
       agent.get('/api/contacts/' + user1Id)
         .expect(200)
-        .end(function(contactsGetErr, contactsGetRes) {
+        .end(function (contactsGetErr, contactsGetRes) {
           // Handle contact get error
           if (contactsGetErr) return done(contactsGetErr);
 
@@ -352,11 +352,11 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    it('should be able to read my own common contacts list', function(done) {
+    it('should be able to read my own common contacts list', function (done) {
       // Get contacts from the authenticated user
       agent.get('/api/contacts/' + user1Id + '/common')
         .expect(200)
-        .end(function(contactsGetErr, contactsGetRes) {
+        .end(function (contactsGetErr, contactsGetRes) {
           // Handle contact get error
           if (contactsGetErr) return done(contactsGetErr);
 
@@ -371,11 +371,11 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    it('should be able to read common contacts list', function(done) {
+    it('should be able to read common contacts list', function (done) {
       // Get contacts from the other user
       agent.get('/api/contacts/' + user2Id + '/common')
         .expect(200)
-        .end(function(contactsGetErr, contactsGetRes) {
+        .end(function (contactsGetErr, contactsGetRes) {
           // Handle contact get error
           if (contactsGetErr) return done(contactsGetErr);
 
@@ -390,12 +390,12 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    it('should be able to create a new unconfirmed contact', function(done) {
+    it('should be able to create a new unconfirmed contact', function (done) {
       // Create a contact User1 -> User4
       agent.post('/api/contact')
         .send({ friendUserId: user4Id })
         .expect(200)
-        .end(function(contactAddErr, contactAddRes) {
+        .end(function (contactAddErr, contactAddRes) {
           // Handle contact add error
           if (contactAddErr) return done(contactAddErr);
 
@@ -409,7 +409,7 @@ describe('Contact CRUD tests', function() {
           // Get the contact for User4 that we just created
           agent.get('/api/contact-by/' + user4Id)
             .expect(200)
-            .end(function(contactByErr, contactByRes) {
+            .end(function (contactByErr, contactByRes) {
               // Handle contact by error
               if (contactByErr) return done(contactByErr);
 
@@ -429,23 +429,23 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    it('should not be able to create a duplicate contact', function(done) {
+    it('should not be able to create a duplicate contact', function (done) {
       // Try and create a contact User1 -> User2
       agent.post('/api/contact')
         .send({ friendUserId: user2Id })
         .expect(409)
-        .end(function(contactAddErr) {
+        .end(function (contactAddErr) {
           // Handle contact add error
           if (contactAddErr) return done(contactAddErr);
           return done();
         });
     });
 
-    it('should be able to confirm a contact', function(done) {
+    it('should be able to confirm a contact', function (done) {
       // Confirm the un-confirmed Contact1 between User1 -> User2
       agent.put('/api/contact/' + contact1Id)
         .expect(200)
-        .end(function(contactConfirmErr, contactConfirmRes) {
+        .end(function (contactConfirmErr, contactConfirmRes) {
           // Handle contact confirm error
           if (contactConfirmErr) return done(contactConfirmErr);
 
@@ -463,10 +463,10 @@ describe('Contact CRUD tests', function() {
 
     });
 
-    it('should be able to delete contact', function(done) {
+    it('should be able to delete contact', function (done) {
       agent.delete('/api/contact/' + contact1Id)
         .expect(200)
-        .end(function(contactDelErr) {
+        .end(function (contactDelErr) {
 
           // Handle contact del error
           if (contactDelErr) return done(contactDelErr);
@@ -474,7 +474,7 @@ describe('Contact CRUD tests', function() {
           // The contact should be gone now
           agent.get('/api/contact-by/' + user2Id)
             .expect(404)
-            .end(function(contactByErr, contactByRes) {
+            .end(function (contactByErr, contactByRes) {
               // Handle contact by error
               if (contactByErr) return done(contactByErr);
 
@@ -487,30 +487,30 @@ describe('Contact CRUD tests', function() {
         });
     });
 
-    context('with email sending error', function() {
+    context('with email sending error', function () {
 
       var originalNow;
 
-      beforeEach(function() {
+      beforeEach(function () {
         // Set the agenda.now() function to fail
         originalNow = agenda.now;
-        agenda.now = function(type, data, callback) {
-          process.nextTick(function() {
+        agenda.now = function (type, data, callback) {
+          process.nextTick(function () {
             callback(new Error('fail!'));
           });
         };
       });
 
-      afterEach(function() {
+      afterEach(function () {
         agenda.now = originalNow;
       });
 
-      it('should fail to create contact', function(done) {
+      it('should fail to create contact', function (done) {
         // Try and create a contact User1 -> User4
         agent.post('/api/contact')
           .send({ friendUserId: user4Id })
           .expect(400)
-          .end(function(contactAddErr, contactAddRes) {
+          .end(function (contactAddErr, contactAddRes) {
             // Handle contact add error
             if (contactAddErr) return done(contactAddErr);
 
@@ -528,9 +528,9 @@ describe('Contact CRUD tests', function() {
 
   });
 
-  afterEach(function(done) {
+  afterEach(function (done) {
     // Uggggly pyramid revenge!
-    User.remove().exec(function() {
+    User.remove().exec(function () {
       Contact.remove().exec(done);
     });
   });

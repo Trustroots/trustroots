@@ -100,12 +100,12 @@ describe('Tag CRUD tests', function () {
     });
   });
 
-  it('should be able to read tribes when not logged in', function(done) {
+  it('should be able to read tribes when not logged in', function (done) {
 
     // Read tribes
     agent.get('/api/tribes')
       .expect(200)
-      .end(function(tribesReadErr, tribesReadRes) {
+      .end(function (tribesReadErr, tribesReadRes) {
 
         tribesReadRes.body.should.have.length(1);
         tribesReadRes.body[0].tribe.should.equal(true);
@@ -115,36 +115,36 @@ describe('Tag CRUD tests', function () {
         tribesReadRes.body[0].attribution.should.equal(_tribe.attribution);
         tribesReadRes.body[0].attribution_url.should.equal(_tribe.attribution_url);
         tribesReadRes.body[0].count.should.eql(0);
+        tribesReadRes.body[0].new.should.equal(true); // Virtual field
+        should.exist(tribesReadRes.body[0].created);
         should.exist(tribesReadRes.body[0]._id);
 
         // `color` and `image_UUID` are published only for tribes
         should.exist(tribesReadRes.body[0].color);
         tribesReadRes.body[0].image_UUID.should.equal(_tribe.image_UUID);
 
-
         // These are at the model, but aren't exposed
         should.not.exist(tribesReadRes.body[0].synonyms);
         should.not.exist(tribesReadRes.body[0].labelHistory);
         should.not.exist(tribesReadRes.body[0].slugHistory);
-        should.not.exist(tribesReadRes.body[0].created);
 
         // Call the assertion callback
         return done(tribesReadErr);
       });
   });
 
-  it('should be able to read tribes when logged in', function(done) {
+  it('should be able to read tribes when logged in', function (done) {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Read tribes
         agent.get('/api/tribes')
           .expect(200)
-          .end(function(tribesReadErr, tribesReadRes) {
+          .end(function (tribesReadErr, tribesReadRes) {
 
             tribesReadRes.body.should.have.length(1);
             tribesReadRes.body[0].tribe.should.equal(true);
@@ -153,19 +153,19 @@ describe('Tag CRUD tests', function () {
             tribesReadRes.body[0].description.should.equal(_tribe.description);
             tribesReadRes.body[0].attribution.should.equal(_tribe.attribution);
             tribesReadRes.body[0].attribution_url.should.equal(_tribe.attribution_url);
+            tribesReadRes.body[0].new.should.equal(true); // Virtual field
             tribesReadRes.body[0].count.should.eql(0);
+            should.exist(tribesReadRes.body[0].created);
             should.exist(tribesReadRes.body[0]._id);
 
             // `color` and `image_UUID` are published only for tribes
             should.exist(tribesReadRes.body[0].color);
             tribesReadRes.body[0].image_UUID.should.equal(_tribe.image_UUID);
 
-
             // These are at the model, but aren't exposed
             should.not.exist(tribesReadRes.body[0].synonyms);
             should.not.exist(tribesReadRes.body[0].labelHistory);
             should.not.exist(tribesReadRes.body[0].slugHistory);
-            should.not.exist(tribesReadRes.body[0].created);
 
             // Call the assertion callback
             return done(tribesReadErr);
@@ -174,7 +174,7 @@ describe('Tag CRUD tests', function () {
       });
   });
 
-  it('should be able to read only 2 most popular tribes', function(done) {
+  it('should be able to read only 2 most popular tribes', function (done) {
 
     // Create more tribes
     var tribe1 = new Tag(_tribe);
@@ -201,7 +201,7 @@ describe('Tag CRUD tests', function () {
             // Read tribes
             agent.get('/api/tribes?limit=2') // defaults to `&page=1`
               .expect(200)
-              .end(function(tribesReadErr, tribesReadRes) {
+              .end(function (tribesReadErr, tribesReadRes) {
 
                 tribesReadRes.body.should.have.length(2);
                 tribesReadRes.body[0].label.should.equal('Tribe 1');
@@ -217,7 +217,7 @@ describe('Tag CRUD tests', function () {
 
   });
 
-  it('should be able to read only 2 second popular tribes', function(done) {
+  it('should be able to read only 2 second popular tribes', function (done) {
 
     // Create more tribes
     var tribe1 = new Tag(_tribe);
@@ -244,7 +244,7 @@ describe('Tag CRUD tests', function () {
             // Read tribes
             agent.get('/api/tribes?limit=2&page=2')
               .expect(200)
-              .end(function(tribesReadErr, tribesReadRes) {
+              .end(function (tribesReadErr, tribesReadRes) {
 
                 tribesReadRes.body.should.have.length(2);
                 tribesReadRes.body[0].label.should.equal('Tribe 3');
@@ -260,12 +260,12 @@ describe('Tag CRUD tests', function () {
 
   });
 
-  it('should be able to read tags when not logged in', function(done) {
+  it('should be able to read tags when not logged in', function (done) {
 
     // Read tags
     agent.get('/api/tags')
       .expect(200)
-      .end(function(tagsReadErr, tagsReadRes) {
+      .end(function (tagsReadErr, tagsReadRes) {
 
         tagsReadRes.body.should.have.length(1);
         tagsReadRes.body[0].label.should.equal('Awesome Tag');
@@ -291,18 +291,18 @@ describe('Tag CRUD tests', function () {
       });
   });
 
-  it('should be able to read tags when logged in', function(done) {
+  it('should be able to read tags when logged in', function (done) {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Read tags
         agent.get('/api/tags')
           .expect(200)
-          .end(function(tagsReadErr, tagsReadRes) {
+          .end(function (tagsReadErr, tagsReadRes) {
 
             tagsReadRes.body.should.have.length(1);
             tagsReadRes.body[0].label.should.equal('Awesome Tag');
@@ -331,7 +331,7 @@ describe('Tag CRUD tests', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(function() {
+    User.remove().exec(function () {
       Tag.remove().exec(done);
     });
   });

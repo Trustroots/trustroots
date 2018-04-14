@@ -4,11 +4,13 @@
  * Module dependencies.
  */
 var _ = require('lodash'),
+    path = require('path'),
     passport = require('passport'),
     FacebookStrategy = require('passport-facebook').Strategy,
-    usersAuthentication = require('../../controllers/users.authentication.server.controller');
+    usersAuthentication = require('../../controllers/users.authentication.server.controller'),
+    log = require(path.resolve('./config/lib/logger'));
 
-module.exports = function(config) {
+module.exports = function (config) {
   // Get config parameters for the strategy
   var clientID = _.get(config, 'facebook.clientID'),
       clientSecret = _.get(config, 'facebook.clientSecret'),
@@ -16,6 +18,11 @@ module.exports = function(config) {
 
   // Don't configure the strategy if missing configuration
   if (!clientID || !clientSecret || !callbackURL) {
+    log('error', 'Cannot configure Facebook strategy due missing configuration #38h1jv', {
+      clientIDExists: Boolean(clientID),
+      clientSecretExists: Boolean(clientSecret),
+      callbackURLExists: Boolean(callbackURL)
+    });
     return;
   }
 
@@ -31,21 +38,16 @@ module.exports = function(config) {
     profileFields: [
       'id',
       'email',
-      'name',
       'first_name',
       'last_name',
-      'hometown',
-      'about',
       'gender',
-      'languages',
       'link',
-      'photos',
       'picture'
     ],
     passReqToCallback: true,
     enableProof: false
   },
-  function(req, accessToken, refreshToken, profile, done) {
+  function (req, accessToken, refreshToken, profile, done) {
     // Set the provider data and include tokens
     var providerData = profile._json;
     providerData.accessToken = accessToken;

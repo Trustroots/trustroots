@@ -6,6 +6,13 @@
   "background_color": "#12b591",
   "theme_color": "#12b591",
   "description": "Travellers community for sharing, hosting and getting people together.",
+  "prefer_related_applications": true,
+  "related_applications": [
+    {
+      "platform": "play",
+      "id": "org.trustroots.trustrootsApp"
+    }
+  ],
   "icons": [{
     "src": "/modules/core/img/icons/android/48.png",
     "sizes": "48x48",

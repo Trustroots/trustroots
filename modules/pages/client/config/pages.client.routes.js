@@ -72,34 +72,34 @@
           pageTitle: 'FAQ'
         }
       }).
-        state('faq.general', {
-          url: '',
-          templateUrl: '/modules/pages/views/faq-general.client.view.html',
-          data: {
-            pageTitle: 'FAQ - Site & community'
-          }
-        }).
-        state('faq.tribes', {
-          url: '/tribes',
-          templateUrl: '/modules/pages/views/faq-tribes.client.view.html',
-          data: {
-            pageTitle: 'FAQ - Tribes'
-          }
-        }).
-        state('faq.foundation', {
-          url: '/foundation',
-          templateUrl: '/modules/pages/views/faq-foundation.client.view.html',
-          data: {
-            pageTitle: 'FAQ - Foundation'
-          }
-        }).
-        state('faq.technology', {
-          url: '/technology',
-          templateUrl: '/modules/pages/views/faq-technology.client.view.html',
-          data: {
-            pageTitle: 'FAQ - Technology'
-          }
-        }).
+      state('faq.general', {
+        url: '',
+        templateUrl: '/modules/pages/views/faq-general.client.view.html',
+        data: {
+          pageTitle: 'FAQ - Site & community'
+        }
+      }).
+      state('faq.tribes', {
+        url: '/tribes',
+        templateUrl: '/modules/pages/views/faq-tribes.client.view.html',
+        data: {
+          pageTitle: 'FAQ - Tribes'
+        }
+      }).
+      state('faq.foundation', {
+        url: '/foundation',
+        templateUrl: '/modules/pages/views/faq-foundation.client.view.html',
+        data: {
+          pageTitle: 'FAQ - Foundation'
+        }
+      }).
+      state('faq.technology', {
+        url: '/technology',
+        templateUrl: '/modules/pages/views/faq-technology.client.view.html',
+        data: {
+          pageTitle: 'FAQ - Technology'
+        }
+      }).
       state('foundation', {
         url: '/foundation',
         templateUrl: '/modules/pages/views/foundation.client.view.html',
@@ -135,7 +135,7 @@
         footerHidden: true,
         controller:
           /* @ngInject */
-          function($state) {
+          function ($state) {
             $state.go('home');
           },
         controllerAs: 'about'

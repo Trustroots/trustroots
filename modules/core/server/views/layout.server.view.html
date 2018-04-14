@@ -10,12 +10,12 @@
   <title tr-page-title>{% if tribe %}{{ tribe.label | striptags }} - Trustroots Tribe{% else %}{{ title }}{% endif %}</title>
   <base href="/">
   <meta name="fragment" content="!">
-  {% if process.env.NODE_ENV === 'development' %}
+  {% if env === 'development' %}
     {% for cssFile in cssFiles %}<link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}">
     {% endfor %}
     <link rel="stylesheet" href="/dist/application.css?c={{appSettings.commit}}">
   {% endif %}
-  {% if process.env.NODE_ENV === 'production' %}
+  {% if env === 'production' %}
     <link rel="stylesheet" href="/dist/application.min.css?c={{appSettings.commit}}">
   {% endif %}
   {# Prefech some domains that are used for user avatars and tribe images #}
@@ -55,8 +55,8 @@
   {# Facebook #}
   {% if facebookAppId !== '' %}<meta property="fb:app_id" content="{{facebookAppId}}">{% endif %}
   {% if tribe %}
-    <meta property="og:title" content="Join {{tribe.label|striptags|addslashes}} on Trustroots">
-    <meta property="og:description" content="Join to meet, host and get hosted by Trustroots Tribe {{tribe.label|striptags|addslashes}}. Trustroots is a travellers' community for sharing, hosting and getting people together.">
+    <meta property="og:title" content="Join {{tribe.label | striptags | replace('"', '\'') }} on Trustroots">
+    <meta property="og:description" content="Join to meet, host and get hosted by Trustroots Tribe {{tribe.label | striptags | replace('"', '\'')}}. Trustroots is a travellers' community for sharing, hosting and getting people together.">
     <meta property="og:url" content="{{hostPort}}/tribes/{{tribe.slug}}">
     {% if tribe.image_UUID %}
       {# https://developers.facebook.com/docs/sharing/best-practices#images #}
@@ -81,8 +81,9 @@
   {# Twitter #}
   {% if twitterUsername %}<meta name="twitter:site" content="{{twitterUsername}}">{% endif %}
   {% if tribe %}
-    <meta name="twitter:title" content="Join {{tribe.label|striptags|addslashes}} on Trustroots">
-    <meta name="twitter:description" content="Join to meet, host and get hosted by Trustroots Tribe {{tribe.label|striptags|addslashes}}. Trustroots is a travellers' community for sharing, hosting and getting people together.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Join {{tribe.label | striptags | replace('"', '\'')}} on Trustroots">
+    <meta name="twitter:description" content="Join to meet, host and get hosted by Trustroots Tribe {{tribe.label | striptags | replace('"', '\'')}}. Trustroots is a travellers' community for sharing, hosting and getting people together.">
     <meta name="twitter:url" content="{{hostPort}}/tribes/{{tribe.slug}}">
     {% if tribe.image_UUID %}
       <meta name="twitter:image" content="https://ucarecdn.com/{{tribe.image_UUID}}/-/progressive/yes/-/scale_crop/1200x630/center/-/quality/lightest/-/format/jpeg/-/overlay/b72e2604-e926-4e17-acbd-e37c0e1f5c73/50%25x50%25/center/{{tribe.slug}}.jpg">
@@ -117,22 +118,22 @@
 <body ng-cloak
       tr-window-blur="app.onWindowBlur()"
       tr-window-focus="app.onWindowFocus()"
-      {% if siteAnnouncement.enabled && siteAnnouncement.message !== '' %}
+      {% if siteAnnouncement.enabled %}
         ng-class="{ 'is-site-announcement-visible': app.user && !app.isSiteAnnouncementClosed }"
       {% endif %}>
 
   <div id="tr-wrap">
 
     {% block header %}
-      {% include 'partials/header.server.view.html' %}
-    {% endblock %}
+      {% include './partials/header.server.view.html' %}
+    {% endblock header %}
 
     {# Flash messages #}
     <mc-messages aria-live="polite" role="status"></mc-messages>
 
     {# Site wide notifications #}
     {# Enabled from `local.js` config #}
-    {% if siteAnnouncement.enabled && siteAnnouncement.message !== '' %}
+    {% if siteAnnouncement.enabled %}
       <div class="alert alert-success site-announcement"
            ng-if="app.user && !app.isSiteAnnouncementClosed"
            aria-label="Site announcement"
@@ -147,33 +148,33 @@
       </div>
     {% endif %}
 
-    <article class="content" id="tr-main" role="main" tabindex="0">
-      {% block content %}{% endblock %}
+    <article class="content" id="tr-main" role="main" tabindex="-1">
+      {% block content %}{% endblock content %}
     </article>
 
   </div>
 
   {% block footer %}
-    {% include 'partials/footer.server.view.html' %}
-  {% endblock %}
+    {% include './partials/footer.server.view.html' %}
+  {% endblock footer %}
 
   {# Embedding constants coming from the backend #}
   <script nonce="{{ nonce }}">
-    var user = {{ user | json | safe }},
-        title = "{{title}}",
-        settings = {{ appSettings | json | safe }},
-        languages = {{ languages | json | safe }},
+    var title = "{{title}}",
+        settings = {{ appSettings | dump | safe }},
+        languages = {{ languages | dump | safe }},
         {% if facebookAppId !== '' %}facebookAppId = "{{facebookAppId}}",{% endif %}
         {% if googleAnalytics.enabled %}gaId = "{{googleAnalytics.code}}",{% endif %}
-        env = "{{ env }}";
+        env = "{{ env }}",
+        user = {{ user | dump | safe }};
   </script>
 
-  {% if process.env.NODE_ENV === 'production' %}
+  {% if env === 'production' %}
     <script src="/dist/application.min.js?c={{appSettings.commit}}"
             nonce="{{ nonce }}"></script>
-    {% endif %}
+  {% endif %}
 
-  {% if process.env.NODE_ENV === 'development' %}
+  {% if env === 'development' %}
   {% for jsFile in jsFiles %}
     <script src="/{{jsFile}}?c={{appSettings.commit}}"
             nonce="{{ nonce }}"></script>

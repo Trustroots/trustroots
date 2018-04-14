@@ -106,7 +106,7 @@ describe('Core CRUD tests', function () {
 
     it('Responses should have Expect-CT header with correct "report-uri" value', function (done) {
       agent.get('/')
-        .expect(function(res) {
+        .expect(function (res) {
 
           var header = _.get(res, 'headers.expect-ct');
 
@@ -136,7 +136,7 @@ describe('Core CRUD tests', function () {
 
     it('Responses should not have Expect-CT header with "enforce" value', function (done) {
       agent.get('/')
-        .expect(function(res) {
+        .expect(function (res) {
           var header = _.get(res, 'headers.expect-ct');
 
           if (!header || _.includes(header, 'enforce;')) {

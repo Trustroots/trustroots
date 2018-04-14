@@ -20,19 +20,16 @@
   opacity: .8;
   margin: 30px 0 0 0;
 }
-.home-tagline,
-.home-tagline-auth {
+.home-tagline {
   margin: 0 auto;
 }
 .home-join {
   margin-top: 40px;
 }
-.home-tagline,
-.home-tagline-auth {
+.home-tagline {
   text-shadow: 1px 1px 6px rgba(0, 0, 0, .6);
 }
-.home-tagline,
-.home-tagline-auth {
+.home-tagline {
   color: #fff;
   padding: 0;
   font-size: 45px;
@@ -43,22 +40,28 @@
   font-size: 30px;
   line-height: 40px;
 }
-.home-tagline-auth {
-  font-size: 35px;
-  line-height: 45px;
+
+// App Store / Play Store buttons
+.home-apps {
+  margin-top: 25px;
+  .btn {
+    @media (max-width: @screen-sm-max) {
+      .button-size(@padding-base-vertical; @padding-base-horizontal; @font-size-base; @line-height-base; @btn-border-radius-base);
+    }
+    margin: 0 5px;
+  }
 }
+
 // Note `max-height` here instead of max-width
 @media screen and (max-height: 700px) {
   .home-logo,
-  .home-tagline,
-  .home-tagline-auth {
+  .home-tagline {
     margin: 15px auto;
   }
   .home-logo {
     max-width: 170px;
     max-height: 170px;
   }
-  .home-tagline-auth,
   .home-tagline {
     font-size: 32px;
     line-height: 40px;
@@ -75,14 +78,15 @@
   }
 }
 @media (max-width: @screen-xs-max) {
-  .home-tagline-auth,
   .home-tagline {
     font-size: 22px;
     line-height: 28px;
+    text-shadow: none;
   }
   .home-subtagline {
     font-size: 20px;
     line-height: 29px;
+    text-shadow: none;
   }
 }
 
@@ -138,8 +142,12 @@
   background: #fff;
   padding: 50px 0;
   @media (max-width: @screen-sm-max) {
-    padding: 30px 0 10px 0;
+    padding: 80px 0 10px 0;
   }
+  .icon-sofa::before {
+    width: 2em;
+  }
+
   // Tribe bubbles for small screens
   .tribes-xs {
     text-align: center;

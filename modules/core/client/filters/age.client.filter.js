@@ -17,7 +17,7 @@
 
   /* @ngInject */
   function ageYearsFilter($filter) {
-    return function(dateStringOrDate) {
+    return function (dateStringOrDate) {
       var dateObj = new Date($filter('date')(dateStringOrDate, 'yyyy-MM-dd')),
           ageDifMs = Date.now() - dateObj.getTime(),
           ageDate = new Date(ageDifMs); // miliseconds from epoch

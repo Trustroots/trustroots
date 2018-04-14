@@ -1,4 +1,4 @@
-{% extends 'email.server.view.html' %}
+{% extends './email.server.view.html' %}
 
 {% block content %}
 Hey {{name}}!
@@ -11,7 +11,7 @@ Hey {{name}}!
 
 To confirm or discard this connection, please click the link below.
 
-<{{urlConfirmPlainText}}>
+{{urlConfirmPlainText}}
 
-{{meName}}: <{{meURLPlainText}}>
-{% endblock %}
+{{meName}}: {{meURLPlainText}}
+{% endblock content %}

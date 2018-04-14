@@ -25,7 +25,7 @@
                 '  <p class="tr-flashcards-title" ng-bind="::flashTitle"></p>' +
                 '  <p class="tr-flashcards-content" ng-bind="::flashContent"></p>' +
                 '</a>',
-      link: function(scope) {
+      link: function (scope) {
 
         var flashcards = [{
           title: 'Make sure your profile is complete',
@@ -34,7 +34,7 @@
           title: 'Tell a little bit about yourself',
           content: 'You\'re much more likely to get a positive response if you have written a bit about yourself.'
         }, {
-          title: 'Explain them why you are choosing them',
+          title: 'Explain to them why you are choosing them',
           content: '...explaining that you are interested in meeting them, not just looking for free accommodation.'
         }, {
           title: 'Tell your host why you\'re on a trip',

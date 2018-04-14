@@ -79,12 +79,12 @@
           value: $scope.tribe.slug
         });
 
-        return $q(function(resolve, reject) {
+        return $q(function (resolve, reject) {
           UserMembershipsService.post({
             id: $scope.tribe._id,
             relation: 'is'
           },
-          function(data) {
+          function (data) {
             if (data.tag && data.user) {
               vm.isMember = true;
               data.tag.$resolved = true;
@@ -103,7 +103,7 @@
               vm.isMember = false;
               reject(false);
             }
-          }, function() {
+          }, function () {
             toggleMembershipError();
             vm.isMember = false;
             reject(false);
@@ -122,7 +122,7 @@
           value: $scope.tribe.slug
         });
 
-        return $q(function(resolve, reject) {
+        return $q(function (resolve, reject) {
 
           // Ask user for confirmation
           $confirm({
@@ -131,49 +131,49 @@
             ok: 'Leave Tribe',
             cancel: 'Cancel'
           })
-          .then(function() {
-            UserMembershipsService.post({
-              id: $scope.tribe._id,
-              relation: 'leave'
-            },
-            function(data) {
-              if (data.tag && data.user) {
+            .then(function () {
+              UserMembershipsService.post({
+                id: $scope.tribe._id,
+                relation: 'leave'
+              },
+              function (data) {
+                if (data.tag && data.user) {
                 // API success
-                vm.isMember = false;
-                data.tag.$resolved = true;
+                  vm.isMember = false;
+                  data.tag.$resolved = true;
 
-                // Update tribe with new count
-                $scope.tribe = data.tag;
-                $rootScope.$broadcast('tribeUpdated', data.tag);
+                  // Update tribe with new count
+                  $scope.tribe = data.tag;
+                  $rootScope.$broadcast('tribeUpdated', data.tag);
 
-                // User model is updated with new tribe data
-                Authentication.user = data.user;
-                $rootScope.$broadcast('userUpdated');
+                  // User model is updated with new tribe data
+                  Authentication.user = data.user;
+                  $rootScope.$broadcast('userUpdated');
 
-                resolve(false);
-              } else {
+                  resolve(false);
+                } else {
                 // API returned error
+                  toggleMembershipError();
+                  vm.isMember = true;
+                  reject(true);
+                }
+              }, function () {
+              // API returned error
                 toggleMembershipError();
                 vm.isMember = true;
                 reject(true);
-              }
-            }, function() {
-              // API returned error
-              toggleMembershipError();
+              });
+            },
+              // `Cancel` button from confirm dialog
+            function () {
+              $analytics.eventTrack('leave-tribe-cancelled', {
+                category: 'tribes.membership',
+                label: 'Leaving tribe cancelled',
+                value: $scope.tribe.slug
+              });
               vm.isMember = true;
               reject(true);
             });
-          },
-          // `Cancel` button from confirm dialog
-          function() {
-            $analytics.eventTrack('leave-tribe-cancelled', {
-              category: 'tribes.membership',
-              label: 'Leaving tribe cancelled',
-              value: $scope.tribe.slug
-            });
-            vm.isMember = true;
-            reject(true);
-          });
 
         });
       }

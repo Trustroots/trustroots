@@ -18,7 +18,7 @@
       if (type === 'array') {
         var langsArr = [];
 
-        angular.forEach($window.languages, function(value, key) {
+        angular.forEach($window.languages, function (value, key) {
           this.push({ key: key, name: value });
         }, langsArr);
 

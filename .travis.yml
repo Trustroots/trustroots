@@ -1,6 +1,10 @@
 language: node_js
 node_js:
   - 8
+  - 9
+matrix:
+  fast_finish: true
+# https://docs.travis-ci.com/user/reference/overview/#Virtualisation-Environment-vs-Operating-System
 dist: trusty
 # NodeJS v4+ requires gcc 4.8
 # https://docs.travis-ci.com/user/languages/javascript-with-nodejs#Node.js-v4-(or-io.js-v3)-compiler-requirements
@@ -16,7 +20,7 @@ addons:
     - google-chrome
     - ubuntu-toolchain-r-test
     - mongodb-upstart
-    - mongodb-3.2-precise
+    - mongodb-3.4-precise
     packages:
     - g++-4.8
     - gcc-4.8

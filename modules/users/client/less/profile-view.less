@@ -18,43 +18,6 @@
   }
 }
 
-// Edit/save/send messages etc buttons for own and other's profiles
-.profile-actions {
-  text-align: right;
-  .profile-edit-help {
-    line-height: 32px; //About the height of the 'edit' button
-  }
-  .nav {
-    float: right;
-  }
-  /*
-  @media (max-width: @screen-sm-max) {
-    text-align: left;
-    .profile-edit-help {
-      float: right;
-    }
-    .nav {
-      float: none;
-    }
-  }
-  @media (max-width: @screen-xs-max) {
-    .navbar();
-    .navbar-default();
-    .navbar-fixed-top();
-    top: @navbar-height;
-    .btn {
-      margin-top: 4px;
-    }
-    .profile-editor-cancel {
-      float: right;
-    }
-    .profile-editor-save {
-      float: left;
-    }
-  }
-  */
-}
-
 .profile-name,
 .profile-username {
   display: inline-block;
@@ -182,16 +145,24 @@
   margin-top: 5px;
   margin-bottom: 10px;
   .social-profile-icon {
+    speak: none;
     color: @gray-light;
+    margin-left: -34px;
     filter: grayscale(100%);
     -webkit-filter: grayscale(100%);
   }
   .social-profile {
-    //padding: 4px 0;
-    //min-height: 29px;
-    padding: 0;
-    margin: 0 0 8px;
-    .clearfix();
+    padding: 4px 4px 4px 34px;
+    margin: 0;
+
+    &.social-profile-connect {
+      line-height: 33px;
+    }
+
+    .social-profile-handle {
+      background: transparent;
+    }
+
     &:hover,
     &.social-profile-active {
       .social-profile-icon {
@@ -199,34 +170,12 @@
         filter: none;
         -webkit-filter: none;
         // Here's a good list of these:
-        // https://www.competethemes.com/social-media-colors/
+        // @link https://www.competethemes.com/social-media-colors/
         &.icon-twitter { color: #00aced; }
         &.icon-facebook { color: #3b5998; }
         &.icon-github { color: #333; }
+        &.icon-warmshowers { color: #007071; }
       }
-    }
-  }
-  .social-profile-handle {
-    color: @brand-primary;
-    &:focus,
-    &:active,
-    &:hover {
-      text-decoration: none;
-      color: darken(@brand-primary, 10%);
-    }
-  }
-  .social-profile-remove {
-    color: @brand-danger;
-    &.social-profile-remove-success {
-      &,
-      &:focus,
-      &:active,
-      &:hover {
-        color: @brand-success;
-      }
-    }
-    .btn {
-      margin-left: 5px;
     }
   }
 }

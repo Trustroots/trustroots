@@ -5,7 +5,7 @@
  */
 
 // Cache buster
-@icon-version: "2016-02-25";
+@icon-version: "2017-08-16";
 @icon-li-width: (30em / 14);
 
 @font-face {
@@ -132,18 +132,15 @@
 
 // Colorful hospitality network icons (nothing to do with fonts otherwise but we use the same .icon- base class).
 .icon-bw,
-.icon-cs,
-.icon-ws {
-  background-repeat: no-repeat;
-  background-position: 50% 50%;
-  background-size: 16px 16px;
-
-  float: left;
-  display: inline-block;
-  min-height: 21px;
-  min-width: 24px;
-  margin-right: 4px;
+.icon-cs {
+  &:before {
+    content: '';
+    min-height: 1em;
+    min-width: 1em;
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+    background-size: 16px 16px;
+  }
 }
-.icon-bw { .img-retina('/modules/core/img/external/icon-bw.png', '/modules/core/img/external/icon-bw@2x.png', 16px, 16px); }
-.icon-cs { .img-retina('/modules/core/img/external/icon-cs.png', '/modules/core/img/external/icon-cs@2x.png', 16px, 16px); }
-.icon-ws { .img-retina('/modules/core/img/external/icon-ws.png', '/modules/core/img/external/icon-ws@2x.png', 16px, 16px); }
+.icon-bw:before { .img-retina('/modules/core/img/external/icon-bw.png', '/modules/core/img/external/icon-bw@2x.png', 16px, 16px); }
+.icon-cs:before { .img-retina('/modules/core/img/external/icon-cs.png', '/modules/core/img/external/icon-cs@2x.png', 16px, 16px); }

@@ -7,17 +7,16 @@ var path = require('path'),
     async = require('async'),
     juice = require('juice'),
     moment = require('moment'),
+    autolinker = require('autolinker'),
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
     inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
-    textProcessor = require(path.resolve('./modules/core/server/controllers/text-processor.server.controller')),
+    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     render = require(path.resolve('./config/lib/render')),
     agenda = require(path.resolve('./config/lib/agenda')),
     config = require(path.resolve('./config/config')),
-    url = (config.https ? 'https' : 'http') + '://' + config.domain,
-    htmlTemplateDir = path.resolve('./modules/core/server/views/email-templates'),
-    textTemplateDir = path.resolve('./modules/core/server/views/email-templates-text');
+    url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
-exports.sendMessagesUnread = function(userFrom, userTo, notification, callback) {
+exports.sendMessagesUnread = function (userFrom, userTo, notification, callback) {
 
   // Is the notification the first one?
   // If not, we send a different subject.
@@ -64,7 +63,7 @@ exports.sendMessagesUnread = function(userFrom, userTo, notification, callback) 
   exports.renderEmailAndSend('messages-unread', params, callback);
 };
 
-exports.sendConfirmContact = function(user, friend, contact, messageHTML, messageText, callback) {
+exports.sendConfirmContact = function (user, friend, contact, messageHTML, messageText, callback) {
   var meURL = url + '/profile/' + user.username,
       urlConfirm = url + '/contact-confirm/' + contact._id,
       campaign = 'confirm-contact';
@@ -100,7 +99,7 @@ exports.sendConfirmContact = function(user, friend, contact, messageHTML, messag
 /**
  * Email with a token to initialize removing a user
  */
-exports.sendRemoveProfile = function(user, callback) {
+exports.sendRemoveProfile = function (user, callback) {
   var urlConfirm = url + '/remove/' + user.removeProfileToken,
       campaign = 'remove-profile';
 
@@ -123,7 +122,7 @@ exports.sendRemoveProfile = function(user, callback) {
 /**
  * Email confirmation that user was removed
  */
-exports.sendRemoveProfileConfirmed = function(user, callback) {
+exports.sendRemoveProfileConfirmed = function (user, callback) {
   var campaign = 'remove-profile-confirmed';
 
   var params = exports.addEmailBaseTemplateParams({
@@ -136,7 +135,7 @@ exports.sendRemoveProfileConfirmed = function(user, callback) {
   exports.renderEmailAndSend('remove-profile-confirmed', params, callback);
 };
 
-exports.sendResetPassword = function(user, callback) {
+exports.sendResetPassword = function (user, callback) {
   var urlConfirm = url + '/api/auth/reset/' + user.resetPasswordToken,
       campaign = 'reset-password';
 
@@ -156,7 +155,7 @@ exports.sendResetPassword = function(user, callback) {
   exports.renderEmailAndSend('reset-password', params, callback);
 };
 
-exports.sendResetPasswordConfirm = function(user, callback) {
+exports.sendResetPasswordConfirm = function (user, callback) {
 
   var urlResetPassword = url + '/password/forgot',
       campaign = 'reset-password-confirm';
@@ -177,7 +176,7 @@ exports.sendResetPasswordConfirm = function(user, callback) {
   exports.renderEmailAndSend('reset-password-confirm', params, callback);
 };
 
-exports.sendChangeEmailConfirmation = function(user, callback) {
+exports.sendChangeEmailConfirmation = function (user, callback) {
 
   var urlConfirm = url + '/confirm-email/' + user.emailToken,
       campaign = 'confirm-email';
@@ -199,7 +198,7 @@ exports.sendChangeEmailConfirmation = function(user, callback) {
   exports.renderEmailAndSend('email-confirmation', params, callback);
 };
 
-exports.sendSignupEmailConfirmation = function(user, callback) {
+exports.sendSignupEmailConfirmation = function (user, callback) {
 
   var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true',
       campaign = 'confirm-email';
@@ -221,7 +220,7 @@ exports.sendSignupEmailConfirmation = function(user, callback) {
   exports.renderEmailAndSend('signup', params, callback);
 };
 
-exports.sendSupportRequest = function(replyTo, supportRequest, callback) {
+exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
 
   var params = {
     from: 'Trustroots Support <' + config.supportEmail + '>',
@@ -237,7 +236,7 @@ exports.sendSupportRequest = function(replyTo, supportRequest, callback) {
   exports.renderEmailAndSend('support-request', params, callback);
 };
 
-exports.sendSignupEmailReminder = function(user, callback) {
+exports.sendSignupEmailReminder = function (user, callback) {
 
   var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true',
       campaign = 'signup-reminder';
@@ -272,7 +271,7 @@ exports.sendSignupEmailReminder = function(user, callback) {
   exports.renderEmailAndSend('signup-reminder', params, callback);
 };
 
-exports.sendReactivateHosts = function(user, callback) {
+exports.sendReactivateHosts = function (user, callback) {
   var urlOffer = url + '/offer',
       campaign = 'reactivate-hosts',
       utmParams = {
@@ -300,7 +299,7 @@ exports.sendReactivateHosts = function(user, callback) {
 /**
  * 1/3 welcome sequence email
  */
-exports.sendWelcomeSequenceFirst = function(user, callback) {
+exports.sendWelcomeSequenceFirst = function (user, callback) {
   var urlInvite = url + '/invite',
       urlEditProfile = url + '/profile/edit',
       campaign = 'welcome-sequence-first',
@@ -335,7 +334,7 @@ exports.sendWelcomeSequenceFirst = function(user, callback) {
 /**
  * 2/3 welcome sequence email
  */
-exports.sendWelcomeSequenceSecond = function(user, callback) {
+exports.sendWelcomeSequenceSecond = function (user, callback) {
   var inviteCode = inviteCodeService.getCode(),
       signupLabel = config.domain + '/c/' + inviteCode,
       urlSignup = url + '/c/' + inviteCode,
@@ -367,14 +366,14 @@ exports.sendWelcomeSequenceSecond = function(user, callback) {
 /**
  * 3/3 welcome sequence email
  */
-exports.sendWelcomeSequenceThird = function(user, callback) {
+exports.sendWelcomeSequenceThird = function (user, callback) {
 
   // Default topic for emails
   var messageTopic = 'feedback';
 
   // For members with empty profiles,
   // remind them how important it is to fill their profile.
-  var descriptionLength = textProcessor.plainText(user.description, true).length;
+  var descriptionLength = textService.plainText(user.description, true).length;
   if (descriptionLength < config.profileMinimumLength) {
     messageTopic = 'fill-profile';
   }
@@ -416,7 +415,7 @@ exports.sendWelcomeSequenceThird = function(user, callback) {
  * @param {Object[]} params - Parameters used for rendering emails
  * @returns {Object[]} - Returns object with supportUrl, footerUrl and headerUrl parameters.
  */
-exports.addEmailBaseTemplateParams = function(params) {
+exports.addEmailBaseTemplateParams = function (params) {
   if (params === null || typeof params !== 'object') {
     console.error('addEmailBaseTemplateParams: requires param to be Object. No URL parameters added.');
     return {};
@@ -451,31 +450,50 @@ exports.addEmailBaseTemplateParams = function(params) {
   return params;
 };
 
-exports.renderEmail = function(templateName, params, callback) {
+exports.renderEmail = function (templateName, params, callback) {
 
   var templatePaths = {};
 
-  templatePaths.text = path.join(textTemplateDir, templateName + '.server.view.html');
+  // `./modules/core/server/views/email-templates-text`
+  templatePaths.text = path.join('email-templates-text', templateName + '.server.view.html');
 
   if (!params.skipHtmlTemplate) {
-    templatePaths.html = path.join(htmlTemplateDir, templateName + '.server.view.html');
+    // `./modules/core/server/views/email-templates`
+    templatePaths.html = path.join('email-templates', templateName + '.server.view.html');
   }
 
   // Rendering in parallel leads to an error. maybe because
   // swig is unmaintained now https://github.com/paularmstrong/swig)
-  async.mapValuesSeries(templatePaths, function(templatePath, key, done) {
-    render(templatePath, params, function(err, rendered) {
+  async.mapValuesSeries(templatePaths, function (templatePath, key, done) {
+    render(templatePath, params, function (err, rendered) {
 
       // there are promises inside render(), need to execute callback in
       // nextTick() so callback can safely throw exceptions
       // see https://github.com/caolan/async/issues/1150
-      async.nextTick(function() {
+      async.nextTick(function () {
         done(err, rendered);
       });
 
     });
-  }, function(err, result) {
+  }, function (err, result) {
     if (err) return callback(err);
+
+    // Clean out html entities (like &gt;) from plain text emails
+    result.text = textService.plainText(result.text);
+
+    // Wrap links with `<` and `>` from plain text emails
+    result.text = autolinker.link(result.text, {
+      urls: true,
+      email: false,
+      phone: false,
+      mention: false,
+      hashtag: false,
+      stripPrefix: false,
+      replaceFn: function (match) {
+        return '<' + match.getAnchorHref() + '>';
+      }
+    });
+
     var email = {
       to: {
         name: params.name,
@@ -505,8 +523,8 @@ exports.renderEmail = function(templateName, params, callback) {
   });
 };
 
-exports.renderEmailAndSend = function(templateName, params, callback) {
-  exports.renderEmail(templateName, params, function(err, email) {
+exports.renderEmailAndSend = function (templateName, params, callback) {
+  exports.renderEmail(templateName, params, function (err, email) {
     if (err) return callback(err);
     agenda.now('send email', email, callback);
   });

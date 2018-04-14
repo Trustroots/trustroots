@@ -1,4 +1,4 @@
-{% extends 'email.server.view.html' %}
+{% extends './email.server.view.html' %}
 
 {% block content %}
 Hey {{name}}!
@@ -6,9 +6,9 @@ Hey {{name}}!
 Your Trustroots account has been removed.
 
 Feel free to leave us feedback:
-<{{supportUrl}}>
+{{supportUrl}}
 
 If you think this was a mistake, please contact us immediately:
-<{{supportUrl}}>
+{{supportUrl}}
 
-{% endblock %}
+{% endblock content %}

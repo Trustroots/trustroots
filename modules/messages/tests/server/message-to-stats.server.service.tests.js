@@ -20,12 +20,12 @@ var longMessageMinimumLength = config.limits.longMessageMinimumLength;
 /**
  * Unit tests
  */
-describe('Message to stats server service Unit Tests:', function() {
+describe('Message to stats server service Unit Tests:', function () {
   var user1,
       user2;
 
   // here we create the users
-  beforeEach(function(done) {
+  beforeEach(function (done) {
 
     user1 = new User({
       firstName: 'Full',
@@ -48,15 +48,15 @@ describe('Message to stats server service Unit Tests:', function() {
     });
 
     // save those users to mongoDB
-    user1.save(function(err) {
+    user1.save(function (err) {
       if (err) return done(err);
       user2.save(done);
     });
   });
 
   // after each test removing all the messages and users
-  afterEach(function(done) {
-    Message.remove().exec(function() {
+  afterEach(function (done) {
+    Message.remove().exec(function () {
       User.remove().exec(done);
     });
   });

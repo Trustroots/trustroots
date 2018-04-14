@@ -7,15 +7,30 @@ var _ = require('lodash'),
     url = (config.https ? 'https' : 'http') + '://' + config.domain,
     analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller'));
 
-exports.notifyPushDeviceAdded = function(user, platform, callback) {
+exports.notifyPushDeviceAdded = function (user, platform, callback) {
 
   if (_.get(user, 'pushRegistration', []).length === 0) return callback();
 
   var editAccountUrl = url + '/profile/edit/account';
 
+  function platformVerbal(platform) {
+    switch (platform) {
+      case 'web':
+        return 'desktop'
+      case 'expo':
+        return 'mobile';
+      case 'ios':
+        return 'mobile';
+      case 'android':
+        return 'mobile';
+      default:
+        return platform;
+    }
+  }
+
   var notification = {
     title: 'Trustroots',
-    body: 'You just enabled Trustroots ' + platform.replace('expo', 'mobile') + ' push notifications. Yay!',
+    body: 'You just enabled Trustroots ' + platformVerbal(platform) + ' notifications. Yay!',
     click_action: analyticsHandler.appendUTMParams(editAccountUrl, {
       source: 'push-notification',
       medium: 'fcm',
@@ -27,11 +42,14 @@ exports.notifyPushDeviceAdded = function(user, platform, callback) {
   exports.sendUserNotification(user, notification, callback);
 };
 
-exports.notifyMessagesUnread = function(userFrom, userTo, data, callback) {
+exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
 
-  if (_.get(userTo, 'pushRegistration', []).length === 0) return callback();
+  // User does not have push registrations
+  if (_.get(userTo, 'pushRegistration', []).length === 0) {
+    return callback();
+  }
 
-  var messageCount = data.messages.length;
+  var messageCount = _.get(data, 'messages', []).length;
 
   // Is the notification the first one?
   // If not, we send a different message.
@@ -67,7 +85,7 @@ exports.notifyMessagesUnread = function(userFrom, userTo, data, callback) {
   exports.sendUserNotification(userTo, notification, callback);
 };
 
-exports.sendUserNotification = function(user, notification, callback) {
+exports.sendUserNotification = function (user, notification, callback) {
 
   var data = {
     userId: user._id,

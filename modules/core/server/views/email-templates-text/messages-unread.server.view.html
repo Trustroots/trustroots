@@ -1,3 +1,6 @@
+{% extends './email.server.view.html' %}
+
+{% block content %}
 Hello {{userToName}}!
 
 {% if messageCount > 1 %}You have {{ messageCount }} unread messages from {{userFromName}} at Trustroots.
@@ -8,7 +11,7 @@ To reply, go to: {{urlReplyPlainText}}
 --------------------------------------------------------------------------------
 {% for message in messages %}
 
-{{message.content | striptags}}
+{{ message.content | striptags(true) }}
 
 --------------------------------------------------------------------------------
 {% endfor %}
@@ -18,3 +21,4 @@ Do not reply this email directly.
 To reply, go to: {{urlReplyPlainText}}
 
 See their profile: {{urlUserFromProfilePlainText}}
+{% endblock content %}

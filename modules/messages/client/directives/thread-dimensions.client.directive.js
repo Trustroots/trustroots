@@ -30,9 +30,9 @@
          * Fire resize() at <html> so that jQuery-Waypoints wakes up and can thus
          * check what's visible on the screen and mark visible messages read.
          */
-        elemThread.bind('scroll', function() {
+        elemThread.bind('scroll', function () {
           if (onScrollTimeout) $timeout.cancel(onScrollTimeout);
-          onScrollTimeout = $timeout(function() {
+          onScrollTimeout = $timeout(function () {
             elemHtml.resize();
           }, 300);
         });
@@ -49,7 +49,7 @@
         /**
          * Scroll thread to bottom to show latest messages
          */
-        var scrollToBottom = function() {
+        var scrollToBottom = function () {
           elemThread.scrollTop(elemThread[0].scrollHeight);
         };
 
@@ -74,7 +74,7 @@
 
           if (!isInitialized) {
             isInitialized = true;
-            $timeout(function() {
+            $timeout(function () {
               elemContainer.css({ 'opacity': '1.0' });
             });
           }
@@ -107,11 +107,11 @@
         /**
          * Listeners & event bindings
          */
-        scope.$on('threadRefreshLayout', function() {
+        scope.$on('threadRefreshLayout', function () {
           activateRefreshLayout();
         });
 
-        scope.$on('threadScrollToBottom', function() {
+        scope.$on('threadScrollToBottom', function () {
           activateScrollToBottom();
         });
 

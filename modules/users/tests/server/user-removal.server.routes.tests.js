@@ -122,7 +122,7 @@ describe('User removal CRUD tests', function () {
         jobs.length.should.equal(0);
 
         // User should still exist
-        User.findOne({ username: userA.username }, function(findUsersErr, findUser) {
+        User.findOne({ username: userA.username }, function (findUsersErr, findUser) {
           if (findUsersErr) {
             return done(findUsersErr);
           }
@@ -184,7 +184,7 @@ describe('User removal CRUD tests', function () {
             jobs[0].data.subject.should.equal('Confirm removing your Trustroots profile');
             jobs[0].data.to.address.should.equal(_userA.email);
 
-            User.findById(signedInUser.body._id, function(findUsersErr, findUser) {
+            User.findById(signedInUser.body._id, function (findUsersErr, findUser) {
               if (findUsersErr) {
                 return done(findUsersErr);
               }
@@ -225,7 +225,7 @@ describe('User removal CRUD tests', function () {
             jobs[0].data.subject.should.equal('Confirm removing your Trustroots profile');
             jobs[0].data.to.address.should.equal(_userA.email);
 
-            User.findById(signedInUser.body._id, function(findUsersErr1, findUser1) {
+            User.findById(signedInUser.body._id, function (findUsersErr1, findUser1) {
               if (findUsersErr1) {
                 return done(findUsersErr1);
               }
@@ -252,7 +252,7 @@ describe('User removal CRUD tests', function () {
                   jobs[1].data.subject.should.equal('Confirm removing your Trustroots profile');
                   jobs[1].data.to.address.should.equal(_userA.email);
 
-                  User.findById(signedInUser.body._id, function(findUsersErr2, findUser2) {
+                  User.findById(signedInUser.body._id, function (findUsersErr2, findUser2) {
                     if (findUsersErr2) {
                       return done(findUsersErr2);
                     }
@@ -303,7 +303,7 @@ describe('User removal CRUD tests', function () {
               jobs[0].data.to.address.should.equal(_userA.email);
               jobs[0].data.text.should.containEql('Your Trustroots account has been removed.');
 
-              User.findById(savedUser._id, function(findUsersErr, findUser) {
+              User.findById(savedUser._id, function (findUsersErr, findUser) {
                 if (findUsersErr) {
                   return done(findUsersErr);
                 }
@@ -338,7 +338,7 @@ describe('User removal CRUD tests', function () {
           jobs.length.should.equal(0);
 
           // User should still exist
-          User.findById(savedUser._id, function(findUsersErr, findUser) {
+          User.findById(savedUser._id, function (findUsersErr, findUser) {
             if (findUsersErr) {
               return done(findUsersErr);
             }
@@ -381,7 +381,7 @@ describe('User removal CRUD tests', function () {
               jobs.length.should.equal(0);
 
               // User should still exist
-              User.findById(savedUser._id, function(findUsersErr, findUser) {
+              User.findById(savedUser._id, function (findUsersErr, findUser) {
                 if (findUsersErr) {
                   return done(findUsersErr);
                 }
@@ -425,7 +425,7 @@ describe('User removal CRUD tests', function () {
               jobs.length.should.equal(0);
 
               // User should still exist
-              User.findById(savedUser._id, function(findUsersErr, findUser) {
+              User.findById(savedUser._id, function (findUsersErr, findUser) {
                 if (findUsersErr) {
                   return done(findUsersErr);
                 }
@@ -470,7 +470,7 @@ describe('User removal CRUD tests', function () {
               jobs.length.should.equal(0);
 
               // User should still exist
-              User.findById(savedUser._id, function(findUsersErr, findUser) {
+              User.findById(savedUser._id, function (findUsersErr, findUser) {
                 if (findUsersErr) {
                   return done(findUsersErr);
                 }
@@ -478,7 +478,7 @@ describe('User removal CRUD tests', function () {
                 findUser.removeProfileToken.should.equal(userA.removeProfileToken);
 
                 // Signed in user should still exist
-                User.findOne({ username: userB.username }, function(findUsersErr, findUser) {
+                User.findOne({ username: userB.username }, function (findUsersErr, findUser) {
                   if (findUsersErr) {
                     return done(findUsersErr);
                   }
@@ -710,7 +710,8 @@ describe('User removal CRUD tests', function () {
         // Create an offer for the user
         function (cb) {
           var offer = new Offer({
-            user: userA._id
+            user: userA._id,
+            location: [0, 0]
           });
 
           offer.save(function (err) { cb(err); });

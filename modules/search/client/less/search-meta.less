@@ -1,0 +1,21 @@
+// Button for opening search in small screens
+.search-map-meta {
+  position: absolute;
+  z-index: @zindex-navbar;
+  top: @navbar-height;
+  margin-bottom: 0;
+  border: 0;
+  box-shadow: @map-toolbar-shadow;
+  .form-group {
+    margin: 0;
+  }
+
+  .btn-group:not(:last-child) {
+    border-bottom: 1px solid @gray-lighter;
+  }
+
+  .btn:focus {
+    outline: none;
+    background: @btn-default-bg;
+  }
+}

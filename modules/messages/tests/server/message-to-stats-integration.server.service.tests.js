@@ -45,7 +45,7 @@ describe('Message to Stats API server service Integration Test', function () {
       user2;
 
   // here we create the users before each test
-  beforeEach(function(done) {
+  beforeEach(function (done) {
 
     user1 = new User({
       firstName: 'Full',
@@ -71,9 +71,9 @@ describe('Message to Stats API server service Integration Test', function () {
     });
 
     // save those users to mongoDB
-    user1.save(function(err) {
+    user1.save(function (err) {
       if (err) return done(err);
-      user2.save(function(err) {
+      user2.save(function (err) {
         if (err) return done(err);
         done();
       });
@@ -81,8 +81,8 @@ describe('Message to Stats API server service Integration Test', function () {
   });
 
   // after each test removing all the messages and users (cleaning the database)
-  afterEach(function(done) {
-    Message.remove().exec(function() {
+  afterEach(function (done) {
+    Message.remove().exec(function () {
       User.remove().exec(done);
     });
   });

@@ -2,20 +2,19 @@
 
 var _ = require('lodash'),
     path = require('path'),
-    config = require(path.resolve('./config/config')),
-    configMongoose = require(path.resolve('./config/lib/mongoose')),
-    configExpress = require(path.resolve('./config/lib/express')),
+    mongooseService = require(path.resolve('./config/lib/mongoose')),
     chalk = require('chalk'),
     faker = require('faker'),
     fs = require('fs'),
     mongoose = require('mongoose'),
-    userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
-    offerModels = require(path.resolve('./modules/offers/server/models/offer.server.model')),
-    User = mongoose.model('User'),
-    Offer = mongoose.model('Offer'),
     cities = JSON.parse(fs.readFileSync(path.resolve('./scripts/fillTestDataCities.json'), 'utf8')),
-    status = ['yes', 'maybe'],
     savedCounter = 0;
+
+require(path.resolve('./modules/users/server/models/user.server.model'));
+require(path.resolve('./modules/offers/server/models/offer.server.model'));
+
+var User = mongoose.model('User');
+var Offer = mongoose.model('Offer');
 
 console.log(chalk.white('--'));
 console.log(chalk.green('Trustroots test data'));
@@ -26,47 +25,13 @@ var random = function (max) {
 };
 
 var randomizeLoaction = function () {
-  var random =  Math.random();
+  var random = Math.random();
   if (random > 0.98) {
     random = ((Math.random() - 0.5) * Math.random() * 4) - 1;
   } else {
     random = random / 10000 - 0.00005;
   }
   return parseFloat(random.toFixed(5));
-};
-
-// Bootstrap db connection
-var db = mongoose.connect(config.db.uri, function(err) {
-  if (err) {
-    console.error(chalk.red('Could not connect to MongoDB!'));
-    console.log(err);
-  }
-});
-
-var addUsers = function (index, max) {
-  var user = new User();
-
-  user.firstName = faker.name.firstName();
-  user.lastName = faker.name.lastName();
-  user.displayName = user.firstName + ' ' + user.lastName;
-  user.provider = 'local';
-  user.public = true;
-  user.avatarUploaded = false;
-  user.avatarSource = 'none';
-  user.email = index+faker.internet.email();
-  user.password = faker.internet.password();
-  user.username = index+user.firstName.toLowerCase().replace('\'', '');
-
-  user.save(function(err) {
-    if (err != null) console.log(err);
-  });
-  index++;
-  addOffer(user._id, index, max);
-
-  if (index <= max) {
-    addUsers(index, max);
-  }
-
 };
 
 var addOffer = function (id, index, max) {
@@ -77,7 +42,8 @@ var addOffer = function (id, index, max) {
   var lon = city.lon + randomizeLoaction();
   var location = [lat, lon];
 
-  offer.status = _.sample(status);
+  offer.type = 'host';
+  offer.status = _.sample(['yes', 'maybe']);
   offer.description = faker.lorem.sentence();
   offer.maxGuests = random(10);
   offer.user = id;
@@ -95,7 +61,35 @@ var addOffer = function (id, index, max) {
       }
     }
   });
-}
+};
+
+var addUsers = function (index, max) {
+  var user = new User();
+
+  user.firstName = faker.name.firstName();
+  user.lastName = faker.name.lastName();
+  user.displayName = user.firstName + ' ' + user.lastName;
+  user.provider = 'local';
+  user.public = true;
+  user.avatarUploaded = false;
+  user.avatarSource = 'none';
+  user.email = index + faker.internet.email();
+  user.password = faker.internet.password();
+  user.username = index + user.displayName.toLowerCase().replace('\'', '').replace(' ', '');
+
+  user.save(function(err) {
+    if (err) {
+      console.log(err);
+    }
+  });
+  index++;
+  addOffer(user._id, index, max);
+
+  if (index <= max) {
+    addUsers(index, max);
+  }
+
+};
 
 // Create optional admin user
 var adminUsername = (process.argv[3] == null) ? false : process.argv[3];
@@ -103,48 +97,53 @@ var adminUsername = (process.argv[3] == null) ? false : process.argv[3];
 // Number of users is required
 if (process.argv[2] == null) {
   console.log(chalk.red('Please give a number of users to add.'));
-}
-else {
-  var numberOfUsers = process.argv[2];
+} else {
 
-  // Create admin user + regular users
-  if (adminUsername !== false) {
-    var adminUser = new User();
+  // Bootstrap db connection
+  mongooseService.connect(function() {
+    mongooseService.loadModels(function() {
 
-    adminUser.firstName = faker.name.firstName();
-    adminUser.lastName = faker.name.lastName();
-    adminUser.displayName = adminUser.firstName + ' ' + adminUser.lastName;
-    adminUser.provider = 'local';
-    adminUser.email = 'admin+' + adminUsername + '@example.tld';
-    adminUser.password = 'password123';
-    adminUser.username = adminUsername;
-    adminUser.avatarSource = 'none';
-    adminUser.public = true;
-    adminUser.avatarUploaded = false;
+      var numberOfUsers = process.argv[2];
 
-    adminUser.save(function(err) {
-      if (!err) {
-        console.log('Created admin user. Login with: ' + adminUsername + ' / password');
+      // Create admin user + regular users
+      if (adminUsername !== false) {
+        var adminUser = new User();
+
+        adminUser.firstName = faker.name.firstName();
+        adminUser.lastName = faker.name.lastName();
+        adminUser.displayName = adminUser.firstName + ' ' + adminUser.lastName;
+        adminUser.provider = 'local';
+        adminUser.email = 'admin+' + adminUsername + '@example.com';
+        adminUser.password = 'password123';
+        adminUser.username = adminUsername;
+        adminUser.avatarSource = 'none';
+        adminUser.public = true;
+        adminUser.avatarUploaded = false;
+
+        adminUser.save(function(err) {
+          if (!err) {
+            console.log('Created admin user. Login with: ' + adminUsername + ' / password');
+          } else {
+            console.log(chalk.red('Could not add admin user ' + adminUsername));
+            console.log(err);
+          }
+
+          // Add regular users
+          console.log('Generating ' + numberOfUsers + ' users...');
+          if (numberOfUsers > 2000) {
+            console.log('...this might really take a while... go grab some coffee!');
+          }
+          addUsers(1, numberOfUsers);
+        });
       } else {
-        console.log(chalk.red('Could not add admin user ' + adminUsername));
-        console.log(err);
+        // Add regular users
+        console.log('Generating ' + numberOfUsers + ' users...');
+        if (numberOfUsers > 2000) {
+          console.log('...this might really take a while... go grab some coffee!');
+        }
+        addUsers(0, numberOfUsers);
       }
 
-      // Add regular users
-      console.log('Generating ' + numberOfUsers + ' users...');
-      if (numberOfUsers > 2000) {
-        console.log('...this might really take a while... go grab some coffee!');
-      }
-      addUsers(1, numberOfUsers);
     });
-  }
-  else {
-    // Add regular users
-    console.log('Generating ' + numberOfUsers + ' users...');
-    if (numberOfUsers > 2000) {
-      console.log('...this might really take a while... go grab some coffee!');
-    }
-    addUsers(0, numberOfUsers);
-  }
-
+  });
 }

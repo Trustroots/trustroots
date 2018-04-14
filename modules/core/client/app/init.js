@@ -4,7 +4,7 @@
   // Start by defining the main module and adding the module dependencies
   angular
     .module(AppConfig.appModuleName,
-            AppConfig.appModuleVendorDependencies);
+      AppConfig.appModuleVendorDependencies);
 
   // App configs
   angular
@@ -65,7 +65,7 @@
   }
 
   // Then define the init function for starting up the application
-  angular.element(document).ready(function() {
+  angular.element(document).ready(function () {
     /* eslint-disable angular/window-service */
 
     // Escape from iframes if ordered to do so from URL.

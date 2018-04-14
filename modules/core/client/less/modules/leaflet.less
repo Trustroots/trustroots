@@ -19,7 +19,7 @@
 
 */
 .leaflet-zoom-anim .leaflet-zoom-animated {
-  transition-property: @map-zoom-transition;
+  .transition-transform(@map-zoom-transition);
 }
 
 .leaflet-top,
@@ -175,6 +175,29 @@
 
 .leaflet-container .leaflet-control-scale {
   font-size: @font-size-small;
+  font-family: @font-family-brand-regular;
+}
+
+// Scale control next to zoom floats next to zoom buttons,
+// not under it like by default
+.leaflet-control-scale {
+  clear: left;
+  margin: 40px 20px 0 0;
+  speak: none;
+
+  // Zoom buttons are slightly bigger so we need slightly bigger gap
+  @media (max-width: @screen-sm-max) {
+    margin-top: 60px;
+  }
+
+  // Hide improve map links on small screens
+  @media (max-width: @screen-xs-max) {
+    position: fixed;
+    bottom: 5px;
+    right: 5px;
+    margin: 0;
+  }
+
 }
 
 .leaflet-touch {
@@ -210,6 +233,11 @@
   }
   .improve-map {
     font-weight: bold;
+
+    // Hide improve map links on small screens
+    @media (max-width: @screen-sm-max) {
+      display: none;
+    }
   }
   &:hover {
     visibility: visible;
@@ -247,5 +275,24 @@
   .leaflet-control-layers-selector {
     margin: 0 8px 0px 0;
     padding: 0;
+  }
+}
+
+// Smaller margins for controls from map edge on small screens
+@media (max-width: @screen-sm-max) {
+  .leaflet-left .leaflet-control {
+    margin-left: 5px;
+  }
+
+  .leaflet-right .leaflet-control {
+    margin-right: 5px;
+  }
+
+  .leaflet-bottom .leaflet-control {
+    margin-bottom: 5px;
+  }
+
+  .leaflet-top .leaflet-control {
+    margin-top: 5px;
   }
 }

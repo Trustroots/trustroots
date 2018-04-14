@@ -1,12 +1,16 @@
 {#
  # Instructions to copypaste the url -template, usage:
  #
- # {% include 'partials/copypasteurl.server.view.html' with {'url': 'http://example.tld/'} %}
+ # {% from "./partials/copypasteurl.server.view.html" import copyPasteUrl %}
+ # {{ copyPasteUrl('https://www.example.com') }}
+ #
+ # You can also use variable in place of the string.
  #
  # Based on:
  # @link https://raw.githubusercontent.com/TomFrankly/mailchimp-responsive-template/master/Responsive%20Basic%20Chopped%20and%20Screwed.html
  # License: @link http://creativecommons.org/licenses/by-sa/3.0/
  #}
+{% macro copyPasteUrl(url) %}
 {% if url %}
 
 <!-- MODULE ROW // -->
@@ -57,3 +61,4 @@
 <!-- // MODULE ROW -->
 
 {% endif %}
+{% endmacro %}

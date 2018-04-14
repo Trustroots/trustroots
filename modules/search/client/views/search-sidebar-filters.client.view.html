@@ -1,0 +1,49 @@
+<section class="search-sidebar-section search-sidebar-filters">
+
+  <!-- Offer type filter -->
+  <div role="group" aria-label="Hosts or people to meet?">
+    <h4>Hosts or people to meet?</h4>
+    <div tr-types-toggle="search.filters.types"></div>
+  </div>
+  <!-- /Offer type filter -->
+
+  <hr class="hr-gray hr-tight">
+
+  <!-- Tribes type filter -->
+  <div role="group" aria-label="Filter by tribes">
+    <div class="row">
+      <div class="col-xs-6">
+        <h4>Tribes</h4>
+      </div>
+      <div class="col-xs-6 text-right">
+        <button type="button"
+             class="btn btn-default search-sidebar-filters-clear"
+             ng-click="search.filters.tribes = [];"
+             ng-disabled="!search.filters.tribes.length">
+          Clear tribes
+        </button>
+      </div>
+    </div>
+
+    <div tr-my-tribes-toggle="search.filters.tribes"></div>
+    <div tr-tribes-toggle="search.filters.tribes"></div>
+  </div>
+  <!-- Tribes type filter -->
+
+  <hr class="hr-gray hr-tight">
+
+  <!-- Language filter -->
+  <h4 id="filter-languages">Spoken languages</h4>
+  <div tr-languages="search.filters.languages"
+       ng-change="search.onLanguageFiltersChange()"
+       aria-labelledby="filter-languages"></div>
+  <!-- /Language filter -->
+
+  <!-- Sidebar closing toggle for small screens -->
+  <button type="button"
+          class="btn btn-action btn-primary visible-xs-block search-sidebar-close"
+          ng-click="search.toggleSidebar()">
+    Back to map
+  </button>
+
+</section>

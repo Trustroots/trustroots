@@ -27,24 +27,24 @@
     activate();
 
     function activate() {
-      $window.addEventListener('dragenter', function() {
+      $window.addEventListener('dragenter', function () {
         showDropZone();
       });
-      $window.addEventListener('drop', function() {
+      $window.addEventListener('drop', function () {
         hideDropZone();
       });
-      angular.element('#profile-edit-avatar-drop')[0].addEventListener('dragleave', function() {
+      angular.element('#profile-edit-avatar-drop')[0].addEventListener('dragleave', function () {
         hideDropZone();
       });
     }
 
     function showDropZone() {
-      $scope.$apply(function() {
+      $scope.$apply(function () {
         vm.showDropzone = true;
       });
     }
     function hideDropZone() {
-      $scope.$apply(function() {
+      $scope.$apply(function () {
         vm.showDropzone = false;
       });
     }
@@ -66,10 +66,10 @@
           data: {
             avatar: fileAvatar
           }
-        }).success(function() {
+        }).success(function () {
           vm.avatarUploading = false;
           updateUserProfile();
-        }).error(function(data, status) {
+        }).error(function (data, status) {
           // Default error
           var saveAvatarErr = 'Oops! Something went wrong. Try again later.';
 
@@ -122,7 +122,7 @@
         fileReader.readAsDataURL(file);
         fileReader.onloadend = function () {
           vm.avatarPreview = true;
-          $scope.$apply(function() {
+          $scope.$apply(function () {
             vm.previewStyle = fileReader.result;
             vm.avatarUploading = false;
             saveAvatar();
@@ -138,12 +138,12 @@
       // Note that this won't end up to the DB as is, it's just used as a cache-buster for new avatar
       vm.user.updated = new Date();
 
-      vm.user.$update(function(updatedUser) {
+      vm.user.$update(function (updatedUser) {
         vm.user = Authentication.user = updatedUser;
         // Notify AppController
         $scope.$emit('userUpdated', updatedUser);
         messageCenterService.add('success', 'Profile photo updated.');
-      }, function(err) {
+      }, function (err) {
         messageCenterService.add('danger', err.data.message || 'Oops! Something went wrong.');
       });
 

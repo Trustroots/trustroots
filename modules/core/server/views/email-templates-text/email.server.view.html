@@ -8,15 +8,15 @@
 {% if mailTitle %}{{ mailTitle }}{% else %}{{title}}{% endif %}
 ----------------------------------------------------------------------
 
-{% block content %}{% endblock %}
+{% block content %}{% endblock content %}
 
 -- {# These two dashes should have space after them and this line stops .editorconfig stripping it out. #}
 Trustroots
 {% if urlFooterPlainText %}{{urlFooterPlainText}}{% endif %}
 
 {% if from %}
-{% if supportUrl %}Contact us: <{{urlSupportPlainText}}>{% endif %}
+{% if supportUrl %}Contact us: {{urlSupportPlainText}}{% endif %}
 {% else %}
 Remember, I'm just a little mail robot. Don't reply this email directly.
-{% if supportUrl %}Contact us if you want to talk to a human: <{{urlSupportPlainText}}>{% endif %}
+{% if supportUrl %}Contact us if you want to talk to a human: {{urlSupportPlainText}}{% endif %}
 {% endif %}

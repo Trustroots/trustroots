@@ -58,22 +58,69 @@
   }
 }
 
+/**
+ * App store badges
+ */
+.btn-app {
+  display: block;
+  max-width: 150px;
+  padding: 0;
+  line-height: 1rem;
+  border-radius: 4px;
+  box-shadow: 0 1px 7px rgba(0, 0, 0, .1);
+}
+
+/**
+ * Circle button
+ * Width and height should be the same for this
+ */
+.btn-round {
+  border-radius: 50%;
+  // Force horizontally and vertical paddings equal for all button sizes
+  padding: @padding-base-vertical;
+  &.btn-action {
+    padding: 15px;
+  }
+  &.btn-lg {
+    padding: @padding-large-vertical;
+  }
+  &.btn-sm {
+    padding: @padding-small-vertical;
+  }
+  &.btn-xs {
+    padding: @padding-xs-vertical;
+  }
+}
+
+// When `btn-round` is part of input group
+.input-group-btn:first-child > .btn-round,
+.input-group-btn:last-child > .btn-round {
+  border-radius: 50%;
+}
+
+/**
+ * Button with slight shadow under it
+ */
+.btn-raised {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2)
+}
+
 /*
  * Hosting buttons
  */
-.btn-hosting-yes {
-  .button-variant(#fff; @hosting-yes; @hosting-yes);
+.btn-offer-hosting-yes {
+  .button-variant(#fff; @offer-hosting-yes; @offer-hosting-yes);
 }
-.btn-hosting-maybe {
-  .button-variant(#fff; @hosting-maybe; @hosting-maybe);
+.btn-offer-hosting-maybe {
+  .button-variant(#fff; @offer-hosting-maybe; @offer-hosting-maybe);
 }
-.btn-hosting-no {
-  .button-variant(#fff; @hosting-no; @hosting-no);
+.btn-offer-hosting-no {
+  .button-variant(#fff; @offer-hosting-no; @offer-hosting-no);
 }
-.btn-hosting-traveling {
-  .button-variant(#fff; @hosting-traveling; @hosting-traveling);
+.btn-offer-meet {
+  .button-variant(#fff; @offer-meet; @offer-meet);
 }
-.btn-hosting {
+.btn-offer-hosting {
   .hosting-status {
     color: #fff;
   }

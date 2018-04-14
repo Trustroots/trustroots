@@ -20,9 +20,9 @@ var tag,
 /**
  * Unit tests
  */
-describe('Tag Model Unit Tests:', function() {
+describe('Tag Model Unit Tests:', function () {
 
-  before(function() {
+  before(function () {
     tag = new Tag({
       'label': 'Tag label'
     });
@@ -34,7 +34,7 @@ describe('Tag Model Unit Tests:', function() {
     });
   });
 
-  describe('Method Save', function() {
+  describe('Method Save', function () {
     it('should begin with no tags', function (done) {
       Tag.find({}, function (err, tags) {
         tags.should.have.length(0);
@@ -104,24 +104,24 @@ describe('Tag Model Unit Tests:', function() {
       });
     });
 
-    it('should be able to save 2 different tags', function(done) {
+    it('should be able to save 2 different tags', function (done) {
       var _tag = new Tag(tag);
       var _tag3 = new Tag(tag3);
 
-      _tag.save(function(err) {
+      _tag.save(function (err) {
         should.not.exist(err);
-        _tag3.save(function(err) {
+        _tag3.save(function (err) {
           should.not.exist(err);
           done();
         });
       });
     });
 
-    it('should show error when trying to save tag with invalid attribution URL', function(done) {
+    it('should show error when trying to save tag with invalid attribution URL', function (done) {
       var _tag = new Tag(tag);
 
       _tag.attribution_url = 'this-is-not-URL';
-      _tag.save(function(err) {
+      _tag.save(function (err) {
         should.exist(err);
         done();
       });
@@ -129,7 +129,7 @@ describe('Tag Model Unit Tests:', function() {
 
   });
 
-  describe('Slug generator', function() {
+  describe('Slug generator', function () {
 
     it('should generate slug for label with accents and special symbols', function (done) {
       var _tag = new Tag(tag);
@@ -154,7 +154,7 @@ describe('Tag Model Unit Tests:', function() {
     });
 
   });
-  describe('Label Validation', function() {
+  describe('Label Validation', function () {
 
     it('should be able to show an error when try to save without label', function (done) {
       var _tag = new Tag(tag);
@@ -176,61 +176,61 @@ describe('Tag Model Unit Tests:', function() {
       });
     });
 
-    it('should be able to show an error when trying to save tag label beginning with .', function(done) {
+    it('should be able to show an error when trying to save tag label beginning with .', function (done) {
       var _tag = new Tag(tag);
 
       _tag.label = '.label';
-      _tag.save(function(err) {
+      _tag.save(function (err) {
         should.exist(err);
         done();
       });
     });
 
-    it('should be able to show an error when trying to save tag label end with .', function(done) {
+    it('should be able to show an error when trying to save tag label end with .', function (done) {
       var _tag = new Tag(tag);
 
       _tag.label = 'label.';
-      _tag.save(function(err) {
+      _tag.save(function (err) {
         should.exist(err);
         done();
       });
     });
 
-    it('should save label with dot', function(done) {
+    it('should save label with dot', function (done) {
       var _tag = new Tag(tag);
 
       _tag.label = 'lab.el';
-      _tag.save(function(err) {
+      _tag.save(function (err) {
         should.not.exist(err);
         done();
       });
     });
 
-    it('should be able to show an error when trying to save label shorter than 2 character', function(done) {
+    it('should be able to show an error when trying to save label shorter than 2 character', function (done) {
       var _tag = new Tag(tag);
 
       _tag.label = 's';
-      _tag.save(function(err) {
+      _tag.save(function (err) {
         should.exist(err);
         done();
       });
     });
 
-    it('should be able to show an error when trying to save a label without at least one alpha character', function(done) {
+    it('should be able to show an error when trying to save a label without at least one alpha character', function (done) {
       var _tag = new Tag(tag);
 
       _tag.label = '1234567890';
-      _tag.save(function(err) {
+      _tag.save(function (err) {
         should.exist(err);
         done();
       });
     });
 
-    it('should be able to show an error when trying to save a label longer than 255 characters', function(done) {
+    it('should be able to show an error when trying to save a label longer than 255 characters', function (done) {
       var _tag = new Tag(tag);
 
       _tag.label = 'l'.repeat(256);
-      _tag.save(function(err) {
+      _tag.save(function (err) {
         should.exist(err);
         done();
       });
@@ -238,7 +238,7 @@ describe('Tag Model Unit Tests:', function() {
 
   });
 
-  afterEach(function(done) {
+  afterEach(function (done) {
     Tag.remove().exec(done);
   });
 });

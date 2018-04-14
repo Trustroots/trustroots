@@ -1,9 +1,9 @@
-<section class="container board container-fullscreen" tr-boards="'sahara'">
+<section class="container board container-fullscreen" tr-boards="['nordiclights', 'jungleroad']">
   <div class="middle-wrapper middle-wrapper-horizontal">
     <div class="middle-content">
 
       <div class="row">
-        <div class="col-xs-12 col-sm-offset-4 col-sm-4 col-lg-offset-5 col-lg-2">
+        <div class="col-xs-12 col-sm-offset-3 col-sm-6 col-md-offset-4 col-md-4">
           <form name="signinForm"
                 class="form-auth"
                 autocomplete="off"
@@ -19,7 +19,8 @@
                        class="form-control input-lg"
                        placeholder="Email or username"
                        ng-model="auth.credentials.username"
-                       ng-disabled="auth.isLoading">
+                       ng-disabled="auth.isLoading"
+                       tabindex="1">
               </div>
               <div class="form-group">
                 <label for="password" class="lead">Password</label>
@@ -31,7 +32,8 @@
                          class="form-control input-lg"
                          ng-attr-type="{{ showPassword ? 'text' : 'password' }}"
                          ng-disabled="auth.isLoading"
-                         ng-model="auth.credentials.password">
+                         ng-model="auth.credentials.password"
+                         tabindex="2">
                   <span class="input-group-btn">
                     <a class="btn btn-lg btn-default btn-password-toggle"
                        role="button"
@@ -48,15 +50,19 @@
               </div>
               <a ui-sref="forgot({ userhandle: auth.credentials.username })"
                  class="btn btn-inverse"
-                 ng-class="{ 'btn-lg btn-block': auth.authError }">
+                 ng-class="{ 'btn-lg btn-block': auth.authError }"
+                 tabindex="4">
                 Forgot?
-                <span ng-if="auth.authError">Recover your password</span>
+                <span ng-if="auth.authError" class="hidden-xs">
+                  Recover your password
+                </span>
               </a>
               <div class="text-center form-group">
                 <br><br>
                 <button type="submit"
-                        class="btn btn-default btn-lg"
-                        ng-disabled="auth.isLoading">
+                        class="btn btn-default btn-action"
+                        ng-disabled="auth.isLoading"
+                        tabindex="3">
                   <span ng-if="!auth.isLoading">
                     {{ auth.continue ? 'Sign in to continue' : 'Login' }}
                   </span>
@@ -67,17 +73,35 @@
           </form>
         </div>
       </div><!-- .row-->
-      <div class="row">
+
+      <!-- For bigger screens -->
+      <div class="row hidden-xs">
         <div class="col-xs-12 text-center text-white">
           <p>
-            <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
-          </p>
-          <p class="visible-xs-block">
             <br>
-            <a ui-sref="home" class="btn btn-link">Back home</a>
+            <a ui-sref="home" class="btn btn-inverse">Back home</a>
+            <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
           </p>
         </div>
       </div><!-- .row-->
+
+      <!-- For smaller screens -->
+      <nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block">
+        <div class="container">
+          <ul class="nav navbar-nav nav-justified" role="toolbar" aria-label="Profile actions">
+          <li>
+            <a ui-sref="home" aria-label="Go to home page">
+              Back home
+            </a>
+          </li>
+            <li class="pull-right">
+              <a ui-sref="signup" aria-label="Sign up">
+                Become a member
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
 
     </div>
   </div>

@@ -159,7 +159,7 @@ describe('User CRUD tests', function () {
         jobs[0].data.subject.should.equal('Confirm Email');
         jobs[0].data.to.address.should.equal(_user.email);
 
-        User.findOne({ username: _user.username.toLowerCase() }, function(err, userRes1) {
+        User.findOne({ username: _user.username.toLowerCase() }, function (err, userRes1) {
           if (err) {
             return done(err);
           }
@@ -226,7 +226,7 @@ describe('User CRUD tests', function () {
         should.not.exist(signupRes.body.salt);
         signupRes.body.emailTemporary.should.equal(_user.email);
 
-        User.findOne({ username: _user.username.toLowerCase() }, function(err, userRes1) {
+        User.findOne({ username: _user.username.toLowerCase() }, function (err, userRes1) {
           if (err) {
             return done(err);
           }
@@ -366,33 +366,33 @@ describe('User CRUD tests', function () {
 
           // Load some json from API, get 403 suspended error
           agent.get('/api/users/' + user.username)
-          .set('Accept', 'application/json')
-          .expect('Content-Type', /json/)
-          .expect(403)
-          .end(function (err, res) {
-            // Handle error
-            if (err) {
-              return done(err);
-            }
-
-            res.body.message.should.equal('Your account has been suspended.');
-
-            // Load some json from API again,
-            // get normal 403 forbidden error since session is now destroyed
-            agent.get('/api/users/' + user.username)
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
             .expect(403)
             .end(function (err, res) {
-              // Handle error
+            // Handle error
               if (err) {
                 return done(err);
               }
 
-              res.body.message.should.equal('Forbidden.');
+              res.body.message.should.equal('Your account has been suspended.');
 
-              return done();
+              // Load some json from API again,
+              // get normal 403 forbidden error since session is now destroyed
+              agent.get('/api/users/' + user.username)
+                .expect(403)
+                .end(function (err, res) {
+                  // Handle error
+                  if (err) {
+                    return done(err);
+                  }
+
+                  res.body.message.should.equal('Forbidden.');
+
+                  return done();
+                });
+
             });
-
-          });
         });
 
       });
@@ -418,45 +418,45 @@ describe('User CRUD tests', function () {
 
           // Load html page
           agent.get('/')
-          .set('Accept', 'text/html')
-          .expect('Content-Type', 'text/html; charset=utf-8')
-          .expect(403)
-          .end(function (err, res) {
-            // Handle error
-            if (err) {
-              return done(err);
-            }
-
-            // Note how we check for `res.text` instead of `res.body`
-            res.text.should.containEql('Your account has been suspended.');
-
-            // Load some html again,
-            // get normal 200 since session is now destroyed
-            agent.get('/')
             .set('Accept', 'text/html')
-            .expect(200)
-            .end(function (err) {
-              // Handle error
+            .expect('Content-Type', 'text/html; charset=utf-8')
+            .expect(403)
+            .end(function (err, res) {
+            // Handle error
               if (err) {
                 return done(err);
               }
 
-              return done();
-            });
+              // Note how we check for `res.text` instead of `res.body`
+              res.text.should.containEql('Your account has been suspended.');
 
-          });
+              // Load some html again,
+              // get normal 200 since session is now destroyed
+              agent.get('/')
+                .set('Accept', 'text/html')
+                .expect(200)
+                .end(function (err) {
+                  // Handle error
+                  if (err) {
+                    return done(err);
+                  }
+
+                  return done();
+                });
+
+            });
         });
 
       });
   });
 
-  context('logged in as a confirmed user', function() {
+  context('logged in as a confirmed user', function () {
 
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       agent.post('/api/auth/signin')
         .send(confirmedCredentials)
         .expect(200)
-        .end(function(err, signinRes) {
+        .end(function (err, signinRes) {
           if (err) return done(err);
           // Sanity check they are confirmed
           signinRes.body.public.should.equal(true);
@@ -464,28 +464,28 @@ describe('User CRUD tests', function () {
         });
     });
 
-    it('should not resend confirmation token', function(done) {
+    it('should not resend confirmation token', function (done) {
       agent.post('/api/auth/resend-confirmation')
         .expect(400)
-        .end(function(err, resendRes) {
+        .end(function (err, resendRes) {
           if (err) return done(err);
           resendRes.body.message.should.equal('Already confirmed.');
           done();
         });
     });
 
-    context('with changed email address', function() {
+    context('with changed email address', function () {
 
-      beforeEach(function(done) {
+      beforeEach(function (done) {
         confirmedUser.emailTemporary = 'confirmed-test-changed@test.com';
         confirmedUser.save(done);
       });
 
-      it('should resend confirmation token for email change', function(done) {
+      it('should resend confirmation token for email change', function (done) {
 
         agent.post('/api/auth/resend-confirmation')
           .expect(200)
-          .end(function(err, resendRes) {
+          .end(function (err, resendRes) {
             if (err) return done(err);
             resendRes.body.message.should.equal('Sent confirmation email.');
             jobs.length.should.equal(1);
@@ -501,13 +501,13 @@ describe('User CRUD tests', function () {
 
   });
 
-  context('logged in as unconfirmed user', function() {
+  context('logged in as unconfirmed user', function () {
 
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(err, signinRes) {
+        .end(function (err, signinRes) {
           if (err) return done(err);
           // Sanity check they are unconfirmed
           signinRes.body.public.should.equal(false);
@@ -515,16 +515,16 @@ describe('User CRUD tests', function () {
         });
     });
 
-    it('should resend confirmation token', function(done) {
+    it('should resend confirmation token', function (done) {
       agent.post('/api/auth/resend-confirmation')
         .expect(200)
-        .end(function(err, resendRes) {
+        .end(function (err, resendRes) {
           if (err) return done(err);
           resendRes.body.message.should.equal('Sent confirmation email.');
           User.findOne(
             { username: _user.username.toLowerCase() },
             'emailToken',
-            function(err, userRes) {
+            function (err, userRes) {
               if (err) return done(err);
               should.exist(userRes);
               should.exist(userRes.emailToken);
@@ -605,7 +605,7 @@ describe('User CRUD tests', function () {
 
           res.body.message.should.be.equal('We sent you an email with further instructions.');
 
-          User.findOne({ username: user.username.toLowerCase() }, function(err, userRes) {
+          User.findOne({ username: user.username.toLowerCase() }, function (err, userRes) {
             userRes.resetPasswordToken.should.not.be.empty();
             should.exist(userRes.resetPasswordExpires);
             return done();
@@ -632,7 +632,7 @@ describe('User CRUD tests', function () {
 
           res.body.message.should.be.equal('We sent you an email with further instructions.');
 
-          User.findOne({ username: user.username.toLowerCase() }, function(err, userRes) {
+          User.findOne({ username: user.username.toLowerCase() }, function (err, userRes) {
             userRes.resetPasswordToken.should.not.be.empty();
             should.exist(userRes.resetPasswordExpires);
             return done();
@@ -659,7 +659,7 @@ describe('User CRUD tests', function () {
 
           res.body.message.should.be.equal('We sent you an email with further instructions.');
 
-          User.findOne({ email: user.email.toLowerCase() }, function(err, userRes) {
+          User.findOne({ email: user.email.toLowerCase() }, function (err, userRes) {
             userRes.resetPasswordToken.should.not.be.empty();
             should.exist(userRes.resetPasswordExpires);
             return done();
@@ -686,7 +686,7 @@ describe('User CRUD tests', function () {
 
           res.body.message.should.be.equal('We sent you an email with further instructions.');
 
-          User.findOne({ email: user.email.toLowerCase() }, function(err, userRes) {
+          User.findOne({ email: user.email.toLowerCase() }, function (err, userRes) {
             userRes.resetPasswordToken.should.not.be.empty();
             should.exist(userRes.resetPasswordExpires);
             return done();
@@ -711,19 +711,19 @@ describe('User CRUD tests', function () {
             return done(err);
           }
 
-          User.findOne({ username: user.username.toLowerCase() }, function(err, userRes) {
+          User.findOne({ username: user.username.toLowerCase() }, function (err, userRes) {
             userRes.resetPasswordToken.should.not.be.empty();
             should.exist(userRes.resetPasswordExpires);
             agent.get('/api/auth/reset/' + userRes.resetPasswordToken)
-            .expect(302)
-            .end(function (err, res) {
+              .expect(302)
+              .end(function (err, res) {
               // Handle error
-              if (err) {
-                return done(err);
-              }
-              res.headers.location.should.be.equal('/password/reset/' + userRes.resetPasswordToken);
-              return done();
-            });
+                if (err) {
+                  return done(err);
+                }
+                res.headers.location.should.be.equal('/password/reset/' + userRes.resetPasswordToken);
+                return done();
+              });
           });
         });
     });
@@ -748,17 +748,17 @@ describe('User CRUD tests', function () {
 
           var invalidToken = 'someTOKEN1234567890';
           agent.get('/api/auth/reset/' + invalidToken)
-          .expect(302)
-          .end(function (err, res) {
+            .expect(302)
+            .end(function (err, res) {
             // Handle error
-            if (err) {
-              return done(err);
-            }
+              if (err) {
+                return done(err);
+              }
 
-            res.headers.location.should.be.equal('/password/reset/invalid');
+              res.headers.location.should.be.equal('/password/reset/invalid');
 
-            return done();
-          });
+              return done();
+            });
         });
     });
   });
@@ -1880,7 +1880,7 @@ describe('User CRUD tests', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(function() {
+    User.remove().exec(function () {
       Tag.remove().exec(done);
     });
   });

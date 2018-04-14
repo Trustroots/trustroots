@@ -13,8 +13,8 @@ var path = require('path'),
     userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
     User = mongoose.model('User');
 
-exports.up = function(next) {
-  mongooseService.connect(function() {
+exports.up = function (next) {
+  mongooseService.connect(function () {
     console.log(chalk.green('Connected to MongoDB.'));
     User.update(
       { avatarUploaded: { $exists: false } },
@@ -28,15 +28,15 @@ exports.up = function(next) {
         console.log(numberAffected);
         console.log('');
       }
-      mongooseService.disconnect(function() {
+      mongooseService.disconnect(function () {
         next(err);
       });
     });
   });
 };
 
-exports.down = function(next) {
-  mongooseService.connect(function() {
+exports.down = function (next) {
+  mongooseService.connect(function () {
     console.log(chalk.green('Connected to MongoDB.'));
     User.update(
       { avatarUploaded: { $exists: true } },
@@ -50,7 +50,7 @@ exports.down = function(next) {
         console.log(numberAffected);
         console.log('');
       }
-      mongooseService.disconnect(function() {
+      mongooseService.disconnect(function () {
         next(err);
       });
     });

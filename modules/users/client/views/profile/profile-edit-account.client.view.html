@@ -85,7 +85,7 @@
     <form autocomplete="off">
       <div class="form-horizontal">
 
-        <div class="form-group">
+        <div class="form-group" ng-if="!profileEditAccount.isNativeMobileApp">
           <label class="col-sm-3 text-right control-label">Push</label>
           <div class="col-sm-9">
 
@@ -230,7 +230,7 @@
   <!-- /Data liberation -->
 
 <!-- Remove -->
-<div class="panel panel-default">
+<div class="panel panel-default" id="remove">
   <div class="panel-heading">
     Remove your account
   </div>

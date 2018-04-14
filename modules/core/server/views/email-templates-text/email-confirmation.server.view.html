@@ -1,4 +1,4 @@
-{% extends 'email.server.view.html' %}
+{% extends './email.server.view.html' %}
 
 {% block content %}
 Hey {{name}}!
@@ -7,6 +7,6 @@ You initiated an email change at Trustroots. Please click the confirmation link 
 
 If you didn't make this request, you can ignore this email.
 
-<{{urlConfirmPlainText}}>
+{{urlConfirmPlainText}}
 
-{% endblock %}
+{% endblock content %}

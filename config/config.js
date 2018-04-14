@@ -12,7 +12,7 @@ var _ = require('lodash'),
 /**
  * Get files by glob patterns
  */
-var getGlobbedPaths = function(globPatterns, excludes) {
+var getGlobbedPaths = function (globPatterns, excludes) {
   // URL paths regex
   var urlRegex = new RegExp('^(?:[a-z]+:)?\/\/', 'i');
 
@@ -21,7 +21,7 @@ var getGlobbedPaths = function(globPatterns, excludes) {
 
   // If glob pattern is array so we use each pattern in a recursive way, otherwise we use glob
   if (_.isArray(globPatterns)) {
-    globPatterns.forEach(function(globPattern) {
+    globPatterns.forEach(function (globPattern) {
       output = _.union(output, getGlobbedPaths(globPattern, excludes));
     });
   } else if (_.isString(globPatterns)) {
@@ -30,7 +30,7 @@ var getGlobbedPaths = function(globPatterns, excludes) {
     } else {
       var files = glob.sync(globPatterns);
       if (excludes) {
-        files = files.map(function(file) {
+        files = files.map(function (file) {
           if (_.isArray(excludes)) {
             for (var i in excludes) {
               if (excludes.hasOwnProperty(i)) {
@@ -53,7 +53,7 @@ var getGlobbedPaths = function(globPatterns, excludes) {
 /**
  * Validate NODE_ENV existance
  */
-var validateEnvironmentVariable = function() {
+var validateEnvironmentVariable = function () {
   var environmentFiles = glob.sync('./config/env/' + process.env.NODE_ENV + '.js');
 
   console.log();
@@ -74,7 +74,7 @@ var validateEnvironmentVariable = function() {
 /**
  * Initialize global configuration files
  */
-var initGlobalConfigFolders = function(config) {
+var initGlobalConfigFolders = function (config) {
   // Appending files
   config.folders = {
     server: {},
@@ -88,7 +88,7 @@ var initGlobalConfigFolders = function(config) {
 /**
  * Initialize global configuration files
  */
-var initGlobalConfigFiles = function(config, assets) {
+var initGlobalConfigFiles = function (config, assets) {
   // Appending files
   config.files = {
     server: {},
@@ -133,7 +133,7 @@ var initGlobalConfigFiles = function(config, assets) {
 /**
  * Initialize global configuration
  */
-var initGlobalConfig = function() {
+var initGlobalConfig = function () {
   // Validate NDOE_ENV existance
   validateEnvironmentVariable();
 

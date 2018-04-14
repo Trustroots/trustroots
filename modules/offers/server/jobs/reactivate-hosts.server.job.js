@@ -20,11 +20,11 @@ var path = require('path'),
     mongoose = require('mongoose'),
     Offer = mongoose.model('Offer');
 
-module.exports = function(job, agendaDone) {
+module.exports = function (job, agendaDone) {
   async.waterfall([
 
     // Find "no" hosting offers
-    function(done) {
+    function (done) {
 
       // Ignore only offers modified within past X days
       // Has to be a JS Date object, not a Moment object
@@ -32,6 +32,7 @@ module.exports = function(job, agendaDone) {
 
       Offer
         .find({
+          type: 'host',
           status: 'no',
           updated: {
             $lt: updatedTimeAgo
@@ -42,21 +43,21 @@ module.exports = function(job, agendaDone) {
           }
         })
         .populate('user', 'public email firstName displayName')
-        .exec(function(err, offers) {
+        .exec(function (err, offers) {
           done(err, offers || []);
         });
     },
 
     // Send emails
-    function(offers, done) {
+    function (offers, done) {
       // No users to send emails to
       if (!offers.length) {
         return done();
       }
 
-      async.eachSeries(offers, function(offer, callback) {
+      async.eachSeries(offers, function (offer, callback) {
 
-        emailService.sendReactivateHosts(offer.user, function(err) {
+        emailService.sendReactivateHosts(offer.user, function (err) {
           if (err) {
             return callback(err);
           } else {
@@ -68,7 +69,7 @@ module.exports = function(job, agendaDone) {
                   reactivateReminderSent: new Date()
                 }
               },
-              function(err) {
+              function (err) {
                 if (err) {
                   console.error('Failed to mark offer\'s reactivation mail sent.');
                 }
@@ -77,13 +78,13 @@ module.exports = function(job, agendaDone) {
             );
           }
         });
-      }, function(err) {
+      }, function (err) {
         done(err);
       });
 
     }
 
-  ], function(err) {
+  ], function (err) {
     if (err) {
       console.error(err);
     }

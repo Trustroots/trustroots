@@ -1,4 +1,4 @@
-{% extends 'email.server.view.html' %}
+{% extends './email.server.view.html' %}
 
 {% block content %}
 
@@ -49,7 +49,10 @@
                                               </p>
                                             {% endif %}
 
-                                            <p>Check our <a href="https://ideas.trustroots.org">blog</a>, like our <a href="https://www.facebook.com/trustroots.org/?ref=welcome-email">Facebook page</a> and follow us on <a href="https://twitter.com/trustroots">Twitter</a> — it would really help us out!</p>
+                                            <p>Check our <a href="https://ideas.trustroots.org">blog</a>,
+                                               like our <a href="https://www.facebook.com/trustroots.org/?ref=welcome-email">Facebook page</a>,
+                                               join our <a href="https://www.facebook.com/groups/trustroots/?ref=welcome-email">Facebook group</a>
+                                               and follow us on <a href="https://twitter.com/trustroots">Twitter</a> — it would really help us out!</p>
 
                                             <p>
                                               Happy traveling!<br/>
@@ -73,4 +76,4 @@
   </tr>
   <!-- // MODULE ROW -->
 
-{% endblock %}
+{% endblock content %}

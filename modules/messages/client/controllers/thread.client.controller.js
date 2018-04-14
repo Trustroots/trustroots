@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-/*
+  /*
  * checklist:
  * - scope init variable - needed?
  * - scaffolding order
@@ -79,8 +79,8 @@
       }
 
       // Fetches first page of messages after receiving user has finished loading (we need the userId from there)
-      userTo.$promise.then(function() {
-        fetchMessages().$promise.then(function(data) {
+      userTo.$promise.then(function () {
+        fetchMessages().$promise.then(function (data) {
 
           addMessages(data);
           vm.isInitialized = true;
@@ -94,7 +94,7 @@
 
           // Timeout makes sure thread-dimensions-directive has finished loading
           // and there would thus be something actually listening to these broadcasts:
-          $timeout(function() {
+          $timeout(function () {
             $scope.$broadcast('threadRefreshLayout');
             if (data.length > 0) {
               $scope.$broadcast('threadScrollToBottom');
@@ -107,7 +107,7 @@
         });
       },
       // No user...
-      function(error) {
+      function (error) {
         // User not found...
         if (error.status === 404) {
           vm.isInitialized = true;
@@ -138,7 +138,7 @@
       // Send a normal message with predefined content
       sendMessage(
         // This attribute must be whitelisted in `sanitizeOptions` at
-        // `modules/core/server/controllers/text-processor.server.controller.js`
+        // `modules/core/server/services/text.server.service.js`
         '<p data-hosting="' + reply + '">' +
           '<b><i>' +
             quickReplyMessage +
@@ -245,7 +245,7 @@
       }
 
       // Finally refresh the layout
-      $timeout(function() {
+      $timeout(function () {
         $scope.$broadcast('threadRefreshLayout');
       });
 
@@ -264,7 +264,7 @@
 
         var oldHeight = elemThread[0].scrollHeight;
 
-        fetchMessages().$promise.then(function(data) {
+        fetchMessages().$promise.then(function (data) {
           addMessages(data);
           setScrollPosition(oldHeight);
         });
@@ -281,7 +281,7 @@
      * Timeout is in place to force function to execute after digest cycle to properly calculate scroll height.
      */
     function setScrollPosition(oldHeight) {
-      $timeout(function() {
+      $timeout(function () {
         var newHeight = elemThread[0].scrollHeight;
         angular.element(elemThread.scrollTop(newHeight - oldHeight));
       });
@@ -308,7 +308,7 @@
     function syncRead() {
       MessagesRead.query({
         messageIds: flaggedAsRead
-      }, function() {
+      }, function () {
         flaggedAsRead = [];
         // Tell app controller to sync this counter
         $rootScope.$broadcast('syncUnreadMessagesCount');
@@ -365,7 +365,7 @@
         read: false
       });
 
-      message.$save(function(response) {
+      message.$save(function (response) {
 
         vm.isSending = false;
 
@@ -383,11 +383,11 @@
         });
 
         // $timeout ensures scroll happens only after DOM has finished rendering
-        $timeout(function() {
+        $timeout(function () {
           $scope.$broadcast('threadScrollToBottom');
         });
 
-      }, function(errorResponse) {
+      }, function (errorResponse) {
         vm.isSending = false;
         messageCenterService.add('danger', (errorResponse.data && errorResponse.data.message) ? errorResponse.data.message : 'Could not send the message. Please try again.');
       });

@@ -6,7 +6,7 @@
 var contactsPolicy = require('../policies/contacts.server.policy'),
     contacts = require('../controllers/contacts.server.controller');
 
-module.exports = function(app) {
+module.exports = function (app) {
 
   app.route('/api/contact').all(contactsPolicy.isAllowed)
     .post(contacts.add);
