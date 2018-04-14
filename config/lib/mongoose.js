@@ -5,17 +5,21 @@
  */
 var config = require('../config'),
     chalk = require('chalk'),
+    debug = require('debug')('tr:mongoose'),
     path = require('path'),
     mongoose = require('mongoose');
 
 // Load the mongoose models
 module.exports.loadModels = function(callback, logprefix) {
+  debug(formatLogPrefix(logprefix) + 'Loading Mongoose models');
+
   // Globbing model files
   config.files.server.models.forEach(function(modelPath) {
+    debug(formatLogPrefix(logprefix) + 'Loading Mongoose model: ' + modelPath);
     require(path.resolve(modelPath));
   });
 
-  console.log(chalk.green(formatLogPrefix(logprefix) + 'Loaded Mongoose models'));
+  debug(formatLogPrefix(logprefix) + 'Loaded Mongoose models');
 
   if (callback) {
     callback();
@@ -23,40 +27,43 @@ module.exports.loadModels = function(callback, logprefix) {
 };
 
 // Initialize Mongoose
-module.exports.connect = function(callback, logprefix) {
+module.exports.connect = function(callback, logprefix, optionsOverride) {
 
   // Use native promises
   mongoose.Promise = global.Promise;
 
-  mongoose
-    .connect(config.db.uri, config.db.options)
-    .then(function (connection) {
-      console.log(chalk.green(formatLogPrefix(logprefix) + 'Connected to MongoDB'));
+  var options = optionsOverride ? _.merge(config.db.options || {}, optionsOverride) : config.db.options;
 
-      // Enabling mongoose debug mode if required
-      mongoose.set('debug', config.db.debug);
+  debug('Connecting to Mongo server: ' + config.db.uri);
 
-      if (callback) {
-        callback(connection.db);
-      }
-    })
-    .catch(function (err) {
-      console.error(chalk.red(formatLogPrefix(logprefix) + 'Could not connect to MongoDB!'));
-      console.error(err);
-    });
+  // Setting Mongoose debug mode
+  mongoose.set('debug', config.db.debug);
+
+  mongoose.connect(config.db.uri, options, function(err) {
+    if (err) {
+      return console.error(chalk.red(formatLogPrefix(logprefix) + 'Could not connect to MongoDB! #fh3924'));
+    }
+
+    console.log(chalk.green(formatLogPrefix(logprefix) + 'Connected to MongoDB'));
+
+    if (callback) {
+      callback();
+    }
+  });
 };
 
 module.exports.disconnect = function(callback, logprefix) {
-  mongoose.connection.db
-    .close(function (err) {
-      if (err) {
-        console.error(chalk.red(formatLogPrefix(logprefix) + 'Could not disconnect to MongoDB!'));
-        console.error(err);
-      } else {
-        console.log(chalk.yellow(formatLogPrefix(logprefix) + 'Disconnected from MongoDB.'));
-      }
-      return callback(err);
-    });
+  debug(formatLogPrefix(logprefix) + 'Attempt to disconnect from MongoDB');
+  mongoose.connection.close();
+
+  mongoose.connection.on('disconnecting', function () {
+    debug(formatLogPrefix(logprefix) + 'Disconnecting from MongoDB...');
+  });
+
+  mongoose.connection.on('disconnected', function () {
+    console.log(chalk.yellow(formatLogPrefix(logprefix) + 'Disconnected from MongoDB'));
+    return callback();
+  });
 };
 
 /**

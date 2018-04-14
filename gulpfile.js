@@ -410,7 +410,9 @@ gulp.task('mocha', function(done) {
           });
         });
       });
-  });
+  },
+  'Test',
+  { autoIndex: false });
 
 });
 

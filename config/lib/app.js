@@ -4,28 +4,40 @@
  * Module dependencies.
  */
 var config = require('../config'),
+    debug = require('debug')('tr:app'),
+    mongoose = require('mongoose'),
     mongooseService = require('./mongoose'),
     express = require('./express'),
     chalk = require('chalk');
 
 module.exports.init = function init(callback) {
-  mongooseService.connect(function (db) {
+  debug('Initialize app');
+  mongooseService.connect(function () {
+    debug('Connected to Mongoose service');
+    debug(mongoose.connection.readyState);
+    debug(mongoose.connection.db);
+    debug(mongoose.connection.config);
 
     // Initialize Models
-    mongooseService.loadModels();
+    mongooseService.loadModels(false, 'App');
 
     // Initialize express
-    var app = express.init(db);
-    if (callback) callback(app, db, config);
-  });
+    var app = express.init();
+    if (callback) {
+      callback(app);
+    }
+  }, 'App');
 };
 
 module.exports.start = function start(callback) {
+  debug('Application starting');
 
-  this.init(function (app, db, config) {
+  this.init(function (app) {
+    debug('Application initialized');
 
     // Start the app by listening on <port> at <host>
     app.listen(config.port, config.host, function () {
+      debug('Application listening to: ' + config.host + ':' + config.port);
 
       // Check in case mailer config is still set to default values (a common problem)
       if (config.mailer.service && config.mailer.service === 'MAILER_SERVICE_PROVIDER') {
@@ -50,7 +62,7 @@ module.exports.start = function start(callback) {
       console.log('');
 
       if (callback) {
-        callback(app, db, config);
+        callback(app);
       }
     });
 

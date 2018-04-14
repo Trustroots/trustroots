@@ -48,6 +48,7 @@ module.exports = {
   https: process.env.HTTPS || false,
   sessionSecret: 'MEAN',
   sessionCollection: 'sessions',
+  host: 'localhost',
   domain: process.env.DOMAIN || 'localhost:3000',
   supportEmail: 'support@trustroots.org', // TO-address for support requests
   surveyReactivateHosts: 'https://ideas.trustroots.org/?p=1302#page-1302', // Survey to send with host reactivation emails

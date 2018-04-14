@@ -3,7 +3,7 @@
 var path = require('path'),
     format = require('util').format,
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    mongooseService = require('./mongoose');
+    mongoose = require('mongoose');
 
 var agenda;
 
@@ -183,45 +183,38 @@ exports.unlockAgendaJobs = function(callback) {
     console.log('[Worker] Attempting to unlock locked Agenda jobs...');
   }
 
-  // Use connect method to connect to the server
-  mongooseService.connect(function (db) {
+  var agendaJobs = mongoose.connection.collection('agendaJobs');
 
-  // agenda.on('ready', function() {
+  agendaJobs.update({
+    lockedAt: {
+      $exists: true
+    },
+    lastFinishedAt: {
+      $exists: false
+    }
+  }, {
+    $unset: {
+      lockedAt: undefined,
+      lastModifiedBy: undefined,
+      lastRunAt: undefined
+    },
+    $set: {
+      nextRunAt: new Date()
+    }
+  }, {
+    multi: true
+  }, function (err, numUnlocked) {
+    if (err) {
+      console.error(err);
+    }
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('[Worker] Unlocked %d Agenda jobs.', parseInt(numUnlocked, 10) || 0);
+    }
 
-    // Re-use Agenda's MongoDB connection
-    // var agendaJobs = agenda._mdb.collection('agendaJobs');
-
-    var agendaJobs = db.collection('agendaJobs');
-
-    agendaJobs.update({
-      lockedAt: {
-        $exists: true
-      },
-      lastFinishedAt: {
-        $exists: false
-      }
-    }, {
-      $unset: {
-        lockedAt: undefined,
-        lastModifiedBy: undefined,
-        lastRunAt: undefined
-      },
-      $set: {
-        nextRunAt: new Date()
-      }
-    }, {
-      multi: true
-    }, function (err, numUnlocked) {
-      if (err) {
-        console.error(err);
-      }
-      if (process.env.NODE_ENV !== 'test') {
-        console.log('[Worker] Unlocked %d Agenda jobs.', parseInt(numUnlocked, 10) || 0);
-      }
-      mongooseService.disconnect(callback, 'Worker');
-    });
-
-  }, 'Worker');
+    if (callback) {
+      callback();
+    }
+  });
 };
 
 /**
