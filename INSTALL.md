@@ -7,7 +7,7 @@ _These instructions are for installing locally. If you'd like to have containeri
 
 Make sure you have installed all these prerequisites:
 * [Node.js](https://nodejs.org/en/download/) v8+ and the NPM v5+ (`node --version && npm --version`). You can run multiple Node versions using [NVM](https://github.com/creationix/nvm).
-* [MongoDB](http://www.mongodb.org/downloads) v3.4+ (`mongod --version`).
+* [MongoDB](http://www.mongodb.org/downloads) v3.4. v3.6 won't work. (`mongod --version`).
 * [GraphicsMagick](http://www.graphicsmagick.org/). If you prefer [ImageMagick](http://www.imagemagick.org/) instead, change `imageProcessor` setting from `./configs/env/local.js` (see install step 2) to `imagemagic`. In Mac OS X, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) and do:
 ```
 brew install graphicsmagick
@@ -43,12 +43,7 @@ Optional: If you need to modify connection settings, see `local.js` config file 
 
 Optional: Installing [Robomongo](https://robomongo.org/) might come handy.
 
-### 4. Install Node modules:
-```bash
-npm install
-```
-
-### 5. Finally start the app:
+### 4. Start the app:
 ```bash
 npm start
 ```
