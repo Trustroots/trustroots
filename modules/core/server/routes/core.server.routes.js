@@ -4,14 +4,12 @@
  * Module dependencies.
  */
 var path = require('path'),
-    facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service'));
+    facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service')),
+    core = require('../controllers/core.server.controller'),
+    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
+    tribes = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller'));
 
 module.exports = function (app) {
-  // Root routing
-  var core = require('../controllers/core.server.controller'),
-      path = require('path'),
-      userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-      tribes = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller'));
 
   // Gives the service worker access to any config it needs
   app.route('/config/sw.js').get(core.renderServiceWorkerConfig);

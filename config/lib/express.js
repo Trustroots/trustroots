@@ -271,7 +271,7 @@ module.exports.initHelmetHeaders = function (app) {
   var cspSrcDevelopment = process.env.NODE_ENV === 'development' ? ['ws://localhost:35729', 'localhost:35729'] : [];
 
   /*
-   * Conten Security Policy (CSP)
+   * Content Security Policy (CSP)
    *
    * By default, directives are wide open. If you don't set a specific policy
    * for a directive, let's say `font-src`, then that directive behaves by
