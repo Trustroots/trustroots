@@ -6,21 +6,21 @@
  * Worker main entry file
  */
 var async = require('async'),
-    mongoose = require('./config/lib/mongoose'),
+    mongooseService = require('./config/lib/mongoose'),
     worker = require('./config/lib/worker');
 
 async.waterfall([
 
   // Bootstrap db connection
   function(done) {
-    mongoose.connect(function() {
+    mongooseService.connect(function () {
       done();
     });
   },
 
   // Load models
   function(done) {
-    mongoose.loadModels(done);
+    mongooseService.loadModels(done);
   },
 
   // Clean out database

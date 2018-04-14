@@ -20,8 +20,8 @@ module.exports = {
       // user: '',
       // pass: ''
     },
-    // Enable mongoose debug mode
-    debug: process.env.MONGODB_DEBUG || false
+    // Mongoose debug mode
+    debug: false
 
   },
   domain: process.env.DOMAIN || 'www.trustroots.org'

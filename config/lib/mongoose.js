@@ -48,8 +48,9 @@ module.exports.connect = function (callback) {
       // Load modules
       _this.loadModels();
 
-      // Call callback FN
-      if (callback) callback(db);
+      if (callback) {
+        callback(db);
+      }
     }
   });
 };
