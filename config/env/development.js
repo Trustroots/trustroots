@@ -13,15 +13,18 @@
 module.exports = {
   db: {
     uri: 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trustroots-dev',
+    // See http://mongoosejs.com/docs/connections.html#options
     options: {
-      auth: {
-        authMechanism: ''
-      }
-      // user: '',
-      // pass: ''
+      autoIndex: true,
+      // Never stop trying to reconnect
+      reconnectTries: Number.MAX_VALUE,
+      // Reconnect every 500ms
+      reconnectInterval: 500,
+      // If not connected, return errors immediately rather than waiting for reconnect
+      bufferMaxEntries: 0
     },
-    // Enable mongoose debug mode
-    debug: process.env.MONGODB_DEBUG || false
+    // Mongoose debug mode
+    debug: true
   },
   app: {
     title: 'Trustroots Development version',

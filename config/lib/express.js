@@ -5,10 +5,12 @@
  */
 var _ = require('lodash'),
     config = require('../config'),
+    debug = require('debug')('tr:express'),
     errorService = require('../../modules/core/server/services/error.server.service'),
     facebookNotificationService = require('../../modules/core/server/services/facebook-notification.server.service'),
     languages = require('../languages/languages.json'),
     express = require('express'),
+    mongoose = require('mongoose'),
     morgan = require('morgan'),
     bodyParser = require('body-parser'),
     session = require('express-session'),
@@ -30,6 +32,7 @@ var _ = require('lodash'),
  * Initialize local variables
  */
 module.exports.initLocalVariables = function (app) {
+  debug('Initialize local variables');
   // Setting application local variables
   app.locals.title = config.app.title;
   app.locals.description = config.app.description;
@@ -98,6 +101,7 @@ module.exports.initLocalVariables = function (app) {
  * Initialize application middleware
  */
 module.exports.initMiddleware = function (app) {
+  debug('Initialize application middleware');
 
   // Should be placed before express.static
   app.use(compress({
@@ -144,13 +148,13 @@ module.exports.initMiddleware = function (app) {
   // Add the cookie parser and flash middleware
   app.use(cookieParser());
   app.use(flash());
-
 };
 
 /**
  * Configure view engine
  */
 module.exports.initViewEngine = function (app) {
+  debug('Initialize view engine');
 
   // Set Nunjucks as the template engine
   // https://mozilla.github.io/nunjucks/
@@ -168,7 +172,9 @@ module.exports.initViewEngine = function (app) {
 /**
  * Configure Express session
  */
-module.exports.initSession = function (app, db) {
+module.exports.initSession = function (app) {
+  debug('Initialize Express session');
+
   // Express MongoDB session storage
   // https://www.npmjs.com/package/express-session
   app.use(session({
@@ -189,7 +195,7 @@ module.exports.initSession = function (app, db) {
       maxAge: 2419200000 // (in milliseconds) 28 days
     },
     store: new MongoStore({
-      mongooseConnection: db.connection,
+      mongooseConnection: mongoose.connection,
       collection: config.sessionCollection
     })
   }));
@@ -199,6 +205,7 @@ module.exports.initSession = function (app, db) {
  * Wire in user last seen middleware
  */
 module.exports.initLastSeen = function (app) {
+  debug('Initialize last-seen middleware');
   var lastSeenController = require(path.resolve('./modules/users/server/controllers/users.lastseen.server.controller'));
   app.use(lastSeenController);
 };
@@ -206,9 +213,10 @@ module.exports.initLastSeen = function (app) {
 /**
  * Invoke modules server configuration
  */
-module.exports.initModulesConfiguration = function (app, db) {
+module.exports.initModulesConfiguration = function (app) {
+  debug('Initialize server configuration');
   config.files.server.configs.forEach(function (configPath) {
-    require(path.resolve(configPath))(app, db);
+    require(path.resolve(configPath))(app);
   });
 };
 
@@ -217,6 +225,7 @@ module.exports.initModulesConfiguration = function (app, db) {
  * https://helmetjs.github.io/docs/
  */
 module.exports.initHelmetHeaders = function (app) {
+  debug('Initialize Helmet headers configuration');
 
   /**
    * X-Frame protection ("frameguard") default options.
@@ -271,7 +280,7 @@ module.exports.initHelmetHeaders = function (app) {
   var cspSrcDevelopment = process.env.NODE_ENV === 'development' ? ['ws://localhost:35729', 'localhost:35729'] : [];
 
   /*
-   * Conten Security Policy (CSP)
+   * Content Security Policy (CSP)
    *
    * By default, directives are wide open. If you don't set a specific policy
    * for a directive, let's say `font-src`, then that directive behaves by
@@ -480,6 +489,7 @@ module.exports.initHelmetHeaders = function (app) {
  * Configure the modules static routes
  */
 module.exports.initModulesClientRoutes = function (app) {
+  debug('Initialize static routes (/client)');
   // Setting the app router and static folder
   app.use('/', express.static(path.resolve('./public')));
 
@@ -494,6 +504,7 @@ module.exports.initModulesClientRoutes = function (app) {
  * Configure the modules ACL policies
  */
 module.exports.initModulesServerPolicies = function () {
+  debug('Initialize ACL policies');
   // Globbing policy files
   config.files.server.policies.forEach(function (policyPath) {
     require(path.resolve(policyPath)).invokeRolesPolicies();
@@ -504,6 +515,7 @@ module.exports.initModulesServerPolicies = function () {
  * Configure the modules server routes
  */
 module.exports.initModulesServerRoutes = function (app) {
+  debug('Initialize server routes');
   // Globbing routing files
   config.files.server.routes.forEach(function (routePath) {
     require(path.resolve(routePath))(app);
@@ -514,13 +526,16 @@ module.exports.initModulesServerRoutes = function (app) {
  * Configure error handling
  */
 module.exports.initErrorRoutes = function (app) {
+  debug('Initialize error routes');
   app.use(errorService.errorResponse);
 };
 
 /**
  * Initialize the Express application
  */
-module.exports.init = function (db) {
+module.exports.init = function () {
+  debug('Initialize Express.js application');
+
   // Initialize express app
   var app = express();
 
@@ -540,7 +555,7 @@ module.exports.init = function (db) {
   this.initModulesClientRoutes(app);
 
   // Initialize Express session
-  this.initSession(app, db);
+  this.initSession(app);
 
   // Initialize Modules configuration
   this.initModulesConfiguration(app);

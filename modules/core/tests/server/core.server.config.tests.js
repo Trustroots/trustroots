@@ -175,7 +175,7 @@ describe('Configuration Tests:', function () {
         process.env.NODE_ENV = env;
 
         // Get application
-        app = express.init(mongoose);
+        app = express.init(mongoose.connection.db);
         agent = request.agent(app);
 
         // Get rendered layout

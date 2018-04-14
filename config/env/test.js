@@ -13,13 +13,7 @@
 module.exports = {
   db: {
     uri: 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trustroots-test',
-    options: {
-      auth: {
-        authMechanism: ''
-      }
-      // user: '',
-      // pass: ''
-    },
+    options: {},
     // Enable mongoose debug mode
     debug: process.env.MONGODB_DEBUG || false
   },

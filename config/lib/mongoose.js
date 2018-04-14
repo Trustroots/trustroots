@@ -5,58 +5,74 @@
  */
 var config = require('../config'),
     chalk = require('chalk'),
+    debug = require('debug')('tr:mongoose'),
     path = require('path'),
     mongoose = require('mongoose');
 
 // Load the mongoose models
-module.exports.loadModels = function (callback) {
+module.exports.loadModels = function (callback, logprefix) {
+  debug(formatLogPrefix(logprefix) + 'Loading Mongoose models');
+
   // Globbing model files
   config.files.server.models.forEach(function (modelPath) {
+    debug(formatLogPrefix(logprefix) + 'Loading Mongoose model: ' + modelPath);
     require(path.resolve(modelPath));
   });
 
-  if (callback) callback();
+  debug(formatLogPrefix(logprefix) + 'Loaded Mongoose models');
+
+  if (callback) {
+    callback();
+  }
 };
 
 // Initialize Mongoose
-module.exports.connect = function (callback) {
-  var _this = this;
+module.exports.connect = function(callback, logprefix, optionsOverride) {
 
   // Use native promises
-  // You could use any ES6 promise constructor here, e.g. `bluebird`
   mongoose.Promise = global.Promise;
 
-  // Options for Native MongoDB connection
-  // https://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
-  // http://mongoosejs.com/docs/connections.html
-  var mongoConnectionOptions = {
-    server: {
-      // Never stop reconnecting
-      reconnectTries: Number.MAX_VALUE
-    }
-  };
+  var options = optionsOverride ? _.merge(config.db.options || {}, optionsOverride) : config.db.options;
 
-  var db = mongoose.connect(config.db.uri, mongoConnectionOptions, function (err) {
-    // Log Error
+  debug('Connecting to Mongo server: ' + config.db.uri);
+
+  // Setting Mongoose debug mode
+  mongoose.set('debug', config.db.debug);
+
+  mongoose.connect(config.db.uri, options, function(err) {
     if (err) {
-      console.error(chalk.red('Could not connect to MongoDB!'));
-      console.log(err);
-    } else {
-      // Enabling mongoose debug mode if required
-      mongoose.set('debug', config.db.debug);
+      return console.error(chalk.red(formatLogPrefix(logprefix) + 'Could not connect to MongoDB! #fh3924'));
+    }
 
-      // Load modules
-      _this.loadModels();
+    console.log(chalk.green(formatLogPrefix(logprefix) + 'Connected to MongoDB'));
 
-      // Call callback FN
-      if (callback) callback(db);
+    if (callback) {
+      callback();
     }
   });
 };
 
-module.exports.disconnect = function (callback) {
-  mongoose.disconnect(function (err) {
-    console.info(chalk.yellow('Disconnected from MongoDB.'));
-    callback(err);
+module.exports.disconnect = function(callback, logprefix) {
+  debug(formatLogPrefix(logprefix) + 'Attempt to disconnect from MongoDB');
+  mongoose.connection.close();
+
+  mongoose.connection.on('disconnecting', function () {
+    debug(formatLogPrefix(logprefix) + 'Disconnecting from MongoDB...');
+  });
+
+  mongoose.connection.on('disconnected', function () {
+    console.log(chalk.yellow(formatLogPrefix(logprefix) + 'Disconnected from MongoDB'));
+    return callback();
   });
 };
+
+/**
+ * Log with prefix info
+ * Used mainly to add context to logging, e.g. "[worker] message"
+ *
+ * @param {String} logprefix
+ * @return {String}
+ */
+function formatLogPrefix(logprefix) {
+  return logprefix ? '[' + logprefix + '] ' : '';
+}
