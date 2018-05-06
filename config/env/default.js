@@ -45,6 +45,7 @@ module.exports = {
   uploadTmpDir: './tmp/',
   uploadDir: './modules/users/client/img/profile/uploads/',
   port: process.env.PORT || 3000,
+  host: 'localhost',
   https: process.env.HTTPS || false,
   sessionSecret: 'MEAN',
   sessionCollection: 'sessions',

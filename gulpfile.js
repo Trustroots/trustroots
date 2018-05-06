@@ -375,14 +375,14 @@ gulp.task('selenium', plugins.shell.task('python ./scripts/selenium/test.py'));
 // Mocha tests task
 gulp.task('mocha', function (done) {
   // Open mongoose connections
-  var mongoose = require('./config/lib/mongoose');
+  var mongooseService = require('./config/lib/mongoose');
   var agenda = require('./config/lib/agenda');
   var testSuites = changedTestFiles.length ? changedTestFiles : testAssets.tests.server;
   var error;
 
   // Connect mongoose
-  mongoose.connect(function () {
-    mongoose.loadModels();
+  mongooseService.connect(function () {
+    mongooseService.loadModels();
     // Run the tests
     gulp.src(testSuites)
       .pipe(plugins.mocha({
@@ -398,8 +398,9 @@ gulp.task('mocha', function (done) {
         // When the tests are done, disconnect agenda/mongoose
         // and pass the error state back to gulp
         // @TODO: https://github.com/Trustroots/trustroots/issues/438
+        // @link https://github.com/agenda/agenda/pull/450
         agenda._mdb.close(function () {
-          mongoose.disconnect(function () {
+          mongooseService.disconnect(function () {
             done(error);
           });
         });
@@ -428,9 +429,9 @@ gulp.task('karma:watch', function (done) {
 // Drops the MongoDB database, used in e2e testing
 gulp.task('dropdb', function (done) {
   // Use mongoose configuration
-  var mongoose = require('./config/lib/mongoose.js');
+  var mongooseService = require('./config/lib/mongoose.js');
 
-  mongoose.connect(function (db) {
+  mongooseService.connect(function (db) {
     db.connection.db.dropDatabase(function (err) {
       if (err) {
         console.error(err);
