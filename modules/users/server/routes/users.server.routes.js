@@ -22,9 +22,12 @@ module.exports = function (app) {
   app.route('/api/users-avatar').all(usersPolicy.isAllowed)
     .post(userProfile.avatarUploadField, userProfile.avatarUpload);
 
-  app.route('/api/users/memberships/:type?').all(usersPolicy.isAllowed)
-    .get(userProfile.getUserMemberships)
-    .post(userProfile.modifyUserTag);
+  app.route('/api/users/memberships').all(usersPolicy.isAllowed)
+    .get(userProfile.getUserMemberships);
+
+  app.route('/api/users/memberships/:tribeId').all(usersPolicy.isAllowed)
+    .post(userProfile.joinTribe)
+    .delete(userProfile.leaveTribe);
 
   app.route('/api/users/invitecode').all(usersPolicy.isAllowed)
     .get(userProfile.getInviteCode);

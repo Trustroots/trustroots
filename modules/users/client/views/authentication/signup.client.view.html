@@ -317,8 +317,7 @@
                tr-tribe-styles="{{::tribe}}"
                tr-tribe-styles-dimensions="906x240"
                tr-tribe-styles-quality="lightest"
-               tr-tribe-styles-progressive="yes"
-               tr-tribe-join>
+               tr-tribe-styles-progressive="yes">
             <div class="tribe-content" ng-class="{'is-image': tribe.image_UUID}">
               <div>
                 <h3 class="tribe-label" ng-bind="::tribe.label"></h3>
@@ -330,7 +329,12 @@
                   }"></ng-pluralize>
                 </div>
               </div>
-              <button class="tribe-join" tr-tribe-join-button></button>
+              <tr-tribe-join-button
+                class="btn btn-primary tribe-join"
+                tribe="tribe"
+                join-label="'Join'"
+                joined-label="'Joined'">
+              </tr-tribe-join-button>
             </div>
           </div>
           <p class="lead text-center"
@@ -348,21 +352,25 @@
                 tr-tribe-styles="{{::tribe}}"
                 tr-tribe-styles-dimensions="906x240"
                 tr-tribe-styles-quality="lightest"
-                tr-tribe-styles-progressive="yes"
-                tr-tribe-join>
-             <div class="tribe-content" ng-class="{ 'is-image': tribe.image_UUID }">
-               <div>
-                 <h3 class="tribe-label" ng-bind="::tribe.label"></h3>
-                 <div class="tribe-meta">
-                   <ng-pluralize count="tribe.count" when="{
-                     '0': 'No members yet',
-                     '1': 'One member',
-                     'other': '{{' + tribe.count + '|number}} members'
-                   }"></ng-pluralize>
-                 </div>
-               </div>
-               <button class="tribe-join" tr-tribe-join-button></button>
-             </div>
+                tr-tribe-styles-progressive="yes">
+              <div class="tribe-content" ng-class="{ 'is-image': tribe.image_UUID }">
+                <div>
+                  <h3 class="tribe-label" ng-bind="::tribe.label"></h3>
+                  <div class="tribe-meta">
+                    <ng-pluralize count="tribe.count" when="{
+                      '0': 'No members yet',
+                      '1': 'One member',
+                      'other': '{{' + tribe.count + '|number}} members'
+                    }"></ng-pluralize>
+                  </div>
+                </div>
+                <tr-tribe-join-button
+                  class="btn btn-primary tribe-join"
+                  tribe="tribe"
+                  join-label="'Join'"
+                  joined-label="'Joined'">
+                </tr-tribe-join-button>
+              </div>
             </li>
           </ul>
 

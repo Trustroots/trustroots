@@ -15,6 +15,15 @@ Versions at `package.json` describe API version.
 
 See [API docs](http://developers.trustroots.org/docs/api/)
 
+#### 0.3.3
+Remove tags endpoints as un-used:
+- GET `/api/tags`
+- GET `/api/tags/:tagSlug`
+
+Joining or leaving a tribe -API changed, new ones:
+- DELETE `/api/users/memberships/:tribeId` - leave
+- POST `/api/users/memberships/:tribeId` - join
+
 #### 0.3.2
 - Add endpoints for tags and tribes:
   - GET `/api/tribes`

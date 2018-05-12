@@ -1,0 +1,41 @@
+.tribe-badge {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  flex-flow: row wrap;
+  justify-content: flex-start;
+  align-items: center;
+  align-content: stretch;
+  margin: 0 0 5px 0;
+  padding: 0 0 5px 0;
+  border-bottom: 1px solid @gray-lighter;
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.tribe-badge-image {
+  .square(60px);
+  .font-brand-light();
+  line-height: 60px;
+  flex-grow: 0;
+  display: block;
+  font-size: 30px;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  user-select: none;
+  margin: 0 10px 0 0;
+  * {
+    cursor: default;
+  }
+}
+
+.tribe-badge-info {
+  flex-grow: 1;
+}
+
+.tribe-badge-actions {
+  flex-grow: 0;
+  padding: 5px;
+}

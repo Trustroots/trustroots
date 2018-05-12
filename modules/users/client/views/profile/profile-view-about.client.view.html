@@ -56,7 +56,7 @@
          tr-common-contacts="::profileCtrl.profile._id"></div>
 
     <!-- Tribes -->
-    <section class="panel panel-default" ng-if="profileCtrl.profile._id === app.user._id || profileCtrl.memberships.tribes.is.length">
+    <section class="panel panel-default" ng-if="profileCtrl.profile._id === app.user._id || profileCtrl.profile.member.length">
       <header class="panel-heading">
         Tribes
       </header>
@@ -66,7 +66,7 @@
              ng-if="::profileCtrl.profile._id !== app.user._id"
              tr-tribes-in-common="profileCtrl.profile.member"></div>
 
-        <div tr-tribes-list="profileCtrl.memberships.tribes.is"
+        <div tr-memberships-list="profileCtrl.profile.member"
              is-own-profile="::profileCtrl.profile._id === app.user._id"></div>
 
       </div>

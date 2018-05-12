@@ -55,15 +55,9 @@ var setPlainTextField = function (value) {
  * but then we'd have extra `_id`'s hanging around.
  */
 var UserMemberSchema = new Schema({
-  tag: {
+  tribe: {
     type: Schema.Types.ObjectId,
-    ref: 'Tag',
-    required: true
-  },
-  relation: {
-    type: String,
-    enum: ['is', 'likes'],
-    default: 'is',
+    ref: 'Tribe',
     required: true
   },
   since: {
@@ -293,7 +287,7 @@ var UserSchema = new Schema({
   removeProfileExpires: {
     type: Date
   },
-  /* Tags & Tribes user is member of */
+  /* Tribes user is member of */
   member: {
     type: [UserMemberSchema]
   },
