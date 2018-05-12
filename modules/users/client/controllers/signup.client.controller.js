@@ -38,7 +38,7 @@
     vm.waitinglistInvitation = Boolean($stateParams.mwr);
     vm.usernameMinlength = 3;
     vm.usernameMaxlength = 34;
-    vm.suggestedTribesLimit = 3;
+    vm.suggestedTribesLimit = 4;
 
     // Initialize controller
     activate();
@@ -140,7 +140,6 @@
         if (withoutTribeId) {
           angular.forEach(tribes, function (suggestedTribe) {
             if (suggestedTribe._id !== withoutTribeId) {
-              // eslint-disable-next-line angular/controller-as-vm
               this.push(suggestedTribe);
             }
           }, suggestedTribes);
@@ -165,8 +164,7 @@
             // If there is referred tribe, add user to that next up
             if (vm.tribe && vm.tribe._id) {
               UserMembershipsService.post({
-                id: vm.tribe._id,
-                relation: 'is'
+                tribeId: vm.tribe._id
               },
               function (data) {
                 updateUser(data.user || newUser.data);
@@ -182,7 +180,8 @@
           },
           function (error) { // On error function
             vm.isLoading = false;
-            messageCenterService.add('danger', error.data.message || 'Something went wrong.');
+            var errorMessage = error.data && error.data.message ? error.data.message : 'Something went wrong while signing you up. Try again!';
+            messageCenterService.add('danger', errorMessage);
           }
         );
     }

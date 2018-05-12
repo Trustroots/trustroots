@@ -1,0 +1,111 @@
+.tribe-header {
+  padding: 0;
+  position: fixed;
+  top: @navbar-height;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  .tribe-header-back {
+    position: absolute;
+    top: (@navbar-height + 10px);
+    left: 10px;
+    [class^="icon-"]:before,
+    [class*=" icon-"]:before {
+      transition: all 0.2s ease-in-out;
+      margin-right: 5px;
+      margin-left: 5px;
+    }
+    &:hover {
+      [class^="icon-"]:before,
+      [class*=" icon-"]:before {
+        margin-right: 10px;
+        margin-left: 0;
+      }
+    }
+    @media (max-width: @screen-xs-max) {
+      position: absolute;
+      top: 0;
+      left: 0;
+      padding-right: 50px;
+      right: 0;
+    }
+  }
+}
+.tribe-header-info {
+  width: 100%;
+  min-height: 680px;
+  background: linear-gradient(to right, rgba(0,0,0,0.65) 0%,rgba(0,0,0,0) 100%);
+  .tribe-pre {
+    margin-bottom: 0;
+  }
+  .tribe-title {
+    font-size: 46px;
+    line-height: 55px;
+  }
+  .tribe-meta {
+    margin-top: 10px;
+  }
+  .tribe-intro {
+    margin-top: 40px;
+  }
+  .tribe-join.btn.btn-active {
+    color: #fff;
+  }
+  .tribe-join {
+    white-space: normal;
+  }
+}
+// For non-authenticated members we show more text, so make header darker
+.is-guest {
+  .tribe-header-info {
+    text-align: center;
+    background: rgba(0,0,0,0.6);
+    @media (min-width: @screen-xs-min) {
+      background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.0) 70%, rgba(0,0,0,0) 100%);
+    }
+    @media (min-width: @screen-md-min) {
+      background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.0) 70%, rgba(0,0,0,0) 100%);
+    }
+    @media (min-width: @screen-xs-min) {
+      text-align: left;
+      .tribe-pre {
+        font-size: 26px;
+        line-height: 35px;
+      }
+      .tribe-title {
+        font-size: 56px;
+        line-height: 65px;
+      }
+    }
+    .tribe-readmore {
+      margin-left: 0;
+      padding-left: 0;
+    }
+  }
+}
+
+.tribe-attribution {
+  display: block;
+  position: absolute;
+  bottom: 30px;
+  right: 0;
+  padding: 30px;
+  a:not(.btn) {
+    text-decoration: none;
+  }
+  // On bigger screens:
+  // Make credits slightly opaque and add hover effects
+  opacity: 0.5;
+  a:hover {
+    border-bottom: 1px solid #fff;
+  }
+  &:hover {
+    transition: opacity 0.3s linear;
+    opacity: 1;
+  }
+}
+
+.tribe-share {
+  float:left;
+  margin: 0 15px 0 0;
+}

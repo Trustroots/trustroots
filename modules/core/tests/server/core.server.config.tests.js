@@ -8,7 +8,7 @@ var mongoose = require('mongoose'),
     request = require('supertest'),
     express = require(path.resolve('./config/lib/express')),
     mongoose = require('mongoose'),
-    Tag = mongoose.model('Tag'),
+    Tribe = mongoose.model('Tribe'),
     User = mongoose.model('User');
 
 /**
@@ -122,7 +122,7 @@ describe('Configuration Tests:', function () {
         tribe: true
       };
 
-      var tribe = new Tag(_tribe);
+      var tribe = new Tribe(_tribe);
 
       // Save a user to the test db
       tribe.save(function (saveErr) {
@@ -154,7 +154,7 @@ describe('Configuration Tests:', function () {
                 // The user we just created should be exposed
                 res.text.should.containEql('user = {"_id":"' + userId + '",');
 
-                Tag.remove().exec(done);
+                Tribe.remove().exec(done);
               });
           });
       });

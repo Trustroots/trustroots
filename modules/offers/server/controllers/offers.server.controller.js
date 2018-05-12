@@ -9,7 +9,7 @@ var _ = require('lodash'),
     config = require(path.resolve('./config/config')),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    tribes = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
+    tribes = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller')),
     textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     log = require(path.resolve('./config/lib/logger')),
     sanitizeHtml = require('sanitize-html'),
@@ -532,7 +532,7 @@ exports.list = function (req, res) {
       // Return failure if tribe id is invalid, otherwise add id to query array
       return mongoose.Types.ObjectId.isValid(tribeId) &&
              tribeQueries.push({
-               'user.member.tag': new mongoose.Types.ObjectId(tribeId)
+               'user.member.tribe': new mongoose.Types.ObjectId(tribeId)
              });
     });
 
@@ -612,7 +612,7 @@ exports.getOffer = function (req, res) {
       done(null, req.offer);
     },
 
-    // Populate `tag` fields from objects at `offer.user.member` array
+    // Populate `tribe` fields from objects at `offer.user.member` array
     function (offer, done) {
 
       // Nothing to populate
@@ -621,16 +621,16 @@ exports.getOffer = function (req, res) {
       }
 
       User.populate(offer.user, {
-        path: 'member.tag',
+        path: 'member.tribe',
         select: tribes.tribeFields,
-        model: 'Tag'
+        model: 'Tribe'
         // Not possible at the moment due bug in Mongoose
         // http://mongoosejs.com/docs/faq.html#populate_sort_order
         // https://github.com/Automattic/mongoose/issues/2202
         // options: { sort: { count: -1 } }
       }, function (err, user) {
         // Overwrite old `offer.user` with new `user` object
-        // containing populated `member.tag` to `offer`
+        // containing populated `member.tribe` to `offer`
         offer.user = user;
         done(err, offer);
       });

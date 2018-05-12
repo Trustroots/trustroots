@@ -7,11 +7,10 @@ var _ = require('lodash'),
     path = require('path'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    tribesHandler = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller')),
+    tribesHandler = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller')),
     contactHandler = require(path.resolve('./modules/contacts/server/controllers/contacts.server.controller')),
     messageHandler = require(path.resolve('./modules/messages/server/controllers/messages.server.controller')),
     offerHandler = require(path.resolve('./modules/offers/server/controllers/offers.server.controller')),
-    tagsHandler = require(path.resolve('./modules/tags/server/controllers/tags.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
     inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
@@ -31,8 +30,7 @@ var _ = require('lodash'),
     os = require('os'),
     mmmagic = require('mmmagic'),
     multerConfig = require(path.resolve('./config/lib/multer')),
-    User = mongoose.model('User'),
-    Tag = mongoose.model('Tag');
+    User = mongoose.model('User');
 
 // Load either ImageMagick or GraphicsMagick as an image processor
 // Defaults to GraphicsMagick
@@ -606,10 +604,9 @@ exports.removeProfile = function (req, res) {
 
     // Subtract 1 from all the tribes.count of which user is member
     function (user, done) {
-      // tagsHandler.editCount(tagId, -1, callback);
-      async.each(user.member, function (relation, cb) {
-        // change the count of every tag (tribe) user is member of
-        tagsHandler.editCount(relation.tag, -1, cb);
+      async.each(user.member, function (membership, callback) {
+        // Update the count of every tribe user is member of
+        tribesHandler.updateCount(membership.tribe, -1, false, callback);
       }, function (err) {
         done(err, user);
       });
@@ -630,8 +627,7 @@ exports.removeProfile = function (req, res) {
         displayName: user.displayName,
         email: user.email
       }, function (err) {
-        // Just log errors, but don't mind about them
-        // as this is not critical step
+        // Just log errors but don't mind about them as this is not critical step
         if (err) {
           // Log the failure to send the email
           log('error', 'Sending confirmation email about successfull profile removal failed #289hhs', {
@@ -783,9 +779,9 @@ exports.userByUsername = function (req, res, next, username) {
         },
         exports.userProfileFields + ' public')
         .populate({
-          path: 'member.tag',
+          path: 'member.tribe',
           select: tribesHandler.tribeFields,
-          model: 'Tag'
+          model: 'Tribe'
           // Not possible at the moment due bug in Mongoose
           // http://mongoosejs.com/docs/faq.html#populate_sort_order
           // https://github.com/Automattic/mongoose/issues/2202
@@ -855,8 +851,8 @@ exports.userByUsername = function (req, res, next, username) {
 /**
  * Sanitize profile before sending it to frontend
  * - Ensures certain fields are removed before publishing
- * - Collects tribe and tag id's into one simple array
- * - Removes tag and tribe references that don't exist anymore (i.e. they are removed from `tags` table but reference ID remains in the user's table)
+ * - Collects tribe id's into one simple array
+ * - Removes tribe references that don't exist anymore (i.e. they are removed from `tribes` table but reference ID remains in the user's table)
  * - Sanitize description in case
  *
  * @param {Object} profile - User profile to sanitize
@@ -874,21 +870,21 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   // We're sanitizing this already on saving/updating the profile, but here we do it again just in case.
   if (profile.description) profile.description = sanitizeHtml(profile.description, textService.sanitizeOptions);
 
-  // Remove tribes/tags without reference object (= they've been deleted from tags table)
+  // Remove tribes without reference object (= they've been deleted from `tribes` table)
   if (profile.member && profile.member.length > 0) {
-    profile.member = _.reject(profile.member, function (o) { return !o.tag; });
+    profile.member = _.reject(profile.member, function (o) { return !o.tribe; });
   }
 
-  // Create simple arrays of tag and tribe id's
+  // Create simple arrays of tribe id's
   profile.memberIds = [];
   if (profile.member && profile.member.length > 0) {
     profile.member.forEach(function (obj) {
-      // If profile's `member.tag` path was populated
-      if (obj.tag && obj.tag._id) {
-        profile.memberIds.push(obj.tag._id.toString());
-      } else if (obj.tag) {
-        // If profile's `member.tag` path wasn't populated, tag is ObjectId
-        profile.memberIds.push(obj.tag.toString());
+      // If profile's `member.tribe` path was populated
+      if (obj.tribe && obj.tribe._id) {
+        profile.memberIds.push(obj.tribe._id.toString());
+      } else if (obj.tribe) {
+        // If profile's `member.tribe` path wasn't populated, tribe is ObjectId
+        profile.memberIds.push(obj.tribe.toString());
       }
     });
   }
@@ -929,145 +925,104 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
 };
 
 /**
- * Join tribe or tag
+ * Join tribe
  */
-exports.modifyUserTag = function (req, res) {
-
-  // Relation (`is`|`likes`|`leave`) should be present
-  if (!req.body.relation || typeof req.body.relation !== 'string' || ['is', 'likes', 'leave'].indexOf(req.body.relation) === -1) {
-    return res.status(400).send({
-      message: 'Missing relation info.'
-    });
-  }
-
-  // Not a valid ObjectId
-  if (!req.body.id || !mongoose.Types.ObjectId.isValid(req.body.id)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
-    });
-  }
-
+exports.joinTribe = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden')
     });
   }
 
-  // Joining [is/likes] (=true) or leaving (=false)?
-  // Relation can be "join" or "leave"
-  var joining = (req.body.relation !== 'leave');
+  var tribeId = req.params.tribeId;
+
+  // Not a valid ObjectId
+  if (!tribeId || !mongoose.Types.ObjectId.isValid(tribeId)) {
+    return res.status(400).send({
+      message: errorService.getErrorMessageByKey('invalid-id')
+    });
+  }
 
   async.waterfall([
 
-    // Check user is a member of this tag/tribe
+    // Check user is a member of this tribe
     function (done) {
-
-      // Search for existing occurance with provided tag/tribe id
-      var isMember = (req.user.member && req.user.member.length) ? _.find(req.user.member, function (membership) {
-        return membership.tag.equals(req.body.id);
-      }) : false;
-
-      // Return error if "is joining + is a member" OR "is leaving + isn't a member"
-      if ((isMember && joining) || (!isMember && !joining)) {
+      // Return if user is already a member
+      if (isUserMemberOfTribe(req.user, tribeId)) {
         return res.status(409).send({
-          message: errorService.getErrorMessageByKey('conflict')
+          message: 'You are already a member of this tribe.'
         });
-      } else {
-        done(null);
       }
+
+      done(null);
     },
 
-    // Update tribe/tag counter
+    // Update tribe counter
     function (done) {
-      Tag.findByIdAndUpdate(req.body.id, {
-        $inc: {
-          count: (joining ? 1 : -1)
-        }
-      }, {
-        safe: false, // @link http://stackoverflow.com/a/4975054/1984644
-        new: true // get the updated document in return
-      })
-        .exec(function (err, tag) {
-
-        // Tag by id `req.body.id` didn't exist
-          if (!tag || !tag._id) {
+      tribesHandler.updateCount(
+        tribeId,
+        1,
+        true,
+        function (err, tribe) {
+          // Tribe by id `req.body.id` didn't exist
+          if (!tribe || !tribe._id) {
             return res.status(400).send({
               message: errorService.getErrorMessageByKey('bad-request')
             });
           }
 
-          done(err, tag);
-        });
+          done(err, tribe);
+        }
+      );
     },
 
-    // Add tribe/tag to user's object
-    function (tag, done) {
-
-      // Mongo query to perform...
-      var query;
-      if (joining) {
-        // When joining...
-        query = {
+    // Add tribe to user's object
+    function (tribe, done) {
+      User.findByIdAndUpdate(
+        req.user._id,
+        {
           $push: {
             member: {
-              tag: tag._id,
-              relation: req.body.relation,
+              tribe: tribe._id,
               since: Date.now()
             }
           }
-        };
-      } else {
-        // When leaving...
-        query = {
-          $pull: {
-            member: {
-              tag: tag._id
-            }
-          }
-        };
-      }
-
-      User.findByIdAndUpdate(req.user._id, query, {
-        safe: true, // @link http://stackoverflow.com/a/4975054/1984644
-        new: true // get the updated document in return
-      })
-        .exec(function (err, user) {
-          done(err, tag, user);
-        });
+        },
+        {
+          safe: true, // @link http://stackoverflow.com/a/4975054/1984644
+          new: true // get the updated document in return
+        }
+      ).exec(function (err, user) {
+        done(err, tribe, user);
+      });
     },
 
-    // Done, output new tribe/tag + user objects
-    function (tag, user, done) {
-
+    // Done, output new tribe + user objects
+    function (tribe, user, done) {
       // Preserver only public fields
-      // Array of keys to preserve in tag/tribe before sending it to the frontend
-      var pickFields = tag.tribe ? tribesHandler.tribeFields.split(' ') : tagsHandler.tagFields.split(' ');
-      var pickedTag = _.pick(tag, pickFields);
+      // Array of keys to preserve in tribe before sending it to the frontend
+      var pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
 
       // Sanitize user profile
       user = exports.sanitizeProfile(user, req.user);
 
-      var message = '';
-      message += (joining ? 'Joined' : 'Left');
-      message += ' ' + ((tag && tag.tribe) ? 'tribe' : 'tag') + '.';
-
       statService.stat({
         namespace: 'tagAction',
         counts: {
-          count: joining ? 1 : -1
+          count: 1
         },
         tags: {
-          type: tag.tribe ? 'tribe' : 'tag'
+          type: 'tribe'
         },
         meta: {
-          slug: tag.slug
+          slug: tribe.slug
         }
       }, function () {
 
         // Send response to API
         res.send({
-          message: message,
-          tag: pickedTag,
+          message: 'Joined tribe.',
+          tribe: pickedTribe,
           user: user
         });
 
@@ -1080,15 +1035,130 @@ exports.modifyUserTag = function (req, res) {
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: 'Failed to join tribe/tag.'
+        message: 'Failed to join tribe.'
       });
     }
   });
-
 };
 
 /**
- * Get user's tags and tribes
+ * Leave tribe
+ */
+exports.leaveTribe = function (req, res) {
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorService.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  var tribeId = req.params.tribeId;
+
+  // Not a valid ObjectId
+  if (!tribeId || !mongoose.Types.ObjectId.isValid(tribeId)) {
+    return res.status(400).send({
+      message: errorService.getErrorMessageByKey('invalid-id')
+    });
+  }
+
+  async.waterfall([
+
+    // Check user is a member of this tribe
+    function (done) {
+      // Return if isn't a member anymore
+      if (!isUserMemberOfTribe(req.user, tribeId)) {
+        return res.status(409).send({
+          message: 'You are not a member of this tribe.'
+        });
+      }
+
+      done(null);
+    },
+
+    // Update tribe counter
+    function (done) {
+      tribesHandler.updateCount(
+        tribeId,
+        -1,
+        true,
+        function (err, tribe) {
+          // Tribe by id `req.body.id` didn't exist
+          if (!tribe || !tribe._id) {
+            return res.status(400).send({
+              message: errorService.getErrorMessageByKey('bad-request')
+            });
+          }
+
+          done(err, tribe);
+        }
+      );
+    },
+
+    // Remove tribe from user's object
+    function (tribe, done) {
+      User.findByIdAndUpdate(
+        req.user._id,
+        {
+          $pull: {
+            member: {
+              tribe: tribeId
+            }
+          }
+        },
+        {
+          safe: true, // @link http://stackoverflow.com/a/4975054/1984644
+          new: true // get the updated document in return
+        }
+      ).exec(function (err, user) {
+        done(err, tribe, user);
+      });
+    },
+
+    // Done, output new tribe + user objects
+    function (tribe, user, done) {
+      // Preserver only public fields
+      // Array of keys to preserve in tribe before sending it to the frontend
+      var pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
+
+      // Sanitize user profile
+      user = exports.sanitizeProfile(user, req.user);
+
+      statService.stat({
+        namespace: 'tagAction',
+        counts: {
+          count: -1
+        },
+        tags: {
+          type: 'tribe'
+        },
+        meta: {
+          slug: tribe.slug
+        }
+      }, function () {
+
+        // Send response to API
+        res.send({
+          message: 'Left tribe.',
+          tribe: pickedTribe,
+          user: user
+        });
+
+        done();
+
+      });
+    }
+
+  // Catch errors
+  ], function (err) {
+    if (err) {
+      return res.status(400).send({
+        message: 'Failed to leave tribe.'
+      });
+    }
+  });
+};
+
+/**
+ * Get user's tribes
  */
 exports.getUserMemberships = function (req, res) {
 
@@ -1098,18 +1168,12 @@ exports.getUserMemberships = function (req, res) {
     });
   }
 
-  if (req.params.type && (req.params.type !== 'tribe' && req.params.type !== 'tag')) {
-    return res.status(400).send({
-      message: 'Type can be only either `tribe` or `tag`.'
-    });
-  }
-
   User
     .findById(req.user._id, 'member')
     .populate({
-      path: 'member.tag',
-      select: tagsHandler.tagFields + ' ' + tribesHandler.tribeFields,
-      model: 'Tag'
+      path: 'member.tribe',
+      select: tribesHandler.tribeFields,
+      model: 'Tribe'
       // Not possible at the moment due bug in Mongoose
       // http://mongoosejs.com/docs/faq.html#populate_sort_order
       // https://github.com/Automattic/mongoose/issues/2202
@@ -1120,19 +1184,11 @@ exports.getUserMemberships = function (req, res) {
       // Something went wrong
       if (err) {
         return res.status(400).send({
-          message: 'Failed to get list of tags and/or tribes.'
+          message: 'Failed to get list of tribes.'
         });
       }
 
-      var memberships = profile.member || [];
-
-      // Only tags or tribes?
-      if (req.params.type && memberships.length) {
-        var tribeOrTag = req.params.type === 'tribe';
-        memberships = _.filter(memberships, { 'tag': { 'tribe': tribeOrTag } });
-      }
-
-      return res.send(memberships);
+      return res.send(profile.member || []);
     });
 };
 
@@ -1359,3 +1415,22 @@ exports.validateInviteCode = function (req, res) {
     });
   });
 };
+
+/**
+ * Is user member of tribe?
+ *
+ * @param object user User
+ * @param String tribeId Tribe ID
+ * @return boolean
+ */
+function isUserMemberOfTribe(user, tribeId) {
+  if (!user.member || !user.member.length) {
+    return false;
+  }
+
+  // `_.find` iterates over elements of collection, returning the first element
+  // predicate returns truthy for. Otherwise returns undefined.
+  return Boolean(_.find(user.member, function (membership) {
+    return membership.tribe.equals(tribeId);
+  }));
+}

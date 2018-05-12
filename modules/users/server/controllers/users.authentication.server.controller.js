@@ -431,10 +431,12 @@ exports.removeOAuthProvider = function (req, res) {
       } else {
         req.login(user, function (err) {
           if (err) {
-            res.status(400).send(err);
-          } else {
-            res.json(user);
+            return res.status(400).send(err);
           }
+
+          // Remove sensitive data before sending out
+          user = userProfile.sanitizeProfile(user);
+          res.json(user);
         });
       }
     });
@@ -692,14 +694,8 @@ exports.confirmEmail = function (req, res) {
     function (result, user) {
 
       // Return authenticated user
-      result.user = user.toObject();
-
-      // Remove some fields before returning user
-      delete result.user.resetPasswordToken;
-      delete result.user.resetPasswordExpires;
-      delete result.user.emailToken;
-      delete result.user.password;
-      delete result.user.salt;
+      // Remove sensitive data befor sending user
+      result.user = userProfile.sanitizeProfile(user);
 
       return res.json(result);
     }

@@ -9,7 +9,7 @@ var _ = require('lodash'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
     Offer = mongoose.model('Offer'),
-    Tag = mongoose.model('Tag'),
+    Tribe = mongoose.model('Tribe'),
     express = require(path.resolve('./config/lib/express'));
 
 /**
@@ -176,7 +176,7 @@ describe('Offer CRUD tests', function () {
       location: [52.498981209298887, 13.418329954147449]
     });
 
-    tribe1 = new Tag({
+    tribe1 = new Tribe({
       'slug': 'tribe1',
       'label': 'tribe1',
       'color': '111111',
@@ -185,11 +185,10 @@ describe('Offer CRUD tests', function () {
       'public': true
     });
 
-    tribe2 = new Tag({
+    tribe2 = new Tribe({
       'slug': 'tribe2',
       'label': 'tribe2',
       'color': '222222',
-      'tribe': true,
       'count': 1,
       'public': true
     });
@@ -220,9 +219,8 @@ describe('Offer CRUD tests', function () {
       // Save user 2 (with tribe membership)
       function (done) {
         user2.member = [{
-          tag: tribe2Id,
-          since: new Date(),
-          relation: 'is'
+          tribe: tribe2Id,
+          since: new Date()
         }];
         user2.save(function (err, user2res) {
           user2Id = user2res._id;
@@ -232,9 +230,8 @@ describe('Offer CRUD tests', function () {
       // Save user 3 (with tribe membership)
       function (done) {
         user3.member = [{
-          tag: tribe1Id,
-          since: new Date(),
-          relation: 'is'
+          tribe: tribe1Id,
+          since: new Date()
         }];
         user3.save(function (err, user3res) {
           user3Id = user3res._id;
@@ -314,7 +311,7 @@ describe('Offer CRUD tests', function () {
         });
     });
 
-    it('should be able to read offers by id and get populated memberships array', function (done) {
+    it('should be able to read offers by id and get populated tribes array', function (done) {
       agent.post('/api/auth/signin')
         // authenticated as `user1`
         .send(credentials)
@@ -332,14 +329,12 @@ describe('Offer CRUD tests', function () {
 
               // Set assertions
               offerGetRes.body.user.member.length.should.equal(1);
-              offerGetRes.body.user.member[0].relation.should.equal('is');
               offerGetRes.body.user.member[0].since.should.not.be.empty();
-              offerGetRes.body.user.member[0].tag._id.should.equal(tribe2Id.toString());
-              offerGetRes.body.user.member[0].tag.tribe.should.equal(tribe2.tribe);
-              offerGetRes.body.user.member[0].tag.color.should.equal(tribe2.color);
-              offerGetRes.body.user.member[0].tag.count.should.equal(tribe2.count);
-              offerGetRes.body.user.member[0].tag.slug.should.equal(tribe2.slug);
-              offerGetRes.body.user.member[0].tag.label.should.equal(tribe2.label);
+              offerGetRes.body.user.member[0].tribe._id.should.equal(tribe2Id.toString());
+              offerGetRes.body.user.member[0].tribe.color.should.equal(tribe2.color);
+              offerGetRes.body.user.member[0].tribe.count.should.equal(tribe2.count);
+              offerGetRes.body.user.member[0].tribe.slug.should.equal(tribe2.slug);
+              offerGetRes.body.user.member[0].tribe.label.should.equal(tribe2.label);
 
               // Call the assertion callback
               return done();
@@ -1791,7 +1786,7 @@ describe('Offer CRUD tests', function () {
   afterEach(function (done) {
     // Uggggly pyramid revenge!
     User.remove().exec(function () {
-      Tag.remove().exec(function () {
+      Tribe.remove().exec(function () {
         Offer.remove().exec(done);
       });
     });

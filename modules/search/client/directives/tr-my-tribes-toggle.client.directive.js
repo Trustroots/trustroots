@@ -59,30 +59,26 @@
 
       /**
        * Initialize memberships array
-       * Collects ids of tribes, ignoring tags
+       * Collects ids of tribes
        * from user's `member` collection.
        */
       function collectUserTribeIds() {
-        UserMembershipsService.query({
-          type: 'tribe'
-        })
+        UserMembershipsService.query()
           .$promise
-          .then(function (userTribes) {
+          .then(function (userMemberships) {
 
-            vm.initialized = true;
-
-            if (!angular.isArray(userTribes) || !userTribes.length) {
+            if (!angular.isArray(userMemberships) || !userMemberships.length) {
               return;
             }
 
             // Fill `vm.userTribes` array with ids of tribes
             var tribeIds = [];
-            angular.forEach(userTribes, function (tribe) {
-              tribeIds.push(tribe.tag._id);
+            angular.forEach(userMemberships, function (membership) {
+              tribeIds.push(membership.tribe._id);
             });
             vm.userTribes = tribeIds;
           })
-          .catch(function () {
+          .finally(function () {
             vm.initialized = true;
           });
 
@@ -96,7 +92,9 @@
         toggled = true;
 
         // Toggle was set `false`, no need to react
-        if (vm.toggle === false) return;
+        if (vm.toggle === false) {
+          return;
+        }
 
         // If toggle was set `true`, wipe out old tribe ids
         // and replace them with user's tribe ids

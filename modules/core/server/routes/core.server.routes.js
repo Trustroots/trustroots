@@ -7,7 +7,7 @@ var path = require('path'),
     facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service')),
     core = require('../controllers/core.server.controller'),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    tribes = require(path.resolve('./modules/tags/server/controllers/tribes.server.controller'));
+    tribes = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller'));
 
 module.exports = function (app) {
 
@@ -33,7 +33,7 @@ module.exports = function (app) {
 
   // Define a tribes route to ensure we'll pass tribe object to index
   // Object is passed to layout at `core.renderIndex()`
-  app.route('/tribes/:tribeSlug').get(core.renderIndex);
+  app.route('/tribes/:tribe').get(core.renderIndex);
 
   // Short URL for invite codes
   app.route('/c/:code').get(userProfile.redirectInviteShortUrl);
@@ -48,7 +48,7 @@ module.exports = function (app) {
     app.route('/*').post(core.renderIndex);
   }
 
-  // Finish by binding the tags middleware
-  app.param('tribeSlug', tribes.tribeBySlug);
+  // Finish by binding the tribes middleware
+  app.param('tribe', tribes.tribeBySlug);
 
 };
