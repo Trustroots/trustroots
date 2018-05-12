@@ -7,8 +7,6 @@
     padding: 0;
     text-align: center;
   }
-  .tribe {
-  }
   .tribe-content {
     display: flex;
     justify-content: space-between;
@@ -25,41 +23,5 @@
     padding: 0;
     font-size: 30px;
     line-height: 1;
-  }
-  // Checkbox button
-  .tribe-join {
-    flex-shrink: 0;
-    display: block;
-    border: 3px solid #fff;
-    color: #fff;
-    text-align: center;
-    background: rgba(255,255,255,.3);
-    transition: background ease-in-out 0.1s;
-    padding: 0;
-    margin: 0;
-    border-radius: 50%;
-    .square(40px);
-    font-size: 20px;
-    box-shadow: 1px 1px 2px rgba(0,0,0,.2);
-    outline: none;
-    // Hide labels:
-    span {
-      display: none;
-    }
-    [class^="icon-"]:before,
-    [class*=" icon-"]:before {
-      opacity: 0;
-      transition: opacity ease-in-out 0.1s;
-    }
-    &.btn-active {
-      background: @brand-primary;
-    }
-    &.btn-active,
-    &:hover {
-      [class^="icon-"]:before,
-      [class*=" icon-"]:before {
-        opacity: 1;
-      }
-    }
   }
 }

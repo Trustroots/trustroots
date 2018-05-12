@@ -37,6 +37,9 @@ exports.invokeRolesPolicies = function () {
     }, {
       resources: '/api/users/memberships',
       permissions: []
+    }, {
+      resources: '/api/users/memberships/:tribeId',
+      permissions: []
     }]
   }, {
     roles: ['user'],
@@ -80,8 +83,11 @@ exports.invokeRolesPolicies = function () {
       resources: '/api/auth/github/callback',
       permissions: ['get']
     }, {
-      resources: '/api/users/memberships/:type?',
-      permissions: ['post', 'get']
+      resources: '/api/users/memberships',
+      permissions: ['get']
+    }, {
+      resources: '/api/users/memberships/:tribeId',
+      permissions: ['post', 'delete']
     }, {
       resources: '/api/users/push/registrations',
       permissions: ['post']

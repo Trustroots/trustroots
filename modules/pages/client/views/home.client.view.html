@@ -115,8 +115,7 @@
            tr-tribe-styles="{{::tribe}}"
            tr-tribe-styles-dimensions="520x520"
            tr-tribe-styles-quality="lightest"
-           tr-tribe-styles-progressive="yes"
-           tr-tribe-join>
+           tr-tribe-styles-progressive="yes">
           <span ng-if="::!tribe.image_UUID" ng-bind="::tribe.label.charAt(0)"></span>
         </a>
       </div>
@@ -124,8 +123,7 @@
            ng-class="{ 'col-sm-pull-3': !$last }"
            ng-repeat="tribe in home.tribes | limitTo:3 track by tribe._id">
         <div class="img-circle tribe tribe-image"
-             tr-tribe-styles="{{::tribe}}"
-             tr-tribe-join>
+             tr-tribe-styles="{{::tribe}}">
           <a ui-sref="tribes.tribe({tribe: tribe.slug})" class="tribe-link">
             <h3 class="tribe-label" ng-bind="::tribe.label"></h3>
           </a>

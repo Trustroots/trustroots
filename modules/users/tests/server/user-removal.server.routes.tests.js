@@ -11,7 +11,7 @@ var fs = require('fs'),
     Contact = mongoose.model('Contact'),
     Message = mongoose.model('Message'),
     Offer = mongoose.model('Offer'),
-    Tag = mongoose.model('Tag'),
+    Tribe = mongoose.model('Tribe'),
     config = require(path.resolve('./config/config')),
     express = require(path.resolve('./config/lib/express')),
     testutils = require(path.resolve('./testutils/server.testutil'));
@@ -617,7 +617,7 @@ describe('User removal CRUD tests', function () {
       ], done);
     });
 
-    it('should subtract 1 from tags.count for each tribe user is member of', function (done) {
+    it('should subtract 1 from tribes.count for each tribe user is member of', function (done) {
 
       var tribeA,
           tribeB;
@@ -625,22 +625,20 @@ describe('User removal CRUD tests', function () {
       async.waterfall([
         // Create some tribes
         function (cb) {
-          tribeA = new Tag({
+          tribeA = new Tribe({
             label: 'Tribe A',
             attribution: 'Photo credits',
             attribution_url: 'http://www.trustroots.org/team',
             image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
-            tribe: true,
             description: 'Lorem ipsum.',
             count: 5
           });
 
-          tribeB = new Tag({
+          tribeB = new Tribe({
             label: 'Tribe B',
             attribution: 'Photo credits',
             attribution_url: 'http://www.trustroots.org/team2',
             image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6d',
-            tribe: true,
             description: 'Lorem ipsum.',
             count: 5
           });
@@ -652,20 +650,17 @@ describe('User removal CRUD tests', function () {
 
         // join the tribeA with the removed user
         function (cb) {
-          agent.post('/api/users/memberships')
-            .send({
-              id: tribeA._id,
-              relation: 'is'
-            })
+          agent.post('/api/users/memberships/' + tribeA._id)
+            .send()
             .expect(200)
             .end(function (err) {
               cb(err);
             });
         },
 
-        // now the tagA should have count 6
+        // now the tribeA should have count 6
         function (cb) {
-          Tag.findById(tribeA._id, function (err, tribe) {
+          Tribe.findById(tribeA._id, function (err, tribe) {
             try {
               should(tribe.count).eql(6);
               cb();
@@ -677,9 +672,9 @@ describe('User removal CRUD tests', function () {
 
         sendDeleteRequest,
 
-        // tagA should have lower count by 1 (5 -> 6 -> 5 now)
+        // tribeA should have lower count by 1 (5 -> 6 -> 5 now)
         function (cb) {
-          Tag.findById(tribeA._id, function (err, tribe) {
+          Tribe.findById(tribeA._id, function (err, tribe) {
             try {
               should(tribe.count).eql(5);
               cb();
@@ -689,9 +684,9 @@ describe('User removal CRUD tests', function () {
           });
         },
 
-        // tagB should have count 5 all the time
+        // tribeB should have count 5 all the time
         function (cb) {
-          Tag.findById(tribeB._id, function (err, tribe) {
+          Tribe.findById(tribeB._id, function (err, tribe) {
             try {
               should(tribe.count).eql(5);
               cb();
@@ -832,7 +827,7 @@ describe('User removal CRUD tests', function () {
 
   // clear database
   afterEach(function (done) {
-    var collectionsToClear = [User, Contact, Message, Offer, Tag];
+    var collectionsToClear = [User, Contact, Message, Offer, Tribe];
 
     async.each(collectionsToClear, function (collection, cb) {
       collection.remove().exec(cb);

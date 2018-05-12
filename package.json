@@ -1,7 +1,7 @@
 {
   "name": "trustroots",
   "description": "Trustroots.org",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "author": "https://www.trustroots.org/foundation",
   "private": true,
   "repository": {

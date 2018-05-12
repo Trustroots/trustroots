@@ -7,11 +7,17 @@
 
   /* @ngInject */
   function UserMembershipsService($resource) {
-    return $resource('/api/users/memberships/:type', {
-      type: '@type'
+    return $resource('/api/users/memberships/:tribeId?', {
+      tribeId: '@tribeId'
     }, {
       post: {
         method: 'POST'
+      },
+      delete: {
+        method: 'DELETE'
+      },
+      get: {
+        method: 'GET'
       }
     });
   }

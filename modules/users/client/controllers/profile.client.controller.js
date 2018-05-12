@@ -19,10 +19,6 @@
     vm.contact = contact;
     vm.contacts = contacts;
 
-    // Tags & Tribes
-    // These are filled at with `initMemberships()` at `action()`
-    vm.memberships = {};
-
     // Exposed to the view
     vm.hasConnectedAdditionalSocialAccounts = hasConnectedAdditionalSocialAccounts;
     vm.isConnectedSocialAccount = isConnectedSocialAccount;
@@ -36,9 +32,6 @@
      * Initialize controller
      */
     function activate() {
-
-      // Fill `vm.memberships`
-      initMemberships();
 
       // When on small screen...
       if (angular.element('body').width() <= 480) {
@@ -79,31 +72,6 @@
       return isNaN(vm.profile.extSitesWS) ? !1 : (x = parseFloat(vm.profile.extSitesWS), (0 | x) === x);
     }
 
-    /**
-     * Construct Tags & Tribes object
-     */
-    function initMemberships() {
-      var memberships = {
-        'tribes': {
-          'is': [],
-          'likes': []
-        },
-        'tags': {
-          'is': [],
-          'likes': []
-        }
-      };
-      // Construct tribes & tags
-      if (profile && profile.member && profile.member.length > 0) {
-        for (var i = 0, len = profile.member.length; i < len; i++) {
-          // Sort to the right category...
-          var tribeOrTag = (profile.member[i].tag.tribe ? 'tribes' : 'tags'),
-              relation = profile.member[i].relation;
-          memberships[tribeOrTag][relation].push(profile.member[i].tag);
-        }
-      }
-      vm.memberships = memberships;
-    }
 
     /**
      * Open avatar modal (bigger photo)
