@@ -4,7 +4,6 @@ var should = require('should'),
     request = require('supertest'),
     path = require('path'),
     mongoose = require('mongoose'),
-    semver = require('semver'),
     User = mongoose.model('User'),
     Tribe = mongoose.model('Tribe'),
     inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
@@ -176,7 +175,7 @@ describe('User CRUD tests', function () {
                 return done(confirmEmailPostErr);
               }
 
-              confirmEmailGetRes.text.should.equal(redirectMessage('/confirm-email/' + userRes1.emailToken));
+              confirmEmailGetRes.text.should.equal('Found. Redirecting to /confirm-email/' + userRes1.emailToken);
 
               // POST does the actual job
               agent.post('/api/auth/confirm-email/' + userRes1.emailToken)
@@ -243,7 +242,7 @@ describe('User CRUD tests', function () {
                 return done(confirmEmailPostErr);
               }
 
-              confirmEmailGetRes.text.should.equal(redirectMessage('/confirm-email-invalid'));
+              confirmEmailGetRes.text.should.equal('Found. Redirecting to /confirm-email-invalid');
 
               // POST does the actual job
               agent.post('/api/auth/confirm-email/WRONG_TOKEN')
@@ -286,7 +285,7 @@ describe('User CRUD tests', function () {
             }
 
             signoutRes.redirect.should.equal(true);
-            signoutRes.text.should.equal(redirectMessage('/'));
+            signoutRes.text.should.equal('Found. Redirecting to /');
 
             return done();
           });
@@ -317,7 +316,7 @@ describe('User CRUD tests', function () {
             }
 
             signoutRes.redirect.should.equal(true);
-            signoutRes.text.should.equal(redirectMessage('/'));
+            signoutRes.text.should.equal('Found. Redirecting to /');
 
             return done();
           });
@@ -1766,16 +1765,3 @@ describe('User CRUD tests', function () {
     });
   });
 });
-
-/**
- * Returns the NodeJS redirect text for any version.
- */
-function redirectMessage(url) {
-  // NodeJS v4 changed the status code representation so we must check
-  // before asserting, to be comptabile with all node versions.
-  if (semver.satisfies(process.versions.node, '>=4.0.0')) {
-    return 'Found. Redirecting to ' + url;
-  } else {
-    return 'Moved Temporarily. Redirecting to ' + url;
-  }
-}
