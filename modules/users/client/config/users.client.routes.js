@@ -230,6 +230,34 @@
           pageTitle: 'Profile contacts'
         }
       }).
+      state('profile.references', {
+        url: '/references',
+        templateUrl: '/modules/users/views/profile/profile-view-references.client.view.html',
+        requiresAuth: true,
+        noScrollingTop: true,
+        abstract: true,
+        data: {
+          pageTitle: 'Profile references'
+        }
+      }).
+      state('profile.references.list', {
+        url: '',
+        templateUrl: '/modules/users/views/profile/profile-view-references-list.client.view.html',
+        requiresAuth: true,
+        noScrollingTop: true,
+        data: {
+          pageTitle: 'Profile references'
+        }
+      }).
+      state('profile.references.new', {
+        url: '/new',
+        templateUrl: '/modules/users/views/profile/profile-view-references-new.client.view.html',
+        requiresAuth: true,
+        noScrollingTop: true,
+        data: {
+          pageTitle: 'Leave a reference'
+        }
+      }).
       state('profile.tribes', {
         url: '/tribes',
         templateUrl: '/modules/users/views/profile/profile-view-tribes.client.view.html',
