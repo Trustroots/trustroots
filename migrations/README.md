@@ -4,12 +4,12 @@ These scripts are always run on `npm update`.
 
 Run migration scripts manually:
 ```bash
-npm run migrate
+npx npm run migrate
 ```
 
 Create new migration scripts:
 ```bash
-migrate create migration-name-here
+npx migrate create migration-name-here
 ```
 
 State of your locally run migrations is stored at `.migrate` file in this folder.
