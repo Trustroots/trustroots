@@ -17,20 +17,14 @@ exports.invokeRolesPolicies = function () {
   acl.allow([{
     roles: ['admin'],
     allows: [{
-      resources: '/api/references/user',
-      permissions: ['post']
-    }, {
-      resources: '/api/references/user/:userToId',
-      permissions: ['get']
+      resources: '/api/references/:referencesUserToId',
+      permissions: ['get', 'post']
     }]
   }, {
     roles: ['user'],
     allows: [{
-      resources: '/api/references/user',
-      permissions: ['post']
-    }, {
-      resources: '/api/references/user/:userToId',
-      permissions: ['get']
+      resources: '/api/references/:referencesUserToId',
+      permissions: ['get', 'post']
     }]
   }]);
 };
@@ -40,18 +34,12 @@ exports.invokeRolesPolicies = function () {
  * Check If References Policy Allows
  */
 exports.isAllowed = function (req, res, next) {
-
   // No references for non-authenticated users
-  // No reference writing for authenticated but un-published users, except if they're reading existing reference
-  if (!req.user || (req.user && !req.user.public && req.method.toLowerCase() !== 'get')) {
+  // No reference writing for authenticated but un-published users
+  if (!req.user || (req.user && !req.user.public)) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden')
     });
-  }
-
-  // If an referenceUser is being processed and the current user "owns" it, then allow any manipulation
-  if (req.referenceUser && req.user && req.referenceUser.userFrom.equals(req.user._id)) {
-    return next();
   }
 
   // Check for user roles

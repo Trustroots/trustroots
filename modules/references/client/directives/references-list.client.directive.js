@@ -7,26 +7,26 @@
    * Usage:
    *
    * ```
-   * <div tr-references-user="userId"></div>
+   * <div tr-references-list="userId"></div>
    * ```
    *
    * userToId: feedback receiver's id
    */
   angular
-    .module('references-user')
-    .directive('trReferencesUser', trReferencesUserDirective);
+    .module('references')
+    .directive('trReferencesList', trReferencesListDirective);
 
   /* @ngInject */
-  function trReferencesUserDirective() {
+  function trReferencesListDirective() {
     var directive = {
       restrict: 'A',
       replace: true,
-      templateUrl: '/modules/references-user/views/directives/tr-references-user-list.client.view.html',
+      templateUrl: '/modules/references/views/directives/tr-references-list.client.view.html',
       scope: {
-        userId: '=trReferencesUser'
+        userToId: '=user'
       },
-      controller: trReferencesUserDirectiveController,
-      controllerAs: 'referencesUser',
+      controller: trReferencesListDirectiveController,
+      controllerAs: 'references',
       bindToController: true // because the scope is isolated
     };
 
@@ -36,7 +36,7 @@
   // Note: Note that the directive's controller is outside the directive's closure.
   // This style eliminates issues where the injection gets created as unreachable code after a return.
   /* @ngInject */
-  function trReferencesUserDirectiveController($scope, ReferenceUserService) {
+  function trReferencesListDirectiveController($scope, ReferencesService) {
 
     // View Model
     var vm = this;
@@ -52,8 +52,8 @@
      * Look for previous answers from the API
      */
     function activate() {
-      ReferenceUserService.get({
-        userId: vm.userId
+      ReferencesService.query({
+        userToId: vm.userToId
       }, function (references) {
         vm.isLoading = false;
         if (angular.isArray(references)) {

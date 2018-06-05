@@ -53,6 +53,7 @@ module.exports.initLocalVariables = function (app) {
     maxOfferValidFromNow: config.limits.maxOfferValidFromNow
   };
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
+  app.locals.appSettings.featureFlags = config.featureFlags || {};
 
   // Assets
   if (process.env.NODE_ENV !== 'production') {

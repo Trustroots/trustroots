@@ -1,0 +1,26 @@
+
+.badge.badge-inline {
+  font-weight: normal;
+  background: none;
+  padding: 0 0 0 2px;
+  color: @gray-light;
+  &:before {
+    content: '·';
+    margin: 0 5px 0 0;
+  }
+}
+
+.btn-primary .badge.badge-inline {
+  color: lighten(@btn-primary-color, 20%);
+}
+
+.list-group-item {
+  > .badge.badge-inline {
+    background: none;
+    float: none;
+ }
+
+ &.active > .badge.badge-inline {
+    color: lighten(@list-group-active-color, 20%);
+ }
+}

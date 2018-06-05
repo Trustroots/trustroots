@@ -17,19 +17,19 @@ exports.invokeRolesPolicies = function () {
   acl.allow([{
     roles: ['admin'],
     allows: [{
-      resources: '/api/references/threads',
+      resources: '/api/references-thread',
       permissions: ['post']
     }, {
-      resources: '/api/references/threads/:userToId',
+      resources: '/api/references-thread/:referenceThreadUserToId',
       permissions: ['get']
     }]
   }, {
     roles: ['user'],
     allows: [{
-      resources: '/api/references/threads',
+      resources: '/api/references-thread',
       permissions: ['post']
     }, {
-      resources: '/api/references/threads/:userToId',
+      resources: '/api/references-thread/:referenceThreadUserToId',
       permissions: ['get']
     }]
   }]);
@@ -40,7 +40,6 @@ exports.invokeRolesPolicies = function () {
  * Check If References Policy Allows
  */
 exports.isAllowed = function (req, res, next) {
-
   // No references for non-authenticated users
   // No reference writing for authenticated but un-published users, except if they're reading existing reference
   if (!req.user || (req.user && !req.user.public && req.method.toLowerCase() !== 'get')) {
