@@ -20,7 +20,7 @@
     "> 1%"
   ],
   "scripts": {
-    "prestart": "npm run install-if-no-modules && check-node-version --package",
+    "prestart": "npm run install-if-no-modules && ./node_modules/.bin/check-node-version --package",
     "install-if-no-modules": "if [ ! -d node_modules ]; then npm install --quiet; fi",
     "start": "concurrently --raw --kill-others --kill-others-on-fail 'gulp' 'npm run start:worker' 'maildev' 'npm run agendash'",
     "start:docker": "npm run prestart && concurrently --raw --kill-others --kill-others-on-fail 'gulp --skipBower' 'npm run start:worker'",
