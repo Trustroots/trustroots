@@ -1,0 +1,21 @@
+<div>
+  <pre>
+    l: {{references.references.length}}
+    references: {{references.references | json }}
+  </pre>
+
+  <div tr-placeholder ng-if="references.isLoading"></div>
+
+  <div class="row content-empty"
+       ng-if="!references.isLoading && references.references.length === 0">
+    <i class="icon-3x icon-users"></i>
+    <h4>No references yet.</h4>
+  </div>
+
+  <div class="row content-empty"
+       ng-if="!references.isLoading && references.references.length > 0">
+    {{references.references.length}} references:<br>
+    ...
+  </div>
+
+</div>

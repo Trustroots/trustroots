@@ -1,0 +1,288 @@
+<div>
+
+  <!-- Already left reference -->
+  <div class="panel panel-default text-center" ng-if="!referenceNew.isLoading && referenceNew.existingReference">
+    <div class="panel-body">
+      <p>
+        Since you have already left a reference to them, you can only add
+        comments to your previous reference.
+      </p>
+    </div>
+  </div>
+
+  <!-- Write new reference -->
+  <uib-tabset class="reference-new-tabs" active="referenceNew.referenceUserTab" type="pills">
+    <uib-tab index="0"
+             classes="reference-new-tabs-tab-processed"
+             deselect="referenceNew.onDeselectTab($event, $selectedIndex, 0)"
+             heading="How do you know them"
+             select="referenceNew.onSelectTab($event)">
+
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 id="howDoYouKnowThemQuestion">How do you know them?</h4>
+        </div>
+        <div class="panel-body">
+
+          <div role="group" aria-labelledby="howDoYouKnowThemQuestion">
+            <!--
+            <label tr-switch>
+              <input type="checkbox"
+                     ng-model="referenceNew.livingTogether"
+                     ng-change="referenceNew.onWeLiveTogetherChanged()">
+              I currently live with this person
+            </label>
+            <div class="text-muted">
+              <em>They need to confirm this and we'll show this in your profiles.</em>
+            </div>
+
+            <br><br>
+            -->
+
+            <label tr-switch>
+              <input type="checkbox"
+                     ng-model="referenceNew.reference.met"
+                     ng-disabled="referenceNew.livingTogether"
+                     ng-change="referenceNew.onHowDoIKnowThemChanged()">
+              Met in person
+            </label>
+
+            <br><br>
+
+            <label tr-switch>
+              <input type="checkbox"
+                     ng-model="referenceNew.reference.hosted_them"
+                     ng-change="referenceNew.onHowDoIKnowThemChanged()">
+              I hosted them
+            </label>
+
+            <br><br>
+
+            <label tr-switch>
+              <input type="checkbox"
+                     ng-model="referenceNew.reference.hosted_me"
+                     ng-change="referenceNew.onHowDoIKnowThemChanged()">
+              They hosted me
+            </label>
+          </div>
+
+          <div class="alert alert-warning reference-new-tabs-alert" role="alert" ng-if="referenceNew.howDoIKnowThemWarning">
+            Sorry, you cannot leave them a reference if you didn't have any previous interraction.
+          </div>
+        </div>
+      </div>
+
+    </uib-tab>
+    <uib-tab index="1"
+             heading="Recommendation"
+             classes="{{ 1 < referenceNew.referenceUserTab ? 'reference-new-tabs-tab-processed' : '' }}"
+             deselect="referenceNew.onDeselectTab($event, $selectedIndex, 1)"
+             select="referenceNew.onSelectTab($event)">
+
+      <div class="panel panel-default">
+        <div class="panel-heading" ng-switch="referenceNew.recommendationQuestion" id="recommendationQuestion">
+          <h4 ng-switch-when="hosted_me">
+            Would you recommend others to stay with them?
+          </h4>
+          <h4 ng-switch-when="hosted_them">
+            Would you recommend others to host them?
+          </h4>
+          <h4 ng-switch-default>
+            Would you recommend others to meet them?
+          </h4>
+        </div>
+        <div class="panel-body">
+
+          <div class="btn-group"
+               role="radiogroup"
+               aria-labelledby="recommendationQuestion">
+            <label class="btn btn-lg btn-reference-recommend btn-reference-recommend-yes"
+                   ng-model="referenceNew.reference.recommend"
+                   role="radio"
+                   aria-checked="{{ referenceNew.reference.recommend === 'yes' }}"
+                   ng-change="referenceNew.onRecommendChange()"
+                   uib-btn-radio="'yes'">
+              <span>Yes</span>
+            </label>
+            <label class="btn btn-lg btn-reference-recommend btn-reference-recommend-no"
+                   ng-model="referenceNew.reference.recommend"
+                   role="radio"
+                   aria-checked="{{ referenceNew.reference.recommend === 'no' }}"
+                   ng-change="referenceNew.onRecommendChange()"
+                   uib-btn-radio="'no'">
+              <span>No</span>
+            </label>
+            <label class="btn btn-lg btn-reference-recommend btn-reference-recommend-unknown"
+                   ng-model="referenceNew.reference.recommend"
+                   role="radio"
+                   aria-checked="{{ referenceNew.reference.recommend === 'unknown' }}"
+                   ng-change="referenceNew.onRecommendChange()"
+                   uib-btn-radio="'unknown'">
+              <span>I don't know</span>
+            </label>
+          </div>
+
+          <div class="alert alert-warning reference-new-tabs-alert" role="alert" ng-if="!referenceNew.reference.recommend && referenceNew.recommendationWarning">
+            Please choose if you can recommend them.
+          </div>
+
+          <div ng-if="referenceNew.reference.recommend === 'no'">
+
+            <br><br>
+
+            <p class="lead">
+              We're sad to hear you didn't have great experience using Trustroots! 😞
+            </p>
+
+            <label tr-switch>
+              <input type="checkbox"
+                     ng-model="referenceNew.report">
+              Report this person to moderators
+            </label>
+
+            <br><br>
+
+            <div ng-if="referenceNew.reference.report">
+              <label for="report-message" class="control-label">Message to moderators</label>
+              <textarea class="form-control input-lg"
+                        rows="7"
+                        id="message"
+                        ng-model="referenceNew.reportMessage"></textarea>
+              <span class="help-block">
+                Please write in English if possible.<br>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </uib-tab>
+    <!-- Tribe endorsements tab is hidden in production for now -->
+    <uib-tab ng-if="referenceNew.appSettings.featureFlags.referenceTribeEndorsements"
+             index="2"
+             heading="Endorsements"
+             classes="{{ 2 < referenceNew.referenceUserTab ? 'reference-new-tabs-tab-processed' : '' }}"
+             deselect="referenceNew.onDeselectTab($event, $selectedIndex, 2)"
+             select="referenceNew.onSelectTab($event)"
+             disable="referenceNew.reference.recommend === 'no'"
+             tooltip-enable="referenceNew.reference.recommend === 'no'"
+             tooltip-placement="bottom"
+             uib-tooltip="You cannot endorse them based on tribes if you cannot recommend them.">
+
+      <div class="panel panel-default"
+           ng-if="!referenceNew.isLoading && !referenceNew.existingReference">
+        <div class="panel-heading">
+          <h4>
+            Pick at most three tribes that really resemble them
+            <span class="text-muted">(optional)</span>
+          </h4>
+        </div>
+        <div class="panel-body" ng-if="referenceNew.reference.recommend !== 'no'">
+
+          <div ng-if="referenceNew.userTo.member && referenceNew.userTo.member.length"
+               class="list-group reference-new-endorsement-selector">
+              <button ng-repeat="membership in referenceNew.userTo.member"
+                      class="list-group-item"
+                      ng-class="{
+                        'active': membership.endorse
+                      }"
+                      ng-disabled="referenceNew.endorsedTribes.length >= referenceNew.endorsementLimit && !membership.endorse"
+                      ng-click="referenceNew.endorse(membership)">
+                <i class="icon-plus icon-lg"></i>
+                {{::membership.tribe.label}}
+                <span class="badge badge-inline" ng-bind="membership.endorsements || 0"></span>
+              </button>
+          </div>
+
+          <pre>{{referenceNew.endorsements | json}}</pre>
+
+        </div>
+      </div>
+
+    </uib-tab>
+    <uib-tab ng-if="referenceNew.appSettings.featureFlags.referenceFreetextFeedback"
+             index="3"
+             heading="Feedback"
+             deselect="referenceNew.onDeselectTab($event, $selectedIndex, 3)"
+             select="referenceNew.onSelectTab($event)">
+
+       <div class="panel panel-default"
+            ng-if="!referenceNew.isLoading && !referenceNew.existingReference">
+
+         <div class="panel-heading">
+           <h4>
+             Your honest, accurate and public feedback
+             <span class="text-muted">(optional)</span>
+           </h4>
+         </div>
+         <div class="panel-body">
+           <div ng-model="referenceNew.reference.feedback"
+                tr-editor
+                tr-editor-options="::app.editorOptions"
+                data-placeholder="Write here..."></div>
+         </div>
+         <div class="panel-footer">
+           You will not be able to modify this afterwards.
+         </div>
+       </div>
+
+       <div class="panel panel-default"
+            ng-if="!referenceNew.isLoading && !referenceNew.existingReference">
+         <div class="panel-heading">
+           <h4>
+             <i class="icon-lock"></i>
+             Private feedback visible only to them
+             <span class="text-muted">(optional)</span>
+           </h4>
+         </div>
+         <div class="panel-body">
+           <div ng-model="referenceNew.reference.feedback_private"
+                tr-editor
+                tr-editor-options="::app.editorOptions"
+                data-placeholder="Write here..."></div>
+         </div>
+       </div>
+
+    </uib-tab>
+  </uib-tabset>
+
+  <!-- Navigation for big screens -->
+  <div class="text-center">
+    <br>
+    <button ng-if="referenceNew.referenceUserTab > 0"
+            type="button"
+            class="btn btn-action btn-link"
+            aria-label="Previous section"
+            ng-disabled="referenceNew.isLoading"
+            ng-click="referenceNew.previousTab()">
+      <span class="icon-left"></span>
+      Back
+    </button>
+    <button ng-if="referenceNew.referenceUserTab < 1"
+            type="button"
+            class="btn btn-action btn-primary"
+            aria-label="Next section"
+            ng-disabled="referenceNew.isLoading"
+            ng-click="referenceNew.nextTab()">
+      Next
+    </button>
+    <!-- For the last tab -->
+    <button ng-if="referenceNew.referenceUserTab >= 1"
+            class="btn btn-action btn-primary"
+            aria-label="Submit reference"
+            ng-disabled="referenceNew.isLoading"
+            ng-click="referenceNew.submit()">
+      Submit
+    </button>
+  </div>
+
+  <pre>
+appSettings: {{referenceNew.appSettings}}
+endorsedTribes: {{referenceNew.endorsedTribes|json}}
+isLoading: {{referenceNew.isLoading|json}}
+reference: {{referenceNew.reference|json}}
+unsavedModifications: {{referenceNew.unsavedModifications|json}}
+userTo: {{referenceNew.userTo | json}}
+  </pre>
+
+</div>

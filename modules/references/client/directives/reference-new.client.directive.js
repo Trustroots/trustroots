@@ -2,33 +2,34 @@
   'use strict';
 
   /**
-   * References-user-new directive widget for leaving a reference to user
+   * References-new directive widget for leaving a reference to user
    *
    * Usage:
    *
    * ```
-   * <div tr-references-user-new="userToId"></div>
+   * <div tr-references-new="userToProfile"></div>
    * ```
+   *
+   * `userToProfile` should contain `_id` and optionally `member` array for tribes.
    *
    * userToId: feedback receiver's id
    */
   angular
-    .module('references-user')
-    .directive('trReferenceUserNew', trReferenceUserNewDirective);
+    .module('references')
+    .directive('trReferenceNew', trReferenceNewDirective);
 
   /* @ngInject */
-  function trReferenceUserNewDirective() {
+  function trReferenceNewDirective() {
     var directive = {
       restrict: 'A',
       replace: true,
-      templateUrl: '/modules/references-user/views/directives/tr-reference-user-new.client.view.html',
+      templateUrl: '/modules/references/views/directives/tr-reference-new.client.view.html',
       scope: {
-        trReferenceUserNew: '=',
-        memberships: '='
+        userTo: '=user'
       },
-      controller: trReferenceUserNewDirectiveController,
-      controllerAs: 'vm',
-      bindToController: true // because the scope is isolated
+      controller: trReferenceNewDirectiveController,
+      controllerAs: 'referenceNew'
+      // bindToController: true // because the scope is isolated
     };
 
     return directive;
@@ -37,36 +38,51 @@
   // Note: Note that the directive's controller is outside the directive's closure.
   // This style eliminates issues where the injection gets created as unreachable code after a return.
   /* @ngInject */
-  function trReferenceUserNewDirectiveController($scope, $analytics, messageCenterService, ReferenceThreadService) {
+  function trReferenceNewDirectiveController(
+    $scope,
+    $analytics,
+    Authentication,
+    messageCenterService,
+    ReferencesService,
+    SettingsFactory,
+    SupportService
+  ) {
 
     // View Model
     var vm = this;
 
-    console.log(vm);
-
     // Exposed to the view
-    vm.userTo = vm.trReferenceUserNew;
-    vm.createReference = createReference;
+    vm.appSettings = SettingsFactory.get();
+    vm.userTo = $scope.userTo;
     vm.onHowDoIKnowThemChanged = onHowDoIKnowThemChanged;
     // vm.onWeLiveTogetherChanged = onWeLiveTogetherChanged;
     vm.onRecommendChange = onRecommendChange;
     vm.onDeselectTab = onDeselectTab;
     vm.nextTab = nextTab;
     vm.previousTab = previousTab;
+    vm.submit = submit;
+    vm.endorse = endorse;
+    vm.isEndorsingNone = false;
     vm.unsavedModifications = false;
     vm.existingReference = false;
     vm.howDoIKnowThemWarning = false;
     vm.recommendationWarning = false;
     vm.referenceUserTab = 0;
+    vm.endorsedTribes = [];
+    vm.endorsementLimit = 3; // Max number of endorsements allowed per reference
+    vm.livingTogether = false;
+    vm.recommendationQuestion = 'met'; // met | hosted_me | hosted_them
+    vm.isLoading = false;
     vm.reference = {
       met: false,
       hosted_me: false,
       hosted_them: false,
-      recommend: ''
+      recommend: '', // yes | no | unknown | ''
+      feedback_private: '',
+      feedback: ''
     };
-    vm.living_together = false;
-    vm.recommendationQuestion = 'met'; // met | hosted_me | hosted_them
-    vm.isLoading = true;
+    vm.report = false;
+    vm.reportMessage = '';
 
     activate();
 
@@ -75,23 +91,21 @@
      */
     function activate() {
 
-      vm.isLoading = false;
-      /*
       // Look up existing reference from the API
-      ReferenceThreadService.get({
-        userToId: vm.userTo
-      }, function (referenceThread) {
-        vm.isLoading = false;
-        if (referenceThread) {
-          vm.allowCreatingReference = true;
-          vm.reference = referenceThread;
-        }
-      }, function (referenceThreadErr) {
-        vm.isLoading = false;
-        // In case of 404, API will tell us if we are allowed to send references to this user
-        vm.allowCreatingReference = (referenceThreadErr.data && angular.isDefined(referenceThreadErr.data.allowCreatingReference)) ? Boolean(referenceThreadErr.data.allowCreatingReference) : false;
-      });
-      */
+      if (vm.userTo && vm.userTo._id) {
+        vm.isLoading = true;
+        ReferencesService.query({
+          userFromId: Authentication.user._id,
+          userToId: vm.userTo._id
+        }, function (reference) {
+          vm.isLoading = false;
+          if (reference) {
+            vm.reference = reference;
+          }
+        }, function () {
+          vm.isLoading = false;
+        });
+      }
     }
 
     /**
@@ -119,7 +133,8 @@
 
 
       // Skip the tribes tab (2) if user didn't recommend them
-      if (vm.reference.recommend === 'no' && next === 2) {
+      // Skip also if feature is disabled
+      if ((!vm.appSettings.featureFlags.referenceTribeEndorsements || vm.reference.recommend === 'no') && next === 2) {
         next++;
       }
 
@@ -132,10 +147,36 @@
     function previousTab() {
       var previous = vm.referenceUserTab - 1;
       // Skip the tribes tab (2) if user didn't recommend them
-      if (vm.reference.recommend === 'no' && previous === 2) {
+      // Skip also if feature is disabled
+      if ((!vm.appSettings.featureFlags.referenceTribeEndorsements || vm.reference.recommend === 'no') && previous === 2) {
         previous--;
       }
       vm.referenceUserTab = previous;
+    }
+
+    /**
+     * Endorse (or un-endorse) a tribe
+     */
+    function endorse(membership) {
+      vm.isEndorsingNone = false;
+      membership.endorse = !membership.endorse;
+
+      if (angular.isUndefined(membership.endorsements)) {
+        membership.endorsements = 0;
+      }
+
+      if (membership.endorse) {
+        membership.endorsements++;
+
+        // Add tribe ID to array
+        vm.endorsedTribes.push(membership.tribe._id);
+      } else {
+        membership.endorsements--;
+
+        // Remove tribe ID from array
+        var index = vm.endorsedTribes.indexOf(membership.tribe._id);
+        if (index !== -1) vm.endorsedTribes.splice(index, 1);
+      }
     }
 
     /**
@@ -160,7 +201,7 @@
 
     /*
     function onWeLiveTogetherChanged() {
-      vm.reference.met = vm.living_together ? vm.living_together : vm.reference.met;
+      vm.reference.met = vm.livingTogether ? vm.livingTogether : vm.reference.met;
     }
     */
 
@@ -187,23 +228,40 @@
     }
 
     /**
-     * Send reference to the API
+     * Send reference (and possible support request) to the API
      */
-    function createReference(reference) {
-      var newReference = new ReferenceThreadService({
-        userTo: vm.userTo,
-        reference: String(reference)
-      });
-
-      vm.reference = newReference;
+    function submit() {
+      var newReference = new ReferencesService(angular.extend(
+        {
+          userToId: vm.userTo._id,
+          endorsedTribes: vm.endorsedTribes
+        },
+        vm.reference
+      ));
 
       newReference.$save(function (response) {
-        vm.reference = response;
+        console.log(response);
         messageCenterService.add('success', 'Thank you!');
       }, function () {
-        vm.reference = false;
         messageCenterService.add('danger', 'Something went wrong. Please try again.');
       });
+
+      // Send possible support message if they want to report this user
+      if (vm.report) {
+        var reportMessage = vm.reportMessage
+          + '\n\n'
+          + 'Sent via reference form.';
+        var report = new SupportService({
+          username: vm.userTo.username || '',
+          message: reportMessage || ''
+        });
+        report.$save(function (response) {
+          console.log(response);
+        }, function (err) {
+          console.log(err);
+        });
+      }
+
     }
 
   }

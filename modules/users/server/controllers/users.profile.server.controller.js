@@ -11,6 +11,7 @@ var _ = require('lodash'),
     contactHandler = require(path.resolve('./modules/contacts/server/controllers/contacts.server.controller')),
     messageHandler = require(path.resolve('./modules/messages/server/controllers/messages.server.controller')),
     offerHandler = require(path.resolve('./modules/offers/server/controllers/offers.server.controller')),
+    referencesHandler = require(path.resolve('./modules/references/server/controllers/references.server.controller')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
     inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
@@ -811,7 +812,7 @@ exports.userByUsername = function (req, res, next, username) {
         });
     },
 
-    // Sanitize & return profile
+    // Sanitize profile
     function (profile, done) {
       req.profile = exports.sanitizeProfile(profile, req.user);
       return done(null, profile);
@@ -832,8 +833,16 @@ exports.userByUsername = function (req, res, next, username) {
             _.assign(req.profile, _.pick(stats, ['replyRate', 'replyTime']));
           }
 
-          return done();
+          done(null, profile);
         });
+    },
+
+    // Get number of references for this user
+    function (profile, done) {
+      referencesHandler.getReferencesCount(profile._id, function (err, referencesCount) {
+        req.profile.referencesCount = !err && referencesCount ? referencesCount : 0;
+        done();
+      })
     },
 
     // Next Route

@@ -1,2 +1,11 @@
-<div tr-reference-user-new="profileCtrl.profile.username"
-     memberships="profileCtrl.profile.memberships"></div>
+<!-- Looking at own profile -->
+<div class="row content-empty"
+     ng-if="profileCtrl.profile._id === app.user._id">
+    <i class="icon-3x icon-users"></i>
+    <h4>You can ask others to leave you a reference by sharing an URL to this page.</h4>
+</div>
+<!-- /Looking at own profile -->
+
+<div ng-if="profileCtrl.profile._id !== app.user._id"
+     tr-reference-new
+     user="profileCtrl.profile"></div>

@@ -1,4 +1,4 @@
-.reference-user-tabs {
+.reference-new-tabs {
   .nav-pills {
     margin-bottom: @padding-base-horizontal;
     margin-right: 1px;
@@ -7,7 +7,7 @@
       width: 100%;
       opacity: 0.5;
       &.active,
-      &.reference-user-tabs-tab-processed {
+      &.reference-new-tabs-tab-processed {
         opacity: 1;
       }
       + li {
@@ -38,7 +38,7 @@
           background: none;
         }
       }
-      &.reference-user-tabs-tab-processed > a {
+      &.reference-new-tabs-tab-processed > a {
         cursor: pointer;
       }
     }
@@ -101,6 +101,16 @@
   }
 }
 
-.reference-user-tabs-alert {
+.reference-new-tabs-alert {
   margin-top: @padding-base-horizontal;
+}
+
+.reference-new-endorsement-selector {
+  button.list-group-item {
+    width: 50%;
+    float: left;
+    &[disabled] {
+      color: @gray-light;
+    }
+  }
 }
