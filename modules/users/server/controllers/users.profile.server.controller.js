@@ -55,6 +55,7 @@ exports.userProfileFields = [
   'seen',
   'created',
   'updated',
+  'passwordUpdated',
   'avatarSource',
   'avatarUploaded',
   'member',
@@ -359,6 +360,7 @@ exports.update = function (req, res) {
       delete req.body.public;
       delete req.body.created;
       delete req.body.seen;
+      delete req.body.passwordUpdated;
       delete req.body.roles;
       delete req.body.email;
       delete req.body.emailHash;

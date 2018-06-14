@@ -246,6 +246,9 @@ var UserSchema = new Schema({
     type: Boolean,
     default: false
   },
+  passwordUpdated: {
+    type: Date
+  },
   /* For email confirmations */
   emailToken: {
     type: String
