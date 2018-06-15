@@ -1,8 +1,46 @@
-
-<!-- Email -->
+<!-- Username -->
 <div class="panel panel-default">
   <div class="panel-heading">
-    Email
+    Username
+  </div>
+  <div class="panel-body">
+
+  <form ng-submit="profileEditAccount.updateUsername()" autocomplete="off" name="settingsUsername">
+    <div class="form-horizontal">
+
+      <div class="form-group" ng-class="{'has-error': (settingsUsername.username.$invalid && settingsUsername.username.$dirty) || profileEditAccount.usernameError}">
+        <label for="username" class="col-sm-3 text-right control-label">Username</label>
+        <div class="col-sm-9">
+          <input type="text"
+                 id="username"
+                 name="username"
+                 class="form-control"
+                 ng-model="profileEditAccount.user.username"
+                 placeholder="username"
+                 mailcheck>
+          <p class="help-block" ng-show="profileEditAccount.user.username && !profileEditAccount.user.username && !profileEditAccount.usernameError">
+            An username is a sensitive information to Trustroot and because of that we keep a limit of one change every 3 months.
+          </p>
+          <p class="help-block" ng-show="profileEditAccount.usernameError" ng-bind="profileEditAccount.usernameError"></p>
+          <p class="help-block" ng-show="profileEditAccount.usernameSuccess" ng-bind="profileEditAccount.usernameSuccess"></p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="col-sm-push-3 col-sm-9">
+          <button type="submit" class="btn btn-primary" ng-disabled="settingsUsername.username.$invalid && settingsUsername.username.$dirty">Change Username</button>
+        </div>
+      </div>
+
+    </div>
+  </form>
+</div>
+<!-- /Username -->
+
+<!-- email -->
+<div class="panel panel-default">
+  <div class="panel-heading">
+    email
   </div>
   <div class="panel-body">
 
