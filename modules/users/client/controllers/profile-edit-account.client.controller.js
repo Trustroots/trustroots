@@ -13,6 +13,7 @@
     var vm = this;
 
     // Exposed
+    vm.updateUsername = updateUsername;
     vm.updateUserEmail = updateUserEmail;
     vm.resendUserEmailConfirm = resendUserEmailConfirm;
     vm.updateUserSubscriptions = updateUserSubscriptions;
@@ -67,6 +68,21 @@
       return push.isBusy || push.isBlocked || !push.isSupported;
     }
 
+    /**
+     * Change username
+     */
+    function updateUsername() {
+      vm.usernameSuccess = vm.usernameError = null;
+      var user = new Users(Authentication.user);
+
+      user.$update(function (response) {
+        messageCenterService.add('success', 'Username updated.');
+        vm.usernameSuccess = '';
+        vm.user = Authentication.user = response;
+      }, function (response) {
+        vm.usernameError = (response.data && response.data.message) || 'Something went wrong';
+      });
+    }
     /**
      * Change user email
      */

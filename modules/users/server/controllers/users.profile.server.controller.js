@@ -302,33 +302,64 @@ exports.update = function (req, res) {
 
     // If user is changing email, check if it's available
     function (done) {
+      var emailChanged = (req.body.email && req.body.email !== req.user.email);
+      var userNameChanged = (req.body.username && req.body.username !== req.user.username);
 
-      // Check if email changed and proceed with extra checks if so
-      if (req.body.email && req.body.email !== req.user.email) {
-        User.findOne({
-          $or: [
-            { emailTemporary: req.body.email.toLowerCase() },
-            { email: req.body.email.toLowerCase() }
-          ]
-        }, 'emailTemporary email', function (err, emailUser) {
-          // Not free
-          if (emailUser) {
-            // If the user we found with this email is currently authenticated user, let user pass to resend confirmation email
-            if (emailUser._id.equals(req.user._id)) {
-              done(null);
+      if (emailChanged || userNameChanged) {
+        // Check if email changed and proceed with extra checks if so
+        if (emailChanged) {
+          User.findOne({
+            $or: [
+              { emailTemporary: req.body.email.toLowerCase() },
+              { email: req.body.email.toLowerCase() }
+            ]
+          }, 'emailTemporary email', function (err, emailUser) {
+            // Not free
+            if (emailUser) {
+              // If the user we found with this email is currently authenticated user, let user pass to resend confirmation email
+              if (emailUser._id.equals(req.user._id)) {
+                done(null);
+              } else {
+                // Otherwise it was someone else's email. Block the way.
+                return res.status(403).send({
+                  message: 'This email is already in use. Please use another one.'
+                });
+              }
             } else {
-              // Otherwise it was someone else's email. Block the way.
-              return res.status(403).send({
-                message: 'This email is already in use. Please use another one.'
-              });
+              // Free, proceed generating the token
+              done(null);
             }
-          } else {
-            // Free, proceed generating the token
-            done(null);
+          });
+        }
+        // User wants to change the username
+        if (userNameChanged) {
+          var now = new Date(Date.now());
+          var updatePermission;
+          if (req.user.usernameUpdated) {
+            updatePermission = req.user.usernameUpdated;
+            // username can be changed once in every 3 months
+            updatePermission.setMonth(updatePermission.getMonth() + 3);
           }
-        });
+          if (!req.user.usernameUpdated || (now >= updatePermission)) {
+            if (!req.user.usernameHistory) {
+              req.user.usernameHistory = [];
+            }
+            // var updatedInfo = {
+            //   username: req.user.username,
+            //   updatedAt: now
+            // };
+            // req.user.usernameHistory.push(updatedInfo);
+            req.user.usernameUpdated = now;
+          } else {
+            return res.status(403).send({
+              message: 'You have used your chance to change your username already'
+            });
+          }
+          // proceed generation the token
+          done(null);
+        }
       } else {
-        // Email didn't change, just continue
+        // Email or username didn't change, just continue
         done(null);
       }
     },
@@ -367,7 +398,7 @@ exports.update = function (req, res) {
       delete req.body.emailToken;
       delete req.body.emailTemporary;
       delete req.body.provider;
-      delete req.body.username;
+      delete req.body.usernameHistory;
       delete req.body.displayUsername;
       delete req.body.salt;
       delete req.body.password;
@@ -917,6 +948,10 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   delete profile.publicReminderSent;
   delete profile.welcomeSequenceStep;
   delete profile.welcomeSequenceSent;
+
+  // The frontend does not need the username history array
+  // but it does need the time the lastupdate was made in case we have it
+  delete profile.usernameHistory;
 
   // Hide Mongoose document revision aka `versionKey`
   // http://mongoosejs.com/docs/guide.html#versionKey
