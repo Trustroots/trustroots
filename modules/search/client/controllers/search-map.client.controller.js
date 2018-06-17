@@ -6,7 +6,7 @@
     .controller('SearchMapController', SearchMapController);
 
   /* @ngInject */
-  function SearchMapController($scope, $state, $stateParams, $timeout, $analytics, $window, OffersService, Authentication, leafletData, messageCenterService, MapLayersFactory, MapMarkersFactory, SearchMapService, FiltersService) {
+  function SearchMapController($scope, $state, $stateParams, $timeout, $analytics, OffersService, Authentication, leafletData, messageCenterService, MapLayersFactory, MapMarkersFactory, SearchMapService, FiltersService) {
 
     // `search-map-canvas` is id of <leaflet> element
     var mapId = 'search-map-canvas';
