@@ -90,7 +90,7 @@
         var selections = [];
         if ($scope.output.length > 0) {
           $scope.output.forEach(function (key) {
-            if (typeof key === 'string') {
+            if (angular.isString(key)) {
               this.push({
                 'key': key,
                 'name': vm.languages[key]

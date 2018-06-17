@@ -20,38 +20,34 @@
 
         var minlength = angular.isDefined(attr.minlength) ? attr.minlength : 1;
 
-        // function(modelValue, viewValue) {
         ngModel.$asyncValidators.username = function (modelValue) {
+          return $q(function (resolve, reject) {
 
-          var deferred = $q.defer();
+            ngModel.$setValidity('username', true);
+            if (modelValue && modelValue.length >= minlength) {
+              if (delayedUsernameValidation) {
+                $timeout.cancel(delayedUsernameValidation);
+              }
 
-          ngModel.$setValidity('username', true);
-          if (modelValue && modelValue.length >= minlength) {
-            if (delayedUsernameValidation) {
-              $timeout.cancel(delayedUsernameValidation);
+              delayedUsernameValidation = $timeout(function () {
+                delayedUsernameValidation = false;
+                SignupValidation
+                  .post({ username: modelValue })
+                  .$promise
+                  .then(function (results) {
+                    if (results && !results.valid) {
+                      // Got result and it's negative
+                      reject();
+                    } else {
+                      // Either result was positive or we couldn't receive any
+                      // response, but regard networks errors as false negatives.
+                      // Otherwise we'd flag everything invalid
+                      resolve();
+                    }
+                  });
+              }, 1000);
             }
-
-            delayedUsernameValidation = $timeout(function () {
-              delayedUsernameValidation = false;
-              SignupValidation
-                .post({ username: modelValue })
-                .$promise
-                .then(function (results) {
-                  if (results && !results.valid) {
-                    // Got result and it's negative
-                    deferred.reject();
-                  } else {
-                    // Either result was positive or we couldn't receive any
-                    // response, but regard networks errors as false negatives.
-                    // Otherwise we'd flag everything invalid
-                    deferred.resolve();
-                  }
-                });
-            }, 1000);
-          }
-
-          // return the promise of the asynchronous validator
-          return deferred.promise;
+          });
         };
 
       }

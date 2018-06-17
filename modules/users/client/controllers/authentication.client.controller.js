@@ -6,7 +6,7 @@
     .controller('AuthenticationController', AuthenticationController);
 
   /* @ngInject */
-  function AuthenticationController($window, $scope, $rootScope, $http, $state, $location, $stateParams, $analytics, Authentication, messageCenterService, Facebook, push, trNativeAppBridge) {
+  function AuthenticationController($scope, $rootScope, $http, $state, $stateParams, $analytics, Authentication, messageCenterService, Facebook, push, trNativeAppBridge) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) {

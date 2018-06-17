@@ -256,7 +256,7 @@
       });
 
       // This will tell Mobile apps wrapping the site to disable push notifications at the device
-      if (typeof $window.postMessage === 'function') {
+      if (angular.isFunction($window.postMessage)) {
         $window.postMessage('unAuthenticated', $location.protocol() + '://' + $location.host());
       }
 

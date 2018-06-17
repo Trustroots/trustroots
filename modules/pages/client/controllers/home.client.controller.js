@@ -7,7 +7,7 @@
     .controller('HomeController', HomeController);
 
   /* @ngInject */
-  function HomeRunBlock($location, $window, $state, Authentication) {
+  function HomeRunBlock($location, $window, Authentication) {
     // When landing to frontpage as authenticated user, redirect to search
     if (Authentication.user && $location.path() === '/') {
       $location.path('/search');
@@ -29,7 +29,7 @@
   }
 
   /* @ngInject */
-  function HomeController($stateParams, $window, Authentication, TribesService, TribeService) {
+  function HomeController($stateParams, $window, TribesService, TribeService) {
 
     var headerHeight = angular.element('#tr-header').height() || 0;
 

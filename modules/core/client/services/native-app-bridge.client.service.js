@@ -33,6 +33,7 @@
     function activate() {
       return $q(function (resolve) {
         logToNativeApp('trNativeAppBridgeFactory activate');
+        // eslint-disable-next-line angular/document-service
         document.addEventListener('message', function (event) {
           // event = event.originalEvent || event;
           if (event && event.data === 'trMobileAppInit' && !$window.isNativeMobileApp) {
