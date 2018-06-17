@@ -15,7 +15,6 @@ var _ = require('lodash'),
     fs = require('fs'),
     nodemon = require('nodemon'),
     mkdirRecursive = require('mkdir-recursive'),
-    argv = require('yargs').argv,
     plugins = gulpLoadPlugins({
       rename: {
         'gulp-angular-templatecache': 'templateCache'
@@ -62,13 +61,13 @@ function loadConfig(done) {
 }
 
 // Nodemon task for server
-function nodemon(done) {
+function runNodemon(done) {
   nodemon({
     script: 'server.js',
     // Default port is `5858`
     // @link https://nodejs.org/api/debugger.html
     nodeArgs: ['--inspect=5858'],
-    ext: 'js html',
+    ext: 'js, html',
     ignore: _.union(
       testAssets.tests.server,
       testAssets.tests.client,
@@ -96,7 +95,7 @@ function nodemon(done) {
 }
 
 // Nodemon task for worker
-function nodemonWorker(done) {
+function runNodemonWorker(done) {
   nodemon({
     script: 'worker.js',
     // Default port is `5858`, but because `nodemon` task is already using it
@@ -235,7 +234,7 @@ gulp.task('watch:server:run-tests', function () {
 
 // ESLint JS linting task
 gulp.task('eslint', function () {
-  var assets = _.union(
+  var lintAssets = _.union(
     [
       defaultAssets.server.gulpConfig,
       defaultAssets.server.migrations
@@ -252,7 +251,7 @@ gulp.task('eslint', function () {
     ]
   );
 
-  return gulp.src(assets)
+  return gulp.src(lintAssets)
     .pipe(plugins.eslint())
     .pipe(plugins.eslint.format())
     // To have the process exit with an error code (1) on
@@ -570,7 +569,7 @@ gulp.task('develop', gulp.series(
   'env:dev',
   'build:dev',
   gulp.parallel(
-    nodemon,
+    runNodemon,
     'watch'
   )
 ));
@@ -580,7 +579,7 @@ gulp.task('prod', gulp.series(
   'env:prod',
   'build:prod',
   gulp.parallel(
-    nodemon,
+    runNodemon,
     'watch'
   )
 ));
@@ -588,11 +587,11 @@ gulp.task('prod', gulp.series(
 // Run worker script in development mode
 gulp.task('worker:dev', gulp.series(
   'env:dev',
-  nodemonWorker
+  runNodemonWorker
 ));
 
 // Run worker script in production mode
 gulp.task('worker:prod', gulp.series(
   'env:prod',
-  nodemonWorker
+  runNodemonWorker
 ));
