@@ -188,20 +188,29 @@ gulp.task('watch', function (done) {
   // Start Refresh
   plugins.refresh.listen();
 
-  // Add watch rules
+  // Watch and lint JS files
+  gulp.watch(
+    _.union(
+      defaultAssets.server.allJS,
+      defaultAssets.server.workerJS,
+      [
+        defaultAssets.server.gulpConfig,
+        defaultAssets.server.migrations
+      ]
+    ),
+    gulp.series('lint')
+  );
+
+  // Watch and generate app files
+  gulp.watch(defaultAssets.server.fontelloConfig, fontello);
   gulp.watch(defaultAssets.server.views).on('change', plugins.refresh.changed);
-  gulp.watch(defaultAssets.server.allJS, ['lint']).on('change', plugins.refresh.changed);
-  gulp.watch(defaultAssets.server.migrations, ['lint']).on('change', plugins.refresh.changed);
-  gulp.watch(defaultAssets.server.fontelloConfig).on('change', fontello);
-  gulp.watch(defaultAssets.client.less, ['clean:css', 'styles']);
+  gulp.watch(defaultAssets.client.less, gulp.series('clean:css', 'styles')).on('change', plugins.refresh.changed);
 
   if (process.env.NODE_ENV === 'production') {
-    gulp.watch(defaultAssets.client.js, ['lint', 'clean:js', 'scripts']);
-    gulp.watch(defaultAssets.server.gulpConfig, ['lint']);
-    gulp.watch(defaultAssets.client.views, ['clean:js', 'scripts']).on('change', plugins.refresh.changed);
+    gulp.watch(defaultAssets.client.js, gulp.series('lint', 'clean:js', 'scripts'));
+    gulp.watch(defaultAssets.client.views, gulp.series('clean:js', 'scripts')).on('change', plugins.refresh.changed);
   } else {
-    gulp.watch(defaultAssets.client.js, ['lint']).on('change', plugins.refresh.changed);
-    gulp.watch(defaultAssets.server.gulpConfig, ['lint']);
+    gulp.watch(defaultAssets.client.js, gulp.series('lint')).on('change', plugins.refresh.changed);
     gulp.watch(defaultAssets.client.views).on('change', plugins.refresh.changed);
   }
   done();
