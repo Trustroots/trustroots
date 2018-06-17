@@ -179,6 +179,8 @@ exports.reset = function (req, res) {
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
 
+        user.passwordUpdated = Date.now();
+
         // Save user with new password
         user.save(function (err) {
 
@@ -298,6 +300,7 @@ exports.changePassword = function (req, res) {
     function (user, done) {
 
       user.password = req.body.newPassword;
+      user.passwordUpdated = Date.now();
 
       user.save(function (err) {
         done(err, user);
