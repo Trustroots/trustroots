@@ -69,19 +69,10 @@ function sanitizeMessages(messages) {
  * @returns {Array}
  */
 function sanitizeThreads(threads, authenticatedUserId) {
-
-  if (!threads || !threads.length) {
-    return [];
-  }
-
-  // Sanitize each outgoing thread
-  var threadsCleaned = [];
-
-  threads.forEach(function (thread) {
-
-    // Threads need just excerpt
-    thread = thread.toObject();
-
+  return threads.filter(function (thread) {
+    // Clean messages that belongs to deleted users
+    return (thread.userFrom !== null && thread.userTo !== null);
+  }).map(function (thread) {
     // Clean message content from html + clean all whitespace + shorten
     if (thread.message) {
       thread.message.excerpt = thread.message.content ? textServiceService.plainText(thread.message.content, true).substring(0, 100).trim() + ' …' : '…';
@@ -95,25 +86,12 @@ function sanitizeThreads(threads, authenticatedUserId) {
 
     // If latest message in the thread was from current user, show
     // it as read - sender obviously read his/her own message
-    if (thread.userFrom && thread.userFrom._id && thread.userFrom._id.toString() === authenticatedUserId.toString()) {
+    if (thread.read === false && thread.userFrom && thread.userFrom._id && thread.userFrom._id.toString() === authenticatedUserId.toString()) {
       thread.read = true;
     }
 
-    threadsCleaned.push(thread);
-
-    // If users weren't populated, they were removed.
-    // Don't return thread at all at this point.
-    //
-    // @todo:
-    // Return thread but with placeholder user and old user's ID
-    // With ID we could fetch the message thread — now all we could
-    // show is this line at inbox but not actual messages
-    // if (thread.userTo && thread.userFrom) {
-    //   threadsCleaned.push(thread);
-    // }
+    return thread;
   });
-
-  return threadsCleaned;
 }
 
 /**
@@ -597,7 +575,10 @@ exports.messagesCount = function (req, res) {
 
   Thread.count({
     read: false,
-    userTo: req.user._id
+    userTo: req.user._id,
+    $match: {
+      userFrom: { $exists: true }
+    }
   }, function (err, unreadCount) {
     if (err) {
       return res.status(400).send({
