@@ -5,6 +5,7 @@
  */
 var _ = require('lodash'),
     path = require('path'),
+    moment = require('moment'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     async = require('async'),
@@ -186,6 +187,51 @@ exports.getPushRegistrationCount = function (callback) {
     callback(null, parseInt(count, 10) || 0);
   });
 };
+
+/**
+ * Generate statistics based on the user last seen attribute
+ */
+exports.getLastSeenStatistic = function (type, callback) {
+  var now = moment();
+  var query = { };
+
+  switch (type) {
+    case 'never':
+      query.seen = { $exists: false };
+      break;
+    case 'today':
+      query.seen = { '$gte': now.startOf('day') };
+      break;
+    case 'week':
+      query.seen = { '$gte': now.startOf('week') };
+      break;
+    case 'thisMonth':
+      query.seen = { '$gte': now.startOf('month') };
+      break;
+    case 'sinceAMonthAgo':
+      var thisMonth = now.startOf('month');
+      query.seen = { '$gte': thisMonth.subtract(1, 'months') };
+      break;
+    case 'sinceSixMonthsAgo':
+      var thisMonth = now.startOf('month');
+      query.seen = { '$gte': thisMonth.subtract(2, 'months') };
+      break;
+    case 'sinceAYearAgo':
+      var thisMonth = now.startOf('month');
+      query.seen = { '$gte': thisMonth.subtract(12, 'months') };
+      break;
+    default:
+      return callback(new Error('Missing last seen statistic type.'));
+  }
+  User.count(query, function (err, count) {
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, parseInt(count) || 0);
+  });
+
+}
 
 /**
  * Get all statistics

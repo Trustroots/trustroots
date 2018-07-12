@@ -65,6 +65,139 @@ module.exports = function (job, agendaDone) {
       });
     },
 
+    // Get the amount of memebers who never got to log into TR
+    function (done) {
+      var stat = 'never';
+      statistics.getLastSeenStatistic(stat, function (err, count) {
+        if (err) {
+          return done(err);
+        }
+        writeDailyStat({
+          namespace: stat,
+          values: {
+            count: parseInt(count)
+          },
+          tags: {
+            access: 'members'
+          }
+        }, done)
+      });
+    },
+
+    // Get the amount of members who logged into TR today
+    function (done) {
+      var stat = 'today';
+      statistics.getLastSeenStatistic(stat, function (err, count) {
+        if (err) {
+          return done(err);
+        }
+        writeDailyStat({
+          namespace: stat,
+          values: {
+            count: parseInt(count)
+          },
+          tags: {
+            access: 'members'
+          }
+        }, done)
+      });
+    },
+
+    // Get the amount of members who logged into TR this week
+    function (done) {
+      var stat = 'week';
+      statistics.getLastSeenStatistic(stat, function (err, count) {
+        if (err) {
+          return done(err);
+        }
+        writeDailyStat({
+          namespace: stat,
+          values: {
+            count: parseInt(count)
+          },
+          tags: {
+            access: 'members'
+          }
+        }, done)
+      });
+    },
+
+    // Get the amount of member who logged in this month
+    function (done) {
+      var stat = 'thisMonth';
+      statistics.getLastSeenStatistic(stat, function (err, count) {
+        if (err) {
+          return done(err);
+        }
+        writeDailyStat({
+          namespace: stat,
+          values: {
+            count: parseInt(count)
+          },
+          tags: {
+            access: 'members'
+          }
+        }, done)
+      });
+    },
+
+    // Get the ammount of members who logged in for that last month
+    function (done) {
+      var stat = 'sinceAMonthAgo';
+      statistics.getLastSeenStatistic(stat, function (err, count) {
+        if (err) {
+          return done(err);
+        }
+        writeDailyStat({
+          namespace: stat,
+          values: {
+            count: parseInt(count)
+          },
+          tags: {
+            access: 'members'
+          }
+        }, done)
+      });
+    },
+
+    // Get the ammount of members who logged in for the last 6 months
+    function (done) {
+      var stat = 'sinceSixMonthsAgo';
+      statistics.getLastSeenStatistic(stat, function (err, count) {
+        if (err) {
+          return done(err);
+        }
+        writeDailyStat({
+          namespace: stat,
+          values: {
+            count: parseInt(count)
+          },
+          tags: {
+            access: 'members'
+          }
+        }, done)
+      });
+    },
+
+    // Get the ammount of members who logged in for the last 12 months
+    function (done) {
+      var stat = 'sinceAYearAgo';
+      statistics.getLastSeenStatistic(stat, function (err, count) {
+        if (err) {
+          return done(err);
+        }
+        writeDailyStat({
+          namespace: stat,
+          values: {
+            count: parseInt(count)
+          },
+          tags: {
+            access: 'members'
+          }
+        }, done)
+      });
+    },
+
     // Hosting offer count
     function (done) {
 
