@@ -333,30 +333,37 @@ exports.update = function (req, res) {
         }
         // User wants to change the username
         if (userNameChanged) {
-          var now = new Date(Date.now());
-          var updatePermission;
-          if (req.user.usernameUpdated) {
-            updatePermission = req.user.usernameUpdated;
-            // username can be changed once in every 3 months
-            updatePermission.setMonth(updatePermission.getMonth() + 3);
-          }
-          if (!req.user.usernameUpdated || (now >= updatePermission)) {
-            if (!req.user.usernameHistory) {
-              req.user.usernameHistory = [];
+          User.findOne({
+            username: req.body.username
+          }, function (err, user) {
+            if (user) {
+              return done(new Error('Username is not available.'), 'username-not-available');
             }
-            // var updatedInfo = {
-            //   username: req.user.username,
-            //   updatedAt: now
-            // };
-            // req.user.usernameHistory.push(updatedInfo);
-            req.user.usernameUpdated = now;
-          } else {
-            return res.status(403).send({
-              message: 'You have used your chance to change your username already'
-            });
-          }
-          // proceed generation the token
-          done(null);
+            var now = new Date(Date.now());
+            var updatePermission;
+            if (req.user.usernameUpdated) {
+              updatePermission = req.user.usernameUpdated;
+              // username can be changed once in every 3 months
+              updatePermission.setMonth(updatePermission.getMonth() + 3);
+            }
+            if (!req.user.usernameUpdated || (now >= updatePermission)) {
+              if (!req.user.usernameHistory) {
+                req.user.usernameHistory = [];
+              }
+              // var updatedInfo = {
+              //   username: req.user.username,
+              //   updatedAt: now
+              // };
+              // req.user.usernameHistory.push(updatedInfo);
+              req.user.usernameUpdated = now;
+            } else {
+              return res.status(403).send({
+                message: 'You have used your chance to change your username already'
+              });
+            }
+            // proceed generation the token
+            done(null);
+          });
         }
       } else {
         // Email or username didn't change, just continue
