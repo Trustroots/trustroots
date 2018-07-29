@@ -339,7 +339,7 @@ exports.update = function (req, res) {
             if (user) {
               return done(new Error('Username is not available.'), 'username-not-available');
             }
-            var now = new Date(Date.now());
+            var now = Date.now();
             var updatePermission;
             if (req.user.usernameUpdated) {
               updatePermission = req.user.usernameUpdated;
