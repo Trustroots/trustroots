@@ -571,7 +571,7 @@ describe('User profile CRUD tests', function () {
     });
   });
 
-  describe.only('Username Updates', function () {
+  describe('Username Update', function () {
     it('should update it', function (done) {
       var user2 = _user;
       user2.username = _user.username + '01';
@@ -627,6 +627,57 @@ describe('User profile CRUD tests', function () {
                     res.body.message.should.equal('You have used your chance to change your username already');
                     return done();
                   });
+              });
+          });
+      });
+
+    it('should update if the three months rule have passed by',
+      function (done) {
+        var user2 = _user;
+        delete user2.email;
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (err) {
+            if (err) {
+              return done(err);
+            }
+            // First change
+            user2.username = _user.username + '01';
+            agent.put('/api/users')
+              .send(user2)
+              .expect(200)
+              .end(function (err, res) {
+                if (err) {
+                  return done(err);
+                }
+                res.body.username.should.equal(user2.username);
+                User.findById(user._id, function (err, user) {
+                  if (err) {
+                    return done(err);
+                  }
+                  var threeMonthsAgo = new Date(user.usernameUpdated);
+                  threeMonthsAgo.setMonth(
+                    user.usernameUpdated.getMonth() - 3
+                  );
+                  user.update(
+                    { $set: { usernameUpdated: threeMonthsAgo } },
+                    function (err) {
+                      if (err) {
+                        return done(err);
+                      }
+                      user2.username = _user.username + '02';
+                      agent.put('/api/users')
+                        .send(user2)
+                        .end(function (err, res) {
+                          if (err) {
+                            return done(err);
+                          }
+                          res.body.username.should.equal(user2.username);
+                          return done();
+                        });
+                    });
+                });
               });
           });
       });
