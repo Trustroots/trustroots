@@ -390,7 +390,6 @@ exports.update = function (req, res) {
       delete req.body.emailToken;
       delete req.body.emailTemporary;
       delete req.body.provider;
-      delete req.body.usernameHistory;
       delete req.body.displayUsername;
       delete req.body.salt;
       delete req.body.password;
@@ -940,10 +939,6 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   delete profile.publicReminderSent;
   delete profile.welcomeSequenceStep;
   delete profile.welcomeSequenceSent;
-
-  // The frontend does not need the username history array
-  // but it does need the time the lastupdate was made in case we have it
-  delete profile.usernameHistory;
 
   // Hide Mongoose document revision aka `versionKey`
   // http://mongoosejs.com/docs/guide.html#versionKey
