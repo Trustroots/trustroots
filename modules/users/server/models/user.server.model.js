@@ -173,17 +173,6 @@ var UserSchema = new Schema({
   usernameUpdated: {
     type: Date
   },
-  usernameHistory: {
-    type: [{
-      username: {
-        type: String
-      },
-      updatedAt: {
-        type: Date
-      }
-    }],
-    default: []
-  },
   // Stores unaltered original username
   displayUsername: {
     type: String,
