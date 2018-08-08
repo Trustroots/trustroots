@@ -74,6 +74,8 @@
     function updateUsername() {
       vm.usernameSuccess = vm.usernameError = null;
       var user = new Users(Authentication.user);
+      /* Just in case the user has changed the e-mail input */
+      delete user.email;
 
       user.$update(function (response) {
         messageCenterService.add('success', 'Username updated.');
@@ -89,6 +91,8 @@
     function updateUserEmail() {
       vm.emailSuccess = vm.emailError = null;
       var user = new Users(Authentication.user);
+      /* Just in case the user has changed the username input */
+      delete user.username;
 
       user.$update(function (response) {
         messageCenterService.add('success', 'Check your email for further instructions.');
