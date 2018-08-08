@@ -571,6 +571,67 @@ describe('User profile CRUD tests', function () {
     });
   });
 
+  describe.only('Username Updates', function () {
+    it('should update it', function (done) {
+      var user2 = _user;
+      user2.username = _user.username + '01';
+      delete user2.email;
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (err) {
+          if (err) {
+            return done(err);
+          }
+          agent.put('/api/users')
+            .send(user2)
+            .expect(200)
+            .end(function (err, res) {
+              if (err) {
+                return done(err);
+              }
+              res.body.username.should.equal(user2.username);
+              return done();
+            });
+        });
+    });
+
+    it('should fail to update if the three months have not passed by',
+      function (done) {
+        var user2 = _user;
+        delete user2.email;
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (err) {
+            if (err) {
+              return done(err);
+            }
+            // First change
+            user2.username = _user.username + '01';
+            agent.put('/api/users')
+              .send(user2)
+              .expect(200)
+              .end(function (err, res) {
+                if (err) {
+                  return done(err);
+                }
+                res.body.username.should.equal(user2.username);
+                user2.username = _user.username + '02';
+                agent.put('/api/users')
+                  .send(user2)
+                  .end(function (err, res) {
+                    if (err) {
+                      return done(err);
+                    }
+                    res.body.message.should.equal('You have used your chance to change your username already');
+                    return done();
+                  });
+              });
+          });
+      });
+  });
+
   afterEach(function (done) {
     User.remove().exec(done);
   });
