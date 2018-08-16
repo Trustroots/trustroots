@@ -36,10 +36,8 @@ function ensureConfigExists(done) {
       .src('config/env/local.sample.js')
       .pipe(plugins.rename('local.js'))
       .pipe(gulp.dest('config/env/'));
-    done();
-  } else {
-    done();
   }
+  done();
 }
 
 /**
@@ -141,6 +139,7 @@ gulp.task('makeUploadsDir', gulp.series(
     mkdirRecursive.mkdir(config.uploadDir, function (err) {
       if (err && err.code !== 'EEXIST') {
         console.error(err);
+        return done(err);
       }
       done();
     });
@@ -174,8 +173,9 @@ gulp.task('env:dev', gulp.series(
 
 // Set NODE_ENV to 'production' and prepare environment
 gulp.task('env:prod', gulp.series(
-  function () {
+  function (done) {
     process.env.NODE_ENV = 'production';
+    done();
   },
   gulp.parallel(
     ensureConfigExists,

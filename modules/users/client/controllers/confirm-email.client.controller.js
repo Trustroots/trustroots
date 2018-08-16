@@ -42,7 +42,7 @@
         .then(
           function (response) { // On success function
 
-          // Attach user profile
+            // Attach user profile
             Authentication.user = response.data.user;
             $rootScope.$broadcast('userUpdated');
 
