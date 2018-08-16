@@ -40,6 +40,10 @@ before_script:
   - 'sh -e /etc/init.d/xvfb start'
   - sleep 3 # give xvfb some time to start
 
+cache:
+  directories:
+    - "node_modules"
+
 notifications:
   slack:
     secure: XRMYG9Hf+bJjMSHHXN0XeGT4ZhSP+oCHBUWmjBwxO0p+VORBOEZvlh/2OvxingFuzLGOXFeOPr1g91G+OgiCGR6GxaDpf680lEjk8ESTJ4oECv0aO2NQEZWYR4peiLRtBmJZTCSsKXDY21nrDHiKOaMQyPJqbzkIrTBMnK/YJpg=
