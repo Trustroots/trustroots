@@ -12,7 +12,6 @@ env:
   - NODE_ENV=travis CXX="g++-4.8" CC="gcc-4.8"
 services:
   - mongodb
-sudo: required
 # gcc 4.8 requires ubuntu-toolchain-r-test
 addons:
   apt:
