@@ -6,16 +6,16 @@ _These instructions are for installing locally. If you'd like to have containeri
 ## Prerequisites
 
 Make sure you have installed all these prerequisites:
+* Unix operating system, like Linux or MacOS. If you use Windows, please look into [installing via Docker]](INSTALL-DOCKER.md) instead.
+* [Git](https://git-scm.com/) (`git --version`, preinstalled on MacOS)
 * [Node.js](https://nodejs.org/en/download/) version 8 or 10 and the NPM v5+ (`node --version && npm --version`). You can run multiple Node versions using [NVM](https://github.com/creationix/nvm).
 * [MongoDB](http://www.mongodb.org/downloads) v3.4. [v3.6 won't work](https://github.com/Trustroots/trustroots/issues/597). (`mongod --version`).
-* [GraphicsMagick](http://www.graphicsmagick.org/). If you prefer [ImageMagick](http://www.imagemagick.org/) instead, change `imageProcessor` setting from `./configs/env/local.js` (see install step 2) to `imagemagic`. In Mac OS X, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) and do:
+* Some of the NPM modules require compiling native code, which might require installing X-Code's [Command line tools](https://railsapps.github.io/xcode-command-line-tools.html) on MacOS or `build-essential` and `make` on Linux.
+* [GraphicsMagick](http://www.graphicsmagick.org/). If you prefer [ImageMagick](http://www.imagemagick.org/) instead, change `imageProcessor` setting from `./configs/env/local.js` (see install step 2) to `imagemagic`. In MacOS, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) and do:
 ```
 brew install graphicsmagick
 brew install imagemagick
 ```
-* [Git](https://git-scm.com/) (`git --version`, preinstalled on OSX)
-* Some of the NPM modules require compiling native code, which might require installing X-Code [Command line tools](https://railsapps.github.io/xcode-command-line-tools.html) on OSX or `build-essential` and `make` on Linux.
-
 
 ## Installing
 
@@ -78,7 +78,7 @@ at [localhost:1081](http://localhost:1081).
 
 5. Choose choose "Service accounts" tab
 
-6. Either "create new service account" via "Manage all service accounts" link or choose existing one from the list (for development "Firebase Admin SDK" accont is fine)
+6. Either "create new service account" via "Manage all service accounts" link or choose existing one from the list (for development "Firebase Admin SDK" account is fine)
 
 7. "Generate new private key" button
 
