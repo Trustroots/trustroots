@@ -108,7 +108,7 @@
         })
           .then(function (tribe) {
 
-          // Got it
+            // Got it
             if (tribe._id) {
               vm.tribe = tribe;
             }

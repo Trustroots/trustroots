@@ -36,10 +36,8 @@ function ensureConfigExists(done) {
       .src('config/env/local.sample.js')
       .pipe(plugins.rename('local.js'))
       .pipe(gulp.dest('config/env/'));
-    done();
-  } else {
-    done();
   }
+  done();
 }
 
 /**
@@ -141,6 +139,7 @@ gulp.task('makeUploadsDir', gulp.series(
     mkdirRecursive.mkdir(config.uploadDir, function (err) {
       if (err && err.code !== 'EEXIST') {
         console.error(err);
+        return done(err);
       }
       done();
     });
@@ -174,8 +173,9 @@ gulp.task('env:dev', gulp.series(
 
 // Set NODE_ENV to 'production' and prepare environment
 gulp.task('env:prod', gulp.series(
-  function () {
+  function (done) {
     process.env.NODE_ENV = 'production';
+    done();
   },
   gulp.parallel(
     ensureConfigExists,
@@ -198,7 +198,7 @@ gulp.task('watch', function (done) {
         defaultAssets.server.migrations
       ]
     ),
-    gulp.series('lint')
+    'lint'
   );
 
   // Watch and generate app files
@@ -321,7 +321,6 @@ gulp.task('clean:css', function () {
 
 // CSS styles task
 gulp.task('styles', function () {
-
   if (process.env.NODE_ENV === 'production') {
 
     var cssStream = gulp.src(defaultAssets.client.lib.css)
@@ -531,11 +530,8 @@ gulp.task('build:prod', gulp.series(
 // Run the project tests
 gulp.task('test', gulp.series(
   'env:test',
-  gulp.parallel(
-    'lint',
-    karma,
-    mocha
-  )
+  karma,
+  mocha
 ));
 
 gulp.task('test:server', gulp.series(
@@ -559,10 +555,7 @@ gulp.task('test:server:watch', gulp.series(
 
 gulp.task('test:client', gulp.series(
   'env:test',
-  gulp.parallel(
-    'lint',
-    karma
-  )
+  karma
 ));
 
 gulp.task('test:client:watch', gulp.series(
