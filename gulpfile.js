@@ -12,7 +12,6 @@ var _ = require('lodash'),
     MergeStream = require('merge-stream'),
     glob = require('glob'),
     del = require('del'),
-    fs = require('fs'),
     nodemon = require('nodemon'),
     mkdirRecursive = require('mkdir-recursive'),
     plugins = gulpLoadPlugins({
@@ -29,20 +28,9 @@ var environmentAssets,
     assets,
     config;
 
-// Make sure local config file exists
-function ensureConfigExists(done) {
-  if (!fs.existsSync('config/env/local.js')) {
-    gulp
-      .src('config/env/local.sample.js')
-      .pipe(plugins.rename('local.js'))
-      .pipe(gulp.dest('config/env/'));
-  }
-  done();
-}
-
 /**
  * Load config + assets
- * Note that loading config before `env:*` and `ensureConfigExists`
+ * Note that loading config before `env:*`
  * tasks would load configs with wrong environment
  */
 function loadConfig(done) {
@@ -152,10 +140,7 @@ gulp.task('env:test', gulp.series(
     process.env.NODE_ENV = 'test';
     done();
   },
-  gulp.parallel(
-    ensureConfigExists,
-    'makeUploadsDir'
-  )
+  'makeUploadsDir'
 ));
 
 // Set NODE_ENV to 'development' and prepare environment
@@ -164,10 +149,7 @@ gulp.task('env:dev', gulp.series(
     process.env.NODE_ENV = 'development';
     done();
   },
-  gulp.parallel(
-    ensureConfigExists,
-    'makeUploadsDir'
-  )
+  'makeUploadsDir'
 ));
 
 
@@ -177,10 +159,7 @@ gulp.task('env:prod', gulp.series(
     process.env.NODE_ENV = 'production';
     done();
   },
-  gulp.parallel(
-    ensureConfigExists,
-    'makeUploadsDir'
-  )
+  'makeUploadsDir'
 ));
 
 // Watch files for changes
@@ -473,27 +452,6 @@ function karmaWatch(done) {
   }, done).start();
 }
 
-function dropdb(done) {
-  // Use mongoose configuration
-  var mongooseService = require('./config/lib/mongoose.js');
-
-  mongooseService.connect(function (db) {
-    db.connection.db.dropDatabase(function (err) {
-      if (err) {
-        console.error(err);
-      } else {
-        console.log('Successfully dropped db: ', db.connection.db.databaseName);
-      }
-      db.connection.db.close(done);
-    });
-  });
-}
-
-// Run Selenium tasks
-gulp.task('selenium', plugins.shell.task('python ./scripts/selenium/test.py'));
-
-// Drops the MongoDB database, used in e2e testing
-gulp.task('dropdb', dropdb);
 
 // Analyse code for potential errors
 gulp.task('lint', gulp.parallel('eslint', 'eslint-angular'));
