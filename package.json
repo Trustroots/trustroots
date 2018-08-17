@@ -127,8 +127,7 @@
     "uuid": "~3.3.2",
     "validator": "~10.5.0",
     "winston": "~2.4.3",
-    "winston-papertrail": "~1.0.4",
-    "yargs": "~11.0.0"
+    "winston-papertrail": "~1.0.4"
   },
   "devDependencies": {
     "agendash": "~0.4.0",
