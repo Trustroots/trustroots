@@ -1,6 +1,0 @@
-#!/bin/bash
-
-echo "Agendash job dashboard running at http://localhost:1081"
-echo ""
-
-"$(npm bin)/agendash" --db=mongodb://localhost/trustroots-dev --collection=agendaJobs --port=1081
