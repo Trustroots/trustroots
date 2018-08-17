@@ -34,7 +34,7 @@
     "fontello": "gulp fontello",
     "dropdb": "gulp dropdb",
     "lint": "gulp lint",
-    "test": "gulp test",
+    "test": "npm run lint && gulp test",
     "test:client": "gulp test:client",
     "test:client:watch": "gulp test:client:watch",
     "test:server": "gulp test:server",
