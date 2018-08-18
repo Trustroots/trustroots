@@ -1,46 +1,7 @@
-<!-- Username -->
+<!-- Email -->
 <div class="panel panel-default">
   <div class="panel-heading">
-    Username
-  </div>
-  <div class="panel-body">
-
-  <form ng-submit="profileEditAccount.updateUsername()" autocomplete="off" name="settingsUsername">
-    <div class="form-horizontal">
-
-      <div class="form-group" ng-class="{'has-error': (settingsUsername.username.$invalid && settingsUsername.username.$dirty) || profileEditAccount.usernameError}">
-        <label for="username" class="col-sm-3 text-right control-label">Username</label>
-        <div class="col-sm-9">
-          <input type="text"
-                 id="username"
-                 name="username"
-                 class="form-control"
-                 ng-model="profileEditAccount.user.username"
-                 placeholder="username"
-                 mailcheck>
-          <p class="help-block" ng-show="profileEditAccount.user.username && !profileEditAccount.user.username && !profileEditAccount.usernameError">
-            An username is a sensitive information to Trustroot and because of that we keep a limit of one change every 3 months.
-          </p>
-          <p class="help-block" ng-show="profileEditAccount.usernameError" ng-bind="profileEditAccount.usernameError"></p>
-          <p class="help-block" ng-show="profileEditAccount.usernameSuccess" ng-bind="profileEditAccount.usernameSuccess"></p>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <div class="col-sm-push-3 col-sm-9">
-          <button type="submit" class="btn btn-primary" ng-disabled="settingsUsername.username.$invalid && settingsUsername.username.$dirty">Change Username</button>
-        </div>
-      </div>
-
-    </div>
-  </form>
-</div>
-<!-- /Username -->
-
-<!-- email -->
-<div class="panel panel-default">
-  <div class="panel-heading">
-    email
+    Email
   </div>
   <div class="panel-body">
 
@@ -219,6 +180,62 @@
   </div>
 </div>
 <!-- /Password -->
+
+<!-- Username -->
+<div class="panel panel-default">
+  <div class="panel-heading">
+    Username
+  </div>
+  <div class="panel-body">
+    <form ng-submit="profileEditAccount.updateUsername()" autocomplete="off" name="settingsUsernameForm">
+      <div class="form-horizontal">
+        <div class="form-group"
+             ng-class="{
+               'has-error': (settingsUsernameForm.username.$invalid && settingsUsernameForm.username.$dirty) || profileEditAccount.usernameError
+             }">
+          <label for="username" class="col-sm-3 text-right control-label">Username</label>
+          <div class="col-sm-9">
+            <input type="text"
+                   id="username"
+                   name="username"
+                   class="form-control"
+                   required
+                   autocapitalize="off"
+                   ng-minlength="3"
+                   ng-maxlength="34"
+                   ng-pattern="/^(?=.*[0-9A-Za-z])[0-9A-Za-z.\-_]{3,34}$/"
+                   tr-validate-username="{{::profileEditAccount.user.username}}"
+                   tr-focustip="'Can contain only letters, numbers, periods, hyphens, and underscores.<br>3—34 characters long.'"
+                   tooltip-is-open="!settingsUsernameForm.username.$pending && settingsUsernameForm.username.$dirty && !settingsUsernameForm.username.$valid"
+                   uib-tooltip="{{profileEditAccount.getUsernameValidationError(settingsUsernameForm.username)}}"
+                   tooltip-popup-delay="500"
+                   tooltip-trigger="'none'"
+                   tooltip-placement="top"
+                   ng-disabled="!profileEditAccount.user.usernameUpdateAllowed"
+                   ng-model="profileEditAccount.user.username">
+            <p class="help-block" ng-show="!profileEditAccount.usernameError">
+              Changing username is limited to once in 3 months.
+            </p>
+            <p class="help-block" ng-show="profileEditAccount.usernameError" ng-bind="profileEditAccount.usernameError"></p>
+            <p class="help-block" ng-show="profileEditAccount.usernameSuccess" ng-bind="profileEditAccount.usernameSuccess"></p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="col-sm-push-3 col-sm-9">
+            <button type="submit"
+                    class="btn btn-primary"
+                    ng-disabled="!profileEditAccount.user.usernameUpdateAllowed || settingsUsernameForm.username.$invalid">
+              Change username
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </form>
+  </div>
+</div>
+<!-- /Username -->
 
 <!-- Data liberation -->
 <div class="panel panel-default">

@@ -20,6 +20,7 @@
     vm.updatingUserSubscriptions = false;
     vm.changeUserPassword = changeUserPassword;
     vm.user = Authentication.user;
+    vm.getUsernameValidationError = getUsernameValidationError;
 
     // Related to profile removal
     vm.removeProfileConfirm = false;
@@ -41,6 +42,41 @@
     vm.isNativeMobileApp = false;
 
     activate();
+
+    /**
+     * Parse $error and return a string
+     * @param {Object} usernameModel - Angular model for username form input
+     * @returns {String} error text
+     */
+    function getUsernameValidationError(usernameModel) {
+      if (!usernameModel || !usernameModel.$dirty || usernameModel.$valid) {
+        return '';
+      }
+
+      var err = usernameModel.$error || {};
+
+      if (err.required || usernameModel.$usernameValue === '') {
+        return 'Username is required.';
+      }
+
+      if (err.maxlength) {
+        return 'Too long, maximum length is 34 characters.';
+      }
+
+      if (err.minlength) {
+        return 'Too short, minumum length is 3 characters.';
+      }
+
+      if (err.pattern) {
+        return 'Invalid username.';
+      }
+
+      if (err.username) {
+        return 'This username is already in use or invalid.';
+      }
+
+      return 'Invalid username.';
+    }
 
     // Activate controller
     function activate() {
