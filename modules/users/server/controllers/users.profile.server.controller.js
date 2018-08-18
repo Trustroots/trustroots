@@ -29,6 +29,7 @@ var _ = require('lodash'),
     fs = require('fs'),
     os = require('os'),
     mmmagic = require('mmmagic'),
+    moment = require('moment'),
     multerConfig = require(path.resolve('./config/lib/multer')),
     User = mongoose.model('User');
 
@@ -288,7 +289,7 @@ exports.avatarUpload = function (req, res) {
 };
 
 /**
- * Update
+ * Update user profile
  */
 exports.update = function (req, res) {
 
@@ -300,60 +301,36 @@ exports.update = function (req, res) {
 
   async.waterfall([
 
-    // If user is changing email, check if it's available
     function (done) {
-      var emailChanged = (req.body.email && req.body.email !== req.user.email);
-      var userNameChanged = (req.body.username && req.body.username !== req.user.username);
+      // Email didn't change, just continue
+      if (!req.body.email || req.body.email === req.user.email) {
+        return done();
+      }
 
-      if (emailChanged || userNameChanged) {
-        // Check if email changed and proceed with extra checks if so
-        if (emailChanged) {
-          User.findOne({
-            $or: [
-              { emailTemporary: req.body.email.toLowerCase() },
-              { email: req.body.email.toLowerCase() }
-            ]
-          }, 'emailTemporary email', function (err, emailUser) {
-            // Not free
-            if (emailUser) {
-              // If the user we found with this email is currently authenticated user, let user pass to resend confirmation email
-              if (emailUser._id.equals(req.user._id)) {
-                done(null);
-              } else {
-                // Otherwise it was someone else's email. Block the way.
-                return res.status(403).send({
-                  message: 'This email is already in use. Please use another one.'
-                });
-              }
-            } else {
-              // Free, proceed generating the token
-              done(null);
-            }
-          });
-        }
-        // User wants to change the username
-        if (userNameChanged) {
-          var now = Date.now();
-          var updatePermission;
-          if (req.user.usernameUpdated) {
-            updatePermission = req.user.usernameUpdated;
-            // username can be changed once in every 3 months
-            updatePermission.setMonth(updatePermission.getMonth() + 3);
-          }
-          if (!req.user.usernameUpdated || (now >= updatePermission)) {
-            req.user.usernameUpdated = now;
+      // User is changing email, check if it's available
+      User.findOne({
+        $or: [
+          { emailTemporary: req.body.email.toLowerCase() },
+          { email: req.body.email.toLowerCase() }
+        ]
+      }, 'emailTemporary email', function (err, emailUser) {
+        // Not available
+        if (emailUser) {
+          // If the user we found with this email is currently authenticated user,
+          // let user pass to resend confirmation email
+          if (emailUser._id.equals(req.user._id)) {
+            done();
           } else {
+            // Otherwise it was someone else's email. Block the way.
             return res.status(403).send({
-              message: 'You have used your chance to change your username already'
+              message: 'This email is already in use. Please use another one.'
             });
           }
-          // proceed generation the token
-          done(null);
+        } else {
+          // Email available, proceed generating the token
+          done();
         }
-      } else {
-        // Email or username didn't change, just continue
-        done(null);
-      }
+      });
     },
 
     // Check if we should generate new email token
@@ -369,6 +346,23 @@ exports.update = function (req, res) {
         // Email didn't change, just continue
         done(null, false, false);
       }
+    },
+
+    // User wants to change the username
+    function (token, email, done) {
+      if (req.body.username && req.body.username !== req.user.username) {
+        // They are not allowed to do so
+        if (!exports.isUsernameUpdateAllowed(req.user)) {
+          return res.status(403).send({
+            message: 'You cannot change your username at this time.'
+          });
+        }
+
+        // Mark username updated
+        req.user.usernameUpdated = new Date();
+      }
+
+      done(null, token, email);
     },
 
     // Update user
@@ -391,6 +385,7 @@ exports.update = function (req, res) {
       delete req.body.emailTemporary;
       delete req.body.provider;
       delete req.body.displayUsername;
+      delete req.body.usernameUpdated;
       delete req.body.salt;
       delete req.body.password;
       delete req.body.resetPasswordToken;
@@ -443,7 +438,7 @@ exports.update = function (req, res) {
 
     // Return user
     function (user) {
-      user = exports.sanitizeProfile(user);
+      user = exports.sanitizeProfile(user, req.user);
       return res.json(user);
     }
 
@@ -871,6 +866,16 @@ exports.userByUsername = function (req, res, next, username) {
 
 };
 
+/**
+ * Has 3 months passed since user changed their username OR signed up?
+ *
+ * @return {Bool}
+ */
+exports.isUsernameUpdateAllowed = function (user) {
+  var allowedDate = moment(user.usernameUpdated || user.created).add(3, 'months');
+
+  return moment().isSameOrAfter(allowedDate);
+};
 
 /**
  * Sanitize profile before sending it to frontend
@@ -913,10 +918,15 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
     });
   }
 
-  // Profile does not belong to currently authenticated user
-  // Remove data we don't need from other member's profile
-  if (!authenticatedUser || !authenticatedUser._id.equals(profile._id)) {
+  // Profile belongs to currently authenticated user
+  if (authenticatedUser && authenticatedUser._id.equals(profile._id)) {
+    // Is user allowed to update their username?
+    profile.usernameUpdateAllowed = exports.isUsernameUpdateAllowed(profile);
+  } else {
+    // Remove data we don't need from other member's profile
+    delete profile.updated;
     delete profile.passwordUpdated;
+    delete profile.usernameUpdated;
   }
 
   // This info totally shouldn't be at the frontend
