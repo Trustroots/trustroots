@@ -6,7 +6,7 @@
     .controller('ProfileEditLocationsController', ProfileEditLocationsController);
 
   /* @ngInject */
-  function ProfileEditLocationsController($scope, $state, Users, Authentication, messageCenterService) {
+  function ProfileEditLocationsController($scope, Users, Authentication, messageCenterService) {
 
     // ViewModel
     var vm = this;
@@ -22,7 +22,6 @@
      * Update a user profile
      */
     function updateUserProfile(isValid) {
-      console.log('updateUserProfile: ' + isValid);
       if (isValid) {
         vm.user.$update(function (response) {
           Authentication.user = response;

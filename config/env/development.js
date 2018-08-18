@@ -21,7 +21,9 @@ module.exports = {
       // pass: ''
     },
     // Mongoose debug mode
-    debug: true
+    debug: true,
+    // Check for MongoDB version compatibility on start
+    checkCompatibility: true
   },
   app: {
     title: 'Trustroots Development version',

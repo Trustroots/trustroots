@@ -6,7 +6,7 @@
     .controller('OfferController', OfferController);
 
   /* @ngInject */
-  function OfferController($timeout, LocationService, MapLayersFactory) {
+  function OfferController($timeout, MapLayersFactory) {
 
     // ViewModel
     var vm = this;

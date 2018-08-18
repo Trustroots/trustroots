@@ -6,7 +6,7 @@
     .controller('InviteController', InviteController);
 
   /* @ngInject */
-  function InviteController(InvitationService, Authentication, $window, $location, $timeout, $state, invitation) {
+  function InviteController(Authentication, $window, $location, invitation) {
 
     // ViewModel
     var vm = this;

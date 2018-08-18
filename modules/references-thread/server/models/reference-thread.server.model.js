@@ -38,4 +38,9 @@ var ReferenceThreadSchema = new Schema({
   }
 });
 
+/**
+ * Indexing
+ */
+ReferenceThreadSchema.index({ userFrom: 1, userTo: 1 });
+
 mongoose.model('ReferenceThread', ReferenceThreadSchema);

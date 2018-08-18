@@ -55,6 +55,7 @@ exports.userProfileFields = [
   'seen',
   'created',
   'updated',
+  'passwordUpdated',
   'avatarSource',
   'avatarUploaded',
   'member',
@@ -359,6 +360,7 @@ exports.update = function (req, res) {
       delete req.body.public;
       delete req.body.created;
       delete req.body.seen;
+      delete req.body.passwordUpdated;
       delete req.body.roles;
       delete req.body.email;
       delete req.body.emailHash;
@@ -893,6 +895,7 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   // Remove data we don't need from other member's profile
   if (!authenticatedUser || !authenticatedUser._id.equals(profile._id)) {
     delete profile.updated;
+    delete profile.passwordUpdated;
   }
 
   // This info totally shouldn't be at the frontend

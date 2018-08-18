@@ -6,7 +6,7 @@
     .controller('SignupController', SignupController);
 
   /* @ngInject */
-  function SignupController($rootScope, $http, $q, $state, $stateParams, $location, $uibModal, $analytics, $window, $timeout, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory, locker) {
+  function SignupController($rootScope, $http, $q, $state, $stateParams, $location, $uibModal, $analytics, $window, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory, locker) {
 
     // If user is already signed in then redirect to search page
     if (Authentication.user) {
@@ -108,7 +108,7 @@
         })
           .then(function (tribe) {
 
-          // Got it
+            // Got it
             if (tribe._id) {
               vm.tribe = tribe;
             }
@@ -140,6 +140,7 @@
         if (withoutTribeId) {
           angular.forEach(tribes, function (suggestedTribe) {
             if (suggestedTribe._id !== withoutTribeId) {
+              // eslint-disable-next-line angular/controller-as-vm
               this.push(suggestedTribe);
             }
           }, suggestedTribes);
@@ -191,54 +192,52 @@
      * Invite code has to be present at `vm.invitationCode`
      */
     function validateInvitationCode() {
-      var deferred = $q.defer();
+      return $q(function (resolve, reject) {
+        vm.invitationCodeError = false;
 
-      vm.invitationCodeError = false;
+        if (vm.invitationCode) {
+          // Validate code
+          InvitationService.post({
+            invitecode: vm.invitationCode
+          }).$promise.then(function (data) {
 
-      if (vm.invitationCode) {
-        // Validate code
-        InvitationService.post({
-          invitecode: vm.invitationCode
-        }).$promise.then(function (data) {
+            // UI
+            vm.invitationCodeValid = data.valid;
+            vm.invitationCodeError = !data.valid;
 
-          // UI
-          vm.invitationCodeValid = data.valid;
-          vm.invitationCodeError = !data.valid;
+            // Resolve promise
+            resolve();
 
-          // Resolve promise
-          deferred.resolve();
+            // Analytics
+            if (data.valid) {
+              $analytics.eventTrack('invitationCode.valid', {
+                category: 'invitation',
+                label: 'Valid invitation code entered'
+              });
+            } else {
+              $analytics.eventTrack('invitationCode.invalid', {
+                category: 'invitation',
+                label: 'Invalid invitation code entered'
+              });
+            }
+          }, function () {
+            vm.invitationCodeValid = false;
+            vm.invitationCodeError = true;
 
-          // Analytics
-          if (data.valid) {
-            $analytics.eventTrack('invitationCode.valid', {
+            // Reject promise
+            reject();
+
+            messageCenterService.add('danger', 'Something went wrong, try again.');
+            $analytics.eventTrack('invitationCode.failed', {
               category: 'invitation',
-              label: 'Valid invitation code entered'
+              label: 'Failed to validate invitation code'
             });
-          } else {
-            $analytics.eventTrack('invitationCode.invalid', {
-              category: 'invitation',
-              label: 'Invalid invitation code entered'
-            });
-          }
-        }, function () {
-          vm.invitationCodeValid = false;
-          vm.invitationCodeError = true;
-
-          // Reject promise
-          deferred.reject();
-
-          messageCenterService.add('danger', 'Something went wrong, try again.');
-          $analytics.eventTrack('invitationCode.failed', {
-            category: 'invitation',
-            label: 'Failed to validate invitation code'
           });
-        });
-      } else {
-        // No invite code available, just resolve promise
-        deferred.resolve();
-      }
-
-      return deferred.promise;
+        } else {
+          // No invite code available, just resolve promise
+          resolve();
+        }
+      });
     }
 
     /**

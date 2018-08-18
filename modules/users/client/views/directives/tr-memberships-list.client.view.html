@@ -1,6 +1,6 @@
 <div>
   <ul class="profile-memberships-list" ng-if="memberships && memberships.length">
-    <li class="tribe" ng-repeat="membership in ::memberships" tr-tribe-join tribe="membership.tribe"> <!--  track by membership.tribe._id-->
+    <li class="tribe" ng-repeat="membership in ::memberships">
       <div tr-tribe-badge="membership.tribe"></div>
     </li>
   </ul>

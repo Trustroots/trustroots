@@ -6,7 +6,7 @@
     .controller('OfferHostEditController', OfferHostEditController);
 
   /* @ngInject */
-  function OfferHostEditController($window, $http, $state, $stateParams, $analytics, $timeout, leafletData, OffersService, Authentication, messageCenterService, offers, defaultLocation) {
+  function OfferHostEditController($window, $state, $stateParams, $analytics, $timeout, leafletData, OffersService, Authentication, messageCenterService, offers, defaultLocation) {
 
     // ViewModel
     var vm = this;
