@@ -177,7 +177,7 @@ gulp.task('watch', function (done) {
         defaultAssets.server.migrations
       ]
     ),
-    'lint'
+    gulp.series('lint')
   );
 
   // Watch and generate app files
