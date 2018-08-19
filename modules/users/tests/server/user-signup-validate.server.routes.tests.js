@@ -15,7 +15,7 @@ var app,
     agent,
     user;
 
-function validationFailure(object, error, invalidMessage, done) {
+function validationFailure(object, error, message, done) {
   agent.post('/api/auth/signup/validate')
     .send(object)
     .expect(200)
