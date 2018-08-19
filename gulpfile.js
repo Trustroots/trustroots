@@ -245,7 +245,7 @@ gulp.task('eslint', function () {
     ]
   );
 
-  return gulp.src(lintAssets)
+  return gulp.src(lintAssets, { allowEmpty: true })
     .pipe(plugins.eslint())
     .pipe(plugins.eslint.format())
     // To have the process exit with an error code (1) on
@@ -266,7 +266,7 @@ gulp.task('eslint-angular', gulp.series(
       ]
     );
 
-    return gulp.src(lintAssets)
+    return gulp.src(lintAssets, { allowEmpty: true })
       .pipe(plugins.eslint({
         configFile: '.eslintrc-angular.js'
       }))
