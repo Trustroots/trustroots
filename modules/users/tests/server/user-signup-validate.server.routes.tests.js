@@ -15,7 +15,7 @@ var app,
     agent,
     user;
 
-function validationFailure(object, error, message, done) {
+function validationFailure(object, error, invalidMessage, done) {
   agent.post('/api/auth/signup/validate')
     .send(object)
     .expect(200)
@@ -33,7 +33,7 @@ function validationFailure(object, error, message, done) {
     });
 }
 
-function validationSuccess(object, error, message, done) {
+function validationSuccess(object, done) {
   agent.post('/api/auth/signup/validate')
     .send(object)
     .expect(200)
@@ -45,6 +45,7 @@ function validationSuccess(object, error, message, done) {
 
       validateRes.body.valid.should.be.true();
       should.not.exist(validateRes.body.error);
+      should.not.exist(validateRes.body.message);
 
       done();
     });
@@ -63,7 +64,7 @@ describe('User signup validation CRUD tests', function () {
     done();
   });
 
-  describe('Signup validation CRUD tests', function () {
+  describe('Username validation', function () {
 
     it('should show an error when missing username info', function (done) {
       validationFailure(
@@ -107,13 +108,14 @@ describe('User signup validation CRUD tests', function () {
       );
     });
 
-    describe('Invalid usernames', function () {
+    describe('Username is in invalid format', function () {
+      var invalidMessage = 'Username is in invalid format.';
 
       it('should show error to validate username beginning with "." (dot)', function (done) {
         validationFailure(
           { username: '.login' },
           'username-invalid',
-          'Username is in invalid format.',
+          invalidMessage,
           done
         );
       });
@@ -122,7 +124,7 @@ describe('User signup validation CRUD tests', function () {
         validationFailure(
           { username: 'login.' },
           'username-invalid',
-          'Username is in invalid format.',
+          invalidMessage,
           done
         );
       });
@@ -131,7 +133,7 @@ describe('User signup validation CRUD tests', function () {
         validationFailure(
           { username: 'log..in' },
           'username-invalid',
-          'Username is in invalid format.',
+          invalidMessage,
           done
         );
       });
@@ -140,7 +142,7 @@ describe('User signup validation CRUD tests', function () {
         validationFailure(
           { username: 'lo' },
           'username-invalid',
-          'Username is in invalid format.',
+          invalidMessage,
           done
         );
       });
@@ -149,7 +151,7 @@ describe('User signup validation CRUD tests', function () {
         validationFailure(
           { username: '-_-' },
           'username-invalid',
-          'Username is in invalid format.',
+          invalidMessage,
           done
         );
       });
@@ -158,20 +160,18 @@ describe('User signup validation CRUD tests', function () {
         validationFailure(
           { username: 'l'.repeat(35) },
           'username-invalid',
-          'Username is in invalid format.',
+          invalidMessage,
           done
         );
       });
 
     });
 
-    describe('Valid usernames', function () {
+    describe('Username is valid', function () {
 
       it('should validate username with dot in the middle', function (done) {
         validationSuccess(
           { username: 'log.in' },
-          'username-valid',
-          'Username is in valid format.',
           done
         );
       });
