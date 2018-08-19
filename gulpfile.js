@@ -207,22 +207,22 @@ gulp.task('watch:server:run-tests', function () {
     defaultAssets.server.migrations
   ],
   gulp.series('test:server:no-lint'))
-    .on('change', function (file) {
+    .on('change', function (changedFile) {
       changedTestFiles = [];
 
       // iterate through server test glob patterns
       _.forEach(testAssets.tests.server, function (pattern) {
         // determine if the changed (watched) file is a server test
-        _.forEach(glob.sync(pattern), function (f) {
-          var filePath = path.resolve(f);
+        _.forEach(glob.sync(pattern), function (file) {
+          var filePath = path.resolve(file);
 
-          if (filePath === path.resolve(file.path)) {
-            changedTestFiles.push(f);
+          if (filePath === path.resolve(changedFile)) {
+            changedTestFiles.push(changedFile);
           }
         });
       });
 
-      plugins.refresh.changed(file);
+      plugins.refresh.changed(changedFile);
     });
 });
 
