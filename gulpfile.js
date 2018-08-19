@@ -201,23 +201,29 @@ gulp.task('watch:server:run-tests', function () {
   plugins.refresh.listen();
 
   // Add Server Test file rules
-  gulp.watch([testAssets.tests.server, defaultAssets.server.allJS, defaultAssets.server.migrations], ['test:server:no-lint']).on('change', function (file) {
-    changedTestFiles = [];
+  gulp.watch([
+    testAssets.tests.server,
+    defaultAssets.server.allJS,
+    defaultAssets.server.migrations
+  ],
+  gulp.series('test:server:no-lint'))
+    .on('change', function (file) {
+      changedTestFiles = [];
 
-    // iterate through server test glob patterns
-    _.forEach(testAssets.tests.server, function (pattern) {
-      // determine if the changed (watched) file is a server test
-      _.forEach(glob.sync(pattern), function (f) {
-        var filePath = path.resolve(f);
+      // iterate through server test glob patterns
+      _.forEach(testAssets.tests.server, function (pattern) {
+        // determine if the changed (watched) file is a server test
+        _.forEach(glob.sync(pattern), function (f) {
+          var filePath = path.resolve(f);
 
-        if (filePath === path.resolve(file.path)) {
-          changedTestFiles.push(f);
-        }
+          if (filePath === path.resolve(file.path)) {
+            changedTestFiles.push(f);
+          }
+        });
       });
-    });
 
-    plugins.refresh.changed(file);
-  });
+      plugins.refresh.changed(file);
+    });
 });
 
 // ESLint JS linting task
