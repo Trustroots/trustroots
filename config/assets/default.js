@@ -16,7 +16,6 @@ module.exports = {
       css: [
         'public/lib/angular/angular-csp.css', // https://docs.angularjs.org/api/ng/directive/ngCsp
         'public/lib/leaflet/dist/leaflet.css',
-        'public/lib/fontello/css/animation.css',
         'public/lib/medium-editor/dist/css/medium-editor.css',
         'modules/core/client/fonts/fontello/css/tricons-codes.css',
         'public/lib/angular-ui-bootstrap/src/datepicker/datepicker.css',
