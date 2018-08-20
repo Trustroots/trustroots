@@ -33,7 +33,21 @@ Install the stack on your localhost and run NodeJS. This approach takes a little
 
 ### Installing with Docker
 
-The easiest and quickest way to get started is with Docker. See [INSTALL-DOCKER.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL-DOCKER.md) for further details. Running through Docker can be a little bit slower.
+If you are familiar with Docker this is the easiest and quickest way to get started. See [INSTALL-DOCKER.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL-DOCKER.md) for further details. Running through Docker can be a little bit slower.
+
+
+## GitHub
+
+We use GitHub for code management and issue tracking. Feel free to [create an issue](https://github.com/Trustroots/trustroots/issues/new) there if you run into an issue setting up the system.
+
+The `master` branch is bleading edge development. `production` is what's running on our servers.
+
+
+## Developer communication
+
+You can find us on Slack.  If that's too proprietary feel free to contact [Kasper](https://www.trustroots.org/profile/guaka) (kasper at trustroots dot org) or  [Mikael](https://www.trustroots.org/profile/mikael). You can also contact us for an invite without queuing.
+
+It's also great if you join the [hacker tribe](https://www.trustroots.org/tribes).
 
 
 ## License
