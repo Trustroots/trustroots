@@ -11,7 +11,7 @@ Make sure you have installed all these prerequisites:
 * [Node.js](https://nodejs.org/en/download/) version 8 or 10 and the NPM v5+ (`node --version && npm --version`). We recommend managing Node.js versions using [NVM](https://github.com/creationix/nvm).
 * [MongoDB](http://www.mongodb.org/downloads) v3.4. [v3.6 won't work](https://github.com/Trustroots/trustroots/issues/597). (`mongod --version`).
 * Some of the NPM modules require compiling native code, which might require installing X-Code's [Command line tools](https://railsapps.github.io/xcode-command-line-tools.html) on MacOS or `build-essential` and `make` on Linux. On MacOS you can install or confirm they're installed by running `xcode-select --install`
-* [GraphicsMagick](http://www.graphicsmagick.org/). If you prefer [ImageMagick](http://www.imagemagick.org/) instead, change `imageProcessor` setting from `./configs/env/local.js` (see install step 2) to `imagemagic`. In MacOS, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) and run:
+* [GraphicsMagick](http://www.graphicsmagick.org/). In MacOS, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) to install it:
     ```bash
     brew install graphicsmagick
     ```
@@ -140,6 +140,16 @@ npm run dropdb
 
 4. [Read more](INFLUXDB.md) about the collected data and metrics
 
+## Use ImageMagick instead of GraphicsMagick
+
+If you prefer [ImageMagick](http://www.imagemagick.org/) over [GraphicsMagick](http://www.graphicsmagick.org/):
+
+1) In MacOS, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) to install it:
+    ```bash
+    brew install imagemagick
+    ```
+
+2) Change `imageProcessor` setting from `./configs/env/local.js` to `imagemagic`.
 
 ## Updating
 
