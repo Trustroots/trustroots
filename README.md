@@ -36,6 +36,12 @@ Install the stack on your localhost and run NodeJS. This approach takes a little
 If you are familiar with Docker this is the easiest and quickest way to get started. See [INSTALL-DOCKER.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL-DOCKER.md) for further details. Running through Docker can be a little bit slower.
 
 
+## Test framework
+
+Try `npm test`.
+
+
+
 ## GitHub
 
 We use GitHub for code management and issue tracking. Feel free to [create an issue](https://github.com/Trustroots/trustroots/issues/new) there if you run into an issue setting up the system.
