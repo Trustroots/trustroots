@@ -105,7 +105,7 @@ describe('Configuration Tests:', function () {
               }
 
               // The user we just created should be exposed
-              res.text.should.containEql('user = {"_id":"' + userId + '",');
+              res.text.should.match(new RegExp('user = \\{.*"_id":"' + userId + '"'));
 
               return done();
             });
@@ -152,7 +152,7 @@ describe('Configuration Tests:', function () {
                 }
 
                 // The user we just created should be exposed
-                res.text.should.containEql('user = {"_id":"' + userId + '",');
+                res.text.should.match(new RegExp('user = \\{.*"_id":"' + userId + '"'));
 
                 Tribe.remove().exec(done);
               });
