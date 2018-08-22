@@ -6,7 +6,7 @@ _These instructions are for installing locally. If you'd like to have containeri
 ## Prerequisites
 
 Make sure you have installed all these prerequisites:
-* Unix operating system, like Linux or MacOS. If you use Windows, please look into [installing via Docker]](INSTALL-DOCKER.md) instead.
+* Unix operating system, like Linux or MacOS. If you use Windows, please look into [installing via Docker](INSTALL-DOCKER.md) instead.
 * [Git](https://git-scm.com/) (`git --version`, preinstalled on MacOS)
 * [Node.js](https://nodejs.org/en/download/) version 8 or 10 and the NPM v5+ (`node --version && npm --version`). We recommend managing Node.js versions using [NVM](https://github.com/creationix/nvm).
 * [MongoDB](http://www.mongodb.org/downloads) v3.4. [v3.6 won't work](https://github.com/Trustroots/trustroots/issues/597). (`mongod --version`).
