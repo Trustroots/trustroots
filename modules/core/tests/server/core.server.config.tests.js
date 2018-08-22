@@ -27,7 +27,7 @@ describe('Configuration Tests:', function () {
 
     beforeEach(function (done) {
       // Get application
-      app = express.init(mongoose);
+      app = express.init(mongoose.connection);
       agent = request.agent(app);
       done();
     });
@@ -175,7 +175,7 @@ describe('Configuration Tests:', function () {
         process.env.NODE_ENV = env;
 
         // Get application
-        app = express.init(mongoose);
+        app = express.init(mongoose.connection);
         agent = request.agent(app);
 
         // Get rendered layout
