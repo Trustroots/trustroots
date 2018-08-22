@@ -53,7 +53,7 @@ It's also great if you join the [hacker tribe](https://www.trustroots.org/tribes
 - [Development](https://github.com/Trustroots/trustroots/wiki/Development) 
 - [INSTALL.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL.md) also contains good information about running 
 s and creating mock data. 
-- [MEAN](http://mean.io/) is the Mongo Express Angular NodeJS framework that Trustroots was built upon.
+- [MEAN](http://meanjs.org/) is the Mongo Express Angular NodeJS framework that Trustroots was built upon.
 
 ## License
 * [The MIT License](LICENSE.md)
