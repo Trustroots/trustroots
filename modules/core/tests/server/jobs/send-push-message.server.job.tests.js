@@ -236,7 +236,7 @@ describe('job: send push message', function () {
             return reg.token;
           });
           // we need to convert CoreMongooseArray to Array
-          [].concat(tokens).should.deepEqual(['123', '456']);
+          Array.from(tokens).should.deepEqual(['123', '456']);
 
           done();
         });
