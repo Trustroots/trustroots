@@ -43,12 +43,10 @@ module.exports.connect = function (callback) {
     }
   };
 
-  var db;
-
   async.waterfall([
     // Connect
     function (done) {
-      db = mongoose.connect(config.db.uri, mongoConnectionOptions, function (err) {
+      mongoose.connect(config.db.uri, mongoConnectionOptions, function (err) {
         if (err) {
           console.error(chalk.red('Could not connect to MongoDB!'));
           console.error(err);
@@ -84,7 +82,7 @@ module.exports.connect = function (callback) {
   ],
   function () {
     if (callback) {
-      callback(db);
+      callback(mongoose.connection);
     }
   });
 };
