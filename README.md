@@ -46,7 +46,7 @@ Try `npm test`.
 
 We use GitHub for code management and issue tracking. Feel free to [create an issue](https://github.com/Trustroots/trustroots/issues/new) there if you run into an issue setting up the system.
 
-The `master` branch is bleading edge development. `production` is what's running on our servers.
+The `master` branch is bleeding edge development. `production` is what's running on our servers.
 
 
 ## Developer communication
