@@ -48,12 +48,18 @@ You can find us on Slack.  If that's too proprietary feel free to contact [Kaspe
 
 It's also great if you join the [hacker tribe](https://www.trustroots.org/tribes).
 
+
+## MEAN framework
+
+[MEAN](http://meanjs.org/) is the Mongo Express Angular NodeJS framework that Trustroots was built upon. Note that http://meanjs.org/ (inactive now) and http://mean.io/ are two separate projects. The former was a fork of mean.io in 2014: http://blog.meanjs.org/post/76726660228/forking-out-of-an-open-source-conflict
+
+Trustroots was built on the meanjs.org version.
+
 ## Further reading
 
 - [Development](https://github.com/Trustroots/trustroots/wiki/Development) wiki page.
 - [INSTALL.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL.md) also contains good information about running 
 s and creating mock data. 
-- [MEAN](http://meanjs.org/) is the Mongo Express Angular NodeJS framework that Trustroots was built upon.
 
 ## License
 * [The MIT License](LICENSE.md)
