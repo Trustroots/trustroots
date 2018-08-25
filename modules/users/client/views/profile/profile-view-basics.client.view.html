@@ -51,8 +51,13 @@
       Member since <time ng-bind="profileCtrl.profile.created | date:'mediumDate'"></time>
     </div>
 
-    <div class="profile-sidebar-section" ng-if="::profileCtrl.profile.seen">
-      Online <span tr-time="profileCtrl.profile.seen" tr-time-format="'MMM d, y h:mm a'"></span>
+    <div class="profile-sidebar-section">
+      <span ng-if="::profileCtrl.profile.seen">
+        Online <span tr-time="profileCtrl.profile.seen" tr-time-format="'MMM d, y h:mm a'"></span>
+      </span>
+      <span ng-if="::!profileCtrl.profile.seen">
+        Online long ago
+      </span>
     </div>
 
     <div class="profile-sidebar-section" ng-if="profileCtrl.profile.locationLiving">
