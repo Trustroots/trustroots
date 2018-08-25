@@ -107,7 +107,8 @@ describe('Offer search tests', function () {
       username: credentials.username,
       password: credentials.password,
       provider: 'local',
-      public: true
+      public: true,
+      seen: new Date()
     });
 
     // Create a new user
@@ -121,7 +122,8 @@ describe('Offer search tests', function () {
       password: credentials2.password,
       languages: ['fin', 'ita'],
       provider: 'local',
-      public: true
+      public: true,
+      seen: new Date()
     });
 
     // Create a new user
@@ -134,7 +136,8 @@ describe('Offer search tests', function () {
       password: credentials.password,
       languages: ['ita'],
       provider: 'local',
-      public: true
+      public: true,
+      seen: new Date()
     });
 
     // Used only for sending via POST and thus doesn't include some data
@@ -931,8 +934,52 @@ describe('Offer search tests', function () {
 
   });
 
+  describe('Search offers by "seen" filter', function () {
+
+    it('should be able to get list of offers from an area filtered by last seen', function (done) {
+      user2.seen = moment().subtract({ 'months': 2 }).toDate()
+
+      user2.save(function (user2SaveErr) {
+        if (user2SaveErr) {
+          return done(user2SaveErr);
+        }
+
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) {
+              return done(signinErr);
+            }
+
+            var filters = {
+              seen: {
+                'months': 1
+              }
+            };
+
+            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+              .expect(200)
+              .end(function (offersGetErr, offersGetRes) {
+                // Handle offer get error
+                if (offersGetErr) return done(offersGetErr);
+
+                // Set assertions
+                // User2's offer should be filtered out
+                offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(1);
+                offersGetRes.body[0]._id.should.equal(offer3Id.toString());
+
+                // Call the assertion callback
+                return done();
+              });
+          });
+      });
+    });
+
+  });
+
   afterEach(function (done) {
-    // Uggggly pyramid revenge!
     User.remove().exec(function () {
       Tribe.remove().exec(function () {
         Offer.remove().exec(done);

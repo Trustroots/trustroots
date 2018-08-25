@@ -416,8 +416,12 @@ exports.list = function (req, res) {
     }
   }
 
-  filters.hasFilter = function (filterType) {
+  filters.hasArrayFilter = function (filterType) {
     return _.has(this, filterType) && _.isArray(this[filterType]) && this[filterType].length > 0;
+  };
+
+  filters.hasObjectFilter = function (filterType) {
+    return _.has(this, filterType) && _.isPlainObject(this[filterType]) && !_.isEmpty(this[filterType]);
   };
 
   // Basic query has always bounding box
@@ -460,7 +464,7 @@ exports.list = function (req, res) {
   });
 
   // Types filter
-  if (filters.hasFilter('types')) {
+  if (filters.hasArrayFilter('types')) {
 
     // Accept only valid values, ignore the rest
     // @link https://lodash.com/docs/#filter
@@ -481,7 +485,7 @@ exports.list = function (req, res) {
   }
 
   // Some of the filters are based on `user` schema
-  if (filters.hasFilter('languages') || filters.hasFilter('tribes')) {
+  if (filters.hasArrayFilter('languages') || filters.hasArrayFilter('tribes') || filters.hasObjectFilter('seen')) {
     query.push({
       $lookup: {
         from: 'users',
@@ -497,9 +501,19 @@ exports.list = function (req, res) {
     });
   }
 
-  // Languages filter
-  if (filters.hasFilter('languages')) {
+  // Last seen filter
+  if (filters.hasObjectFilter('seen')) {
+    query.push({
+      $match: {
+        'user.seen': {
+          $gte: moment().subtract(filters.seen).toDate()
+        }
+      }
+    });
+  }
 
+  // Languages filter
+  if (filters.hasArrayFilter('languages')) {
     var languages = require(path.resolve('./config/languages/languages.json'));
 
     // Above json `languages` object contains language names, but we need just keys.
@@ -524,8 +538,7 @@ exports.list = function (req, res) {
   }
 
   // Tribes filter
-  if (filters.hasFilter('tribes')) {
-
+  if (filters.hasArrayFilter('tribes')) {
     var tribeQueries = [];
 
     var isTribeFilterValid = filters.tribes.every(function (tribeId) {
@@ -556,7 +569,6 @@ exports.list = function (req, res) {
         $match: tribeQueries[0]
       });
     }
-
   }
 
   // Pick fields to receive

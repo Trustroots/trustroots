@@ -32,6 +32,19 @@
 
   <hr class="hr-gray hr-tight">
 
+  <!-- Online recently filter (aka "seen") -->
+  <p>
+    <label tr-switch>
+      <input type="checkbox"
+             ng-model="search.onlineInPast6Months"
+             ng-change="search.onSeenFilterChange()">
+      Online in the past 6 months
+    </label>
+  </p>
+  <!-- /Online recently filter (aka "seen") -->
+
+  <hr class="hr-gray hr-tight">
+
   <!-- Language filter -->
   <h4 id="filter-languages">Spoken languages</h4>
   <div tr-languages="search.filters.languages"
