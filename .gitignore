@@ -59,4 +59,5 @@ migrations/.migrate
 
 # User uploads
 uploads
-modules/users/client/img/profile/uploads
+public/uploads-profile
+modules/users/client/img/profile/uploads # folder removed 2018-08
