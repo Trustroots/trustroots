@@ -30,7 +30,7 @@
 
       // Options
       var defaultSize = 256,
-          defaultAvatar = '/public/img/avatar.png';
+          defaultAvatar = '/img/avatar.png';
 
       return {
         template:
@@ -102,7 +102,7 @@
                 // 32 is the smallest and 2048 biggest file size we're generating.
                 var fileSize = ($scope.size < 32) ? 32 : $scope.size;
 
-                $scope.avatar = '/public/img/uploads-profile/' + $scope.user._id + '/avatar/' + fileSize + '.jpg?' + timestamp;
+                $scope.avatar = '/uploads-profile/' + $scope.user._id + '/avatar/' + fileSize + '.jpg?' + timestamp;
               } else {
                 $scope.avatar = defaultAvatar;
               }
