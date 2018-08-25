@@ -318,7 +318,6 @@ describe('User profile CRUD tests', function () {
     });
   });
 
-  it('should not be able to update profile picture without being logged-in', function (done) {
 
     agent.post('/api/users-avatar')
       .send({})
