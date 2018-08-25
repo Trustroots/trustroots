@@ -15,7 +15,10 @@
     var defaultFilters = {
       tribes: [],
       types: [],
-      languages: []
+      languages: [],
+      seen: {
+        months: 24
+      }
     };
 
     // Make cache id unique for this user

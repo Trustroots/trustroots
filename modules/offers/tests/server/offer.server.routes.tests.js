@@ -1102,7 +1102,6 @@ describe('Offer CRUD tests', function () {
   });
 
   afterEach(function (done) {
-    // Uggggly pyramid revenge!
     User.remove().exec(function () {
       Tribe.remove().exec(function () {
         Offer.remove().exec(done);
