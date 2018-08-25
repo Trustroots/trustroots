@@ -92,6 +92,27 @@ module.exports.connect = function (callback) {
 module.exports.disconnect = function (callback) {
   mongoose.disconnect(function (err) {
     console.info(chalk.yellow('Disconnected from MongoDB.'));
-    callback(err);
+    if (callback) {
+      callback(err);
+    }
+  });
+};
+
+module.exports.dropDatabase = function (db, callback) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('You cannot drop database in production mode!');
+    return process.exit(1);
+  }
+
+  db.connection.db.dropDatabase(function (err) {
+    if (err) {
+      console.error('Failed to drop database', err);
+    } else {
+      console.log('Successfully dropped database:', db.connection.db.databaseName);
+    }
+
+    if (callback) {
+      callback(err);
+    }
   });
 };
