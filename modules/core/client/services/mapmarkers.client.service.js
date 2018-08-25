@@ -15,7 +15,7 @@
     var markerIconSize = $window.innerWidth < 768 ? 30 : 20;
 
     // Base path for icon images
-    var path = '/modules/core/img/map/';
+    var path = '/public/img/map/';
 
     // Leaflet.js
     var Leaflet = $window.L;

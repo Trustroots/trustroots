@@ -30,7 +30,7 @@
 
       // Options
       var defaultSize = 256,
-          defaultAvatar = '/modules/users/img/avatar.png';
+          defaultAvatar = '/public/img/avatar.png';
 
       return {
         template:

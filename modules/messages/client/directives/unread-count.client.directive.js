@@ -31,7 +31,7 @@
 
       var favicon1xElem = angular.element('#favicon'),
           favicon2xElem = angular.element('#favicon2x'),
-          faviconPath = '/modules/core/img/';
+          faviconPath = '/public/img/';
 
       scope.unread = PollMessagesCount.getUnreadCount();
 
