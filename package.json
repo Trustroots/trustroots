@@ -99,13 +99,13 @@
     "gulp-sourcemaps": "~2.6.4",
     "gulp-uglify": "~3.0.1",
     "he": "~1.1.1",
-    "helmet": "~3.12.2",
+    "helmet": "~3.13.0",
     "html-to-text": "~4.0.0",
     "influx": "~5.0.7",
     "juice": "~4.3.2",
     "lodash": "~4.17.10",
     "merge-stream": "~1.0.1",
-    "method-override": "~2.3.10",
+    "method-override": "~3.0.0",
     "migrate": "~0.2.4",
     "mkdir-recursive": "~0.4.0",
     "mmmagic": "~0.5.0",
@@ -131,7 +131,7 @@
     "speakingurl": "~14.0.1",
     "stathat": "0.0.8",
     "uuid": "~3.3.2",
-    "validator": "~10.5.0",
+    "validator": "~10.7.0",
     "winston": "~2.4.3",
     "winston-papertrail": "~1.0.4"
   },
@@ -149,13 +149,13 @@
     "karma-phantomjs-launcher": "~1.0.4",
     "maildev": "~1.0.0-rc3",
     "nodemailer-stub-transport": "~1.1.0",
-    "nodemon": "~1.17.5",
+    "nodemon": "~1.18.3",
     "promise": "~8.0.0",
-    "proxyquire": "~2.0.1",
+    "proxyquire": "~2.1.0",
     "semver": "~5.5.0",
-    "should": "~11.2.1",
+    "should": "~13.2.3",
     "sinon": "~2.3.7",
-    "supertest": "~3.0.0"
+    "supertest": "~3.1.0"
   },
   "bugs": {
     "url": "https://github.com/Trustroots/trustroots/issues"
