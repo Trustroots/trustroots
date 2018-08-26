@@ -168,7 +168,7 @@ module.exports.initViewEngine = function (app) {
 /**
  * Configure Express session
  */
-module.exports.initSession = function (app, connection) {
+module.exports.initSession = function (app, db) {
   // Express MongoDB session storage
   // https://www.npmjs.com/package/express-session
   app.use(session({
@@ -189,7 +189,7 @@ module.exports.initSession = function (app, connection) {
       maxAge: 2419200000 // (in milliseconds) 28 days
     },
     store: new MongoStore({
-      mongooseConnection: connection,
+      mongooseConnection: db.connection,
       collection: config.sessionCollection
     })
   }));
@@ -523,7 +523,7 @@ module.exports.initErrorRoutes = function (app) {
 /**
  * Initialize the Express application
  */
-module.exports.init = function (connection) {
+module.exports.init = function (db) {
   // Initialize express app
   var app = express();
 
@@ -543,7 +543,7 @@ module.exports.init = function (connection) {
   this.initModulesClientRoutes(app);
 
   // Initialize Express session
-  this.initSession(app, connection);
+  this.initSession(app, db);
 
   // Initialize Modules configuration
   this.initModulesConfiguration(app);

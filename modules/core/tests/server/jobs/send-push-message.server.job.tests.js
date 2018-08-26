@@ -235,8 +235,7 @@ describe('job: send push message', function () {
           var tokens = updatedUser.pushRegistration.map(function (reg) {
             return reg.token;
           });
-          // we need to convert CoreMongooseArray to Array
-          Array.from(tokens).should.deepEqual(['123', '456']);
+          tokens.should.deepEqual(['123', '456']);
 
           done();
         });

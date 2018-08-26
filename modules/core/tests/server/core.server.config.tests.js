@@ -27,7 +27,7 @@ describe('Configuration Tests:', function () {
 
     beforeEach(function (done) {
       // Get application
-      app = express.init(mongoose.connection);
+      app = express.init(mongoose);
       agent = request.agent(app);
       done();
     });
@@ -105,7 +105,7 @@ describe('Configuration Tests:', function () {
               }
 
               // The user we just created should be exposed
-              res.text.should.match(new RegExp('user = \\{.*"_id":"' + userId + '"'));
+              res.text.should.containEql('user = {"_id":"' + userId + '",');
 
               return done();
             });
@@ -152,7 +152,7 @@ describe('Configuration Tests:', function () {
                 }
 
                 // The user we just created should be exposed
-                res.text.should.match(new RegExp('user = \\{.*"_id":"' + userId + '"'));
+                res.text.should.containEql('user = {"_id":"' + userId + '",');
 
                 Tribe.remove().exec(done);
               });
@@ -175,7 +175,7 @@ describe('Configuration Tests:', function () {
         process.env.NODE_ENV = env;
 
         // Get application
-        app = express.init(mongoose.connection);
+        app = express.init(mongoose);
         agent = request.agent(app);
 
         // Get rendered layout

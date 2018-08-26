@@ -21,7 +21,7 @@ describe('Display Message Statistics in User Route', function () {
 
   before(function (done) {
     // Get application
-    var app = express.init(mongoose.connection);
+    var app = express.init(mongoose);
     agent = request.agent(app);
 
     done();

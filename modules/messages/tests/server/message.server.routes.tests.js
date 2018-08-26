@@ -32,7 +32,7 @@ describe('Message CRUD tests', function () {
 
   before(function (done) {
     // Get application
-    app = express.init(mongoose.connection);
+    app = express.init(mongoose);
     agent = request.agent(app);
 
     done();
