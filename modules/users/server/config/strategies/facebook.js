@@ -44,6 +44,12 @@ module.exports = function (config) {
       'link',
       'picture'
     ],
+    // Note FB API version
+    // v2.10 is available until November 7, 2019
+    //
+    // @link https://developers.facebook.com/docs/apps/versions
+    // @link https://developers.facebook.com/docs/apps/changelog
+    profileURL: 'https://graph.facebook.com/v2.10/me',
     passReqToCallback: true,
     enableProof: false
   },
