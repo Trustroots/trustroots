@@ -45,13 +45,13 @@ describe('Contact Model Unit Tests:', function () {
     });
 
     // Create users
-    user1.save(function (user1Err, user1Res) {
+    user1.save(function () {
 
-      user1Id = user1Res._id;
+      user1Id = user1._id;
 
-      user2.save(function (user2Err, user2Res) {
+      user2.save(function () {
 
-        user2Id = user2Res._id;
+        user2Id = user2._id;
 
         // Create connection between users
         contact = new Contact({
