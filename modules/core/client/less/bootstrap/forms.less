@@ -111,6 +111,10 @@ label + .checkbox {
     margin: 0 1px;
     font-size: 28px;
     line-height: 28px;
+    &, &:hover {
+      -moz-appearance: textfield;
+      -webkit-appearance: textfield;
+    }
     // Leave number input clickable but hide special appearance
     &::-webkit-inner-spin-button,
     &::-webkit-outer-spin-button {
