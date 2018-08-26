@@ -26,7 +26,7 @@ describe('Statistics CRUD tests', function () {
 
   before(function () {
     // Get application
-    app = express.init(mongoose.connection);
+    app = express.init(mongoose);
     agent = request.agent(app);
   });
 
