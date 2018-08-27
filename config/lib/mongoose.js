@@ -96,17 +96,17 @@ module.exports.disconnect = function (callback) {
   });
 };
 
-module.exports.dropDatabase = function (db, callback) {
+module.exports.dropDatabase = function (connection, callback) {
   if (process.env.NODE_ENV === 'production') {
     console.error('You cannot drop database in production mode!');
     return process.exit(1);
   }
 
-  db.connection.db.dropDatabase(function (err) {
+  connection.dropDatabase(function (err) {
     if (err) {
       console.error('Failed to drop database', err);
     } else {
-      console.log('Successfully dropped database:', db.connection.db.databaseName);
+      console.log('Successfully dropped database:', connection.db.databaseName);
     }
 
     if (callback) {
