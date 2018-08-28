@@ -55,10 +55,19 @@ npm start
 Add any configurations you want to keep out of version control to `config/env/local.js` file. It's created for you on first start and overrides anything in `config/env/local.js`
 
 
- [localhost:1080](http://localhost:1080) and
-[Agendash](https://github.com/joeframbach/agendash) (background job dashboard)
-at [localhost:1081](http://localhost:1081).
+## Running services
 
+### MailDev
+
+MailDev is there for viewing and testing emails during development
+
+[MailDev](https://github.com/djfarrelly/MailDev) will be running at [localhost:1080](http://localhost:1080)
+
+### Agendash
+
+Agendash is a job scheduling for Node.js
+
+[Agendash](https://github.com/joeframbach/agendash) (background job dashboard) at [localhost:1081](http://localhost:1081).
 
 ## Running tests
 
