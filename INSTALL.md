@@ -65,7 +65,7 @@ MailDev is there for viewing and testing emails during development
 
 ### Agendash
 
-Agendash is a job scheduling for Node.js
+Agendash is a dashboard & inspector for [Agenda](https://github.com/agenda/agenda), our job scheduling library.
 
 [Agendash](https://github.com/joeframbach/agendash) (background job dashboard) at [localhost:1081](http://localhost:1081).
 
