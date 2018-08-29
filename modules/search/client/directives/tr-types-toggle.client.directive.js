@@ -46,7 +46,7 @@
         },
         {
           id: 'meet',
-          label: 'People to meet'
+          label: 'Meetups'
         }
       ];
 
