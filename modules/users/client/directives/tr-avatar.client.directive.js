@@ -97,7 +97,7 @@
             } else if ($scope.source === 'local') {
               if ($scope.user.avatarUploaded && $scope.user && $scope.user._id) {
                 // Cache buster
-                var timestamp = new Date($scope.user.updated).getTime();
+                var timestamp = $scope.user.updated ? new Date($scope.user.updated).getTime() : '';
 
                 // 32 is the smallest and 2048 biggest file size we're generating.
                 var fileSize = ($scope.size < 32) ? 32 : $scope.size;

@@ -1,7 +1,7 @@
 <h1 align="center">
 	<br>
 	<br>
-	<a href="https://www.trustroots.org/"><img width="200" src="https://cdn.rawgit.com/Trustroots/trustroots/master/modules/core/client/img/logo/color.svg" alt="Trustroots"></a>
+	<a href="https://www.trustroots.org/"><img width="200" src="https://cdn.rawgit.com/Trustroots/trustroots/master/public/img/logo/color.svg" alt="Trustroots"></a>
 	<br>
 	<br>
 	<br>
