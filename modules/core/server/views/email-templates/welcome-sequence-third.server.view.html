@@ -37,23 +37,19 @@
                                           <td valign="top" class="textContent">
 
                                             <p>Hi {{name}}!</p>
-                                            <p>This is {{from.name}} from Trustroots Foundation. You signed up a little while ago and I just wanted to check back.</p>
+                                            <p>This is {{from.name}} from Trustroots Foundation. You signed up a little while ago, and I just wanted to check back.</p>
                                             {% if topic === 'fill-profile' %}
                                               <p>
                                                 Your profile seems to be quite empty.
-                                                It would be very easy to take a short time to <a href="{{urlEditProfile}}">fill it out</a> and it would really make it easier for you to connect with people on Trustroots.
+                                                It would be very easy to take a short time to <a href="{{urlEditProfile}}">fill it out</a>, and it would make it easier for you to connect with people on Trustroots.
                                               </p>
                                             {% else %}
                                               <p>
-                                                How has your experience with Trustroots been for you so far? I would be really glad to hear any feedback. You can just reply this email.
+                                                How has your experience with Trustroots been for you so far? I would be happy to hear any feedback. You can simply reply to this email.
                                               </p>
                                             {% endif %}
 
-                                            <p>Check our <a href="https://ideas.trustroots.org">blog</a>,
-                                               like our <a href="https://www.facebook.com/trustroots.org/?ref=welcome-email">Facebook page</a>,
-                                               join our <a href="https://www.facebook.com/groups/trustroots/?ref=welcome-email">Facebook group</a>
-                                               and follow us on <a href="https://twitter.com/trustroots">Twitter</a> — it would really help us out!</p>
-
+                                            {% include "./partials/socialmedia.server.view.html" %}
                                             <p>
                                               Happy traveling!<br/>
                                               {{from.name}}

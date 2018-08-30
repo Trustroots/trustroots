@@ -37,13 +37,20 @@
                                           <td valign="top" class="textContent">
 
                                               <p>Hi {{name}}!</p>
-                                              <p>It would really help us if you could forward this email to invite your friends to join Trustroots.</p>
-                                              <p>The code is valid for 24 hours.</p>
-                                              <p>To get a new code, visit <a href="{{urlInvite}}">invite friends page</a>.</p>
                                               <p>
-                                                Invite link: <a href="{{urlSignup}}">{{signupLabel}}</a>
+                                                I'm {{from.name}} from the Trustroots Foundation.
+                                                How are your first impressions from Trustroots — anything missing?
+                                                If you have any feedback for us, you can simply reply to this email.
                                               </p>
-
+                                              <p>
+                                                Trustroots is not only about hosting others but also about meeting community members.
+                                                To make it easier for others to find you, you can <a href="{{urlMeetup}}">create a meetup</a>.
+                                              </p>
+                                              {% include "./partials/socialmedia.server.view.html" %}
+                                              <p>
+                                                Have a good one!
+                                                {{from.name}}
+                                              </p>
                                           </td>
                                       </tr>
                                   </table>
