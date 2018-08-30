@@ -103,7 +103,7 @@ describe('Job: welcome sequence, first email', function () {
         // Confirmed user received welcome email, unconfirmed didn't
         jobs.length.should.equal(1);
         jobs[0].type.should.equal('send email');
-        jobs[0].data.subject.should.equal('Welcome to Trustroots ' + _confirmedUser.firstName + '!');
+        jobs[0].data.subject.should.equal('👋 Welcome to Trustroots ' + _confirmedUser.firstName + '!');
         done();
       });
 
