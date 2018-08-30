@@ -3,11 +3,17 @@
 {% block content %}
 Hi {{name}}!
 
-It would really help us if you could forward this email to invite your friends to join Trustroots.
+I'm {{from.name}} from the Trustroots Foundation.
+How are your first impressions from Trustroots — anything missing?
+If you have any feedback for us, you can simply reply to this email.
 
-The code is valid for 24 hours.
-To get a new code, see: {{urlInvitePlainText}}
+Trustroots is not only about hosting others but also about meeting community members.
+To make it easier for others to find you, you can create a meetup:
 
-Invite link: {{urlSignupPlainText}}
+{{urlMeetup}}
 
+{% include "./partials/socialmedia.server.view.html" %}
+
+Have a good one!
+{{from.name}}
 {% endblock content %}
