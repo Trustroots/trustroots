@@ -352,7 +352,7 @@ exports.update = function (req, res) {
     function (token, email, done) {
       if (req.body.username && req.body.username !== req.user.username) {
         // They are not allowed to do so
-        if (!exports.isUsernameUpdateAllowed(req.user)) {
+        if (!isUsernameUpdateAllowed(req.user)) {
           return res.status(403).send({
             message: 'You cannot change your username at this time.'
           });
@@ -871,9 +871,9 @@ exports.userByUsername = function (req, res, next, username) {
  *
  * @return {Bool}
  */
-exports.isUsernameUpdateAllowed = function (user) {
-  var allowedDate = moment(user.usernameUpdated || user.created).add(3, 'months');
-
+function isUsernameUpdateAllowed(user) {
+  var allowedDate = moment(user.usernameUpdated || user.created)
+    .add(3, 'months');
   return moment().isSameOrAfter(allowedDate);
 };
 
@@ -921,7 +921,7 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   // Profile belongs to currently authenticated user
   if (authenticatedUser && authenticatedUser._id.equals(profile._id)) {
     // Is user allowed to update their username?
-    profile.usernameUpdateAllowed = exports.isUsernameUpdateAllowed(profile);
+    profile.usernameUpdateAllowed = isUsernameUpdateAllowed(profile);
   } else {
     // Remove data we don't need from other member's profile
     delete profile.updated;
