@@ -18,18 +18,9 @@ addons:
   apt:
     sources:
     - google-chrome
-    # gcc 4.8 requires ubuntu-toolchain-r-test
-    - ubuntu-toolchain-r-test
-    - mongodb-upstart
-    - mongodb-3.4-precise
     packages:
-    - g++-4.8
-    - gcc-4.8
-    - clang
     - google-chrome-stable
     - graphicsmagick
-    - mongodb-org-server
-    - mongodb-org-shell
 before_script:
   - mongo --version
   - mongod --version
