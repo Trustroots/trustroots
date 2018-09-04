@@ -5,7 +5,10 @@ node_js:
 env:
   - TEST=client
   - TEST=server
-script: npm run test:$TEST
+script:
+  - npm run test:$TEST
+install:
+  - npm ci
 matrix:
 fast_finish: true
 # https://docs.travis-ci.com/user/reference/overview/#Virtualisation-Environment-vs-Operating-System
@@ -40,7 +43,7 @@ before_script:
 
 cache:
   directories:
-    - "node_modules"
+    - "$HOME/.npm"
 
 notifications:
   slack:
