@@ -2,21 +2,21 @@ language: node_js
 node_js:
   - 8
   - 10
+env:
+  - TEST=client
+  - TEST=server
+script: npm run test:$TEST
 matrix:
-  fast_finish: true
+fast_finish: true
 # https://docs.travis-ci.com/user/reference/overview/#Virtualisation-Environment-vs-Operating-System
 dist: trusty
-# NodeJS v4+ requires gcc 4.8
-# https://docs.travis-ci.com/user/languages/javascript-with-nodejs#Node.js-v4-(or-io.js-v3)-compiler-requirements
-env:
-  - NODE_ENV=travis CXX="g++-4.8" CC="gcc-4.8"
 services:
   - mongodb
-# gcc 4.8 requires ubuntu-toolchain-r-test
 addons:
   apt:
     sources:
     - google-chrome
+    # gcc 4.8 requires ubuntu-toolchain-r-test
     - ubuntu-toolchain-r-test
     - mongodb-upstart
     - mongodb-3.4-precise
@@ -28,8 +28,6 @@ addons:
     - graphicsmagick
     - mongodb-org-server
     - mongodb-org-shell
-before_install:
-  - gem update --system
 before_script:
   - mongo --version
   - mongod --version
