@@ -34,6 +34,7 @@ before_script:
 cache:
   directories:
     - "$HOME/.npm"
+    - "$HOME/.cache/bower"
 
 notifications:
   slack:
