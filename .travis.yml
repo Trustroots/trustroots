@@ -20,6 +20,7 @@ addons:
     - google-chrome
     packages:
     - google-chrome-stable
+    - graphicsmagick
 before_script:
   - mongo --version
   - mongod --version
