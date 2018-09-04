@@ -2,10 +2,11 @@ language: node_js
 node_js:
   - 10
 env:
-  - TEST=client
-  - TEST=server
+  - RUN=lint
+  - RUN=test:client
+  - RUN=test:server:no-lint
 script:
-  - npm run test:$TEST
+  - npm run $RUN
 install:
   - npm ci
 matrix:
