@@ -601,7 +601,7 @@ describe('User profile CRUD tests', function () {
     it('should update it an user created 3 months ago', function (done) {
       var threeMonthsAgo = moment(user.created)
         .subtract(3, 'months')
-        .calendar();
+        .toDate();
       user.update({ $set: { created: threeMonthsAgo } }, function (err) {
         should.not.exist(err);
         agent.post('/api/auth/signin')
@@ -632,7 +632,7 @@ describe('User profile CRUD tests', function () {
       function (done) {
         var threeMonthsAgo = moment(user.created)
           .subtract(3, 'months')
-          .calendar();
+          .toDate();
         user.update({ $set: { created: threeMonthsAgo } }, function (err) {
           should.not.exist(err);
           agent.post('/api/auth/signin')
@@ -674,7 +674,7 @@ describe('User profile CRUD tests', function () {
       function (done) {
         var threeMonthsAgo = moment(user.created)
           .subtract(3, 'months')
-          .calendar();
+          .toDate();
         user.update({ $set: { created: threeMonthsAgo } }, function (err) {
           should.not.exist(err);
           agent.post('/api/auth/signin')
@@ -702,7 +702,7 @@ describe('User profile CRUD tests', function () {
                     }
                     var threeMonthsAgo = moment(user.usernameUpdated)
                       .subtract(3, 'months')
-                      .calendar();
+                      .toDate();
                     user.update(
                       { $set: { usernameUpdated: threeMonthsAgo } },
                       function (err) {
