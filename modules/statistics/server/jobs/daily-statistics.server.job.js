@@ -75,15 +75,15 @@ module.exports = function (job, agendaDone) {
         }
 
         // Write numbers to stats
-        async.eachSeries(hostOfferCounts, function (offerCount, doneStatus) {
+        async.eachOfSeries(hostOfferCounts, function (offerCount, offerStatus, doneStatus) {
           writeDailyStat({
             namespace: 'offers',
             values: {
-              count: parseInt(offerCount.count, 10)
+              count: parseInt(offerCount, 10)
             },
             tags: {
               type: 'host',
-              status: String(offerCount._id) // `yes|maybe|no`
+              status: String(offerStatus) // `yes|maybe|no`
             }
           }, doneStatus);
         }, done);
