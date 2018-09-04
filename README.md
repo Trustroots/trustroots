@@ -18,20 +18,18 @@ You don't have the be a programmer to participate. Check [volunteers page](https
 
 ## Development
 
-Check [developers.trustroots.org](http://developers.trustroots.org/) to get started.
+Trustroots has a [developer portal](http://developers.trustroots.org/) with
+information about the API and other methods of interacting with the project.
 
+To work on Trustroots itself, read on! We have two main ways of running the
+software for development:
 
-## Installing
-
-We have two major ways of running the software:
-
-
-### Installing locally
+### Running locally
 
 Install the stack on your localhost and run NodeJS. This approach takes a little more time to setup, and bit more manual configuration, but is super fast, and can be easier to work with. See [INSTALL.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL.md) for details.
 
 
-### Installing with Docker
+### Running with Docker
 
 If you are familiar with Docker this is the easiest and quickest way to get started. See [INSTALL-DOCKER.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL-DOCKER.md) for further details. Running through Docker can be a little bit slower.
 

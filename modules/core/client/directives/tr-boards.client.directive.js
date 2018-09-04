@@ -169,7 +169,6 @@
           },
           'jungleroad': {
             'name': 'Dean Johns',
-            'url': 'https://unsplash.com/photos/MgZWbdCKcGg',
             'license': 'CC',
             'license_url': 'https://unsplash.com/license',
             'file': 'jungleroad.jpg',
