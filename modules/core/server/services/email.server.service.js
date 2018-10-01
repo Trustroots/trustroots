@@ -385,6 +385,7 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
     },
     firstName: user.firstName,
     name: user.displayName,
+    username: user.username,
     email: user.email,
     urlEditProfile: analyticsHandler.appendUTMParams(urlEditProfile, utmParams),
     utmCampaign: campaign,
