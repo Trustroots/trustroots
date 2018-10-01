@@ -16,9 +16,6 @@ require(path.resolve('./modules/offers/server/models/offer.server.model'));
 var User = mongoose.model('User');
 var Offer = mongoose.model('Offer');
 
-console.log(chalk.white('--'));
-console.log(chalk.green('Trustroots test data'));
-console.log(chalk.white('--'));
 
 var random = function (max) {
   return Math.floor(Math.random() * max);
