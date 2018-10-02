@@ -46,7 +46,7 @@
             Authentication.user.memberIds.length > 0) {
           angular.forEach($scope.trTribesInCommon, function (membership) {
             // If authenticated user has it as well, add to list
-            if (Authentication.user.memberIds.indexOf(membership.tribe._id) > -1) {
+            if (membership.tribe && Authentication.user.memberIds.indexOf(membership.tribe._id) > -1) {
               tribesInCommon.push(membership);
             }
           });

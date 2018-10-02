@@ -6,7 +6,7 @@
     .controller('OfferListMeetController', OfferListMeetController);
 
   /* @ngInject */
-  function OfferListMeetController($scope, offers, $stateParams, $timeout, $anchorScroll, $state, $analytics, $confirm, OffersService, messageCenterService) {
+  function OfferListMeetController(offers, $timeout, $anchorScroll, $analytics, $confirm, OffersService, messageCenterService) {
 
     // ViewModel
     var vm = this;

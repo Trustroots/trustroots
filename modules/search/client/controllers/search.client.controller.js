@@ -24,6 +24,8 @@
     vm.onPlaceSearch = onPlaceSearch;
     vm.openSearchPlaceInput = openSearchPlaceInput;
     vm.onLanguageFiltersChange = onLanguageFiltersChange;
+    vm.onSeenFilterChange = onSeenFilterChange;
+    vm.onlineInPast6Months = vm.filters.seen && vm.filters.seen.months === 6;
     vm.sidebarTab = 'filters';
 
     // Visibility toggle for search place input on small screens
@@ -103,6 +105,22 @@
       $timeout(function () {
         // Save new value to cache
         FiltersService.set('languages', vm.filters.languages || []);
+
+        onFiltersUpdated();
+      });
+    }
+
+    /**
+     * Fired for changes at seen filter
+     */
+    function onSeenFilterChange() {
+      vm.filters.seen.months = vm.onlineInPast6Months ? 6 : 24;
+
+      // `vm.filters.seen` is still out of sync at this point,
+      // but in next cycle after `$timeout` we have updated version.
+      $timeout(function () {
+        // Save new value to cache
+        FiltersService.set('seen', vm.filters.seen);
 
         onFiltersUpdated();
       });

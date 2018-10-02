@@ -337,13 +337,16 @@ module.exports.initHelmetHeaders = function (app) {
         '*.vis.earthdata.nasa.gov', // Map tiles
         '*.facebook.com',
         '*.fbcdn.net', // Facebook releated
+        '*.fbsbx.com', // Facebook related
         '*.twitter.com',
         '*.google-analytics.com',
         '*.gstatic.com', // Google analytics related
         '*.googleusercontent.com', // Google CDN. Android app related.
         '*.g.doubleclick.net', // Google Analytics related
-        'gravatar.com', // Gravatar (Wordpress)
-        '*.wp.com', // Gravatar (Wordpress)
+        'gravatar.com', // Gravatar (WordPress.com)
+        'i0.wp.com', // Gravatar (WordPress.com)
+        'i1.wp.com', // Gravatar (WordPress.com)
+        'i2.wp.com', // Gravatar (WordPress.com)
         'ucarecdn.com', // Our Tribe image CDN "Uploadcare.com"
         'data:' // Inline images (`<img src="data:...">`)
       ],

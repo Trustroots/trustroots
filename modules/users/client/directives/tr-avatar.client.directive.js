@@ -30,7 +30,7 @@
 
       // Options
       var defaultSize = 256,
-          defaultAvatar = '/modules/users/img/avatar.png';
+          defaultAvatar = '/img/avatar.png';
 
       return {
         template:
@@ -95,14 +95,14 @@
               }
             // Locally uploaded avatar
             } else if ($scope.source === 'local') {
-              if ($scope.user.avatarUploaded) {
+              if ($scope.user.avatarUploaded && $scope.user && $scope.user._id) {
                 // Cache buster
-                var timestamp = new Date($scope.user.updated).getTime();
+                var timestamp = $scope.user.updated ? new Date($scope.user.updated).getTime() : '';
 
                 // 32 is the smallest and 2048 biggest file size we're generating.
                 var fileSize = ($scope.size < 32) ? 32 : $scope.size;
 
-                $scope.avatar = '/modules/users/img/profile/uploads/' + $scope.user._id + '/avatar/' + fileSize + '.jpg?' + timestamp;
+                $scope.avatar = '/uploads-profile/' + $scope.user._id + '/avatar/' + fileSize + '.jpg?' + timestamp;
               } else {
                 $scope.avatar = defaultAvatar;
               }

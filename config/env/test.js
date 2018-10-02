@@ -21,7 +21,9 @@ module.exports = {
       // pass: ''
     },
     // Mongoose debug mode
-    debug: false
+    debug: false,
+    // Check for MongoDB version compatibility on start
+    checkCompatibility: false
   },
   maxUploadSize: 10000, // =10kb in bytes. Set ridiculously small just for tests
   port: 3001,

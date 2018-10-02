@@ -169,7 +169,6 @@
           },
           'jungleroad': {
             'name': 'Dean Johns',
-            'url': 'https://unsplash.com/photos/MgZWbdCKcGg',
             'license': 'CC',
             'license_url': 'https://unsplash.com/license',
             'file': 'jungleroad.jpg',
@@ -206,7 +205,7 @@
         var file = ($window.innerWidth <= 480 && photo.file_mobile) ? photo.file_mobile : photo.file;
 
         elem.css({
-          'background-image': 'url(/modules/core/img/board/' + file + ')'
+          'background-image': 'url(/img/board/' + file + ')'
         });
 
         // To prevent key being literally `key`: `{key: ...}`, we want it to be actual keyname such as `hitchroad`.

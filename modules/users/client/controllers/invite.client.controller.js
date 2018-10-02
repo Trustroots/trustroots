@@ -6,7 +6,7 @@
     .controller('InviteController', InviteController);
 
   /* @ngInject */
-  function InviteController(InvitationService, Authentication, $window, $location, $timeout, $state, invitation) {
+  function InviteController(Authentication, $window, $location, invitation) {
 
     // ViewModel
     var vm = this;
@@ -83,7 +83,7 @@
           description: inviteTextGeneric,
           // Image used for sharing
           // Image URL would be appended to "note" section in invite emails as well
-          // media: domain + '/modules/core/img/og_image.jpg',
+          // media: domain + '/img/og_image.jpg',
           email_template: 'invite',
           email_vars: {
             'code': code,
