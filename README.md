@@ -7,7 +7,7 @@
 	<br>
 </h1>
 
-> _Travellers' community. Sharing, hosting and getting people together._
+> _Travellers' community. Sharing, hosting and getting people together._//comment added
 
 ## Volunteering
 
