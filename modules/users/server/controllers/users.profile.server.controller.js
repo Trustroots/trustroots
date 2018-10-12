@@ -80,6 +80,7 @@ exports.userMiniProfileFields = [
   'avatarSource',
   'avatarUploaded',
   'emailHash',
+  'locationLiving',
   'additionalProvidersData.facebook.id' // For FB avatars
 ].join(' ');
 
