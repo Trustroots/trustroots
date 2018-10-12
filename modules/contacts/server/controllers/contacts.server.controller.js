@@ -476,6 +476,7 @@ exports.contactListByUser = function (req, res, next, listUserId) {
           avatarSource: '$user.avatarSource',
           avatarUploaded: '$user.avatarUploaded',
           emailHash: '$user.emailHash',
+          locationLiving: '$user.locationLiving',
           additionalProvidersData: {
             facebook: {
               id: '$user.additionalProvidersData.facebook.id'
