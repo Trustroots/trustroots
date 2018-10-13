@@ -69,6 +69,22 @@ Agendash is a dashboard & inspector for [Agenda](https://github.com/agenda/agend
 
 [Agendash](https://github.com/joeframbach/agendash) (background job dashboard) at [localhost:1081](http://localhost:1081).
 
+## Debugging
+
+The standard node inspector runs on each start for the main app (port 5858) and the worker (port 5859).
+
+To debug using Chrome:
+
+1. Run 'npm start'
+2. Open chrome://inspect/#devices. Note the "Remote Target" list should be empty to start
+3. Press "Open dedicated DevTools for Node"
+4. Press "Add connection" and add both 'localhost:5858' and 'localhost:5859'
+5. They will now appear in "Remote Target" list
+6. Press 'inspect' on whichever process you want to debug
+7. You should now have console/profiler etc available.
+
+More information can be found in the NodeJS [debug documentation](https://nodejs.org/en/docs/guides/debugging-getting-started/).
+
 ## Running tests
 
 - `npm test` (both client & server)
