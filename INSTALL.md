@@ -9,7 +9,7 @@ Make sure you have installed all these prerequisites:
 * Unix operating system, like Linux or MacOS. If you use Windows, please look into [installing via Docker](INSTALL-DOCKER.md) instead.
 * [Git](https://git-scm.com/) (`git --version`, preinstalled on MacOS)
 * [Node.js](https://nodejs.org/en/download/) version 8 or 10 and the NPM v5+ (`node --version && npm --version`). We recommend managing Node.js versions using [NVM](https://github.com/creationix/nvm).
-* [MongoDB](http://www.mongodb.org/downloads) v3.4. [v3.6 won't work](https://github.com/Trustroots/trustroots/issues/597). (`mongod --version`).
+* [MongoDB](http://www.mongodb.org/downloads) v3.6 - 4.0. (`mongod --version`).
 * Some of the NPM modules require compiling native code, which might require installing X-Code's [Command line tools](https://railsapps.github.io/xcode-command-line-tools.html) on MacOS or `build-essential` and `make` on Linux. On MacOS you can install or confirm they're installed by running `xcode-select --install`
 * [GraphicsMagick](http://www.graphicsmagick.org/). In MacOS, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) to install it:
     ```bash
