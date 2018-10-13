@@ -419,30 +419,30 @@ function mocha(done) {
   mongooseService.connect(function (db) {
     // Clean out test database to have clean base
     mongooseService.dropDatabase(db, function () {
-      mongooseService.loadModels();
-
-      // Run the tests
-      gulp.src(testSuites)
-        .pipe(plugins.mocha({
-          reporter: 'spec',
-          timeout: 10000
-        }))
-        .on('error', function (err) {
-          // If an error occurs, save it
-          error = err;
-          console.error(err);
-        })
-        .on('end', function () {
-          // When the tests are done, disconnect agenda/mongoose
-          // and pass the error state back to gulp
-          // @TODO: https://github.com/Trustroots/trustroots/issues/438
-          // @link https://github.com/agenda/agenda/pull/450
-          agenda._mdb.close(function () {
-            mongooseService.disconnect(function () {
-              done(error);
+      mongooseService.loadModels(function () {
+        // Run the tests
+        gulp.src(testSuites)
+          .pipe(plugins.mocha({
+            reporter: 'spec',
+            timeout: 10000
+          }))
+          .on('error', function (err) {
+            // If an error occurs, save it
+            error = err;
+            console.error(err);
+          })
+          .on('end', function () {
+            // When the tests are done, disconnect agenda/mongoose
+            // and pass the error state back to gulp
+            // @TODO: https://github.com/Trustroots/trustroots/issues/438
+            // @link https://github.com/agenda/agenda/pull/450
+            agenda._mdb.close(function () {
+              mongooseService.disconnect(function () {
+                done(error);
+              });
             });
           });
-        });
+      });
     });
   });
 }
