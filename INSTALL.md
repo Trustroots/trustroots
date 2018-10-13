@@ -83,7 +83,7 @@ To lint files, run `npm run lint`
 
 There's a script that can generate mock user data. It's highly recommended you run this script after installation, that way you'll have something to look at.
 
-1. Run `node scripts/fillTestData.js 10000 adminusername` — that will create 10000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
+1. Run `node scripts/fillTestData.js 1000 adminusername` — that will create 1000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
 2. It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
 3. To see the result, log in with your chosen username and password `password123`.
 
