@@ -181,7 +181,7 @@ describe('Service: email', function () {
       if (err) return done(err);
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
-      jobs[0].data.subject.should.equal('Support request');
+      jobs[0].data.subject.should.equal('Support request from ' + supportRequest.username + ' (' + supportRequest.displayName + ')');
       jobs[0].data.replyTo.email.should.equal(replyTo.email);
       should.not.exist(jobs[0].data.replyTo.name);
       jobs[0].data.to.address.should.equal(config.supportEmail);
