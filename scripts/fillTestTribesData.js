@@ -6,7 +6,7 @@ var path = require('path'),
     faker = require('faker'),
     mongoose = require('mongoose');
 
-require(path.resolve('./modules/tribes/server/model/tribe.server.model'));
+require(path.resolve('./modules/tribes/server/models/tribe.server.model'));
 
 var Tribe = mongoose.model('Tribe');
 
