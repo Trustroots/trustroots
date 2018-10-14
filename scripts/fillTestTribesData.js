@@ -14,10 +14,6 @@ console.log(chalk.white('--'));
 console.log(chalk.green('Trustroots test tribes data'));
 console.log(chalk.white('--'));
 
-var random = function (max) {
-  return Math.floor(Math.random() * max);
-};
-
 var addTribes = function (index, max) {
   var tribe = new Tribe();
 
