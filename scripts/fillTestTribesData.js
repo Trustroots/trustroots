@@ -6,7 +6,7 @@ var path = require('path'),
     faker = require('faker'),
     mongoose = require('mongoose');
 
-require(path.resolve('./modules/tribes/server/models/tribe.server.model'));
+require(path.resolve('./modules/tribes/server/model/tribe.server.model'));
 
 var Tribe = mongoose.model('Tribe');
 
@@ -18,35 +18,45 @@ var random = function (max) {
   return Math.floor(Math.random() * max);
 };
 
-var addTribes = function (max) {
+var addTribes = function (index, max) {
   var tribe = new Tribe();
 
-  for (var i = 0; i < max; i++) {
-    tribe.label = faker.name.firstName();
-    tribe.labelHistory = faker.name.lastName();
-    tribe.slugHistory = tribe.firstName + ' ' + tribe.lastName;
-    tribe.synonyms = 'local';
-    tribe.color = true;
-    tribe.count = false;
-    tribe.created = faker.date();
-    tribe.public = true;
-    tribe.image_UUID = faker.internet.password();
-    tribe.attribution = i + tribe.displayName.toLowerCase().replace('\'', '').replace(' ', '');
-    tribe.attribution_url = faker.attribution_url();
-    tribe.description = faker.lorem.sentence();
+  tribe.label = faker.random.word();
+  tribe.labelHistory = faker.random.words();
+  tribe.slugHistory = faker.random.words();
+  tribe.synonyms = faker.random.words();
+  tribe.color = faker.internet.color().slice(1);
+  tribe.count = 0;
+  tribe.created = Date.now();
+  tribe.modified = Date.now();
+  tribe.public = true;
+  // tribe.image_UUID = faker.random.uuid();
+  tribe.attribution = faker.name.findName();
+  tribe.attribution_url = faker.internet.url();
+  tribe.description = faker.lorem.sentences();
 
-    tribe.save(function (err) {
-      if (err) {
-        console.log(err);
+  tribe.save(function (err) {
+    if (err != null) {
+      console.log(err);
+    }
+    else {
+      if (index >= max) {
+        console.log(chalk.green('Done with ' + max + ' test tribes!'));
+        console.log(chalk.white('')); // Reset to white
+        process.exit(0);
       }
-    });
-    i++;
+    }
+  });
+
+  index+=1;
+  if (index < max) {
+    addTribes(index, max);
   }
 };
 
 // Number of tribes is required
 if (process.argv[2] == null) {
-  console.log(chalk.red('Please give a number of tribes to add.'));
+  console.log(chalk.red('Usage node Please give a number of tribes to add.'));
 } else {
 
   // Bootstrap db connection
@@ -58,7 +68,7 @@ if (process.argv[2] == null) {
       if (numberOfTribes > 2000) {
         console.log('...this might really take a while... go grab some coffee!');
       }
-      addTribes(numberOfTribes);
+      addTribes(0, numberOfTribes);
     });
   });
 }
