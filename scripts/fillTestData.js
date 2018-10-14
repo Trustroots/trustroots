@@ -85,7 +85,7 @@ var addUsers = function (index, max) {
   index++;
   addOffer(user._id, index, max);
 
-  if (index <= max) {
+  if (index < max) {
     addUsers(index, max);
   }
 
