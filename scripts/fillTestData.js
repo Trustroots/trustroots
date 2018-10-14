@@ -18,6 +18,7 @@ var User = mongoose.model('User');
 var Offer = mongoose.model('Offer');
 var Tribe = mongoose.model('Tribe');
 
+console.log(chalk.white('--'));
 console.log(chalk.green('Trustroots test data'));
 console.log(chalk.white('--'));
 
