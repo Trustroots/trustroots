@@ -17,7 +17,7 @@ console.log(chalk.white('--'));
 var addTribes = function (index, max) {
   var tribe = new Tribe();
 
-  tribe.label = faker.random.word();
+  tribe.label = faker.random.word() + '_' + index;
   tribe.labelHistory = faker.random.words();
   tribe.slugHistory = faker.random.words();
   tribe.synonyms = faker.random.words();
@@ -51,8 +51,8 @@ var addTribes = function (index, max) {
 };
 
 // Number of tribes is required
-if (process.argv[2] == null) {
-  console.log(chalk.red('Usage node Please give a number of tribes to add.'));
+if (process.argv[2] == null || process.argv[2] < 1) {
+  console.log(chalk.red('Usage: node fillTestTribeData <number of tribes to add>'));
 } else {
 
   // Bootstrap db connection
