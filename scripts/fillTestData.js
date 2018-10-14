@@ -19,12 +19,30 @@ var User = mongoose.model('User');
 var Offer = mongoose.model('Offer');
 var Tribe = mongoose.model('Tribe');
 
-console.log(chalk.white('--'));
 console.log(chalk.green('Trustroots test data'));
 console.log(chalk.white('--'));
 
 var random = function (max) {
   return Math.floor(Math.random() * max);
+};
+
+// Fisher-Yates shuffle algorith taken from:
+// https://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array
+/**
+ * Shuffles array in place.
+ * @param {Array} a items An array containing the items.
+ */
+var shuffle = function shuffle(a) {
+  var j,
+      x,
+      i;
+  for (i = a.length - 1; i > 0; i--) {
+    j = Math.floor(Math.random() * (i + 1));
+    x = a[i];
+    a[i] = a[j];
+    a[j] = x;
+  }
+  return a;
 };
 
 var randomizeLoaction = function () {
@@ -107,6 +125,29 @@ var addUsers = function (index, max, tribes) {
     }
   }
 
+  if (tribes.length > 0) {
+    var userNumTribes = random(tribes.length);
+
+    // Randomize indecies
+    var randomTribes = [];
+    for (var i = 0; i < tribes.length; i++) {
+      randomTribes[i] = i;
+    }
+    randomTribes = shuffle(randomTribes);
+
+    // Add the tribes using the random indecies
+    for (var j = 0; j < userNumTribes; j++) {
+      var rand = randomTribes[j];
+      user.member.push({ tribe: tribes[rand]._id, since: Date.now() });
+      tribes[rand].count +=1;
+      Tribe.findByIdAndUpdate(tribes[rand]._id, tribes[rand], function (err) {
+        if (err) {
+          console.error(err);
+        }
+      });
+    }
+  }
+
   user.save(function (err) {
     if (err) {
       console.log(err);
@@ -115,7 +156,7 @@ var addUsers = function (index, max, tribes) {
   index++;
   addOffer(user._id, index, max);
 
-  if (index < max) {
+  if (index <= max) {
     addUsers(index, max, tribes);
   }
 
