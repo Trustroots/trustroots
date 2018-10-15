@@ -10,7 +10,7 @@ var request = require('supertest'),
     User = mongoose.model('User'),
     express = require(path.resolve('./config/lib/express')),
     config = require(path.resolve('./config/config')),
-    userHandler = require(path.resolve('./modules/users/server/controllers/users.server.controller'));
+    userHandler = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
 
 describe('Search users: GET /users?search=string', function () {
 
@@ -20,9 +20,9 @@ describe('Search users: GET /users?search=string', function () {
   var limit = 9;
 
   // initialize the testing environment
-  before(function() {
+  before(function () {
     // Get application
-    var app = express.init(mongoose);
+    var app = express.init(mongoose.connection);
     agent = request.agent(app);
   });
 

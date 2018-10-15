@@ -1482,7 +1482,7 @@ exports.search = function (req, res, next) {
 
   // validate the query string
   if (req.query.search.length < 3) {
-    var errorMessage = errorHandler.getErrorMessageByKey('bad-request');
+    var errorMessage = errorService.getErrorMessageByKey('bad-request');
     return res.status(400).send({
       message: errorMessage,
       detail: 'Query string should be at least 3 characters long.'
