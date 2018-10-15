@@ -15,8 +15,7 @@ var mongoose = require('mongoose'),
   require(path.resolve('./modules/messages/server/controllers/messages.server.controller'));
 
 describe('Message to Stats API server service Integration Test', function () {
-  var reachEventEmitter,
-      sandbox;
+  var reachEventEmitter;
 
   before(function () {
     // this emitter will emit event 'reachedInfluxdb' with variables measurement,
@@ -25,10 +24,8 @@ describe('Message to Stats API server service Integration Test', function () {
   });
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
-
     // it will emit an event 'reachedInfluxdb' which should be caught in the tests
-    sandbox.stub(influx.InfluxDB.prototype, 'writeMeasurement').callsFake(function (measurement, fields, tags) {
+    sinon.stub(influx.InfluxDB.prototype, 'writeMeasurement').callsFake(function (measurement, fields, tags) {
       return new Promise(function (resolve) {
         reachEventEmitter.emit('reachedInfluxdb', measurement, fields, tags);
         resolve();
@@ -38,7 +35,7 @@ describe('Message to Stats API server service Integration Test', function () {
 
   // back to the original
   afterEach(function () {
-    sandbox.restore();
+    sinon.restore();
   });
 
   var user1,
@@ -127,8 +124,8 @@ describe('Message to Stats API server service Integration Test', function () {
 
       // stubbing the influxdb config
       beforeEach(function () {
-        sandbox.stub(config.influxdb, 'enabled').value(true);
-        sandbox.stub(config.influxdb, 'options').value({
+        sinon.stub(config.influxdb, 'enabled').value(true);
+        sinon.stub(config.influxdb, 'options').value({
           host: 'localhost',
           port: 4242,
           protocol: 'http',

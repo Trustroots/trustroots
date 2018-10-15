@@ -274,22 +274,15 @@ describe('Job: message unread', function () {
       return moment.duration(duration).asMilliseconds();
     }
 
-    // keep a reference to sinon sandbox here
-    var sandbox;
-
     beforeEach(function () {
-      // create the sinon sandbox to easily restore original state
-      // http://sinonjs.org/releases/v1.17.7/sandbox/
-      sandbox = sinon.sandbox.create();
-
       // set the fake time with sinon
       // http://sinonjs.org/releases/v1.17.7/fake-timers/
-      sandbox.useFakeTimers(1500000000000);
+      sinon.useFakeTimers(1500000000000);
     });
 
     // restore the original state
     afterEach(function () {
-      sandbox.restore();
+      sinon.restore();
     });
 
     it('Remind user again after a specified time.', function (done) {
@@ -299,7 +292,7 @@ describe('Job: message unread', function () {
         if (err) return done(err);
 
         // wait for 10 minutes
-        sandbox.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+        sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
         messageUnreadJobHandler({}, function (err) {
           if (err) return done(err);
@@ -308,7 +301,7 @@ describe('Job: message unread', function () {
           jobs.length.should.equal(1);
 
           // wait for 24 hours
-          sandbox.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
+          sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
 
           messageUnreadJobHandler({}, function (err) {
             if (err) return done(err);
@@ -336,7 +329,7 @@ describe('Job: message unread', function () {
         if (err) return done(err);
 
         // wait a minute
-        sandbox.clock.tick(milliseconds({ minutes: 1 }));
+        sinon.clock.tick(milliseconds({ minutes: 1 }));
 
         // update: message is created at the current time
         message.created = new Date();
@@ -344,7 +337,7 @@ describe('Job: message unread', function () {
           if (err) return done(err);
 
           // wait for 10 minutes
-          sandbox.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+          sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
           messageUnreadJobHandler({}, function (err) {
             if (err) return done(err);
@@ -353,7 +346,7 @@ describe('Job: message unread', function () {
             jobs.length.should.equal(1);
 
             // wait for 24 hours
-            sandbox.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
+            sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
 
             messageUnreadJobHandler({}, function (err) {
               if (err) return done(err);
@@ -384,7 +377,7 @@ describe('Job: message unread', function () {
         if (err) return done(err);
 
         // wait a minute
-        sandbox.clock.tick(milliseconds({ minutes: 1 }));
+        sinon.clock.tick(milliseconds({ minutes: 1 }));
 
         // update: message is created at the current time
         message.created = new Date();
@@ -392,7 +385,7 @@ describe('Job: message unread', function () {
           if (err) return done(err);
 
           // wait for 10 minutes
-          sandbox.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+          sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
           messageUnreadJobHandler({}, function (err) {
             if (err) return done(err);
@@ -401,7 +394,7 @@ describe('Job: message unread', function () {
             jobs.length.should.equal(1);
 
             // wait for 24 hours
-            sandbox.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
+            sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
 
             messageUnreadJobHandler({}, function (err) {
               if (err) return done(err);
@@ -425,7 +418,7 @@ describe('Job: message unread', function () {
         if (err) return done(err);
 
         // wait for 10 minutes
-        sandbox.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+        sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
         messageUnreadJobHandler({}, function (err) {
           if (err) return done(err);
@@ -437,7 +430,7 @@ describe('Job: message unread', function () {
           jobs[0].data.to.address.should.equal(_userTo.email);
 
           // wait for 24 hours
-          sandbox.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
+          sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
 
           messageUnreadJobHandler({}, function (err) {
             if (err) return done(err);
@@ -461,7 +454,7 @@ describe('Job: message unread', function () {
         if (err) return done(err);
 
         // wait for 24 hours
-        sandbox.clock.tick(milliseconds({ hours: 24, milliseconds: 1 }));
+        sinon.clock.tick(milliseconds({ hours: 24, milliseconds: 1 }));
 
         messageUnreadJobHandler({}, function (err) {
           if (err) return done(err);
@@ -482,7 +475,7 @@ describe('Job: message unread', function () {
         if (err) return done(err);
 
         // wait for 10 minutes
-        sandbox.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+        sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
         messageUnreadJobHandler({}, function (err) {
           if (err) return done(err);
@@ -491,7 +484,7 @@ describe('Job: message unread', function () {
           jobs.length.should.equal(1);
 
           // wait for 14 days
-          sandbox.clock.tick(milliseconds({ days: 14 }));
+          sinon.clock.tick(milliseconds({ days: 14 }));
 
           messageUnreadJobHandler({}, function (err) {
             if (err) return done(err);

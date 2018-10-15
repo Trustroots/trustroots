@@ -12,24 +12,17 @@ var should = require('should'),
     sparkpostWebhooks = require(path.resolve('./modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller'));
 
 describe('Sparkpost Webhooks - Integration Test', function () {
-  // replace the influx & stathat service stat() functions with fake version
-  var sandbox;
 
-  // initializing and clearing the sinon sandbox
-  beforeEach(function () {
-    // sandboxing in sinon helps restore the spied/stubbed/mocked functions
-    sandbox = sinon.sandbox.create();
-  });
-
+  // restoring the stubs
   afterEach(function () {
     // restore the stubbed services
-    sandbox.restore();
+    sinon.restore();
   });
 
   // stub the influx and stathat endpoints
   beforeEach(function () {
     // stub the influx endpoint(s)
-    sandbox.stub(influx.InfluxDB.prototype, 'writeMeasurement');
+    sinon.stub(influx.InfluxDB.prototype, 'writeMeasurement');
 
     // and writeMeasurement returns a Promise
     influx.InfluxDB.prototype.writeMeasurement.returns(
@@ -39,7 +32,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     );
 
     // provide config options for influxdb
-    sandbox.stub(config.influxdb, 'options').value({
+    sinon.stub(config.influxdb, 'options').value({
       host: 'localhost',
       port: 8086,
       protocol: 'http',
@@ -47,7 +40,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     });
 
     // stub the stathat endpoints
-    sandbox.stub(stathat, 'trackEZCountWithTime');
+    sinon.stub(stathat, 'trackEZCountWithTime');
     stathat.trackEZCountWithTime.callsArgWithAsync(4, 200, null);
   });
 
@@ -66,14 +59,11 @@ describe('Sparkpost Webhooks - Integration Test', function () {
 
   context('influxdb configured', function () {
     beforeEach(function () {
-      // stub the config.stathat.key
-      // sandbox.stub(config.stathat, 'key', 'stathatkey');
-
       // stub enable stathat in config
-      sandbox.stub(config.stathat, 'enabled').value(false);
+      sinon.stub(config.stathat, 'enabled').value(false);
 
       // stub enable influx in config
-      sandbox.stub(config.influxdb, 'enabled').value(true);
+      sinon.stub(config.influxdb, 'enabled').value(true);
     });
 
     it('should reach the influxdb with data in correct format', function (done) {
@@ -109,13 +99,13 @@ describe('Sparkpost Webhooks - Integration Test', function () {
   context('stathat configured', function () {
     beforeEach(function () {
       // stub the config.stathat.key
-      sandbox.stub(config.stathat, 'key').value('stathatkey');
+      sinon.stub(config.stathat, 'key').value('stathatkey');
 
       // stub enable stathat in config
-      sandbox.stub(config.stathat, 'enabled').value(true);
+      sinon.stub(config.stathat, 'enabled').value(true);
 
       // stub enable influx in config
-      sandbox.stub(config.influxdb, 'enabled').value(false);
+      sinon.stub(config.influxdb, 'enabled').value(false);
     });
 
     it('should reach stathat with data in correct format', function (done) {
