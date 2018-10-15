@@ -14,8 +14,6 @@ describe('Worker tests', function () {
     retryDelaySeconds: 3
   };
 
-  var sandbox = sinon.sandbox.create();
-
   var failHandler,
       definedJobs = [],
       scheduledJobs = [];
@@ -29,12 +27,12 @@ describe('Worker tests', function () {
 
     // Stub out all of agendas functionality as we are not testing agenda
 
-    sandbox.stub(agenda, 'start').callsFake(function () { });
+    sinon.stub(agenda, 'start').callsFake(function () { });
 
     // Pass through agenda.on('ready')
     // Save handler for agenda.on('fail')
 
-    sandbox.stub(agenda, 'on').callsFake(function (name, fn) {
+    sinon.stub(agenda, 'on').callsFake(function (name, fn) {
       if (name === 'ready') {
         process.nextTick(fn);
       } else if (name === 'fail') {
@@ -44,22 +42,22 @@ describe('Worker tests', function () {
 
     // Collect calls to agenda.define() and agenda.every()
 
-    sandbox.stub(agenda, 'define').callsFake(function (name, options, fn) {
+    sinon.stub(agenda, 'define').callsFake(function (name, options, fn) {
       definedJobs.push({ name: name, options: options, fn: fn });
     });
 
-    sandbox.stub(agenda, 'every').callsFake(function (repeat, name) {
+    sinon.stub(agenda, 'every').callsFake(function (repeat, name) {
       scheduledJobs.push({ repeat: repeat, name: name });
     });
 
     // Allow for easily maths for nextRunAt calculations
 
-    sandbox.useFakeTimers();
+    sinon.useFakeTimers();
 
   });
 
   afterEach(function () {
-    sandbox.restore();
+    sinon.restore();
     worker.removeExitListeners();
   });
 

@@ -10,23 +10,19 @@ var should = require('should'),
 describe('General Stats API Service Unit Tests', function () {
   // replace the influx & stathat service stat() functions with fake version
 
-  var sandbox;
-
   beforeEach(function () {
-    // sandboxing in sinon helps restore the spied/stubbed/mocked functions
-    sandbox = sinon.sandbox.create();
 
     // stub the service dependencies
-    sandbox.stub(stathatService, 'stat');
+    sinon.stub(stathatService, 'stat');
     stathatService.stat.callsArgAsync(1);
 
-    sandbox.stub(influxService, 'stat');
+    sinon.stub(influxService, 'stat');
     influxService.stat.callsArgAsync(1);
   });
 
   afterEach(function () {
     // restore the stubbed services
-    sandbox.restore();
+    sinon.restore();
   });
 
 
