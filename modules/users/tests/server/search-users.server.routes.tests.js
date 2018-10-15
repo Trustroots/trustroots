@@ -14,8 +14,7 @@ var request = require('supertest'),
 
 describe('Search users: GET /users?search=string', function () {
 
-  var agent,
-      sandbox;
+  var agent;
 
   var limit = 9;
 
@@ -34,13 +33,11 @@ describe('Search users: GET /users?search=string', function () {
   });
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
-
-    sandbox.stub(config.limits, 'userSearchLimit').value(limit);
+    sinon.stub(config.limits, 'userSearchLimit').value(limit);
   });
 
   afterEach(function () {
-    sandbox.restore();
+    sinon.restore();
   });
 
 
