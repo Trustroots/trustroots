@@ -27,25 +27,6 @@ var random = function (max) {
   return Math.floor(Math.random() * max);
 };
 
-// Fisher-Yates shuffle algorith taken from:
-// https://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array
-/**
- * Shuffles array in place.
- * @param {Array} a items An array containing the items.
- */
-var shuffle = function shuffle(a) {
-  var j,
-      x,
-      i;
-  for (i = a.length - 1; i > 0; i--) {
-    j = Math.floor(Math.random() * (i + 1));
-    x = a[i];
-    a[i] = a[j];
-    a[j] = x;
-  }
-  return a;
-};
-
 var randomizeLoaction = function () {
   var random = Math.random();
   if (random > 0.98) {
@@ -134,7 +115,7 @@ var addUsers = function (index, max, tribes) {
     for (var i = 0; i < tribes.length; i++) {
       randomTribes[i] = i;
     }
-    randomTribes = shuffle(randomTribes);
+    randomTribes = _.shuffle(randomTribes);
 
     // Add the tribes using the random indecies
     for (var j = 0; j < userNumTribes; j++) {
