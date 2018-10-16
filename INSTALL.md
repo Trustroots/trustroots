@@ -15,6 +15,11 @@ Make sure you have installed all these prerequisites:
     ```bash
     brew install graphicsmagick
     ```
+* [Bower](https://bower.io/) for managing packages
+    ```bash
+    npm install -g bower
+    bower install
+    ```
 
 ## Installing
 
