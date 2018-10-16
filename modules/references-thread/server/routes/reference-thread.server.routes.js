@@ -8,12 +8,12 @@ var referenceThreadPolicy = require('../policies/reference-thread.server.policy'
 
 module.exports = function (app) {
 
-  app.route('/api/references/threads/:userToId').all(referenceThreadPolicy.isAllowed)
+  app.route('/api/references-thread/:referenceThreadUserToId').all(referenceThreadPolicy.isAllowed)
     .get(referenceThread.readReferenceThread);
 
-  app.route('/api/references/threads').all(referenceThreadPolicy.isAllowed)
+  app.route('/api/references-thread').all(referenceThreadPolicy.isAllowed)
     .post(referenceThread.createReferenceThread);
 
   // Finish by binding the middleware
-  app.param('userToId', referenceThread.readReferenceThreadById);
+  app.param('referenceThreadUserToId', referenceThread.readReferenceThreadById);
 };
