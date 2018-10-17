@@ -11,17 +11,9 @@ var _ = require('lodash'),
     cities = JSON.parse(fs.readFileSync(path.resolve('./scripts/fillTestDataCities.json'), 'utf8')),
     savedCounter = 0;
 
-require(path.resolve('./modules/users/server/models/user.server.model'));
 require(path.resolve('./modules/offers/server/models/offer.server.model'));
-require(path.resolve('./modules/tribes/server/models/tribe.server.model'));
 
-var User = mongoose.model('User');
 var Offer = mongoose.model('Offer');
-var Tribe = mongoose.model('Tribe');
-
-console.log(chalk.white('--'));
-console.log(chalk.green('Trustroots test data'));
-console.log(chalk.white('--'));
 
 var random = function (max) {
   return Math.floor(Math.random() * max);
@@ -66,98 +58,32 @@ var addOffer = function (id, index, max) {
   });
 };
 
-var addUsers = function (index, max, tribes) {
-  var user = new User();
+var addUsers = function (max, adminUsers) {
+  var index = 0;
+  var numAdminUsers;
 
-  user.firstName = faker.name.firstName();
-  user.lastName = faker.name.lastName();
-  user.displayName = user.firstName + ' ' + user.lastName;
-  user.provider = 'local';
-  user.public = true;
-  user.avatarUploaded = false;
-  user.avatarSource = 'none';
-  user.email = index + faker.internet.email();
-  user.password = faker.internet.password();
-  user.username = index + user.displayName.toLowerCase().replace('\'', '').replace(' ', '');
-  user.seen = moment()
-    .subtract(Math.random() * 365, 'd')
-    .subtract(Math.random() * 24, 'h')
-    .subtract(Math.random() * 3600, 's');
+  if (adminUsers === null || adminUsers === undefined) {
+    numAdminUsers = 0;
+  } else {
+    numAdminUsers = adminUsers.length;
+  }
 
-  if (tribes.length > 0) {
-    var userNumTribes = random(tribes.length);
-
-    // Randomize indecies
-    var randomTribes = [];
-    for (var i = 0; i < tribes.length; i++) {
-      randomTribes[i] = i;
-    }
-    randomTribes = _.shuffle(randomTribes);
-
-    // Add the tribes using the random indecies
-    for (var j = 0; j < userNumTribes; j++) {
-      var rand = randomTribes[j];
-      user.member.push({ tribe: tribes[rand]._id, since: Date.now() });
-      tribes[rand].count +=1;
-      Tribe.findByIdAndUpdate(tribes[rand]._id, tribes[rand], function (err) {
-        if (err) {
-          console.error(err);
-        }
-      });
+  var printWarning = function printWarning() {
+    console.log('Generating ' + max + ' users...');
+    if (max > 2000) {
+      console.log('...this might really take a while... go grab some coffee!');
     }
   }
 
-  if (tribes.length > 0) {
-    var userNumTribes = random(tribes.length);
-
-    // Randomize indecies
-    var randomTribes = [];
-    for (var i = 0; i < tribes.length; i++) {
-      randomTribes[i] = i;
-    }
-    randomTribes = _.shuffle(randomTribes);
-
-    // Add the tribes using the random indecies
-    for (var j = 0; j < userNumTribes; j++) {
-      var rand = randomTribes[j];
-      user.member.push({ tribe: tribes[rand]._id, since: Date.now() });
-      tribes[rand].count +=1;
-      Tribe.findByIdAndUpdate(tribes[rand]._id, tribes[rand], function (err) {
-        if (err) {
-          console.error(err);
-        }
-      });
-    }
+  if (numAdminUsers === 0) {
+    printWarning();
   }
-
-  user.save(function (err) {
-    if (err) {
-      console.log(err);
-    }
-  });
-  index++;
-  addOffer(user._id, index, max);
-
-  if (index < max) {
-    addUsers(index, max, tribes);
-  }
-
-};
-
-// Create optional admin user
-var adminUsername = (process.argv[3] == null) ? false : process.argv[3];
-
-// Number of users is required
-if (process.argv[2] == null) {
-  console.log(chalk.red('Please give a number of users to add.'));
-} else {
 
   // Bootstrap db connection
   mongooseService.connect(function () {
     mongooseService.loadModels(function () {
-
-      var numberOfUsers = process.argv[2];
-
+      var Tribe = mongoose.model('Tribe');
+      var User = mongoose.model('User');
 
       var getTribes = new Promise(function (resolve, reject) {
         Tribe.find(function (err, tribes) {
@@ -169,49 +95,119 @@ if (process.argv[2] == null) {
       });
 
       getTribes.then(function (tribes) {
+
         console.log(chalk.white('--'));
-        // Create admin user + regular users
-        if (adminUsername !== false) {
-          var adminUser = new User();
+        console.log(chalk.green('Trustroots test data'));
+        console.log(chalk.white('--'));
 
-          adminUser.firstName = faker.name.firstName();
-          adminUser.lastName = faker.name.lastName();
-          adminUser.displayName = adminUser.firstName + ' ' + adminUser.lastName;
-          adminUser.provider = 'local';
-          adminUser.email = 'admin+' + adminUsername + '@example.com';
-          adminUser.password = 'password123';
-          adminUser.username = adminUsername;
-          adminUser.avatarSource = 'none';
-          adminUser.public = true;
-          adminUser.avatarUploaded = false;
+        (function addNextUser(){
+          var user = new User();
+          var admin;
 
-          adminUser.save(function (err) {
-            if (!err) {
-              console.log('Created admin user. Login with: ' + adminUsername + ' / password');
-            } else {
-              console.log(chalk.red('Could not add admin user ' + adminUsername));
+          // Check if this is an admin user
+          if (numAdminUsers > 0) {
+            admin = adminUsers[adminUsers.length - numAdminUsers];
+          }
+
+          // Add mock data
+          user.firstName = faker.name.firstName();
+          user.lastName = faker.name.lastName();
+          user.displayName = user.firstName + ' ' + user.lastName;
+          user.provider = 'local';
+          user.public = true;
+          user.avatarUploaded = false;
+          user.avatarSource = 'none';
+
+          if (admin !== undefined) {
+            // admin user
+            user.email = 'admin+' + admin + '@example.com';
+            user.password = 'password123';
+            user.username = admin;
+          }
+          else {
+            // non admin user
+            user.email = index + faker.internet.email();
+            user.password = faker.internet.password();
+            user.username = index + user.displayName.toLowerCase().replace('\'', '').replace(' ', '');
+          }
+
+          // Add the user to tribes
+          if (tribes.length > 0) {
+            var userNumTribes = random(tribes.length);
+
+            // Randomize indecies
+            var randomTribes = [];
+            for (var i = 0; i < tribes.length; i++) {
+              randomTribes[i] = i;
+            }
+            randomTribes = _.shuffle(randomTribes);
+
+            // Add the tribes using the random indecies
+            for (var j = 0; j < userNumTribes; j++) {
+              var rand = randomTribes[j];
+              user.member.push({ tribe: tribes[rand]._id, since: Date.now() });
+              tribes[rand].count += 1;
+              Tribe.findByIdAndUpdate(tribes[rand]._id, tribes[rand], function (err) {
+                if (err) {
+                  console.error(err);
+                }
+              });
+            }
+          }
+
+          // Save the user
+          user.save(function (err) {
+            if (admin!== undefined) {
+              console.log('Created admin user. Login with: ' + admin + ' / password');
+            } else if (err && admin !== undefined) {
+              console.log(chalk.red('Could not add admin user ' + admin));
+              console.log(err);
+            } else if (err) {
               console.log(err);
             }
-
-            // Add regular users
-            console.log('Generating ' + numberOfUsers + ' users...');
-            if (numberOfUsers > 2000) {
-              console.log('...this might really take a while... go grab some coffee!');
-            }
-            addUsers(1, numberOfUsers, tribes);
           });
-        } else {
-        // Add regular users
-          console.log('Generating ' + numberOfUsers + ' users...');
-          if (numberOfUsers > 2000) {
-            console.log('...this might really take a while... go grab some coffee!');
-          }
-          addUsers(0, numberOfUsers, tribes);
-        }
 
-      }).catch(function (err){
-        console.log(err);
+          index++;
+          addOffer(user._id, index, max);
+
+          // No more admin users
+          if (numAdminUsers === 1) {
+            printWarning();
+          }
+
+          if (admin !== undefined) {
+            numAdminUsers--;
+          }
+
+          if (index < max) {
+            addNextUser();
+          }
+        }());
+
+        while (numAdminUsers > 0) {
+
+        }
       });
     });
   });
+} // addUsers()
+
+// Number of users is required
+if (process.argv[2] == null) {
+  console.log(chalk.red('Usage: node fillTestData.js <number of users to add> {user names}'));
+} else {
+  // Parse optional admin users
+  var numberOfUsers = process.argv[2];
+  var adminUsers = [];
+  for (var i = 3; i < process.argv.length; i++) {
+    if (process.argv[i] !== null) {
+      adminUsers.push(process.argv[i]);
+    }
+  }
+  // Add users
+  if (adminUsers.length > 0) {
+    addUsers(numberOfUsers, adminUsers);
+  } else {
+    addUsers(numberOfUsers);
+  }
 }
