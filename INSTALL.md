@@ -97,11 +97,14 @@ To lint files, run `npm run lint`
 
 ## Mock data
 
-There's a script that can generate mock user data. It's highly recommended you run this script after installation, that way you'll have something to look at.
+There are scripts that generate mock user data, hosting offers, and tribes. It's highly recommended you run these scripts after installation, that way you'll have something to look at.
 
-1. Run `node scripts/fillTestData.js 1000 adminusername` — that will create 1000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
-2. It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
-3. To see the result, log in with your chosen username and password `password123`.
+1. Run `node scripts/fillTestTribesData.js 50` — This will create 50 tribes.
+    * Run this prior to adding users to add users to tribes automatically
+
+2. Run `node scripts/fillTestData.js 1000 adminusername` — This will create 1000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
+    * It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
+    * To see the result, log in with your chosen username and password `password123`.
 
 
 ## Clean database
