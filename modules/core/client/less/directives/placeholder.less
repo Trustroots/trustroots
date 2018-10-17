@@ -1,0 +1,17 @@
+
+.tr-placeholder {
+  margin-bottom: 20px;
+  * {
+    user-select: none;
+    display: inline;
+    animation: placeholder-pulse 1.8s ease-in-out infinite;
+    background: @gray-light;
+    color: transparent;
+  }
+}
+
+@keyframes placeholder-pulse {
+  0% { opacity: .5; }
+  50% { opacity: 1; }
+  100% { opacity: .5; }
+}
