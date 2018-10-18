@@ -7,7 +7,7 @@ var _ = require('lodash'),
     faker = require('faker'),
     fs = require('fs'),
     mongoose = require('mongoose'),
-    cities = JSON.parse(fs.readFileSync(path.resolve('./scripts/fillTestDataCities.json'), 'utf8')),
+    cities = JSON.parse(fs.readFileSync(path.resolve('./scripts/db-seeding/fillTestDataCities.json'), 'utf8')),
     savedCounter = 0;
 
 require(path.resolve('./modules/offers/server/models/offer.server.model'));

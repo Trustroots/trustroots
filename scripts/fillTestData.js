@@ -1,5 +1,5 @@
 var exec = require('child_process').exec;
-var tribes = exec('node ./scripts/fillTestTribesData.js 100');
+var tribes = exec('node ./scripts/db-seeding/fillTestTribesData.js 100');
 
 tribes.stdout.on('data', function (data) {
   console.log(data);
@@ -15,7 +15,7 @@ var sequenceScriptsPromise = new Promise(function (resolve) {
 });
 
 sequenceScriptsPromise.then(function () {
-  var users = exec('node ./scripts/fillTestUsersData.js 1000 admin1 admin2 admin3');
+  var users = exec('node ./scripts/db-seeding/fillTestUsersData.js 1000 admin1 admin2 admin3');
 
   users.stdout.on('data', function (data) {
     console.log(data);
@@ -29,7 +29,7 @@ sequenceScriptsPromise.then(function () {
     });
   });
 }).then(function () {
-  var messages = exec('node ./scripts/fillTestMessagesData.js 1000');
+  var messages = exec('node ./scripts/db-seeding/fillTestMessagesData.js 1000');
   messages.stdout.on('data', function (data) {
     console.log(data);
   });
