@@ -13,6 +13,12 @@ var random = function (max) {
 
 var addMessages = function (max) {
   var index = 0;
+
+  console.log('Generating ' + max + ' messages...');
+  if (max > 2000) {
+    console.log('...this might really take a while... go grab some coffee!');
+  }
+
   console.log(chalk.white('--'));
   console.log(chalk.green('Trustroots test messages data'));
   console.log(chalk.white('--'));
@@ -93,9 +99,5 @@ if (process.argv[2] == null || process.argv[2] < 1) {
 
   var numberOfMessages= process.argv[2];
   // Add messages
-  console.log('Generating ' + numberOfMessages + ' users...');
-  if (numberOfMessages > 2000) {
-    console.log('...this might really take a while... go grab some coffee!');
-  }
   addMessages(numberOfMessages);
 }
