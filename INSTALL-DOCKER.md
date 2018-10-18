@@ -4,7 +4,7 @@ Trustroots Docker containers are excellent for getting into development quickly.
 
 Development with Docker might be little bit slower than running Mongo+NodeJS+NPM directly at your computer, but saves you from installing and configuring all the required dependencies.
 
-_Note that we are not keeping too close eye on Docker setup so things might break unexpectedly. Feel free to help us maintain the docker setup!_
+_Note that we are not keeping too close an eye on the Docker setup so things might break unexpectedly. Feel free to help us maintain the docker setup!_
 
 
 ## Prerequisites
@@ -40,7 +40,7 @@ Optional: See `config/env/local.sample.js` or `config/env/default.js` for detail
 docker-compose up
 ```
 
-This will take a while. Good news is you just have to sit back and let it do it's magic.
+This will take a while. Good news is you just have to sit back and let it do its magic.
 
 
 ##### 4. Done!
@@ -57,7 +57,7 @@ You can now access these from your browser:
 - Hit `Ctrl+C` to turn off containers.
 - Type `docker-compose up` to start them up again.
 - You might want to run containers as daemon: `docker-compose up -d` and then read the logs only from "trustroots" container: `docker-compose logs trustroots`. You can use a helper script: `./scripts/docker/up.sh`
-- If you see a lot of `Run migrate DB script on update` coming from Nginx container, it means NodeJS isn't up yet or it has stopped due error. You should see "Trustroots server is up and running now." once Trustroots is really running.
+- If you see a lot of `Run migrate DB script on update` coming from Nginx container, it means NodeJS isn't up yet or it has stopped due tp errors. You should see "Trustroots server is up and running now." once Trustroots is really running.
 - Type `docker-compose build --no-cache trustroots` to rebuild them to have fresh install.
 - When you do changes to any files, they get recompiled and the browser is refreshed. If this step feels too slow for your needs, it's because of Docker. This step is faster on local [install](INSTALL.md) so you might want to consider that.
 - Keep an eye on console in case of compiling errors.

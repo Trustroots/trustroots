@@ -31,7 +31,7 @@ Install the stack on your localhost and run NodeJS. This approach takes a little
 
 ### Running with Docker
 
-If you are familiar with Docker this is the easiest and quickest way to get started. See [INSTALL-DOCKER.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL-DOCKER.md) for further details. Running through Docker can be a little bit slower.
+If you are familiar with Docker, this is the easiest and quickest way to get started. See [INSTALL-DOCKER.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL-DOCKER.md) for further details. Running through Docker can be a little bit slower.
 
 ## GitHub
 
@@ -42,7 +42,7 @@ The `master` branch is bleeding edge development. `production` is what's running
 
 ## Developer communication
 
-You can find us on Slack.  If that's too proprietary feel free to contact [Kasper](https://www.trustroots.org/profile/guaka) (kasper at trustroots dot org) or  [Mikael](https://www.trustroots.org/profile/mikael). You can also contact us for an invite without queuing.
+You can find us on Slack. If that's too proprietary feel free to contact [Kasper](https://www.trustroots.org/profile/guaka) (kasper at trustroots dot org) or [Mikael](https://www.trustroots.org/profile/mikael). You can also contact us for an invite without queuing.
 
 It's also great if you join the [hacker tribe](https://www.trustroots.org/tribes).
 
@@ -56,8 +56,7 @@ Trustroots was built on the meanjs.org version.
 ## Further reading
 
 - [Development](https://github.com/Trustroots/trustroots/wiki/Development) wiki page.
-- [INSTALL.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL.md) also contains good information about running 
-s and creating mock data. 
+- [INSTALL.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL.md) also contains good information about running and creating mock data. 
 
 ## License
 * [The MIT License](LICENSE.md)
