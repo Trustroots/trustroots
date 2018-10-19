@@ -84,7 +84,7 @@
           $httpBackend.flush();
 
           // Test $scope value
-          expect(Authentication.user).toEqual(undefined);
+          expect(Authentication.user).toEqual(null);
         });
 
       });
