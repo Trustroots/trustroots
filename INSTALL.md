@@ -9,7 +9,7 @@ Make sure you have installed all these prerequisites:
 * Unix operating system, like Linux or MacOS. If you use Windows, please look into [installing via Docker](INSTALL-DOCKER.md) instead.
 * [Git](https://git-scm.com/) (`git --version`, preinstalled on MacOS)
 * [Node.js](https://nodejs.org/en/download/) version 8 or 10 and the NPM v5+ (`node --version && npm --version`). We recommend managing Node.js versions using [NVM](https://github.com/creationix/nvm).
-* [MongoDB](http://www.mongodb.org/downloads) v3.4. [v3.6 won't work](https://github.com/Trustroots/trustroots/issues/597). (`mongod --version`).
+* [MongoDB](http://www.mongodb.org/downloads) v3.6 - 4.0. (`mongod --version`).
 * Some of the NPM modules require compiling native code, which might require installing X-Code's [Command line tools](https://railsapps.github.io/xcode-command-line-tools.html) on MacOS or `build-essential` and `make` on Linux. On MacOS you can install or confirm they're installed by running `xcode-select --install`
 * [GraphicsMagick](http://www.graphicsmagick.org/). In MacOS, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) to install it:
     ```bash
@@ -69,6 +69,22 @@ Agendash is a dashboard & inspector for [Agenda](https://github.com/agenda/agend
 
 [Agendash](https://github.com/joeframbach/agendash) (background job dashboard) at [localhost:1081](http://localhost:1081).
 
+## Debugging
+
+The standard node inspector runs on each start for the main app (port 5858) and the worker (port 5859).
+
+To debug using Chrome:
+
+1. Run 'npm start'
+2. Open `chrome://inspect/#devices`. Note the "Remote Target" list should be empty to start
+3. Press "Open dedicated DevTools for Node"
+4. Press "Add connection" and add both `localhost:5858` and `localhost:5859`
+5. They will now appear in "Remote Target" list
+6. Press 'inspect' on whichever process you want to debug
+7. You should now have console/profiler etc available.
+
+More information can be found in the NodeJS [debug documentation](https://nodejs.org/en/docs/guides/debugging-getting-started/).
+
 ## Running tests
 
 - `npm test` (both client & server)
@@ -81,11 +97,14 @@ To lint files, run `npm run lint`
 
 ## Mock data
 
-There's a script that can generate mock user data. It's highly recommended you run this script after installation, that way you'll have something to look at.
+There are scripts that generate mock user data, hosting offers, and tribes. It's highly recommended you run these scripts after installation, that way you'll have something to look at.
 
-1. Run `node scripts/fillTestData.js 1000 adminusername` — that will create 1000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
-2. It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
-3. To see the result, log in with your chosen username and password `password123`.
+1. Run `node scripts/fillTestTribesData.js 50` — This will create 50 tribes.
+    * Run this prior to adding users to add users to tribes automatically
+
+2. Run `node scripts/fillTestData.js 1000 adminusername` — This will create 1000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
+    * It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
+    * To see the result, log in with your chosen username and password `password123`.
 
 
 ## Clean database

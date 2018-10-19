@@ -142,15 +142,16 @@
       } else if (options.satellite) {
         // Satellite fallback: NASA Earth Data
         // @link https://earthdata.nasa.gov/about/science-system-description/eosdis-components/global-imagery-browse-services-gibs
-        // @link https://github.com/nasa-gibs/gibs-web-examples/blob/release/examples/leaflet/webmercator-epsg3857.js
+        // @link https://wiki.earthdata.nasa.gov/display/GIBS/GIBS+API+for+Developers#GIBSAPIforDevelopers-ServiceEndpointsandGetCapabilities
+        // @link https://github.com/nasa-gibs/gibs-web-examples/blob/master/examples/leaflet/webmercator-epsg3857.js
         layers.satellite = {
           name: 'Satellite',
           type: 'xyz',
-          url: '//map1{s}.vis.earthdata.nasa.gov/wmts-webmerc/{layer}/default/{time}/{tileMatrixSet}/{z}/{y}/{x}.jpg',
+          url: '//gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/{layer}/default/{time}/{tileMatrixSet}/{z}/{y}/{x}.jpg',
           layerOptions: {
-            layer: 'MODIS_Terra_CorrectedReflectance_TrueColor',
-            tileMatrixSet: 'GoogleMapsCompatible_Level13',
-            time: '2017-08-22',
+            layer: 'Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual',
+            tileMatrixSet: 'GoogleMapsCompatible_Level12',
+            time: '2009-08-22',
             subdomains: ['a', 'b', 'c'],
             attribution: '<a href="https://wiki.earthdata.nasa.gov/display/GIBS" target="_blank" rel="noopener">© NASA Earth Data</a>',
             noWrap: true,

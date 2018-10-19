@@ -36,7 +36,7 @@ describe('Configuration Tests:', function () {
       credentials = {
         username: 'helloworld',
         password: 'M3@n.jsI$Aw3$0m3'
-      }
+      };
 
       // Create a new user
       _user = {
@@ -163,7 +163,7 @@ describe('Configuration Tests:', function () {
 
     afterEach(function (done) {
       User.remove().exec(done);
-    })
+    });
 
   });
 

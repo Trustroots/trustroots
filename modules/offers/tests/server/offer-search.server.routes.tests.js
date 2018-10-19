@@ -937,7 +937,7 @@ describe('Offer search tests', function () {
   describe('Search offers by "seen" filter', function () {
 
     it('should be able to get list of offers from an area filtered by last seen', function (done) {
-      user2.seen = moment().subtract({ 'months': 2 }).toDate()
+      user2.seen = moment().subtract({ 'months': 2 }).toDate();
 
       user2.save(function (user2SaveErr) {
         if (user2SaveErr) {
