@@ -56,7 +56,8 @@ Trustroots was built on the meanjs.org version.
 ## Further reading
 
 - [Development](https://github.com/Trustroots/trustroots/wiki/Development) wiki page.
-- [INSTALL.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL.md) also contains good information about running and creating mock data. 
+- [INSTALL.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL.md) also contains good information about running 
+and creating mock data. 
 
 ## License
 * [The MIT License](LICENSE.md)
