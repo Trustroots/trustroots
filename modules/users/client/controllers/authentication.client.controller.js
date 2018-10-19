@@ -66,7 +66,7 @@
               delete $rootScope.signinStateParams;
               $state.go(stateTo, stateToParams);
             } else {
-            // Redirect to the search page
+              // Redirect to the search page
               $state.go('search.map');
             }
           },
