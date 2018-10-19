@@ -82,6 +82,7 @@
 
           AuthenticationController.signin();
           $httpBackend.flush();
+          $scope.$digest();
 
           // Test $scope value
           expect(Authentication.user).toBeNull();
