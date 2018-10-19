@@ -9,6 +9,18 @@ var // should = require('should'),
 
 describe('Create a reference', function () {
 
+  // user can leave a reference to anyone
+  //  - types of interaction
+  //  - recommend
+  //  - from whom
+  //  - to whom
+  // POST /references
+  // reference can't be modified or removed
+  // email notification will be sent to the receiver of the reference
+  // the receiver has some time to give a reference, too.
+  // after this time the only accepted answers are yes/ignore.
+  // after the given time or after both left reference, both references become public
+
   var user1,
       user2,
       user3Nonpublic;
@@ -52,18 +64,6 @@ describe('Create a reference', function () {
     provider: 'local'
   };
 
-  // user can leave a reference to anyone
-  //  - types of interaction
-  //  - recommend
-  //  - from whom
-  //  - to whom
-  // POST /references
-  // reference can't be modified or removed
-  // email notification will be sent to the receiver of the reference
-  // the receiver has some time to give a reference, too.
-  // after this time the only accepted answers are yes/ignore.
-  // after the given time or after both left reference, both references become public
-  //
   beforeEach(function (done) {
 
     user1 = new User(_user1);
