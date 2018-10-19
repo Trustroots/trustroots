@@ -16,7 +16,7 @@ exports.notifyPushDeviceAdded = function (user, platform, callback) {
   function platformVerbal(platform) {
     switch (platform) {
       case 'web':
-        return 'desktop'
+        return 'desktop';
       case 'expo':
         return 'mobile';
       case 'ios':
