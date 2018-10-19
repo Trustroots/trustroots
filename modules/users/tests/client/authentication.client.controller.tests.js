@@ -71,7 +71,7 @@
           expect(Authentication.user).toEqual('Fred');
         });
 
-        it('should fail to log in with nothing', function () {
+        it('should fail to log in with nothing', inject(function ($rootScope) {
 
           // Test expected POST request
           $httpBackend.expectPOST('/api/auth/signin').respond(400, {
@@ -82,11 +82,11 @@
 
           AuthenticationController.signin();
           $httpBackend.flush();
-          $scope.$digest();
+          $rootScope.$digest();
 
           // Test $scope value
           expect(Authentication.user).toBeNull();
-        });
+        }));
 
       });
 
