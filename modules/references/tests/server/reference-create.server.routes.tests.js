@@ -366,57 +366,32 @@ describe('Create a reference', function () {
         });
 
         it('send email notification to target user');
+        it('desktop notification');
       });
 
       context('reply reference', function () {
-        it('only positive recommendation is allowed when opposite-direction public reference exists');
 
         it('set both references as public', function (done) {
           async.waterfall([
-            // send request
+            // first create a non-public reference in the opposite direction
             function (cb) {
-              agent.post('/api/references')
-                .send({
-                  userTo: user2._id,
-                  met: true,
-                  hostedMe: true,
-                  hostedThem: true,
-                  recommend: 'yes'
-                })
-                .expect(201)
-                .end(function (err, response) {
-                  if (err) return cb(err);
-
-                  try {
-                    should(response).have.propertyByPath('body', 'public').equal(false);
-                    return cb();
-                  } catch (e) {
-                    return cb(e);
-                  }
-                });
-            },
-            // after, private reference should be found in the database
-            function (cb) {
-              Reference.findOne({ userFrom: user1._id, userTo: user2._id }).exec(function (err, reference) {
-                if (err) return cb(err);
-
-                try {
-                  should(reference).have.property('public', false);
-                  return cb();
-                } catch (e) {
-                  return cb(e);
-                }
+              var reference = new Reference({
+                userFrom: user2._id,
+                userTo: user1._id,
+                met: true,
+                recommend: 'no',
+                public: false
               });
-            },
-            // log in as the other user
-            function (cb) {
-              signIn({ username: _user2.username, password: _user2.password }, agent)(cb);
+
+              return reference.save(function (err) {
+                return cb(err);
+              });
             },
             // create the opposite direction reference
             function (cb) {
               agent.post('/api/references')
                 .send({
-                  userTo: user1._id,
+                  userTo: user2._id,
                   met: true,
                   hostedMe: true,
                   hostedThem: true,
@@ -436,7 +411,7 @@ describe('Create a reference', function () {
             },
             // after, both references should be found in the database and public
             function (cb) {
-              Reference.findOne({ userFrom: user1._id, userTo: user2._id }).exec(function (err, reference) {
+              Reference.findOne({ userFrom: user2._id, userTo: user1._id }).exec(function (err, reference) {
                 if (err) return cb(err);
 
                 try {
@@ -448,7 +423,7 @@ describe('Create a reference', function () {
               });
             },
             function (cb) {
-              Reference.findOne({ userFrom: user2._id, userTo: user1._id }).exec(function (err, reference) {
+              Reference.findOne({ userFrom: user1._id, userTo: user2._id }).exec(function (err, reference) {
                 if (err) return cb(err);
 
                 try {
@@ -462,7 +437,69 @@ describe('Create a reference', function () {
           ], done);
         });
 
+        it('only positive recommendation is allowed when opposite-direction public reference exists', function (done) {
+          async.waterfall([
+            // first create a public reference in the opposite direction
+            function (cb) {
+              var reference = new Reference({
+                userFrom: user2._id,
+                userTo: user1._id,
+                met: true,
+                recommend: 'no',
+                public: true
+              });
+
+              return reference.save(function (err) {
+                return cb(err);
+              });
+            },
+            // create a response reference with recommend: 'no'
+            // should fail
+            function (cb) {
+              agent.post('/api/references')
+                .send({
+                  userTo: user2._id,
+                  met: true,
+                  hostedMe: true,
+                  hostedThem: true,
+                  recommend: 'no'
+                })
+                .expect(400)
+                .end(function (err, response) {
+                  if (err) return cb(err);
+
+                  try {
+                    should(response).have.propertyByPath('body').match({
+                      message: 'Bad request.',
+                      detail: 'Only a positive recommendation is allowed in response to a public reference.'
+                    });
+                    return cb();
+                  } catch (e) {
+                    return cb(e);
+                  }
+                });
+            },
+            // create a response reference with recommend: 'yes'
+            // should succeed
+            function (cb) {
+              agent.post('/api/references')
+                .send({
+                  userTo: user2._id,
+                  met: true,
+                  hostedMe: true,
+                  hostedThem: true,
+                  recommend: 'yes'
+                })
+                .expect(201)
+                .end(function (err) {
+                  return cb(err);
+                });
+            }
+          ], done);
+        });
+
         it('send email notification (maybe)');
+        it('desktop notification');
       });
     });
 

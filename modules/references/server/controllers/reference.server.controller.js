@@ -58,6 +58,17 @@ function create(req, res, next) {
     // save the reference...
     function saveNewReference(otherReference, cb) {
 
+      // ... when the other reference is public, this one can only have value of recommend: yes ...
+      if (otherReference && otherReference.public && req.body.recommend !== 'yes') {
+        return cb({
+          status: 400,
+          body: {
+            errType: 'bad-request',
+            detail: 'Only a positive recommendation is allowed in response to a public reference.'
+          }
+        });
+      }
+
       // ...and make it public if it is a reference reply
       var reference = new Reference(_.merge(req.body, { userFrom: req.user._id, public: !!otherReference }));
 
