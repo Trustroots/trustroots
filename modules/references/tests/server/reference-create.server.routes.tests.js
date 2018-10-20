@@ -213,7 +213,7 @@ describe('Create a reference', function () {
 
         it('[duplicate reference (the same (from, to) combination)] 409 Conflict', function (done) {
           async.waterfall([
-            // send the first request
+            // send the first request and expect 201 Created
             function (cb) {
               agent.post('/api/references')
                 .send({
@@ -228,7 +228,7 @@ describe('Create a reference', function () {
                   cb(err);
                 });
             },
-            // send the second request
+            // send the second request and expect 409 Conflict
             function (cb) {
               agent.post('/api/references')
                 .send({
@@ -246,9 +246,33 @@ describe('Create a reference', function () {
           ], done);
         });
 
-        it('[creating a reference for self] 400');
+        it('[creating a reference for self] 400', function (done) {
+          agent.post('/api/references')
+            .send({
+              userTo: user1._id, // the same user as logged in user
+              met: false,
+              hostedMe: true,
+              hostedThem: false,
+              recommend: 'no'
+            })
+            .expect(400)
+            .end(function (err, response) {
+              if (err) done(err);
+
+              try {
+                should(response.body).match({
+                  message: 'Bad request.',
+                  detail: 'Reference to self.'
+                });
+                return done();
+              } catch (e) {
+                return done(e);
+              }
+            });
+        });
+
         it('[creating a reference for nonexistent user] 404');
-        it('[creating a reference for non-public user]');
+        it('[creating a reference for non-public user] 404');
       });
 
       context('initial reference', function () {

@@ -7,6 +7,15 @@ var mongoose = require('mongoose'),
     Reference = mongoose.model('Reference');
 
 function create(req, res) {
+
+  // Can't create a reference to oneself
+  if (req.user._id.toString() === req.body.userTo) {
+    return res.status(400).json({
+      message: errorService.getErrorMessageByKey('bad-request'),
+      detail: 'Reference to self.'
+    });
+  }
+
   var reference = new Reference(_.merge(req.body, { userFrom: req.user._id }));
 
   reference.save(function (err, savedReference) {
