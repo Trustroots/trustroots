@@ -150,17 +150,23 @@ function create(req, res, next) {
       if (otherReference && !otherReference.public) {
         otherReference.set({ public: true });
         return otherReference.save(function (err) {
-          return cb(err, savedReference);
+          return cb(err, savedReference, otherReference);
         });
       }
 
-      return cb(null, savedReference);
+      return cb(null, savedReference, otherReference);
     },
     // send email notification
-    function (savedReference, cb) {
-      emailService.sendReferenceNotificationFirst(req.user, userTo, function (err) {
-        return cb(err, savedReference);
-      });
+    function (savedReference, otherReference, cb) {
+      if (!otherReference) {
+        return emailService.sendReferenceNotificationFirst(req.user, userTo, function (err) {
+          cb(err, savedReference);
+        });
+      } else {
+        return emailService.sendReferenceNotificationSecond(req.user, userTo, savedReference, function (err) {
+          cb(err, savedReference);
+        });
+      }
     },
     // finally, respond
     function (savedReference, cb) {

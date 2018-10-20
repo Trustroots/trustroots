@@ -410,6 +410,21 @@ exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
 };
 
 /**
+ * Reference Notification (Second reference between users)
+ */
+exports.sendReferenceNotificationSecond = function (userFrom, userTo, reference, callback) {
+
+  var params = exports.addEmailBaseTemplateParams({
+    subject: 'New reference from ' + userFrom.username,
+    email: userTo.email,
+    seeReferencesUrl: url + '/profile/' + userTo.username + '/references',
+    recommend: reference.recommend
+  });
+
+  exports.renderEmailAndSend('reference-notification-second', params, callback);
+};
+
+/**
  * Add several parameters to be used to render transactional emails
  * These variables are used by email base template:
  * `modules/core/server/views/email-templates/email.server.view.html`

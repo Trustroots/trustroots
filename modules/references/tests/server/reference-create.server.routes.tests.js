@@ -5,7 +5,6 @@ var should = require('should'),
     async = require('async'),
     path = require('path'),
     sinon = require('sinon'),
-    _ = require('lodash'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
     Reference = mongoose.model('Reference'),
@@ -396,8 +395,10 @@ describe('Create a reference', function () {
                 should(jobs[0].data.subject).equal('New reference from ' + user1.username);
                 should(jobs[0].data.to.address).equal(user2.email);
                 // @TODO add the right link
-                should(jobs[0].data.text).match(new RegExp(_.escapeRegExp('/profile/' + user1.username + '/references/new')));
-                should(jobs[0].data.html).match(new RegExp(_.escapeRegExp('/profile/' + user1.username + '/references/new')));
+                should(jobs[0].data.text)
+                  .containEql('/profile/' + user1.username + '/references/new');
+                should(jobs[0].data.html)
+                  .containEql('/profile/' + user1.username + '/references/new');
 
                 return done();
               } catch (e) {
@@ -538,7 +539,64 @@ describe('Create a reference', function () {
           ], done);
         });
 
-        it('send email notification (maybe)');
+        it('send email notification about the received reference', function (done) {
+          try {
+            should(jobs.length).equal(0);
+          } catch (e) {
+            return done(e);
+          }
+
+          async.waterfall([
+            // first create a reference in the opposite direction
+            function (cb) {
+              var reference = new Reference({
+                userFrom: user2._id,
+                userTo: user1._id,
+                met: true,
+                recommend: 'no'
+              });
+
+              return reference.save(function (err) {
+                return cb(err);
+              });
+            },
+            function (cb) {
+              agent.post('/api/references')
+                .send({
+                  userTo: user2._id,
+                  met: true,
+                  hostedMe: true,
+                  hostedThem: true,
+                  recommend: 'yes'
+                })
+                .expect(201)
+                .end(function (err) {
+                  if (err) return cb(err);
+
+                  try {
+                    should(jobs.length).equal(1);
+                    should(jobs[0].type).equal('send email');
+                    // @TODO design the email (subject, body, ...)
+                    should(jobs[0].data.subject).equal('New reference from ' + user1.username);
+                    should(jobs[0].data.to.address).equal(user2.email);
+                    // @TODO add the right link
+                    // this is a link to the own references - see my references
+                    // because I already gave a reference
+                    should(jobs[0].data.text)
+                      .containEql('/profile/' + user2.username + '/references');
+                    should(jobs[0].data.html)
+                      .containEql('/profile/' + user2.username + '/references');
+
+                    return cb();
+                  } catch (e) {
+                    return cb(e);
+                  }
+                });
+            }
+          ], done);
+
+        });
+
         it('desktop notification');
       });
     });
