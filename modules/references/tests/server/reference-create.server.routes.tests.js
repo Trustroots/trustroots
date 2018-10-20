@@ -91,7 +91,9 @@ describe('Create a reference', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(done);
+    Reference.remove().exec(function () {
+      User.remove().exec(done);
+    });
   });
 
   /**
@@ -209,7 +211,41 @@ describe('Create a reference', function () {
         });
 
 
-        it('[duplicate reference (the same (from, to) combination)] 409 Conflict');
+        it('[duplicate reference (the same (from, to) combination)] 409 Conflict', function (done) {
+          async.waterfall([
+            // send the first request
+            function (cb) {
+              agent.post('/api/references')
+                .send({
+                  userTo: user2._id,
+                  met: true,
+                  hostedMe: true,
+                  hostedThem: true,
+                  recommend: 'yes'
+                })
+                .expect(201)
+                .end(function (err) {
+                  cb(err);
+                });
+            },
+            // send the second request
+            function (cb) {
+              agent.post('/api/references')
+                .send({
+                  userTo: user2._id,
+                  met: false,
+                  hostedMe: true,
+                  hostedThem: false,
+                  recommend: 'no'
+                })
+                .expect(409)
+                .end(function (err) {
+                  cb(err);
+                });
+            }
+          ], done);
+        });
+
         it('[creating a reference for self] 400');
         it('[creating a reference for nonexistent user] 404');
         it('[creating a reference for non-public user]');
@@ -221,7 +257,7 @@ describe('Create a reference', function () {
       });
 
       context('reply reference', function () {
-        it('[late] only positive recommendation is allowed');
+        it('[late] only positive recommendation is allowed when opposite-direction public reference exists');
         it('set both references as public');
         it('send email notification (maybe)');
       });
