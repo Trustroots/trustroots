@@ -11,11 +11,6 @@ var random = function (max) {
   return Math.floor(Math.random() * max);
 };
 
-// var addMonths = function addMonths(date, months) {
-//   date.setMonth(date.getMonth() + months);
-//   return date;
-// };
-
 var addDays = function addDays(date, days) {
   var result = new Date(date);
   result.setDate(result.getDate() + days);
