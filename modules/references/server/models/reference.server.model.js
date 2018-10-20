@@ -13,7 +13,7 @@ var mongoose = require('mongoose'),
 var ReferenceSchema = new Schema({
   created: {
     type: Date,
-    default: Date.now,
+    default: function () { return Date.now(); }, // Date.now is wrapped for sinon.useFakeTimers()
     required: true
   },
   /*
@@ -24,7 +24,7 @@ var ReferenceSchema = new Schema({
   */
   public: {
     type: Boolean,
-    default: true,
+    default: false,
     required: true
   },
   userFrom: {
@@ -42,12 +42,12 @@ var ReferenceSchema = new Schema({
     default: false,
     required: true
   },
-  hosted_me: {
+  hostedMe: {
     type: Boolean,
     default: false,
     required: true
   },
-  hosted_them: {
+  hostedThem: {
     type: Boolean,
     default: false,
     required: true

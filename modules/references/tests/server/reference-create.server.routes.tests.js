@@ -1,10 +1,13 @@
 'use strict';
 
-var // should = require('should'),
+var should = require('should'),
     request = require('supertest'),
+    async = require('async'),
     path = require('path'),
+    sinon = require('sinon'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
+    Reference = mongoose.model('Reference'),
     express = require(path.resolve('./config/lib/express'));
 
 describe('Create a reference', function () {
@@ -64,6 +67,14 @@ describe('Create a reference', function () {
     provider: 'local'
   };
 
+  beforeEach(function () {
+    sinon.useFakeTimers({ now: 1500000000000, toFake: ['Date'] });
+  });
+
+  afterEach(function () {
+    sinon.restore();
+  });
+
   beforeEach(function (done) {
 
     user1 = new User(_user1);
@@ -120,7 +131,11 @@ describe('Create a reference', function () {
         it('respond with 201 Created and the new reference in body', function (done) {
           agent.post('/api/references')
             .send({
-
+              userTo: user2._id,
+              met: true,
+              hostedMe: true,
+              hostedThem: true,
+              recommend: 'yes'
             })
             .expect(201)
             .end(function (err, res) {
@@ -128,14 +143,72 @@ describe('Create a reference', function () {
                 return done(err);
               }
 
-              res;
-              // @TODO unfinished test!!
+              should(res.body).match({
+                public: false,
+                userFrom: user1._id.toString(),
+                userTo: user2._id.toString(),
+                created: Date.now(),
+                met: true,
+                hostedMe: true,
+                hostedThem: true,
+                recommend: 'yes'
+              });
+
+              should(res.body).have.property('id').match(/^[0-9a-f]{24}$/);
 
               return done();
             });
         });
 
-        it('save reference to database with proper fields');
+        it('save reference to database', function (done) {
+          async.waterfall([
+            // before, reference shouldn't be found in the database
+            function (cb) {
+              Reference.find({ userFrom: user1._id, userTo: user2._id }).exec(cb);
+            },
+            function (references, cb) {
+              try {
+                should(references).have.length(0);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            },
+            // send request
+            function (cb) {
+              agent.post('/api/references')
+                .send({
+                  userTo: user2._id,
+                  met: true,
+                  hostedMe: true,
+                  hostedThem: true,
+                  recommend: 'yes'
+                })
+                .expect(201)
+                .end(function (err) {
+                  cb(err);
+                });
+            },
+            // after, reference should be found in the database
+            function (cb) {
+              Reference.find({ userFrom: user1._id, userTo: user2._id }).exec(cb);
+            },
+            function (references, cb) {
+              try {
+                should(references).have.length(1);
+                should(references[0]).match({
+                  userFrom: user1._id,
+                  userTo: user2._id
+                });
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            }
+          ], done);
+        });
+
+
         it('[duplicate reference between these people] 409 Conflict');
         it('[sending a reference to self] 400');
         it('[sending a reference to nonexistent user] 404');
@@ -160,6 +233,7 @@ describe('Create a reference', function () {
       it('[invalid receiver id] 400');
       it('[missing fields] 400');
       it('[unexpected fields] 400');
+      it('[all interaction types false] 400');
     });
   });
 

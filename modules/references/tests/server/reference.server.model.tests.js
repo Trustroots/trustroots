@@ -42,8 +42,8 @@ describe('Reference Model Unit Tests', function () {
         userFrom: user1._id,
         userTo: user2._id,
         met: true,
-        hosted_me: true,
-        hosted_them: false,
+        hostedMe: true,
+        hostedThem: false,
         recommend: 'no'
       });
 
@@ -51,8 +51,8 @@ describe('Reference Model Unit Tests', function () {
         userFrom: user2._id,
         userTo: user1._id,
         met: true,
-        hosted_me: false,
-        hosted_them: true,
+        hostedMe: false,
+        hostedThem: true,
         recommend: 'yes'
       });
 
@@ -78,8 +78,8 @@ describe('Reference Model Unit Tests', function () {
         userFrom: user1._id,
         userTo: user2._id,
         met: true,
-        hosted_me: true,
-        hosted_them: false,
+        hostedMe: true,
+        hostedThem: false,
         recommend: 'no'
       });
 
@@ -87,8 +87,8 @@ describe('Reference Model Unit Tests', function () {
         userFrom: user1._id,
         userTo: user3._id,
         met: true,
-        hosted_me: false,
-        hosted_them: true,
+        hostedMe: false,
+        hostedThem: true,
         recommend: 'yes'
       });
 
@@ -109,13 +109,13 @@ describe('Reference Model Unit Tests', function () {
       });
     });
 
-    it('show error when saving invalid values of \'met\', \'recommend\', \'hosted_me\', \'hosted_them\'', function (done) {
+    it('show error when saving invalid values of \'met\', \'recommend\', \'hostedMe\', \'hostedThem\'', function (done) {
       var reference = new Reference({
         userFrom: user1._id,
         userTo: user2._id,
         met: 'foo',
-        hosted_me: 'foolme',
-        hosted_them: 'foolthem',
+        hostedMe: 'foolme',
+        hostedThem: 'foolthem',
         recommend: 'bar'
       });
 
@@ -124,8 +124,8 @@ describe('Reference Model Unit Tests', function () {
           should.exist(err);
           should(err).match({ errors: {
             met: { value: 'foo', kind: 'Boolean' },
-            hosted_me: { value: 'foolme', kind: 'Boolean' },
-            hosted_them: { value: 'foolthem', kind: 'Boolean' },
+            hostedMe: { value: 'foolme', kind: 'Boolean' },
+            hostedThem: { value: 'foolthem', kind: 'Boolean' },
             recommend: { value: 'bar', kind: 'enum' }
           } });
         } catch (e) {
@@ -156,7 +156,6 @@ describe('Reference Model Unit Tests', function () {
         reference2.save(function (err) {
           try {
             should.exist(err);
-            console.log(err);
             should(err).have.property('errors').match({
               userFrom: { kind: 'unique' },
               userTo: { kind: 'unique' }
