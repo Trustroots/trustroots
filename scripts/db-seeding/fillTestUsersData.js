@@ -72,7 +72,7 @@ var addUsers = function (max, adminUsers) {
     if (max > 2000) {
       console.log('...this might really take a while... go grab some coffee!');
     }
-  }
+  };
 
   if (numAdminUsers === 0) {
     printWarning();
@@ -189,7 +189,7 @@ var addUsers = function (max, adminUsers) {
       });
     });
   });
-} // addUsers()
+}; // addUsers()
 
 // Number of users is required
 if (process.argv[2] == null) {

@@ -20,8 +20,7 @@ var addDays = function addDays(date, days) {
   var result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
-}
-
+};
 
 var addThreads = function (numThreads, maxMessages) {
   var index = 0;
@@ -144,7 +143,7 @@ var addThreads = function (numThreads, maxMessages) {
         console.log(err);
       });
     });
-  })
+  });
 };
 
 // Number of threads and max number of messages is required
