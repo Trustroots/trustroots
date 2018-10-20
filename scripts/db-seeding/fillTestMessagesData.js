@@ -61,12 +61,9 @@ var addThreads = function (numThreads, maxMessages) {
           var messageThread = new Thread;
           var threadSize = random(maxMessages) + 1;
 
-          console.log('Adding ' + threadSize + ' messages');
-
           (function addNextMessage(depth, to, from) {
             var message = new Message();
 
-            console.log('Adding single message');
             message.created = addDays(Date.now(), -depth);
             message.content = faker.lorem.sentences();
 
