@@ -42,17 +42,17 @@ npm start
 
 #### Good to know
 
-- Run the app by typing `npm start`
-- Stop the app by hitting `Ctrl+C`
+- Run the app by typing `npm start`.
+- Stop the app by hitting `Ctrl+C`.
 - To skip checking Bower modules on start (useful if you're offline), type `npm run start:skipBower`
 - When you change any file, they get recompiled and the browser is refreshed.
-- Keep an eye on console in case of compiling errors.
-- [Read more](https://github.com/Trustroots/trustroots/wiki/Development)
-- You can start clean by running `npm run distclean && npm run dropdb`
+- Keep an eye on the console in case of compiling errors.
+- [Read more](https://github.com/Trustroots/trustroots/wiki/Development).
+- You can start clean by running `npm run distclean && npm run dropdb`.
 
 ## Modifying configurations
 
-Add any configurations you want to keep out of version control to `config/env/local.js` file. It's created for you on first start and overrides anything in `config/env/local.js`
+Add any configurations you want to keep out of version control to `config/env/local.js` file. It's created for you on the first start and overrides anything in `config/env/local.js`.
 
 
 ## Running services
@@ -120,15 +120,15 @@ npm run dropdb
 
 2. Go to [FCM console](https://console.firebase.google.com/) and create a new project
 
-3. Open the project and hit small gear next to "Overview" at the sidebar so that you get to "project settings" page
+3. Open the project and hit the small gear next to "Overview" at the sidebar so that you get to "project settings" page
 
-4. Choose choose "Cloud messaging" tab, copy "Sender ID" number
+4. Choose "Cloud messaging" tab, copy "Sender ID" number
 
-5. Choose choose "Service accounts" tab
+5. Choose "Service accounts" tab
 
-6. Either "create new service account" via "Manage all service accounts" link or choose existing one from the list (for development "Firebase Admin SDK" account is fine)
+6. Either "create new service account" via "Manage all service accounts" link or choose existing one from the list (for development, "Firebase Admin SDK" account is fine)
 
-7. "Generate new private key" button
+7. Click on the "Generate new private key" button
 
 8. Choose "json" format and you'll get a file to download
 
@@ -141,7 +141,7 @@ npm run dropdb
     },
     ```
 
-10. To stop eslint complaining, you might need to convert double quotes to single quotes. (`"` → `'`)
+10. To stop eslint from complaining, you might need to convert double quotes to single quotes. (`"` → `'`)
 
 
 ## Enable collecting statistics to InfluxDB (optional)
