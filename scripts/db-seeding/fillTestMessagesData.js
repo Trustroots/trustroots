@@ -59,7 +59,7 @@ var addThreads = function (numThreads, maxMessages) {
           (function addNextMessage(depth, to, from) {
             var message = new Message();
 
-            message.created = addDays(Date.now(), -depth);
+            message.created = addDays(Date.now(), -depth + 1);
             message.content = faker.lorem.sentences();
 
             // Randomize indecies
