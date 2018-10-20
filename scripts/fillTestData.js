@@ -29,7 +29,7 @@ sequenceScriptsPromise.then(function () {
     });
   });
 }).then(function () {
-  var messages = exec('node ./scripts/db-seeding/fillTestMessagesData.js 1000');
+  var messages = exec('node ./scripts/db-seeding/fillTestMessagesData.js 2000 10');
   messages.stdout.on('data', function (data) {
     console.log(data);
   });
