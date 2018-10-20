@@ -5,9 +5,11 @@ var should = require('should'),
     async = require('async'),
     path = require('path'),
     sinon = require('sinon'),
+    _ = require('lodash'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
     Reference = mongoose.model('Reference'),
+    testutils = require(path.resolve('./testutils/server.testutil')),
     express = require(path.resolve('./config/lib/express'));
 
 describe('Create a reference', function () {
@@ -23,6 +25,9 @@ describe('Create a reference', function () {
   // the receiver has some time to give a reference, too.
   // after this time the only accepted answers are yes/ignore.
   // after the given time or after both left reference, both references become public
+
+  // we'll catch email notifications
+  var jobs = testutils.catchJobs();
 
   var user1,
       user2,
@@ -365,7 +370,42 @@ describe('Create a reference', function () {
           ], done);
         });
 
-        it('send email notification to target user');
+        it('send email notification to target user', function (done) {
+          try {
+            should(jobs.length).equal(0);
+          } catch (e) {
+            return done(e);
+          }
+
+          agent.post('/api/references')
+            .send({
+              userTo: user2._id,
+              met: true,
+              hostedMe: true,
+              hostedThem: true,
+              recommend: 'yes'
+            })
+            .expect(201)
+            .end(function (err) {
+              if (err) return done(err);
+
+              try {
+                should(jobs.length).equal(1);
+                should(jobs[0].type).equal('send email');
+                // @TODO design the email (subject, body, ...)
+                should(jobs[0].data.subject).equal('New reference from ' + user1.username);
+                should(jobs[0].data.to.address).equal(user2.email);
+                // @TODO add the right link
+                should(jobs[0].data.text).match(new RegExp(_.escapeRegExp('/profile/' + user1.username + '/references/new')));
+                should(jobs[0].data.html).match(new RegExp(_.escapeRegExp('/profile/' + user1.username + '/references/new')));
+
+                return done();
+              } catch (e) {
+                return done(e);
+              }
+            });
+        });
+
         it('desktop notification');
       });
 

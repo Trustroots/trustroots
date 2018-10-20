@@ -5,6 +5,7 @@ var mongoose = require('mongoose'),
     path = require('path'),
     async = require('async'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
+    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     Reference = mongoose.model('Reference'),
     User = mongoose.model('User');
 
@@ -62,6 +63,8 @@ function validateCreate(req) {
 
 function create(req, res, next) {
 
+  var userTo; // not to have to pass found user in callbacks
+
   return async.waterfall([
     // Synchronous validation of the request data consistency
     function validation(cb) {
@@ -75,8 +78,10 @@ function create(req, res, next) {
     },
     // Check if the receiver of the reference exists and is public
     function isUserToPublic(cb) {
-      User.findOne({ _id: req.body.userTo }).exec(function (err, userTo) {
+      User.findOne({ _id: req.body.userTo }).exec(function (err, foundUser) {
         if (err) return cb(err);
+
+        userTo = foundUser;
 
         // Can't create a reference to a nonexistent user
         // Can't create a reference to a nonpublic user
@@ -150,6 +155,12 @@ function create(req, res, next) {
       }
 
       return cb(null, savedReference);
+    },
+    // send email notification
+    function (savedReference, cb) {
+      emailService.sendReferenceNotificationFirst(req.user, userTo, function (err) {
+        return cb(err, savedReference);
+      });
     },
     // finally, respond
     function (savedReference, cb) {
