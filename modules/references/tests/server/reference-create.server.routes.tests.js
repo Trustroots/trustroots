@@ -271,8 +271,55 @@ describe('Create a reference', function () {
             });
         });
 
-        it('[creating a reference for nonexistent user] 404');
-        it('[creating a reference for non-public user] 404');
+        it('[creating a reference for nonexistent user] 404', function (done) {
+          agent.post('/api/references')
+            .send({
+              userTo: '0'.repeat(24), // nonexistent user id
+              met: false,
+              hostedMe: true,
+              hostedThem: false,
+              recommend: 'no'
+            })
+            .expect(404)
+            .end(function (err, response) {
+              if (err) return done(err);
+
+              try {
+                should(response.body).match({
+                  message: 'Not found.',
+                  detail: 'User not found.'
+                });
+                return done();
+              } catch (e) {
+                return done(e);
+              }
+            });
+        });
+
+        it('[creating a reference for non-public user] 404', function (done) {
+          agent.post('/api/references')
+            .send({
+              userTo: user3Nonpublic._id, // non-public user id
+              met: false,
+              hostedMe: true,
+              hostedThem: false,
+              recommend: 'no'
+            })
+            .expect(404)
+            .end(function (err, response) {
+              if (err) return done(err);
+
+              try {
+                should(response.body).match({
+                  message: 'Not found.',
+                  detail: 'User not found.'
+                });
+                return done();
+              } catch (e) {
+                return done(e);
+              }
+            });
+        });
       });
 
       context('initial reference', function () {
