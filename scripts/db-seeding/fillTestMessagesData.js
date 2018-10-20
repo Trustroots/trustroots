@@ -53,6 +53,11 @@ var addThreads = function (numThreads, maxMessages) {
 
       getUsers.then(function (users) {
 
+        if (users.length < 2) {
+          console.log('Error: At least 2 users must exist to create message threads. Please create more users and run again');
+          process.exit(1);
+        }
+
         (function addNextMessageThread() {
           var messageThread = new Thread;
           var threadSize = random(maxMessages) + 1;
@@ -90,7 +95,7 @@ var addThreads = function (numThreads, maxMessages) {
             } else {
               message.read = false;
             }
-            
+
             message.notificationCount = 0;
 
             message.save(function (err) {
