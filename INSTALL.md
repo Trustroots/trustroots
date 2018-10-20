@@ -99,7 +99,7 @@ To lint files, run `npm run lint`
 
 There is a data script that the individual mock data scripts with default values to generate mock user data, hosting offers, messages and tribes. It's highly recommended you run this script after installation, that way you'll have something to look at.
 
-Run `node fillTestData.js` - This will add automatically add:
+Run `node scripts/fillTestData.js` - This will add automatically add:
 
 * 100 tribes
 * 1000 users including 3 users with user names of `admin1`, `admin2`, `admin3` each with the password of `password123`
