@@ -264,7 +264,7 @@ describe('Create a reference', function () {
               try {
                 should(response.body).match({
                   message: 'Bad request.',
-                  detail: 'Reference to self.'
+                  details: ['Reference to self.']
                 });
                 return done();
               } catch (e) {
@@ -471,7 +471,7 @@ describe('Create a reference', function () {
                   try {
                     should(response).have.propertyByPath('body').match({
                       message: 'Bad request.',
-                      detail: 'Only a positive recommendation is allowed in response to a public reference.'
+                      details: ['Only a positive recommendation is allowed in response to a public reference.']
                     });
                     return cb();
                   } catch (e) {
@@ -504,12 +504,146 @@ describe('Create a reference', function () {
     });
 
     context('invalid request', function () {
-      it('[invalid value in interaction types] 400');
-      it('[invalid recommendation] 400');
-      it('[invalid receiver id] 400');
-      it('[missing fields] 400');
-      it('[unexpected fields] 400');
-      it('[all interaction types false] 400');
+      it('[invalid value in interaction types] 400', function (done) {
+        agent.post('/api/references')
+          .send({
+            userTo: user2._id,
+            met: 'met',
+            hostedMe: false,
+            recommend: 'unknown'
+          })
+          .expect(400)
+          .end(function (err, response) {
+            if (err) return done(err);
+
+            try {
+              should(response.body).match({
+                message: 'Bad request.',
+                details: ['Value of \'met\' should be a boolean.']
+              });
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          });
+      });
+
+      it('[invalid recommendation] 400', function (done) {
+        agent.post('/api/references')
+          .send({
+            userTo: user2._id,
+            met: true,
+            hostedMe: false,
+            recommend: 'invalid'
+          })
+          .expect(400)
+          .end(function (err, response) {
+            if (err) return done(err);
+
+            try {
+              should(response.body).match({
+                message: 'Bad request.',
+                details: ['Invalid recommendation.']
+              });
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          });
+      });
+
+      it('[invalid userTo] 400', function (done) {
+        agent.post('/api/references')
+          .send({
+            userTo: 'hello',
+            hostedMe: true,
+            recommend: 'yes'
+          })
+          .expect(400)
+          .end(function (err, response) {
+            if (err) return done(err);
+
+            try {
+              should(response.body).match({
+                message: 'Bad request.',
+                details: ['Value of userTo must be a user id.']
+              });
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          });
+      });
+
+      it('[missing userTo] 400', function (done) {
+        agent.post('/api/references')
+          .send({
+            hostedMe: true,
+            recommend: 'yes'
+          })
+          .expect(400)
+          .end(function (err, response) {
+            if (err) return done(err);
+
+            try {
+              should(response.body).match({
+                message: 'Bad request.',
+                details: ['Missing userTo.']
+              });
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          });
+      });
+
+      it('[unexpected fields] 400', function (done) {
+        agent.post('/api/references')
+          .send({
+            userTo: user2._id,
+            hostedMe: true,
+            recommend: 'yes',
+            foo: 'bar'
+          })
+          .expect(400)
+          .end(function (err, response) {
+            if (err) return done(err);
+
+            try {
+              should(response.body).match({
+                message: 'Bad request.',
+                details: ['Unexpected fields.']
+              });
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          });
+      });
+
+      it('[all interaction types false or missing] 400', function (done) {
+        agent.post('/api/references')
+          .send({
+            userTo: user2._id,
+            met: false,
+            hostedMe: false,
+            recommend: 'yes'
+          })
+          .expect(400)
+          .end(function (err, response) {
+            if (err) return done(err);
+
+            try {
+              should(response.body).match({
+                message: 'Bad request.',
+                details: ['No interaction.']
+              });
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          });
+      });
     });
   });
 

@@ -8,25 +8,70 @@ var mongoose = require('mongoose'),
     Reference = mongoose.model('Reference'),
     User = mongoose.model('User');
 
+function validateCreate(req) {
+  var valid = true;
+  var details = [];
+
+  // Can't create a reference to oneself
+  if (req.user._id.toString() === req.body.userTo) {
+    valid = false;
+    details.push('Reference to self.');
+  }
+
+  // Some interaction must have happened
+  var isInteraction = req.body.met || req.body.hostedMe || req.body.hostedThem;
+  if (!isInteraction) {
+    valid = false;
+    details.push('No interaction.');
+  }
+
+  // Value of 'recommend' must be valid ('yes', 'no', 'unknown')
+  if (req.body.recommend && !['yes', 'no', 'unknown'].includes(req.body.recommend)) {
+    valid = false;
+    details.push('Invalid recommendation.');
+  }
+
+  // Values of interactions must be boolean
+  ['met', 'hostedMe', 'hostedThem'].forEach(function (interaction) {
+    if (req.body.hasOwnProperty(interaction) && typeof req.body[interaction] !== 'boolean') {
+      valid = false;
+      details.push('Value of \'' + interaction + '\' should be a boolean.');
+    }
+  });
+
+  // Value of userTo must exist and be a UserId
+  if (!req.body.hasOwnProperty('userTo')) {
+    valid = false;
+    details.push('Missing userTo.');
+  } else if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
+    valid = false;
+    details.push('Value of userTo must be a user id.');
+  }
+
+  // No unexpected fields
+  var allowedFields = ['userTo', 'met', 'hostedMe', 'hostedThem', 'recommend'];
+  var fields = Object.keys(req.body);
+  var unexpectedFields = _.difference(fields, allowedFields);
+  if (unexpectedFields.length > 0) {
+    valid = false;
+    details.push('Unexpected fields.');
+  }
+
+  return { valid: valid, details: details };
+}
+
 function create(req, res, next) {
 
   return async.waterfall([
-    // Synchronous validation of the data consistency
+    // Synchronous validation of the request data consistency
     function validation(cb) {
-      // Can't create a reference to oneself
-      var valid = true;
-      var detail = '';
+      var validation = validateCreate(req);
 
-      if (req.user._id.toString() === req.body.userTo) {
-        valid = false;
-        detail = 'Reference to self.';
-      }
-
-      if (valid) {
+      if (validation.valid) {
         return cb();
       }
 
-      return cb({ status: 400, body: { errType: 'bad-request', detail: detail } });
+      return cb({ status: 400, body: { errType: 'bad-request', details: validation.details } });
     },
     // Check if the receiver of the reference exists and is public
     function isUserToPublic(cb) {
@@ -64,7 +109,7 @@ function create(req, res, next) {
           status: 400,
           body: {
             errType: 'bad-request',
-            detail: 'Only a positive recommendation is allowed in response to a public reference.'
+            details: ['Only a positive recommendation is allowed in response to a public reference.']
           }
         });
       }
@@ -76,10 +121,10 @@ function create(req, res, next) {
 
         // manage errors
         if (err) {
-          var isConflict = err.errors && err.errors.userFrom && err.errors.userTo &&
-            err.errors.userFrom.kind === 'unique' && err.errors.userTo.kind === 'unique';
 
           // conflict
+          var isConflict = err.errors && err.errors.userFrom && err.errors.userTo &&
+            err.errors.userFrom.kind === 'unique' && err.errors.userTo.kind === 'unique';
           if (isConflict) {
             return cb({
               status: 409,
