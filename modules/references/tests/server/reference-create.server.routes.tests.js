@@ -91,8 +91,8 @@ describe('Create a reference', function () {
   });
 
   afterEach(function (done) {
-    Reference.remove().exec(function () {
-      User.remove().exec(done);
+    Reference.deleteMany().exec(function () {
+      User.deleteMany().exec(done);
     });
   });
 
@@ -106,7 +106,9 @@ describe('Create a reference', function () {
       agent.post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(done);
+        .end(function (err) {
+          return done(err);
+        });
     };
   }
 
@@ -323,13 +325,143 @@ describe('Create a reference', function () {
       });
 
       context('initial reference', function () {
-        it('the reference is private');
+        it('the reference is saved as private', function (done) {
+          async.waterfall([
+            // send request
+            function (cb) {
+              agent.post('/api/references')
+                .send({
+                  userTo: user2._id,
+                  met: true,
+                  hostedMe: true,
+                  hostedThem: true,
+                  recommend: 'yes'
+                })
+                .expect(201)
+                .end(function (err, response) {
+                  if (err) return cb(err);
+
+                  try {
+                    should(response).have.propertyByPath('body', 'public').equal(false);
+                    return cb();
+                  } catch (e) {
+                    return cb(e);
+                  }
+                });
+            },
+            // after, reference should be found in the database
+            function (cb) {
+              Reference.findOne({ userFrom: user1._id, userTo: user2._id }).exec(function (err, reference) {
+                if (err) return cb(err);
+
+                try {
+                  should(reference).have.property('public', false);
+                  return cb();
+                } catch (e) {
+                  return cb(e);
+                }
+              });
+            }
+          ], done);
+        });
+
         it('send email notification to target user');
       });
 
       context('reply reference', function () {
-        it('[late] only positive recommendation is allowed when opposite-direction public reference exists');
-        it('set both references as public');
+        it('only positive recommendation is allowed when opposite-direction public reference exists');
+
+        it('set both references as public', function (done) {
+          async.waterfall([
+            // send request
+            function (cb) {
+              agent.post('/api/references')
+                .send({
+                  userTo: user2._id,
+                  met: true,
+                  hostedMe: true,
+                  hostedThem: true,
+                  recommend: 'yes'
+                })
+                .expect(201)
+                .end(function (err, response) {
+                  if (err) return cb(err);
+
+                  try {
+                    should(response).have.propertyByPath('body', 'public').equal(false);
+                    return cb();
+                  } catch (e) {
+                    return cb(e);
+                  }
+                });
+            },
+            // after, private reference should be found in the database
+            function (cb) {
+              Reference.findOne({ userFrom: user1._id, userTo: user2._id }).exec(function (err, reference) {
+                if (err) return cb(err);
+
+                try {
+                  should(reference).have.property('public', false);
+                  return cb();
+                } catch (e) {
+                  return cb(e);
+                }
+              });
+            },
+            // log in as the other user
+            function (cb) {
+              signIn({ username: _user2.username, password: _user2.password }, agent)(cb);
+            },
+            // create the opposite direction reference
+            function (cb) {
+              agent.post('/api/references')
+                .send({
+                  userTo: user1._id,
+                  met: true,
+                  hostedMe: true,
+                  hostedThem: true,
+                  recommend: 'yes'
+                })
+                .expect(201)
+                .end(function (err, response) {
+                  if (err) return cb(err);
+
+                  try {
+                    should(response).have.propertyByPath('body', 'public').equal(true);
+                    return cb();
+                  } catch (e) {
+                    return cb(e);
+                  }
+                });
+            },
+            // after, both references should be found in the database and public
+            function (cb) {
+              Reference.findOne({ userFrom: user1._id, userTo: user2._id }).exec(function (err, reference) {
+                if (err) return cb(err);
+
+                try {
+                  should(reference).have.property('public', true);
+                  return cb();
+                } catch (e) {
+                  return cb(e);
+                }
+              });
+            },
+            function (cb) {
+              Reference.findOne({ userFrom: user2._id, userTo: user1._id }).exec(function (err, reference) {
+                if (err) return cb(err);
+
+                try {
+                  should(reference).have.property('public', true);
+                  return cb();
+                } catch (e) {
+                  return cb(e);
+                }
+              });
+            }
+          ], done);
+        });
+
         it('send email notification (maybe)');
       });
     });

@@ -48,10 +48,18 @@ function create(req, res, next) {
         return cb();
       });
     },
-    // save the reference
-    function saveNewReference(cb) {
+    // Check if the opposite direction reference exists
+    // when it exists, we want to make both references public
+    function getOtherReference(cb) {
+      Reference.findOne({ userFrom: req.body.userTo, userTo: req.user._id }).exec(function (err, ref) {
+        cb(err, ref);
+      });
+    },
+    // save the reference...
+    function saveNewReference(otherReference, cb) {
 
-      var reference = new Reference(_.merge(req.body, { userFrom: req.user._id }));
+      // ...and make it public if it is a reference reply
+      var reference = new Reference(_.merge(req.body, { userFrom: req.user._id, public: !!otherReference }));
 
       reference.save(function (err, savedReference) {
 
@@ -72,20 +80,36 @@ function create(req, res, next) {
           return cb(err);
         }
 
-        return cb({
-          status: 201,
-          body: {
-            userFrom: savedReference.userFrom,
-            userTo: savedReference.userTo,
-            recommend: savedReference.recommend,
-            created: savedReference.created.getTime(),
-            met: savedReference.met,
-            hostedMe: savedReference.hostedMe,
-            hostedThem: savedReference.hostedThem,
-            id: savedReference._id,
-            public: savedReference.public
-          }
+        return cb(null, savedReference, otherReference);
+
+      });
+    },
+    // ...and if this is a reference reply, make the other reference public, too
+    function (savedReference, otherReference, cb) {
+      if (otherReference && !otherReference.public) {
+        otherReference.set({ public: true });
+        return otherReference.save(function (err) {
+          return cb(err, savedReference);
         });
+      }
+
+      return cb(null, savedReference);
+    },
+    // finally, respond
+    function (savedReference, cb) {
+      return cb({
+        status: 201,
+        body: {
+          userFrom: savedReference.userFrom,
+          userTo: savedReference.userTo,
+          recommend: savedReference.recommend,
+          created: savedReference.created.getTime(),
+          met: savedReference.met,
+          hostedMe: savedReference.hostedMe,
+          hostedThem: savedReference.hostedThem,
+          id: savedReference._id,
+          public: savedReference.public
+        }
       });
     }
   ], function (err) {
