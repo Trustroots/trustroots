@@ -209,10 +209,10 @@ describe('Create a reference', function () {
         });
 
 
-        it('[duplicate reference between these people] 409 Conflict');
-        it('[sending a reference to self] 400');
-        it('[sending a reference to nonexistent user] 404');
-        it('[sending a reference to non-public user]');
+        it('[duplicate reference (the same (from, to) combination)] 409 Conflict');
+        it('[creating a reference for self] 400');
+        it('[creating a reference for nonexistent user] 404');
+        it('[creating a reference for non-public user]');
       });
 
       context('initial reference', function () {
