@@ -10,7 +10,7 @@ tribes.stderr.on('data', function (data) {
 
 var sequenceScriptsPromise = new Promise(function (resolve) {
   tribes.on('close', function () {
-    resolve();
+    resolve(true);
   });
 });
 
@@ -25,7 +25,7 @@ sequenceScriptsPromise.then(function () {
   });
   return new Promise(function (resolve) {
     users.on('close', function () {
-      resolve();
+      resolve(true);
     });
   });
 }).then(function () {
@@ -39,4 +39,6 @@ sequenceScriptsPromise.then(function () {
   messages.on('close', function () {
     return;
   });
+}).catch(function (error) {
+  console.error(error.message);
 });
