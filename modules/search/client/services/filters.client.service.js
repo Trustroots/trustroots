@@ -14,7 +14,10 @@
     // Default structure for filters object
     var defaultFilters = {
       tribes: [],
-      types: [],
+      types: [
+        'host',
+        'meet'
+      ],
       languages: [],
       seen: {
         months: 24
