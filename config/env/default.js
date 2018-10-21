@@ -93,6 +93,8 @@ module.exports = {
     // How long we should wait before trying to reactivate "no" hosts?
     // Moment.js `duration` object literal http://momentjs.com/docs/#/durations/
     timeToReactivateHosts: { days: 90 },
+    // How long should user have for replying a reference before it becomes public?
+    timeToReplyReference: { days: 14 },
     // How long should we wait to update user's seen field since the last update
     timeToUpdateLastSeenUser: { minutes: 5 },
     // when to send reminders about unread messages (since the last unread message was sent)

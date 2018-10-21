@@ -77,6 +77,12 @@ exports.start = function (options, callback) {
       require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-third.server.job'))
     );
 
+    agenda.define(
+      'publish old unpublished references',
+      { lockLifetime: 10000, concurrency: 1 },
+      require(path.resolve('./modules/references/server/jobs/references-publish.server.job'))
+    );
+
     // Schedule job(s)
 
     agenda.every('5 minutes', 'check unread messages');
@@ -86,6 +92,7 @@ exports.start = function (options, callback) {
     agenda.every('15 minutes', 'welcome sequence first');
     agenda.every('60 minutes', 'welcome sequence second');
     agenda.every('60 minutes', 'welcome sequence third');
+    agenda.every('23 minutes', 'publish old unpublished references');
 
     // Start worker
 
