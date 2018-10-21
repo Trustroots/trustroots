@@ -5,7 +5,7 @@ var path = require('path'),
 
 exports.generateEmailToken = function (user, saltBuffer) {
   var email = user.emailTemporary || user.email;
-  var buf = Buffer.concat([saltBuffer, new Buffer(email)]);
+  var buf = Buffer.concat([saltBuffer, Buffer.from(email)]);
   return buf.toString('hex');
 };
 
