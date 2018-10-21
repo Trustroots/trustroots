@@ -10,6 +10,10 @@ var mongoose = require('mongoose'),
     Reference = mongoose.model('Reference'),
     User = mongoose.model('User');
 
+/**
+ * Validate the request body and data consistency
+ * of Create a reference
+ */
 function validateCreate(req) {
   var valid = true;
   var details = [];
@@ -62,7 +66,10 @@ function validateCreate(req) {
   return { valid: valid, details: details };
 }
 
-function create(req, res, next) {
+/**
+ * Create a reference - express middleware
+ */
+exports.create = function (req, res, next) {
 
   var userTo; // not to have to pass found user in callbacks
 
@@ -147,7 +154,7 @@ function create(req, res, next) {
       });
     },
     // ...and if this is a reference reply, make the other reference public, too
-    function (savedReference, otherReference, cb) {
+    function publishOtherReference(savedReference, otherReference, cb) {
       if (otherReference && !otherReference.public) {
         otherReference.set({ public: true });
         return otherReference.save(function (err) {
@@ -158,7 +165,7 @@ function create(req, res, next) {
       return cb(null, savedReference, otherReference);
     },
     // send email notification
-    function (savedReference, otherReference, cb) {
+    function sendEmailNotification(savedReference, otherReference, cb) {
       if (!otherReference) {
         return emailService.sendReferenceNotificationFirst(req.user, userTo, function (err) {
           cb(err, savedReference, otherReference);
@@ -170,13 +177,13 @@ function create(req, res, next) {
       }
     },
     // send push notification
-    function (savedReference, otherReference, cb) {
+    function sendPushNotification(savedReference, otherReference, cb) {
       return pushService.notifyNewReference(req.user, userTo, { isFirst: !otherReference }, function (err) {
         cb(err, savedReference);
       });
     },
     // finally, respond
-    function (savedReference, cb) {
+    function respond(savedReference, cb) {
       return cb({
         status: 201,
         body: {
@@ -193,6 +200,7 @@ function create(req, res, next) {
       });
     }
   ], function (err) {
+    // send error responses
     if (err && err.status && err.body) {
       if (err.body.errType) {
         err.body.message = errorService.getErrorMessageByKey(err.body.errType);
@@ -201,10 +209,7 @@ function create(req, res, next) {
       return res.status(err.status).json(err.body);
     }
 
+    // take care of unexpected errors
     return next(err);
   });
-}
-
-module.exports = {
-  create: create
 };

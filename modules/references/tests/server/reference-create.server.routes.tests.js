@@ -25,7 +25,7 @@ describe('Create a reference', function () {
   // after this time the only accepted answers are yes/ignore.
   // after the given time or after both left reference, both references become public
 
-  // we'll catch email notifications
+  // we'll catch email and push notifications
   var jobs = testutils.catchJobs();
 
   var user1,
@@ -85,13 +85,9 @@ describe('Create a reference', function () {
     user2 = new User(_user2);
     user3Nonpublic = new User(_user3Nonpublic);
 
-    user1.save(function (err) {
-      if (err) return done(err);
-      return user2.save(function (err) {
-        if (err) return done(err);
-        return user3Nonpublic.save(done);
-      });
-    });
+    async.eachSeries([user1, user2, user3Nonpublic], function (user, cb) {
+      user.save(cb);
+    }, done);
   });
 
   afterEach(function (done) {
@@ -430,8 +426,9 @@ describe('Create a reference', function () {
                 should(job.data.userId).equal(user2._id.toString());
                 should(job.data.notification.title).equal('Trustroots');
                 // @TODO design the notification text
-                should(job.data.notification.body).equal(user1.username + ' gave you a new reference. Give a reference back.');
-                job.data.notification.click_action.should
+                should(job.data.notification.body)
+                  .equal(user1.username + ' gave you a new reference. Give a reference back.');
+                should(job.data.notification.click_action)
                   .containEql('/profile/' + user1.username + '/references/new');
 
                 return done();
@@ -673,8 +670,9 @@ describe('Create a reference', function () {
                     should(job.data.userId).equal(user2._id.toString());
                     should(job.data.notification.title).equal('Trustroots');
                     // @TODO design the notification text
-                    should(job.data.notification.body).equal(user1.username + ' gave you a new reference. You can see it.');
-                    job.data.notification.click_action.should
+                    should(job.data.notification.body)
+                      .equal(user1.username + ' gave you a new reference. You can see it.');
+                    should(job.data.notification.click_action)
                       .containEql('/profile/' + user2.username + '/references');
 
                     return cb();

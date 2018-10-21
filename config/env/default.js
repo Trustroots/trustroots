@@ -18,6 +18,16 @@ module.exports = {
     description: 'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.'
   },
 
+  // Feature flags
+  featureFlags: {
+    // enable references at all?
+    reference: false
+    // Tribe endorsements for user references
+    // referenceTribeEndorsements: false,
+    // Free text feedback in references
+    // referenceFreetextFeedback: false
+  },
+
   // Is site invitation only?
   invitations: {
     enabled: false,
