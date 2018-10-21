@@ -167,8 +167,5 @@ describe('Reference Model Unit Tests', function () {
         });
       });
     });
-
-    // @TODO this check probably has to be implemented in application
-    it('show error when saving reference to nonexistent user');
   });
 });
