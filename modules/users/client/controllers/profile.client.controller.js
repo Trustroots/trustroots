@@ -32,7 +32,6 @@
      * Initialize controller
      */
     function activate() {
-
       // When on small screen...
       if (angular.element('body').width() <= 480) {
         // By default we land to `about` tab of this controller
@@ -41,7 +40,7 @@
           // Timeout ensures `ui-sref-active=""` gets updated at the templates
           $timeout(function () {
             $state.go('profile.overview', { username: profile.username });
-          });
+          }, 25);
         }
       // When on bigger screen...
       // Redirect "mobile only" tabs to about tab
