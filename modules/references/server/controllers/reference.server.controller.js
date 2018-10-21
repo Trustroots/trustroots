@@ -6,6 +6,7 @@ var mongoose = require('mongoose'),
     async = require('async'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+    pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
     Reference = mongoose.model('Reference'),
     User = mongoose.model('User');
 
@@ -160,13 +161,19 @@ function create(req, res, next) {
     function (savedReference, otherReference, cb) {
       if (!otherReference) {
         return emailService.sendReferenceNotificationFirst(req.user, userTo, function (err) {
-          cb(err, savedReference);
+          cb(err, savedReference, otherReference);
         });
       } else {
         return emailService.sendReferenceNotificationSecond(req.user, userTo, savedReference, function (err) {
-          cb(err, savedReference);
+          cb(err, savedReference, otherReference);
         });
       }
+    },
+    // send push notification
+    function (savedReference, otherReference, cb) {
+      return pushService.notifyNewReference(req.user, userTo, { isFirst: !otherReference }, function (err) {
+        cb(err, savedReference);
+      });
     },
     // finally, respond
     function (savedReference, cb) {

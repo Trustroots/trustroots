@@ -389,15 +389,17 @@ describe('Create a reference', function () {
               if (err) return done(err);
 
               try {
-                should(jobs.length).equal(1);
-                should(jobs[0].type).equal('send email');
+                var emailJobs = jobs.filter(function (job) { return job.type === 'send email'; });
+                should(emailJobs.length).equal(1);
+
+                var job = emailJobs[0];
                 // @TODO design the email (subject, body, ...)
-                should(jobs[0].data.subject).equal('New reference from ' + user1.username);
-                should(jobs[0].data.to.address).equal(user2.email);
+                should(job.data.subject).equal('New reference from ' + user1.username);
+                should(job.data.to.address).equal(user2.email);
                 // @TODO add the right link
-                should(jobs[0].data.text)
+                should(job.data.text)
                   .containEql('/profile/' + user1.username + '/references/new');
-                should(jobs[0].data.html)
+                should(job.data.html)
                   .containEql('/profile/' + user1.username + '/references/new');
 
                 return done();
@@ -407,7 +409,37 @@ describe('Create a reference', function () {
             });
         });
 
-        it('desktop notification');
+        it('push notification', function (done) {
+          agent.post('/api/references')
+            .send({
+              userTo: user2._id,
+              met: true,
+              hostedMe: true,
+              hostedThem: true,
+              recommend: 'yes'
+            })
+            .expect(201)
+            .end(function (err) {
+              if (err) return done(err);
+
+              try {
+                var pushJobs = jobs.filter(function (job) { return job.type === 'send push message'; });
+                should(pushJobs.length).equal(1);
+
+                var job = pushJobs[0];
+                should(job.data.userId).equal(user2._id.toString());
+                should(job.data.notification.title).equal('Trustroots');
+                // @TODO design the notification text
+                should(job.data.notification.body).equal(user1.username + ' gave you a new reference. Give a reference back.');
+                job.data.notification.click_action.should
+                  .containEql('/profile/' + user1.username + '/references/new');
+
+                return done();
+              } catch (e) {
+                return done(e);
+              }
+            });
+        });
       });
 
       context('reply reference', function () {
@@ -574,17 +606,19 @@ describe('Create a reference', function () {
                   if (err) return cb(err);
 
                   try {
-                    should(jobs.length).equal(1);
-                    should(jobs[0].type).equal('send email');
+                    var emailJobs = jobs.filter(function (job) { return job.type === 'send email'; });
+                    should(emailJobs.length).equal(1);
+
+                    var job = emailJobs[0];
                     // @TODO design the email (subject, body, ...)
-                    should(jobs[0].data.subject).equal('New reference from ' + user1.username);
-                    should(jobs[0].data.to.address).equal(user2.email);
+                    should(job.data.subject).equal('New reference from ' + user1.username);
+                    should(job.data.to.address).equal(user2.email);
                     // @TODO add the right link
                     // this is a link to the own references - see my references
                     // because I already gave a reference
-                    should(jobs[0].data.text)
+                    should(job.data.text)
                       .containEql('/profile/' + user2.username + '/references');
-                    should(jobs[0].data.html)
+                    should(job.data.html)
                       .containEql('/profile/' + user2.username + '/references');
 
                     return cb();
@@ -597,7 +631,61 @@ describe('Create a reference', function () {
 
         });
 
-        it('desktop notification');
+        it('push notification', function (done) {
+          try {
+            should(jobs.length).equal(0);
+          } catch (e) {
+            return done(e);
+          }
+
+          async.waterfall([
+            // first create a reference in the opposite direction
+            function (cb) {
+              var reference = new Reference({
+                userFrom: user2._id,
+                userTo: user1._id,
+                met: true,
+                recommend: 'no'
+              });
+
+              return reference.save(function (err) {
+                return cb(err);
+              });
+            },
+            function (cb) {
+              agent.post('/api/references')
+                .send({
+                  userTo: user2._id,
+                  met: true,
+                  hostedMe: true,
+                  hostedThem: true,
+                  recommend: 'yes'
+                })
+                .expect(201)
+                .end(function (err) {
+                  if (err) return cb(err);
+
+                  try {
+                    var pushJobs = jobs.filter(function (job) { return job.type === 'send push message'; });
+                    should(pushJobs.length).equal(1);
+
+                    var job = pushJobs[0];
+                    should(job.data.userId).equal(user2._id.toString());
+                    should(job.data.notification.title).equal('Trustroots');
+                    // @TODO design the notification text
+                    should(job.data.notification.body).equal(user1.username + ' gave you a new reference. You can see it.');
+                    job.data.notification.click_action.should
+                      .containEql('/profile/' + user2.username + '/references');
+
+                    return cb();
+                  } catch (e) {
+                    return cb(e);
+                  }
+                });
+            }
+          ], done);
+
+        });
       });
     });
 
