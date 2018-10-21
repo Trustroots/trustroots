@@ -149,15 +149,30 @@
             return SettingsService.get();
           },
 
-          profile: function (UserProfilesService, $stateParams) {
+          profile: function (UserProfilesService, $stateParams, $q) {
             return UserProfilesService.get({
               username: $stateParams.username
-            });
+            }).$promise
+              .catch(function (e) {
+
+                if (e.status === 404) {
+                  // when user was not found, resolving with empty user profile, in order to display the User Not Found error.
+                  return { $promise: $q.resolve({ }), $resolved: true };
+                }
+
+                throw e;
+              });
           },
 
           // Contact is loaded only after profile is loaded, because we need the profile ID
           contact: function (ContactByService, profile, Authentication) {
             return profile.$promise.then(function (profile) {
+
+              // when user doesn't exist, no need to load contact
+              if (!profile._id) {
+                return;
+              }
+
               if (Authentication.user && Authentication.user._id === profile._id) {
                 // No profile found or looking at own profile: no need to load contact
                 return;
@@ -173,6 +188,12 @@
           // Contacts list is loaded only after profile is loaded, because we need the profile ID
           contacts: function (ContactsListService, profile) {
             return profile.$promise.then(function (profile) {
+
+              // when user doesn't exist, no need to load contacts
+              if (!profile._id) {
+                return;
+              }
+
               // Load contact
               return ContactsListService.query({
                 listUserId: profile._id
