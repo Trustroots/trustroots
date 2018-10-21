@@ -220,7 +220,7 @@ exports.unlockAgendaJobs = function (callback) {
       if (process.env.NODE_ENV !== 'test') {
         console.log('[Worker] Unlocked %d Agenda jobs.', parseInt(numUnlocked, 10) || 0);
       }
-      client.close();
+      client.close(callback);
     });
 
   });
