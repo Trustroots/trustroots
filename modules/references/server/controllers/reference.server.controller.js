@@ -7,6 +7,7 @@ var mongoose = require('mongoose'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
+    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     Reference = mongoose.model('Reference'),
     User = mongoose.model('User');
 
@@ -70,6 +71,24 @@ function validateCreate(req) {
   if (Object.keys(interactionErrors).length > 0) details.interactions = interactionErrors;
 
   return { valid: valid, details: details };
+}
+
+var referenceFields = [
+  '_id',
+  'public',
+  'userFrom',
+  'userTo',
+  'created',
+  'interactions.met',
+  'interactions.hostedMe',
+  'interactions.hostedThem',
+  'recommend'
+];
+
+function formatReference(reference) {
+  // converts MongooseObject to Object and picks only defined fields
+  var ref = _.pick(reference, referenceFields);
+  return ref;
 }
 
 /**
@@ -212,19 +231,7 @@ exports.create = function (req, res, next) {
     function respond(savedReference, cb) {
       return cb({
         status: 201,
-        body: {
-          userFrom: savedReference.userFrom,
-          userTo: savedReference.userTo,
-          recommend: savedReference.recommend,
-          created: savedReference.created.getTime(),
-          interactions: {
-            met: savedReference.interactions.met,
-            hostedMe: savedReference.interactions.hostedMe,
-            hostedThem: savedReference.interactions.hostedThem
-          },
-          id: savedReference._id,
-          public: savedReference.public
-        }
+        body: formatReference(savedReference)
       });
     }
   ], processResponses.bind(this, res, next));
@@ -235,18 +242,29 @@ exports.create = function (req, res, next) {
  */
 exports.readMany = function readMany(req, res, next) {
 
-  var userFrom = req.query.userFrom;
+  var query = { public: true };
+
+  if (req.query.userFrom) {
+    query.userFrom = req.query.userFrom;
+  }
+
+  if (req.query.userTo) {
+    query.userTo = req.query.userTo;
+  }
 
   return async.waterfall([
 
     function findReferences(cb) {
-      Reference.find({ userFrom: userFrom, public: true }).exec(cb);
+      Reference.find(query)
+        .select(referenceFields)
+        .populate('userFrom userTo', userProfile.userMiniProfileFields)
+        .exec(cb);
     },
 
     function respond(references, cb) {
       cb({
         status: 200,
-        body: references
+        body: references.map(formatReference)
       });
     }
 

@@ -5,7 +5,9 @@ var _ = require('lodash'),
     path = require('path'),
     request = require('supertest'),
     should = require('should'),
+    sinon = require('sinon'),
     utils = require('./utils'),
+    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     express = require(path.resolve('./config/lib/express'));
 
 describe('Read references by userFrom Id or userTo Id', function () {
@@ -30,6 +32,14 @@ describe('Read references by userFrom Id or userTo Id', function () {
     email: 'nonpublic@example.com'
   });
   var _users = _.concat(_usersPublic, _usersPrivate);
+
+  beforeEach(function () {
+    sinon.useFakeTimers({ now: new Date('2018-01-12'), toFake: ['Date'] });
+  });
+
+  afterEach(function () {
+    sinon.restore();
+  });
 
   beforeEach(function (done) {
     utils.saveUsers(_users, function (err, usrs) {
@@ -82,7 +92,7 @@ describe('Read references by userFrom Id or userTo Id', function () {
 
           try {
             // user2 gave 3 public and 1 non-public references
-            should(res.body).be.Array().of.length(3);
+            should(res).have.property('body').which.is.Array().of.length(3);
             return done();
           } catch (e) {
             return done(e);
@@ -90,7 +100,59 @@ describe('Read references by userFrom Id or userTo Id', function () {
         });
     });
 
-    it('[param userTo] respond with all public references to userTo');
+    it('the references in response have expected structure, userFrom & userTo have miniProfile', function (done) {
+      agent
+        .get('/api/references?userFrom=' + users[2]._id)
+        .expect(200)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            res.body.forEach(function (ref) {
+              should(ref)
+                .have.property('userFrom')
+                .which.is.Object()
+                .with.properties(userProfile.userMiniProfileFields.split(' ').slice(2, -1));
+
+              should(ref)
+                .have.property('userTo')
+                .which.is.Object()
+                .with.properties(userProfile.userMiniProfileFields.split(' ').slice(2, -1));
+
+              should(ref).have.propertyByPath('interactions', 'met').Boolean();
+              should(ref).have.propertyByPath('interactions', 'hostedMe').Boolean();
+              should(ref).have.propertyByPath('interactions', 'hostedThem').Boolean();
+              should(ref).have.property('public', true);
+              should(ref).have.property('created', new Date().toISOString());
+              should(ref).have.property('recommend').oneOf('yes', 'no', 'unknown');
+              should(ref).have.property('_id').String().match(/[0-9a-f]{24}/);
+            });
+
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+    });
+
+    it('[param userTo] respond with all public references to userTo', function (done) {
+      agent
+        .get('/api/references?userTo=' + users[2]._id)
+        .expect(200)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            // user2 has received 2 public and 1 non-public reference
+            should(res).have.property('body').which.is.Array().of.length(2);
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+
+    });
+
     it('[params userFrom and userTo] respond with 1 or 0 public reference from userFrom to userTo');
     it('[userFrom is self] display all public and private references from userFrom');
     it('[no params] 400 and error');

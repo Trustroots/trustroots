@@ -92,16 +92,15 @@ describe('Create a reference', function () {
                 public: false,
                 userFrom: user1._id.toString(),
                 userTo: user2._id.toString(),
-                created: Date.now(),
+                created: new Date().toISOString(),
                 interactions: {
                   met: true,
                   hostedMe: true,
                   hostedThem: true
                 },
-                recommend: 'yes'
+                recommend: 'yes',
+                _id: /^[0-9a-f]{24}$/
               });
-
-              should(res.body).have.property('id').match(/^[0-9a-f]{24}$/);
 
               return done();
             });
