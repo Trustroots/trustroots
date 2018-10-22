@@ -17,8 +17,18 @@
       scope: {
         memberships: '=trMembershipsList',
         isOwnProfile: '='
-      }
+      },
+      controller: trMembershipsListController
+
     };
+  }
+
+  function trMembershipsListController($scope) {
+    $scope.displayAllTribes = false;
+    $scope.toggle = function () {
+      $scope.displayAllTribes = true;
+    }
+
   }
 
 }());
