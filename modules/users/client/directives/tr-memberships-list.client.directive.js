@@ -27,8 +27,7 @@
     $scope.displayAllTribes = false;
     $scope.toggle = function () {
       $scope.displayAllTribes = true;
-    }
-
+    };
   }
 
 }());
