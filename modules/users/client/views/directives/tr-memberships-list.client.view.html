@@ -2,7 +2,7 @@
   <ul class="profile-memberships-list panel-more-wrap"
   ng-if="memberships && memberships.length > 5 && !displayAllTribes">
     <div class="panel-more-excerpt">
-      <li class="tribe" ng-repeat="membership in ::memberships | limitTo:5">
+      <li class="tribe" ng-repeat="membership in ::memberships | orderBy: '-tribe.count' | limitTo:5">
         <div tr-tribe-badge="membership.tribe"></div>
       </li>
     </div>
@@ -11,7 +11,7 @@
 
   <ul class="profile-memberships-list"
   ng-if="memberships && (memberships.length <= 5 || displayAllTribes)">
-      <li class="tribe" ng-repeat="membership in ::memberships">
+      <li class="tribe" ng-repeat="membership in ::memberships | orderBy: '-tribe.count'">
         <div tr-tribe-badge="membership.tribe"></div>
       </li>
   </ul>
