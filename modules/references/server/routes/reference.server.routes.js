@@ -8,6 +8,7 @@ var path = require('path'),
 module.exports = function (app) {
   if (config.featureFlags.reference) {
     app.route('/api/references').all(referencePolicy.isAllowed)
-      .post(references.create);
+      .post(references.create)
+      .get(references.readMany);
   }
 };

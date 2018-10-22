@@ -219,3 +219,7 @@ exports.create = function (req, res, next) {
     return next(err);
   });
 };
+
+exports.readMany = function readMany(req, res) {
+  return res.end();
+};

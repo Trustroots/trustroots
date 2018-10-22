@@ -1,14 +1,15 @@
 'use strict';
 
 var should = require('should'),
+    _ = require('lodash'),
     request = require('supertest'),
     async = require('async'),
     path = require('path'),
     sinon = require('sinon'),
     mongoose = require('mongoose'),
-    User = mongoose.model('User'),
     Reference = mongoose.model('Reference'),
     testutils = require(path.resolve('./testutils/server.testutil')),
+    utils = require('./utils'),
     express = require(path.resolve('./config/lib/express'));
 
 describe('Create a reference', function () {
@@ -35,41 +36,13 @@ describe('Create a reference', function () {
   var app = express.init(mongoose.connection);
   var agent = request.agent(app);
 
-  var _user1 = {
-    public: true,
-    firstName: 'Full',
-    lastName: 'Name',
-    displayName: 'Full Name',
-    email: 'user1@example.com',
-    username: 'user1',
-    displayUsername: 'user1',
-    password: 'correcthorsebatterystaples',
-    provider: 'local'
-  };
-
-  var _user2 = {
-    public: true,
-    firstName: 'Full2',
-    lastName: 'Name2',
-    displayName: 'Full2 Name2',
-    email: 'user2@example.com',
-    username: 'user2',
-    displayUsername: 'user2',
-    password: 'correcthorsebatterystaples',
-    provider: 'local'
-  };
-
-  var _user3Nonpublic = {
+  var _usersPublic = utils.generateUsers(2, { public: true });
+  var _usersNonpublic = utils.generateUsers(1, {
     public: false,
-    firstName: 'Full3',
-    lastName: 'Name3',
-    displayName: 'Full3 Name3',
-    email: 'user3@example.com',
-    username: 'user3',
-    displayUsername: 'user3',
-    password: 'correcthorsebatterystaples',
-    provider: 'local'
-  };
+    username: 'nonpublic',
+    email: 'nonpublic@example.com'
+  });
+  var _users = _.concat(_usersPublic, _usersNonpublic);
 
   beforeEach(function () {
     sinon.useFakeTimers({ now: 1500000000000, toFake: ['Date'] });
@@ -80,54 +53,20 @@ describe('Create a reference', function () {
   });
 
   beforeEach(function (done) {
-
-    user1 = new User(_user1);
-    user2 = new User(_user2);
-    user3Nonpublic = new User(_user3Nonpublic);
-
-    async.eachSeries([user1, user2, user3Nonpublic], function (user, cb) {
-      user.save(cb);
-    }, done);
-  });
-
-  afterEach(function (done) {
-    Reference.deleteMany().exec(function () {
-      User.deleteMany().exec(done);
+    utils.saveUsers(_users, function (err, usrs) {
+      user1 = usrs[0];
+      user2 = usrs[1];
+      user3Nonpublic = usrs[2];
+      done(err);
     });
   });
 
-  /**
-   * @TODO this can be refactored. Sign in may be moved to some test utils
-   *
-   *
-   */
-  function signIn(credentials, agent) {
-    return function (done) {
-      agent.post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (err) {
-          return done(err);
-        });
-    };
-  }
-
-  /**
-   *
-   *
-   */
-  function signOut(agent) {
-    return function (done) {
-      agent.get('/api/auth/signout')
-        .expect(302)
-        .end(done);
-    };
-  }
+  afterEach(utils.clearDatabase.bind(this, ['Reference', 'User']));
 
   context('logged in', function () {
     // Sign in and sign out
-    beforeEach(signIn({ username: _user1.username, password: _user1.password }, agent));
-    afterEach(signOut(agent));
+    beforeEach(utils.signIn.bind(this, _.pick(_users[0], ['username', 'password']), agent));
+    afterEach(utils.signOut.bind(this, agent));
 
     context('valid request', function () {
       context('every reference', function () {
@@ -902,8 +841,8 @@ describe('Create a reference', function () {
 
   context('logged in as non-public user', function () {
     // Sign in and sign out
-    beforeEach(signIn({ username: _user3Nonpublic.username, password: _user3Nonpublic.password }, agent));
-    afterEach(signOut(agent));
+    beforeEach(utils.signIn.bind(this, _.pick(_usersNonpublic[0], ['username', 'password']), agent));
+    afterEach(utils.signOut.bind(this, agent));
 
     it('403', function (done) {
       agent.post('/api/references')
