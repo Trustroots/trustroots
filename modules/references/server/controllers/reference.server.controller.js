@@ -88,6 +88,28 @@ function checkDuplicate(req, done) {
 }
 
 /**
+ * Express response in callback of async.waterfall
+ * @param {object} resOrErr - if this is a well specified object, it will trigger a response,
+ *                                   otherwise 500 error
+ * @param {integer} [resOrErr.status] - html status of the response
+ * @param {any} [resOrErr.body] - response body
+ * @param {string} [resOrErr.body.errType] - will be transformed to body.message by errorService by key
+ */
+function processResponses(res, next, resOrErr) {
+  // send error responses
+  if (resOrErr && resOrErr.status && resOrErr.body) {
+    if (resOrErr.body.errType) {
+      resOrErr.body.message = errorService.getErrorMessageByKey(resOrErr.body.errType);
+      delete resOrErr.body.errType;
+    }
+    return res.status(resOrErr.status).json(resOrErr.body);
+  }
+
+  // take care of unexpected resOrErrors
+  return next(resOrErr);
+}
+
+/**
  * Create a reference - express middleware
  */
 exports.create = function (req, res, next) {
@@ -205,21 +227,28 @@ exports.create = function (req, res, next) {
         }
       });
     }
-  ], function (err) {
-    // send error responses
-    if (err && err.status && err.body) {
-      if (err.body.errType) {
-        err.body.message = errorService.getErrorMessageByKey(err.body.errType);
-        delete err.body.errType;
-      }
-      return res.status(err.status).json(err.body);
-    }
-
-    // take care of unexpected errors
-    return next(err);
-  });
+  ], processResponses.bind(this, res, next));
 };
 
-exports.readMany = function readMany(req, res) {
-  return res.end();
+/**
+ * Read references filtered by userFrom or userTo
+ */
+exports.readMany = function readMany(req, res, next) {
+
+  var userFrom = req.query.userFrom;
+
+  return async.waterfall([
+
+    function findReferences(cb) {
+      Reference.find({ userFrom: userFrom, public: true }).exec(cb);
+    },
+
+    function respond(references, cb) {
+      cb({
+        status: 200,
+        body: references
+      });
+    }
+
+  ], processResponses.bind(this, res, next));
 };

@@ -4,6 +4,7 @@ var _ = require('lodash'),
     mongoose = require('mongoose'),
     path = require('path'),
     request = require('supertest'),
+    should = require('should'),
     utils = require('./utils'),
     express = require(path.resolve('./config/lib/express'));
 
@@ -19,8 +20,8 @@ describe('Read references by userFrom Id or userTo Id', function () {
   var app = express.init(mongoose.connection);
   var agent = request.agent(app);
 
-  var users;
-
+  var users/* ,
+      references*/;
 
   var _usersPublic = utils.generateUsers(6, { public: true });
   var _usersPrivate = utils.generateUsers(3, {
@@ -37,7 +38,35 @@ describe('Read references by userFrom Id or userTo Id', function () {
     });
   });
 
-  afterEach(utils.clearDatabase.bind(this, ['User']));
+  /**
+   * array of [userFrom, userTo, values]
+   *   0 1 2 3 4 5
+   * 0 . T T T F T
+   * 1 T . T T . T
+   * 2 T . . T F T
+   * 3 T . F . . .
+   * 4 F . . . . .
+   * 5 T . . . . .
+   */
+  var referenceData = [
+    [0, 1], [0, 2], [0, 3], [0, 4, { public: false }], [0, 5],
+    [1, 0], [1, 2], [1, 3], [1, 5],
+    [2, 0], [2, 3], [2, 4, { public: false }], [2, 5],
+    [3, 0], [3, 2, { public: false }],
+    [4, 0, { public: false }],
+    [5, 0]
+  ];
+
+  beforeEach(function (done) {
+    var _references = utils.generateReferences(users, referenceData);
+
+    utils.saveReferences(_references, function (err) {
+      // references = refs;
+      return done(err);
+    });
+  });
+
+  afterEach(utils.clearDatabase.bind(this, ['Reference', 'User']));
 
   context('logged in as public user', function () {
 
@@ -48,8 +77,17 @@ describe('Read references by userFrom Id or userTo Id', function () {
       agent
         .get('/api/references?userFrom=' + users[2]._id)
         .expect(200)
-        .end(done);
-      // @TODO the test is not implemented yet!!!
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            // user2 gave 3 public and 1 non-public references
+            should(res.body).be.Array().of.length(3);
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
     });
 
     it('[param userTo] respond with all public references to userTo');
