@@ -42,9 +42,13 @@ The `master` branch is bleeding edge development. `production` is what's running
 
 ## Developer communication
 
-You can find us on Slack. If that's too proprietary feel free to contact [Kasper](https://www.trustroots.org/profile/guaka) (kasper at trustroots dot org) or [Mikael](https://www.trustroots.org/profile/mikael). You can also contact us for an invite without queuing.
+We are using Slack for communications, contact [Kasper](https://www.trustroots.org/profile/guaka) (kasper at trustroots dot org) or [Mikael](https://www.trustroots.org/profile/mikael) if you want an account. You can also contact us for an invite without queuing.
+
+If Slack is too proprietary for you, note that we are considering setting up a Discourse forum. For now you can also use the GitHub issues for communication purposes.
 
 It's also great if you join the [hacker tribe](https://www.trustroots.org/tribes).
+
+Idea: find Trustroots developers in your area, meet up and hack on stuff together.
 
 
 ## MEAN framework
