@@ -10,8 +10,7 @@
       <div class="panel-body">
 
         <!-- Short descriptions -->
-        <div ng-if="profileCtrl.profile.description.length < 2400 || profileCtrl.profileDescriptionToggle"
-        ng-bind-html="profileCtrl.profile.description | trustedHtml"></div>
+        <div ng-if="profileCtrl.profile.description.length < 2400 || profileCtrl.profileDescriptionToggle" ng-bind-html="profileCtrl.profile.description | trustedHtml"></div>
 
         <!-- Long descriptions -->
         <div ng-if="profileCtrl.profile.description.length >= 2400 && !profileCtrl.profileDescriptionToggle"
@@ -65,8 +64,7 @@
              ng-if="::profileCtrl.profile._id !== app.user._id"
              tr-tribes-in-common="profileCtrl.profile.member"></div>
 
-        <div tr-memberships-list="profileCtrl.profile.member"
-        is-own-profile="::profileCtrl.profile._id === app.user._id"></div>
+        <div tr-memberships-list="profileCtrl.profile.member" is-own-profile="::profileCtrl.profile._id === app.user._id"></div>
 
       </div>
     </section>

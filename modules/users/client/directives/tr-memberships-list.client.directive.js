@@ -24,9 +24,9 @@
   }
 
   function trMembershipsListController($scope) {
-    $scope.displayAllTribes = false;
+    $scope.tribeListLimit = 5;
     $scope.toggle = function () {
-      $scope.displayAllTribes = true;
+      $scope.tribeListLimit = undefined;
     };
   }
 
