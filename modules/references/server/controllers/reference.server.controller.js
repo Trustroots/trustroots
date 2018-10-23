@@ -345,3 +345,18 @@ exports.readMany = function readMany(req, res, next) {
 
   ], processResponses.bind(this, res, next));
 };
+
+/**
+ * Load a reference by id to request.reference
+ */
+exports.referenceById = function referenceById(req, res, next, id) { // eslint-disable-line no-unused-vars
+  return next();
+};
+
+
+/**
+ * Read a reference by id
+ */
+exports.readOne = function readOne(req, res) {
+  return res.end();
+};
