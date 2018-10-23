@@ -350,8 +350,21 @@ exports.readMany = function readMany(req, res, next) {
  * Load a reference by id to request.reference
  */
 exports.referenceById = function referenceById(req, res, next, id) { // eslint-disable-line no-unused-vars
-  // @TODO careful! the non-logged user and non-public user goes through this middleware, too!
-  return next();
+  // don't bother fetching a reference for non-public users or guests
+  if (!req.user || !req.user.public) return next();
+
+  async.waterfall([
+    function (cb) {
+      Reference.findById(req.params.referenceId)
+        .select(referenceFields)
+        .populate('userFrom userTo', userProfile.userMiniProfileFields)
+        .exec(cb);
+    },
+    function (reference, cb) {
+      req.reference = reference;
+      cb();
+    }
+  ], processResponses.bind(this, res, next));
 };
 
 
@@ -359,5 +372,5 @@ exports.referenceById = function referenceById(req, res, next, id) { // eslint-d
  * Read a reference by id
  */
 exports.readOne = function readOne(req, res) {
-  return res.end();
+  return res.status(200).json(req.reference);
 };

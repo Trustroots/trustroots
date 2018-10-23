@@ -4,7 +4,10 @@ var _ = require('lodash'),
     mongoose = require('mongoose'),
     path = require('path'),
     request = require('supertest'),
+    should = require('should'),
+    sinon = require('sinon'),
     utils = require('./utils'),
+    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     express = require(path.resolve('./config/lib/express'));
 
 describe('Read a single reference by reference id', function () {
@@ -19,7 +22,16 @@ describe('Read a single reference by reference id', function () {
   var _usersPrivate = utils.generateUsers(1, { public: false, username: 'private', email: 'non@example.com' });
   var _users = _.concat(_usersPublic, _usersPrivate);
 
-  var users; // eslint-disable-line no-unused-vars
+  var users,
+      references;
+
+  beforeEach(function () {
+    sinon.useFakeTimers({ now: new Date('2019-01-13 13:21:55.1'), toFake: ['Date'] });
+  });
+
+  afterEach(function () {
+    sinon.restore();
+  });
 
   beforeEach(function (done) {
     utils.saveUsers(_users, function (err, usrs) {
@@ -28,7 +40,28 @@ describe('Read a single reference by reference id', function () {
     });
   });
 
-  afterEach(utils.clearDatabase.bind(this, ['User']));
+  /**
+   *   0 1 2
+   * 0 . T F
+   * 1 F . T
+   * 2 T F .
+   */
+  var referenceData = [
+    [0, 1], [0, 2, { public: false }],
+    [1, 0, { public: false }], [1, 2],
+    [2, 0], [2, 1, { public: false }]
+  ];
+
+  beforeEach(function (done) {
+    var _references = utils.generateReferences(users, referenceData);
+
+    utils.saveReferences(_references, function (err, refs) {
+      references = refs;
+      return done(err);
+    });
+  });
+
+  afterEach(utils.clearDatabase.bind(this, ['Reference', 'User']));
 
   context('logged in as public user', function () {
 
@@ -37,14 +70,38 @@ describe('Read a single reference by reference id', function () {
 
     it('read a single public reference by id', function (done) {
       agent
-        .get('/api/references/0123456789ab0123456789ab')
+        .get('/api/references/' + references[3]._id)
         .expect(200)
-        .end(done);
-      // @TODO the test is not implemented!
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            var userFromExp = _.pick(users[1], userProfile.userMiniProfileFields.split(' ').slice(2));
+            userFromExp._id = users[1]._id.toString();
+            var userToExp = _.pick(users[2], userProfile.userMiniProfileFields.split(' ').slice(2));
+            userToExp._id = users[2]._id.toString();
+
+            should(res.body).eql({
+              public: true,
+              userFrom: userFromExp,
+              userTo: userToExp,
+              created: new Date().toISOString(),
+              _id: references[3]._id.toString(),
+              met: references[3].met,
+              hostedMe: references[3].hostedMe,
+              hostedThem: references[3].hostedThem,
+              recommend: references[3].recommend
+            });
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
     });
 
     it('read a single private reference if it is from self');
-    it('can not read private references other than from self');
+    it('can not read private references other than from self 404');
+    it('[reference doesn\'t exist] 404');
     it('[invalid referenceId] 400');
   });
 
@@ -54,7 +111,7 @@ describe('Read a single reference by reference id', function () {
 
     it('403', function (done) {
       agent
-        .get('/api/references/0123456789ab0123456789ab')
+        .get('/api/references/' + references[3]._id)
         .expect(403)
         .end(done);
     });
@@ -63,7 +120,7 @@ describe('Read a single reference by reference id', function () {
   context('not logged in', function () {
     it('403', function (done) {
       agent
-        .get('/api/references/0123456789ab0123456789ab')
+        .get('/api/references/' + references[3]._id)
         .expect(403)
         .end(done);
     });
