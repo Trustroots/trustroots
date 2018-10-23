@@ -139,7 +139,26 @@ describe('Read a single reference by reference id', function () {
         });
     });
 
-    it('[reference doesn\'t exist] 404');
+    it('[reference doesn\'t exist] 404', function (done) {
+      agent
+        .get('/api/references/' + 'a'.repeat(24))
+        .expect(404)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            should(res.body).eql({
+              message: 'Not found.',
+              detail: 'Reference not found.'
+            });
+
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+    });
+
     it('[invalid referenceId] 400');
   });
 

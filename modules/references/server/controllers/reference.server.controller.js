@@ -362,8 +362,8 @@ exports.referenceById = function referenceById(req, res, next, id) { // eslint-d
         .exec(cb);
     },
     function (reference, cb) {
-      var isPublicOrFromSelf = reference.public || reference.userFrom._id.toString() === req.user._id.toString();
-      if (!isPublicOrFromSelf) {
+      var isExistentPublicOrFromSelf = reference && (reference.public || reference.userFrom._id.toString() === req.user._id.toString());
+      if (!isExistentPublicOrFromSelf) {
         return cb({
           status: 404,
           body: {
