@@ -12,6 +12,9 @@ exports.invokeRolesPolicies = function () {
     allows: [{
       resources: '/api/references',
       permissions: ['get', 'post']
+    }, {
+      resources: '/api/references/:referenceId',
+      permissions: ['get']
     }]
   }]);
 };

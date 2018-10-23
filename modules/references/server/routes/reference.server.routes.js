@@ -11,7 +11,7 @@ module.exports = function (app) {
       .post(references.create)
       .get(references.readMany);
 
-    app.route('/api/references/:referenceId')
+    app.route('/api/references/:referenceId').all(referencePolicy.isAllowed)
       .get(references.readOne);
 
     app.param('referenceId', references.referenceById);

@@ -350,6 +350,7 @@ exports.readMany = function readMany(req, res, next) {
  * Load a reference by id to request.reference
  */
 exports.referenceById = function referenceById(req, res, next, id) { // eslint-disable-line no-unused-vars
+  // @TODO careful! the non-logged user and non-public user goes through this middleware, too!
   return next();
 };
 
