@@ -159,7 +159,25 @@ describe('Read a single reference by reference id', function () {
         });
     });
 
-    it('[invalid referenceId] 400');
+    it('[invalid referenceId] 400', function (done) {
+      agent
+        .get('/api/references/foo')
+        .expect(400)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            should(res.body).eql({
+              message: 'Bad request.',
+              details: ['Invalid referenceId.']
+            });
+
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+    });
   });
 
   context('logged in as non-public user', function () {

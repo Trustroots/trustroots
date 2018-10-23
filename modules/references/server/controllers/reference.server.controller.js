@@ -346,6 +346,24 @@ exports.readMany = function readMany(req, res, next) {
   ], processResponses.bind(this, res, next));
 };
 
+
+/**
+ * Validator for id of referenceById controller
+ * @param {string} id - referenceId
+ */
+function validateReadOne(id) {
+  var valid = true;
+  var details = [];
+
+  var isIdValid = mongoose.Types.ObjectId.isValid(id);
+  if (!isIdValid) {
+    valid = false;
+    details.push('Invalid referenceId.');
+  }
+
+  return { valid: valid, details: details };
+}
+
 /**
  * Load a reference by id to request.reference
  */
@@ -354,6 +372,8 @@ exports.referenceById = function referenceById(req, res, next, id) { // eslint-d
   if (!req.user || !req.user.public) return next();
 
   async.waterfall([
+    // validate
+    validate.bind(this, validateReadOne, id),
     // find the reference by id
     function (cb) {
       Reference.findById(req.params.referenceId)
