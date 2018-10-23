@@ -183,8 +183,43 @@ describe('Read references by userFrom Id or userTo Id', function () {
         });
     });
 
-    it('[no params] 400 and error');
-    it('[invalid params] 400 and error');
+    it('[no params] 400 and error', function (done) {
+      agent
+        .get('/api/references')
+        .expect(400)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            should(res.body).eql({
+              message: 'Bad request.',
+              details: ['Missing query parameters userFrom or userTo.']
+            });
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+    });
+
+    it('[invalid params] 400 and error', function (done) {
+      agent
+        .get('/api/references?userFrom=asdf&userTo=1')
+        .expect(400)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            should(res.body).eql({
+              message: 'Bad request.',
+              details: ['Invalid query parameter userFrom.', 'Invalid query parameter userTo.']
+            });
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+    });
   });
 
   context('logged in as non-public user', function () {

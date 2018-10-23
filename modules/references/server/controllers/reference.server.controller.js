@@ -129,6 +129,22 @@ function processResponses(res, next, resOrErr) {
 }
 
 /**
+ * Validate request with validator and call callback with prepared error response
+ * @param {function} validator - function (parameter): { valid: boolean, details: string[] }
+ * @param {object} req - Express Request object
+ * @param {function} cb - callback function
+ */
+function validate(validator, req, cb) {
+  var validation = validator(req);
+
+  if (validation.valid) {
+    return cb();
+  }
+
+  return cb({ status: 400, body: { errType: 'bad-request', details: validation.details } });
+}
+
+/**
  * Create a reference - express middleware
  */
 exports.create = function (req, res, next) {
@@ -137,15 +153,7 @@ exports.create = function (req, res, next) {
 
   return async.waterfall([
     // Synchronous validation of the request data consistency
-    function validation(cb) {
-      var validation = validateCreate(req);
-
-      if (validation.valid) {
-        return cb();
-      }
-
-      return cb({ status: 400, body: { errType: 'bad-request', details: validation.details } });
-    },
+    validate.bind(this, validateCreate, req),
     // Check that the reference is not duplicate
     _.partial(checkDuplicate, req),
     // Check if the receiver of the reference exists and is public
@@ -238,11 +246,42 @@ exports.create = function (req, res, next) {
 };
 
 /**
+ * Validator for readMany controller
+ */
+function validateReadMany(req) {
+  var valid = true;
+  var details = [];
+
+  // check that query contains userFrom or userTo
+  var isQueryWithFilter = req.query.userFrom || req.query.userTo;
+  if (!isQueryWithFilter) {
+    valid = false;
+    details.push('Missing query parameters userFrom or userTo.');
+  }
+
+  // check that userFrom and userTo is valid mongodb/mongoose ObjectId
+  ['userFrom', 'userTo'].forEach(function (param) {
+    if (!req.query[param]) return;
+
+    var isParamValid = mongoose.Types.ObjectId.isValid(req.query[param]);
+    if (!isParamValid) {
+      valid = false;
+      details.push('Invalid query parameter ' + param + '.');
+    }
+  });
+
+  return { valid: valid, details: details };
+}
+
+/**
  * Read references filtered by userFrom or userTo
  */
 exports.readMany = function readMany(req, res, next) {
 
   return async.waterfall([
+
+    // validate the query
+    validate.bind(this, validateReadMany, req),
 
     // build a query (synchronous)
     function buildQuery(cb) {
