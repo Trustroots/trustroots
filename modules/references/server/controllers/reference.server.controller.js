@@ -242,26 +242,47 @@ exports.create = function (req, res, next) {
  */
 exports.readMany = function readMany(req, res, next) {
 
-  var query = { public: true };
-
-  if (req.query.userFrom) {
-    query.userFrom = req.query.userFrom;
-  }
-
-  if (req.query.userTo) {
-    query.userTo = req.query.userTo;
-  }
-
   return async.waterfall([
 
-    function findReferences(cb) {
+    // build a query (synchronous)
+    function buildQuery(cb) {
+      var query = { };
+
+      /**
+       * Allow non-public references only when userFrom is self
+       */
+      var isSelfUserFrom = req.user._id.toString() === req.query.userFrom;
+      if (!isSelfUserFrom) {
+        query.public = true;
+      }
+
+      /**
+       * Filter by userFrom
+       */
+      if (req.query.userFrom) {
+        query.userFrom = req.query.userFrom;
+      }
+
+      /**
+       * Filter by userTo
+       */
+      if (req.query.userTo) {
+        query.userTo = req.query.userTo;
+      }
+
+      cb(null, query);
+    },
+
+    // find references by query
+    function findReferences(query, cb) {
       Reference.find(query)
         .select(referenceFields)
         .populate('userFrom userTo', userProfile.userMiniProfileFields)
         .exec(cb);
     },
 
-    function respond(references, cb) {
+    // prepare success response
+    function prepareSuccessResponse(references, cb) {
       cb({
         status: 200,
         body: references.map(formatReference)

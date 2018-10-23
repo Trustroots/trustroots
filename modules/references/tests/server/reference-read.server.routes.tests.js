@@ -22,8 +22,7 @@ describe('Read references by userFrom Id or userTo Id', function () {
   var app = express.init(mongoose.connection);
   var agent = request.agent(app);
 
-  var users/* ,
-      references*/;
+  var users;
 
   var _usersPublic = utils.generateUsers(6, { public: true });
   var _usersPrivate = utils.generateUsers(3, {
@@ -51,7 +50,7 @@ describe('Read references by userFrom Id or userTo Id', function () {
   /**
    * array of [userFrom, userTo, values]
    *   0 1 2 3 4 5
-   * 0 . T T T F T
+   * 0 . T T F F T
    * 1 T . T T . T
    * 2 T . . T F T
    * 3 T . F . . .
@@ -59,7 +58,7 @@ describe('Read references by userFrom Id or userTo Id', function () {
    * 5 T . . . . .
    */
   var referenceData = [
-    [0, 1], [0, 2], [0, 3], [0, 4, { public: false }], [0, 5],
+    [0, 1], [0, 2], [0, 3, { public: false }], [0, 4, { public: false }], [0, 5],
     [1, 0], [1, 2], [1, 3], [1, 5],
     [2, 0], [2, 3], [2, 4, { public: false }], [2, 5],
     [3, 0], [3, 2, { public: false }],
@@ -70,10 +69,7 @@ describe('Read references by userFrom Id or userTo Id', function () {
   beforeEach(function (done) {
     var _references = utils.generateReferences(users, referenceData);
 
-    utils.saveReferences(_references, function (err) {
-      // references = refs;
-      return done(err);
-    });
+    utils.saveReferences(_references, done);
   });
 
   afterEach(utils.clearDatabase.bind(this, ['Reference', 'User']));
@@ -150,12 +146,45 @@ describe('Read references by userFrom Id or userTo Id', function () {
             return done(e);
           }
         });
-
     });
 
-    it('[params userFrom and userTo] respond with 1 or 0 public reference from userFrom to userTo');
-    it('[userFrom is self] display all public and private references from userFrom');
+    it('[params userFrom and userTo] respond with 1 or 0 public reference from userFrom to userTo', function (done) {
+      agent
+        .get('/api/references?userFrom=' + users[2]._id + '&userTo=' + users[5]._id)
+        .expect(200)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            // there is 1 public reference from user2 to user5
+            should(res).have.property('body').which.is.Array().of.length(1);
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+    });
+
+    it('[userFrom is self] display all public and private references from userFrom', function (done) {
+      agent
+        .get('/api/references?userFrom=' + users[0]._id)
+        .expect(200)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            // user0 has given 3 public and 2 non-public reference
+            // and should see all 5 of them
+            should(res).have.property('body').which.is.Array().of.length(5);
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+    });
+
     it('[no params] 400 and error');
+    it('[invalid params] 400 and error');
   });
 
   context('logged in as non-public user', function () {

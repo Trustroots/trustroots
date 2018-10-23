@@ -80,7 +80,7 @@ function generateReferences(users, referenceData) {
       recommend: ['yes', 'no', 'unknown'][getRandInt(3)]
     };
 
-    return _.defaultsDeep(data[2], defaultReference);
+    return _.defaultsDeep({}, data[2], defaultReference);
   });
 }
 
