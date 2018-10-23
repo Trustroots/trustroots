@@ -354,6 +354,7 @@ exports.referenceById = function referenceById(req, res, next, id) { // eslint-d
   if (!req.user || !req.user.public) return next();
 
   async.waterfall([
+    // find the reference by id
     function (cb) {
       Reference.findById(req.params.referenceId)
         .select(referenceFields)
@@ -361,8 +362,20 @@ exports.referenceById = function referenceById(req, res, next, id) { // eslint-d
         .exec(cb);
     },
     function (reference, cb) {
+      var isPublicOrFromSelf = reference.public || reference.userFrom._id.toString() === req.user._id.toString();
+      if (!isPublicOrFromSelf) {
+        return cb({
+          status: 404,
+          body: {
+            errType: 'not-found',
+            detail: 'Reference not found.'
+          }
+        });
+      }
+
+      // assign the reference to the request object
       req.reference = reference;
-      cb();
+      return cb();
     }
   ], processResponses.bind(this, res, next));
 };

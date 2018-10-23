@@ -99,8 +99,46 @@ describe('Read a single reference by reference id', function () {
         });
     });
 
-    it('read a single private reference if it is from self');
-    it('can not read private references other than from self 404');
+    it('read a single private reference if it is from self', function (done) {
+      agent
+        .get('/api/references/' + references[1]._id)
+        .expect(200)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            should(res.body).match({
+              public: false,
+              _id: references[1]._id.toString()
+            });
+
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+    });
+
+    it('[private references not from self] 404', function (done) {
+      agent
+        .get('/api/references/' + references[2]._id)
+        .expect(404)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            should(res.body).eql({
+              message: 'Not found.',
+              detail: 'Reference not found.'
+            });
+
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+    });
+
     it('[reference doesn\'t exist] 404');
     it('[invalid referenceId] 400');
   });
