@@ -73,22 +73,34 @@ function validateCreate(req) {
   return { valid: valid, details: details };
 }
 
-var referenceFields = [
+var nonpublicReferenceFields = [
   '_id',
   'public',
   'userFrom',
   'userTo',
-  'created',
+  'created'
+];
+
+var referenceFields = nonpublicReferenceFields.concat([
   'interactions.met',
   'interactions.hostedMe',
   'interactions.hostedThem',
   'recommend'
-];
+]);
 
-function formatReference(reference) {
+/**
+ * Convert mongoose object to a reference with limited fields
+ * @param {MongooseObject|object} reference - the raw reference
+ * @param {boolean} isNonpublicFullyDisplayed - can we show all fields of the nonpublic reference?
+ * @returns {object} the reference, either full or limited
+ */
+function formatReference(reference, isNonpublicFullyDisplayed) {
   // converts MongooseObject to Object and picks only defined fields
-  var ref = _.pick(reference, referenceFields);
-  return ref;
+  if (reference.public || isNonpublicFullyDisplayed) {
+    return _.pick(reference, referenceFields);
+  } else {
+    return _.pick(reference, nonpublicReferenceFields);
+  }
 }
 
 /**
@@ -239,7 +251,7 @@ exports.create = function (req, res, next) {
     function respond(savedReference, cb) {
       return cb({
         status: 201,
-        body: formatReference(savedReference)
+        body: formatReference(savedReference, true)
       });
     }
   ], processResponses.bind(this, res, next));
@@ -288,10 +300,10 @@ exports.readMany = function readMany(req, res, next) {
       var query = { };
 
       /**
-       * Allow non-public references only when userFrom is self
+       * Allow non-public references only when userFrom or userTo is self
        */
-      var isSelfUserFrom = req.user._id.toString() === req.query.userFrom;
-      if (!isSelfUserFrom) {
+      var isSelfUserFromOrUserTo = [req.query.userFrom, req.query.userTo].includes(req.user._id.toString());
+      if (!isSelfUserFromOrUserTo) {
         query.public = true;
       }
 
@@ -322,9 +334,12 @@ exports.readMany = function readMany(req, res, next) {
 
     // prepare success response
     function prepareSuccessResponse(references, cb) {
+      var isSelfUserFrom = req.query.userFrom === req.user._id.toString();
+
+      // when userFrom is self, we can see the nonpublic references in their full form
       cb({
         status: 200,
-        body: references.map(formatReference)
+        body: references.map(_.partial(formatReference, _, isSelfUserFrom))
       });
     }
 

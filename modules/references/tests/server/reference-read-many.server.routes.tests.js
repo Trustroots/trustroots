@@ -176,6 +176,40 @@ describe('Read references by userFrom Id or userTo Id', function () {
             // user0 has given 3 public and 2 non-public reference
             // and should see all 5 of them
             should(res).have.property('body').which.is.Array().of.length(5);
+
+            var nonpublic = res.body.filter(function (ref) { return !ref.public; });
+            should(nonpublic).length(2);
+            // the reference details are also present
+            should(nonpublic[0]).have.keys('recommend', 'interactions');
+            should(nonpublic[0].interactions).have.keys('met', 'hostedMe', 'hostedThem');
+
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+    });
+
+    it('[userTo is self] private references are included in limited form (only userFrom, userTo, public, created)', function (done) {
+      agent
+        .get('/api/references?userTo=' + users[0]._id)
+        .expect(200)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            // user0 has received 4 public and 1 non-public reference
+            // and should see all 5 of them
+            // but the 1 non-public should have only fields userFrom, userTo, public, created
+            should(res).have.property('body').which.is.Array().of.length(5);
+
+            var nonpublic = res.body.filter(function (ref) { return !ref.public; });
+            should(nonpublic).be.Array().of.length(1);
+            should(nonpublic[0]).match({
+              public: false,
+              created: new Date().toISOString()
+            });
+            should(nonpublic[0]).have.only.keys('_id', 'userFrom', 'userTo', 'created', 'public');
             return done();
           } catch (e) {
             return done(e);
