@@ -1,12 +1,12 @@
 <div>
-  <ul class="profile-memberships-list" ng-if="memberships && memberships.length">
-    <li class="tribe" ng-repeat="membership in ::memberships">
+  <ul class="profile-memberships-list" ng-if="tribesMembershipsList.memberships && tribesMembershipsList.memberships.length">
+    <li class="tribe" ng-repeat="membership in ::tribesMembershipsList.memberships">
       <div tr-tribe-badge="membership.tribe"></div>
     </li>
   </ul>
 
-  <div class="text-center" ng-if="isOwnProfile">
-    <div class="content-empty" ng-if="memberships && memberships.length === 0">
+  <div class="text-center" ng-if="tribesMembershipsList.isOwnProfile">
+    <div class="content-empty" ng-if="tribesMembershipsList.memberships && tribesMembershipsList.memberships.length === 0">
       <div class="icon-tribes icon-3x text-muted"></div>
       <p><em>Joining Tribes helps you find likeminded Trustroots members.</em></p>
       <br><br>
@@ -14,7 +14,7 @@
         Join Tribes
       </a>
     </div>
-    <div ng-if="memberships && memberships.length > 0">
+    <div ng-if="tribesMembershipsList.memberships && tribesMembershipsList.memberships.length > 0">
       <hr class="hr-gray hr-tight"/>
       <a ui-sref="tribes.list" class="btn btn-sm btn-default">
         Join more Tribes
