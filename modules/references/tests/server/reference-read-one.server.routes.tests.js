@@ -119,9 +119,32 @@ describe('Read a single reference by reference id', function () {
         });
     });
 
-    it('[private references not from self] 404', function (done) {
+    it('[private reference to self] display in limited form', function (done) {
       agent
         .get('/api/references/' + references[2]._id)
+        .expect(200)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          try {
+            should(res.body).match({
+              public: false,
+              _id: references[2]._id.toString(),
+              created: new Date().toISOString()
+            });
+
+            should(res.body).have.only.keys('userFrom', 'userTo', '_id', 'public', 'created');
+
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+    });
+
+    it('[private references not from self] 404', function (done) {
+      agent
+        .get('/api/references/' + references[5]._id)
         .expect(404)
         .end(function (err, res) {
           if (err) return done(err);

@@ -381,9 +381,14 @@ exports.referenceById = function referenceById(req, res, next, id) { // eslint-d
         .populate('userFrom userTo', userProfile.userMiniProfileFields)
         .exec(cb);
     },
+    // make sure that nonpublic references are not exposed
+    // assign reference to request object
     function (reference, cb) {
-      var isExistentPublicOrFromSelf = reference && (reference.public || reference.userFrom._id.toString() === req.user._id.toString());
-      if (!isExistentPublicOrFromSelf) {
+
+      // nonpublic reference can be exposed to userFrom or userTo only.
+      var isExistentPublicOrFromToSelf = reference
+        && (reference.public || [reference.userFrom._id.toString(), reference.userTo._id.toString()].includes(req.user._id.toString()));
+      if (!isExistentPublicOrFromToSelf) {
         return cb({
           status: 404,
           body: {
@@ -394,7 +399,9 @@ exports.referenceById = function referenceById(req, res, next, id) { // eslint-d
       }
 
       // assign the reference to the request object
-      req.reference = reference;
+      // when reference is public, only userFrom can see it whole
+      var isUserFrom = reference.userFrom._id.toString() === req.user._id.toString();
+      req.reference = formatReference(reference, isUserFrom);
       return cb();
     }
   ], processResponses.bind(this, res, next));
