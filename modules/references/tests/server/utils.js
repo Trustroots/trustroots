@@ -109,8 +109,8 @@ function saveDocumentsToCollection(collection, _docs, done) {
   });
 }
 
-var saveUsers = _.curry(saveDocumentsToCollection)('User');
-var saveReferences = _.curry(saveDocumentsToCollection)('Reference');
+var saveUsers = _.partial(saveDocumentsToCollection, 'User');
+var saveReferences = _.partial(saveDocumentsToCollection, 'Reference');
 
 /**
  * Clear specified database collections
