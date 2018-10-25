@@ -3,6 +3,7 @@
 console.log ('Trustroots admin shell: show threads marked as not in spirit');
 
 
+
 // Ensuring that we're in the right directory
 process.chdir(__dirname);
 process.chdir('../../');
@@ -13,35 +14,53 @@ var _ = require('lodash'),
     path = require('path'),
     mongooseService = require(path.resolve('config/lib/mongoose'));
 
+// TODO: turn off mongoose logging feedback
+
 mongooseService.connect();
 mongooseService.loadModels();
+mongoose.set('debug', false);
 
 var Message = mongoose.model('Message'),
     Thread = mongoose.model('Thread'),
     User = mongoose.model('User'),
     ReferenceThread = mongoose.model('ReferenceThread');
 
-var htmlFormat = function(s) {
+const htmlFormat = function(s) {
   // Quick'n'dirty way of ditching HTML
   return (s.replace(/\<.*?\>/gi, ''));
 }
+
+const findUser = async function (userId) {
+  try {
+    return await User.findOne({_id: userId});
+  }
+  catch(err) {
+    console.log(err);
+  }
+}
+
 
 
 var showMessage = function(id) {
   Message.find(
     {'_id': id},
     function(err, docs) {
-      _.map(docs, function(m) {
-        console.log(m.userFrom);
-        console.log(m.userTo);
-        console.log(htmlFormat(m.content));
+      _.map(docs, async function(m) {
+        var stuff = [await findUser(m.userFrom),
+                     await findUser(m.userTo),
+                     htmlFormat(m.content)
+                    ];
+        var promise = await Promise.all(stuff);
+        console.log('from ' + promise[0].username + '\n',
+                    'to ' + promise[1].username + '\n',
+                    promise[2] + '\n\n');
       })
     }
   )
 }
 
 
-var showThread = function(id) {
+var showThread = async function(id) {
   Thread.find(
     {'_id': id},
     function(err, docs) {
@@ -52,15 +71,18 @@ var showThread = function(id) {
   )
 }
 
+
+// At some point it should disconnect. Not yet sure how to do this.
+const disconnect = async function() {
+  await mongooseService.disconnect();
+}
+
+
 ReferenceThread.find(
   {'reference': 'no'},
-  function(err, docs) {
-    _.map(docs, function(rt) {
-      showThread(rt.thread);
+  async function(err, docs) {
+    await _.map(_.slice(docs, 0, 10), async function(rt) {
+      await showThread(rt.thread);
     });
   }
 );
-
-
-// At some point it should disconnect. Not yet sure how to do this.
-// mongooseService.disconnect();
