@@ -3,6 +3,10 @@
 #
 # This is a simple shell script to help finding users
 #
+# @guaka uses this to
+# - find profiles of new developers on GitHub
+# - find profiles of the people behind support queries
+#
 
 CMD="mongo --quiet trustroots-dev --eval"
 
