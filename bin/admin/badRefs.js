@@ -7,8 +7,8 @@ console.log ('Trustroots admin shell: show threads marked as not in spirit');
 @todo
 
 Queries to work with:
-db.referencethreads.aggregate({ "$group": { _id: "$userTo", count: {$sum:1}}}, {$sort: {count: -1}});
-db.referencethreads.aggregate({ "$group": { _id: "$userFrom", count: {$sum:1}}}, {$sort: {count: -1}});
+db.referencethreads.aggregate({ "$match": { 'reference': 'no'}}, "$group": { _id: "$userTo", count: {$sum:1}}}, {$sort: {count: -1}});
+db.referencethreads.aggregate({ "$match": { 'reference': 'no'}}, "$group": { _id: "$userFrom", count: {$sum:1}}}, {$sort: {count: -1}});
 
 */
 

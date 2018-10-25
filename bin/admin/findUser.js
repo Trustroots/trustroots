@@ -36,6 +36,7 @@ User.find({ $or: [
   { 'username': { $regex: re }},
   { 'email': { $regex: re }},
   { 'displayName': { $regex: re }},
+  { '_id': query },
 ]}, function(err, docs) {
   _.map(docs, function(d) {
     console.log(d.username, d.email);
