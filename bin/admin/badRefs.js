@@ -3,6 +3,15 @@
 console.log ('Trustroots admin shell: show threads marked as not in spirit');
 
 
+/***
+@todo
+
+Queries to work with:
+db.referencethreads.aggregate({ "$group": { _id: "$userTo", count: {$sum:1}}}, {$sort: {count: -1}});
+db.referencethreads.aggregate({ "$group": { _id: "$userFrom", count: {$sum:1}}}, {$sort: {count: -1}});
+
+*/
+
 
 // Ensuring that we're in the right directory
 process.chdir(__dirname);
@@ -81,7 +90,7 @@ const showBadRefs = function() {
   ReferenceThread.find(
     {'reference': 'no'},
     async function(err, docs) {
-      await _.map(_.slice(docs, 0, 10), async function(rt) {
+      await _.map(docs, async function(rt) {
         await showThread(rt.thread);
       });
     }
@@ -98,4 +107,4 @@ var timeout = setInterval(function() {
     mongooseService.disconnect();
     clearInterval(timeout);
   }
-}, 1000);
+}, 3000);
