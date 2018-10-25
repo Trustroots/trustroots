@@ -39,6 +39,8 @@ const findUser = async function (userId) {
   }
 }
 
+var areWeDone = false;
+
 
 
 var showMessage = function(id) {
@@ -66,23 +68,34 @@ var showThread = async function(id) {
     function(err, docs) {
       _.map(docs, function(t) {
         showMessage(t.message);
-      })
+      });
+      areWeDone = true;
     }
   )
 }
 
 
-// At some point it should disconnect. Not yet sure how to do this.
-const disconnect = async function() {
-  await mongooseService.disconnect();
+
+
+const showBadRefs = function() {
+  ReferenceThread.find(
+    {'reference': 'no'},
+    async function(err, docs) {
+      await _.map(_.slice(docs, 0, 10), async function(rt) {
+        await showThread(rt.thread);
+      });
+    }
+  );
 }
 
+showBadRefs();
 
-ReferenceThread.find(
-  {'reference': 'no'},
-  async function(err, docs) {
-    await _.map(_.slice(docs, 0, 10), async function(rt) {
-      await showThread(rt.thread);
-    });
+
+
+// This doesn't seem right, but it does the job.
+var timeout = setInterval(function() {
+  if (areWeDone) {
+    mongooseService.disconnect();
+    clearInterval(timeout);
   }
-);
+}, 1000);
