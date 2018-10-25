@@ -2,10 +2,16 @@
 
 console.log ('Trustroots admin shell: show threads marked as not in spirit');
 
-var // async = require('async'),
+
+// Ensuring that we're in the right directory
+process.chdir(__dirname);
+process.chdir('../../');
+
+var _ = require('lodash'),
+    async = require('async'),
     mongoose = require('mongoose'),
-    mongooseService = require('../config/lib/mongoose'),
-    _ = require('lodash');
+    path = require('path'),
+    mongooseService = require(path.resolve('config/lib/mongoose'));
 
 mongooseService.connect();
 mongooseService.loadModels();
@@ -16,6 +22,7 @@ var Message = mongoose.model('Message'),
     ReferenceThread = mongoose.model('ReferenceThread');
 
 var htmlFormat = function(s) {
+  // Quick'n'dirty way of ditching HTML
   return (s.replace(/\<.*?\>/gi, ''));
 }
 
@@ -51,10 +58,9 @@ ReferenceThread.find(
     _.map(docs, function(rt) {
       showThread(rt.thread);
     });
-
   }
 );
 
 
-// At some point it should disconnect.
+// At some point it should disconnect. Not yet sure how to do this.
 // mongooseService.disconnect();
