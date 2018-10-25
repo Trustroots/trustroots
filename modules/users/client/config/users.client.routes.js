@@ -44,22 +44,6 @@
         }
       }).
 
-      // This route was deprecated Mar 2016
-      // Redirects to `profile-edit.account`
-      state('profile-settings', {
-        url: '/profile/settings',
-        requiresAuth: true,
-        controller:
-          /* @ngInject */
-          function ($state) {
-            $state.go('profile-edit.account');
-          },
-        controllerAs: 'profileSettings',
-        data: {
-          pageTitle: 'Account'
-        }
-      }).
-
       state('profile-edit', {
         url: '/profile/edit',
         templateUrl: '/modules/users/views/profile/profile-edit.client.view.html',
