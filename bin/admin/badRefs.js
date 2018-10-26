@@ -12,26 +12,12 @@ db.referencethreads.aggregate({ "$match": { 'reference': 'no'}}, "$group": { _id
 
 */
 
-
-// Ensuring that we're in the right directory
-process.chdir(__dirname);
-process.chdir('../../');
-
-var _ = require('lodash'),
-    async = require('async'),
+var trshell = require('./trshell'),
     mongoose = require('mongoose'),
-    path = require('path'),
-    mongooseService = require(path.resolve('config/lib/mongoose'));
-
-// TODO: turn off mongoose logging feedback
-
-mongooseService.connect();
-mongooseService.loadModels();
-mongoose.set('debug', false);
-
-var Message = mongoose.model('Message'),
-    Thread = mongoose.model('Thread'),
+    _ = require('lodash'),
     User = mongoose.model('User'),
+    Message = mongoose.model('Message'),
+    Thread = mongoose.model('Thread'),
     ReferenceThread = mongoose.model('ReferenceThread');
 
 const htmlFormat = function(s) {
@@ -49,7 +35,6 @@ const findUser = async function (userId) {
 }
 
 var areWeDone = false;
-
 
 
 var showMessage = function(id) {
@@ -100,11 +85,10 @@ const showBadRefs = function() {
 showBadRefs();
 
 
-
 // This doesn't seem right, but it does the job.
 var timeout = setInterval(function() {
   if (areWeDone) {
-    mongooseService.disconnect();
+    trshell.disconnect();
     clearInterval(timeout);
   }
 }, 3000);

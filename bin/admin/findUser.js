@@ -2,42 +2,27 @@
 
 console.log ('Trustroots admin shell: find user');
 
-
-// Ensuring that we're in the right directory
-process.chdir(__dirname);
-process.chdir('../../');
-
-var _ = require('lodash'),
-    async = require('async'),
+var trshell = require('./trshell'),
     mongoose = require('mongoose'),
-    path = require('path'),
-    mongooseService = require(path.resolve('config/lib/mongoose'));
+    _ = require('lodash'),
+    User = mongoose.model('User');
 
-// TODO: turn off mongoose logging feedback
 
-mongooseService.connect();
-mongooseService.loadModels();
-mongoose.set('debug', false);
-
-var Message = mongoose.model('Message'),
-    Thread = mongoose.model('Thread'),
-    User = mongoose.model('User'),
-    ReferenceThread = mongoose.model('ReferenceThread');
 
 const query = process.argv[2];
 
-console.log ('Looking for', query);
+console.log ('Looking for user', query);
 
 var areWeDone = false;
 
-
 const re = new RegExp('.*' + query + '.*', 'i')
-User.find({ $or: [
+User.find( { $or: [
   { 'username': { $regex: re }},
   { 'email': { $regex: re }},
   { 'displayName': { $regex: re }},
-  { '_id': query },
-]}, function(err, docs) {
+  //  { '_id': query },    // somehow this doesn't properly $or
+]}
+, function(err, docs) {
   _.map(docs, function(d) {
     console.log(d.username, d.email);
   });
@@ -49,7 +34,7 @@ User.find({ $or: [
 // This doesn't seem right, but it does the job.
 var timeout = setInterval(function() {
   if (areWeDone) {
-    mongooseService.disconnect();
+    trshell.disconnect();
     clearInterval(timeout);
   }
 }, 3000);
