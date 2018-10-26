@@ -143,7 +143,7 @@ var UserSchema = new Schema({
   },
   gender: {
     type: String,
-    enum: ['', 'male', 'female', 'other'],
+    enum: ['', 'female', 'male', 'non-binary', 'other'],
     default: ''
   },
   languages: {
@@ -222,7 +222,7 @@ var UserSchema = new Schema({
     }],
     default: ['user']
   },
-  /* The last time the user was logged in (uncertain if its live right now 5 Apr 2015) */
+  /* The last time the user was logged in; collected from July 2017 onwards */
   seen: {
     type: Date
   },

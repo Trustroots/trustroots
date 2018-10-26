@@ -11,16 +11,9 @@ var path = require('path'),
 
 describe('Service: influx', function () {
 
-  // create sinon sandbox
-  var sandbox;
-  beforeEach(function () {
-    // sandboxing in sinon helps restore the spied/stubbed/mocked functions and parameters
-    sandbox = sinon.sandbox.create();
-  });
-
-  // restore the stubbed services in sandbox
+  // restore the stubbed services
   afterEach(function () {
-    sandbox.restore();
+    sinon.restore();
   });
 
 
@@ -28,7 +21,7 @@ describe('Service: influx', function () {
 
     beforeEach(function () {
       // disable influx
-      sandbox.stub(config.influxdb, 'enabled').value(false);
+      sinon.stub(config.influxdb, 'enabled').value(false);
     });
 
     it('Getting client returns error if no InfluxDB configured', function (done) {
@@ -48,7 +41,7 @@ describe('Service: influx', function () {
     beforeEach(function () {
 
       // stub the config to enable influx
-      sandbox.stub(config, 'influxdb').value({
+      sinon.stub(config, 'influxdb').value({
         enabled: true,
         options: { // options are here to pass validation. InfluxDB is stubbed.
           host: 'example.com',
@@ -59,7 +52,7 @@ describe('Service: influx', function () {
       });
 
       // stub the influx.writeMeasurement method
-      sandbox.stub(influx.InfluxDB.prototype, 'writeMeasurement');
+      sinon.stub(influx.InfluxDB.prototype, 'writeMeasurement');
 
       // and it returns a Promise
       influx.InfluxDB.prototype.writeMeasurement.returns(

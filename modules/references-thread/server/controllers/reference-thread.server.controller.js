@@ -17,7 +17,6 @@ var path = require('path'),
  * Create a new thread reference
  */
 exports.createReferenceThread = function (req, res) {
-
   if (!req.user || (req.user && !req.user.public)) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden')
@@ -160,7 +159,6 @@ exports.readReferenceThread = function (req, res) {
 
 // Reference Thread reading middleware
 exports.readReferenceThreadById = function (req, res, next, userToId) {
-
   // Check if user is authenticated
   if (!req.user) {
     return res.status(403).send({
@@ -214,12 +212,9 @@ exports.readReferenceThreadById = function (req, res, next, userToId) {
         });
       });
     }
-
   ], function (err) {
     if (err) {
       return next(err);
     }
   });
-
-
 };

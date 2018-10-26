@@ -13,10 +13,10 @@ mongoose.loadModels();
 
 module.exports.init = function init(callback) {
 
-  mongoose.connect(function (db) {
+  mongoose.connect(function (connection) {
     // Initialize express
-    var app = express.init(db);
-    if (callback) callback(app, db, config);
+    var app = express.init(connection);
+    if (callback) callback(app, connection, config);
   });
 };
 

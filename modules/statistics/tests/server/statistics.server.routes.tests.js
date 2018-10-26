@@ -26,7 +26,7 @@ describe('Statistics CRUD tests', function () {
 
   before(function () {
     // Get application
-    app = express.init(mongoose);
+    app = express.init(mongoose.connection);
     agent = request.agent(app);
   });
 
@@ -227,7 +227,7 @@ describe('Statistics CRUD tests', function () {
             return done(statsWriteErr);
           }
 
-          statsWriteRes.body.message.should.equal('OK')
+          statsWriteRes.body.message.should.equal('OK');
           statsWriteRes.headers.should.not.have.property('x-tr-update-needed');
 
           // Call the assertion callback
@@ -257,7 +257,7 @@ describe('Statistics CRUD tests', function () {
 
           statsWriteRes.body.message.should.equal('Missing or invalid `collection`.');
           statsWriteRes.headers.should.have.property('x-tr-update-needed');
-          statsWriteRes.headers['x-tr-update-needed'].should.equal('You should update Trustroots app or otherwise it will not continue functioning.')
+          statsWriteRes.headers['x-tr-update-needed'].should.equal('You should update Trustroots app or otherwise it will not continue functioning.');
 
           // Call the assertion callback
           return done();
@@ -286,7 +286,7 @@ describe('Statistics CRUD tests', function () {
 
           statsWriteRes.body.message.should.equal('You should update Trustroots app or otherwise it will not continue functioning.');
           statsWriteRes.headers.should.have.property('x-tr-update-needed');
-          statsWriteRes.headers['x-tr-update-needed'].should.equal('You should update Trustroots app or otherwise it will not continue functioning.')
+          statsWriteRes.headers['x-tr-update-needed'].should.equal('You should update Trustroots app or otherwise it will not continue functioning.');
 
           // Call the assertion callback
           return done();
