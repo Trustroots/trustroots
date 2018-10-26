@@ -39,10 +39,7 @@ module.exports.connect = function (callback) {
   // https://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
   // http://mongoosejs.com/docs/connections.html
   var mongoConnectionOptions = {
-    server: {
-      // Never stop reconnecting
-      reconnectTries: Number.MAX_VALUE
-    }
+    reconnectTries: Number.MAX_VALUE
   };
 
   async.waterfall([
