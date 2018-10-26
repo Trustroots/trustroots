@@ -35,7 +35,7 @@
       vm.isUserPublic = false;
       vm.hostingDropdown = false;
       vm.hostingStatusLabel = hostingStatusLabel;
-
+      vm.isMobile = navigator.userAgent.toLowerCase().indexOf('mobile') >= 0;
       activate();
 
       /**

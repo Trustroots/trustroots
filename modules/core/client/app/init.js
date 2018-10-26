@@ -53,6 +53,7 @@
     // @link https://docs.angularjs.org/guide/production#disable-comment-and-css-class-directives
     $compileProvider.commentDirectivesEnabled(false);
     $compileProvider.cssClassDirectivesEnabled(false);
+    $compileProvider.aHrefSanitizationWhitelist(/^geo:.*/);
 
     // By default tooltips and popovers are appended to
     // '$body' instead of the parent element
