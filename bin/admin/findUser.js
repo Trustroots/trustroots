@@ -1,24 +1,22 @@
 #!/usr/bin/env node
 
 var trshell = require('./trshell'),
-    mongoose = require('mongoose'),
     _ = require('lodash'),
-    User = mongoose.model('User');
+    User = trshell.mongoose.model('User');
 
 const query = process.argv[2];
 
 console.log ('Trustroots admin shell: find user');
 console.log ('Looking for user', query);
 
-const re = new RegExp('.*' + query + '.*', 'i')
+const re = new RegExp('.*' + query + '.*', 'i');
+const requery = { $regex: re };
 User.find( { $or: [
-  { 'username': { $regex: re }},
-  { 'email': { $regex: re }},
-  { 'displayName': { $regex: re }},
-  //  { '_id': query },    // somehow this doesn't properly $or
-]}
-, function(err, docs) {
-  _.map(docs, function(d) {
+  { 'email': requery },
+  { 'username': requery },
+  { 'displayName': requery },
+]}, async function(err, docs) {
+  await _.map(docs, function(d) {
     console.log(d.username, d.email, d.roles);
   });
   trshell.weAreDone();

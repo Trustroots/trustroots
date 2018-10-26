@@ -12,6 +12,8 @@ mongooseService.connect();
 mongooseService.loadModels();
 mongoose.set('debug', false);
 
+module.exports.mongoose = mongoose;
+
 
 module.exports.htmlFormat = function(s) {
   // Quick'n'dirty way of ditching HTML

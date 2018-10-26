@@ -13,12 +13,11 @@ db.referencethreads.aggregate({ "$match": { 'reference': 'no'}}, "$group": { _id
 */
 
 var trshell = require('./trshell'),
-    mongoose = require('mongoose'),
     _ = require('lodash'),
-    User = mongoose.model('User'),
-    Thread = mongoose.model('Thread'),
-    Message = mongoose.model('Message'),
-    ReferenceThread = mongoose.model('ReferenceThread');
+    User = trshell.mongoose.model('User'),
+    Thread = trshell.mongoose.model('Thread'),
+    Message = trshell.mongoose.model('Message'),
+    ReferenceThread = trshell.mongoose.model('ReferenceThread');
 
 
 const findUser = async function (userId) {
@@ -53,8 +52,8 @@ var showMessage = function(id) {
 var showThread = async function(id) {
   Thread.find(
     {'_id': id},
-    function(err, docs) {
-      _.map(docs, function(t) {
+    async function(err, docs) {
+      await _.map(docs, function(t) {
         showMessage(t.message);
       });
       trshell.weAreDone();
@@ -66,9 +65,9 @@ var showThread = async function(id) {
 const showBadRefs = function() {
   ReferenceThread.find(
     {'reference': 'no'},
-    async function(err, docs) {
-      await _.map(docs, async function(rt) {
-        await showThread(rt.thread);
+    function(err, docs) {
+      _.map(docs, async function(rt) {
+        showThread(rt.thread);
       });
     }
   );
