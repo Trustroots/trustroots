@@ -16,14 +16,10 @@ var trshell = require('./trshell'),
     mongoose = require('mongoose'),
     _ = require('lodash'),
     User = mongoose.model('User'),
-    Message = mongoose.model('Message'),
     Thread = mongoose.model('Thread'),
+    Message = mongoose.model('Message'),
     ReferenceThread = mongoose.model('ReferenceThread');
 
-const htmlFormat = function(s) {
-  // Quick'n'dirty way of ditching HTML
-  return (s.replace(/\<.*?\>/gi, ''));
-}
 
 const findUser = async function (userId) {
   try {
@@ -34,8 +30,6 @@ const findUser = async function (userId) {
   }
 }
 
-var areWeDone = false;
-
 
 var showMessage = function(id) {
   Message.find(
@@ -44,7 +38,7 @@ var showMessage = function(id) {
       _.map(docs, async function(m) {
         var stuff = [await findUser(m.userFrom),
                      await findUser(m.userTo),
-                     htmlFormat(m.content)
+                     trshell.htmlFormat(m.content)
                     ];
         var promise = await Promise.all(stuff);
         console.log('from ' + promise[0].username + '\n',
@@ -63,12 +57,10 @@ var showThread = async function(id) {
       _.map(docs, function(t) {
         showMessage(t.message);
       });
-      areWeDone = true;
+      trshell.weAreDone();
     }
   )
 }
-
-
 
 
 const showBadRefs = function() {
@@ -83,12 +75,3 @@ const showBadRefs = function() {
 }
 
 showBadRefs();
-
-
-// This doesn't seem right, but it does the job.
-var timeout = setInterval(function() {
-  if (areWeDone) {
-    trshell.disconnect();
-    clearInterval(timeout);
-  }
-}, 3000);

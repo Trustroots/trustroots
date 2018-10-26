@@ -1,19 +1,14 @@
 #!/usr/bin/env node
 
-console.log ('Trustroots admin shell: find user');
-
 var trshell = require('./trshell'),
     mongoose = require('mongoose'),
     _ = require('lodash'),
     User = mongoose.model('User');
 
-
-
 const query = process.argv[2];
 
+console.log ('Trustroots admin shell: find user');
 console.log ('Looking for user', query);
-
-var areWeDone = false;
 
 const re = new RegExp('.*' + query + '.*', 'i')
 User.find( { $or: [
@@ -24,17 +19,7 @@ User.find( { $or: [
 ]}
 , function(err, docs) {
   _.map(docs, function(d) {
-    console.log(d.username, d.email);
+    console.log(d.username, d.email, d.roles);
   });
-  areWeDone = true;
+  trshell.weAreDone();
 });
-
-
-
-// This doesn't seem right, but it does the job.
-var timeout = setInterval(function() {
-  if (areWeDone) {
-    trshell.disconnect();
-    clearInterval(timeout);
-  }
-}, 3000);

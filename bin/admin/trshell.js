@@ -12,4 +12,21 @@ mongooseService.connect();
 mongooseService.loadModels();
 mongoose.set('debug', false);
 
-module.exports.disconnect = mongooseService.disconnect
+
+module.exports.htmlFormat = function(s) {
+  // Quick'n'dirty way of ditching HTML
+  return (s.replace(/\<.*?\>/gi, ''));
+}
+
+
+var areWeDone = false;
+
+module.exports.weAreDone = function() { areWeDone = true; };
+
+// This doesn't seem right, but it does the job.
+var timeout = setInterval(function() {
+  if (areWeDone) {
+    mongooseService.disconnect();
+    clearInterval(timeout);
+  }
+}, 3000);
