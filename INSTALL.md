@@ -97,15 +97,26 @@ To lint files, run `npm run lint`
 
 ## Mock data
 
-There are scripts that generate mock user data, hosting offers, and tribes. It's highly recommended you run these scripts after installation, that way you'll have something to look at.
+There is a data script that the individual mock data scripts with default values to generate mock user data, hosting offers, messages and tribes. It's highly recommended you run this script after installation, that way you'll have something to look at.
 
-1. Run `node scripts/fillTestTribesData.js 50` — This will create 50 tribes.
+Run `npm run test:data` - This will add automatically add:
+
+* 100 tribes
+* 1000 users including 3 users with user names of `admin1`, `admin2`, `admin3` each with the password of `password123`
+* 2000 message threads with 1 to 10 messages in each thread
+
+For more custom setups, you can alternatively run the scripts for generating data individually. It is currently recommended that you run them in the sequence provided below.
+
+1. To add tribes, run `npm run test-data:tribes 50` — This will create 50 tribes.
     * Run this prior to adding users to add users to tribes automatically
 
-2. Run `node scripts/fillTestData.js 1000 adminusername` — This will create 1000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
+2. To add users, run `npm run test-data:users 1000 adminusername` — This will create 1000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
     * It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
     * To see the result, log in with your chosen username and password `password123`.
+    * Additional admin usernames are also supported (eg. `npm run test-data:users 1000 admin1 admin2 admin3`)
+    * If tribes exist, users will also be added to random tribes
 
+3. To add messages, run `npm run test-data:messages 1000 10` — This will create 1000 message threads between random users with up to 10 messages in each thread.
 
 ## Clean database
 
