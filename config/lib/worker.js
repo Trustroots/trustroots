@@ -183,7 +183,7 @@ exports.unlockAgendaJobs = function (callback) {
   }
 
   // Use connect method to connect to the server
-  MongoClient.connect(config.db.uri, function (err, db) {
+  MongoClient.connect(config.db.uri, function (err, client) {
     if (err) {
       console.error(err);
       return callback(err);
@@ -193,8 +193,7 @@ exports.unlockAgendaJobs = function (callback) {
 
     // Re-use Agenda's MongoDB connection
     // var agendaJobs = agenda._mdb.collection('agendaJobs');
-
-    var agendaJobs = db.collection('agendaJobs');
+    var agendaJobs = client.db().collection('agendaJobs');
 
     agendaJobs.update({
       lockedAt: {
@@ -221,7 +220,7 @@ exports.unlockAgendaJobs = function (callback) {
       if (process.env.NODE_ENV !== 'test') {
         console.log('[Worker] Unlocked %d Agenda jobs.', parseInt(numUnlocked, 10) || 0);
       }
-      db.close(callback);
+      client.close(callback);
     });
 
   });
