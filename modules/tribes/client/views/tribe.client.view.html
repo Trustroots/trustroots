@@ -59,7 +59,7 @@
               }"></ng-pluralize>
             <div class="lead tribe-meta"
                  ng-if="tribeCtrl.tribe.description"
-                 ng-bind="::tribeCtrl.tribe.description"></div>
+                 ng-bind-html="::tribeCtrl.tribe.description"></div>
             <br><br>
             <tr-tribe-join-button
                     class="btn btn-lg btn-primary tribe-join"

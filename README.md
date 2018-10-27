@@ -13,8 +13,7 @@
 
 [developers.trustroots.org](http://developers.trustroots.org/)
 
-You don't have the be a programmer to participate. Check [volunteers page](https://www.trustroots.org/volunteering) for more info.
-
+You don't have to be a programmer to participate. Check [volunteers page](https://www.trustroots.org/volunteering) for more info.
 
 ## Development
 
@@ -28,10 +27,9 @@ software for development:
 
 Install the stack on your localhost and run NodeJS. This approach takes a little more time to setup, and bit more manual configuration, but is super fast, and can be easier to work with. See [INSTALL.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL.md) for details.
 
-
 ### Running with Docker
 
-If you are familiar with Docker this is the easiest and quickest way to get started. See [INSTALL-DOCKER.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL-DOCKER.md) for further details. Running through Docker can be a little bit slower.
+If you are familiar with Docker, this is the easiest and quickest way to get started. See [INSTALL-DOCKER.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL-DOCKER.md) for further details. Running through Docker can be a little bit slower.
 
 ## GitHub
 
@@ -39,13 +37,15 @@ We use GitHub for code management and issue tracking. Feel free to [create an is
 
 The `master` branch is bleeding edge development. `production` is what's running on our servers.
 
-
 ## Developer communication
 
-You can find us on Slack.  If that's too proprietary feel free to contact [Kasper](https://www.trustroots.org/profile/guaka) (kasper at trustroots dot org) or  [Mikael](https://www.trustroots.org/profile/mikael). You can also contact us for an invite without queuing.
+We are using Slack for communications, contact [Kasper](https://www.trustroots.org/profile/guaka) (kasper at trustroots dot org) or [Mikael](https://www.trustroots.org/profile/mikael) if you want an account. You can also contact us for an invite without queuing.
+
+If Slack is too proprietary for you, note that we are considering setting up a Discourse forum. For now you can also use the GitHub issues for communication purposes.
 
 It's also great if you join the [hacker tribe](https://www.trustroots.org/tribes).
 
+Idea: find Trustroots developers in your area, meet up and hack on stuff together.
 
 ## MEAN framework
 
@@ -56,10 +56,11 @@ Trustroots was built on the meanjs.org version.
 ## Further reading
 
 - [Development](https://github.com/Trustroots/trustroots/wiki/Development) wiki page.
-- [INSTALL.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL.md) also contains good information about running 
-s and creating mock data. 
+- [INSTALL.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL.md) also contains good information about running
+  and creating mock data.
 
 ## License
-* [The MIT License](LICENSE.md)
-* Photos copyright [photographers](https://github.com/Trustroots/trustroots/blob/master/modules/core/client/directives/tr-boards.client.directive.js#L30) - several of them are under Creative Commons. Others are permitted to use only with Trustroots.
-* Logos of external communities are copyrighted work and may be subject to trademark laws.
+
+- [The MIT License](LICENSE.md)
+- Photos copyright [photographers](https://github.com/Trustroots/trustroots/blob/master/modules/core/client/directives/tr-boards.client.directive.js#L30) - several of them are under Creative Commons. Others are permitted to use only with Trustroots.
+- Logos of external communities are copyrighted work and may be subject to trademark laws.
