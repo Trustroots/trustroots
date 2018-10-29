@@ -57,7 +57,6 @@ function runNodemon(done) {
     ignore: _.union(
       testAssets.tests.server,
       testAssets.tests.client,
-      testAssets.tests.e2e,
       [
         defaultAssets.server.fontelloConfig,
         defaultAssets.server.gulpConfig,
@@ -92,7 +91,6 @@ function runNodemonWorker(done) {
     ignore: _.union(
       testAssets.tests.server,
       testAssets.tests.client,
-      testAssets.tests.e2e,
       [
         defaultAssets.server.fontelloConfig,
         defaultAssets.server.gulpConfig,
@@ -237,7 +235,6 @@ gulp.task('eslint', function () {
     defaultAssets.client.js,
     testAssets.tests.server,
     testAssets.tests.client,
-    testAssets.tests.e2e,
     // Don't lint dist and lib files
     [
       '!public/**',
@@ -357,7 +354,7 @@ function angularUibTemplatecache() {
   // Loop trough module names
   defaultAssets.client.lib.uibModuleTemplates.forEach(function (uibModule) {
 
-    var moduleStream = gulp.src(['public/lib/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
+    var moduleStream = gulp.src(['node_modules/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
       .pipe(plugins.htmlmin({ collapseWhitespace: true }))
       .pipe(plugins.templateCache('uib-templates-' + uibModule + '.js', {
         root: 'uib/template/' + uibModule + '/',

@@ -44,7 +44,6 @@ npm start
 
 - Run the app by typing `npm start`.
 - Stop the app by hitting `Ctrl+C`.
-- To skip checking Bower modules on start (useful if you're offline), type `npm run start:skipBower`
 - When you change any file, they get recompiled and the browser is refreshed.
 - Keep an eye on the console in case of compiling errors.
 - [Read more](https://github.com/Trustroots/trustroots/wiki/Development).

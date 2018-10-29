@@ -491,6 +491,9 @@ module.exports.initModulesClientRoutes = function (app) {
     app.use(staticPath.replace('/client', ''), express.static(path.resolve('./' + staticPath)));
   });
 
+  if (process.env.NODE_ENV !== 'production') {
+    app.use('/node_modules', express.static(path.resolve('./node_modules'), { extensions: ['js', 'css'] }));
+  }
 };
 
 /**
