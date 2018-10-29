@@ -290,16 +290,7 @@ gulp.task('scripts', gulp.series(
   loadConfig,
   angularTemplateCache,
   angularUibTemplatecache,
-  function () {
-    var scriptFiles = _.union(assets.client.lib.js, assets.client.js);
-    return gulp.src(scriptFiles)
-      .pipe(plugins.ngAnnotate())
-      .pipe(plugins.uglify({
-        mangle: true
-      }))
-      .pipe(plugins.concat('application.min.js'))
-      .pipe(gulp.dest('public/dist'));
-  }
+  'webpack'
 ));
 
 // Clean JS files -task
@@ -484,11 +475,11 @@ gulp.task('build:dev', gulp.series(
     'lint',
     'clean'
   ),
+  angularUibTemplatecache,
   gulp.parallel(
-    angularUibTemplatecache,
-    'styles'
-  ),
-  'webpack'
+    'styles',
+    'scripts'
+  )
 ));
 
 // Build assets for production mode
@@ -501,8 +492,7 @@ gulp.task('build:prod', gulp.series(
   gulp.parallel(
     'styles',
     'scripts'
-  ),
-  'webpack'
+  )
 ));
 
 // Run the project tests

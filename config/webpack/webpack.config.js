@@ -6,8 +6,10 @@ const { join } = require('path');
 const shims = require('./webpack.shims');
 const basedir = join(__dirname, '../..');
 
+const prod = process.env.NODE_ENV === 'production';
+
 module.exports = merge(shims, {
-  mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+  mode: prod ? 'production' : 'development',
   entry: require.resolve('./main'),
   output: {
     path: join(basedir, 'public/assets')
@@ -18,7 +20,7 @@ module.exports = merge(shims, {
     }
   },
   module: {
-    rules: process.env.NODE_ENV === 'production' ? [
+    rules: prod ? [
       {
         test: /\.js$/,
         exclude: /node_modules/,
