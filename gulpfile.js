@@ -14,6 +14,8 @@ var _ = require('lodash'),
     del = require('del'),
     nodemon = require('nodemon'),
     mkdirRecursive = require('mkdir-recursive'),
+    webpackStream = require('webpack-stream'),
+    merge = require('webpack-merge'),
     plugins = gulpLoadPlugins({
       rename: {
         'gulp-angular-templatecache': 'templateCache'
@@ -150,6 +152,15 @@ gulp.task('env:dev', gulp.series(
   'makeUploadsDir'
 ));
 
+gulp.task('webpack', function () {
+  return gulp.src('config/webpack/main.js')
+    .pipe(webpackStream(merge(require('./config/webpack/webpack.config.js'), {
+      output: {
+        filename: 'main.js'
+      }
+    })))
+    .pipe(gulp.dest('public/assets/'));
+});
 
 // Set NODE_ENV to 'production' and prepare environment
 gulp.task('env:prod', gulp.series(
@@ -476,7 +487,8 @@ gulp.task('build:dev', gulp.series(
   gulp.parallel(
     angularUibTemplatecache,
     'styles'
-  )
+  ),
+  'webpack'
 ));
 
 // Build assets for production mode
@@ -489,7 +501,8 @@ gulp.task('build:prod', gulp.series(
   gulp.parallel(
     'styles',
     'scripts'
-  )
+  ),
+  'webpack'
 ));
 
 // Run the project tests

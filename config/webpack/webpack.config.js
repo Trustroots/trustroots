@@ -18,13 +18,13 @@ module.exports = merge(shims, {
     }
   },
   module: {
-    rules: [
+    rules: process.env.NODE_ENV === 'production' ? [
       {
         test: /\.js$/,
         exclude: /node_modules/,
         loader: 'ng-annotate-loader?ngAnnotate=ng-annotate-patched'
       }
-    ]
+    ] : []
   },
   plugins: [
     new webpack.DefinePlugin({

@@ -31,8 +31,6 @@
     "start:prod": "gulp prod",
     "start:worker": "gulp worker:dev",
     "start:worker:prod": "gulp worker:prod",
-    "build:webpack": "NODE_ENV=development webpack --config ./config/webpack/webpack.config.js",
-    "build:webpack:prod": "NODE_ENV=production webpack --config ./config/webpack/webpack.config.js",
     "build": "gulp build:dev",
     "build:dev": "gulp build:dev",
     "build:prod": "gulp build:prod",
@@ -202,7 +200,8 @@
     "supertest": "~3.3.0",
     "webpack": "^4.23.1",
     "webpack-cli": "^3.1.2",
-    "webpack-merge": "^4.1.4"
+    "webpack-merge": "^4.1.4",
+    "webpack-stream": "^5.1.1"
   },
   "bugs": {
     "url": "https://github.com/Trustroots/trustroots/issues"
