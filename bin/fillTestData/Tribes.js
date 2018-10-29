@@ -4,7 +4,13 @@ var path = require('path'),
     mongooseService = require(path.resolve('./config/lib/mongoose')),
     chalk = require('chalk'),
     faker = require('faker'),
+    fs = require('fs'),
+    tribesData = JSON.parse(fs.readFileSync(path.resolve('./bin/fillTestData/data/Tribes.json'), 'utf8')),
     mongoose = require('mongoose');
+
+var random = function (max) {
+  return Math.floor(Math.random() * max);
+};
 
 var addTribes = function (max) {
   var index = 0;
@@ -36,7 +42,7 @@ var addTribes = function (max) {
         tribe.created = Date.now();
         tribe.modified = Date.now();
         tribe.public = true;
-        // tribe.image_UUID = faker.random.uuid();
+        tribe.image_UUID = tribesData[random(tribesData.length)].image_UUID;
         tribe.attribution = faker.name.findName();
         tribe.attribution_url = faker.internet.url();
         tribe.description = faker.lorem.sentences();
