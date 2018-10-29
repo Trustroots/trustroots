@@ -105,8 +105,8 @@ describe('Support request Model Unit Tests:', function () {
   });
 
   afterEach(function (done) {
-    SupportRequest.remove().exec(function () {
-      User.remove().exec(done);
+    SupportRequest.deleteMany().exec(function () {
+      User.deleteMany().exec(done);
     });
   });
 });

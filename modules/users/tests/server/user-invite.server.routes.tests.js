@@ -188,6 +188,6 @@ describe('User invites CRUD tests', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(done);
+    User.deleteMany().exec(done);
   });
 });

@@ -32,6 +32,8 @@ module.exports.connect = function (callback) {
 
   // Enabling mongoose debug mode if required
   mongoose.set('debug', config.db.debug);
+  mongoose.set('useFindAndModify', false);
+  mongoose.set('useCreateIndex', true);
 
   // Options for Native MongoDB connection
   // https://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
