@@ -333,7 +333,7 @@ module.exports.initHelmetHeaders = function (app) {
         '*.tiles.mapbox.com', // Map tiles
         'api.mapbox.com', // Map tiles/Geocoding
         '*.tile.openstreetmap.org', // Map tiles
-        '*.vis.earthdata.nasa.gov', // Map tiles
+        '*.earthdata.nasa.gov', // Map tiles
         '*.facebook.com',
         '*.fbcdn.net', // Facebook releated
         '*.fbsbx.com', // Facebook related
