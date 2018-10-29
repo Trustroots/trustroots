@@ -70,9 +70,7 @@ module.exports = {
         'node_modules/angular-mailcheck/angular-mailcheck.js',
         'node_modules/angular-locker/dist/angular-locker.js',
         'node_modules/angular-confirm/angular-confirm.js',
-        'node_modules/angulargrid/angulargrid.js',
-        'node_modules/firebase/firebase-app.js',
-        'node_modules/firebase/firebase-messaging.js'
+        'node_modules/angulargrid/angulargrid.js'
       ],
       less: [
         'node_modules/angular-trustpass/src/tr-trustpass.less',

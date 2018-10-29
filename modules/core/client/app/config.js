@@ -76,3 +76,5 @@ var AppConfig = (function () {
     registerModule: registerModule
   };
 }());
+
+module.exports = AppConfig;

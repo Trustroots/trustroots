@@ -35,6 +35,7 @@ scipts/docker/nginx-conf/*
 # App
 build
 public/dist
+public/assets
 modules/core/client/app/css
 .idea
 tmp
