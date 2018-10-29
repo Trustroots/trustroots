@@ -62,7 +62,7 @@ module.exports = {
         'node_modules/angular-waypoints/dist/angular-waypoints.all.js',
         'node_modules/ng-file-upload/dist/ng-file-upload.js',
         'node_modules/message-center/message-center.js',
-        'node_modules/chosen/chosen.jquery.js',
+        'node_modules/chosen-js/chosen.jquery.js',
         'node_modules/angular-chosen-localytics/dist/angular-chosen.js',
         'node_modules/angular-loading-bar/build/loading-bar.js',
         'node_modules/angular-trustpass/dist/tr-trustpass.js',

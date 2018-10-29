@@ -11,6 +11,9 @@
  *  to an equivalent module import.
  *
  *  The goal would be to eventually remove this file.
+ *
+ *  `require.resolve` is for files that are installed via package.json into node_modules
+ *  `localResolve` is for files that are in the project repo (relative to root dir)
  */
 
 const webpack = require('webpack');
@@ -21,69 +24,62 @@ const config = require('../config');
 
 const basedir = join(__dirname, '../..');
 
-function requireResolve(name) {
+function localResolve(name) {
   return require.resolve(join(basedir, name));
 }
 
 module.exports = {
   resolve: {
     alias: {
-      'uib-templates': requireResolve('public/dist/uib-templates'),
-      angular: requireResolve('public/lib/angular/angular.js')
+      'uib-templates': localResolve('public/dist/uib-templates')
     }
   },
   module: {
     rules: [
-
       // Make angular available to the templates
       {
-        test: requireResolve('public/lib/angular/angular.js'),
-        loader: `exports-loader?angular`
+        test: localResolve('public/dist/uib-templates'),
+        loader: `imports-loader?angular`
       },
-      {
-        test: requireResolve('public/dist/uib-templates'),
-        loader: `imports-loader?angular=${requireResolve('public/lib/angular/angular')}`
-      },
-
 
       // Allow access to PruneClusterForLeaflet PruneCluster from outside the module
       {
-        test: requireResolve('public/lib/PruneCluster/dist/PruneCluster'),
+        test: require.resolve('prunecluster/dist/PruneCluster'),
         loader: `exports-loader?PruneClusterForLeaflet,PruneCluster`
       },
 
       // Ensure the "trustroots" angular module is defined before we define the "core" one
       {
-        test: requireResolve('modules/core/client/core.client.module'),
-        loader: `imports-loader?_=${requireResolve('modules/core/client/app/init')}`
+        test: localResolve('modules/core/client/core.client.module'),
+        loader: `imports-loader?_=${localResolve('modules/core/client/app/init')}`
       },
 
       // Ensure the "core" angular module is defined before we define the templates
       {
-        test: requireResolve('public/dist/uib-templates'),
-        loader: `imports-loader?_=${requireResolve('modules/core/client/core.client.module')}`
+        test: localResolve('public/dist/uib-templates'),
+        loader: `imports-loader?_=${localResolve('modules/core/client/core.client.module')}`
       },
 
       // Import all the existing dependencies (from assets/*)
       {
         test: require.resolve('./main'),
         use: config.files.webpack.js.map(filename => {
-          return `imports-loader?_=${requireResolve(filename)}`;
+          return `imports-loader?_=${localResolve(filename)}`;
         })
       }
     ]
   },
   plugins: [
     new webpack.ProvidePlugin({
-      L: requireResolve('/public/lib/leaflet'),
-      jQuery: 'jquery',
-      $: 'jquery',
-      'window.jQuery': 'jquery',
-      moment: 'moment',
-      AppConfig: requireResolve('modules/core/client/app/config'),
-      PruneClusterForLeaflet: [requireResolve('public/lib/PruneCluster/dist/PruneCluster'), 'PruneClusterForLeaflet'],
-      PruneCluster: [requireResolve('public/lib/PruneCluster/dist/PruneCluster'), 'PruneCluster'],
-      MediumEditor: requireResolve('public/lib/medium-editor/dist/js/medium-editor')
+      L: require.resolve('leaflet'),
+      jQuery: require.resolve('jquery'),
+      $: require.resolve('jquery'),
+      'window.jQuery': require.resolve('jquery'),
+      moment: require.resolve('moment'),
+      AppConfig: localResolve('modules/core/client/app/config'),
+      PruneClusterForLeaflet: [require.resolve('prunecluster/dist/PruneCluster'), 'PruneClusterForLeaflet'],
+      PruneCluster: [require.resolve('prunecluster/dist/PruneCluster'), 'PruneCluster'],
+      MediumEditor: require.resolve('medium-editor/dist/js/medium-editor')
     })
   ]
 };

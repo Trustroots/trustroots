@@ -86,6 +86,7 @@
     "autoprefixer": "~9.1.5",
     "basic-auth": "~2.0.1",
     "body-parser": "~1.18.3",
+    "bower": "~1.8.4",
     "bootstrap": "3.3.7",
     "bson": "~1.0.9",
     "chalk": "~2.4.1",
