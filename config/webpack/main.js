@@ -5,4 +5,8 @@
  *
  */
 
-import 'uib-templates';
+import '@/public/dist/uib-templates';
+
+if (process.env.NODE_ENV === 'production') {
+  require('@/public/dist/templates');
+}

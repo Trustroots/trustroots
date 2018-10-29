@@ -56,7 +56,6 @@ module.exports = {
         'node_modules/medium-editor/dist/js/medium-editor.js',
         'node_modules/leaflet/dist/leaflet-src.js',
         'node_modules/angular-simple-logger/dist/angular-simple-logger.js', // Required by angular-leaflet-directive
-        'node_modules/PruneCluster/dist/PruneCluster.js',
         'node_modules/ui-leaflet/dist/ui-leaflet.js',
         'node_modules/leaflet-active-area/src/leaflet.activearea.js',
         'node_modules/angular-waypoints/dist/angular-waypoints.all.js',

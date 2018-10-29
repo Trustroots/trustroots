@@ -29,11 +29,6 @@ function localResolve(name) {
 }
 
 module.exports = {
-  resolve: {
-    alias: {
-      'uib-templates': localResolve('public/dist/uib-templates')
-    }
-  },
   module: {
     rules: [
       // Make angular available to the templates
