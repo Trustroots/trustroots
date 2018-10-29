@@ -539,6 +539,7 @@ gulp.task('test:server:watch', gulp.series(
 ));
 
 gulp.task('test:client', gulp.series(
+  'build:dev',
   'env:test',
   karma
 ));

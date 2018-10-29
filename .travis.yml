@@ -10,7 +10,6 @@ script:
 install:
   - npm install -g bower # `npm ci` fails without bower installed
   - npm ci
-  - npm run build
 matrix:
 fast_finish: true
 # https://docs.travis-ci.com/user/reference/overview/#Virtualisation-Environment-vs-Operating-System
