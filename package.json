@@ -21,7 +21,7 @@
     "> 1%"
   ],
   "scripts": {
-    "distclean": "rm -fr ./node_modules ./public/dist",
+    "distclean": "rm -fr ./node_modules ./public/dist ./public/assets ./public/push-messaging-sw.js",
     "prestart": "npm run install-if-no-modules && npx check-node-version --package && npm run ensure-config-exists",
     "ensure-config-exists": "if [ ! -e './config/env/local.js' ]; then cp -n ./config/env/local.sample.js ./config/env/local.js; fi",
     "install-if-no-modules": "if [ ! -d node_modules ]; then npm install --quiet; fi",

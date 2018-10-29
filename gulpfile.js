@@ -153,27 +153,29 @@ gulp.task('env:dev', gulp.series(
 ));
 
 gulp.task('webpack', gulp.parallel(
-  webpackTask('./config/webpack/entries/main.js', {
+  webpackTask({
+    entry: './config/webpack/entries/main.js',
     filename: 'main.js',
     path: 'public/assets/'
   }),
-  webpackTask('./config/webpack/entries/pushMessagingServiceWorker.js', {
+  webpackTask({
+    entry: './config/webpack/entries/pushMessagingServiceWorker.js',
     filename: 'push-messaging-sw.js',
     path: 'public/'
   })
 ));
 
-function webpackTask(entry, output) {
+function webpackTask(opts) {
   return function () {
-    var resolvedEntry = require.resolve(entry);
+    var resolvedEntry = require.resolve(opts.entry);
     return gulp.src(resolvedEntry)
       .pipe(webpackStream(merge(require('./config/webpack/webpack.config.js'), {
         entry: resolvedEntry,
         output: {
-          filename: output.filename
+          filename: opts.filename
         }
       })))
-      .pipe(gulp.dest(output.path));
+      .pipe(gulp.dest(opts.path));
   };
 }
 
