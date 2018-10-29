@@ -6,11 +6,13 @@ const { join } = require('path');
 const shims = require('./webpack.shims');
 const basedir = join(__dirname, '../..');
 
+const config = require('../config');
+
 const prod = process.env.NODE_ENV === 'production';
 
 module.exports = merge(shims, {
   mode: prod ? 'production' : 'development',
-  entry: require.resolve('./main'),
+  entry: require.resolve('./entries/main'),
   output: {
     path: join(basedir, 'public/assets')
   },
@@ -30,7 +32,8 @@ module.exports = merge(shims, {
   },
   plugins: [
     new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+      'FCM_SENDER_ID': JSON.stringify(config.fcm.senderId)
     })
   ]
 });

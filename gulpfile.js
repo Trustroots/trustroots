@@ -152,15 +152,30 @@ gulp.task('env:dev', gulp.series(
   'makeUploadsDir'
 ));
 
-gulp.task('webpack', function () {
-  return gulp.src('config/webpack/main.js')
-    .pipe(webpackStream(merge(require('./config/webpack/webpack.config.js'), {
-      output: {
-        filename: 'main.js'
-      }
-    })))
-    .pipe(gulp.dest('public/assets/'));
-});
+gulp.task('webpack', gulp.parallel(
+  webpackTask('./config/webpack/entries/main.js', {
+    filename: 'main.js',
+    path: 'public/assets/'
+  }),
+  webpackTask('./config/webpack/entries/pushMessagingServiceWorker.js', {
+    filename: 'push-messaging-sw.js',
+    path: 'public/'
+  })
+));
+
+function webpackTask(entry, output) {
+  return function () {
+    var resolvedEntry = require.resolve(entry);
+    return gulp.src(resolvedEntry)
+      .pipe(webpackStream(merge(require('./config/webpack/webpack.config.js'), {
+        entry: resolvedEntry,
+        output: {
+          filename: output.filename
+        }
+      })))
+      .pipe(gulp.dest(output.path));
+  };
+}
 
 // Set NODE_ENV to 'production' and prepare environment
 gulp.task('env:prod', gulp.series(
