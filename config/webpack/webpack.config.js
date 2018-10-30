@@ -22,13 +22,28 @@ module.exports = merge(shims, {
     }
   },
   module: {
-    rules: isProduction ? [
+    rules: [
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        loader: 'ng-annotate-loader?ngAnnotate=ng-annotate-patched'
-      }
-    ] : []
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              ['@babel/preset-env', { useBuiltIns: 'usage' }],
+              ['@babel/preset-react']
+            ]
+          }
+        }
+      },
+      ...(isProduction ? [
+        {
+          test: /\.js$/,
+          exclude: /node_modules/,
+          loader: 'ng-annotate-loader?ngAnnotate=ng-annotate-patched'
+        }
+      ] : [])
+    ]
   },
   plugins: [
     new webpack.DefinePlugin({

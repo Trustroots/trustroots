@@ -129,7 +129,13 @@
 
     <div class="row">
 
+      <!--
       <div class="col-sm-3 hidden-xs" ng-include="'/modules/users/views/profile/profile-view-basics.client.view.html'"></div>
+      -->
+
+      <div class="col-sm-3 hidden-xs">
+        <profile-view-basics profile="profileCtrl.profile"></profile-view-basics>
+      </div>
 
       <div class="col-sm-9">
 
