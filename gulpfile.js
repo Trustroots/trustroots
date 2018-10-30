@@ -14,6 +14,7 @@ var _ = require('lodash'),
     del = require('del'),
     nodemon = require('nodemon'),
     mkdirRecursive = require('mkdir-recursive'),
+    webpack = require('webpack'),
     webpackStream = require('webpack-stream'),
     merge = require('webpack-merge'),
     plugins = gulpLoadPlugins({
@@ -170,11 +171,16 @@ function webpackTask(opts) {
     var resolvedEntry = require.resolve(opts.entry);
     return gulp.src(resolvedEntry)
       .pipe(webpackStream(merge(require('./config/webpack/webpack.config.js'), {
+        watch: opts.watch,
         entry: resolvedEntry,
         output: {
           filename: opts.filename
         }
-      })))
+      }), webpack, function (err, stats){
+        if (opts.onChange) {
+          opts.onChange(err, stats);
+        }
+      }))
       .pipe(gulp.dest(opts.path));
   };
 }
@@ -215,7 +221,7 @@ gulp.task('watch', function (done) {
     gulp.watch(defaultAssets.client.js, gulp.series('lint', 'clean:js', 'scripts'));
     gulp.watch(defaultAssets.client.views, gulp.series('clean:js', 'scripts')).on('change', plugins.refresh.changed);
   } else {
-    gulp.watch(defaultAssets.client.js, gulp.series('lint')).on('change', plugins.refresh.changed);
+    gulp.watch(defaultAssets.client.js, gulp.series('lint'));
     gulp.watch(defaultAssets.client.views).on('change', plugins.refresh.changed);
   }
   done();
@@ -558,7 +564,17 @@ gulp.task('develop', gulp.series(
   'build:dev',
   gulp.parallel(
     runNodemon,
-    'watch'
+    'watch',
+    webpackTask({
+      entry: './config/webpack/entries/main.js',
+      filename: 'main.js',
+      path: 'public/assets/',
+      watch: true,
+      onChange: function () {
+        console.log('webpack changed!');
+        plugins.refresh.changed('/assets/main.js');
+      }
+    })
   )
 ));
 
