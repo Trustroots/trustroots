@@ -101,7 +101,7 @@ var addThreads = function (numThreads, maxMessages) {
               messageThread.userFrom = message.userFrom;
               messageThread.userTo = message.userTo;
               messageThread.message = message._id;
-              messageThread.read = false;
+              messageThread.read = true;
               messageThread.save(function (err) {
                 if (err != null) {
                   console.log(err);

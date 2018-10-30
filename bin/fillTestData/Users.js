@@ -116,6 +116,7 @@ var addUsers = function (max, adminUsers) {
           user.public = true;
           user.avatarUploaded = false;
           user.avatarSource = 'none';
+          user.welcomeSequenceStep = 3;
 
           if (admin !== undefined) {
             // admin user
