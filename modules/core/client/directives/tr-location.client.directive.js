@@ -34,6 +34,7 @@
       scope: {
         value: '=ngModel',
         // `?` makes these optional
+        limitLocationTypes: '=?',
         trLocationChange: '=?',
         trLocationNotfound: '=?',
         trLocationCenter: '=?',
@@ -61,7 +62,12 @@
         element.attr('typeahead-min-length', attr.typeaheadMinLength ? parseInt(attr.typeaheadMinLength, 10) : 3);
         element.attr('typeahead-wait-ms', attr.typeaheadWaitMs ? parseInt(attr.typeaheadWaitMs, 10) : 300);
         element.attr('typeahead-on-select', 'trLocation.onSelect($item, $model, $label, $event)');
-        element.attr('uib-typeahead', 'trTitle as address.trTitle for address in trLocation.searchSuggestions($viewValue)');
+        element.attr('uib-typeahead', 'trTitle as address.trTitle for address in trLocation.searchSuggestions('
+          + getQueryParameters(scope.limitLocationTypes) + ')');
+
+        function getQueryParameters(limitLocationTypes) {
+          return limitLocationTypes ? '$viewValue, "country,region,place,locality,neighborhood"' : '$viewValue';
+        }
 
         // Stop infinite rendering on $compile
         element.removeAttr('tr-location');
@@ -101,9 +107,9 @@
         /**
          * Get geolocation suggestions
          */
-        function searchSuggestions(query) {
+        function searchSuggestions(query, types) {
           $scope.trLocationNotfound = false;
-          return LocationService.suggestions(query).then(function (suggestions) {
+          return LocationService.suggestions(query, types).then(function (suggestions) {
             // Enter was pressed before we got these results, thus just pick first
             if ($scope.skipSuggestions) {
               $scope.skipSuggestions = false;
