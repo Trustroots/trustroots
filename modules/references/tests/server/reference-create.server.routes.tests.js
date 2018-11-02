@@ -136,9 +136,11 @@ describe('Create a reference', function () {
           agent.post('/api/references')
             .send({
               userTo: user2._id,
-              met: true,
-              hostedMe: true,
-              hostedThem: true,
+              interactions: {
+                met: true,
+                hostedMe: true,
+                hostedThem: true
+              },
               recommend: 'yes'
             })
             .expect(201)
@@ -152,9 +154,11 @@ describe('Create a reference', function () {
                 userFrom: user1._id.toString(),
                 userTo: user2._id.toString(),
                 created: Date.now(),
-                met: true,
-                hostedMe: true,
-                hostedThem: true,
+                interactions: {
+                  met: true,
+                  hostedMe: true,
+                  hostedThem: true
+                },
                 recommend: 'yes'
               });
 
@@ -183,9 +187,11 @@ describe('Create a reference', function () {
               agent.post('/api/references')
                 .send({
                   userTo: user2._id,
-                  met: true,
-                  hostedMe: true,
-                  hostedThem: true,
+                  interactions: {
+                    met: true,
+                    hostedMe: true,
+                    hostedThem: true
+                  },
                   recommend: 'yes'
                 })
                 .expect(201)
@@ -202,7 +208,12 @@ describe('Create a reference', function () {
                 should(references).have.length(1);
                 should(references[0]).match({
                   userFrom: user1._id,
-                  userTo: user2._id
+                  userTo: user2._id,
+                  interactions: {
+                    met: true,
+                    hostedMe: true,
+                    hostedThem: true
+                  }
                 });
                 cb();
               } catch (e) {
@@ -220,9 +231,11 @@ describe('Create a reference', function () {
               agent.post('/api/references')
                 .send({
                   userTo: user2._id,
-                  met: true,
-                  hostedMe: true,
-                  hostedThem: true,
+                  interactions: {
+                    met: true,
+                    hostedMe: true,
+                    hostedThem: true
+                  },
                   recommend: 'yes'
                 })
                 .expect(201)
@@ -235,9 +248,11 @@ describe('Create a reference', function () {
               agent.post('/api/references')
                 .send({
                   userTo: user2._id,
-                  met: false,
-                  hostedMe: true,
-                  hostedThem: false,
+                  interactions: {
+                    met: false,
+                    hostedMe: true,
+                    hostedThem: false
+                  },
                   recommend: 'no'
                 })
                 .expect(409)
@@ -252,9 +267,11 @@ describe('Create a reference', function () {
           agent.post('/api/references')
             .send({
               userTo: user1._id, // the same user as logged in user
-              met: false,
-              hostedMe: true,
-              hostedThem: false,
+              interactions: {
+                met: false,
+                hostedMe: true,
+                hostedThem: false
+              },
               recommend: 'no'
             })
             .expect(400)
@@ -277,9 +294,11 @@ describe('Create a reference', function () {
           agent.post('/api/references')
             .send({
               userTo: '0'.repeat(24), // nonexistent user id
-              met: false,
-              hostedMe: true,
-              hostedThem: false,
+              interactions: {
+                met: false,
+                hostedMe: true,
+                hostedThem: false
+              },
               recommend: 'no'
             })
             .expect(404)
@@ -302,9 +321,11 @@ describe('Create a reference', function () {
           agent.post('/api/references')
             .send({
               userTo: user3Nonpublic._id, // non-public user id
-              met: false,
-              hostedMe: true,
-              hostedThem: false,
+              interactions: {
+                met: false,
+                hostedMe: true,
+                hostedThem: false
+              },
               recommend: 'no'
             })
             .expect(404)
@@ -332,9 +353,11 @@ describe('Create a reference', function () {
               agent.post('/api/references')
                 .send({
                   userTo: user2._id,
-                  met: true,
-                  hostedMe: true,
-                  hostedThem: true,
+                  interactions: {
+                    met: true,
+                    hostedMe: true,
+                    hostedThem: true
+                  },
                   recommend: 'yes'
                 })
                 .expect(201)
@@ -375,9 +398,11 @@ describe('Create a reference', function () {
           agent.post('/api/references')
             .send({
               userTo: user2._id,
-              met: true,
-              hostedMe: true,
-              hostedThem: true,
+              interactions: {
+                met: true,
+                hostedMe: true,
+                hostedThem: true
+              },
               recommend: 'yes'
             })
             .expect(201)
@@ -409,9 +434,11 @@ describe('Create a reference', function () {
           agent.post('/api/references')
             .send({
               userTo: user2._id,
-              met: true,
-              hostedMe: true,
-              hostedThem: true,
+              interactions: {
+                met: true,
+                hostedMe: true,
+                hostedThem: true
+              },
               recommend: 'yes'
             })
             .expect(201)
@@ -462,9 +489,11 @@ describe('Create a reference', function () {
               agent.post('/api/references')
                 .send({
                   userTo: user2._id,
-                  met: true,
-                  hostedMe: true,
-                  hostedThem: true,
+                  interactions: {
+                    met: true,
+                    hostedMe: true,
+                    hostedThem: true
+                  },
                   recommend: 'yes'
                 })
                 .expect(201)
@@ -529,9 +558,11 @@ describe('Create a reference', function () {
               agent.post('/api/references')
                 .send({
                   userTo: user2._id,
-                  met: true,
-                  hostedMe: true,
-                  hostedThem: true,
+                  interactions: {
+                    met: true,
+                    hostedMe: true,
+                    hostedThem: true
+                  },
                   recommend: 'no'
                 })
                 .expect(400)
@@ -555,9 +586,11 @@ describe('Create a reference', function () {
               agent.post('/api/references')
                 .send({
                   userTo: user2._id,
-                  met: true,
-                  hostedMe: true,
-                  hostedThem: true,
+                  interactions: {
+                    met: true,
+                    hostedMe: true,
+                    hostedThem: true
+                  },
                   recommend: 'yes'
                 })
                 .expect(201)
@@ -593,9 +626,11 @@ describe('Create a reference', function () {
               agent.post('/api/references')
                 .send({
                   userTo: user2._id,
-                  met: true,
-                  hostedMe: true,
-                  hostedThem: true,
+                  interactions: {
+                    met: true,
+                    hostedMe: true,
+                    hostedThem: true
+                  },
                   recommend: 'yes'
                 })
                 .expect(201)
@@ -641,7 +676,9 @@ describe('Create a reference', function () {
               var reference = new Reference({
                 userFrom: user2._id,
                 userTo: user1._id,
-                met: true,
+                interaction: {
+                  met: true
+                },
                 recommend: 'no'
               });
 
@@ -653,9 +690,11 @@ describe('Create a reference', function () {
               agent.post('/api/references')
                 .send({
                   userTo: user2._id,
-                  met: true,
-                  hostedMe: true,
-                  hostedThem: true,
+                  interactions: {
+                    met: true,
+                    hostedMe: true,
+                    hostedThem: true
+                  },
                   recommend: 'yes'
                 })
                 .expect(201)
@@ -692,8 +731,10 @@ describe('Create a reference', function () {
         agent.post('/api/references')
           .send({
             userTo: user2._id,
-            met: 'met',
-            hostedMe: false,
+            interactions: {
+              met: 'met',
+              hostedMe: false
+            },
             recommend: 'unknown'
           })
           .expect(400)
@@ -716,8 +757,10 @@ describe('Create a reference', function () {
         agent.post('/api/references')
           .send({
             userTo: user2._id,
-            met: true,
-            hostedMe: false,
+            interactions: {
+              met: true,
+              hostedMe: false
+            },
             recommend: 'invalid'
           })
           .expect(400)
@@ -740,7 +783,9 @@ describe('Create a reference', function () {
         agent.post('/api/references')
           .send({
             userTo: 'hello',
-            hostedMe: true,
+            interactions: {
+              hostedMe: true
+            },
             recommend: 'yes'
           })
           .expect(400)
@@ -762,7 +807,9 @@ describe('Create a reference', function () {
       it('[missing userTo] 400', function (done) {
         agent.post('/api/references')
           .send({
-            hostedMe: true,
+            interactions: {
+              hostedMe: true
+            },
             recommend: 'yes'
           })
           .expect(400)
@@ -785,7 +832,9 @@ describe('Create a reference', function () {
         agent.post('/api/references')
           .send({
             userTo: user2._id,
-            hostedMe: true,
+            interactions: {
+              hostedMe: true
+            },
             recommend: 'yes',
             foo: 'bar'
           })
@@ -810,7 +859,9 @@ describe('Create a reference', function () {
           .send({
             userTo: user2._id,
             met: false,
-            hostedMe: false,
+            interactions: {
+              hostedMe: false
+            },
             recommend: 'yes'
           })
           .expect(400)

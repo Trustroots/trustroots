@@ -49,9 +49,11 @@ describe('Job: Set reference to public after a given period of time', function (
       userFrom: generateRandomId(),
       userTo: generateRandomId(),
       // here we don't care if all interactions are false
-      met: generateRandomBoolean(),
-      hostedMe: generateRandomBoolean(),
-      hostedThem: generateRandomBoolean(),
+      interactions: {
+        met: generateRandomBoolean(),
+        hostedMe: generateRandomBoolean(),
+        hostedThem: generateRandomBoolean()
+      },
       recommend: generateRandomRecommend()
     };
   }

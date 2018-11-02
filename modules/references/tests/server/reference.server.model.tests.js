@@ -41,18 +41,22 @@ describe('Reference Model Unit Tests', function () {
       var reference1 = new Reference({
         userFrom: user1._id,
         userTo: user2._id,
-        met: true,
-        hostedMe: true,
-        hostedThem: false,
+        interactions: {
+          met: true,
+          hostedMe: true,
+          hostedThem: false
+        },
         recommend: 'no'
       });
 
       var reference2 = new Reference({
         userFrom: user2._id,
         userTo: user1._id,
-        met: true,
-        hostedMe: false,
-        hostedThem: true,
+        interactions: {
+          met: true,
+          hostedMe: false,
+          hostedThem: true
+        },
         recommend: 'yes'
       });
 
@@ -77,18 +81,22 @@ describe('Reference Model Unit Tests', function () {
       var reference1 = new Reference({
         userFrom: user1._id,
         userTo: user2._id,
-        met: true,
-        hostedMe: true,
-        hostedThem: false,
+        interactions: {
+          met: true,
+          hostedMe: true,
+          hostedThem: false
+        },
         recommend: 'no'
       });
 
       var reference2 = new Reference({
         userFrom: user1._id,
         userTo: user3._id,
-        met: true,
-        hostedMe: false,
-        hostedThem: true,
+        interactions: {
+          met: true,
+          hostedMe: false,
+          hostedThem: true
+        },
         recommend: 'yes'
       });
 
@@ -113,9 +121,11 @@ describe('Reference Model Unit Tests', function () {
       var reference = new Reference({
         userFrom: user1._id,
         userTo: user2._id,
-        met: 'foo',
-        hostedMe: 'foolme',
-        hostedThem: 'foolthem',
+        interactions: {
+          met: 'foo',
+          hostedMe: 'foolme',
+          hostedThem: 'foolthem'
+        },
         recommend: 'bar'
       });
 
@@ -123,9 +133,9 @@ describe('Reference Model Unit Tests', function () {
         try {
           should.exist(err);
           should(err).match({ errors: {
-            met: { value: 'foo', kind: 'Boolean' },
-            hostedMe: { value: 'foolme', kind: 'Boolean' },
-            hostedThem: { value: 'foolthem', kind: 'Boolean' },
+            'interactions.met': { value: 'foo', kind: 'Boolean' },
+            'interactions.hostedMe': { value: 'foolme', kind: 'Boolean' },
+            'interactions.hostedThem': { value: 'foolthem', kind: 'Boolean' },
             recommend: { value: 'bar', kind: 'enum' }
           } });
         } catch (e) {

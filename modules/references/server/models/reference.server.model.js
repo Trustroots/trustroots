@@ -37,20 +37,22 @@ var ReferenceSchema = new Schema({
     ref: 'User',
     required: true
   },
-  met: {
-    type: Boolean,
-    default: false,
-    required: true
-  },
-  hostedMe: {
-    type: Boolean,
-    default: false,
-    required: true
-  },
-  hostedThem: {
-    type: Boolean,
-    default: false,
-    required: true
+  interactions: {
+    met: {
+      type: Boolean,
+      default: false,
+      required: true
+    },
+    hostedMe: {
+      type: Boolean,
+      default: false,
+      required: true
+    },
+    hostedThem: {
+      type: Boolean,
+      default: false,
+      required: true
+    }
   },
   recommend: {
     type: String,

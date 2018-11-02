@@ -25,7 +25,7 @@ function validateCreate(req) {
   }
 
   // Some interaction must have happened
-  var isInteraction = req.body.met || req.body.hostedMe || req.body.hostedThem;
+  var isInteraction = req.body.interactions && (req.body.interactions.met || req.body.interactions.hostedMe || req.body.interactions.hostedThem);
   if (!isInteraction) {
     valid = false;
     details.push('No interaction.');
@@ -39,7 +39,7 @@ function validateCreate(req) {
 
   // Values of interactions must be boolean
   ['met', 'hostedMe', 'hostedThem'].forEach(function (interaction) {
-    if (req.body.hasOwnProperty(interaction) && typeof req.body[interaction] !== 'boolean') {
+    if (req.body.interactions && req.body.interactions.hasOwnProperty(interaction) && typeof req.body.interactions[interaction] !== 'boolean') {
       valid = false;
       details.push('Value of \'' + interaction + '\' should be a boolean.');
     }
@@ -55,10 +55,13 @@ function validateCreate(req) {
   }
 
   // No unexpected fields
-  var allowedFields = ['userTo', 'met', 'hostedMe', 'hostedThem', 'recommend'];
+  var allowedFields = ['userTo', 'interactions', 'recommend'];
   var fields = Object.keys(req.body);
   var unexpectedFields = _.difference(fields, allowedFields);
-  if (unexpectedFields.length > 0) {
+  var allowedInteractions = ['met', 'hostedMe', 'hostedThem'];
+  var interactions = Object.keys(req.body.interactions || {});
+  var unexpectedInteractions = _.difference(interactions, allowedInteractions);
+  if (unexpectedFields.length > 0 || unexpectedInteractions.length > 0) {
     valid = false;
     details.push('Unexpected fields.');
   }
@@ -191,9 +194,11 @@ exports.create = function (req, res, next) {
           userTo: savedReference.userTo,
           recommend: savedReference.recommend,
           created: savedReference.created.getTime(),
-          met: savedReference.met,
-          hostedMe: savedReference.hostedMe,
-          hostedThem: savedReference.hostedThem,
+          interactions: {
+            met: savedReference.interactions.met,
+            hostedMe: savedReference.interactions.hostedMe,
+            hostedThem: savedReference.interactions.hostedThem
+          },
           id: savedReference._id,
           public: savedReference.public
         }
