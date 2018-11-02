@@ -70,6 +70,21 @@ function validateCreate(req) {
 }
 
 /**
+ * Check if the reference already exists. If it exists, return an error in a callback.
+ */
+function checkDuplicate(req, done) {
+  Reference.findOne({ userFrom: req.user._id, userTo: req.body.userTo }).exec(function (err, ref) {
+    if (err) return done(err);
+
+    if (ref === null) {
+      return done();
+    }
+
+    return done({ status: 409, body: { errType: 'conflict' } });
+  });
+}
+
+/**
  * Create a reference - express middleware
  */
 exports.create = function (req, res, next) {
@@ -87,6 +102,8 @@ exports.create = function (req, res, next) {
 
       return cb({ status: 400, body: { errType: 'bad-request', details: validation.details } });
     },
+    // Check that the reference is not duplicate
+    _.partial(checkDuplicate, req),
     // Check if the receiver of the reference exists and is public
     function isUserToPublic(cb) {
       User.findOne({ _id: req.body.userTo }).exec(function (err, foundUser) {
@@ -134,26 +151,7 @@ exports.create = function (req, res, next) {
       var reference = new Reference(_.merge(req.body, { userFrom: req.user._id, public: !!otherReference }));
 
       reference.save(function (err, savedReference) {
-
-        // manage errors
-        if (err) {
-
-          // conflict
-          var isConflict = err.errors && err.errors.userFrom && err.errors.userTo &&
-            err.errors.userFrom.kind === 'unique' && err.errors.userTo.kind === 'unique';
-          if (isConflict) {
-            return cb({
-              status: 409,
-              body: { errType: 'conflict' }
-            });
-          }
-
-          // any other error
-          return cb(err);
-        }
-
-        return cb(null, savedReference, otherReference);
-
+        return cb(err, savedReference, otherReference);
       });
     },
     // ...and if this is a reference reply, make the other reference public, too
