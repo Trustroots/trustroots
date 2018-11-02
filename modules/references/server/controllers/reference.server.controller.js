@@ -16,42 +16,43 @@ var mongoose = require('mongoose'),
  */
 function validateCreate(req) {
   var valid = true;
-  var details = [];
+  var details = {};
+  var interactionErrors = {};
 
   // Can't create a reference to oneself
   if (req.user._id.toString() === req.body.userTo) {
     valid = false;
-    details.push('Reference to self.');
+    details.userTo = 'self';
   }
 
   // Some interaction must have happened
   var isInteraction = req.body.interactions && (req.body.interactions.met || req.body.interactions.hostedMe || req.body.interactions.hostedThem);
   if (!isInteraction) {
     valid = false;
-    details.push('No interaction.');
+    interactionErrors.any = 'missing';
   }
 
   // Value of 'recommend' must be valid ('yes', 'no', 'unknown')
   if (req.body.recommend && !['yes', 'no', 'unknown'].includes(req.body.recommend)) {
     valid = false;
-    details.push('Invalid recommendation.');
+    details.recommend = 'one of \'yes\', \'no\', \'unknown\' expected';
   }
 
   // Values of interactions must be boolean
   ['met', 'hostedMe', 'hostedThem'].forEach(function (interaction) {
     if (req.body.interactions && req.body.interactions.hasOwnProperty(interaction) && typeof req.body.interactions[interaction] !== 'boolean') {
       valid = false;
-      details.push('Value of \'' + interaction + '\' should be a boolean.');
+      interactionErrors[interaction] = 'boolean expected';
     }
   });
 
   // Value of userTo must exist and be a UserId
   if (!req.body.hasOwnProperty('userTo')) {
     valid = false;
-    details.push('Missing userTo.');
+    details.userTo = 'missing';
   } else if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
     valid = false;
-    details.push('Value of userTo must be a user id.');
+    details.userTo = 'userId expected';
   }
 
   // No unexpected fields
@@ -63,8 +64,10 @@ function validateCreate(req) {
   var unexpectedInteractions = _.difference(interactions, allowedInteractions);
   if (unexpectedFields.length > 0 || unexpectedInteractions.length > 0) {
     valid = false;
-    details.push('Unexpected fields.');
+    details.fields = 'unexpected';
   }
+
+  if (Object.keys(interactionErrors).length > 0) details.interactions = interactionErrors;
 
   return { valid: valid, details: details };
 }

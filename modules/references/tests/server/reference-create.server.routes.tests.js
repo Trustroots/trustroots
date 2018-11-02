@@ -276,12 +276,14 @@ describe('Create a reference', function () {
             })
             .expect(400)
             .end(function (err, response) {
-              if (err) done(err);
+              if (err) return done(err);
 
               try {
                 should(response.body).match({
                   message: 'Bad request.',
-                  details: ['Reference to self.']
+                  details: {
+                    userTo: 'self'
+                  }
                 });
                 return done();
               } catch (e) {
@@ -744,7 +746,11 @@ describe('Create a reference', function () {
             try {
               should(response.body).match({
                 message: 'Bad request.',
-                details: ['Value of \'met\' should be a boolean.']
+                details: {
+                  interactions: {
+                    met: 'boolean expected'
+                  }
+                }
               });
               return done();
             } catch (e) {
@@ -770,7 +776,9 @@ describe('Create a reference', function () {
             try {
               should(response.body).match({
                 message: 'Bad request.',
-                details: ['Invalid recommendation.']
+                details: {
+                  recommend: 'one of \'yes\', \'no\', \'unknown\' expected'
+                }
               });
               return done();
             } catch (e) {
@@ -795,7 +803,9 @@ describe('Create a reference', function () {
             try {
               should(response.body).match({
                 message: 'Bad request.',
-                details: ['Value of userTo must be a user id.']
+                details: {
+                  userTo: 'userId expected'
+                }
               });
               return done();
             } catch (e) {
@@ -819,7 +829,9 @@ describe('Create a reference', function () {
             try {
               should(response.body).match({
                 message: 'Bad request.',
-                details: ['Missing userTo.']
+                details: {
+                  userTo: 'missing'
+                }
               });
               return done();
             } catch (e) {
@@ -845,7 +857,9 @@ describe('Create a reference', function () {
             try {
               should(response.body).match({
                 message: 'Bad request.',
-                details: ['Unexpected fields.']
+                details: {
+                  fields: 'unexpected'
+                }
               });
               return done();
             } catch (e) {
@@ -871,7 +885,11 @@ describe('Create a reference', function () {
             try {
               should(response.body).match({
                 message: 'Bad request.',
-                details: ['No interaction.']
+                details: {
+                  interactions: {
+                    any: 'missing'
+                  }
+                }
               });
               return done();
             } catch (e) {
