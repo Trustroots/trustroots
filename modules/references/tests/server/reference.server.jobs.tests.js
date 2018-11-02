@@ -44,21 +44,23 @@ describe('Job: Set reference to public after a given period of time', function (
     return ['yes', 'no', 'unknown'][Math.floor(3 * Math.random())];
   }
 
-  var referenceData = {
-    get userFrom() { return generateRandomId(); },
-    get userTo() { return generateRandomId(); },
-    // here we don't care if all interactions are false
-    get met() { return generateRandomBoolean(); },
-    get hostedMe() { return generateRandomBoolean(); },
-    get hostedThem() { return generateRandomBoolean(); },
-    get recommend() { return generateRandomRecommend(); }
-  };
+  function generateReferenceData() {
+    return {
+      userFrom: generateRandomId(),
+      userTo: generateRandomId(),
+      // here we don't care if all interactions are false
+      met: generateRandomBoolean(),
+      hostedMe: generateRandomBoolean(),
+      hostedThem: generateRandomBoolean(),
+      recommend: generateRandomRecommend()
+    };
+  }
 
   function createReferences(count, done) {
     var references = [];
 
     for (var i = 0; i < count; ++i) {
-      references.push(new Reference(referenceData));
+      references.push(new Reference(generateReferenceData()));
     }
     async.eachSeries(references, function (reference, cb) { reference.save(cb); }, done);
   }
