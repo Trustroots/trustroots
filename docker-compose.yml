@@ -41,7 +41,7 @@ maildev:
 
 ## Database container
 mongodb:
-  image: mongo:3.2
+  image: mongo:3.6
   container_name: db_1
   restart: always
   command: "--smallfiles --logpath=/dev/null"

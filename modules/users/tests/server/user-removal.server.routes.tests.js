@@ -23,7 +23,6 @@ var app,
     agent,
     credentialsA,
     credentialsB,
-    sandbox,
     userA,
     _userA,
     userB,
@@ -38,7 +37,7 @@ describe('User removal CRUD tests', function () {
 
   before(function (done) {
     // Get application
-    app = express.init(mongoose);
+    app = express.init(mongoose.connection);
     agent = request.agent(app);
 
     done();
@@ -46,12 +45,11 @@ describe('User removal CRUD tests', function () {
 
   // initialize sinon
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
-    sandbox.useFakeTimers(1500 * 1000 * 1000 * 1000, 'Date');
+    sinon.useFakeTimers({ now: 1500 * 1000 * 1000 * 1000, toFake: ['Date'] });
   });
 
   afterEach(function () {
-    sandbox.restore();
+    sinon.restore();
   });
 
   // Create an user A

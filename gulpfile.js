@@ -12,9 +12,11 @@ var _ = require('lodash'),
     MergeStream = require('merge-stream'),
     glob = require('glob'),
     del = require('del'),
-    fs = require('fs'),
     nodemon = require('nodemon'),
     mkdirRecursive = require('mkdir-recursive'),
+    webpack = require('webpack'),
+    webpackStream = require('webpack-stream'),
+    merge = require('webpack-merge'),
     plugins = gulpLoadPlugins({
       rename: {
         'gulp-angular-templatecache': 'templateCache'
@@ -29,22 +31,9 @@ var environmentAssets,
     assets,
     config;
 
-// Make sure local config file exists
-function ensureConfigExists(done) {
-  if (!fs.existsSync('config/env/local.js')) {
-    gulp
-      .src('config/env/local.sample.js')
-      .pipe(plugins.rename('local.js'))
-      .pipe(gulp.dest('config/env/'));
-    done();
-  } else {
-    done();
-  }
-}
-
 /**
  * Load config + assets
- * Note that loading config before `env:*` and `ensureConfigExists`
+ * Note that loading config before `env:*`
  * tasks would load configs with wrong environment
  */
 function loadConfig(done) {
@@ -71,7 +60,6 @@ function runNodemon(done) {
     ignore: _.union(
       testAssets.tests.server,
       testAssets.tests.client,
-      testAssets.tests.e2e,
       [
         defaultAssets.server.fontelloConfig,
         defaultAssets.server.gulpConfig,
@@ -106,7 +94,6 @@ function runNodemonWorker(done) {
     ignore: _.union(
       testAssets.tests.server,
       testAssets.tests.client,
-      testAssets.tests.e2e,
       [
         defaultAssets.server.fontelloConfig,
         defaultAssets.server.gulpConfig,
@@ -141,6 +128,7 @@ gulp.task('makeUploadsDir', gulp.series(
     mkdirRecursive.mkdir(config.uploadDir, function (err) {
       if (err && err.code !== 'EEXIST') {
         console.error(err);
+        return done(err);
       }
       done();
     });
@@ -153,10 +141,7 @@ gulp.task('env:test', gulp.series(
     process.env.NODE_ENV = 'test';
     done();
   },
-  gulp.parallel(
-    ensureConfigExists,
-    'makeUploadsDir'
-  )
+  'makeUploadsDir'
 ));
 
 // Set NODE_ENV to 'development' and prepare environment
@@ -165,22 +150,48 @@ gulp.task('env:dev', gulp.series(
     process.env.NODE_ENV = 'development';
     done();
   },
-  gulp.parallel(
-    ensureConfigExists,
-    'makeUploadsDir'
-  )
+  'makeUploadsDir'
 ));
 
+gulp.task('webpack', gulp.parallel(
+  webpackTask({
+    entry: './config/webpack/entries/main.js',
+    filename: 'main.js',
+    path: 'public/assets/'
+  }),
+  webpackTask({
+    entry: './config/webpack/entries/pushMessagingServiceWorker.js',
+    filename: 'push-messaging-sw.js',
+    path: 'public/'
+  })
+));
+
+function webpackTask(opts) {
+  return function () {
+    var resolvedEntry = require.resolve(opts.entry);
+    return gulp.src(resolvedEntry)
+      .pipe(webpackStream(merge(require('./config/webpack/webpack.config.js'), {
+        watch: opts.watch,
+        entry: resolvedEntry,
+        output: {
+          filename: opts.filename
+        }
+      }), webpack, function (err, stats){
+        if (opts.onChange) {
+          opts.onChange(err, stats);
+        }
+      }))
+      .pipe(gulp.dest(opts.path));
+  };
+}
 
 // Set NODE_ENV to 'production' and prepare environment
 gulp.task('env:prod', gulp.series(
-  function () {
+  function (done) {
     process.env.NODE_ENV = 'production';
+    done();
   },
-  gulp.parallel(
-    ensureConfigExists,
-    'makeUploadsDir'
-  )
+  'makeUploadsDir'
 ));
 
 // Watch files for changes
@@ -210,7 +221,7 @@ gulp.task('watch', function (done) {
     gulp.watch(defaultAssets.client.js, gulp.series('lint', 'clean:js', 'scripts'));
     gulp.watch(defaultAssets.client.views, gulp.series('clean:js', 'scripts')).on('change', plugins.refresh.changed);
   } else {
-    gulp.watch(defaultAssets.client.js, gulp.series('lint')).on('change', plugins.refresh.changed);
+    gulp.watch(defaultAssets.client.js, gulp.series('lint'));
     gulp.watch(defaultAssets.client.views).on('change', plugins.refresh.changed);
   }
   done();
@@ -222,23 +233,29 @@ gulp.task('watch:server:run-tests', function () {
   plugins.refresh.listen();
 
   // Add Server Test file rules
-  gulp.watch([testAssets.tests.server, defaultAssets.server.allJS, defaultAssets.server.migrations], ['test:server:no-lint']).on('change', function (file) {
-    changedTestFiles = [];
+  gulp.watch([
+    testAssets.tests.server,
+    defaultAssets.server.allJS,
+    defaultAssets.server.migrations
+  ],
+  gulp.series('test:server:no-lint'))
+    .on('change', function (changedFile) {
+      changedTestFiles = [];
 
-    // iterate through server test glob patterns
-    _.forEach(testAssets.tests.server, function (pattern) {
-      // determine if the changed (watched) file is a server test
-      _.forEach(glob.sync(pattern), function (f) {
-        var filePath = path.resolve(f);
+      // iterate through server test glob patterns
+      _.forEach(testAssets.tests.server, function (pattern) {
+        // determine if the changed (watched) file is a server test
+        _.forEach(glob.sync(pattern), function (file) {
+          var filePath = path.resolve(file);
 
-        if (filePath === path.resolve(file.path)) {
-          changedTestFiles.push(f);
-        }
+          if (filePath === path.resolve(changedFile)) {
+            changedTestFiles.push(changedFile);
+          }
+        });
       });
-    });
 
-    plugins.refresh.changed(file);
-  });
+      plugins.refresh.changed(changedFile);
+    });
 });
 
 // ESLint JS linting task
@@ -252,7 +269,6 @@ gulp.task('eslint', function () {
     defaultAssets.client.js,
     testAssets.tests.server,
     testAssets.tests.client,
-    testAssets.tests.e2e,
     // Don't lint dist and lib files
     [
       '!public/**',
@@ -260,7 +276,7 @@ gulp.task('eslint', function () {
     ]
   );
 
-  return gulp.src(lintAssets)
+  return gulp.src(lintAssets, { allowEmpty: true })
     .pipe(plugins.eslint())
     .pipe(plugins.eslint.format())
     // To have the process exit with an error code (1) on
@@ -281,7 +297,7 @@ gulp.task('eslint-angular', gulp.series(
       ]
     );
 
-    return gulp.src(lintAssets)
+    return gulp.src(lintAssets, { allowEmpty: true })
       .pipe(plugins.eslint({
         configFile: '.eslintrc-angular.js'
       }))
@@ -297,16 +313,7 @@ gulp.task('scripts', gulp.series(
   loadConfig,
   angularTemplateCache,
   angularUibTemplatecache,
-  function () {
-    var scriptFiles = _.union(assets.client.lib.js, assets.client.js);
-    return gulp.src(scriptFiles)
-      .pipe(plugins.ngAnnotate())
-      .pipe(plugins.uglify({
-        mangle: true
-      }))
-      .pipe(plugins.concat('application.min.js'))
-      .pipe(gulp.dest('public/dist'));
-  }
+  'webpack'
 ));
 
 // Clean JS files -task
@@ -321,7 +328,6 @@ gulp.task('clean:css', function () {
 
 // CSS styles task
 gulp.task('styles', function () {
-
   if (process.env.NODE_ENV === 'production') {
 
     var cssStream = gulp.src(defaultAssets.client.lib.css)
@@ -373,7 +379,7 @@ function angularUibTemplatecache() {
   // Loop trough module names
   defaultAssets.client.lib.uibModuleTemplates.forEach(function (uibModule) {
 
-    var moduleStream = gulp.src(['public/lib/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
+    var moduleStream = gulp.src(['node_modules/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
       .pipe(plugins.htmlmin({ collapseWhitespace: true }))
       .pipe(plugins.templateCache('uib-templates-' + uibModule + '.js', {
         root: 'uib/template/' + uibModule + '/',
@@ -432,30 +438,34 @@ function mocha(done) {
   var error;
 
   // Connect mongoose
-  mongooseService.connect(function () {
-    mongooseService.loadModels();
-    // Run the tests
-    gulp.src(testSuites)
-      .pipe(plugins.mocha({
-        reporter: 'spec',
-        timeout: 10000
-      }))
-      .on('error', function (err) {
-        // If an error occurs, save it
-        error = err;
-        console.error(err);
-      })
-      .on('end', function () {
-        // When the tests are done, disconnect agenda/mongoose
-        // and pass the error state back to gulp
-        // @TODO: https://github.com/Trustroots/trustroots/issues/438
-        // @link https://github.com/agenda/agenda/pull/450
-        agenda._mdb.close(function () {
-          mongooseService.disconnect(function () {
-            done(error);
+  mongooseService.connect(function (db) {
+    // Clean out test database to have clean base
+    mongooseService.dropDatabase(db, function () {
+      mongooseService.loadModels();
+
+      // Run the tests
+      gulp.src(testSuites)
+        .pipe(plugins.mocha({
+          reporter: 'spec',
+          timeout: 10000
+        }))
+        .on('error', function (err) {
+          // If an error occurs, save it
+          error = err;
+          console.error(err);
+        })
+        .on('end', function () {
+          // When the tests are done, disconnect agenda/mongoose
+          // and pass the error state back to gulp
+          // @TODO: https://github.com/Trustroots/trustroots/issues/438
+          // @link https://github.com/agenda/agenda/pull/450
+          agenda._mdb.close(function () {
+            mongooseService.disconnect(function () {
+              done(error);
+            });
           });
         });
-      });
+    });
   });
 }
 
@@ -474,27 +484,6 @@ function karmaWatch(done) {
   }, done).start();
 }
 
-function dropdb(done) {
-  // Use mongoose configuration
-  var mongooseService = require('./config/lib/mongoose.js');
-
-  mongooseService.connect(function (db) {
-    db.connection.db.dropDatabase(function (err) {
-      if (err) {
-        console.error(err);
-      } else {
-        console.log('Successfully dropped db: ', db.connection.db.databaseName);
-      }
-      db.connection.db.close(done);
-    });
-  });
-}
-
-// Run Selenium tasks
-gulp.task('selenium', plugins.shell.task('python ./scripts/selenium/test.py'));
-
-// Drops the MongoDB database, used in e2e testing
-gulp.task('dropdb', dropdb);
 
 // Analyse code for potential errors
 gulp.task('lint', gulp.parallel('eslint', 'eslint-angular'));
@@ -509,9 +498,10 @@ gulp.task('build:dev', gulp.series(
     'lint',
     'clean'
   ),
+  angularUibTemplatecache,
   gulp.parallel(
-    angularUibTemplatecache,
-    'styles'
+    'styles',
+    'scripts'
   )
 ));
 
@@ -531,11 +521,8 @@ gulp.task('build:prod', gulp.series(
 // Run the project tests
 gulp.task('test', gulp.series(
   'env:test',
-  gulp.parallel(
-    'lint',
-    karma,
-    mocha
-  )
+  karma,
+  mocha
 ));
 
 gulp.task('test:server', gulp.series(
@@ -558,11 +545,9 @@ gulp.task('test:server:watch', gulp.series(
 ));
 
 gulp.task('test:client', gulp.series(
+  'build:dev',
   'env:test',
-  gulp.parallel(
-    'lint',
-    karma
-  )
+  karma
 ));
 
 gulp.task('test:client:watch', gulp.series(
@@ -579,7 +564,17 @@ gulp.task('develop', gulp.series(
   'build:dev',
   gulp.parallel(
     runNodemon,
-    'watch'
+    'watch',
+    webpackTask({
+      entry: './config/webpack/entries/main.js',
+      filename: 'main.js',
+      path: 'public/assets/',
+      watch: true,
+      onChange: function () {
+        console.log('webpack changed!');
+        plugins.refresh.changed('/assets/main.js');
+      }
+    })
   )
 ));
 

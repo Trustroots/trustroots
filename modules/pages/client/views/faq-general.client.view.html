@@ -26,6 +26,8 @@
   <a href="https://www.wikihow.com/Set-a-Bookmark-Shortcut-in-Your-Home-Screen-on-Android#Using_Firefox_sub" rel="noopener">Android (Firefox)</a>.
   <br><br>
   If you would like to help out developing our mobile apps, read more about <a href="http://developers.trustroots.org/" rel="noopener">developing Trustroots</a>.
+  <br><br>
+  <em>See also <a ui-sref="faq.technology({'#': 'f-droid'})">Could you offer mobile app at F-Droid store?</a></em>
 </div>
 
 <div class="faq-question" id="is-trustroots-alternative">
@@ -43,38 +45,40 @@
   Back to the roots. Earthy. The art of asking — and trusting — is something we often experience while traveling. We also have some innovative ideas that can help building trust among people. Once the network is big enough we'd love to work with scientists to build something that can really make a difference through trust metrics.
 </div>
 
-<div class="faq-question" id="why-is-trustroots-invite-only">
-  <h3>Why is Trustroots invite only?</h3>
-  Trustroots is growing, we’ve passed <a ui-sref="statistics">25’000 members</a> (March 2017).
-  Until now Trustroots has been focused around the hitchhiking community.
-  As we grow, we want to manage the transition to a wider audience carefully.
-  <br><br>
-  Right now we simply don’t have the features to support a diverse audience of
-  people with differing values. We want to build on the tribes feature, and add
-  a whole lot more to help with this. But for the time being, we feel that it’s
-  better to keep our growth more focused.
-  <br><br>
-  Read more from our <a href="https://ideas.trustroots.org/2017/03/25/trustroots-goes-invitation-only/">blog post</a>.
-</div>
+<div ng-if="app.appSettings.invitationsEnabled">
+  <div class="faq-question" id="why-is-trustroots-invite-only">
+    <h3>Why is Trustroots invite only?</h3>
+    Trustroots is growing, we’ve passed <a ui-sref="statistics">25’000 members</a> (March 2017).
+    Until now Trustroots has been focused around the hitchhiking community.
+    As we grow, we want to manage the transition to a wider audience carefully.
+    <br><br>
+    Right now we simply don’t have the features to support a diverse audience of
+    people with differing values. We want to build on the tribes feature, and add
+    a whole lot more to help with this. But for the time being, we feel that it’s
+    better to keep our growth more focused.
+    <br><br>
+    Read more from our <a href="https://ideas.trustroots.org/2017/03/25/trustroots-goes-invitation-only/">blog post</a>.
+  </div>
 
-<div class="faq-question" id="how-waitinglist-works">
-  <h3>How waiting list works?</h3>
-  <ul>
-    <li>You sign up to the list.</li>
-    <li>You verify your email.</li>
-    <li>You get your own invite link.</li>
-    <li>You invite friends by giving them your link.</li>
-    <li>Once you have 4 friends on the waiting list, we send you and your friends a link to join the site.</li>
-  </ul>
-  <p ng-if="!app.user" class="text-center">
-    <br>
-    <a ui-sref="signup" class="btn btn-lg btn-primary">Sign up!</a>
-  </p>
-</div>
+  <div class="faq-question" id="how-waitinglist-works">
+    <h3>How waiting list works?</h3>
+    <ul>
+      <li>You sign up to the list.</li>
+      <li>You verify your email.</li>
+      <li>You get your own invite link.</li>
+      <li>You invite friends by giving them your link.</li>
+      <li>Once you have 4 friends on the waiting list, we send you and your friends a link to join the site.</li>
+    </ul>
+    <p ng-if="!app.user" class="text-center">
+      <br>
+      <a ui-sref="signup" class="btn btn-lg btn-primary">Sign up!</a>
+    </p>
+  </div>
 
-<div class="faq-question" id="i-did-not-receive-invite-code">
-  <h3>I did not receive invite code</h3>
-  If you know that you should've received invite code from the waiting list, check first your email spam folder. If you don't find the email there, please <a ui-sref="support">contact us</a>.
+  <div class="faq-question" id="i-did-not-receive-invite-code">
+    <h3>I did not receive invite code</h3>
+    If you know that you should've received invite code from the waiting list, check first your email spam folder. If you don't find the email there, please <a ui-sref="support">contact us</a>.
+  </div>
 </div>
 
 <div class="faq-question" id="why-is-there-facebook-connection">

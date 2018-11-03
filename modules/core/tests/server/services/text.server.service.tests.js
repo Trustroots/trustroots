@@ -27,7 +27,7 @@ describe('Text processor tests', function () {
     '<h5>h5</h5>' +
     '<h6>h6</h6>' +
     '&nbsp;' +
-    '<img src="//www.trustroots.org/modules/users/img/avatar.png"/>' +
+    '<img src="//www.trustroots.org/img/avatar.png"/>' +
     '<p>unclosed tag' +
     '<p>foo<br>bar</p>';
 

@@ -31,7 +31,7 @@
           var $header = angular.element('#tr-header');
           // Set y-axis offset for scrolling to element to header's height
           return $header.length ? ($header.height() + 5) : 50;
-        }
+        };
         $anchorScroll();
       }, 500);
     }

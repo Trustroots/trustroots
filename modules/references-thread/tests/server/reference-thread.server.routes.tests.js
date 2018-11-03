@@ -38,7 +38,7 @@ describe('Reference Thread CRUD tests', function () {
 
   before(function (done) {
     // Get application
-    app = express.init(mongoose);
+    app = express.init(mongoose.connection);
     agent = request.agent(app);
 
     done();
@@ -190,7 +190,7 @@ describe('Reference Thread CRUD tests', function () {
   });
 
   it('should not be able to read references if not logged in', function (done) {
-    agent.get('/api/references/threads/' + referenceUserToId)
+    agent.get('/api/references-thread/' + referenceUserToId)
       .expect(403)
       .end(function (referenceReadErr, referenceReadRes) {
 
@@ -218,7 +218,7 @@ describe('Reference Thread CRUD tests', function () {
           if (referenceThreadErr) return done(referenceThreadErr);
 
           // Read reference
-          agent.get('/api/references/threads/' + referenceUserToId)
+          agent.get('/api/references-thread/' + referenceUserToId)
             .expect(200)
             .end(function (referenceReadErr, referenceReadRes) {
 
@@ -253,7 +253,7 @@ describe('Reference Thread CRUD tests', function () {
           if (referenceThreadErr) return done(referenceThreadErr);
 
           // Read reference
-          agent.get('/api/references/threads/' + referenceUserToId)
+          agent.get('/api/references-thread/' + referenceUserToId)
             .expect(200)
             .end(function (referenceReadErr, referenceReadRes) {
 
@@ -280,7 +280,7 @@ describe('Reference Thread CRUD tests', function () {
         if (signinErr) return done(signinErr);
 
         // Read reference
-        agent.get('/api/references/threads/' + referenceUserToId)
+        agent.get('/api/references-thread/' + referenceUserToId)
           .expect(404)
           .end(function (referenceReadErr, referenceReadRes) {
 
@@ -310,7 +310,7 @@ describe('Reference Thread CRUD tests', function () {
           Thread.remove().exec(function () {
 
             // Read reference
-            agent.get('/api/references/threads/' + referenceUserToId)
+            agent.get('/api/references-thread/' + referenceUserToId)
               .expect(404)
               .end(function (referenceReadErr, referenceReadRes) {
 
@@ -331,7 +331,7 @@ describe('Reference Thread CRUD tests', function () {
   });
 
   it('should not be able to create reference if not logged in', function (done) {
-    agent.post('/api/references/threads')
+    agent.post('/api/references-thread')
       .send(referenceThread)
       .expect(403)
       .end(function (referenceSaveErr, referenceSaveRes) {
@@ -352,7 +352,7 @@ describe('Reference Thread CRUD tests', function () {
         if (signinErr) return done(signinErr);
 
         // Save a new reference
-        agent.post('/api/references/threads')
+        agent.post('/api/references-thread')
           .send(referenceThread)
           .expect(403)
           .end(function (referenceSaveErr, referenceSaveRes) {
@@ -378,7 +378,7 @@ describe('Reference Thread CRUD tests', function () {
         // Save a new reference
         referenceThread.userTo = referenceUserFromId;
 
-        agent.post('/api/references/threads')
+        agent.post('/api/references-thread')
           .send(referenceThread)
           .expect(400)
           .end(function (referenceSaveErr, referenceSaveRes) {
@@ -403,7 +403,7 @@ describe('Reference Thread CRUD tests', function () {
         if (signinErr) return done(signinErr);
 
         // Save a new reference
-        agent.post('/api/references/threads')
+        agent.post('/api/references-thread')
           .send(referenceThread)
           .expect(200)
           .end(function (referenceSaveErr, referenceSaveRes) {
@@ -444,7 +444,7 @@ describe('Reference Thread CRUD tests', function () {
 
           // Save 2st new reference ("no") via API
           referenceThread.reference = 'no';
-          agent.post('/api/references/threads')
+          agent.post('/api/references-thread')
             .send(referenceThread)
             .expect(200)
             .end(function (referenceSaveErr) {
@@ -475,7 +475,7 @@ describe('Reference Thread CRUD tests', function () {
                   moment().diff(referenceThreadFindRes[1].created, 'hours').should.equal(24);
 
                   // Read reference
-                  agent.get('/api/references/threads/' + referenceUserToId)
+                  agent.get('/api/references-thread/' + referenceUserToId)
                     .expect(200)
                     .end(function (referenceReadErr, referenceReadRes) {
 

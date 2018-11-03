@@ -33,7 +33,7 @@ describe('Core CRUD tests', function () {
 
   before(function (done) {
     // Get application
-    app = express.init(mongoose);
+    app = express.init(mongoose.connection);
     agent = request.agent(app);
 
     done();
@@ -128,7 +128,7 @@ describe('Core CRUD tests', function () {
 
     it('Responses should have Expect-CT header with correct "max-age" value', function (done) {
       agent.get('/')
-        .expect('expect-ct', /max-age=30;/)
+        .expect('expect-ct', /max-age=30/)
         .end(function (err) {
           return done(err);
         });

@@ -9,7 +9,7 @@
 
   /* @ngInject */
   function ReferenceThreadService($resource) {
-    return $resource('/api/references/threads/:userToId', {
+    return $resource('/api/references-thread/:userToId', {
       userToId: '@_id'
     }, {
       get: {

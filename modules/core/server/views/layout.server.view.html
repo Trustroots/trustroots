@@ -31,24 +31,24 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#12b591">
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/icons/android/512.png" sizes="512x512">
-  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/icons/android/192.png" sizes="192x192">
-  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/icons/android/144.png" sizes="144x144">
-  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/icons/android/96.png" sizes="96x96">
-  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/icons/android/72.png" sizes="72x72">
-  <link rel="icon" type="image/png" href="{{hostPort}}/modules/core/img/icons/android/48.png" sizes="48x48">
-  <link rel="icon shortcut" type="image/png" href="{{hostPort}}/modules/core/img/favicon@2x.png" sizes="32x32" id="favicon2x">
-  <link rel="icon shortcut" type="image/png" href="{{hostPort}}/modules/core/img/favicon.png" sizes="16x16" id="favicon">
+  <link rel="icon" type="image/png" href="{{hostPort}}/img/icons/android/512.png" sizes="512x512">
+  <link rel="icon" type="image/png" href="{{hostPort}}/img/icons/android/192.png" sizes="192x192">
+  <link rel="icon" type="image/png" href="{{hostPort}}/img/icons/android/144.png" sizes="144x144">
+  <link rel="icon" type="image/png" href="{{hostPort}}/img/icons/android/96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="{{hostPort}}/img/icons/android/72.png" sizes="72x72">
+  <link rel="icon" type="image/png" href="{{hostPort}}/img/icons/android/48.png" sizes="48x48">
+  <link rel="icon shortcut" type="image/png" href="{{hostPort}}/img/favicon@2x.png" sizes="32x32" id="favicon2x">
+  <link rel="icon shortcut" type="image/png" href="{{hostPort}}/img/favicon.png" sizes="16x16" id="favicon">
 
   {# Apple #}
-  <link rel="apple-touch-icon-precomposed" sizes="152x152" href="{{hostPort}}/modules/core/img/icons/ios/Icon-76@2x.png">
-  <link rel="apple-touch-icon-precomposed" sizes="120x120" href="{{hostPort}}/modules/core/img/icons/ios/Icon-60@2x.png">
-  <link rel="apple-touch-icon-precomposed" sizes="76x76" href="{{hostPort}}/modules/core/img/icons/ios/Icon-76.png">
-  <link rel="apple-touch-icon-precomposed" sizes="60x60" href="{{hostPort}}/modules/core/img/icons/ios/Icon-60.png">
-  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="{{hostPort}}/modules/core/img/icons/ios/Icon-72@2x.png">
-  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="{{hostPort}}/modules/core/img/icons/ios/Icon@2x.png">
-  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="{{hostPort}}/modules/core/img/icons/ios/Icon-72.png">
-  <link rel="apple-touch-icon" sizes="57x57" href="{{hostPort}}/modules/core/img/icons/ios/Icon.png">
+  <link rel="apple-touch-icon-precomposed" sizes="152x152" href="{{hostPort}}/img/icons/ios/Icon-76@2x.png">
+  <link rel="apple-touch-icon-precomposed" sizes="120x120" href="{{hostPort}}/img/icons/ios/Icon-60@2x.png">
+  <link rel="apple-touch-icon-precomposed" sizes="76x76" href="{{hostPort}}/img/icons/ios/Icon-76.png">
+  <link rel="apple-touch-icon-precomposed" sizes="60x60" href="{{hostPort}}/img/icons/ios/Icon-60.png">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="{{hostPort}}/img/icons/ios/Icon-72@2x.png">
+  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="{{hostPort}}/img/icons/ios/Icon@2x.png">
+  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="{{hostPort}}/img/icons/ios/Icon-72.png">
+  <link rel="apple-touch-icon" sizes="57x57" href="{{hostPort}}/img/icons/ios/Icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
@@ -62,7 +62,7 @@
       {# https://developers.facebook.com/docs/sharing/best-practices#images #}
       <meta property="og:image" content="https://ucarecdn.com/{{tribe.image_UUID}}/-/progressive/yes/-/scale_crop/1200x630/center/-/quality/lightest/-/format/jpeg/-/overlay/b72e2604-e926-4e17-acbd-e37c0e1f5c73/50%25x50%25/center/{{tribe.slug}}.jpg">
     {% else %}
-      <meta property="og:image" content="{{hostPort}}/modules/core/img/og_image.jpg">
+      <meta property="og:image" content="{{hostPort}}/img/og_image.jpg">
     {% endif %}
   {% else %}
     {% if invite %}
@@ -72,7 +72,7 @@
     {% endif %}
     <meta property="og:description" content="{{description}}">
     <meta property="og:url" content="{{canonicalUrl}}">
-    <meta property="og:image" content="{{hostPort}}/modules/core/img/og_image.jpg">
+    <meta property="og:image" content="{{hostPort}}/img/og_image.jpg">
   {% endif %}
   <meta property="og:site_name" content="{{title}}">
   <meta property="og:type" content="website">
@@ -88,19 +88,19 @@
     {% if tribe.image_UUID %}
       <meta name="twitter:image" content="https://ucarecdn.com/{{tribe.image_UUID}}/-/progressive/yes/-/scale_crop/1200x630/center/-/quality/lightest/-/format/jpeg/-/overlay/b72e2604-e926-4e17-acbd-e37c0e1f5c73/50%25x50%25/center/{{tribe.slug}}.jpg">
     {% else %}
-      <meta name="twitter:image" content="{{hostPort}}/modules/core/img/og_image.jpg">
+      <meta name="twitter:image" content="{{hostPort}}/img/og_image.jpg">
     {% endif %}
   {% else %}
     <meta name="twitter:title" content="{{title}}">
     <meta name="twitter:description" content="{{description}}">
     <meta name="twitter:url" content="{{hostPort}}/">
-    <meta name="twitter:image" content="{{hostPort}}/modules/core/img/og_image.jpg">
+    <meta name="twitter:image" content="{{hostPort}}/img/og_image.jpg">
   {% endif %}
 
   {# MS #}
   <meta name="msapplication-tap-highlight" content="no">
   <meta name="msapplication-TileColor" content="#FFFFFF">
-  <meta name="msapplication-TileImage" content="{{hostPort}}/modules/core/img/icons/apple-touch-icon-144x144-precomposed.png">
+  <meta name="msapplication-TileImage" content="{{hostPort}}/img/icons/apple-touch-icon-144x144-precomposed.png">
 
   {# Google Analytics #}
   {% if googleAnalytics.enabled === true %}
@@ -170,7 +170,7 @@
   </script>
 
   {% if env === 'production' %}
-    <script src="/dist/application.min.js?c={{appSettings.commit}}"
+    <script src="/assets/main.js?c={{appSettings.commit}}"
             nonce="{{ nonce }}"></script>
   {% endif %}
 

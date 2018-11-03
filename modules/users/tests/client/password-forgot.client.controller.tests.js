@@ -93,7 +93,7 @@
           });
 
           it('should not clear form', function () {
-            expect($scope.vm.credentials).not.toBe(null);
+            expect($scope.vm.credentials).not.toBeNull();
           });
 
           it('should set error to response message', function () {
@@ -117,7 +117,7 @@
           });
 
           it('should clear form', function () {
-            expect($scope.vm.credentials).toBe(null);
+            expect($scope.vm.credentials).toBeNull();
           });
 
           it('should set success to response message', function () {

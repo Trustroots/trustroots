@@ -108,7 +108,7 @@
           });
 
           it('should clear password form', function () {
-            expect($scope.vm.passwordDetails).toBe(null);
+            expect($scope.vm.passwordDetails).toBeNull();
           });
 
           it('should attach user profile', function () {

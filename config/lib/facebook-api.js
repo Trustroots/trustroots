@@ -16,7 +16,7 @@ var fbClientID = _.get(config, 'facebook.clientID'),
 
 /**
  * Configure FB API version
- * v2.8 is available at least until October 2018
+ * v2.10 is available until November 7, 2019
  *
  * @link https://developers.facebook.com/docs/apps/versions
  * @link https://developers.facebook.com/docs/apps/changelog

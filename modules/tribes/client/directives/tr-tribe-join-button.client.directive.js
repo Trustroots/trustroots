@@ -193,7 +193,7 @@
                 reject(err);
               });
             },
-              // `Cancel` button from confirm dialog
+            // `Cancel` button from confirm dialog
             function () {
               reject('cancelled');
             });

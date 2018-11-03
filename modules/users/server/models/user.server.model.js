@@ -143,7 +143,7 @@ var UserSchema = new Schema({
   },
   gender: {
     type: String,
-    enum: ['', 'male', 'female', 'other'],
+    enum: ['', 'female', 'male', 'non-binary', 'other'],
     default: ''
   },
   languages: {
@@ -222,7 +222,7 @@ var UserSchema = new Schema({
     }],
     default: ['user']
   },
-  /* The last time the user was logged in (uncertain if its live right now 5 Apr 2015) */
+  /* The last time the user was logged in; collected from July 2017 onwards */
   seen: {
     type: Date
   },
@@ -327,7 +327,7 @@ UserSchema.pre('save', function (next) {
  */
 UserSchema.methods.hashPassword = function (password) {
   if (this.salt && password) {
-    return crypto.pbkdf2Sync(password, new Buffer(this.salt, 'base64'), 10000, 64, 'SHA1').toString('base64');
+    return crypto.pbkdf2Sync(password, Buffer.from(this.salt, 'base64'), 10000, 64, 'SHA1').toString('base64');
   } else {
     return password;
   }

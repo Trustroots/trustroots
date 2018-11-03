@@ -65,137 +65,29 @@ module.exports = function (job, agendaDone) {
       });
     },
 
-    // Get the amount of memebers who never got to log into TR
+    // Ammount of users - The past 7 days
     function (done) {
-      var stat = 'never';
-      statistics.getLastSeenStatistic(stat, function (err, count) {
-        if (err) {
-          return done(err);
-        }
-        writeDailyStat({
-          namespace: stat,
-          values: {
-            count: parseInt(count)
-          },
-          tags: {
-            access: 'members'
-          }
-        }, done)
-      });
+      collectLastSeen('past7d', done);
     },
 
-    // Get the amount of members who logged into TR today
+    // Ammount of users - The past 14 days
     function (done) {
-      var stat = 'today';
-      statistics.getLastSeenStatistic(stat, function (err, count) {
-        if (err) {
-          return done(err);
-        }
-        writeDailyStat({
-          namespace: stat,
-          values: {
-            count: parseInt(count)
-          },
-          tags: {
-            access: 'members'
-          }
-        }, done)
-      });
+      collectLastSeen('past14d', done);
     },
 
-    // Get the amount of members who logged into TR this week
+    // Ammount of users - The past 30 days
     function (done) {
-      var stat = 'week';
-      statistics.getLastSeenStatistic(stat, function (err, count) {
-        if (err) {
-          return done(err);
-        }
-        writeDailyStat({
-          namespace: stat,
-          values: {
-            count: parseInt(count)
-          },
-          tags: {
-            access: 'members'
-          }
-        }, done)
-      });
+      collectLastSeen('past30d', done);
     },
 
-    // Get the amount of member who logged in this month
+    // Ammount of users - The past 6 months
     function (done) {
-      var stat = 'thisMonth';
-      statistics.getLastSeenStatistic(stat, function (err, count) {
-        if (err) {
-          return done(err);
-        }
-        writeDailyStat({
-          namespace: stat,
-          values: {
-            count: parseInt(count)
-          },
-          tags: {
-            access: 'members'
-          }
-        }, done)
-      });
+      collectLastSeen('past6m', done);
     },
 
-    // Get the ammount of members who logged in for that last month
+    // Ammount of users - The past year
     function (done) {
-      var stat = 'sinceAMonthAgo';
-      statistics.getLastSeenStatistic(stat, function (err, count) {
-        if (err) {
-          return done(err);
-        }
-        writeDailyStat({
-          namespace: stat,
-          values: {
-            count: parseInt(count)
-          },
-          tags: {
-            access: 'members'
-          }
-        }, done)
-      });
-    },
-
-    // Get the ammount of members who logged in for the last 6 months
-    function (done) {
-      var stat = 'sinceSixMonthsAgo';
-      statistics.getLastSeenStatistic(stat, function (err, count) {
-        if (err) {
-          return done(err);
-        }
-        writeDailyStat({
-          namespace: stat,
-          values: {
-            count: parseInt(count)
-          },
-          tags: {
-            access: 'members'
-          }
-        }, done)
-      });
-    },
-
-    // Get the ammount of members who logged in for the last 12 months
-    function (done) {
-      var stat = 'sinceAYearAgo';
-      statistics.getLastSeenStatistic(stat, function (err, count) {
-        if (err) {
-          return done(err);
-        }
-        writeDailyStat({
-          namespace: stat,
-          values: {
-            count: parseInt(count)
-          },
-          tags: {
-            access: 'members'
-          }
-        }, done)
-      });
+      collectLastSeen('past12m', done);
     },
 
     // Hosting offer count
@@ -208,15 +100,15 @@ module.exports = function (job, agendaDone) {
         }
 
         // Write numbers to stats
-        async.eachSeries(hostOfferCounts, function (offerCount, doneStatus) {
+        async.eachOfSeries(hostOfferCounts, function (offerCount, offerStatus, doneStatus) {
           writeDailyStat({
             namespace: 'offers',
             values: {
-              count: parseInt(offerCount.count, 10)
+              count: parseInt(offerCount, 10)
             },
             tags: {
               type: 'host',
-              status: String(offerCount._id) // `yes|maybe|no`
+              status: String(offerStatus) // `yes|maybe|no`
             }
           }, doneStatus);
         }, done);
@@ -324,3 +216,24 @@ function writeDailyStat(statObject, callback) {
     callback(null);
   });
 }
+
+/**
+ * Collect Last Seen Stats
+ */
+function collectLastSeen(seenSince, callback) {
+  statistics.getLastSeenStatistic(seenSince, function (err, count) {
+    if (err) {
+      return callback(err);
+    }
+    writeDailyStat({
+      namespace: seenSince,
+      values: {
+        count: parseInt(count, 10)
+      },
+      tags: {
+        access: 'members'
+      }
+    }, callback);
+  });
+};
+

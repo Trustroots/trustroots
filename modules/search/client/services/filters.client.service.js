@@ -14,8 +14,14 @@
     // Default structure for filters object
     var defaultFilters = {
       tribes: [],
-      types: [],
-      languages: []
+      types: [
+        'host',
+        'meet'
+      ],
+      languages: [],
+      seen: {
+        months: 24
+      }
     };
 
     // Make cache id unique for this user

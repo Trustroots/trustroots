@@ -13,24 +13,16 @@ var should = require('should'),
     sinon = require('sinon');
 
 describe('Stat API integration tests', function () {
-  // replace the influx & stathat service stat() functions with fake version
-  var sandbox;
-
-  // initializing and clearing the sinon sandbox
-  beforeEach(function () {
-    // sandboxing in sinon helps restore the spied/stubbed/mocked functions
-    sandbox = sinon.sandbox.create();
-  });
-
+  // restoring stubs
   afterEach(function () {
     // restore the stubbed services
-    sandbox.restore();
+    sinon.restore();
   });
 
   // stub the influx and stathat endpoints
   beforeEach(function () {
     // stub the influx endpoint(s)
-    sandbox.stub(influx.InfluxDB.prototype, 'writeMeasurement');
+    sinon.stub(influx.InfluxDB.prototype, 'writeMeasurement');
 
     // and writeMeasurement returns a Promise
     influx.InfluxDB.prototype.writeMeasurement.returns(
@@ -40,7 +32,7 @@ describe('Stat API integration tests', function () {
     );
 
     // provide config options for influxdb
-    sandbox.stub(config.influxdb, 'options').value({
+    sinon.stub(config.influxdb, 'options').value({
       host: 'localhost',
       port: 8086,
       protocol: 'http',
@@ -48,16 +40,16 @@ describe('Stat API integration tests', function () {
     });
 
     // stub the stathat endpoints
-    sandbox.stub(stathat, 'trackEZCount');
+    sinon.stub(stathat, 'trackEZCount');
     stathat.trackEZCount.callsArgWithAsync(3, 200, null);
 
-    sandbox.stub(stathat, 'trackEZCountWithTime');
+    sinon.stub(stathat, 'trackEZCountWithTime');
     stathat.trackEZCountWithTime.callsArgWithAsync(4, 200, null);
 
-    sandbox.stub(stathat, 'trackEZValue');
+    sinon.stub(stathat, 'trackEZValue');
     stathat.trackEZValue.callsArgWithAsync(3, 200, null);
 
-    sandbox.stub(stathat, 'trackEZValueWithTime');
+    sinon.stub(stathat, 'trackEZValueWithTime');
     stathat.trackEZValueWithTime.callsArgWithAsync(4, 200, null);
 
   });
@@ -66,13 +58,13 @@ describe('Stat API integration tests', function () {
   context('endpoints enabled', function () {
     beforeEach(function () {
       // stub the config.stathat.key
-      sandbox.stub(config.stathat, 'key').value('stathatkey');
+      sinon.stub(config.stathat, 'key').value('stathatkey');
 
       // stub enable stathat in config
-      sandbox.stub(config.stathat, 'enabled').value(true);
+      sinon.stub(config.stathat, 'enabled').value(true);
 
       // stub enable influx in config
-      sandbox.stub(config.influxdb, 'enabled').value(true);
+      sinon.stub(config.influxdb, 'enabled').value(true);
     });
 
     context('valid data', function () {
@@ -677,13 +669,13 @@ describe('Stat API integration tests', function () {
   context('influx disabled', function () {
     beforeEach(function () {
       // stub the config.stathat.key
-      sandbox.stub(config.stathat, 'key').value('stathatkey');
+      sinon.stub(config.stathat, 'key').value('stathatkey');
 
       // stub enable stathat in config
-      sandbox.stub(config.stathat, 'enabled').value(true);
+      sinon.stub(config.stathat, 'enabled').value(true);
 
       // stub enable influx in config
-      sandbox.stub(config.influxdb, 'enabled').value(false);
+      sinon.stub(config.influxdb, 'enabled').value(false);
     });
 
     it('send only to stathat, influx ignored without error', function (done) {
@@ -709,13 +701,13 @@ describe('Stat API integration tests', function () {
   context('stathat disabled', function () {
     beforeEach(function () {
       // stub the config.stathat.key
-      sandbox.stub(config.stathat, 'key').value('stathatkey');
+      sinon.stub(config.stathat, 'key').value('stathatkey');
 
       // stub enable stathat in config
-      sandbox.stub(config.stathat, 'enabled').value(false);
+      sinon.stub(config.stathat, 'enabled').value(false);
 
       // stub enable influx in config
-      sandbox.stub(config.influxdb, 'enabled').value(true);
+      sinon.stub(config.influxdb, 'enabled').value(true);
     });
 
     it('send only to influx, stathat ignored without error', function (done) {

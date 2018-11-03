@@ -1,8 +1,8 @@
 <section class="search-sidebar-section search-sidebar-filters">
 
   <!-- Offer type filter -->
-  <div role="group" aria-label="Hosts or people to meet?">
-    <h4>Hosts or people to meet?</h4>
+  <div role="group" aria-label="Hosts or meetups?">
+    <h4>Hosts or meetups?</h4>
     <div tr-types-toggle="search.filters.types"></div>
   </div>
   <!-- /Offer type filter -->
@@ -29,6 +29,19 @@
     <div tr-tribes-toggle="search.filters.tribes"></div>
   </div>
   <!-- Tribes type filter -->
+
+  <hr class="hr-gray hr-tight">
+
+  <!-- Online recently filter (aka "seen") -->
+  <p>
+    <label tr-switch>
+      <input type="checkbox"
+             ng-model="search.onlineInPast6Months"
+             ng-change="search.onSeenFilterChange()">
+      Online in the past 6 months
+    </label>
+  </p>
+  <!-- /Online recently filter (aka "seen") -->
 
   <hr class="hr-gray hr-tight">
 

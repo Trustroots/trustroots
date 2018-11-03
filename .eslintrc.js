@@ -37,6 +37,7 @@ module.exports = {
     'one-var': [0, 'never'],
     'one-var-declaration-per-line': [2, 'always'],
     'padded-blocks': 0,
+    'semi': [2, 'always'],
     'space-before-function-paren': ['error', {
       'anonymous': 'always',
       'named': 'never',

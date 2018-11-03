@@ -194,35 +194,33 @@ exports.getPushRegistrationCount = function (callback) {
 exports.getLastSeenStatistic = function (type, callback) {
   var now = moment();
   var query = { };
+  var slideWindow;
 
   switch (type) {
-    case 'never':
-      query.seen = { $exists: false };
+    case 'past48h':
+      slideWindow = now.subtract(48, 'hours');
       break;
-    case 'today':
-      query.seen = { '$gte': now.startOf('day') };
+    case 'past7d':
+      slideWindow = now.subtract(7, 'days');
       break;
-    case 'week':
-      query.seen = { '$gte': now.startOf('week') };
+    case 'past14d':
+      slideWindow = now.subtract(14, 'days');
       break;
-    case 'thisMonth':
-      query.seen = { '$gte': now.startOf('month') };
+    case 'past30d':
+      slideWindow = now.subtract(30, 'days');
       break;
-    case 'sinceAMonthAgo':
-      var thisMonth = now.startOf('month');
-      query.seen = { '$gte': thisMonth.subtract(1, 'months') };
+    case 'past6m':
+      slideWindow = now.subtract(6, 'months');
       break;
-    case 'sinceSixMonthsAgo':
-      var thisMonth = now.startOf('month');
-      query.seen = { '$gte': thisMonth.subtract(2, 'months') };
-      break;
-    case 'sinceAYearAgo':
-      var thisMonth = now.startOf('month');
-      query.seen = { '$gte': thisMonth.subtract(12, 'months') };
+    case 'past12m':
+      slideWindow = now.subtract(12, 'months');
       break;
     default:
       return callback(new Error('Missing last seen statistic type.'));
   }
+
+  query.seen = { '$gte': slideWindow };
+
   User.count(query, function (err, count) {
     if (err) {
       callback(err);
@@ -230,8 +228,7 @@ exports.getLastSeenStatistic = function (type, callback) {
     }
     callback(null, parseInt(count) || 0);
   });
-
-}
+};
 
 /**
  * Get all statistics

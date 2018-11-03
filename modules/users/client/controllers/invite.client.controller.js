@@ -83,7 +83,7 @@
           description: inviteTextGeneric,
           // Image used for sharing
           // Image URL would be appended to "note" section in invite emails as well
-          // media: domain + '/modules/core/img/og_image.jpg',
+          // media: domain + '/img/og_image.jpg',
           email_template: 'invite',
           email_vars: {
             'code': code,

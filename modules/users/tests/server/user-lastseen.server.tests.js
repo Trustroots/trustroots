@@ -17,25 +17,23 @@ describe('User last seen CRUD tests', function () {
   var app,
       agent,
       _confirmedUser,
-      sandbox,
       confirmedUser;
 
 
   before(function (done) {
     // Get application
-    app = express.init(mongoose);
+    app = express.init(mongoose.connection);
     agent = request.agent(app);
 
     done();
   });
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
-    sandbox.useFakeTimers(1500000000000, 'Date');
+    sinon.useFakeTimers({ now: 1500000000000, toFake: ['Date'] });
   });
 
   afterEach(function () {
-    sandbox.restore();
+    sinon.restore();
   });
 
   // Create a confirmed user
@@ -90,7 +88,7 @@ describe('User last seen CRUD tests', function () {
 
     it('should update the last seen date of logged user when accessing api', function (done) {
       // Read statistics
-      sandbox.clock.tick(20);
+      sinon.clock.tick(20);
       agent.get('/api/messages')
         .expect(200)
         .end(function (err) {
@@ -116,7 +114,7 @@ describe('User last seen CRUD tests', function () {
       // how long should we wait between updates on minimum
       var minutesToUpdate = { minutes: 1 }; // 1 minute
 
-      sandbox.stub(config.limits, 'timeToUpdateLastSeenUser').value(minutesToUpdate);
+      sinon.stub(config.limits, 'timeToUpdateLastSeenUser').value(minutesToUpdate);
 
       var timeToUpdate = moment.duration(minutesToUpdate).asMilliseconds();
 
@@ -131,7 +129,7 @@ describe('User last seen CRUD tests', function () {
               should(user.seen).eql(originalTime);
 
               // now wait almost for the time to update
-              sandbox.clock.tick(timeToUpdate - 1);
+              sinon.clock.tick(timeToUpdate - 1);
               agent.get('/api/messages')
                 .expect(200)
                 .end(function () {
@@ -141,7 +139,7 @@ describe('User last seen CRUD tests', function () {
                       should(user.seen).eql(originalTime);
 
                       // now wait for another 2 milliseconds
-                      sandbox.clock.tick(2);
+                      sinon.clock.tick(2);
 
                       agent.get('/api/messages')
                         .expect(200)

@@ -82,9 +82,10 @@
 
           AuthenticationController.signin();
           $httpBackend.flush();
+          $scope.$digest();
 
           // Test $scope value
-          expect(Authentication.user).toEqual(undefined);
+          expect(Authentication.user).toBeNull();
         });
 
       });

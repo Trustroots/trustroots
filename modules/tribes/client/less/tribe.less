@@ -1,14 +1,13 @@
 .tribe-header {
   padding: 0;
   position: fixed;
-  top: @navbar-height;
+  top: 0;
   bottom: 0;
   left: 0;
   right: 0;
   .tribe-header-back {
-    position: absolute;
-    top: (@navbar-height + 10px);
-    left: 10px;
+    padding-top: (@navbar-height + 50px);
+    margin-left: -30px;
     [class^="icon-"]:before,
     [class*=" icon-"]:before {
       transition: all 0.2s ease-in-out;
@@ -22,18 +21,13 @@
         margin-left: 0;
       }
     }
-    @media (max-width: @screen-xs-max) {
-      position: absolute;
-      top: 0;
-      left: 0;
-      padding-right: 50px;
-      right: 0;
-    }
   }
 }
 .tribe-header-info {
   width: 100%;
   min-height: 680px;
+  height: 100vh;
+  overflow: auto;
   background: linear-gradient(to right, rgba(0,0,0,0.65) 0%,rgba(0,0,0,0) 100%);
   .tribe-pre {
     margin-bottom: 0;

@@ -10,32 +10,28 @@ var should = require('should'),
 
 describe('Stathat Service Unit Test', function () {
   // replace the stathat.trackEZ<Count|Value><WithTime> with stubs
-  var sandbox;
 
   beforeEach(function () {
-    // sandboxing in sinon helps restore the spied/stubbed/mocked functions
-    sandbox = sinon.sandbox.create();
-
     // stub the service dependencies
-    sandbox.stub(stathat, 'trackEZCount').callsArgWithAsync(3, 200, null);
+    sinon.stub(stathat, 'trackEZCount').callsArgWithAsync(3, 200, null);
 
-    sandbox.stub(stathat, 'trackEZCountWithTime').callsArgWithAsync(4, 200, null);
+    sinon.stub(stathat, 'trackEZCountWithTime').callsArgWithAsync(4, 200, null);
 
-    sandbox.stub(stathat, 'trackEZValue').callsArgWithAsync(3, 200, null);
+    sinon.stub(stathat, 'trackEZValue').callsArgWithAsync(3, 200, null);
 
-    sandbox.stub(stathat, 'trackEZValueWithTime').callsArgWithAsync(4, 200, null);
+    sinon.stub(stathat, 'trackEZValueWithTime').callsArgWithAsync(4, 200, null);
 
     // stub the config.stathat.key
-    sandbox.stub(config.stathat, 'key').value('stathatkey');
+    sinon.stub(config.stathat, 'key').value('stathatkey');
 
     // stub enable stathat in config
-    sandbox.stub(config.stathat, 'enabled').value(true);
+    sinon.stub(config.stathat, 'enabled').value(true);
 
   });
 
   afterEach(function () {
     // restore the stubbed methods
-    sandbox.restore();
+    sinon.restore();
   });
 
 

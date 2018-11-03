@@ -51,8 +51,13 @@
       Member since <time ng-bind="profileCtrl.profile.created | date:'mediumDate'"></time>
     </div>
 
-    <div class="profile-sidebar-section" ng-if="::profileCtrl.profile.seen">
-      Online <span tr-time="profileCtrl.profile.seen" tr-time-format="'MMM d, y h:mm a'"></span>
+    <div class="profile-sidebar-section">
+      <span ng-if="::profileCtrl.profile.seen">
+        Online <span tr-time="profileCtrl.profile.seen" tr-time-format="'MMM d, y h:mm a'"></span>
+      </span>
+      <span ng-if="::!profileCtrl.profile.seen">
+        Online long ago
+      </span>
     </div>
 
     <div class="profile-sidebar-section" ng-if="profileCtrl.profile.locationLiving">
@@ -75,11 +80,20 @@
       </ul>
     </div>
 
-    <div class="profile-sidebar-section" ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts() || profileCtrl.profile.extSitesBW || profileCtrl.profile.extSitesCS || profileCtrl.profile.extSitesWS">
-      <h4 id="profile-networks" aria-label="Member in other networks">Elsewhere</h4>
+    <div class="profile-sidebar-section"
+         ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts() || profileCtrl.profile.extSitesBW || profileCtrl.profile.extSitesCS || profileCtrl.profile.extSitesWS">
+      <h4 id="profile-networks" aria-label="Member in other networks">
+        Elsewhere
+      </h4>
       <ul class="social-profiles list-unstyled"
           aria-describedby="profile-networks">
-        <li class="social-profile" ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts()" ng-repeat="(providerName, providerData) in profileCtrl.profile.additionalProvidersData track by providerName">
+        <!--
+          Facebook profile link is hidden here until issue with their API gets resolved
+          See https://github.com/Trustroots/trustroots/issues/237
+        -->
+        <li class="social-profile"
+            ng-repeat="(providerName, providerData) in profileCtrl.profile.additionalProvidersData track by providerName"
+            ng-if="providerName !== 'facebook'">
           <i class="social-profile-icon icon-fw icon-lg icon-{{ ::providerName }}"></i>
           <a rel="noopener"
              class="social-profile-handle text-capitalize"

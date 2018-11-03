@@ -16,6 +16,8 @@
  */
 
 module.exports = {
+  // Need to listen on all addresses so the nginx container can access it
+  host: '0.0.0.0',
 
   /**
    * NodeMailer settings for Maildev Docker image

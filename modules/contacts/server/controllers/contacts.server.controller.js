@@ -375,9 +375,9 @@ exports.filterByCommon = function (req, res, next) {
       // @link https://lodash.com/docs/#filter
       req.contacts = _.filter(req.contacts, function (contact) {
 
-      // Check if `contact.user._id` is also on list of authenticated user's
-      // contacts list. Returning truthy will let it trough to `req.contacts`,
-      // returning falsy will hold it back.
+        // Check if `contact.user._id` is also on list of authenticated user's
+        // contacts list. Returning truthy will let it trough to `req.contacts`,
+        // returning falsy will hold it back.
         return authUserContactUsers.indexOf(contact.user._id.toString()) > -1;
       });
 

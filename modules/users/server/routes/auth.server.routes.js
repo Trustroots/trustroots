@@ -40,8 +40,7 @@ module.exports = function (app) {
     .get(passport.authenticate('facebook', {
       scope: [
         'public_profile',
-        'email',
-        'user_friends'
+        'email'
       ]
     }))
     .put(userAuthentication.updateFacebookOAuthToken);

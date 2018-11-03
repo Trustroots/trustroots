@@ -56,7 +56,7 @@ module.exports.initLocalVariables = function (app) {
 
   // Assets
   if (process.env.NODE_ENV !== 'production') {
-    app.locals.jsFiles = _.concat(config.files.client.js, 'dist/uib-templates.js');
+    app.locals.jsFiles = ['assets/main.js'];
     app.locals.cssFiles = _.map(config.files.client.css, function (file) { return file.replace('/client', ''); });
   }
 
@@ -168,7 +168,7 @@ module.exports.initViewEngine = function (app) {
 /**
  * Configure Express session
  */
-module.exports.initSession = function (app, db) {
+module.exports.initSession = function (app, connection) {
   // Express MongoDB session storage
   // https://www.npmjs.com/package/express-session
   app.use(session({
@@ -189,7 +189,7 @@ module.exports.initSession = function (app, db) {
       maxAge: 2419200000 // (in milliseconds) 28 days
     },
     store: new MongoStore({
-      mongooseConnection: db.connection,
+      mongooseConnection: connection,
       collection: config.sessionCollection
     })
   }));
@@ -333,16 +333,19 @@ module.exports.initHelmetHeaders = function (app) {
         '*.tiles.mapbox.com', // Map tiles
         'api.mapbox.com', // Map tiles/Geocoding
         '*.tile.openstreetmap.org', // Map tiles
-        '*.vis.earthdata.nasa.gov', // Map tiles
+        '*.earthdata.nasa.gov', // Map tiles
         '*.facebook.com',
         '*.fbcdn.net', // Facebook releated
+        '*.fbsbx.com', // Facebook related
         '*.twitter.com',
         '*.google-analytics.com',
         '*.gstatic.com', // Google analytics related
         '*.googleusercontent.com', // Google CDN. Android app related.
         '*.g.doubleclick.net', // Google Analytics related
-        'gravatar.com', // Gravatar (Wordpress)
-        '*.wp.com', // Gravatar (Wordpress)
+        'gravatar.com', // Gravatar (WordPress.com)
+        'i0.wp.com', // Gravatar (WordPress.com)
+        'i1.wp.com', // Gravatar (WordPress.com)
+        'i2.wp.com', // Gravatar (WordPress.com)
         'ucarecdn.com', // Our Tribe image CDN "Uploadcare.com"
         'data:' // Inline images (`<img src="data:...">`)
       ],
@@ -488,6 +491,9 @@ module.exports.initModulesClientRoutes = function (app) {
     app.use(staticPath.replace('/client', ''), express.static(path.resolve('./' + staticPath)));
   });
 
+  if (process.env.NODE_ENV !== 'production') {
+    app.use('/node_modules', express.static(path.resolve('./node_modules'), { extensions: ['js', 'css'] }));
+  }
 };
 
 /**
@@ -520,7 +526,7 @@ module.exports.initErrorRoutes = function (app) {
 /**
  * Initialize the Express application
  */
-module.exports.init = function (db) {
+module.exports.init = function (connection) {
   // Initialize express app
   var app = express();
 
@@ -540,7 +546,7 @@ module.exports.init = function (db) {
   this.initModulesClientRoutes(app);
 
   // Initialize Express session
-  this.initSession(app, db);
+  this.initSession(app, connection);
 
   // Initialize Modules configuration
   this.initModulesConfiguration(app);

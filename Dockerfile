@@ -1,4 +1,4 @@
-FROM node:6.3
+FROM node:10.12
 
 # Install prerequisites
 # https://docs.docker.com/engine/articles/dockerfile_best-practices/#apt-get
@@ -22,13 +22,11 @@ RUN dpkg -i dumb-init_*.deb
 
 # Install global node modules
 RUN npm install -g -y gulp --quiet
-RUN npm install -g -y bower --quiet
 RUN npm install -g -y faker --quiet
 RUN npm install -g -y migrate --quiet
 
 # Create working directory
 RUN mkdir -p /trustroots
-RUN mkdir -p /trustroots/public/lib
 WORKDIR /trustroots
 
 # Copies the local package.json file to the container
@@ -38,11 +36,6 @@ WORKDIR /trustroots
 # Install npm packages
 COPY package.json /trustroots/
 RUN npm install --quiet
-
-# Install bower packages
-COPY bower.json /trustroots/
-COPY .bowerrc /trustroots/
-RUN bower install --quiet --config.interactive=false --allow-root
 
 # Set environment variables
 ENV NODE_ENV development
