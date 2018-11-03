@@ -6,7 +6,7 @@ var _ = require('lodash'),
     request = require('supertest'),
     should = require('should'),
     sinon = require('sinon'),
-    utils = require('./utils'),
+    utils = require(path.resolve('./testutils/data.server.testutils')),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     express = require(path.resolve('./config/lib/express'));
 
@@ -61,11 +61,11 @@ describe('Read a single reference by reference id', function () {
     });
   });
 
-  afterEach(utils.clearDatabase.bind(this, ['Reference', 'User']));
+  afterEach(utils.clearDatabase);
 
   context('logged in as public user', function () {
 
-    beforeEach(utils.signIn.bind(this, _.pick(_usersPublic[0], ['username', 'password']), agent));
+    beforeEach(utils.signIn.bind(this, _usersPublic[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
     it('read a single public reference by id', function (done) {
@@ -87,9 +87,11 @@ describe('Read a single reference by reference id', function () {
               userTo: userToExp,
               created: new Date().toISOString(),
               _id: references[3]._id.toString(),
-              met: references[3].met,
-              hostedMe: references[3].hostedMe,
-              hostedThem: references[3].hostedThem,
+              interactions: {
+                met: references[3].interactions.met,
+                hostedMe: references[3].interactions.hostedMe,
+                hostedThem: references[3].interactions.hostedThem
+              },
               recommend: references[3].recommend
             });
             return done();
@@ -204,7 +206,7 @@ describe('Read a single reference by reference id', function () {
   });
 
   context('logged in as non-public user', function () {
-    beforeEach(utils.signIn.bind(this, _.pick(_usersPrivate[0], ['username', 'password']), agent));
+    beforeEach(utils.signIn.bind(this, _usersPrivate[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
     it('403', function (done) {
