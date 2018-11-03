@@ -1,7 +1,6 @@
 'use strict';
 
 var async = require('async'),
-    crypto = require('crypto'),
     moment = require('moment'),
     mongoose = require('mongoose'),
     path = require('path'),
@@ -29,32 +28,17 @@ describe('Job: Set reference to public after a given period of time', function (
     Reference.deleteMany({}).exec(done);
   });
 
-  function generateRandomId() {
-    var result = crypto.randomBytes(12).toString('hex');
-    // padding with 0 to 24 characters
-    result = '0'.repeat(24 - result.length) + result;
-    return result;
-  }
-
-  function generateRandomBoolean() {
-    return !!Math.floor(2 * Math.random());
-  }
-
-  function generateRandomRecommend() {
-    return ['yes', 'no', 'unknown'][Math.floor(3 * Math.random())];
-  }
-
   function generateReferenceData() {
     return {
-      userFrom: generateRandomId(),
-      userTo: generateRandomId(),
+      userFrom: new mongoose.Types.ObjectId(),
+      userTo: new mongoose.Types.ObjectId(),
       // here we don't care if all interactions are false
       interactions: {
-        met: generateRandomBoolean(),
-        hostedMe: generateRandomBoolean(),
-        hostedThem: generateRandomBoolean()
+        met: true,
+        hostedMe: false,
+        hostedThem: true
       },
-      recommend: generateRandomRecommend()
+      recommend: 'yes'
     };
   }
 
