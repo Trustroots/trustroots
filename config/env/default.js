@@ -20,12 +20,8 @@ module.exports = {
 
   // Feature flags
   featureFlags: {
-    // enable references at all?
+    // enable references?
     reference: false
-    // Tribe endorsements for user references
-    // referenceTribeEndorsements: false,
-    // Free text feedback in references
-    // referenceFreetextFeedback: false
   },
 
   // Is site invitation only?
