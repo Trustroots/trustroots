@@ -94,7 +94,7 @@
     "connect-mongo": "~2.0.1",
     "cookie-parser": "~1.4.3",
     "del": "~3.0.0",
-    "eslint-plugin-angular": "~3.3.0",
+    "eslint-plugin-angular": "~4.0.0",
     "expect-ct": "~0.1.1",
     "expo-server-sdk": "~2.3.3",
     "express": "~4.16.4",
