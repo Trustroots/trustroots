@@ -136,7 +136,7 @@ function processResponses(res, next, resOrErr) {
     return res.status(resOrErr.status).json(resOrErr.body);
   }
 
-  // take care of unexpected resOrErrors
+  // take care of unexpected errors
   return next(resOrErr);
 }
 
