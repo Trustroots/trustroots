@@ -1,13 +1,9 @@
-import { react2angular } from 'react2angular';
-import ProfileViewBasics from '../components/ProfileViewBasics';
-
 (function () {
   'use strict';
 
   angular
     .module('users')
-    .config(UsersConfig)
-    .component('profileViewBasics', react2angular(ProfileViewBasics, ['profile']));
+    .config(UsersConfig);
 
   /* @ngInject */
   function UsersConfig($httpProvider) {
