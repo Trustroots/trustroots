@@ -228,9 +228,7 @@
 
       describe('Volunteering Route', function () {
         var mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/volunteering.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('volunteering');
         }));
 
@@ -242,8 +240,8 @@
           expect(mainstate.abstract).toBe(undefined);
         });
 
-        it('Should have templateUrl', function () {
-          expect(mainstate.templateUrl).toBe('/modules/pages/views/volunteering.client.view.html');
+        it('Should have template', function () {
+          expect(mainstate.template).toBeDefined();
         });
       });
 

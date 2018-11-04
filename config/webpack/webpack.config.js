@@ -35,6 +35,9 @@ module.exports = merge(shims, {
                 modules: 'commonjs'
               }],
               ['@babel/preset-react']
+            ],
+            plugins: [
+              '@babel/plugin-proposal-object-rest-spread'
             ]
           }
         }
