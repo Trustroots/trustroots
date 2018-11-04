@@ -30,7 +30,10 @@ module.exports = merge(shims, {
           loader: 'babel-loader',
           options: {
             presets: [
-              ['@babel/preset-env', { useBuiltIns: 'usage' }],
+              ['@babel/preset-env', {
+                useBuiltIns: 'usage',
+                modules: 'commonjs'
+              }],
               ['@babel/preset-react']
             ]
           }

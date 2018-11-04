@@ -1,5 +1,7 @@
 'use strict';
 
+import ngreact from 'ngreact';
+
 // Init the application configuration module for AngularJS application
 // eslint-disable-next-line no-unused-vars
 var AppConfig = (function () {
@@ -10,6 +12,7 @@ var AppConfig = (function () {
 
   var appModuleName = 'trustroots';
   var appModuleVendorDependencies = [
+    ngreact.name,
     'ngAria',
     'ngResource',
     'ngAnimate',

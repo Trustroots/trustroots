@@ -7,7 +7,6 @@
 
 import '@/public/dist/uib-templates';
 import angular from 'angular';
-import { react2angular } from 'react2angular';
 
 if (process.env.NODE_ENV === 'production') {
   require('@/public/dist/templates');
@@ -42,9 +41,15 @@ function importComponents(r) {
       throw new Error(`You must define propTypes on your component, e.g. ${name}.propTypes = {};`);
     }
     const propNames = Object.keys(Component.propTypes);
+
     angular
       .module('trustroots')
-      .component(lowercaseFirstLetter(Component.name), react2angular(Component, propNames));
+      .directive(lowercaseFirstLetter(Component.name), createDirective);
+
+    /* @ngInject */
+    function createDirective(reactDirective) {
+      return reactDirective(Component, propNames);
+    }
   });
 }
 
