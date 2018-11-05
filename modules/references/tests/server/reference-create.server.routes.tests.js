@@ -61,7 +61,7 @@ describe('Create a reference', function () {
     });
   });
 
-  afterEach(utils.clearDatabase.bind(this, ['Reference', 'User']));
+  afterEach(utils.clearDatabase);
 
   context('logged in', function () {
     // Sign in and sign out

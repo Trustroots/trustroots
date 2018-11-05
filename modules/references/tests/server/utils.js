@@ -117,12 +117,30 @@ var saveReferences = _.partial(saveDocumentsToCollection, 'Reference');
  * @param {string[]} - array of collection names to have all documents removed
  * @param {function} - callback
  */
-function clearDatabase(collections, done) {
+function clearDatabaseCollections(collections, done) {
   var models = collections.map(function (collection) { return mongoose.model(collection);});
 
   async.eachSeries(models, function (Model, cb) {
     Model.deleteMany().exec(cb);
   }, done);
+}
+
+/**
+ * This is a list of the collections to clear
+ * The new collections should be added as needed
+ * Eventually this list shall become complete
+ */
+var collections = [
+  'User',
+  'Reference'
+];
+
+/**
+ * Clear all collections in a database
+ * Usage in mocha: afterEach(clearDatabase)
+ */
+function clearDatabase(done) {
+  clearDatabaseCollections(collections, done);
 }
 
 /**

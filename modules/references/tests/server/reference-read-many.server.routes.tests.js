@@ -72,7 +72,7 @@ describe('Read references by userFrom Id or userTo Id', function () {
     utils.saveReferences(_references, done);
   });
 
-  afterEach(utils.clearDatabase.bind(this, ['Reference', 'User']));
+  afterEach(utils.clearDatabase);
 
   context('logged in as public user', function () {
 
