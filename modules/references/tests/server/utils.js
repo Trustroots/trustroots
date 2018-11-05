@@ -133,13 +133,12 @@ function clearDatabase(collections, done) {
  * @param {object} agent - supertest's agent
  * @param {function} done - callback
  */
-function signIn(credentials, agent, done) {
+function signIn(user, agent, done) {
+  var credentials = _.pick(user, ['username', 'password']);
   agent.post('/api/auth/signin')
     .send(credentials)
     .expect(200)
-    .end(function (err) {
-      return done(err);
-    });
+    .end(done);
 }
 
 /**

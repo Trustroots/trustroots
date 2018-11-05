@@ -76,7 +76,7 @@ describe('Read references by userFrom Id or userTo Id', function () {
 
   context('logged in as public user', function () {
 
-    beforeEach(utils.signIn.bind(this, _.pick(_usersPublic[0], ['username', 'password']), agent));
+    beforeEach(utils.signIn.bind(this, _usersPublic[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
     it('[param userFrom] respond with all public references from userFrom', function (done) {
@@ -257,7 +257,7 @@ describe('Read references by userFrom Id or userTo Id', function () {
   });
 
   context('logged in as non-public user', function () {
-    beforeEach(utils.signIn.bind(this, _.pick(_usersPrivate[0], ['username', 'password']), agent));
+    beforeEach(utils.signIn.bind(this, _usersPrivate[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
     it('403', function (done) {

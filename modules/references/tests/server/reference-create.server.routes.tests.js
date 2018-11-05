@@ -65,7 +65,7 @@ describe('Create a reference', function () {
 
   context('logged in', function () {
     // Sign in and sign out
-    beforeEach(utils.signIn.bind(this, _.pick(_users[0], ['username', 'password']), agent));
+    beforeEach(utils.signIn.bind(this, _users[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
     context('valid request', function () {
@@ -840,7 +840,7 @@ describe('Create a reference', function () {
 
   context('logged in as non-public user', function () {
     // Sign in and sign out
-    beforeEach(utils.signIn.bind(this, _.pick(_usersNonpublic[0], ['username', 'password']), agent));
+    beforeEach(utils.signIn.bind(this, _usersNonpublic[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
     it('403', function (done) {
