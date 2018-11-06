@@ -1,17 +1,17 @@
 'use strict';
 
-var should = require('should'),
-    mongoose = require('mongoose'),
-    path = require('path'),
-    utils = require(path.resolve('./testutils/data.server.testutils')),
-    User = mongoose.model('User'),
-    Reference = mongoose.model('Reference');
+const should = require('should'),
+      mongoose = require('mongoose'),
+      path = require('path'),
+      utils = require(path.resolve('./testutils/data.server.testutils')),
+      User = mongoose.model('User'),
+      Reference = mongoose.model('Reference');
 
 describe('Reference Model Unit Tests', function () {
 
   describe('Method Save', function () {
 
-    var user1,
+    let user1,
         user2,
         user3;
 
@@ -38,7 +38,7 @@ describe('Reference Model Unit Tests', function () {
     afterEach(utils.clearDatabase);
 
     it('save both directions without problems', function (done) {
-      var reference1 = new Reference({
+      const reference1 = new Reference({
         userFrom: user1._id,
         userTo: user2._id,
         interactions: {
@@ -49,7 +49,7 @@ describe('Reference Model Unit Tests', function () {
         recommend: 'no'
       });
 
-      var reference2 = new Reference({
+      const reference2 = new Reference({
         userFrom: user2._id,
         userTo: user1._id,
         interactions: {
@@ -78,7 +78,7 @@ describe('Reference Model Unit Tests', function () {
     });
 
     it('save multiple references from one user to different users without problems', function (done) {
-      var reference1 = new Reference({
+      const reference1 = new Reference({
         userFrom: user1._id,
         userTo: user2._id,
         interactions: {
@@ -89,7 +89,7 @@ describe('Reference Model Unit Tests', function () {
         recommend: 'no'
       });
 
-      var reference2 = new Reference({
+      const reference2 = new Reference({
         userFrom: user1._id,
         userTo: user3._id,
         interactions: {
@@ -118,7 +118,7 @@ describe('Reference Model Unit Tests', function () {
     });
 
     it('show error when saving invalid values of \'met\', \'recommend\', \'hostedMe\', \'hostedThem\'', function (done) {
-      var reference = new Reference({
+      const reference = new Reference({
         userFrom: user1._id,
         userTo: user2._id,
         interactions: {
@@ -147,12 +147,12 @@ describe('Reference Model Unit Tests', function () {
     });
 
     it('show error when saving duplicate reference (reference (from, to) already exists)', function (done) {
-      var reference1 = new Reference({
+      const reference1 = new Reference({
         userFrom: user2._id,
         userTo: user1._id
       });
 
-      var reference2 = new Reference({
+      const reference2 = new Reference({
         userFrom: user2._id,
         userTo: user1._id
       });

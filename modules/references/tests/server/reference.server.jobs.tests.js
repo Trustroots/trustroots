@@ -1,15 +1,15 @@
 'use strict';
 
-var async = require('async'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    path = require('path'),
-    should = require('should'),
-    sinon = require('sinon'),
-    config = require(path.resolve('./config/config')),
-    jobPublishReference = require('../../server/jobs/references-publish.server.job'),
-    utils = require(path.resolve('./testutils/data.server.testutils')),
-    Reference = mongoose.model('Reference');
+const async = require('async'),
+      moment = require('moment'),
+      mongoose = require('mongoose'),
+      path = require('path'),
+      should = require('should'),
+      sinon = require('sinon'),
+      config = require(path.resolve('./config/config')),
+      jobPublishReference = require('../../server/jobs/references-publish.server.job'),
+      utils = require(path.resolve('./testutils/data.server.testutils')),
+      Reference = mongoose.model('Reference');
 
 describe('Job: Set reference to public after a given period of time', function () {
 
@@ -42,9 +42,9 @@ describe('Job: Set reference to public after a given period of time', function (
   }
 
   function createReferences(count, done) {
-    var references = [];
+    const references = [];
 
-    for (var i = 0; i < count; ++i) {
+    for (let i = 0; i < count; ++i) {
       references.push(new Reference(generateReferenceData()));
     }
     async.eachSeries(references, function (reference, cb) { reference.save(cb); }, done);

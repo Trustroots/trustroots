@@ -1,28 +1,28 @@
 'use strict';
 
-var _ = require('lodash'),
-    mongoose = require('mongoose'),
-    path = require('path'),
-    request = require('supertest'),
-    should = require('should'),
-    sinon = require('sinon'),
-    utils = require(path.resolve('./testutils/data.server.testutils')),
-    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    express = require(path.resolve('./config/lib/express'));
+const _ = require('lodash'),
+      mongoose = require('mongoose'),
+      path = require('path'),
+      request = require('supertest'),
+      should = require('should'),
+      sinon = require('sinon'),
+      utils = require(path.resolve('./testutils/data.server.testutils')),
+      userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
+      express = require(path.resolve('./config/lib/express'));
 
 describe('Read a single reference by reference id', function () {
   // GET /references/:referenceId
   // logged in public user can read a single public reference by id
   // .....                 can read a single private reference if it is from self
   // logged in public user can not read other private references
-  var app = express.init(mongoose.connection);
-  var agent = request.agent(app);
+  const app = express.init(mongoose.connection);
+  const agent = request.agent(app);
 
-  var _usersPublic = utils.generateUsers(3, { public: true });
-  var _usersPrivate = utils.generateUsers(1, { public: false, username: 'private', email: 'non@example.com' });
-  var _users = _.concat(_usersPublic, _usersPrivate);
+  const _usersPublic = utils.generateUsers(3, { public: true });
+  const _usersPrivate = utils.generateUsers(1, { public: false, username: 'private', email: 'non@example.com' });
+  const _users = _.concat(_usersPublic, _usersPrivate);
 
-  var users,
+  let users,
       references;
 
   beforeEach(function () {
@@ -55,14 +55,14 @@ describe('Read a single reference by reference id', function () {
    * 1 F . T
    * 2 T F .
    */
-  var referenceData = [
+  const referenceData = [
     [0, 1], [0, 2, { public: false }],
     [1, 0, { public: false }], [1, 2],
     [2, 0], [2, 1, { public: false }]
   ];
 
   beforeEach(function (done) {
-    var _references = utils.generateReferences(users, referenceData);
+    const _references = utils.generateReferences(users, referenceData);
 
     utils.saveReferences(_references, function (err, refs) {
       references = refs;
@@ -87,10 +87,10 @@ describe('Read a single reference by reference id', function () {
           try {
 
             // pre-collect expected values of users
-            var userFields = userProfile.userMiniProfileFields.split(' ').slice(2);
-            var userFromExp = _.pick(users[1], userFields);
+            const userFields = userProfile.userMiniProfileFields.split(' ').slice(2);
+            const userFromExp = _.pick(users[1], userFields);
             userFromExp._id = users[1]._id.toString();
-            var userToExp = _.pick(users[2], userFields);
+            const userToExp = _.pick(users[2], userFields);
             userToExp._id = users[2]._id.toString();
 
             should(res.body).eql({

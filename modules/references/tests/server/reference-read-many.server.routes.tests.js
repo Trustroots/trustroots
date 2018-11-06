@@ -1,14 +1,14 @@
 'use strict';
 
-var _ = require('lodash'),
-    mongoose = require('mongoose'),
-    path = require('path'),
-    request = require('supertest'),
-    should = require('should'),
-    sinon = require('sinon'),
-    utils = require(path.resolve('./testutils/data.server.testutils')),
-    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    express = require(path.resolve('./config/lib/express'));
+const _ = require('lodash'),
+      mongoose = require('mongoose'),
+      path = require('path'),
+      request = require('supertest'),
+      should = require('should'),
+      sinon = require('sinon'),
+      utils = require(path.resolve('./testutils/data.server.testutils')),
+      userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
+      express = require(path.resolve('./config/lib/express'));
 
 describe('Read references by userFrom Id or userTo Id', function () {
   // GET /references?userFrom=:UserId&userTo=:UserId
@@ -19,18 +19,18 @@ describe('Read references by userFrom Id or userTo Id', function () {
   // ...                   can not read private references to self
   // ...                   can read a specific reference by specifying userFrom and userTo
   // when userFrom or userTo doesn't exist, we simply return empty list
-  var app = express.init(mongoose.connection);
-  var agent = request.agent(app);
+  const app = express.init(mongoose.connection);
+  const agent = request.agent(app);
 
-  var users;
+  let users;
 
-  var _usersPublic = utils.generateUsers(6, { public: true });
-  var _usersPrivate = utils.generateUsers(3, {
+  const _usersPublic = utils.generateUsers(6, { public: true });
+  const _usersPrivate = utils.generateUsers(3, {
     public: false,
     username: 'nonpublic',
     email: 'nonpublic@example.com'
   });
-  var _users = _.concat(_usersPublic, _usersPrivate);
+  const _users = _.concat(_usersPublic, _usersPrivate);
 
   beforeEach(function () {
     sinon.useFakeTimers({ now: new Date('2018-01-12'), toFake: ['Date'] });
@@ -65,7 +65,7 @@ describe('Read references by userFrom Id or userTo Id', function () {
    * 4 F . . . . .
    * 5 T . . . . .
    */
-  var referenceData = [
+  const referenceData = [
     [0, 1], [0, 2], [0, 3, { public: false }], [0, 4, { public: false }], [0, 5],
     [1, 0], [1, 2], [1, 3], [1, 5],
     [2, 0], [2, 3], [2, 4, { public: false }], [2, 5],
@@ -75,7 +75,7 @@ describe('Read references by userFrom Id or userTo Id', function () {
   ];
 
   beforeEach(function (done) {
-    var _references = utils.generateReferences(users, referenceData);
+    const _references = utils.generateReferences(users, referenceData);
 
     utils.saveReferences(_references, done);
   });
@@ -185,7 +185,7 @@ describe('Read references by userFrom Id or userTo Id', function () {
             // and should see all 5 of them
             should(res).have.property('body').which.is.Array().of.length(5);
 
-            var nonpublic = res.body.filter(function (ref) { return !ref.public; });
+            const nonpublic = res.body.filter(function (ref) { return !ref.public; });
             should(nonpublic).length(2);
             // the reference details are also present
             should(nonpublic[0]).have.keys('recommend', 'interactions');
@@ -211,7 +211,7 @@ describe('Read references by userFrom Id or userTo Id', function () {
             // but the 1 non-public should have only fields userFrom, userTo, public, created
             should(res).have.property('body').which.is.Array().of.length(5);
 
-            var nonpublic = res.body.filter(function (ref) { return !ref.public; });
+            const nonpublic = res.body.filter(function (ref) { return !ref.public; });
             should(nonpublic).be.Array().of.length(1);
             should(nonpublic[0]).match({
               public: false,

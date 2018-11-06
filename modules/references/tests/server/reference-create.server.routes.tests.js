@@ -1,18 +1,17 @@
 'use strict';
 
-var should = require('should'),
-    _ = require('lodash'),
-    request = require('supertest'),
-    async = require('async'),
-    path = require('path'),
-    sinon = require('sinon'),
-    mongoose = require('mongoose'),
-    Reference = mongoose.model('Reference'),
-    testutils = require(path.resolve('./testutils/server.testutil')),
-    utils = require(path.resolve('./testutils/data.server.testutils')),
-    express = require(path.resolve('./config/lib/express'));
+const should = require('should'),
+      request = require('supertest'),
+      async = require('async'),
+      path = require('path'),
+      sinon = require('sinon'),
+      mongoose = require('mongoose'),
+      Reference = mongoose.model('Reference'),
+      testutils = require(path.resolve('./testutils/server.testutil')),
+      utils = require(path.resolve('./testutils/data.server.testutils')),
+      express = require(path.resolve('./config/lib/express'));
 
-describe('Create a reference', function () {
+describe('Create a reference', () => {
 
   // user can leave a reference to anyone
   //  - types of interaction
@@ -27,32 +26,33 @@ describe('Create a reference', function () {
   // after the given time or after both left reference, both references become public
 
   // we'll catch email and push notifications
-  var jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs();
 
-  var user1,
+  let user1,
       user2,
       user3Nonpublic;
 
-  var app = express.init(mongoose.connection);
-  var agent = request.agent(app);
+  const app = express.init(mongoose.connection);
+  const agent = request.agent(app);
 
-  var _usersPublic = utils.generateUsers(2, { public: true });
-  var _usersNonpublic = utils.generateUsers(1, {
+  const _usersPublic = utils.generateUsers(2, { public: true });
+  const _usersNonpublic = utils.generateUsers(1, {
     public: false,
     username: 'nonpublic',
     email: 'nonpublic@example.com'
   });
-  var _users = _.concat(_usersPublic, _usersNonpublic);
 
-  beforeEach(function () {
+  const _users = [..._usersPublic, ..._usersNonpublic];
+
+  beforeEach(() => {
     sinon.useFakeTimers({ now: 1500000000000, toFake: ['Date'] });
   });
 
-  afterEach(function () {
+  afterEach(() => {
     sinon.restore();
   });
 
-  beforeEach(function (done) {
+  beforeEach((done) => {
     utils.saveUsers(_users, function (err, usrs) {
       user1 = usrs[0];
       user2 = usrs[1];
@@ -63,16 +63,16 @@ describe('Create a reference', function () {
 
   afterEach(utils.clearDatabase);
 
-  context('logged in', function () {
+  context('logged in', () => {
     // Sign in and sign out
     beforeEach(utils.signIn.bind(this, _users[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
-    context('valid request', function () {
-      context('every reference', function () {
+    context('valid request', () => {
+      context('every reference', () => {
 
-        it('respond with 201 Created and the new reference in body', function (done) {
-          agent.post('/api/references')
+        it('respond with 201 Created and the new reference in body', async () => {
+          const { body } = await agent.post('/api/references')
             .send({
               userTo: user2._id,
               interactions: {
@@ -82,127 +82,86 @@ describe('Create a reference', function () {
               },
               recommend: 'yes'
             })
-            .expect(201)
-            .end(function (err, res) {
-              if (err) {
-                return done(err);
-              }
+            .expect(201);
 
-              should(res.body).match({
-                public: false,
-                userFrom: user1._id.toString(),
-                userTo: user2._id.toString(),
-                created: new Date().toISOString(),
-                interactions: {
-                  met: true,
-                  hostedMe: true,
-                  hostedThem: true
-                },
-                recommend: 'yes',
-                _id: /^[0-9a-f]{24}$/
-              });
-
-              return done();
-            });
+          should(body).match({
+            public: false,
+            userFrom: user1._id.toString(),
+            userTo: user2._id.toString(),
+            created: new Date().toISOString(),
+            interactions: {
+              met: true,
+              hostedMe: true,
+              hostedThem: true
+            },
+            recommend: 'yes',
+            _id: /^[0-9a-f]{24}$/
+          });
         });
 
-        it('save reference to database', function (done) {
-          async.waterfall([
-            // before, reference shouldn't be found in the database
-            function (cb) {
-              Reference.find({ userFrom: user1._id, userTo: user2._id }).exec(cb);
-            },
-            function (references, cb) {
-              try {
-                should(references).have.length(0);
-                cb();
-              } catch (e) {
-                cb(e);
-              }
-            },
-            // send request
-            function (cb) {
-              agent.post('/api/references')
-                .send({
-                  userTo: user2._id,
-                  interactions: {
-                    met: true,
-                    hostedMe: true,
-                    hostedThem: true
-                  },
-                  recommend: 'yes'
-                })
-                .expect(201)
-                .end(function (err) {
-                  cb(err);
-                });
-            },
-            // after, reference should be found in the database
-            function (cb) {
-              Reference.find({ userFrom: user1._id, userTo: user2._id }).exec(cb);
-            },
-            function (references, cb) {
-              try {
-                should(references).have.length(1);
-                should(references[0]).match({
-                  userFrom: user1._id,
-                  userTo: user2._id,
-                  interactions: {
-                    met: true,
-                    hostedMe: true,
-                    hostedThem: true
-                  }
-                });
-                cb();
-              } catch (e) {
-                cb(e);
-              }
+        it('save reference to database', async () => {
+          // before, reference shouldn't be found in the database
+          const beforeReferences = await Reference.find({ userFrom: user1._id, userTo: user2._id }).exec();
+          should(beforeReferences).have.length(0);
+
+          // send request
+          await agent.post('/api/references')
+            .send({
+              userTo: user2._id,
+              interactions: {
+                met: true,
+                hostedMe: true,
+                hostedThem: true
+              },
+              recommend: 'yes'
+            })
+            .expect(201);
+
+          // after, reference should be found in the database
+          const afterReferences = await Reference.find({ userFrom: user1._id, userTo: user2._id }).exec();
+          should(afterReferences).have.length(1);
+          should(afterReferences[0]).match({
+            userFrom: user1._id,
+            userTo: user2._id,
+            interactions: {
+              met: true,
+              hostedMe: true,
+              hostedThem: true
             }
-          ], done);
+          });
         });
 
 
-        it('[duplicate reference (the same (from, to) combination)] 409 Conflict', function (done) {
-          async.waterfall([
-            // send the first request and expect 201 Created
-            function (cb) {
-              agent.post('/api/references')
-                .send({
-                  userTo: user2._id,
-                  interactions: {
-                    met: true,
-                    hostedMe: true,
-                    hostedThem: true
-                  },
-                  recommend: 'yes'
-                })
-                .expect(201)
-                .end(function (err) {
-                  cb(err);
-                });
-            },
-            // send the second request and expect 409 Conflict
-            function (cb) {
-              agent.post('/api/references')
-                .send({
-                  userTo: user2._id,
-                  interactions: {
-                    met: false,
-                    hostedMe: true,
-                    hostedThem: false
-                  },
-                  recommend: 'no'
-                })
-                .expect(409)
-                .end(function (err) {
-                  cb(err);
-                });
-            }
-          ], done);
+        it('[duplicate reference (the same (from, to) combination)] 409 Conflict', async () => {
+          // send the first request and expect 201 Created
+          await agent.post('/api/references')
+            .send({
+              userTo: user2._id,
+              interactions: {
+                met: true,
+                hostedMe: true,
+                hostedThem: true
+              },
+              recommend: 'yes'
+            })
+            .expect(201);
+
+          // send the second request and expect 409 Conflict
+          await agent.post('/api/references')
+            .send({
+              userTo: user2._id,
+              interactions: {
+                met: false,
+                hostedMe: true,
+                hostedThem: false
+              },
+              recommend: 'no'
+            })
+            .expect(409);
         });
 
-        it('[creating a reference for self] 400', function (done) {
-          agent.post('/api/references')
+        it('[creating a reference for self] 400', async () => {
+          const { body } = await agent.post('/api/references')
             .send({
               userTo: user1._id, // the same user as logged in user
               interactions: {
@@ -212,26 +171,18 @@ describe('Create a reference', function () {
               },
               recommend: 'no'
             })
-            .expect(400)
-            .end(function (err, response) {
-              if (err) return done(err);
+            .expect(400);
 
-              try {
-                should(response.body).match({
-                  message: 'Bad request.',
-                  details: {
-                    userTo: 'self'
-                  }
-                });
-                return done();
-              } catch (e) {
-                return done(e);
-              }
-            });
+          should(body).match({
+            message: 'Bad request.',
+            details: {
+              userTo: 'self'
+            }
+          });
         });
 
-        it('[creating a reference for nonexistent user] 404', function (done) {
-          agent.post('/api/references')
+        it('[creating a reference for nonexistent user] 404', async () => {
+          const { body } = await agent.post('/api/references')
             .send({
               userTo: '0'.repeat(24), // nonexistent user id
               interactions: {
@@ -241,26 +192,18 @@ describe('Create a reference', function () {
               },
               recommend: 'no'
             })
-            .expect(404)
-            .end(function (err, response) {
-              if (err) return done(err);
+            .expect(404);
 
-              try {
-                should(response.body).match({
-                  message: 'Not found.',
-                  details: {
-                    userTo: 'not found'
-                  }
-                });
-                return done();
-              } catch (e) {
-                return done(e);
-              }
-            });
+          should(body).match({
+            message: 'Not found.',
+            details: {
+              userTo: 'not found'
+            }
+          });
         });
 
-        it('[creating a reference for non-public user] 404', function (done) {
-          agent.post('/api/references')
+        it('[creating a reference for non-public user] 404', async () => {
+          const { body } = await agent.post('/api/references')
             .send({
               userTo: user3Nonpublic._id, // non-public user id
               interactions: {
@@ -270,76 +213,21 @@ describe('Create a reference', function () {
               },
               recommend: 'no'
             })
-            .expect(404)
-            .end(function (err, response) {
-              if (err) return done(err);
+            .expect(404);
 
-              try {
-                should(response.body).match({
-                  message: 'Not found.',
-                  details: {
-                    userTo: 'not found'
-                  }
-                });
-                return done();
-              } catch (e) {
-                return done(e);
-              }
-            });
+          should(body).match({
+            message: 'Not found.',
+            details: {
+              userTo: 'not found'
+            }
+          });
         });
       });
 
-      context('initial reference', function () {
-        it('the reference is saved as private', function (done) {
-          async.waterfall([
-            // send request
-            function (cb) {
-              agent.post('/api/references')
-                .send({
-                  userTo: user2._id,
-                  interactions: {
-                    met: true,
-                    hostedMe: true,
-                    hostedThem: true
-                  },
-                  recommend: 'yes'
-                })
-                .expect(201)
-                .end(function (err, response) {
-                  if (err) return cb(err);
-
-                  try {
-                    should(response).have.propertyByPath('body', 'public').equal(false);
-                    return cb();
-                  } catch (e) {
-                    return cb(e);
-                  }
-                });
-            },
-            // after, reference should be found in the database
-            function (cb) {
-              Reference.findOne({ userFrom: user1._id, userTo: user2._id }).exec(function (err, reference) {
-                if (err) return cb(err);
-
-                try {
-                  should(reference).have.property('public', false);
-                  return cb();
-                } catch (e) {
-                  return cb(e);
-                }
-              });
-            }
-          ], done);
-        });
-
-        it('send email notification to target user', function (done) {
-          try {
-            should(jobs.length).equal(0);
-          } catch (e) {
-            return done(e);
-          }
-
-          agent.post('/api/references')
+      context('initial reference', () => {
+        it('the reference is saved as private', async () => {
+          // send request
+          const { body } = await agent.post('/api/references')
             .send({
               userTo: user2._id,
               interactions: {
@@ -349,33 +237,19 @@ describe('Create a reference', function () {
               },
               recommend: 'yes'
             })
-            .expect(201)
-            .end(function (err) {
-              if (err) return done(err);
+            .expect(201);
 
-              try {
-                var emailJobs = jobs.filter(function (job) { return job.type === 'send email'; });
-                should(emailJobs.length).equal(1);
+          should(body).have.property('public', false);
 
-                var job = emailJobs[0];
-                // @TODO design the email (subject, body, ...)
-                should(job.data.subject).equal('New reference from ' + user1.username);
-                should(job.data.to.address).equal(user2.email);
-                // @TODO add the right link
-                should(job.data.text)
-                  .containEql('/profile/' + user1.username + '/references/new');
-                should(job.data.html)
-                  .containEql('/profile/' + user1.username + '/references/new');
-
-                return done();
-              } catch (e) {
-                return done(e);
-              }
-            });
+          // after, reference should be found in the database
+          const reference = await Reference.findOne({ userFrom: user1._id, userTo: user2._id }).exec();
+          should(reference).have.property('public', false);
         });
 
-        it('push notification', function (done) {
-          agent.post('/api/references')
+        it('send email notification to target user', async () => {
+          should(jobs.length).equal(0);
+
+          await agent.post('/api/references')
             .send({
               userTo: user2._id,
               interactions: {
@@ -385,28 +259,46 @@ describe('Create a reference', function () {
               },
               recommend: 'yes'
             })
-            .expect(201)
-            .end(function (err) {
-              if (err) return done(err);
+            .expect(201);
 
-              try {
-                var pushJobs = jobs.filter(function (job) { return job.type === 'send push message'; });
-                should(pushJobs.length).equal(1);
+          const emailJobs = jobs.filter(job => job.type === 'send email');
+          should(emailJobs.length).equal(1);
 
-                var job = pushJobs[0];
-                should(job.data.userId).equal(user2._id.toString());
-                should(job.data.notification.title).equal('Trustroots');
-                // @TODO design the notification text
-                should(job.data.notification.body)
-                  .equal(user1.username + ' gave you a new reference. Give a reference back.');
-                should(job.data.notification.click_action)
-                  .containEql('/profile/' + user1.username + '/references/new');
+          const [job] = emailJobs;
+          // @TODO design the email (subject, body, ...)
+          should(job.data.subject).equal(`New reference from ${user1.username}`);
+          should(job.data.to.address).equal(user2.email);
+          // @TODO add the right link
+          should(job.data.text)
+            .containEql(`/profile/${user1.username}/references/new`);
+          should(job.data.html)
+            .containEql(`/profile/${user1.username}/references/new`);
+        });
 
-                return done();
-              } catch (e) {
-                return done(e);
-              }
-            });
+        it('push notification', async () => {
+          await agent.post('/api/references')
+            .send({
+              userTo: user2._id,
+              interactions: {
+                met: true,
+                hostedMe: true,
+                hostedThem: true
+              },
+              recommend: 'yes'
+            })
+            .expect(201);
+
+          const pushJobs = jobs.filter(job => job.type === 'send push message');
+          should(pushJobs.length).equal(1);
+
+          const [job] = pushJobs;
+          should(job.data.userId).equal(user2._id.toString());
+          should(job.data.notification.title).equal('Trustroots');
+          // @TODO design the notification text
+          should(job.data.notification.body)
+            .equal(`${user1.username} gave you a new reference. Give a reference back.`);
+          should(job.data.notification.click_action)
+            .containEql(`/profile/${user1.username}/references/new`);
         });
       });
 
@@ -416,7 +308,7 @@ describe('Create a reference', function () {
           async.waterfall([
             // first create a non-public reference in the opposite direction
             function (cb) {
-              var reference = new Reference({
+              const reference = new Reference({
                 userFrom: user2._id,
                 userTo: user1._id,
                 met: true,
@@ -484,7 +376,7 @@ describe('Create a reference', function () {
           async.waterfall([
             // first create a public reference in the opposite direction
             function (cb) {
-              var reference = new Reference({
+              const reference = new Reference({
                 userFrom: user2._id,
                 userTo: user1._id,
                 met: true,
@@ -557,7 +449,7 @@ describe('Create a reference', function () {
           async.waterfall([
             // first create a reference in the opposite direction
             function (cb) {
-              var reference = new Reference({
+              const reference = new Reference({
                 userFrom: user2._id,
                 userTo: user1._id,
                 met: true,
@@ -584,10 +476,10 @@ describe('Create a reference', function () {
                   if (err) return cb(err);
 
                   try {
-                    var emailJobs = jobs.filter(function (job) { return job.type === 'send email'; });
+                    const emailJobs = jobs.filter(function (job) { return job.type === 'send email'; });
                     should(emailJobs.length).equal(1);
 
-                    var job = emailJobs[0];
+                    const job = emailJobs[0];
                     // @TODO design the email (subject, body, ...)
                     should(job.data.subject).equal('New reference from ' + user1.username);
                     should(job.data.to.address).equal(user2.email);
@@ -619,7 +511,7 @@ describe('Create a reference', function () {
           async.waterfall([
             // first create a reference in the opposite direction
             function (cb) {
-              var reference = new Reference({
+              const reference = new Reference({
                 userFrom: user2._id,
                 userTo: user1._id,
                 interaction: {
@@ -648,10 +540,10 @@ describe('Create a reference', function () {
                   if (err) return cb(err);
 
                   try {
-                    var pushJobs = jobs.filter(function (job) { return job.type === 'send push message'; });
+                    const pushJobs = jobs.filter(function (job) { return job.type === 'send push message'; });
                     should(pushJobs.length).equal(1);
 
-                    var job = pushJobs[0];
+                    const job = pushJobs[0];
                     should(job.data.userId).equal(user2._id.toString());
                     should(job.data.notification.title).equal('Trustroots');
                     // @TODO design the notification text
