@@ -9,7 +9,7 @@ var should = require('should'),
     mongoose = require('mongoose'),
     Reference = mongoose.model('Reference'),
     testutils = require(path.resolve('./testutils/server.testutil')),
-    utils = require('./utils'),
+    utils = require(path.resolve('./testutils/data.server.testutils')),
     express = require(path.resolve('./config/lib/express'));
 
 describe('Create a reference', function () {

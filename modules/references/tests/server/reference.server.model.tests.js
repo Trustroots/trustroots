@@ -2,7 +2,8 @@
 
 var should = require('should'),
     mongoose = require('mongoose'),
-    utils = require('./utils'),
+    path = require('path'),
+    utils = require(path.resolve('./testutils/data.server.testutils')),
     User = mongoose.model('User'),
     Reference = mongoose.model('Reference');
 

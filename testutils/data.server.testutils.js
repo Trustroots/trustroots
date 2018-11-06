@@ -74,9 +74,11 @@ function generateReferences(users, referenceData) {
       userFrom: users[data[0]]._id,
       userTo: users[data[1]]._id,
       public: true,
-      met: !getRandInt(2),
-      hostedMe: !getRandInt(2),
-      hostedThem: !getRandInt(2),
+      interactions: {
+        met: !getRandInt(2),
+        hostedMe: !getRandInt(2),
+        hostedThem: !getRandInt(2)
+      },
       recommend: ['yes', 'no', 'unknown'][getRandInt(3)]
     };
 

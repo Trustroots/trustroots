@@ -8,7 +8,7 @@ var async = require('async'),
     sinon = require('sinon'),
     config = require(path.resolve('./config/config')),
     jobPublishReference = require('../../server/jobs/references-publish.server.job'),
-    utils = require('./utils'),
+    utils = require(path.resolve('./testutils/data.server.testutils')),
     Reference = mongoose.model('Reference');
 
 describe('Job: Set reference to public after a given period of time', function () {

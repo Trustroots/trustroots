@@ -6,7 +6,7 @@ var _ = require('lodash'),
     request = require('supertest'),
     should = require('should'),
     sinon = require('sinon'),
-    utils = require('./utils'),
+    utils = require(path.resolve('./testutils/data.server.testutils')),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     express = require(path.resolve('./config/lib/express'));
 
