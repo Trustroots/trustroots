@@ -379,7 +379,7 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
   var params = exports.addEmailBaseTemplateParams({
     subject: 'How is it going, ' + user.firstName + '?',
     from: {
-      name: 'Mikael',
+      name: 'Dario',
       // Use support email instead of default "no-reply@":
       address: config.supportEmail
     },
