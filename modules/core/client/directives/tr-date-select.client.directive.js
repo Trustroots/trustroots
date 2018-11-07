@@ -77,7 +77,7 @@
                 ngModel.$setViewValue(m.format('YYYY-MM-DD'));
               }
             } else {
-              ngModel.$setViewValue();
+              ngModel.$setViewValue(null);
             }
           });
 
