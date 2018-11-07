@@ -1,0 +1,6 @@
+---
+extends: '../.eslintrc.es9.yaml'
+overrides:
+  - files: 'server.testutil.js'
+    rules:
+      no-var: 0

@@ -10,7 +10,7 @@ const _ = require('lodash'),
       userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
       express = require(path.resolve('./config/lib/express'));
 
-describe('Read references by userFrom Id or userTo Id', function () {
+describe('Read references by userFrom Id or userTo Id', () => {
   // GET /references?userFrom=:UserId&userTo=:UserId
 
   // logged in public user can read all public references by userFrom
@@ -32,19 +32,16 @@ describe('Read references by userFrom Id or userTo Id', function () {
   });
   const _users = _.concat(_usersPublic, _usersPrivate);
 
-  beforeEach(function () {
+  beforeEach(() => {
     sinon.useFakeTimers({ now: new Date('2018-01-12'), toFake: ['Date'] });
   });
 
-  afterEach(function () {
+  afterEach(() => {
     sinon.restore();
   });
 
-  beforeEach(function (done) {
-    utils.saveUsers(_users, function (err, usrs) {
-      users = usrs;
-      return done(err);
-    });
+  beforeEach(async () => {
+    users = await utils.saveUsers(_users);
   });
 
   /**
@@ -74,220 +71,152 @@ describe('Read references by userFrom Id or userTo Id', function () {
     [5, 0]
   ];
 
-  beforeEach(function (done) {
+  beforeEach(async () => {
     const _references = utils.generateReferences(users, referenceData);
 
-    utils.saveReferences(_references, done);
+    await utils.saveReferences(_references);
   });
 
   afterEach(utils.clearDatabase);
 
-  context('logged in as public user', function () {
+  context('logged in as public user', () => {
 
     beforeEach(utils.signIn.bind(this, _usersPublic[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
-    it('[param userFrom] respond with all public references from userFrom', function (done) {
-      agent
-        .get('/api/references?userFrom=' + users[2]._id)
-        .expect(200)
-        .end(function (err, res) {
-          if (err) return done(err);
+    it('[param userFrom] respond with all public references from userFrom', async () => {
+      const { body } = await agent
+        .get(`/api/references?userFrom=${users[2]._id}`)
+        .expect(200);
 
-          try {
-            // user2 gave 3 public and 1 non-public references
-            should(res).have.property('body').which.is.Array().of.length(3);
-            return done();
-          } catch (e) {
-            return done(e);
-          }
-        });
+      // user2 gave 3 public and 1 non-public references
+      should(body).be.Array().of.length(3);
     });
 
-    it('the references in response have expected structure, userFrom & userTo have miniProfile', function (done) {
-      agent
-        .get('/api/references?userFrom=' + users[2]._id)
-        .expect(200)
-        .end(function (err, res) {
-          if (err) return done(err);
+    it('the references in response have expected structure, userFrom & userTo have miniProfile', async () => {
+      const { body } = await agent
+        .get(`/api/references?userFrom=${users[2]._id}`)
+        .expect(200);
 
-          try {
-            res.body.forEach(function (ref) {
-              should(ref)
-                .have.property('userFrom')
-                .which.is.Object()
-                .with.properties(userProfile.userMiniProfileFields.split(' ').slice(2, -1));
+      for (const ref of body) {
+        should(ref)
+          .have.property('userFrom')
+          .which.is.Object()
+          .with.properties(userProfile.userMiniProfileFields.split(' ').slice(2, -1));
 
-              should(ref)
-                .have.property('userTo')
-                .which.is.Object()
-                .with.properties(userProfile.userMiniProfileFields.split(' ').slice(2, -1));
+        should(ref)
+          .have.property('userTo')
+          .which.is.Object()
+          .with.properties(userProfile.userMiniProfileFields.split(' ').slice(2, -1));
 
-              should(ref).have.propertyByPath('interactions', 'met').Boolean();
-              should(ref).have.propertyByPath('interactions', 'hostedMe').Boolean();
-              should(ref).have.propertyByPath('interactions', 'hostedThem').Boolean();
-              should(ref).have.property('public', true);
-              should(ref).have.property('created', new Date().toISOString());
-              should(ref).have.property('recommend').oneOf('yes', 'no', 'unknown');
-              should(ref).have.property('_id').String().match(/[0-9a-f]{24}/);
-            });
-
-            return done();
-          } catch (e) {
-            return done(e);
-          }
-        });
+        should(ref).have.propertyByPath('interactions', 'met').Boolean();
+        should(ref).have.propertyByPath('interactions', 'hostedMe').Boolean();
+        should(ref).have.propertyByPath('interactions', 'hostedThem').Boolean();
+        should(ref).have.property('public', true);
+        should(ref).have.property('created', new Date().toISOString());
+        should(ref).have.property('recommend').oneOf('yes', 'no', 'unknown');
+        should(ref).have.property('_id').String().match(/[0-9a-f]{24}/);
+      }
     });
 
-    it('[param userTo] respond with all public references to userTo', function (done) {
-      agent
-        .get('/api/references?userTo=' + users[2]._id)
-        .expect(200)
-        .end(function (err, res) {
-          if (err) return done(err);
+    it('[param userTo] respond with all public references to userTo', async () => {
+      const { body } = await agent
+        .get(`/api/references?userTo=${users[2]._id}`)
+        .expect(200);
 
-          try {
-            // user2 has received 2 public and 1 non-public reference
-            should(res).have.property('body').which.is.Array().of.length(2);
-            return done();
-          } catch (e) {
-            return done(e);
-          }
-        });
+      // user2 has received 2 public and 1 non-public reference
+      should(body).be.Array().of.length(2);
     });
 
-    it('[params userFrom and userTo] respond with 1 or 0 public reference from userFrom to userTo', function (done) {
-      agent
-        .get('/api/references?userFrom=' + users[2]._id + '&userTo=' + users[5]._id)
-        .expect(200)
-        .end(function (err, res) {
-          if (err) return done(err);
+    it('[params userFrom and userTo] respond with 1 or 0 public reference from userFrom to userTo', async () => {
+      const { body } = await agent
+        .get(`/api/references?userFrom=${users[2]._id}&userTo=${users[5]._id}`)
+        .expect(200);
 
-          try {
-            // there is 1 public reference from user2 to user5
-            should(res).have.property('body').which.is.Array().of.length(1);
-            return done();
-          } catch (e) {
-            return done(e);
-          }
-        });
+      // there is 1 public reference from user2 to user5
+      should(body).be.Array().of.length(1);
     });
 
-    it('[userFrom is self] display all public and private references from userFrom', function (done) {
-      agent
+    it('[userFrom is self] display all public and private references from userFrom', async () => {
+      const { body } = await agent
         .get('/api/references?userFrom=' + users[0]._id)
-        .expect(200)
-        .end(function (err, res) {
-          if (err) return done(err);
+        .expect(200);
 
-          try {
-            // user0 has given 3 public and 2 non-public reference
-            // and should see all 5 of them
-            should(res).have.property('body').which.is.Array().of.length(5);
+      // user0 has given 3 public and 2 non-public reference
+      // and should see all 5 of them
+      should(body).be.Array().of.length(5);
 
-            const nonpublic = res.body.filter(function (ref) { return !ref.public; });
-            should(nonpublic).length(2);
-            // the reference details are also present
-            should(nonpublic[0]).have.keys('recommend', 'interactions');
-            should(nonpublic[0].interactions).have.keys('met', 'hostedMe', 'hostedThem');
-
-            return done();
-          } catch (e) {
-            return done(e);
-          }
-        });
+      const nonpublic = body.filter(ref => !ref.public);
+      should(nonpublic).length(2);
+      // the reference details are also present
+      should(nonpublic[0]).have.keys('recommend', 'interactions');
+      should(nonpublic[0].interactions).have.keys('met', 'hostedMe', 'hostedThem');
     });
 
-    it('[userTo is self] private references are included in limited form (only userFrom, userTo, public, created)', function (done) {
-      agent
-        .get('/api/references?userTo=' + users[0]._id)
-        .expect(200)
-        .end(function (err, res) {
-          if (err) return done(err);
+    it('[userTo is self] private references are included in limited form (only userFrom, userTo, public, created)', async () => {
+      const { body } = await agent
+        .get(`/api/references?userTo=${users[0]._id}`)
+        .expect(200);
 
-          try {
-            // user0 has received 4 public and 1 non-public reference
-            // and should see all 5 of them
-            // but the 1 non-public should have only fields userFrom, userTo, public, created
-            should(res).have.property('body').which.is.Array().of.length(5);
+      // user0 has received 4 public and 1 non-public reference
+      // and should see all 5 of them
+      // but the 1 non-public should have only fields userFrom, userTo, public, created
+      should(body).be.Array().of.length(5);
 
-            const nonpublic = res.body.filter(function (ref) { return !ref.public; });
-            should(nonpublic).be.Array().of.length(1);
-            should(nonpublic[0]).match({
-              public: false,
-              created: new Date().toISOString()
-            });
-            should(nonpublic[0]).have.only.keys('_id', 'userFrom', 'userTo', 'created', 'public');
-            return done();
-          } catch (e) {
-            return done(e);
-          }
-        });
+      const nonpublic = body.filter(ref => !ref.public);
+      should(nonpublic).be.Array().of.length(1);
+      should(nonpublic[0]).match({
+        public: false,
+        created: new Date().toISOString()
+      });
+      should(nonpublic[0]).have.only.keys('_id', 'userFrom', 'userTo', 'created', 'public');
     });
 
-    it('[no params] 400 and error', function (done) {
-      agent
+    it('[no params] 400 and error', async () => {
+      const { body } = await agent
         .get('/api/references')
-        .expect(400)
-        .end(function (err, res) {
-          if (err) return done(err);
+        .expect(400);
 
-          try {
-            should(res.body).eql({
-              message: 'Bad request.',
-              details: {
-                userFrom: 'missing',
-                userTo: 'missing'
-              }
-            });
-            return done();
-          } catch (e) {
-            return done(e);
-          }
-        });
+      should(body).eql({
+        message: 'Bad request.',
+        details: {
+          userFrom: 'missing',
+          userTo: 'missing'
+        }
+      });
     });
 
-    it('[invalid params] 400 and error', function (done) {
-      agent
+    it('[invalid params] 400 and error', async () => {
+      const { body } = await agent
         .get('/api/references?userFrom=asdf&userTo=1')
-        .expect(400)
-        .end(function (err, res) {
-          if (err) return done(err);
+        .expect(400);
 
-          try {
-            should(res.body).eql({
-              message: 'Bad request.',
-              details: {
-                userFrom: 'invalid',
-                userTo: 'invalid'
-              }
-            });
-            return done();
-          } catch (e) {
-            return done(e);
-          }
-        });
+      should(body).eql({
+        message: 'Bad request.',
+        details: {
+          userFrom: 'invalid',
+          userTo: 'invalid'
+        }
+      });
     });
   });
 
-  context('logged in as non-public user', function () {
+  context('logged in as non-public user', () => {
     beforeEach(utils.signIn.bind(this, _usersPrivate[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
-    it('403', function (done) {
-      agent
-        .get('/api/references?userFrom=' + users[2]._id)
-        .expect(403)
-        .end(done);
+    it('403', async () => {
+      await agent
+        .get(`/api/references?userFrom=${users[2]._id}`)
+        .expect(403);
     });
   });
 
-  context('not logged in', function () {
-    it('403', function (done) {
-      agent
-        .get('/api/references?userFrom=' + users[2]._id)
-        .expect(403)
-        .end(done);
+  context('not logged in', () => {
+    it('403', async () => {
+      await agent
+        .get(`/api/references?userFrom=${users[2]._id}`)
+        .expect(403);
     });
   });
 });

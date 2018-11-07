@@ -51,13 +51,8 @@ describe('Create a reference', () => {
     sinon.restore();
   });
 
-  beforeEach((done) => {
-    utils.saveUsers(_users, (err, usrs) => {
-      user1 = usrs[0];
-      user2 = usrs[1];
-      user3Nonpublic = usrs[2];
-      done(err);
-    });
+  beforeEach(async () => {
+    [user1, user2, user3Nonpublic] = await utils.saveUsers(_users);
   });
 
   afterEach(utils.clearDatabase);
@@ -456,7 +451,7 @@ describe('Create a reference', () => {
             })
             .expect(201);
 
-          const pushJobs = jobs.filter(function (job) { return job.type === 'send push message'; });
+          const pushJobs = jobs.filter(job => job.type === 'send push message');
           should(pushJobs.length).equal(1);
 
           const [job] = pushJobs;
@@ -607,7 +602,7 @@ describe('Create a reference', () => {
     });
   });
 
-  context('not logged in', function () {
+  context('not logged in', () => {
     it('403', async () => {
       await agent.post('/api/references')
         .send({ })
