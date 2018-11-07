@@ -7,6 +7,7 @@ var mongoose = require('mongoose'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
+    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     Reference = mongoose.model('Reference'),
     User = mongoose.model('User');
 
@@ -72,6 +73,36 @@ function validateCreate(req) {
   return { valid: valid, details: details };
 }
 
+var nonpublicReferenceFields = [
+  '_id',
+  'public',
+  'userFrom',
+  'userTo',
+  'created'
+];
+
+var referenceFields = nonpublicReferenceFields.concat([
+  'interactions.met',
+  'interactions.hostedMe',
+  'interactions.hostedThem',
+  'recommend'
+]);
+
+/**
+ * Convert mongoose object to a reference with limited fields
+ * @param {MongooseObject|object} reference - the raw reference
+ * @param {boolean} isNonpublicFullyDisplayed - can we show all fields of the nonpublic reference?
+ * @returns {object} the reference, either full or limited
+ */
+function formatReference(reference, isNonpublicFullyDisplayed) {
+  // converts MongooseObject to Object and picks only defined fields
+  if (reference.public || isNonpublicFullyDisplayed) {
+    return _.pick(reference, referenceFields);
+  } else {
+    return _.pick(reference, nonpublicReferenceFields);
+  }
+}
+
 /**
  * Check if the reference already exists. If it exists, return an error in a callback.
  */
@@ -88,6 +119,44 @@ function checkDuplicate(req, done) {
 }
 
 /**
+ * Express response in callback of async.waterfall
+ * @param {object} resOrErr - if this is a well specified object, it will trigger a response,
+ *                                   otherwise 500 error
+ * @param {integer} [resOrErr.status] - html status of the response
+ * @param {any} [resOrErr.body] - response body
+ * @param {string} [resOrErr.body.errType] - will be transformed to body.message by errorService by key
+ */
+function processResponses(res, next, resOrErr) {
+  // send error responses
+  if (resOrErr && resOrErr.status && resOrErr.body) {
+    if (resOrErr.body.errType) {
+      resOrErr.body.message = errorService.getErrorMessageByKey(resOrErr.body.errType);
+      delete resOrErr.body.errType;
+    }
+    return res.status(resOrErr.status).json(resOrErr.body);
+  }
+
+  // take care of unexpected errors
+  return next(resOrErr);
+}
+
+/**
+ * Validate request with validator and call callback with prepared error response
+ * @param {function} validator - function (parameter): { valid: boolean, details: string[] }
+ * @param {object} req - Express Request object
+ * @param {function} cb - callback function
+ */
+function validate(validator, req, cb) {
+  var validation = validator(req);
+
+  if (validation.valid) {
+    return cb();
+  }
+
+  return cb({ status: 400, body: { errType: 'bad-request', details: validation.details } });
+}
+
+/**
  * Create a reference - express middleware
  */
 exports.create = function (req, res, next) {
@@ -96,15 +165,7 @@ exports.create = function (req, res, next) {
 
   return async.waterfall([
     // Synchronous validation of the request data consistency
-    function validation(cb) {
-      var validation = validateCreate(req);
-
-      if (validation.valid) {
-        return cb();
-      }
-
-      return cb({ status: 400, body: { errType: 'bad-request', details: validation.details } });
-    },
+    validate.bind(this, validateCreate, req),
     // Check that the reference is not duplicate
     _.partial(checkDuplicate, req),
     // Check if the receiver of the reference exists and is public
@@ -190,32 +251,97 @@ exports.create = function (req, res, next) {
     function respond(savedReference, cb) {
       return cb({
         status: 201,
-        body: {
-          userFrom: savedReference.userFrom,
-          userTo: savedReference.userTo,
-          recommend: savedReference.recommend,
-          created: savedReference.created.getTime(),
-          interactions: {
-            met: savedReference.interactions.met,
-            hostedMe: savedReference.interactions.hostedMe,
-            hostedThem: savedReference.interactions.hostedThem
-          },
-          id: savedReference._id,
-          public: savedReference.public
-        }
+        body: formatReference(savedReference, true)
       });
     }
-  ], function (err) {
-    // send error responses
-    if (err && err.status && err.body) {
-      if (err.body.errType) {
-        err.body.message = errorService.getErrorMessageByKey(err.body.errType);
-        delete err.body.errType;
+  ], processResponses.bind(this, res, next));
+};
+
+/**
+ * Validator for readMany controller
+ */
+function validateReadMany(req) {
+  var valid = true;
+  var details = [];
+
+  // check that query contains userFrom or userTo
+  var isQueryWithFilter = req.query.userFrom || req.query.userTo;
+  if (!isQueryWithFilter) {
+    valid = false;
+    details.push('Missing query parameters userFrom or userTo.');
+  }
+
+  // check that userFrom and userTo is valid mongodb/mongoose ObjectId
+  ['userFrom', 'userTo'].forEach(function (param) {
+    if (!req.query[param]) return;
+
+    var isParamValid = mongoose.Types.ObjectId.isValid(req.query[param]);
+    if (!isParamValid) {
+      valid = false;
+      details.push('Invalid query parameter ' + param + '.');
+    }
+  });
+
+  return { valid: valid, details: details };
+}
+
+/**
+ * Read references filtered by userFrom or userTo
+ */
+exports.readMany = function readMany(req, res, next) {
+
+  return async.waterfall([
+
+    // validate the query
+    validate.bind(this, validateReadMany, req),
+
+    // build a query (synchronous)
+    function buildQuery(cb) {
+      var query = { };
+
+      /**
+       * Allow non-public references only when userFrom or userTo is self
+       */
+      var isSelfUserFromOrUserTo = [req.query.userFrom, req.query.userTo].includes(req.user._id.toString());
+      if (!isSelfUserFromOrUserTo) {
+        query.public = true;
       }
-      return res.status(err.status).json(err.body);
+
+      /**
+       * Filter by userFrom
+       */
+      if (req.query.userFrom) {
+        query.userFrom = req.query.userFrom;
+      }
+
+      /**
+       * Filter by userTo
+       */
+      if (req.query.userTo) {
+        query.userTo = req.query.userTo;
+      }
+
+      cb(null, query);
+    },
+
+    // find references by query
+    function findReferences(query, cb) {
+      Reference.find(query)
+        .select(referenceFields)
+        .populate('userFrom userTo', userProfile.userMiniProfileFields)
+        .exec(cb);
+    },
+
+    // prepare success response
+    function prepareSuccessResponse(references, cb) {
+      var isSelfUserFrom = req.query.userFrom === req.user._id.toString();
+
+      // when userFrom is self, we can see the nonpublic references in their full form
+      cb({
+        status: 200,
+        body: references.map(_.partial(formatReference, _, isSelfUserFrom))
+      });
     }
 
-    // take care of unexpected errors
-    return next(err);
-  });
+  ], processResponses.bind(this, res, next));
 };

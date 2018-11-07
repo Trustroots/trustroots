@@ -8,6 +8,7 @@ var async = require('async'),
     sinon = require('sinon'),
     config = require(path.resolve('./config/config')),
     jobPublishReference = require('../../server/jobs/references-publish.server.job'),
+    utils = require(path.resolve('./testutils/data.server.testutils')),
     Reference = mongoose.model('Reference');
 
 describe('Job: Set reference to public after a given period of time', function () {
@@ -24,9 +25,7 @@ describe('Job: Set reference to public after a given period of time', function (
   });
 
   // delete references after each test
-  afterEach(function (done) {
-    Reference.deleteMany({}).exec(done);
-  });
+  afterEach(utils.clearDatabase);
 
   function generateReferenceData() {
     return {

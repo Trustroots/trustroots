@@ -2,6 +2,8 @@
 
 var should = require('should'),
     mongoose = require('mongoose'),
+    path = require('path'),
+    utils = require(path.resolve('./testutils/data.server.testutils')),
     User = mongoose.model('User'),
     Reference = mongoose.model('Reference');
 
@@ -33,9 +35,7 @@ describe('Reference Model Unit Tests', function () {
       });
     });
 
-    afterEach(function (done) {
-      Reference.remove().exec(done);
-    });
+    afterEach(utils.clearDatabase);
 
     it('save both directions without problems', function (done) {
       var reference1 = new Reference({

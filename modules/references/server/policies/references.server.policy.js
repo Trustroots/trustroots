@@ -11,7 +11,7 @@ exports.invokeRolesPolicies = function () {
     roles: ['user', 'admin'],
     allows: [{
       resources: '/api/references',
-      permissions: ['post']
+      permissions: ['get', 'post']
     }]
   }]);
 };
