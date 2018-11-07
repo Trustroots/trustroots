@@ -1,26 +1,26 @@
 'use strict';
 
-const async = require('async'),
-      moment = require('moment'),
+const moment = require('moment'),
       mongoose = require('mongoose'),
       path = require('path'),
       should = require('should'),
       sinon = require('sinon'),
+      util = require('util'),
       config = require(path.resolve('./config/config')),
       jobPublishReference = require('../../server/jobs/references-publish.server.job'),
       utils = require(path.resolve('./testutils/data.server.testutils')),
       Reference = mongoose.model('Reference');
 
-describe('Job: Set reference to public after a given period of time', function () {
+describe('Job: Set reference to public after a given period of time', () => {
 
   // fake Date
   // stub config.limits.timeToReplyReference with custom test value
-  beforeEach(function () {
+  beforeEach(() => {
     sinon.useFakeTimers({ now: new Date('2018-10-12 11:33:21.312'), toFake: ['Date'] });
     sinon.stub(config.limits, 'timeToReplyReference').value({ days: 7 });
   });
 
-  afterEach(function () {
+  afterEach(() => {
     sinon.restore();
   });
 
@@ -41,62 +41,52 @@ describe('Job: Set reference to public after a given period of time', function (
     };
   }
 
-  function createReferences(count, done) {
+  async function createReferences(count) {
     const references = [];
 
     for (let i = 0; i < count; ++i) {
       references.push(new Reference(generateReferenceData()));
     }
-    async.eachSeries(references, function (reference, cb) { reference.save(cb); }, done);
+
+    for (const reference of references) {
+      await reference.save();
+    }
   }
 
-  function countPublicReferences(done) {
-    return Reference.find({ public: true }).exec(function (err, resp) {
-      return done(err, resp.length);
-    });
+  async function countPublicReferences() {
+    const references = await Reference.find({ public: true }).exec();
+    return references.length;
   }
 
-  function waitWithCallback(duration, done) {
+  function wait(duration) {
     sinon.clock.tick(moment.duration(duration).asMilliseconds());
-    return done();
   }
 
-  function runJobAndExpectPublicReferences(expectedCount, done) {
-    jobPublishReference(null, function (errJob) {
-      if (errJob) return done(errJob);
-
-      countPublicReferences(function (err, actualCount) {
-        if (err) return done(err);
-
-        try {
-          should(actualCount).eql(expectedCount);
-          return done();
-        } catch (e) {
-          return done(e);
-        }
-      });
-
-    });
+  async function runJobAndExpectPublicReferences(expectedCount) {
+    // promisify job and run it
+    await util.promisify(jobPublishReference)(null);
+    // count the references which are public
+    const actualCount = await countPublicReferences();
+    // test
+    should(actualCount).eql(expectedCount);
   }
 
-  it('non-public references older than a given period of time become public', function (done) {
-    return async.waterfall([
-      // create some non-public references
-      createReferences.bind(this, 7),
-      // wait for some time less than the given period
-      waitWithCallback.bind(this, { days: 3 }),
-      // create some more references
-      createReferences.bind(this, 4),
-      // run the job and see that all the references are private
-      runJobAndExpectPublicReferences.bind(this, 0),
-      // wait so the older references can become public
-      waitWithCallback.bind(this, { days: 4, seconds: 1 }),
-      // run the job and see that the older references are public now
-      runJobAndExpectPublicReferences.bind(this, 7),
-      // wait longer
-      waitWithCallback.bind(this, { days: 3 }),
-      // run the job and see that all the references are public now
-      runJobAndExpectPublicReferences.bind(this, 11)
-    ], done);
+  it('non-public references older than a given period of time become public', async () => {
+    // create some non-public references
+    await createReferences(7);
+    // wait for some time less than the given period
+    wait({ days: 3 });
+    // create some more references
+    await createReferences(4);
+    // run the job and see that all the references are private
+    await runJobAndExpectPublicReferences(0);
+    // wait so the older references can become public
+    wait({ days: 4, seconds: 1 });
+    // run the job and see that the older references are public now
+    await runJobAndExpectPublicReferences(7);
+    // wait longer
+    wait({ days: 3 });
+    // run the job and see that all the references are public now
+    await runJobAndExpectPublicReferences(11);
   });
 });

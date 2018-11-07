@@ -1,7 +1,6 @@
 'use strict';
 
-const _ = require('lodash'),
-      mongoose = require('mongoose'),
+const mongoose = require('mongoose'),
       path = require('path'),
       request = require('supertest'),
       should = require('should'),
@@ -30,7 +29,7 @@ describe('Read references by userFrom Id or userTo Id', () => {
     username: 'nonpublic',
     email: 'nonpublic@example.com'
   });
-  const _users = _.concat(_usersPublic, _usersPrivate);
+  const _users = [..._usersPublic, ..._usersPrivate];
 
   beforeEach(() => {
     sinon.useFakeTimers({ now: new Date('2018-01-12'), toFake: ['Date'] });
