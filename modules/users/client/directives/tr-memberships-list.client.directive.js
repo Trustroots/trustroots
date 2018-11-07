@@ -17,7 +17,16 @@
       scope: {
         memberships: '=trMembershipsList',
         isOwnProfile: '='
-      }
+      },
+      controller: trMembershipsListController
+
+    };
+  }
+
+  function trMembershipsListController($scope) {
+    $scope.tribeListLimit = 5;
+    $scope.toggle = function () {
+      $scope.tribeListLimit = undefined;
     };
   }
 
