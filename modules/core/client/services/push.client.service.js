@@ -17,6 +17,7 @@
     $q) {
 
     var LOCKER_KEY = 'tr.push';
+    var NOT_CLEARED_ON_SIGN_OUT_NAMESPACE = 'notClearedOnSignOut';
 
     var push = {
       isSupported: getIsSupported(),
@@ -104,7 +105,7 @@
       // - locker isn't supported (we can't store status)
       // - we've asked already (stored with `locker`)
       // - no authenticated user
-      if (!locker.supported() || locker.get(pushAskedKey) || !Authentication.user) {
+      if (!locker.supported() || locker.namespace(NOT_CLEARED_ON_SIGN_OUT_NAMESPACE).get(pushAskedKey) || !Authentication.user) {
         return;
       }
 
@@ -125,7 +126,7 @@
           // When modal is closed/dismissed
           $scope.$on('modal.closing', function () {
             // Store info that we've now asked and user reacted
-            locker.put(pushAskedKey, 'yes');
+            locker.namespace(NOT_CLEARED_ON_SIGN_OUT_NAMESPACE).put(pushAskedKey, 'yes');
           });
 
         },
