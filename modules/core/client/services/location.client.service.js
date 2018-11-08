@@ -128,6 +128,10 @@
         return [];
       }
 
+      if (val == null || val.length <= 1) {
+        return [];
+      }
+
       return $http.get(
         'https://api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json'
         + '?access_token=' + appSettings.mapbox.publicKey
