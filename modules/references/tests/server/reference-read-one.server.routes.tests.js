@@ -154,7 +154,9 @@ describe('Read a single reference by reference id', function () {
           try {
             should(res.body).eql({
               message: 'Not found.',
-              detail: 'Reference not found.'
+              details: {
+                reference: 'not found'
+              }
             });
 
             return done();
@@ -174,7 +176,9 @@ describe('Read a single reference by reference id', function () {
           try {
             should(res.body).eql({
               message: 'Not found.',
-              detail: 'Reference not found.'
+              details: {
+                reference: 'not found'
+              }
             });
 
             return done();
@@ -194,7 +198,9 @@ describe('Read a single reference by reference id', function () {
           try {
             should(res.body).eql({
               message: 'Bad request.',
-              details: ['Invalid referenceId.']
+              details: {
+                referenceId: 'invalid'
+              }
             });
 
             return done();

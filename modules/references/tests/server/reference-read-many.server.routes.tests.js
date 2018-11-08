@@ -227,7 +227,10 @@ describe('Read references by userFrom Id or userTo Id', function () {
           try {
             should(res.body).eql({
               message: 'Bad request.',
-              details: ['Missing query parameters userFrom or userTo.']
+              details: {
+                userFrom: 'missing',
+                userTo: 'missing'
+              }
             });
             return done();
           } catch (e) {
@@ -246,7 +249,10 @@ describe('Read references by userFrom Id or userTo Id', function () {
           try {
             should(res.body).eql({
               message: 'Bad request.',
-              details: ['Invalid query parameter userFrom.', 'Invalid query parameter userTo.']
+              details: {
+                userFrom: 'invalid',
+                userTo: 'invalid'
+              }
             });
             return done();
           } catch (e) {

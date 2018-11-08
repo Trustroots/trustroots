@@ -182,7 +182,9 @@ exports.create = function (req, res, next) {
             status: 404,
             body: {
               errType: 'not-found',
-              detail: 'User not found.'
+              details: {
+                userTo: 'not found'
+              }
             }
           });
         }
@@ -206,7 +208,9 @@ exports.create = function (req, res, next) {
           status: 400,
           body: {
             errType: 'bad-request',
-            details: ['Only a positive recommendation is allowed in response to a public reference.']
+            details: {
+              recommend: '\'yes\' expected - response to public'
+            }
           }
         });
       }
@@ -262,13 +266,14 @@ exports.create = function (req, res, next) {
  */
 function validateReadMany(req) {
   var valid = true;
-  var details = [];
+  var details = {};
 
   // check that query contains userFrom or userTo
   var isQueryWithFilter = req.query.userFrom || req.query.userTo;
   if (!isQueryWithFilter) {
     valid = false;
-    details.push('Missing query parameters userFrom or userTo.');
+    details.userFrom = 'missing';
+    details.userTo = 'missing';
   }
 
   // check that userFrom and userTo is valid mongodb/mongoose ObjectId
@@ -278,7 +283,7 @@ function validateReadMany(req) {
     var isParamValid = mongoose.Types.ObjectId.isValid(req.query[param]);
     if (!isParamValid) {
       valid = false;
-      details.push('Invalid query parameter ' + param + '.');
+      details[param] = 'invalid';
     }
   });
 
@@ -353,12 +358,12 @@ exports.readMany = function readMany(req, res, next) {
  */
 function validateReadOne(id) {
   var valid = true;
-  var details = [];
+  var details = {};
 
   var isIdValid = mongoose.Types.ObjectId.isValid(id);
   if (!isIdValid) {
     valid = false;
-    details.push('Invalid referenceId.');
+    details.referenceId = 'invalid';
   }
 
   return { valid: valid, details: details };
@@ -393,7 +398,9 @@ exports.referenceById = function referenceById(req, res, next, id) { // eslint-d
           status: 404,
           body: {
             errType: 'not-found',
-            detail: 'Reference not found.'
+            details: {
+              reference: 'not found'
+            }
           }
         });
       }
