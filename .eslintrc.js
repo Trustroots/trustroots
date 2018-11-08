@@ -86,5 +86,21 @@ module.exports = {
     __TESTING__: true,
     _: false,
     AppConfig: true
-  }
+  },
+  overrides: [{
+    // ES 2018 - specify migrated files and folders here
+    files: [
+      'testutils/data.server.testutils.js',
+      'modules/references/server/**',
+      'modules/references/tests/server/**'
+    ],
+    parserOptions: {
+      ecmaVersion: 9
+    },
+    rules: {
+      'no-var': 2,
+      'prefer-const': 2,
+      'arrow-spacing': [2, { before: true, after: true }]
+    }
+  }]
 };
