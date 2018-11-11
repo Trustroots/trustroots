@@ -418,34 +418,36 @@ function mocha(done) {
   var testSuites = changedTestFiles.length ? changedTestFiles : testAssets.tests.server;
   var error;
 
-  // Connect mongoose
-  mongooseService.connect(function (db) {
-    // Clean out test database to have clean base
-    mongooseService.dropDatabase(db, function () {
-      gulp.src(testSuites)
-        .pipe(plugins.mocha({
-          reporter: 'spec',
-          timeout: 10000,
-          file: './testutils/loadmodels.testutil'
-        }))
-        .on('error', function (err) {
-          // If an error occurs, save it
-          error = err;
-          console.error(err);
-        })
-        .on('end', function () {
-          // When the tests are done, disconnect agenda/mongoose
-          // and pass the error state back to gulp
-          // @TODO: https://github.com/Trustroots/trustroots/issues/438
-          // @link https://github.com/agenda/agenda/pull/450
-          agenda._mdb.close(function () {
-            mongooseService.disconnect(function () {
-              done(error);
-            });
-          });
+  gulp.src(testSuites)
+    .pipe(plugins.mocha({
+      reporter: 'spec',
+      timeout: 10000,
+      delay: true,
+      exit: true,
+      file: './testutils/loadmodels.testutil'
+    }))
+    .on('error', function (err) {
+      // If an error occurs, save it
+      error = err;
+      console.error(err);
+      // Close the DB connection
+      agenda._mdb.close(function () {
+        mongooseService.disconnect(function () {
+          done(error);
         });
+      });
+    })
+    .on('end', function () {
+      // When the tests are done, disconnect agenda/mongoose
+      // and pass the error state back to gulp
+      // @TODO: https://github.com/Trustroots/trustroots/issues/438
+      // @link https://github.com/agenda/agenda/pull/450
+      agenda._mdb.close(function () {
+        mongooseService.disconnect(function () {
+          done(error);
+        });
+      });
     });
-  });
 }
 
 function karma(done) {
