@@ -21,6 +21,11 @@
         </a>
       </li>
       <li>
+        <a ui-sref="profile.references.new({username: profileCtrl.profile.username})">
+          Write a reference
+        </a>
+      </li>
+      <li>
         <a ui-sref="contactAdd({userId: profileCtrl.profile._id})"
            ng-if="profileCtrl.contact.$resolved && !profileCtrl.contact._id">
           Add contact
@@ -172,6 +177,12 @@
                 </a>
               </li>
               <li>
+                <a ui-sref="profile.references.new({username: profileCtrl.profile.username})">
+                  <i class="icon-plus-squared-alt"></i>
+                  Write a reference
+                </a>
+              </li>
+              <li>
                 <a class="btn btn-link"
                    ui-sref="contactAdd({userId: profileCtrl.profile._id})"
                    ng-if="profileCtrl.contact.$resolved && !profileCtrl.contact._id">
@@ -216,6 +227,17 @@
                           ng-bind="profileCtrl.contacts.length"></span>
                     <span class="sr-only">
                       {{profileCtrl.contacts.length}} Contacts
+                    </span>
+                  </a>
+                </li>
+                <li ui-sref-active="active" role="presentation">
+                  <a ui-sref="profile.references.list" role="tab">
+                    <span aria-hidden="true">References</span>
+                    <span class="badge"
+                          aria-hidden="true"
+                          ng-bind="profileCtrl.referencesCount || 0"></span>
+                    <span class="sr-only">
+                      {{profileCtrl.referencesCount || 0}} References
                     </span>
                   </a>
                 </li>
