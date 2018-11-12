@@ -3,7 +3,8 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
     async = require('async'),
     juice = require('juice'),
     moment = require('moment'),
@@ -221,12 +222,22 @@ exports.sendSignupEmailConfirmation = function (user, callback) {
 
 exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
 
+  var subject = 'Support request';
+
+  // I miss CoffeeSscript
+  if (_.has(supportRequest, 'username') && supportRequest.username) {
+    subject += ' from ' + supportRequest.username;
+  }
+  if (_.has(supportRequest, 'displayName') && supportRequest.displayName) {
+    subject += ' (' + supportRequest.displayName + ')';
+  }
+
   var params = {
     from: 'Trustroots Support <' + config.supportEmail + '>',
     name: 'Trustroots Support', // `To:`
     email: config.supportEmail, // `To:`
     replyTo: replyTo,
-    subject: 'Support request',
+    subject: subject,
     request: supportRequest,
     skipHtmlTemplate: true, // Don't render html template for this email
     sparkpostCampaign: 'support-request'
