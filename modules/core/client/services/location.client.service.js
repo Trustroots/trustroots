@@ -125,7 +125,11 @@
     function suggestions(val, types) {
       if (!appSettings.mapbox || !appSettings.mapbox.publicKey) {
         $log.warn('No Mapbox settings found; cannot do geocoding!');
-        return [];
+        return Promise.resolve([]);
+      }
+
+      if (val == null || val.length <= 1) {
+        return Promise.resolve([]);
       }
 
       return $http.get(
@@ -145,7 +149,7 @@
               return geolocation;
             });
           } else {
-            return [];
+            return Promise.resolve([]);
           }
         });
     }
