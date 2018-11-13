@@ -3,4 +3,5 @@ User-agent: *
 Disallow: /?_escaped_fragment_=/profile/
 Disallow: /profile/
 Disallow: /modules/users/client/img/profile/uploads/
+Disallow: /uploads-profile/
 Disallow: /api/users/

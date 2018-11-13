@@ -3,7 +3,8 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
     async = require('async'),
     juice = require('juice'),
     moment = require('moment'),
@@ -221,12 +222,22 @@ exports.sendSignupEmailConfirmation = function (user, callback) {
 
 exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
 
+  var subject = 'Support request';
+
+  // I miss CoffeeSscript
+  if (_.has(supportRequest, 'username') && supportRequest.username) {
+    subject += ' from ' + supportRequest.username;
+  }
+  if (_.has(supportRequest, 'displayName') && supportRequest.displayName) {
+    subject += ' (' + supportRequest.displayName + ')';
+  }
+
   var params = {
     from: 'Trustroots Support <' + config.supportEmail + '>',
     name: 'Trustroots Support', // `To:`
     email: config.supportEmail, // `To:`
     replyTo: replyTo,
-    subject: 'Support request',
+    subject: subject,
     request: supportRequest,
     skipHtmlTemplate: true, // Don't render html template for this email
     sparkpostCampaign: 'support-request'
@@ -379,7 +390,7 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
   var params = exports.addEmailBaseTemplateParams({
     subject: 'How is it going, ' + user.firstName + '?',
     from: {
-      name: 'Mikael',
+      name: 'Dario',
       // Use support email instead of default "no-reply@":
       address: config.supportEmail
     },
@@ -393,6 +404,35 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
   });
 
   exports.renderEmailAndSend('welcome-sequence-third', params, callback);
+};
+
+/**
+ * Reference Notification (First between users)
+ */
+exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
+
+  var params = exports.addEmailBaseTemplateParams({
+    subject: 'New reference from ' + userFrom.username,
+    email: userTo.email,
+    giveReferenceUrl: url + '/profile/' + userFrom.username + '/references/new'
+  });
+
+  exports.renderEmailAndSend('reference-notification-first', params, callback);
+};
+
+/**
+ * Reference Notification (Second reference between users)
+ */
+exports.sendReferenceNotificationSecond = function (userFrom, userTo, reference, callback) {
+
+  var params = exports.addEmailBaseTemplateParams({
+    subject: 'New reference from ' + userFrom.username,
+    email: userTo.email,
+    seeReferencesUrl: url + '/profile/' + userTo.username + '/references',
+    recommend: reference.recommend
+  });
+
+  exports.renderEmailAndSend('reference-notification-second', params, callback);
 };
 
 /**

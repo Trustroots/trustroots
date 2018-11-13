@@ -1,6 +1,7 @@
 language: node_js
 node_js:
   - 10
+  - 11
 env:
   - RUN=lint
   - RUN=test:client
@@ -35,7 +36,6 @@ before_script:
 cache:
   directories:
     - "$HOME/.npm"
-    - "$HOME/.cache/bower"
 
 notifications:
   slack:

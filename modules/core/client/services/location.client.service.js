@@ -65,16 +65,34 @@
      */
     function getBounds(geolocation) {
       if (!geolocation || !geolocation.bbox || !angular.isArray(geolocation.bbox) || geolocation.bbox.length !== 4) {
-        return false;
+        var center = geolocation.center;
+        if (!geolocation || !center || !angular.isArray(center) || center.length !== 2) {
+          return false;
+        } else {
+          var borderFromCenter = .002;
+          return getBoundsObject(
+            parseFloat(center[1]) + borderFromCenter,
+            parseFloat(center[0]) - borderFromCenter,
+            parseFloat(center[1]) - borderFromCenter,
+            parseFloat(center[0]) + borderFromCenter);
+        }
       }
+      return getBoundsObject(
+        parseFloat(geolocation.bbox[3]),
+        parseFloat(geolocation.bbox[2]),
+        parseFloat(geolocation.bbox[1]),
+        parseFloat(geolocation.bbox[0]));
+    }
+
+    function getBoundsObject(northEastLat, northEastLng, southWestLat, southWestLng) {
       return {
         'northEast': {
-          'lat': parseFloat(geolocation.bbox[3]),
-          'lng': parseFloat(geolocation.bbox[2])
+          'lat': northEastLat,
+          'lng': northEastLng
         },
         'southWest': {
-          'lat': parseFloat(geolocation.bbox[1]),
-          'lng': parseFloat(geolocation.bbox[0])
+          'lat': southWestLat,
+          'lng': southWestLng
         }
       };
     }
@@ -125,14 +143,18 @@
     function suggestions(val, types) {
       if (!appSettings.mapbox || !appSettings.mapbox.publicKey) {
         $log.warn('No Mapbox settings found; cannot do geocoding!');
-        return [];
+        return Promise.resolve([]);
+      }
+
+      if (val == null || val.length <= 1) {
+        return Promise.resolve([]);
       }
 
       return $http.get(
-        'https://api.mapbox.com/geocoding/v5/mapbox.places/' + val + '.json'
+        'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(val) + '.json'
         + '?access_token=' + appSettings.mapbox.publicKey
         + '&language=en'
-        + '&types=' + (types || 'country,region,place,locality,neighborhood'),
+        + (types ? '&types=' + types : ''),
         {
           // Tells Angular-Loading-Bar to ignore this http request
           // @link https://github.com/chieffancypants/angular-loading-bar#ignoring-particular-xhr-requests
@@ -145,7 +167,7 @@
               return geolocation;
             });
           } else {
-            return [];
+            return Promise.resolve([]);
           }
         });
     }

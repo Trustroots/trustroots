@@ -14,6 +14,9 @@ var _ = require('lodash'),
     del = require('del'),
     nodemon = require('nodemon'),
     mkdirRecursive = require('mkdir-recursive'),
+    webpack = require('webpack'),
+    webpackStream = require('webpack-stream'),
+    merge = require('webpack-merge'),
     plugins = gulpLoadPlugins({
       rename: {
         'gulp-angular-templatecache': 'templateCache'
@@ -57,7 +60,6 @@ function runNodemon(done) {
     ignore: _.union(
       testAssets.tests.server,
       testAssets.tests.client,
-      testAssets.tests.e2e,
       [
         defaultAssets.server.fontelloConfig,
         defaultAssets.server.gulpConfig,
@@ -92,7 +94,6 @@ function runNodemonWorker(done) {
     ignore: _.union(
       testAssets.tests.server,
       testAssets.tests.client,
-      testAssets.tests.e2e,
       [
         defaultAssets.server.fontelloConfig,
         defaultAssets.server.gulpConfig,
@@ -152,6 +153,37 @@ gulp.task('env:dev', gulp.series(
   'makeUploadsDir'
 ));
 
+gulp.task('webpack', gulp.parallel(
+  webpackTask({
+    entry: './config/webpack/entries/main.js',
+    filename: 'main.js',
+    path: 'public/assets/'
+  }),
+  webpackTask({
+    entry: './config/webpack/entries/pushMessagingServiceWorker.js',
+    filename: 'push-messaging-sw.js',
+    path: 'public/'
+  })
+));
+
+function webpackTask(opts) {
+  return function () {
+    var resolvedEntry = require.resolve(opts.entry);
+    return gulp.src(resolvedEntry)
+      .pipe(webpackStream(merge(require('./config/webpack/webpack.config.js'), {
+        watch: opts.watch,
+        entry: resolvedEntry,
+        output: {
+          filename: opts.filename
+        }
+      }), webpack, function (err, stats){
+        if (opts.onChange) {
+          opts.onChange(err, stats);
+        }
+      }))
+      .pipe(gulp.dest(opts.path));
+  };
+}
 
 // Set NODE_ENV to 'production' and prepare environment
 gulp.task('env:prod', gulp.series(
@@ -189,7 +221,7 @@ gulp.task('watch', function (done) {
     gulp.watch(defaultAssets.client.js, gulp.series('lint', 'clean:js', 'scripts'));
     gulp.watch(defaultAssets.client.views, gulp.series('clean:js', 'scripts')).on('change', plugins.refresh.changed);
   } else {
-    gulp.watch(defaultAssets.client.js, gulp.series('lint')).on('change', plugins.refresh.changed);
+    gulp.watch(defaultAssets.client.js, gulp.series('lint'));
     gulp.watch(defaultAssets.client.views).on('change', plugins.refresh.changed);
   }
   done();
@@ -237,7 +269,6 @@ gulp.task('eslint', function () {
     defaultAssets.client.js,
     testAssets.tests.server,
     testAssets.tests.client,
-    testAssets.tests.e2e,
     // Don't lint dist and lib files
     [
       '!public/**',
@@ -282,16 +313,7 @@ gulp.task('scripts', gulp.series(
   loadConfig,
   angularTemplateCache,
   angularUibTemplatecache,
-  function () {
-    var scriptFiles = _.union(assets.client.lib.js, assets.client.js);
-    return gulp.src(scriptFiles)
-      .pipe(plugins.ngAnnotate())
-      .pipe(plugins.uglify({
-        mangle: true
-      }))
-      .pipe(plugins.concat('application.min.js'))
-      .pipe(gulp.dest('public/dist'));
-  }
+  'webpack'
 ));
 
 // Clean JS files -task
@@ -357,7 +379,7 @@ function angularUibTemplatecache() {
   // Loop trough module names
   defaultAssets.client.lib.uibModuleTemplates.forEach(function (uibModule) {
 
-    var moduleStream = gulp.src(['public/lib/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
+    var moduleStream = gulp.src(['node_modules/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
       .pipe(plugins.htmlmin({ collapseWhitespace: true }))
       .pipe(plugins.templateCache('uib-templates-' + uibModule + '.js', {
         root: 'uib/template/' + uibModule + '/',
@@ -476,9 +498,10 @@ gulp.task('build:dev', gulp.series(
     'lint',
     'clean'
   ),
+  angularUibTemplatecache,
   gulp.parallel(
-    angularUibTemplatecache,
-    'styles'
+    'styles',
+    'scripts'
   )
 ));
 
@@ -522,6 +545,7 @@ gulp.task('test:server:watch', gulp.series(
 ));
 
 gulp.task('test:client', gulp.series(
+  'build:dev',
   'env:test',
   karma
 ));
@@ -540,7 +564,17 @@ gulp.task('develop', gulp.series(
   'build:dev',
   gulp.parallel(
     runNodemon,
-    'watch'
+    'watch',
+    webpackTask({
+      entry: './config/webpack/entries/main.js',
+      filename: 'main.js',
+      path: 'public/assets/',
+      watch: true,
+      onChange: function () {
+        console.log('webpack changed!');
+        plugins.refresh.changed('/assets/main.js');
+      }
+    })
   )
 ));
 

@@ -14,7 +14,8 @@
     var SERVICE_WORKER_PATH = '/push-messaging-sw.js';
     var SERVICE_WORKER_SCOPE = '/trustroots-push-messaging-scope';
 
-    var firebase = $window.firebase;
+    var firebase = require('firebase/app');
+    require('firebase/messaging');
     var _messaging = null; // set in initMessaging()
     var onTokenRefreshCallbacks = [];
     var onMessageCallbacks = [];

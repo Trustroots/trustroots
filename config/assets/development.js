@@ -11,7 +11,7 @@ module.exports = {
       uibModuleTemplates: defaultAssets.client.lib.uibModuleTemplates,
       css: defaultAssets.client.lib.css,
       js: _.union(defaultAssets.client.lib.js, [
-        'public/lib/angulartics/src/angulartics-debug.js'
+        'node_modules/angulartics/src/angulartics-debug.js'
       ]),
       less: defaultAssets.client.lib.less,
       tests: defaultAssets.client.lib.tests
