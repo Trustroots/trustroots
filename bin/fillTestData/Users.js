@@ -6,6 +6,7 @@ var _ = require('lodash'),
     chalk = require('chalk'),
     faker = require('faker'),
     fs = require('fs'),
+    moment = require('moment'),
     mongoose = require('mongoose'),
     cities = JSON.parse(fs.readFileSync(path.resolve('./bin/fillTestData/data/Cities.json'), 'utf8')),
     savedCounter = 0;
@@ -117,6 +118,10 @@ var addUsers = function (max, adminUsers) {
           user.avatarUploaded = false;
           user.avatarSource = 'none';
           user.welcomeSequenceStep = 3;
+          user.seen = moment()
+            .subtract(Math.random() * 365, 'd')
+            .subtract(Math.random() * 24, 'h')
+            .subtract(Math.random() * 3600, 's');
 
           if (admin !== undefined) {
             // admin user
