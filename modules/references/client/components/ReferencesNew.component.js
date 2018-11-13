@@ -1,5 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import * as references from './references.api';
+
+const api = { references };
 
 function Interaction(props) {
 
@@ -294,14 +297,14 @@ export default class ReferencesNew extends React.Component {
     });
   }
 
-  handleSubmit() {
-    /* do something with the provided data
-    {
+  async handleSubmit() {
+    const data = {
       reference: this.state.reference,
       report: this.state.report,
       reportMessage: this.state.reportMessage
     };
-    */
+
+    await api.references.create({ ...data.reference, userTo: this.props.userTo._id });
   }
 
   render() {
@@ -341,4 +344,6 @@ export default class ReferencesNew extends React.Component {
   }
 }
 
-ReferencesNew.propTypes = {};
+ReferencesNew.propTypes = {
+  userTo: PropTypes.object
+};
