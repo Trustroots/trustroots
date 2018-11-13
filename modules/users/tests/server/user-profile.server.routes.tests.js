@@ -726,6 +726,65 @@ describe('User profile CRUD tests', function () {
             });
         });
       });
+
+    it('user should not be allowed to change the usernameUpdateAllowed status',
+      function (done) {
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (err) {
+            if (err) {
+              return done(err);
+            }
+            agent.put('/api/users')
+              .send({
+                usernameUpdateAllowed: true
+              })
+              .expect(200)
+              .end(function (err, res) {
+                if (err) {
+                  return done(err);
+                }
+
+                res.body.usernameUpdateAllowed.should.equal(false);
+
+                User.findOne(
+                  { username: credentials.username },
+                  function (err, newUser) {
+                    should.not.exist(newUser.usernameUpdateAllowed);
+                    done(err);
+                  });
+              });
+          });
+      });
+
+    it('user should not be allowed to change the date when their username was last changed',
+      function (done) {
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (err) {
+            if (err) {
+              return done(err);
+            }
+            agent.put('/api/users')
+              .send({
+                usernameUpdated: moment().subtract(3, 'months').toDate()
+              })
+              .expect(200)
+              .end(function (err) {
+                if (err) {
+                  return done(err);
+                }
+                User.findOne(
+                  { username: credentials.username },
+                  function (err, newUser) {
+                    should.not.exist(newUser.usernameUpdated);
+                    done(err);
+                  });
+              });
+          });
+      });
   });
 
   afterEach(function (done) {
