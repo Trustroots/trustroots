@@ -85,19 +85,6 @@
         vm.searchSuggestions = searchSuggestions;
         vm.onSelect = onSelect;
 
-        // Initialize controller
-        activate();
-
-        function activate() {
-
-          // If directive has init value, use it to search a location
-          if (angular.isDefined($scope.value) && angular.isString($scope.value) && $scope.value) {
-            // If location is found, don't show suggestions list but activate first found result
-            $scope.skipSuggestions = true;
-            searchSuggestions($scope.value);
-          }
-        }
-
         /**
          * Get geolocation suggestions
          */
