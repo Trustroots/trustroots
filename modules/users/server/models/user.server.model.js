@@ -170,6 +170,9 @@ var UserSchema = new Schema({
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
     trim: true
   },
+  usernameUpdated: {
+    type: Date
+  },
   // Stores unaltered original username
   displayUsername: {
     type: String,
