@@ -49,6 +49,14 @@ describe('Read references by userFrom Id or userTo Id', function () {
 
   /**
    * array of [userFrom, userTo, values]
+   *
+   * Overview of the referenceData
+   * - row: userFrom - index of user within array of users provided to utils.generateReferences()
+   * - column: userTo - same as row
+   * - T: reference exists and is public
+   * - F: reference exists and is not public
+   * - .: reference doesn't exist
+   *
    *   0 1 2 3 4 5
    * 0 . T T F F T
    * 1 T . T T . T

@@ -41,6 +41,15 @@ describe('Read a single reference by reference id', function () {
   });
 
   /**
+   * array of [userFrom, userTo, values]
+   *
+   * Overview of the referenceData
+   * - row: userFrom - index of user within array of users provided to utils.generateReferences()
+   * - column: userTo - same as row
+   * - T: reference exists and is public
+   * - F: reference exists and is not public
+   * - .: reference doesn't exist
+   *
    *   0 1 2
    * 0 . T F
    * 1 F . T
@@ -76,9 +85,12 @@ describe('Read a single reference by reference id', function () {
           if (err) return done(err);
 
           try {
-            var userFromExp = _.pick(users[1], userProfile.userMiniProfileFields.split(' ').slice(2));
+
+            // pre-collect expected values of users
+            var userFields = userProfile.userMiniProfileFields.split(' ').slice(2);
+            var userFromExp = _.pick(users[1], userFields);
             userFromExp._id = users[1]._id.toString();
-            var userToExp = _.pick(users[2], userProfile.userMiniProfileFields.split(' ').slice(2));
+            var userToExp = _.pick(users[2], userFields);
             userToExp._id = users[2]._id.toString();
 
             should(res.body).eql({

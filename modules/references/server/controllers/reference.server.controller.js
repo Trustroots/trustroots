@@ -21,7 +21,7 @@ function validateCreate(req) {
   var interactionErrors = {};
 
   // Can't create a reference to oneself
-  if (req.user._id.toString() === req.body.userTo) {
+  if (req.user._id.equals(req.body.userTo)) {
     valid = false;
     details.userTo = 'self';
   }
@@ -307,7 +307,7 @@ exports.readMany = function readMany(req, res, next) {
       /**
        * Allow non-public references only when userFrom or userTo is self
        */
-      var isSelfUserFromOrUserTo = [req.query.userFrom, req.query.userTo].includes(req.user._id.toString());
+      var isSelfUserFromOrUserTo = req.user._id.equals(req.query.userFrom) || req.user._id.equals(req.query.userTo);
       if (!isSelfUserFromOrUserTo) {
         query.public = true;
       }
@@ -339,7 +339,7 @@ exports.readMany = function readMany(req, res, next) {
 
     // prepare success response
     function prepareSuccessResponse(references, cb) {
-      var isSelfUserFrom = req.query.userFrom === req.user._id.toString();
+      var isSelfUserFrom = req.user._id.equals(req.query.userFrom);
 
       // when userFrom is self, we can see the nonpublic references in their full form
       cb({
@@ -392,7 +392,7 @@ exports.referenceById = function referenceById(req, res, next, id) { // eslint-d
 
       // nonpublic reference can be exposed to userFrom or userTo only.
       var isExistentPublicOrFromToSelf = reference
-        && (reference.public || [reference.userFrom._id.toString(), reference.userTo._id.toString()].includes(req.user._id.toString()));
+        && (reference.public || reference.userFrom._id.equals(req.user._id) || reference.userTo.equals(req.user._id));
       if (!isExistentPublicOrFromToSelf) {
         return cb({
           status: 404,
@@ -407,7 +407,7 @@ exports.referenceById = function referenceById(req, res, next, id) { // eslint-d
 
       // assign the reference to the request object
       // when reference is public, only userFrom can see it whole
-      var isUserFrom = reference.userFrom._id.toString() === req.user._id.toString();
+      var isUserFrom = reference.userFrom._id.equals(req.user._id);
       req.reference = formatReference(reference, isUserFrom);
       return cb();
     }
