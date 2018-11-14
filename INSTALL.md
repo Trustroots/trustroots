@@ -47,7 +47,6 @@ npm start
 - To skip checking Bower modules on start (useful if you're offline), type `npm run start:skipBower`
 - When you change any file, they get recompiled and the browser is refreshed.
 - Keep an eye on the console in case of compiling errors.
-- [Read more](https://github.com/Trustroots/trustroots/wiki/Development).
 - You can start clean by running `npm run distclean && npm run dropdb`.
 
 ## Modifying configurations
@@ -194,6 +193,8 @@ $ npm run migrate     # Migrate database up
 
 ## Support
 
-- Check [troubleshooting](https://github.com/Trustroots/trustroots/wiki/Troubleshooting).
 - Check and open issues at [GitHub](https://github.com/Trustroots/trustroots/issues)
 - [Contact us](https://www.trustroots.org/contact)
+- https://meta.trustroots.org/
+- https://trustroots.slack.com/
+
