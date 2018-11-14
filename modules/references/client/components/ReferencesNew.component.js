@@ -251,7 +251,6 @@ export default class ReferencesNew extends React.Component {
 
   handleTabSwitch(move) {
     this.setState({
-      ...this.state,
       tab: this.state.tab + move
     });
   }
@@ -261,7 +260,6 @@ export default class ReferencesNew extends React.Component {
       const interaction = { };
       interaction[data[0]] = !this.state.reference.interactions[data[0]];
       this.setState({
-        ...this.state,
         reference: {
           ...this.state.reference,
           interactions: {
@@ -274,7 +272,6 @@ export default class ReferencesNew extends React.Component {
 
     if (field === 'recommend') {
       this.setState({
-        ...this.state,
         reference: {
           ...this.state.reference,
           recommend: data[0]
@@ -285,14 +282,12 @@ export default class ReferencesNew extends React.Component {
 
   handleChangeReport() {
     this.setState({
-      ...this.state,
       report: !this.state.report
     });
   }
 
   handleChangeReportMessage(reportMessage) {
     this.setState({
-      ...this.state,
       reportMessage
     });
   }
