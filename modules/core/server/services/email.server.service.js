@@ -452,6 +452,7 @@ exports.addEmailBaseTemplateParams = function (params) {
   var baseUrl = (config.https ? 'https' : 'http') + '://' + config.domain;
 
   params.urlSupportPlainText = baseUrl + '/support';
+  params.urlProfilePlainText = baseUrl + '/profile/' + user.username;
   params.footerUrlPlainText = baseUrl;
 
   params.headerUrl = analyticsHandler.appendUTMParams(baseUrl, {
@@ -469,6 +470,13 @@ exports.addEmailBaseTemplateParams = function (params) {
   });
 
   params.supportUrl = analyticsHandler.appendUTMParams(params.urlSupportPlainText, {
+    source: 'transactional-email',
+    medium: 'email',
+    campaign: params.utmCampaign || 'transactional-email',
+    content: 'email-support'
+  });
+
+  params.profileUrl = analyticsHandler.appendUTMParams(params.urlProfilePlainText, {
     source: 'transactional-email',
     medium: 'email',
     campaign: params.utmCampaign || 'transactional-email',
