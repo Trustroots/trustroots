@@ -85,6 +85,35 @@ exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
   exports.sendUserNotification(userTo, notification, callback);
 };
 
+/**
+ * Send a push notification about a new reference, to the receiver of the reference
+ * @param {User} userFrom - user who gave the reference
+ * @param {User} userTo - user who received the reference
+ * @param {Object} data - notification config
+ * @param {boolean} data.isFirst - is it the first reference between users?
+ */
+exports.notifyNewReference = function (userFrom, userTo, data, callback) {
+  var giveReferenceUrl = url + '/profile/' + userFrom.username + '/references/new';
+  var readReferencesUrl = url + '/profile/' + userTo.username + '/references';
+
+  // When the reference is first, reply reference can be given.
+  // Otherwise both references are public now and can be seen.
+  var actionText = (data.isFirst) ? 'Give a reference back.' : 'You can see it.';
+  var actionUrl = (data.isFirst) ? giveReferenceUrl : readReferencesUrl;
+
+  var notification = {
+    title: 'Trustroots',
+    body: userFrom.username + ' gave you a new reference. ' + actionText,
+    click_action: analyticsHandler.appendUTMParams(actionUrl, {
+      source: 'push-notification',
+      medium: 'fcm',
+      campaign: 'new-reference',
+      content: 'reply-to' // @TODO what are the correct parameters here? What do they mean?
+    })
+  };
+  exports.sendUserNotification(userTo, notification, callback);
+};
+
 exports.sendUserNotification = function (user, notification, callback) {
 
   var data = {

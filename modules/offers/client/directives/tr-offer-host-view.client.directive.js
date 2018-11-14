@@ -22,7 +22,7 @@
     return directive;
 
     /* @ngInject */
-    function trOfferHostViewDirectiveController($scope, OffersByService) {
+    function trOfferHostViewDirectiveController($scope, $window, OffersByService) {
 
       // ViewModel
       var vm = this;
@@ -35,7 +35,7 @@
       vm.isUserPublic = false;
       vm.hostingDropdown = false;
       vm.hostingStatusLabel = hostingStatusLabel;
-
+      vm.isMobile = $window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || $window.isNativeMobileApp;
       activate();
 
       /**

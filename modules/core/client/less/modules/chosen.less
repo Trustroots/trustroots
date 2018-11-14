@@ -3,20 +3,20 @@
  * Requires Bootstrap3 mixins
  */
 
-@chosen-sprite: '/lib/chosen/chosen-sprite.png';
-@chosen-sprite-retina: '/lib/chosen/chosen-sprite@2x.png';
+@chosen-sprite: '/modules/core/img/chosen-js/chosen-sprite.png';
+@chosen-sprite-retina: '/modules/core/img/chosen-js/chosen-sprite@2x.png';
 
 // Adapted from
 // https://github.com/localytics/angular-chosen/blob/master/chosen-spinner.css
 .localytics-chosen.loading {
   &.chosen-container-multi .chosen-choices {
-    background-image: url('/lib/angular-chosen-localytics/spinner.gif');
+    background-image: url('/modules/core/img/angular-chosen-localytics/spinner.gif');
     background-repeat: no-repeat;
     background-position: 95%;
   }
   &.chosen-container-single .chosen-single {
     span {
-      background: url('/lib/angular-chosen-localytics/spinner.gif') no-repeat right;
+      background: url('/modules/core/img/angular-chosen-localytics/spinner.gif') no-repeat right;
     }
     .search-choice-close {
       display: none;
