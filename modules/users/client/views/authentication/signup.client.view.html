@@ -138,6 +138,7 @@
                        tooltip-trigger="'none'"
                        tooltip-placement="top"
                        ng-attr-type="{{ showPassword ? 'text' : 'password' }}"
+                       autocapitalize="off"
                        ng-model="signup.credentials.password"
                        ng-minlength="8"
                        ng-disabled="signup.isLoading">

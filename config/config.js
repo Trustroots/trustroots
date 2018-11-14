@@ -94,7 +94,8 @@ var initGlobalConfigFiles = function (config, assets) {
     server: {},
     client: {
       lib: {}
-    }
+    },
+    webpack: {}
   };
 
   // Setting Globbed model files
@@ -117,6 +118,8 @@ var initGlobalConfigFiles = function (config, assets) {
   } else {
     config.files.client.js = getGlobbedPaths(assets.client.lib.js, 'public/').concat(getGlobbedPaths(assets.client.js, ['client/', 'public/']));
   }
+
+  config.files.webpack.js = getGlobbedPaths(assets.client.lib.js).concat(getGlobbedPaths(assets.client.js));
 
   // Setting Globbed css files
   if (process.env.NODE_ENV === 'production') {

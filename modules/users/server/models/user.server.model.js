@@ -170,6 +170,9 @@ var UserSchema = new Schema({
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
     trim: true
   },
+  usernameUpdated: {
+    type: Date
+  },
   // Stores unaltered original username
   displayUsername: {
     type: String,
@@ -327,7 +330,7 @@ UserSchema.pre('save', function (next) {
  */
 UserSchema.methods.hashPassword = function (password) {
   if (this.salt && password) {
-    return crypto.pbkdf2Sync(password, new Buffer(this.salt, 'base64'), 10000, 64, 'SHA1').toString('base64');
+    return crypto.pbkdf2Sync(password, Buffer.from(this.salt, 'base64'), 10000, 64, 'SHA1').toString('base64');
   } else {
     return password;
   }

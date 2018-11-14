@@ -198,6 +198,11 @@
            class="btn btn-sm btn-inverse-primary">
           Bigger map
         </a>
+        <a ng-if="::trOfferHost.isMobile"
+          ng-href="geo:{{trOfferHost.offer.location[0]}},{{trOfferHost.offer.location[1]}};u=200"
+           class="btn btn-sm btn-inverse-primary">
+          Open on device
+        </a>
       </div>
 
     </div>

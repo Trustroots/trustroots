@@ -7,6 +7,9 @@ var _ = require('lodash'),
     defaultAssets = require('./config/assets/default'),
     testAssets = require('./config/assets/test'),
     // testConfig = require('./config/env/test'),
+    webpack = require('webpack'),
+    webpackConfig = require('./config/webpack/webpack.config'),
+    merge = require('webpack-merge'),
     karmaReporters = ['mocha'];
 
 // Karma configuration
@@ -15,8 +18,18 @@ module.exports = function (karmaConfig) {
     frameworks: ['jasmine'],
 
     preprocessors: {
+      'config/webpack/entries/main.js': ['webpack'],
+      'modules/*/tests/client/**/*.js': ['webpack'],
       'modules/*/client/views/**/*.html': ['ng-html2js']
     },
+
+    webpack: merge(webpackConfig, {
+      plugins: [
+        new webpack.DefinePlugin({
+          module: 'angular.mock.module'
+        })
+      ]
+    }),
 
     ngHtml2JsPreprocessor: {
       moduleName: 'trustroots',
@@ -27,7 +40,10 @@ module.exports = function (karmaConfig) {
     },
 
     // List of files / patterns to load in the browser
-    files: _.union(defaultAssets.client.lib.js, defaultAssets.client.lib.tests, defaultAssets.client.js, testAssets.tests.client, defaultAssets.client.views),
+    files: [
+      'config/webpack/entries/main.js',
+      require.resolve('angular-mocks'),
+    ].concat(testAssets.tests.client),
 
     // Test results reporter to use
     // Possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'

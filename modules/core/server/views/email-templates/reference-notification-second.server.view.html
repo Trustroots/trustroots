@@ -1,0 +1,7 @@
+{% extends './email.server.view.html' %}
+
+{% block content %}
+<a href="{{seeReferencesUrl}}">see my references</a>
+the recommendation was {{recommend}} <!-- yes, no, unknown -->
+and we can show other reference data, too.
+{% endblock content %}

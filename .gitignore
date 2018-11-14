@@ -25,7 +25,6 @@ Icon
 # Env/development
 .nodemonignore
 node_modules/
-.bower-*/
 .vagrant
 *.pyc
 passenger.*
@@ -37,6 +36,8 @@ scipts/docker/nginx-conf/*
 build
 public/lib
 public/dist
+public/assets
+public/push-messaging-sw.js
 modules/core/client/app/css
 .idea
 tmp

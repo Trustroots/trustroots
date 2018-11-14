@@ -68,11 +68,7 @@ You can now access these from your browser:
 
 ## Mock data
 
-There's a script that can generate mock user data. It's recommended you run this script after installation, that way you'll have something to look at.
-
-1. Run `docker-compose run trustroots node scripts/fillTestData.js 10000 adminusername` — that will create 10000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
-2. It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
-3. To see the result, log in with your chosen username and password `password123`.
+There are scripts for generating mock data for user data, hosting offers, messages and tribes. See the 'Mock data' instructions in [INSTALL.md](INSTALL.md) for more details.
 
 
 ## Clean database
