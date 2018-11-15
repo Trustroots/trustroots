@@ -443,7 +443,7 @@ exports.sendReferenceNotificationSecond = function (userFrom, userTo, reference,
  * @param {Object[]} params - Parameters used for rendering emails
  * @returns {Object[]} - Returns object with supportUrl, footerUrl and headerUrl parameters.
  */
-exports.addEmailBaseTemplateParams = function (params) {
+exports.addEmailBaseTemplateParams = function (params, user) {
   if (params === null || typeof params !== 'object') {
     console.error('addEmailBaseTemplateParams: requires param to be Object. No URL parameters added.');
     return {};
@@ -480,7 +480,7 @@ exports.addEmailBaseTemplateParams = function (params) {
     source: 'transactional-email',
     medium: 'email',
     campaign: params.utmCampaign || 'transactional-email',
-    content: 'email-support'
+    content: 'email-profile'
   });
 
   return params;
