@@ -3,8 +3,18 @@ export async function create(reference) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json; charset=utf-8'
-      // "Content-Type": "application/x-www-form-urlencoded",
     },
     body: JSON.stringify(reference) // eslint-disable-line angular/json-functions
+  });
+}
+
+export async function report(user, message) {
+  await fetch('/api/support', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    body: JSON.stringify({ // eslint-disable-line angular/json-functions
+      message,
+      reportMember: user.username
+    })
   });
 }

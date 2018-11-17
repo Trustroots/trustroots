@@ -1,4 +1,4 @@
-import { Navigation } from '../../client/components/ReferencesNew.component';
+import Navigation from '../../client/components/Navigation';
 import Enzyme from 'enzyme';
 import { shallow } from 'enzyme';
 import React from 'react';
