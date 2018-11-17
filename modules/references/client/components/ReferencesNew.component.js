@@ -177,7 +177,7 @@ Report.propTypes = {
   onChangeReportMessage: PropTypes.func
 };
 
-function Navigation(props) {
+export function Navigation(props) {
   const back = (
     <button
       type="button"
