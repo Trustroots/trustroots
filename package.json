@@ -37,6 +37,7 @@
     "migrate-down": "migrate down",
     "migrate": "migrate up",
     "postshrinkwrap": "node -e \"fs.utimesSync('./node_modules', new Date(), new Date());\"",
+    "preseed": "npm run check-environment",
     "prestart": "npm run check-environment",
     "pretest": "npm run check-environment",
     "seed:messages": "node ./bin/fillTestData/Messages.js",
