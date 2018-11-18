@@ -23,8 +23,8 @@
   "scripts": {
     "distclean": "rm -fr ./node_modules ./public/dist ./public/assets ./public/push-messaging-sw.js",
     "prestart": "npm run install-if-no-modules && npx check-node-version --package && npm run ensure-config-exists",
-    "ensure-config-exists": "if [ ! -e './config/env/local.js' ]; then cp -n ./config/env/local.sample.js ./config/env/local.js; fi",
     "install-if-no-modules": "if [ ! -d node_modules ]; then npm install --quiet; fi",
+    "ensure-config-exists": "node ./bin/ensure-config-exists.js",
     "start": "concurrently --raw --kill-others --kill-others-on-fail 'npm run start:develop' 'npm run start:worker' 'npm run dashboard:mail'",
     "start:docker": "npm run prestart && concurrently --raw --kill-others --kill-others-on-fail 'gulp develop' 'npm run start:worker'",
     "start:develop": "gulp develop",
