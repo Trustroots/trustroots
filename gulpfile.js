@@ -13,7 +13,6 @@ var _ = require('lodash'),
     glob = require('glob'),
     del = require('del'),
     nodemon = require('nodemon'),
-    mkdirRecursive = require('mkdir-recursive'),
     webpack = require('webpack'),
     webpackStream = require('webpack-stream'),
     merge = require('webpack-merge'),
@@ -120,28 +119,12 @@ function runNodemonWorker(done) {
   done();
 }
 
-
-// Make sure upload directory exists
-gulp.task('makeUploadsDir', gulp.series(
-  loadConfig,
-  function (done) {
-    mkdirRecursive.mkdir(config.uploadDir, function (err) {
-      if (err && err.code !== 'EEXIST') {
-        console.error(err);
-        return done(err);
-      }
-      done();
-    });
-  }
-));
-
 // Set NODE_ENV to 'test' and prepare environment
 gulp.task('env:test', gulp.series(
   function (done) {
     process.env.NODE_ENV = 'test';
     done();
-  },
-  'makeUploadsDir'
+  }
 ));
 
 // Set NODE_ENV to 'development' and prepare environment
@@ -149,8 +132,7 @@ gulp.task('env:dev', gulp.series(
   function (done) {
     process.env.NODE_ENV = 'development';
     done();
-  },
-  'makeUploadsDir'
+  }
 ));
 
 gulp.task('webpack', gulp.parallel(
@@ -190,8 +172,7 @@ gulp.task('env:prod', gulp.series(
   function (done) {
     process.env.NODE_ENV = 'production';
     done();
-  },
-  'makeUploadsDir'
+  }
 ));
 
 // Watch files for changes
