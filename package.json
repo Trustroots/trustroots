@@ -51,7 +51,6 @@
     "seed:messages": "node ./bin/fillTestData/Messages.js",
     "migrate": "migrate up",
     "migrate-down": "migrate down",
-    "update": "npm install --quiet && npm prune && migrate",
     "dashboard:mail": "maildev",
     "dashboard:jobs": "agendash --db=mongodb://localhost/trustroots-dev --collection=agendaJobs --port=1081",
     "agenda-maintenance": "node ./bin/db-maintenance/archive-done-agenda-jobs.js"
