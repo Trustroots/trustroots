@@ -34,7 +34,7 @@ export default function Navigation(props) {
       className="btn btn-action btn-primary"
       aria-label="Submit reference"
       onClick={props.onSubmit}
-      disabled={props.tabDone < props.tabs - 1}>
+      disabled={props.tabDone < props.tabs - 1 || props.disabled}>
       Submit
     </button>
   );
@@ -46,7 +46,6 @@ export default function Navigation(props) {
       {/* <!-- For the last tab -->*/}
       {(props.tab === props.tabs - 1) ? submit : null}
     </div>
-
   );
 }
 
@@ -54,6 +53,7 @@ Navigation.propTypes = {
   onBack: PropTypes.func,
   onNext: PropTypes.func,
   onSubmit: PropTypes.func,
+  disabled: PropTypes.boolean,
   tab: PropTypes.number, // current tab index - indexed from 0
   tabs: PropTypes.number, // amount of tabs to display
   tabDone: PropTypes.number // which tab is already filled

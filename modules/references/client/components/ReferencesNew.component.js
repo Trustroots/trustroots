@@ -4,6 +4,7 @@ import * as references from './references.api';
 import Navigation from './Navigation';
 import Interaction from './Interaction';
 import Recommend from './Recommend';
+import { Self, Loading, Duplicate, Submitted } from './Info';
 
 const api = { references };
 
@@ -22,8 +23,24 @@ export default class ReferencesNew extends React.Component {
         recommend: null
       },
       report: false,
-      reportMessage: ''
+      reportMessage: '',
+      isSelf: props.userFrom._id === props.userTo._id,
+      isLoading: true,
+      isSubmitting: false,
+      isDuplicate: false,
+      isSubmitted: false,
+      isPublic: false
     };
+  }
+
+  async componentDidMount() {
+    const reference = await api.references.read({ userFrom: this.props.userFrom._id, userTo: this.props.userTo._id });
+
+    const newState = { isLoading: false };
+
+    if (reference.length === 1) newState.isDuplicate = true;
+
+    this.setState(newState);
   }
 
   handleTabSwitch(move) {
@@ -74,11 +91,21 @@ export default class ReferencesNew extends React.Component {
       reportMessage: this.state.reportMessage
     };
 
-    await api.references.create({ ...data.reference, userTo: this.props.userTo._id });
+    this.setState({
+      isSubmitting: true
+    });
+
+    const savedReference = await api.references.create({ ...data.reference, userTo: this.props.userTo._id });
 
     if (data.reference.recommend === 'no' && data.report) {
       await api.references.report(this.props.userTo, data.reportMessage);
     }
+
+    this.setState({
+      isSubmitting: false,
+      isSubmitted: true,
+      isPublic: savedReference.public
+    });
   }
 
   render() {
@@ -100,6 +127,18 @@ export default class ReferencesNew extends React.Component {
     const tabDone = (recommend) ? 1 :
       (hostedMe || hostedThem || met) ? 0 : -1;
 
+    if (this.state.isSelf) return <Self />;
+
+    if (this.state.isLoading) return <Loading />;
+
+    if (this.state.isDuplicate) return <Duplicate />;
+
+    if (this.state.isSubmitted) {
+      const isReported = this.state.reference.recommend === 'no' && this.state.report;
+      const isPublic = this.state.isPublic;
+      return <Submitted isReported={isReported} isPublic={isPublic} />;
+    }
+
     return (
       <div>
         <nav><span>How do you know them</span> &gt; <span>Recommendation</span></nav>
@@ -109,6 +148,7 @@ export default class ReferencesNew extends React.Component {
           tab={this.state.tab}
           tabDone={tabDone}
           tabs={tabs.length}
+          disabled={this.state.isSubmitting}
           onBack={() => this.handleTabSwitch(-1)}
           onNext={() => this.handleTabSwitch(+1)}
           onSubmit={() => this.handleSubmit()}
@@ -119,5 +159,6 @@ export default class ReferencesNew extends React.Component {
 }
 
 ReferencesNew.propTypes = {
+  userFrom: PropTypes.object,
   userTo: PropTypes.object
 };

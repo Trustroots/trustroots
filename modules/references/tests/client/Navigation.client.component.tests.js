@@ -22,15 +22,6 @@ Enzyme.configure({ adapter: new Adapter() });
     });
 
     describe('Navigation through 3 tabs', () => {
-      xit('test', () => {
-        const wrapper = shallow(<Navigation tab={1} tabDone={0} tabs={3} onBack={() => {}} />);
-        console.log(wrapper);
-        console.log(<Navigation tab={0} />);
-        console.log(wrapper.find('button'), wrapper.exists(), wrapper.name());
-        expect(wrapper.find('button')).toBeDefined();
-        expect(wrapper.props().tab).toBe(0);
-      });
-
       it('when tab is 0, there is no Back button and there is Next button', () => {
         const wrapper = shallow(<Navigation tab={0} tabs={3} />);
 
