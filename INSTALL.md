@@ -67,13 +67,23 @@ Add any configurations you want to keep out of version control to `config/env/lo
 
 ### Emails
 
-MailDev is there for viewing and testing emails during development
+MailDev is there for viewing and testing emails during development.
 
-[MailDev](https://github.com/djfarrelly/MailDev) will be running at [localhost:1080](http://localhost:1080)
+[MailDev](https://github.com/djfarrelly/MailDev) will be already running at [localhost:1080](http://localhost:1080) but if you need to run it manually, type:
+
+```bash
+npm run dashboard:mail
+```
 
 ### Background jobs
 
-[Agendash](https://github.com/agenda/agendash) is a dashboard & inspector for [Agenda](https://github.com/agenda/agenda), our job scheduling library and it runs at [localhost:1081](http://localhost:1081).
+[Agendash](https://github.com/agenda/agendash) is a dashboard & inspector for [Agenda](https://github.com/agenda/agenda), our job scheduling library.
+
+To run it at [localhost:1081](http://localhost:1081), type:
+
+```bash
+npm run dashboard:jobs
+```
 
 ## Debugging
 
