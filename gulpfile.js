@@ -32,17 +32,19 @@ var environmentAssets,
 
 /**
  * Load config + assets
- * Note that loading config before `env:*`
- * tasks would load configs with wrong environment
  */
 function loadConfig(done) {
+  console.log('->loadConfig');
   if (!config) {
+    console.log('->loadConfig -> config');
     config = require('./config/config');
   }
   if (!environmentAssets) {
+    console.log('->loadConfig -> environmentAssets');
     environmentAssets = require('./config/assets/' + process.env.NODE_ENV || 'development') || {};
   }
   if (!assets) {
+    console.log('->loadConfig -> assets');
     assets = _.extend(defaultAssets, environmentAssets);
   }
   done();
@@ -119,22 +121,6 @@ function runNodemonWorker(done) {
   done();
 }
 
-// Set NODE_ENV to 'test' and prepare environment
-gulp.task('env:test', gulp.series(
-  function (done) {
-    process.env.NODE_ENV = 'test';
-    done();
-  }
-));
-
-// Set NODE_ENV to 'development' and prepare environment
-gulp.task('env:dev', gulp.series(
-  function (done) {
-    process.env.NODE_ENV = 'development';
-    done();
-  }
-));
-
 gulp.task('webpack', gulp.parallel(
   webpackTask({
     entry: './config/webpack/entries/main.js',
@@ -166,14 +152,6 @@ function webpackTask(opts) {
       .pipe(gulp.dest(opts.path));
   };
 }
-
-// Set NODE_ENV to 'production' and prepare environment
-gulp.task('env:prod', gulp.series(
-  function (done) {
-    process.env.NODE_ENV = 'production';
-    done();
-  }
-));
 
 // Watch files for changes
 gulp.task('watch', function watch(done) {
@@ -470,9 +448,8 @@ gulp.task('lint', gulp.parallel('eslint', 'eslint-angular'));
 // Clean dist css and js files
 gulp.task('clean', gulp.parallel('clean:css', 'clean:js'));
 
-// Build assets for development mode
-gulp.task('build:dev', gulp.series(
-  'env:dev',
+// Build assets
+gulp.task('build', gulp.series(
   gulp.parallel(
     'lint',
     'clean'
@@ -484,38 +461,18 @@ gulp.task('build:dev', gulp.series(
   )
 ));
 
-// Build assets for production mode
-gulp.task('build:prod', gulp.series(
-  'env:prod',
-  gulp.parallel(
-    'lint',
-    'clean'
-  ),
-  gulp.parallel(
-    'build:styles',
-    'build:scripts'
-  )
-));
-
 // Run the project tests
 gulp.task('test', gulp.series(
-  'env:test',
   karma,
   mocha
 ));
 
-gulp.task('test:server', gulp.series(
-  'env:test',
-  gulp.parallel(
-    'lint',
-    mocha
-  )
-));
-
-gulp.task('test:server:no-lint', gulp.series(
-  'env:test',
+gulp.task('test:server', gulp.parallel(
+  'lint',
   mocha
 ));
+
+gulp.task('test:server:no-lint', mocha);
 
 // Watch all server files for changes & run server tests (test:server) task on changes
 gulp.task('test:server:watch', gulp.series(
@@ -524,23 +481,18 @@ gulp.task('test:server:watch', gulp.series(
 ));
 
 gulp.task('test:client', gulp.series(
-  'build:dev',
-  'env:test',
+  'build',
   karma
 ));
 
-gulp.task('test:client:watch', gulp.series(
-  'env:test',
-  gulp.parallel(
-    'lint',
-    karmaWatch
-  )
+gulp.task('test:client:watch', gulp.parallel(
+  'lint',
+  karmaWatch
 ));
 
-// Run the project in development mode
-gulp.task('develop', gulp.series(
-  'env:dev',
-  'build:dev',
+// Run the development server
+gulp.task('server', gulp.series(
+  'build',
   gulp.parallel(
     runNodemon,
     'watch',
@@ -557,24 +509,5 @@ gulp.task('develop', gulp.series(
   )
 ));
 
-// Run the project in production mode
-gulp.task('prod', gulp.series(
-  'env:prod',
-  'build:prod',
-  gulp.parallel(
-    runNodemon,
-    'watch'
-  )
-));
-
 // Run worker script in development mode
-gulp.task('worker:dev', gulp.series(
-  'env:dev',
-  runNodemonWorker
-));
-
-// Run worker script in production mode
-gulp.task('worker:prod', gulp.series(
-  'env:prod',
-  runNodemonWorker
-));
+gulp.task('worker', runNodemonWorker);
