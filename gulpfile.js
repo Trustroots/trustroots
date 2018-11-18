@@ -196,11 +196,11 @@ gulp.task('watch', function watch(done) {
   // Watch and generate app files
   gulp.watch(defaultAssets.server.fontelloConfig, fontello);
   gulp.watch(defaultAssets.server.views).on('change', plugins.refresh.changed);
-  gulp.watch(defaultAssets.client.less, gulp.series('clean:css', 'styles')).on('change', plugins.refresh.changed);
+  gulp.watch(defaultAssets.client.less, gulp.series('clean:css', 'build:styles')).on('change', plugins.refresh.changed);
 
   if (process.env.NODE_ENV === 'production') {
-    gulp.watch(defaultAssets.client.js, gulp.series('lint', 'clean:js', 'scripts'));
-    gulp.watch(defaultAssets.client.views, gulp.series('clean:js', 'scripts')).on('change', plugins.refresh.changed);
+    gulp.watch(defaultAssets.client.js, gulp.series('lint', 'clean:js', 'build:scripts'));
+    gulp.watch(defaultAssets.client.views, gulp.series('clean:js', 'build:scripts')).on('change', plugins.refresh.changed);
   } else {
     gulp.watch(defaultAssets.client.js, gulp.series('lint'));
     gulp.watch(defaultAssets.client.views).on('change', plugins.refresh.changed);
@@ -290,7 +290,7 @@ gulp.task('eslint-angular', gulp.series(
 ));
 
 // JavaScript task
-gulp.task('scripts', gulp.series(
+gulp.task('build:scripts', gulp.series(
   loadConfig,
   angularTemplateCache,
   angularUibTemplatecache,
@@ -308,7 +308,7 @@ gulp.task('clean:css', function cleanCSS() {
 });
 
 // CSS styles task
-gulp.task('styles', function buildStyles() {
+gulp.task('build:styles', function buildStyles() {
   if (process.env.NODE_ENV === 'production') {
 
     var cssStream = gulp.src(defaultAssets.client.lib.css)
@@ -479,8 +479,8 @@ gulp.task('build:dev', gulp.series(
   ),
   angularUibTemplatecache,
   gulp.parallel(
-    'styles',
-    'scripts'
+    'build:styles',
+    'build:scripts'
   )
 ));
 
@@ -492,8 +492,8 @@ gulp.task('build:prod', gulp.series(
     'clean'
   ),
   gulp.parallel(
-    'styles',
-    'scripts'
+    'build:styles',
+    'build:scripts'
   )
 ));
 
