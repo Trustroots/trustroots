@@ -176,7 +176,7 @@ gulp.task('env:prod', gulp.series(
 ));
 
 // Watch files for changes
-gulp.task('watch', function (done) {
+gulp.task('watch', function watch(done) {
   // Start Refresh
   plugins.refresh.listen();
 
@@ -209,7 +209,7 @@ gulp.task('watch', function (done) {
 });
 
 // Watch server test files
-gulp.task('watch:server:run-tests', function () {
+gulp.task('watch:server:run-tests', function watchServerRunTests() {
   // Start Refresh
   plugins.refresh.listen();
 
@@ -240,7 +240,7 @@ gulp.task('watch:server:run-tests', function () {
 });
 
 // ESLint JS linting task
-gulp.task('eslint', function () {
+gulp.task('eslint', function eslint() {
   var lintAssets = _.union(
     [
       defaultAssets.server.gulpConfig,
@@ -268,7 +268,7 @@ gulp.task('eslint', function () {
 // ESLint JS linting task for Angular files
 gulp.task('eslint-angular', gulp.series(
   loadConfig,
-  function () {
+  function eslintAngular() {
     var lintAssets = _.union(
       assets.client.js,
       // Don't lint dist and lib files
@@ -298,17 +298,17 @@ gulp.task('scripts', gulp.series(
 ));
 
 // Clean JS files -task
-gulp.task('clean:js', function () {
+gulp.task('clean:js', function cleanJS() {
   return del(['public/dist/*.js']);
 });
 
 // Clean CSS files -task
-gulp.task('clean:css', function () {
+gulp.task('clean:css', function cleanCSS() {
   return del(['public/dist/*.css']);
 });
 
 // CSS styles task
-gulp.task('styles', function () {
+gulp.task('styles', function buildStyles() {
   if (process.env.NODE_ENV === 'production') {
 
     var cssStream = gulp.src(defaultAssets.client.lib.css)
@@ -354,7 +354,6 @@ gulp.task('styles', function () {
 // we can pick modules we need. Therefore we need
 // to manually compile our UIB templates.
 function angularUibTemplatecache() {
-
   var uibModulesStreams = new MergeStream();
 
   // Loop trough module names
@@ -464,7 +463,6 @@ function karmaWatch(done) {
     singleRun: false
   }, done).start();
 }
-
 
 // Analyse code for potential errors
 gulp.task('lint', gulp.parallel('eslint', 'eslint-angular'));
