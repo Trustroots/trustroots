@@ -248,7 +248,9 @@ describe('Create a reference', function () {
               try {
                 should(response.body).match({
                   message: 'Not found.',
-                  detail: 'User not found.'
+                  details: {
+                    userTo: 'not found'
+                  }
                 });
                 return done();
               } catch (e) {
@@ -275,7 +277,9 @@ describe('Create a reference', function () {
               try {
                 should(response.body).match({
                   message: 'Not found.',
-                  detail: 'User not found.'
+                  details: {
+                    userTo: 'not found'
+                  }
                 });
                 return done();
               } catch (e) {
@@ -512,7 +516,9 @@ describe('Create a reference', function () {
                   try {
                     should(response).have.propertyByPath('body').match({
                       message: 'Bad request.',
-                      details: ['Only a positive recommendation is allowed in response to a public reference.']
+                      details: {
+                        recommend: '\'yes\' expected - response to public'
+                      }
                     });
                     return cb();
                   } catch (e) {

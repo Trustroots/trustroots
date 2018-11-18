@@ -47,7 +47,7 @@ npm start
 - When you change any file, they get recompiled and the browser is refreshed.
 - Keep an eye on the console in case of compiling errors.
 - [Read more](https://github.com/Trustroots/trustroots/wiki/Development).
-- You can start clean by running `npm run distclean && npm run dropdb`.
+- You can start clean by running `npm run dropdb && npm run distclean`.
 
 ## Modifying configurations
 

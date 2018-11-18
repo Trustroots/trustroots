@@ -21,7 +21,7 @@ function validateCreate(req) {
   var interactionErrors = {};
 
   // Can't create a reference to oneself
-  if (req.user._id.toString() === req.body.userTo) {
+  if (req.user._id.equals(req.body.userTo)) {
     valid = false;
     details.userTo = 'self';
   }
@@ -182,7 +182,9 @@ exports.create = function (req, res, next) {
             status: 404,
             body: {
               errType: 'not-found',
-              detail: 'User not found.'
+              details: {
+                userTo: 'not found'
+              }
             }
           });
         }
@@ -206,7 +208,9 @@ exports.create = function (req, res, next) {
           status: 400,
           body: {
             errType: 'bad-request',
-            details: ['Only a positive recommendation is allowed in response to a public reference.']
+            details: {
+              recommend: '\'yes\' expected - response to public'
+            }
           }
         });
       }
@@ -262,13 +266,14 @@ exports.create = function (req, res, next) {
  */
 function validateReadMany(req) {
   var valid = true;
-  var details = [];
+  var details = {};
 
   // check that query contains userFrom or userTo
   var isQueryWithFilter = req.query.userFrom || req.query.userTo;
   if (!isQueryWithFilter) {
     valid = false;
-    details.push('Missing query parameters userFrom or userTo.');
+    details.userFrom = 'missing';
+    details.userTo = 'missing';
   }
 
   // check that userFrom and userTo is valid mongodb/mongoose ObjectId
@@ -278,7 +283,7 @@ function validateReadMany(req) {
     var isParamValid = mongoose.Types.ObjectId.isValid(req.query[param]);
     if (!isParamValid) {
       valid = false;
-      details.push('Invalid query parameter ' + param + '.');
+      details[param] = 'invalid';
     }
   });
 
@@ -302,7 +307,7 @@ exports.readMany = function readMany(req, res, next) {
       /**
        * Allow non-public references only when userFrom or userTo is self
        */
-      var isSelfUserFromOrUserTo = [req.query.userFrom, req.query.userTo].includes(req.user._id.toString());
+      var isSelfUserFromOrUserTo = req.user._id.equals(req.query.userFrom) || req.user._id.equals(req.query.userTo);
       if (!isSelfUserFromOrUserTo) {
         query.public = true;
       }
@@ -334,7 +339,7 @@ exports.readMany = function readMany(req, res, next) {
 
     // prepare success response
     function prepareSuccessResponse(references, cb) {
-      var isSelfUserFrom = req.query.userFrom === req.user._id.toString();
+      var isSelfUserFrom = req.user._id.equals(req.query.userFrom);
 
       // when userFrom is self, we can see the nonpublic references in their full form
       cb({
@@ -344,4 +349,75 @@ exports.readMany = function readMany(req, res, next) {
     }
 
   ], processResponses.bind(this, res, next));
+};
+
+
+/**
+ * Validator for id of referenceById controller
+ * @param {string} id - referenceId
+ */
+function validateReadOne(id) {
+  var valid = true;
+  var details = {};
+
+  var isIdValid = mongoose.Types.ObjectId.isValid(id);
+  if (!isIdValid) {
+    valid = false;
+    details.referenceId = 'invalid';
+  }
+
+  return { valid: valid, details: details };
+}
+
+/**
+ * Load a reference by id to request.reference
+ */
+exports.referenceById = function referenceById(req, res, next, id) { // eslint-disable-line no-unused-vars
+  // don't bother fetching a reference for non-public users or guests
+  if (!req.user || !req.user.public) return next();
+
+  async.waterfall([
+    // validate
+    validate.bind(this, validateReadOne, id),
+    // find the reference by id
+    function (cb) {
+      Reference.findById(req.params.referenceId)
+        .select(referenceFields)
+        .populate('userFrom userTo', userProfile.userMiniProfileFields)
+        .exec(cb);
+    },
+    // make sure that nonpublic references are not exposed
+    // assign reference to request object
+    function (reference, cb) {
+
+      // nonpublic reference can be exposed to userFrom or userTo only.
+      var isExistentPublicOrFromToSelf = reference
+        && (reference.public || reference.userFrom._id.equals(req.user._id) || reference.userTo.equals(req.user._id));
+      if (!isExistentPublicOrFromToSelf) {
+        return cb({
+          status: 404,
+          body: {
+            errType: 'not-found',
+            details: {
+              reference: 'not found'
+            }
+          }
+        });
+      }
+
+      // assign the reference to the request object
+      // when reference is public, only userFrom can see it whole
+      var isUserFrom = reference.userFrom._id.equals(req.user._id);
+      req.reference = formatReference(reference, isUserFrom);
+      return cb();
+    }
+  ], processResponses.bind(this, res, next));
+};
+
+
+/**
+ * Read a reference by id
+ */
+exports.readOne = function readOne(req, res) {
+  return res.status(200).json(req.reference);
 };
