@@ -99,8 +99,7 @@
             if (data.length > 0) {
               $scope.$broadcast('threadScrollToBottom');
             } else if (!vm.messages.length && !vm.content.length) {
-              vm.content = '<p>I’m traveling to ______ because</p>' +
-                           '<p>I chose to write to you because</p>';
+              vm.content = '';
             }
           });
 
