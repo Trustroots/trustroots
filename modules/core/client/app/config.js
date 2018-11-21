@@ -34,7 +34,6 @@ var AppConfig = (function () {
     'ui-leaflet',
     'ngFileUpload',
     'zumba.angular-waypoints',
-    'MessageCenterModule',
     'localytics.directives',
     'angular-loading-bar',
     'trTrustpass',

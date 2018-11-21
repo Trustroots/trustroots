@@ -60,7 +60,6 @@ module.exports = {
         'node_modules/leaflet-active-area/src/leaflet.activearea.js',
         'node_modules/angular-waypoints/dist/angular-waypoints.all.js',
         'node_modules/ng-file-upload/dist/ng-file-upload.js',
-        'node_modules/message-center/message-center.js',
         'node_modules/chosen-js/chosen.jquery.js',
         'node_modules/angular-chosen-localytics/dist/angular-chosen.js',
         'node_modules/angular-loading-bar/build/loading-bar.js',

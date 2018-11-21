@@ -8,10 +8,18 @@ _These instructions are for installing locally. If you'd like to have containeri
 Make sure you have installed all these prerequisites:
 * Unix operating system, like Linux or MacOS. If you use Windows, please look into [installing via Docker](INSTALL-DOCKER.md) instead.
 * [Git](https://git-scm.com/) (`git --version`, preinstalled on MacOS)
-* [Node.js](https://nodejs.org/en/download/) version 8 or 10 and the NPM v5+ (`node --version && npm --version`). We recommend managing Node.js versions using [NVM](https://github.com/creationix/nvm).
-* [MongoDB](http://www.mongodb.org/downloads) v3.6 - 4.0. (`mongod --version`).
-* Some of the NPM modules require compiling native code, which might require installing X-Code's [Command line tools](https://railsapps.github.io/xcode-command-line-tools.html) on MacOS or `build-essential` and `make` on Linux. On MacOS you can install or confirm they're installed by running `xcode-select --install`
-* [GraphicsMagick](http://www.graphicsmagick.org/). In MacOS, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) to install it:
+* [Node.js](https://nodejs.org/en/download/):
+  * See "engines" from `package.json` for supported versions
+  * Use `node --version && npm --version` to check your current version.
+  * We recommend managing Node.js versions using [NVM](https://github.com/creationix/nvm).
+* [MongoDB](http://www.mongodb.org/downloads)
+  * See "engines" from `package.json` for supported versions
+  * Use `mongod --version` to check your current version.
+* Some of the NPM modules require compiling native code, which might require installing:
+  * MacOS: X-Code's [Command line tools](https://railsapps.github.io/xcode-command-line-tools.html). You can install or confirm they're installed by running `xcode-select --install`
+  * Linux: `build-essential` and `make`
+* [GraphicsMagick](http://www.graphicsmagick.org/).
+  * In MacOS, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) to install it:
     ```bash
     brew install graphicsmagick
     ```
@@ -43,29 +51,38 @@ npm start
 #### Good to know
 
 - Run the app by typing `npm start`.
+- Run commands in production mode by appending `NODE_ENV` to command, e.g.: `NODE_ENV=production npm start`.
 - Stop the app by hitting `Ctrl+C`.
 - When you change any file, they get recompiled and the browser is refreshed.
 - Keep an eye on the console in case of compiling errors.
-- You can start clean by running `npm run distclean && npm run dropdb`.
+- NPM dependencies are installed and kept up-to date automatically when starting the app.
+- You can start clean by running `npm run dropdb && npm run distclean`.
 
 ## Modifying configurations
 
 Add any configurations you want to keep out of version control to `config/env/local.js` file. It's created for you on the first start and overrides anything in `config/env/local.js`.
 
+## Development tools
 
-## Running services
+### Emails
 
-### MailDev
+MailDev is there for viewing and testing emails during development.
 
-MailDev is there for viewing and testing emails during development
+[MailDev](https://github.com/djfarrelly/MailDev) will be already running at [localhost:1080](http://localhost:1080) but if you need to run it manually, type:
 
-[MailDev](https://github.com/djfarrelly/MailDev) will be running at [localhost:1080](http://localhost:1080)
+```bash
+npm run dashboard:mail
+```
 
-### Agendash
+### Background jobs
 
-Agendash is a dashboard & inspector for [Agenda](https://github.com/agenda/agenda), our job scheduling library.
+[Agendash](https://github.com/agenda/agendash) is a dashboard & inspector for [Agenda](https://github.com/agenda/agenda), our job scheduling library.
 
-[Agendash](https://github.com/joeframbach/agendash) (background job dashboard) at [localhost:1081](http://localhost:1081).
+To run it at [localhost:1081](http://localhost:1081), type:
+
+```bash
+npm run dashboard:jobs
+```
 
 ## Debugging
 
@@ -187,19 +204,6 @@ If you prefer [ImageMagick](http://www.imagemagick.org/) over [GraphicsMagick](h
     ```
 
 2) Change `imageProcessor` setting from `./configs/env/local.js` to `imagemagic`.
-
-## Updating
-
-Run these to get most recent version:
-```bash
-$ git pull            # Get the latest code for the current branch
-$ npm update          # Update NPM
-$ npm run migrate     # Migrate database up
-```
-
-...or simply `./scripts/update.sh` which does this all for you.
-
-
 
 ## Support
 

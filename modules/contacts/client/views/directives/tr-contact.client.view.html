@@ -7,6 +7,17 @@
     <a ui-sref="profile.about({username: contactCtrl.contact.user.username})"
        ng-bind="::contactCtrl.contact.user.displayName"></a>
   </h4>
+  <div ng-if="::contactCtrl.contact.user.locationLiving">
+    <i class="icon-fw icon-building text-muted"></i>
+    <small>Lives in <a ui-sref="search.map({location: contactCtrl.contact.user.locationLiving})"
+                ng-bind="::contactCtrl.contact.user.locationLiving"></a></small>
+  </div>
+
+  <div ng-if="::contactCtrl.contact.user.locationFrom">
+    <i class="icon-fw icon-home text-muted"></i>
+    <small>From <a ui-sref="search.map({location: contactCtrl.contact.user.locationFrom})"
+            ng-bind="::contactCtrl.contact.user.locationFrom"></a></small>
+  </div>
   <small class="text-muted" ng-if="::!contactCtrl.hideMeta">
     <span ng-if="::contactCtrl.contact.confirmed === true">Since</span>
     <span ng-if="::contactCtrl.contact.confirmed === false">Requested</span>
