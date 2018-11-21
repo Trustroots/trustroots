@@ -98,8 +98,6 @@
             $scope.$broadcast('threadRefreshLayout');
             if (data.length > 0) {
               $scope.$broadcast('threadScrollToBottom');
-            } else if (!vm.messages.length && !vm.content.length) {
-              vm.content = '';
             }
           });
 
