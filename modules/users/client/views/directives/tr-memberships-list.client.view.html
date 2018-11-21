@@ -1,8 +1,11 @@
 <div>
-  <ul class="profile-memberships-list" ng-if="memberships && memberships.length">
-    <li class="tribe" ng-repeat="membership in ::memberships">
-      <div tr-tribe-badge="membership.tribe"></div>
-    </li>
+  <ul class="profile-memberships-list panel-more-wrap" ng-if="memberships">
+    <div class="panel-more-excerpt">
+      <li class="tribe" ng-repeat="membership in memberships | orderBy: '-tribe.count' | limitTo:tribeListLimit">
+        <div tr-tribe-badge="membership.tribe"></div>
+      </li>
+    </div>
+    <div ng-if="memberships.length > tribeListLimit" class="panel-more-fade" ng-click="toggle()">Show more...</div>
   </ul>
 
   <div class="text-center" ng-if="isOwnProfile">

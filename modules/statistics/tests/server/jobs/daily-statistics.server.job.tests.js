@@ -60,7 +60,7 @@ describe('Daily Statistics Job - Unit Test', function () {
           // test influx endpoint
 
           // Called total 2 times, once per each stat call in job
-          sinon.assert.callCount(influx.InfluxDB.prototype.writeMeasurement, 12);
+          sinon.assert.callCount(influx.InfluxDB.prototype.writeMeasurement, 17);
 
           // Member count stat point
           var memberMeasurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
@@ -110,7 +110,7 @@ describe('Daily Statistics Job - Unit Test', function () {
           // test stathat endpoint
 
           // Called total 4 times, twice per each stat call in job
-          sinon.assert.callCount(stathat.trackEZValue, 27);
+          sinon.assert.callCount(stathat.trackEZValue, 37);
 
           // `getCall(0)` and `getCall(1)` contain calls for member count
           var memberGroupedArgs = _.zip.apply(this, [

@@ -6,7 +6,7 @@ var AppConfig = (function () {
   // Init module configuration options
   // When testing, `window.env` is undefined, thus default to 'test'
   // eslint-disable-next-line angular/window-service
-  var appEnv = window.env ? window.env : 'test';
+  var appEnv = process.env.NODE_ENV || 'test';
 
   var appModuleName = 'trustroots';
   var appModuleVendorDependencies = [
@@ -34,7 +34,6 @@ var AppConfig = (function () {
     'ui-leaflet',
     'ngFileUpload',
     'zumba.angular-waypoints',
-    'MessageCenterModule',
     'localytics.directives',
     'angular-loading-bar',
     'trTrustpass',
@@ -76,3 +75,5 @@ var AppConfig = (function () {
     registerModule: registerModule
   };
 }());
+
+module.exports = AppConfig;

@@ -5,6 +5,7 @@
  */
 var _ = require('lodash'),
     path = require('path'),
+    moment = require('moment'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     async = require('async'),
@@ -184,6 +185,48 @@ exports.getPushRegistrationCount = function (callback) {
       return;
     }
     callback(null, parseInt(count, 10) || 0);
+  });
+};
+
+/**
+ * Generate statistics based on the user last seen attribute
+ */
+exports.getLastSeenStatistic = function (type, callback) {
+  var now = moment();
+  var query = { };
+  var slideWindow;
+
+  switch (type) {
+    case 'past48h':
+      slideWindow = now.subtract(48, 'hours');
+      break;
+    case 'past7d':
+      slideWindow = now.subtract(7, 'days');
+      break;
+    case 'past14d':
+      slideWindow = now.subtract(14, 'days');
+      break;
+    case 'past30d':
+      slideWindow = now.subtract(30, 'days');
+      break;
+    case 'past6m':
+      slideWindow = now.subtract(6, 'months');
+      break;
+    case 'past12m':
+      slideWindow = now.subtract(12, 'months');
+      break;
+    default:
+      return callback(new Error('Missing last seen statistic type.'));
+  }
+
+  query.seen = { '$gte': slideWindow };
+
+  User.count(query, function (err, count) {
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, parseInt(count) || 0);
   });
 };
 

@@ -10,22 +10,20 @@
       <div class="panel-body">
 
         <!-- Short descriptions -->
-        <div ng-if="profileCtrl.profile.description.length < 2400" ng-bind-html="profileCtrl.profile.description | trustedHtml"></div>
+        <div ng-if="profileCtrl.profile.description.length < 2400 || profileCtrl.profileDescriptionToggle" ng-bind-html="profileCtrl.profile.description | trustedHtml"></div>
 
         <!-- Long descriptions -->
-        <div ng-if="profileCtrl.profile.description.length >= 2400">
-          <div class="panel-more-wrap" ng-hide="profileCtrl.profileDescriptionToggle">
-            <div class="panel-more-excerpt" ng-bind-html="profileCtrl.profile.description | limitTo:2400 | trustedHtml" ng-click="profileCtrl.profileDescriptionToggle=true"></div>
-            <div class="panel-more-fade" ng-click="profileCtrl.profileDescriptionToggle=true">Show more...</div>
-          </div>
-          <div ng-if="profileCtrl.profileDescriptionToggle" ng-bind-html="profileCtrl.profile.description | trustedHtml"></div>
+        <div ng-if="profileCtrl.profile.description.length >= 2400 && !profileCtrl.profileDescriptionToggle"
+          class="panel-more-wrap" ng-click="profileCtrl.profileDescriptionToggle=true">
+            <div class="panel-more-excerpt" ng-bind-html="profileCtrl.profile.description | limitTo:2400 | trustedHtml" ></div>
+            <div class="panel-more-fade">Show more...</div>
         </div>
 
         <!-- If no description, show deep thoughts... -->
         <blockquote class="profile-quote"
                     ng-if="!profileCtrl.profile.description || profileCtrl.profile.description === ''"
                     aria-label="Member has not written description about themself.">
-          “Everyone is necessarily the hero of his own life story.”
+          “Everyone is necessarily the hero of their own life story.”
         </blockquote>
 
       </div>
@@ -66,8 +64,7 @@
              ng-if="::profileCtrl.profile._id !== app.user._id"
              tr-tribes-in-common="profileCtrl.profile.member"></div>
 
-        <div tr-memberships-list="profileCtrl.profile.member"
-             is-own-profile="::profileCtrl.profile._id === app.user._id"></div>
+        <div tr-memberships-list="profileCtrl.profile.member" is-own-profile="::profileCtrl.profile._id === app.user._id"></div>
 
       </div>
     </section>

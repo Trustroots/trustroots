@@ -28,7 +28,7 @@
   </section>
 
   <!-- Tribe found -->
-  <section class="board flex-centered tribe-image tribe-header"
+  <section class="board tribe-image tribe-header"
            ng-if="tribeCtrl.tribe._id"
            tr-tribe-styles="{{::tribeCtrl.tribe}}"
            tr-tribe-styles-dimensions="1400x900"
@@ -36,15 +36,19 @@
            ng-swipe-left="tribeCtrl.goBack()"
            ng-swipe-right="tribeCtrl.goBack()"
            ng-class="{'is-guest': !app.user}">
-    <a ng-click="tribeCtrl.goBack()" class="btn btn-lg btn-link tribe-header-back">
-      <i class="icon-left"></i> More tribes
-    </a>
-    <div class="flex-centered tribe-header-info">
-      <div class="container">
+           <div class="tribe-header-info">
+             <div class="container">
+               <div class="row no-gutters">
+                 <div class="col-xs-12">
+                <a ng-click="tribeCtrl.goBack()" class="btn btn-lg btn-link tribe-header-back">
+                  <i class="icon-left"></i> More tribes
+                </a>
+              </div>
+          </div>
         <div class="row">
 
           <!-- For authenticated members -->
-          <div class="col-xs-10 col-sm-7 col-md-6 col-lg-5"
+          <div class="col-xs-10 col-sm-offset-1 col-sm-7 col-md-6 col-lg-5"
                ng-if="app.user">
             <p class="lead tribe-pre">Tribe</p>
             <h2 class="font-brand-regular tribe-title"
@@ -59,7 +63,7 @@
               }"></ng-pluralize>
             <div class="lead tribe-meta"
                  ng-if="tribeCtrl.tribe.description"
-                 ng-bind="::tribeCtrl.tribe.description"></div>
+                 ng-bind-html="::tribeCtrl.tribe.description"></div>
             <br><br>
             <tr-tribe-join-button
                     class="btn btn-lg btn-primary tribe-join"
@@ -93,7 +97,7 @@
           </div>
 
           <!-- For non authenticated members -->
-          <div class="col-xs-12 col-sm-7 col-md-6 col-lg-5" ng-if="!app.user">
+          <div class="col-xs-12 col-sm-offset-1 col-sm-7 col-md-6 col-lg-5" ng-if="!app.user">
             <p class="lead tribe-pre">Trustroots Tribe</p>
             <h2 class="font-brand-regular tribe-title" ng-bind="::tribeCtrl.tribe.label"></h2>
             <ng-pluralize

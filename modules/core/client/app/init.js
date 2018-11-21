@@ -54,6 +54,11 @@
     $compileProvider.commentDirectivesEnabled(false);
     $compileProvider.cssClassDirectivesEnabled(false);
 
+    // Whitelist of safe urls during a[href] sanitization.
+    // Unmatched URLs are prefixed with 'unsafe:' string.
+    // @link https://docs.angularjs.org/api/ng/provider/$compileProvider#aHrefSanitizationWhitelist
+    $compileProvider.aHrefSanitizationWhitelist(/^\s*(geo|https?|ftp|mailto|tel|webcal|data|blob):/);
+
     // By default tooltips and popovers are appended to
     // '$body' instead of the parent element
     // @link https://angular-ui.github.io/bootstrap/#!#tooltip
@@ -61,7 +66,6 @@
     $uibTooltipProvider.options({
       appendToBody: true
     });
-
   }
 
   // Then define the init function for starting up the application

@@ -56,7 +56,7 @@ module.exports.initLocalVariables = function (app) {
 
   // Assets
   if (process.env.NODE_ENV !== 'production') {
-    app.locals.jsFiles = _.concat(config.files.client.js, 'dist/uib-templates.js');
+    app.locals.jsFiles = ['assets/main.js'];
     app.locals.cssFiles = _.map(config.files.client.css, function (file) { return file.replace('/client', ''); });
   }
 
@@ -333,7 +333,7 @@ module.exports.initHelmetHeaders = function (app) {
         '*.tiles.mapbox.com', // Map tiles
         'api.mapbox.com', // Map tiles/Geocoding
         '*.tile.openstreetmap.org', // Map tiles
-        '*.vis.earthdata.nasa.gov', // Map tiles
+        '*.earthdata.nasa.gov', // Map tiles
         '*.facebook.com',
         '*.fbcdn.net', // Facebook releated
         '*.fbsbx.com', // Facebook related
@@ -491,6 +491,9 @@ module.exports.initModulesClientRoutes = function (app) {
     app.use(staticPath.replace('/client', ''), express.static(path.resolve('./' + staticPath)));
   });
 
+  if (process.env.NODE_ENV !== 'production') {
+    app.use('/node_modules', express.static(path.resolve('./node_modules'), { extensions: ['js', 'css'] }));
+  }
 };
 
 /**

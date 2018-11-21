@@ -8,10 +8,18 @@ _These instructions are for installing locally. If you'd like to have containeri
 Make sure you have installed all these prerequisites:
 * Unix operating system, like Linux or MacOS. If you use Windows, please look into [installing via Docker](INSTALL-DOCKER.md) instead.
 * [Git](https://git-scm.com/) (`git --version`, preinstalled on MacOS)
-* [Node.js](https://nodejs.org/en/download/) version 8 or 10 and the NPM v5+ (`node --version && npm --version`). We recommend managing Node.js versions using [NVM](https://github.com/creationix/nvm).
-* [MongoDB](http://www.mongodb.org/downloads) v3.6 - 4.0. (`mongod --version`).
-* Some of the NPM modules require compiling native code, which might require installing X-Code's [Command line tools](https://railsapps.github.io/xcode-command-line-tools.html) on MacOS or `build-essential` and `make` on Linux. On MacOS you can install or confirm they're installed by running `xcode-select --install`
-* [GraphicsMagick](http://www.graphicsmagick.org/). In MacOS, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) to install it:
+* [Node.js](https://nodejs.org/en/download/):
+  * See "engines" from `package.json` for supported versions
+  * Use `node --version && npm --version` to check your current version.
+  * We recommend managing Node.js versions using [NVM](https://github.com/creationix/nvm).
+* [MongoDB](http://www.mongodb.org/downloads)
+  * See "engines" from `package.json` for supported versions
+  * Use `mongod --version` to check your current version.
+* Some of the NPM modules require compiling native code, which might require installing:
+  * MacOS: X-Code's [Command line tools](https://railsapps.github.io/xcode-command-line-tools.html). You can install or confirm they're installed by running `xcode-select --install`
+  * Linux: `build-essential` and `make`
+* [GraphicsMagick](http://www.graphicsmagick.org/).
+  * In MacOS, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) to install it:
     ```bash
     brew install graphicsmagick
     ```
@@ -43,31 +51,39 @@ npm start
 #### Good to know
 
 - Run the app by typing `npm start`.
+- Run commands in production mode by appending `NODE_ENV` to command, e.g.: `NODE_ENV=production npm start`.
 - Stop the app by hitting `Ctrl+C`.
-- To skip checking Bower modules on start (useful if you're offline), type `npm run start:skipBower`
 - When you change any file, they get recompiled and the browser is refreshed.
 - Keep an eye on the console in case of compiling errors.
 - [Read more](https://github.com/Trustroots/trustroots/wiki/Development).
-- You can start clean by running `npm run distclean && npm run dropdb`.
+- NPM dependencies are installed and kept up-to date automatically when starting the app.
+- You can start clean by running `npm run dropdb && npm run distclean`.
 
 ## Modifying configurations
 
 Add any configurations you want to keep out of version control to `config/env/local.js` file. It's created for you on the first start and overrides anything in `config/env/local.js`.
 
+## Development tools
 
-## Running services
+### Emails
 
-### MailDev
+MailDev is there for viewing and testing emails during development.
 
-MailDev is there for viewing and testing emails during development
+[MailDev](https://github.com/djfarrelly/MailDev) will be already running at [localhost:1080](http://localhost:1080) but if you need to run it manually, type:
 
-[MailDev](https://github.com/djfarrelly/MailDev) will be running at [localhost:1080](http://localhost:1080)
+```bash
+npm run dashboard:mail
+```
 
-### Agendash
+### Background jobs
 
-Agendash is a dashboard & inspector for [Agenda](https://github.com/agenda/agenda), our job scheduling library.
+[Agendash](https://github.com/agenda/agendash) is a dashboard & inspector for [Agenda](https://github.com/agenda/agenda), our job scheduling library.
 
-[Agendash](https://github.com/joeframbach/agendash) (background job dashboard) at [localhost:1081](http://localhost:1081).
+To run it at [localhost:1081](http://localhost:1081), type:
+
+```bash
+npm run dashboard:jobs
+```
 
 ## Debugging
 
@@ -97,15 +113,26 @@ To lint files, run `npm run lint`
 
 ## Mock data
 
-There are scripts that generate mock user data, hosting offers, and tribes. It's highly recommended you run these scripts after installation, that way you'll have something to look at.
+There is a data script that the individual mock data scripts with default values to generate mock user data, hosting offers, messages and tribes. It's highly recommended you run this script after installation, that way you'll have something to look at.
 
-1. Run `node scripts/fillTestTribesData.js 50` — This will create 50 tribes.
+Run `npm run seed` - This will add automatically add:
+
+* 100 tribes
+* 1000 users including 3 users with user names of `admin1`, `admin2`, `admin3` each with the password of `password123`
+* 2000 message threads with 1 to 10 messages in each thread
+
+For more custom setups, you can alternatively run the scripts for generating data individually. It is currently recommended that you run them in the sequence provided below.
+
+1. To add tribes, run `npm run seed:tribes 50` — This will create 50 tribes.
     * Run this prior to adding users to add users to tribes automatically
 
-2. Run `node scripts/fillTestData.js 1000 adminusername` — This will create 1000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
+2. To add users, run `npm run seed:users 1000 adminusername` — This will create 1000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
     * It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
     * To see the result, log in with your chosen username and password `password123`.
+    * Additional admin usernames are also supported (eg. `npm run seed:users 1000 admin1 admin2 admin3`)
+    * If tribes exist, users will also be added to random tribes
 
+3. To add messages, run `npm run seed:messages 1000 10` — This will create 1000 message threads between random users with up to 10 messages in each thread.
 
 ## Clean database
 
@@ -178,19 +205,6 @@ If you prefer [ImageMagick](http://www.imagemagick.org/) over [GraphicsMagick](h
     ```
 
 2) Change `imageProcessor` setting from `./configs/env/local.js` to `imagemagic`.
-
-## Updating
-
-Run these to get most recent version:
-```bash
-$ git pull            # Get the latest code for the current branch
-$ npm update          # Update NPM
-$ npm run migrate     # Migrate database up
-```
-
-...or simply `./scripts/update.sh` which does this all for you.
-
-
 
 ## Support
 

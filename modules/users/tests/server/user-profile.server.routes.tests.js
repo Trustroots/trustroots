@@ -4,6 +4,7 @@ var should = require('should'),
     request = require('supertest'),
     path = require('path'),
     mongoose = require('mongoose'),
+    moment = require('moment'),
     User = mongoose.model('User'),
     config = require(path.resolve('./config/config')),
     express = require(path.resolve('./config/lib/express'));
@@ -181,6 +182,7 @@ describe('User profile CRUD tests', function () {
                 return done(userInfoErr);
               }
 
+              // Second time changing it
               userInfoRes.body.should.be.instanceof(Object);
               userInfoRes.body.firstName.should.be.equal('user_update_first');
               userInfoRes.body.lastName.should.be.equal('user_update_last');
@@ -569,6 +571,224 @@ describe('User profile CRUD tests', function () {
             });
         });
     });
+  });
+
+  describe('Username change', function () {
+    it('should not let a new user to change username', function (done) {
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (err) {
+          if (err) {
+            return done(err);
+          }
+          var user2 = _user;
+          user2.username = _user.username + '01';
+          delete user2.email;
+          agent.put('/api/users')
+            .send(user2)
+            .expect(403)
+            .end(function (err, res) {
+              if (err) {
+                return done(err);
+              }
+              res.body.message.should.equal('You cannot change your username at this time.');
+              return done();
+            });
+        });
+    });
+
+    it('should allow changing username for users created 3 months ago who never changed their username', function (done) {
+      var threeMonthsAgo = moment(user.created)
+        .subtract(3, 'months')
+        .toDate();
+      user.update({ $set: { created: threeMonthsAgo } }, function (err) {
+        should.not.exist(err);
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (err) {
+            if (err) {
+              return done(err);
+            }
+            var user2 = _user;
+            user2.username = _user.username + '01';
+            delete user2.email;
+            agent.put('/api/users')
+              .send(user2)
+              .expect(200)
+              .end(function (err, res) {
+                if (err) {
+                  return done(err);
+                }
+                res.body.username.should.equal(user2.username);
+                return done();
+              });
+          });
+      });
+    });
+
+    it('should not be able to change username if username was changed within previous 3 months',
+      function (done) {
+        var threeMonthsAgo = moment(user.created)
+          .subtract(3, 'months')
+          .toDate();
+        user.update({ $set: { created: threeMonthsAgo } }, function (err) {
+          should.not.exist(err);
+          agent.post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (err) {
+              if (err) {
+                return done(err);
+              }
+              var user2 = _user;
+              user2.username = _user.username + '01';
+              delete user2.email;
+              // First username change
+              // First we're setting usernameUpdate
+              // This should succeed
+              agent.put('/api/users')
+                .send(user2)
+                .expect(200)
+                .end(function (err, res) {
+                  if (err) {
+                    return done(err);
+                  }
+                  res.body.username.should.equal(user2.username);
+                  user2.username = _user.username + '02';
+                  // Second username change for the same user
+                  // Then we're testing that previous usernameUpdate prevents further changes
+                  // This should fail
+                  agent.put('/api/users')
+                    .send(user2)
+                    .end(function (err, res) {
+                      if (err) {
+                        return done(err);
+                      }
+                      res.body.message.should.equal('You cannot change your username at this time.');
+                      return done();
+                    });
+                });
+            });
+        });
+      });
+
+    it('should be able to change username if username was changed more than 3 months ago',
+      function (done) {
+        var threeMonthsAgo = moment(user.created)
+          .subtract(3, 'months')
+          .toDate();
+        user.update({ $set: { created: threeMonthsAgo } }, function (err) {
+          should.not.exist(err);
+          agent.post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (err) {
+              if (err) {
+                return done(err);
+              }
+              // First change
+              var user2 = _user;
+              user2.username = _user.username + '01';
+              delete user2.email;
+              agent.put('/api/users')
+                .send(user2)
+                .expect(200)
+                .end(function (err, res) {
+                  if (err) {
+                    return done(err);
+                  }
+                  res.body.username.should.equal(user2.username);
+                  User.findById(user._id, function (err, user) {
+                    if (err) {
+                      return done(err);
+                    }
+                    var threeMonthsAgo = moment(user.usernameUpdated)
+                      .subtract(3, 'months')
+                      .toDate();
+                    user.update(
+                      { $set: { usernameUpdated: threeMonthsAgo } },
+                      function (err) {
+                        if (err) {
+                          return done(err);
+                        }
+                        // Second time changing it
+                        user2.username = _user.username + '02';
+                        agent.put('/api/users')
+                          .send(user2)
+                          .end(function (err, res) {
+                            if (err) {
+                              return done(err);
+                            }
+                            res.body.username.should.equal(user2.username);
+                            return done();
+                          });
+                      });
+                  });
+                });
+            });
+        });
+      });
+
+    it('should not be allowed to change the usernameUpdateAllowed status',
+      function (done) {
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (err) {
+            if (err) {
+              return done(err);
+            }
+            agent.put('/api/users')
+              .send({
+                usernameUpdateAllowed: true
+              })
+              .expect(200)
+              .end(function (err, res) {
+                if (err) {
+                  return done(err);
+                }
+
+                res.body.usernameUpdateAllowed.should.equal(false);
+
+                User.findOne(
+                  { username: credentials.username },
+                  function (err, newUser) {
+                    should.not.exist(newUser.usernameUpdateAllowed);
+                    done(err);
+                  });
+              });
+          });
+      });
+
+    it('should not be allowed to change the date when their username was last changed',
+      function (done) {
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (err) {
+            if (err) {
+              return done(err);
+            }
+            agent.put('/api/users')
+              .send({
+                usernameUpdated: moment().subtract(3, 'months').toDate()
+              })
+              .expect(200)
+              .end(function (err) {
+                if (err) {
+                  return done(err);
+                }
+                User.findOne(
+                  { username: credentials.username },
+                  function (err, newUser) {
+                    should.not.exist(newUser.usernameUpdated);
+                    done(err);
+                  });
+              });
+          });
+      });
   });
 
   afterEach(function (done) {
