@@ -478,7 +478,6 @@ exports.contactListByUser = function (req, res, next, listUserId) {
           locationFrom: '$user.locationFrom',
           locationLiving: '$user.locationLiving',
           emailHash: '$user.emailHash',
-          locationLiving: '$user.locationLiving',
           additionalProvidersData: {
             facebook: {
               id: '$user.additionalProvidersData.facebook.id'

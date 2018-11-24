@@ -23,11 +23,6 @@
     <span ng-if="::contactCtrl.contact.confirmed === false">Requested</span>
     <time ng-bind="::contactCtrl.contact.created | date:'mediumDate'"></time>
   </small>
-  <div>
-    <small class="text-muted">
-      <span ng-bind="::contactCtrl.contact.user.locationLiving"></span>
-    </small>
-  </div>
 
   <!-- Authenticated user requested this connection -->
   <div class="contact-confirm"
