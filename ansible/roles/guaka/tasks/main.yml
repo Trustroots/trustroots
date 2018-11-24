@@ -1,0 +1,76 @@
+---
+- name: Ensure an admin group
+  group: name=admin state=present
+
+- name: Create user guaka
+  user:
+    name: guaka
+    shell: /bin/zsh
+    comment: "guaka"
+    groups: admin,sudo,www-data
+    createhome: yes
+    append: yes
+  tags:
+    - groups
+
+- name: Create ssh directory
+  file: path=/home/guaka/.ssh state=directory
+
+- name: Copy authorized_keys
+  template: src=authorized_keys dest=/home/guaka/.ssh/ owner=guaka mode=0600
+  tags:
+    - ssh
+    - authorized_keys
+
+- name: Ensure .ssh owner/rights
+  file:
+    path: /home/guaka/.ssh/authorized_keys
+    owner: guaka
+    group: guaka
+    mode: 0600
+  tags:
+    - ssh
+
+- name: Ensure .ssh owner/rights
+  file:
+    path: /home/guaka/.ssh
+    owner: guaka
+    group: guaka
+    mode: 0700
+  tags:
+    - ssh
+
+- name: Copy bash aliases over
+  template: src=localaliases dest=/home/guaka/.localaliases owner=guaka
+  tags:
+    - guaka
+
+- name: permissions
+  file:
+    path: /home/guaka
+    owner: guaka
+    recurse: yes
+
+- name: Git clone dotfiles into ~/dotfiles
+  git:
+    dest: /home/guaka/dotfiles
+    repo: https://github.com/guaka/dotfiles.git
+    force: yes
+    accept_hostkey: yes
+
+- name: Make guaka owner of the cloned dotfiles files
+  file:
+    path: /home/guaka/dotfiles
+    owner: guaka
+    recurse: yes
+
+- name: Install dotfiles
+  shell: /home/guaka/dotfiles/install.sh
+  args:
+    creates: /home/guaka/.zprezto
+  become_user: guaka
+
+- name: Add guaka to sudoers
+  lineinfile:
+    dest: /etc/sudoers
+    line: 'guaka ALL=(ALL) NOPASSWD: ALL'

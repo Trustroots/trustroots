@@ -1,0 +1,10 @@
+---
+- hosts: hetzner
+  gather_facts: false
+  become: yes
+
+  roles:
+  - handlers
+  - system
+  - guaka
+  - firewall
