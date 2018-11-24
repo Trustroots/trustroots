@@ -11,7 +11,7 @@
     // ViewModel
     var vm = this;
 
-    // Expoxed to the view
+    // Exposed to the view
     vm.sendSupportRequest = sendSupportRequest;
     vm.success = false;
     vm.isLoading = false;
