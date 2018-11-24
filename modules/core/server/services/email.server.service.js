@@ -237,7 +237,7 @@ exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
     name: 'Trustroots Support', // `To:`
     email: config.supportEmail, // `To:`
     replyTo: replyTo,
-    subject: 'Support request from ' + supportRequest.username + ' (' + supportRequest.displayName + ')',
+    subject: subject,
     request: supportRequest,
     skipHtmlTemplate: true, // Don't render html template for this email
     sparkpostCampaign: 'support-request'
