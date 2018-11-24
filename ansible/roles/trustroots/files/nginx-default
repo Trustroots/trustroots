@@ -1,0 +1,43 @@
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    
+    server_name _;
+
+    root /srv/trustroots/public;
+
+    location = /robots.txt {
+        access_log off;
+        log_not_found off;
+
+    	## Normally this is already added at the NodeJS app
+    	## but this file is served directly
+	
+    	add_header Strict-Transport-Security max-age=15768000;
+	add_header Content-Type text/plain;
+  	return 200 'Disallow: /';
+    }	
+	    
+    location / {
+        proxy_pass         http://127.0.0.1:3000/;
+	proxy_redirect     off;
+	
+        proxy_set_header   Host             $host;
+	proxy_set_header   X-Real-IP        $remote_addr;
+	proxy_set_header   X-Forwarded-For  $proxy_add_x_forwarded_for;
+	
+        client_max_body_size       10m;
+	client_body_buffer_size    128k;
+	
+        proxy_connect_timeout      90;
+	proxy_send_timeout         90;
+	proxy_read_timeout         90;
+	
+        proxy_buffer_size          4k;
+	proxy_buffers              4 32k;
+	proxy_busy_buffers_size    64k;
+	proxy_temp_file_write_size 64k;
+    }
+}
+
+

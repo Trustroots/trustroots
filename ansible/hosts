@@ -1,0 +1,12 @@
+# Use ansible_ssh_user=root for setup
+
+[hetzner]
+dev.trustroots.org   #  ansible_ssh_user=root
+staging.trustroots.org
+
+[dev]
+dev.trustroots.org   
+staging.trustroots.org
+
+
+[prod]

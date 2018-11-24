@@ -1,0 +1,8 @@
+## Guaka 2018-10-27
+
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBfZlk1NiUa3uGd/e0yGYrnuMxdrk6Orc74xiiDUq7gX guaka@x
+
+
+## Mikael copied from trustroots prod server 2018-10-27  @todo use ed25519
+
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDI+RW3WFYac5BmobPf5117RYoifAJEcnCR7j2emVUJ1qFnbtbx9CzEDjFOd2R8fZbDTqEwNuojzrnEay/hW6ep6fyGFvYLbLnmQioo9QUfKchyjuOwElfFvLgzSffFuhPu9+Nb2A+8bgK7MI8IxEMBUFG4/XbmBLnlE9Y9UqY6visMdbXaeAy+31+vG+c2tAaNHtnMmDCEL7fIht0OyF5EAx6vZbSoOAJa4kYOUZ2YqKqCq5ZgUGrYTMguD4nMkHNwfMZr/CVoM1vrCh7xx/brzv/H+/aRpId2Dbbad9Jbag1rV4ge1QzWOlZUbJ+bgTJwHj/wpVNgmPNPTWy67NGX mikael@mikael.local

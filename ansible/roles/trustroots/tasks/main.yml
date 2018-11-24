@@ -1,0 +1,88 @@
+---
+- name: Clone/pull project repo
+  git: repo=https://github.com/trustroots/trustroots.git dest=/srv/trustroots force=yes
+  tags:
+    - git
+
+   
+- name: chown guaka
+  file: dest=/srv/trustroots owner=guaka group=admin mode=u=rwX,g=rX,o=rX recurse=yes
+  tags:
+    - chown
+# This should be user trustroots
+    
+    
+- name: node apt stuff
+  shell: "curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -"
+  tags:
+    - node
+    - node1
+    
+- name: install node
+  apt: pkg=nodejs state=present
+  tags:
+    - node
+    - node2
+
+
+
+- name: install pm2
+  npm:
+    name: pm2
+    global: yes
+  tags:
+    - npm
+    - pm2
+    
+- name: nginx conf
+  copy:
+    src: files/nginx-default
+    dest: /etc/nginx/sites-available/default
+    owner: root
+    mode: 0644
+  tags:
+    - nginx
+
+- name: reload nginx
+  service: name=nginx state=reloaded
+  tags:
+    - nginx
+
+- name: npm ci
+  # https://docs.npmjs.com/cli/ci
+  shell: 'cd /srv/trustroots && npm ci'
+  become: yes
+  become_user: guaka
+  tags:
+    - install
+
+- name: npm run build:prod
+  shell: 'cd /srv/trustroots && npm run build:prod'
+  become: yes
+  become_user: guaka
+  tags:
+    - build
+  
+    
+
+- name: generate test data
+  shell: 'cd /srv/trustroots && npm run seed > /dev/null'
+  become: yes
+  become_user: guaka
+  tags:
+    - testdata
+    
+
+- name: pm2 start
+  shell: 'cd /srv/trustroots && pm2 start worker-pm2.json --env production'
+  become: yes
+  become_user: guaka
+  tags:
+    - pm2
+
+- name: pm2 start
+  shell: 'cd /srv/trustroots && pm2 start server-pm2.json --env production'
+  become: yes
+  become_user: guaka
+  tags:
+    - pm2

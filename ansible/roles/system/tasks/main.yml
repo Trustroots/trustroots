@@ -1,0 +1,34 @@
+---
+- name: Upgrade packages
+  when: "'localhost' not in inventory_hostname"
+  apt: upgrade=dist update-cache=yes
+
+#- name: Install python
+#  apt: pkg=python
+
+- name: Install system packages
+  apt: pkg={{ item }}
+  with_items: "{{ system_apt_packages }}"
+  tags:
+    - deb
+    - packages
+
+- name: Disable empty password login
+  lineinfile: dest=/etc/ssh/sshd_config regexp="^#?PermitEmptyPasswords" line="PermitEmptyPasswords no"
+  notify: restart sshd
+
+- name: Disable remote root login
+  lineinfile: dest=/etc/ssh/sshd_config regexp="^#?PermitRootLogin" line="PermitRootLogin no"
+  notify: restart sshd
+
+- name: Disable password login
+  lineinfile: dest=/etc/ssh/sshd_config regexp="^#?PasswordAuthentication" line="PasswordAuthentication no"
+  notify: restart sshd
+
+- name: Enable tmpreaper
+  lineinfile:
+    dest: /etc/tmpreaper.conf
+    regexp: '^SHOWWARNING=true'
+    line: 'SHOWWARNING=false'
+  tags:
+    - tmp

@@ -1,0 +1,9 @@
+---
+- hosts: dev
+  become: yes
+
+  roles:
+  - system
+  - firewall
+  - trustroots
+        
