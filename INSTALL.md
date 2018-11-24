@@ -55,7 +55,6 @@ npm start
 - Stop the app by hitting `Ctrl+C`.
 - When you change any file, they get recompiled and the browser is refreshed.
 - Keep an eye on the console in case of compiling errors.
-- [Read more](https://github.com/Trustroots/trustroots/wiki/Development).
 - NPM dependencies are installed and kept up-to date automatically when starting the app.
 - You can start clean by running `npm run dropdb && npm run distclean`.
 
@@ -208,6 +207,8 @@ If you prefer [ImageMagick](http://www.imagemagick.org/) over [GraphicsMagick](h
 
 ## Support
 
-- Check [troubleshooting](https://github.com/Trustroots/trustroots/wiki/Troubleshooting).
 - Check and open issues at [GitHub](https://github.com/Trustroots/trustroots/issues)
 - [Contact us](https://www.trustroots.org/contact)
+- https://meta.trustroots.org/
+- https://trustroots.slack.com/
+

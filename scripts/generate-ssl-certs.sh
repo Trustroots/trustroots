@@ -2,7 +2,7 @@
 
 # Script to generate self signed certificates for dev purposes
 #
-# See https://github.com/Trustroots/trustroots/wiki/SSL-Certificate for production certs
+# See https://github.com/Trustroots/trustroots/tree/master/docs/SSL-Certificate.md for production certs
 
 CERT_PATH="./scripts/certs"
 CERT_FILE="trustroots_org"
