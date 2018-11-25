@@ -502,8 +502,8 @@ describe('Job: message unread', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(function () {
-      Message.remove().exec(done);
+    User.deleteMany().exec(function () {
+      Message.deleteMany().exec(done);
     });
   });
 });

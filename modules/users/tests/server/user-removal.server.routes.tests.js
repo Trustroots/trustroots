@@ -828,7 +828,7 @@ describe('User removal CRUD tests', function () {
     var collectionsToClear = [User, Contact, Message, Offer, Tribe];
 
     async.each(collectionsToClear, function (collection, cb) {
-      collection.remove().exec(cb);
+      collection.deleteMany().exec(cb);
     }, done);
   });
 });

@@ -59,7 +59,7 @@ describe('User last seen CRUD tests', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(done);
+    User.deleteMany().exec(done);
   });
 
   context('logged in', function () {

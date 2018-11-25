@@ -56,8 +56,8 @@ describe('Message to stats server service Unit Tests:', function () {
 
   // after each test removing all the messages and users
   afterEach(function (done) {
-    Message.remove().exec(function () {
-      User.remove().exec(done);
+    Message.deleteMany().exec(function () {
+      User.deleteMany().exec(done);
     });
   });
 

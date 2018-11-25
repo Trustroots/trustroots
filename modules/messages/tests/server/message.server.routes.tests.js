@@ -957,9 +957,9 @@ describe('Message CRUD tests', function () {
 
   afterEach(function (done) {
     // Uggggly pyramid revenge!
-    User.remove().exec(function () {
-      Message.remove().exec(function () {
-        Thread.remove().exec(done);
+    User.deleteMany().exec(function () {
+      Message.deleteMany().exec(function () {
+        Thread.deleteMany().exec(done);
       });
     });
   });

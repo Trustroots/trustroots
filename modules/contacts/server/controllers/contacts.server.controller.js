@@ -156,7 +156,7 @@ exports.remove = function (req, res) {
  * Clear all contacts by user id
  */
 exports.removeAllByUserId = function (userId, callback) {
-  Contact.remove({
+  Contact.deleteMany({
     $or: [
       { userTo: userId },
       { userFrom: userId }

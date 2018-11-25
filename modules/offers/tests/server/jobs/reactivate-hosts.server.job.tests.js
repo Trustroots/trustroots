@@ -199,8 +199,8 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
   });
 
   afterEach(function (done) {
-    Offer.remove().exec(function () {
-      User.remove().exec(done);
+    Offer.deleteMany().exec(function () {
+      User.deleteMany().exec(done);
     });
   });
 });

@@ -154,7 +154,7 @@ describe('Configuration Tests:', function () {
                 // The user we just created should be exposed
                 res.text.should.match(new RegExp('user = \\{.*"_id":"' + userId + '"'));
 
-                Tribe.remove().exec(done);
+                Tribe.deleteMany().exec(done);
               });
           });
       });
@@ -162,7 +162,7 @@ describe('Configuration Tests:', function () {
     });
 
     afterEach(function (done) {
-      User.remove().exec(done);
+      User.deleteMany().exec(done);
     });
 
   });
