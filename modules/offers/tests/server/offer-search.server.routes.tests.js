@@ -455,7 +455,7 @@ describe('Offer search tests', function () {
           if (signinErr) return done(signinErr);
 
           // Clean out the DB from other offers
-          Offer.remove().exec(function () {
+          Offer.deleteMany().exec(function () {
 
             // Create new offer to target location
             var testLocationOffer = new Offer(offer1);
@@ -980,9 +980,9 @@ describe('Offer search tests', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(function () {
-      Tribe.remove().exec(function () {
-        Offer.remove().exec(done);
+    User.deleteMany().exec(function () {
+      Tribe.deleteMany().exec(function () {
+        Offer.deleteMany().exec(done);
       });
     });
   });

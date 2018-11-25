@@ -238,6 +238,6 @@ describe('Tribe Model Unit Tests:', function () {
   });
 
   afterEach(function (done) {
-    Tribe.remove().exec(done);
+    Tribe.deleteMany().exec(done);
   });
 });

@@ -595,7 +595,7 @@ exports.messagesCount = function (req, res) {
     });
   }
 
-  Thread.count({
+  Thread.countDocuments({
     read: false,
     userTo: req.user._id
   }, function (err, unreadCount) {

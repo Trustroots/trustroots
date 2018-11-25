@@ -530,8 +530,8 @@ describe('Contact CRUD tests', function () {
 
   afterEach(function (done) {
     // Uggggly pyramid revenge!
-    User.remove().exec(function () {
-      Contact.remove().exec(done);
+    User.deleteMany().exec(function () {
+      Contact.deleteMany().exec(done);
     });
   });
 });

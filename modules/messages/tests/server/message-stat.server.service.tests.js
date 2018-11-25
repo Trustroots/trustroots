@@ -120,13 +120,13 @@ describe('Count Message Statistics of User', function () {
     // remove all User, Message, MessageStat
     async.parallel([
       function (cb) {
-        User.remove().exec(cb);
+        User.deleteMany().exec(cb);
       },
       function (cb) {
-        Message.remove().exec(cb);
+        Message.deleteMany().exec(cb);
       },
       function (cb) {
-        MessageStat.remove().exec(cb);
+        MessageStat.deleteMany().exec(cb);
       }
     ], done);
   });
@@ -292,13 +292,13 @@ describe('MessageStat Creation & Updating Test', function () {
     // clean User, Message, MessageStat
     async.parallel([
       function (cb) {
-        User.remove().exec(cb);
+        User.deleteMany().exec(cb);
       },
       function (cb) {
-        Message.remove().exec(cb);
+        Message.deleteMany().exec(cb);
       },
       function (cb) {
-        MessageStat.remove().exec(cb);
+        MessageStat.deleteMany().exec(cb);
       }
     ], done);
   });

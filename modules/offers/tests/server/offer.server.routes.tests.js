@@ -1102,9 +1102,9 @@ describe('Offer CRUD tests', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(function () {
-      Tribe.remove().exec(function () {
-        Offer.remove().exec(done);
+    User.deleteMany().exec(function () {
+      Tribe.deleteMany().exec(function () {
+        Offer.deleteMany().exec(done);
       });
     });
   });

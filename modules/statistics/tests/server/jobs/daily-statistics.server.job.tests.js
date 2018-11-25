@@ -110,7 +110,7 @@ describe('Daily Statistics Job - Unit Test', function () {
           // test stathat endpoint
 
           // Called total 4 times, twice per each stat call in job
-          sinon.assert.callCount(stathat.trackEZValue, 37);
+          sinon.assert.callCount(stathat.trackEZValue, 68);
 
           // `getCall(0)` and `getCall(1)` contain calls for member count
           var memberGroupedArgs = _.zip.apply(this, [

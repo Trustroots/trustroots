@@ -122,8 +122,8 @@ describe('Reference Thread Model Unit Tests:', function () {
   });
 
   afterEach(function (done) {
-    ReferenceThread.remove().exec(function () {
-      User.remove().exec(done);
+    ReferenceThread.deleteMany().exec(function () {
+      User.deleteMany().exec(done);
     });
   });
 });

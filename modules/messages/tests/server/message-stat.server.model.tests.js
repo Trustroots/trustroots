@@ -51,7 +51,7 @@ describe('MessageStats Model', function () {
   });
 
   afterEach(function (done) {
-    MessageStat.remove().exec(done);
+    MessageStat.deleteMany().exec(done);
   });
 
   it('new MessageStat should have specific fields', function () {

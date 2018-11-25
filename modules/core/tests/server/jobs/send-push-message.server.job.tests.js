@@ -196,7 +196,7 @@ describe('job: send push message', function () {
     });
 
     afterEach(function (done) {
-      User.remove().exec(done);
+      User.deleteMany().exec(done);
     });
 
     it('removes user tokens if they are invalid', function (done) {

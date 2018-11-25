@@ -13,7 +13,6 @@ var _ = require('lodash'),
     glob = require('glob'),
     del = require('del'),
     nodemon = require('nodemon'),
-    mkdirRecursive = require('mkdir-recursive'),
     webpack = require('webpack'),
     webpackStream = require('webpack-stream'),
     merge = require('webpack-merge'),
@@ -120,28 +119,12 @@ function runNodemonWorker(done) {
   done();
 }
 
-
-// Make sure upload directory exists
-gulp.task('makeUploadsDir', gulp.series(
-  loadConfig,
-  function (done) {
-    mkdirRecursive.mkdir(config.uploadDir, function (err) {
-      if (err && err.code !== 'EEXIST') {
-        console.error(err);
-        return done(err);
-      }
-      done();
-    });
-  }
-));
-
 // Set NODE_ENV to 'test' and prepare environment
 gulp.task('env:test', gulp.series(
   function (done) {
     process.env.NODE_ENV = 'test';
     done();
-  },
-  'makeUploadsDir'
+  }
 ));
 
 // Set NODE_ENV to 'development' and prepare environment
@@ -149,8 +132,7 @@ gulp.task('env:dev', gulp.series(
   function (done) {
     process.env.NODE_ENV = 'development';
     done();
-  },
-  'makeUploadsDir'
+  }
 ));
 
 gulp.task('webpack', gulp.parallel(
@@ -190,12 +172,11 @@ gulp.task('env:prod', gulp.series(
   function (done) {
     process.env.NODE_ENV = 'production';
     done();
-  },
-  'makeUploadsDir'
+  }
 ));
 
 // Watch files for changes
-gulp.task('watch', function (done) {
+gulp.task('watch', function watch(done) {
   // Start Refresh
   plugins.refresh.listen();
 
@@ -215,11 +196,11 @@ gulp.task('watch', function (done) {
   // Watch and generate app files
   gulp.watch(defaultAssets.server.fontelloConfig, fontello);
   gulp.watch(defaultAssets.server.views).on('change', plugins.refresh.changed);
-  gulp.watch(defaultAssets.client.less, gulp.series('clean:css', 'styles')).on('change', plugins.refresh.changed);
+  gulp.watch(defaultAssets.client.less, gulp.series('clean:css', 'build:styles')).on('change', plugins.refresh.changed);
 
   if (process.env.NODE_ENV === 'production') {
-    gulp.watch(defaultAssets.client.js, gulp.series('lint', 'clean:js', 'scripts'));
-    gulp.watch(defaultAssets.client.views, gulp.series('clean:js', 'scripts')).on('change', plugins.refresh.changed);
+    gulp.watch(defaultAssets.client.js, gulp.series('lint', 'clean:js', 'build:scripts'));
+    gulp.watch(defaultAssets.client.views, gulp.series('clean:js', 'build:scripts')).on('change', plugins.refresh.changed);
   } else {
     gulp.watch(defaultAssets.client.js, gulp.series('lint'));
     gulp.watch(defaultAssets.client.views).on('change', plugins.refresh.changed);
@@ -228,7 +209,7 @@ gulp.task('watch', function (done) {
 });
 
 // Watch server test files
-gulp.task('watch:server:run-tests', function () {
+gulp.task('watch:server:run-tests', function watchServerRunTests() {
   // Start Refresh
   plugins.refresh.listen();
 
@@ -259,7 +240,7 @@ gulp.task('watch:server:run-tests', function () {
 });
 
 // ESLint JS linting task
-gulp.task('eslint', function () {
+gulp.task('eslint', function eslint() {
   var lintAssets = _.union(
     [
       defaultAssets.server.gulpConfig,
@@ -287,7 +268,7 @@ gulp.task('eslint', function () {
 // ESLint JS linting task for Angular files
 gulp.task('eslint-angular', gulp.series(
   loadConfig,
-  function () {
+  function eslintAngular() {
     var lintAssets = _.union(
       assets.client.js,
       // Don't lint dist and lib files
@@ -309,7 +290,7 @@ gulp.task('eslint-angular', gulp.series(
 ));
 
 // JavaScript task
-gulp.task('scripts', gulp.series(
+gulp.task('build:scripts', gulp.series(
   loadConfig,
   angularTemplateCache,
   angularUibTemplatecache,
@@ -317,17 +298,17 @@ gulp.task('scripts', gulp.series(
 ));
 
 // Clean JS files -task
-gulp.task('clean:js', function () {
+gulp.task('clean:js', function cleanJS() {
   return del(['public/dist/*.js']);
 });
 
 // Clean CSS files -task
-gulp.task('clean:css', function () {
+gulp.task('clean:css', function cleanCSS() {
   return del(['public/dist/*.css']);
 });
 
 // CSS styles task
-gulp.task('styles', function () {
+gulp.task('build:styles', function buildStyles() {
   if (process.env.NODE_ENV === 'production') {
 
     var cssStream = gulp.src(defaultAssets.client.lib.css)
@@ -373,7 +354,6 @@ gulp.task('styles', function () {
 // we can pick modules we need. Therefore we need
 // to manually compile our UIB templates.
 function angularUibTemplatecache() {
-
   var uibModulesStreams = new MergeStream();
 
   // Loop trough module names
@@ -484,7 +464,6 @@ function karmaWatch(done) {
   }, done).start();
 }
 
-
 // Analyse code for potential errors
 gulp.task('lint', gulp.parallel('eslint', 'eslint-angular'));
 
@@ -500,8 +479,8 @@ gulp.task('build:dev', gulp.series(
   ),
   angularUibTemplatecache,
   gulp.parallel(
-    'styles',
-    'scripts'
+    'build:styles',
+    'build:scripts'
   )
 ));
 
@@ -513,8 +492,8 @@ gulp.task('build:prod', gulp.series(
     'clean'
   ),
   gulp.parallel(
-    'styles',
-    'scripts'
+    'build:styles',
+    'build:scripts'
   )
 ));
 

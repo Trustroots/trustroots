@@ -200,8 +200,8 @@ describe('Statistics CRUD tests', function () {
 
     after(function (done) {
       // Clean out
-      User.remove().exec(function () {
-        Offer.remove().exec(done);
+      User.deleteMany().exec(function () {
+        Offer.deleteMany().exec(done);
       });
     });
   });
