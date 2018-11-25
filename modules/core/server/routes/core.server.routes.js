@@ -15,8 +15,9 @@ module.exports = function (app) {
 
   redirect(app);
 
+  app.redirect('/invite', '/signup');
   app.redirect('/tribes/lgbt', '/tribes/lgbtq');
-  app.redirect('/tribes/invite', '/signup');
+  app.redirect('/tribes/vegans-vegetarians', '/tribes/veg');
 
   // Gives the service worker access to any config it needs
   app.route('/config/sw.js').get(core.renderServiceWorkerConfig);
