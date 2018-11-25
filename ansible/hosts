@@ -1,8 +1,8 @@
 # Use ansible_ssh_user=root for setup
 
 [hetzner]
-dev.trustroots.org   #  ansible_ssh_user=root
-staging.trustroots.org
+dev.trustroots.org     ansible_ssh_user=guaka
+staging.trustroots.org ansible_ssh_user=guaka
 
 [dev]
 dev.trustroots.org   
