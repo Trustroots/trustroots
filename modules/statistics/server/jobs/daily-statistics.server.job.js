@@ -19,22 +19,25 @@ var async = require('async'),
 
 module.exports = function (job, agendaDone) {
 
+  var totalUserCount;
+
   async.waterfall([
 
     // Member count
     function (done) {
-
-      statistics.getUsersCount(function (err, userCount) {
+      statistics.getUsersCount(function (err, count) {
         if (err) {
           log('error', 'Daily statistics: failed fetching user count.', err);
           return done();
         }
 
+        totalUserCount = count;
+
         // Write number to stats
         writeDailyStat({
           namespace: 'members',
           values: {
-            count: parseInt(userCount, 10)
+            count: count
           },
           tags: {
             members: 'members'
@@ -45,7 +48,7 @@ module.exports = function (job, agendaDone) {
 
     // Get number of users who have push notifications enabled
     function (done) {
-      statistics.getPushRegistrationCount(function (err, pushRegistrationCount) {
+      statistics.getPushRegistrationCount(function (err, count) {
         if (err) {
           log('error', 'Daily statistics: failed fetching push registration count.', err);
           return done();
@@ -55,7 +58,7 @@ module.exports = function (job, agendaDone) {
         writeDailyStat({
           namespace: 'pushRegistrations',
           values: {
-            count: parseInt(pushRegistrationCount, 10)
+            count: count
           },
           tags: {
             type: 'all'
@@ -65,34 +68,28 @@ module.exports = function (job, agendaDone) {
       });
     },
 
-    // Ammount of users - The past 7 days
     function (done) {
-      collectLastSeen('past7d', done);
+      collectLastSeen({ 'days': 7 }, 'memberLastSeenPast7days', totalUserCount, done);
     },
 
-    // Ammount of users - The past 14 days
     function (done) {
-      collectLastSeen('past14d', done);
+      collectLastSeen({ 'days': 14 }, 'memberLastSeenPast14days', totalUserCount, done);
     },
 
-    // Ammount of users - The past 30 days
     function (done) {
-      collectLastSeen('past30d', done);
+      collectLastSeen({ 'days': 30 }, 'memberLastSeenPast30days', totalUserCount, done);
     },
 
-    // Ammount of users - The past 6 months
     function (done) {
-      collectLastSeen('past6m', done);
+      collectLastSeen({ 'months': 6 }, 'memberLastSeenPast6months', totalUserCount, done);
     },
 
-    // Ammount of users - The past year
     function (done) {
-      collectLastSeen('past12m', done);
+      collectLastSeen({ 'months': 12 }, 'memberLastSeenPast12months', totalUserCount, done);
     },
 
     // Hosting offer count
     function (done) {
-
       statistics.getHostOffersCount(function (err, hostOfferCounts) {
         if (err) {
           log('error', 'Daily statistics: failed fetching hosting offer counts.', err);
@@ -100,11 +97,12 @@ module.exports = function (job, agendaDone) {
         }
 
         // Write numbers to stats
-        async.eachOfSeries(hostOfferCounts, function (offerCount, offerStatus, doneStatus) {
+        async.eachOfSeries(hostOfferCounts, function (count, offerStatus, doneStatus) {
           writeDailyStat({
             namespace: 'offers',
             values: {
-              count: parseInt(offerCount, 10)
+              count: count,
+              percentage: count / totalUserCount * 100
             },
             tags: {
               type: 'host',
@@ -118,8 +116,7 @@ module.exports = function (job, agendaDone) {
 
     // Meet offer count
     function (done) {
-
-      statistics.getMeetOffersCount(function (err, meetOfferCount) {
+      statistics.getMeetOffersCount(function (err, count) {
         if (err) {
           log('error', 'Daily statistics: failed fetching meet count.', err);
           return done();
@@ -129,7 +126,7 @@ module.exports = function (job, agendaDone) {
         writeDailyStat({
           namespace: 'offers',
           values: {
-            count: parseInt(meetOfferCount, 10)
+            count: count
           },
           tags: {
             type: 'meet'
@@ -140,7 +137,6 @@ module.exports = function (job, agendaDone) {
 
     // Connected to networks counters
     function (done) {
-
       var networks = [
         'couchsurfing',
         'warmshowers',
@@ -163,7 +159,8 @@ module.exports = function (job, agendaDone) {
           writeDailyStat({
             namespace: 'membersInNetworks',
             values: {
-              count: parseInt(count, 10)
+              count: count,
+              percentage: count / totalUserCount * 100
             },
             tags: {
               network: networkName
@@ -171,7 +168,6 @@ module.exports = function (job, agendaDone) {
           }, doneNetwork);
         });
       }, done);
-
     }
 
   ], function (err) {
@@ -220,15 +216,16 @@ function writeDailyStat(statObject, callback) {
 /**
  * Collect Last Seen Stats
  */
-function collectLastSeen(seenSince, callback) {
-  statistics.getLastSeenStatistic(seenSince, function (err, count) {
+function collectLastSeen(seenSinceDays, namespace, totalUserCount, callback) {
+  statistics.getLastSeenStatistic(seenSinceDays, function (err, count) {
     if (err) {
       return callback(err);
     }
     writeDailyStat({
-      namespace: seenSince,
+      namespace: namespace,
       values: {
-        count: parseInt(count, 10)
+        count: count,
+        percentage: count / totalUserCount * 100
       },
       tags: {
         access: 'members'
@@ -236,4 +233,3 @@ function collectLastSeen(seenSince, callback) {
     }, callback);
   });
 };
-

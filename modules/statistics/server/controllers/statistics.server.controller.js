@@ -19,10 +19,9 @@ var _ = require('lodash'),
  * Get count of all public users
  */
 exports.getUsersCount = function (callback) {
-  User.count({ public: true }, function (err, count) {
+  User.countDocuments({ public: true }, function (err, count) {
     if (err) {
-      callback(err);
-      return;
+      return callback(err);
     }
     callback(null, parseInt(count, 10) || 0);
   });
@@ -63,10 +62,9 @@ exports.getExternalSiteCount = function (site, callback) {
       break;
   }
 
-  User.count(query, function (err, count) {
+  User.countDocuments(query, function (err, count) {
     if (err) {
-      callback(err);
-      return;
+      return callback(err);
     }
     callback(null, parseInt(count, 10) || 0);
   });
@@ -76,7 +74,7 @@ exports.getExternalSiteCount = function (site, callback) {
  * Get count of all public users
  */
 exports.getMeetOffersCount = function (callback) {
-  Offer.count({
+  Offer.countDocuments({
     type: 'meet',
     $or: [
       { validUntil: { $gte: new Date() } },
@@ -84,8 +82,7 @@ exports.getMeetOffersCount = function (callback) {
     ]
   }, function (err, count) {
     if (err) {
-      callback(err);
-      return;
+      return callback(err);
     }
     callback(null, parseInt(count, 10) || 0);
   });
@@ -113,8 +110,7 @@ exports.getHostOffersCount = function (callback) {
   ],
   function (err, counters) {
     if (err) {
-      callback(err);
-      return;
+      return callback(err);
     }
 
     // the returned counters is expected to be an array of a form
@@ -142,7 +138,7 @@ exports.getHostOffersCount = function (callback) {
     if (counters && counters.length > 0) {
       counters.forEach(function (counter) {
         if (['yes', 'maybe', 'no'].indexOf(counter._id) !== -1) {
-          values[counter._id] = counter.count || 0;
+          values[counter._id] = parseInt(counter.count, 10) || 0;
         }
       });
     }
@@ -155,14 +151,13 @@ exports.getHostOffersCount = function (callback) {
  * Get count of newsletter subscriptions
  */
 exports.getNewsletterSubscriptionsCount = function (callback) {
-  User.count({
+  User.countDocuments({
     newsletter: true,
     public: true
   },
   function (err, count) {
     if (err) {
-      callback(err);
-      return;
+      return callback(err);
     }
     callback(null, parseInt(count, 10) || 0);
   });
@@ -172,7 +167,7 @@ exports.getNewsletterSubscriptionsCount = function (callback) {
  * Get count of registered push notifications
  */
 exports.getPushRegistrationCount = function (callback) {
-  User.count({
+  User.countDocuments({
     public: true,
     pushRegistration: {
       $exists: true,
@@ -181,8 +176,7 @@ exports.getPushRegistrationCount = function (callback) {
     }
   }, function (err, count) {
     if (err) {
-      callback(err);
-      return;
+      return callback(err);
     }
     callback(null, parseInt(count, 10) || 0);
   });
@@ -191,42 +185,18 @@ exports.getPushRegistrationCount = function (callback) {
 /**
  * Generate statistics based on the user last seen attribute
  */
-exports.getLastSeenStatistic = function (type, callback) {
-  var now = moment();
-  var query = { };
-  var slideWindow;
-
-  switch (type) {
-    case 'past48h':
-      slideWindow = now.subtract(48, 'hours');
-      break;
-    case 'past7d':
-      slideWindow = now.subtract(7, 'days');
-      break;
-    case 'past14d':
-      slideWindow = now.subtract(14, 'days');
-      break;
-    case 'past30d':
-      slideWindow = now.subtract(30, 'days');
-      break;
-    case 'past6m':
-      slideWindow = now.subtract(6, 'months');
-      break;
-    case 'past12m':
-      slideWindow = now.subtract(12, 'months');
-      break;
-    default:
-      return callback(new Error('Missing last seen statistic type.'));
-  }
-
-  query.seen = { '$gte': slideWindow };
-
-  User.count(query, function (err, count) {
-    if (err) {
-      callback(err);
-      return;
+exports.getLastSeenStatistic = function (since, callback) {
+  var query = {
+    seen: {
+      '$gte': moment().subtract(since).toDate()
     }
-    callback(null, parseInt(count) || 0);
+  };
+
+  User.countDocuments(query, function (err, count) {
+    if (err) {
+      return callback(err);
+    }
+    callback(null, parseInt(count, 10) || 0);
   });
 };
 
@@ -234,7 +204,6 @@ exports.getLastSeenStatistic = function (type, callback) {
  * Get all statistics
  */
 exports.getPublicStatistics = function (req, res) {
-
   req.statistics = {
     connected: {},
     hosting: {}
@@ -377,7 +346,6 @@ exports.getPublicStatistics = function (req, res) {
  * ```
  */
 exports.collectStatistics = function (req, res) {
-
   var collection = String(_.get(req, 'body.collection', ''));
 
   var validCollections = ['mobileAppInit'];
