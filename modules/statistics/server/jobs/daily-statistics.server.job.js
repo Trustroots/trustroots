@@ -101,7 +101,8 @@ module.exports = function (job, agendaDone) {
           writeDailyStat({
             namespace: 'offers',
             values: {
-              count: count
+              count: count,
+              percentage: count / totalUserCount * 100
             },
             tags: {
               type: 'host',
