@@ -6,6 +6,10 @@
       <h2>Trustroots Statistics</h2>
       <br><br><br>
     </div>
+
+    <!-- this doesn't work yet, nginx cors settings - keeping this up here for now so it's quicker to test -->
+    <img src="https://grafana.trustroots.org/render/d-solo/000000002/members?orgId=1&from=1419289200000&to=1543142370362&panelId=1&width=1000&height=500&tz=Europe%2FMadrid">
+
     <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 stats">
 
       <div ng-if="!stats.statisticsData.$resolved"
@@ -85,6 +89,13 @@
 
         <hr>
 
+
+        Are you an (aspiring) data scientist? Check <a href="https://grafana.trustroots.org/">our grafana</a> for stats galore.
+
+        Wanna help get better numbers? Consider <a ui-sref="volunteering">joining us</a>.
+
+
+        <hr>
         <h3>Enabling the latent trust between humans since</h3>
         <time class="lead" ng-bind="stats.launchDate | date:mediumDate"></time>
       </section>
