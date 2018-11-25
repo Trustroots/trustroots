@@ -160,7 +160,6 @@
     "passport-twitter": "~1.0.4",
     "prunecluster": "~2.1.0",
     "randomcolor": "~0.5.1",
-    "redirective": "~1.1.0",
     "sanitize-html": "~1.19.1",
     "serve-favicon": "~2.5.0",
     "speakingurl": "~14.0.1",
