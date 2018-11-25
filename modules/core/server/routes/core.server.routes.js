@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 var path = require('path'),
-    redirect = require("express-redirect"),
+    redirect = require("redirective"),
     facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service')),
     core = require('../controllers/core.server.controller'),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
@@ -13,11 +13,9 @@ var path = require('path'),
 
 module.exports = function (app) {
 
-  redirect(app);
-
-  app.redirect('/invite', '/signup');
-  app.redirect('/tribes/lgbt', '/tribes/lgbtq');
-  app.redirect('/tribes/vegans-vegetarians', '/tribes/veg');
+  app.use('/invite', redirect('/signup'));
+  app.use('/tribes/lgbt', redirect('/tribes/lgbtq'));
+  app.use('/tribes/vegans-vegetarians', redirect('/tribes/veg'));
 
   // Gives the service worker access to any config it needs
   app.route('/config/sw.js').get(core.renderServiceWorkerConfig);
