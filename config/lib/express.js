@@ -330,6 +330,7 @@ module.exports.initHelmetHeaders = function (app) {
       // Defines the origins from which images can be loaded.
       imgSrc: [
         '\'self\'',
+        'grafana.trustroots.org',
         '*.tiles.mapbox.com', // Map tiles
         'api.mapbox.com', // Map tiles/Geocoding
         '*.tile.openstreetmap.org', // Map tiles
