@@ -20,22 +20,11 @@ ansible-playbook playbooks/hetznerinit.yml --limit staging --list-hosts
 ansible-playbook --check playbooks/hetznerinit.yml
 ```
 
-### running ansible on only dev server
-```
-ansible-playbook playbooks/hetznerinit.yml --limit dev
-```
 
-### running ansible on dev and staging
-```
-ansible-playbook playbooks/hetznerinit.yml --limit non-prod
-```
+### Setting up a new Hetzner cloud instance
 
-### deploy specific version. branch can be the full 40-character SHA-1 hash, the literal string HEAD, a branch name, or a tag name.
-```
-ansible-playbook playbooks/trustroots.yml --limit dev --extra-vars "version=any_branch"
-```
-
-### limit roles with --tag paramter
-```
-ansible-playbook playbooks/trustroots.yml --tags nginx --extra-vars "version=any_branch"
-```
+0. Make sure to add your ssh key to the box
+1. Add `box` to `ansible/hosts`, make sure to set `ansible_ssh_user=root`
+2. `ssh root@BOX apt install python`
+3. `ansible-playbook -l BOX playbooks/hetznerinit.yml`
+4. Change `ansible-ssh_user` in `ansible/hosts`
