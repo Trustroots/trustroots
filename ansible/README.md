@@ -7,6 +7,10 @@ will have `playbooks/initdigitalocean.yml`.
 
 
 
+### examples of running ansible
 
-
+```
+# running ansible on all server in "--check" mode, not changing things
+ansible-playbook --check playbooks/hetznerinit.yml
+```
 

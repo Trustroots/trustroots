@@ -9,7 +9,18 @@ var path = require('path'),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     tribes = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller'));
 
+
 module.exports = function (app) {
+
+  var redirect = function (src, dst) {
+    app.route(src).get(function (req, res) {
+      res.redirect(301, dst);
+    });
+  };
+
+  redirect('/invite', '/signup');
+  redirect('/tribes/lgbt', '/tribes/lgbtq');
+  redirect('/tribes/vegans-vegetarians', '/tribes/veg');
 
   // Gives the service worker access to any config it needs
   app.route('/config/sw.js').get(core.renderServiceWorkerConfig);

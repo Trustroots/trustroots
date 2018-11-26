@@ -32,6 +32,9 @@ passenger.*
 scipts/docker/nginx-conf/*
 !scipts/docker/nginx-conf/trustroots.conf
 
+# Ansible Deployment Junk 
+ansible/playbooks/*.retry
+
 # App
 build
 public/lib

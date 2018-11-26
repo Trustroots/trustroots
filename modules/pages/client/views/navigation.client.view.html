@@ -16,7 +16,6 @@
 
   <a ui-sref="offer.meet.list" class="list-group-item">
     Meet
-    <span class="label label-primary">New!</span>
   </a>
 
   <a ui-sref="profile.contacts({ username: app.user.username })" class="list-group-item">
@@ -25,13 +24,6 @@
 
   <a ui-sref="tribes.list" class="list-group-item">
     Tribes
-  </a>
-
-  <a ng-if="::app.appSettings.invitationsEnabled"
-     ui-sref="invite"
-     class="list-group-item">
-    Invite Friends
-    <span class="label label-primary">New!</span>
   </a>
 
   <a ui-sref="profile-edit.account" class="list-group-item">
@@ -65,7 +57,6 @@
   </a>
   <a class="list-group-item" href="https://shop.trustroots.org/">
     Shop
-    <span class="label label-primary">New!</span>
   </a>
   <a class="list-group-item" ui-sref="media">
     Media
