@@ -12,11 +12,11 @@ var path = require('path'),
 
 module.exports = function (app) {
 
-  var redirect = function(src, dst) {
+  var redirect = function (src, dst) {
     app.route(src).get(function (req, res) {
       res.redirect(301, dst);
     });
-  }
+  };
 
   redirect('/invite', '/signup');
   redirect('/tribes/lgbt', '/tribes/lgbtq');
