@@ -1,0 +1,4 @@
+# If you would like to report a security issue
+# you may report it to us by email
+Contact: ops+sec@trustroots.org
+Hiring: https://www.trustroots.org/volunteering
