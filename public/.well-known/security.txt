@@ -1,4 +1,7 @@
 # If you would like to report a security issue
 # you may report it to us by email
-Contact: ops+sec@trustroots.org
+Contact: hello@trustroots.org
 Hiring: https://www.trustroots.org/volunteering
+
+
+# See also https://github.com/Trustroots/trustroots/blob/e40663d48338e8fc2d4596462b0dfd44f3a60028/SECURITY.md
