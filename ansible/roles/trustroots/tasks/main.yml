@@ -1,6 +1,6 @@
 ---
 - name: Clone/pull project repo
-  git: repo=https://github.com/trustroots/trustroots.git dest=/srv/trustroots force=yes
+  git: repo=https://github.com/trustroots/trustroots.git dest=/srv/trustroots force=yes version={{ version }}
   tags:
     - git
 
