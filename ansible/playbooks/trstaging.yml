@@ -1,0 +1,9 @@
+---
+- hosts: staging
+  become: yes
+
+  roles:
+  - system
+  - trprod
+  - firewall
+  - trustroots
