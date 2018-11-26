@@ -1,9 +1,9 @@
 ---
-- hosts: staging
+- hosts: prod
   become: yes
 
   roles:
-  - system
   - trprod
+  - system
   - firewall
   - trustroots

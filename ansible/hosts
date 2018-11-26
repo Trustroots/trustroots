@@ -3,10 +3,13 @@
 # Use ansible_ssh_user=root for the initial setup
 # e.g. with playbooks/hetznerinit.yml
 #
+# Change to ansible_ssh_user=guaka afterwards
+#
+#
 
 [hetzner]
-dev.trustroots.org ansible_ssh_user=guaka
-staging.trustroots.org ansible_ssh_user=guaka
+dev.trustroots.org     ansible_ssh_user=root
+staging.trustroots.org ansible_ssh_user=root
 
 
 [non-prod]
