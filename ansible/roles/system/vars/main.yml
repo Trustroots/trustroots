@@ -23,6 +23,7 @@ system_apt_packages:
   - nullmailer
   - passenger
   - nginx-full
+  - influxdb
   - mongodb-server
   - graphicsmagick
   - make

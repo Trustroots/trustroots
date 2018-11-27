@@ -1,4 +1,20 @@
 ---
+
+#- name: install and configure enable influxdb
+- name: configure enable influxdb
+  import_tasks: influxdb.yml
+  tags: influxdb
+
+- name: configure and enbale nginx
+  import_tasks: nginx.yml
+  tags: nginx
+
+## TODO:
+## seperate nginx
+## seperate node
+## ...
+
+
 - name: Clone/pull project repo
   git: repo=https://github.com/trustroots/trustroots.git dest=/srv/trustroots force=yes version={{ version }}
   tags:
@@ -25,7 +41,6 @@
     - node2
 
 
-
 - name: install pm2
   npm:
     name: pm2
@@ -34,19 +49,6 @@
     - npm
     - pm2
     
-- name: nginx conf
-  copy:
-    src: files/nginx-default
-    dest: /etc/nginx/sites-available/default
-    owner: root
-    mode: 0644
-  tags:
-    - nginx
-
-- name: reload nginx
-  service: name=nginx state=reloaded
-  tags:
-    - nginx
 
 - name: npm ci
   # https://docs.npmjs.com/cli/ci
