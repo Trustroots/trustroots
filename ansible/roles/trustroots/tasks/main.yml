@@ -69,20 +69,7 @@
     - npm
     - pm2
 
-- name: nginx conf
-  copy:
-    src: files/nginx-default
-    dest: /etc/nginx/sites-available/default
-    owner: root
-    mode: 0644
-  tags:
-    - nginx
-
-- name: reload nginx
-  service: name=nginx state=reloaded
-  tags:
-    - nginx
-
+    
 - name: npm ci
   # https://docs.npmjs.com/cli/ci
   shell: 'cd /srv/trustroots && npm ci'
