@@ -1,5 +1,7 @@
 ---
 - hosts: dev
+  vars:
+    version: "{{ version }}"
   become: yes
 
   roles:

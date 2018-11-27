@@ -7,10 +7,33 @@ will have `playbooks/initdigitalocean.yml`.
 
 
 
-### examples of running ansible
+## examples of running ansible
+
+### checking behaviour of --limit
+```
+ansible-playbook playbooks/hetznerinit.yml --limit staging --list-hosts
+```
+
+### running ansible on all server in "--check" mode, not changing things
 
 ```
-# running ansible on all server in "--check" mode, not changing things
 ansible-playbook --check playbooks/hetznerinit.yml
+```
+
+### running ansible on only dev server
+```
+ansible-playbook playbooks/hetznerinit.yml --limit dev
+```
+
+### running ansible on dev and staging
+```
+ansible-playbook playbooks/hetznerinit.yml --limit non-prod
+```
+
+### deploy specific branch
+### branch can be the full 40-character SHA-1 hash, the literal string HEAD, a branch name, or a tag name.
+
+```
+ansible-playbook playbooks/trustroots.yml --limit dev --extra-vars "version=any_branch"
 ```
 
