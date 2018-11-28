@@ -35,6 +35,9 @@ scipts/docker/nginx-conf/*
 # Ansible Deployment Junk 
 ansible/playbooks/*.retry
 
+# Ansible-Vault Password
+ansible/SECRET
+
 # App
 build
 public/lib
