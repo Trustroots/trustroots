@@ -9,30 +9,20 @@
   function UsersRoutes($stateProvider) {
 
     $stateProvider.
+      // Invite route deprecated in 11-2018
       state('invite', {
         url: '/invite',
-        templateUrl: '/modules/users/views/invite.client.view.html',
-        controller: 'InviteController',
-        controllerAs: 'invite',
-        requiresAuth: true,
-        resolve: {
-          // A string value resolves to a service
-          SettingsService: 'SettingsService',
-          InvitationService: 'InvitationService',
-
-          appSettings: function (SettingsService) {
-            return SettingsService.get();
+        controller:
+          /* @ngInject */
+          function ($state) {
+            $state.go('signup');
           },
-
-          invitation: function (InvitationService) {
-            return InvitationService.get();
-          }
-        },
+        controllerAs: 'invite',
+        requiresAuth: false,
         data: {
-          pageTitle: 'Invite friends'
+          pageTitle: 'Signup'
         }
       }).
-
       // Users state routing
       state('welcome', {
         url: '/welcome',

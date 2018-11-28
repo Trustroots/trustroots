@@ -153,6 +153,6 @@ describe('Job: welcome sequence, second email', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(done);
+    User.deleteMany().exec(done);
   });
 });

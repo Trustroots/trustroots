@@ -537,6 +537,6 @@ describe('User signup and authentication CRUD tests', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(done);
+    User.deleteMany().exec(done);
   });
 });

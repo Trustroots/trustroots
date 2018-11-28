@@ -99,8 +99,8 @@ describe('Contact Model Unit Tests:', function () {
   });
 
   afterEach(function (done) {
-    Contact.remove().exec(function () {
-      User.remove().exec(done);
+    Contact.deleteMany().exec(function () {
+      User.deleteMany().exec(done);
     });
   });
 });

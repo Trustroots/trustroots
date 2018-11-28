@@ -1,4 +1,7 @@
-# How to contact us
+
+# Trustroots security
+
+## How to contact us
 
 Please send any issue that you feel affects the
 security of Trustroots to **hello@trustroots.org**.
@@ -10,6 +13,11 @@ message *without details* to one of the following:
 * Message [@trustroots](https://twitter.com/trustroots) on Twitter.
 * Give us a heads up on IRC in [#trustroots](https://webchat.freenode.net/?channels=trustroots) on Freenode.
 
-# History
+## History
 
 No security issues have been reported yet.
+
+
+## See also
+
+* https://www.trustroots.org/.well-known/security.txt

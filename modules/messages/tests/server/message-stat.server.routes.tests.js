@@ -103,10 +103,10 @@ describe('Display Message Statistics in User Route', function () {
     // remove all User, MessageStat
     async.parallel([
       function (cb) {
-        User.remove().exec(cb);
+        User.deleteMany().exec(cb);
       },
       function (cb) {
-        MessageStat.remove().exec(cb);
+        MessageStat.deleteMany().exec(cb);
       }
     ], done);
   });

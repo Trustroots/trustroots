@@ -160,7 +160,7 @@ function sendUnreadMessageReminders(reminder, callback) {
       // check whether the thread is non-replied
       async.eachSeries(furtherNotifications, function (notification, checkDone) {
         // count messages in the other direction
-        Message.count({
+        Message.countDocuments({
           userFrom: notification._id.userTo,
           userTo: notification._id.userFrom
         }, function (err, count) {

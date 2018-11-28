@@ -30,16 +30,12 @@ ansible-playbook playbooks/hetznerinit.yml --limit dev
 ansible-playbook playbooks/hetznerinit.yml --limit non-prod
 ```
 
-### deploy specific branch
-
+### deploy specific version. branch can be the full 40-character SHA-1 hash, the literal string HEAD, a branch name, or a tag name.
 ```
-# 'branch' can be the full 40-character SHA-1 hash, the literal string HEAD, a branch name, or a tag name.
 ansible-playbook playbooks/trustroots.yml --limit dev --extra-vars "version=any_branch"
 ```
 
 ### limit roles with --tag paramter
 ```
 ansible-playbook playbooks/trustroots.yml --tags nginx --extra-vars "version=any_branch"
-
 ```
-
