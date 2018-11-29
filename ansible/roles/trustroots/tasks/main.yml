@@ -20,26 +20,46 @@
   tags:
     - git
 
-   
+
 - name: chown guaka
   file: dest=/srv/trustroots owner=guaka group=admin mode=u=rwX,g=rX,o=rX recurse=yes
   tags:
     - chown
 # This should be user trustroots
-    
-    
+
+
+- name: Add grafana apt source
+  apt_repository:
+    repo: deb https://packagecloud.io/grafana/stable/debian/ stretch main
+    state: present
+  tags:
+    - grafana
+
+- name: Add grafana apt signing key, will not download if present
+  apt_key:
+    # @todo: add key ID
+    url: https://packagecloud.io/gpg.key
+    state: present
+  tags:
+    - grafana
+
+
 - name: node apt stuff
   shell: "curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -"
   tags:
     - node
     - node1
-    
+
 - name: install node
   apt: pkg=nodejs state=present
   tags:
     - node
     - node2
 
+- name: install grafana
+  apt: pkg=grafana state=present
+  tags:
+    - grafana
 
 - name: install pm2
   npm:
@@ -48,7 +68,20 @@
   tags:
     - npm
     - pm2
-    
+
+- name: nginx conf
+  copy:
+    src: files/nginx-default
+    dest: /etc/nginx/sites-available/default
+    owner: root
+    mode: 0644
+  tags:
+    - nginx
+
+- name: reload nginx
+  service: name=nginx state=reloaded
+  tags:
+    - nginx
 
 - name: npm ci
   # https://docs.npmjs.com/cli/ci
@@ -64,8 +97,8 @@
   become_user: guaka
   tags:
     - build
-  
-    
+
+
 
 - name: generate test data
   shell: 'cd /srv/trustroots && npm run seed > /dev/null'
@@ -73,7 +106,7 @@
   become_user: guaka
   tags:
     - testdata
-    
+
 
 - name: pm2 start
   shell: 'cd /srv/trustroots && pm2 start worker-pm2.json --env production'
