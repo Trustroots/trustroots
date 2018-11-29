@@ -1,0 +1,64 @@
+---
+
+- name: node apt stuff
+  shell: "curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -"
+  args:
+    warn: false
+  tags:
+    - node-apt-source
+
+
+- name: install node
+  apt: pkg=nodejs state=present
+  tags:
+    - node-apt-install
+
+
+- name: install pm2
+  npm:
+    name: pm2
+    global: yes
+  tags:
+    - npm
+    - pm2
+    
+
+- name: npm ci
+  # https://docs.npmjs.com/cli/ci
+  shell: 'cd /srv/trustroots && npm ci'
+  become: yes
+  become_user: guaka
+  tags:
+    - install
+
+
+- name: npm run build:prod
+  shell: 'cd /srv/trustroots && npm run build:prod'
+  become: yes
+  become_user: guaka
+  tags:
+    - build
+  
+    
+- name: generate test data
+  shell: 'cd /srv/trustroots && npm run seed > /dev/null'
+  become: yes
+  become_user: guaka
+  tags:
+    - testdata
+    
+
+- name: pm2 start
+  shell: 'cd /srv/trustroots && pm2 start worker-pm2.json --env production'
+  become: yes
+  become_user: guaka
+  tags:
+    - pm2
+
+
+- name: pm2 start
+  shell: 'cd /srv/trustroots && pm2 start server-pm2.json --env production'
+  become: yes
+  become_user: guaka
+  tags:
+    - pm2

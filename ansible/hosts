@@ -8,17 +8,22 @@
 #
 
 [hetzner]
-dev.trustroots.org     ansible_ssh_user=root
-staging.trustroots.org ansible_ssh_user=root
+dev.trustroots.org      ansible_ssh_user=guaka
+staging.trustroots.org  ansible_ssh_user=guaka
 
 
 [non-prod]
-dev.trustroots.org ansible_ssh_user=guaka
-staging.trustroots.org ansible_ssh_user=guaka
+dev.trustroots.org      ansible_ssh_user=guaka
+staging.trustroots.org  ansible_ssh_user=guaka
 
 
 [dev]
-dev.trustroots.org
+dev.trustroots.org      ansible_ssh_user=guaka
+
 
 [staging]
-staging.trustroots.org
+staging.trustroots.org  ansible_ssh_user=guaka
+
+
+[prod]
+trustroots.org 
