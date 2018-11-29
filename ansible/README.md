@@ -1,3 +1,11 @@
+## Setting up a new Hetzner cloud instance
+
+0. Make sure to add your ssh key to the box
+1. Add `box` to `ansible/hosts`, make sure to set `ansible_ssh_user=root`
+2. `ssh root@BOX apt install python`
+3. `ansible-playbook -l BOX playbooks/hetznerinit.yml`
+4. Change `ansible-ssh_user` in `ansible/hosts`
+
 ## ansible
 
 `playbooks/inithetzner.yml` is the initial setup for Hetzner
@@ -7,7 +15,7 @@ will have `playbooks/initdigitalocean.yml`.
 
 
 
-## examples of running ansible
+### examples of running ansible
 
 ### checking behaviour of --limit
 ```
@@ -15,7 +23,6 @@ ansible-playbook playbooks/hetznerinit.yml --limit staging --list-hosts
 ```
 
 ### running ansible on all server in "--check" mode, not changing things
-
 ```
 ansible-playbook --check playbooks/hetznerinit.yml
 ```
@@ -37,5 +44,5 @@ ansible-playbook playbooks/trustroots.yml --limit dev --extra-vars "version=any_
 
 ### limit roles with --tag paramter
 ```
-ansible-playbook playbooks/trustroots.yml --tags nginx --extra-vars "version=any_branch"
+ansible-playbook playbooks/trustroots.yml --tags nginx --extra-vars "version=other_branch"
 ```
