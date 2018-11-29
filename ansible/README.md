@@ -44,6 +44,5 @@ ansible-playbook playbooks/trustroots.yml --limit dev --extra-vars "version=any_
 
 ### limit roles with --tag paramter
 ```
-ansible-playbook playbooks/trustroots.yml --tags nginx --extra-vars "version=any_branch"
-
+ansible-playbook playbooks/trustroots.yml --tags nginx --extra-vars "version=other_branch"
 ```

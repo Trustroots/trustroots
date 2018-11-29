@@ -16,6 +16,7 @@ staging.trustroots.org  ansible_ssh_user=guaka
 dev.trustroots.org      ansible_ssh_user=guaka
 staging.trustroots.org  ansible_ssh_user=guaka
 
+
 [dev]
 dev.trustroots.org      ansible_ssh_user=guaka
 
