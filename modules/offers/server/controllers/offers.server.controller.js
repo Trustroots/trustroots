@@ -822,7 +822,7 @@ exports.offerById = function (req, res, next, offerId) {
  * Clear all offers by user id
  */
 exports.removeAllByUserId = function (userId, callback) {
-  Offer.remove({
+  Offer.deleteMany({
     user: userId
   }, function (err) {
     if (callback) {

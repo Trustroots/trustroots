@@ -117,6 +117,6 @@ describe('Support CRUD tests', function () {
 
   afterEach(function (done) {
     // Clean out
-    User.remove().exec(done);
+    User.deleteMany().exec(done);
   });
 });

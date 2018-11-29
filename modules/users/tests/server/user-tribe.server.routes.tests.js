@@ -324,8 +324,8 @@ describe('User tribe memberships CRUD tests', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(function () {
-      Tribe.remove().exec(done);
+    User.deleteMany().exec(function () {
+      Tribe.deleteMany().exec(done);
     });
   });
 });

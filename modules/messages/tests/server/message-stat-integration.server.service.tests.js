@@ -76,8 +76,8 @@ describe('Integration of the MessageStat service', function () {
 
   // after each test removing all the messages and users (cleaning the database)
   afterEach(function (done) {
-    Message.remove().exec(function () {
-      User.remove().exec(done);
+    Message.deleteMany().exec(function () {
+      User.deleteMany().exec(done);
     });
   });
 

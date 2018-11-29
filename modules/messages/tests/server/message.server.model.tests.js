@@ -88,8 +88,8 @@ describe('Message Model Unit Tests:', function () {
   });
 
   afterEach(function (done) {
-    Message.remove().exec(function () {
-      User.remove().exec(done);
+    Message.deleteMany().exec(function () {
+      User.deleteMany().exec(done);
     });
   });
 });

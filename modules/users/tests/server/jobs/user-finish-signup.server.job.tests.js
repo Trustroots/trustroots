@@ -297,6 +297,6 @@ describe('Job: user finish signup', function () {
   });
 
   afterEach(function (done) {
-    User.remove().exec(done);
+    User.deleteMany().exec(done);
   });
 });

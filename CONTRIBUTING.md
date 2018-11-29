@@ -35,7 +35,3 @@ We value getting things done attitude. Arguments about minor issues shouldn't ge
 
 We highly value real life interaction. Both within the network as well as among technical contributors. If possible, try to meet up with other Trustroots contributors in real life. You can connect your Trustroots profile to your GitHub account to facilitate such connections.
 
-
-# Contributing
-
-Please see [Development](https://github.com/Trustroots/trustroots/wiki/Development/) and [Volunteering](https://github.com/Trustroots/trustroots/wiki/Volunteering) pages for more info.

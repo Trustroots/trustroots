@@ -156,7 +156,7 @@ exports.remove = function (req, res) {
  * Clear all contacts by user id
  */
 exports.removeAllByUserId = function (userId, callback) {
-  Contact.remove({
+  Contact.deleteMany({
     $or: [
       { userTo: userId },
       { userFrom: userId }
@@ -328,22 +328,6 @@ exports.filterByCommon = function (req, res, next) {
     userTo: 1,
     test: '$userTo'
   })
-  /*
-[ { _id: 582b39afdc026f1144750726,
-    __v: 0,
-    userFrom: 56fe9df12861d31fd6963ff7,
-    userTo: 544b7832f1bf94f007de9fe0,
-    confirmed: true,
-    created: 2016-11-15T16:37:03.559Z },
-  { _id: 582b3a4adc026f1144750727,
-    __v: 0,
-    userFrom: 5821afcf999c80c8b2a8b065,
-    userTo: 56fe9df12861d31fd6963ff7,
-    confirmed: true,
-    created: 2016-11-15T16:39:38.431Z } ]
-  */
-  // `distinct` returns chosen fields as an array
-  // .distinct('userFrom', function(err, authUserContacts) {
     .exec(function (err, authUserContacts) {
       if (err) {
         return next(err);
