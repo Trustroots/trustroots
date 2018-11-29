@@ -36,7 +36,7 @@ scipts/docker/nginx-conf/*
 ansible/playbooks/*.retry
 
 # Ansible-Vault Password
-ansible/SECRET
+ansible/VAULT_SECRET
 
 # App
 build
