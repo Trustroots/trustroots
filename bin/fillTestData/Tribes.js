@@ -7,10 +7,13 @@ var _ = require('lodash'),
     argv = require('yargs')
       .usage('Usage: node $0 <number of tribes to add> {options}')
       .boolean('verbose')
+      .boolean('limit')
       .describe('verbose', 'Enable extra database output (default=false)')
+      .describe('limit', 'If tribes already exist in the database, only add up to the number of tribes (default=false)')
       .demandCommand(1)
       .example('node $0 1000', 'Adds 1000 randomly seeded tribes to the database')
       .example('node $0 100 --verbose', 'Adds 100 randomly seeded tribes to the database with verbose database output')
+      .example('node $0 100 --limit', 'Adds up to 100 randomly seeded tribes to the database (eg. If 20 tribes already exist, 80 tribes will be added)')
       .check(function (argv) {
         if (argv._[0] < 1) {
           throw new Error('Error: Number of tribes should be greater than 0');
@@ -55,6 +58,7 @@ var addTribes = function () {
   var index = 0;
   var max = argv._[0];
   var verbose = (argv.verbose === true);
+  var limit = (argv.limit === true);
 
   // Add tribes
   console.log('Generating ' + max + ' tribes...');
@@ -76,40 +80,62 @@ var addTribes = function () {
     mongooseService.loadModels(function () {
       var Tribe = mongoose.model('Tribe');
 
-      (function addNextTribe() {
-        var tribe = new Tribe();
-
-        tribe.label = faker.random.word() + '_' + index;
-        tribe.labelHistory = faker.random.words();
-        tribe.slugHistory = faker.random.words();
-        tribe.synonyms = faker.random.words();
-        tribe.color = faker.internet.color().slice(1);
-        tribe.count = 0;
-        tribe.created = Date.now();
-        tribe.modified = Date.now();
-        tribe.public = true;
-        tribe.image_UUID = _.sample(tribeImageUUIDs);
-        tribe.attribution = faker.name.findName();
-        tribe.attribution_url = faker.internet.url();
-        tribe.description = faker.lorem.sentences();
-
-        tribe.save(function (err) {
-          if (err != null) {
-            console.log(err);
+      var getTribes = new Promise(function (resolve, reject) {
+        Tribe.find(function (err, tribes) {
+          if (err) {
+            reject(err);
           }
-          else {
-            if (index >= max) {
-              console.log(chalk.green('Done with ' + max + ' test tribes!'));
-              console.log(chalk.white('')); // Reset to white
-              process.exit(0);
-            }
-          }
+          resolve(tribes);
         });
-        index+=1;
-        if (index < max) {
-          addNextTribe();
+      });
+
+      getTribes.then(function (tribes) {
+        if (limit) {
+          index = tribes.length;
         }
-      }());
+
+        if (index < max) {
+          (function addNextTribe() {
+            var tribe = new Tribe();
+
+            tribe.label = faker.random.word() + '_' + index;
+            tribe.labelHistory = faker.random.words();
+            tribe.slugHistory = faker.random.words();
+            tribe.synonyms = faker.random.words();
+            tribe.color = faker.internet.color().slice(1);
+            tribe.count = 0;
+            tribe.created = Date.now();
+            tribe.modified = Date.now();
+            tribe.public = true;
+            tribe.image_UUID = _.sample(tribeImageUUIDs);
+            tribe.attribution = faker.name.findName();
+            tribe.attribution_url = faker.internet.url();
+            tribe.description = faker.lorem.sentences();
+
+            tribe.save(function (err) {
+              if (err != null) {
+                console.log(err);
+              }
+              else {
+                if (index >= max) {
+                  console.log(chalk.green('Done with ' + max + ' test tribes!'));
+                  console.log(chalk.white('')); // Reset to white
+                  process.exit(0);
+                }
+              }
+            });
+            index+=1;
+            if (index < max) {
+              addNextTribe();
+            }
+          }());
+        }
+        else {
+          console.log(chalk.green(tribes.length + ' tribes already exist. No tribes created!'));
+          console.log(chalk.white('')); // Reset to white
+          process.exit(0);
+        }
+      });
     });
   });
 };
