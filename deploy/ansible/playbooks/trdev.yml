@@ -1,0 +1,11 @@
+---
+- hosts: dev
+  become: yes
+  roles:
+  - debug
+  - users
+  - system
+  - firewall
+  - trustroots
+  vars_files:
+  - "group_vars/dev.yml"

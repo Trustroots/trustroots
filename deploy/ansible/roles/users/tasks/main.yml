@@ -1,0 +1,11 @@
+---
+
+- name: add system users, ssh_dirs and ssh_keys
+  import_tasks: users.yml
+  tags: [ssh, users]
+
+
+- name: add and condigure user guaka
+  import_tasks: guaka.yml
+  tags: [users, guaka]
+

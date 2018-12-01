@@ -1,0 +1,29 @@
+---
+
+## TODO: add 'bind-address = "127.0.0.1:0"' then confirm it actually works..
+## TODO: add all other needed configuration values to influx..
+## TODO: apparently we need to add the [HTTP] in the config
+## TODO: do we pre fill influx with test data?
+
+- name: Install influxdb
+  apt:
+    name: influxdb
+    state: present
+
+
+- name: influxdb conf
+  copy:
+    src: files/influxdb.conf
+    dest: /etc/influxdb/influxdb.conf
+    owner: root
+    mode: 0644
+  notify:
+    - restart influxdb
+
+
+- name: enable influxdb
+  systemd:
+    name: influxdb
+    enabled: yes
+    state: started
+

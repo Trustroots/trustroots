@@ -1,0 +1,22 @@
+---
+
+- name: Install nginx
+  apt:
+    name: nginx-full
+    state: present
+
+- name: nginx conf
+  copy:
+    src: files/nginx-default
+    dest: /etc/nginx/sites-available/default
+    owner: root
+    mode: 0644
+  notify:
+    - restart nginx
+
+- name: enable nginx
+  systemd:
+    name: nginx
+    enabled: yes
+    state: started
+
