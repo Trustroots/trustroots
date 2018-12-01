@@ -5,9 +5,12 @@ var _ = require('lodash'),
     mongooseService = require(path.resolve('./config/lib/mongoose')),
     chalk = require('chalk'),
     argv = require('yargs')
-      .usage('Usage: $0 <number of tribes to add>')
-      // Number of tribes is required
+      .usage('Usage: node $0 <number of tribes to add> {options}')
+      .boolean('verbose')
+      .describe('verbose', 'Enable extra database output (default=false)')
       .demandCommand(1)
+      .example('node $0 1000', 'Adds 1000 randomly seeded tribes to the database')
+      .example('node $0 100 --verbose', 'Adds 100 randomly seeded tribes to the database with verbose database output')
       .check(function (argv) {
         if (argv._[0] < 1) {
           throw new Error('Error: Number of tribes should be greater than 0');
@@ -16,7 +19,8 @@ var _ = require('lodash'),
       })
       .argv,
     faker = require('faker'),
-    mongoose = require('mongoose');
+    mongoose = require('mongoose'),
+    config = require(path.resolve('./config/config'));
 
 var tribeImageUUIDs = [
   '171433b0-853b-4d19-a8b4-44def956696d',
@@ -47,8 +51,10 @@ var tribeImageUUIDs = [
   '69a500a4-a16e-4c4d-9981-84fbe310d531'
 ];
 
-var addTribes = function (max) {
+var addTribes = function () {
   var index = 0;
+  var max = argv._[0];
+  var verbose = (argv.verbose === true);
 
   // Add tribes
   console.log('Generating ' + max + ' tribes...');
@@ -56,9 +62,14 @@ var addTribes = function (max) {
     console.log('...this might really take a while... go grab some coffee!');
   }
 
-  console.log(chalk.white('--'));
-  console.log(chalk.green('Trustroots test tribes data'));
-  console.log(chalk.white('--'));
+  if (verbose) {
+    console.log(chalk.white('--'));
+    console.log(chalk.green('Trustroots test tribes data'));
+    console.log(chalk.white('--'));
+  }
+
+  // Override debug mode to use the option set by the user
+  config.db.debug = verbose;
 
   // Bootstrap db connection
   mongooseService.connect(function () {
@@ -103,5 +114,4 @@ var addTribes = function (max) {
   });
 };
 
-var numberOfTribes= argv._[0];
-addTribes(numberOfTribes);
+addTribes();
