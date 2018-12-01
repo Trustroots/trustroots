@@ -13,6 +13,7 @@ var _ = require('lodash'),
         }
         return true;
       })
+      .strict()
       .argv,
     faker = require('faker'),
     fs = require('fs'),

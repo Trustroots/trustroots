@@ -20,6 +20,7 @@ var _ = require('lodash'),
         }
         return true;
       })
+      .strict()
       .argv,
     faker = require('faker'),
     mongoose = require('mongoose'),
