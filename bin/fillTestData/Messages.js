@@ -5,13 +5,17 @@ var _ = require('lodash'),
     mongooseService = require(path.resolve('./config/lib/mongoose')),
     chalk = require('chalk'),
     argv = require('yargs')
-      .usage('Usage: $0 <number of threads to add> <max messages per thread>')
+      .usage('Usage: $0 <number of threads to add> <max messages per thread> {options}')
+      .boolean('verbose')
+      .describe('verbose', 'Enable extra database output (default=false)')
       .demandCommand(2)
+      .example('node $0 100 10', 'Adds 100 random threads wth up to 10 messages per thread to the database')
+      .example('node $0 100 10 --verbose', 'Adds 100 random threads wth up to 10 messages per thread to the database with verbose database output')
       .check(function (argv) {
         if (argv._[0] < 1) {
           throw new Error('Error: Number of threads should be greater than 0');
         }
-        else if (argv._[1]) {
+        else if (argv._[1] < 1) {
           throw new Error('Error: Max messages per thread should be greater than 0');
         }
         return true;
@@ -19,7 +23,8 @@ var _ = require('lodash'),
       .strict()
       .argv,
     faker = require('faker'),
-    mongoose = require('mongoose');
+    mongoose = require('mongoose'),
+    config = require(path.resolve('./config/config'));
 
 var random = function (max) {
   return Math.floor(Math.random() * max);
@@ -31,17 +36,25 @@ var addDays = function addDays(date, days) {
   return result;
 };
 
-var addThreads = function (numThreads, maxMessages) {
+var addThreads = function () {
   var index = 0;
+  var numThreads = argv._[0];
+  var maxMessages= argv._[1];
+  var verbose = (argv.verbose === true);
 
   console.log('Generating ' + numThreads + ' messages...');
   if (numThreads > 2000) {
     console.log('...this might really take a while... go grab some coffee!');
   }
 
-  console.log(chalk.white('--'));
-  console.log(chalk.green('Trustroots test messages data'));
-  console.log(chalk.white('--'));
+  if (verbose) {
+    console.log(chalk.white('--'));
+    console.log(chalk.green('Trustroots test tribes data'));
+    console.log(chalk.white('--'));
+  }
+
+  // Override debug mode to use the option set by the user
+  config.db.debug = verbose;
 
   // Bootstrap db connection
   mongooseService.connect(function () {
@@ -152,8 +165,5 @@ var addThreads = function (numThreads, maxMessages) {
   });
 };
 
-var numberOfThreads = argv._[0];
-var maxMessages= argv._[1];
-
 // Add messages
-addThreads(numberOfThreads, maxMessages);
+addThreads();
