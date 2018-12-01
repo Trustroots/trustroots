@@ -4,6 +4,17 @@ var _ = require('lodash'),
     path = require('path'),
     mongooseService = require(path.resolve('./config/lib/mongoose')),
     chalk = require('chalk'),
+    argv = require('yargs')
+      .usage('Usage: $0 <number of tribes to add>')
+      // Number of tribes is required
+      .demandCommand(1)
+      .check(function (argv) {
+        if (argv._[0] < 1) {
+          throw new Error('Error: Number of tribes should be greater than 0');
+        }
+        return true;
+      })
+      .argv,
     faker = require('faker'),
     mongoose = require('mongoose');
 
@@ -92,10 +103,5 @@ var addTribes = function (max) {
   });
 };
 
-// Number of tribes is required
-if (process.argv[2] == null || process.argv[2] < 1) {
-  console.log(chalk.red('Usage: node fillTestTribesData.js <number of tribes to add>'));
-} else {
-  var numberOfTribes= process.argv[2];
-  addTribes(numberOfTribes);
-}
+var numberOfTribes= argv._[0];
+addTribes(numberOfTribes);

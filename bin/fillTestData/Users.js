@@ -4,6 +4,16 @@ var _ = require('lodash'),
     path = require('path'),
     mongooseService = require(path.resolve('./config/lib/mongoose')),
     chalk = require('chalk'),
+    argv = require('yargs')
+      .usage('Usage: $0 <number of users to add> {user names}')
+      .demandCommand(1)
+      .check(function (argv) {
+        if (argv._[0] < 1) {
+          throw new Error('Error: Number of users should be greater than 0');
+        }
+        return true;
+      })
+      .argv,
     faker = require('faker'),
     fs = require('fs'),
     moment = require('moment'),
@@ -197,22 +207,17 @@ var addUsers = function (max, adminUsers) {
   });
 }; // addUsers()
 
-// Number of users is required
-if (process.argv[2] == null) {
-  console.log(chalk.red('Usage: node fillTestData.js <number of users to add> {user names}'));
+// Parse optional admin users
+var numberOfUsers = argv._[0];
+var adminUsers = [];
+for (var i = 1; i < argv._.length; i++) {
+  if (argv._[i] !== null) {
+    adminUsers.push(argv._[i]);
+  }
+}
+// Add users
+if (adminUsers.length > 0) {
+  addUsers(numberOfUsers, adminUsers);
 } else {
-  // Parse optional admin users
-  var numberOfUsers = process.argv[2];
-  var adminUsers = [];
-  for (var i = 3; i < process.argv.length; i++) {
-    if (process.argv[i] !== null) {
-      adminUsers.push(process.argv[i]);
-    }
-  }
-  // Add users
-  if (adminUsers.length > 0) {
-    addUsers(numberOfUsers, adminUsers);
-  } else {
-    addUsers(numberOfUsers);
-  }
+  addUsers(numberOfUsers);
 }

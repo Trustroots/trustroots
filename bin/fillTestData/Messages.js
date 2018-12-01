@@ -4,6 +4,19 @@ var _ = require('lodash'),
     path = require('path'),
     mongooseService = require(path.resolve('./config/lib/mongoose')),
     chalk = require('chalk'),
+    argv = require('yargs')
+      .usage('Usage: $0 <number of threads to add> <max messages per thread>')
+      .demandCommand(2)
+      .check(function (argv) {
+        if (argv._[0] < 1) {
+          throw new Error('Error: Number of threads should be greater than 0');
+        }
+        else if (argv._[1]) {
+          throw new Error('Error: Max messages per thread should be greater than 0');
+        }
+        return true;
+      })
+      .argv,
     faker = require('faker'),
     mongoose = require('mongoose');
 
@@ -138,14 +151,8 @@ var addThreads = function (numThreads, maxMessages) {
   });
 };
 
-// Number of threads and max number of messages is required
-if (process.argv[2] == null || process.argv[2] < 1 || process.argv[3]== null || process.argv[3] < 1) {
-  console.log(chalk.red('Usage: node fillTestMessageData <number of threads to add> <max messages per thread>'));
-} else {
+var numberOfThreads = argv._[0];
+var maxMessages= argv._[1];
 
-  var numberOfThreads = process.argv[2];
-  var maxMessages= process.argv[3];
-
-  // Add messages
-  addThreads(numberOfThreads, maxMessages);
-}
+// Add messages
+addThreads(numberOfThreads, maxMessages);

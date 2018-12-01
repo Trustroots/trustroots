@@ -220,7 +220,8 @@
     "webpack": "~4.27.1",
     "webpack-cli": "~3.1.2",
     "webpack-merge": "~4.1.5",
-    "webpack-stream": "~5.2.1"
+    "webpack-stream": "~5.2.1",
+    "yargs": "^12.0.5"
   },
   "bugs": {
     "url": "https://github.com/Trustroots/trustroots/issues"
