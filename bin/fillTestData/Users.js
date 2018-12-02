@@ -21,14 +21,14 @@ var argv = yargs.usage('$0 <numberOfUsers>', 'Seed database with number of tribe
       type: 'number'
     })
     .array('userNames')
-    .boolean('verbose')
+    .boolean('debug')
     .boolean('limit')
     .describe('userNames', 'List of admin usernames')
-    .describe('verbose', 'Enable extra database output (default=false)')
+    .describe('debug', 'Enable extra database output (default=false)')
     .describe('limit', 'If users already exist in the database, only add up to the number of users (default=false)')
     .example('node $0 1000', 'Adds 1000 randomly seeded users to the database')
     .example('node $0 100 --userNames admin1 admin2 admin3 --', 'Adds 100 randomly seeded users including usernames: admin1, admin2, and admin3 all using the password \'password123\'')
-    .example('node $0 100 --verbose', 'Adds 100 randomly seeded users to the database with verbose database output')
+    .example('node $0 100 --debug', 'Adds 100 randomly seeded users to the database with debug database output')
     .example('node $0 100 --limit', 'Adds up to 100 randomly seeded users to the database (eg. If 20 users already exist, 80 users will be added)')
     .check(function (argv) {
       if (argv.numberOfUsers < 1) {

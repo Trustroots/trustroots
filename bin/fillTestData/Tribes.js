@@ -15,12 +15,12 @@ var argv = yargs.usage('$0 <numberOfTribes>', 'Seed database with number of trib
       describe: 'Number of tribes to add',
       type: 'number'
     })
-    .boolean('verbose')
+    .boolean('debug')
     .boolean('limit')
-    .describe('verbose', 'Enable extra database output (default=false)')
+    .describe('debug', 'Enable extra database output (default=false)')
     .describe('limit', 'If tribes already exist in the database, only add up to the number of tribes (default=false)')
     .example('node $0 1000', 'Adds 1000 randomly seeded tribes to the database')
-    .example('node $0 100 --verbose', 'Adds 100 randomly seeded tribes to the database with verbose database output')
+    .example('node $0 100 --debug', 'Adds 100 randomly seeded tribes to the database with debug database output')
     .example('node $0 100 --limit', 'Adds up to 100 randomly seeded tribes to the database (eg. If 20 tribes already exist, 80 tribes will be added)')
     .check(function (argv) {
       if (argv.numberOfTribes < 1) {
@@ -63,7 +63,7 @@ var tribeImageUUIDs = [
 var addTribes = function () {
   var index = 0;
   var max = argv.numberOfTribes;
-  var verbose = (argv.verbose === true);
+  var debug = (argv.debug === true);
   var limit = (argv.limit === true);
 
   // Add tribes
@@ -72,14 +72,14 @@ var addTribes = function () {
     console.log('...this might really take a while... go grab some coffee!');
   }
 
-  if (verbose) {
+  if (debug) {
     console.log(chalk.white('--'));
     console.log(chalk.green('Trustroots test tribes data'));
     console.log(chalk.white('--'));
   }
 
   // Override debug mode to use the option set by the user
-  config.db.debug = verbose;
+  config.db.debug = debug;
 
   // Bootstrap db connection
   mongooseService.connect(function () {
