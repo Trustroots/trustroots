@@ -9,6 +9,7 @@ var _ = require('lodash'),
     fs = require('fs'),
     moment = require('moment'),
     mongoose = require('mongoose'),
+    async = require('async'),
     config = require(path.resolve('./config/config')),
     cities = JSON.parse(fs.readFileSync(path.resolve('./bin/fillTestData/data/Cities.json'), 'utf8')),
     savedCounter = 0;
@@ -57,7 +58,7 @@ var randomizeLoaction = function () {
   return parseFloat(random.toFixed(5));
 };
 
-var addOffer = function (id, index, max) {
+var addOffer = function (id, index, max, callback) {
   var offer = new Offer();
 
   var city = cities[random(cities.length)];
@@ -77,9 +78,10 @@ var addOffer = function (id, index, max) {
     if (err != null) console.log(err);
     else {
       savedCounter++;
-      if (savedCounter >= max) {
+      if (index >= max) {
         console.log(chalk.green('Done with ' + max + ' test users!'));
         console.log(chalk.white('')); // Reset to white
+        callback(null, null);
         process.exit(0);
       }
     }
@@ -90,6 +92,7 @@ var addUsers = function (max, adminUsers) {
   var index = 0;
   var numAdminUsers;
   var debug = (argv.debug === true);
+  var limit = (argv.limit === true);
 
   if (adminUsers === null || adminUsers === undefined) {
     numAdminUsers = 0;
@@ -117,114 +120,142 @@ var addUsers = function (max, adminUsers) {
       var Tribe = mongoose.model('Tribe');
       var User = mongoose.model('User');
 
-      var getTribes = new Promise(function (resolve, reject) {
-        Tribe.find(function (err, tribes) {
-          if (err) {
-            reject(err);
+      async.waterfall([
+        function (done) {
+          User.find(function (err, users) {
+            if (err) {
+              done(err, null);
+            }
+            done(null, users);
+          });
+        },
+
+        function (users, done) {
+          if (limit) {
+            index = users.length;
           }
-          resolve(tribes);
-        });
-      });
+          if (index < max) {
+            var getTribes = new Promise(function (resolve, reject) {
+              Tribe.find(function (err, tribes) {
+                if (err) {
+                  reject(err);
+                }
+                resolve(tribes);
+              });
+            });
 
-      getTribes.then(function (tribes) {
+            getTribes.then(function (tribes) {
 
-        console.log(chalk.white('--'));
-        console.log(chalk.green('Trustroots test user data'));
-        console.log(chalk.white('--'));
+              console.log(chalk.white('--'));
+              console.log(chalk.green('Trustroots test user data'));
+              console.log(chalk.white('--'));
 
-        (function addNextUser(){
-          var user = new User();
-          var admin;
+              (function addNextUser(){
+                var user = new User();
+                var admin;
 
-          // Check if this is an admin user
-          if (numAdminUsers > 0) {
-            admin = adminUsers[adminUsers.length - numAdminUsers];
-          }
+                // Check if this is an admin user
+                if (numAdminUsers > 0) {
+                  admin = adminUsers[adminUsers.length - numAdminUsers];
+                }
 
-          // Add mock data
-          user.firstName = faker.name.firstName();
-          user.lastName = faker.name.lastName();
-          user.displayName = user.firstName + ' ' + user.lastName;
-          user.provider = 'local';
-          user.public = true;
-          user.avatarUploaded = false;
-          user.avatarSource = 'none';
-          user.welcomeSequenceStep = 3;
-          user.seen = moment()
-            .subtract(Math.random() * 365, 'd')
-            .subtract(Math.random() * 24, 'h')
-            .subtract(Math.random() * 3600, 's');
+                // Add mock data
+                user.firstName = faker.name.firstName();
+                user.lastName = faker.name.lastName();
+                user.displayName = user.firstName + ' ' + user.lastName;
+                user.provider = 'local';
+                user.public = true;
+                user.avatarUploaded = false;
+                user.avatarSource = 'none';
+                user.welcomeSequenceStep = 3;
+                user.seen = moment()
+                  .subtract(Math.random() * 365, 'd')
+                  .subtract(Math.random() * 24, 'h')
+                  .subtract(Math.random() * 3600, 's');
 
-          if (admin !== undefined) {
-            // admin user
-            user.email = 'admin+' + admin + '@example.com';
-            user.password = 'password123';
-            user.username = admin;
+                if (admin !== undefined) {
+                // admin user
+                  user.email = 'admin+' + admin + '@example.com';
+                  user.password = 'password123';
+                  user.username = admin;
+                }
+                else {
+                // non admin user
+                  user.email = index + faker.internet.email();
+                  user.password = faker.internet.password();
+                  user.username = index + user.displayName.toLowerCase().replace('\'', '').replace(' ', '');
+                }
+
+                // Add the user to tribes
+                if (tribes.length > 0) {
+                  var userNumTribes = random(tribes.length);
+
+                  // Randomize indecies
+                  var randomTribes = [];
+                  for (var i = 0; i < tribes.length; i++) {
+                    randomTribes[i] = i;
+                  }
+                  randomTribes = _.shuffle(randomTribes);
+
+                  // Add the tribes using the random indecies
+                  for (var j = 0; j < userNumTribes; j++) {
+                    var rand = randomTribes[j];
+                    user.member.push({ tribe: tribes[rand]._id, since: Date.now() });
+                    tribes[rand].count += 1;
+                    Tribe.findByIdAndUpdate(tribes[rand]._id, tribes[rand], function (err) {
+                      if (err) {
+                        console.error(err);
+                      }
+                    });
+                  }
+                }
+
+                // Save the user
+                user.save(function (err) {
+                  if (admin!== undefined) {
+                    console.log('Created admin user. Login with: ' + admin + ' / password');
+                  } else if (err && admin !== undefined) {
+                    console.log(chalk.red('Could not add admin user ' + admin));
+                    console.log(err);
+                  } else if (err) {
+                    console.log(err);
+                  }
+                });
+
+                index++;
+                addOffer(user._id, index, max, done);
+
+                // No more admin users
+                if (numAdminUsers === 1) {
+                  printWarning();
+                }
+
+                if (admin !== undefined) {
+                  numAdminUsers--;
+                }
+
+                if (index < max) {
+                  addNextUser();
+                }
+              }());
+
+              while (numAdminUsers > 0) {
+
+              }
+            }).catch(function (err) {
+              console.log(err);
+              done(err, null);
+            });
           }
           else {
-            // non admin user
-            user.email = index + faker.internet.email();
-            user.password = faker.internet.password();
-            user.username = index + user.displayName.toLowerCase().replace('\'', '').replace(' ', '');
+            console.log(chalk.green(users.length + ' users already exist. No users created!'));
+            console.log(chalk.white('')); // Reset to white
+            process.exit(0);
           }
-
-          // Add the user to tribes
-          if (tribes.length > 0) {
-            var userNumTribes = random(tribes.length);
-
-            // Randomize indecies
-            var randomTribes = [];
-            for (var i = 0; i < tribes.length; i++) {
-              randomTribes[i] = i;
-            }
-            randomTribes = _.shuffle(randomTribes);
-
-            // Add the tribes using the random indecies
-            for (var j = 0; j < userNumTribes; j++) {
-              var rand = randomTribes[j];
-              user.member.push({ tribe: tribes[rand]._id, since: Date.now() });
-              tribes[rand].count += 1;
-              Tribe.findByIdAndUpdate(tribes[rand]._id, tribes[rand], function (err) {
-                if (err) {
-                  console.error(err);
-                }
-              });
-            }
-          }
-
-          // Save the user
-          user.save(function (err) {
-            if (admin!== undefined) {
-              console.log('Created admin user. Login with: ' + admin + ' / password');
-            } else if (err && admin !== undefined) {
-              console.log(chalk.red('Could not add admin user ' + admin));
-              console.log(err);
-            } else if (err) {
-              console.log(err);
-            }
-          });
-
-          index++;
-          addOffer(user._id, index, max);
-
-          // No more admin users
-          if (numAdminUsers === 1) {
-            printWarning();
-          }
-
-          if (admin !== undefined) {
-            numAdminUsers--;
-          }
-
-          if (index < max) {
-            addNextUser();
-          }
-        }());
-
-        while (numAdminUsers > 0) {
-
         }
-      });
+      ]);
+
+
     });
   });
 }; // addUsers()
