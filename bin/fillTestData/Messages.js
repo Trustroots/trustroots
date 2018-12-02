@@ -4,31 +4,43 @@ var _ = require('lodash'),
     path = require('path'),
     mongooseService = require(path.resolve('./config/lib/mongoose')),
     chalk = require('chalk'),
-    argv = require('yargs')
-      .usage('Usage: $0 <number of threads to add> <max messages per thread> {options}')
-      .boolean('verbose')
-      .boolean('limit')
-      .describe('verbose', 'Enable extra database output (default=false)')
-      .describe('limit', 'If threads already exist in the database, only add up to the number of threads (default=false)')
-      .demandCommand(2)
-      .example('node $0 100 10', 'Adds 100 random threads wth up to 10 messages per thread to the database')
-      .example('node $0 100 10 --verbose', 'Adds 100 random threads wth up to 10 messages per thread to the database with verbose database output')
-      .example('node $0 10 5 --limit', 'Adds up to 10 randomly seeded threads to the database with up to 5 message per thread (eg. If 5 threads already exist, 5 threads will be added)')
-      .check(function (argv) {
-        if (argv._[0] < 1) {
-          throw new Error('Error: Number of threads should be greater than 0');
-        }
-        else if (argv._[1] < 1) {
-          throw new Error('Error: Max messages per thread should be greater than 0');
-        }
-        return true;
-      })
-      .strict()
-      .argv,
+    yargs = require('yargs'),
     faker = require('faker'),
     mongoose = require('mongoose'),
     async = require('async'),
     config = require(path.resolve('./config/config'));
+
+var argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
+  'Seed database with number of threads with up to max messages per thread',
+  function (yargs) {
+    return yargs
+      .positional('numberOfThreads', {
+        describe: 'Number of threads to add',
+        type: 'number'
+      })
+      .positional('maxMessages', {
+        describe: 'Maximum number of messages per thread to add',
+        type: 'number'
+      })
+      .boolean('verbose')
+      .boolean('limit')
+      .describe('verbose', 'Enable extra database output (default=false)')
+      .describe('limit', 'If threads already exist in the database, only add up to the number of threads (default=false)')
+      .example('$0 100 10', 'Adds 100 random threads wth up to 10 messages per thread to the database')
+      .example('$0 100 10 --verbose', 'Adds 100 random threads wth up to 10 messages per thread to the database with verbose database output')
+      .example('$0 10 5 --limit', 'Adds up to 10 randomly seeded threads to the database with up to 5 message per thread (eg. If 5 threads already exist, 5 threads will be added)')
+      .check(function (argv) {
+        if (argv.numberOfThreads < 1) {
+          throw new Error('Error: Number of threads should be greater than 0');
+        }
+        else if (argv.maxMessages < 1) {
+          throw new Error('Error: Max messages per thread should be greater than 0');
+        }
+        return true;
+      })
+      .strict().yargs;
+  })
+  .argv;
 
 var random = function (max) {
   return Math.floor(Math.random() * max);
@@ -42,8 +54,8 @@ var addDays = function addDays(date, days) {
 
 var addThreads = function () {
   var index = 0;
-  var numThreads = argv._[0];
-  var maxMessages= argv._[1];
+  var numThreads = argv.numberOfThreads;
+  var maxMessages= argv.maxMessages;
   var verbose = (argv.verbose === true);
   var limit = (argv.limit === true);
 

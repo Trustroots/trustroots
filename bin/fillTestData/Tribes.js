@@ -4,27 +4,32 @@ var _ = require('lodash'),
     path = require('path'),
     mongooseService = require(path.resolve('./config/lib/mongoose')),
     chalk = require('chalk'),
-    argv = require('yargs')
-      .usage('Usage: node $0 <number of tribes to add> {options}')
-      .boolean('verbose')
-      .boolean('limit')
-      .describe('verbose', 'Enable extra database output (default=false)')
-      .describe('limit', 'If tribes already exist in the database, only add up to the number of tribes (default=false)')
-      .demandCommand(1)
-      .example('node $0 1000', 'Adds 1000 randomly seeded tribes to the database')
-      .example('node $0 100 --verbose', 'Adds 100 randomly seeded tribes to the database with verbose database output')
-      .example('node $0 100 --limit', 'Adds up to 100 randomly seeded tribes to the database (eg. If 20 tribes already exist, 80 tribes will be added)')
-      .check(function (argv) {
-        if (argv._[0] < 1) {
-          throw new Error('Error: Number of tribes should be greater than 0');
-        }
-        return true;
-      })
-      .strict()
-      .argv,
+    yargs = require('yargs'),
     faker = require('faker'),
     mongoose = require('mongoose'),
     config = require(path.resolve('./config/config'));
+
+var argv = yargs.usage('$0 <numberOfTribes>', 'Seed database with number of tribes', function (yargs) {
+  return yargs
+    .positional('numberOfTribes', {
+      describe: 'Number of tribes to add',
+      type: 'number'
+    })
+    .boolean('verbose')
+    .boolean('limit')
+    .describe('verbose', 'Enable extra database output (default=false)')
+    .describe('limit', 'If tribes already exist in the database, only add up to the number of tribes (default=false)')
+    .example('node $0 1000', 'Adds 1000 randomly seeded tribes to the database')
+    .example('node $0 100 --verbose', 'Adds 100 randomly seeded tribes to the database with verbose database output')
+    .example('node $0 100 --limit', 'Adds up to 100 randomly seeded tribes to the database (eg. If 20 tribes already exist, 80 tribes will be added)')
+    .check(function (argv) {
+      if (argv.numberOfTribes < 1) {
+        throw new Error('Error: Number of tribes should be greater than 0');
+      }
+      return true;
+    })
+    .strict().yargs;
+}).argv;
 
 var tribeImageUUIDs = [
   '171433b0-853b-4d19-a8b4-44def956696d',
@@ -57,7 +62,7 @@ var tribeImageUUIDs = [
 
 var addTribes = function () {
   var index = 0;
-  var max = argv._[0];
+  var max = argv.numberOfTribes;
   var verbose = (argv.verbose === true);
   var limit = (argv.limit === true);
 

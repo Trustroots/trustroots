@@ -4,17 +4,7 @@ var _ = require('lodash'),
     path = require('path'),
     mongooseService = require(path.resolve('./config/lib/mongoose')),
     chalk = require('chalk'),
-    argv = require('yargs')
-      .usage('Usage: $0 <number of users to add> {user names}')
-      .demandCommand(1)
-      .check(function (argv) {
-        if (argv._[0] < 1) {
-          throw new Error('Error: Number of users should be greater than 0');
-        }
-        return true;
-      })
-      .strict()
-      .argv,
+    yargs = require('yargs'),
     faker = require('faker'),
     fs = require('fs'),
     moment = require('moment'),
@@ -23,6 +13,32 @@ var _ = require('lodash'),
     savedCounter = 0;
 
 require(path.resolve('./modules/offers/server/models/offer.server.model'));
+
+var argv = yargs.usage('$0 <numberOfUsers>', 'Seed database with number of tribes', function (yargs) {
+  return yargs
+    .positional('numberOfUsers', {
+      describe: 'Number of users to add',
+      type: 'number'
+    })
+    .array('userNames')
+    .boolean('verbose')
+    .boolean('limit')
+    .describe('userNames', 'List of admin usernames')
+    .describe('verbose', 'Enable extra database output (default=false)')
+    .describe('limit', 'If users already exist in the database, only add up to the number of users (default=false)')
+    .example('node $0 1000', 'Adds 1000 randomly seeded users to the database')
+    .example('node $0 100 --userNames admin1 admin2 admin3 --', 'Adds 100 randomly seeded users including usernames: admin1, admin2, and admin3 all using the password \'password123\'')
+    .example('node $0 100 --verbose', 'Adds 100 randomly seeded users to the database with verbose database output')
+    .example('node $0 100 --limit', 'Adds up to 100 randomly seeded users to the database (eg. If 20 users already exist, 80 users will be added)')
+    .check(function (argv) {
+      if (argv.numberOfUsers < 1) {
+        throw new Error('Error: Number of users should be greater than 0');
+      }
+      return true;
+    })
+    .strict()
+    .yargs;
+}).argv;
 
 var Offer = mongoose.model('Offer');
 
@@ -209,11 +225,13 @@ var addUsers = function (max, adminUsers) {
 }; // addUsers()
 
 // Parse optional admin users
-var numberOfUsers = argv._[0];
+var numberOfUsers = argv.numberOfUsers;
 var adminUsers = [];
-for (var i = 1; i < argv._.length; i++) {
-  if (argv._[i] !== null) {
-    adminUsers.push(argv._[i]);
+if (argv.userNames) {
+  for (var i = 0; i < argv.userNames.length; i++) {
+    if (argv.userNames[i] !== null) {
+      adminUsers.push(argv.userNames[i]);
+    }
   }
 }
 // Add users
