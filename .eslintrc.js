@@ -1,4 +1,11 @@
 module.exports = {
+  parserOptions: {
+    ecmaVersion: 2018,
+    sourceType: 'module'
+  },
+  extends: [
+    'plugin:react/recommended'
+  ],
   rules: {
     camelcase: 0,
     'comma-dangle': [2, 'never'],
