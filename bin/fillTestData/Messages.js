@@ -64,11 +64,9 @@ var addThreads = function () {
     console.log('...this might really take a while... go grab some coffee!');
   }
 
-  if (debug) {
-    console.log(chalk.white('--'));
-    console.log(chalk.green('Trustroots test tribes data'));
-    console.log(chalk.white('--'));
-  }
+  console.log(chalk.white('--'));
+  console.log(chalk.green('Trustroots test tribes data'));
+  console.log(chalk.white('--'));
 
   // Override debug mode to use the option set by the user
   config.db.debug = debug;
