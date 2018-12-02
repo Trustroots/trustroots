@@ -9,6 +9,7 @@ var _ = require('lodash'),
     fs = require('fs'),
     moment = require('moment'),
     mongoose = require('mongoose'),
+    config = require(path.resolve('./config/config')),
     cities = JSON.parse(fs.readFileSync(path.resolve('./bin/fillTestData/data/Cities.json'), 'utf8')),
     savedCounter = 0;
 
@@ -88,6 +89,7 @@ var addOffer = function (id, index, max) {
 var addUsers = function (max, adminUsers) {
   var index = 0;
   var numAdminUsers;
+  var debug = (argv.debug === true);
 
   if (adminUsers === null || adminUsers === undefined) {
     numAdminUsers = 0;
@@ -105,6 +107,9 @@ var addUsers = function (max, adminUsers) {
   if (numAdminUsers === 0) {
     printWarning();
   }
+
+  // Override debug mode to use the option set by the user
+  config.db.debug = debug;
 
   // Bootstrap db connection
   mongooseService.connect(function () {
