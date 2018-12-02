@@ -32,8 +32,9 @@
     - install
 
 
+## TODO:figure this out
 - name: npm run build:prod
-  shell: 'cd /srv/trustroots && npm run build:prod'
+  shell: 'cd /srv/trustroots && npm run build:dev'
   become: yes
   become_user: guaka
   tags:
@@ -49,16 +50,10 @@
     
 
 - name: pm2 start
-  shell: 'cd /srv/trustroots && pm2 start worker-pm2.json --env production'
+#  shell: 'cd /srv/trustroots && pm2 start worker-pm2.json --env production'
+  shell: 'cd /srv/trustroots && pm2 start worker-pm2.json --env development'
   become: yes
   become_user: guaka
   tags:
     - pm2
 
-
-- name: pm2 start
-  shell: 'cd /srv/trustroots && pm2 start server-pm2.json --env production'
-  become: yes
-  become_user: guaka
-  tags:
-    - pm2
