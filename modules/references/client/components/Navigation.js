@@ -53,7 +53,7 @@ Navigation.propTypes = {
   onBack: PropTypes.func,
   onNext: PropTypes.func,
   onSubmit: PropTypes.func,
-  disabled: PropTypes.boolean,
+  disabled: PropTypes.bool,
   tab: PropTypes.number, // current tab index - indexed from 0
   tabs: PropTypes.number, // amount of tabs to display
   tabDone: PropTypes.number // which tab is already filled

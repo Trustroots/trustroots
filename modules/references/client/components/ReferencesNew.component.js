@@ -131,12 +131,12 @@ export default class ReferencesNew extends React.Component {
 
     if (this.state.isLoading) return <Loading />;
 
-    if (this.state.isDuplicate) return <Duplicate />;
+    if (this.state.isDuplicate) return <Duplicate userTo={this.props.userTo} />;
 
     if (this.state.isSubmitted) {
       const isReported = this.state.reference.recommend === 'no' && this.state.report;
       const isPublic = this.state.isPublic;
-      return <Submitted isReported={isReported} isPublic={isPublic} />;
+      return <Submitted isReported={isReported} isPublic={isPublic} userTo={this.props.userTo} />;
     }
 
     return (
