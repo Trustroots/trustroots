@@ -128,9 +128,13 @@ var addTribes = function () {
                 console.log(err);
               }
               else {
+                process.stdout.write('.');
                 savedTribes += 1;
                 if (savedTribes >= max) {
-                  console.log(chalk.green('Done with ' + max + ' test tribes!'));
+                  console.log('');
+                  console.log(chalk.green(tribes.length + ' tribes existed in the database.'));
+                  console.log(chalk.green(savedTribes + ' tribes successfully added.'));
+                  console.log(chalk.green('Database now contains ' + (tribes.length + savedTribes) + ' tribes.'));
                   console.log(chalk.white('')); // Reset to white
                   process.exit(0);
                 }
