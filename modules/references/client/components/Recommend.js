@@ -73,10 +73,10 @@ export default function Recommend(props) {
 }
 
 Recommend.propTypes = {
-  reference: PropTypes.object,
-  onChangeRecommend: PropTypes.func,
-  onChangeReport: PropTypes.func,
-  onChangeReportMessage: PropTypes.func,
-  report: PropTypes.bool,
-  reportMessage: PropTypes.string
+  reference: PropTypes.object.isRequired,
+  onChangeRecommend: PropTypes.func.isRequired,
+  onChangeReport: PropTypes.func.isRequired,
+  onChangeReportMessage: PropTypes.func.isRequired,
+  report: PropTypes.bool.isRequired,
+  reportMessage: PropTypes.string.isRequired
 };

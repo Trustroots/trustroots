@@ -50,6 +50,6 @@ export default function Interaction(props) {
 }
 
 Interaction.propTypes = {
-  onChange: PropTypes.func,
-  reference: PropTypes.object
+  onChange: PropTypes.func.isRequired,
+  reference: PropTypes.object.isRequired
 };

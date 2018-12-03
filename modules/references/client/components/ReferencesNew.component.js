@@ -173,6 +173,6 @@ export default class ReferencesNew extends React.Component {
 }
 
 ReferencesNew.propTypes = {
-  userFrom: PropTypes.object,
-  userTo: PropTypes.object
+  userFrom: PropTypes.object.isRequired,
+  userTo: PropTypes.object.isRequired
 };

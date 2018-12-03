@@ -50,12 +50,12 @@ export default function Navigation(props) {
 }
 
 Navigation.propTypes = {
-  onBack: PropTypes.func,
-  onNext: PropTypes.func,
-  onSubmit: PropTypes.func,
+  onBack: PropTypes.func.isRequired,
+  onNext: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
   disabled: PropTypes.bool,
-  tab: PropTypes.number, // current tab index - indexed from 0
-  tabs: PropTypes.number, // amount of tabs to display
-  tabDone: PropTypes.number // which tab is already filled
+  tab: PropTypes.number.isRequired, // current tab index - indexed from 0
+  tabs: PropTypes.number.isRequired, // amount of tabs to display
+  tabDone: PropTypes.number.isRequired // which tab is already filled
 };
 

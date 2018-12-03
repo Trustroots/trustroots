@@ -12,7 +12,7 @@ function UserLink({ user }) {
 }
 
 UserLink.propTypes = {
-  user: PropTypes.object
+  user: PropTypes.object.isRequired
 };
 
 export function Self() {
@@ -28,7 +28,7 @@ export function Duplicate({ userTo }) {
 }
 
 Duplicate.propTypes = {
-  userTo: PropTypes.object
+  userTo: PropTypes.object.isRequired
 };
 
 export function Submitted({ isReported, isPublic, userTo }) {
@@ -57,7 +57,7 @@ export function Submitted({ isReported, isPublic, userTo }) {
 }
 
 Submitted.propTypes = {
-  userTo: PropTypes.object,
-  isReported: PropTypes.bool,
-  isPublic: PropTypes.bool
+  userTo: PropTypes.object.isRequired,
+  isReported: PropTypes.bool.isRequired,
+  isPublic: PropTypes.bool.isRequired
 };

@@ -36,8 +36,8 @@ export default function Report(props) {
 }
 
 Report.propTypes = {
-  report: PropTypes.bool,
-  reportMessage: PropTypes.string,
-  onChangeReport: PropTypes.func,
-  onChangeReportMessage: PropTypes.func
+  report: PropTypes.bool.isRequired,
+  reportMessage: PropTypes.string.isRequired,
+  onChangeReport: PropTypes.func.isRequired,
+  onChangeReportMessage: PropTypes.func.isRequired
 };
