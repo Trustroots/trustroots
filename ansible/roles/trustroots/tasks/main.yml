@@ -1,0 +1,53 @@
+---
+
+#- name: install and configure enable influxdb
+- name: configure enable influxdb
+  import_tasks: influxdb.yml
+  tags: influxdb
+
+
+- name: configure and enbale nginx
+  import_tasks: nginx.yml
+  tags: nginx
+
+
+- name: Clone/pull project repo
+  git: repo=https://github.com/trustroots/trustroots.git dest=/srv/trustroots force=yes version={{ version }}
+  tags:
+    - git
+
+
+- name: chown guaka
+  file: dest=/srv/trustroots owner=guaka group=admin mode=u=rwX,g=rX,o=rX recurse=yes
+  tags:
+    - chown
+# This should be user trustroots
+
+    
+- name: install and configure node
+  import_tasks: node.yml
+  tags: node
+
+
+- name: Add grafana apt source
+  apt_repository:
+    repo: deb https://packagecloud.io/grafana/stable/debian/ stretch main
+    state: present
+  tags:
+    - grafana
+
+
+- name: Add grafana apt signing key, will not download if present
+  apt_key:
+    # @todo: add key ID
+    url: https://packagecloud.io/gpg.key
+    state: present
+  tags:
+    - grafana
+
+
+- name: install grafana
+  apt: pkg=grafana state=present
+  tags:
+    - grafana
+

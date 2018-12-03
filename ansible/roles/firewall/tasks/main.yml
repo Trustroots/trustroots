@@ -1,0 +1,26 @@
+---
+- name: Install apt packages
+  apt: pkg={{ item }}
+  with_items: "{{ firewall_apt_packages }}"
+
+- name: Set up firewall
+  when: "'localhost' not in inventory_hostname"
+  ufw:
+    rule: limit
+    port: ssh
+    proto: tcp
+    state: enabled
+
+- name: Allow http
+  when: "'localhost' not in inventory_hostname"
+  ufw:
+    rule: allow
+    port: 80
+    proto: tcp
+
+- name: Allow https
+  when: "'localhost' not in inventory_hostname"
+  ufw:
+    rule: allow
+    port: 443
+    proto: tcp

@@ -206,8 +206,8 @@ describe('Offer Model Unit Tests:', function () {
   });
 
   afterEach(function (done) {
-    Offer.remove().exec(function () {
-      User.remove().exec(done);
+    Offer.deleteMany().exec(function () {
+      User.deleteMany().exec(done);
     });
   });
 });

@@ -306,8 +306,8 @@ describe('Reference Thread CRUD tests', function () {
         if (signinErr) return done(signinErr);
 
         // Remove message threads completely
-        Message.remove().exec(function () {
-          Thread.remove().exec(function () {
+        Message.deleteMany().exec(function () {
+          Thread.deleteMany().exec(function () {
 
             // Read reference
             agent.get('/api/references-thread/' + referenceUserToId)
@@ -498,10 +498,10 @@ describe('Reference Thread CRUD tests', function () {
 
   afterEach(function (done) {
     // Uggggly pyramid revenge!
-    User.remove().exec(function () {
-      Message.remove().exec(function () {
-        Thread.remove().exec(function () {
-          ReferenceThread.remove().exec(done);
+    User.deleteMany().exec(function () {
+      Message.deleteMany().exec(function () {
+        Thread.deleteMany().exec(function () {
+          ReferenceThread.deleteMany().exec(done);
         });
       });
     });

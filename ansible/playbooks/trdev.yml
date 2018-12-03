@@ -1,0 +1,11 @@
+---
+- hosts: dev
+  vars:
+    version: "{{ version }}"
+  become: yes
+
+  roles:
+  - trdev
+  - system
+  - firewall
+  - trustroots

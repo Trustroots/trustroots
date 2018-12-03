@@ -1,0 +1,26 @@
+- name: Create ssh directory
+  file: path=/home/guaka/.ssh state=directory
+
+- name: Copy authorized_keys_no-NDA
+  template: src=../../files/authorized_keys_no-NDA.j2 dest=/home/guaka/.ssh/authorized_keys owner=guaka mode=0600
+  tags:
+    - ssh
+    - authorized_keys
+
+- name: Ensure .ssh owner/rights
+  file:
+    path: /home/guaka/.ssh/authorized_keys
+    owner: guaka
+    group: guaka
+    mode: 0600
+  tags:
+    - ssh
+
+- name: Ensure .ssh owner/rights
+  file:
+    path: /home/guaka/.ssh
+    owner: guaka
+    group: guaka
+    mode: 0700
+  tags:
+    - ssh
