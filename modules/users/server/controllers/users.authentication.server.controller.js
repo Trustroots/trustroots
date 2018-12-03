@@ -84,21 +84,6 @@ exports.signup = function (req, res) {
 
     },
 
-    // Report how did you hear about us to stats
-
-    function () {
-      return statService.stat({
-        namespace: 'profileSignupHowHeardAboutUs',
-        fields: {
-          freetext: req.body.profileSignupHowHeardAboutUs
-        }
-      }, function () {
-        return res.json({
-          message: 'Your response have been saved.'
-        })
-      })
-    },
-
     // Send email
     function (user, done) {
       emailService.sendSignupEmailConfirmation(user, function (err) {
