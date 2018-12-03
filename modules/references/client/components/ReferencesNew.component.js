@@ -5,6 +5,7 @@ import Navigation from './Navigation';
 import Interaction from './Interaction';
 import Recommend from './Recommend';
 import { Self, Loading, Duplicate, Submitted } from './Info';
+import { Tab, Tabs } from 'react-bootstrap';
 
 const api = { references };
 
@@ -141,8 +142,21 @@ export default class ReferencesNew extends React.Component {
 
     return (
       <div>
-        <nav><span>How do you know them</span> &gt; <span>Recommendation</span></nav>
-        {tabs[this.state.tab]}
+        <Tabs
+          activeKey={this.state.tab}
+          bsStyle="pills"
+          onSelect={() => {}}
+          id="create-reference-tabs"
+        >
+          <Tab
+            eventKey={0}
+            title="How do you know them"
+          >{tabs[0]}</Tab>
+          <Tab
+            eventKey={1}
+            title="Recommendation"
+          >{tabs[1]}</Tab>
+        </Tabs>
         {/* <!-- Navigation for big screens -->*/}
         <Navigation
           tab={this.state.tab}
