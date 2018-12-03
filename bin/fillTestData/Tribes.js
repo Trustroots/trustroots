@@ -102,7 +102,7 @@ var addTribes = function () {
           (function addNextTribe() {
             var tribe = new Tribe();
 
-            tribe.label = faker.random.word() + '_' + index;
+            tribe.label = faker.lorem.word() + '_' + index;
             tribe.labelHistory = faker.random.words();
             tribe.slugHistory = faker.random.words();
             tribe.synonyms = faker.random.words();
