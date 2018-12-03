@@ -98,11 +98,18 @@ var addTribes = function () {
           index = tribes.length;
         }
 
-        if (index < max) {
-          (function addNextTribe() {
+        if (index >= max) {
+          console.log(chalk.green(tribes.length + ' tribes already exist. No tribes created!'));
+          console.log(chalk.white('')); // Reset to white
+          process.exit(0);
+        }
+
+        while (index < max) {
+          var savedTribes = 0;
+          (function addNextTribe(tribeIndex) {
             var tribe = new Tribe();
 
-            tribe.label = faker.lorem.word() + '_' + index;
+            tribe.label = faker.lorem.word() + '_' + tribeIndex;
             tribe.labelHistory = faker.random.words();
             tribe.slugHistory = faker.random.words();
             tribe.synonyms = faker.random.words();
@@ -121,23 +128,16 @@ var addTribes = function () {
                 console.log(err);
               }
               else {
-                if (index >= max) {
+                savedTribes += 1;
+                if (savedTribes >= max) {
                   console.log(chalk.green('Done with ' + max + ' test tribes!'));
                   console.log(chalk.white('')); // Reset to white
                   process.exit(0);
                 }
               }
             });
-            index+=1;
-            if (index < max) {
-              addNextTribe();
-            }
-          }());
-        }
-        else {
-          console.log(chalk.green(tribes.length + ' tribes already exist. No tribes created!'));
-          console.log(chalk.white('')); // Reset to white
-          process.exit(0);
+          }(index));
+          index+=1;
         }
       });
     });
