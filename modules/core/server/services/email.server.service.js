@@ -275,7 +275,7 @@ exports.sendSignupEmailReminder = function (user, callback) {
 
   // This will be the last reminder, mention that at the email subject line
   if ((user.publicReminderCount + 1) === config.limits.maxSignupReminders) {
-    params.subject = 'Last change to complete your signup to Trustroots!';
+    params.subject = 'Last chance to complete your signup to Trustroots!';
   }
 
   exports.renderEmailAndSend('signup-reminder', params, callback);
