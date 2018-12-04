@@ -93,112 +93,122 @@ var addThreads = function () {
             index = threads.length;
           }
 
-          if (index < numThreads) {
-            var getUsers = new Promise(function (resolve, reject) {
-              User.find(function (err, users) {
-                if (err) {
-                  reject(err);
-                }
-                resolve(users);
-              });
-            });
-
-            getUsers.then(function (users) {
-
-              if (users.length < 2) {
-                console.log('Error: At least 2 users must exist to create message threads. Please create more users and run again');
-                process.exit(1);
-              }
-
-              (function addNextMessageThread() {
-                var messageThread = new Thread;
-                var threadSize = random(maxMessages) + 1;
-
-                (function addNextMessage(depth, to, from) {
-                  var message = new Message();
-
-                  message.created = addDays(Date.now(), -depth + 1);
-                  message.content = faker.lorem.sentences();
-
-                  // Randomize indecies
-                  var randomUsers = [];
-                  for (var i = 0; i < users.length; i++) {
-                    randomUsers[i] = i;
-                  }
-                  randomUsers = _.shuffle(randomUsers);
-
-                  if (to) {
-                    message.userTo = to;
-                  } else {
-                    message.userTo = users[randomUsers[1]]._id;
-                  }
-                  if (from) {
-                    message.userFrom = from;
-                  } else {
-                    message.userFrom = users[randomUsers[0]]._id;
-                  }
-
-                  // Assume 80% of messages are read
-                  if (random(100) < 80) {
-                    message.read = true;
-                  } else {
-                    message.read = false;
-                  }
-
-                  message.notificationCount = 0;
-
-                  message.save(function (err) {
-                    if (err != null) {
-                      console.log(err);
-                    }
-                  });
-
-                  // Add thread for the most recent message
-                  if (depth === 1) {
-                    messageThread.updated = message.created;
-                    messageThread.userFrom = message.userFrom;
-                    messageThread.userTo = message.userTo;
-                    messageThread.message = message._id;
-                    messageThread.read = true;
-                    messageThread.save(function (err) {
-                      if (err != null) {
-                        console.log(err);
-                      }
-                      else {
-                        console.log('index ' + index);
-                        if (index >= numThreads) {
-                          console.log(chalk.green('Done with ' + numThreads + ' test threads!'));
-                          console.log(chalk.white('')); // Reset to white
-                          process.exit(0);
-                        }
-                      }
-                    });
-                  }
-
-                  depth-=1;
-                  if (depth > 0) {
-                    // Reverse the order of to and from to simulate a conversation going back and forth
-                    addNextMessage(depth, message.userFrom, message.userTo);
-                  }
-
-                }(threadSize));
-
-                index+=1;
-                if (index < numThreads) {
-                  addNextMessageThread();
-                }
-              }());
-
-            }).catch(function (err) {
-              console.log(err);
-              done(err, null);
-            });
-          }
-          else {
+          if (index >= numThreads) {
             console.log(chalk.green(threads.length + ' threads already exist. No threads created!'));
             console.log(chalk.white('')); // Reset to white
             process.exit(0);
           }
+
+          var getUsers = new Promise(function (resolve, reject) {
+            User.find(function (err, users) {
+              if (err) {
+                reject(err);
+              }
+              resolve(users);
+            });
+          });
+
+          getUsers.then(function (users) {
+
+            if (users.length < 2) {
+              console.log('Error: At least 2 users must exist to create message threads. Please create more users and run again');
+              process.exit(1);
+            }
+
+            while (index < numThreads) {
+              var threadsSaved = 0;
+
+              (function addNextMessageThread() {
+                var messageThread = new Thread;
+                var messageCount = random(maxMessages) + 1;
+                var messageIndex = messageCount;
+                var to,
+                    from;
+
+                while (messageIndex > 0) {
+                  function addNextMessage(depth, userTo, userFrom) {
+                    var message = new Message();
+
+                    message.created = addDays(Date.now(), -depth + 1);
+                    message.content = faker.lorem.sentences();
+
+                    // Randomize indecies
+                    var randomUsers = [];
+                    for (var i = 0; i < users.length; i++) {
+                      randomUsers[i] = i;
+                    }
+                    randomUsers = _.shuffle(randomUsers);
+
+                    if (userTo) {
+                      message.userTo = userTo;
+                    } else {
+                      message.userTo = users[randomUsers[1]]._id;
+                      to = message.userTo;
+                    }
+                    if (userFrom) {
+                      message.userFrom = userFrom;
+                    } else {
+                      message.userFrom = users[randomUsers[0]]._id;
+                      from = message.userFrom;
+                    }
+
+                    // Assume 80% of messages are read
+                    if (random(100) < 80) {
+                      message.read = true;
+                    } else {
+                      message.read = false;
+                    }
+
+                    message.notificationCount = 0;
+
+                    message.save(function (err) {
+                      if (err != null) {
+                        console.log(err);
+                      } else {
+                        // Add thread for the most recent message
+                        if (depth === 1) {
+                          messageThread.updated = message.created;
+                          messageThread.userFrom = message.userFrom;
+                          messageThread.userTo = message.userTo;
+                          messageThread.message = message._id;
+                          messageThread.read = true;
+                          messageThread.save(function (err) {
+                            if (err != null) {
+                              console.log(err);
+                            }
+                            else {
+                              threadsSaved += 1;
+                              if (threadsSaved >= numThreads) {
+                                console.log(chalk.green('Done with ' + numThreads + ' test threads!'));
+                                console.log(chalk.white('')); // Reset to white
+                                process.exit(0);
+                              }
+                            }
+                          });
+                        }
+                      }
+                    });
+                  };
+
+                  if (messageIndex === messageCount) {
+                    addNextMessage(messageIndex);
+                  } else if (((messageIndex + 1) % 2) === 0) {
+                    // Reverse the order of to and from to simulate a conversation going back and forth
+                    addNextMessage(messageIndex, from, to);
+                  } else if (((messageIndex + 1) % 2) === 1) {
+                    addNextMessage(messageIndex, to, from);
+                  }
+
+                  messageIndex -=1;
+                }
+              }());
+              index += 1;
+            }
+
+          }).catch(function (err) {
+            console.log(err);
+            done(err, null);
+          });
           done(null, null);
         }
       ]);
