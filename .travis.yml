@@ -6,7 +6,7 @@ env:
   - RUN=lint
   - RUN=test:client
   - RUN=test:server:no-lint
-  - NODE_ENV=production
+  - RUN=build:prod
 script:
   - npm run $RUN
 install:
