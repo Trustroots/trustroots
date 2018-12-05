@@ -31,18 +31,23 @@
   tags:
     - install
 
-
+## TODO: make var in 'shell' come form playbook
 ## TODO:figure this out
-- name: npm run build:prod
-  shell: 'cd /srv/trustroots && npm run build:dev'
+## TODO: remove env here, it shoyld be in playbook
+## get rind of the OR TRUE that fixes the broken population stuff
+- name: npm run build:dev
+  shell: 'cd /srv/trustroots && npm run build:dev || true '
   become: yes
   become_user: guaka
+#  environment:
+#    NODE_ENV: development
   tags:
     - build
   
-    
+
+## TODO: get rid of the need for OR TRUE
 - name: generate test data
-  shell: 'cd /srv/trustroots && npm run seed > /dev/null'
+  shell: 'cd /srv/trustroots && npm run seed > /dev/null || true'
   become: yes
   become_user: guaka
   tags:

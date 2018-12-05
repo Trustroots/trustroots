@@ -1,2 +1,0 @@
-firewall_apt_packages:
-- ufw
