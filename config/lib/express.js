@@ -48,6 +48,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
   app.locals.appSettings.invitationsEnabled = config.invitations.enabled;
   app.locals.appSettings.i18nEnabled = config.featureFlags.i18n;
+  app.locals.appSettings.referencesEnabled = config.featureFlags.reference;
   app.locals.appSettings.maitreId = config.invitations.enabled ? config.invitations.maitreId : false;
   app.locals.appSettings.fcmSenderId = config.fcm.senderId;
   app.locals.appSettings.limits = {

@@ -176,7 +176,7 @@
                   Send a message
                 </a>
               </li>
-              <li>
+              <li ng-if="app.appSettings.referencesEnabled">
                 <a ui-sref="profile.references.new({username: profileCtrl.profile.username})">
                   <i class="icon-plus-squared-alt"></i>
                   Write a reference

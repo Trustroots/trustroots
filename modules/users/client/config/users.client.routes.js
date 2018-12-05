@@ -225,34 +225,6 @@
           pageTitle: 'Profile contacts'
         }
       }).
-      state('profile.references', {
-        url: '/references',
-        templateUrl: '/modules/users/views/profile/profile-view-references.client.view.html',
-        requiresAuth: true,
-        noScrollingTop: true,
-        abstract: true,
-        data: {
-          pageTitle: 'Profile references'
-        }
-      }).
-      state('profile.references.list', {
-        url: '',
-        templateUrl: '/modules/users/views/profile/profile-view-references-list.client.view.html',
-        requiresAuth: true,
-        noScrollingTop: true,
-        data: {
-          pageTitle: 'Profile references'
-        }
-      }).
-      state('profile.references.new', {
-        url: '/new',
-        template: '<references-new userTo="profileCtrl.profile" userFrom="app.user"></references-new>',
-        requiresAuth: true,
-        noScrollingTop: true,
-        data: {
-          pageTitle: 'Leave a reference'
-        }
-      }).
       state('profile.tribes', {
         url: '/tribes',
         templateUrl: '/modules/users/views/profile/profile-view-tribes.client.view.html',
@@ -386,6 +358,38 @@
           pageTitle: 'Remove profile'
         }
       });
+
+    if (AppConfig.appEnv !== 'production') {
+      $stateProvider.
+        state('profile.references', {
+          url: '/references',
+          templateUrl: '/modules/users/views/profile/profile-view-references.client.view.html',
+          requiresAuth: true,
+          noScrollingTop: true,
+          abstract: true,
+          data: {
+            pageTitle: 'Profile references'
+          }
+        }).
+        state('profile.references.list', {
+          url: '',
+          templateUrl: '/modules/users/views/profile/profile-view-references-list.client.view.html',
+          requiresAuth: true,
+          noScrollingTop: true,
+          data: {
+            pageTitle: 'Profile references'
+          }
+        }).
+        state('profile.references.new', {
+          url: '/new',
+          template: '<references-new userTo="profileCtrl.profile" userFrom="app.user"></references-new>',
+          requiresAuth: true,
+          noScrollingTop: true,
+          data: {
+            pageTitle: 'Leave a reference'
+          }
+        });
+    }
   }
 
 }());
