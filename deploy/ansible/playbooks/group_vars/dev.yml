@@ -1,0 +1,9 @@
+---
+ssh_users:
+  - guaka
+  - mikael
+  - zrthstr
+
+## we need a short and a long form of this..
+env_short: dev
+env_long: developement
