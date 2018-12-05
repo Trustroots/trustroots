@@ -8,4 +8,5 @@
   vars_files:
   - "group_vars/dev.yml"
   environment:
-    NODE_ENV: development
+    NODE_ENV: "{{ env_short }}"
+
