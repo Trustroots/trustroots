@@ -230,7 +230,10 @@
                     </span>
                   </a>
                 </li>
-                <li ui-sref-active="active" role="presentation">
+                <li
+                  ui-sref-active="active" role="presentation"
+                  ng-if="app.appSettings.referencesEnabled"
+                >
                   <a ui-sref="profile.references.list" role="tab">
                     <span aria-hidden="true">References</span>
                     <span class="badge"
