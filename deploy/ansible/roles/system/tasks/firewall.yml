@@ -1,7 +1,9 @@
 ---
-- name: Install apt packages
+## should we move the HTTP part to nginx and so on?
+
+- name: Install firewall
   apt:
-    name: "{{ firewall_apt_packages }}"
+    name: ufw
     state: present
 
 - name: Set up firewall
@@ -25,3 +27,4 @@
     rule: allow
     port: 443
     proto: tcp
+
