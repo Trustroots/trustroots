@@ -10,8 +10,7 @@
   import_tasks: nginx.yml
   tags: nginx
 
-## TODO: find a way that branch will not change if not specified
-## should version be 'HEAD' ?
+## TODO: test if non suplying of version leads to current HEAD?
 
 - name: Clone/pull project repo
   git:
@@ -35,25 +34,7 @@
   tags: node
 
 
-- name: Add grafana apt source
-  apt_repository:
-    repo: deb https://packagecloud.io/grafana/stable/debian/ stretch main
-    state: present
-  tags:
-    - grafana
-
-
-- name: Add grafana apt signing key, will not download if present
-  apt_key:
-    # @todo: add key ID
-    url: https://packagecloud.io/gpg.key
-    state: present
-  tags:
-    - grafana
-
-
-- name: install grafana
-  apt: pkg=grafana state=present
-  tags:
-    - grafana
+- name: install and configure grafana
+  import_tasks: grafana.yml
+  tags: grafana
 
