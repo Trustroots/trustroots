@@ -32,6 +32,7 @@
   become_user: guaka
 
 
+## get rind of the OR TRUE that fixes the broken population stuff
 - name: npm run build:ENV "{{ env_short }}"
   shell: "npm run build:{{ env_short }} || true "
   args: 
