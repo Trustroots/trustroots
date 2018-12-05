@@ -6,6 +6,11 @@ module.exports = {
   extends: [
     'plugin:react/recommended'
   ],
+  settings: {
+    react: {
+      version: '16.6'
+    }
+  },
   rules: {
     camelcase: 0,
     'comma-dangle': [2, 'never'],

@@ -26,7 +26,7 @@ module.exports = merge(shims, {
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        use: {
+        use: [{
           loader: 'babel-loader',
           options: {
             presets: [
@@ -37,18 +37,12 @@ module.exports = merge(shims, {
               ['@babel/preset-react']
             ],
             plugins: [
-              '@babel/plugin-proposal-object-rest-spread'
+              '@babel/plugin-proposal-object-rest-spread',
+              'angularjs-annotate'
             ]
           }
-        }
-      },
-      ...(isProduction ? [
-        {
-          test: /\.js$/,
-          exclude: /node_modules/,
-          loader: 'ng-annotate-loader?ngAnnotate=ng-annotate-patched'
-        }
-      ] : [])
+        }]
+      }
     ]
   },
   plugins: [

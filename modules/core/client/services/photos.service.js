@@ -1,7 +1,5 @@
 /* eslint-disable angular/document-service,angular/window-service */
 
-import angular from 'angular';
-
 const photos = {
   'bokeh': {
     'name': 'Sandra', // "pinkorchid_too"
@@ -158,15 +156,11 @@ const photos = {
   }
 };
 
-function getApplicationScope() {
-  return angular.element(document.querySelector('html')).scope();
-}
-
 export function selectPhoto(name) {
   const photo = photos[name];
   const file = (window.innerWidth <= 480 && photo.file_mobile) ? photo.file_mobile : photo.file;
   const imageUrl = `/img/board/${file}`;
-  getApplicationScope().$emit('photoCreditsUpdated', { [name]: photo });
+
   return {
     imageUrl,
     ...photo

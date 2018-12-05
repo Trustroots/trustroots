@@ -34,7 +34,7 @@ function importComponents(r) {
   r.keys().forEach(path => {
     const Component = r(path).default;
     const name = extractComponentNameFromPath(path);
-    if (name !== Component.name) {
+    if (name !== Component.name && process.env.NODE_ENV !== 'production') {
       throw new Error(`Component filename and component name do not match: ${name || '<empty>'} vs ${Component.name || '<empty>'}`);
     }
     if (!Component.propTypes) {
@@ -44,7 +44,7 @@ function importComponents(r) {
 
     angular
       .module('trustroots')
-      .directive(lowercaseFirstLetter(Component.name), createDirective);
+      .directive(lowercaseFirstLetter(name), createDirective);
 
     /* @ngInject */
     function createDirective(reactDirective) {
