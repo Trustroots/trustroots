@@ -22,8 +22,13 @@
     - git
 
 
-- name: chown guaka
-  file: dest=/srv/trustroots owner=guaka group=admin mode=u=rwX,g=rX,o=rX recurse=yes
+- name: chown /srv/trustroots guaka
+  file:
+    dest: /srv/trustroots
+    owner: guaka
+    group: admin
+    mode: u=rwX,g=rX,o=rX
+    recurse: yes
   tags:
     - chown
 # This should be user trustroots
