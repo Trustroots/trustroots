@@ -6,13 +6,7 @@
   - system
   - trustroots
   vars_files:
-<<<<<<< HEAD:deploy/ansible/playbooks/dev/tr.yml
   - "group_vars/main.yml"
   environment:
     NODE_ENV: "{{ env_short }}"
 
-=======
-  - "group_vars/dev.yml"
-  environment:
-    NODE_ENV: development
->>>>>>> ansible: added env var for node test data creation:deploy/ansible/playbooks/trdev.yml
