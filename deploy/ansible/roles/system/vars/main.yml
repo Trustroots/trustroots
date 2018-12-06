@@ -24,11 +24,9 @@ system_apt_packages:
   - zsh
   - nullmailer
   - passenger
-  - mongodb-server
   - graphicsmagick
   - make
   - build-essential
-  - influxdb
   - monit
   - munin
 
