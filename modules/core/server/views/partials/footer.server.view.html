@@ -7,11 +7,12 @@
     <div class="col-xs-6">
       <ul class="list-unstyled">
         <li><a ui-sref="volunteering">Volunteering</a></li>
+        <li><a ui-sref="team">Teams</a></li>
         <li><a href="https://meta.trustroots.org/t/lets-translate-trustroots/59">Translations</a></li>
-        <li><a ui-sref="rules">Rules</a></li>
-        <li><a ui-sref="privacy">Privacy</a></li>
         <li><a ui-sref="donate">Donate</a></li>
+        <li><a ui-sref="rules">Rules</a></li>
         <li><a ui-sref="faq">FAQ</a></li>
+        <li><a ui-sref="privacy">Privacy</a></li>
         <li itemscope itemtype="http://schema.org/Organization">
           <a ui-sref="foundation" itemprop="name">
             Trustroots Foundation
@@ -26,7 +27,6 @@
       <ul class="list-inline">
         <li>
           {% if appSettings.commit %}
-          {% if appSettings.commitTime %}Last change {{ appSettings.commitTime }}{% endif %}
           <a href="https://github.com/Trustroots/trustroots/tree/{{ appSettings.commit }}"
              uib-tooltip="Currently deployed code at GitHub"
              aria-label="Currently deployed code at GitHub">
