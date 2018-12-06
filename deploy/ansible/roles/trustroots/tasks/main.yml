@@ -20,6 +20,7 @@
   tags: mongodb
 
 
+## TODO: test if non suplying of version leads to current HEAD?
 - name: Clone/pull project repo
   git:
     repo: https://github.com/trustroots/trustroots.git
