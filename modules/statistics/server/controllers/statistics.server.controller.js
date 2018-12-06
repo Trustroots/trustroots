@@ -9,7 +9,6 @@ var _ = require('lodash'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     async = require('async'),
-    git = require('git-rev'),
     semver = require('semver'),
     mongoose = require('mongoose'),
     Offer = mongoose.model('Offer'),
@@ -308,15 +307,6 @@ exports.getPublicStatistics = function (req, res) {
         req.statistics.hosting.yes = counter.yes;
         req.statistics.hosting.maybe = counter.maybe;
         done();
-      });
-    },
-
-    // Returns: 'git rev-parse HEAD'
-    // @link https://www.npmjs.com/package/git-rev
-    function (done) {
-      git.long(function (hash) {
-        req.statistics.commit = hash || '';
-        done(null);
       });
     },
 

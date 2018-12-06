@@ -1,4 +1,4 @@
-<section class="container board container-fullscreen text-center" tr-boards="'bokeh'">
+<section class="container board text-center" tr-boards="'bokeh'">
   <div class="row">
     <div class="col-xs-12">
       <img class="hidden-xs" src="/img/logo/color.svg" alt="Trustroots" width="140" height="140" />
@@ -120,9 +120,6 @@
       <p>
         <br>
         <a ng-if="!app.user" ui-sref="signup" class="btn btn-lg btn-action btn-inverse">Join Trustroots</a>
-        <br><br>
-        <br><br>
-        <a class="stats-commit" ng-if="stats.commit" ng-href="https://github.com/Trustroots/trustroots/tree/{{stats.commit}}">Currently deployed code at Github</a>
       </p>
 
     </div>
