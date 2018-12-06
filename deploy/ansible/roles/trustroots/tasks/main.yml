@@ -36,6 +36,7 @@
     owner: guaka
     group: guaka
     mode: "u=rwX,g=rX,o=rX"
+    mode: u=rwX,g=rX,o=rX
     recurse: yes
   tags:
     - chown
