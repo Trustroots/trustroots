@@ -1,9 +1,13 @@
 import React from 'react';
+import '../../../core/client/components/i18n';
 import { selectPhoto } from '@/modules/core/client/services/photos.service';
+
+// the render prop
+import { NamespacesConsumer } from 'react-i18next';
 
 export default function Volunteering() {
   const photo = selectPhoto('happyhippies');
-  return <>
+  return <NamespacesConsumer>{ t => (<>
     <section className="board volunteer-header board-happyhippies" style={{ backgroundImage: `url("${photo.imageUrl}")` }}>
       <div className="container">
         <div className="row">
@@ -11,7 +15,7 @@ export default function Volunteering() {
             <br/><br/>
             <i className="icon-3x icon-heart-o"></i>
             <br/><br/>
-            <h2>Volunteering</h2>
+            <h2>{t('Volunteering')}</h2>
           </div>
         </div>
       </div>
@@ -20,7 +24,7 @@ export default function Volunteering() {
     <section className="container container-spacer">
       <div className="row">
         <div className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
-          <p className="lead">Help us build Trustroots! Nobody can do everything, but everyone can do something... </p>
+          <p className="lead">{t('Help us build Trustroots! Nobody can do everything, but everyone can do something...')}</p>
         </div>
 
         <div className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
@@ -95,7 +99,7 @@ export default function Volunteering() {
         </div>
       </div>
     </section>
-  </>;
+  </>) }</NamespacesConsumer>;
 }
 
 Volunteering.propTypes = {};
