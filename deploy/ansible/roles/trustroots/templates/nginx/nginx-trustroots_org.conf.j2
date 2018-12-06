@@ -43,30 +43,9 @@ server {
     ssl_certificate     {{ ssl_cert_file_path }};
     ssl_certificate_key {{ ssl_key_file_path }};
 
-    ## Enable maintenance mode by uncommenting this
-    #include /srv/configs/nginx-maintenance.conf;
-
-    ## Maximum allowed size of the client request body,
-    ## specified in the “Content-Length” request header field
     client_max_body_size 10M;
 
-    ## Letsencrypt acme challenge
-    #include /srv/configs/nginx-acme-challenge.conf;
-
-    ## Location specific configs
-    #include /srv/configs/nginx-location.conf;
-
-    ## Phusion Passenger
-    #include /srv/configs/nginx-passenger.conf;
-
-    ## SSL
-    #include /srv/configs/nginx-ssl.conf;
-
-    ## Gzip Compression
-    #include /srv/configs/nginx-gzip.conf;
-
     ## Static files
-    ## TODO: parameterize
     root /srv/trustroots/public;
 
         location = /robots.txt {
@@ -105,6 +84,3 @@ server {
 
 }
 
-# Warm up Passenger
-# TODO: get rid of this, replace with pm2
-#passenger_pre_start https://www.{{ url_full }}/;
