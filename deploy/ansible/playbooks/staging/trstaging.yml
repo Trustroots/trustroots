@@ -1,0 +1,11 @@
+---
+
+- hosts: staging
+  become: yes
+  roles:
+  - system
+  - users
+  - firewall
+  - trustroots
+  vars_files:
+  - "group_vars/main.yml"
