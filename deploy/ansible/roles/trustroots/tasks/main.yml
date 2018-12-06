@@ -1,9 +1,13 @@
 ---
 
-#- name: install and configure enable influxdb
-- name: configure enable influxdb
+- name: install, configure and enable influxdb
   import_tasks: influxdb.yml
   tags: influxdb
+
+
+- name: install let's encrypt's certbot
+  import_tasks: certbot.yml
+  tags: ssl
 
 
 - name: configure and enbale nginx
@@ -32,7 +36,7 @@
     dest: /srv/trustroots
     owner: guaka
     group: admin
-    mode: u=rwX,g=rX,o=rX
+    mode: "u=rwX,g=rX,o=rX"
     recurse: yes
   tags:
     - chown
