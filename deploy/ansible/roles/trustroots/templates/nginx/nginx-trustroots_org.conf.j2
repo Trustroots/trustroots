@@ -22,7 +22,7 @@ server {
     return 301 https://www.{{ url_full }}$request_uri;
 
     ## SSL
-    include /srv/configs/nginx-ssl.conf;
+    #include /srv/configs/nginx-ssl.conf;
 }
 
 ## Primary Server block
@@ -47,24 +47,24 @@ server {
     client_max_body_size 10M;
 
     ## Letsencrypt acme challenge
-    include /srv/configs/nginx-acme-challenge.conf;
+    #include /srv/configs/nginx-acme-challenge.conf;
 
     ## Location specific configs
-    include /srv/configs/nginx-location.conf;
+    #include /srv/configs/nginx-location.conf;
 
     ## Phusion Passenger
-    include /srv/configs/nginx-passenger.conf;
+    #include /srv/configs/nginx-passenger.conf;
 
     ## SSL
-    include /srv/configs/nginx-ssl.conf;
+    #include /srv/configs/nginx-ssl.conf;
 
     ## Gzip Compression
-    include /srv/configs/nginx-gzip.conf;
+    #include /srv/configs/nginx-gzip.conf;
 
     ## Static files
     root /srv/trustroots/public;
 }
 
 # Warm up Passenger
-# TODO: get rid of this in fafour of pm2
-passenger_pre_start https://www.{{ url_full }}/;
+# TODO: get rid of this, replace with pm2
+#passenger_pre_start https://www.{{ url_full }}/;
