@@ -31,8 +31,6 @@ server {
 ## - Redirect non SSL to SSL
 ## - Enable Passenger
 server {
-#    listen 443 ssl http2;
-#    listen [::]:443 ssl http2;
 
     ## TODO: find out if the network supports ipv6, else dissable
     listen 443 ssl;
@@ -80,7 +78,5 @@ server {
 	proxy_busy_buffers_size    64k;
 	proxy_temp_file_write_size 64k;
     }
-
-
 }
 
