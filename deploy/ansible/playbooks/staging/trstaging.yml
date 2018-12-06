@@ -8,5 +8,4 @@
   - firewall
   - trustroots
   vars_files:
-
-  - "group_vars/{{ env }}"
+  - "group_vars/main.yml"

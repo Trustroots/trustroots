@@ -6,7 +6,7 @@
   - system
   - trustroots
   vars_files:
-  - "group_vars/dev.yml"
+  - "group_vars/main.yml"
   environment:
     NODE_ENV: "{{ env_short }}"
 
