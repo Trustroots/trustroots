@@ -10,8 +10,13 @@
   import_tasks: nginx.yml
   tags: nginx
 
-## TODO: test if non suplying of version leads to current HEAD?
 
+- name: install and configure mongodb
+  import_tasks: mongodb.yml
+  tags: mongodb
+
+
+## TODO: test if non suplying of version leads to current HEAD?
 - name: Clone/pull project repo
   git:
     repo: https://github.com/trustroots/trustroots.git
