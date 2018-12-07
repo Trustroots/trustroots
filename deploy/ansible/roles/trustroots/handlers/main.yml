@@ -5,12 +5,8 @@
   tags: influxdb
 
 
-- name: nginx restarthandler
+- name: nginx restart handler
   import_tasks: nginx.yml
   tags: nginx
 
-
-- name: ssh restart handler
-  import_tasks: ssh.yml
-  tags: ssh
 
