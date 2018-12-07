@@ -17,7 +17,7 @@ ansible_ssh_user=guaka
 dev.trustroots.org
 
 [dev:vars]
-ansible_ssh_user=guaka
+#ansible_ssh_user=guaka
 env=FOOOO
 
 
@@ -25,7 +25,7 @@ env=FOOOO
 staging.trustroots.org
 
 [staging:vars]
-ansible_ssh_user=guaka
+#ansible_ssh_user=guaka
 
 
 [hetzner:children]
