@@ -10,4 +10,7 @@
   tags: nginx
 
 
+- name: ssh restart handler
+  import_tasks: ssh.yml
+  tags: ssh
 
