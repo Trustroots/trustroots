@@ -1,4 +1,9 @@
 ---
-# Example that prints the loopback address and gateway for each host
+# Example debug..
 - debug:
-    msg: "System {{ inventory_hostname }} has env {{ env }}"
+    msg: "System: {{ inventory_hostname }} has env: {{ env }} url_full: {{ url_full }} domains_all: {{ domains_all }} domains_all_csl: {{ domains_all_csl }}"
+  tags: debug
+
+- debug:
+    msg: "ssl_cert_file_path: {{ ssl_cert_file_path }}, ssl_key_file_path: {{ ssl_key_file_path }}"
+  tags: debug
