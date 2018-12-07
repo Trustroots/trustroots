@@ -1,11 +1,5 @@
 ---
 
-## TODO: move the resulting file to vault to save time in the future
-#- name: provide nginx with dhparams
-# shell: "openssl dhparam -out /etc/ssl/certs/trustroots_org_dhparam.pem"
-#  args:
-#    creates: /etc/ssl/certs/trustroots_org_dhparam.pem
-
 - name: Generate DH Parameters with a different size (2048 bits)
   openssl_dhparam:
     path: /etc/ssl/certs/trustroots_org_dhparam.pem
@@ -31,7 +25,6 @@
     - gzip_params
 
 
-## TODO: add sym link
 - name: nginx sites enabled
   template:
     src: "nginx/{{ item }}.j2"
