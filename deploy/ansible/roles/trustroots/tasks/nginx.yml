@@ -1,18 +1,60 @@
 ---
 
+## TODO: move the resulting file to vault to save time in the future
+#- name: provide nginx with dhparams
+# shell: "openssl dhparam -out /etc/ssl/certs/trustroots_org_dhparam.pem"
+#  args:
+#    creates: /etc/ssl/certs/trustroots_org_dhparam.pem
+
+- name: Generate DH Parameters with a different size (2048 bits)
+  openssl_dhparam:
+    path: /etc/ssl/certs/trustroots_org_dhparam.pem
+    size: 2048
+
+
 - name: Install nginx
   apt:
     name: nginx-full
     state: present
 
-- name: nginx conf
-  copy:
-    src: files/nginx-default
-    dest: /etc/nginx/sites-available/default
+- name: main nginx confs
+  template:
+    src: "nginx/{{ item }}.j2"
+    dest: "/etc/nginx/{{ item }}"
     owner: root
     mode: 0644
   notify:
     - restart nginx
+  loop:
+    - ssl_params
+    - nginx.conf
+    - gzip_params
+
+
+## TODO: add sym link
+- name: nginx sites enabled
+  template:
+    src: "nginx/{{ item }}.j2"
+    dest: "/etc/nginx/sites-available/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  loop:
+    - nginx-trustroots_org.conf
+#    - default
+  notify:
+    - restart nginx
+
+
+- name: Create symbolic link 
+  file:
+    src: "/etc/nginx/sites-available/{{ item }}"
+    dest: "/etc/nginx/sites-enabled/{{ item }}"
+    state: link
+  loop:
+    - nginx-trustroots_org.conf
+#    - default
+
 
 - name: enable nginx
   systemd:

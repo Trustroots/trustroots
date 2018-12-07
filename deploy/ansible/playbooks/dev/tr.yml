@@ -2,6 +2,7 @@
 - hosts: dev
   become: yes
   roles:
+  - debug
   - users
   - system
   - trustroots
