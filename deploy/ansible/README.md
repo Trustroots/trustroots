@@ -8,7 +8,7 @@
 
 ### First runn
 ```
-ansible-playbook playbooks/dev/tr.yml  -e "ansible_ssh_user=admin"
+ansible-playbook playbooks/dev/tr.yml  -e "ansible_ssh_user=root"
 ```
 
 ### checking behaviour of --limit
