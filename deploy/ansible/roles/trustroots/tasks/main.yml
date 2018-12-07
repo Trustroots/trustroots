@@ -20,7 +20,6 @@
   tags: mongodb
 
 
-## TODO: test if non suplying of version leads to current HEAD?
 - name: Clone/pull project repo
   git:
     repo: https://github.com/trustroots/trustroots.git
@@ -40,7 +39,6 @@
     recurse: yes
   tags:
     - chown
-# This should be user trustroots
 
     
 - name: install and configure node
