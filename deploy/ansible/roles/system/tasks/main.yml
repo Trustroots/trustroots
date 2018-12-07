@@ -23,15 +23,15 @@
 
 - name: Disable empty password login
   lineinfile: dest=/etc/ssh/sshd_config regexp="^#?PermitEmptyPasswords" line="PermitEmptyPasswords no"
-  notify: restart sshd
+  notify: restart ssh
 
 - name: Disable remote root login
   lineinfile: dest=/etc/ssh/sshd_config regexp="^#?PermitRootLogin" line="PermitRootLogin no"
-  notify: restart sshd
+  notify: restart ssh
 
 - name: Disable password login
   lineinfile: dest=/etc/ssh/sshd_config regexp="^#?PasswordAuthentication" line="PasswordAuthentication no"
-  notify: restart sshd
+  notify: restart ssh
 
 - name: Enable tmpreaper
   lineinfile:
