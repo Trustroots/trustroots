@@ -1,6 +1,15 @@
 {% extends './email.server.view.html' %}
 
 {% block content %}
-give the reference, too: {{giveReferenceUrl}}
-And give more explanation about time limit etc.
+Hello BOB-FIRSTNAME,
+
+Great news! [LINK-TO-PROFILE]ALICE-FIRSTNAME left you a reference on Trustroots.
+
+You will be able to see their reference after you leave them a reference as well.
+Ideally you go to {{giveReferenceUrl}} right now.
+
+Otherwise you will have two weeks to do this. If you don't leave them
+a reference in the next two weeks their reference to you will show and
+you will only be able to leave a positive reference.
+
 {% endblock content %}
