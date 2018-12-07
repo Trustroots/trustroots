@@ -1,11 +1,11 @@
 {% extends './email.server.view.html' %}
 
 {% block content %}
-Hi ALICE-FIRSTNAME,
+Hi {{userTo.firstName}},
 
-Good news, [LINKTOPROFILE]BOB-FIRSTNAME has left you a reference as
-well. The recommendation was {{recommend}}
+Good news, {{userFrom.firstName}} ({{userFromProfileUrl}}) has left you a reference as
+well. The recommendation was {{recommend}}.
 
-You can see your own references at {{seeReferencesUrl}}
+You can see your own references at {{seeReferencesUrl}}.
 
 {% endblock content %}

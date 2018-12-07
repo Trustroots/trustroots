@@ -1,9 +1,9 @@
 {% extends './email.server.view.html' %}
 
 {% block content %}
-Hello BOB-FIRSTNAME,
+Hello {{userTo.firstName}},
 
-Great news! [LINK-TO-PROFILE]ALICE-FIRSTNAME left you a reference on Trustroots.
+Great news! {{userFrom.firstName}} ({{userFromProfileUrl}}) left you a reference on Trustroots.
 
 You will be able to see their reference after you leave them a reference as well.
 Ideally you go to {{giveReferenceUrl}} right now.

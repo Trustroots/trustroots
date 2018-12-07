@@ -417,6 +417,9 @@ exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
   var params = exports.addEmailBaseTemplateParams({
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
+    userFrom: userFrom,
+    userTo: userTo,
+    userFromProfileUrl: url + '/profile/' + userFrom.username,
     giveReferenceUrl: url + '/profile/' + userFrom.username + '/references/new'
   });
 
@@ -431,6 +434,9 @@ exports.sendReferenceNotificationSecond = function (userFrom, userTo, reference,
   var params = exports.addEmailBaseTemplateParams({
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
+    userFrom: userFrom,
+    userTo: userTo,
+    userFromProfileUrl: url + '/profile/' + userFrom.username,
     seeReferencesUrl: url + '/profile/' + userTo.username + '/references',
     recommend: reference.recommend
   });

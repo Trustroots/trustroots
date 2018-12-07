@@ -1,5 +1,27 @@
-{% extends './email.server.view.html' %}
+{% extends './email-with-container.server.view.html' %}
 
-{% block content %}
-<a href="{{giveReferenceUrl}}">give a reference</a>
-{% endblock content %}
+{% block textcontent %}
+  <p>
+    Hello {{userTo.firstName}}!
+  </p>
+
+  <p>
+    Great news! <a href="{{userFromProfileUrl}}">{{userFrom.firstName}}</a> left you a reference on Trustroots.
+  </p>
+
+  <p>You will be able to see their reference after you leave them a reference as well.</p>
+
+  <p>
+    Otherwise you will have two weeks to do this.
+    After two weeks, their reference for you will become public
+    and you will only be able to give them a positive reference.
+  </p>
+{% endblock textcontent %}
+
+{% block actionbutton %}
+  {% from "./partials/button.server.view.html" import button %}
+  {{button(giveReferenceUrl, 'Give a reference to ' + userFrom.firstName + ' now')}}
+
+  {% from "./partials/copypasteurl.server.view.html" import copyPasteUrl %}
+  {{copyPasteUrl(giveReferenceUrl)}}
+{% endblock actionbutton %}
