@@ -11,8 +11,9 @@
     state: present
 
 
-# TODO:
+# sudo ufw allow 80
 # pause nginx if nececry
+# add 'all_domains' to cert bot command
 
 - name: runn certbot in standalone mode if cert not found
   shell: "certbot certonly --standalone --preferred-challenges http -d {{ domains_all_csl }}  -m {{ email_addr_ssl }}  --agree-tos --no-eff-email --non-interactive --cert-name {{ url_full }}"
