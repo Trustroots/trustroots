@@ -74,6 +74,12 @@
 
 
 
+- name: remove default nginx conf's symlink
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+
 - name: Create symbolic link 
   file:
     src: "/etc/nginx/sites-available/{{ item }}"
