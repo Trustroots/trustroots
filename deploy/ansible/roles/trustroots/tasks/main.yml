@@ -34,7 +34,7 @@
   file:
     dest: /srv/trustroots
     owner: guaka
-    group: admin
+    group: guaka
     mode: "u=rwX,g=rX,o=rX"
     recurse: yes
   tags:
