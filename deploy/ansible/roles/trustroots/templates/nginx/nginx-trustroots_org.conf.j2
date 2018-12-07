@@ -23,7 +23,6 @@ server {
 
     ssl_certificate     {{ ssl_cert_file_path }};
     ssl_certificate_key {{ ssl_key_file_path }};
-
 }
 
 ## Primary Server block
@@ -44,6 +43,7 @@ server {
     client_max_body_size 10M;
 
     ## Static files
+    ## TODO: parameterize
     root /srv/trustroots/public;
 
         location = /robots.txt {
