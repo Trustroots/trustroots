@@ -30,6 +30,17 @@
   with_items: "{{ ssh_users }}"
 
 
+#- name: provide shell config for all users
+#  copy:
+#    dest: "/home/{{ item }}/.zshrc"
+#    src: "_.zshrc"
+#    mode: 0500
+#    owner: "{{ item }}"
+#    group: "{{ item }}"
+#  with_items: "{{ ssh_users }}"
+#  when: item != 'guaka'
+#
+
 - name: Deploy ssh public keys
   authorized_key:
     user: "{{ item }}"
@@ -38,13 +49,13 @@
   with_items: "{{ ssh_users }}"
 
 
-- name: Add guaka to sudoers
+- name: Add users to sudoers
   lineinfile:
     dest: /etc/sudoers
     line: "{{ item }} ALL=(ALL) NOPASSWD: ALL"
   with_items: "{{ ssh_users }}"
 
-- name: permissions
+- name: chown home folders with correct permissions
   file:
     path: "/home/{{ item }}"
     owner: "{{ item }}"
