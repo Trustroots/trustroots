@@ -21,8 +21,9 @@ server {
     server_name {{ url_full }};
     return 301 https://www.{{ url_full }}$request_uri;
 
-    ## SSL
-    #include /srv/configs/nginx-ssl.conf;
+    ssl_certificate     {{ ssl_cert_file_path }};
+    ssl_certificate_key {{ ssl_key_file_path }};
+
 }
 
 ## Primary Server block
@@ -38,6 +39,9 @@ server {
     listen [::]:443 ipv6only=on;
 
     server_name www.{{ url_full }};
+
+    ssl_certificate     {{ ssl_cert_file_path }};
+    ssl_certificate_key {{ ssl_key_file_path }};
 
     ## Enable maintenance mode by uncommenting this
     #include /srv/configs/nginx-maintenance.conf;
