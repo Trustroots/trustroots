@@ -32,6 +32,9 @@
   become_user: guaka
 
 
+
+
+
 ## TODO:figure this out
 ## TODO: remove env here, it shoyld be in playbook
 ## get rind of the OR TRUE that fixes the broken population stuff
@@ -56,12 +59,31 @@
   tags:
     - testdata
 
-- name: pm2 start
-  shell: "pm2 start worker-pm2.json --env {{ env_long }} || true"
+
+- name: "pm2 start {{ item }}"
+  shell: "pm2 start {{ item }}-pm2.json --env {{ env_long }} || true"
   args:
     chdir: /srv/trustroots
   become: yes
   become_user: guaka
   tags:
     - pm2
+  loop:
+    - server
+    - worker
+
+
+## sudo env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u guaka --hp /home/guaka
+- name: generate and anable pm2 systemd things
+  shell: "env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u guaka --hp /home/guaka"
+  args:
+    creates: "/etc/systemd/system/pm2-guaka.service"
+
+
+- name: tell pm2 to save process list
+  shell: pm2 save
+  become: yes
+  become_user: guaka
+  args:
+    chdir: /srv/trustroots
 
