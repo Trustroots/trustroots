@@ -179,7 +179,8 @@ var addThreads = function () {
                             else {
                               process.stdout.write('.');
                               threadsSaved += 1;
-                              if (threadsSaved >= numThreads) {
+                              if ((limit && (threadsSaved + threads.length >= numThreads))
+                                  || !limit && ((threadsSaved >= numThreads))) {
                                 console.log('');
                                 console.log(chalk.green(threads.length + ' threads existed in the database.'));
                                 console.log(chalk.green(threadsSaved + ' threads successfully added.'));
