@@ -85,7 +85,7 @@
     "angulartics-google-analytics": "~0.5.0",
     "async": "~2.6.1",
     "autolinker": "~1.8.1",
-    "autoprefixer": "~9.3.1",
+    "autoprefixer": "~9.4.2",
     "basic-auth": "~2.0.1",
     "body-parser": "~1.18.3",
     "bootstrap": "3.3.7",
@@ -93,7 +93,7 @@
     "check-node-version": "~3.2.0",
     "compression": "~1.7.3",
     "connect-flash": "~0.1.1",
-    "connect-mongo": "~2.0.2",
+    "connect-mongo": "~2.0.3",
     "cookie-parser": "~1.4.3",
     "del": "~3.0.0",
     "eslint-plugin-angular": "~4.0.0",
@@ -142,7 +142,7 @@
     "mmmagic": "~0.5.2",
     "moment": "~2.22.2",
     "mongodb": "~3.1.10",
-    "mongoose": "~5.3.14",
+    "mongoose": "~5.3.15",
     "mongoose-beautiful-unique-validation": "~7.1.1",
     "mongoose-integer": "~0.1.1",
     "mongoose-paginate": "5.0.3",
@@ -159,7 +159,7 @@
     "passport-twitter": "~1.0.4",
     "prunecluster": "~2.1.0",
     "randomcolor": "~0.5.1",
-    "sanitize-html": "~1.19.1",
+    "sanitize-html": "~1.19.3",
     "serve-favicon": "~2.5.0",
     "speakingurl": "~14.0.1",
     "stathat": "0.0.8",
@@ -170,9 +170,9 @@
     "winston-papertrail": "~1.0.4"
   },
   "devDependencies": {
-    "@babel/core": "~7.1.2",
-    "@babel/plugin-proposal-object-rest-spread": "~7.0.0",
-    "@babel/preset-env": "~7.1.0",
+    "@babel/core": "~7.2.0",
+    "@babel/plugin-proposal-object-rest-spread": "~7.2.0",
+    "@babel/preset-env": "~7.2.0",
     "@babel/preset-react": "~7.0.0",
     "agendash": "~0.4.0",
     "babel-loader": "~8.0.4",
@@ -208,10 +208,10 @@
     "should": "~13.2.3",
     "sinon": "~7.1.1",
     "supertest": "~3.3.0",
-    "webpack": "~4.26.1",
+    "webpack": "~4.27.1",
     "webpack-cli": "~3.1.2",
     "webpack-merge": "~4.1.4",
-    "webpack-stream": "~5.2.0"
+    "webpack-stream": "~5.2.1"
   },
   "bugs": {
     "url": "https://github.com/Trustroots/trustroots/issues"
