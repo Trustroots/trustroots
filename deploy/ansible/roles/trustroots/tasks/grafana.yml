@@ -1,0 +1,18 @@
+---
+
+- name: Add grafana apt source
+  apt_repository:
+    repo: deb https://packagecloud.io/grafana/stable/debian/ stretch main
+    state: present
+
+
+- name: Add grafana apt signing key, will not download if present
+  apt_key:
+    # @todo: add key ID
+    url: https://packagecloud.io/gpg.key
+    state: present
+
+
+- name: install grafana
+  apt: pkg=grafana state=present
+

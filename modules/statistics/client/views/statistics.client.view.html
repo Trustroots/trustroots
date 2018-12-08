@@ -1,4 +1,4 @@
-<section class="container board container-fullscreen text-center" tr-boards="'bokeh'">
+<section class="container board text-center" tr-boards="'bokeh'">
   <div class="row">
     <div class="col-xs-12">
       <img class="hidden-xs" src="/img/logo/color.svg" alt="Trustroots" width="140" height="140" />
@@ -6,6 +6,7 @@
       <h2>Trustroots Statistics</h2>
       <br><br><br>
     </div>
+
     <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 stats">
 
       <div ng-if="!stats.statisticsData.$resolved"
@@ -85,6 +86,33 @@
 
         <hr>
 
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3 class="panel-title">Member growth</h3>
+          </div>
+          <div class="panel-body">
+            <a href="https://grafana.trustroots.org/d/000000002/members">
+              <img class="img-responsive" src="https://grafana.trustroots.org/render/d-solo/000000002/members?orgId=1&from=1419289200000&to=1543142370362&panelId=1&width=800&height=300&theme=light" width="100%" alt="Trustroots member growth">
+            </a>
+          </div>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3 class="panel-title">Number of messages sent</h3>
+          </div>
+          <div class="panel-body">
+            <a href="https://grafana.trustroots.org/d/000000001/messages">
+              <img class="img-responsive" src="https://grafana.trustroots.org/render/d-solo/000000001/messages?panelId=3&from=1419289200000&to=1543142370362&panelId=1&width=800&height=300&theme=light" width="100%" alt="Trustroots weekly messages">
+            </a>
+          </div>
+        </div>
+
+        <p>Are you an (aspiring) data scientist? Check <a href="https://grafana.trustroots.org/">our grafana</a> for stats galore.</p>
+
+        <p>Wanna help get better numbers? Consider <a ui-sref="volunteering">joining us</a>.</p>
+
+        <hr>
         <h3>Enabling the latent trust between humans since</h3>
         <time class="lead" ng-bind="stats.launchDate | date:mediumDate"></time>
       </section>
@@ -92,9 +120,6 @@
       <p>
         <br>
         <a ng-if="!app.user" ui-sref="signup" class="btn btn-lg btn-action btn-inverse">Join Trustroots</a>
-        <br><br>
-        <br><br>
-        <a class="stats-commit" ng-if="stats.commit" ng-href="https://github.com/Trustroots/trustroots/tree/{{stats.commit}}">Currently deployed code at Github</a>
       </p>
 
     </div>

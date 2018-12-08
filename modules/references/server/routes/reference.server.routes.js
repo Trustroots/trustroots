@@ -1,9 +1,9 @@
 'use strict';
 
-var path = require('path'),
-    config = require(path.resolve('./config/config')),
-    referencePolicy = require('../policies/references.server.policy'),
-    references = require('../controllers/reference.server.controller');
+const path = require('path'),
+      config = require(path.resolve('./config/config')),
+      referencePolicy = require('../policies/references.server.policy'),
+      references = require('../controllers/reference.server.controller');
 
 module.exports = function (app) {
   if (config.featureFlags.reference) {

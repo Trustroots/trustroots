@@ -1,0 +1,33 @@
+
+
+system_apt_packages:
+  - ack-grep
+  - backupninja
+  - curl
+  - emacs25-nox
+  - tmux
+  - screen
+  - etckeeper
+  - fail2ban
+  - git
+  - htop
+  - jq
+  - locate
+  - multitail
+  - openssh-server
+  - pv
+  - pwgen
+  - sudo
+  - tmpreaper
+  - unattended-upgrades
+  - w3m
+  - zsh
+  - nullmailer
+  - passenger
+  - graphicsmagick
+  - make
+  - build-essential
+  - monit
+  - munin
+
+

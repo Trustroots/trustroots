@@ -156,7 +156,6 @@ describe('Statistics CRUD tests', function () {
 
           statsReadRes.body.total.should.equal(2);
           statsReadRes.body.newsletter.should.equal(1);
-          should.exist(statsReadRes.body.commit);
 
           // Call the assertion callback
           return done(statsReadErr);
@@ -189,7 +188,6 @@ describe('Statistics CRUD tests', function () {
 
               statsReadRes.body.total.should.equal(2);
               statsReadRes.body.newsletter.should.equal(1);
-              should.exist(statsReadRes.body.commit);
 
               // Call the assertion callback
               return done(statsReadErr);

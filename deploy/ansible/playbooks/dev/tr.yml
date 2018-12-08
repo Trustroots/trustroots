@@ -1,0 +1,13 @@
+---
+- hosts: dev
+  become: yes
+  roles:
+  - debug
+  - users
+  - system
+  - trustroots
+  vars_files:
+  - "group_vars/main.yml"
+  environment:
+    NODE_ENV: "{{ env_short }}"
+

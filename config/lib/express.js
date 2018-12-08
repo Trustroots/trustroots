@@ -290,6 +290,8 @@ module.exports.initHelmetHeaders = function (app) {
 
       // Defines the origins from which scripts can be loaded.
       scriptSrc: [
+        // For Webpack
+        '\'unsafe-eval\'',
         // IE Edge does not support `nonce`, thus we need `unsafe-inline`. :-(
         // Using sha instead could work.
         '\'unsafe-inline\'',
@@ -325,6 +327,7 @@ module.exports.initHelmetHeaders = function (app) {
       // Defines the origins from which images can be loaded.
       imgSrc: [
         '\'self\'',
+        'grafana.trustroots.org',
         '*.tiles.mapbox.com', // Map tiles
         'api.mapbox.com', // Map tiles/Geocoding
         '*.tile.openstreetmap.org', // Map tiles

@@ -1,0 +1,9 @@
+---
+- hosts: hetzner
+  gather_facts: false
+  become: yes
+  roles:
+    - system
+    - guaka
+    - trprod
+    - firewall

@@ -3,17 +3,17 @@
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-    uniqueValidation = require('mongoose-beautiful-unique-validation'),
-    Schema = mongoose.Schema;
+const mongoose = require('mongoose'),
+      uniqueValidation = require('mongoose-beautiful-unique-validation'),
+      Schema = mongoose.Schema;
 
 /**
  * ReferenceUser Schema
  */
-var ReferenceSchema = new Schema({
+const ReferenceSchema = new Schema({
   created: {
     type: Date,
-    default: function () { return Date.now(); }, // Date.now is wrapped for sinon.useFakeTimers()
+    default: () => Date.now(), // Date.now is wrapped for sinon.useFakeTimers()
     required: true
   },
   /*

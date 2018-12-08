@@ -1,0 +1,83 @@
+---
+
+- name: node apt stuff
+  shell: "curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -"
+  args:
+    warn: false
+  tags:
+    - node-apt-source
+
+
+- name: Install nodejs
+  apt:
+    name: nodejs
+    state: present
+
+
+- name: install pm2
+  npm:
+    name: pm2
+    global: yes
+  tags:
+    - npm
+    - pm2
+    
+
+- name: npm ci
+  # https://docs.npmjs.com/cli/ci
+  shell: 'npm ci'
+  args:
+    chdir: /srv/trustroots
+  become: yes
+  become_user: guaka
+
+
+- name: npm run build:ENV "{{ env_short }}"
+  shell: "npm run build:{{ env_short }} || true "
+  args: 
+    chdir: /srv/trustroots
+  become: yes
+  become_user: guaka
+  tags:
+    - build
+  
+
+## TODO: get rid of the need for OR TRUE
+- name: generate test data
+  shell: 'npm run seed > /home/guaka/.node_test_data_created || true'
+  args: 
+    chdir: /srv/trustroots
+    creates: /home/guaka/.node_test_data_created
+  become: yes
+  become_user: guaka
+  tags:
+    - testdata
+
+
+- name: "pm2 start {{ item }}"
+  shell: "pm2 start {{ item }}-pm2.json --env {{ env_long }} || true"
+  args:
+    chdir: /srv/trustroots
+  become: yes
+  become_user: guaka
+  tags:
+    - pm2
+  loop:
+    - server
+    - worker
+
+
+## sudo env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u guaka --hp /home/guaka
+- name: generate and anable pm2 systemd things
+  shell: "env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u guaka --hp /home/guaka"
+  args:
+    creates: "/etc/systemd/system/pm2-guaka.service"
+
+
+- name: tell pm2 to save process list
+  shell: pm2 save
+  become: yes
+  become_user: guaka
+  args:
+    chdir: /srv/trustroots
+

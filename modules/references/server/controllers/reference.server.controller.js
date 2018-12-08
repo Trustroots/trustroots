@@ -1,24 +1,24 @@
 'use strict';
 
-var mongoose = require('mongoose'),
-    _ = require('lodash'),
-    path = require('path'),
-    async = require('async'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
-    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    Reference = mongoose.model('Reference'),
-    User = mongoose.model('User');
+const mongoose = require('mongoose'),
+      _ = require('lodash'),
+      path = require('path'),
+      util = require('util'),
+      errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
+      emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+      pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
+      userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
+      Reference = mongoose.model('Reference'),
+      User = mongoose.model('User');
 
 /**
  * Validate the request body and data consistency
  * of Create a reference
  */
 function validateCreate(req) {
-  var valid = true;
-  var details = {};
-  var interactionErrors = {};
+  let valid = true;
+  const details = {};
+  const interactionErrors = {};
 
   // Can't create a reference to oneself
   if (req.user._id.equals(req.body.userTo)) {
@@ -27,7 +27,7 @@ function validateCreate(req) {
   }
 
   // Some interaction must have happened
-  var isInteraction = req.body.interactions && (req.body.interactions.met || req.body.interactions.hostedMe || req.body.interactions.hostedThem);
+  const isInteraction = req.body.interactions && (req.body.interactions.met || req.body.interactions.hostedMe || req.body.interactions.hostedThem);
   if (!isInteraction) {
     valid = false;
     interactionErrors.any = 'missing';
@@ -57,12 +57,12 @@ function validateCreate(req) {
   }
 
   // No unexpected fields
-  var allowedFields = ['userTo', 'interactions', 'recommend'];
-  var fields = Object.keys(req.body);
-  var unexpectedFields = _.difference(fields, allowedFields);
-  var allowedInteractions = ['met', 'hostedMe', 'hostedThem'];
-  var interactions = Object.keys(req.body.interactions || {});
-  var unexpectedInteractions = _.difference(interactions, allowedInteractions);
+  const allowedFields = ['userTo', 'interactions', 'recommend'];
+  const fields = Object.keys(req.body);
+  const unexpectedFields = _.difference(fields, allowedFields);
+  const allowedInteractions = ['met', 'hostedMe', 'hostedThem'];
+  const interactions = Object.keys(req.body.interactions || {});
+  const unexpectedInteractions = _.difference(interactions, allowedInteractions);
   if (unexpectedFields.length > 0 || unexpectedInteractions.length > 0) {
     valid = false;
     details.fields = 'unexpected';
@@ -70,10 +70,17 @@ function validateCreate(req) {
 
   if (Object.keys(interactionErrors).length > 0) details.interactions = interactionErrors;
 
-  return { valid: valid, details: details };
+  return { valid, details };
 }
 
-var nonpublicReferenceFields = [
+class ResponseError {
+  constructor({ status, body }) {
+    this.status = status;
+    this.body = body;
+  }
+}
+
+const nonpublicReferenceFields = [
   '_id',
   'public',
   'userFrom',
@@ -81,7 +88,7 @@ var nonpublicReferenceFields = [
   'created'
 ];
 
-var referenceFields = nonpublicReferenceFields.concat([
+const referenceFields = nonpublicReferenceFields.concat([
   'interactions.met',
   'interactions.hostedMe',
   'interactions.hostedThem',
@@ -106,16 +113,12 @@ function formatReference(reference, isNonpublicFullyDisplayed) {
 /**
  * Check if the reference already exists. If it exists, return an error in a callback.
  */
-function checkDuplicate(req, done) {
-  Reference.findOne({ userFrom: req.user._id, userTo: req.body.userTo }).exec(function (err, ref) {
-    if (err) return done(err);
+async function checkDuplicate(req) {
+  const ref = await Reference.findOne({ userFrom: req.user._id, userTo: req.body.userTo }).exec();
 
-    if (ref === null) {
-      return done();
-    }
+  if (ref === null) return;
 
-    return done({ status: 409, body: { errType: 'conflict' } });
-  });
+  throw new ResponseError({ status: 409, body: { errType: 'conflict' } });
 }
 
 /**
@@ -146,130 +149,134 @@ function processResponses(res, next, resOrErr) {
  * @param {object} req - Express Request object
  * @param {function} cb - callback function
  */
-function validate(validator, req, cb) {
-  var validation = validator(req);
+function validate(validator, req) {
+  const validation = validator(req);
 
   if (validation.valid) {
-    return cb();
+    return;
   }
 
-  return cb({ status: 400, body: { errType: 'bad-request', details: validation.details } });
+  throw new ResponseError({ status: 400, body: { errType: 'bad-request', details: validation.details } });
+}
+
+async function isUserToPublic(req) {
+  const userTo = await User.findOne({ _id: req.body.userTo }).exec();
+
+  // Can't create a reference to a nonexistent user
+  // Can't create a reference to a nonpublic user
+  if (!userTo || !userTo.public) {
+    throw new ResponseError({
+      status: 404,
+      body: {
+        errType: 'not-found',
+        details: {
+          userTo: 'not found'
+        }
+      }
+    });
+  }
+
+  return userTo;
+}
+
+function validateReplyToPublicReference(otherReference, req) {
+  if (otherReference && otherReference.public && req.body.recommend !== 'yes') {
+    throw new ResponseError({
+      status: 400,
+      body: {
+        errType: 'bad-request',
+        details: {
+          recommend: '\'yes\' expected - response to public'
+        }
+      }
+    });
+  }
+}
+
+async function saveNewReference(referenceData) {
+  const reference = new Reference(referenceData);
+  return await reference.save();
+}
+
+async function publishOtherReference(otherReference) {
+  if (otherReference && !otherReference.public) {
+    otherReference.set({ public: true });
+    await otherReference.save();
+  }
+}
+
+async function sendEmailNotification(userFrom, userTo, savedReference, otherReference) {
+  if (!otherReference) {
+    return util.promisify(emailService.sendReferenceNotificationFirst)(userFrom, userTo);
+  } else {
+    return util.promisify(emailService.sendReferenceNotificationSecond)(userFrom, userTo, savedReference);
+  }
+}
+
+async function sendPushNotification(userFrom, userTo, { isFirst }) {
+  return util.promisify(pushService.notifyNewReference)(userFrom, userTo, { isFirst });
 }
 
 /**
  * Create a reference - express middleware
  */
-exports.create = function (req, res, next) {
+exports.create = async function (req, res, next) {
 
-  var userTo; // not to have to pass found user in callbacks
-
-  return async.waterfall([
+  // each of the following functions throws a special response error when it wants to respond
+  // this special error gets processed within the catch {}
+  try {
     // Synchronous validation of the request data consistency
-    validate.bind(this, validateCreate, req),
+    validate(validateCreate, req);
+
     // Check that the reference is not duplicate
-    _.partial(checkDuplicate, req),
+    await checkDuplicate(req);
+
     // Check if the receiver of the reference exists and is public
-    function isUserToPublic(cb) {
-      User.findOne({ _id: req.body.userTo }).exec(function (err, foundUser) {
-        if (err) return cb(err);
+    const userTo = await isUserToPublic(req);
 
-        userTo = foundUser;
-
-        // Can't create a reference to a nonexistent user
-        // Can't create a reference to a nonpublic user
-        if (!userTo || !userTo.public) {
-          return cb({
-            status: 404,
-            body: {
-              errType: 'not-found',
-              details: {
-                userTo: 'not found'
-              }
-            }
-          });
-        }
-
-        return cb();
-      });
-    },
     // Check if the opposite direction reference exists
-    // when it exists, we want to make both references public
-    function getOtherReference(cb) {
-      Reference.findOne({ userFrom: req.body.userTo, userTo: req.user._id }).exec(function (err, ref) {
-        cb(err, ref);
-      });
-    },
+    // when it exists, we will want to make both references public
+    const otherReference = await Reference.findOne({ userFrom: req.body.userTo, userTo: req.user._id }).exec();
+
+    // when the other reference is public, this one can only have value of recommend: yes
+    validateReplyToPublicReference(otherReference, req);
+
     // save the reference...
-    function saveNewReference(otherReference, cb) {
+    const savedReference = await saveNewReference({
+      ...req.body,
+      userFrom: req.user._id,
+      public: !!otherReference
+    });
 
-      // ... when the other reference is public, this one can only have value of recommend: yes ...
-      if (otherReference && otherReference.public && req.body.recommend !== 'yes') {
-        return cb({
-          status: 400,
-          body: {
-            errType: 'bad-request',
-            details: {
-              recommend: '\'yes\' expected - response to public'
-            }
-          }
-        });
-      }
-
-      // ...and make it public if it is a reference reply
-      var reference = new Reference(_.merge(req.body, { userFrom: req.user._id, public: !!otherReference }));
-
-      reference.save(function (err, savedReference) {
-        return cb(err, savedReference, otherReference);
-      });
-    },
     // ...and if this is a reference reply, make the other reference public, too
-    function publishOtherReference(savedReference, otherReference, cb) {
-      if (otherReference && !otherReference.public) {
-        otherReference.set({ public: true });
-        return otherReference.save(function (err) {
-          return cb(err, savedReference, otherReference);
-        });
-      }
+    await publishOtherReference(otherReference);
 
-      return cb(null, savedReference, otherReference);
-    },
     // send email notification
-    function sendEmailNotification(savedReference, otherReference, cb) {
-      if (!otherReference) {
-        return emailService.sendReferenceNotificationFirst(req.user, userTo, function (err) {
-          cb(err, savedReference, otherReference);
-        });
-      } else {
-        return emailService.sendReferenceNotificationSecond(req.user, userTo, savedReference, function (err) {
-          cb(err, savedReference, otherReference);
-        });
-      }
-    },
+    await sendEmailNotification(req.user, userTo, savedReference, otherReference);
+
     // send push notification
-    function sendPushNotification(savedReference, otherReference, cb) {
-      return pushService.notifyNewReference(req.user, userTo, { isFirst: !otherReference }, function (err) {
-        cb(err, savedReference);
-      });
-    },
+    await sendPushNotification(req.user, userTo, { isFirst: !otherReference });
+
     // finally, respond
-    function respond(savedReference, cb) {
-      return cb({
-        status: 201,
-        body: formatReference(savedReference, true)
-      });
-    }
-  ], processResponses.bind(this, res, next));
+    throw new ResponseError({
+      status: 201,
+      body: formatReference(savedReference, true)
+    });
+
+  } catch (e) {
+    processResponses(res, next, e);
+  }
 };
 
 /**
  * Validator for readMany controller
  */
 function validateReadMany(req) {
-  var valid = true;
-  var details = {};
+  let valid = true;
+  const details = {};
 
   // check that query contains userFrom or userTo
-  var isQueryWithFilter = req.query.userFrom || req.query.userTo;
+  const isQueryWithFilter = req.query.userFrom || req.query.userTo;
   if (!isQueryWithFilter) {
     valid = false;
     details.userFrom = 'missing';
@@ -280,34 +287,35 @@ function validateReadMany(req) {
   ['userFrom', 'userTo'].forEach(function (param) {
     if (!req.query[param]) return;
 
-    var isParamValid = mongoose.Types.ObjectId.isValid(req.query[param]);
+    const isParamValid = mongoose.Types.ObjectId.isValid(req.query[param]);
     if (!isParamValid) {
       valid = false;
       details[param] = 'invalid';
     }
   });
 
-  return { valid: valid, details: details };
+  return { valid, details };
 }
 
 /**
  * Read references filtered by userFrom or userTo
  */
-exports.readMany = function readMany(req, res, next) {
-
-  return async.waterfall([
-
+exports.readMany = async function readMany(req, res, next) {
+  try {
     // validate the query
-    validate.bind(this, validateReadMany, req),
+    validate(validateReadMany, req);
 
-    // build a query (synchronous)
-    function buildQuery(cb) {
-      var query = { };
+    const { userFrom, userTo } = req.query;
+    const self = req.user;
+
+    // build a query
+    const query = (function buildQuery() {
+      const query = { };
 
       /**
        * Allow non-public references only when userFrom or userTo is self
        */
-      var isSelfUserFromOrUserTo = req.user._id.equals(req.query.userFrom) || req.user._id.equals(req.query.userTo);
+      const isSelfUserFromOrUserTo = self._id.equals(userFrom) || self._id.equals(userTo);
       if (!isSelfUserFromOrUserTo) {
         query.public = true;
       }
@@ -315,40 +323,37 @@ exports.readMany = function readMany(req, res, next) {
       /**
        * Filter by userFrom
        */
-      if (req.query.userFrom) {
-        query.userFrom = req.query.userFrom;
+      if (userFrom) {
+        query.userFrom = userFrom;
       }
 
       /**
        * Filter by userTo
        */
-      if (req.query.userTo) {
-        query.userTo = req.query.userTo;
+      if (userTo) {
+        query.userTo = userTo;
       }
 
-      cb(null, query);
-    },
+      return query;
+    }());
 
     // find references by query
-    function findReferences(query, cb) {
-      Reference.find(query)
-        .select(referenceFields)
-        .populate('userFrom userTo', userProfile.userMiniProfileFields)
-        .exec(cb);
-    },
+    const references = await Reference.find(query)
+      .select(referenceFields)
+      .populate('userFrom userTo', userProfile.userMiniProfileFields)
+      .exec();
 
-    // prepare success response
-    function prepareSuccessResponse(references, cb) {
-      var isSelfUserFrom = req.user._id.equals(req.query.userFrom);
+    // is the logged user userFrom?
+    const isSelfUserFrom = self._id.equals(userFrom);
 
-      // when userFrom is self, we can see the nonpublic references in their full form
-      cb({
-        status: 200,
-        body: references.map(_.partial(formatReference, _, isSelfUserFrom))
-      });
-    }
-
-  ], processResponses.bind(this, res, next));
+    // when userFrom is self, we can see the nonpublic references in their full form
+    throw new ResponseError({
+      status: 200,
+      body: references.map(reference => formatReference(reference, isSelfUserFrom))
+    });
+  } catch (e) {
+    processResponses(res, next, e);
+  }
 };
 
 
@@ -357,61 +362,63 @@ exports.readMany = function readMany(req, res, next) {
  * @param {string} id - referenceId
  */
 function validateReadOne(id) {
-  var valid = true;
-  var details = {};
+  let valid = true;
+  const details = {};
 
-  var isIdValid = mongoose.Types.ObjectId.isValid(id);
+  const isIdValid = mongoose.Types.ObjectId.isValid(id);
   if (!isIdValid) {
     valid = false;
     details.referenceId = 'invalid';
   }
 
-  return { valid: valid, details: details };
+  return { valid, details };
 }
 
 /**
  * Load a reference by id to request.reference
  */
-exports.referenceById = function referenceById(req, res, next, id) { // eslint-disable-line no-unused-vars
-  // don't bother fetching a reference for non-public users or guests
-  if (!req.user || !req.user.public) return next();
+exports.referenceById = async function referenceById(req, res, next, id) { // eslint-disable-line no-unused-vars
+  try {
+    // don't bother fetching a reference for non-public users or guests
+    if (!req.user || !req.user.public) return next();
 
-  async.waterfall([
     // validate
-    validate.bind(this, validateReadOne, id),
+    validate(validateReadOne, id);
+
+    const selfId = req.user._id;
+
     // find the reference by id
-    function (cb) {
-      Reference.findById(req.params.referenceId)
-        .select(referenceFields)
-        .populate('userFrom userTo', userProfile.userMiniProfileFields)
-        .exec(cb);
-    },
+    const reference = await Reference.findById(req.params.referenceId)
+      .select(referenceFields)
+      .populate('userFrom userTo', userProfile.userMiniProfileFields)
+      .exec();
+
+    const userFromId = (reference) ? reference.userFrom._id : null;
+    const userToId = (reference) ? reference.userTo._id : null;
+
     // make sure that nonpublic references are not exposed
-    // assign reference to request object
-    function (reference, cb) {
-
-      // nonpublic reference can be exposed to userFrom or userTo only.
-      var isExistentPublicOrFromToSelf = reference
-        && (reference.public || reference.userFrom._id.equals(req.user._id) || reference.userTo.equals(req.user._id));
-      if (!isExistentPublicOrFromToSelf) {
-        return cb({
-          status: 404,
-          body: {
-            errType: 'not-found',
-            details: {
-              reference: 'not found'
-            }
+    // nonpublic reference can be exposed to userFrom or userTo only.
+    const isExistentPublicOrFromToSelf = reference && (reference.public || userFromId.equals(selfId) || userToId.equals(selfId));
+    if (!isExistentPublicOrFromToSelf) {
+      throw new ResponseError({
+        status: 404,
+        body: {
+          errType: 'not-found',
+          details: {
+            reference: 'not found'
           }
-        });
-      }
-
-      // assign the reference to the request object
-      // when reference is public, only userFrom can see it whole
-      var isUserFrom = reference.userFrom._id.equals(req.user._id);
-      req.reference = formatReference(reference, isUserFrom);
-      return cb();
+        }
+      });
     }
-  ], processResponses.bind(this, res, next));
+
+    // assign the reference to the request object
+    // when reference is not public, only userFrom can see it whole
+    const isUserFrom = userFromId === selfId;
+    req.reference = formatReference(reference, isUserFrom);
+    return next();
+  } catch (e) {
+    processResponses(res, next, e);
+  }
 };
 
 

@@ -1,0 +1,64 @@
+---
+
+
+## admin group is leggacy since ubuntu 12.01
+## https://wiki.ubuntu.com/PrecisePangolin/ReleaseNotes/UbuntuDesktop#PrecisePangolin.2BAC8-ReleaseNotes.2BAC8-CommonInfrastructure.Common_Infrastructure
+#- name: Ensure an admin group
+#  group:
+#    name: admin
+#    state: present
+
+
+- name: add system users
+  user:
+    name: "{{ item }}"
+    shell: /bin/zsh
+    groups: sudo,www-data
+#    groups: admin,sudo,www-data
+    createhome: yes
+    append: yes
+    comment: "i dont really know what this comment is"
+    state: present
+  with_items: "{{ ssh_users }}"
+
+
+- name: Create .ssh folder
+  file:
+    path: "/home/{{ item }}/.ssh/"
+    state: directory
+    mode: 0755
+  with_items: "{{ ssh_users }}"
+
+
+#- name: provide shell config for all users
+#  copy:
+#    dest: "/home/{{ item }}/.zshrc"
+#    src: "_.zshrc"
+#    mode: 0500
+#    owner: "{{ item }}"
+#    group: "{{ item }}"
+#  with_items: "{{ ssh_users }}"
+#  when: item != 'guaka'
+#
+
+- name: Deploy ssh public keys
+  authorized_key:
+    user: "{{ item }}"
+    state: present
+    key: "{{ lookup('file', 'ssh_pubkeys/' + item + '.pub') }}"
+  with_items: "{{ ssh_users }}"
+
+
+- name: Add users to sudoers
+  lineinfile:
+    dest: /etc/sudoers
+    line: "{{ item }} ALL=(ALL) NOPASSWD: ALL"
+  with_items: "{{ ssh_users }}"
+
+- name: chown home folders with correct permissions
+  file:
+    path: "/home/{{ item }}"
+    owner: "{{ item }}"
+    recurse: yes
+  with_items: "{{ ssh_users }}"
+

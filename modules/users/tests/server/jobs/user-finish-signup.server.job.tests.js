@@ -151,7 +151,7 @@ describe('Job: user finish signup', function () {
 
         jobs.length.should.equal(1);
         jobs[0].type.should.equal('send email');
-        jobs[0].data.subject.should.equal('Last change to complete your signup to Trustroots!');
+        jobs[0].data.subject.should.equal('Last chance to complete your signup to Trustroots!');
         jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
         ['html', 'text'].forEach(function (format) {
           jobs[0].data[format].should.containEql('This is our last reminder, after which we will stop sending you emails.');

@@ -1,0 +1,25 @@
+---
+
+- name: Install mongodb-server
+  apt:
+    name: mongodb-server
+    state: present
+
+
+#- name: mongodb conf
+#  copy:
+#    src: files/mongodb.conf
+#    dest: /etc/mongodb/mongodb.conf
+#    owner: root
+#    mode: 0644
+#  notify:
+#    - restart mongodb
+#
+#
+
+- name: enable mongodb
+  systemd:
+    name: mongodb
+    enabled: yes
+    state: started
+

@@ -33,7 +33,10 @@ scipts/docker/nginx-conf/*
 !scipts/docker/nginx-conf/trustroots.conf
 
 # Ansible Deployment Junk 
-ansible/playbooks/*.retry
+deploy/ansible/playbooks/*/*.retry
+
+# Ansible-Vault Password
+deploy/ansible/VAULT_SECRET
 
 # App
 build
