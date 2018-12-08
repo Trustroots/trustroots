@@ -2,7 +2,7 @@
 title: Trustroots development documentation
 ---
 
-<div class="align:right">
+<div style="float:right">
   <a href="https://www.trustroots.org/"><img width="200"
 src="https://cdn.rawgit.com/Trustroots/trustroots/master/public/img/logo/color.svg"
 alt="Trustroots"></a>
