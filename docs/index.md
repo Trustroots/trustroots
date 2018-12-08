@@ -2,6 +2,12 @@
 title: Trustroots development documentation
 ---
 
+<div class="align:right">
+  <a href="https://www.trustroots.org/"><img width="200"
+src="https://cdn.rawgit.com/Trustroots/trustroots/master/public/img/logo/color.svg"
+alt="Trustroots"></a>
+</div>
+
 ## Source code
 
 - [Website source code](https://github.com/trustroots/trustroots)
@@ -51,9 +57,9 @@ highlights at
 Is Trustroots.org down or is it just me? Check
 [status.trustroots.org](https://status.trustroots.org/)
 
-## Contact
+## Contact and communication
 
-- https://www.trustroots.org/contact
+[Contact us](https://www.trustroots.org/contact).
 
 We are using Slack for communications, contact
 [Kasper](https://www.trustroots.org/profile/guaka) (kasper at
