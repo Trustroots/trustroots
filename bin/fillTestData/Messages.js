@@ -177,9 +177,13 @@ var addThreads = function () {
                               console.log(err);
                             }
                             else {
+                              process.stdout.write('.');
                               threadsSaved += 1;
                               if (threadsSaved >= numThreads) {
-                                console.log(chalk.green('Done with ' + numThreads + ' test threads!'));
+                                console.log('');
+                                console.log(chalk.green(threads.length + ' threads existed in the database.'));
+                                console.log(chalk.green(threadsSaved + ' threads successfully added.'));
+                                console.log(chalk.green('Database now contains ' + (threads.length + threadsSaved) + ' threads.'));
                                 console.log(chalk.white('')); // Reset to white
                                 process.exit(0);
                               }
