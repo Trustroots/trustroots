@@ -130,7 +130,8 @@ var addTribes = function () {
               else {
                 process.stdout.write('.');
                 savedTribes += 1;
-                if (savedTribes >= max) {
+                if ((limit && (savedTribes + tribes.length >= max))
+                    || !limit && ((savedTribes >= max))) {
                   console.log('');
                   console.log(chalk.green(tribes.length + ' tribes existed in the database.'));
                   console.log(chalk.green(savedTribes + ' tribes successfully added.'));
