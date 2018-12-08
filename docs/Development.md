@@ -10,8 +10,6 @@
 * It would be good if you'd get familiar with the code base with smaller tasks, see [easy](https://github.com/Trustroots/trustroots/issues?q=is%3Aopen+is%3Aissue+label%3Aeasy) tag for those. Ask us for guidance and we'll help.
 * We're looking forward to work with proactive, talented hackers! :-) It's easier to work with people who can commit for longer term, who are proactive and can work independently. [Kudos!](https://github.com/Trustroots/trustroots/blob/master/public/humans.txt)
 
-We're trying waffle.io to get [an overview of issues](https://waffle.io/Trustroots/trustroots).
-
 # How to write code
 * Master is the most up-to-date branch and updated frequently. New feature branches are under our own repository and work is merged via pull requests, apart from very small changes. If you're not actively working on Trustroots yet, just fork the project and send pull requests from your repo.
 * [Tests](#Testing)! [We use Travis-cli](https://travis-ci.org/) to inform us when something fails. Don't be the weasel! :-)
