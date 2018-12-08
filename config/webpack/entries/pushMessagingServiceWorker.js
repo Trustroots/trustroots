@@ -7,7 +7,7 @@ firebase.initializeApp({
   'messagingSenderId': FCM_SENDER_ID
 });
 
-var messaging = firebase.messaging();
+const messaging = firebase.messaging();
 
 messaging.setBackgroundMessageHandler(function (payload) {
   // not actually used, but without it here firefox does not receive messages...

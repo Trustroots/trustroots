@@ -1,8 +1,14 @@
+const es2018rules = {
+  'no-var': 2,
+  'prefer-const': 2,
+  'arrow-spacing': [2, { before: true, after: true }]
+};
+
 module.exports = {
-  parserOptions: {
-    ecmaVersion: 2018,
-    sourceType: 'module'
-  },
+  /*
+   * this would ideally belong to the react overrides, but overrides can't include extends
+   * https://github.com/eslint/eslint/issues/8813
+   */
   extends: [
     'plugin:react/recommended'
   ],
@@ -87,7 +93,14 @@ module.exports = {
     _: false,
     AppConfig: true
   },
+  /*
+    eventually, after the migration, these overrides will become the main rules
+
+    it would be nice to keep the rules for client and server separate,
+    because eventually, they want to become independent codebases.
+  */
   overrides: [{
+    // overrides for server code
     // ES 2018 - specify migrated files and folders here
     files: [
       'testutils/data.server.testutils.js',
@@ -95,12 +108,22 @@ module.exports = {
       'modules/references/tests/server/**'
     ],
     parserOptions: {
-      ecmaVersion: 9
+      ecmaVersion: 2018
     },
-    rules: {
-      'no-var': 2,
-      'prefer-const': 2,
-      'arrow-spacing': [2, { before: true, after: true }]
-    }
+    rules: es2018rules
+  }, {
+    // overrides for client/react code
+    files: [
+      'config/webpack/**',
+      'modules/core/client/app/config.js',
+      'modules/**/client/components/**',
+      'modules/core/client/directives/tr-boards.client.directive.js',
+      'modules/core/client/services/photos.service.js'
+    ],
+    parserOptions: {
+      ecmaVersion: 2018,
+      sourceType: 'module'
+    },
+    rules: es2018rules
   }]
 };
