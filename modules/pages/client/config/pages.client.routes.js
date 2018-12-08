@@ -116,7 +116,7 @@
       }).
       state('volunteering', {
         url: '/volunteering',
-        templateUrl: '/modules/pages/views/volunteering.client.view.html',
+        template: '<volunteering></volunteering>',
         data: {
           pageTitle: 'Volunteering'
         }
