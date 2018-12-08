@@ -4,10 +4,9 @@
  * Various functions that repeat in tests a lot
  */
 
-var _ = require('lodash'),
-    async = require('async'),
-    crypto = require('crypto'),
-    mongoose = require('mongoose');
+const _ = require('lodash'),
+      crypto = require('crypto'),
+      mongoose = require('mongoose');
 
 /**
  * Get random integer within [0, exclusiveMaximum)
@@ -32,32 +31,17 @@ function getRandInt(exclusiveMaximum) {
  * @param {string} [defs.password] - password (defaults to a random password)
  * @returns {object[]} array of user data
  */
-function generateUsers(count, defs) {
-  defs = _.defaultsDeep(defs, {
-    username: 'username',
-    firstName: 'GivenName',
-    lastName: 'FamilyName',
-    email: 'user@example.com'
-  });
+function generateUsers(count, { username='username', firstName='GivenName', lastName='FamilyName', email='user@example.com', public: pub, password }={ }) {
 
-  return _.range(count).map(function (i) {
-    var username = defs.username + i;
-    var firstName = defs.firstName + i;
-    var lastName = defs.lastName + i;
-    var email = i + defs.email;
-    var publ = defs.hasOwnProperty('public') ? defs.public : !getRandInt(2); // public is reserved word
-    var password = defs.password || crypto.randomBytes(24).toString('base64');
-
-    return {
-      public: publ,
-      firstName: firstName,
-      lastName: lastName,
-      email: email,
-      username: username,
-      displayUsername: username,
-      password: password
-    };
-  });
+  return _.range(count).map(i => ({
+    public: (typeof pub === 'boolean') ? pub : !getRandInt(2),
+    firstName: firstName + i,
+    lastName: lastName + i,
+    email: i + email,
+    username: username + i,
+    displayUsername: username + i,
+    password: password || crypto.randomBytes(24).toString('base64')
+  }));
 }
 
 /**
@@ -70,7 +54,7 @@ function generateUsers(count, defs) {
  */
 function generateReferences(users, referenceData) {
   return referenceData.map(function (data) {
-    var defaultReference = {
+    const defaultReference = {
       userFrom: users[data[0]]._id,
       userTo: users[data[1]]._id,
       public: true,
@@ -87,44 +71,71 @@ function generateReferences(users, referenceData) {
 }
 
 /**
- * @callback {saveDocumentsCallback}
- * @param {error|null} error
- * @param {object[]} documents - array of saved mongo documents
- */
-
-/**
  * Save documents to mongodb
  * @param {string} collection - name of mongoose model (mongodb collection)
  * @param {object[]} _documents - array of document data
- * @param {saveDocumentsCallback} done
+ * @returns {Promise<Document[]>}
  */
-function saveDocumentsToCollection(collection, _docs, done) {
-  var docs = _docs.map(function (_doc) {
-    var Model = mongoose.model(collection);
+async function saveDocumentsToCollection(collection, _docs) {
+  const docs = _docs.map(_doc => {
+    const Model = mongoose.model(collection);
     return new Model(_doc);
   });
 
-  async.eachSeries(docs, function (doc, cb) {
-    doc.save(cb);
-  }, function (err) {
-    return done(err, docs);
-  });
+  for (const doc of docs) {
+    await doc.save();
+  }
+
+  return docs;
 }
 
-var saveUsers = _.partial(saveDocumentsToCollection, 'User');
-var saveReferences = _.partial(saveDocumentsToCollection, 'Reference');
+/**
+ * save users to database calls callback if provided and returns Promise with saved documents
+ * @param {User[]} _docs - User documents to save
+ * @param {callback} [done] - optional callback
+ * @returns {Promise<User[]>}
+ * the callback support can be removed when the whole codebase is migrated to ES6
+ */
+async function saveUsers(_docs, done=() => {}) {
+  try {
+    const docs = await saveDocumentsToCollection('User', _docs);
+    done(null, docs);
+    return docs;
+  } catch (e) {
+    done(e);
+    throw e;
+  }
+}
+
+/**
+ * save references to database calls callback if provided and returns Promise with saved documents
+ * @param {Reference[]} _docs - Reference documents to save
+ * @param {callback} [done] - optional callback
+ * @returns {Promise<Reference[]>}
+ * the callback support can be removed when the whole codebase is migrated to ES6
+ */
+async function saveReferences(_docs, done=() => {}) {
+  try {
+    const docs = await saveDocumentsToCollection('Reference', _docs);
+    done(null, docs);
+    return docs;
+  } catch (e) {
+    done(e);
+    throw e;
+  }
+}
 
 /**
  * Clear specified database collections
- * @param {string[]} - array of collection names to have all documents removed
- * @param {function} - callback
+ * @param {string[]} collections - array of collection names to have all documents removed
+ * @returns {Promise<void>}
  */
-function clearDatabaseCollections(collections, done) {
-  var models = collections.map(function (collection) { return mongoose.model(collection);});
+async function clearDatabaseCollections(collections) {
+  const models = collections.map(collection => mongoose.model(collection));
 
-  async.eachSeries(models, function (Model, cb) {
-    Model.deleteMany().exec(cb);
-  }, done);
+  for (const Model of models) {
+    await Model.deleteMany().exec();
+  }
 }
 
 /**
@@ -132,7 +143,7 @@ function clearDatabaseCollections(collections, done) {
  * The new collections should be added as needed
  * Eventually this list shall become complete
  */
-var collections = [
+const collections = [
   'User',
   'Reference'
 ];
@@ -140,45 +151,44 @@ var collections = [
 /**
  * Clear all collections in a database
  * Usage in mocha: afterEach(clearDatabase)
+ * @returns {Promise<void>}
  */
-function clearDatabase(done) {
-  clearDatabaseCollections(collections, done);
+async function clearDatabase() {
+  await clearDatabaseCollections(collections);
 }
 
 /**
  * Sign in to app
- * @param {object} credentials
- * @param {string} credentials.username
- * @param {string} credentials.password
+ * @param {object} user
+ * @param {string} user.username
+ * @param {string} user.password
  * @param {object} agent - supertest's agent
- * @param {function} done - callback
+ * @returns {Promise<void>}
  */
-function signIn(user, agent, done) {
-  var credentials = _.pick(user, ['username', 'password']);
-  agent.post('/api/auth/signin')
-    .send(credentials)
-    .expect(200)
-    .end(done);
+async function signIn(user, agent) {
+  const { username, password } = user;
+  await agent.post('/api/auth/signin')
+    .send({ username, password })
+    .expect(200);
 }
 
 /**
  * Sign out from app
  * @param {object} agent - supertest's agent
- * @param {function} done - callback
+ * @returns {Promise<void>}
  */
-function signOut(agent, done) {
-  agent.get('/api/auth/signout')
-    .expect(302)
-    .end(done);
+async function signOut(agent) {
+  await agent.get('/api/auth/signout')
+    .expect(302);
 }
 
 
 module.exports = {
-  generateUsers: generateUsers,
-  saveUsers: saveUsers,
-  generateReferences: generateReferences,
-  saveReferences: saveReferences,
-  clearDatabase: clearDatabase,
-  signIn: signIn,
-  signOut: signOut
+  generateUsers,
+  saveUsers,
+  generateReferences,
+  saveReferences,
+  clearDatabase,
+  signIn,
+  signOut
 };

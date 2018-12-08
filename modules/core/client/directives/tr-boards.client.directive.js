@@ -1,3 +1,4 @@
+/* eslint no-var: 0 */
 import photos from '@/modules/core/client/services/photos.service';
 
 (function () {

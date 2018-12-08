@@ -1,8 +1,8 @@
 'use strict';
 
-var acl = require('acl'),
-    path = require('path'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+let acl = require('acl');
+const path = require('path'),
+      errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
 
 acl = new acl(new acl.memoryBackend());
 
@@ -19,22 +19,21 @@ exports.invokeRolesPolicies = function () {
   }]);
 };
 
-exports.isAllowed = function (req, res, next) {
+exports.isAllowed = async function (req, res, next) {
+  try {
+    const roles = (req.user && req.user.roles) ? req.user.roles : ['guest'];
 
-  var roles = (req.user && req.user.roles) ? req.user.roles : ['guest'];
+    const isAllowed = await acl.areAnyRolesAllowed(roles, req.route.path, req.method.toLowerCase());
 
-  acl.areAnyRolesAllowed(roles, req.route.path, req.method.toLowerCase(), function (err, isAllowed) {
-    if (err) {
-
-    } else {
-      if (isAllowed && req.user.public) {
-        // Access granted! Invoke next middleware
-        return next();
-      }
-
-      return res.status(403).json({
-        message: errorService.getErrorMessageByKey('forbidden')
-      });
+    if (isAllowed && req.user.public) {
+      // Access granted! Invoke next middleware
+      return next();
     }
-  });
+
+    return res.status(403).json({
+      message: errorService.getErrorMessageByKey('forbidden')
+    });
+  } catch (e) {
+    return next(e);
+  }
 };
