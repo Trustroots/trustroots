@@ -1468,3 +1468,44 @@ function isUserMemberOfTribe(user, tribeId) {
     return membership.tribe.equals(tribeId);
   }));
 }
+
+/*
+ * This middleware sends response with an array of found users
+ * We assume that req.query.search exists
+ */
+exports.search = function (req, res, next) {
+
+  // check that the search string is provided
+  if (!_.has(req.query, 'search')) {
+    return next();
+  }
+
+  // validate the query string
+  if (req.query.search.length < 3) {
+    var errorMessage = errorService.getErrorMessageByKey('bad-request');
+    return res.status(400).send({
+      message: errorMessage,
+      detail: 'Query string should be at least 3 characters long.'
+    });
+  }
+
+  // perform the search
+  User
+    .find({ $and: [
+      { public: true }, // only public users
+      {
+        $text: {
+          $search: req.query.search
+        }
+      }
+    ] }, { score: { $meta: 'textScore' } })
+    // select only the right profile properties
+    .select(exports.userMiniProfileFields + ' -_id')
+    .sort({ score: { $meta: 'textScore' } })
+    // limit the amount of found users (config)
+    .limit(config.limits.userSearchLimit)
+    .exec(function (err, users) {
+      if (err) return next(err);
+      return res.send(users);
+    });
+};

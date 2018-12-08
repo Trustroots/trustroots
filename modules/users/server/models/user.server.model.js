@@ -349,4 +349,6 @@ UserSchema.methods.authenticate = function (password) {
  */
 UserSchema.plugin(uniqueValidation);
 
+UserSchema.index({ username: 'text', firstName: 'text', lastName: 'text' });
+
 mongoose.model('User', UserSchema);

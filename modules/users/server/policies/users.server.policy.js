@@ -45,7 +45,7 @@ exports.invokeRolesPolicies = function () {
     roles: ['user'],
     allows: [{
       resources: '/api/users',
-      permissions: ['put', 'delete']
+      permissions: ['get', 'put', 'delete']
     }, {
       resources: '/api/users/remove/:token',
       permissions: ['delete']

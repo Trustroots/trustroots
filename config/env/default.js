@@ -108,6 +108,8 @@ module.exports = {
     unreadMessageReminders: [{ minutes: 10 }, { hours: 24 }],
     // after what delay to stop sending further unread message reminders
     unreadMessageRemindersTooLate: { days: 14 },
+    // how many users should we return from search at maximum
+    userSearchLimit: 10,
     // Time intervals between welcome sequence emails
     welcomeSequence: {
       first: { minutes: 0 },
