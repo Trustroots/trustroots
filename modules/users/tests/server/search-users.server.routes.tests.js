@@ -25,6 +25,11 @@ describe('Search users: GET /users?search=string', function () {
     agent = request.agent(app);
   });
 
+  // rebuild indexes before tests
+  before(function (done) {
+    User.ensureIndexes(done);
+  });
+
   // clear the database
   afterEach(function (done) {
     async.each([User], function (collection, cb) {
@@ -103,7 +108,7 @@ describe('Search users: GET /users?search=string', function () {
     });
 
     context('valid request', function () {
-      it('[some usernames matched] return array of users', function (done) {
+      it('[a username matched] return array of users', function (done) {
         async.waterfall([
 
           // create some users
@@ -118,7 +123,7 @@ describe('Search users: GET /users?search=string', function () {
 
           // search
           function (users, cb) {
-            agent.get('/api/users?search=asd')
+            agent.get('/api/users?search=asdia')
               .expect(200)
               .end(function (err, response) {
                 cb(err, response.body);
@@ -128,7 +133,7 @@ describe('Search users: GET /users?search=string', function () {
           // check that we found the users
           function (foundUsers, cb) {
 
-            should(foundUsers).length(3);
+            should(foundUsers).length(1);
 
             cb();
           }
@@ -144,9 +149,9 @@ describe('Search users: GET /users?search=string', function () {
               { firstName: 'qwer' },
               { firstName: 'qwera' },
               { firstName: 'qwery' },
-              { firstName: 'qwert' },
+              { firstName: 'qwer' },
               { firstName: 'qwe' },
-              { firstName: 'sqweruyo' }
+              { firstName: 'sqwero' }
             ], cb);
           },
 
@@ -162,7 +167,7 @@ describe('Search users: GET /users?search=string', function () {
           // check that we found the users
           function (foundUsers, cb) {
 
-            should(foundUsers).length(4);
+            should(foundUsers).length(2);
 
             cb();
           }
@@ -177,11 +182,11 @@ describe('Search users: GET /users?search=string', function () {
             createUsers([
               { lastName: 'zxcvbna' },
               { lastName: 'zxcvbnrya' },
-              { lastName: 'zxcvboa' },
+              { lastName: 'zxcvb' },
               { lastName: 'zxcvbny' },
               { lastName: 'zxcvb' },
               { lastName: 'zxcvba' },
-              { lastName: 'xcvz' },
+              { lastName: 'zxcvz' },
               { lastName: 'asdia' },
               { lastName: 'hasdfg' }
             ], cb);
@@ -199,7 +204,7 @@ describe('Search users: GET /users?search=string', function () {
           // check that we found the users
           function (foundUsers, cb) {
 
-            should(foundUsers).length(6);
+            should(foundUsers).length(2);
 
             cb();
           }
@@ -217,14 +222,14 @@ describe('Search users: GET /users?search=string', function () {
               { firstName: 'jAcob', lastName: 'alic' },
               { firstName: 'jaCob', lastName: 'alid' },
               { firstName: 'jacob', lastName: 'aliE' },
-              { firstName: 'jacob', lastName: 'alIf' },
-              { firstName: 'jacob', lastName: 'alg' }
+              { firstName: 'jacob', lastName: 'alIA' },
+              { firstName: 'jaco', lastName: 'alg' }
             ], cb);
           },
 
           // search
           function (users, cb) {
-            agent.get('/api/users?search=jacob+aLi')
+            agent.get('/api/users?search=jacob+aLia')
               .expect(200)
               .end(function (err, response) {
                 cb(err, response.body);
@@ -274,13 +279,13 @@ describe('Search users: GET /users?search=string', function () {
         ], done);
       });
 
-      it('the user data should have only fields from miniProfile', function (done) {
+      it('the user data should have only fields from miniProfile, and score', function (done) {
         async.waterfall([
 
           // create some users
           function (cb) {
             createUsers([
-              { username: 'aaaaaaa' }
+              { username: 'aaa' }
             ], cb);
           },
 
@@ -303,7 +308,7 @@ describe('Search users: GET /users?search=string', function () {
 
             var unexpectedFields = _.difference(actualFields, expectedFields);
 
-            should(unexpectedFields).length(0);
+            should(unexpectedFields).eql(['score']);
 
             cb();
           }
@@ -316,24 +321,24 @@ describe('Search users: GET /users?search=string', function () {
           // create some users
           function (cb) {
             createUsers([
-              { username: 'aaaaaaaa' },
-              { firstName: 'aaaaaaa' },
-              { lastName: 'aaaaaaa' },
-              { username: 'aaaaaaa' },
-              { username: 'aaaaaaaaab' },
-              { username: 'aaaaaaaba' },
-              { firstName: 'aaaaaaa' },
-              { lastName: 'aaaaaaac' },
-              { firstName: 'aaaaaaa' },
-              { lastName: 'aaaaaaa' },
-              { firstName: 'aaaaaaa' },
-              { lastName: 'aaaaaaa' }
+              { username: 'aaaaaa' },
+              { firstName: 'aaaaaa' },
+              { lastName: 'aaaaaa' },
+              { lastName: 'aaaaaa' },
+              { firstName: 'aAaAaa' },
+              { lastName: 'aaaaaa' },
+              { firstName: 'aaaaaa' },
+              { lastName: 'aaaaaa' },
+              { firstName: 'aaaaaa' },
+              { lastName: 'aaaaaa' },
+              { firstName: 'aaaaaa' },
+              { lastName: 'aaaaaa' }
             ], cb);
           },
 
           // search
           function (users, cb) {
-            agent.get('/api/users?search=aaa')
+            agent.get('/api/users?search=aaaaaa')
               .expect(200)
               .end(function (err, response) {
                 cb(err, response.body);
@@ -356,16 +361,16 @@ describe('Search users: GET /users?search=string', function () {
           // create some users
           function (cb) {
             createUsers([
-              { username: 'aaabcdef' },
-              { firstName: 'aAabCd' },
-              { lastName: 'aaABCc' },
+              { username: 'abcdef' },
+              { firstName: 'abCdef' },
+              { lastName: 'ABCdEF' },
               { username: 'aabc' }
             ], cb);
           },
 
           // search
           function (users, cb) {
-            agent.get('/api/users?search=aaaBc')
+            agent.get('/api/users?search=abcdEf')
               .expect(200)
               .end(function (err, response) {
                 cb(err, response.body);
@@ -388,16 +393,17 @@ describe('Search users: GET /users?search=string', function () {
           // create some users
           function (cb) {
             createUsers([
-              { username: 'aaabcdef', public: true },
+              { username: 'aabcdef', public: true },
               { firstName: 'aAabCd', public: false },
               { lastName: 'aaABCc', public: false },
-              { username: 'aabc', public: true } // this one is not matched
+              { lastName: 'aaABCc', public: true }, // this one is not matched
+              { firstName: 'aabCDef', lastName: 'aAbcdef', public: true }
             ], cb);
           },
 
           // search
           function (users, cb) {
-            agent.get('/api/users?search=aaaBc')
+            agent.get('/api/users?search=aabcdef')
               .expect(200)
               .end(function (err, response) {
                 cb(err, response.body);
@@ -407,7 +413,7 @@ describe('Search users: GET /users?search=string', function () {
           // check that we found the users
           function (foundUsers, cb) {
 
-            should(foundUsers).length(1);
+            should(foundUsers).length(2);
 
             cb();
           }

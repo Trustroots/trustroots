@@ -1489,29 +1489,19 @@ exports.search = function (req, res, next) {
     });
   }
 
-
-  // build the regexp for the query
-  // match at the beginning of the strings, case insensitive
-  var queryString = _.escapeRegExp(req.query.search);
-  var queryRegexp = new RegExp('^' + queryString, 'i');
-
   // perform the search
   User
     .find({ $and: [
       { public: true }, // only public users
       {
-        $or: [
-          // search in the following fields
-          { username: queryRegexp },
-          { firstName: queryRegexp },
-          { lastName: queryRegexp },
-          { displayName: queryRegexp }
-        ]
+        $text: {
+          $search: req.query.search
+        }
       }
-    ] })
+    ] }, { score: { $meta: 'textScore' } })
     // select only the right profile properties
     .select(exports.userMiniProfileFields + ' -_id')
-    .sort({ username: 1 })
+    .sort({ score: { $meta: 'textScore' } })
     // limit the amount of found users (config)
     .limit(config.limits.userSearchLimit)
     .exec(function (err, users) {
