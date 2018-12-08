@@ -25,25 +25,41 @@ software for development:
 
 ### Running locally
 
-Install the stack on your localhost and run NodeJS. This approach takes a little more time to setup, and bit more manual configuration, but is super fast, and can be easier to work with. See [INSTALL.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL.md) for details.
+Install the stack on your localhost and run NodeJS. This approach
+takes a little more time to setup, and bit more manual configuration,
+but is super fast, and can be easier to work with. See
+[INSTALL.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL.md)
+for details.
 
 ### Running with Docker
 
-If you are familiar with Docker, this is the easiest and quickest way to get started. See [INSTALL-DOCKER.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL-DOCKER.md) for further details. Running through Docker can be a little bit slower.
+If you are familiar with Docker, this is the easiest and quickest way
+to get started. See
+[INSTALL-DOCKER.md](https://github.com/Trustroots/trustroots/blob/master/INSTALL-DOCKER.md)
+for further details. Running through Docker can be a little bit
+slower.
 
 ## GitHub
 
-We use GitHub for code management and issue tracking. Feel free to [create an issue](https://github.com/Trustroots/trustroots/issues/new) there if you run into an issue setting up the system.
+We use GitHub for code management and issue tracking. Feel free to
+[create an issue](https://github.com/Trustroots/trustroots/issues/new)
+there if you run into an issue setting up the system.
 
 The `master` branch is bleeding edge development. `production` is what's running on our servers.
 
 ## Developer communication
 
-We are using Slack for communications, contact [Kasper](https://www.trustroots.org/profile/guaka) (kasper at trustroots dot org) or [Mikael](https://www.trustroots.org/profile/mikael) if you want an account. You can also contact us for an invite without queuing.
+We are using Slack for communications, contact
+[Kasper](https://www.trustroots.org/profile/guaka) (kasper at
+trustroots dot org) or
+[Mikael](https://www.trustroots.org/profile/mikael) if you want an
+account. You can also contact us for an invite without queuing.
 
-If Slack is too proprietary for you, note that we are considering setting up a Discourse forum. For now you can also use the GitHub issues for communication purposes.  You can also check https://meta.trustroots.org/
+In November 2018 we started [meta](https://meta.trustroots.org/), a
+Discourse forum. If Slack is too proprietary for you, you're welcome
+to use this instead.
 
-It's also great if you join the [hacker tribe](https://www.trustroots.org/tribes).
+It's also great if you join the [hacker tribe](https://www.trustroots.org/tribes/hackers).
 
 Idea: find Trustroots developers in your area, meet up and hack on stuff together.
 
