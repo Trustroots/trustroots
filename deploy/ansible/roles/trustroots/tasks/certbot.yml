@@ -1,0 +1,23 @@
+---
+
+- name: add ppa:certbot/certbot
+  apt_repository:
+    repo: ppa:certbot/certbot
+
+
+- name: install certbot
+  apt:
+    name: certbot
+    state: present
+
+
+# TODO:
+# pause nginx if nececry
+
+- name: runn certbot in standalone mode if cert not found
+  shell: "certbot certonly --standalone --preferred-challenges http -d {{ domains_all_csl }}  -m {{ email_addr_ssl }}  --agree-tos --no-eff-email --non-interactive --cert-name {{ url_full }}"
+  args:
+    creates: /etc/letsencrypt/live/dev.trustroots.org/fullchain.pem
+
+
+# retstat nginx ?

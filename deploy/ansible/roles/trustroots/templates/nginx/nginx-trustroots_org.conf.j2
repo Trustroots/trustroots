@@ -1,0 +1,81 @@
+## TRUSTROOTS.ORG || {{ url_full }}
+##
+## PRODUCTION
+##
+## Following tips from:
+## http://mozilla.github.io/server-side-tls/ssl-config-generator/
+## https://aralbalkan.com/scribbles/setting-up-ssl-with-nginx-using-a-namecheap-essentialssl-wildcard-certificate-on-digitalocean/
+## https://bjornjohansen.no/optimizing-https-nginx
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    # Redirect all HTTP requests to HTTPS with a 301 Moved Permanently response.
+    return 301 https://$host$request_uri;
+}
+
+## Redirect non-www to www
+server {
+    listen 443 ssl;
+    server_name {{ url_full }};
+    return 301 https://www.{{ url_full }}$request_uri;
+
+    ssl_certificate     {{ ssl_cert_file_path }};
+    ssl_certificate_key {{ ssl_key_file_path }};
+}
+
+## Primary Server block
+## - Enable SSL
+## - Redirect non SSL to SSL
+## - Enable Passenger
+server {
+
+    ## TODO: find out if the network supports ipv6, else dissable
+    listen 443 ssl;
+    listen [::]:443 ipv6only=on;
+
+    server_name www.{{ url_full }};
+
+    ssl_certificate     {{ ssl_cert_file_path }};
+    ssl_certificate_key {{ ssl_key_file_path }};
+
+    client_max_body_size 10M;
+
+    ## Static files
+    ## TODO: parameterize
+    root /srv/trustroots/public;
+
+        location = /robots.txt {
+        access_log off;
+        log_not_found off;
+
+    	## Normally this is already added at the NodeJS app
+    	## but this file is served directly
+	
+    	add_header Strict-Transport-Security max-age=15768000;
+	add_header Content-Type text/plain;
+  	return 200 'Disallow: /';
+    }	
+	    
+    location / {
+        proxy_pass         http://127.0.0.1:3000/;
+	proxy_redirect     off;
+	
+        proxy_set_header   Host             $host;
+	proxy_set_header   X-Real-IP        $remote_addr;
+	proxy_set_header   X-Forwarded-For  $proxy_add_x_forwarded_for;
+	
+        client_max_body_size       10m;
+	client_body_buffer_size    128k;
+	
+        proxy_connect_timeout      90;
+	proxy_send_timeout         90;
+	proxy_read_timeout         90;
+	
+        proxy_buffer_size          4k;
+	proxy_buffers              4 32k;
+	proxy_busy_buffers_size    64k;
+	proxy_temp_file_write_size 64k;
+    }
+}

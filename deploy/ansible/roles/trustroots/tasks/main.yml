@@ -1,0 +1,52 @@
+---
+
+- name: install, configure and enable influxdb
+  import_tasks: influxdb.yml
+  tags: influxdb
+
+
+- name: install let's encrypt's certbot
+  import_tasks: certbot.yml
+  tags: ssl
+
+
+- name: configure and enbale nginx
+  import_tasks: nginx.yml
+  tags: nginx
+
+
+- name: install and configure mongodb
+  import_tasks: mongodb.yml
+  tags: mongodb
+
+
+- name: Clone/pull project repo
+  git:
+    repo: https://github.com/trustroots/trustroots.git
+    dest: /srv/trustroots
+    force: yes
+    version: "{{ version | default('HEAD') }}"
+  tags:
+    - git
+
+
+- name: chown /srv/trustroots guaka
+  file:
+    dest: /srv/trustroots
+    owner: guaka
+    group: guaka
+    mode: "u=rwX,g=rX,o=rX"
+    recurse: yes
+  tags:
+    - chown
+
+    
+- name: install and configure node
+  import_tasks: node.yml
+  tags: node
+
+
+- name: install and configure grafana
+  import_tasks: grafana.yml
+  tags: grafana
+

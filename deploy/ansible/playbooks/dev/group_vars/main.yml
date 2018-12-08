@@ -1,0 +1,38 @@
+---
+ssh_users:
+  - guaka
+  - mikael
+  - zrthstr
+  - mrkvon
+
+## we need a short and a long form of this..
+env_short: dev
+env_long: developement
+
+
+url_prefix: "{{ env_short }}."
+url_base: "trustroots.org"
+url_full: "{{ url_prefix }}{{ url_base }}"
+
+
+subdomains:
+  - www
+  - influxdb
+  - grafana
+  - shop
+
+# sorry, i dont know of a better way of doing this..
+domains_all: '[ "{{ url_full }}" ] +  {{ subdomains | map("regex_replace", "^(.*)$", "\1." + url_full) | list }}'
+# comma seperated strings..
+domains_all_csl: "{{ domains_all|join(',') }}"
+
+
+ssl_path: "/etc/letsencrypt/live/{{  url_full }}/"
+
+ssl_cert_file: "fullchain.pem"
+ssl_cert_file_path: "{{ ssl_path + ssl_cert_file }}"
+
+ssl_key_file: "privkey.pem"
+ssl_key_file_path: "{{ ssl_path + ssl_key_file }}"
+
+email_addr_ssl: "admin@{{ url_base }}"
