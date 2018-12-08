@@ -47,6 +47,8 @@
   template:
     src: "nginx/{{ item }}.j2"
     dest: "/etc/nginx/sites-available/{{ item }}"
+=======
+>>>>>>> 9ce417dd5fbf7b77d17c70effde83fbb6b3a8562
     owner: root
     group: root
     mode: 0644
@@ -55,6 +57,41 @@
 #    - default
   notify:
     - restart nginx
+  loop:
+    - ssl_params
+    - nginx.conf
+    - gzip_params
+
+
+- name: nginx sites enabled
+  template:
+    src: "nginx/{{ item }}.j2"
+    dest: "/etc/nginx/sites-available/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  loop:
+    - nginx-trustroots_org.conf
+#    - default
+  notify:
+    - restart nginx
+
+
+- name: remove default nginx conf's symlink
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+
+- name: Create symbolic link 
+  file:
+    src: "/etc/nginx/sites-available/{{ item }}"
+    dest: "/etc/nginx/sites-enabled/{{ item }}"
+    state: link
+  loop:
+    - nginx-trustroots_org.conf
+#    - default
+
 
 
 - name: remove default nginx conf's symlink

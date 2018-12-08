@@ -11,8 +11,7 @@
     state: present
 
 
-# TODO;
-# sudo ufw allow 80
+# TODO:
 # pause nginx if nececry
 
 - name: runn certbot in standalone mode if cert not found
