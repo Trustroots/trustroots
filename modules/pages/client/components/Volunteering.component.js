@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import React from 'react';
 import { selectPhoto } from '@/modules/core/client/services/photos.service';
 
