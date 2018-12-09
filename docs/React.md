@@ -22,6 +22,8 @@ We'll replace the current AngularJS components one by one. Eventually, we'll dro
 Create a react component with a path `modules/**/client/components/SomeName.component.js`. It will get imported to Angular [automatically](/config/webpac). Then you can use this component within Angular like `<some-name></some-name>`.
 See an [example component](https://github.com/Trustroots/trustroots/blob/master/modules/pages/client/components/Volunteering.component.js).
 
+_Please note: When you create a React component which is not imported to Angular (i.e. when it's used in other React components only), skip the `component` in the filename (name it just SomeName.js)._
+
 ## Issues and solutions
 
 ### Routing
@@ -30,6 +32,10 @@ We're using [UI-Router for AngularJS](https://ui-router.github.io/ng1/).
 
 The different paths (i.e. [`/volunteering`](https://trustroots.org/volunteering)) are configured in `/modules/**/client/config/**.client.routes.js`.
 Look at the ([example](https://github.com/Trustroots/trustroots/blob/master/modules/pages/client/config/pages.client.routes.js)) and search for `volunteering` to see how a React component can be added to the router.
+
+#### Links within the app
+
+Where we used `ui-sref` in Angular views, we'll use `href` in React components. This solution reloads the app and therefore is far from ideal.
 
 ## Passing data from Angular to React
 
