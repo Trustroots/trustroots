@@ -12,7 +12,8 @@ var _ = require('lodash'),
     async = require('async'),
     config = require(path.resolve('./config/config')),
     cities = JSON.parse(fs.readFileSync(path.resolve('./bin/fillTestData/data/Cities.json'), 'utf8')),
-    savedCounter = 0;
+    savedUsers = 0,
+    savedOffers = 0;
 
 require(path.resolve('./modules/offers/server/models/offer.server.model'));
 
@@ -58,7 +59,15 @@ var randomizeLoaction = function () {
   return parseFloat(random.toFixed(5));
 };
 
-var addOffer = function (id, index, max, usersLength, callback) {
+var printSummary = function (countExisting, countSaved) {
+  console.log('');
+  console.log(chalk.green(countExisting + ' users existed in the database.'));
+  console.log(chalk.green(countSaved + ' users successfully added.'));
+  console.log(chalk.green('Database now contains ' + (countExisting + countSaved) + ' users.'));
+  console.log(chalk.white(''));
+};
+
+var addOffer = function (id, index, max, usersLength, limit, callback) {
   var offer = new Offer();
 
   var city = cities[random(cities.length)];
@@ -77,13 +86,11 @@ var addOffer = function (id, index, max, usersLength, callback) {
   offer.save(function (err) {
     if (err != null) console.log(err);
     else {
-      savedCounter++;
-      if (savedCounter >= max) {
-        console.log('');
-        console.log(chalk.green(usersLength + ' users existed in the database.'));
-        console.log(chalk.green(savedCounter + ' users successfully added.'));
-        console.log(chalk.green('Database now contains ' + (usersLength + savedCounter) + ' users.'));
-        console.log(chalk.white('')); // Reset to white
+      savedOffers++;
+      // Exit if we have completed saving all users and offers
+      if ((limit && (savedUsers + usersLength >= max && savedOffers + usersLength >= max))
+          || ((!limit && (savedUsers >= max && savedOffers >= max)))) {
+        printSummary(usersLength, savedUsers);
         callback(null, null);
         process.exit(0);
       }
@@ -224,6 +231,7 @@ var addUsers = function () {
 
                 // Save the user
                 user.save(function (err) {
+                  savedUsers++;
                   process.stdout.write('.');
                   if (admin!== undefined) {
                     console.log('Created admin user. Login with: ' + admin + ' / password');
@@ -233,9 +241,17 @@ var addUsers = function () {
                   } else if (err) {
                     console.log(err);
                   }
+
+                  // Exit if we have completed saving all users and offers
+                  if ((limit && (savedUsers + users.length >= max && savedOffers + users.length >= max))
+                       || ((!limit && (savedUsers >= max && savedOffers >= max)))) {
+                    printSummary(users.length, savedUsers);
+                    done(null, null);
+                    process.exit(0);
+                  }
                 });
 
-                addOffer(user._id, index, max, users.length, done);
+                addOffer(user._id, index, max, users.length, limit, done);
 
                 // No more admin users
                 if (numAdminUsers === 1) {
