@@ -242,16 +242,9 @@ var addUsers = function () {
                     console.log(err);
                   }
 
-                  // Exit if we have completed saving all users and offers
-                  if ((limit && (savedUsers + users.length >= max && savedOffers + users.length >= max))
-                       || ((!limit && (savedUsers >= max && savedOffers >= max)))) {
-                    printSummary(users.length, savedUsers);
-                    done(null, null);
-                    process.exit(0);
-                  }
+                  addOffer(user._id, index, max, users.length, limit, done);
                 });
 
-                addOffer(user._id, index, max, users.length, limit, done);
 
                 // No more admin users
                 if (numAdminUsers === 1) {
