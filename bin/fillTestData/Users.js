@@ -91,11 +91,14 @@ var addOffer = function (id, index, max, usersLength, callback) {
   });
 };
 
-var addUsers = function (max, adminUsers) {
+var addUsers = function () {
   var index = 0;
   var numAdminUsers;
   var debug = (argv.debug === true);
   var limit = (argv.limit === true);
+  var max = argv.numberOfUsers;
+  var adminUsers = argv.userNames;
+  console.log(adminUsers);
 
   if (adminUsers === null || adminUsers === undefined) {
     numAdminUsers = 0;
@@ -259,19 +262,4 @@ var addUsers = function (max, adminUsers) {
   });
 }; // addUsers()
 
-// Parse optional admin users
-var numberOfUsers = argv.numberOfUsers;
-var adminUsers = [];
-if (argv.userNames) {
-  for (var i = 0; i < argv.userNames.length; i++) {
-    if (argv.userNames[i] !== null) {
-      adminUsers.push(argv.userNames[i]);
-    }
-  }
-}
-// Add users
-if (adminUsers.length > 0) {
-  addUsers(numberOfUsers, adminUsers);
-} else {
-  addUsers(numberOfUsers);
-}
+addUsers();
