@@ -58,7 +58,7 @@ var randomizeLoaction = function () {
   return parseFloat(random.toFixed(5));
 };
 
-var addOffer = function (id, index, max, callback) {
+var addOffer = function (id, index, max, usersLength, callback) {
   var offer = new Offer();
 
   var city = cities[random(cities.length)];
@@ -79,7 +79,10 @@ var addOffer = function (id, index, max, callback) {
     else {
       savedCounter++;
       if (savedCounter >= max) {
-        console.log(chalk.green('Done with ' + max + ' test users!'));
+        console.log('');
+        console.log(chalk.green(usersLength + ' users existed in the database.'));
+        console.log(chalk.green(savedCounter + ' users successfully added.'));
+        console.log(chalk.green('Database now contains ' + (usersLength + savedCounter) + ' users.'));
         console.log(chalk.white('')); // Reset to white
         callback(null, null);
         process.exit(0);
@@ -219,6 +222,7 @@ var addUsers = function (max, adminUsers) {
 
                 // Save the user
                 user.save(function (err) {
+                  process.stdout.write('.');
                   if (admin!== undefined) {
                     console.log('Created admin user. Login with: ' + admin + ' / password');
                   } else if (err && admin !== undefined) {
@@ -229,7 +233,7 @@ var addUsers = function (max, adminUsers) {
                   }
                 });
 
-                addOffer(user._id, index, max, done);
+                addOffer(user._id, index, max, users.length, done);
 
                 // No more admin users
                 if (numAdminUsers === 1) {
