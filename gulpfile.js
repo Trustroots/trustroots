@@ -16,6 +16,7 @@ var _ = require('lodash'),
     webpack = require('webpack'),
     webpackStream = require('webpack-stream'),
     merge = require('webpack-merge'),
+    print = require('gulp-print').default,
     plugins = gulpLoadPlugins({
       rename: {
         'gulp-angular-templatecache': 'templateCache'
@@ -403,9 +404,9 @@ function fontello() {
     .pipe(plugins.fontello({
       font: 'font', // Destination dir for Fonts and Glyphs
       css: 'css', // Destination dir for CSS Styles,
-      assetsOnly: true // extract from ZipFile only CSS Styles and Fonts exclude config.json, LICENSE.txt, README.txt and demo.html
+      assetsOnly: false
     }))
-    .pipe(plugins.print())
+    .pipe(print())
     .pipe(gulp.dest('modules/core/client/fonts/fontello'))
     .pipe(plugins.refresh());
 }
@@ -496,6 +497,9 @@ gulp.task('build:prod', gulp.series(
     'build:scripts'
   )
 ));
+
+// Run fontello update
+gulp.task('fontello', fontello);
 
 // Run the project tests
 gulp.task('test', gulp.series(
