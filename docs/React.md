@@ -22,7 +22,7 @@ We'll replace the current AngularJS components one by one. Eventually, we'll dro
 Create a react component with a path `modules/**/client/components/SomeName.component.js`. It will get imported to Angular [automatically](https://github.com/Trustroots/trustroots/blob/master/config/webpack/entries/main.js). Then you can use this component within Angular like `<some-name></some-name>`.
 See an [example component](https://github.com/Trustroots/trustroots/blob/master/modules/pages/client/components/Volunteering.component.js).
 
-_Please note: When you create a React component which is not imported to Angular (i.e. when it's used in other React components only), skip the `component` in the filename (name it just SomeName.js)._
+_Please note: When you create a React component which is not imported to Angular (i.e. when it's used in other React components only), skip the `component` in the filename - name it just `SomeName.js`._
 
 ## Issues and solutions
 
@@ -31,7 +31,7 @@ _Please note: When you create a React component which is not imported to Angular
 We're using [UI-Router for AngularJS](https://ui-router.github.io/ng1/).
 
 The different paths (i.e. [`/volunteering`](https://trustroots.org/volunteering)) are configured in `/modules/**/client/config/**.client.routes.js`.
-Look at the ([example](https://github.com/Trustroots/trustroots/blob/master/modules/pages/client/config/pages.client.routes.js)) and search for `volunteering` to see how a React component can be added to the router.
+Look at the [example](https://github.com/Trustroots/trustroots/blob/master/modules/pages/client/config/pages.client.routes.js) and search for `volunteering` to see how a React component can be added to the router.
 
 #### Links within the app
 
@@ -39,7 +39,7 @@ Where we used `ui-sref` in Angular views, we'll use `href` in React components. 
 
 ## Passing data from Angular to React
 
-If you need to provide data to a React component, you can pass them in attributes. Then they'll be available in the component as props.
+If you need to provide data to a React component, you can pass them in attributes. Then they'll be available in the component as `props`.
 
 In AngularJS view it will look like this:
 
@@ -77,6 +77,10 @@ export default class ProfileViewBasics {
   }
 }
 ```
+
+If you need data from API, don't fetch them from Angular, but from React.
+
+(Provide an example api service when References are merged.)
 
 ## Testing
 
