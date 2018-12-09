@@ -98,7 +98,6 @@ var addUsers = function () {
   var limit = (argv.limit === true);
   var max = argv.numberOfUsers;
   var adminUsers = argv.userNames;
-  console.log(adminUsers);
 
   if (adminUsers === null || adminUsers === undefined) {
     numAdminUsers = 0;
