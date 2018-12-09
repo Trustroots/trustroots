@@ -44,7 +44,7 @@
     "seed:messages": "node ./bin/fillTestData/Messages.js",
     "seed:tribes": "node ./bin/fillTestData/Tribes.js",
     "seed:users": "node ./bin/fillTestData/Users.js",
-    "seed": "npm run seed:tribes 100 && npm run seed:users 1000 admin1 admin2 admin3 && npm run seed:messages 2000 10",
+    "seed": "npm run seed:tribes 100 && npm run seed:users 1000 -- --userNames admin1 admin2 admin3 && npm run seed:messages 2000 10",
     "start:develop": "gulp develop",
     "start:docker": "npm run prestart && concurrently --raw --kill-others --kill-others-on-fail 'gulp develop' 'npm run start:worker'",
     "start:prod": "gulp prod",
