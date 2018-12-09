@@ -31,6 +31,7 @@ don't hesitate to [contact us](https://www.trustroots.org/contact/)._
 - [Angular-Directives.md](Angular-Directives.md)
 - [Database.md](Database.md)
 - [Development.md](Development.md)
+- [Icons.md](Icons.md)
 - [InfluxDB.md](InfluxDB.md)
 - [Monitoring.md](Monitoring.md)
 - [oAuth-apps.md](oAuth-apps.md)
@@ -74,6 +75,3 @@ to use this instead.
 It's also great if you join the [hacker tribe](https://www.trustroots.org/tribes/hackers).
 
 <a href="https://www.trustroots.org/"><img width="200" src="https://cdn.rawgit.com/Trustroots/trustroots/master/public/img/logo/color.svg" alt="Trustroots"></a>
-
-
-
