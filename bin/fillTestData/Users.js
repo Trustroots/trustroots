@@ -78,7 +78,7 @@ var addOffer = function (id, index, max, callback) {
     if (err != null) console.log(err);
     else {
       savedCounter++;
-      if (index >= max) {
+      if (savedCounter >= max) {
         console.log(chalk.green('Done with ' + max + ' test users!'));
         console.log(chalk.white('')); // Reset to white
         callback(null, null);
@@ -134,22 +134,29 @@ var addUsers = function (max, adminUsers) {
           if (limit) {
             index = users.length;
           }
-          if (index < max) {
-            var getTribes = new Promise(function (resolve, reject) {
-              Tribe.find(function (err, tribes) {
-                if (err) {
-                  reject(err);
-                }
-                resolve(tribes);
-              });
+
+          if (index >= max) {
+            console.log(chalk.green(users.length + ' users already exist. No users created!'));
+            console.log(chalk.white('')); // Reset to white
+            process.exit(0);
+          }
+
+          var getTribes = new Promise(function (resolve, reject) {
+            Tribe.find(function (err, tribes) {
+              if (err) {
+                reject(err);
+              }
+              resolve(tribes);
             });
+          });
 
-            getTribes.then(function (tribes) {
+          getTribes.then(function (tribes) {
 
-              console.log(chalk.white('--'));
-              console.log(chalk.green('Trustroots test user data'));
-              console.log(chalk.white('--'));
+            console.log(chalk.white('--'));
+            console.log(chalk.green('Trustroots test user data'));
+            console.log(chalk.white('--'));
 
+            while (index < max) {
               (function addNextUser(){
                 var user = new User();
                 var admin;
@@ -222,7 +229,6 @@ var addUsers = function (max, adminUsers) {
                   }
                 });
 
-                index++;
                 addOffer(user._id, index, max, done);
 
                 // No more admin users
@@ -233,25 +239,14 @@ var addUsers = function (max, adminUsers) {
                 if (admin !== undefined) {
                   numAdminUsers--;
                 }
-
-                if (index < max) {
-                  addNextUser();
-                }
               }());
 
-              while (numAdminUsers > 0) {
-
-              }
-            }).catch(function (err) {
-              console.log(err);
-              done(err, null);
-            });
-          }
-          else {
-            console.log(chalk.green(users.length + ' users already exist. No users created!'));
-            console.log(chalk.white('')); // Reset to white
-            process.exit(0);
-          }
+              index++;
+            }
+          }).catch(function (err) {
+            console.log(err);
+            done(err, null);
+          });
         }
       ]);
 
