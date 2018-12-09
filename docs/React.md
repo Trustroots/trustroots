@@ -19,7 +19,7 @@ We'll replace the current AngularJS components one by one. Eventually, we'll dro
 
 ## How to wire up React components to AngularJS?
 
-Create a react component with a path `modules/**/client/components/SomeName.component.js`. It will get imported to Angular [automatically](/config/webpac). Then you can use this component within Angular like `<some-name></some-name>`.
+Create a react component with a path `modules/**/client/components/SomeName.component.js`. It will get imported to Angular [automatically](https://github.com/Trustroots/trustroots/blob/master/config/webpack/entries/main.js). Then you can use this component within Angular like `<some-name></some-name>`.
 See an [example component](https://github.com/Trustroots/trustroots/blob/master/modules/pages/client/components/Volunteering.component.js).
 
 _Please note: When you create a React component which is not imported to Angular (i.e. when it's used in other React components only), skip the `component` in the filename (name it just SomeName.js)._
