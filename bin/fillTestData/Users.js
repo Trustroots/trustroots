@@ -233,7 +233,7 @@ var addUsers = function () {
                 user.save(function (err) {
                   savedUsers++;
                   process.stdout.write('.');
-                  if (admin!== undefined) {
+                  if (!err && admin!== undefined) {
                     console.log('Created admin user. Login with: ' + admin + ' / password');
                   } else if (err && admin !== undefined) {
                     console.log(chalk.red('Could not add admin user ' + admin));
