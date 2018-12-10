@@ -174,7 +174,7 @@ function isValidUntil(validUntil) {
   var minDate = moment().set(zeroTime);
 
   // Validate range
-  return validUntil.isAfter(minDate) && validUntil.isBefore(maxDate);
+  return validUntil.isSameOrAfter(minDate) && validUntil.isBefore(maxDate);
 }
 
 /**
