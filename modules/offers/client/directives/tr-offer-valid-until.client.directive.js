@@ -38,7 +38,7 @@
       vm.offerValidityInDays = 30;
 
       // Predefined options visible without calendar
-      vm.choises = {
+      vm.choices = {
         'A week': 7,
         'Two weeks': 14,
         'Three weeks': 23,
@@ -95,7 +95,7 @@
         // @link https://momentjs.com/docs/#/manipulating/add/
         var add = days ? { days: days } : appSettings.limits.maxOfferValidFromNow;
 
-        vm.validUntil = moment().add(add).toDate();
+        vm.validUntil = moment().endOf('day').add(add).toDate();
       }
 
     }
