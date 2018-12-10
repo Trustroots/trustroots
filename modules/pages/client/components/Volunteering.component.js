@@ -7,7 +7,7 @@ import { NamespacesConsumer } from 'react-i18next';
 
 export default function Volunteering() {
   const photo = selectPhoto('happyhippies');
-  return <NamespacesConsumer>{ t => (<>
+  return <NamespacesConsumer ns={'volunteering'}>{ t => (<>
     <section className="board volunteer-header board-happyhippies" style={{ backgroundImage: `url("${photo.imageUrl}")` }}>
       <div className="container">
         <div className="row">
