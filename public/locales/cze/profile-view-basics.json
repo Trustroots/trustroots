@@ -1,4 +1,5 @@
 {
   "Member since {{date, MMM Do, YYYY}}": "Členem od {{date, Do MMM YYYY}}",
-  "Online {{date, fromNow}}": "Online {{date, fromNow}}"
+  "Online {{date, fromNow}}": "Online {{date, fromNow}}",
+  "Online long ago": "Online dávno"
 }
