@@ -1,16 +1,19 @@
 import React from 'react';
+import { NamespacesConsumer } from 'react-i18next';
+import '@/modules/core/client/components/i18n';
 import PropTypes from 'prop-types';
-import moment from 'moment';
 
 export default function ProfileViewBasics({ profile }) {
-  return <>
+  return (<NamespacesConsumer ns="profile-view-basics">{ t => (<>
     <div className="profile-sidebar-section">
-      Member since {moment(profile.created).format('MMM Do, YYYY')}
+      {t('Member since {{date, MMM Do, YYYY}}', { date: profile.created })}
     </div>
     <div className="profile-sidebar-section">
-      {profile.seen ? <span>Online {moment(profile.seen).fromNow()}</span> : <span>Online long ago</span>}
+      <span>
+        {(profile.seen) ? t('Online {{date, fromNow}}', { date: profile.seen }) : t('Online long ago')}
+      </span>
     </div>
-  </>;
+  </>) }</NamespacesConsumer>);
 };
 
 ProfileViewBasics.propTypes = {
