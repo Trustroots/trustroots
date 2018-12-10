@@ -145,13 +145,6 @@ function isValidOfferType(type) {
  */
 function isValidUntil(validUntil) {
 
-  var zeroTime = {
-    'hours': 0,
-    'minutes': 0,
-    'seconds': 0,
-    'millisecond': 0
-  };
-
   // Input date
   var validUntil = moment(validUntil);
 
@@ -161,20 +154,19 @@ function isValidUntil(validUntil) {
   }
 
   // Set input time to midnight
-  validUntil = validUntil.set(zeroTime);
+  validUntil = validUntil.endOf('day');
 
   // Maximum valid date
   var maxDate = moment()
     .add(config.limits.maxOfferValidFromNow || { days: 30 })
     // Add one extra day just to accommodate oddities from timezones
-    .add(1, 'days')
-    .set(zeroTime);
+    .endOf('day');
 
   // Minimum valid date
-  var minDate = moment().set(zeroTime);
+  var minDate = moment().startOf('day');
 
   // Validate range
-  return validUntil.isSameOrAfter(minDate) && validUntil.isBefore(maxDate);
+  return validUntil.isSameOrAfter(minDate) && validUntil.isSameOrBefore(maxDate);
 }
 
 /**
