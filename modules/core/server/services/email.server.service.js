@@ -329,6 +329,7 @@ exports.sendWelcomeSequenceFirst = function (user, callback) {
     firstName: user.firstName,
     name: user.displayName,
     email: user.email,
+    username: user.username,
     urlFAQ: analyticsHandler.appendUTMParams(urlFAQ, utmParams),
     urlEditProfile: analyticsHandler.appendUTMParams(urlEditProfile, utmParams),
     utmCampaign: campaign,
@@ -360,6 +361,7 @@ exports.sendWelcomeSequenceSecond = function (user, callback) {
     firstName: user.firstName,
     name: user.displayName,
     email: user.email,
+    username: user.username,
     urlMeetup: analyticsHandler.appendUTMParams(urlMeet, utmParams),
     utmCampaign: campaign,
     sparkpostCampaign: campaign
@@ -397,6 +399,7 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
     firstName: user.firstName,
     name: user.displayName,
     email: user.email,
+    username: user.username,
     urlEditProfile: analyticsHandler.appendUTMParams(urlEditProfile, utmParams),
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
@@ -443,7 +446,7 @@ exports.sendReferenceNotificationSecond = function (userFrom, userTo, reference,
  * @param {Object[]} params - Parameters used for rendering emails
  * @returns {Object[]} - Returns object with supportUrl, footerUrl and headerUrl parameters.
  */
-exports.addEmailBaseTemplateParams = function (params, user) {
+exports.addEmailBaseTemplateParams = function (params) {
   if (params === null || typeof params !== 'object') {
     console.error('addEmailBaseTemplateParams: requires param to be Object. No URL parameters added.');
     return {};
@@ -452,37 +455,23 @@ exports.addEmailBaseTemplateParams = function (params, user) {
   var baseUrl = (config.https ? 'https' : 'http') + '://' + config.domain;
 
   params.urlSupportPlainText = baseUrl + '/support';
-  params.urlProfilePlainText = baseUrl + '/profile/' + user.username;
   params.footerUrlPlainText = baseUrl;
 
-  params.headerUrl = analyticsHandler.appendUTMParams(baseUrl, {
-    source: 'transactional-email',
-    medium: 'email',
-    campaign: params.utmCampaign || 'transactional-email',
-    content: 'email-header'
-  });
+  var buildAnalyticsUrl = function (url, content) {
+    return analyticsHandler.appendUTMParams(url, {
+      source: 'transactional-email',
+      medium: 'email',
+      campaign: params.utmCampaign || 'transactional-email',
+      content: content
+    });
+  };
 
-  params.footerUrl = analyticsHandler.appendUTMParams(baseUrl, {
-    source: 'transactional-email',
-    medium: 'email',
-    campaign: params.utmCampaign || 'transactional-email',
-    content: 'email-footer'
-  });
-
-  params.supportUrl = analyticsHandler.appendUTMParams(params.urlSupportPlainText, {
-    source: 'transactional-email',
-    medium: 'email',
-    campaign: params.utmCampaign || 'transactional-email',
-    content: 'email-support'
-  });
-
-  params.profileUrl = analyticsHandler.appendUTMParams(params.urlProfilePlainText, {
-    source: 'transactional-email',
-    medium: 'email',
-    campaign: params.utmCampaign || 'transactional-email',
-    content: 'email-profile'
-  });
-
+  params.headerUrl = buildAnalyticsUrl(baseUrl, 'email-header');
+  params.footerUrl = buildAnalyticsUrl(baseUrl, 'email-footer');
+  params.supportUrl = buildAnalyticsUrl(params.urlSupportPlainText, 'email-support');
+  if (params.username) {
+    params.profileUrl = buildAnalyticsUrl(baseUrl + '/profile/' + params.username, 'email-profile');
+  }
   return params;
 };
 
