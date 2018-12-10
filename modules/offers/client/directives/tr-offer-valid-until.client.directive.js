@@ -66,6 +66,8 @@
         if ($scope.validUntil) {
           vm.isCalendarVisible = true;
           vm.validUntil = $scope.validUntil;
+        } else {
+          setValidUntilDays(vm.offerValidityInDays);
         }
 
         $scope.$watch('trOfferValidUntil.offerValidityInDays', function (newValue, oldValue) {
