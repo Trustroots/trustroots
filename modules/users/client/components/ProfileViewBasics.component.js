@@ -6,11 +6,11 @@ import PropTypes from 'prop-types';
 export default function ProfileViewBasics({ profile }) {
   return (<NamespacesConsumer ns="profile-view-basics">{ t => (<>
     <div className="profile-sidebar-section">
-      {t('Member since {{date, MMM Do, YYYY}}', { date: profile.created })}
+      {t('Member since {{date, MMM Do, YYYY}}', { date: new Date(profile.created) })}
     </div>
     <div className="profile-sidebar-section">
       <span>
-        {(profile.seen) ? t('Online {{date, fromNow}}', { date: profile.seen }) : t('Online long ago')}
+        {(profile.seen) ? t('Online {{date, fromNow}}', { date: new Date(profile.seen) }) : t('Online long ago')}
       </span>
     </div>
   </>) }</NamespacesConsumer>);
