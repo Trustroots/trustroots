@@ -33,7 +33,6 @@ don't hesitate to [contact us](https://www.trustroots.org/contact/)._
 - [Monitoring.md](Monitoring.md)
 - [oAuth-apps.md](oAuth-apps.md)
 - [Server.md](Server.md)
-- [Services-and-resources.md](Services-and-resources.md)
 - [Troubleshooting.md](Troubleshooting.md)
 
 
@@ -50,8 +49,8 @@ don't hesitate to [contact us](https://www.trustroots.org/contact/)._
 - [Privacy-Policy.md](Privacy-Policy.md)
 
 other sources
-- https://wiki.trustroots.org/
-- https://meta.trustroots.org/
+- [wiki.trustroots.org](https://wiki.trustroots.org/)
+- [meta.trustroots.org](https://meta.trustroots.org/)
 
 
 ## Logos and other graphics

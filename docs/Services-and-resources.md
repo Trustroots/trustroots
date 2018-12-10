@@ -1,4 +1,5 @@
-Store possible _future_ services, examples, resources (e.g. blog posts) etc that don't fit under any specific todo.
+Store possible _future_ services, examples, resources (e.g. blog
+posts) etc that don't fit under any specific todo.
 
 ## SMS gateways
 * https://www.nexmo.com/ (used at [Hitchticker](https://github.com/guaka/hitchticker/issues/2))
