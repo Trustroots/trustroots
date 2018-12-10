@@ -27,20 +27,32 @@ don't hesitate to [contact us](https://www.trustroots.org/contact/)._
 
 ## Docs & more
 
-- [Accessibility.md](Accessibility.md)
-- [Angular-Directives.md](Angular-Directives.md)
-- [Database.md](Database.md)
+- [Angular-Directives.md](Angular-Directives.md) - note that we are [moving to React](https://github.com/Trustroots/trustroots/labels/React)
 - [Development.md](Development.md)
 - [Icons.md](Icons.md)
-- [InfluxDB.md](InfluxDB.md)
 - [Monitoring.md](Monitoring.md)
 - [oAuth-apps.md](oAuth-apps.md)
-- [Photos.md](Photos.md)
-- [Privacy-Policy.md](Privacy-Policy.md)
-- [Safety.md](Safety.md)
 - [Server.md](Server.md)
 - [Services-and-resources.md](Services-and-resources.md)
 - [Troubleshooting.md](Troubleshooting.md)
+
+
+### Data ###
+
+- [Database.md](Database.md)
+- [InfluxDB.md](InfluxDB.md)
+
+
+## More information
+
+- [Accessibility.md](Accessibility.md)
+- [Photos.md](Photos.md)
+- [Privacy-Policy.md](Privacy-Policy.md)
+
+other sources
+- https://wiki.trustroots.org/
+- https://meta.trustroots.org/
+
 
 ## Logos and other graphics
 
