@@ -14,7 +14,8 @@ module.exports = {
   // Feature flags
   featureFlags: {
     // enable references?
-    reference: true
+    reference: true,
+    i18n: true
   },
   db: {
     uri: 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trustroots-test',
