@@ -161,6 +161,7 @@
     "passport-twitter": "~1.0.4",
     "prunecluster": "~2.1.0",
     "randomcolor": "~0.5.1",
+    "react-bootstrap": "^0.32.4",
     "react-i18next": "~8.3.8",
     "sanitize-html": "~1.19.3",
     "serve-favicon": "~2.5.0",
