@@ -24,7 +24,7 @@
         Read more
       </a>
 
-      <language-switch ng-if="app.appSettings.i18nEnabled"></language-switch>
+      <language-switch aria-label="Localization" ng-if="app.appSettings.i18nEnabled"></language-switch>
     </nav>
   </div>
   <!-- /Header for non-authenticated users -->
@@ -197,9 +197,6 @@
         <a ui-sref="navigation" aria-label="My profile, info and support">
           <i class="icon-menu icon-fw icon-lg"></i>
         </a>
-      </li>
-      <li ng-if="app.appSettings.i18nEnabled">
-        <language-switch></language-switch>
       </li>
     </ul>
 
