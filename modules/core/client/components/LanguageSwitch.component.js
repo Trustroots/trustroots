@@ -1,14 +1,14 @@
 import React from 'react';
-import i18n from '@/config/client/i18n';
 import locales from '@/config/shared/locales';
 import PropTypes from 'prop-types';
 import { Dropdown, MenuItem } from 'react-bootstrap';
+import LanguageSwitchContainer from './LanguageSwitchContainer';
 
-function LanguageSwitchPresentation({ currentLanguageCode, onChangeLanguage }) {
-  // selected language
-  const currentLanguage = locales.find(language => language.code === currentLanguageCode);
+function LanguageSwitchDropdownPresentation({ currentLanguageCode, onChangeLanguage }) {
   // languages which are not selected
   const otherLanguages = locales.filter(language => language.code !== currentLanguageCode);
+  // selected language
+  const currentLanguage = locales.find(language => language.code === currentLanguageCode);
 
   return (
     <Dropdown
@@ -31,36 +31,41 @@ function LanguageSwitchPresentation({ currentLanguageCode, onChangeLanguage }) {
   );
 };
 
-LanguageSwitchPresentation.propTypes = {
+LanguageSwitchDropdownPresentation.propTypes = {
   currentLanguageCode: PropTypes.string,
   onChangeLanguage: PropTypes.func
 };
 
-export default class LanguageSwitch extends React.Component {
-  constructor(props) {
-    super(props);
+function LanguageSwitchSelectPresentation({ currentLanguageCode, onChangeLanguage }) {
+  return (
+    <select
+      className="form-control"
+      id="locale"
+      value={currentLanguageCode}
+      onChange={(event) => onChangeLanguage(event.target.value)}
+    >
+      {locales.map(language => (
+        <option key={language.code} value={language.code} >
+          {language.name}
+        </option>
+      ))}
+    </select>
+  );
+};
 
-    this.state = {
-      currentLanguageCode: 'en'
-    };
+LanguageSwitchSelectPresentation.propTypes = {
+  currentLanguageCode: PropTypes.string,
+  onChangeLanguage: PropTypes.func
+};
 
-    // bind class context to class methods
-    this.handleChangeLanguage = this.handleChangeLanguage.bind(this);
-  }
-
-  handleChangeLanguage(languageCode) {
-    this.setState(() => ({ currentLanguageCode: languageCode }));
-    i18n.changeLanguage(languageCode);
-  }
-
-  render() {
-    return (
-      <LanguageSwitchPresentation
-        currentLanguageCode={this.state.currentLanguageCode}
-        onChangeLanguage={this.handleChangeLanguage}
-      />
-    );
-  }
+export default function LanguageSwitch({ presentation='dropdown' }) {
+  return (
+    <LanguageSwitchContainer presentation={
+      (presentation === 'dropdown') ? LanguageSwitchDropdownPresentation : LanguageSwitchSelectPresentation
+    } />
+  );
 }
 
-LanguageSwitch.propTypes = {};
+LanguageSwitch.propTypes = {
+  presentation: PropTypes.string
+};
