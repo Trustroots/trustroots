@@ -4,7 +4,7 @@ import '@/config/lib/i18n';
 import PropTypes from 'prop-types';
 
 export default function ProfileViewBasics({ profile }) {
-  return (<NamespacesConsumer ns="profile-view-basics">{ t => (<>
+  return (<NamespacesConsumer ns="user-profile">{ t => (<>
     <div className="profile-sidebar-section">
       {t('Member since {{date, MMM Do, YYYY}}', { date: new Date(profile.created) })}
     </div>
