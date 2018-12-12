@@ -103,6 +103,8 @@ describe('Job: welcome sequence, second email', function () {
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal('Meet new people at Trustroots, ' + _confirmedUser.firstName);
+      // Check that the email contains a link to profile
+      jobs[0].data.html.should.match(/href="http.+\/profile\/user_confirmed/);
       done();
     });
   });
