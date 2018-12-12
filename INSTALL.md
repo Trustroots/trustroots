@@ -62,6 +62,11 @@ npm start
 
 Add any configurations you want to keep out of version control to `config/env/local.js` file. It's created for you on the first start and overrides anything in `config/env/local.js`.
 
+## Access the server from another device
+* Make sure you are connected to the same network (WIFI/LAN). Find your ip address using `ipconfig` or `ifconfig`.
+* Add `host: null` into  `config/env/local.js`
+* Alternatively you can also use https://ngrok.com/
+
 ## Development tools
 
 ### Emails
