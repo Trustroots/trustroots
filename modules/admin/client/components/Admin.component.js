@@ -15,7 +15,7 @@ export default function Admin() {
         <p>In development.</p>
 
         <ul>
-          <li>TODO: <a ui-sref="admin-search-users">Search users (regexp)</a></li>
+          <li><a href="/admin/search-users">Search users (no regexp yet)</a></li>
           <li>TODO: Most recent downvoted threads</li>
           <li>TODO: new signups: how did you hear about trustroots?</li>
         </ul>
