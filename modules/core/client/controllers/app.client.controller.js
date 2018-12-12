@@ -164,8 +164,11 @@
       $scope.$on('$stateChangeStart', function (event, toState, toParams) {
 
         if (toState.requiresRole) {
+          if (!Authentication.user) {
+            toState.requiresAuth = true;
+          }
           // Check if user has the required role
-          if (!Authentication.user.roles.includes(toState.requiresRole)) {
+          else if (Authentication.user && !Authentication.user.roles.includes(toState.requiresRole)) {
             event.preventDefault();
             $state.go('volunteering');
           }

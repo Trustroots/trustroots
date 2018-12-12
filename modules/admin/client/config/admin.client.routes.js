@@ -11,12 +11,21 @@
     $stateProvider.
       state('admin', {
         url: '/admin',
-        template: '<admin></admin>',
+        template: '<Admin></Admin>',
         requiresRole: 'admin',
         data: {
           pageTitle: 'Admin'
         }
+      }).
+      state('admin-search-users', {
+        url: '/admin/search-users',
+        template: '<AdminSearchUsers></AdminSearchUsers>',
+        requiresRole: 'admin',
+        data: {
+          pageTitle: 'Admin: Search users'
+        }
       });
+
   }
 
 }());

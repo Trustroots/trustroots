@@ -15,8 +15,9 @@ export default function Admin() {
         <p>In development.</p>
 
         <ul>
-          <li>TODO: Search users (regexp)</li>
-          <li>TODO: Most recent downvotes messages</li>
+          <li>TODO: <a ui-sref="admin-search-users">Search users (regexp)</a></li>
+          <li>TODO: Most recent downvoted threads</li>
+          <li>TODO: new signups: how did you hear about trustroots?</li>
         </ul>
 
       </div>
