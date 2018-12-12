@@ -163,6 +163,14 @@
        */
       $scope.$on('$stateChangeStart', function (event, toState, toParams) {
 
+        if (toState.requiresRole) {
+          // Check if user has the required role
+          if (!Authentication.user.roles.includes(toState.requiresRole)) {
+            event.preventDefault();
+            $state.go('volunteering');
+          }
+        }
+
         // Redirect to login page if no user
         if (toState.requiresAuth && !Authentication.user) {
           // Cancel stateChange

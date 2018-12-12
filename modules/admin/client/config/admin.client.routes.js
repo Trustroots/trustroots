@@ -12,6 +12,7 @@
       state('admin', {
         url: '/admin',
         template: '<admin></admin>',
+        requiresRole: 'admin',
         data: {
           pageTitle: 'Admin'
         }

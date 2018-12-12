@@ -8,7 +8,18 @@ export default function Admin() {
           margin-top: 60px;
         }`}
       </style>
-      <div id="wrapper">Hello admin world</div>
+      <div className="container" id="wrapper">
+
+        <h2>Trustroots admin dashboard</h2>
+
+        <p>In development.</p>
+
+        <ul>
+          <li>TODO: Search users (regexp)</li>
+          <li>TODO: Most recent downvotes messages</li>
+        </ul>
+
+      </div>
     </>
   );
 }
