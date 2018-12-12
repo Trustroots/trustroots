@@ -1,6 +1,6 @@
 import React from 'react';
 import { NamespacesConsumer, Trans } from 'react-i18next';
-import '../../../core/client/components/i18n';
+import '@/config/lib/i18n';
 import { selectPhoto } from '@/modules/core/client/services/photos.service';
 
 export default function Volunteering() {

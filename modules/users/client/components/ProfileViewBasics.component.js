@@ -1,6 +1,6 @@
 import React from 'react';
 import { NamespacesConsumer } from 'react-i18next';
-import '@/modules/core/client/components/i18n';
+import '@/config/lib/i18n';
 import PropTypes from 'prop-types';
 
 export default function ProfileViewBasics({ profile }) {
