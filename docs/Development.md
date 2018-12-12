@@ -21,6 +21,7 @@
 # The application
 * **MEAN** stack, seeded originally with [MEAN.js](http://meanjs.org/) boilerplate: [MongoDB](www.mongodb.org), [ExpressJS](http://expressjs.com/), [AngularJS](https://angularjs.org/) v1, [NodeJS](http://nodejs.org/). Additionally stuff like [Bootstrap](http://getbootstrap.com/), [Leaflet](http://leafletjs.com/) etc. 
 * [[Database]] scheme (look for `*.server.model.js` project files to check most up to date info)
+* We're migrating the client to React. Read a [migration guide](React.md).
 
 # The mobile app
 We have a React Native app for Android written in ClojureScript: https://github.com/Trustroots/Trustroots-React-Native
