@@ -27,7 +27,8 @@ don't hesitate to [contact us](https://www.trustroots.org/contact/)._
 
 ## Docs & more
 
-- [Angular-Directives.md](Angular-Directives.md) - note that we are [moving to React](https://github.com/Trustroots/trustroots/labels/React)
+- [Angular-Directives.md](Angular-Directives.md)
+- [We are moving to React](React.md)
 - [Development.md](Development.md)
 - [Icons.md](Icons.md)
 - [Monitoring.md](Monitoring.md)
