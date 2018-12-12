@@ -2,6 +2,15 @@ import React from 'react';
 
 export default function Admin() {
   return (
-    <div>Hello admin world</div>
+    <>
+      <style>
+        {`#wrapper {
+          margin-top: 60px;
+        }`}
+      </style>
+      <div id="wrapper">Hello admin world</div>
+    </>
   );
 }
+
+Admin.propTypes = {};

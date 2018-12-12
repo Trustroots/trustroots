@@ -6,13 +6,11 @@
     .config(AdminRoutes);
 
   /* @ngInject */
-  function AdminRoutes($stateProvider, $urlRouterProvider) {
-
-    $urlRouterProvider.when('/admin');
+  function AdminRoutes($stateProvider) {
 
     $stateProvider.
-      state('volunteering', {
-        url: '/volunteering',
+      state('admin', {
+        url: '/admin',
         template: '<admin></admin>',
         data: {
           pageTitle: 'Admin'
