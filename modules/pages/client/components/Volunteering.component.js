@@ -67,7 +67,7 @@ export default function Volunteering() {
 
             <li>
               <strong><em>TEST THE WEBSITE!</em></strong>
-              <p>Use the website: travel and host! Test it out with different mobile devices, browsers, and screen sizes. Report bugs by opening <a href="https://github.com/Trustroots/trustroots/issues/new">an issue on GitHub</a> or use the <a ui-sref="contact">contact</a> form. </p>
+              <p>Use the website: travel and host! Test it out with different mobile devices, browsers, and screen sizes. Report bugs by opening <a href="https://github.com/Trustroots/trustroots/issues/new">an issue on GitHub</a> or use the <a href="/contact">contact</a> form. </p>
             </li>
 
             <li>
@@ -84,7 +84,7 @@ export default function Volunteering() {
 
             <li>
               <strong><em>GET IN TOUCH!</em></strong>
-              <p>We&apos;re always happy to <a ui-sref="contact">hear from you</a> if you don&apos;t know what you can do.</p>
+              <p>We&apos;re always happy to <a href="/contact">hear from you</a> if you don&apos;t know what you can do.</p>
               <p>If you&apos;re still not sure and just want to chat to some humans, introduce yourself on our <a href="https://meta.trustroots.org/">volunteer forum</a>. All are welcome and we&apos;ll be happy to help you get started.</p>
             </li>
 
