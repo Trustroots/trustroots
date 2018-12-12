@@ -23,7 +23,7 @@
           ng-disabled="offerHostEdit.isLoading ||
           (offerHostEdit.offer.status!=='no' && (offerHostEdit.offer.description|plainTextLength)<5)"
           uib-tooltip="Write longer description first"
-          tooltip-enable="(offerMeet.offer.description|plainTextLength)<5"
+          tooltip-enable="(offerMeet.offer.description|plainTextLength)<5 && offerHostEdit.offer.status !== 'no'"
           tooltip-placement="bottom"
           aria-hidden="true">
     Save and Exit
@@ -144,12 +144,14 @@
 
       <div class="panel panel-default" ng-class="{ 'panel-disabled': offerHostEdit.offer.status === 'no' && !offerDescriptionFocused }">
         <div class="panel-heading">
-          <h4 id="offerDescriptionLabel">Tell about your home and hosting possibilities *</h4>
+          <h4 id="offerDescriptionLabel">Tell about your home and hosting possibilities
+            <i ng-if="offerHostEdit.offer.status !== 'no'"> (required)</i>
+          </h4>
         </div>
         <div class="panel-body">
           <div class="offer-description"
                aria-labelledby="offerDescriptionLabel"
-               aria-required="false"
+               aria-required="offerHostEdit.offer.status !== 'no'"
                ng-focus="offerDescriptionFocused = true"
                ng-blur="offerDescriptionFocused = false"
                ng-class="{ 'is-not-empty': offer.description.length }"
