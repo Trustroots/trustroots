@@ -417,6 +417,7 @@ exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
   var params = exports.addEmailBaseTemplateParams({
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
+    username: userTo.username, // data needed for link to profile in footer
     userFrom: userFrom,
     userTo: userTo,
     userFromProfileUrl: url + '/profile/' + userFrom.username,
@@ -434,6 +435,7 @@ exports.sendReferenceNotificationSecond = function (userFrom, userTo, reference,
   var params = exports.addEmailBaseTemplateParams({
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
+    username: userTo.username, // data needed for link to profile in footer
     userFrom: userFrom,
     userTo: userTo,
     userFromProfileUrl: url + '/profile/' + userFrom.username,
