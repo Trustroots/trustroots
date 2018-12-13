@@ -23,6 +23,8 @@
          aria-label="Read more about Trustroots">
         Read more
       </a>
+
+      <language-switch ng-if="app.appSettings.i18nEnabled"></language-switch>
     </nav>
   </div>
   <!-- /Header for non-authenticated users -->
@@ -191,13 +193,12 @@
           <i class="icon-menu icon-fw icon-lg"></i>
         </a>
       </li>
+      <li ng-if="app.appSettings.i18nEnabled">
+        <language-switch></language-switch>
+      </li>
     </ul>
 
   </div>
   <!-- /Header for authenticated users -->
-
-  <div class="container" ng-if="app.appSettings.i18nEnabled">
-    <language-switch></language-switch>
-  </div>
 
 </header>
