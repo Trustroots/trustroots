@@ -87,12 +87,12 @@ exports.signup = function (req, res) {
     // Report how did you hear about us to stats
     function (user, done) {
       statService.stat({
-        namespace: "profileSignupHowHeardAboutUs",
+        namespace: 'profileSignupHowHeardAboutUs',
         fields: {
           // userID: req.body.userID,
           freetext: req.body.profileSignupHowHeardAboutUs
         }
-      }, function(err) {
+      }, function (err) {
         done(err, user);
       });
     },
