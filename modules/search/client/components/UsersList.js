@@ -58,9 +58,15 @@ User.propTypes = {
 
 
 export default function UsersList({ users }) {
-  const usersComponent = [];
-  for (const user of users) {
-    usersComponent.push(<User userData={user} />);
+  const usersEvenComponent = [];
+  const usersUnEvenComponent = [];
+  for (let i = 0; i < users.length; i++) {
+    if (i % 2 === 0) {
+      usersEvenComponent.push(<User userData={users[i]} key={`user-results-${i}`} />);
+    }
+    else {
+      usersUnEvenComponent.push(<User userData={users[i]} key={`user-results-${i}`} />);
+    }
   }
   return (
     <div>
@@ -68,17 +74,15 @@ export default function UsersList({ users }) {
         <div className="col-xs-12 col-sm-6"
           ng-repeat="contact in ContactsList.contacts | filter:ContactsList.searchText track by contact._id">
           <div>
-            {<User userData={users[0]} />}
+            {usersEvenComponent}
           </div>
 
         </div>
-      </div>
 
-      <div className="row">
         <div className="col-xs-12 col-sm-6"
           ng-repeat="contact in ContactsList.contacts | filter:ContactsList.searchText track by contact._id">
           <div>
-            {<User userData={users[0]} />}
+            {usersUnEvenComponent}
           </div>
 
         </div>
