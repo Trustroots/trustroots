@@ -49,19 +49,9 @@
                   </span>
                 </div>
               </div>
-              <a ui-sref="forgot({ userhandle: auth.credentials.username })"
-                 class="btn btn-inverse"
-                 ng-class="{ 'btn-lg btn-block': auth.authError }"
-                 tabindex="4">
-                Forgot?
-                <span ng-if="auth.authError" class="hidden-xs">
-                  Recover your password
-                </span>
-              </a>
-              <div class="text-center form-group">
-                <br><br>
+              <div class="form-group">
                 <button type="submit"
-                        class="btn btn-default btn-action"
+                        class="btn btn-default btn-lg"
                         ng-disabled="auth.isLoading"
                         tabindex="3">
                   <span ng-if="!auth.isLoading">
@@ -69,22 +59,30 @@
                   </span>
                   <span ng-if="auth.isLoading">Wait...</span>
                 </button>
+                <span class="btn space-h"></span>
+                <a ui-sref="forgot({ userhandle: auth.credentials.username })"
+                   class="btn-link"
+                   ng-class="{ 'btn-lg btn-link': auth.authError }"
+                   tabindex="4">
+                  Forgot?
+                  <span ng-if="auth.authError" class="hidden-xs">
+                    Recover your password
+                  </span>
+                </a>
               </div>
             </fieldset>
           </form>
+          <!-- For bigger screens -->
+          <div class="text-white hidden-xs">
+            <br>
+            <a ui-sref="signup" class="btn btn-inverse btn-lg btn-signup">Become a member</a>
+            <span>&nbsp;&nbsp;or&nbsp;&nbsp;</span>
+            <a ui-sref="home" class="link">Back home</a>
+          </div>
         </div>
       </div><!-- .row-->
 
-      <!-- For bigger screens -->
-      <div class="row hidden-xs">
-        <div class="col-xs-12 text-center text-white">
-          <p>
-            <br>
-            <a ui-sref="home" class="btn btn-inverse">Back home</a>
-            <a ui-sref="signup" class="btn btn-inverse">Become a member</a>
-          </p>
-        </div>
-      </div><!-- .row-->
+
 
       <!-- For smaller screens -->
       <nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block">
