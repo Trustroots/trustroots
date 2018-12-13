@@ -305,7 +305,9 @@ exports.update = function (req, res) {
   // validate locale
   // @TODO validation framework
   if (req.body.locale && (typeof req.body.locale !== 'string' || !Object.keys(languages).includes(req.body.locale))) {
-    return res.status(400).end();
+    return res.status(400).send({
+      message: errorService.getErrorMessageByKey('bad-request')
+    });
   }
 
   async.waterfall([
