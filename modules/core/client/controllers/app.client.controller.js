@@ -170,7 +170,7 @@
           // Check if user has the required role
           else if (Authentication.user && !Authentication.user.roles.includes(toState.requiresRole)) {
             event.preventDefault();
-            $window.alert('Wanna help us build Trustroots?')
+            $window.alert('Wanna help us build Trustroots?');
             $state.go('volunteering');
           }
         }
