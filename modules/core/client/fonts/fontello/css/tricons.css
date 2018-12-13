@@ -1,11 +1,11 @@
 @font-face {
   font-family: 'tricons';
-  src: url('../font/tricons.eot?47159994');
-  src: url('../font/tricons.eot?47159994#iefix') format('embedded-opentype'),
-       url('../font/tricons.woff2?47159994') format('woff2'),
-       url('../font/tricons.woff?47159994') format('woff'),
-       url('../font/tricons.ttf?47159994') format('truetype'),
-       url('../font/tricons.svg?47159994#tricons') format('svg');
+  src: url('../font/tricons.eot?53632891');
+  src: url('../font/tricons.eot?53632891#iefix') format('embedded-opentype'),
+       url('../font/tricons.woff2?53632891') format('woff2'),
+       url('../font/tricons.woff?53632891') format('woff'),
+       url('../font/tricons.ttf?53632891') format('truetype'),
+       url('../font/tricons.svg?53632891#tricons') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -15,7 +15,7 @@
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   @font-face {
     font-family: 'tricons';
-    src: url('../font/tricons.svg?47159994#tricons') format('svg');
+    src: url('../font/tricons.svg?53632891#tricons') format('svg');
   }
 }
 */
@@ -114,3 +114,4 @@
 .icon-instagram:before { content: '\f16d'; } /* '' */
 .icon-apple:before { content: '\f179'; } /* '' */
 .icon-sliders:before { content: '\f1de'; } /* '' */
+.icon-map:before { content: '\f279'; } /* '' */

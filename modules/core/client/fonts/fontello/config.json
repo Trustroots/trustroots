@@ -399,6 +399,12 @@
       "css": "apple",
       "code": 61817,
       "src": "fontawesome"
+    },
+    {
+      "uid": "79beb8c7fcd56e1985b70e9a120cbcbf",
+      "css": "map",
+      "code": 62073,
+      "src": "fontawesome"
     }
   ]
 }

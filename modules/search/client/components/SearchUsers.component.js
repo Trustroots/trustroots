@@ -114,7 +114,7 @@ class SearchUsers extends React.Component {
           tooltip-enable="::search.screenWidth >= 768"
           tooltip-placement="bottom"
           aria-label="Go to map search">
-          <i className="icon-tree"></i>
+          <i className="icon-map"></i>
         </a>
       </span>
     );
