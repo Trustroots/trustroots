@@ -80,6 +80,15 @@
         data: {
           pageTitle: 'Search'
         }
+      }).
+      state('search-users', {
+        url: '/search/users',
+        template: '<search-users></search-users>',
+        requiresAuth: true,
+        footerHidden: true,
+        data: {
+          pageTitle: 'Search for users'
+        }
       });
   }
 
