@@ -11,8 +11,8 @@ export default function Admin() {
 
         <ul>
           <li><a href="/admin/search-users">Search users (no regexp yet)</a></li>
+          <li>TODO: new signups: how did you hear about trustroots? See <a href="https://github.com/Trustroots/trustroots/issues/879">GitHub issue</a></li>
           <li>TODO: Most recent downvoted threads</li>
-          <li>TODO: new signups: how did you hear about trustroots?</li>
         </ul>
 
       </div>
