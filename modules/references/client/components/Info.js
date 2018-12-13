@@ -31,16 +31,14 @@ Duplicate.propTypes = {
   userTo: PropTypes.object.isRequired
 };
 
-export function Submitted({ isReported, isPublic, userTo }) {
+export function Submitted({ isReported, isPublic, userFrom, userTo }) {
   const name = userTo.displayName || userTo.username;
 
   const isPublicMessage = (isPublic) ?
     (
       <>
-      <div>Your reference for <UserLink user={userTo} /> is public now.</div>
-      {/* TODO add the links here */}
-      <div><a>See the reference.</a></div>
-      <div><a>See the reference from {name} to you.</a></div>
+      <div><a href={`/profile/${userTo.username}/references`}>Your reference</a> for <UserLink user={userTo} /> is public now.</div>
+      <div><a href={`/profile/${userFrom.username}/references`}>See the reference from {name} to you.</a></div>
       </>
     ) :
     (
@@ -57,6 +55,7 @@ export function Submitted({ isReported, isPublic, userTo }) {
 }
 
 Submitted.propTypes = {
+  userFrom: PropTypes.object.isRequired,
   userTo: PropTypes.object.isRequired,
   isReported: PropTypes.bool.isRequired,
   isPublic: PropTypes.bool.isRequired

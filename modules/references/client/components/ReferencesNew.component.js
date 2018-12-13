@@ -137,7 +137,7 @@ export default class ReferencesNew extends React.Component {
     if (this.state.isSubmitted) {
       const isReported = this.state.reference.recommend === 'no' && this.state.report;
       const isPublic = this.state.isPublic;
-      return <Submitted isReported={isReported} isPublic={isPublic} userTo={this.props.userTo} />;
+      return <Submitted isReported={isReported} isPublic={isPublic} userFrom={this.props.userFrom} userTo={this.props.userTo} />;
     }
 
     return (
@@ -151,10 +151,12 @@ export default class ReferencesNew extends React.Component {
           <Tab
             eventKey={0}
             title="How do you know them"
+            disabled
           >{tabs[0]}</Tab>
           <Tab
             eventKey={1}
             title="Recommendation"
+            disabled
           >{tabs[1]}</Tab>
         </Tabs>
         {/* <!-- Navigation for big screens -->*/}

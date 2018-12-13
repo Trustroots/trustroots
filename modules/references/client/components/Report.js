@@ -8,15 +8,16 @@ export default function Report(props) {
       <p className="lead">
         We&apos;re sad to hear you didn&apos;t have great experience using Trustroots! 😞
       </p>
-      <label>
-        <input
-          type="checkbox"
-          checked={props.report}
-          onChange={props.onChangeReport}
-        />
-        Report this person to moderators
-      </label>
-      <br /><br />
+      <div className="checkbox">
+        <label>
+          <input
+            type="checkbox"
+            checked={props.report}
+            onChange={props.onChangeReport}
+          />
+          Report this person to moderators
+        </label>
+      </div>
       {(props.report) ?
         <div>
           <label htmlFor="report-message" className="control-label">Message to moderators</label>
