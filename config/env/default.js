@@ -21,7 +21,8 @@ module.exports = {
   // Feature flags
   featureFlags: {
     // enable references?
-    reference: false
+    reference: false,
+    i18n: false
   },
 
   // Is site invitation only?
