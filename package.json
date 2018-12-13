@@ -86,6 +86,7 @@
     "async": "~2.6.1",
     "autolinker": "~1.8.1",
     "autoprefixer": "~9.4.2",
+    "axios": "^0.18.0",
     "basic-auth": "~2.0.1",
     "body-parser": "~1.18.3",
     "bootstrap": "3.3.7",
