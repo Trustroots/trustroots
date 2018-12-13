@@ -19,7 +19,10 @@
       }).
       state('admin-search-users', {
         url: '/admin/search-users',
-        template: '<admin-search-users></admin-search-users>', // Dashes are good here
+        // `template` is Angular state so
+        // it should be lowercase, with dashes
+        // This is the bridge towards (and from) React
+        template: '<admin-search-users></admin-search-users>',
         requiresRole: 'admin',
         data: {
           pageTitle: 'Admin: Search users'
