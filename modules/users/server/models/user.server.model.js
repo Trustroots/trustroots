@@ -249,6 +249,11 @@ var UserSchema = new Schema({
     type: Boolean,
     default: false
   },
+  /* Preferred interface language (client, emails, ...) */
+  locale: {
+    type: String,
+    default: ''
+  },
   passwordUpdated: {
     type: Date
   },
