@@ -3,8 +3,8 @@
 /**
  * Module dependencies.
  */
-var acl = require('acl'),
-    path = require('path');
+var acl = require('acl');
+
 
 // Using the memory backend
 acl = new acl(new acl.memoryBackend());

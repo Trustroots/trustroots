@@ -6,30 +6,7 @@
 var _ = require('lodash'),
     path = require('path'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    tribesHandler = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller')),
-    contactHandler = require(path.resolve('./modules/contacts/server/controllers/contacts.server.controller')),
-    messageHandler = require(path.resolve('./modules/messages/server/controllers/messages.server.controller')),
-    offerHandler = require(path.resolve('./modules/offers/server/controllers/offers.server.controller')),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    log = require(path.resolve('./config/lib/logger')),
-    del = require('del'),
-    messageStatService = require(path.resolve(
-      './modules/messages/server/services/message-stat.server.service')),
-    config = require(path.resolve('./config/config')),
-    async = require('async'),
-    crypto = require('crypto'),
-    sanitizeHtml = require('sanitize-html'),
-    mkdirRecursive = require('mkdir-recursive'),
     mongoose = require('mongoose'),
-    multer = require('multer'),
-    fs = require('fs'),
-    os = require('os'),
-    mmmagic = require('mmmagic'),
-    moment = require('moment'),
-    multerConfig = require(path.resolve('./config/lib/multer')),
     User = mongoose.model('User');
 
 /*
@@ -52,21 +29,25 @@ exports.adminSearch = function (req, res, next) {
     });
   }
 
+  var query = req.query.search;
   // perform the search
+  var regexp_query = new RegExp('.*' + query + '.*', 'i');
+
+  //  if (query.match(/^[0-9a-fA-F]{24}$/)) {
+  //    query = '0'.repeat(24);
+  //  }
+
   User
-    .find({ $and: [
-      {}, // public: true }, // only public users
-      {
-        $text: {
-          $search: req.query.search
-        }
-      }
-    ] }, { score: { $meta: 'textScore' } })
+    .find({ $or: [
+      //     { '_id': query },   // Cast to ObjectId failed
+      { 'email': regexp_query },
+      { 'username': regexp_query },
+      { 'displayName': regexp_query }
+    ] })
     // select only the right profile properties
     //    .select(exports.userMiniProfileFields + ' -_id')
-    .sort({ score: { $meta: 'textScore' } })
-    // limit the amount of found users (config)
-    .limit(config.limits.userSearchLimit)
+    .sort()
+    .limit(30)
     .exec(function (err, users) {
       if (err) return next(err);
       return res.send(users);
