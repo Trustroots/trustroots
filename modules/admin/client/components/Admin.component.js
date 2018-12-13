@@ -3,12 +3,7 @@ import React from 'react';
 export default function Admin() {
   return (
     <>
-      <style>
-        {`#wrapper {
-          margin-top: 60px;
-        }`}
-      </style>
-      <div className="container" id="wrapper">
+      <div className="container container-spacer">
 
         <h2>Trustroots admin dashboard</h2>
 

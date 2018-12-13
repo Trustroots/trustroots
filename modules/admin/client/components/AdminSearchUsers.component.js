@@ -20,12 +20,9 @@ export default class AdminSearchUsers extends React.Component {
 
   render() { return (
     <>
-      <style>
-        {`#wrapper {
-          margin-top: 60px;
-        }`}
-      </style>
-      <div className="container" id="wrapper">
+      <div className="container container-spacer">
+
+        <a href="/admin">/admin</a>
 
         <h2>Trustroots admin search users</h2>
 
