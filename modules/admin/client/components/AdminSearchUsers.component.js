@@ -31,7 +31,7 @@ export default class AdminSearchUsers extends React.Component {
 
         <p>Search users without regexp</p>
 
-        <input type="text" onChange={this.searchUserQuery} />
+        <input type="search" onChange={this.searchUserQuery} />
 
         <div id="search-users-results">
           <ul>
