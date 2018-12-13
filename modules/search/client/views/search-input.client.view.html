@@ -1,6 +1,18 @@
 <div class="form-group search-form-group search-place"
      ng-class="{ 'has-warning': search.locationNotFound }">
   <div class="input-group input-location">
+    <span class="input-group-btn"
+      style="border-left-width: 1px; border-left-style: solid; border-color: #12b591;">
+      <a type="button"
+        href="/search/users"
+        class="btn btn-lg btn-default"
+        tooltip-enable="::search.screenWidth >= 768"
+        tooltip-placement="bottom"
+        uib-tooltip="Go to search users"
+        aria-label="Go to search users by username">
+        <i class="icon-users"></i>
+      </a>
+    </span>
     <label for="search-query" class="sr-only">Search places</label>
     <input type="text"
            id="search-query"

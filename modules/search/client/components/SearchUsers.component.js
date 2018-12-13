@@ -101,8 +101,13 @@ class SearchUsers extends React.Component {
   render() {
     console.log('SearchUsers: render');
 
+    const borderStyle = { 'borderLeftWidth': '1px',
+      'borderLeftStyle': 'solid',
+      'borderColor': '#eee' };
+
     const switchToSearchPlaces = (
-      <span className="input-group-btn">
+      <span className="input-group-btn"
+        style={borderStyle}>
         <a type="button"
           href="/search"
           className="btn btn-lg btn-default"
@@ -117,6 +122,7 @@ class SearchUsers extends React.Component {
     const searchForm = (
       <div className="form-group search-form-group" id="search-users-form">
         <div className="input-group">
+          {switchToSearchPlaces}
           <label htmlFor="search-query" className="sr-only">Search users</label>
           <input type="text"
             id="search-query"
@@ -154,7 +160,6 @@ class SearchUsers extends React.Component {
 
     return (
       <section className="container container-spacer">
-        {switchToSearchPlaces}
         {searchForm}
         { this.state.users &&
         <UsersResults users={this.state.users} resolved={this.state.resolved} />
