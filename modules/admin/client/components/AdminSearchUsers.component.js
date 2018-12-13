@@ -31,13 +31,12 @@ export default class AdminSearchUsers extends React.Component {
         <input type="search" onChange={this.searchUserQuery} />
 
         <div id="search-users-results">
-          <ul>
+          <table className="table">
+            <tr><th>username</th><th>name</th><th>email</th><th>id</th></tr>
             {this.state.userResults.map((user) =>
-              <li key={user.username}><a href={'/profile/' + user.username}>
-                { user.username }</a> {user.displayName}</li>)}
-          </ul>
-          { // {JSON.stringify(this.state.userResults)}
-          }
+              <tr key={user.username}><td><a href={'/profile/' + user.username}>{ user.username }</a></td> <td>{user.displayName}</td> <td>{user.email}</td> <td>{user._id}</td></tr>)}
+          </table>
+
         </div>
       </div>
     </>
