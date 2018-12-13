@@ -78,7 +78,7 @@ export default function UsersList({ users }) {
         <div className="col-xs-12 col-sm-6"
           ng-repeat="contact in ContactsList.contacts | filter:ContactsList.searchText track by contact._id">
           <div>
-            {<User userData={users[1]} />}
+            {<User userData={users[0]} />}
           </div>
 
         </div>

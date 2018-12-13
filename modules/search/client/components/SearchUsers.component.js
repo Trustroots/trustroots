@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 
 import UsersList from './UsersList';
 
+import { searchUsers } from './search.api';
 
 function UsersResults({ users, resolved }) {
   const userList = (
@@ -42,15 +43,17 @@ function UsersResults({ users, resolved }) {
 
   return (
     <div>
-      {(!users || !resolved) &&
-      <div className="content-wait"
-        role="alertdialog"
-        aria-busy="true"
-        aria-live="assertive"
-        ng-if="!ContactsList.contacts || !ContactsList.contacts.$resolved">
-        <small>Wait a moment...</small>
-      </div>}
-      {resolved && (users && users.length > 0? userList : noUsers)}
+      {!resolved?
+        <div className="content-wait"
+          role="alertdialog"
+          aria-busy="true"
+          aria-live="assertive"
+          ng-if="!ContactsList.contacts || !ContactsList.contacts.$resolved">
+          <small>Wait a moment...</small>
+        </div>
+        :
+        (users && users.length > 0? userList : noUsers)
+      }
     </div>
   );
 }
@@ -82,18 +85,13 @@ class SearchUsers extends React.Component {
     // this.props.searchQuery = event.target.value ;
   }
 
-  actionSearch() {
-    /*eslint-disable */
-    // this.setState({ searchQuery: searchQuery });
+  async actionSearch() {
     this.setState({ resolved: false });
     console.log('Searching for: ' + this.state.searchQuery);
-    // do AJAX call too API: /users/?search=
-    setTimeout(() => {
-      this.setState({ resolved: true })
-      console.log('result!')}
-      , 2000);
 
-    /* eslint-enable */
+    const userResults = await searchUsers(this.state.searchQuery);
+    this.setState({ resolved: true, users: userResults });
+    console.log(this.state.users);
   };
 
   clickClear() {
@@ -102,9 +100,6 @@ class SearchUsers extends React.Component {
 
   render() {
     console.log('SearchUsers: render');
-    const users = [{ displayName: 'Abel Por Que No', avatarSource: '/test.html', profileUrl: '/profile/admin1' },
-      { displayName: 'Abel Por Que Sí', avatarSource: '/test.html', profileUrl: '/profile/admin1' }
-    ];
 
     const switchToSearchPlaces = (
       <span className="input-group-btn">
@@ -161,7 +156,9 @@ class SearchUsers extends React.Component {
       <section className="container container-spacer">
         {switchToSearchPlaces}
         {searchForm}
-        <UsersResults users={users} resolved={this.state.resolved} />
+        { this.state.users &&
+        <UsersResults users={this.state.users} resolved={this.state.resolved} />
+        }
       </section>
     );
   }
@@ -172,7 +169,7 @@ SearchUsers.propTypes = {
 };
 
 SearchUsers.defaultProps = {
-  searchQuery: ''
+  searchQuery: 'admin1'
 };
 
 export default SearchUsers;
