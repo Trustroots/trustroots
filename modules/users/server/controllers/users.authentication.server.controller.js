@@ -85,16 +85,15 @@ exports.signup = function (req, res) {
     },
 
     // Report how did you hear about us to stats
-    function () {
-      return statService.stat({
+    function (user, done) {
+      statService.stat({
         namespace: "profileSignupHowHeardAboutUs",
         fields: {
+          // userID: req.body.userID,
           freetext: req.body.profileSignupHowHeardAboutUs
         }
-      }, function () {
-        return res.json({
-          message: "Your response have been saved."
-        });
+      }, function(err) {
+        done(err, user);
       });
     },
 
