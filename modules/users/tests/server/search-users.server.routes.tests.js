@@ -60,7 +60,11 @@ describe('Search users: GET /users?search=string', function () {
         get displayUsername() { return this.username; },
         password: user.password || '******password',
         provider: 'local',
-        public: _.has(user, 'public') ? user.public : true
+        public: _.has(user, 'public') ? user.public : true,
+        gender: 'non-binary',
+        locationFrom: 'Wonderland',
+        locationLiving: 'La Islantilla'
+
       });
 
       createdUsers.push(createdUser);
@@ -279,7 +283,7 @@ describe('Search users: GET /users?search=string', function () {
         ], done);
       });
 
-      it('the user data should have only fields from miniProfile, and score', function (done) {
+      it('the user data should have only fields from searchProfile, and score', function (done) {
         async.waterfall([
 
           // create some users
@@ -303,7 +307,7 @@ describe('Search users: GET /users?search=string', function () {
 
             should(foundUsers).length(1);
 
-            var expectedFields = userHandler.userMiniProfileFields.split(' ');
+            var expectedFields = userHandler.userSearchProfileFields.split(' ');
             var actualFields = _.keys(foundUsers[0]);
 
             var unexpectedFields = _.difference(actualFields, expectedFields);
