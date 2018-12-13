@@ -1,5 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import '@/config/lib/i18n';
+import { withNamespaces } from 'react-i18next';
 
 // @TODO provide the value from API config endpoint
 const timeToReplyReference = { days: 14 };
@@ -19,16 +21,16 @@ UserLink.propTypes = {
 /**
  * Error message when trying to give a reference to oneself.
  */
-export function ReferenceToSelfInfo() {
-  return (<div className="alert alert-warning">Sorry, you can&apos;t give a reference to yourself.</div>);
-}
+export const ReferenceToSelfInfo = withNamespaces('reference')(function ({ t }) {
+  return (<div className="alert alert-warning">{t('Sorry, you can\'t give a reference to yourself.')}</div>);
+});
 
 /**
  * Info that data are loading.
  */
-export function LoadingInfo() {
-  return (<div>Wait a moment...</div>);
-}
+export const LoadingInfo = withNamespaces('reference')(function ({ t }) {
+  return (<div className="alert alert-warning">{t('Wait a moment...')}</div>);
+});
 
 /**
  * Error message when reference was already given
