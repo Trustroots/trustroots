@@ -86,6 +86,7 @@ exports.userMiniProfileFields = [
 
 // Mini + a few fields we'll need at listings
 exports.userListingProfileFields = exports.userMiniProfileFields + ' member birthdate gender tagline';
+exports.userSearchProfileFields = exports.userMiniProfileFields + ' gender locationFrom locationLiving -_id';
 
 /**
  * Middleware to validate+process avatar upload field
@@ -1500,7 +1501,7 @@ exports.search = function (req, res, next) {
       }
     ] }, { score: { $meta: 'textScore' } })
     // select only the right profile properties
-    .select(exports.userMiniProfileFields + ' -_id')
+    .select(exports.userSearchProfileFields)
     .sort({ score: { $meta: 'textScore' } })
     // limit the amount of found users (config)
     .limit(config.limits.userSearchLimit)
