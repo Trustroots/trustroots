@@ -1,23 +1,13 @@
 ---
 
-
-## admin group is leggacy since ubuntu 12.01
-## https://wiki.ubuntu.com/PrecisePangolin/ReleaseNotes/UbuntuDesktop#PrecisePangolin.2BAC8-ReleaseNotes.2BAC8-CommonInfrastructure.Common_Infrastructure
-#- name: Ensure an admin group
-#  group:
-#    name: admin
-#    state: present
-
-
-- name: add system users
+- name: Add system users
   user:
     name: "{{ item }}"
     shell: /bin/zsh
     groups: sudo,www-data
-#    groups: admin,sudo,www-data
     createhome: yes
     append: yes
-    comment: "i dont really know what this comment is"
+    comment: "managed by ansible"
     state: present
   with_items: "{{ ssh_users }}"
 
@@ -54,6 +44,7 @@
     dest: /etc/sudoers
     line: "{{ item }} ALL=(ALL) NOPASSWD: ALL"
   with_items: "{{ ssh_users }}"
+
 
 - name: chown home folders with correct permissions
   file:

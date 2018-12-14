@@ -27,29 +27,29 @@
   # https://docs.npmjs.com/cli/ci
   shell: 'npm ci'
   args:
-    chdir: /srv/trustroots
+    chdir: "{{ tr_dir }}"
   become: yes
-  become_user: guaka
+  become_user: "{{ tr_user }}"
 
 
 - name: npm run build:ENV "{{ env_short }}"
   shell: "npm run build:{{ env_short }} || true "
   args: 
-    chdir: /srv/trustroots
+    chdir: "{{ tr_dir }}"
   become: yes
-  become_user: guaka
+  become_user: "{{ tr_user }}"
   tags:
     - build
   
 
 ## TODO: get rid of the need for OR TRUE
 - name: generate test data
-  shell: 'npm run seed > /home/guaka/.node_test_data_created || true'
+  shell: "npm run seed > /home/{{ tr_user }}/.node_test_data_created || true"
   args: 
-    chdir: /srv/trustroots
-    creates: /home/guaka/.node_test_data_created
+    chdir: "{{ tr_dir }}"
+    creates: "/home/{{ tr_user }}/.node_test_data_created"
   become: yes
-  become_user: guaka
+  become_user: "{{ tr_user }}"
   tags:
     - testdata
 
@@ -57,9 +57,9 @@
 - name: "pm2 start {{ item }}"
   shell: "pm2 start {{ item }}-pm2.json --env {{ env_long }} || true"
   args:
-    chdir: /srv/trustroots
+    chdir: "{{ tr_dir }}"
   become: yes
-  become_user: guaka
+  become_user: "{{ tr_user }}"
   tags:
     - pm2
   loop:
@@ -69,15 +69,15 @@
 
 ## sudo env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u guaka --hp /home/guaka
 - name: generate and anable pm2 systemd things
-  shell: "env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u guaka --hp /home/guaka"
+  shell: "env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u {{ tr_user }} --hp /home/{{ tr_user }}"
   args:
-    creates: "/etc/systemd/system/pm2-guaka.service"
+    creates: "/etc/systemd/system/pm2-{{ tr_user }}.service"
 
 
 - name: tell pm2 to save process list
   shell: pm2 save
   become: yes
-  become_user: guaka
+  become_user: "{{ tr_user }}"
   args:
-    chdir: /srv/trustroots
+    chdir: "{{ tr_dir }}"
 

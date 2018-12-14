@@ -5,6 +5,10 @@ ssh_users:
   - zrthstr
   - mrkvon
 
+
+tr_user: guaka
+tr_dir: /srv/trustroots
+
 ## we need a short and a long form of this..
 env_short: dev
 env_long: developement
@@ -21,12 +25,15 @@ subdomains:
   - grafana
   - shop
 
+
 # sorry, i dont know of a better way of doing this..
 domains_all: '[ "{{ url_full }}" ] +  {{ subdomains | map("regex_replace", "^(.*)$", "\1." + url_full) | list }}'
+
 # comma seperated strings..
 domains_all_csl: "{{ domains_all|join(',') }}"
 
 
+# ssl
 ssl_path: "/etc/letsencrypt/live/{{  url_full }}/"
 
 ssl_cert_file: "fullchain.pem"
@@ -34,5 +41,6 @@ ssl_cert_file_path: "{{ ssl_path + ssl_cert_file }}"
 
 ssl_key_file: "privkey.pem"
 ssl_key_file_path: "{{ ssl_path + ssl_key_file }}"
+
 
 email_addr_ssl: "admin@{{ url_base }}"

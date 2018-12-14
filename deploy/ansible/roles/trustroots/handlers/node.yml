@@ -5,5 +5,5 @@
   args:
     chdir: /srv/trustroots
   become: yes
-  become_user: guaka
+  become_user: "{{ tr_user }}"
 

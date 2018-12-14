@@ -23,7 +23,7 @@
 - name: Clone/pull project repo
   git:
     repo: https://github.com/trustroots/trustroots.git
-    dest: /srv/trustroots
+    dest: "{{ tr_dir }}"
     force: yes
     version: "{{ version | default('HEAD') }}"
 ## this is currently not needed as node.yml restarts the server on every runn anyways
@@ -33,11 +33,11 @@
     - git
 
 
-- name: chown /srv/trustroots guaka
+- name: "chown {{ tr_dir }} {{ tr_user }}"
   file:
-    dest: /srv/trustroots
-    owner: guaka
-    group: guaka
+    dest: "{{ tr_dir }}"
+    owner: "{{ tr_user }}"
+    group: "{{ tr_user }}"
     mode: "u=rwX,g=rX,o=rX"
     recurse: yes
   tags:
