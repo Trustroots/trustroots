@@ -1,11 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Tab, Tabs } from 'react-bootstrap';
+import '@/config/lib/i18n';
+import { NamespacesConsumer } from 'react-i18next';
 import * as references from '../api/references.api';
 import Navigation from './create-reference/Navigation';
 import Interaction from './create-reference/Interaction';
 import Recommend from './create-reference/Recommend';
 import { ReferenceToSelfInfo, LoadingInfo, DuplicateInfo, SubmittedInfo } from './create-reference/Info';
-import { Tab, Tabs } from 'react-bootstrap';
 
 const api = { references };
 
@@ -132,7 +134,7 @@ export default class CreateReference extends React.Component {
       return <SubmittedInfo isReported={isReported} isPublic={isPublic} userFrom={this.props.userFrom} userTo={this.props.userTo} />;
     }
 
-    return (
+    return (<NamespacesConsumer ns="reference">{ t => (
       <div>
         <Tabs
           activeKey={this.state.tab}
@@ -142,12 +144,12 @@ export default class CreateReference extends React.Component {
         >
           <Tab
             eventKey={0}
-            title="How do you know them"
+            title={t('How do you know them')}
             disabled
           >{tabs[0]}</Tab>
           <Tab
             eventKey={1}
-            title="Recommendation"
+            title={t('Recommendation')}
             disabled
           >{tabs[1]}</Tab>
         </Tabs>
@@ -162,7 +164,7 @@ export default class CreateReference extends React.Component {
           onSubmit={this.handleSubmit}
         />
       </div>
-    );
+    )}</NamespacesConsumer>);
   }
 }
 
