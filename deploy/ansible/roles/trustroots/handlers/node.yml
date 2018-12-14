@@ -1,0 +1,9 @@
+---
+
+- name: restart all pm2 processes
+  shell: "pm2 restart all"
+  args:
+    chdir: /srv/trustroots
+  become: yes
+  become_user: guaka
+
