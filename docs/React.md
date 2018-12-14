@@ -37,9 +37,25 @@ Look at the [example](https://github.com/Trustroots/trustroots/blob/master/modul
 
 Where we used `ui-sref` in Angular views, we'll use `href` in React components. This solution reloads the app and therefore is far from ideal.
 
-## Passing data from Angular to React
+## Getting Data
 
-If you need to provide data to a React component, you can pass them in attributes. Then they'll be available in the component as `props`.
+### API calls from React
+
+If you need some new data from API, request them directly for React.
+
+Put your methods with API calls to a separate file (i.e. `modules/**/client/components/*.api.js` (this is going to change)). Then import and call these methods in your React component as needed. We're using [`axios`](https://github.com/axios/axios) library to make API requests.
+
+```js
+import axios from 'axios';
+
+export async function searchUsers(query) {
+  return await axios.get(`/api/users?search=${query}`);
+}
+```
+
+### Passing data from Angular to React
+
+If you need to provide data from Angular to a React component, you can pass them in html attributes. Then they'll be available in the component as `props`.
 
 In AngularJS view it will look like this:
 
@@ -77,10 +93,6 @@ export default class ProfileViewBasics {
   }
 }
 ```
-
-If you need data from API, don't fetch them from Angular, but from React.
-
-(Provide an example api service when References are merged.)
 
 ## Testing
 
