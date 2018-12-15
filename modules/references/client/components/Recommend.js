@@ -55,11 +55,6 @@ export default function Recommend({ primaryInteraction, recommend, report, repor
             <span>I don&apos;t know</span>
           </label>
         </div>
-        {!recommend && (
-          <div className="alert alert-warning reference-new-tabs-alert" role="alert" ng-if="!referenceNew.reference.recommend && referenceNew.recommendationWarning">
-            Please choose if you can recommend them.
-          </div>
-        )}
         {recommend === 'no' && (
           <Report
             onChangeReport={onChangeReport}

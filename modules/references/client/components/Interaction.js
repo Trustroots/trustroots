@@ -1,9 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+/**
+ * Presentational component for picking an interaction
+ */
 export default function Interaction({ interactions, onChange }) {
-
-  const isInteraction = [...Object.keys(interactions)].reduce((accumulator, current) => accumulator || interactions[current], false);
   return (
     <div className="panel panel-default">
       <div className="panel-heading">
@@ -42,11 +43,6 @@ export default function Interaction({ interactions, onChange }) {
             </label>
           </div>
         </div>
-        {!isInteraction && (
-          <div className="alert alert-warning reference-new-tabs-alert" role="alert">
-            Please tell us about your interaction.
-          </div>
-        )}
       </div>
     </div>
   );

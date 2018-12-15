@@ -1,12 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-// TODO we can't use the config/config for some reason
-import * as config from '../../../../config/env/default';
+
+// @TODO provide the value from API config endpoint
+const timeToReplyReference = { days: 14 };
 
 /**
- * @TODO make these elements nicer
+ * Link to a user
+ * @param {User} user - user to link to
  */
-
 function UserLink({ user }) {
   return (<strong><a href={`/profile/${user.username}`}>{user.displayName || user.username}</a></strong>);
 }
@@ -15,14 +16,24 @@ UserLink.propTypes = {
   user: PropTypes.object.isRequired
 };
 
+/**
+ * Error message when trying to give a reference to oneself.
+ */
 export function Self() {
   return (<div className="alert alert-warning">Sorry, you can&apos;t give a reference to yourself.</div>);
 }
 
+/**
+ * Info that data are loading.
+ */
 export function Loading() {
-  return (<div className="alert alert-warning">Loading</div>);
+  return (<div>Wait a moment...</div>);
 }
 
+/**
+ * Error message when reference was already given
+ * @param {User} userTo
+ */
 export function Duplicate({ userTo }) {
   return (<div className="alert alert-warning">You&apos;ve already given a reference to <UserLink user={userTo} />.</div>);
 }
@@ -31,6 +42,9 @@ Duplicate.propTypes = {
   userTo: PropTypes.object.isRequired
 };
 
+/**
+ * Info after successful submitting of a new reference.
+ */
 export function Submitted({ isReported, isPublic, userFrom, userTo }) {
   const name = userTo.displayName || userTo.username;
 
@@ -42,7 +56,7 @@ export function Submitted({ isReported, isPublic, userFrom, userTo }) {
       </>
     ) :
     (
-      <div>Your reference will become public when <UserLink user={userTo} /> gives you a reference back, or in {config.limits.timeToReplyReference.days} days.</div>
+      <div>Your reference will become public when <UserLink user={userTo} /> gives you a reference back, or in {timeToReplyReference.days} days.</div>
     );
 
   return (
