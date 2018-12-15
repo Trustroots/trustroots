@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * `local.docker.js` is copied to `local.js` by Docker provisioning
  *

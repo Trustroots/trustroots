@@ -1,5 +1,3 @@
-'use strict';
-
 /*
  * Please don't make your own config changes to this file!
  * Copy local.sample.js to local.js and make your changes there. Thanks.
@@ -11,10 +9,9 @@
  */
 
 module.exports = {
-  // Feature flags
   featureFlags: {
-    // enable references?
-    reference: true
+    reference: true,
+    i18n: false
   },
   db: {
     uri: 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trustroots-dev',
