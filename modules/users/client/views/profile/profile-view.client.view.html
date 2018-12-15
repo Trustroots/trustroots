@@ -20,7 +20,7 @@
           Send a message
         </a>
       </li>
-      <li>
+      <li ng-if="app.appSettings.referencesEnabled">
         <a ui-sref="profile.references.new({username: profileCtrl.profile.username})">
           Write a reference
         </a>
