@@ -93,14 +93,10 @@ Enzyme.configure({ adapter: new Adapter() });
 
       expect(spyCreate.callCount).toBe(0);
       wrapper.setState({
-        reference: {
-          interactions: {
-            met: false,
-            hostedMe: true,
-            hostedThem: false
-          },
-          recommend: 'yes'
-        }
+        met: false,
+        hostedMe: true,
+        hostedThem: false,
+        recommend: 'yes'
       });
 
       const nav = wrapper.find(Navigation);
@@ -108,15 +104,13 @@ Enzyme.configure({ adapter: new Adapter() });
 
       expect(spyCreate.callCount).toBe(1);
 
-      expect(spyCreate.calledOnceWith({
-        interactions: {
-          met: false,
-          hostedMe: true,
-          hostedThem: false
-        },
+      expect(spyCreate.getCall(0).args[0]).toEqual({
+        met: false,
+        hostedMe: true,
+        hostedThem: false,
         recommend: 'yes',
         userTo: userTo._id
-      })).toBe(true);
+      });
     });
 
     it('submit a report when recommend is no and user wants to send a report', async () => {
@@ -134,14 +128,10 @@ Enzyme.configure({ adapter: new Adapter() });
 
       expect(spyReport.callCount).toBe(0);
       wrapper.setState({
-        reference: {
-          interactions: {
-            met: false,
-            hostedMe: true,
-            hostedThem: false
-          },
-          recommend: 'unknown'
-        },
+        met: false,
+        hostedMe: true,
+        hostedThem: false,
+        recommend: 'unknown',
         report: true,
         reportMessage: 'asdf'
       });
@@ -155,14 +145,10 @@ Enzyme.configure({ adapter: new Adapter() });
       expect(spyReport.callCount).toBe(0);
 
       wrapper.setState({
-        reference: {
-          interactions: {
-            met: true,
-            hostedMe: true,
-            hostedThem: true
-          },
-          recommend: 'no'
-        }
+        met: true,
+        hostedMe: true,
+        hostedThem: true,
+        recommend: 'no'
       });
 
       nav.props().onSubmit();

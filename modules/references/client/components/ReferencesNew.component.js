@@ -14,17 +14,13 @@ export default class ReferencesNew extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      tab: 0,
-      reference: {
-        interactions: {
-          met: false,
-          hostedThem: false,
-          hostedMe: false
-        },
-        recommend: null
-      },
+      met: false,
+      hostedThem: false,
+      hostedMe: false,
+      recommend: null,
       report: false,
       reportMessage: '',
+      tab: 0,
       isSelf: props.userFrom._id === props.userTo._id,
       isLoading: true,
       isSubmitting: false,
@@ -32,6 +28,14 @@ export default class ReferencesNew extends React.Component {
       isSubmitted: false,
       isPublic: false
     };
+
+    // bind methods
+    this.handleTabSwitch = this.handleTabSwitch.bind(this);
+    this.handleChangeInteraction = this.handleChangeInteraction.bind(this);
+    this.handleChangeRecommend = this.handleChangeRecommend.bind(this);
+    this.handleChangeReport = this.handleChangeReport.bind(this);
+    this.handleChangeReportMessage = this.handleChangeReportMessage.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
   async componentDidMount() {
@@ -53,55 +57,36 @@ export default class ReferencesNew extends React.Component {
   handleChangeInteraction(interactionType) {
     this.setState(state => {
       const interaction = { };
-      interaction[interactionType] = !state.reference.interactions[interactionType];
-      return {
-        reference: {
-          ...state.reference,
-          interactions: {
-            ...state.reference.interactions,
-            ...interaction
-          }
-        }
-      };
+      interaction[interactionType] = !state[interactionType];
+      return interaction;
     });
   }
 
   handleChangeRecommend(recommend) {
-    this.setState(state => ({
-      reference: {
-        ...state.reference,
-        recommend
-      }
-    }));
+    this.setState(() => ({ recommend }));
   }
 
   handleChangeReport() {
-    this.setState(state => ({
-      report: !state.report
-    }));
+    this.setState(state => ({ report: !state.report }));
   }
 
   handleChangeReportMessage(reportMessage) {
-    this.setState(() => ({
-      reportMessage
-    }));
+    this.setState(() => ({ reportMessage }));
   }
 
   async handleSubmit() {
-    this.setState(() => {
-      isSubmitting: true;
-    });
+    // start submitting
+    this.setState(() => ({ isSubmitting: true }));
 
-    const data = {
-      reference: this.state.reference,
-      report: this.state.report,
-      reportMessage: this.state.reportMessage
-    };
+    // get data from state
+    const { met, hostedThem, hostedMe, recommend, report, reportMessage } = this.state;
+    const reference = { met, hostedThem, hostedMe, recommend };
 
-    const savedReference = await api.references.create({ ...data.reference, userTo: this.props.userTo._id });
+    // save the reference
+    const savedReference = await api.references.create({ ...reference, userTo: this.props.userTo._id });
 
-    if (data.reference.recommend === 'no' && data.report) {
-      await api.references.report(this.props.userTo, data.reportMessage);
+    if (recommend === 'no' && report) {
+      await api.references.report(this.props.userTo, reportMessage);
     }
 
     this.setState(() => ({
@@ -112,23 +97,28 @@ export default class ReferencesNew extends React.Component {
   }
 
   render() {
+    const { hostedMe, hostedThem, met, recommend, report, reportMessage } = this.state;
+    const primaryInteraction = (hostedMe && 'hostedMe') || (hostedThem && 'hostedThem') || 'met';
+
     const tabs = [
-      <Interaction key="interaction" reference={this.state.reference} onChange={(type) => this.handleChangeInteraction(type)} />,
+      <Interaction
+        key="interaction"
+        interactions={{ hostedMe, hostedThem, met }}
+        onChange={this.handleChangeInteraction}
+      />,
       <Recommend
         key="recommend"
-        reference={this.state.reference}
-        report={this.state.report}
-        onChangeRecommend={(recommend) => this.handleChangeRecommend(recommend)}
-        reportMessage={this.state.reportMessage}
-        onChangeReport={() => this.handleChangeReport()}
-        onChangeReportMessage={(reportMessage) => this.handleChangeReportMessage(reportMessage)}
+        primaryInteraction={primaryInteraction}
+        recommend={recommend}
+        report={report}
+        reportMessage={reportMessage}
+        onChangeRecommend={this.handleChangeRecommend}
+        onChangeReport={this.handleChangeReport}
+        onChangeReportMessage={this.handleChangeReportMessage}
       />
     ];
 
-    const { interactions: { hostedMe, hostedThem, met }, recommend } = this.state.reference;
-
-    const tabDone = (recommend) ? 1 :
-      (hostedMe || hostedThem || met) ? 0 : -1;
+    const tabDone = (recommend) ? 1 : (hostedMe || hostedThem || met) ? 0 : -1;
 
     if (this.state.isSelf) return <Self />;
 
@@ -137,7 +127,7 @@ export default class ReferencesNew extends React.Component {
     if (this.state.isDuplicate) return <Duplicate userTo={this.props.userTo} />;
 
     if (this.state.isSubmitted) {
-      const isReported = this.state.reference.recommend === 'no' && this.state.report;
+      const isReported = recommend === 'no' && report;
       const isPublic = this.state.isPublic;
       return <Submitted isReported={isReported} isPublic={isPublic} userFrom={this.props.userFrom} userTo={this.props.userTo} />;
     }
@@ -169,7 +159,7 @@ export default class ReferencesNew extends React.Component {
           disabled={this.state.isSubmitting}
           onBack={() => this.handleTabSwitch(-1)}
           onNext={() => this.handleTabSwitch(+1)}
-          onSubmit={() => this.handleSubmit()}
+          onSubmit={this.handleSubmit}
         />
       </div>
     );

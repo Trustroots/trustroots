@@ -1,9 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-export default function Interaction(props) {
+export default function Interaction({ interactions, onChange }) {
 
-  const { reference: { interactions } } = props;
   const isInteraction = [...Object.keys(interactions)].reduce((accumulator, current) => accumulator || interactions[current], false);
   return (
     <div className="panel panel-default">
@@ -16,8 +15,8 @@ export default function Interaction(props) {
             <label>
               <input
                 type="checkbox"
-                checked={props.reference.interactions.met}
-                onChange={() => props.onChange('met')}
+                checked={interactions.met}
+                onChange={() => onChange('met')}
               />
               Met in person
             </label>
@@ -26,8 +25,8 @@ export default function Interaction(props) {
             <label>
               <input
                 type="checkbox"
-                checked={props.reference.interactions.hostedThem}
-                onChange={() => props.onChange('hostedThem')}
+                checked={interactions.hostedThem}
+                onChange={() => onChange('hostedThem')}
               />
               I hosted them
             </label>
@@ -36,8 +35,8 @@ export default function Interaction(props) {
             <label>
               <input
                 type="checkbox"
-                checked={props.reference.interactions.hostedMe}
-                onChange={() => props.onChange('hostedMe')}
+                checked={interactions.hostedMe}
+                onChange={() => onChange('hostedMe')}
               />
               They hosted me
             </label>
@@ -55,5 +54,5 @@ export default function Interaction(props) {
 
 Interaction.propTypes = {
   onChange: PropTypes.func.isRequired,
-  reference: PropTypes.object.isRequired
+  interactions: PropTypes.object.isRequired
 };

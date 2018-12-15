@@ -2,16 +2,15 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Report from './Report';
 
-export default function Recommend(props) {
+export default function Recommend({ primaryInteraction, recommend, report, reportMessage, onChangeRecommend, onChangeReport, onChangeReportMessage }) {
 
-  const { hostedMe, hostedThem } = props.reference.interactions;
-  const maxInteraction = (hostedMe) ? 'hostedMe' : (hostedThem) ? 'hostedThem' : 'met';
   const recommendQuestions = {
     hostedMe: 'Would you recommend others to stay with them?',
     hostedThem: 'Would you recommend others to host them?',
     met: 'Would you recommend others to meet them?'
   };
-  const question = recommendQuestions[maxInteraction];
+
+  const question = recommendQuestions[primaryInteraction];
 
   return (
     <div className="panel panel-default">
@@ -24,49 +23,49 @@ export default function Recommend(props) {
           aria-labelledby="recommendationQuestion">
           <label className="btn btn-lg btn-reference-recommend btn-reference-recommend-yes"
             role="radio"
-            aria-checked={ props.reference.recommend === 'yes' }>
+            aria-checked={ recommend === 'yes' }>
             <input
               type="radio"
               name="recommend"
-              checked={props.reference.recommend === 'yes'}
-              onChange={() => props.onChangeRecommend('yes')}
+              checked={recommend === 'yes'}
+              onChange={() => onChangeRecommend('yes')}
             />
             <span>Yes</span>
           </label>
           <label className="btn btn-lg btn-reference-recommend btn-reference-recommend-no"
             role="radio"
-            aria-checked={ props.reference.recommend === 'no' }>
+            aria-checked={ recommend === 'no' }>
             <input
               type="radio"
               name="recommend"
-              checked={props.reference.recommend === 'no'}
-              onChange={() => props.onChangeRecommend('no')}
+              checked={recommend === 'no'}
+              onChange={() => onChangeRecommend('no')}
             />
             <span>No</span>
           </label>
           <label className="btn btn-lg btn-reference-recommend btn-reference-recommend-unknown"
             role="radio"
-            aria-checked={props.reference.recommend === 'unknown' }>
+            aria-checked={recommend === 'unknown' }>
             <input
               type="radio"
               name="recommend"
-              checked={props.reference.recommend === 'unknown'}
-              onChange={() => props.onChangeRecommend('unknown')}
+              checked={recommend === 'unknown'}
+              onChange={() => onChangeRecommend('unknown')}
             />
             <span>I don&apos;t know</span>
           </label>
         </div>
-        {!props.reference.recommend && (
+        {!recommend && (
           <div className="alert alert-warning reference-new-tabs-alert" role="alert" ng-if="!referenceNew.reference.recommend && referenceNew.recommendationWarning">
             Please choose if you can recommend them.
           </div>
         )}
-        {props.reference.recommend === 'no' && (
+        {recommend === 'no' && (
           <Report
-            onChangeReport={props.onChangeReport}
-            onChangeReportMessage={props.onChangeReportMessage}
-            report={props.report}
-            reportMessage={props.reportMessage}
+            onChangeReport={onChangeReport}
+            onChangeReportMessage={onChangeReportMessage}
+            report={report}
+            reportMessage={reportMessage}
           />
         )}
       </div>
@@ -75,10 +74,11 @@ export default function Recommend(props) {
 }
 
 Recommend.propTypes = {
-  reference: PropTypes.object.isRequired,
+  primaryInteraction: PropTypes.string.isRequired,
+  recommend: PropTypes.string,
+  report: PropTypes.bool.isRequired,
+  reportMessage: PropTypes.string.isRequired,
   onChangeRecommend: PropTypes.func.isRequired,
   onChangeReport: PropTypes.func.isRequired,
-  onChangeReportMessage: PropTypes.func.isRequired,
-  report: PropTypes.bool.isRequired,
-  reportMessage: PropTypes.string.isRequired
+  onChangeReportMessage: PropTypes.func.isRequired
 };
