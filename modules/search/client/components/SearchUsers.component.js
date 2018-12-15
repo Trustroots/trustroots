@@ -75,7 +75,7 @@ class SearchUsers extends React.Component {
     this.actionSearch = this.actionSearch.bind(this);
 
     this.state = {
-      searchQuery: props.searchQuery,
+      searchQuery: props.searchQuery || '',
       resolved: true
     };
   }
@@ -85,7 +85,9 @@ class SearchUsers extends React.Component {
     // this.props.searchQuery = event.target.value ;
   }
 
-  async actionSearch() {
+  async actionSearch(event) {
+    event.preventDefault();
+    event.stopPropagation();
     this.setState({ resolved: false });
     console.log('Searching for: ' + this.state.searchQuery);
 
@@ -120,7 +122,8 @@ class SearchUsers extends React.Component {
     );
 
     const searchForm = (
-      <div className="form-group search-form-group" id="search-users-form">
+      <form className="form-group search-form-group" id="search-users-form"
+        onSubmit={this.actionSearch}>
         <div className="input-group">
           {switchToSearchPlaces}
           <label htmlFor="search-query" className="sr-only">Search users</label>
@@ -146,7 +149,6 @@ class SearchUsers extends React.Component {
             <span>
               <button type="submit"
                 disabled={!this.state.searchQuery}
-                onClick={() => this.actionSearch()}
                 className="btn btn-lg btn-default"
                 tooltip-enable="::search.screenWidth >= 768"
                 tooltip-placement="bottom"
@@ -156,7 +158,7 @@ class SearchUsers extends React.Component {
             </span>
           </span>
         </div>
-      </div>);
+      </form>);
 
     return (
       <section className="container container-spacer">
@@ -173,8 +175,5 @@ SearchUsers.propTypes = {
   searchQuery: PropTypes.string
 };
 
-SearchUsers.defaultProps = {
-  searchQuery: 'admin1'
-};
 
 export default SearchUsers;

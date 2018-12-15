@@ -83,7 +83,7 @@
       }).
       state('search-users', {
         url: '/search/users',
-        template: '<search-users></search-users>',
+        template: '<search-users searchQuery="admin1"></search-users>',
         requiresAuth: true,
         footerHidden: true,
         data: {
