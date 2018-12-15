@@ -1,5 +1,8 @@
 'use strict';
 
+var path = require('path'),
+    languages = require(path.resolve('./config/languages/languages'));
+
 /**
  * Module dependencies.
  */
@@ -297,6 +300,14 @@ exports.update = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden')
+    });
+  }
+
+  // validate locale
+  // @TODO validation framework
+  if (req.body.locale && (typeof req.body.locale !== 'string' || !Object.keys(languages).includes(req.body.locale))) {
+    return res.status(400).send({
+      message: errorService.getErrorMessageByKey('bad-request')
     });
   }
 

@@ -105,7 +105,8 @@ module.exports = {
     files: [
       'testutils/data.server.testutils.js',
       'modules/references/server/**',
-      'modules/references/tests/server/**'
+      'modules/references/tests/server/**',
+      'modules/users/tests/server/user-change-locale.server.routes.tests.js'
     ],
     parserOptions: {
       ecmaVersion: 2018
