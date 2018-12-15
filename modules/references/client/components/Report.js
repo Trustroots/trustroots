@@ -18,7 +18,7 @@ export default function Report(props) {
           Report this person to moderators
         </label>
       </div>
-      {(props.report) ?
+      {props.report && (
         <div>
           <label htmlFor="report-message" className="control-label">Message to moderators</label>
           <textarea className="form-control input-lg"
@@ -30,8 +30,8 @@ export default function Report(props) {
           <span className="help-block">
             Please write in English if possible.<br />
           </span>
-        </div> : null
-      }
+        </div>
+      )}
     </div>
   );
 }

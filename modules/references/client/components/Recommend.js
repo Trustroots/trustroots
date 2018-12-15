@@ -56,17 +56,19 @@ export default function Recommend(props) {
             <span>I don&apos;t know</span>
           </label>
         </div>
-        {(!props.reference.recommend) ?
+        {!props.reference.recommend && (
           <div className="alert alert-warning reference-new-tabs-alert" role="alert" ng-if="!referenceNew.reference.recommend && referenceNew.recommendationWarning">
             Please choose if you can recommend them.
-          </div> : null}
-        {(props.reference.recommend === 'no') ?
+          </div>
+        )}
+        {props.reference.recommend === 'no' && (
           <Report
             onChangeReport={props.onChangeReport}
             onChangeReportMessage={props.onChangeReportMessage}
             report={props.report}
             reportMessage={props.reportMessage}
-          /> : null}
+          />
+        )}
       </div>
     </div>
   );

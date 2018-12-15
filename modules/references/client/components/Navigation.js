@@ -7,7 +7,7 @@ import PropTypes from 'prop-types';
  *
  */
 export default function Navigation(props) {
-  const back = (
+  const backButton = (
     <button
       type="button"
       className="btn btn-action btn-link"
@@ -18,7 +18,7 @@ export default function Navigation(props) {
     </button>
   );
 
-  const next = (
+  const nextButton = (
     <button
       type="button"
       className="btn btn-action btn-primary"
@@ -29,7 +29,7 @@ export default function Navigation(props) {
     </button>
   );
 
-  const submit = (
+  const submitButton = (
     <button
       className="btn btn-action btn-primary"
       aria-label="Submit reference"
@@ -39,12 +39,15 @@ export default function Navigation(props) {
     </button>
   );
 
+  const showBackButton = props.tab > 0; // not the first tab
+  const showNextButton = props.tab < props.tabs - 1; // not the last tab
+  const showSubmitButton = props.tab === props.tabs - 1; // the last tab
+
   return (
     <div className="text-center">
-      {(props.tab > 0) ? back : null}
-      {(props.tab < props.tabs - 1) ? next : null}
-      {/* <!-- For the last tab -->*/}
-      {(props.tab === props.tabs - 1) ? submit : null}
+      {showBackButton && backButton}
+      {showNextButton && nextButton}
+      {showSubmitButton && submitButton}
     </div>
   );
 }

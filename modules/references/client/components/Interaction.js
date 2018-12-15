@@ -43,11 +43,11 @@ export default function Interaction(props) {
             </label>
           </div>
         </div>
-        {(!isInteraction) ? (
+        {!isInteraction && (
           <div className="alert alert-warning reference-new-tabs-alert" role="alert">
             Please tell us about your interaction.
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );

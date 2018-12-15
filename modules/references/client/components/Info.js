@@ -49,7 +49,7 @@ export function Submitted({ isReported, isPublic, userFrom, userTo }) {
     <div className="alert alert-success">
       <div>Done!</div>
       <div>{isPublicMessage}</div>
-      {(isReported) ? <div>Also, <UserLink user={userTo} /> was reported.</div> : null}
+      {isReported && <div>Also, <UserLink user={userTo} /> was reported.</div>}
     </div>
   );
 }
