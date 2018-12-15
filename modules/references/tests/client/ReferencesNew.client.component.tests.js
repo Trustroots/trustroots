@@ -10,7 +10,7 @@ import React from 'react';
 import sinon from 'sinon';
 import Adapter from 'enzyme-adapter-react-16';
 import jasmineEnzyme from 'jasmine-enzyme';
-import * as api from '../../client/components/references.api';
+import * as api from '../../client/api/references.api';
 
 Enzyme.configure({ adapter: new Adapter() });
 

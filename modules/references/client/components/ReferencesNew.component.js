@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import * as references from './references.api';
+import * as references from '../api/references.api';
 import Navigation from './Navigation';
 import Interaction from './Interaction';
 import Recommend from './Recommend';
