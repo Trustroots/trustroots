@@ -37,64 +37,66 @@ export default class ReferencesNew extends React.Component {
   async componentDidMount() {
     const reference = await api.references.read({ userFrom: this.props.userFrom._id, userTo: this.props.userTo._id });
 
-    const newState = { isLoading: false };
-
-    if (reference.length === 1) newState.isDuplicate = true;
-
-    this.setState(newState);
-  }
-
-  handleTabSwitch(move) {
-    this.setState({
-      tab: this.state.tab + move
+    this.setState(() => {
+      const newState = { isLoading: false };
+      if (reference.length === 1) newState.isDuplicate = true;
+      return newState;
     });
   }
 
+  handleTabSwitch(move) {
+    this.setState(state => ({
+      tab: state.tab + move
+    }));
+  }
+
   handleChangeInteraction(interactionType) {
-    const interaction = { };
-    interaction[interactionType] = !this.state.reference.interactions[interactionType];
-    this.setState({
-      reference: {
-        ...this.state.reference,
-        interactions: {
-          ...this.state.reference.interactions,
-          ...interaction
+    this.setState(state => {
+      const interaction = { };
+      interaction[interactionType] = !state.reference.interactions[interactionType];
+      return {
+        reference: {
+          ...state.reference,
+          interactions: {
+            ...state.reference.interactions,
+            ...interaction
+          }
         }
-      }
+      };
     });
   }
 
   handleChangeRecommend(recommend) {
-    this.setState({
+    this.setState(state => ({
       reference: {
-        ...this.state.reference,
+        ...state.reference,
         recommend
       }
-    });
+    }));
   }
 
   handleChangeReport() {
-    this.setState({
-      report: !this.state.report
-    });
+    this.setState(state => ({
+      report: !state.report
+    }));
   }
 
   handleChangeReportMessage(reportMessage) {
-    this.setState({
+    this.setState(() => ({
       reportMessage
-    });
+    }));
   }
 
   async handleSubmit() {
+    this.setState(() => {
+      isSubmitting: true;
+    });
+
     const data = {
       reference: this.state.reference,
       report: this.state.report,
       reportMessage: this.state.reportMessage
     };
-
-    this.setState({
-      isSubmitting: true
-    });
 
     const savedReference = await api.references.create({ ...data.reference, userTo: this.props.userTo._id });
 
@@ -102,11 +104,11 @@ export default class ReferencesNew extends React.Component {
       await api.references.report(this.props.userTo, data.reportMessage);
     }
 
-    this.setState({
+    this.setState(() => ({
       isSubmitting: false,
       isSubmitted: true,
       isPublic: savedReference.public
-    });
+    }));
   }
 
   render() {

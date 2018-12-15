@@ -128,6 +128,9 @@ module.exports = {
       ecmaVersion: 2018,
       sourceType: 'module'
     },
-    rules: es2018rules
+    rules: {
+      ...es2018rules,
+      'react/no-access-state-in-setstate': 2
+    }
   }]
 };
