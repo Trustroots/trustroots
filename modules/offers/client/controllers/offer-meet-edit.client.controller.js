@@ -17,6 +17,7 @@
     vm.editOffer = editOffer;
     vm.mapCenter = defaultLocation;
     vm.isLoading = false;
+    vm.minDescription = 5;
 
     activate();
 

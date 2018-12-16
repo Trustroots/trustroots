@@ -21,7 +21,7 @@
     vm.isLoading = true;
     vm.firstTimeAround = false;
     vm.invalidateMapSize = invalidateMapSize;
-    vm.isDecriptionTooShort = false;
+    vm.isDescriptionTooShort = false;
 
     activate();
 
@@ -86,7 +86,8 @@
     }
 
     $scope.$watch('offerHostEdit.offer.description', function (newValue) {
-      vm.isDecriptionTooShort = $filter('plainTextLength')(newValue) < 5;
+      vm.isDescriptionTooShort = $filter('plainTextLength')(newValue) < 5;
+      console.log(newValue);
     });
 
     /**
