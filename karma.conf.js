@@ -3,9 +3,7 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    defaultAssets = require('./config/assets/default'),
-    testAssets = require('./config/assets/test'),
+var testAssets = require('./config/assets/test'),
     // testConfig = require('./config/env/test'),
     webpack = require('webpack'),
     webpackConfig = require('./config/webpack/webpack.config'),
@@ -42,7 +40,7 @@ module.exports = function (karmaConfig) {
     // List of files / patterns to load in the browser
     files: [
       'config/webpack/entries/main.js',
-      require.resolve('angular-mocks'),
+      require.resolve('angular-mocks')
     ].concat(testAssets.tests.client),
 
     // Test results reporter to use
