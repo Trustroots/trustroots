@@ -63,7 +63,7 @@ Enzyme.configure({ adapter: new Adapter() });
       const wrapper = shallow(<ReferencesNew userFrom={userFrom} userTo={userTo} />);
 
       expect(wrapper.find(Duplicate)).not.toExist();
-      await null;
+      await null; // wait for the next tick (resolve stubbed API call)
       expect(wrapper.find(Duplicate)).toExist();
       expect(wrapper.find(Interaction)).not.toExist();
     });
@@ -76,7 +76,7 @@ Enzyme.configure({ adapter: new Adapter() });
 
       const wrapper = shallow(<ReferencesNew userFrom={userFrom} userTo={userTo} />);
       expect(wrapper.find(Interaction)).not.toExist();
-      await null;
+      await null; // wait for the next tick (resolve stubbed API call)
       expect(wrapper.find(Interaction)).toExist();
     });
 
@@ -89,7 +89,7 @@ Enzyme.configure({ adapter: new Adapter() });
 
       const wrapper = shallow(<ReferencesNew userFrom={userFrom} userTo={userTo} />);
 
-      await null;
+      await null; // wait for the next tick (resolve stubbed API call)
 
       expect(spyCreate.callCount).toBe(0);
       wrapper.setState({
@@ -124,7 +124,7 @@ Enzyme.configure({ adapter: new Adapter() });
 
       const wrapper = shallow(<ReferencesNew userFrom={userFrom} userTo={userTo} />);
 
-      await null;
+      await null; // wait for the next tick (resolve stubbed API call)
 
       expect(spyReport.callCount).toBe(0);
       wrapper.setState({
@@ -140,7 +140,7 @@ Enzyme.configure({ adapter: new Adapter() });
 
       nav.props().onSubmit();
 
-      await null;
+      await null; // wait for the next tick (resolve stubbed API call)
 
       expect(spyReport.callCount).toBe(0);
 
@@ -153,7 +153,7 @@ Enzyme.configure({ adapter: new Adapter() });
 
       nav.props().onSubmit();
 
-      await null;
+      await null; // wait for the next tick (resolve stubbed API call)
 
       expect(spyReport.callCount).toBe(1);
       expect(spyReport.calledOnceWith(userTo, 'asdf')).toBe(true);
