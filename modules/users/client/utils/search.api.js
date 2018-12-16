@@ -1,10 +1,5 @@
-export async function searchUsers(query) {
-  const response = await fetch(`/api/users?search=${query}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8'
-    }
-  });
+import axios from 'axios';
 
-  return await response.json();
+export async function searchUsers(query) {
+  return await axios.get(`/api/users?search=${query}`);
 }
