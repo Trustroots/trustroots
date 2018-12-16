@@ -181,29 +181,15 @@ gulp.task('watch', function watch(done) {
   // Start Refresh
   plugins.refresh.listen();
 
-  // Watch and lint JS files
-  gulp.watch(
-    _.union(
-      defaultAssets.server.allJS,
-      defaultAssets.server.workerJS,
-      [
-        defaultAssets.server.gulpConfig,
-        defaultAssets.server.migrations
-      ]
-    ),
-    gulp.series('lint')
-  );
-
   // Watch and generate app files
   gulp.watch(defaultAssets.server.fontelloConfig, fontello);
   gulp.watch(defaultAssets.server.views).on('change', plugins.refresh.changed);
   gulp.watch(defaultAssets.client.less, gulp.series('clean:css', 'build:styles')).on('change', plugins.refresh.changed);
 
   if (process.env.NODE_ENV === 'production') {
-    gulp.watch(defaultAssets.client.js, gulp.series('lint', 'clean:js', 'build:scripts'));
+    gulp.watch(defaultAssets.client.js, gulp.series('clean:js', 'build:scripts'));
     gulp.watch(defaultAssets.client.views, gulp.series('clean:js', 'build:scripts')).on('change', plugins.refresh.changed);
   } else {
-    gulp.watch(defaultAssets.client.js, gulp.series('lint'));
     gulp.watch(defaultAssets.client.views).on('change', plugins.refresh.changed);
   }
   done();
@@ -239,56 +225,6 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
       plugins.refresh.changed(changedFile);
     });
 });
-
-// ESLint JS linting task
-gulp.task('eslint', function eslint() {
-  var lintAssets = _.union(
-    [
-      defaultAssets.server.gulpConfig,
-      defaultAssets.server.migrations
-    ],
-    defaultAssets.server.allJS,
-    defaultAssets.client.js,
-    testAssets.tests.server,
-    testAssets.tests.client,
-    // Don't lint dist and lib files
-    [
-      '!public/**',
-      '!node_modules/**'
-    ]
-  );
-
-  return gulp.src(lintAssets, { allowEmpty: true })
-    .pipe(plugins.eslint())
-    .pipe(plugins.eslint.format())
-    // To have the process exit with an error code (1) on
-    // lint error, return the stream and pipe to failAfterError last.
-    .pipe(plugins.eslint.failAfterError());
-});
-
-// ESLint JS linting task for Angular files
-gulp.task('eslint-angular', gulp.series(
-  loadConfig,
-  function eslintAngular() {
-    var lintAssets = _.union(
-      assets.client.js,
-      // Don't lint dist and lib files
-      [
-        '!public/**/*',
-        '!node_modules/**/*'
-      ]
-    );
-
-    return gulp.src(lintAssets, { allowEmpty: true })
-      .pipe(plugins.eslint({
-        configFile: '.eslintrc-angular.js'
-      }))
-      .pipe(plugins.eslint.format())
-      // To have the process exit with an error code (1) on
-      // lint error, return the stream and pipe to failAfterError last.
-      .pipe(plugins.eslint.failAfterError());
-  }
-));
 
 // JavaScript task
 gulp.task('build:scripts', gulp.series(
@@ -465,19 +401,13 @@ function karmaWatch(done) {
   }, done).start();
 }
 
-// Analyse code for potential errors
-gulp.task('lint', gulp.parallel('eslint', 'eslint-angular'));
-
 // Clean dist css and js files
 gulp.task('clean', gulp.parallel('clean:css', 'clean:js'));
 
 // Build assets for development mode
 gulp.task('build:dev', gulp.series(
   'env:dev',
-  gulp.parallel(
-    'lint',
-    'clean'
-  ),
+  'clean',
   angularUibTemplatecache,
   gulp.parallel(
     'build:styles',
@@ -488,10 +418,7 @@ gulp.task('build:dev', gulp.series(
 // Build assets for production mode
 gulp.task('build:prod', gulp.series(
   'env:prod',
-  gulp.parallel(
-    'lint',
-    'clean'
-  ),
+  'clean',
   gulp.parallel(
     'build:styles',
     'build:scripts'
@@ -510,10 +437,7 @@ gulp.task('test', gulp.series(
 
 gulp.task('test:server', gulp.series(
   'env:test',
-  gulp.parallel(
-    'lint',
-    mocha
-  )
+  mocha
 ));
 
 gulp.task('test:server:no-lint', gulp.series(
@@ -535,10 +459,7 @@ gulp.task('test:client', gulp.series(
 
 gulp.task('test:client:watch', gulp.series(
   'env:test',
-  gulp.parallel(
-    'lint',
-    karmaWatch
-  )
+  karmaWatch
 ));
 
 // Run the project in development mode

@@ -1,0 +1,5 @@
+bin/admin
+deploy
+node_modules
+public
+scripts
