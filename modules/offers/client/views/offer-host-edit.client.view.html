@@ -20,7 +20,11 @@
 
   <button type="submit"
           class="btn btn-lg btn-inverse-primary pull-right hidden-xs"
-          ng-disabled="offerHostEdit.isLoading"
+          ng-disabled="offerHostEdit.isLoading ||
+          (offerHostEdit.offer.status!=='no' && offerHostEdit.isDecriptionTooShort)"
+          uib-tooltip="Write longer description first"
+          tooltip-enable="offerHostEdit.isDecriptionTooShort && offerHostEdit.offer.status !== 'no'"
+          tooltip-placement="bottom"
           aria-hidden="true">
     Save and Exit
   </button>
@@ -140,12 +144,14 @@
 
       <div class="panel panel-default" ng-class="{ 'panel-disabled': offerHostEdit.offer.status === 'no' && !offerDescriptionFocused }">
         <div class="panel-heading">
-          <h4 id="offerDescriptionLabel">Tell about your home and hosting possibilities</h4>
+          <h4 id="offerDescriptionLabel">Tell about your home and hosting possibilities
+            <i ng-if="offerHostEdit.offer.status !== 'no'"> (required)</i>
+          </h4>
         </div>
         <div class="panel-body">
           <div class="offer-description"
                aria-labelledby="offerDescriptionLabel"
-               aria-required="false"
+               aria-required="offerHostEdit.offer.status !== 'no'"
                ng-focus="offerDescriptionFocused = true"
                ng-blur="offerDescriptionFocused = false"
                ng-class="{ 'is-not-empty': offer.description.length }"
@@ -166,7 +172,7 @@
     <uib-tab index="2"
              heading="Location"
              select="offer.invalidateMapSize(offerHostEdit.leafletData)"
-             disable="offerHostEdit.offer.status === 'no'">
+             disable="offerHostEdit.offer.status === 'no' || offerHostEdit.isDecriptionTooShort">
 
       <!-- Location -->
       <div class="panel panel-default offer-panel-map">
@@ -257,6 +263,9 @@
        type="button"
        class="btn btn-action btn-primary"
        aria-label="Next section"
+       uib-tooltip="Write longer description first"
+       tooltip-enable="offerHostEdit.isDecriptionTooShort&& offerHostEdit.offerTab === 1"
+       ng-disabled="offerHostEdit.isDecriptionTooShort && offerHostEdit.offerTab === 1"
        ng-click="offerHostEdit.offerTab = offerHostEdit.offerTab + 1">
       Next
     </button>
@@ -289,6 +298,9 @@
              type="button"
              class="btn btn-lg btn-primary"
              aria-label="Next section"
+             uib-tooltip="Write longer description first"
+             tooltip-enable="offerHostEdit.isDecriptionTooShort && offerHostEdit.offerTab === 1"
+             ng-disabled="offerHostEdit.isDecriptionTooShort && offerHostEdit.offerTab === 1"
              ng-click="offerHostEdit.offerTab = offerHostEdit.offerTab + 1">
             Next
             <span class="icon-right" aria-hiddne="true"></span>
