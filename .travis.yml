@@ -35,6 +35,7 @@ before_script:
 
 cache:
   directories:
+    - "$HOME/.node-gyp"
     - "$HOME/.npm"
 
 notifications:
