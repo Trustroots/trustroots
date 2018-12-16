@@ -52,11 +52,10 @@
     "start:worker:prod": "gulp worker:prod",
     "start:worker": "gulp worker:dev",
     "start": "concurrently --raw --kill-others --kill-others-on-fail 'npm:lint:watch' 'npm:start:develop' 'npm:start:worker' 'npm:dashboard:mail'",
-    "test:client:watch": "npm run pretest && gulp test:client:watch",
+    "test:client:watch": "npm run pretest && concurrently --raw 'npm:lint:watch' 'gulp test:client:watch'",
     "test:client": "npm run pretest && gulp test:client",
     "test:selenium": "python ./scripts/selenium/test.py",
-    "test:server:no-lint": "npm run pretest && gulp test:server:no-lint",
-    "test:server:watch": "npm run pretest && gulp test:server:watch",
+    "test:server:watch": "npm run pretest && concurrently --raw 'npm:lint:watch' 'gulp test:server:watch'",
     "test:server": "npm run pretest && gulp test:server",
     "test": "npm run lint && gulp test",
     "travis-ci": "concurrently --raw --kill-others-on-fail 'npm run lint' 'npm run build:prod'"

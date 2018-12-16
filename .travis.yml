@@ -4,7 +4,7 @@ node_js:
   - 11
 env:
   - $RUN="npm run test:client"
-  - $RUN="npm run test:server:no-lint"
+  - $RUN="npm run test:server"
   - $RUN="npm run travis-ci"
 script:
   - $RUN

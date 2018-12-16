@@ -206,7 +206,7 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
     defaultAssets.server.allJS,
     defaultAssets.server.migrations
   ],
-  gulp.series('test:server:no-lint'))
+  gulp.series('test:server'))
     .on('change', function (changedFile) {
       changedTestFiles = [];
 
@@ -440,14 +440,10 @@ gulp.task('test:server', gulp.series(
   mocha
 ));
 
-gulp.task('test:server:no-lint', gulp.series(
-  'env:test',
-  mocha
-));
 
 // Watch all server files for changes & run server tests (test:server) task on changes
 gulp.task('test:server:watch', gulp.series(
-  'test:server:no-lint',
+  'test:server',
   'watch:server:run-tests'
 ));
 
