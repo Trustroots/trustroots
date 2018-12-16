@@ -1,5 +1,3 @@
-'use strict';
-
 /*
  * Please don't make your own config changes to this file!
  * Copy local.sample.js to local.js and make your changes there. Thanks.
@@ -13,18 +11,14 @@
  */
 
 module.exports = {
+  featureFlags: {
+    reference: false,
+    i18n: false
+  },
   app: {
     title: 'Trustroots',
     description: 'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.'
   },
-
-  // Feature flags
-  featureFlags: {
-    // enable references?
-    reference: false,
-    i18n: false
-  },
-
   // Is site invitation only?
   invitations: {
     enabled: false,
@@ -47,16 +41,16 @@ module.exports = {
     // You can access user object like this: `{{app.user.displayName}}`
     message: ''
   },
-  maxUploadSize: process.env.MAX_UPLOAD_SIZE || 10 * 1024 * 1024, // 10MB. Remember to change this to Nginx configs as well
+  maxUploadSize: 10 * 1024 * 1024, // 10MB. Remember to change this to Nginx configs as well
   imageProcessor: 'graphicsmagick', // graphicsmagick|imagemagick
   uploadTmpDir: './tmp/',
   uploadDir: './public/uploads-profile',
-  port: process.env.PORT || 3000,
+  port: 3000,
   host: 'localhost',
-  https: process.env.HTTPS || false,
+  https: false,
   sessionSecret: 'MEAN',
   sessionCollection: 'sessions',
-  domain: process.env.DOMAIN || 'localhost:3000',
+  domain: 'localhost:3000',
   supportEmail: 'support@trustroots.org', // TO-address for support requests
   surveyReactivateHosts: 'https://ideas.trustroots.org/?p=1302#page-1302', // Survey to send with host reactivation emails
   profileMinimumLength: 140, // Require User.profile.description to be >=140 chars to send messages
@@ -68,9 +62,9 @@ module.exports = {
   ],
   // SparkPost webhook API endpoint configuration (`/api/sparkpost/webhook`)
   sparkpostWebhook: {
-    enabled: process.env.SPARKPOST_WEBHOOK_ENABLED || true,
-    username: process.env.SPARKPOST_WEBHOOK_USERNAME || 'sparkpost',
-    password: process.env.SPARKPOST_WEBHOOK_PASSWORD || 'sparkpost'
+    enabled: true,
+    username: 'sparkpost',
+    password: 'sparkpost'
   },
   influxdb: {
     enabled: false,
@@ -121,12 +115,12 @@ module.exports = {
     maxOfferValidFromNow: { days: 30 }
   },
   mailer: {
-    from: process.env.MAILER_FROM || 'trustroots@localhost',
+    from: 'trustroots@localhost',
     options: {
-      service: process.env.MAILER_SERVICE_PROVIDER || false,
+      service: false,
       auth: {
-        user: process.env.MAILER_EMAIL_ID || false,
-        pass: process.env.MAILER_PASSWORD || false
+        user: false,
+        pass: false
       }
     }
   },
@@ -149,44 +143,44 @@ module.exports = {
         legacy: false
       }
     },
-    user: process.env.MAPBOX_USERNAME || '',
-    publicKey: process.env.MAPBOX_ACCESS_TOKEN || ''
+    user: '',
+    publicKey: ''
   },
   facebook: {
-    page: process.env.FACEBOOK_PAGE || '',
-    clientID: process.env.FACEBOOK_ID || false,
-    clientSecret: process.env.FACEBOOK_SECRET || false,
-    clientAccessToken: process.env.FACEBOOK_ACCESS_TOKEN || false,
+    page: '',
+    clientID: false,
+    clientSecret: false,
+    clientAccessToken: false,
     callbackURL: '/api/auth/facebook/callback',
-    notificationsEnabled: process.env.FACEBOOK_NOTIFICATIONS_ENABLED || false
+    notificationsEnabled: false
   },
   twitter: {
-    username: process.env.TWITTER_USERNAME || '',
-    clientID: process.env.TWITTER_KEY || '',
-    clientSecret: process.env.TWITTER_SECRET || '',
+    username: '',
+    clientID: '',
+    clientSecret: '',
     callbackURL: '/api/auth/twitter/callback'
   },
   google: {
-    page: process.env.GOOGLE_PAGE || ''
+    page: ''
   },
   fcm: {
-    senderId: process.env.FCM_SENDER_ID || '',
+    senderId: '',
     serviceAccount: false
   },
   github: {
-    clientID: process.env.GITHUB_ID || '',
-    clientSecret: process.env.GITHUB_SECRET || '',
+    clientID: '',
+    clientSecret: '',
     callbackURL: '/api/auth/github/callback'
   },
   googleAnalytics: {
-    enabled: process.env.GA_ENABLED || false,
-    code: process.env.GA_CODE || ''
+    enabled: false,
+    code: ''
   },
   log: {
     papertrail: {
       // If host & port are false, papertrail is disabled
-      host: process.env.WINSTON_HOST || false,
-      port: process.env.WINSTON_PORT || false,
+      host: false,
+      port: false,
       level: 'debug',
       program: 'production',
       inlineMeta: true

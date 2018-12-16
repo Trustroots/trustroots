@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Rename this file to local.js for having local configuration variables that
  * will not get commited and pushed to remote repositories.
@@ -12,6 +10,12 @@
  */
 
 module.exports = {
+  /*
+  featureFlags: {
+    ...require('development').featureFlags
+    // List your fature flag modifications here
+  }
+  */
 
   /*
   // Appears on top of every page for authenticated users.
