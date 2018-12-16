@@ -57,7 +57,8 @@
     "test:server:no-lint": "npm run pretest && gulp test:server:no-lint",
     "test:server:watch": "npm run pretest && gulp test:server:watch",
     "test:server": "npm run pretest && gulp test:server",
-    "test": "npm run lint && gulp test"
+    "test": "npm run lint && gulp test",
+    "travis-ci": "concurrently --raw --kill-others-on-fail 'npm run lint' 'npm run build:prod'"
   },
   "dependencies": {
     "acl": "~0.4.11",
