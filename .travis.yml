@@ -3,16 +3,15 @@ node_js:
   - 10
   - 11
 env:
-  - RUN=lint
-  - RUN=test:client
-  - RUN=test:server:no-lint
-  - RUN=build:prod
+  - RUN=npm run test:client
+  - RUN=npm run test:server:no-lint
+  - RUN=npm run lint && npm run build:prod
 script:
-  - npm run $RUN
+  - $RUN
 install:
   - npm ci
 matrix:
-fast_finish: true
+  fast_finish: true
 # https://docs.travis-ci.com/user/reference/overview/#Virtualisation-Environment-vs-Operating-System
 dist: trusty
 services:
