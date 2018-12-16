@@ -9,9 +9,17 @@
   <button type="submit"
           class="btn btn-lg btn-inverse-primary pull-right hidden-xs"
           aria-hidden="true"
-          ng-disabled="offerMeet.isLoading">
+          ng-disabled="offerMeet.isLoading"
+          ng-if="!offerMeet.newOffer">
     Save and Exit
   </button>
+
+  <button
+  class="btn btn-lg btn-inverse-primary pull-right hidden-xs"
+  aria-label="Cancel adding a meet offer"
+  ui-sref="offer.meet.list">
+  Cancel
+ </button>
 
   <uib-tabset class="offer-tabs" active="offerMeet.offerTab">
 
@@ -156,13 +164,13 @@
     <div class="container">
       <ul class="nav navbar-nav nav-justified" role="toolbar" aria-label="Offer actions">
         <li>
-          <a ng-if="offerMeet.offerTab === 0"
+          <button ng-if="offerMeet.offerTab === 0"
              type="button"
              class="btn btn-lg btn-primary"
              aria-label="Cancel adding a meet offer"
              ui-sref="offer.meet.list">
             Cancel
-          </a>
+          </button>
           <button ng-if="offerMeet.offerTab >= 1"
              type="button"
              class="btn btn-lg btn-primary"
