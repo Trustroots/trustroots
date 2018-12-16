@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 /**
  * Refactros 'Tag' schema into 'Tribe' schema
