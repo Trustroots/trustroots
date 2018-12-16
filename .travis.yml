@@ -3,9 +3,9 @@ node_js:
   - 10
   - 11
 env:
-  - RUN=npm run test:client
-  - RUN=npm run test:server:no-lint
-  - RUN=npm run lint && npm run build:prod
+  - $RUN="npm run test:client"
+  - $RUN="npm run test:server:no-lint"
+  - $RUN="npm run lint && npm run build:prod"
 script:
   - $RUN
 install:
