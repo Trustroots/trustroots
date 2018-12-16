@@ -19,14 +19,14 @@ UserLink.propTypes = {
 /**
  * Error message when trying to give a reference to oneself.
  */
-export function Self() {
+export function ReferenceToSelfInfo() {
   return (<div className="alert alert-warning">Sorry, you can&apos;t give a reference to yourself.</div>);
 }
 
 /**
  * Info that data are loading.
  */
-export function Loading() {
+export function LoadingInfo() {
   return (<div>Wait a moment...</div>);
 }
 
@@ -34,18 +34,18 @@ export function Loading() {
  * Error message when reference was already given
  * @param {User} userTo
  */
-export function Duplicate({ userTo }) {
+export function DuplicateInfo({ userTo }) {
   return (<div className="alert alert-warning">You&apos;ve already given a reference to <UserLink user={userTo} />.</div>);
 }
 
-Duplicate.propTypes = {
+DuplicateInfo.propTypes = {
   userTo: PropTypes.object.isRequired
 };
 
 /**
  * Info after successful submitting of a new reference.
  */
-export function Submitted({ isReported, isPublic, userFrom, userTo }) {
+export function SubmittedInfo({ isReported, isPublic, userFrom, userTo }) {
   const name = userTo.displayName || userTo.username;
 
   const isPublicMessage = (isPublic) ?
@@ -68,7 +68,7 @@ export function Submitted({ isReported, isPublic, userFrom, userTo }) {
   );
 }
 
-Submitted.propTypes = {
+SubmittedInfo.propTypes = {
   userFrom: PropTypes.object.isRequired,
   userTo: PropTypes.object.isRequired,
   isReported: PropTypes.bool.isRequired,

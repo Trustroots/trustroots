@@ -382,7 +382,7 @@
         }).
         state('profile.references.new', {
           url: '/new',
-          template: '<references-new userTo="profileCtrl.profile" userFrom="app.user"></references-new>',
+          template: '<create-reference userTo="profileCtrl.profile" userFrom="app.user"></create-reference>',
           requiresAuth: true,
           noScrollingTop: true,
           data: {

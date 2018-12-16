@@ -1,15 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import * as references from '../api/references.api';
-import Navigation from './Navigation';
-import Interaction from './Interaction';
-import Recommend from './Recommend';
-import { Self, Loading, Duplicate, Submitted } from './Info';
+import Navigation from './create-reference/Navigation';
+import Interaction from './create-reference/Interaction';
+import Recommend from './create-reference/Recommend';
+import { ReferenceToSelfInfo, LoadingInfo, DuplicateInfo, SubmittedInfo } from './create-reference/Info';
 import { Tab, Tabs } from 'react-bootstrap';
 
 const api = { references };
 
-export default class ReferencesNew extends React.Component {
+export default class CreateReference extends React.Component {
 
   constructor(props) {
     super(props);
@@ -120,16 +120,16 @@ export default class ReferencesNew extends React.Component {
 
     const tabDone = (recommend) ? 1 : (hostedMe || hostedThem || met) ? 0 : -1;
 
-    if (this.state.isSelf) return <Self />;
+    if (this.state.isSelf) return <ReferenceToSelfInfo />;
 
-    if (this.state.isLoading) return <Loading />;
+    if (this.state.isLoading) return <LoadingInfo />;
 
-    if (this.state.isDuplicate) return <Duplicate userTo={this.props.userTo} />;
+    if (this.state.isDuplicate) return <DuplicateInfo userTo={this.props.userTo} />;
 
     if (this.state.isSubmitted) {
       const isReported = recommend === 'no' && report;
       const isPublic = this.state.isPublic;
-      return <Submitted isReported={isReported} isPublic={isPublic} userFrom={this.props.userFrom} userTo={this.props.userTo} />;
+      return <SubmittedInfo isReported={isReported} isPublic={isPublic} userFrom={this.props.userFrom} userTo={this.props.userTo} />;
     }
 
     return (
@@ -166,7 +166,7 @@ export default class ReferencesNew extends React.Component {
   }
 }
 
-ReferencesNew.propTypes = {
+CreateReference.propTypes = {
   userFrom: PropTypes.object.isRequired,
   userTo: PropTypes.object.isRequired
 };

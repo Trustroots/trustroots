@@ -1,9 +1,9 @@
 'use strict';
 
-import ReferencesNew from '../../client/components/ReferencesNew.component';
-import { Self, Loading, Duplicate, Submitted } from '../../client/components/Info';
-import Interaction from '../../client/components/Interaction';
-import Navigation from '../../client/components/Navigation';
+import CreateReference from '../../client/components/CreateReference.component';
+import { ReferenceToSelfInfo, LoadingInfo, DuplicateInfo, SubmittedInfo } from '../../client/components/create-reference/Info';
+import Interaction from '../../client/components/create-reference/Interaction';
+import Navigation from '../../client/components/create-reference/Navigation';
 import Enzyme from 'enzyme';
 import { shallow } from 'enzyme';
 import React from 'react';
@@ -21,7 +21,7 @@ Enzyme.configure({ adapter: new Adapter() });
 
 (function () {
 
-  describe('<ReferencesNew />', () => {
+  describe('<CreateReference />', () => {
     beforeEach(() => {
       jasmineEnzyme();
     });
@@ -36,8 +36,8 @@ Enzyme.configure({ adapter: new Adapter() });
         username: 'username'
       };
 
-      const wrapper = shallow(<ReferencesNew userFrom={me} userTo={me} />);
-      expect(wrapper.find(Self)).toExist();
+      const wrapper = shallow(<CreateReference userFrom={me} userTo={me} />);
+      expect(wrapper.find(ReferenceToSelfInfo)).toExist();
     });
 
     it('check whether the reference exists at the beginning', () => {
@@ -47,9 +47,9 @@ Enzyme.configure({ adapter: new Adapter() });
       stub.withArgs({ userFrom: userFrom._id, userTo: userTo._id }).returns(new Promise(() => {}));
 
       expect(stub.callCount).toBe(0);
-      const wrapper = shallow(<ReferencesNew userFrom={userFrom} userTo={userTo} />);
+      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} />);
       expect(stub.callCount).toBe(1);
-      expect(wrapper.find(Loading)).toExist();
+      expect(wrapper.find(LoadingInfo)).toExist();
     });
 
     it('can not leave a second reference', async () => {
@@ -60,11 +60,11 @@ Enzyme.configure({ adapter: new Adapter() });
         userFrom, userTo, public: false
       }]);
 
-      const wrapper = shallow(<ReferencesNew userFrom={userFrom} userTo={userTo} />);
+      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} />);
 
-      expect(wrapper.find(Duplicate)).not.toExist();
+      expect(wrapper.find(DuplicateInfo)).not.toExist();
       await null; // wait for the next tick (resolve stubbed API call)
-      expect(wrapper.find(Duplicate)).toExist();
+      expect(wrapper.find(DuplicateInfo)).toExist();
       expect(wrapper.find(Interaction)).not.toExist();
     });
 
@@ -74,7 +74,7 @@ Enzyme.configure({ adapter: new Adapter() });
       const stub = sinon.stub(api, 'read');
       stub.withArgs({ userFrom: userFrom._id, userTo: userTo._id }).resolves([]);
 
-      const wrapper = shallow(<ReferencesNew userFrom={userFrom} userTo={userTo} />);
+      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} />);
       expect(wrapper.find(Interaction)).not.toExist();
       await null; // wait for the next tick (resolve stubbed API call)
       expect(wrapper.find(Interaction)).toExist();
@@ -87,7 +87,7 @@ Enzyme.configure({ adapter: new Adapter() });
       const stubRead = sinon.stub(api, 'read');
       stubRead.withArgs({ userFrom: userFrom._id, userTo: userTo._id }).resolves([]);
 
-      const wrapper = shallow(<ReferencesNew userFrom={userFrom} userTo={userTo} />);
+      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} />);
 
       await null; // wait for the next tick (resolve stubbed API call)
 
@@ -122,7 +122,7 @@ Enzyme.configure({ adapter: new Adapter() });
       stubRead.withArgs({ userFrom: userFrom._id, userTo: userTo._id }).resolves([]);
       stubCreate.resolves();
 
-      const wrapper = shallow(<ReferencesNew userFrom={userFrom} userTo={userTo} />);
+      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} />);
 
       await null; // wait for the next tick (resolve stubbed API call)
 
@@ -163,7 +163,7 @@ Enzyme.configure({ adapter: new Adapter() });
       const userFrom = { _id: '111111', username: 'userfrom' };
       const userTo = { _id: '222222', username: 'userto' };
 
-      const wrapper = shallow(<ReferencesNew userFrom={userFrom} userTo={userTo} />);
+      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} />);
 
       wrapper.setState({
         isLoading: false,
@@ -172,7 +172,7 @@ Enzyme.configure({ adapter: new Adapter() });
 
       wrapper.update();
 
-      expect(wrapper.find(Submitted)).toExist();
+      expect(wrapper.find(SubmittedInfo)).toExist();
     });
   });
 }());
