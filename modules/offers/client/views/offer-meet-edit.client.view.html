@@ -9,8 +9,8 @@
   <button type="submit"
           class="btn btn-lg btn-inverse-primary pull-right hidden-xs"
           aria-hidden="true"
-          ng-disabled="offerMeet.isLoading"
-          ng-if="!offerMeet.newOffer">
+          ng-if="!offerMeet.newOffer"
+          ng-disabled="offerMeet.isLoading || (offerMeet.offer.description|plainTextLength) < offerMeet.minDescription">
     Save and Exit
   </button>
 
@@ -39,13 +39,16 @@
           <div class="panel panel-default">
             <div class="panel-heading">
               <h4 id="offerDescriptionLabel">
-                What is this about?
+                What is this about? <i>(required)</i>
               </h4>
             </div>
             <div class="panel-body">
               <div class="offer-description offer-description-"
                    aria-labelledby="offerDescriptionLabel"
-                   aria-required="false"
+                   aria-required="true"
+                   uib-tooltip="Write more please"
+                   tooltip-enable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+                   tooltip-is-open="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
                    ng-class="{ 'is-not-empty': offer.description.length }"
                    ng-hide="!offerMeet.offer" ng-model="offerMeet.offer.description"
                    tr-editor
@@ -83,6 +86,10 @@
     </uib-tab>
     <uib-tab index="1"
              heading="Location"
+             disable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+             uib-tooltip="Write some description first"
+             tooltip-enable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+             tooltip-placement="right"
              select="offer.invalidateMapSize(offerMeet.leafletData)">
 
       <!-- Location -->
@@ -146,6 +153,9 @@
        type="button"
        class="btn btn-action btn-primary"
        aria-label="Next section"
+       uib-tooltip="Write some description first"
+       tooltip-enable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+       ng-disabled="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
        ng-click="offerMeet.offerTab = offerMeet.offerTab + 1">
       Next
     </button>
@@ -185,6 +195,9 @@
              type="button"
              class="btn btn-lg btn-primary"
              aria-label="Next section"
+             uib-tooltip="Write some description first"
+             tooltip-enable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+             ng-disabled="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
              ng-click="offerMeet.offerTab = offerMeet.offerTab + 1">
             Next
             <span class="icon-right"></span>

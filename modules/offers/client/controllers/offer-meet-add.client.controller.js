@@ -19,6 +19,7 @@
     vm.isCalendarVisible = false;
     vm.isLoading = false;
     vm.newOffer = false;
+    vm.minDescription = 5;
 
     activate();
 
