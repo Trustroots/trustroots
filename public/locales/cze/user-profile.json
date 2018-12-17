@@ -16,5 +16,6 @@
   "Replies within {{replyTime, fromNow}}.": "Odpovídá během {{replyTime, fromNow}}.",
   "Lives in": "Bydlí v",
   "From": "Z",
-  "Languages": "Jazyky"
+  "Languages": "Jazyky",
+  "Elsewhere": "Jinde"
 }

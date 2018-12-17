@@ -16,5 +16,6 @@
   "Replies within {{replyTime, fromNow}}.": "Replies within {{replyTime, fromNow}}.",
   "Lives in": "Lives in",
   "From": "From",
-  "Languages": "Languages"
+  "Languages": "Languages",
+  "Elsewhere": "Elsewhere"
 }
