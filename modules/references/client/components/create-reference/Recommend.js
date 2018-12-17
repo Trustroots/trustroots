@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Report from './Report';
+import { ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
 
 export default function Recommend({ primaryInteraction, recommend, report, reportMessage, onChangeRecommend, onChangeReport, onChangeReportMessage }) {
 
@@ -18,43 +19,39 @@ export default function Recommend({ primaryInteraction, recommend, report, repor
         <h4>{question}</h4>
       </div>
       <div className="panel-body">
-        <div className="btn-group"
-          role="radiogroup"
+        <ToggleButtonGroup
+          type="radio"
+          name="recommend"
+          onChange={onChangeRecommend}
+          value={recommend}
           aria-labelledby="recommendationQuestion">
-          <label className="btn btn-lg btn-reference-recommend btn-reference-recommend-yes"
-            role="radio"
-            aria-checked={ recommend === 'yes' }>
-            <input
-              type="radio"
-              name="recommend"
-              checked={recommend === 'yes'}
-              onChange={() => onChangeRecommend('yes')}
-            />
-            <span>Yes</span>
-          </label>
-          <label className="btn btn-lg btn-reference-recommend btn-reference-recommend-no"
-            role="radio"
-            aria-checked={ recommend === 'no' }>
-            <input
-              type="radio"
-              name="recommend"
-              checked={recommend === 'no'}
-              onChange={() => onChangeRecommend('no')}
-            />
-            <span>No</span>
-          </label>
-          <label className="btn btn-lg btn-reference-recommend btn-reference-recommend-unknown"
-            role="radio"
-            aria-checked={recommend === 'unknown' }>
-            <input
-              type="radio"
-              name="recommend"
-              checked={recommend === 'unknown'}
-              onChange={() => onChangeRecommend('unknown')}
-            />
-            <span>I don&apos;t know</span>
-          </label>
-        </div>
+          <ToggleButton
+            className="btn btn-lg"
+            aria-checked={ recommend === 'yes' }
+            value="yes"
+            bsStyle="success"
+            bsSize="large"
+          >
+            Yes
+          </ToggleButton>
+          <ToggleButton
+            className="btn btn-lg"
+            aria-checked={ recommend === 'no' }
+            value="no"
+            bsStyle="danger"
+            bsSize="large"
+          >
+            No
+          </ToggleButton>
+          <ToggleButton
+            aria-checked={recommend === 'unknown' }
+            value="unknown"
+            bsStyle="default"
+            bsSize="large"
+          >
+            I don&apos;t know
+          </ToggleButton>
+        </ToggleButtonGroup>
         {recommend === 'no' && (
           <Report
             onChangeReport={onChangeReport}
