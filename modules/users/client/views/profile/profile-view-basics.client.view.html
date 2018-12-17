@@ -27,60 +27,60 @@
   </a>
   <div class="panel-body">
 
-    <div class="profile-sidebar-section">
-      <!-- A React component, includes Member since, Online ... ago  -->
-      <!-- This component should expand to include all the fields here and replace this Angular component. -->
-      <profile-view-basics profile="profileCtrl.profile"></profile-view-basics>
-    </div>
+  <div class="profile-sidebar-section">
+    <!-- A React component, includes Member since, Online ... ago  -->
+    <!-- This component should expand to include all the fields here and replace this Angular component. -->
+    <profile-view-basics profile="profileCtrl.profile"></profile-view-basics>
+  </div>
 
-    <div class="profile-sidebar-section"
+  <div class="profile-sidebar-section"
     ng-if="profileCtrl.hasConnectedAdditionalSocialAccounts() || profileCtrl.profile.extSitesBW || profileCtrl.profile.extSitesCS || profileCtrl.profile.extSitesWS">
- <h4 id="profile-networks" aria-label="Member in other networks">
-   Elsewhere
- </h4>
- <ul class="social-profiles list-unstyled"
-     aria-describedby="profile-networks">
-   <!--
-     Facebook profile link is hidden here until issue with their API gets resolved
-     See https://github.com/Trustroots/trustroots/issues/237
-   -->
-   <li class="social-profile"
-       ng-repeat="(providerName, providerData) in profileCtrl.profile.additionalProvidersData track by providerName"
-       ng-if="providerName !== 'facebook'">
-     <i class="social-profile-icon icon-fw icon-lg icon-{{ ::providerName }}"></i>
-     <a rel="noopener"
-        class="social-profile-handle text-capitalize"
-        ng-href="{{ ::profileCtrl.socialAccountLink(providerName, providerData) }}"
-        ng-bind="::providerName"></a>
-   </li>
-   <li class="social-profile" ng-if="profileCtrl.profile.extSitesBW">
-     <i class="social-profile-icon icon-fw icon-lg icon-bw"></i>
-     <a rel="noopener"
-        class="social-profile-handle"
-        ng-href="https://www.bewelcome.org/members/{{ ::profileCtrl.profile.extSitesBW }}">
-       BeWelcome
-     </a>
-   </li>
-   <li class="social-profile" ng-if="profileCtrl.profile.extSitesCS">
-     <i class="social-profile-icon icon-fw icon-lg icon-cs"></i>
-     <!--
-     Link here has `noreferrer` because;
-     https://github.com/Trustroots/trustroots/issues/464
-     -->
-     <a rel="noreferrer noopener"
-        class="social-profile-handle"
-        ng-href="https://www.couchsurfing.com/people/{{ ::profileCtrl.profile.extSitesCS }}">
-       Couchsurfing
-     </a>
-   </li>
-   <li class="social-profile" ng-if="profileCtrl.profile.extSitesWS">
-     <i class="social-profile-icon icon-fw icon-lg icon-warmshowers"></i>
-     <a class="social-profile-handle"
-        ng-href="https://www.warmshowers.org/{{ ::(profileCtrl.isWarmshowersId() ? 'user' : 'users') }}/{{ ::profileCtrl.profile.extSitesWS }}">
-       Warmshowers
-     </a>
-   </li>
- </ul>
+    <h4 id="profile-networks" aria-label="Member in other networks">
+    Elsewhere
+    </h4>
+    <ul class="social-profiles list-unstyled"
+        aria-describedby="profile-networks">
+      <!--
+        Facebook profile link is hidden here until issue with their API gets resolved
+        See https://github.com/Trustroots/trustroots/issues/237
+      -->
+      <li class="social-profile"
+          ng-repeat="(providerName, providerData) in profileCtrl.profile.additionalProvidersData track by providerName"
+          ng-if="providerName !== 'facebook'">
+        <i class="social-profile-icon icon-fw icon-lg icon-{{ ::providerName }}"></i>
+        <a rel="noopener"
+            class="social-profile-handle text-capitalize"
+            ng-href="{{ ::profileCtrl.socialAccountLink(providerName, providerData) }}"
+            ng-bind="::providerName"></a>
+      </li>
+      <li class="social-profile" ng-if="profileCtrl.profile.extSitesBW">
+        <i class="social-profile-icon icon-fw icon-lg icon-bw"></i>
+        <a rel="noopener"
+            class="social-profile-handle"
+            ng-href="https://www.bewelcome.org/members/{{ ::profileCtrl.profile.extSitesBW }}">
+          BeWelcome
+        </a>
+      </li>
+      <li class="social-profile" ng-if="profileCtrl.profile.extSitesCS">
+        <i class="social-profile-icon icon-fw icon-lg icon-cs"></i>
+        <!--
+        Link here has `noreferrer` because;
+        https://github.com/Trustroots/trustroots/issues/464
+        -->
+        <a rel="noreferrer noopener"
+            class="social-profile-handle"
+            ng-href="https://www.couchsurfing.com/people/{{ ::profileCtrl.profile.extSitesCS }}">
+          Couchsurfing
+        </a>
+      </li>
+      <li class="social-profile" ng-if="profileCtrl.profile.extSitesWS">
+        <i class="social-profile-icon icon-fw icon-lg icon-warmshowers"></i>
+        <a class="social-profile-handle"
+            ng-href="https://www.warmshowers.org/{{ ::(profileCtrl.isWarmshowersId() ? 'user' : 'users') }}/{{ ::profileCtrl.profile.extSitesWS }}">
+          Warmshowers
+        </a>
+      </li>
+    </ul>
 </div>
 
   </div>

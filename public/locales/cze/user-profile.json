@@ -13,5 +13,8 @@
   "non-binary": "non-binary",
   "other": "jiné",
   "Reply rate {{replyRate}}.": "Míra odpovědí {{replyRate}}.",
-  "Replies within {{replyTime, fromNow}}.": "Odpovídá během {{replyTime, fromNow}}."
+  "Replies within {{replyTime, fromNow}}.": "Odpovídá během {{replyTime, fromNow}}.",
+  "Lives in": "Bydlí v",
+  "From": "Z",
+  "Languages": "Jazyky"
 }
