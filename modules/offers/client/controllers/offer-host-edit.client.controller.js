@@ -87,7 +87,6 @@
 
     $scope.$watch('offerHostEdit.offer.description', function (newValue) {
       vm.isDescriptionTooShort = $filter('plainTextLength')(newValue) < 5;
-      console.log(newValue);
     });
 
     /**
