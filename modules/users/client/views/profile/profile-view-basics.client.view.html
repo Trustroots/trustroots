@@ -27,41 +27,10 @@
   </a>
   <div class="panel-body">
 
-    <!-- Reply Rate -->
-    <div class="profile-sidebar-section text-muted"
-         ng-if="::(profileCtrl.profile.replyRate || profileCtrl.profile.replyTime)">
-      <span ng-if="::profileCtrl.profile.replyRate">
-        Reply rate {{ ::profileCtrl.profile.replyRate }}.
-      </span>
-      <span ng-if="::profileCtrl.profile.replyTime">
-        <br>Replies within {{ ::profileCtrl.profile.replyTime }}.
-      </span>
-    </div>
-
     <div class="profile-sidebar-section">
       <!-- A React component, includes Member since, Online ... ago  -->
       <!-- This component should expand to include all the fields here and replace this Angular component. -->
       <profile-view-basics profile="profileCtrl.profile"></profile-view-basics>
-    </div>
-
-    <div class="profile-sidebar-section" ng-if="profileCtrl.profile.locationLiving">
-      <i class="icon-fw icon-building text-muted"></i>
-      Lives in <a ui-sref="search.map({location: profileCtrl.profile.locationLiving})"
-                  ng-bind="profileCtrl.profile.locationLiving"></a>
-    </div>
-
-    <div class="profile-sidebar-section" ng-if="profileCtrl.profile.locationFrom">
-      <i class="icon-fw icon-home text-muted"></i>
-      From <a ui-sref="search.map({location: profileCtrl.profile.locationFrom})"
-              ng-bind="profileCtrl.profile.locationFrom"></a>
-    </div>
-
-    <div class="profile-sidebar-section" ng-if="profileCtrl.profile.languages.length">
-      <h4 id="profile-languages">Languages</h4>
-      <ul class="list-unstyled" aria-describedby="profile-languages">
-        <li ng-repeat="code in profileCtrl.profile.languages track by code"
-            ng-bind="::app.languageNames[code] || code"></li>
-      </ul>
     </div>
 
     <div class="profile-sidebar-section"

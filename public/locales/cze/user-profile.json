@@ -11,5 +11,7 @@
   "female": "žena",
   "male": "muž",
   "non-binary": "non-binary",
-  "other": "jiné"
+  "other": "jiné",
+  "Reply rate {{replyRate}}.": "Míra odpovědí {{replyRate}}.",
+  "Replies within {{replyTime, fromNow}}.": "Odpovídá během {{replyTime, fromNow}}."
 }

@@ -5,6 +5,19 @@ import PropTypes from 'prop-types';
 
 export default function ProfileViewBasics({ profile }) {
   return (<NamespacesConsumer ns="user-profile">{ t => (<>
+    {/* show div only if replyrate or replyTime is present */}
+    {(profile.replyRate || profile.replyTime) &&
+    <div className="profile-sidebar-section text-muted">
+      {profile.replyRate &&
+      <span>
+        {t('Reply rate {{replyRate}}.', { replyRate: profile.replyRate })}
+      </span>}
+      {profile.replyTime &&
+      <span>
+        <br/>
+        {t('Replies within {{replyTime, fromNow}}.', { replyTime: profile.replyTime })}
+      </span>}
+    </div>}
     {/* show div only if birthdate or gender is present */}
     {(profile.birthdate || profile.gender) &&
     <div className="profile-sidebar-section" >
