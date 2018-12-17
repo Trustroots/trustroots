@@ -5,6 +5,13 @@ import PropTypes from 'prop-types';
 
 export default function ProfileViewBasics({ profile }) {
   return (<NamespacesConsumer ns="user-profile">{ t => (<>
+    {/* show div only if birthdate or gender is present */}
+    {(profile.birthdate || profile.gender) &&
+    <div className="profile-sidebar-section" >
+      {profile.birthdate && t('{{birthdate, age}} years', { birthdate: new Date(profile.birthdate) })}
+      {(profile.birthdate && profile.gender) && <span>, </span>}
+      <span className={(!profile.birthdate) && 'text-capitalize'}>{t(profile.gender)}.</span>
+    </div>}
     <div className="profile-sidebar-section">
       {t('Member since {{date, MMM Do, YYYY}}', { date: new Date(profile.created) })}
     </div>

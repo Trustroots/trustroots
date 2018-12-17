@@ -6,5 +6,10 @@
   "Show more...": "Show more...",
   "Member has not written description about themself.": "Member has not written description about themself.",
   "Your profile description should be longer so that you can send messages.": "Your profile description should be longer so that you can send messages.",
-  "Fill your profile": "Fill your profile"
+  "Fill your profile": "Fill your profile",
+  "{{birthdate, age}} years": "{{birthdate, age}} years",
+  "female": "female",
+  "male": "male",
+  "non-binary": "non-binary",
+  "other": "other"
 }
