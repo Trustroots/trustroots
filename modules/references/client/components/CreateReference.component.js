@@ -57,11 +57,7 @@ export class CreateReference extends React.Component {
   }
 
   handleChangeInteraction(interactionType) {
-    this.setState(state => {
-      const interaction = { };
-      interaction[interactionType] = !state[interactionType];
-      return interaction;
-    });
+    this.setState(state => ({ [interactionType]: !state[interactionType] }));
   }
 
   handleChangeRecommend(recommend) {
