@@ -1,6 +1,6 @@
 'use strict';
 
-import CreateReference from '../../client/components/CreateReference.component';
+import { CreateReference } from '../../client/components/CreateReference.component';
 import { ReferenceToSelfInfo, LoadingInfo, DuplicateInfo, SubmittedInfo } from '../../client/components/create-reference/Info';
 import Interaction from '../../client/components/create-reference/Interaction';
 import Navigation from '../../client/components/create-reference/Navigation';
@@ -30,13 +30,15 @@ Enzyme.configure({ adapter: new Adapter() });
       sinon.restore();
     });
 
+    const t = key => key;
+
     it('should not be possible to leave a reference to self', () => {
       const me = {
         _id: '123456',
         username: 'username'
       };
 
-      const wrapper = shallow(<CreateReference userFrom={me} userTo={me} />);
+      const wrapper = shallow(<CreateReference userFrom={me} userTo={me} t={t} />);
       expect(wrapper.find(ReferenceToSelfInfo)).toExist();
     });
 
@@ -47,7 +49,7 @@ Enzyme.configure({ adapter: new Adapter() });
       stub.withArgs({ userFrom: userFrom._id, userTo: userTo._id }).returns(new Promise(() => {}));
 
       expect(stub.callCount).toBe(0);
-      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} />);
+      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} t={t} />);
       expect(stub.callCount).toBe(1);
       expect(wrapper.find(LoadingInfo)).toExist();
     });
@@ -60,7 +62,7 @@ Enzyme.configure({ adapter: new Adapter() });
         userFrom, userTo, public: false
       }]);
 
-      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} />);
+      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} t={t} />);
 
       expect(wrapper.find(DuplicateInfo)).not.toExist();
       await null; // wait for the next tick (resolve stubbed API call)
@@ -74,7 +76,7 @@ Enzyme.configure({ adapter: new Adapter() });
       const stub = sinon.stub(api, 'read');
       stub.withArgs({ userFrom: userFrom._id, userTo: userTo._id }).resolves([]);
 
-      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} />);
+      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} t={t} />);
       expect(wrapper.find(Interaction)).not.toExist();
       await null; // wait for the next tick (resolve stubbed API call)
       expect(wrapper.find(Interaction)).toExist();
@@ -87,7 +89,7 @@ Enzyme.configure({ adapter: new Adapter() });
       const stubRead = sinon.stub(api, 'read');
       stubRead.withArgs({ userFrom: userFrom._id, userTo: userTo._id }).resolves([]);
 
-      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} />);
+      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} t={t} />);
 
       await null; // wait for the next tick (resolve stubbed API call)
 
@@ -122,7 +124,7 @@ Enzyme.configure({ adapter: new Adapter() });
       stubRead.withArgs({ userFrom: userFrom._id, userTo: userTo._id }).resolves([]);
       stubCreate.resolves();
 
-      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} />);
+      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} t={t} />);
 
       await null; // wait for the next tick (resolve stubbed API call)
 
@@ -163,7 +165,7 @@ Enzyme.configure({ adapter: new Adapter() });
       const userFrom = { _id: '111111', username: 'userfrom' };
       const userTo = { _id: '222222', username: 'userto' };
 
-      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} />);
+      const wrapper = shallow(<CreateReference userFrom={userFrom} userTo={userTo} t={t} />);
 
       wrapper.setState({
         isLoading: false,

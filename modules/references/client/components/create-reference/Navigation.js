@@ -7,7 +7,7 @@ import { withNamespaces } from 'react-i18next';
  * It can contain three different buttons: Back, Next, Submit.
  * Each of them has a related property onBack, onNext, onSubmit
  */
-const Navigation = withNamespaces('reference')(function ({ t, disabled, tab, tabs, tabDone, onBack, onNext, onSubmit }) {
+export function Navigation({ t, disabled, tab, tabs, tabDone, onBack, onNext, onSubmit }) {
   const backButton = (
     <button
       type="button"
@@ -51,9 +51,10 @@ const Navigation = withNamespaces('reference')(function ({ t, disabled, tab, tab
       {showSubmitButton && submitButton}
     </div>
   );
-});
+}
 
 Navigation.propTypes = {
+  t: PropTypes.func.isRequired,
   onBack: PropTypes.func.isRequired,
   onNext: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
@@ -63,4 +64,4 @@ Navigation.propTypes = {
   tabDone: PropTypes.number.isRequired // which tab is already filled
 };
 
-export default Navigation;
+export default withNamespaces('reference')(Navigation);

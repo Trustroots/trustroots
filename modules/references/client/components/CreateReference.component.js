@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Tab, Tabs } from 'react-bootstrap';
 import '@/config/lib/i18n';
-import { NamespacesConsumer } from 'react-i18next';
+import { withNamespaces } from 'react-i18next';
 import * as references from '../api/references.api';
 import Navigation from './create-reference/Navigation';
 import Interaction from './create-reference/Interaction';
@@ -11,7 +11,7 @@ import { ReferenceToSelfInfo, LoadingInfo, DuplicateInfo, SubmittedInfo } from '
 
 const api = { references };
 
-export default class CreateReference extends React.Component {
+export class CreateReference extends React.Component {
 
   constructor(props) {
     super(props);
@@ -99,6 +99,7 @@ export default class CreateReference extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     const { hostedMe, hostedThem, met, recommend, report, reportMessage } = this.state;
     const primaryInteraction = (hostedMe && 'hostedMe') || (hostedThem && 'hostedThem') || 'met';
 
@@ -134,7 +135,7 @@ export default class CreateReference extends React.Component {
       return <SubmittedInfo isReported={isReported} isPublic={isPublic} userFrom={this.props.userFrom} userTo={this.props.userTo} />;
     }
 
-    return (<NamespacesConsumer ns="reference">{ t => (
+    return (
       <div>
         <Tabs
           activeKey={this.state.tab}
@@ -164,11 +165,22 @@ export default class CreateReference extends React.Component {
           onSubmit={this.handleSubmit}
         />
       </div>
-    )}</NamespacesConsumer>);
+    );
   }
 }
 
-CreateReference.propTypes = {
+const CreateReferenceHOC = withNamespaces('reference')(CreateReference);
+
+Object.defineProperty(CreateReferenceHOC, 'name', { value: 'CreateReference' });
+
+CreateReferenceHOC.propTypes = {
   userFrom: PropTypes.object.isRequired,
   userTo: PropTypes.object.isRequired
 };
+
+CreateReference.propTypes = {
+  ...CreateReferenceHOC.propTypes,
+  t: PropTypes.func.isRequired
+};
+
+export default CreateReferenceHOC;

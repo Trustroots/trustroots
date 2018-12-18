@@ -1,4 +1,4 @@
-import Navigation from '../../client/components/create-reference/Navigation';
+import { Navigation } from '../../client/components/create-reference/Navigation';
 import Enzyme from 'enzyme';
 import { shallow } from 'enzyme';
 import React from 'react';
@@ -16,112 +16,94 @@ Enzyme.configure({ adapter: new Adapter() });
 (function () {
   'use strict';
 
-  describe('Save a new reference', () => {
+  describe('Navigation through 3 tabs', () => {
+
+    const t = key => key; // dummy translation function
+    const f = () => {}; // dummy handler function
+
     beforeEach(() => {
       jasmineEnzyme();
     });
 
-    describe('Navigation through 3 tabs', () => {
-      it('when tab is 0, there is no Back button and there is Next button', () => {
-        const wrapper = shallow(<Navigation tab={0} tabs={3} />);
+    /**
+     * Given tab number and amount of tabs, test that specific buttons are present
+     */
+    [
+      { tab: 0, tabs: 3, buttons: ['Next'] },
+      { tab: 1, tabs: 3, buttons: ['Back', 'Next'] },
+      { tab: 2, tabs: 3, buttons: ['Back', 'Submit'] }
+    ].forEach(({ tab, tabs, buttons }) => {
+      it(`when tab=${tab} and tabs=${3} there is only ${buttons.join(' and ')} button`, () => {
+        const wrapper = shallow(<Navigation
+          tab={tab}
+          tabs={tabs}
+          tabDone={0}
+          onBack={f}
+          onNext={f}
+          onSubmit={f}
+          t={t}
+        />);
 
-        const buttons = wrapper.find('button');
-        expect(buttons.length).toBe(1);
-        expect(buttons.at(0).text()).toBe('Next');
+        const foundButtons = wrapper.find('button');
+        expect(foundButtons.length).toBe(buttons.length);
+        buttons.forEach((button, index) => {
+          expect(foundButtons.at(index).text()).toBe(button);
+        });
       });
+    });
 
-      it('when tab is 1, there is Back button and Next button', () => {
-        const wrapper = shallow(<Navigation tab={1} tabs={3} />);
+    /**
+     * Test whether buttons are disabled and enabled in different contexts
+     */
+    [
+      { tab: 1, tabs: 3, tabDone: 0, buttons: [{ name: 'Back', disabled: false }, { name: 'Next', disabled: true }] },
+      { tab: 1, tabs: 3, tabDone: 1, buttons: [{ name: 'Back', disabled: false }, { name: 'Next', disabled: false }] },
+      { tab: 2, tabs: 3, tabDone: 1, buttons: [{ name: 'Back', disabled: false }, { name: 'Submit', disabled: true }] },
+      { tab: 2, tabs: 3, tabDone: 2, buttons: [{ name: 'Back', disabled: false }, { name: 'Submit', disabled: false }] }
+    ].forEach(({ tab, tabs, tabDone, buttons }) => {
 
-        const buttons = wrapper.find('button');
-        expect(buttons.length).toBe(2);
-        expect(buttons.at(0).text()).toBe('Back');
-        expect(buttons.at(1).text()).toBe('Next');
+      const expectations = buttons.map(({ name, disabled }) => `the ${name} button should be ${(disabled) ? 'disabled' : 'enabled'}`);
+
+      it(`when tab=${tab}, tabs=${tabs} and tabDone=${tabDone}, ${expectations.join(' and ')}`, () => {
+        const wrapper = shallow(<Navigation tab={tab} tabDone={tabDone} tabs={tabs} t={t} />);
+
+        const foundButtons = wrapper.find('button');
+        expect(foundButtons.length).toBe(buttons.length);
+        buttons.forEach(({ name, disabled }, index) => {
+          const testedButton = foundButtons.at(index);
+          expect(testedButton.text()).toBe(name);
+          if (disabled) {
+            expect(testedButton).toBeDisabled();
+          } else {
+            expect(testedButton).not.toBeDisabled();
+          }
+        });
       });
+    });
 
-      it('when tab is 2, there is Back and Submit button and no Next button', () => {
-        const wrapper = shallow(<Navigation tab={2} tabs={3} />);
+    /**
+     * Test that clicking a button triggers an event handler provided in props
+     */
+    [
+      { tab: 1, tabDone: 0, tabs: 3, button: 'Back', buttonIndex: 0, testTrigger: 'onBack' },
+      { tab: 1, tabDone: 1, tabs: 3, button: 'Next', buttonIndex: 1, testTrigger: 'onNext' },
+      { tab: 2, tabDone: 2, tabs: 3, button: 'Submit', buttonIndex: 1, testTrigger: 'onSubmit' }
+    ].forEach(({ tab, tabs, tabDone, button, buttonIndex, testTrigger }) => {
+      it(`when ${button} button is clicked, the ${testTrigger} should be triggered`, () => {
+        const spy = sinon.spy();
+        const wrapper = shallow(<Navigation
+          tab={tab}
+          tabDone={tabDone}
+          tabs={tabs}
+          t={t}
+          {...{ [testTrigger]: spy }}
+        />);
 
-        const buttons = wrapper.find('button');
-        expect(buttons.length).toBe(2);
-        expect(buttons.at(0).text()).toBe('Back');
-        expect(buttons.at(1).text()).toBe('Submit');
-      });
-
-      it('when tab is 1 and tabDone is 0, the Next button should be disabled', () => {
-        const wrapper = shallow(<Navigation tab={1} tabDone={0} tabs={3} />);
-
-        const buttons = wrapper.find('button');
-        expect(buttons.length).toBe(2);
-        const next = buttons.at(1);
-        expect(next.text()).toBe('Next');
-        expect(next).toBeDisabled();
-      });
-
-      it('when tab is 1 and tabDone is 1, the Next button should be enabled', () => {
-        const wrapper = shallow(<Navigation tab={1} tabDone={1} tabs={3} />);
-
-        const buttons = wrapper.find('button');
-        expect(buttons.length).toBe(2);
-        const next = buttons.at(1);
-        expect(next.text()).toBe('Next');
-        expect(next).not.toBeDisabled();
-      });
-
-      it('when tab is 2 and tabDone is less, the Submit button should be disabled', () => {
-        const wrapper = shallow(<Navigation tab={2} tabDone={1} tabs={3} />);
-
-        const buttons = wrapper.find('button');
-        expect(buttons.length).toBe(2);
-        const submit = buttons.at(1);
-        expect(submit.text()).toBe('Submit');
-        expect(submit).toBeDisabled();
-
-        /* this is how to set props and test again
-        wrapper.setProps({ tabDone: 2 });
-        const submitAfter = wrapper.find('button').at(1);
-        expect(submitAfter).not.toBeDisabled();
-        */
-      });
-
-      it('when tab is 2 and tabDone is 2, the Submit button should be enabled', () => {
-        const wrapper = shallow(<Navigation tab={2} tabDone={2} tabs={3} />);
-
-        const buttons = wrapper.find('button');
-        expect(buttons.length).toBe(2);
-        const submit = buttons.at(1);
-        expect(submit.text()).toBe('Submit');
-        expect(submit).not.toBeDisabled();
-      });
-
-      it('when Back button is clicked, the onBack should be triggered', () => {
-        const onBack = sinon.spy();
-
-        const wrapper = shallow(<Navigation tab={1} tabDone={0} tabs={3} onBack={onBack} />);
-        const back = wrapper.find('button').at(0);
-        expect(onBack.callCount).toBe(0);
-        back.simulate('click');
-        expect(onBack.callCount).toBe(1);
-      });
-
-      it('when Next button is clicked, the onNext should be triggered', () => {
-        const onNext = sinon.spy();
-
-        const wrapper = shallow(<Navigation tab={1} tabDone={1} tabs={3} onNext={onNext} />);
-        const next = wrapper.find('button').at(1);
-        expect(onNext.callCount).toBe(0);
-        next.simulate('click');
-        expect(onNext.callCount).toBe(1);
-      });
-
-      it('when Submit button is clicked, the onSubmit should be triggered', () => {
-        const onSubmit = sinon.spy();
-
-        const wrapper = shallow(<Navigation tab={2} tabDone={2} tabs={3} onSubmit={onSubmit} />);
-        const submit = wrapper.find('button').at(1);
-        expect(onSubmit.callCount).toBe(0);
-        submit.simulate('click');
-        expect(onSubmit.callCount).toBe(1);
+        const testedButton = wrapper.find('button').at(buttonIndex);
+        expect(testedButton.text()).toBe(button);
+        expect(spy.callCount).toBe(0);
+        testedButton.simulate('click');
+        expect(spy.callCount).toBe(1);
       });
     });
   });
