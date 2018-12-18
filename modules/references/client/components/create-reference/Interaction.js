@@ -10,10 +10,10 @@ const Interaction = withNamespaces('reference')(function ({ t, interactions, onC
   return (
     <div className="panel panel-default">
       <div className="panel-heading">
-        <h4 id="howDoYouKnowThemQuestion">{t('How do you know them?')}</h4>
+        <h4 id="how-do-you-know-them-question">{t('How do you know them?')}</h4>
       </div>
       <div className="panel-body">
-        <div role="group" aria-labelledby="howDoYouKnowThemQuestion">
+        <div role="group" aria-labelledby="how-do-you-know-them-question">
           <div className="checkbox">
             <label>
               <input
