@@ -4,8 +4,32 @@ var _ = require('lodash'),
     path = require('path'),
     mongooseService = require(path.resolve('./config/lib/mongoose')),
     chalk = require('chalk'),
+    yargs = require('yargs'),
     faker = require('faker'),
-    mongoose = require('mongoose');
+    mongoose = require('mongoose'),
+    config = require(path.resolve('./config/config'));
+
+var argv = yargs.usage('$0 <numberOfTribes>', 'Seed database with number of tribes', function (yargs) {
+  return yargs
+    .positional('numberOfTribes', {
+      describe: 'Number of tribes to add',
+      type: 'number'
+    })
+    .boolean('debug')
+    .boolean('limit')
+    .describe('debug', 'Enable extra database output (default=false)')
+    .describe('limit', 'If tribes already exist in the database, only add up to the number of tribes (default=false)')
+    .example('node $0 1000', 'Adds 1000 randomly seeded tribes to the database')
+    .example('node $0 100 --debug', 'Adds 100 randomly seeded tribes to the database with debug database output')
+    .example('node $0 100 --limit', 'Adds up to 100 randomly seeded tribes to the database (eg. If 20 tribes already exist, 80 tribes will be added)')
+    .check(function (argv) {
+      if (argv.numberOfTribes < 1) {
+        throw new Error('Error: Number of tribes should be greater than 0');
+      }
+      return true;
+    })
+    .strict().yargs;
+}).argv;
 
 var tribeImageUUIDs = [
   '171433b0-853b-4d19-a8b4-44def956696d',
@@ -36,8 +60,11 @@ var tribeImageUUIDs = [
   '69a500a4-a16e-4c4d-9981-84fbe310d531'
 ];
 
-var addTribes = function (max) {
+var addTribes = function () {
   var index = 0;
+  var max = argv.numberOfTribes;
+  var debug = (argv.debug === true);
+  var limit = (argv.limit === true);
 
   // Add tribes
   console.log('Generating ' + max + ' tribes...');
@@ -49,53 +76,77 @@ var addTribes = function (max) {
   console.log(chalk.green('Trustroots test tribes data'));
   console.log(chalk.white('--'));
 
+  // Override debug mode to use the option set by the user
+  config.db.debug = debug;
+
   // Bootstrap db connection
   mongooseService.connect(function () {
     mongooseService.loadModels(function () {
       var Tribe = mongoose.model('Tribe');
 
-      (function addNextTribe() {
-        var tribe = new Tribe();
-
-        tribe.label = faker.random.word() + '_' + index;
-        tribe.labelHistory = faker.random.words();
-        tribe.slugHistory = faker.random.words();
-        tribe.synonyms = faker.random.words();
-        tribe.color = faker.internet.color().slice(1);
-        tribe.count = 0;
-        tribe.created = Date.now();
-        tribe.modified = Date.now();
-        tribe.public = true;
-        tribe.image_UUID = _.sample(tribeImageUUIDs);
-        tribe.attribution = faker.name.findName();
-        tribe.attribution_url = faker.internet.url();
-        tribe.description = faker.lorem.sentences();
-
-        tribe.save(function (err) {
-          if (err != null) {
-            console.log(err);
+      var getTribes = new Promise(function (resolve, reject) {
+        Tribe.find(function (err, tribes) {
+          if (err) {
+            reject(err);
           }
-          else {
-            if (index >= max) {
-              console.log(chalk.green('Done with ' + max + ' test tribes!'));
-              console.log(chalk.white('')); // Reset to white
-              process.exit(0);
-            }
-          }
+          resolve(tribes);
         });
-        index+=1;
-        if (index < max) {
-          addNextTribe();
+      });
+
+      getTribes.then(function (tribes) {
+        if (limit) {
+          index = tribes.length;
         }
-      }());
+
+        if (index >= max) {
+          console.log(chalk.green(tribes.length + ' tribes already exist. No tribes created!'));
+          console.log(chalk.white('')); // Reset to white
+          process.exit(0);
+        }
+
+        while (index < max) {
+          var savedTribes = 0;
+          (function addNextTribe(tribeIndex) {
+            var tribe = new Tribe();
+
+            tribe.label = faker.lorem.word() + '_' + (tribes.length + tribeIndex);
+            tribe.labelHistory = faker.random.words();
+            tribe.slugHistory = faker.random.words();
+            tribe.synonyms = faker.random.words();
+            tribe.color = faker.internet.color().slice(1);
+            tribe.count = 0;
+            tribe.created = Date.now();
+            tribe.modified = Date.now();
+            tribe.public = true;
+            tribe.image_UUID = _.sample(tribeImageUUIDs);
+            tribe.attribution = faker.name.findName();
+            tribe.attribution_url = faker.internet.url();
+            tribe.description = faker.lorem.sentences();
+
+            tribe.save(function (err) {
+              if (err != null) {
+                console.log(err);
+              }
+              else {
+                process.stdout.write('.');
+                savedTribes += 1;
+                if ((limit && (savedTribes + tribes.length >= max))
+                    || !limit && ((savedTribes >= max))) {
+                  console.log('');
+                  console.log(chalk.green(tribes.length + ' tribes existed in the database.'));
+                  console.log(chalk.green(savedTribes + ' tribes successfully added.'));
+                  console.log(chalk.green('Database now contains ' + (tribes.length + savedTribes) + ' tribes.'));
+                  console.log(chalk.white('')); // Reset to white
+                  process.exit(0);
+                }
+              }
+            });
+          }(index));
+          index+=1;
+        }
+      });
     });
   });
 };
 
-// Number of tribes is required
-if (process.argv[2] == null || process.argv[2] < 1) {
-  console.log(chalk.red('Usage: node fillTestTribesData.js <number of tribes to add>'));
-} else {
-  var numberOfTribes= process.argv[2];
-  addTribes(numberOfTribes);
-}
+addTribes();

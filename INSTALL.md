@@ -130,13 +130,15 @@ For more custom setups, you can alternatively run the scripts for generating dat
 1. To add tribes, run `npm run seed:tribes 50` — This will create 50 tribes.
     * Run this prior to adding users to add users to tribes automatically
 
-2. To add users, run `npm run seed:users 1000 adminusername` — This will create 1000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
+2. To add users, run `npm run seed:users 1000 -- --userNames adminusername` — This will create 1000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
     * It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
     * To see the result, log in with your chosen username and password `password123`.
-    * Additional admin usernames are also supported (eg. `npm run seed:users 1000 admin1 admin2 admin3`)
+    * Additional admin usernames are also supported (eg. `npm run seed:users 1000 -- --userNames admin1 admin2 admin3`)
     * If tribes exist, users will also be added to random tribes
 
 3. To add messages, run `npm run seed:messages 1000 10` — This will create 1000 message threads between random users with up to 10 messages in each thread.
+
+All scripts additionally support `--debug` and `--limit` flags showing database debug information and not creating new elements if the number of database items already exist respectively.
 
 ## Clean database
 
