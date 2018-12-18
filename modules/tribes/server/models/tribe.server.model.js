@@ -34,7 +34,7 @@ function randomHex() {
  */
 var validateLabel = function (label) {
   return (label &&
-          label.match(/[a-z]/) && // Should have at least one a-zA-Z (non case-insensitive regex)
+          label.match(/[a-zA-Z]/) && // Should have at least one a-zA-Z (non case-insensitive regex)
           config.illegalStrings.indexOf(label.trim().toLowerCase()) < 0 &&
           label.charAt(0) !== '.' && // Don't start with `.`
           label.slice(-1) !== '.' // Don't end with `.`
