@@ -305,6 +305,11 @@ var UserSchema = new Schema({
   pushRegistration: {
     type: [UserPushRegistrationSchema],
     default: []
+  },
+  acquisitionStory: {
+    type: String,
+    trim: true,
+    default: ''
   }
 });
 
