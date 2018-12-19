@@ -46,7 +46,7 @@ export default function ProfileViewBasics({ profile, hasConnectedAdditionalSocia
         {t('From')} <a ui-sref="search.map({location: profileCtrl.profile.locationFrom})">
           {profile.locationFrom}</a>
       </div>}
-    {profile.languages.length &&
+    {profile.languages.length > 0 &&
       <div className="profile-sidebar-section">
         <h4 id="profile-languages">{t('Languages')}</h4>
         <ul className="list-unstyled" aria-describedby="profile-languages">
