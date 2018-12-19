@@ -221,11 +221,6 @@ var addUsers = function () {
                     var rand = randomTribes[j];
                     user.member.push({ tribe: tribes[rand]._id, since: Date.now() });
                     tribes[rand].count += 1;
-                    Tribe.findByIdAndUpdate(tribes[rand]._id, tribes[rand], function (err) {
-                      if (err) {
-                        console.error(err);
-                      }
-                    });
                   }
                 }
 
@@ -233,6 +228,19 @@ var addUsers = function () {
                 user.save(function (err) {
                   savedUsers++;
                   process.stdout.write('.');
+
+                  // Update tribes with the new tribe counts once all users have been  added
+                  if ((limit && (savedUsers + users.length >= max))
+                        || (!limit && (savedUsers >= max))) {
+                    for (var j = 0; j < tribes.length; j++) {
+                      Tribe.findByIdAndUpdate(tribes[j]._id, tribes[j], function (err) {
+                        if (err) {
+                          console.error(err);
+                        }
+                      });
+                    }
+                  }
+
                   if (!err && admin!== undefined) {
                     console.log('Created admin user. Login with: ' + admin + ' / password');
                   } else if (err && admin !== undefined) {
