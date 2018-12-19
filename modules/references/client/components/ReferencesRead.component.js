@@ -30,7 +30,7 @@ export default class ReferencesRead extends React.Component {
       <div>Read references of {this.props.user.username}.</div>
       <ul>
         {this.state.references.map(reference => (
-          <li key={reference._id}>
+          <li key={reference._id} id={reference._id}>
             <Reference reference={reference} />
           </li>
         ))}
