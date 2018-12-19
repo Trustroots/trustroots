@@ -194,7 +194,7 @@
               <p>
                 By signing up you agree to abide to our
                 <span class="visible-xs-inline">rules</span>
-                <a class="hidden-xs" ui-sref="rules" ng-click="signup.openRules($event);" uib-tooltip="Read rules" tooltip-placement="bottom">rules</a>
+                <a class="hidden-xs" ui-sref="rules" ng-click="signup.openRules($event);" uib-tooltip="Read rules" tooltip-placement="bottom">rules</a>,
                 that include standards of behavior that apply to everyone.
               </p>
             </div>
@@ -210,12 +210,14 @@
 
           <!-- How did you hear about us -->
           <div class="form-group">
-            <div class="col-sm-offset-4 col-sm-8">
-              <p>How did you hear about Trustroots?</p>
+            <label class="col-sm-4 control-label"
+                   for="acquisitionStory">How did you hear about us?</label>
+            <div class="col-sm-8">
               <input type="text"
-                     name="profileSignupHowHeardAboutUs"
+                     id="acquisitionStory"
+                     name="acquisitionStory"
                      class="form-control input-lg"
-                     ng-model="signup.credentials.profileSignupHowHeardAboutUs">
+                     ng-model="signup.credentials.acquisitionStory">
             </div>
           </div>
           <!-- /How did you hear about us -->
