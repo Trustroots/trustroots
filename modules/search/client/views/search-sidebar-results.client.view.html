@@ -64,7 +64,7 @@
         </span>
       </div>
       <div class="search-result-tagline"
-           ng-if="::search.offer.user.tagline"
+           ng-if="::search.offer.user.tagline && search.offer.type !== 'meet'"
            ng-bind="::search.offer.user.tagline"></div>
       <div class="search-result-hosting">
         <div class="search-result-label"
