@@ -7,6 +7,7 @@ var _ = require('lodash'),
     path = require('path'),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
+    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
     authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
@@ -72,6 +73,10 @@ exports.signup = function (req, res) {
 
       user.emailToken = authenticationService.generateEmailToken(user, salt);
 
+      if (req.body.acquisitionStory != null) {
+        user.acquisitionStory = textService.plainText(req.body.acquisitionStory.trim(0, 5000));
+      }
+
       // Then save the user
       user.save(function (err) {
         // Remove sensitive data before login
@@ -82,19 +87,6 @@ exports.signup = function (req, res) {
 
       });
 
-    },
-
-    // Report how did you hear about us to stats
-    function (user, done) {
-      statService.stat({
-        namespace: 'profileSignupHowHeardAboutUs',
-        fields: {
-          // userID: req.body.userID,
-          freetext: req.body.profileSignupHowHeardAboutUs
-        }
-      }, function (err) {
-        done(err, user);
-      });
     },
 
     // Send email
