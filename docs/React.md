@@ -94,6 +94,10 @@ export default class ProfileViewBasics {
 }
 ```
 
+## Internacionalization
+
+Read [a manual](i18n.md).
+
 ## Testing
 
 Testing is done with `Jasmine` and [`Enzyme`](https://github.com/airbnb/enzyme).
