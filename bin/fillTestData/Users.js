@@ -172,7 +172,8 @@ var addUsers = function () {
           if (index >= max) {
             console.log(chalk.green(users.length + ' users already exist. No users created!'));
             console.log(chalk.white('')); // Reset to white
-            process.exit(0);
+            done(null);
+            return;
           }
 
           console.log(chalk.white('--'));
@@ -269,16 +270,35 @@ var addUsers = function () {
 
         // Update tribes with the new tribe counts once all users have been  added
         function updateTribes(done) {
-          for (var j = 0; j < tribes.length; j++) {
-            Tribe.findByIdAndUpdate(tribes[j]._id, tribes[j], function (err) {
-              if (err) {
-                console.error(err);
-              }
-            });
+          var numTribesUpdated = 0;
+
+          // If we didn't add any users, tribes do not need to be updated
+          if (savedUsers === 0) {
+            done(null);
+          } else {
+            // Update tribes
+            for (var j = 0; j < tribes.length; j++) {
+              Tribe.findByIdAndUpdate(tribes[j]._id, tribes[j], function (err) {
+                if (err) {
+                  console.error(err);
+                }
+
+                numTribesUpdated += 1;
+                if (tribes.length === numTribesUpdated) {
+                  done(null);
+                }
+              });
+            }
           }
-          done(null);
-          process.exit(0);
+        },
+
+        // disconnect from mongo
+        function disconnect(done) {
+          mongooseService.disconnect(function () {
+            done(null);
+          });
         }
+
       ]); // asyc.waterfall
 
     });
