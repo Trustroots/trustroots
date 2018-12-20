@@ -118,6 +118,7 @@ module.exports = {
       'config/env/**',
       'config/webpack/**',
       'config/lib/i18n.js',
+      'config/lib/axios.js',
       'modules/core/client/app/config.js',
       'modules/**/client/components/**',
       'modules/**/client/api/**',
