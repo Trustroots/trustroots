@@ -8,6 +8,7 @@ export function ReferencesReadPresentational({ t, publicReferences, nonpublicRef
 
   // only self can see that they received nonpublic references
   const hasNonpublicReferences = nonpublicReferences && nonpublicReferences.length > 0;
+  const hasPublicReferences = publicReferences && publicReferences.length > 0;
 
   const positiveCount = publicReferences.filter(({ recommend }) => recommend === 'yes').length;
   const unknownCount = publicReferences.filter(({ recommend }) => recommend === 'unknown').length;
@@ -22,6 +23,8 @@ export function ReferencesReadPresentational({ t, publicReferences, nonpublicRef
     </div>
   );
 
+  const noReferences = <div>No references yet.</div>;
+
   return (<>
     {referenceCount}
     {hasNonpublicReferences && (<section>
@@ -35,7 +38,7 @@ export function ReferencesReadPresentational({ t, publicReferences, nonpublicRef
       </ul>
     </section>)}
 
-    <section>
+    {hasPublicReferences && (<section>
       <div>{t('Public')}</div>
       <ul>
         {publicReferences.map(reference => (
@@ -44,7 +47,9 @@ export function ReferencesReadPresentational({ t, publicReferences, nonpublicRef
           </li>
         ))}
       </ul>
-    </section>
+    </section>)}
+
+    {!hasNonpublicReferences && !hasPublicReferences && noReferences}
   </>);
 };
 
