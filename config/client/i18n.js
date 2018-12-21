@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { reactI18nextModule } from 'react-i18next';
 import backend from 'i18next-xhr-backend';
+import detector from 'i18next-browser-languagedetector';
 import moment from 'moment';
 
 /**
@@ -44,17 +45,23 @@ function format(value, format, languageCode) {
 }
 
 i18n
+  .use(detector)
   .use(backend)
   .use(reactI18nextModule) // passes i18n down to react-i18next
   .init({
-    lng: 'en', // a default app locale
     // allow keys to be phrases having `:`, `.`
+    fallbackLng: 'en', // a default app locale
     nsSeparator: false,
-    // saveMissing: true, // @TODO send not translated keys to endpoint
     keySeparator: false, // we do not use keys in form messages.welcome
+    // saveMissing: true, // @TODO send not translated keys to endpoint
     interpolation: {
       escapeValue: false, // react already safes from xss
       format
+    },
+    detection: {
+      lookupCookie: 'i18n',
+      order: ['cookie'],
+      chaches: ['cookie']
     }
     // saveMissingPlurals: true,
     // debug: true // show missing translation keys in console.log
