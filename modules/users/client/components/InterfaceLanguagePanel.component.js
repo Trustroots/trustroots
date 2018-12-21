@@ -18,7 +18,10 @@ export default function InterfaceLanguagePanel() {
 
                 <div className="form-group">
                   <div className="col-sm-9 col-md-7 col-lg-6">
-                    <LanguageSwitch presentation="select" />
+                    <LanguageSwitch
+                      presentation="select"
+                      saveToAPI={true}
+                    />
                   </div>
                 </div>
 

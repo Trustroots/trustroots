@@ -1,6 +1,9 @@
 import React from 'react';
 import i18n from '@/config/client/i18n';
 import PropTypes from 'prop-types';
+import * as users from '@/modules/users/client/api/users.api';
+
+const api = { users };
 
 export default class LanguageSwitchContainer extends React.Component {
   constructor(props) {
@@ -14,9 +17,14 @@ export default class LanguageSwitchContainer extends React.Component {
     this.handleChangeLanguage = this.handleChangeLanguage.bind(this);
   }
 
-  handleChangeLanguage(languageCode) {
+  async handleChangeLanguage(languageCode) {
     this.setState(() => ({ currentLanguageCode: languageCode }));
     i18n.changeLanguage(languageCode);
+
+    // save the user's choice to api
+    if (this.props.saveToAPI) {
+      await api.users.update({ locale: languageCode });
+    }
   }
 
   render() {
@@ -30,5 +38,6 @@ export default class LanguageSwitchContainer extends React.Component {
 }
 
 LanguageSwitchContainer.propTypes = {
-  presentation: PropTypes.func.isRequired
+  presentation: PropTypes.func.isRequired,
+  saveToAPI: PropTypes.bool.isRequired
 };

@@ -58,14 +58,15 @@ LanguageSwitchSelectPresentation.propTypes = {
   onChangeLanguage: PropTypes.func
 };
 
-export default function LanguageSwitch({ presentation='dropdown' }) {
+export default function LanguageSwitch({ presentation='dropdown', saveToAPI=false }) {
   return (
     <LanguageSwitchContainer presentation={
       (presentation === 'dropdown') ? LanguageSwitchDropdownPresentation : LanguageSwitchSelectPresentation
-    } />
+    } saveToAPI={saveToAPI} />
   );
 }
 
 LanguageSwitch.propTypes = {
-  presentation: PropTypes.string
+  presentation: PropTypes.string,
+  saveToAPI: PropTypes.bool
 };
