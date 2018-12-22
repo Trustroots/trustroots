@@ -23,6 +23,7 @@ export default class LanguageSwitchContainer extends React.Component {
 
     // save the user's choice to api
     if (this.props.saveToAPI) {
+      // @TODO this needs some feedback. Currently no feedback to user that this was saved.
       await api.users.update({ locale: languageCode });
     }
   }
