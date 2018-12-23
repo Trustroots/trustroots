@@ -58,7 +58,6 @@ const es2018rules = {
 };
 
 const angularRules = {
-  ...defaultRules,
   'angular/component-limit': 0,
   'angular/controller-as-route': 1,
   'angular/controller-as-vm': 1,
