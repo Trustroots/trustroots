@@ -113,7 +113,24 @@ More information can be found in the NodeJS [debug documentation](https://nodejs
 - `npm run test:server`
 - `npm run test:server:watch` (run + watch for changes)
 
-To lint files, run `npm run lint`
+## Coding styles
+
+We apply [Eslint](https://eslint.org/) rules to our JavaScript files so you might want to consider installing [editor integration](https://eslint.org/docs/user-guide/integrations#editors) to let it point out errors and warnings.
+
+Files are linted as you modify them when running `npm start`, but if you need to lint all the files separately, run:
+```bash
+npm run lint
+```
+
+To continuously lint files as you modify them, run:
+```bash
+npm run lint:watch
+```
+
+To let Eslint fix linting errors automatically, append `-- --fix` to either regular lint or -watch command like so:
+```bash
+npm run lint:watch -- --fix
+```
 
 ## Mock data
 
@@ -218,4 +235,3 @@ If you prefer [ImageMagick](http://www.imagemagick.org/) over [GraphicsMagick](h
 - [Contact us](https://www.trustroots.org/contact)
 - https://meta.trustroots.org/
 - https://trustroots.slack.com/
-

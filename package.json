@@ -34,7 +34,7 @@
     "ensure-uploads-dir-exists": "node ./bin/ensure-uploads-dir-exists.js",
     "fontello": "gulp fontello",
     "install-dependencies": "node ./bin/install-deps.js",
-    "lint:watch": "esw --cache --fix --watch .",
+    "lint:watch": "esw --cache --watch .",
     "lint": "eslint .",
     "migrate-down": "migrate down",
     "migrate": "migrate up",
