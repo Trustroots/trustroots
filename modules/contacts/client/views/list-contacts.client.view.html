@@ -43,17 +43,13 @@
     <div class="col-xs-12 col-sm-6"
          ng-repeat="contact in ContactsList.contacts | filter:ContactsList.searchText track by contact._id"
          ng-if="contact.confirmed === isConfirmed">
-      <div class="contacts-contact panel panel-default"
-           tr-contact-avatar-size="128"
-           tr-contact-profile-id="::profileCtrl.profile._id"
-           tr-contact="::contact"></div>
-      <div class="contacts-contact panel panel-default">
-        <contact
-          contact="::contact"
-          avatarSize="128"
-          selfId="app.user._id"
-        ></contact>
-      </div>
+      <contact
+        class="contacts-contact panel panel-default"
+        contact="::contact"
+        avatarSize="128"
+        selfId="app.user._id"
+        onContactRemoved="ContactsList.broadcastRemoveContact"
+      ></contact>
     </div>
   </div>
 

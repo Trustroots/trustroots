@@ -2,6 +2,9 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import ContactPresentational from './ContactPresentational';
 import RemoveContact from './RemoveContact';
+import * as contacts from '../api/contacts.api';
+
+const api = { contacts };
 
 export default class Contact extends Component {
 
@@ -23,9 +26,11 @@ export default class Contact extends Component {
 
   async handleRemoveContact() {
     this.setState(() => ({ removeInProgress: true }));
-    await new Promise(resolve => setTimeout(() => resolve(), 2000)); // eslint-disable-line angular/timeout-service
+    await api.contacts.remove(this.props.contact._id);
     this.setState(() => ({ removeInProgress: false }));
     this.handleRemoveContactModal(false);
+    // broadcast the change to angular
+    this.props.onContactRemoved(this.props.contact);
   }
 
   render() {
@@ -56,7 +61,10 @@ Contact.propTypes = {
   contact: PropTypes.object.isRequired,
   avatarSize: PropTypes.number,
   selfId: PropTypes.string.isRequired,
-  hideMeta: PropTypes.bool
+  hideMeta: PropTypes.bool,
+  // this is a function provided from Angular. It broadcasts the information that a contact was removed.
+  // @TODO this won't be needed when migration is finished
+  onContactRemoved: PropTypes.func.isRequired
 };
 
 function getSituation(contact, selfId) {
