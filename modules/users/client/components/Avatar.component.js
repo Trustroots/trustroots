@@ -1,8 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import has from 'lodash/has';
-import '@/config/lib/i18n';
-import { withNamespaces } from 'react-i18next';
+import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 
 /**
  * User's avatar
@@ -41,23 +40,15 @@ export function Avatar({ t, user, size=256, source='', link=true }) {
   );
 }
 
-const AvatarHOC = withNamespaces('user')(Avatar);
-
-AvatarHOC.propTypes = {
+Avatar.propTypes = {
+  t: PropTypes.func.isRequired,
   user: PropTypes.object.isRequired,
   size: PropTypes.number,
   source: PropTypes.string,
   link: PropTypes.bool
 };
 
-Avatar.propTypes = {
-  ...AvatarHOC.propTypes,
-  t: PropTypes.func.isRequired
-};
-
-Object.defineProperty(AvatarHOC, 'name', { value: 'Avatar' });
-
-export default AvatarHOC;
+export default withNamespaces('user')(Avatar);
 
 
 /**
