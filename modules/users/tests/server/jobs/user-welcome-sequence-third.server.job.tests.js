@@ -103,9 +103,12 @@ describe('Job: welcome sequence, third email', function () {
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal('How is it going, ' + _confirmedUser.firstName + '?');
+      // Check that the email contains a link to profile
+      jobs[0].data.html.should.match(/href="http.+\/profile\/user_confirmed/);
       done();
     });
   });
+
 
   it('Do not send first and second welcome sequence email when everyone is on step 3', function (done) {
     // Run first welcome sequence email job

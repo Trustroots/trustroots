@@ -94,6 +94,19 @@ describe('Job: welcome sequence, first email', function () {
     confirmedUser.save(done);
   });
 
+  it('Send first welcome sequence email to confirmed users only', function (done) {
+    userWelcomeSequenceFirstJobHandler({}, function (err) {
+      if (err) return done(err);
+      // Confirmed user received welcome email, unconfirmed didn't
+      jobs.length.should.equal(1);
+      jobs[0].type.should.equal('send email');
+      jobs[0].data.subject.should.match(new RegExp('Welcome to Trustroots ' + _confirmedUser.firstName + '!'));
+      // Check that the email contains a link to profile
+      jobs[0].data.html.should.match(/href="http.+\/profile\/user_confirmed/);
+      done();
+    });
+  });
+
   it('Do not send welcome sequence emails to unconfirmed users', function (done) {
     unConfirmedUser.save(function (err) {
       if (err) return done(err);
@@ -124,6 +137,7 @@ describe('Job: welcome sequence, first email', function () {
       });
     });
   });
+
 
   it('Do not send welcome sequence emails to suspended users', function (done) {
     confirmedUser.roles = ['suspended'];

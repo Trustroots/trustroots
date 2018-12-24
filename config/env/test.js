@@ -11,10 +11,9 @@
  */
 
 module.exports = {
-  // Feature flags
   featureFlags: {
-    // enable references?
-    reference: true
+    reference: true,
+    i18n: true
   },
   db: {
     uri: 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trustroots-test',
@@ -54,12 +53,12 @@ module.exports = {
   },
   mapbox: {
     // Mapbox is publicly exposed to the frontend
-    user: process.env.MAPBOX_USERNAME || 'trustroots',
+    user: 'trustroots',
     map: {
-      default: process.env.MAPBOX_MAP_DEFAULT || false,
-      satellite: process.env.MAPBOX_MAP_SATELLITE || false,
-      hitchmap: process.env.MAPBOX_MAP_HITCHMAP || false
+      default: false,
+      satellite: false,
+      hitchmap: false
     },
-    publicKey: process.env.MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
+    publicKey: 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
   }
 };

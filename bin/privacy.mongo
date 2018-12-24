@@ -1,0 +1,25 @@
+#!/usr/bin/env mongo
+
+
+// @todo This needs a variable so we can also make other databases
+// more private (not just tranalysis)
+
+var db = new Mongo().getDB("trustroots-dev");
+
+// password1234
+
+// const salt = crypto.randomBytes(16).toString('base64');
+// const passwordHash = crypto.pbkdf2Sync('correcthorsebatterystaplesOrOtherPassword', Buffer.from(salt, 'base64'), 10000, 64, 'SHA1').toString('base64');
+// passwordHash
+// salt
+
+db.users.update({}, { '$set': { salt: 'u26cQIumbZ1zLUrt5PugAg==', password: 'YO8Mkenw9ll6GXC/w4SZUhuhMBwAJbghUEyDN0e6R9ekpBBmK6ko6QEwbO9DzNutL5jGpa4sqpe/8Lfj9GT/fQ=='} }, { multi: true });
+
+// @todo 'email' and 'emailTemporary' fields but not sure how to do
+// that in one query since they should be unique.
+// Would be cool to have a dump+anonymize script
+
+db.sessions.remove({});
+db.agendaJobs.remove({});
+
+// @todo garble messages?

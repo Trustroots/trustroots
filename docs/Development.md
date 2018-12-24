@@ -10,8 +10,6 @@
 * It would be good if you'd get familiar with the code base with smaller tasks, see [easy](https://github.com/Trustroots/trustroots/issues?q=is%3Aopen+is%3Aissue+label%3Aeasy) tag for those. Ask us for guidance and we'll help.
 * We're looking forward to work with proactive, talented hackers! :-) It's easier to work with people who can commit for longer term, who are proactive and can work independently. [Kudos!](https://github.com/Trustroots/trustroots/blob/master/public/humans.txt)
 
-We're trying waffle.io to get [an overview of issues](https://waffle.io/Trustroots/trustroots).
-
 # How to write code
 * Master is the most up-to-date branch and updated frequently. New feature branches are under our own repository and work is merged via pull requests, apart from very small changes. If you're not actively working on Trustroots yet, just fork the project and send pull requests from your repo.
 * [Tests](#Testing)! [We use Travis-cli](https://travis-ci.org/) to inform us when something fails. Don't be the weasel! :-)
@@ -23,6 +21,7 @@ We're trying waffle.io to get [an overview of issues](https://waffle.io/Trustroo
 # The application
 * **MEAN** stack, seeded originally with [MEAN.js](http://meanjs.org/) boilerplate: [MongoDB](www.mongodb.org), [ExpressJS](http://expressjs.com/), [AngularJS](https://angularjs.org/) v1, [NodeJS](http://nodejs.org/). Additionally stuff like [Bootstrap](http://getbootstrap.com/), [Leaflet](http://leafletjs.com/) etc. 
 * [[Database]] scheme (look for `*.server.model.js` project files to check most up to date info)
+* We're migrating the client to React. Read a [migration guide](React.md).
 
 # The mobile app
 We have a React Native app for Android written in ClojureScript: https://github.com/Trustroots/Trustroots-React-Native

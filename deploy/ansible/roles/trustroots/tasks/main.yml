@@ -26,6 +26,9 @@
     dest: /srv/trustroots
     force: yes
     version: "{{ version | default('HEAD') }}"
+## this is currently not needed as node.yml restarts the server on every runn anyways
+#  notify:
+#    - restart all pm2 processes
   tags:
     - git
 

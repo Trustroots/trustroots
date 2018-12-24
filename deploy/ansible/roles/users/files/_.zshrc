@@ -3770,3 +3770,6 @@ zrclocal
 # Local variables:
 # mode: sh
 # End:
+
+cd /srv/trustroots
+

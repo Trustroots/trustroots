@@ -249,6 +249,11 @@ var UserSchema = new Schema({
     type: Boolean,
     default: false
   },
+  /* Preferred interface language (client, emails, ...) */
+  locale: {
+    type: String,
+    default: ''
+  },
   passwordUpdated: {
     type: Date
   },
@@ -348,5 +353,7 @@ UserSchema.methods.authenticate = function (password) {
  * @link https://www.npmjs.com/package/mongoose-beautiful-unique-validation
  */
 UserSchema.plugin(uniqueValidation);
+
+UserSchema.index({ username: 'text', firstName: 'text', lastName: 'text' });
 
 mongoose.model('User', UserSchema);

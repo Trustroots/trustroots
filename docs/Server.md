@@ -1,8 +1,14 @@
-As of December 2018 we're in the process of moving to deploying everything [through ansible](https://github.com/Trustroots/trustroots/tree/master/deploy/ansible). For now we have done the basics for https://dev.trustroots.org/ and https://staging.trustroots.org/.
+As of December 2018 we're in the process of moving to deploying
+everything [through
+ansible](https://github.com/Trustroots/trustroots/tree/master/deploy/ansible). For
+now we have done the basics for https://dev.trustroots.org/ and
+https://staging.trustroots.org/.
 
 ----------------------
 
-Trustroots runs on [DigitalOcean](https://www.digitalocean.com/?refcode=6dc078966c9c) (_referral link_) Ubuntu 14.04 droplet.
+Trustroots runs on
+[DigitalOcean](https://www.digitalocean.com/?refcode=6dc078966c9c)
+(_referral link_) Ubuntu 14.04 droplet.
 
 This is how to configure production server.
 

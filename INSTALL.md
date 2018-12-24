@@ -62,6 +62,11 @@ npm start
 
 Add any configurations you want to keep out of version control to `config/env/local.js` file. It's created for you on the first start and overrides anything in `config/env/local.js`.
 
+## Access the server from another device
+* Make sure you are connected to the same network (WIFI/LAN). Find your ip address using `ipconfig` or `ifconfig`.
+* Add `host: null` into  `config/env/local.js`
+* Alternatively you can also use https://ngrok.com/
+
 ## Development tools
 
 ### Emails
@@ -108,7 +113,24 @@ More information can be found in the NodeJS [debug documentation](https://nodejs
 - `npm run test:server`
 - `npm run test:server:watch` (run + watch for changes)
 
-To lint files, run `npm run lint`
+## Coding styles
+
+We apply [Eslint](https://eslint.org/) rules to our JavaScript files so you might want to consider installing [editor integration](https://eslint.org/docs/user-guide/integrations#editors) to let it point out errors and warnings.
+
+Files are linted as you modify them when running `npm start`, but if you need to lint all the files separately, run:
+```bash
+npm run lint
+```
+
+To continuously lint files as you modify them, run:
+```bash
+npm run lint:watch
+```
+
+To let Eslint fix linting errors automatically, append `-- --fix` to either regular lint or -watch command like so:
+```bash
+npm run lint:watch -- --fix
+```
 
 ## Mock data
 
@@ -125,13 +147,15 @@ For more custom setups, you can alternatively run the scripts for generating dat
 1. To add tribes, run `npm run seed:tribes 50` — This will create 50 tribes.
     * Run this prior to adding users to add users to tribes automatically
 
-2. To add users, run `npm run seed:users 1000 adminusername` — This will create 1000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
+2. To add users, run `npm run seed:users 1000 -- --userNames adminusername` — This will create 1000 users and hosting offers. `adminusername` is optional (a-z0-9) and will create an admin user.
     * It can take up to 5 minutes. Mongoose might complain about duplicates — just ignore these errors.
     * To see the result, log in with your chosen username and password `password123`.
-    * Additional admin usernames are also supported (eg. `npm run seed:users 1000 admin1 admin2 admin3`)
+    * Additional admin usernames are also supported (eg. `npm run seed:users 1000 -- --userNames admin1 admin2 admin3`)
     * If tribes exist, users will also be added to random tribes
 
 3. To add messages, run `npm run seed:messages 1000 10` — This will create 1000 message threads between random users with up to 10 messages in each thread.
+
+All scripts additionally support `--debug` and `--limit` flags showing database debug information and not creating new elements if the number of database items already exist respectively.
 
 ## Clean database
 
@@ -211,4 +235,3 @@ If you prefer [ImageMagick](http://www.imagemagick.org/) over [GraphicsMagick](h
 - [Contact us](https://www.trustroots.org/contact)
 - https://meta.trustroots.org/
 - https://trustroots.slack.com/
-

@@ -10,3 +10,6 @@
   tags: nginx
 
 
+- name: pm2 restart-all handler
+  import_task: node.yml
+  tags: node 

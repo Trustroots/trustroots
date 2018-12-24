@@ -215,6 +215,16 @@ describe('Tribe Model Unit Tests:', function () {
       });
     });
 
+    it('should save label with all capital letters', function (done) {
+      var _tribe = new Tribe(tribe1);
+
+      _tribe.label = 'LABEL';
+      _tribe.save(function (err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
     it('should be able to show an error when trying to save a label without at least one alpha character', function (done) {
       var _tribe = new Tribe(tribe1);
 

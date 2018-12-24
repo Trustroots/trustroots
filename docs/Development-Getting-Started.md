@@ -2,12 +2,14 @@ OK, so you've read the [[dev|Development]] page, you're running the code locally
 
 ## MEAN
 
-Trustroots is built on MEAN. They have [great documentation](http://meanjs.org/docs.html). Here's a few general pointers to get started:
+Trustroots was built on MEAN. MEAN [isn't active anymore](https://github.com/Trustroots/trustroots/issues/638) so it's better not to rely too much on  [their documentation](http://meanjs.org/docs.html). Here's a few general pointers to get started:
 
 * The app uses [MongoDB](https://www.mongodb.org/) for data storage.
 * Node / Express server side to publish APIs.
 * Angular client side to pull from APIs and render templates.
 * The development stack is glued together with [grunt](http://gruntjs.com/) and other magic.
+
+Also note that as of 2018Q4 we're moving to [React](. See also https://github.com/Trustroots/trustroots/labels/React
 
 ## Layout
 

@@ -329,6 +329,7 @@ exports.sendWelcomeSequenceFirst = function (user, callback) {
     firstName: user.firstName,
     name: user.displayName,
     email: user.email,
+    username: user.username,
     urlFAQ: analyticsHandler.appendUTMParams(urlFAQ, utmParams),
     urlEditProfile: analyticsHandler.appendUTMParams(urlEditProfile, utmParams),
     utmCampaign: campaign,
@@ -360,6 +361,7 @@ exports.sendWelcomeSequenceSecond = function (user, callback) {
     firstName: user.firstName,
     name: user.displayName,
     email: user.email,
+    username: user.username,
     urlMeetup: analyticsHandler.appendUTMParams(urlMeet, utmParams),
     utmCampaign: campaign,
     sparkpostCampaign: campaign
@@ -397,6 +399,7 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
     firstName: user.firstName,
     name: user.displayName,
     email: user.email,
+    username: user.username,
     urlEditProfile: analyticsHandler.appendUTMParams(urlEditProfile, utmParams),
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
@@ -414,6 +417,10 @@ exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
   var params = exports.addEmailBaseTemplateParams({
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
+    username: userTo.username, // data needed for link to profile in footer
+    userFrom: userFrom,
+    userTo: userTo,
+    userFromProfileUrl: url + '/profile/' + userFrom.username,
     giveReferenceUrl: url + '/profile/' + userFrom.username + '/references/new'
   });
 
@@ -428,6 +435,10 @@ exports.sendReferenceNotificationSecond = function (userFrom, userTo, reference,
   var params = exports.addEmailBaseTemplateParams({
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
+    username: userTo.username, // data needed for link to profile in footer
+    userFrom: userFrom,
+    userTo: userTo,
+    userFromProfileUrl: url + '/profile/' + userFrom.username,
     seeReferencesUrl: url + '/profile/' + userTo.username + '/references',
     recommend: reference.recommend
   });
@@ -454,27 +465,21 @@ exports.addEmailBaseTemplateParams = function (params) {
   params.urlSupportPlainText = baseUrl + '/support';
   params.footerUrlPlainText = baseUrl;
 
-  params.headerUrl = analyticsHandler.appendUTMParams(baseUrl, {
-    source: 'transactional-email',
-    medium: 'email',
-    campaign: params.utmCampaign || 'transactional-email',
-    content: 'email-header'
-  });
+  var buildAnalyticsUrl = function (url, content) {
+    return analyticsHandler.appendUTMParams(url, {
+      source: 'transactional-email',
+      medium: 'email',
+      campaign: params.utmCampaign || 'transactional-email',
+      content: content
+    });
+  };
 
-  params.footerUrl = analyticsHandler.appendUTMParams(baseUrl, {
-    source: 'transactional-email',
-    medium: 'email',
-    campaign: params.utmCampaign || 'transactional-email',
-    content: 'email-footer'
-  });
-
-  params.supportUrl = analyticsHandler.appendUTMParams(params.urlSupportPlainText, {
-    source: 'transactional-email',
-    medium: 'email',
-    campaign: params.utmCampaign || 'transactional-email',
-    content: 'email-support'
-  });
-
+  params.headerUrl = buildAnalyticsUrl(baseUrl, 'email-header');
+  params.footerUrl = buildAnalyticsUrl(baseUrl, 'email-footer');
+  params.supportUrl = buildAnalyticsUrl(params.urlSupportPlainText, 'email-support');
+  if (params.username) {
+    params.profileUrl = buildAnalyticsUrl(baseUrl + '/profile/' + params.username, 'email-profile');
+  }
   return params;
 };
 

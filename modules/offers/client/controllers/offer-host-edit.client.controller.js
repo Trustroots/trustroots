@@ -6,7 +6,7 @@
     .controller('OfferHostEditController', OfferHostEditController);
 
   /* @ngInject */
-  function OfferHostEditController($window, $state, $stateParams, $analytics, $timeout, leafletData, OffersService, Authentication, messageCenterService, offers, defaultLocation) {
+  function OfferHostEditController($window, $state, $stateParams, $analytics, $timeout, leafletData, OffersService, Authentication, messageCenterService, offers, defaultLocation, $scope, $filter) {
 
     // ViewModel
     var vm = this;
@@ -21,6 +21,7 @@
     vm.isLoading = true;
     vm.firstTimeAround = false;
     vm.invalidateMapSize = invalidateMapSize;
+    vm.isDescriptionTooShort = false;
 
     activate();
 
@@ -83,6 +84,10 @@
         });
 
     }
+
+    $scope.$watch('offerHostEdit.offer.description', function (newValue) {
+      vm.isDescriptionTooShort = $filter('plainTextLength')(newValue) < 5;
+    });
 
     /**
      * Invalidate map size on tab change

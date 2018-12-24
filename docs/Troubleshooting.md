@@ -61,6 +61,11 @@ If you get errors about `node-gyp` when doing `npm install/update`, check you ha
 
 This is most likely required by [lwip](https://github.com/EyalAr/lwip) package, basically a library handling image processing.
 
+Assuming you have the above installed and are still having issues, the next step is verifying that you are pointing at the correct version of build tools. In some cases, package managers can cause incompatibilities (brew, nvm, etc.) and similarly with manual installs of various tools. It maybe helpful to:
+
+* Check your path for any non-standard tool or bin directories (eg. `/Applications/MAMP/Library/bin/`). It may be helpful to remove them or comment them out temporarily.
+* Verify the location of libtool using `which libtool`to see you are using the version installed above.
+
 #### ImportError: No module named site
 If you see error `ImportError: No module named site` when doing `npm install/update`, unsetting these python variables might help:
 ```bash

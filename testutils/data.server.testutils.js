@@ -27,11 +27,12 @@ function getRandInt(exclusiveMaximum) {
  * @param {string} [defs.firstName=GivenName] - first name (will have a number appended)
  * @param {string} [defs.lastName=FamilyName] - last name (will have a number appended)
  * @param {string} [defs.email=user(at)example.com] - email (will have a number prepended)
+ * @param {string} [defs.locale=] - locale (preferred language)
  * @param {boolean} [defs.publ] - is the user public? (defaults to a random boolean)
  * @param {string} [defs.password] - password (defaults to a random password)
  * @returns {object[]} array of user data
  */
-function generateUsers(count, { username='username', firstName='GivenName', lastName='FamilyName', email='user@example.com', public: pub, password }={ }) {
+function generateUsers(count, { username='username', firstName='GivenName', lastName='FamilyName', email='user@example.com', locale='', public: pub, password }={ }) {
 
   return _.range(count).map(i => ({
     public: (typeof pub === 'boolean') ? pub : !getRandInt(2),
@@ -40,6 +41,7 @@ function generateUsers(count, { username='username', firstName='GivenName', last
     email: i + email,
     username: username + i,
     displayUsername: username + i,
+    locale,
     password: password || crypto.randomBytes(24).toString('base64')
   }));
 }

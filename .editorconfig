@@ -1,46 +1,19 @@
-# EditorConfig is awesome: http://EditorConfig.org
-
-# top-most EditorConfig file
+# http://editorconfig.org
 root = true
 
-# Unix-style newlines with a newline ending every file
 [**]
+indent_style = space
+indent_size = 2
 end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
 insert_final_newline = true
 
-# Standard at: https://github.com/felixge/node-style-guide
-[**.{js,json}]
-trim_trailing_whitespace = true
-indent_style = space
-indent_size = 2
-max_line_length = off
-quote_type = single
-curly_bracket_next_line = false
-spaces_around_operators = true
-space_after_control_statements = true
-space_after_anonymous_functions = false
-spaces_in_brackets = false
-
-# https://github.com/jedmao/codepainter
-[node_modules/**.js]
-codepaint = false
-
-[**.{yml,html,css,less}]
-trim_trailing_whitespace = true
-indent_style = space
-indent_size = 2
+[**.md]
+trim_trailing_whitespace = false
 
 [**.json]
 insert_final_newline = false
-trim_trailing_whitespace = true
-
-[**.md]
-indent_style = space
 
 [**.py]
-indent_style = space
 indent_size = 4
-
-[Makefile]
-indent_style = tab
-indent_size = 8

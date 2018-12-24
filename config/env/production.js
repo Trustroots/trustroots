@@ -24,6 +24,5 @@ module.exports = {
     debug: false,
     // Check for MongoDB version compatibility on start
     checkCompatibility: false
-  },
-  domain: process.env.DOMAIN || 'www.trustroots.org'
+  }
 };
