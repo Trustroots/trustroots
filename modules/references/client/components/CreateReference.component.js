@@ -1,8 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Tab, Tabs } from 'react-bootstrap';
-import '@/config/lib/i18n';
-import { withNamespaces } from 'react-i18next';
+import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 import * as references from '../api/references.api';
 import Navigation from './create-reference/Navigation';
 import Interaction from './create-reference/Interaction';
@@ -165,18 +164,10 @@ export class CreateReference extends React.Component {
   }
 }
 
-const CreateReferenceHOC = withNamespaces('reference')(CreateReference);
-
-Object.defineProperty(CreateReferenceHOC, 'name', { value: 'CreateReference' });
-
-CreateReferenceHOC.propTypes = {
-  userFrom: PropTypes.object.isRequired,
-  userTo: PropTypes.object.isRequired
-};
-
 CreateReference.propTypes = {
-  ...CreateReferenceHOC.propTypes,
+  userFrom: PropTypes.object.isRequired,
+  userTo: PropTypes.object.isRequired,
   t: PropTypes.func.isRequired
 };
 
-export default CreateReferenceHOC;
+export default withNamespaces('reference')(CreateReference);
