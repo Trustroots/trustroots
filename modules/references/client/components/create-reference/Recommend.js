@@ -1,14 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Report from './Report';
 import { ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
+import '@/config/lib/i18n';
+import { withNamespaces } from 'react-i18next';
+import Report from './Report';
 
-export default function Recommend({ primaryInteraction, recommend, report, reportMessage, onChangeRecommend, onChangeReport, onChangeReportMessage }) {
+const Recommend = withNamespaces('reference')(function ({ t, primaryInteraction, recommend, report, reportMessage, onChangeRecommend, onChangeReport, onChangeReportMessage }) {
 
   const recommendQuestions = {
-    hostedMe: 'Would you recommend others to stay with them?',
-    hostedThem: 'Would you recommend others to host them?',
-    met: 'Would you recommend others to meet them?'
+    hostedMe: t('Would you recommend others to stay with them?'),
+    hostedThem: t('Would you recommend others to host them?'),
+    met: t('Would you recommend others to meet them?')
   };
 
   const question = recommendQuestions[primaryInteraction];
@@ -27,29 +29,29 @@ export default function Recommend({ primaryInteraction, recommend, report, repor
           aria-labelledby="recommendationQuestion">
           <ToggleButton
             className="btn btn-lg"
-            aria-checked={ recommend === 'yes' }
+            aria-checked={recommend === 'yes'}
             value="yes"
             bsStyle="success"
             bsSize="large"
           >
-            Yes
+            {t('Yes')}
           </ToggleButton>
           <ToggleButton
             className="btn btn-lg"
-            aria-checked={ recommend === 'no' }
+            aria-checked={recommend === 'no'}
             value="no"
             bsStyle="danger"
             bsSize="large"
           >
-            No
+            {t('No')}
           </ToggleButton>
           <ToggleButton
-            aria-checked={recommend === 'unknown' }
+            aria-checked={recommend === 'unknown'}
             value="unknown"
             bsStyle="default"
             bsSize="large"
           >
-            I don&apos;t know
+            {t('I don\'t know')}
           </ToggleButton>
         </ToggleButtonGroup>
         {recommend === 'no' && (
@@ -63,7 +65,7 @@ export default function Recommend({ primaryInteraction, recommend, report, repor
       </div>
     </div>
   );
-}
+});
 
 Recommend.propTypes = {
   primaryInteraction: PropTypes.string.isRequired,
@@ -74,3 +76,5 @@ Recommend.propTypes = {
   onChangeReport: PropTypes.func.isRequired,
   onChangeReportMessage: PropTypes.func.isRequired
 };
+
+export default Recommend;

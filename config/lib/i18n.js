@@ -41,6 +41,7 @@ i18n
       escapeValue: false, // react already safes from xss
       format
     }
+    // debug: true // show missing translation keys in console.log
   });
 
 export default i18n;

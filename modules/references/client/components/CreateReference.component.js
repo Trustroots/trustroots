@@ -1,15 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Tab, Tabs } from 'react-bootstrap';
+import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 import * as references from '../api/references.api';
 import Navigation from './create-reference/Navigation';
 import Interaction from './create-reference/Interaction';
 import Recommend from './create-reference/Recommend';
 import { ReferenceToSelfInfo, LoadingInfo, DuplicateInfo, SubmittedInfo } from './create-reference/Info';
-import { Tab, Tabs } from 'react-bootstrap';
 
 const api = { references };
 
-export default class CreateReference extends React.Component {
+export class CreateReference extends React.Component {
 
   constructor(props) {
     super(props);
@@ -55,11 +56,7 @@ export default class CreateReference extends React.Component {
   }
 
   handleChangeInteraction(interactionType) {
-    this.setState(state => {
-      const interaction = { };
-      interaction[interactionType] = !state[interactionType];
-      return interaction;
-    });
+    this.setState(state => ({ [interactionType]: !state[interactionType] }));
   }
 
   handleChangeRecommend(recommend) {
@@ -97,6 +94,7 @@ export default class CreateReference extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     const { hostedMe, hostedThem, met, recommend, report, reportMessage } = this.state;
     const primaryInteraction = (hostedMe && 'hostedMe') || (hostedThem && 'hostedThem') || 'met';
 
@@ -142,12 +140,12 @@ export default class CreateReference extends React.Component {
         >
           <Tab
             eventKey={0}
-            title="How do you know them"
+            title={t('How do you know them')}
             disabled
           >{tabs[0]}</Tab>
           <Tab
             eventKey={1}
-            title="Recommendation"
+            title={t('Recommendation')}
             disabled
           >{tabs[1]}</Tab>
         </Tabs>
@@ -168,5 +166,8 @@ export default class CreateReference extends React.Component {
 
 CreateReference.propTypes = {
   userFrom: PropTypes.object.isRequired,
-  userTo: PropTypes.object.isRequired
+  userTo: PropTypes.object.isRequired,
+  t: PropTypes.func.isRequired
 };
+
+export default withNamespaces('reference')(CreateReference);

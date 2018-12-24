@@ -1,20 +1,21 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { withNamespaces } from 'react-i18next';
 
 /**
  * Navigation is a react component.
- * It can contain three different buttons: Back, Next, Submit. Each of them has a related property onBack, onNext, onSubmit
- *
+ * It can contain three different buttons: Back, Next, Submit.
+ * Each of them has a related property onBack, onNext, onSubmit
  */
-export default function Navigation(props) {
+export function Navigation({ t, disabled, tab, tabs, tabDone, onBack, onNext, onSubmit }) {
   const backButton = (
     <button
       type="button"
       className="btn btn-action btn-link"
       aria-label="Previous section"
-      onClick={props.onBack}>
+      onClick={onBack}>
       <span className="icon-left"></span>
-      Back
+      {t('Back')}
     </button>
   );
 
@@ -23,9 +24,9 @@ export default function Navigation(props) {
       type="button"
       className="btn btn-action btn-primary"
       aria-label="Next section"
-      onClick={props.onNext}
-      disabled={props.tabDone < props.tab}>
-      Next
+      onClick={onNext}
+      disabled={tabDone < tab}>
+      {t('Next')}
     </button>
   );
 
@@ -33,15 +34,15 @@ export default function Navigation(props) {
     <button
       className="btn btn-action btn-primary"
       aria-label="Submit reference"
-      onClick={props.onSubmit}
-      disabled={props.tabDone < props.tabs - 1 || props.disabled}>
-      Submit
+      onClick={onSubmit}
+      disabled={tabDone < tabs - 1 || disabled}>
+      {t('Submit')}
     </button>
   );
 
-  const showBackButton = props.tab > 0; // not the first tab
-  const showNextButton = props.tab < props.tabs - 1; // not the last tab
-  const showSubmitButton = props.tab === props.tabs - 1; // the last tab
+  const showBackButton = tab > 0; // not the first tab
+  const showNextButton = tab < tabs - 1; // not the last tab
+  const showSubmitButton = tab === tabs - 1; // the last tab
 
   return (
     <div className="text-center">
@@ -53,6 +54,7 @@ export default function Navigation(props) {
 }
 
 Navigation.propTypes = {
+  t: PropTypes.func.isRequired,
   onBack: PropTypes.func.isRequired,
   onNext: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
@@ -62,3 +64,4 @@ Navigation.propTypes = {
   tabDone: PropTypes.number.isRequired // which tab is already filled
 };
 
+export default withNamespaces('reference')(Navigation);

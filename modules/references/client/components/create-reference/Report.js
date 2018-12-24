@@ -1,40 +1,42 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import '@/config/lib/i18n';
+import { withNamespaces } from 'react-i18next';
 
-export default function Report(props) {
+const Report = withNamespaces('reference')(function ({ t, report, reportMessage, onChangeReport, onChangeReportMessage }) {
   return (
     <div>
       <br /><br />
       <p className="lead">
-        We&apos;re sad to hear you didn&apos;t have great experience using Trustroots! 😞
+        {t('We\'re sad to hear you didn\'t have a great experience using Trustroots!')} 😞
       </p>
       <div className="checkbox">
         <label>
           <input
             type="checkbox"
-            checked={props.report}
-            onChange={props.onChangeReport}
+            checked={report}
+            onChange={onChangeReport}
           />
-          Report this person to moderators
+          {t('Report this person to moderators')}
         </label>
       </div>
-      {props.report && (
+      {report && (
         <div>
-          <label htmlFor="report-message" className="control-label">Message to moderators</label>
+          <label htmlFor="report-message" className="control-label">{t('Message to moderators')}</label>
           <textarea className="form-control input-lg"
             rows="7"
             id="message"
-            onChange={(event) => props.onChangeReportMessage(event.target.value)}
-            value={props.reportMessage}
+            onChange={(event) => onChangeReportMessage(event.target.value)}
+            value={reportMessage}
           ></textarea>
           <span className="help-block">
-            Please write in English if possible.<br />
+            {t('Please write in English if possible.')}<br />
           </span>
         </div>
       )}
     </div>
   );
-}
+});
 
 Report.propTypes = {
   report: PropTypes.bool.isRequired,
@@ -42,3 +44,5 @@ Report.propTypes = {
   onChangeReport: PropTypes.func.isRequired,
   onChangeReportMessage: PropTypes.func.isRequired
 };
+
+export default Report;
