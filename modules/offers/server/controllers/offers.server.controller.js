@@ -170,10 +170,9 @@ function isValidUntil(validUntil) {
 }
 
 /**
- * Create (or update if exists) a Offer
+ * Create offer
  */
 exports.create = function (req, res) {
-
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden')
@@ -218,10 +217,6 @@ exports.create = function (req, res) {
   // Update timestamp
   offer.updated = new Date();
 
-  // Do the upsert, which works like this: If no Offer document exists with
-  // _id = offer.id, then create a new doc using upsertData.
-  // Otherwise, update the existing doc with upsertData
-  // @link http://stackoverflow.com/a/7855281
   offer.save(function (err) {
     if (err) {
       return res.status(400).send({
@@ -233,20 +228,19 @@ exports.create = function (req, res) {
       message: 'Offer saved.'
     });
   });
-
 };
 
 /**
  * Update an Offer
  */
 exports.update = function (req, res) {
-
   async.waterfall([
 
     // Validate
     function (done) {
 
-      if (!req.user) {
+      // User can modify only their own offers
+      if (!req.user || !req.offer.user._id.equals(req.user._id)) {
         return res.status(403).send({
           message: errorService.getErrorMessageByKey('forbidden')
         });

@@ -837,6 +837,36 @@ describe('Offer CRUD tests', function () {
         });
     });
 
+    it('should not be able to update offer of other user', function (done) {
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          // Handle signin error
+          if (signinErr) return done(signinErr);
+
+          offer2.description = '<p>Not allowed</p>';
+
+          // Update offer
+          agent.put('/api/offers/' + offer2Id)
+            .send(offer2)
+            .expect(403)
+            .end(function (offerSaveErr) {
+              // Handle offer save error
+              if (offerSaveErr) return done(offerSaveErr);
+
+              Offer.findOne({
+                _id: offer2Id
+              }, function (err, offer) {
+                should.not.exist(err);
+                offer.description.should.not.equal(offer2.description);
+                return done();
+              });
+            });
+
+        });
+    });
+
     it('should not able to change offer type when updating offer', function (done) {
       agent.post('/api/auth/signin')
         .send(credentials)
