@@ -307,7 +307,9 @@ describe('Search users: GET /users?search=string', function () {
 
             should(foundUsers).length(1);
 
-            var expectedFields = userHandler.userSearchProfileFields.split(' ');
+            // _id is not specified in userSearchProfileFields, but gets included anyways
+            // that's just how mongo works
+            var expectedFields = userHandler.userSearchProfileFields.split(' ').concat(['_id']);
             var actualFields = _.keys(foundUsers[0]);
 
             var unexpectedFields = _.difference(actualFields, expectedFields);
