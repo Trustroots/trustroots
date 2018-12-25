@@ -12,7 +12,9 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
+    log = require(path.resolve('./config/lib/logger')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     config = require(path.resolve('./config/config')),
     async = require('async'),
@@ -69,30 +71,26 @@ module.exports = function (job, agendaDone) {
 
         emailService.sendWelcomeSequenceFirst(user, function (err) {
           if (err) {
-            console.error('Failed to send welcome sequence email 1/3.');
             return callback(err);
-          } else {
-            // Mark reminder sent and update the reminder count
-            User.findByIdAndUpdate(
-              user._id,
-              {
-                $set: {
-                  welcomeSequenceSent: new Date()
-                },
-                // If the field does not exist, $inc creates the field
-                // and sets the field to the specified value.
-                $inc: {
-                  welcomeSequenceStep: 1
-                }
-              },
-              function (err) {
-                if (err) {
-                  console.error('Failed to update user\'s `onboardingStepsDone`.');
-                }
-                callback(err);
-              }
-            );
           }
+
+          // Mark reminder sent and update the reminder count
+          User.findByIdAndUpdate(
+            user._id,
+            {
+              $set: {
+                welcomeSequenceSent: new Date()
+              },
+              // If the field does not exist, $inc creates the field
+              // and sets the field to the specified value.
+              $inc: {
+                welcomeSequenceStep: 1
+              }
+            },
+            function (err) {
+              callback(err);
+            }
+          );
         });
       }, function (err) {
         done(err);
@@ -102,7 +100,10 @@ module.exports = function (job, agendaDone) {
 
   ], function (err) {
     if (err) {
-      console.error(err);
+      log('error', 'Failure in first welcome sequence background job.', {
+        error: err,
+        jobId: _.get(job, 'attrs._id').toString()
+      });
     }
     return agendaDone(err);
   });

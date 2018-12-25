@@ -20,11 +20,12 @@ const defaultRules = {
   'new-cap': [2, { newIsCapExceptions: ['acl.memoryBackend', 'acl'] }],
   'no-bitwise': 0,
   'no-caller': 2,
-  'no-console': 0,
+  'no-console': 2,
   'no-else-return': 0,
   'no-empty-character-class': 2,
   'no-multi-spaces': 2,
   'no-param-reassign': 0,
+  'no-process-exit': 2,
   'no-shadow': 0,
   'no-spaced-func': 2,
   'no-throw-literal': 2,
@@ -200,6 +201,18 @@ module.exports = {
     rules: {
       ...es2018rules,
       'react/no-access-state-in-setstate': 2
+    }
+  },{
+    // overrides for CLI scripts and application config
+    files: [
+      'bin/**',
+      'config/**',
+      'migrations/**',
+      'scripts/**',
+    ],
+    rules: {
+      'no-console': 0,
+      'no-process-exit': 0,
     }
   }]
 };

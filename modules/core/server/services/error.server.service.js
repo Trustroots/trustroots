@@ -1,5 +1,8 @@
 'use strict';
 
+var path = require('path'),
+    log = require(path.resolve('./config/lib/logger'));
+
 // Default error message when unsure how to respond
 var defaultErrorMessage = 'Snap! Something went wrong. If this keeps happening, please contact us.';
 
@@ -67,9 +70,8 @@ exports.errorResponse = function (err, req, res, next) {
   // If the error object doesn't exists
   if (!err) return next();
 
-
   // Log errors
-  console.error(err.stack);
+  log('error', 'API error response', err.stack);
 
   // Construct error response
   var errorResponse = {

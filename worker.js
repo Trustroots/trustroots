@@ -1,5 +1,7 @@
 'use strict';
 
+/* eslint-disable no-console */
+
 /**
  * Trustroots
  *
@@ -40,7 +42,6 @@ async.waterfall([
 
 ], function (err) {
   if (err) {
-    console.log('[Worker] error on initializing worker:');
-    console.error(err);
+    console.error('[Worker] error on initializing worker:', err);
   }
 });
