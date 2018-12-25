@@ -89,7 +89,7 @@ exports.userMiniProfileFields = [
 
 // Mini + a few fields we'll need at listings
 exports.userListingProfileFields = exports.userMiniProfileFields + ' member birthdate gender tagline';
-exports.userSearchProfileFields = exports.userMiniProfileFields + ' gender locationFrom locationLiving -_id';
+exports.userSearchProfileFields = exports.userMiniProfileFields + ' gender locationFrom locationLiving';
 
 /**
  * Middleware to validate+process avatar upload field
