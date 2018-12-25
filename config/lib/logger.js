@@ -1,5 +1,10 @@
 'use strict';
-// A general purpose logging service that can be used anywhere in the app
+
+/*
+ * A general purpose logging service that can be used anywhere in the app
+ *
+ * See docs/Logging.md
+ */
 
 /**
  * Module dependencies.
