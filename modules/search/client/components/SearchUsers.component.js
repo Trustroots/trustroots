@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 
 import UsersList from './UsersList';
 
-import { searchUsers } from './search.api';
+// import { searchUsers } from './search.api';
+import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
 
 function UsersResults({ users, resolved }) {
   const userList = (
@@ -91,8 +92,10 @@ class SearchUsers extends React.Component {
     this.setState({ resolved: false });
     console.log('Searching for: ' + this.state.searchQuery);
 
+    // eslint-disable-next-line react/no-access-state-in-setstate
     const userResults = await searchUsers(this.state.searchQuery);
-    this.setState({ resolved: true, users: userResults });
+    console.log(userResults);
+    this.setState({ resolved: true, users: userResults.data });
     console.log(this.state.users);
   };
 
