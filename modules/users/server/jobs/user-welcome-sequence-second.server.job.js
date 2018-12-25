@@ -104,7 +104,6 @@ module.exports = function (job, agendaDone) {
         error: err,
         jobId: _.get(job, 'attrs._id').toString()
       });
-      console.error('test');
     }
     return agendaDone(err);
   });
