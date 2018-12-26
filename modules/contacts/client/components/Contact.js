@@ -47,6 +47,7 @@ export default class Contact extends Component {
         situation={situation}
       />
       <ContactPresentational
+        className={this.props.className}
         contact={this.props.contact}
         avatarSize={this.props.avatarSize}
         hideMeta={this.props.hideMeta}
@@ -58,6 +59,7 @@ export default class Contact extends Component {
 }
 
 Contact.propTypes = {
+  className: PropTypes.string,
   contact: PropTypes.object.isRequired,
   avatarSize: PropTypes.number,
   selfId: PropTypes.string.isRequired,
