@@ -89,12 +89,13 @@ export default withNamespaces('contact')(ContactListPresentational);
 /**
  * This filter is probably different from the AngularJS filter.
  * It filters contacts with users, who contain a given string in one of their string fields (shallow)
+ * Case insensitive.
  * @TODO improve it!
  */
 function filterContacts(contacts, filter) {
   return contacts.filter(({ user }) => {
     for (const key in user) {
-      if (typeof user[key] === 'string' && user[key].includes(filter)) return true;
+      if (typeof user[key] === 'string' && user[key].toLowerCase().includes(filter.toLowerCase())) return true;
     }
     return false;
   });
