@@ -7,10 +7,10 @@ import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
 
 function UsersResults({ users, isSearching }) {
   const userList = (
-    <div className="contacts-list" ng-if="ContactsList.contacts.$isSearching && ContactsList.contacts.length > 0">
+    <div className="contacts-list">
 
       <div className="row">
-        <div className="col-xs-12" ng-class="{'col-sm-8': ContactsList.contacts.length >= 6, 'text-center': ContactsList.contacts.length < 6}">
+        <div className="col-xs-12">
           <h4 className="text-muted">
 
             {users.length === 1 &&
@@ -22,7 +22,6 @@ function UsersResults({ users, isSearching }) {
             {users.length > 1 &&
             <span>
               {users.length} users found.
-              {/* {{ (ContactsList.contacts | filter:{ confirmed: true }).length }} contacts */}
             </span>
             }
 
@@ -35,7 +34,7 @@ function UsersResults({ users, isSearching }) {
   );
 
   const noUsers = (
-    <div className="row content-empty" ng-if="ContactsList.contacts.$isSearching && !ContactsList.contacts.length">
+    <div className="row content-empty">
       <i className="icon-3x icon-users"></i>
       <h4>No users found with this name.</h4>
     </div>
@@ -47,8 +46,7 @@ function UsersResults({ users, isSearching }) {
         <div className="content-wait"
           role="alertdialog"
           aria-busy="true"
-          aria-live="assertive"
-          ng-if="!ContactsList.contacts || !ContactsList.contacts.$isSearching">
+          aria-live="assertive">
           <small>Wait a moment...</small>
         </div>
         :
@@ -63,9 +61,6 @@ UsersResults.propTypes = {
   isSearching: PropTypes.bool
 };
 
-// export class SearchUsersBar extends React.Component {
-
-// export default function SearchUsers({ searchQuery }) {
 class SearchUsers extends React.Component {
 
   constructor(props) {

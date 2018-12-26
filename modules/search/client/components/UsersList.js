@@ -38,16 +38,14 @@ export default function UsersList({ users }) {
   return (
     <div>
       <div className="row">
-        <div className="col-xs-12 col-sm-6"
-          ng-repeat="contact in ContactsList.contacts | filter:ContactsList.searchText track by contact._id">
+        <div className="col-xs-12 col-sm-6">
           <div>
             {usersEvenComponent}
           </div>
 
         </div>
 
-        <div className="col-xs-12 col-sm-6"
-          ng-repeat="contact in ContactsList.contacts | filter:ContactsList.searchText track by contact._id">
+        <div className="col-xs-12 col-sm-6">
           <div>
             {usersUnEvenComponent}
           </div>
