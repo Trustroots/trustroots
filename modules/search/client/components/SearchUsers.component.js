@@ -99,13 +99,8 @@ class SearchUsers extends React.Component {
 
   render() {
 
-    const borderStyle = { 'borderLeftWidth': '1px',
-      'borderLeftStyle': 'solid',
-      'borderColor': '#eee' };
-
     const switchToSearchPlaces = (
-      <span className="input-group-btn"
-        style={borderStyle}>
+      <span className="input-group-btn switcher-to-search-places">
         <a type="button"
           href="/search"
           className="btn btn-lg btn-default"
