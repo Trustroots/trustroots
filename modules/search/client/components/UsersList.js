@@ -1,39 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const Avatar = ({ avatarSize, avatarSource, displayName, profileUrl }) => (
-  <div data-size={avatarSize}>
-    <a href={profileUrl}
-      aria-label={`Open user profile for ${displayName}`}>
-      <img className={`avatar avatar-${avatarSize} avatar-${avatarSource}`}
-        alt=''
-        // {alt={`Profile picture for ${userData.displayName}`}}
-        aria-hidden="true"
-        src={avatarSource}
-        href={profileUrl}
-        draggable="false" />
-    </a>
-  </div>
-);
-
-Avatar.defaultProps = {
-  avatarSize: 128
-};
-
-Avatar.propTypes = {
-  avatarSize: PropTypes.number,
-  avatarSource: PropTypes.string,
-  displayName: PropTypes.string,
-  profileUrl: PropTypes.string
-};
+import Avatar from '@/modules/users/client/components/Avatar.component';
 
 const User = ({ userData }) => {
+  console.log(userData);
   const profileUrl = `/profile/${userData.username}`;
   return (
     <div className="contacts-contact panel panel-default">
-      <Avatar avatarSize={128} avatarSource="/test.html"
-        displayName={userData.displayName}
-        profileUrl={profileUrl}/>
+      <Avatar size={128}
+        user={userData}
+        link={true}/>
       <h4>
         <a href={profileUrl}>
           {userData.displayName}
