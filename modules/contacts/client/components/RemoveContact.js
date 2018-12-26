@@ -5,25 +5,27 @@ import { Modal } from 'react-bootstrap';
 
 export function RemoveContact({ t, contact, show, inProgress, onHide, onRemoveContact, situation='confirmed' }) {
 
+  // parse contact.created to Date
+  const created = new Date(contact.created);
   // Different confirm button label and modal title depending on situation
   const situationLabels = {
     // User is cancelling a request they sent
     unconfirmedFromMe: {
-      confirm: 'Yes, revoke request',
-      title: 'Revoke contact request?',
-      time: 'Requested'
+      confirm: t('Yes, revoke request'),
+      title: t('Revoke contact request?'),
+      time: t('Requested {{created, MMM D, YYYY}}', { created })
     },
     // Decline received request
     unconfirmedToMe: {
-      confirm: 'Yes, decline request',
-      title: 'Decline contact request?',
-      time: 'Requested'
+      confirm: t('Yes, decline request'),
+      title: t('Decline contact request?'),
+      time: t('Requested {{created, MMM D, YYYY}}', { created })
     },
     // Removing confirmed contact
     confirmed: {
-      confirm: 'Yes, remove contact',
-      title: 'Remove contact?',
-      time: 'Connected since'
+      confirm: t('Yes, remove contact'),
+      title: t('Remove contact?'),
+      time: t('Connected since {{created, MMM D, YYYY}}', { created })
     }
   };
 
@@ -34,21 +36,27 @@ export function RemoveContact({ t, contact, show, inProgress, onHide, onRemoveCo
       <div className="modal-content">
         <Modal.Header>
           <button type="button" className="close" aria-hidden="true" onClick={onHide} ng-if="!removeContactModal.isLoading">&times;</button>
-          <Modal.Title>{t(labels.title)}</Modal.Title>
+          <Modal.Title>{labels.title}</Modal.Title>
         </Modal.Header>
 
         <Modal.Body>
 
-          <p>
-            {t(`${labels.time} {{created, MMM D, YYYY}}`, { created: new Date(contact.created) })}
-          </p>
+          <p>{labels.time}</p>
 
         </Modal.Body>
 
         <Modal.Footer>
-          <button className="btn btn-link" onClick={onHide} ng-disabled="removeContactModal.isLoading">Cancel</button>
-          <button className="btn btn-primary" onClick={onRemoveContact} ng-disabled="removeContactModal.isLoading">
-            {!inProgress && <span>{t(labels.confirm)}</span>}
+          <button
+            className="btn btn-link"
+            onClick={onHide}
+            disabled={inProgress}
+          >{t('Cancel')}</button>
+          <button
+            className="btn btn-primary"
+            onClick={onRemoveContact}
+            disabled={inProgress}
+          >
+            {!inProgress && <span>{labels.confirm}</span>}
             {inProgress && <span
               role="alertdialog"
               aria-busy="true"

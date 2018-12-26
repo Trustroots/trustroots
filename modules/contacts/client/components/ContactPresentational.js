@@ -1,26 +1,30 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withNamespaces } from 'react-i18next';
+import { Trans, withNamespaces } from 'react-i18next';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 
 export function ContactPresentational({ t, contact, avatarSize=128, hideMeta=false, situation, onClickRemove }) {
+
+  const { username, displayName, locationFrom, locationLiving } = contact.user;
   return (<>
     <Avatar user={contact.user} size={avatarSize} />
     <h4>
-      <a href={`/profile/${contact.user.username}`}>{contact.user.displayName}</a>
+      <a href={`/profile/${username}`}>{displayName}</a>
     </h4>
-    {contact.user.locationLiving && <div>
+    {locationLiving && <div>
       <i className="icon-fw icon-building text-muted"></i>
       <small>
-        {t('Lives in')}
-        <a href={`/search?location=${contact.user.locationLiving}`}>{contact.user.locationLiving}</a>
+        <Trans locationLiving={locationLiving}>
+          Lives in <a href={`/search?location=${locationLiving}`}>{{ locationLiving }}</a>
+        </Trans>
       </small>
     </div>}
-    {contact.user.locationFrom && <div>
+    {locationFrom && <div>
       <i className="icon-fw icon-home text-muted"></i>
       <small>
-        {t('From')}
-        <a href={`/search?location=${contact.user.locationFrom}`}>{contact.user.locationFrom}</a>
+        <Trans locationFrom={locationFrom}>
+          From <a href={`/search?location=${locationFrom}`}>{{ locationFrom }}</a>
+        </Trans>
       </small>
     </div>}
     {!hideMeta && <small className="text-muted">

@@ -20,8 +20,8 @@ export default class Contact extends Component {
     this.handleRemoveContact = this.handleRemoveContact.bind(this);
   }
 
-  handleRemoveContactModal(show) {
-    this.setState(() => ({ showRemoveModal: show }));
+  handleRemoveContactModal(showRemoveModal) {
+    this.setState(() => ({ showRemoveModal }));
   }
 
   async handleRemoveContact() {
