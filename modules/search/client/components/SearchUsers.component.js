@@ -6,9 +6,9 @@ import UsersList from './UsersList';
 // import { searchUsers } from './search.api';
 import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
 
-function UsersResults({ users, resolved }) {
+function UsersResults({ users, isSearching }) {
   const userList = (
-    <div className="contacts-list" ng-if="ContactsList.contacts.$resolved && ContactsList.contacts.length > 0">
+    <div className="contacts-list" ng-if="ContactsList.contacts.$isSearching && ContactsList.contacts.length > 0">
 
       <div className="row">
         <div className="col-xs-12" ng-class="{'col-sm-8': ContactsList.contacts.length >= 6, 'text-center': ContactsList.contacts.length < 6}">
@@ -36,7 +36,7 @@ function UsersResults({ users, resolved }) {
   );
 
   const noUsers = (
-    <div className="row content-empty" ng-if="ContactsList.contacts.$resolved && !ContactsList.contacts.length">
+    <div className="row content-empty" ng-if="ContactsList.contacts.$isSearching && !ContactsList.contacts.length">
       <i className="icon-3x icon-users"></i>
       <h4>No users found with this name.</h4>
     </div>
@@ -44,12 +44,12 @@ function UsersResults({ users, resolved }) {
 
   return (
     <div>
-      {!resolved?
+      {!isSearching?
         <div className="content-wait"
           role="alertdialog"
           aria-busy="true"
           aria-live="assertive"
-          ng-if="!ContactsList.contacts || !ContactsList.contacts.$resolved">
+          ng-if="!ContactsList.contacts || !ContactsList.contacts.$isSearching">
           <small>Wait a moment...</small>
         </div>
         :
@@ -61,7 +61,7 @@ function UsersResults({ users, resolved }) {
 
 UsersResults.propTypes = {
   users: PropTypes.array,
-  resolved: PropTypes.bool
+  isSearching: PropTypes.bool
 };
 
 // export class SearchUsersBar extends React.Component {
@@ -77,7 +77,7 @@ class SearchUsers extends React.Component {
 
     this.state = {
       searchQuery: props.searchQuery || '',
-      resolved: true
+      isSearching: true
     };
   }
 
@@ -89,13 +89,16 @@ class SearchUsers extends React.Component {
   async actionSearch(event) {
     event.preventDefault();
     event.stopPropagation();
-    this.setState({ resolved: false });
+    this.setState({ isSearching: false });
     console.log('Searching for: ' + this.state.searchQuery);
 
-    // eslint-disable-next-line react/no-access-state-in-setstate
-    const userResults = await searchUsers(this.state.searchQuery);
-    console.log(userResults);
-    this.setState({ resolved: true, users: userResults.data });
+    this.setState({ isSearching: false }, async () => {
+      searchUsers(this.state.searchQuery)
+        .then(({ data }) => {
+          this.setState({ isSearching: true, users: data });
+        });
+    });
+
     console.log(this.state.users);
   };
 
@@ -167,7 +170,7 @@ class SearchUsers extends React.Component {
       <section className="container container-spacer">
         {searchForm}
         { this.state.users &&
-        <UsersResults users={this.state.users} resolved={this.state.resolved} />
+        <UsersResults users={this.state.users} isSearching={this.state.isSearching} />
         }
       </section>
     );
