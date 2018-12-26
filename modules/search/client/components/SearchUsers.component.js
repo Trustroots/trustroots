@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 
 import UsersList from './UsersList';
 
-// import { searchUsers } from './search.api';
 import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
 
 function UsersResults({ users, isSearching }) {
@@ -71,7 +70,6 @@ class SearchUsers extends React.Component {
 
   constructor(props) {
     super(props);
-    console.log('SearchUsers constructor');
     this.handleChange = this.handleChange.bind(this);
     this.actionSearch = this.actionSearch.bind(this);
 
@@ -90,7 +88,6 @@ class SearchUsers extends React.Component {
     event.preventDefault();
     event.stopPropagation();
     this.setState({ isSearching: false });
-    console.log('Searching for: ' + this.state.searchQuery);
 
     this.setState({ isSearching: false }, async () => {
       searchUsers(this.state.searchQuery)
@@ -99,7 +96,6 @@ class SearchUsers extends React.Component {
         });
     });
 
-    console.log(this.state.users);
   };
 
   clickClear() {
@@ -107,7 +103,6 @@ class SearchUsers extends React.Component {
   }
 
   render() {
-    console.log('SearchUsers: render');
 
     const borderStyle = { 'borderLeftWidth': '1px',
       'borderLeftStyle': 'solid',
