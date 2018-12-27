@@ -104,8 +104,6 @@ class SearchUsers extends React.Component {
         <a type="button"
           href="/search"
           className="btn btn-lg btn-default"
-          tooltip-enable="::search.screenWidth >= 768"
-          tooltip-placement="bottom"
           aria-label="Go to map search">
           <i className="icon-map"></i>
         </a>
@@ -131,8 +129,6 @@ class SearchUsers extends React.Component {
                 disabled={!this.state.searchQuery}
                 onClick={this.clickClear.bind(this)}
                 className="btn btn-lg btn-default"
-                tooltip-enable="::search.screenWidth >= 768"
-                tooltip-placement="bottom"
                 aria-label="Clear users search">
                 <i className="icon-close"></i>
               </button>
@@ -141,8 +137,6 @@ class SearchUsers extends React.Component {
               <button type="submit"
                 disabled={!this.state.searchQuery}
                 className="btn btn-lg btn-default"
-                tooltip-enable="::search.screenWidth >= 768"
-                tooltip-placement="bottom"
                 aria-label="Search users">
                 <i className="icon-search"></i>
               </button>
