@@ -15,13 +15,13 @@ function UsersResults({ users, isSearching }) {
 
             {users.length === 1 &&
             <span>
-            One user found.
+            One member found.
             </span>
             }
 
             {users.length > 1 &&
             <span>
-              {users.length} users found.
+              {users.length} members found.
             </span>
             }
 
@@ -36,7 +36,7 @@ function UsersResults({ users, isSearching }) {
   const noUsers = (
     <div className="row content-empty">
       <i className="icon-3x icon-users"></i>
-      <h4>No users found with this name.</h4>
+      <h4>No member found with this name.</h4>
     </div>
   );
 
@@ -115,11 +115,11 @@ class SearchUsers extends React.Component {
         onSubmit={this.actionSearch}>
         <div className="input-group">
           {switchToSearchPlaces}
-          <label htmlFor="search-query" className="sr-only">Search users</label>
+          <label htmlFor="search-query" className="sr-only">Search members</label>
           <input type="text"
             id="search-query"
             className="form-control input-lg"
-            placeholder="Search users"
+            placeholder="Search members"
             tabIndex="0"
             onChange={ this.handleChange }
             value={this.state.searchQuery} />
@@ -129,7 +129,7 @@ class SearchUsers extends React.Component {
                 disabled={!this.state.searchQuery}
                 onClick={this.clickClear.bind(this)}
                 className="btn btn-lg btn-default"
-                aria-label="Clear users search">
+                aria-label="Clear members search">
                 <i className="icon-close"></i>
               </button>
             </span>
@@ -137,7 +137,7 @@ class SearchUsers extends React.Component {
               <button type="submit"
                 disabled={!this.state.searchQuery}
                 className="btn btn-lg btn-default"
-                aria-label="Search users">
+                aria-label="Search members">
                 <i className="icon-search"></i>
               </button>
             </span>
