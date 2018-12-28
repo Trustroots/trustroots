@@ -7,10 +7,10 @@ export function PublicReference({ t, reference }) {
   return (
     <div>
       <div>
-        {reference.hostedMe && 'guest'} {reference.hostedThem && 'host'} {reference.met && 'met'}
+        {reference.hostedMe && t('guest')} {reference.hostedThem && t('host')} {reference.met && t('met')}
       </div>
       <div>
-        Recommends: {reference.recommend}
+        {t('Recommends: {{recommend}}', { recommend: reference.recommend })}
       </div>
       <div>
         {t('Given {{created, MMM D YYYY}}', { created })}

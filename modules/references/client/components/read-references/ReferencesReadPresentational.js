@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withNamespaces } from 'react-i18next';
+import { withNamespaces, Trans } from 'react-i18next';
 import Reference from './Reference';
 
 export function ReferencesReadPresentational({ t, publicReferences, nonpublicReferences }) {
@@ -16,18 +16,20 @@ export function ReferencesReadPresentational({ t, publicReferences, nonpublicRef
   const referenceCount = (
     <div className="col-xs-12">
       <h4 className="text-muted">
-        References:
-        {' '}
-        <span style={{ color: 'green' }}>{positiveCount} recommend</span>
-        {' '}
-        <span style={{ color: 'grey' }}>{unknownCount} unknown</span>
-        {' '}
-        <span style={{ color: 'red' }}>{negativeCount} not recommend</span>
+        <Trans positiveCount={positiveCount} unknownCount={unknownCount} negativeCount={negativeCount}>
+          References:
+          {' '}
+          <span style={{ color: 'green' }}>{{ positiveCount }} recommend</span>
+          {' '}
+          <span style={{ color: 'grey' }}>{{ unknownCount }} unknown</span>
+          {' '}
+          <span style={{ color: 'red' }}>{{ negativeCount }} not recommend</span>
+        </Trans>
       </h4>
     </div>
   );
 
-  const noReferences = <div>No references yet.</div>;
+  const noReferences = <div>{t('No references yet.')}</div>;
 
   return (<>
     <section className="row">
