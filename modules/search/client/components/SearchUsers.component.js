@@ -5,6 +5,8 @@ import UsersList from './UsersList';
 
 import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
 
+const MINIMUM_QUERY_LENGTH = 3;
+
 function UsersResults({ users, isSearching }) {
   const userList = (
     <div className="contacts-list">
@@ -126,8 +128,8 @@ class SearchUsers extends React.Component {
           <span className="input-group-btn">
             <span>
               <button type="button"
-                disabled={!this.state.searchQuery}
                 onClick={this.clickClear.bind(this)}
+                disabled={this.state.searchQuery.length < MINIMUM_QUERY_LENGTH}
                 className="btn btn-lg btn-default"
                 aria-label="Clear members search">
                 <i className="icon-close"></i>
@@ -135,7 +137,7 @@ class SearchUsers extends React.Component {
             </span>
             <span>
               <button type="submit"
-                disabled={!this.state.searchQuery}
+                disabled={this.state.searchQuery.length < MINIMUM_QUERY_LENGTH}
                 className="btn btn-lg btn-default"
                 aria-label="Search members">
                 <i className="icon-search"></i>
