@@ -17,7 +17,7 @@ function UsersResults({ users, isSearching }) {
 
             {users.length === 1 &&
             <span>
-            One member found.
+              One member found.
             </span>
             }
 
@@ -38,7 +38,7 @@ function UsersResults({ users, isSearching }) {
   const noUsers = (
     <div className="row content-empty">
       <i className="icon-3x icon-users"></i>
-      <h4>No member found with this name.</h4>
+      <h4>No members found by this name.</h4>
     </div>
   );
 
@@ -78,7 +78,6 @@ class SearchUsers extends React.Component {
 
   handleChange(event) {
     this.setState({ searchQuery: event.target.value });
-    // this.props.searchQuery = event.target.value ;
   }
 
   async actionSearch(event) {

@@ -82,12 +82,12 @@
         }
       }).
       state('search-users', {
-        url: '/search/users',
         template: '<search-users searchQuery="admin1"></search-users>',
+        url: '/search/members',
         requiresAuth: true,
         footerHidden: true,
         data: {
-          pageTitle: 'Search for users'
+          pageTitle: 'Search members'
         }
       });
   }
