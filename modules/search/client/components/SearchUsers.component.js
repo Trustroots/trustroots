@@ -71,8 +71,8 @@ class SearchUsers extends React.Component {
     this.actionSearch = this.actionSearch.bind(this);
 
     this.state = {
-      searchQuery: props.searchQuery || '',
       isSearching: true
+      searchQuery: '',
     };
   }
 
@@ -145,9 +145,7 @@ class SearchUsers extends React.Component {
   }
 }
 
-SearchUsers.propTypes = {
-  searchQuery: PropTypes.string
-};
+SearchUsers.propTypes = {};
 
 
 export default SearchUsers;
