@@ -7,7 +7,7 @@ import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
 
 const MINIMUM_QUERY_LENGTH = 3;
 
-function UsersResults({ users, isSearching }) {
+function UsersResults({ users }) {
   const userList = (
     <div className="contacts-list">
 
@@ -42,25 +42,11 @@ function UsersResults({ users, isSearching }) {
     </div>
   );
 
-  return (
-    <div>
-      {!isSearching?
-        <div className="content-wait"
-          role="alertdialog"
-          aria-busy="true"
-          aria-live="assertive">
-          <small>Wait a moment...</small>
-        </div>
-        :
-        (users && users.length > 0? userList : noUsers)
-      }
-    </div>
-  );
+  return users && users.length > 0 ? userList : noUsers;
 }
 
 UsersResults.propTypes = {
-  users: PropTypes.array,
-  isSearching: PropTypes.bool
+  users: PropTypes.array
 };
 
 class SearchUsers extends React.Component {
@@ -72,8 +58,8 @@ class SearchUsers extends React.Component {
     this.clearSearchQuery = this.clearSearchQuery.bind(this);
 
     this.state = {
-      isSearching: true
       searchQuery: '',
+      isSearching: false
     };
   }
 
@@ -84,15 +70,16 @@ class SearchUsers extends React.Component {
   async actionSearch(event) {
     event.preventDefault();
     event.stopPropagation();
-    this.setState({ isSearching: false });
 
-    this.setState({ isSearching: false }, async () => {
+    this.setState({ isSearching: true }, () => {
       searchUsers(this.state.searchQuery)
         .then(({ data }) => {
-          this.setState({ isSearching: true, users: data });
+          this.setState({ users: data });
+        })
+        .finally(() => {
+          this.setState({ isSearching: false });
         });
     });
-
   };
 
   clearSearchQuery() {
@@ -100,6 +87,14 @@ class SearchUsers extends React.Component {
   }
 
   render() {
+    const loading = (
+      <div className="content-wait"
+        role="alertdialog"
+        aria-busy="true"
+        aria-live="assertive">
+        <small>Wait a moment...</small>
+      </div>
+    );
 
     const searchForm = (
       <form className="form-group search-form-group" id="search-users-form"
@@ -138,8 +133,9 @@ class SearchUsers extends React.Component {
     return (
       <section className="container container-spacer">
         {searchForm}
-        { this.state.users &&
-        <UsersResults users={this.state.users} isSearching={this.state.isSearching} />
+        {this.state.isSearching && loading}
+        {!this.state.isSearching && this.state.users &&
+          <UsersResults users={this.state.users} />
         }
       </section>
     );
