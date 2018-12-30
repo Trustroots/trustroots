@@ -95,7 +95,7 @@ class SearchUsers extends React.Component {
 
   };
 
-  clickClear() {
+  clearSearchQuery() {
     this.setState({ searchQuery: '' });
   }
 
@@ -128,8 +128,8 @@ class SearchUsers extends React.Component {
           <span className="input-group-btn">
             <span>
               <button type="button"
-                onClick={this.clickClear.bind(this)}
                 disabled={this.state.searchQuery.length < MINIMUM_QUERY_LENGTH}
+                onClick={this.clearSearchQuery}
                 className="btn btn-lg btn-default"
                 aria-label="Clear members search">
                 <i className="icon-close"></i>
