@@ -137,6 +137,16 @@ class SearchUsers extends React.Component {
         {!this.state.isSearching && this.state.users &&
           <UsersResults users={this.state.users} />
         }
+        {!this.state.isSearching && !this.state.users &&
+          <div className="row content-empty">
+            <i className="icon-3x icon-users"></i>
+          </div>
+        }
+        <hr className="hr-gray"/>
+        <p>
+          <i className="icon-map icon-lg text-muted"></i>
+          Looking for hosts? <a href="/search">See hosts on world map.</a>
+        </p>
       </section>
     );
   }
