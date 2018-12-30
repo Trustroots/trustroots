@@ -101,22 +101,10 @@ class SearchUsers extends React.Component {
 
   render() {
 
-    const switchToSearchPlaces = (
-      <span className="input-group-btn switcher-to-search-places">
-        <a type="button"
-          href="/search"
-          className="btn btn-lg btn-default"
-          aria-label="Go to map search">
-          <i className="icon-map"></i>
-        </a>
-      </span>
-    );
-
     const searchForm = (
       <form className="form-group search-form-group" id="search-users-form"
         onSubmit={this.actionSearch}>
         <div className="input-group">
-          {switchToSearchPlaces}
           <label htmlFor="search-query" className="sr-only">Search members</label>
           <input type="text"
             id="search-query"
