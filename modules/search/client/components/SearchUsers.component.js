@@ -69,6 +69,7 @@ class SearchUsers extends React.Component {
     super(props);
     this.handleChange = this.handleChange.bind(this);
     this.actionSearch = this.actionSearch.bind(this);
+    this.clearSearchQuery = this.clearSearchQuery.bind(this);
 
     this.state = {
       isSearching: true
