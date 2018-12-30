@@ -182,7 +182,6 @@ gulp.task('watch', function watch(done) {
   plugins.refresh.listen();
 
   // Watch and generate app files
-  gulp.watch(defaultAssets.server.fontelloConfig, fontello);
   gulp.watch(defaultAssets.server.views).on('change', plugins.refresh.changed);
   gulp.watch(defaultAssets.client.less, gulp.series('clean:css', 'build:styles')).on('change', plugins.refresh.changed);
 
