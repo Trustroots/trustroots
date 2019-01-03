@@ -190,7 +190,12 @@
 
       <!-- The map -->
       <div tr-offer-location="trOfferHost.offer"
-           ng-if="trOfferHost.offer.status === 'yes' || trOfferHost.offer.status === 'maybe'"></div>
+        ng-if="trOfferHost.offer.status === 'yes' || trOfferHost.offer.status === 'maybe'"></div>
+
+      <offer-location
+        ng-if="trOfferHost.offer.status === 'yes' || trOfferHost.offer.status === 'maybe'"
+        offer="trOfferHost.offer"
+      ></offer-location>
 
       <div class="panel-footer text-center"
            ng-if="trOfferHost.offer.status === 'yes' || trOfferHost.offer.status === 'maybe'">
