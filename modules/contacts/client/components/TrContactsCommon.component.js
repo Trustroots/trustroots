@@ -6,9 +6,18 @@ export default class TrContactsCommon extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-        contactsCommonList: contactsCommonList
+        contacts: []
     }
     this.isContactsCommonList = this.isContactsCommonList.bind(this);
+    this.onChange = this.onChange.bind(this);
+
+    this.onChange();
+  }
+
+  onChange() {
+      this.setState({
+          contactsCommonList: this.props.contactsCommonList
+      })
   }
 
   isContactsCommonList() {
@@ -20,25 +29,27 @@ export default class TrContactsCommon extends React.Component {
   render(){
     this.isContactsCommonList();
 
-    const listContact = this.state.contactsCommonList.map((contact) => {
+    const listContact = this.state.contacts.map((contact) => {
         return(
             <div 
-                tr-contact="contact"
+                tr-contact={contact}
                 tr-contact-hide-meta="true"
                 tr-contact-avatar-size="64">
             </div>
         )
     })
 
-    return (<NamespacesConsumer>
+    return (
         <div className="panel panel-default">
+            <h1>HEY it works</h1>
             {/* convert ng-pluralize with NamespacesConsumer */}
             <div className="panel-body">
                 <div className="contacts-contact">
-                    {listContact()}
+                    {listContact}
                 </div>
             </div>
         </div>
-            </NamespacesConsumer>);
+        );
   }
 }
+
