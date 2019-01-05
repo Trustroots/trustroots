@@ -19,11 +19,11 @@ Read on [how to get started with development](Development-Getting-Started.md).
 
 ## Bugs & feature requests
 
-_Expect problems and eat them for breakfast. If you have questions,
-don't hesitate to [contact us](https://www.trustroots.org/contact/)._
-
 - [Report issues about the website](https://github.com/Trustroots/trustroots/issues)
 - [Report issues about mobile apps](https://github.com/Trustroots/trustroots-expo-mobile/issues)
+- [Report security issues](https://github.com/Trustroots/trustroots/blob/master/SECURITY.md#readme)
+
+_If you have questions, don't hesitate to [contact us](https://www.trustroots.org/contact/)._
 
 ## Docs & more
 
