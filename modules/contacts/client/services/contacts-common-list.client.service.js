@@ -20,7 +20,7 @@
 'use strict';
 var axios = require('axios');
 
-exports = function ContactsCommonListService(id) {
+export function contactsCommonListService(id) {
   return (
     axios.get('/api/contacts/'+ id + '/common')
       .then(function (resp) {
@@ -31,3 +31,14 @@ exports = function ContactsCommonListService(id) {
       })
   );
 };
+// exports = function contactsCommonListService(id) {
+//   return (
+//     axios.get('/api/contacts/'+ id + '/common')
+//       .then(function (resp) {
+//         return resp.data;
+//       })
+//       .catch(function (error) {
+//         return error;
+//       })
+//   );
+// };
