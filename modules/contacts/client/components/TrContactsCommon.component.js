@@ -46,3 +46,5 @@ export default class TrContactsCommon extends React.Component {
     );
   }
 }
+
+TrContactsCommon.propTypes = {};
