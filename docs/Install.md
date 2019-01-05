@@ -1,12 +1,11 @@
 # Running Trustroots locally
 
-_These instructions are for installing locally. If you'd like to have containerised setup, see [INSTALL-DOCKER.md](INSTALL-DOCKER.md) instead._
-
+_These instructions are for installing locally. If you'd like to have containerised setup, see [Installing with Docker](Install-Docker.md) instead._
 
 ## Prerequisites
 
 Make sure you have installed all these prerequisites:
-* Unix operating system, like Linux or MacOS. If you use Windows, please look into [installing via Docker](INSTALL-DOCKER.md) instead.
+* Unix operating system, like Linux or MacOS. If you use Windows, please look into installing via Docker instead.
 * [Git](https://git-scm.com/) (`git --version`, preinstalled on MacOS)
 * [Node.js](https://nodejs.org/en/download/):
   * See "engines" from `package.json` for supported versions
@@ -46,7 +45,7 @@ Optional: If you need to modify connection settings, see `config/env/local.js` c
 npm start
 ```
 
-🎉 Open [localhost:3000](http://localhost:3000) in your browser.
+🎉 Open http://localhost:3000 in your browser.
 
 #### Good to know
 
@@ -61,11 +60,6 @@ npm start
 ## Modifying configurations
 
 Add any configurations you want to keep out of version control to `config/env/local.js` file. It's created for you on the first start and overrides anything in `config/env/local.js`.
-
-## Access the server from another device
-* Make sure you are connected to the same network (WIFI/LAN). Find your ip address using `ipconfig` or `ifconfig`.
-* Add `host: null` into  `config/env/local.js`
-* Alternatively you can also use https://ngrok.com/
 
 ## Development tools
 
@@ -104,6 +98,11 @@ To debug using Chrome:
 7. You should now have console/profiler etc available.
 
 More information can be found in the NodeJS [debug documentation](https://nodejs.org/en/docs/guides/debugging-getting-started/).
+
+## Access the server from another device
+* Make sure you are connected to the same network (WIFI/LAN). Find your ip address using `ipconfig` or `ifconfig`.
+* Add `host: null` into `config/env/local.js`
+* Alternatively you can also use service like [Ngrok](https://ngrok.com).
 
 ## Running tests
 
@@ -191,7 +190,7 @@ npm run dropdb
     },
     ```
 
-10. To stop eslint from complaining, you might need to convert double quotes to single quotes. (`"` → `'`)
+10. To stop Eslint from complaining, you might need to convert double quotes to single quotes. (`"` → `'`) or [disable Eslint](https://eslint.org/docs/user-guide/configuring#disabling-rules-with-inline-comments) for those lines.
 
 
 ## Enable collecting statistics to InfluxDB (optional)

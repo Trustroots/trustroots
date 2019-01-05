@@ -19,7 +19,7 @@
 * We're aiming for [continuous delivery](https://en.wikipedia.org/wiki/Continuous_delivery) methods (not quite there yet, but almost).
 
 # The application
-* **MEAN** stack, seeded originally with [MEAN.js](http://meanjs.org/) boilerplate: [MongoDB](www.mongodb.org), [ExpressJS](http://expressjs.com/), [AngularJS](https://angularjs.org/) v1, [NodeJS](http://nodejs.org/). Additionally stuff like [Bootstrap](http://getbootstrap.com/), [Leaflet](http://leafletjs.com/) etc. 
+* **MEAN** stack, seeded originally with [MEAN.js](http://meanjs.org/) boilerplate: [MongoDB](www.mongodb.org), [ExpressJS](http://expressjs.com/), [AngularJS](https://angularjs.org/) v1, [NodeJS](http://nodejs.org/). Additionally stuff like [Bootstrap](http://getbootstrap.com/), [Leaflet](http://leafletjs.com/) etc.
 * [[Database]] scheme (look for `*.server.model.js` project files to check most up to date info)
 * We're migrating the client to React. Read a [migration guide](React.md).
 
@@ -75,7 +75,7 @@ Convention is as follows:
 
 #### Strategy:
 ##### CI setup
-Slowly getting there. Any help/experiences appreciated! [#228](https://github.com/Trustroots/trustroots/issues/228) 
+Slowly getting there. Any help/experiences appreciated! [#228](https://github.com/Trustroots/trustroots/issues/228)
 
 ##### Unit tests
 ...mainly to test Mongo models ([example](https://github.com/Trustroots/trustroots/blob/master/modules/users/tests/server/user.server.model.tests.js)).
@@ -96,15 +96,35 @@ _(Selenium tests are currently out of date.)_
 * `npm test` for everything,
 * `npm run test:server` for Mocha tests,
 * `npm run test:server:watch` same with watching,
-* `npm run test:client` for testing Karma-unit tests and 
+* `npm run test:client` for testing Karma-unit tests and
 * `npm run test:selenium` to run Selenium tests. Requires Python. Make sure Trustroots is running already as this task won't spin it up first. This task isn't included in the main test task. If you want to pass custom domain to test for Selenium you can do so by running: `python ./scripts/selenium/test.py http://dev.trustroots.org/`
 
-## Documentation
-Documents our internal API end points. Great help for writing integration tests.
+## Folder layout
 
-[developers.trustroots.org/docs/api](http://developers.trustroots.org/docs/api/)
+You might want to read the [folder structure](http://meanjs.org/docs.html#folder-structure) to get a handle on how things are laid out. A quick summary:
 
-[Swagger editor](http://editor.swagger.io/) file: [swagger.json](https://raw.githubusercontent.com/Trustroots/developers/gh-pages/docs/swagger.json)
-
-## More?
-See [developers.trustroots.org](http://developers.trustroots.org/)
+* `modules/` contains one folder for each "component" of the site, this is where most of the interesting stuff lives
+* `modules/**/server/` contains all the backend, server side stuff
+  * `/models` defines the [Mongoose](https://mongoosejs.com/) models. There are only a few, so it might be worth scanning them to understand the data model. For in depth description, see [[database]].
+  * `/controllers` as you'd expect, Express controllers live here.
+  * `/routes` links url paths to controllers
+  * `/tests` defines tests run server side
+  * `/jobs` [Agenda](https://www.npmjs.com/package/agenda) job scheduler (~cron) jobs (see config/lib/agenda.js for more)
+  * `modules/core/server/views` contains email templates and initial rendered index.html
+* `modules/**/client/` contains all the client side stuff
+    * `modules/core/client/app`
+    * `modules/core/client/app/less` contains the site wide style variables and `application.less` file which includes rest of the modules.
+    * `/less` is where you'll find **CSS styles** in [LESS format](http://lesscss.org/). Each module should have .less file with the module name, which then includes rest of the less files from the same folder. E.g.: `modules/core/client/app/less/application.less` includes `modules/messages/client/app/less/messages.less` which then includes `inbox.less` and `thread.less` from the same directory.
+    * `/views` is where you'll find templates
+    * `/services` is where you'll find [Angular service](https://docs.angularjs.org/guide/services), mostly for connecting to REST API points
+    * `/config` contains the client side routes and other configs
+    * `/directives` contains the [Angular directives](https://docs.angularjs.org/guide/directive)
+    * `/controllers` contains the angular client side [controllers](https://docs.angularjs.org/guide/controller)
+* `config/` ta-da, configs! Server side.
+  * `/assets` Defines paths for assets (serverside JS, frontend CSS/JS/LESS, lib files etc)
+  * `/lib/env` primary config files. Don't modify anything else here except `local.js`.
+  * `/lib/env/local.js` file overriding other `env/*` files. Put here your adjustments you don't want have publicly at the repo (it's git-ignored).
+  * `/lib/agenda.js` [Agenda](https://www.npmjs.com/package/agenda) job scheduler (kinda like cron)
+* `bower.js` frontend packages, managed with [Bower](http://bower.io/)
+* `package.js` backend packages, managed with [NPM](https://www.npmjs.com/)
+* `fontello.conf.js` config for icon font. Drag it to [Fontello](http://fontello.com/) to edit.
