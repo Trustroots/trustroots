@@ -1,8 +1,11 @@
 # Icons are from Fontello
 
-[Read more](../modules/core/client/fonts/fontello/README.txt).
+[fontello.com](http://fontello.com/) (GitHub)[https://github.com/fontello/fontello]
 
-[See the current set of icons](../modules/core/client/fonts/fontello/demo.html).
+- [Read more about Fontello](../modules/core/client/fonts/fontello/README.txt).
+- [See the current set of icons](../modules/core/client/fonts/fontello/demo.html).
+
+## HTML example
 
 ```html
 <i class="icon-newiconname"></i>

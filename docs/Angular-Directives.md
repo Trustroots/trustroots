@@ -1,6 +1,6 @@
 # Trustroots Angular Directives
 
-@todo: move these to [ngdoc comments to the code](https://github.com/bevacqua/grunt-ngdoc)
+Note that [we are moving to React](React.md) so you should always prefer to make React Components instead of new Angular directives.
 
 Always prefix directive with "tr", eg. [`/modules/users/client/directives/tr-avatar.client.directive.js`](https://github.com/Trustroots/trustroots/blob/master/modules/users/client/directives/tr-avatar.client.directive.js). Place directive views under module's `/views/` folder, for example [`/modules/users/client/views/directives/tr-monkeybox.client.view.html`](https://github.com/Trustroots/trustroots/blob/master/modules/users/client/views/directives/tr-monkeybox.client.view.html).
 
