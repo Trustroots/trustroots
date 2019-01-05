@@ -2,6 +2,7 @@
 
 [fontello.com](http://fontello.com/) (GitHub)[https://github.com/fontello/fontello]
 
+- Read about [design prinsibles when using icons](Design-prinsibles.md).
 - [Read more about Fontello](../modules/core/client/fonts/fontello/README.txt).
 - [See the current set of icons](../modules/core/client/fonts/fontello/demo.html).
 

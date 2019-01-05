@@ -29,12 +29,13 @@ Read on [how to get started with development](Development-Getting-Started.md).
 
 ### Basics
 - [Accessibility](Accessibility.md)
+- [Design principles](Design-principles.md)
 - [Development](Development.md)
 - [Getting started troubleshooting](Troubleshooting.md)
 - [We are moving to React](React.md)
 
 ### In-depth documentation
-- [Angular-Directives](Angular-Directives.md) (deprecated)
+- [Angular Directives](Angular-Directives.md) (deprecated)
 - [App and server Monitoring](Monitoring.md)
 - [Database](Database.md)
 - [Icons](Icons.md)
