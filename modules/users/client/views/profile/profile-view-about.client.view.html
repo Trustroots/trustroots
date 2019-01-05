@@ -13,9 +13,11 @@
     </div>
 
     <!-- Contacts in common -->
-    <div ng-if="profileCtrl.profile._id !== app.user._id && profileCtrl.contacts.length"
-         tr-common-contacts="::profileCtrl.profile._id"></div>
-
+    <!-- <div ng-if="profileCtrl.profile._id !== app.user._id && profileCtrl.contacts.length"
+         tr-common-contacts="::profileCtrl.profile._id"></div> -->
+    <div ng-if="profileCtrl.profile._id !== app.user._id && profileCtrl.contacts.length">
+      <tr-contacts-common contacts="::profileCtrl.profile._id"></tr-contacts-common>
+    </div>
     <!-- Tribes -->
     <section class="panel panel-default" ng-if="profileCtrl.profile._id === app.user._id || profileCtrl.profile.member.length">
       <header class="panel-heading">
