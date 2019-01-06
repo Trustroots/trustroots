@@ -169,7 +169,7 @@ function addUsers() {
           if (index >= max) {
             console.log(chalk.green(userCount + ' users already exist. No users created!'));
             console.log(chalk.white('')); // Reset to white
-            done(null);
+            resolve();
             return;
           }
 
