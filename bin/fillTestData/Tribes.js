@@ -9,7 +9,7 @@ const _ = require('lodash'),
       mongoose = require('mongoose'),
       config = require(path.resolve('./config/config'));
 
-const argv = yargs.usage('$0 <numberOfTribes>', 'Seed database with number of tribes', function (yargs) {
+const argv = yargs.usage('$0 <numberOfTribes>', 'Seed database with number of tribes', (yargs) => {
   return yargs
     .positional('numberOfTribes', {
       describe: 'Number of tribes to add',
@@ -80,12 +80,12 @@ const addTribes = function () {
   config.db.debug = debug;
 
   // Bootstrap db connection
-  mongooseService.connect(function () {
-    mongooseService.loadModels(function () {
+  mongooseService.connect(() => {
+    mongooseService.loadModels(() => {
       const Tribe = mongoose.model('Tribe');
 
-      const getTribes = new Promise(function (resolve, reject) {
-        Tribe.find(function (err, tribes) {
+      const getTribes = new Promise((resolve, reject) => {
+        Tribe.find((err, tribes) => {
           if (err) {
             reject(err);
           }
@@ -93,7 +93,7 @@ const addTribes = function () {
         });
       });
 
-      getTribes.then(function (tribes) {
+      getTribes.then((tribes) => {
         let savedTribes = 0;
         if (limit) {
           index = tribes.length;
@@ -123,7 +123,7 @@ const addTribes = function () {
             tribe.attribution_url = faker.internet.url();
             tribe.description = faker.lorem.sentences();
 
-            tribe.save(function (err) {
+            tribe.save((err) => {
               if (err != null) {
                 console.log(err);
               }
