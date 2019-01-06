@@ -94,6 +94,7 @@ const addTribes = function () {
       });
 
       getTribes.then(function (tribes) {
+        let savedTribes = 0;
         if (limit) {
           index = tribes.length;
         }
@@ -105,7 +106,6 @@ const addTribes = function () {
         }
 
         while (index < max) {
-          let savedTribes = 0;
           (function addNextTribe(tribeIndex) {
             let tribe = new Tribe();
 
