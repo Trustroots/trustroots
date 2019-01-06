@@ -84,23 +84,16 @@ const addTribes = function () {
     mongooseService.loadModels(() => {
       const Tribe = mongoose.model('Tribe');
 
-      const getTribes = new Promise((resolve, reject) => {
-        Tribe.find((err, tribes) => {
-          if (err) {
-            reject(err);
-          }
-          resolve(tribes);
-        });
-      });
+      const getTribeCount = Tribe.countDocuments();
 
-      getTribes.then((tribes) => {
+      getTribeCount.then((tribeCount) => {
         let savedTribes = 0;
         if (limit) {
-          index = tribes.length;
+          index = tribeCount;
         }
 
         if (index >= max) {
-          console.log(chalk.green(tribes.length + ' tribes already exist. No tribes created!'));
+          console.log(chalk.green(tribeCount + ' tribes already exist. No tribes created!'));
           console.log(chalk.white('')); // Reset to white
           process.exit(0);
         }
@@ -109,7 +102,7 @@ const addTribes = function () {
           (function addNextTribe(tribeIndex) {
             let tribe = new Tribe();
 
-            tribe.label = faker.lorem.word() + '_' + (tribes.length + tribeIndex);
+            tribe.label = faker.lorem.word() + '_' + (tribeCount + tribeIndex);
             tribe.labelHistory = faker.random.words();
             tribe.slugHistory = faker.random.words();
             tribe.synonyms = faker.random.words();
@@ -130,12 +123,12 @@ const addTribes = function () {
               else {
                 process.stdout.write('.');
                 savedTribes += 1;
-                if ((limit && (savedTribes + tribes.length >= max))
+                if ((limit && (savedTribes + tribeCount >= max))
                     || !limit && ((savedTribes >= max))) {
                   console.log('');
-                  console.log(chalk.green(tribes.length + ' tribes existed in the database.'));
+                  console.log(chalk.green(tribeCount + ' tribes existed in the database.'));
                   console.log(chalk.green(savedTribes + ' tribes successfully added.'));
-                  console.log(chalk.green('Database now contains ' + (tribes.length + savedTribes) + ' tribes.'));
+                  console.log(chalk.green('Database now contains ' + (tribeCount + savedTribes) + ' tribes.'));
                   console.log(chalk.white('')); // Reset to white
                   process.exit(0);
                 }
