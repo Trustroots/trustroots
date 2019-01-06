@@ -12,8 +12,7 @@ const _ = require('lodash'),
       config = require(path.resolve('./config/config')),
       cities = JSON.parse(fs.readFileSync(path.resolve('./bin/fillTestData/data/Cities.json'), 'utf8'));
 
-let users = null,
-    tribes = null,
+let tribes = null,
     savedUsers = 0,
     savedOffers = 0;
 
@@ -133,6 +132,7 @@ function addUsers() {
     mongooseService.loadModels(async () => {
       const Tribe = mongoose.model('Tribe');
       const User = mongoose.model('User');
+      let userCount = 0;
 
      /**
       * Gets the users and tribes from the database and saves them into the
@@ -141,12 +141,12 @@ function addUsers() {
       * @returns {Promise} Promise that completes when user and tribe data
       *  have successfully loaded into global variables.
       */
-      function getUsersAndTribes() {
-        const getUsers = User.find();
+      function getUserCountAndTribes() {
+        const getUserCount = User.countDocuments();
         const getTribes = Tribe.find();
 
-        return Promise.all([getUsers, getTribes]).then((results) => {
-          [users, tribes] = results;
+        return Promise.all([getUserCount, getTribes]).then((results) => {
+          [userCount, tribes] = results;
         }).catch(function (err) {
           console.log(err);
         });
@@ -162,11 +162,11 @@ function addUsers() {
       function addAllUsers() {
         return new Promise ((resolve) => {
           if (limit) {
-            index = users.length;
+            index = userCount;
           }
 
           if (index >= max) {
-            console.log(chalk.green(users.length + ' users already exist. No users created!'));
+            console.log(chalk.green(userCount + ' users already exist. No users created!'));
             console.log(chalk.white('')); // Reset to white
             done(null);
             return;
@@ -246,7 +246,7 @@ function addUsers() {
                   console.log(err);
                 }
 
-                addOffer(user._id, index, max, users.length, limit, resolve);
+                addOffer(user._id, index, max, userCount, limit, resolve);
               });
 
 
@@ -299,11 +299,11 @@ function addUsers() {
 
 
       // This is the main sequence to add all the users.
-      //    * First get the current user and tribe data
+      //    * First get the current number of users and tribe data
       //    * Then seed all the new users
       //    * Lastly update the number of users that were added to each tribe
       try {
-        await getUsersAndTribes();
+        await getUserCountAndTribes();
         await addAllUsers();
         await updateTribes();
 
