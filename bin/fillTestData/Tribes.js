@@ -1,15 +1,15 @@
 'use strict';
 
-var _ = require('lodash'),
-    path = require('path'),
-    mongooseService = require(path.resolve('./config/lib/mongoose')),
-    chalk = require('chalk'),
-    yargs = require('yargs'),
-    faker = require('faker'),
-    mongoose = require('mongoose'),
-    config = require(path.resolve('./config/config'));
+const _ = require('lodash'),
+      path = require('path'),
+      mongooseService = require(path.resolve('./config/lib/mongoose')),
+      chalk = require('chalk'),
+      yargs = require('yargs'),
+      faker = require('faker'),
+      mongoose = require('mongoose'),
+      config = require(path.resolve('./config/config'));
 
-var argv = yargs.usage('$0 <numberOfTribes>', 'Seed database with number of tribes', function (yargs) {
+const argv = yargs.usage('$0 <numberOfTribes>', 'Seed database with number of tribes', function (yargs) {
   return yargs
     .positional('numberOfTribes', {
       describe: 'Number of tribes to add',
@@ -31,7 +31,7 @@ var argv = yargs.usage('$0 <numberOfTribes>', 'Seed database with number of trib
     .strict().yargs;
 }).argv;
 
-var tribeImageUUIDs = [
+const tribeImageUUIDs = [
   '171433b0-853b-4d19-a8b4-44def956696d',
   '22028fde-5302-4172-954d-f54949afd7e4',
   'e69eb05f-773f-423c-9246-43629b5a8baf',
@@ -60,11 +60,11 @@ var tribeImageUUIDs = [
   '69a500a4-a16e-4c4d-9981-84fbe310d531'
 ];
 
-var addTribes = function () {
-  var index = 0;
-  var max = argv.numberOfTribes;
-  var debug = (argv.debug === true);
-  var limit = (argv.limit === true);
+const addTribes = function () {
+  let index = 0;
+  const max = argv.numberOfTribes;
+  const debug = (argv.debug === true);
+  const limit = (argv.limit === true);
 
   // Add tribes
   console.log('Generating ' + max + ' tribes...');
@@ -82,9 +82,9 @@ var addTribes = function () {
   // Bootstrap db connection
   mongooseService.connect(function () {
     mongooseService.loadModels(function () {
-      var Tribe = mongoose.model('Tribe');
+      const Tribe = mongoose.model('Tribe');
 
-      var getTribes = new Promise(function (resolve, reject) {
+      const getTribes = new Promise(function (resolve, reject) {
         Tribe.find(function (err, tribes) {
           if (err) {
             reject(err);
@@ -105,9 +105,9 @@ var addTribes = function () {
         }
 
         while (index < max) {
-          var savedTribes = 0;
+          let savedTribes = 0;
           (function addNextTribe(tribeIndex) {
-            var tribe = new Tribe();
+            let tribe = new Tribe();
 
             tribe.label = faker.lorem.word() + '_' + (tribes.length + tribeIndex);
             tribe.labelHistory = faker.random.words();
