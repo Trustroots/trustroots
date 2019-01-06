@@ -136,27 +136,12 @@ var addUsers = function () {
       async.waterfall([
 
         function getUsersAndTribes(done) {
-          var getUsers = new Promise(function (resolve, reject) {
-            User.find(function (err, foundUsers) {
-              if (err) {
-                reject(err);
-              }
-              users = foundUsers;
-              resolve();
-            });
-          });
+          const getUsers = User.find();
+          const getTribes = Tribe.find();
 
-          var getTribes = new Promise(function (resolve, reject) {
-            Tribe.find(function (err, foundTribes) {
-              if (err) {
-                reject(err);
-              }
-              tribes = foundTribes;
-              resolve();
-            });
-          });
-
-          Promise.all([getUsers, getTribes]).then(function () {
+          Promise.all([getUsers, getTribes]).then(function (results) {
+            users = results[0];
+            tribes = results[1];
             done(null);
           }).catch(function (err) {
             console.log(err);
