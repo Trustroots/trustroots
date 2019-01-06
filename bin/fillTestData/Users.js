@@ -141,8 +141,7 @@ const addUsers = function () {
           const getTribes = Tribe.find();
 
           Promise.all([getUsers, getTribes]).then((results) => {
-            users = results[0];
-            tribes = results[1];
+            [users, tribes] = results;
             done(null);
           }).catch(function (err) {
             console.log(err);
