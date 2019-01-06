@@ -6,11 +6,10 @@ const _ = require('lodash'),
       chalk = require('chalk'),
       yargs = require('yargs'),
       faker = require('faker'),
-      fs = require('fs'),
       moment = require('moment'),
       mongoose = require('mongoose'),
       config = require(path.resolve('./config/config')),
-      cities = JSON.parse(fs.readFileSync(path.resolve('./bin/fillTestData/data/Cities.json'), 'utf8'));
+      cities = require(path.resolve('./bin/fillTestData/data/Cities.json'));
 
 let savedUsers = 0,
     savedOffers = 0;
