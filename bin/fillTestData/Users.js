@@ -52,7 +52,7 @@ const random = function (max) {
   return Math.floor(Math.random() * max);
 };
 
-const randomizeLoaction = function () {
+const randomizeLocation = function () {
   let random = Math.random();
   if (random > 0.98) {
     random = ((Math.random() - 0.5) * Math.random() * 4) - 1;
@@ -74,8 +74,8 @@ const addOffer = function (id, index, max, usersLength, limit, callback) {
   let offer = new Offer();
 
   let city = cities[random(cities.length)];
-  let lat = city.lat + randomizeLoaction();
-  let lon = city.lon + randomizeLoaction();
+  let lat = city.lat + randomizeLocation();
+  let lon = city.lon + randomizeLocation();
   let location = [lat, lon];
 
   offer.type = 'host';
