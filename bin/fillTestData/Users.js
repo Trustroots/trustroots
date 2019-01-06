@@ -72,10 +72,10 @@ const printSummary = function (countExisting, countSaved) {
 const addOffer = function (id, index, max, usersLength, limit, callback) {
   let offer = new Offer();
 
-  let city = cities[random(cities.length)];
-  let lat = city.lat + randomizeLocation();
-  let lon = city.lon + randomizeLocation();
-  let location = [lat, lon];
+  const city = cities[random(cities.length)];
+  const lat = city.lat + randomizeLocation();
+  const lon = city.lon + randomizeLocation();
+  const location = [lat, lon];
 
   offer.type = 'host';
   offer.status = _.sample(['yes', 'maybe']);
@@ -102,10 +102,11 @@ const addOffer = function (id, index, max, usersLength, limit, callback) {
 function addUsers() {
   let index = 0;
   let numAdminUsers;
-  let debug = (argv.debug === true);
-  let limit = (argv.limit === true);
-  let max = argv.numberOfUsers;
-  let adminUsers = argv.userNames;
+
+  const debug = (argv.debug === true);
+  const limit = (argv.limit === true);
+  const max = argv.numberOfUsers;
+  const adminUsers = argv.userNames;
 
   if (adminUsers === null || adminUsers === undefined) {
     numAdminUsers = 0;
