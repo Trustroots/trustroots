@@ -151,17 +151,17 @@ function addUsers() {
         }).catch(function (err) {
           console.log(err);
         });
-      } //getUsersAndTribes()
+      } // getUsersAndTribes()
 
 
-     /**
+      /**
       * Adds the number of users using the options specified by the user
       *
       * @returns {Promise} Promise that completes when all users have
       *  successfully been added.
       */
       function addAllUsers() {
-        return new Promise ((resolve) => {
+        return new Promise((resolve) => {
           if (limit) {
             index = userCount;
           }
@@ -264,10 +264,10 @@ function addUsers() {
             index++;
           }
         });
-      } //addAllUsers()
+      } // addAllUsers()
 
 
-     /**
+      /**
       * Update tribes with the new tribe counts once all users have been  added
       *
       * @returns {Promise} Promise that completes when all the tribes have
@@ -296,7 +296,7 @@ function addUsers() {
             }
           }
         });
-      } //updateTribes()
+      } // updateTribes()
 
 
       // This is the main sequence to add all the users.
