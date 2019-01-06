@@ -17,10 +17,9 @@
 
 // }());
 
-'use strict';
 var axios = require('axios');
 
-export function contactsCommonListService(id) {
+exports.contactsCommonListService = function (id) {
   return (
     axios.get('/api/contacts/'+ id + '/common')
       .then(function (resp) {
@@ -31,14 +30,3 @@ export function contactsCommonListService(id) {
       })
   );
 };
-// exports = function contactsCommonListService(id) {
-//   return (
-//     axios.get('/api/contacts/'+ id + '/common')
-//       .then(function (resp) {
-//         return resp.data;
-//       })
-//       .catch(function (error) {
-//         return error;
-//       })
-//   );
-// };

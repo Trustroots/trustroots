@@ -2,6 +2,7 @@ import React from 'react';
 // import { NamespacesConsumer } from 'react-i18next';
 import PropTypes from 'prop-types';
 import Contact from './Contact.component';
+// import { contactsCommonListService } from '@/modules/contacts/client/service/contacts-common-list.client.service';
 import { contactsCommonListService } from '../services/contacts-common-list.client.service';
 import '@/config/lib/i18n';
 
