@@ -194,7 +194,7 @@ const addThreads = function () {
                         }
                       }
                     });
-                  };
+                  }
 
                   if (messageIndex === messageCount) {
                     addNextMessage(messageIndex);
