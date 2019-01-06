@@ -12,7 +12,7 @@ const _ = require('lodash'),
 
 const argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
   'Seed database with number of threads with up to max messages per thread',
-  function (yargs) {
+  (yargs) => {
     return yargs
       .positional('numberOfThreads', {
         describe: 'Number of threads to add',
@@ -29,7 +29,7 @@ const argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
       .example('$0 100 10', 'Adds 100 random threads wth up to 10 messages per thread to the database')
       .example('$0 100 10 --debug', 'Adds 100 random threads wth up to 10 messages per thread to the database with debug database output')
       .example('$0 10 5 --limit', 'Adds up to 10 randomly seeded threads to the database with up to 5 message per thread (eg. If 5 threads already exist, 5 threads will be added)')
-      .check(function (argv) {
+      .check((argv) => {
         if (argv.numberOfThreads < 1) {
           throw new Error('Error: Number of threads should be greater than 0');
         }
@@ -72,15 +72,15 @@ const addThreads = function () {
   config.db.debug = debug;
 
   // Bootstrap db connection
-  mongooseService.connect(function () {
-    mongooseService.loadModels(function () {
+  mongooseService.connect(() => {
+    mongooseService.loadModels(() => {
       const Thread = mongoose.model('Thread');
       const Message = mongoose.model('Message');
       const User = mongoose.model('User');
 
       async.waterfall([
         function (done) {
-          Thread.find(function (err, threads) {
+          Thread.find((err, threads) => {
             if (err) {
               done(err, null);
             }
@@ -99,8 +99,8 @@ const addThreads = function () {
             process.exit(0);
           }
 
-          var getUsers = new Promise(function (resolve, reject) {
-            User.find(function (err, users) {
+          var getUsers = new Promise((resolve, reject) => {
+            User.find((err, users) => {
               if (err) {
                 reject(err);
               }
@@ -108,7 +108,7 @@ const addThreads = function () {
             });
           });
 
-          getUsers.then(function (users) {
+          getUsers.then((users) => {
             let threadsSaved = 0;
 
             if (users.length < 2) {
@@ -162,7 +162,7 @@ const addThreads = function () {
 
                     message.notificationCount = 0;
 
-                    message.save(function (err) {
+                    message.save((err) => {
                       if (err != null) {
                         console.log(err);
                       } else {
@@ -173,7 +173,7 @@ const addThreads = function () {
                           messageThread.userTo = message.userTo;
                           messageThread.message = message._id;
                           messageThread.read = true;
-                          messageThread.save(function (err) {
+                          messageThread.save((err) => {
                             if (err != null) {
                               console.log(err);
                             }
@@ -211,7 +211,7 @@ const addThreads = function () {
               index += 1;
             }
 
-          }).catch(function (err) {
+          }).catch((err) => {
             console.log(err);
             done(err, null);
           });
