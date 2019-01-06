@@ -12,8 +12,7 @@ const _ = require('lodash'),
       config = require(path.resolve('./config/config')),
       cities = JSON.parse(fs.readFileSync(path.resolve('./bin/fillTestData/data/Cities.json'), 'utf8'));
 
-let tribes = null,
-    savedUsers = 0,
+let savedUsers = 0,
     savedOffers = 0;
 
 require(path.resolve('./modules/offers/server/models/offer.server.model'));
@@ -132,7 +131,9 @@ function addUsers() {
     mongooseService.loadModels(async () => {
       const Tribe = mongoose.model('Tribe');
       const User = mongoose.model('User');
+
       let userCount = 0;
+      let tribes = null;
 
      /**
       * Gets the users and tribes from the database and saves them into the
