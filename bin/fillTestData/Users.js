@@ -9,7 +9,6 @@ const _ = require('lodash'),
       fs = require('fs'),
       moment = require('moment'),
       mongoose = require('mongoose'),
-      async = require('async'),
       config = require(path.resolve('./config/config')),
       cities = JSON.parse(fs.readFileSync(path.resolve('./bin/fillTestData/data/Cities.json'), 'utf8'));
 
@@ -100,7 +99,7 @@ const addOffer = function (id, index, max, usersLength, limit, callback) {
   });
 };
 
-const addUsers = function () {
+function addUsers() {
   let index = 0;
   let numAdminUsers;
   let debug = (argv.debug === true);
@@ -130,26 +129,37 @@ const addUsers = function () {
 
   // Bootstrap db connection
   mongooseService.connect(() => {
-    mongooseService.loadModels(() => {
+    mongooseService.loadModels(async () => {
       const Tribe = mongoose.model('Tribe');
       const User = mongoose.model('User');
 
-      async.waterfall([
+     /**
+      * Gets the users and tribes from the database and saves them into the
+      * global variables
+      *
+      * @returns {Promise} Promise that completes when user and tribe data
+      *  have successfully loaded into global variables.
+      */
+      function getUsersAndTribes() {
+        const getUsers = User.find();
+        const getTribes = Tribe.find();
 
-        function getUsersAndTribes(done) {
-          const getUsers = User.find();
-          const getTribes = Tribe.find();
+        return Promise.all([getUsers, getTribes]).then((results) => {
+          [users, tribes] = results;
+        }).catch(function (err) {
+          console.log(err);
+        });
+      } //getUsersAndTribes()
 
-          Promise.all([getUsers, getTribes]).then((results) => {
-            [users, tribes] = results;
-            done(null);
-          }).catch(function (err) {
-            console.log(err);
-            done(err);
-          });
-        },
 
-        function addAllUsers(done) {
+     /**
+      * Adds the number of users using the options specified by the user
+      *
+      * @returns {Promise} Promise that completes when all users have
+      *  successfully been added.
+      */
+      function addAllUsers() {
+        return new Promise ((resolve) => {
           if (limit) {
             index = users.length;
           }
@@ -235,7 +245,7 @@ const addUsers = function () {
                   console.log(err);
                 }
 
-                addOffer(user._id, index, max, users.length, limit, done);
+                addOffer(user._id, index, max, users.length, limit, resolve);
               });
 
 
@@ -251,15 +261,23 @@ const addUsers = function () {
 
             index++;
           }
-        },
+        });
+      } //addAllUsers()
 
-        // Update tribes with the new tribe counts once all users have been  added
-        function updateTribes(done) {
+
+     /**
+      * Update tribes with the new tribe counts once all users have been  added
+      *
+      * @returns {Promise} Promise that completes when all the tribes have
+      *  successfully been updated.
+      */
+      function updateTribes() {
+        return new Promise((resolve) => {
           let numTribesUpdated = 0;
 
           // If we didn't add any users, tribes do not need to be updated
           if (savedUsers === 0) {
-            done(null);
+            resolve();
           } else {
             // Update tribes
             for (let j = 0; j < tribes.length; j++) {
@@ -270,22 +288,30 @@ const addUsers = function () {
 
                 numTribesUpdated += 1;
                 if (tribes.length === numTribesUpdated) {
-                  done(null);
+                  resolve();
                 }
               });
             }
           }
-        },
+        });
+      } //updateTribes()
 
-        // disconnect from mongo
-        function disconnect(done) {
-          mongooseService.disconnect(() => {
-            done(null);
-          });
-        }
 
-      ]); // asyc.waterfall
+      // This is the main sequence to add all the users.
+      //    * First get the current user and tribe data
+      //    * Then seed all the new users
+      //    * Lastly update the number of users that were added to each tribe
+      try {
+        await getUsersAndTribes();
+        await addAllUsers();
+        await updateTribes();
 
+        // Disconnect from the database
+        mongooseService.disconnect();
+
+      } catch (err) {
+        console.log(err);
+      }
     });
   });
 }; // addUsers()
