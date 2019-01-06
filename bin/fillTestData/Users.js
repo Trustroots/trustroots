@@ -86,7 +86,7 @@ const addOffer = function (id, index, max, usersLength, limit, callback) {
   offer.location = location;
   offer.locationFuzzy = location;
 
-  offer.save(function (err) {
+  offer.save((err) => {
     if (err != null) console.log(err);
     else {
       savedOffers++;
@@ -129,8 +129,8 @@ const addUsers = function () {
   config.db.debug = debug;
 
   // Bootstrap db connection
-  mongooseService.connect(function () {
-    mongooseService.loadModels(function () {
+  mongooseService.connect(() => {
+    mongooseService.loadModels(() => {
       const Tribe = mongoose.model('Tribe');
       const User = mongoose.model('User');
 
@@ -140,7 +140,7 @@ const addUsers = function () {
           const getUsers = User.find();
           const getTribes = Tribe.find();
 
-          Promise.all([getUsers, getTribes]).then(function (results) {
+          Promise.all([getUsers, getTribes]).then((results) => {
             users = results[0];
             tribes = results[1];
             done(null);
@@ -264,7 +264,7 @@ const addUsers = function () {
           } else {
             // Update tribes
             for (let j = 0; j < tribes.length; j++) {
-              Tribe.findByIdAndUpdate(tribes[j]._id, tribes[j], function (err) {
+              Tribe.findByIdAndUpdate(tribes[j]._id, tribes[j], (err) => {
                 if (err) {
                   console.error(err);
                 }
@@ -280,7 +280,7 @@ const addUsers = function () {
 
         // disconnect from mongo
         function disconnect(done) {
-          mongooseService.disconnect(function () {
+          mongooseService.disconnect(() => {
             done(null);
           });
         }
