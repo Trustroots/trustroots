@@ -1,16 +1,16 @@
 'use strict';
 
-var _ = require('lodash'),
-    path = require('path'),
-    mongooseService = require(path.resolve('./config/lib/mongoose')),
-    chalk = require('chalk'),
-    yargs = require('yargs'),
-    faker = require('faker'),
-    mongoose = require('mongoose'),
-    async = require('async'),
-    config = require(path.resolve('./config/config'));
+const _ = require('lodash'),
+      path = require('path'),
+      mongooseService = require(path.resolve('./config/lib/mongoose')),
+      chalk = require('chalk'),
+      yargs = require('yargs'),
+      faker = require('faker'),
+      mongoose = require('mongoose'),
+      async = require('async'),
+      config = require(path.resolve('./config/config'));
 
-var argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
+const argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
   'Seed database with number of threads with up to max messages per thread',
   function (yargs) {
     return yargs
@@ -42,22 +42,22 @@ var argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
   })
   .argv;
 
-var random = function (max) {
+const random = function (max) {
   return Math.floor(Math.random() * max);
 };
 
-var addDays = function addDays(date, days) {
-  var result = new Date(date);
+const addDays = function addDays(date, days) {
+  const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
 };
 
-var addThreads = function () {
-  var index = 0;
-  var numThreads = argv.numberOfThreads;
-  var maxMessages= argv.maxMessages;
-  var debug = (argv.debug === true);
-  var limit = (argv.limit === true);
+const addThreads = function () {
+  let index = 0;
+  const numThreads = argv.numberOfThreads;
+  const maxMessages= argv.maxMessages;
+  const debug = (argv.debug === true);
+  const limit = (argv.limit === true);
 
   console.log('Generating ' + numThreads + ' messages...');
   if (numThreads > 2000) {
@@ -74,9 +74,9 @@ var addThreads = function () {
   // Bootstrap db connection
   mongooseService.connect(function () {
     mongooseService.loadModels(function () {
-      var Thread = mongoose.model('Thread');
-      var Message = mongoose.model('Message');
-      var User = mongoose.model('User');
+      const Thread = mongoose.model('Thread');
+      const Message = mongoose.model('Message');
+      const User = mongoose.model('User');
 
       async.waterfall([
         function (done) {
@@ -109,6 +109,7 @@ var addThreads = function () {
           });
 
           getUsers.then(function (users) {
+            let threadsSaved = 0;
 
             if (users.length < 2) {
               console.log('Error: At least 2 users must exist to create message threads. Please create more users and run again');
@@ -116,25 +117,25 @@ var addThreads = function () {
             }
 
             while (index < numThreads) {
-              var threadsSaved = 0;
 
               (function addNextMessageThread() {
-                var messageThread = new Thread;
-                var messageCount = random(maxMessages) + 1;
-                var messageIndex = messageCount;
-                var to,
+                const messageCount = random(maxMessages) + 1;
+                let messageThread = new Thread;
+                let messageIndex = messageCount;
+
+                let to,
                     from;
 
                 while (messageIndex > 0) {
                   function addNextMessage(depth, userTo, userFrom) {
-                    var message = new Message();
+                    let message = new Message();
 
                     message.created = addDays(Date.now(), -depth + 1);
                     message.content = faker.lorem.sentences();
 
                     // Randomize indecies
-                    var randomUsers = [];
-                    for (var i = 0; i < users.length; i++) {
+                    let randomUsers = [];
+                    for (let i = 0; i < users.length; i++) {
                       randomUsers[i] = i;
                     }
                     randomUsers = _.shuffle(randomUsers);
