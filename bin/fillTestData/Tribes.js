@@ -81,65 +81,82 @@ const addTribes = function () {
 
   // Bootstrap db connection
   mongooseService.connect(() => {
-    mongooseService.loadModels(() => {
+    mongooseService.loadModels(async () => {
       const Tribe = mongoose.model('Tribe');
 
-      const getTribeCount = Tribe.countDocuments();
+      /**
+      * Adds the number of tribes using the options specified by the user
+      *
+      * @returns {Promise} Promise that completes when all tribes have
+      *  successfully been added.
+      */
+      function addAllTribes(tribeCount) {
+        return new Promise((resolve) => {
+          let savedTribes = 0;
+          if (limit) {
+            index = tribeCount;
+          }
 
-      getTribeCount.then((tribeCount) => {
-        let savedTribes = 0;
-        if (limit) {
-          index = tribeCount;
-        }
+          if (index >= max) {
+            console.log(chalk.green(tribeCount + ' tribes already exist. No tribes created!'));
+            console.log(chalk.white('')); // Reset to white
+            process.exit(0);
+          }
 
-        if (index >= max) {
-          console.log(chalk.green(tribeCount + ' tribes already exist. No tribes created!'));
-          console.log(chalk.white('')); // Reset to white
-          process.exit(0);
-        }
+          while (index < max) {
+            (function addNextTribe(tribeIndex) {
+              let tribe = new Tribe();
 
-        while (index < max) {
-          (function addNextTribe(tribeIndex) {
-            let tribe = new Tribe();
+              tribe.label = faker.lorem.word() + '_' + (tribeCount + tribeIndex);
+              tribe.labelHistory = faker.random.words();
+              tribe.slugHistory = faker.random.words();
+              tribe.synonyms = faker.random.words();
+              tribe.color = faker.internet.color().slice(1);
+              tribe.count = 0;
+              tribe.created = Date.now();
+              tribe.modified = Date.now();
+              tribe.public = true;
+              tribe.image_UUID = _.sample(tribeImageUUIDs);
+              tribe.attribution = faker.name.findName();
+              tribe.attribution_url = faker.internet.url();
+              tribe.description = faker.lorem.sentences();
 
-            tribe.label = faker.lorem.word() + '_' + (tribeCount + tribeIndex);
-            tribe.labelHistory = faker.random.words();
-            tribe.slugHistory = faker.random.words();
-            tribe.synonyms = faker.random.words();
-            tribe.color = faker.internet.color().slice(1);
-            tribe.count = 0;
-            tribe.created = Date.now();
-            tribe.modified = Date.now();
-            tribe.public = true;
-            tribe.image_UUID = _.sample(tribeImageUUIDs);
-            tribe.attribution = faker.name.findName();
-            tribe.attribution_url = faker.internet.url();
-            tribe.description = faker.lorem.sentences();
-
-            tribe.save((err) => {
-              if (err != null) {
-                console.log(err);
-              }
-              else {
-                process.stdout.write('.');
-                savedTribes += 1;
-                if ((limit && (savedTribes + tribeCount >= max))
-                    || !limit && ((savedTribes >= max))) {
-                  console.log('');
-                  console.log(chalk.green(tribeCount + ' tribes existed in the database.'));
-                  console.log(chalk.green(savedTribes + ' tribes successfully added.'));
-                  console.log(chalk.green('Database now contains ' + (tribeCount + savedTribes) + ' tribes.'));
-                  console.log(chalk.white('')); // Reset to white
-                  process.exit(0);
+              tribe.save((err) => {
+                if (err != null) {
+                  console.log(err);
                 }
-              }
-            });
-          }(index));
-          index+=1;
-        }
-      });
-    });
-  });
+                else {
+                  process.stdout.write('.');
+                  savedTribes += 1;
+                  if ((limit && (savedTribes + tribeCount >= max))
+                    || !limit && ((savedTribes >= max))) {
+                    console.log('');
+                    console.log(chalk.green(tribeCount + ' tribes existed in the database.'));
+                    console.log(chalk.green(savedTribes + ' tribes successfully added.'));
+                    console.log(chalk.green('Database now contains ' + (tribeCount + savedTribes) + ' tribes.'));
+                    console.log(chalk.white('')); // Reset to white
+                    resolve();
+                  }
+                }
+              });
+            }(index));
+            index += 1;
+          }
+        }); // Promise
+      } // addTotalTribes()
+
+
+      // This is the main sequence to add the tribes.
+      //    * First get the current number of tribes from the database
+      //    * Then seed all the new tribes
+      const tribeCount = await Tribe.countDocuments();
+      await addAllTribes(tribeCount);
+
+      // Disconnect from the database
+      mongooseService.disconnect();
+
+    }); // monggooseService.loadModels
+  }); // mongooseService.connect
 };
 
 addTribes();
