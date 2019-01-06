@@ -59,7 +59,7 @@ const addThreads = function () {
   const debug = (argv.debug === true);
   const limit = (argv.limit === true);
 
-  console.log('Generating ' + numThreads + ' messages...');
+  console.log('Generating ' + numThreads + ' message threads...');
   if (numThreads > 2000) {
     console.log('...this might really take a while... go grab some coffee!');
   }
@@ -94,7 +94,7 @@ const addThreads = function () {
           }
 
           if (index >= numThreads) {
-            console.log(chalk.green(threads.length + ' threads already exist. No threads created!'));
+            console.log(chalk.green(threads.length + ' message threads already exist. No threads created!'));
             console.log(chalk.white('')); // Reset to white
             process.exit(0);
           }
@@ -183,9 +183,9 @@ const addThreads = function () {
                               if ((limit && (threadsSaved + threads.length >= numThreads))
                                   || !limit && ((threadsSaved >= numThreads))) {
                                 console.log('');
-                                console.log(chalk.green(threads.length + ' threads existed in the database.'));
-                                console.log(chalk.green(threadsSaved + ' threads successfully added.'));
-                                console.log(chalk.green('Database now contains ' + (threads.length + threadsSaved) + ' threads.'));
+                                console.log(chalk.green(threads.length + ' message threads existed in the database.'));
+                                console.log(chalk.green(threadsSaved + ' message threads successfully added.'));
+                                console.log(chalk.green('Database now contains ' + (threads.length + threadsSaved) + ' message threads.'));
                                 console.log(chalk.white('')); // Reset to white
                                 process.exit(0);
                               }
