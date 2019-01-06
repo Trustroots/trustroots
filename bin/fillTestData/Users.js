@@ -135,7 +135,7 @@ function addUsers() {
       let userCount = 0;
       let tribes = null;
 
-     /**
+      /**
       * Gets the users and tribes from the database and saves them into the
       * global variables
       *
