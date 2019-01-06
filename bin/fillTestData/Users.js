@@ -1,25 +1,26 @@
 'use strict';
 
-var _ = require('lodash'),
-    path = require('path'),
-    mongooseService = require(path.resolve('./config/lib/mongoose')),
-    chalk = require('chalk'),
-    yargs = require('yargs'),
-    faker = require('faker'),
-    fs = require('fs'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    async = require('async'),
-    config = require(path.resolve('./config/config')),
-    cities = JSON.parse(fs.readFileSync(path.resolve('./bin/fillTestData/data/Cities.json'), 'utf8')),
-    users = null,
+const _ = require('lodash'),
+      path = require('path'),
+      mongooseService = require(path.resolve('./config/lib/mongoose')),
+      chalk = require('chalk'),
+      yargs = require('yargs'),
+      faker = require('faker'),
+      fs = require('fs'),
+      moment = require('moment'),
+      mongoose = require('mongoose'),
+      async = require('async'),
+      config = require(path.resolve('./config/config')),
+      cities = JSON.parse(fs.readFileSync(path.resolve('./bin/fillTestData/data/Cities.json'), 'utf8'));
+
+let users = null,
     tribes = null,
     savedUsers = 0,
     savedOffers = 0;
 
 require(path.resolve('./modules/offers/server/models/offer.server.model'));
 
-var argv = yargs.usage('$0 <numberOfUsers>', 'Seed database with number of tribes', function (yargs) {
+const argv = yargs.usage('$0 <numberOfUsers>', 'Seed database with number of tribes', function (yargs) {
   return yargs
     .positional('numberOfUsers', {
       describe: 'Number of users to add',
@@ -45,14 +46,14 @@ var argv = yargs.usage('$0 <numberOfUsers>', 'Seed database with number of tribe
     .yargs;
 }).argv;
 
-var Offer = mongoose.model('Offer');
+const Offer = mongoose.model('Offer');
 
-var random = function (max) {
+const random = function (max) {
   return Math.floor(Math.random() * max);
 };
 
-var randomizeLoaction = function () {
-  var random = Math.random();
+const randomizeLoaction = function () {
+  let random = Math.random();
   if (random > 0.98) {
     random = ((Math.random() - 0.5) * Math.random() * 4) - 1;
   } else {
@@ -61,7 +62,7 @@ var randomizeLoaction = function () {
   return parseFloat(random.toFixed(5));
 };
 
-var printSummary = function (countExisting, countSaved) {
+const printSummary = function (countExisting, countSaved) {
   console.log('');
   console.log(chalk.green(countExisting + ' users existed in the database.'));
   console.log(chalk.green(countSaved + ' users successfully added.'));
@@ -69,13 +70,13 @@ var printSummary = function (countExisting, countSaved) {
   console.log(chalk.white(''));
 };
 
-var addOffer = function (id, index, max, usersLength, limit, callback) {
-  var offer = new Offer();
+const addOffer = function (id, index, max, usersLength, limit, callback) {
+  let offer = new Offer();
 
-  var city = cities[random(cities.length)];
-  var lat = city.lat + randomizeLoaction();
-  var lon = city.lon + randomizeLoaction();
-  var location = [lat, lon];
+  let city = cities[random(cities.length)];
+  let lat = city.lat + randomizeLoaction();
+  let lon = city.lon + randomizeLoaction();
+  let location = [lat, lon];
 
   offer.type = 'host';
   offer.status = _.sample(['yes', 'maybe']);
@@ -99,13 +100,13 @@ var addOffer = function (id, index, max, usersLength, limit, callback) {
   });
 };
 
-var addUsers = function () {
-  var index = 0;
-  var numAdminUsers;
-  var debug = (argv.debug === true);
-  var limit = (argv.limit === true);
-  var max = argv.numberOfUsers;
-  var adminUsers = argv.userNames;
+const addUsers = function () {
+  let index = 0;
+  let numAdminUsers;
+  let debug = (argv.debug === true);
+  let limit = (argv.limit === true);
+  let max = argv.numberOfUsers;
+  let adminUsers = argv.userNames;
 
   if (adminUsers === null || adminUsers === undefined) {
     numAdminUsers = 0;
@@ -113,7 +114,7 @@ var addUsers = function () {
     numAdminUsers = adminUsers.length;
   }
 
-  var printWarning = function printWarning() {
+  const printWarning = function printWarning() {
     console.log('Generating ' + max + ' users...');
     if (max > 2000) {
       console.log('...this might really take a while... go grab some coffee!');
@@ -130,8 +131,8 @@ var addUsers = function () {
   // Bootstrap db connection
   mongooseService.connect(function () {
     mongooseService.loadModels(function () {
-      var Tribe = mongoose.model('Tribe');
-      var User = mongoose.model('User');
+      const Tribe = mongoose.model('Tribe');
+      const User = mongoose.model('User');
 
       async.waterfall([
 
@@ -167,8 +168,8 @@ var addUsers = function () {
 
           while (index < max) {
             (function addNextUser(){
-              var user = new User();
-              var admin;
+              let user = new User();
+              let admin;
 
               // Check if this is an admin user
               if (numAdminUsers > 0) {
@@ -204,18 +205,18 @@ var addUsers = function () {
 
               // Add the user to tribes
               if (tribes.length > 0) {
-                var userNumTribes = random(tribes.length);
+                const userNumTribes = random(tribes.length);
 
                 // Randomize indecies
-                var randomTribes = [];
-                for (var i = 0; i < tribes.length; i++) {
+                let randomTribes = [];
+                for (let i = 0; i < tribes.length; i++) {
                   randomTribes[i] = i;
                 }
                 randomTribes = _.shuffle(randomTribes);
 
                 // Add the tribes using the random indecies
-                for (var j = 0; j < userNumTribes; j++) {
-                  var rand = randomTribes[j];
+                for (let j = 0; j < userNumTribes; j++) {
+                  let rand = randomTribes[j];
                   user.member.push({ tribe: tribes[rand]._id, since: Date.now() });
                   tribes[rand].count += 1;
                 }
@@ -255,14 +256,14 @@ var addUsers = function () {
 
         // Update tribes with the new tribe counts once all users have been  added
         function updateTribes(done) {
-          var numTribesUpdated = 0;
+          let numTribesUpdated = 0;
 
           // If we didn't add any users, tribes do not need to be updated
           if (savedUsers === 0) {
             done(null);
           } else {
             // Update tribes
-            for (var j = 0; j < tribes.length; j++) {
+            for (let j = 0; j < tribes.length; j++) {
               Tribe.findByIdAndUpdate(tribes[j]._id, tribes[j], function (err) {
                 if (err) {
                   console.error(err);
