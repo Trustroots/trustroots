@@ -39,7 +39,6 @@ export default class ContactsCommon extends React.Component {
         <div className="panel-body">
           <div className="contacts-contact">
             {this.state.contacts.map((contact) => {
-              console.log(contact.user.displayName);
               return (
                 <div key={contact}>
                   <Contact
@@ -56,6 +55,6 @@ export default class ContactsCommon extends React.Component {
   }
 }
 
-TrContactsCommon.propTypes = {
+ContactsCommon.propTypes = {
   contacts: PropTypes.string
 };
