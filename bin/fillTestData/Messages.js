@@ -142,107 +142,102 @@ function seedThreads() {
 
           // Add threads until we reach the total
           while (index < numThreads) {
+            const messageCount = random(maxMessages) + 1;
+            let messageIndex = messageCount;
+            let to,
+                from;
 
-            (function addNextMessageThread() {
-              const messageCount = random(maxMessages) + 1;
-              let messageThread = new Thread;
-              let messageIndex = messageCount;
-              let to,
-                  from;
+            // Add messages until we reach the total
+            while (messageIndex > 0) {
+              function addMessage(depth, userTo, userFrom) {
+                let message = new Message();
 
-              // Add messages until we reach the total
-              while (messageIndex > 0) {
-                function addNextMessage(depth, userTo, userFrom) {
-                  let message = new Message();
+                message.created = addDays(Date.now(), -depth + 1);
+                message.content = faker.lorem.sentences();
 
-                  message.created = addDays(Date.now(), -depth + 1);
-                  message.content = faker.lorem.sentences();
+                // Randomize indecies
+                let randomUsers = [];
+                for (let i = 0; i < users.length; i++) {
+                  randomUsers[i] = i;
+                }
+                randomUsers = _.shuffle(randomUsers);
 
-                  // Randomize indecies
-                  let randomUsers = [];
-                  for (let i = 0; i < users.length; i++) {
-                    randomUsers[i] = i;
-                  }
-                  randomUsers = _.shuffle(randomUsers);
-
-                  if (userTo) {
-                    message.userTo = userTo;
-                  } else {
-                    message.userTo = users[randomUsers[1]]._id;
-                    to = message.userTo;
-                  }
-                  if (userFrom) {
-                    message.userFrom = userFrom;
-                  } else {
-                    message.userFrom = users[randomUsers[0]]._id;
-                    from = message.userFrom;
-                  }
-
-                  // Assume 80% of messages are read
-                  if (random(100) < 80) {
-                    message.read = true;
-                  } else {
-                    message.read = false;
-                  }
-
-                  message.notificationCount = 0;
-
-                  // save the newly created message
-                  message.save((err) => {
-                    if (err != null) {
-                      console.log(err);
-                    } else {
-                      // Message was saved successfully
-
-                      // Add thread for the most recent message
-                      if (depth === 1) {
-                        messageThread.updated = message.created;
-                        messageThread.userFrom = message.userFrom;
-                        messageThread.userTo = message.userTo;
-                        messageThread.message = message._id;
-                        messageThread.read = true;
-
-                        // save the message thread
-                        messageThread.save((err) => {
-                          if (err != null) {
-                            console.log(err);
-                          }
-                          else {
-                            // Thread was saved successfully
-                            process.stdout.write('.');
-                            threadsSaved += 1;
-
-                            // If all threads have been saved print a summary and
-                            // resolve the promise.
-                            if ((limit && (threadsSaved + initialThreadCount >= numThreads))
-                                  || !limit && ((threadsSaved >= numThreads))) {
-                              console.log('');
-                              console.log(chalk.green(initialThreadCount + ' message threads existed in the database.'));
-                              console.log(chalk.green(threadsSaved + ' message threads successfully added.'));
-                              console.log(chalk.green('Database now contains ' + (initialThreadCount + threadsSaved) + ' message threads.'));
-                              console.log(chalk.white('')); // Reset to white
-                              resolve();
-                              return;
-                            }
-                          }
-                        });
-                      }
-                    }
-                  });
-                } // addNextMessage
-
-                if (messageIndex === messageCount) {
-                  addNextMessage(messageIndex);
-                } else if (((messageIndex + 1) % 2) === 0) {
-                  // Reverse the order of to and from to simulate a conversation going back and forth
-                  addNextMessage(messageIndex, from, to);
-                } else if (((messageIndex + 1) % 2) === 1) {
-                  addNextMessage(messageIndex, to, from);
+                if (userTo) {
+                  message.userTo = userTo;
+                } else {
+                  message.userTo = users[randomUsers[1]]._id;
+                  to = message.userTo;
+                }
+                if (userFrom) {
+                  message.userFrom = userFrom;
+                } else {
+                  message.userFrom = users[randomUsers[0]]._id;
+                  from = message.userFrom;
                 }
 
-                messageIndex -= 1;
+                // Assume 80% of messages are read
+                if (random(100) < 80) {
+                  message.read = true;
+                } else {
+                  message.read = false;
+                }
+
+                message.notificationCount = 0;
+
+                // save the newly created message
+                message.save((err) => {
+                  if (err != null) {
+                    console.log(err);
+                  } else {
+                    // Message was saved successfully
+
+                    // Add thread for the most recent message
+                    if (depth === 1) {
+                      let messageThread = new Thread;
+
+                      // seed the message thread data
+                      seedThread(messageThread, message);
+
+                      // save the message thread
+                      messageThread.save((err) => {
+                        if (err != null) {
+                          console.log(err);
+                        }
+                        else {
+                          // Thread was saved successfully
+                          process.stdout.write('.');
+                          threadsSaved += 1;
+
+                          // If all threads have been saved print a summary and
+                          // resolve the promise.
+                          if ((limit && (threadsSaved + initialThreadCount >= numThreads))
+                                  || !limit && ((threadsSaved >= numThreads))) {
+                            console.log('');
+                            console.log(chalk.green(initialThreadCount + ' message threads existed in the database.'));
+                            console.log(chalk.green(threadsSaved + ' message threads successfully added.'));
+                            console.log(chalk.green('Database now contains ' + (initialThreadCount + threadsSaved) + ' message threads.'));
+                            console.log(chalk.white('')); // Reset to white
+                            resolve();
+                            return;
+                          }
+                        }
+                      }); // messageThread.save
+                    }
+                  }
+                }); // message.save
+              } // addNextMessage
+
+              if (messageIndex === messageCount) {
+                addMessage(messageIndex);
+              } else if (((messageIndex + 1) % 2) === 0) {
+                // Reverse the order of to and from to simulate a conversation going back and forth
+                addMessage(messageIndex, from, to);
+              } else if (((messageIndex + 1) % 2) === 1) {
+                addMessage(messageIndex, to, from);
               }
-            }());
+
+              messageIndex -= 1;
+            }
             index += 1;
           }
         }); // Promise
@@ -263,6 +258,25 @@ function seedThreads() {
 
     }); // monggooseService.loadModels
   }); // mongooseService.connect
+
+
+  /**
+   * Seed the message thread with fake data and data from the message.
+   *
+   * @param {Thread} thread
+   * @param {Message} message
+   * @returns
+   */
+  function seedThread(thread, message) {
+    thread.updated = message.created;
+    thread.userFrom = message.userFrom;
+    thread.userTo = message.userTo;
+    thread.message = message._id;
+    thread.read = true;
+
+    return thread;
+  } // seedThread
+
 } // seedThreads
 
 seedThreads();
