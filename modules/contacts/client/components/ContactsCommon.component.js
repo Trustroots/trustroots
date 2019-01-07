@@ -38,16 +38,15 @@ export default class ContactsCommon extends React.Component {
         {/* convert ng-pluralize with NamespacesConsumer */}
         <div className="panel-body">
           <div className="contacts-contact">
-            {this.state.contacts.map((contact) => {
-              return (
-                <div key={contact}>
-                  <Contact
-                    contact={contact}
-                    hide-meta="true"
-                    avatar-size="64"
-                    selfId={this.props.contacts}
-                  />
-                </div>);})}
+            {this.state.contacts.map((contact) =>
+              <div key={contact}>
+                <Contact
+                  contact={contact}
+                  hide-meta="true"
+                  avatar-size="64"
+                  selfId={this.props.contacts}
+                />
+              </div>)}
           </div>
         </div>
       </div>
