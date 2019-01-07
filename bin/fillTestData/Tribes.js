@@ -131,7 +131,7 @@ const addTribes = function () {
           if (index >= max) {
             console.log(chalk.green(tribeCount + ' tribes already exist. No tribes created!'));
             console.log(chalk.white('')); // Reset to white
-            process.exit(0);
+            resolve();
           }
 
           // Add tribes until we reach the total
