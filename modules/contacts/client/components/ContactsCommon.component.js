@@ -22,7 +22,6 @@ export default class ContactsCommon extends React.Component {
   async onChange() {
     const contacts = this.props.contacts;
     const list = await contactsCommonListService(contacts);
-    console.log(list[0]);
     this.setState({
       contacts: list
     });
@@ -42,8 +41,8 @@ export default class ContactsCommon extends React.Component {
               <div key={contact}>
                 <Contact
                   contact={contact}
-                  hide-meta="true"
-                  avatar-size="64"
+                  hide-meta={true}
+                  avatar-size={64}
                   selfId={this.props.contacts}
                 />
               </div>)}
