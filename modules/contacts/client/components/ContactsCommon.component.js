@@ -5,7 +5,7 @@ import Contact from './Contact.component';
 import { contactsCommonListService } from '../services/contacts-common-list.client.service';
 import '@/config/lib/i18n';
 
-export default class TrContactsCommon extends React.Component {
+export default class ContactsCommon extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
