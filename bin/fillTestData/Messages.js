@@ -1,5 +1,8 @@
 'use strict';
 
+/**
+ * Required dependencies
+ */
 const _ = require('lodash'),
       path = require('path'),
       mongooseService = require(path.resolve('./config/lib/mongoose')),
@@ -10,6 +13,10 @@ const _ = require('lodash'),
       async = require('async'),
       config = require(path.resolve('./config/config'));
 
+
+/**
+ * Configure the script usage using yargs to obtain parameters and enforce usage.
+ */
 const argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
   'Seed database with number of threads with up to max messages per thread',
   (yargs) => {
@@ -42,17 +49,38 @@ const argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
   })
   .argv;
 
-const random = function (max) {
-  return Math.floor(Math.random() * max);
-};
 
-const addDays = function addDays(date, days) {
+/**
+ * This generates a random integer between 0 and max - 1 inclusively
+ *
+ * @param {number} max The max value to use to generate the random integer
+ * @returns random integer between 0 and max - 1
+ */
+function random(max) {
+  return Math.floor(Math.random() * max);
+}
+
+
+/**
+ * Adds number of days to the date and returns a new date
+ *
+ * @param {Date} date
+ * @param {number} days
+ * @returns {Date} the new date object
+ */
+function addDays(date, days) {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
-};
+}
 
-const addThreads = function () {
+/**
+ * This the the main method that seeds all the message threads. Based on the
+ * limit parameter and the number of threads and messages options, it
+ * determines how many new message threads to add. It then adds the
+ * threads and prints status accordingly.
+ */
+function seedThreads() {
   let index = 0;
   const numThreads = argv.numberOfThreads;
   const maxMessages= argv.maxMessages;
@@ -220,7 +248,6 @@ const addThreads = function () {
       ]);
     });
   });
-};
+} // seedThreads
 
-// Add messages
-addThreads();
+seedThreads();
