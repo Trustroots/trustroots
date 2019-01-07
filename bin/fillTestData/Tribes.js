@@ -194,8 +194,12 @@ function seedTribes() {
       // This is the main sequence to add the tribes.
       //    * First get the current number of tribes from the database
       //    * Then seed all the new tribes
-      const tribeCount = await Tribe.countDocuments();
-      await addTribes(tribeCount);
+      try {
+        const tribeCount = await Tribe.countDocuments();
+        await addTribes(tribeCount);
+      } catch (err) {
+        console.log(err);
+      }
 
       // Disconnect from the database
       mongooseService.disconnect();
