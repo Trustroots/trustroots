@@ -322,7 +322,7 @@ function addUsers() {
           let numTribesUpdated = 0;
 
           // If we didn't add any users, tribes do not need to be updated
-          if (savedUsers === 0) {
+          if (savedUsers === 0 || tribes.length === 0) {
             resolve();
           } else {
             // Update tribes
