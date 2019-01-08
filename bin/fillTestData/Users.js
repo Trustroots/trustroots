@@ -1,5 +1,8 @@
 'use strict';
 
+/**
+ * Required dependencies
+ */
 const _ = require('lodash'),
       path = require('path'),
       mongooseService = require(path.resolve('./config/lib/mongoose')),
@@ -11,11 +14,12 @@ const _ = require('lodash'),
       config = require(path.resolve('./config/config')),
       cities = require(path.resolve('./bin/fillTestData/data/Cities.json'));
 
-let savedUsers = 0,
-    savedOffers = 0;
-
 require(path.resolve('./modules/offers/server/models/offer.server.model'));
 
+
+/**
+ * Configure the script usage using yargs to obtain parameters and enforce usage.
+ */
 const argv = yargs.usage('$0 <numberOfUsers>', 'Seed database with number of tribes', function (yargs) {
   return yargs
     .positional('numberOfUsers', {
@@ -42,13 +46,32 @@ const argv = yargs.usage('$0 <numberOfUsers>', 'Seed database with number of tri
     .yargs;
 }).argv;
 
+
+/**
+ * Globals
+ */
+let savedUsers = 0,
+    savedOffers = 0;
 const Offer = mongoose.model('Offer');
 
-const random = function (max) {
-  return Math.floor(Math.random() * max);
-};
 
-const randomizeLocation = function () {
+/**
+ * Generates a random integer between 0 and max - 1 inclusively
+ *
+ * @param {number} max The max value to use to generate the random integer
+ * @returns random integer between 0 and max - 1
+ */
+function random(max) {
+  return Math.floor(Math.random() * max);
+}
+
+
+/**
+ * Generates a random float value for locations
+ *
+ * @returns {float} 
+ */
+function randomizeLocation() {
   let random = Math.random();
   if (random > 0.98) {
     random = ((Math.random() - 0.5) * Math.random() * 4) - 1;
@@ -56,17 +79,35 @@ const randomizeLocation = function () {
     random = random / 10000 - 0.00005;
   }
   return parseFloat(random.toFixed(5));
-};
+}
 
-const printSummary = function (countExisting, countSaved) {
+
+/**
+ * Prints the final summary of how many users were saved
+ *
+ * @param {number} countExisting
+ * @param {number} countSaved
+ */
+function printSummary(countExisting, countSaved) {
   console.log('');
   console.log(chalk.green(countExisting + ' users existed in the database.'));
   console.log(chalk.green(countSaved + ' users successfully added.'));
   console.log(chalk.green('Database now contains ' + (countExisting + countSaved) + ' users.'));
   console.log(chalk.white(''));
-};
+}
 
-const addOffer = function (id, index, max, usersLength, limit, callback) {
+
+/**
+ * Seeds an offer and adds it to the database. When the last offer
+ * is saved calls the callback.
+ *
+ * @param {string} userID
+ * @param {number} maxUsers
+ * @param {number} initialUserCount
+ * @param {boolean} limit
+ * @param {function} callback
+ */
+function addOffer(userID, maxUsers, initialUserCount, limit, callback) {
   let offer = new Offer();
 
   const city = cities[random(cities.length)];
@@ -78,7 +119,7 @@ const addOffer = function (id, index, max, usersLength, limit, callback) {
   offer.status = _.sample(['yes', 'maybe']);
   offer.description = faker.lorem.sentence();
   offer.maxGuests = random(10);
-  offer.user = id;
+  offer.user = userID;
   offer.location = location;
   offer.locationFuzzy = location;
 
@@ -87,15 +128,19 @@ const addOffer = function (id, index, max, usersLength, limit, callback) {
     else {
       savedOffers++;
       // Exit if we have completed saving all users and offers
-      if ((limit && (savedUsers + usersLength >= max && savedOffers + usersLength >= max))
-          || ((!limit && (savedUsers >= max && savedOffers >= max)))) {
-        printSummary(usersLength, savedUsers);
+      if ((limit && (savedUsers + initialUserCount >= maxUsers && savedOffers + initialUserCount >= maxUsers))
+          || (!limit && (savedUsers >= maxUsers && savedOffers >= maxUsers))) {
+        printSummary(initialUserCount, savedUsers);
         callback(null);
       }
     }
   });
-};
+}
 
+/**
+ * Seed and add all the users
+ *
+ */
 function addUsers() {
   let index = 0;
   let numAdminUsers;
@@ -246,7 +291,7 @@ function addUsers() {
                   console.log(err);
                 }
 
-                addOffer(user._id, index, max, userCount, limit, resolve);
+                addOffer(user._id, max, userCount, limit, resolve);
               });
 
 
