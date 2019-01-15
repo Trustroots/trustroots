@@ -20,7 +20,7 @@ export default class ContactsCommon extends React.Component {
     }
   }
   async onChange() {
-    const contacts = this.props.contacts;
+    const contacts = this.props.profileId;
     const list = await contactsCommonListService(contacts);
     this.setState({
       contacts: list
@@ -43,7 +43,7 @@ export default class ContactsCommon extends React.Component {
                   contact={contact}
                   hide-meta={true}
                   avatar-size={64}
-                  selfId={this.props.contacts}
+                  selfId={this.props.profileId}
                 />
               </div>)}
           </div>
@@ -54,5 +54,5 @@ export default class ContactsCommon extends React.Component {
 }
 
 ContactsCommon.propTypes = {
-  contacts: PropTypes.string
+  profileId: PropTypes.string
 };
