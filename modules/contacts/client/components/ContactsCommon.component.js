@@ -20,10 +20,10 @@ export default class ContactsCommon extends React.Component {
     }
   }
   async onChange() {
-    const contacts = this.props.profileId;
-    const list = await contactsCommonListService(contacts);
+    const profileId = this.props.profileId;
+    const lists = await contactsCommonListService(profileId);
     this.setState({
-      contacts: list
+      contacts: lists
     });
   }
 
@@ -38,7 +38,7 @@ export default class ContactsCommon extends React.Component {
         <div className="panel-body">
           <div className="contacts-contact">
             {this.state.contacts.map((contact) =>
-              <div key={contact}>
+              <div key={contact._id.toString()}>
                 <Contact
                   contact={contact}
                   hide-meta={true}
