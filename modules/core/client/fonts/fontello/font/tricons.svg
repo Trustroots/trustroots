@@ -1,7 +1,7 @@
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg xmlns="http://www.w3.org/2000/svg">
-<metadata>Copyright (C) 2017 by original authors @ fontello.com</metadata>
+<metadata>Copyright (C) 2018 by original authors @ fontello.com</metadata>
 <defs>
 <font id="tricons" horiz-adv-x="1000" >
 <font-face font-family="tricons" font-weight="400" font-stretch="normal" units-per-em="1000" ascent="850" descent="-150" />
@@ -123,6 +123,8 @@
 <glyph glyph-name="apple" unicode="&#xf179;" d="M777 172q-21-70-68-139-72-110-144-110-27 0-78 18-48 18-84 18-34 0-79-19-45-19-74-19-85 0-168 145-82 146-82 281 0 127 63 208 63 81 159 81 40 0 98-17 58-17 77-17 25 0 80 19 57 19 97 19 66 0 119-36 29-20 58-56-44-37-64-66-36-52-36-115 0-69 38-125t88-70z m-209 655q0-34-17-76-16-42-52-77-30-30-60-40-20-7-58-10 2 83 44 143 41 60 139 83 1-2 2-6t1-6q0-2 0-6t1-5z" horiz-adv-x="785.7" />
 
 <glyph glyph-name="sliders" unicode="&#xf1de;" d="M196 64v-71h-196v71h196z m197 72q14 0 25-11t11-25v-143q0-14-11-25t-25-11h-143q-14 0-25 11t-11 25v143q0 15 11 25t25 11h143z m89 214v-71h-482v71h482z m-357 286v-72h-125v72h125z m732-572v-71h-411v71h411z m-536 643q15 0 26-10t10-26v-142q0-15-10-25t-26-11h-142q-15 0-25 11t-11 25v142q0 15 11 26t25 10h142z m358-286q14 0 25-10t10-25v-143q0-15-10-25t-25-11h-143q-15 0-25 11t-11 25v143q0 14 11 25t25 10h143z m178-71v-71h-125v71h125z m0 286v-72h-482v72h482z" horiz-adv-x="857.1" />
+
+<glyph glyph-name="map" unicode="&#xf279;" d="M286 850q7 0 12-5t6-13v-821q0-11-10-16l-268-143q-4-2-8-2-7 0-13 5t-5 13v821q0 11 10 16l267 143q4 2 9 2z m696 0q7 0 13-5t5-13v-821q0-11-9-16l-268-143q-4-2-9-2-7 0-12 5t-6 13v821q0 11 10 16l268 143q4 2 8 2z m-625 0q5 0 8-2l286-142q10-6 10-17v-821q0-7-6-13t-12-5q-5 0-8 2l-286 142q-10 6-10 17v821q0 7 6 13t12 5z" horiz-adv-x="1000" />
 </font>
 </defs>
 </svg>

@@ -33,6 +33,8 @@ before_script:
   - 'sh -e /etc/init.d/xvfb start'
   - sleep 3 # give xvfb some time to start
 
+  # Ensure stable NPM version (avoids `-next.0` tags)
+  - 'npm install -g npm'
 cache:
   directories:
     - "$HOME/.node-gyp"
