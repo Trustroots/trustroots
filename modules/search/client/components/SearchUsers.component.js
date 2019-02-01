@@ -67,18 +67,16 @@ class SearchUsers extends React.Component {
     this.setState({ searchQuery: event.target.value });
   }
 
-  async actionSearch(event) {
+  actionSearch(event) {
     event.preventDefault();
     event.stopPropagation();
 
     this.setState({ isSearching: true }, () => {
-      searchUsers(this.state.searchQuery)
-        .then(({ data }) => {
-          this.setState({ users: data });
-        })
-        .finally(() => {
-          this.setState({ isSearching: false });
-        });
+      searchUsers(this.state.searchQuery).then(({ data }) => {
+        this.setState({ users: data, isSearching: false });
+      }).catch(() => {
+        this.setState({ isSearching: false });
+      });
     });
   };
 
