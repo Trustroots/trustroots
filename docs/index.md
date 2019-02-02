@@ -11,31 +11,32 @@ title: Trustroots manual for volunteers
     ></a>
 </div>
 
-## Source code
+## Becoming a volunteer
 
-- [Website source code](https://github.com/trustroots/trustroots)
-- [Mobile app source code](https://github.com/trustroots/trustroots-expo-mobile)
+_Become a volunteer and make a difference!_ [Read more.](Volunteering.md)
 
-## Bugs & feature suggestions
+## Where to report bugs & feature suggestions
 
 - [Issues about the website](https://github.com/Trustroots/trustroots/issues)
 - [Issues about mobile apps](https://github.com/Trustroots/trustroots-expo-mobile/issues)
 - [Report security issues](https://github.com/Trustroots/trustroots/blob/master/SECURITY.md#readme)
 
-## Volunteering
+## Source code
 
-Join development? Become a volunteer and make a difference!
+- [Website source code](https://github.com/trustroots/trustroots)
+- [Mobile app source code](https://github.com/trustroots/trustroots-expo-mobile)
 
-Read on [how to get started with development](Development-Getting-Started.md).
+## Guides
+- [Design principles](Design-principles.md)
+- [Photos](Photos.md)
 
 ## Documentation
 
 ### Basics
 - [Accessibility](Accessibility.md)
-- [Design principles](Design-principles.md)
-- [Development](Development.md)
 - [Getting started troubleshooting](Troubleshooting.md)
 - [We are moving to React](React.md)
+- [Development](Development.md)
 
 ### In-depth documentation
 - [Angular Directives](Angular-Directives.md) (deprecated)
@@ -44,7 +45,6 @@ Read on [how to get started with development](Development-Getting-Started.md).
 - [Icons](Icons.md)
 - [InfluxDB](InfluxDB.md)
 - [oAuth-apps](oAuth-apps.md)
-- [Photos](Photos.md)
 - [Server](Server.md)
 
 ## More information
@@ -68,9 +68,7 @@ Is Trustroots.org down or is it just me? Check
 ## Contact and communication
 
 - [Contact us via our support form](https://www.trustroots.org/contact).
-- We are using Slack for volunteer, day-to-day communications. Contact [Kasper](https://www.trustroots.org/profile/guaka) (kasper at trustroots dot org) or
-[Mikael](https://www.trustroots.org/profile/mikael) if you want an
-account. You can also contact us for an invite without queuing.
+- We are using [chat](Volunteer-Chat.md) for volunteer, day-to-day communications.
 - For generic, async project conversations that are open for everyone head over to [meta forums](https://meta.trustroots.org/).
 - It's also great if you join the [hacker tribe](https://www.trustroots.org/tribes/hackers)!
 

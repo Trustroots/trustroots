@@ -11,10 +11,9 @@
 
 ## Volunteering
 
-You don't have to be a programmer to participate. Check [volunteers page](https://www.trustroots.org/volunteering) for more info.
+You don't have to be a programmer to participate!
 
-Trustroots has a [developer documentation](https://developers.trustroots.org/) with
-information how to get started with development.
+Check [volunteers manual](https://manual.trustroots.org/Volunteering.html) for more info on how to get started.
 
 ## Bugs & feature suggestions
 

@@ -1,5 +1,13 @@
 # Getting started with Development
 
+# Where work happens
+
+Technical conversations often happen either on our GitHub repository or at [#tech](https://trustroots.slack.com/messages/C0A3Q15SS) channel at volunteer chat.
+
+Source code:
+- [Website source code](https://github.com/trustroots/trustroots)
+- [Mobile app source code](https://github.com/trustroots/trustroots-expo-mobile)
+
 ## Stack
 
 Trustroots is fully written in JavaScript (both back- and frontend) on [Node.js](https://nodejs.org).
@@ -10,13 +18,13 @@ We store additional data in [InfluxDB](https://www.influxdata.com/) for statisti
 
 Our backend framework is [Express.js](https://expressjs.com/).
 
-Our frontend framework is [Angular v1](https://angularjs.org/) written in ES5 version of JavaScript but [we are migrating](React.md) to ES6 version and [React](https://reactjs.org/).
+Our frontend framework is [Angular v1](https://angularjs.org/) (Note that v1 has been deprecated) written in ES5 version of JavaScript but [we are migrating](React.md) to ES6 version and [React](https://reactjs.org/).
 
 The application is compiled and served using [Gulp](https://gulpjs.org/) and [Webpack](https://webpack.js.org/).
 
 [Babel](https://babeljs.io/) that transpiles modern ES6 frontend code back to ES5 that most browsers understand.
 
-Our stylesheets are written in [LESS](http://lesscss.org/) and our UI uses [Bootstrap v3](https://getbootstrap.com/docs/3.3/) framework quite extensively.
+Our stylesheets are written in [LESS](http://lesscss.org/) language and our UI uses [Bootstrap v3](https://getbootstrap.com/docs/3.3/) (not the latest v4) framework quite extensively.
 
 ## Architecture in short
 
@@ -47,17 +55,15 @@ Note that [meanjs.org](http://meanjs.org/) and [mean.io](http://mean.io/) are tw
 
 ## Where to start?
 
-First of all, [get the application running](https://developers.trustroots.org/Install.html) and perhaps familiarise yourself little bit more with [development documentation](https://developers.trustroots.org/).
+Suppose you've already dropped by at [volunteer chat](Volunteer-Chat.md) at this point and if you haven't, you should!
+
+Then the first step is to [get the application running](Install.html) and perhaps familiarise yourself little bit more with rest of the [documentation](https://manual.trustroots.org).
 
 [Easy issues](https://github.com/Trustroots/trustroots/issues?q=is%3Aissue+is%3Aopen+label%3Aeasy) are a great place to start work. These should be issues which are fairly easily fixable.
 
 Hopefully with a little diving into the code, you should be able to find and fix one or two of these issues. If you're just starting out with the code, these are a great way to contribute something really useful very quickly.
 
 Adding more significant features, major refactoring, and so on are typically handled by more experienced developers in the team.
-
-Contact us so that you can join the chatter over at Slack and introduce yourself. 🙂 See [developers.trustroots.org](https://developers.trustroots.org/) for details.
-
-_Thanks for helping out, we really appreciate it!_
 
 ## Further studying
 
