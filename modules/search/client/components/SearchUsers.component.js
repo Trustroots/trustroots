@@ -67,18 +67,16 @@ class SearchUsers extends React.Component {
     this.setState({ searchQuery: event.target.value });
   }
 
-  async actionSearch(event) {
+  actionSearch(event) {
     event.preventDefault();
     event.stopPropagation();
 
     this.setState({ isSearching: true }, () => {
-      searchUsers(this.state.searchQuery)
-        .then(({ data }) => {
-          this.setState({ users: data });
-        })
-        .finally(() => {
-          this.setState({ isSearching: false });
-        });
+      searchUsers(this.state.searchQuery).then(({ data }) => {
+        this.setState({ users: data, isSearching: false });
+      }).catch(() => {
+        this.setState({ isSearching: false });
+      });
     });
   };
 
@@ -104,7 +102,7 @@ class SearchUsers extends React.Component {
           <input type="text"
             id="search-query"
             className="form-control input-lg"
-            placeholder="Search members"
+            placeholder="Type name, username..."
             tabIndex="0"
             onChange={ this.handleChange }
             value={this.state.searchQuery} />
