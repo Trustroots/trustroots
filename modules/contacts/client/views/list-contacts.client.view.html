@@ -50,14 +50,24 @@
     </div>
   </div>
 
+  <p class="text-center" ng-if="::profileCtrl.profile._id === app.user._id">
+    <br/><br/>
+    <a ui-sref="search-users" class="btn btn-link">
+      Find more people
+    </a>
+  </p>
+
   </div>
   <!-- /Contact list -->
-
 
   <!-- No contacts -->
   <div class="row content-empty" ng-if="ContactsList.contacts.$resolved && !ContactsList.contacts.length">
       <i class="icon-3x icon-users"></i>
       <h4>No contacts yet.</h4>
+      <p ng-if="::profileCtrl.profile._id === app.user._id">
+        <br/>
+        <a ui-sref="search-users" class="btn btn-link">Find people</a>
+      </p>
   </div>
   <!-- /No contacts -->
 

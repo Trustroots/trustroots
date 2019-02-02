@@ -102,7 +102,7 @@ class SearchUsers extends React.Component {
           <input type="text"
             id="search-query"
             className="form-control input-lg"
-            placeholder="Search members"
+            placeholder="Type name, username..."
             tabIndex="0"
             onChange={ this.handleChange }
             value={this.state.searchQuery} />
