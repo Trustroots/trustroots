@@ -31,12 +31,12 @@ We have two main ways to run the software.
 
 Install the stack on your localhost and run NodeJS and MongoDB locally.
 This approach takes a little more time to setup, and bit more manual configuration,
-but is fast, and can be easier to work with. [Read more](https://developers.trustroots.org/Install.html).
+but is fast, and can be easier to work with. [Read more](https://manual.trustroots.org/Install.html).
 
 ### Running with Docker
 
 If you are familiar with Docker, this is the easiest and quickest way
-to get started. Running Docker can be a little bit slower than running locally. [Read more](https://developers.trustroots.org/Install-Docker.html).
+to get started. Running Docker can be a little bit slower than running locally. [Read more](https://manual.trustroots.org/Install-Docker.html).
 
 ## License
 

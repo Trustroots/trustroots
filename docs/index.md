@@ -1,11 +1,14 @@
 ---
-title: Trustroots development documentation
+title: Trustroots manual for volunteers
 ---
 
 <div style="float:right">
-  <a href="https://www.trustroots.org/"><img width="200"
-src="https://cdn.rawgit.com/Trustroots/trustroots/master/public/img/logo/color.svg"
-alt="Trustroots"></a>
+  <a href="https://www.trustroots.org/">
+    <img
+      width="200"
+      src="https://cdn.rawgit.com/Trustroots/trustroots/master/public/img/logo/color.svg"
+      alt="Trustroots"
+    ></a>
 </div>
 
 ## Source code
@@ -75,4 +78,4 @@ account. You can also contact us for an invite without queuing.
 
 _[Improve these docs](https://github.com/Trustroots/trustroots/tree/master/docs)._
 
-This documentation at developers.trustroots.org is licensed under [a Creative Commons Attribution 4.0 International License](http://creativecommons.org/licenses/by/4.0/).
+This documentation at manual.trustroots.org is licensed under [a Creative Commons Attribution 4.0 International License](http://creativecommons.org/licenses/by/4.0/).
