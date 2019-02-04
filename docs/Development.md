@@ -1,22 +1,4 @@
-# Installation
-* See [README.md](https://github.com/Trustroots/trustroots/blob/master/README.md#installing) for how to get started.
-* To install mobile app (Android), see [mobile repository](https://github.com/Trustroots/Trustroots-React-Native).
 
-# Join the team?
-* Contact us via [form](https://www.trustroots.org/contact), drop [Mikael](http://www.mikaelkorpela.fi) a message or join the chat [on IRC](http://webchat.freenode.net/?channels=trustroots).
-* See [issue list](https://github.com/Trustroots/trustroots/issues/) and read about [[milestones]].
-* We're quite planned and tasks are done in prioritised order so starting to write code without communicating with the team first mixes up things. It doesn't mean that you can't work on other things. We value all progress. If you've found a bug, feel free to just fix it and send us pull requests. That said, drop us a line first before you start working on something bigger.
-* Our features list is kept short and simple. While many things would be awesome to have, it sometimes makes more sense to make less but better. We know it's fun to work on your own ideas but this is a team effort. Avoid clutter and keep things simple.
-* It would be good if you'd get familiar with the code base with smaller tasks, see [easy](https://github.com/Trustroots/trustroots/issues?q=is%3Aopen+is%3Aissue+label%3Aeasy) tag for those. Ask us for guidance and we'll help.
-* We're looking forward to work with proactive, talented hackers! :-) It's easier to work with people who can commit for longer term, who are proactive and can work independently. [Kudos!](https://github.com/Trustroots/trustroots/blob/master/public/humans.txt)
-
-# How to write code
-* Master is the most up-to-date branch and updated frequently. New feature branches are under our own repository and work is merged via pull requests, apart from very small changes. If you're not actively working on Trustroots yet, just fork the project and send pull requests from your repo.
-* [Tests](#Testing)! [We use Travis-cli](https://travis-ci.org/) to inform us when something fails. Don't be the weasel! :-)
-* Write [JSDoc](http://usejsdoc.org/) comment blocks, please, or add them when you see them missing.
-* Check [[Accessibility]].
-* [Mikael](https://github.com/simison) is responsible of deployments to production, ask more for details.
-* We're aiming for [continuous delivery](https://en.wikipedia.org/wiki/Continuous_delivery) methods (not quite there yet, but almost).
 
 # The application
 * **MEAN** stack, seeded originally with [MEAN.js](http://meanjs.org/) boilerplate: [MongoDB](www.mongodb.org), [ExpressJS](http://expressjs.com/), [AngularJS](https://angularjs.org/) v1, [NodeJS](http://nodejs.org/). Additionally stuff like [Bootstrap](http://getbootstrap.com/), [Leaflet](http://leafletjs.com/) etc.

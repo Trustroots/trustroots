@@ -3,10 +3,14 @@
 Design principles to follow while building Trustroots interfaces.
 
 In this guide:
+- Feature creep
 - Icons
 - Language
 - Don't use loading spinners
 - Colours
+
+### Feature creep
+Our features list is kept short and simple. While many things would be awesome to have, it sometimes makes more sense to make less but better. Avoid clutter and keep things simple.
 
 ### Icons
 
