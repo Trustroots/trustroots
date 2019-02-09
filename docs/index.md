@@ -71,9 +71,3 @@ Is Trustroots.org down or is it just me? Check
 - We are using [chat](Volunteer-Chat.md) for volunteer, day-to-day communications.
 - For generic, async project conversations that are open for everyone head over to [meta forums](https://meta.trustroots.org/).
 - It's also great if you join the [hacker tribe](https://www.trustroots.org/tribes/hackers)!
-
----
-
-_[Improve these docs](https://github.com/Trustroots/trustroots/tree/master/docs)._
-
-This documentation at team.trustroots.org is licensed under [a Creative Commons Attribution 4.0 International License](http://creativecommons.org/licenses/by/4.0/).

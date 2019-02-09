@@ -1,0 +1,62 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+#skip-to-content {
+  height: 1px;
+  width: 1px;
+  position: absolute;
+  overflow: hidden;
+  top: -10px;
+
+  &:focus {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    height: auto;
+    width: auto;
+    background: invert($body-link-color);
+    outline: thick solid invert($body-link-color);
+  }
+}
+
+.page-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+  padding-top: 1rem;
+  text-align: left;
+}
+
+@media (max-width: 800px) {
+  .page-header {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+.project-name {
+  font-size: 2rem;
+}
+
+@media (max-width: 480px) {
+  .project-name {
+    font-size: 1.5rem;
+  }
+}
+
+.project-tagline {
+  margin-bottom: 0;
+}
+
+/* Search input */
+/* https://duckduckgo.com/search_box */
+.duckduckgo {
+  margin: 1rem 0;
+  height: 40px;
+  overflow: hidden;
+  padding: 0;
+  width: 258px;
+}

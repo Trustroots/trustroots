@@ -72,3 +72,8 @@ migrations/.migrate
 uploads
 public/uploads-profile
 modules/users/client/img/profile/uploads # folder removed 2018-08
+
+# Jekyll files for /docs development
+docs/_site
+docs/Gemfile
+docs/Gemfile.lock
