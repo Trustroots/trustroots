@@ -68,6 +68,6 @@ Is Trustroots.org down or is it just me? Check
 ## Contact and communication
 
 - [Contact us via our support form](https://www.trustroots.org/contact).
-- We are using [chat](Volunteer-Chat.md) for volunteer, day-to-day communications.
+- We are using [chat](Chat.md) for volunteer, day-to-day communications.
 - For generic, async project conversations that are open for everyone head over to [meta forums](https://meta.trustroots.org/).
 - It's also great if you join the [hacker tribe](https://www.trustroots.org/tribes/hackers)!

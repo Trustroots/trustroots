@@ -1,6 +1,6 @@
 # Getting started with Development
 
-# Where work happens
+## Where work happens
 
 Technical conversations often happen either on our GitHub repository or at [#tech](https://trustroots.slack.com/messages/C0A3Q15SS) channel at volunteer chat. [#log](https://trustroots.slack.com/messages/C08SG9CSK) channel is great for following the work happening on GitHub.
 
@@ -55,7 +55,7 @@ Note that [meanjs.org](http://meanjs.org/) and [mean.io](http://mean.io/) are tw
 
 ## Where to start?
 
-Suppose you've already dropped by at [volunteer chat](Volunteer-Chat.md) at this point and if you haven't, you should!
+Suppose you've already dropped by at [volunteer chat](Chat.md) at this point and if you haven't, you should!
 
 Then the first step is to [get the application running](Install.md) and perhaps familiarise yourself little bit more with rest of the [documentation](https://team.trustroots.org).
 

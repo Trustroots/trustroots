@@ -1,4 +1,6 @@
-# Icons are from Fontello
+# Icons
+
+## Icons are from Fontello
 
 [fontello.com](http://fontello.com/) (GitHub)[https://github.com/fontello/fontello]
 

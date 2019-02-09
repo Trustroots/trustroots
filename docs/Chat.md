@@ -1,3 +1,5 @@
+# Volunteer Chat
+
 We are using Slack for volunteer, day-to-day communications.
 
 [trustroots.slack.com](https://trustroots.slack.com)

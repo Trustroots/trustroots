@@ -8,7 +8,7 @@ Generally speaking, it's helpful if you have a good tolerance for some kind of c
 
 **Aight! Ready to help out Trustroots?**
 
-Please start by joining our [volunteer chat](Volunteer-Chat.md). You should start by introducing yourself; what have you done in the past, what are you interested in and little bit about yourself. We're always happy to hear from you even if you don't know what you can do.
+Please start by joining our [volunteer chat](Chat.md). You should start by introducing yourself; what have you done in the past, what are you interested in and little bit about yourself. We're always happy to hear from you even if you don't know what you can do.
 
 **How to get started with:**
 

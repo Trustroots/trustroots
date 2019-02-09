@@ -1,3 +1,5 @@
+# Server
+
 As of December 2018 we're in the process of moving to deploying
 everything [through
 ansible](https://github.com/Trustroots/trustroots/tree/master/deploy/ansible). For
@@ -45,7 +47,7 @@ Test configuration by running `sudo nginx -t` and start/stop/restart nginx by `s
 ## Configure backups
 1. Install [AWS CLI](https://github.com/aws/aws-cli)
 2. Make sure you have bucket `trustroots-backups` at [S3](http://aws.amazon.com/s3/) and give user access to that bucket
-3. Create a config file with user's access keys `/srv/configs/aws.conf`: 
+3. Create a config file with user's access keys `/srv/configs/aws.conf`:
 ```
 [default]
 aws_access_key_id=ACCESS_KEY
