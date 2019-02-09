@@ -22,4 +22,4 @@ As a project we have a history of designer volunteers dropping out fairly early 
 
 # Further studying
 
-Familiarise yourself little bit more with rest of the [documentation and guides](https://manual.trustroots.org).
+Familiarise yourself little bit more with rest of the [documentation and guides](https://team.trustroots.org).

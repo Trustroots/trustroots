@@ -57,7 +57,7 @@ Note that [meanjs.org](http://meanjs.org/) and [mean.io](http://mean.io/) are tw
 
 Suppose you've already dropped by at [volunteer chat](Volunteer-Chat.md) at this point and if you haven't, you should!
 
-Then the first step is to [get the application running](Install.md) and perhaps familiarise yourself little bit more with rest of the [documentation](https://manual.trustroots.org).
+Then the first step is to [get the application running](Install.md) and perhaps familiarise yourself little bit more with rest of the [documentation](https://team.trustroots.org).
 
 [Easy issues](https://github.com/Trustroots/trustroots/issues?q=is%3Aissue+is%3Aopen+label%3Aeasy) are a great place to start work. These should be issues which are fairly easily fixable.
 

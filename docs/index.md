@@ -1,5 +1,5 @@
 ---
-title: Trustroots manual for volunteers
+title: Trustroots Team Guide
 ---
 
 <div style="float:right">
@@ -13,7 +13,7 @@ title: Trustroots manual for volunteers
 
 ## Becoming a volunteer
 
-_Become a volunteer and make a difference!_ [Read more.](Volunteering.md)
+[_Become a volunteer and make a difference!_](Volunteering.md)
 
 ## Where to report bugs & feature suggestions
 
@@ -76,4 +76,4 @@ Is Trustroots.org down or is it just me? Check
 
 _[Improve these docs](https://github.com/Trustroots/trustroots/tree/master/docs)._
 
-This documentation at manual.trustroots.org is licensed under [a Creative Commons Attribution 4.0 International License](http://creativecommons.org/licenses/by/4.0/).
+This documentation at team.trustroots.org is licensed under [a Creative Commons Attribution 4.0 International License](http://creativecommons.org/licenses/by/4.0/).
