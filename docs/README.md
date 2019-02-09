@@ -2,4 +2,4 @@
 
 👋
 
-Please see [developers.trustroots.org](https://developers.trustroots.org/) or [index.md](index.md).
+Please see [team.trustroots.org](https://team.trustroots.org/) or [index.md](index.md).
