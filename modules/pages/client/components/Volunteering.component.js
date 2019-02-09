@@ -24,8 +24,8 @@ export default function Volunteering() {
         <div className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
           <p className="lead">{t('Help us build Trustroots! Nobody can do everything, but everyone can do something…')}</p>
           <p>{t('Trustroots needs developers, designers, people handling support queue, copywriting and much more.')}</p>
-          <p>{t('Please head over to our volunteers manual to learn how to get started.')}</p>
-          <p><a href="https://team.trustroots.org/">{t('Volunteers manual')}</a></p>
+          <p>{t('Please head over to our Team Guide to learn how to get started.')}</p>
+          <p><a href="https://team.trustroots.org/">{t('Team Guide')}</a></p>
         </div>
         <a className="btn btn-xs btn-primary pull-right" href="https://github.com/Trustroots/trustroots/edit/master/modules/pages/client/components/Volunteering.component.js" rel="noopener noreferrer" target="_blank">Edit this page<i className="icon-github icon-lg"></i></a>
       </div>

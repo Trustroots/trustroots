@@ -13,7 +13,7 @@
 
 You don't have to be a programmer to participate!
 
-Check [volunteers manual](https://team.trustroots.org/Volunteering.html) for more info on how to get started.
+Check [Team Guide](https://team.trustroots.org/Volunteering.html) for more info on how to get started.
 
 ## Bugs & feature suggestions
 
