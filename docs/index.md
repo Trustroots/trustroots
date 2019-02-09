@@ -37,6 +37,7 @@ title: Trustroots Team Guide
 - [Getting started troubleshooting](Troubleshooting.md)
 - [We are moving to React](React.md)
 - [Development](Development.md)
+- [Pull request workflow](Pull-Request-Workflow.md)
 
 ### In-depth documentation
 - [Angular Directives](Angular-Directives.md) (deprecated)
