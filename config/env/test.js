@@ -27,7 +27,7 @@ module.exports = {
     // Mongoose debug mode
     debug: false,
     // Autoindex indexes
-    autoIndex: true,
+    autoIndex: false,
     // Check for MongoDB version compatibility on start
     checkCompatibility: false
   },
