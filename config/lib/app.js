@@ -39,6 +39,7 @@ module.exports.start = function start(callback) {
       console.log(chalk.green(new Date()));
       console.log(chalk.green('Environment:\t\t' + process.env.NODE_ENV));
       console.log(chalk.green('Database:\t\t' + config.db.uri));
+      console.log(chalk.green('Database autoindexing:\t\t' + (config.db.autoIndex ? 'on' : 'off')));
       console.log(chalk.green('HTTPS:\t\t\t' + (config.https ? 'on' : 'off')));
       console.log(chalk.green('Port:\t\t\t' + config.port));
       console.log(chalk.green('Image processor:\t' + config.imageProcessor));

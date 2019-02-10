@@ -7,6 +7,7 @@ var config = require('../config'),
     async = require('async'),
     chalk = require('chalk'),
     path = require('path'),
+    log = require('./logger'),
     mongoose = require('mongoose'),
     semver = require('semver');
 
@@ -15,6 +16,25 @@ module.exports.loadModels = function (callback) {
   // Globbing model files
   config.files.server.models.forEach(function (modelPath) {
     require(path.resolve(modelPath));
+  });
+
+  // Array of registered models
+  var models = mongoose.connection.modelNames();
+
+  // Logging for indexing events in models
+  models.forEach(function (model) {
+    mongoose.model(model).on('index', function (error) {
+      if (error) {
+        log('error', 'Indexing Mongoose Schema failed', {
+          error: error,
+          model: model
+        });
+      } else {
+        log('info', 'Indexed Mongoose Schema', {
+          model: model
+        });
+      }
+    });
   });
 
   if (callback) {
@@ -31,8 +51,7 @@ module.exports.connect = function (callback) {
   mongoose.Promise = global.Promise;
 
   // Enabling mongoose debug mode if required
-  mongoose.set('debug', config.db.debug);
-  mongoose.set('useFindAndModify', false);
+  mongoose.set('debug', Boolean(config.db.debug));
   mongoose.set('useCreateIndex', true);
 
   // Options for Native MongoDB connection
@@ -42,7 +61,14 @@ module.exports.connect = function (callback) {
     server: {
       // Never stop reconnecting
       reconnectTries: Number.MAX_VALUE
-    }
+    },
+    // https://mongoosejs.com/docs/deprecations.html#-ensureindex-
+    useCreateIndex: true,
+    // https://mongoosejs.com/docs/deprecations.html#-findandmodify-
+    useFindAndModify: false,
+    // Mongoose-specific option. Set to false to disable automatic index
+    // creation for all models associated with this connection.
+    // Ensure indexes manually by running `npm run ensure-indexes`
   };
 
   async.waterfall([
