@@ -67,7 +67,7 @@ module.exports.connect = function (callback) {
     useFindAndModify: false,
     // Mongoose-specific option. Set to false to disable automatic index
     // creation for all models associated with this connection.
-    // Ensure indexes manually by running `npm run ensure-indexes`
+    autoIndex: Boolean(config.db.autoindex)
   };
 
   async.waterfall([
