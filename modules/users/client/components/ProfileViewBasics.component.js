@@ -1,4 +1,5 @@
 import React from 'react';
+import classnames from 'classnames';
 import { NamespacesConsumer } from 'react-i18next';
 import '@/config/lib/i18n';
 import PropTypes from 'prop-types';
@@ -25,7 +26,7 @@ export default function ProfileViewBasics({ profile }) {
     <div className="profile-sidebar-section" >
       {profile.birthdate && t('{{birthdate, age}} years', { birthdate: new Date(profile.birthdate) })}
       {(profile.birthdate && profile.gender) && <span>, </span>}
-      <span className={(!profile.birthdate) ? 'text-capitalize' : null }>{t(profile.gender)}.</span>
+      <span className={classnames({'text-capitalize': !profile.birthdate })}>{t(profile.gender)}.</span>
     </div>}
     <div className="profile-sidebar-section">
       {t('Member since {{date, MMM Do, YYYY}}', { date: new Date(profile.created) })}

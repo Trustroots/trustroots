@@ -94,6 +94,7 @@
     "bootstrap": "3.3.7",
     "chalk": "~2.4.1",
     "check-node-version": "~3.2.0",
+    "classnames": "^2.2.6",
     "compression": "~1.7.3",
     "connect-flash": "~0.1.1",
     "connect-mongo": "~2.0.3",
