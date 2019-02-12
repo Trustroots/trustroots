@@ -4,7 +4,7 @@ import { NamespacesConsumer } from 'react-i18next';
 import '@/config/lib/i18n';
 import PropTypes from 'prop-types';
 import * as languages from '@/config/languages/languages';
-import { hasConnectedAdditionalSocialAccounts, isWarmshowersId, socialAccountLink } from './utils';
+import { hasConnectedAdditionalSocialAccounts, isWarmshowersId, socialAccountLink } from './utils/networks';
 
 export default function ProfileViewBasics({ profile }) {
   return (<NamespacesConsumer ns={['user-profile', 'languages']}>{ (t) => (<>
@@ -26,7 +26,7 @@ export default function ProfileViewBasics({ profile }) {
     <div className="profile-sidebar-section" >
       {profile.birthdate && t('{{birthdate, age}} years', { birthdate: new Date(profile.birthdate) })}
       {(profile.birthdate && profile.gender) && <span>, </span>}
-      <span className={classnames({'text-capitalize': !profile.birthdate })}>{t(profile.gender)}.</span>
+      <span className={classnames({ 'text-capitalize': !profile.birthdate })}>{t(profile.gender)}.</span>
     </div>}
     <div className="profile-sidebar-section">
       {t('Member since {{date, MMM Do, YYYY}}', { date: new Date(profile.created) })}
@@ -67,13 +67,15 @@ export default function ProfileViewBasics({ profile }) {
               See https://github.com/Trustroots/trustroots/issues/237
             */}
             {profile.additionalProvidersData && Object.keys(profile.additionalProvidersData).map(
-              (key, indeks) =>
-              {return (key !== 'facebook') && <li className="social-profile" key={indeks}><i className={`social-profile-icon icon-fw icon-lg icon-${key}`}></i>
-                <a rel="noopener"
-                  className="social-profile-handle text-capitalize"
-                  href={socialAccountLink(key, profile.additionalProvidersData[key])}>{key}
-                </a>
-              </li>;
+              (network) => {
+                return network !== 'facebook' &&
+                  (<li className="social-profile" key={network}>
+                    <i className={`social-profile-icon icon-fw icon-lg icon-${network}`} />
+                    <a rel="noopener"
+                      className="social-profile-handle text-capitalize"
+                      href={socialAccountLink(network, profile.additionalProvidersData[network])}>{network}
+                    </a>
+                  </li>);
               }
             )}
 
