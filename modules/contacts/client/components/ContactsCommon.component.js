@@ -2,7 +2,7 @@ import React from 'react';
 // import { NamespacesConsumer } from 'react-i18next';
 import PropTypes from 'prop-types';
 import Contact from './Contact.component';
-import { contactsCommonListService } from '../api/contacts.api';
+import { getContactsCommon } from '../api/contacts.api';
 import '@/config/lib/i18n';
 
 export default class ContactsCommon extends React.Component {
@@ -14,14 +14,16 @@ export default class ContactsCommon extends React.Component {
     this.isContactsCommonList = this.isContactsCommonList.bind(this);
     this.onChange = this.onChange.bind(this);
   }
+
   isContactsCommonList() {
     if (this.state.contacts.length === 0) {
       return;
     }
   }
+
   async onChange() {
     const profileId = this.props.profileId;
-    const lists = await contactsCommonListService(profileId);
+    const lists = await getContactsCommon(profileId);
     this.setState({
       contacts: lists
     });
