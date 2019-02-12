@@ -3,8 +3,9 @@ import { NamespacesConsumer } from 'react-i18next';
 import '@/config/lib/i18n';
 import PropTypes from 'prop-types';
 import * as languages from '@/config/languages/languages';
+import { hasConnectedAdditionalSocialAccounts, isWarmshowersId, socialAccountLink } from './utils';
 
-export default function ProfileViewBasics({ profile, hasConnectedAdditionalSocialAccounts, isWarmshowersId, socialAccountLink }) {
+export default function ProfileViewBasics({ profile }) {
   return (<NamespacesConsumer ns={['user-profile', 'languages']}>{ (t) => (<>
     {/* show div only if replyrate or replyTime is present */}
     {(profile.replyRate || profile.replyTime) &&
@@ -53,7 +54,7 @@ export default function ProfileViewBasics({ profile, hasConnectedAdditionalSocia
           {profile.languages.map(code => <li key={code}>{t(languages[code], { ns: 'languages' }) || code}</li>)}
         </ul>
       </div>}
-      { (hasConnectedAdditionalSocialAccounts() || profile.extSitesBW || profile.extSitesCS || profile.extSitesWS) &&
+      { (hasConnectedAdditionalSocialAccounts(profile) || profile.extSitesBW || profile.extSitesCS || profile.extSitesWS) &&
         <div className="profile-sidebar-section">
           <h4 id="profile-networks" aria-label="Member in other networks">
             {t('Elsewhere')}
@@ -103,7 +104,7 @@ export default function ProfileViewBasics({ profile, hasConnectedAdditionalSocia
             <li className="social-profile">
               <i className="social-profile-icon icon-fw icon-lg icon-warmshowers"></i>
               <a className="social-profile-handle"
-                href={`https://www.warmshowers.org/${isWarmshowersId ? 'user' : 'users' }/${profile.extSitesWS}`}>
+                href={`https://www.warmshowers.org/${isWarmshowersId(profile) ? 'user' : 'users' }/${profile.extSitesWS}`}>
                 Warmshowers
               </a>
             </li>}
@@ -113,8 +114,5 @@ export default function ProfileViewBasics({ profile, hasConnectedAdditionalSocia
 };
 
 ProfileViewBasics.propTypes = {
-  profile: PropTypes.object,
-  hasConnectedAdditionalSocialAccounts: PropTypes.func,
-  isWarmshowersId: PropTypes.func,
-  socialAccountLink: PropTypes.func
+  profile: PropTypes.object
 };
