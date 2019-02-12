@@ -16,6 +16,7 @@ var _ = require('lodash'),
     async = require('async'),
     basicAuth = require('basic-auth'),
     speakingurl = require('speakingurl'),
+    log = require(path.resolve('./config/lib/logger')),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     config = require(path.resolve('./config/config'));
@@ -122,7 +123,10 @@ exports.processAndSendMetrics = function (event, callback) {
 
   // Didn't validate, don't continue
   if (!tags.category || !tags.type) {
-    console.error('Could not validate SparkPost event webhook (type: ' + eventType + ', category: ' + eventCategory + ')');
+    log('error', 'Could not validate SparkPost event webhook.', {
+      type: eventType,
+      category: eventCategory
+    });
     return callback();
   }
 

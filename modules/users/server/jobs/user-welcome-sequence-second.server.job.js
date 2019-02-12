@@ -12,7 +12,9 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
+var _ = require('lodash'),
+    path = require('path'),
+    log = require(path.resolve('./config/lib/logger')),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
     config = require(path.resolve('./config/config')),
     async = require('async'),
@@ -85,9 +87,6 @@ module.exports = function (job, agendaDone) {
                 }
               },
               function (err) {
-                if (err) {
-                  console.error('Failed to mark user\'s reminder sent.');
-                }
                 callback(err);
               }
             );
@@ -101,7 +100,10 @@ module.exports = function (job, agendaDone) {
 
   ], function (err) {
     if (err) {
-      console.error(err);
+      log('error', 'Failure in second welcome sequence background job.', {
+        error: err,
+        jobId: _.get(job, 'attrs._id').toString()
+      });
     }
     return agendaDone(err);
   });

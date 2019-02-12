@@ -12,6 +12,7 @@ var path = require('path'),
     async = require('async'),
     config = require(path.resolve('./config/config')),
     mongoose = require('mongoose'),
+    log = require(path.resolve('./config/lib/logger')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
     textService = require(path.resolve('./modules/core/server/services/text.server.service'));
 
@@ -99,8 +100,8 @@ module.exports.save = function (message, callback) {
       });
     }
   ], function (err) {
-    if (err && (process.env.NODE_ENV === 'production')) {
-      console.error(err);
+    if (err) {
+      log('error', 'Saving message stats failed.', err);
     }
     if (typeof callback === 'function') {
       return callback(err);

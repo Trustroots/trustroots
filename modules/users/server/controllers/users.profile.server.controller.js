@@ -230,10 +230,7 @@ exports.avatarUpload = function (req, res) {
 
             // Something's wrong with the file, stop here.
             if (err) {
-              if (process.env.NODE_ENV === 'development') {
-                console.error('Error while generating thumbnail ' + thumbSize);
-                console.error(err);
-              }
+              log('error', 'User profile avatar upload: failed to generate thumbnail.', err);
 
               // This stops us sending res multiple times since tasks are running paraller
               if (!asyncQueueErrorHappened) {
@@ -245,8 +242,7 @@ exports.avatarUpload = function (req, res) {
                 // Attempt to delete tmp file
                 fs.unlink(req.file.path, function (err) {
                   if (err) {
-                    console.error('Failed to clean out temporary image.');
-                    console.error(err);
+                    log('error', 'User profile avatar upload: failed to clean out temporary image.', err);
                   }
                   // @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
                   return res.status(422).send({
@@ -902,7 +898,6 @@ function isUsernameUpdateAllowed(user) {
  */
 exports.sanitizeProfile = function (profile, authenticatedUser) {
   if (!profile) {
-    console.warn('sanitizeProfile() needs profile data to sanitize.');
     return;
   }
 

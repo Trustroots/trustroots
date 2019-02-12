@@ -7,7 +7,9 @@
  */
 var async = require('async'),
     mongooseService = require('./config/lib/mongoose'),
-    worker = require('./config/lib/worker');
+    worker = require('./config/lib/worker'),
+    path = require('path'),
+    log = require(path.resolve('./config/lib/logger'));
 
 async.waterfall([
 
@@ -40,7 +42,6 @@ async.waterfall([
 
 ], function (err) {
   if (err) {
-    console.log('[Worker] error on initializing worker:');
-    console.error(err);
+    log('error', '[Worker] Error while initializing the background job worker.', err);
   }
 });

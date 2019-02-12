@@ -3,7 +3,9 @@
 /**
  * Module dependencies.
  */
-var url = require('url');
+var url = require('url'),
+    path = require('path'),
+    log = require(path.resolve('./config/lib/logger'));
 
 /**
  * Append UTM parameters to URL for Analytics
@@ -51,11 +53,12 @@ var url = require('url');
  */
 exports.appendUTMParams = function (trackUrl, utmParams) {
   if (!trackUrl || !utmParams || !utmParams.source || !utmParams.medium || !utmParams.campaign) {
-    console.error('utmTrackify() missing one of the required variables:');
-    console.error('- trackUrl: ' + trackUrl);
-    console.error('- utmParams.source: ' + utmParams.source);
-    console.error('- utmParams.medium: ' + utmParams.medium);
-    console.error('- utmParams.campaign: ' + utmParams.campaign);
+    log('error', 'utmTrackify() missing one of the required variables.', {
+      trackUrl: trackUrl,
+      utmParamsSource: utmParams.source,
+      utmParamsMedium: utmParams.medium,
+      utmParamsCampaign: utmParams.campaign
+    });
     return trackUrl || '';
   }
 

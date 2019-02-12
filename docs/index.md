@@ -45,6 +45,7 @@ title: Trustroots Team Guide
 - [Database](Database.md)
 - [Icons](Icons.md)
 - [InfluxDB](InfluxDB.md)
+- [Logging](Logging.md)
 - [oAuth-apps](oAuth-apps.md)
 - [Server](Server.md)
 

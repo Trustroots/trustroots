@@ -1,5 +1,7 @@
 'use strict';
 
+/* eslint-disable no-console */
+
 /**
  * Module dependencies.
  */
@@ -270,7 +272,7 @@ gulp.task('build:styles', function buildStyles() {
     // More verbose `less` errors
     var lessProcessor = plugins.less();
     lessProcessor.on('error', function (err) {
-      console.log(err);
+      console.error(err);
     });
     // Process only LESS files, since CSS libs will be linked directly at the template
     return gulp.src(_.union(defaultAssets.client.lib.less, defaultAssets.client.less))
@@ -470,7 +472,7 @@ gulp.task('develop', gulp.series(
       path: 'public/assets/',
       watch: true,
       onChange: function () {
-        console.log('webpack changed!');
+        console.log('Webpack detected a change');
         plugins.refresh.changed('/assets/main.js');
       }
     })
