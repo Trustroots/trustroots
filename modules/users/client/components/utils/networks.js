@@ -3,8 +3,8 @@
   * @link https://github.com/Trustroots/trustroots/issues/308
   */
 function isWarmshowersId(profile) {
-  let x;
-  return isNaN(profile.extSitesWS) ? !1 : (x = parseFloat(profile.extSitesWS), (0 | x) === x);
+  // WarmShowers id should contain only digits
+  return /^[0-9]*$/.test(profile.extSitesWS);
 }
 
 /**
