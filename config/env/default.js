@@ -103,8 +103,8 @@ module.exports = {
     unreadMessageReminders: [{ minutes: 10 }, { hours: 24 }],
     // after what delay to stop sending further unread message reminders
     unreadMessageRemindersTooLate: { days: 14 },
-    // how many users should we return from search at maximum at one page
-    userSearchPageLimit: 10,
+    // pagination: how many results should we return per page
+    paginationLimit: 20,
     // Time intervals between welcome sequence emails
     welcomeSequence: {
       first: { minutes: 0 },

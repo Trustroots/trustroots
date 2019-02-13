@@ -8,7 +8,6 @@ var request = require('supertest'),
     mongoose = require('mongoose'),
     should = require('should'),
     User = mongoose.model('User'),
-    express = require(path.resolve('./config/lib/express')),
     config = require(path.resolve('./config/config')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
 
@@ -20,6 +19,11 @@ describe('Search users: GET /users?search=string', function () {
 
   // initialize the testing environment
   before(function () {
+    // Stub the limit value
+    sinon.stub(config.limits, 'paginationLimit').value(limit);
+
+    // the limit is used in this config, so we needed to stub limit before importing this
+    var express = require(path.resolve('./config/lib/express'));
     // Get application
     var app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -37,11 +41,7 @@ describe('Search users: GET /users?search=string', function () {
     }, done);
   });
 
-  beforeEach(function () {
-    sinon.stub(config.limits, 'userSearchPageLimit').value(limit);
-  });
-
-  afterEach(function () {
+  after(function () {
     sinon.restore();
   });
 
@@ -342,11 +342,14 @@ describe('Search users: GET /users?search=string', function () {
             done(err);
           });
         });
-        // TCs with different or missing page parameter
+        // TCs with different or missing page and limit parameters
         var pageTests = [
           { params: '', expected: limit },
           { params: '&page=1', expected: limit },
-          { params: '&page=2', expected: testUsers.length - limit }
+          { params: '&page=2', expected: testUsers.length - limit },
+          { params: '&limit=11', expected: 11 },
+          { params: '&page=1&limit=11', expected: 11 },
+          { params: '&page=2&limit=11', expected: testUsers.length - 11 }
         ];
 
         pageTests.forEach(function (test) {
