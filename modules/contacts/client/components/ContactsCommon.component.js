@@ -11,29 +11,23 @@ export default class ContactsCommon extends React.Component {
     this.state = {
       contacts: []
     };
-    this.isContactsCommonList = this.isContactsCommonList.bind(this);
-    this.onChange = this.onChange.bind(this);
-  }
-
-  isContactsCommonList() {
-    if (this.state.contacts.length === 0) {
-      return;
-    }
-  }
-
-  async onChange() {
-    const profileId = this.props.profileId;
-    const lists = await getContactsCommon(profileId);
-    this.setState({
-      contacts: lists
-    });
   }
 
   componentDidMount() {
-    this.onChange();
+    const profileId = this.props.profileId;
+    getContactsCommon(profileId)
+      .then(lists => {
+        this.setState({
+          contacts: lists
+        });
+      });
+
   }
+
   render() {
-    this.isContactsCommonList();
+    const isContactsCommonList = this.state.contacts.length;
+
+    if (!isContactsCommonList) return null;
     return (
       <div className="panel panel-default">
         {/* convert ng-pluralize with NamespacesConsumer */}
