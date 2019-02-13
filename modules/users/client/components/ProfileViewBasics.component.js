@@ -1,6 +1,7 @@
 import React from 'react';
 import classnames from 'classnames';
-import { withNamespaces } from './utils/i18n-angular-load';
+import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
+import { Trans } from 'react-i18next';
 import '@/config/lib/i18n';
 import PropTypes from 'prop-types';
 import * as languages from '@/config/languages/languages';
@@ -46,20 +47,18 @@ export function ProfileViewBasics({ t, profile }) {
   const renderLocationLiving = locationLiving => (
     <div className="profile-sidebar-section">
       <i className="icon-fw icon-building text-muted" />
-      {t('Lives in')}{' '}
-      <a ui-sref="search.map({location: locationLiving})">
-        {locationLiving}
-      </a>
+      <Trans>
+        Lives in <a href="search.map({locationLiving})">{{ locationLiving }}</a>
+      </Trans>
     </div>
   );
 
   const renderLocationFrom = locationFrom => (
     <div className="profile-sidebar-section">
       <i className="icon-fw icon-home text-muted"></i>
-      {t('From')}{' '}
-      <a ui-sref="search.map({location: locationFrom})">
-        {locationFrom}
-      </a>
+      <Trans>
+        From <a href="search.map({locationFrom})">{{ locationFrom }}</a>
+      </Trans>
     </div>
   );
 

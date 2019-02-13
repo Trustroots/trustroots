@@ -14,7 +14,8 @@
   "other": "jiné",
   "Reply rate {{replyRate}}.": "Míra odpovědí {{replyRate}}.",
   "Replies within {{replyTime, fromNow}}.": "Odpovídá během {{replyTime, fromNow}}.",
-  "Lives in": "Bydlí v",
+  "Lives in <1>{{locationLiving}}</1>": "Bydlí v <1>{{locationLiving}}</1>",
+  "From <1>{{locationFrom}}</1>": "Z <1>{{locationFrom}}</l>",
   "From": "Z",
   "Languages": "Jazyky",
   "Elsewhere": "Jinde"
