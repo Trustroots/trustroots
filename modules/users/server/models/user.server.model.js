@@ -49,6 +49,12 @@ var setPlainTextField = function (value) {
   return textService.plainText(value, true);
 };
 
+var setPlainTextFieldAndLimit = function (limit) {
+  return function (value) {
+    return setPlainTextField(value).substring(0, limit);
+  };
+};
+
 /**
  * SubSchema for `User` schema's `member` array
  * This could be defined directly under `UserSchema` as well,
@@ -308,8 +314,8 @@ var UserSchema = new Schema({
   },
   acquisitionStory: {
     type: String,
-    trim: true,
-    default: ''
+    default: '',
+    set: setPlainTextFieldAndLimit(5000)
   }
 });
 
