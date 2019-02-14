@@ -1,7 +1,7 @@
 
 <div class="row">
   <div class="col-md-6">
-    <about-me profile="profileCtrl.profile" profileDescriptionToggle="profileCtrl.profileDescriptionToggle" user="app.user" appSettings="app.appSettings"></about-me>
+    <about-me profile="profileCtrl.profile" isSelf="app.user.id === profileCtrl.profile.id" appSettings="app.appSettings"></about-me>
   </div>
 
   <div class="col-md-6">
