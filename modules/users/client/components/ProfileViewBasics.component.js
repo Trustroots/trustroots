@@ -7,42 +7,92 @@ import PropTypes from 'prop-types';
 import * as languages from '@/config/languages/languages';
 import { hasConnectedAdditionalSocialAccounts, isWarmshowersId, socialAccountLink } from './utils/networks';
 
+
 export function ProfileViewBasics({ t, profile }) {
+
+  /*
+  * Functions passing strings to translation fuctio for translation scripts
+  */
+  const getGender = (genderCode, sentence) => {
+    switch (genderCode) {
+      case 'female':
+        return sentence ? t('Female') : t('female');
+      case 'male':
+        return sentence ? t('Male') : t('male');
+      case 'non-binary':
+        return sentence ? t('Non-binary') : t('non-binary');
+      case 'other':
+        return sentence ? t('Other') : t('other');
+      default:
+        return undefined;
+    }
+  };
+
+  const getBirthdate = birthdate => (
+    t('{{birthdate, age}} years', { birthdate: new Date(birthdate) })
+  );
+
+  const getReplyRate = replyRate => (
+    t('Reply rate {{replyRate}}.', { replyRate: replyRate })
+  );
+
+  const getReplyTime = replyTime => (
+    t('Replies within {{replyTime, fromNow}}.', { replyTime: replyTime })
+  );
+
+  const getMemberSince = created => (
+    t('Member since {{date, MMM Do, YYYY}}', { date: new Date(created) })
+  );
+
+  const getSeenOnline = seen => {
+    if(seen)
+      return t('Online {{date, fromNow}}', { date: new Date(seen) })
+    return t('Online long ago');
+  }
+
+  const getLanguage = code => (
+    t(languages[code], { ns: 'languages' })
+  );
+
+
+  /*
+   * Rendering functions
+   */
   const renderReplyData = (replyRate, replyTime) => (
     <div className="profile-sidebar-section text-muted">
       {replyRate &&
       <span>
-        {t('Reply rate {{replyRate}}.', { replyRate: profile.replyRate })}
+        {getReplyRate(replyRate)}
       </span>}
       {replyTime &&
       <span>
         <br/>
-        {t('Replies within {{replyTime, fromNow}}.', { replyTime: profile.replyTime })}
+        {getReplyTime}
       </span>}
     </div>
   );
 
   const renderBirthdateAndGender = (birthdate, gender) => (
     <div className="profile-sidebar-section" >
-      {birthdate && t('{{birthdate, age}} years', { birthdate: new Date(birthdate) })}
+      {birthdate && getBirthdate(birthdate)}
       {(birthdate && gender) && <span>, </span>}
-      <span className={classnames({ 'text-capitalize': !birthdate })}>{t(gender)}.</span>
+      <span>{getGender(gender, !birthdate)}.</span>
     </div>
   );
 
-  const renderMemberSince = () => (
+  const renderMemberSince = created => (
     <div className="profile-sidebar-section">
-      {t('Member since {{date, MMM Do, YYYY}}', { date: new Date(profile.created) })}
+      {getMemberSince(created)}
     </div>
   );
 
-  const renderSeenOnline = () => {
+  const renderSeenOnline = seen => (
     <div className="profile-sidebar-section">
       <span>
-        {(profile.seen) ? t('Online {{date, fromNow}}', { date: new Date(profile.seen) }) : t('Online long ago')}
+        {getSeenOnline(seen)}
       </span>
-    </div>;
-  };
+    </div>
+  );
 
   const renderLocationLiving = locationLiving => (
     <div className="profile-sidebar-section">
@@ -69,7 +119,7 @@ export function ProfileViewBasics({ t, profile }) {
       </h4>
       <ul className="list-unstyled" aria-describedby="profile-languages">
         {languagesList.map(
-          code => <li key={code}>{t(languages[code], { ns: 'languages' }) || code}</li>
+          code => <li key={code}>{getLanguage(code) || code}</li>
         )}
       </ul>
     </div>
@@ -137,7 +187,7 @@ export function ProfileViewBasics({ t, profile }) {
     </div>
   );
 
-  return (<>
+  return (<div>
     {/* reply rate and reply time */}
     {(profile.replyRate || profile.replyTime) && renderReplyData(profile.replyRate, profile.replyTime)}
 
@@ -145,9 +195,9 @@ export function ProfileViewBasics({ t, profile }) {
     {(profile.birthdate || profile.gender) && renderBirthdateAndGender(profile.birthdate, profile.gender)}
 
     {/* member since */}
-    {renderMemberSince()}
+    {renderMemberSince(profile.created)}
     {/* seen online */}
-    {renderSeenOnline()}
+    {renderSeenOnline(profile.seen)}
 
     {/* location living */}
     { profile.locationLiving && renderLocationLiving(profile.locationLiving) }
@@ -162,7 +212,7 @@ export function ProfileViewBasics({ t, profile }) {
     { (hasConnectedAdditionalSocialAccounts(profile) || profile.extSitesBW || profile.extSitesCS || profile.extSitesWS) &&
         renderSocialNetworks(profile)
     }
-  </>);
+  </div>);
 };
 
 ProfileViewBasics.propTypes = {
