@@ -111,7 +111,7 @@ module.exports.initMiddleware = function (app) {
 
   // Initialize pagination middleware
   // Set Pagination default values (limit, max limit)
-  app.use(paginate.middleware(20, 50));
+  app.use(paginate.middleware(config.limits.paginationLimit, 50));
 
   // Initialize favicon middleware
   app.use(favicon('public/favicon.ico'));
