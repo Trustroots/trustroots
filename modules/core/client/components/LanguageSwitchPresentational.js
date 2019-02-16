@@ -9,7 +9,7 @@ import locales from '@/config/shared/locales';
  * @param {String} currentLanguageCode - code of current language
  * @param {Function} onChangeLanguage - what to do when language is changed
  */
-export function LanguageSwitchDropdownPresentation({ currentLanguageCode, onChangeLanguage }) {
+export function LanguageSwitchDropdown({ currentLanguageCode, onChangeLanguage }) {
   // languages which are not selected
   const otherLanguages = locales.filter(language => language.code !== currentLanguageCode);
   // selected language
@@ -42,7 +42,7 @@ export function LanguageSwitchDropdownPresentation({ currentLanguageCode, onChan
  * Is used in user's account.
  * Params are the same as for LanguageSwitchDropdownPresentation.
  */
-export function LanguageSwitchSelectPresentation({ currentLanguageCode, onChangeLanguage }) {
+export function LanguageSwitchSelect({ currentLanguageCode, onChangeLanguage }) {
   return (
     <select
       className="form-control"
@@ -59,7 +59,7 @@ export function LanguageSwitchSelectPresentation({ currentLanguageCode, onChange
   );
 };
 
-LanguageSwitchSelectPresentation.propTypes = LanguageSwitchDropdownPresentation.propTypes = {
+LanguageSwitchSelect.propTypes = LanguageSwitchDropdown.propTypes = {
   currentLanguageCode: PropTypes.string,
   onChangeLanguage: PropTypes.func
 };

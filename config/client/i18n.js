@@ -49,8 +49,8 @@ i18n
   .use(backend)
   .use(reactI18nextModule) // passes i18n down to react-i18next
   .init({
-    // allow keys to be phrases having `:`, `.`
     fallbackLng: 'en', // a default app locale
+    // allow keys to be phrases having `:`, `.`
     nsSeparator: false,
     keySeparator: false, // we do not use keys in form messages.welcome
     // saveMissing: true, // @TODO send not translated keys to endpoint

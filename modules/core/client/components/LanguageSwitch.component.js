@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import LanguageSwitchContainer from './LanguageSwitchContainer';
-import { LanguageSwitchDropdownPresentation, LanguageSwitchSelectPresentation } from './LanguageSwitchPresentational';
+import { LanguageSwitchDropdown, LanguageSwitchSelect } from './LanguageSwitchPresentational';
 
 /**
  * The main LanguageSwitch component.
@@ -11,7 +11,7 @@ import { LanguageSwitchDropdownPresentation, LanguageSwitchSelectPresentation } 
 export default function LanguageSwitch({ presentation='dropdown', saveToAPI=false }) {
   return (
     <LanguageSwitchContainer presentation={
-      (presentation === 'dropdown') ? LanguageSwitchDropdownPresentation : LanguageSwitchSelectPresentation
+      (presentation === 'dropdown') ? LanguageSwitchDropdown : LanguageSwitchSelect
     } saveToAPI={saveToAPI} />
   );
 }
