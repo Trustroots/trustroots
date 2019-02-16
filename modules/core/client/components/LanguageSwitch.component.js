@@ -16,6 +16,7 @@ function LanguageSwitchDropdownPresentation({ currentLanguageCode, onChangeLangu
       title={currentLanguage.name}
       id={`dropdown-basic-${currentLanguage.code}`}
       pullRight
+      className="disable-hover-display"
     >
       <Dropdown.Toggle className="btn-inverse">
         {currentLanguage.label}

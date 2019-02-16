@@ -64,7 +64,7 @@
   @media (min-width: @grid-float-breakpoint) {
 
     /* Make Bootstrap dropdowns open at hover */
-    .dropdown:hover .dropdown-menu {
+    .dropdown:hover:not(.disable-hover-display) .dropdown-menu {
       display: block;
     }
 
@@ -88,6 +88,7 @@
   align-items: center;
   justify-content: center;
   padding: 5px 0;
+
   .header-more-text,
   .header-welcome-text {
     font-size: 18px;
@@ -99,5 +100,20 @@
   .header-welcome-text,
   .btn {
     margin: 0 10px;
+  }
+
+  .flex-side {
+    flex: 1;
+  }
+
+  .language-switch {
+    display: flex;
+    justify-content: flex-end;
+
+    .dropdown-menu {
+      margin-top: 5px;
+      margin-right: 10px;
+      min-width: 100%; // We'd like dropdown-menu to be similar size to button. But it's 10px wider.
+    }
   }
 }

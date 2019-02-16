@@ -10,6 +10,8 @@
   <!-- Header for non-authenticated users -->
   <div class="container" ng-if="!app.user">
     <nav class="header-welcome text-center" aria-label="Page navigation" role="navigation">
+      <!-- a span for centering the main header content -->
+      <span class="flex-side"></span>
       <span class="header-welcome-text hidden-xs">New to Trustroots?</span>
       <a ui-sref="signup" class="btn btn-lg btn-default">
         Join
@@ -24,7 +26,7 @@
         Read more
       </a>
 
-      <language-switch aria-label="Localization" ng-if="app.appSettings.i18nEnabled"></language-switch>
+      <language-switch class="flex-side language-switch" aria-label="Localization" ng-if="app.appSettings.i18nEnabled"></language-switch>
     </nav>
   </div>
   <!-- /Header for non-authenticated users -->
