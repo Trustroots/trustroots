@@ -61,7 +61,7 @@ i18n
     detection: {
       lookupCookie: 'i18n',
       order: ['cookie'],
-      chaches: ['cookie']
+      caches: ['cookie']
     }
     // saveMissingPlurals: true,
     // debug: true // show missing translation keys in console.log

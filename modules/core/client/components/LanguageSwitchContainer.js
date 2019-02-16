@@ -5,6 +5,15 @@ import * as users from '@/modules/users/client/api/users.api';
 
 const api = { users };
 
+/**
+ * Smart component for Language switch.
+ * It expects (as Component attributes):
+ * @param {Component} presentation - a presentational component with props:
+ *   - currentLanguageCode
+ *   - languages
+ *   - onChangeLanguage
+ * @param {Boolean} saveToAPI - save the selection to API or not?
+ */
 export default class LanguageSwitchContainer extends React.Component {
   constructor(props) {
     super(props);

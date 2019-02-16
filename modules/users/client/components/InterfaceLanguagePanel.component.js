@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch.component';
-import '@/config/lib/i18n';
-import { withNamespaces } from 'react-i18next';
+import '@/config/client/i18n';
+import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 
 export function InterfaceLanguagePanel({ t }) {
   return (
@@ -41,14 +41,8 @@ export function InterfaceLanguagePanel({ t }) {
   );
 }
 
-const InterfaceLanguagePanelHOC = withNamespaces('user')(InterfaceLanguagePanel);
-
-InterfaceLanguagePanelHOC.propTypes = {};
-
-Object.defineProperty(InterfaceLanguagePanelHOC, 'name', { value: InterfaceLanguagePanel.name });
-
 InterfaceLanguagePanel.propTypes = {
   t: PropTypes.func.isRequired
 };
 
-export default InterfaceLanguagePanelHOC;
+export default withNamespaces('user')(InterfaceLanguagePanel);
