@@ -1,7 +1,5 @@
 import React, { Component } from 'react';
-import sanitizeHtml from 'sanitize-html';
 import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
-{/* import { Trans } from 'react-i18next'; */}
 import '@/config/lib/i18n';
 import PropTypes from 'prop-types';
 import { limitTo, plainTextLength } from './utils/filters';
@@ -31,13 +29,13 @@ export class AboutMe extends Component {
         <div className="panel-body">
           {/* Short descriptions */}
           {(profile.description.length < 2400 || this.state.profileDescriptionToggle) &&
-          <div dangerouslySetInnerHTML={{__html: sanitizeHtml(profile.description)}}></div>}{/* TODO Can we trust this HTML?*/}
+          <div dangerouslySetInnerHTML={{ __html: profile.description }}></div>}
 
           {/* Long descriptions */}
           {profile.description.length >= 2400 && !this.state.profileDescriptionToggle &&
           <div
             className="panel-more-wrap">
-            <div className="panel-more-excerpt" dangerouslySetInnerHTML={{__html: sanitizeHtml(limitTo(profile.description, 2400))}}></div>
+            <div className="panel-more-excerpt" dangerouslySetInnerHTML={{ __html: limitTo(profile.description, 2400) }}></div>
             <div className="panel-more-fade" onClick={this.changeProfileDescriptionToggle}>{t('Show more...')}</div>
           </div>}
 

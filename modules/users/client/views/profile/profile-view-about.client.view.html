@@ -1,19 +1,17 @@
 
 <div class="row">
   <div class="col-md-6">
-    <about-me profile="profileCtrl.profile" isSelf="app.user.id === profileCtrl.profile.id" appSettings="app.appSettings"></about-me>
+    <about-me profile="profileCtrl.profile" isSelf="app.user._id === profileCtrl.profile._id" appSettings="app.appSettings"></about-me>
   </div>
 
   <div class="col-md-6">
-    <!-- <offers profile="profileCtrl.profile" user="app.user"></offers> -->
-
+    
     <!-- Offers -->
     <div class="hidden-xs">
       <div tr-offer-host-view="profileCtrl.profile"
            tr-offer-host-view-auth-user="::app.user"></div>
     </div>
 
-    <!-- <contacts-in-common profile="profileCtrl.profile" user="app.user" contacts="profileCtrl.contacts"></contacts-in-common> -->
     <!-- Contacts in common -->
     <div ng-if="profileCtrl.profile._id !== app.user._id && profileCtrl.contacts.length"
          tr-common-contacts="::profileCtrl.profile._id"></div>
