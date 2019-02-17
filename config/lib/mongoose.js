@@ -10,9 +10,12 @@ var config = require('../config'),
     mongoose = require('mongoose'),
     semver = require('semver');
 
-// Options for Native MongoDB connection
-// https://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
-// http://mongoosejs.com/docs/connections.html
+/**
+ * Options for Native MongoDB connection
+ *
+ * @link https://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
+ * @link https://mongoosejs.com/docs/connections.html
+ */
 var mongoConnectionOptions = {
   server: {
     // Never stop reconnecting
