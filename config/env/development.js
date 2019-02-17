@@ -25,7 +25,8 @@ module.exports = {
     // Mongoose debug mode
     debug: true,
     // Autoindex indexes
-    autoIndex: true,
+    // Mongoose calls createIndex on each Model's index when staring the app
+    autoIndex: false,
     // Check for MongoDB version compatibility on start
     checkCompatibility: true
   },

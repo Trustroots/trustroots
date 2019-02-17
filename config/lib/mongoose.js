@@ -11,8 +11,29 @@ var config = require('../config'),
     mongoose = require('mongoose'),
     semver = require('semver');
 
+// Options for Native MongoDB connection
+// https://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
+// http://mongoosejs.com/docs/connections.html
+var mongoConnectionOptions = {
+  server: {
+    // Never stop reconnecting
+    reconnectTries: Number.MAX_VALUE
+  },
+  // https://mongoosejs.com/docs/deprecations.html#-ensureindex-
+  useCreateIndex: true,
+  // https://mongoosejs.com/docs/deprecations.html#-findandmodify-
+  useFindAndModify: false,
+  // Mongoose-specific option. Set to false to disable automatic index
+  // creation for all models associated with this connection.
+  autoIndex: Boolean(config.db.autoIndex)
+};
+
 // Load the mongoose models
 module.exports.loadModels = function (callback) {
+  log('info', 'Loading Mongoose Schemas.', {
+    autoIndex: mongoConnectionOptions.autoIndex
+  });
+
   // Globbing model files
   config.files.server.models.forEach(function (modelPath) {
     require(path.resolve(modelPath));
@@ -25,12 +46,12 @@ module.exports.loadModels = function (callback) {
   models.forEach(function (model) {
     mongoose.model(model).on('index', function (error) {
       if (error) {
-        log('error', 'Calling createIndex failed for Mongoose Schema', {
+        log('error', 'Calling createIndex failed for Mongoose Schema.', {
           error: error,
           model: model
         });
       } else {
-        log('info', 'Calling createIndex succeeded for Mongoose Schema', {
+        log('info', 'Calling createIndex succeeded for Mongoose Schema.', {
           model: model
         });
       }
@@ -52,23 +73,6 @@ module.exports.connect = function (callback) {
 
   // Enabling mongoose debug mode if required
   mongoose.set('debug', Boolean(config.db.debug));
-
-  // Options for Native MongoDB connection
-  // https://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
-  // http://mongoosejs.com/docs/connections.html
-  var mongoConnectionOptions = {
-    server: {
-      // Never stop reconnecting
-      reconnectTries: Number.MAX_VALUE
-    },
-    // https://mongoosejs.com/docs/deprecations.html#-ensureindex-
-    useCreateIndex: true,
-    // https://mongoosejs.com/docs/deprecations.html#-findandmodify-
-    useFindAndModify: false,
-    // Mongoose-specific option. Set to false to disable automatic index
-    // creation for all models associated with this connection.
-    autoIndex: Boolean(config.db.autoIndex)
-  };
 
   async.waterfall([
     // Connect
