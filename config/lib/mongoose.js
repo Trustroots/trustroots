@@ -16,7 +16,7 @@ var config = require('../config'),
 var mongoConnectionOptions = {
   server: {
     // Never stop reconnecting
-    reconnectTries: Number.MAX_VALUE
+    reconnectTries: Number.MAX_SAFE_INTEGER
   },
   // https://mongoosejs.com/docs/deprecations.html#-ensureindex-
   useCreateIndex: true,
