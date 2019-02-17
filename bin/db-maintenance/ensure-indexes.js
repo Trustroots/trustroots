@@ -28,13 +28,17 @@ if (process.argv[2]) {
 
 mongooseService.connect(async (connection) => {
   await mongooseService.loadModels();
-  const allModels = connection.modelNames();
-  if (!allModels.includes(predefinedModel)) {
-    console.error(`"${predefinedModel}" is not a valid model name. Models: ${allModels.join(', ')}`);
+  const modelNames = connection.modelNames();
+
+  // Validate manually defined model
+  if (predefinedModel && !modelNames.includes(predefinedModel)) {
+    console.error(`"${predefinedModel}" is not a valid model name. Models: ${modelNames.join(', ')}`);
     process.exit(1);
   }
-  const models = predefinedModel ? [predefinedModel] : allModels;
-  await mongooseService.ensureIndexes(connection, models);
+
+  const modelNamesToIndex = predefinedModel ? [predefinedModel] : modelNames;
+
+  await mongooseService.ensureIndexes(connection, modelNamesToIndex);
   await mongooseService.disconnect();
 });
 
