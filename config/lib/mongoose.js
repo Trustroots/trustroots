@@ -25,12 +25,12 @@ module.exports.loadModels = function (callback) {
   models.forEach(function (model) {
     mongoose.model(model).on('index', function (error) {
       if (error) {
-        log('error', 'Indexing Mongoose Schema failed', {
+        log('error', 'Calling createIndex failed for Mongoose Schema', {
           error: error,
           model: model
         });
       } else {
-        log('info', 'Indexed Mongoose Schema', {
+        log('info', 'Calling createIndex succeeded for Mongoose Schema', {
           model: model
         });
       }
