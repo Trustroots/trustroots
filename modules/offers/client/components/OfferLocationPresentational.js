@@ -46,11 +46,13 @@ export default function OfferLocationPresentational({ zoom, location, onChangeZo
 
 /**
  * Get url of marker icon
+ *
+ * @param {String} marker - maybe, meet, yes or an empty string
  */
 function getMarkerUrl(marker) {
-  const markerName = ['marker', 'icon', ...((marker) ? [marker] : [])].join('-');
-  return `/img/map/${markerName}.svg`;
-};
+  const markerFile = (marker) ? `-${marker}` : '';
+  return `/img/map/marker-icon${markerFile}.svg`;
+}
 
 /**
  * Size of the map icon in pixels (bigger for smaller screens)
