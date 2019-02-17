@@ -11,22 +11,22 @@ import { hasConnectedAdditionalSocialAccounts, isWarmshowersId, socialAccountLin
 export function ProfileViewBasics({ t, profile }) {
 
   /*
-  * Functions passing strings to translation fuctio for translation scripts
+  * Functions passing strings to translation fuction for translation scripts
   */
-  const getGender = (genderCode, sentence) => {
-    switch (genderCode) {
-      case 'female':
-        return sentence ? t('Female') : t('female');
-      case 'male':
-        return sentence ? t('Male') : t('male');
-      case 'non-binary':
-        return sentence ? t('Non-binary') : t('non-binary');
-      case 'other':
-        return sentence ? t('Other') : t('other');
-      default:
-        return undefined;
-    }
-  };
+ const getGender = (genderCode) => {
+  switch (genderCode) {
+    case 'female':
+      return t('female');
+    case 'male':
+      return t('male');
+    case 'non-binary':
+      return t('non-binary');
+    case 'other':
+      return t('other');
+    default:
+      return undefined;
+  }
+};
 
   const getBirthdate = birthdate => (
     t('{{birthdate, age}} years', { birthdate: new Date(birthdate) })
@@ -45,10 +45,11 @@ export function ProfileViewBasics({ t, profile }) {
   );
 
   const getSeenOnline = seen => {
-    if(seen)
-      return t('Online {{date, fromNow}}', { date: new Date(seen) })
+    if (seen){
+      return t('Online {{ date, fromNow }}', { date: new Date(seen) });
+    }
     return t('Online long ago');
-  }
+  };
 
   const getLanguage = code => (
     t(languages[code], { ns: 'languages' })
@@ -76,7 +77,7 @@ export function ProfileViewBasics({ t, profile }) {
     <div className="profile-sidebar-section" >
       {birthdate && getBirthdate(birthdate)}
       {(birthdate && gender) && <span>, </span>}
-      <span>{getGender(gender, !birthdate)}.</span>
+      <span className={ classnames({ 'text-capitalize': !birthdate }) }>{getGender(gender)}.</span>
     </div>
   );
 
