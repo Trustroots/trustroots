@@ -19,8 +19,8 @@ const config = require('../../config/config');
 const mongooseService = require('../../config/lib/mongoose');
 
 let predefinedModel;
-if (process.argv[2] === 'reverse') {
-  console.log(`Ensuring indexes only for Mongo collection ${process.argv[2]}`);
+if (process.argv[2]) {
+  console.log(`Ensuring indexes only for Mongo collection "${process.argv[2]}"`);
   predefinedModel = process.argv[2];
 } else {
   console.log('Ensuring indexes for all Mongo collections');
@@ -28,7 +28,12 @@ if (process.argv[2] === 'reverse') {
 
 mongooseService.connect(async (connection) => {
   await mongooseService.loadModels();
-  const models = predefinedModel ? [predefinedModel] : connection.modelNames();
+  const allModels = connection.modelNames();
+  if (!allModels.includes(predefinedModel)) {
+    console.error(`"${predefinedModel}" is not a valid model name. Models: ${allModels.join(', ')}`);
+    process.exit(1);
+  }
+  const models = predefinedModel ? [predefinedModel] : allModels;
   await mongooseService.ensureIndexes(connection, models);
   await mongooseService.disconnect();
 });
