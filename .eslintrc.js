@@ -214,5 +214,14 @@ module.exports = {
       'no-console': 0,
       'no-process-exit': 0,
     }
+  },{
+    // overrides for CLI scripts and application config
+    files: [
+      'bin/**',
+      'scripts/**',
+    ],
+    parserOptions: {
+      ecmaVersion: 2018
+    }
   }]
 };
