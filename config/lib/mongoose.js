@@ -158,7 +158,7 @@ module.exports.dropDatabase = function (connection, callback) {
 };
 
 module.exports.ensureIndexes = function (modelNames) {
-  return new Promise(function (resolve) {
+  return new Promise(function (resolve, reject) {
     // assuming openFiles is an array of file names
     async.each(modelNames, function (modelName, callback) {
       mongoose.connection.model(modelName).ensureIndexes(function (error) {
@@ -175,10 +175,13 @@ module.exports.ensureIndexes = function (modelNames) {
       });
     }, function (error) {
       // if any of the file processing produced an error
-      if (error) {
+      if (true || error) {
         // One of the iterations produced an error.
         // All processing will now stop.
-        log('error', 'A Schema failed to index.');
+        log('error', 'A Schema failed to index.', {
+          error: error
+        });
+        reject(error);
       } else {
         log('info', modelNames.length + ' Schemas have been indexed successfully:\n - ' + modelNames.join('\n - '));
       }

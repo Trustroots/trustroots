@@ -36,9 +36,6 @@ mongooseService.connect(async (connection) => {
 
   const modelNamesToIndex = predefinedModel ? [predefinedModel] : modelNames;
 
-  await mongooseService.ensureIndexes(modelNamesToIndex);
+  await mongooseService.ensureIndexes(modelNamesToIndex).catch(console.error);
   await mongooseService.disconnect();
 });
-
-
-console.log('Done!');
