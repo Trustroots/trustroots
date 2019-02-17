@@ -172,6 +172,8 @@ module.exports = {
     // ES 2018 - specify migrated files and folders here
     files: [
       'bin/db-maintenance/ensure-indexes.js',
+      'config/env/**',
+      'config/webpack/**',
       'modules/references/server/**',
       'modules/references/tests/server/**',
       'modules/users/tests/server/user-change-locale.server.routes.tests.js',
@@ -184,9 +186,7 @@ module.exports = {
   }, {
     // overrides for client/react code
     files: [
-      'config/env/**',
-      'config/webpack/**',
-      'config/lib/i18n.js',
+      'config/client/i18n.js',
       'modules/core/client/app/config.js',
       'modules/**/client/components/**',
       'modules/**/client/api/**',

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
-import '@/config/lib/i18n';
+import '@/config/client/i18n';
 import PropTypes from 'prop-types';
 import { limitTo, plainTextLength } from './utils/filters';
 

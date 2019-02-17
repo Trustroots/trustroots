@@ -1,5 +1,5 @@
 import React from 'react';
-import i18n from '@/config/lib/i18n';
+import i18n from '@/config/client/i18n';
 
 export default function LanguageSwitch() {
   const changeLanguage = (languageCode) => {
