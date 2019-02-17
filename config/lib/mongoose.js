@@ -175,7 +175,7 @@ module.exports.ensureIndexes = function (modelNames) {
       });
     }, function (error) {
       // if any of the file processing produced an error
-      if (true || error) {
+      if (error) {
         // One of the iterations produced an error.
         // All processing will now stop.
         log('error', 'A Schema failed to index.', {
