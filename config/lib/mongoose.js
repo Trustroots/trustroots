@@ -5,7 +5,6 @@
  */
 var config = require('../config'),
     async = require('async'),
-    chalk = require('chalk'),
     path = require('path'),
     log = require('./logger'),
     mongoose = require('mongoose'),
@@ -79,8 +78,9 @@ module.exports.connect = function (callback) {
     function (done) {
       mongoose.connect(config.db.uri, mongoConnectionOptions, function (err) {
         if (err) {
-          console.error(chalk.red('Could not connect to MongoDB!'));
-          console.error(err);
+          log('error', 'Could not connect to MongoDB!', {
+            error: err
+          });
         }
         done(err);
       });
@@ -95,9 +95,15 @@ module.exports.connect = function (callback) {
       var engines = require(path.resolve('./package.json')).engines;
       var admin = new mongoose.mongo.Admin(mongoose.connection.db);
       admin.buildInfo(function (err, info) {
-        console.log(chalk.green('MongoDB version: ' + info.version));
+        log('info', 'MongoDB', {
+          version: info.version
+        });
+
         if (semver.valid(info.version) && !semver.satisfies(info.version, engines.mongodb)) {
-          console.error(chalk.red('MongoDB version incompatibility! Compatible version(s):', engines.mongodb));
+          log('error', 'MongoDB version incompatibility!', {
+            version: info.version,
+            compatibleVersion: engines.mongodb
+          });
           process.exit(1);
         }
 
@@ -120,7 +126,7 @@ module.exports.connect = function (callback) {
 
 module.exports.disconnect = function (callback) {
   mongoose.disconnect(function (err) {
-    console.info(chalk.yellow('Disconnected from MongoDB.'));
+    log('info', 'Disconnected from MongoDB.');
     if (callback) {
       callback(err);
     }
@@ -129,15 +135,17 @@ module.exports.disconnect = function (callback) {
 
 module.exports.dropDatabase = function (connection, callback) {
   if (process.env.NODE_ENV === 'production') {
-    console.error('You cannot drop database in production mode!');
+    log('error', 'You cannot drop database in production mode!');
     return process.exit(1);
   }
 
   connection.dropDatabase(function (err) {
     if (err) {
-      console.error('Failed to drop database', err);
+      log('error', 'Failed to drop database', {
+        error: err
+      });
     } else {
-      console.log('Successfully dropped database:', connection.db.databaseName);
+      log('info', 'Successfully dropped database: ' + connection.db.databaseName);
     }
 
     if (callback) {
