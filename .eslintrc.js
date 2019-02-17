@@ -171,10 +171,11 @@ module.exports = {
     // overrides for server code
     // ES 2018 - specify migrated files and folders here
     files: [
-      'testutils/data.server.testutils.js',
+      'bin/db-maintenance/ensure-indexes.js',
       'modules/references/server/**',
       'modules/references/tests/server/**',
-      'modules/users/tests/server/user-change-locale.server.routes.tests.js'
+      'modules/users/tests/server/user-change-locale.server.routes.tests.js',
+      'testutils/data.server.testutils.js'
     ],
     parserOptions: {
       ecmaVersion: 2018

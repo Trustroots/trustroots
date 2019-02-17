@@ -58,7 +58,8 @@
     "test:server:watch": "npm run pretest && gulp test:server:watch",
     "test:server": "npm run pretest && gulp test:server",
     "test": "npm run lint && gulp test",
-    "travis-ci": "concurrently --kill-others-on-fail 'npm:lint' 'npm:build:prod'"
+    "travis-ci": "concurrently --kill-others-on-fail 'npm:lint' 'npm:build:prod'",
+    "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.js"
   },
   "dependencies": {
     "acl": "~0.4.11",

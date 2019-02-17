@@ -156,3 +156,33 @@ module.exports.dropDatabase = function (connection, callback) {
     }
   });
 };
+
+module.exports.ensureIndexes = function (connection, modelNames) {
+  return new Promise(function (resolve) {
+    // assuming openFiles is an array of file names
+    async.each(modelNames, function (modelName, callback) {
+      connection.model(modelName).ensureIndexes(function (error) {
+        if (error) {
+          log('error', 'Indexing Mongoose Schema failed', {
+            model: modelName,
+            error: error
+          });
+          callback(error);
+        } else {
+          log('info', 'Indexed Mongoose Schema ' + modelName);
+          callback();
+        }
+      });
+    }, function (error) {
+      // if any of the file processing produced an error
+      if (error) {
+        // One of the iterations produced an error.
+        // All processing will now stop.
+        log('error', 'A Schema failed to index.');
+      } else {
+        log('info', 'All Schemas have been indexed successfully.');
+      }
+      resolve();
+    });
+  });
+};
