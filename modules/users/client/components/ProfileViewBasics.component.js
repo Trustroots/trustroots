@@ -13,20 +13,20 @@ export function ProfileViewBasics({ t, profile }) {
   /*
   * Functions passing strings to translation fuction for translation scripts
   */
- const getGender = (genderCode) => {
-  switch (genderCode) {
-    case 'female':
-      return t('female');
-    case 'male':
-      return t('male');
-    case 'non-binary':
-      return t('non-binary');
-    case 'other':
-      return t('other');
-    default:
-      return undefined;
-  }
-};
+  const getGender = (genderCode) => {
+    switch (genderCode) {
+      case 'female':
+        return t('female');
+      case 'male':
+        return t('male');
+      case 'non-binary':
+        return t('non-binary');
+      case 'other':
+        return t('other');
+      default:
+        return undefined;
+    }
+  };
 
   const getBirthdate = birthdate => (
     t('{{birthdate, age}} years', { birthdate: new Date(birthdate) })
@@ -68,7 +68,7 @@ export function ProfileViewBasics({ t, profile }) {
       {replyTime &&
       <span>
         <br/>
-        {getReplyTime}
+        {getReplyTime(replyTime)}
       </span>}
     </div>
   );
