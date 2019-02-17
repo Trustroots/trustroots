@@ -14,8 +14,6 @@
  * Example:
  *  npm run ensure-indexes -- User
  */
-
-const config = require('../../config/config');
 const mongooseService = require('../../config/lib/mongoose');
 
 let predefinedModel;
@@ -38,7 +36,7 @@ mongooseService.connect(async (connection) => {
 
   const modelNamesToIndex = predefinedModel ? [predefinedModel] : modelNames;
 
-  await mongooseService.ensureIndexes(connection, modelNamesToIndex);
+  await mongooseService.ensureIndexes(modelNamesToIndex);
   await mongooseService.disconnect();
 });
 
