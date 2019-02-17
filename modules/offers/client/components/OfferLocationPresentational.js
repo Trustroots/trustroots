@@ -58,6 +58,10 @@ function getMarkerUrl(marker) {
  * Size of the map icon in pixels (bigger for smaller screens)
  * @param {Number} windowWidth - current width of window
  * @returns {Number} - icon size
+ *
+ * @TODO use window.matchMedia
+ * https://github.com/Trustroots/trustroots/pull/1023#discussion_r257518997
+ * perhaps in the related smart component
  */
 function getIconSize(windowWidth) {
   return (windowWidth < 768) ? 30 : 20;
@@ -65,6 +69,8 @@ function getIconSize(windowWidth) {
 
 /**
  * Get aria label for accessibility
+ *
+ * @TODO add translations
  */
 function getAriaLabel(marker) {
   switch (marker) {

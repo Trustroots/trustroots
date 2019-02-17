@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import OfferLocationPresentational from './OfferLocationPresentational';
+import throttle from 'lodash/throttle';
 
 export default class OfferLocation extends React.Component {
 
@@ -14,16 +15,18 @@ export default class OfferLocation extends React.Component {
 
     this.handleChangeZoom = this.handleChangeZoom.bind(this);
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
+    // update window size max every 200 milliseconds, not faster
+    this.throttledUpdateWindowDimensions = throttle(this.updateWindowDimensions, 200);
   }
 
   /* updating windows size with https://stackoverflow.com/a/42141641 */
   componentDidMount() {
     this.updateWindowDimensions();
-    window.addEventListener('resize', this.updateWindowDimensions);
+    window.addEventListener('resize', this.throttledUpdateWindowDimensions);
   }
 
   componentWillUnmount() {
-    window.removeEventListener('resize', this.updateWindowDimensions);
+    window.removeEventListener('resize', this.throttledUpdateWindowDimensions);
   }
 
   updateWindowDimensions() {
