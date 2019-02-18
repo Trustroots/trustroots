@@ -1,5 +1,6 @@
 
 <div class="row">
+  <!-- About me -->
   <div class="col-md-6">
     <about-me profile="profileCtrl.profile" isSelf="app.user._id === profileCtrl.profile._id" appSettings="app.appSettings"></about-me>
   </div>
@@ -7,7 +8,9 @@
   <div class="col-md-6">
 
     <!-- Offers -->
+    
     <div class="hidden-xs">
+      <offers></offers>
       <div tr-offer-host-view="profileCtrl.profile"
            tr-offer-host-view-auth-user="::app.user"></div>
     </div>
