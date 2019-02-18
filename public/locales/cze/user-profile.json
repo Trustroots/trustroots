@@ -1,5 +1,10 @@
 {
   "Member since {{date, MMM Do, YYYY}}": "Členem od {{date, Do MMM YYYY}}",
   "Online {{date, fromNow}}": "Online {{date, fromNow}}",
-  "Online long ago": "Online dávno"
+  "Online long ago": "Online dávno",
+  "About me": "O mně",
+  "Show more...": "Více...",
+  "Member has not written description about themself.": "Člen o sobě ještě nic nenapsal.",
+  "Your profile description should be longer so that you can send messages.": "Tvůj popis musí být delší, abys mohl/a posílat zprávy.",
+  "Fill your profile": "Vyplň svůj profil."
 }

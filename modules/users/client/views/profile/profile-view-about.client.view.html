@@ -1,48 +1,11 @@
 
 <div class="row">
   <div class="col-md-6">
-
-    <!-- About me -->
-    <section class="panel panel-default">
-      <header class="panel-heading">
-        About me
-      </header>
-      <div class="panel-body">
-
-        <!-- Short descriptions -->
-        <div ng-if="profileCtrl.profile.description.length < 2400 || profileCtrl.profileDescriptionToggle" ng-bind-html="profileCtrl.profile.description | trustedHtml"></div>
-
-        <!-- Long descriptions -->
-        <div ng-if="profileCtrl.profile.description.length >= 2400 && !profileCtrl.profileDescriptionToggle"
-          class="panel-more-wrap" ng-click="profileCtrl.profileDescriptionToggle=true">
-            <div class="panel-more-excerpt" ng-bind-html="profileCtrl.profile.description | limitTo:2400 | trustedHtml" ></div>
-            <div class="panel-more-fade">Show more...</div>
-        </div>
-
-        <!-- If no description, show deep thoughts... -->
-        <blockquote class="profile-quote"
-                    ng-if="!profileCtrl.profile.description || profileCtrl.profile.description === ''"
-                    aria-label="Member has not written description about themself.">
-          “Everyone is necessarily the hero of their own life story.”
-        </blockquote>
-
-      </div>
-
-      <!-- User watching their own profile and it's too short -->
-      <footer class="panel-footer" ng-if="app.user._id === profileCtrl.profile._id && (!profileCtrl.profile.description || (profileCtrl.profile.description|plainTextLength) < app.appSettings.profileMinimumLength)">
-        <p class="lead">
-          Your profile description should be longer so that you can send messages.
-          <br><br>
-          <a ui-sref="profile-edit.about" class="btn btn-primary">Fill your profile</a>
-        </p>
-      </footer>
-    </section>
-    <!-- /About me -->
-
+    <about-me profile="profileCtrl.profile" isSelf="app.user._id === profileCtrl.profile._id" appSettings="app.appSettings"></about-me>
   </div>
 
   <div class="col-md-6">
-
+    
     <!-- Offers -->
     <div class="hidden-xs">
       <div tr-offer-host-view="profileCtrl.profile"

@@ -1,5 +1,10 @@
 {
   "Member since {{date, MMM Do, YYYY}}": "Member since {{date, MMM Do, YYYY}}",
   "Online {{date, fromNow}}": "Online {{date, fromNow}}",
-  "Online long ago": "Online long ago"
+  "Online long ago": "Online long ago",
+  "About me": "About me",
+  "Show more...": "Show more...",
+  "Member has not written description about themself.": "Member has not written description about themself.",
+  "Your profile description should be longer so that you can send messages.": "Your profile description should be longer so that you can send messages.",
+  "Fill your profile": "Fill your profile"
 }
