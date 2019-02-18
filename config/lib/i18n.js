@@ -22,8 +22,10 @@ function format(value, format, languageCode) {
   if (value instanceof Date) {
     moment.locale(codes[languageCode]);
     if (format === 'fromNow') return moment(value).fromNow();
+    if (format === 'age') return moment().diff(moment(value), 'years');
     return moment(value).format(format);
   }
+
   return value;
 }
 
