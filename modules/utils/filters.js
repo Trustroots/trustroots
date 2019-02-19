@@ -9,5 +9,5 @@ export const plainTextLength = (text) => {
 };
 
 export const sanitizeHtml = (text) => {
-  return sanitizeHtmlFunction(text)
-}
+  return sanitizeHtmlFunction(text);
+};
