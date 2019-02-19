@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import classnames from 'classnames';
 import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 import '@/config/lib/i18n';
+import { limitTo, sanitizeHtml } from '../../../utils/filters';
+
 // import PropTypes from 'prop-types';
 
 export class Offers extends Component {
@@ -9,7 +11,15 @@ export class Offers extends Component {
     super(props);
     this.renderOffer = this.renderOffer.bind(this);
     this.state = {
+      offerDescriptionToggle = false
     };
+  }
+
+  setOfferDescriptionToggle(state) {
+    this.setState((prevState) => ({
+      offerDescriptionToggle: state // !prevState.offerDescriptionToggle
+    })
+    );
   }
 
   renderButtonOwn() {
@@ -73,32 +83,41 @@ export class Offers extends Component {
     return(
       <div>
         {/*  Edit button  */}
-        <a ui-sref="offer.host.edit"
-            className="btn btn-inverse-primary btn-round btn-raised pull-right"
-            aria-label="Modify hosting offer"
-            ng-if="trOfferHost.isOwnOffer">
-          <span className="icon-edit"></span>
-        </a>
+        {trOfferHost.isOwnOffer &&
+          <a ui-sref="offer.host.edit"
+              className="btn btn-inverse-primary btn-round btn-raised pull-right"
+              aria-label="Modify hosting offer">
+            <span className="icon-edit"></span>
+          </a>
+        }
 
         {/*  Short descriptions  */}
-        <div ng-if="trOfferHost.offer.description && trOfferHost.offer.description.length < 2000"
-              ng-bind-html="trOfferHost.offer.description | trustedHtml"></div>
+        {(trOfferHost.offer.description && trOfferHost.offer.description.length < 2000) && 
+          <div dangerouslySetInnerHTML={{ __html: htmlSanitize(trOfferHost.offer.description) }}>
+          </div>
+        }
 
         {/*  Long descriptions  */}
-        <div ng-if="trOfferHost.offer.description && trOfferHost.offer.description.length >= 2000">
-          <div className="panel-more-wrap"
-                ng-hide="trOfferHost.offerDescriptionToggle">
-            <div ng-bind-html="trOfferHost.offer.description | limitTo:2000 | trustedHtml"
+        {trOfferHost.offer.description && trOfferHost.offer.description.length >= 2000 &&
+          <div>
+            {!trOfferHost.offerDescriptionToggle &&
+              <div className="panel-more-wrap">
+                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(limitTo(trOfferHost.offer.description), 2000) }}
                   className="panel-more-excerpt"
-                  ng-click="trOfferHost.offerDescriptionToggle=true"></div>
-            <div className="panel-more-fade"
-                  ng-click="trOfferHost.offerDescriptionToggle=true">
-              Show more...
-            </div>
+                  onClick={this.setOfferDescriptionToggle(true)}> // TODO - change or set true
+                </div>
+                <div className="panel-more-fade"
+                  onClick={this.setOfferDescriptionToggle(true)}>
+                  Show more...
+                </div>
+              </div>
+            }
+            {trOfferHost.offerDescriptionToggle &&
+              <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(trOfferHost.offer.description) }}>
+              </div>
+            }
           </div>
-          <div ng-bind-html="trOfferHost.offer.description | trustedHtml"
-                ng-show="trOfferHost.offerDescriptionToggle"></div>
-        </div>
+        }
 
         <p className="offer-restrictions">
         {/* TODO
@@ -116,50 +135,60 @@ export class Offers extends Component {
     return(
       <div>
       {/*  Edit button  */}
-       <a ui-sref="offer.host.edit({'status': 'no'})"
-           className="btn btn-inverse-primary btn-round btn-raised pull-right"
-           aria-label="Modify hosting offer"
-           ng-if="isOwnOffer">
-         <span className="icon-edit"></span>
-       </a>
+      {isOwnOffer &&
+        <a ui-sref="offer.host.edit({'status': 'no'})"
+            className="btn btn-inverse-primary btn-round btn-raised pull-right"
+            aria-label="Modify hosting offer">
+          <span className="icon-edit"></span>
+        </a>
+      }
 
       {/*  User has written explanation  */}
-       <div ng-if="trOfferHost.offer.noOfferDescription" ng-bind-html="trOfferHost.offer.noOfferDescription | trustedHtml"></div>
-
+      {trOfferHost.offer.noOfferDescription &&
+        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(trOfferHost.offer.noOfferDescription) }}>
+        </div>
+      }
       {/*  Default "sorry nope"  */}
-       <div className="content-empty text-muted" ng-if="!trOfferHost.offer.noOfferDescription">
-         <div className="icon-sofa icon-3x text-muted"></div>
+      {!trOfferHost.offer.noOfferDescription &&
+        <div className="content-empty text-muted">
+          <div className="icon-sofa icon-3x text-muted"></div>
 
-        {/*  Show for others  */}
-         <h4 ng-if="!trOfferHost.isOwnOffer">
-           Sorry, user is not hosting currently.
-         </h4>
+          {/*  Show for others  */}
+          {!trOfferHost.isOwnOffer &&
+            <h4>
+              Sorry, user is not hosting currently.
+            </h4>
+          }
 
-        {/*  Show for the user  */}
-         <div ng-if="trOfferHost.isOwnOffer">
-           <br />
-           <p className="lead">
-             <em>Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.</em>
-           </p>
-           <br />
-         </div>
-       </div>
+          {/*  Show for the user  */}
+          {trOfferHost.isOwnOffer &&
+            <div>
+              <br />
+              <p className="lead">
+                <em>Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.</em>
+              </p>
+              <br />
+            </div>
+          }
+        </div>
+      }
 
       {/*  Action button  */}
-       <div ng-if="trOfferHost.isOwnOffer && (!trOfferHost.offer.status || trOfferHost.offer.status === 'no')"
-             className="text-center">
-         <br />
-         <hr className="hr-gray hr-tight hr-xs" />
-         <a ui-sref="offer.host.edit({status: 'yes'})"
-             className="btn btn-inverse-primary">
-           Start hosting travellers
-         </a>
-         &nbsp;
-         <a ui-sref="offer.meet.list"
-             className="btn btn-inverse-primary">
-           Meet people
-         </a>
-       </div>
+      {trOfferHost.isOwnOffer && (!trOfferHost.offer.status || trOfferHost.offer.status === 'no') &&
+        <div className="text-center">
+          <br />
+          <hr className="hr-gray hr-tight hr-xs" />
+          <a ui-sref="offer.host.edit({status: 'yes'})"
+              className="btn btn-inverse-primary">
+            Start hosting travellers
+          </a>
+          &nbsp;
+          <a ui-sref="offer.meet.list"
+              className="btn btn-inverse-primary">
+            Meet people
+          </a>
+        </div>
+      }
      </div>
     );
   }
@@ -167,23 +196,24 @@ export class Offers extends Component {
   renderMap() {
     return(
       <div> {/* / TODO change later to <> */}
-        <offer-location
-        ng-if="trOfferHost.offer.status === 'yes' || trOfferHost.offer.status === 'maybe'"
-        offer="trOfferHost.offer"
-        ></offer-location>
-
-        <div className="panel-footer text-center"
-              ng-if="trOfferHost.offer.status === 'yes' || trOfferHost.offer.status === 'maybe'">
+        {(trOfferHost.offer.status === 'yes' || trOfferHost.offer.status === 'maybe') &&
+          <offer-location offer="trOfferHost.offer">
+          </offer-location>
+        }
+        {(trOfferHost.offer.status === 'yes' || trOfferHost.offer.status === 'maybe') &&
+        <div className="panel-footer text-center">
           <a ui-sref="search.map({offer: trOfferHost.offer._id})"
               className="btn btn-sm btn-inverse-primary">
             Bigger map
           </a>
-          <a ng-if="::trOfferHost.isMobile"
-            ng-href="geo:{{trOfferHost.offer.location[0]}},{{trOfferHost.offer.location[1]}};u=200"
+          {trOfferHost.isMobile &&
+          <a href="geo:{{trOfferHost.offer.location[0]}},{{trOfferHost.offer.location[1]}};u=200"
               className="btn btn-sm btn-inverse-primary">
             Open on device
           </a>
+          }
         </div>
+        }
       </div>
     );
   }
