@@ -12,7 +12,6 @@ export class Offers extends Component {
     this.renderOffer = this.renderOffer.bind(this);
     this.state = {
       offerDescriptionToggle: false,
-      cats: 234,
       offer: {},
       isLoading: true,
       isOwnOffer: false,
@@ -37,7 +36,6 @@ export class Offers extends Component {
     if (profile && profile._id) {
       that.setState(() => ({
         profile: profile,
-        cats: 1,
         isOwnOffer: true,
         //isOwnOffer: 'dfa' //(authUser && authUser._id && authUser._id === profile._id),
         //isUserPublic: (authUser && authUser.public)
