@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import classnames from 'classnames';
 import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 import '@/config/lib/i18n';
 // import PropTypes from 'prop-types';
@@ -14,37 +15,37 @@ export class Offers extends Component {
   renderButtonOwn() {
     return(
       <div
-        class="pull-right btn-group"
+        className="pull-right btn-group"
         uib-dropdown
         is-open="hostingDropdown">
-        <button class="btn btn-sm dropdown-toggle btn-offer-hosting"
+        <button className="btn btn-sm dropdown-toggle btn-offer-hosting"
                 uib-tooltip="Change"
                 tooltip-placement="left"
                 uib-dropdown-toggle
-                ng-class="{
+                className={classnames({
                   'btn-offer-hosting-yes': trOfferHost.offer.status === 'yes',
                   'btn-offer-hosting-maybe': trOfferHost.offer.status === 'maybe',
                   'btn-offer-hosting-no': (!trOfferHost.offer || trOfferHost.offer.status === 'no')
-                }">
+                })}>
           { trOfferHost.hostingStatusLabel(trOfferHost.offer.status) }
-          <span class="caret"></span>
+          <span className="caret"></span>
         </button>
-        <ul class="dropdown-menu" role="menu">
+        <ul className="dropdown-menu" role="menu">
           <li>
             <a ui-sref="offer.host.edit({'status': 'yes'})"
-                class="cursor-pointer offer-hosting-yes">
+                className="cursor-pointer offer-hosting-yes">
               I can host
             </a>
           </li>
           <li>
             <a ui-sref="offer.host.edit({'status': 'maybe'})"
-                class="cursor-pointer offer-hosting-maybe">
+                className="cursor-pointer offer-hosting-maybe">
               I might be able to host
             </a>
           </li>
           <li>
             <a ui-sref="offer.host.edit({'status': 'no'})"
-                class="cursor-pointer offer-hosting-no">
+                className="cursor-pointer offer-hosting-no">
               I can't host currently
             </a>
           </li>
@@ -55,14 +56,14 @@ export class Offers extends Component {
 
   renderButtonOther() {
     return(
-      <a class="btn btn-sm pull-right btn-offer-hosting btn-offer-hosting-yes"
+      <a className="btn btn-sm pull-right btn-offer-hosting btn-offer-hosting-yes"
         aria-label="Hosting status: {{ ::trOfferHost.hostingStatusLabel(trOfferHost.offer.status) }}"
         ui-sref="messageThread({username: trOfferHost.profile.username})"
-        ng-class="{
+        className={classnames({
           'btn-offer-hosting-no': !trOfferHost.offer || trOfferHost.offer.status === 'no',
           'btn-offer-hosting-yes': trOfferHost.offer.status === 'yes',
           'btn-offer-hosting-maybe': trOfferHost.offer.status === 'maybe'
-        }">
+        })}>
         { trOfferHost.hostingStatusLabel(trOfferHost.offer.status) }
       </a>
     );
@@ -73,10 +74,10 @@ export class Offers extends Component {
       <div>
         {/*  Edit button  */}
         <a ui-sref="offer.host.edit"
-            class="btn btn-inverse-primary btn-round btn-raised pull-right"
+            className="btn btn-inverse-primary btn-round btn-raised pull-right"
             aria-label="Modify hosting offer"
             ng-if="trOfferHost.isOwnOffer">
-          <span class="icon-edit"></span>
+          <span className="icon-edit"></span>
         </a>
 
         {/*  Short descriptions  */}
@@ -85,12 +86,12 @@ export class Offers extends Component {
 
         {/*  Long descriptions  */}
         <div ng-if="trOfferHost.offer.description && trOfferHost.offer.description.length >= 2000">
-          <div class="panel-more-wrap"
+          <div className="panel-more-wrap"
                 ng-hide="trOfferHost.offerDescriptionToggle">
             <div ng-bind-html="trOfferHost.offer.description | limitTo:2000 | trustedHtml"
-                  class="panel-more-excerpt"
+                  className="panel-more-excerpt"
                   ng-click="trOfferHost.offerDescriptionToggle=true"></div>
-            <div class="panel-more-fade"
+            <div className="panel-more-fade"
                   ng-click="trOfferHost.offerDescriptionToggle=true">
               Show more...
             </div>
@@ -99,7 +100,7 @@ export class Offers extends Component {
                 ng-show="trOfferHost.offerDescriptionToggle"></div>
         </div>
 
-        <p class="offer-restrictions">
+        <p className="offer-restrictions">
         {/* TODO
           {trOfferHost.offer.maxGuests, plural, offset:1
               =0    {No guests.}
@@ -116,18 +117,18 @@ export class Offers extends Component {
       <div>
       {/*  Edit button  */}
        <a ui-sref="offer.host.edit({'status': 'no'})"
-           class="btn btn-inverse-primary btn-round btn-raised pull-right"
+           className="btn btn-inverse-primary btn-round btn-raised pull-right"
            aria-label="Modify hosting offer"
            ng-if="isOwnOffer">
-         <span class="icon-edit"></span>
+         <span className="icon-edit"></span>
        </a>
 
       {/*  User has written explanation  */}
        <div ng-if="trOfferHost.offer.noOfferDescription" ng-bind-html="trOfferHost.offer.noOfferDescription | trustedHtml"></div>
 
       {/*  Default "sorry nope"  */}
-       <div class="content-empty text-muted" ng-if="!trOfferHost.offer.noOfferDescription">
-         <div class="icon-sofa icon-3x text-muted"></div>
+       <div className="content-empty text-muted" ng-if="!trOfferHost.offer.noOfferDescription">
+         <div className="icon-sofa icon-3x text-muted"></div>
 
         {/*  Show for others  */}
          <h4 ng-if="!trOfferHost.isOwnOffer">
@@ -137,7 +138,7 @@ export class Offers extends Component {
         {/*  Show for the user  */}
          <div ng-if="trOfferHost.isOwnOffer">
            <br />
-           <p class="lead">
+           <p className="lead">
              <em>Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.</em>
            </p>
            <br />
@@ -146,16 +147,16 @@ export class Offers extends Component {
 
       {/*  Action button  */}
        <div ng-if="trOfferHost.isOwnOffer && (!trOfferHost.offer.status || trOfferHost.offer.status === 'no')"
-             class="text-center">
+             className="text-center">
          <br />
-         <hr class="hr-gray hr-tight hr-xs" />
+         <hr className="hr-gray hr-tight hr-xs" />
          <a ui-sref="offer.host.edit({status: 'yes'})"
-             class="btn btn-inverse-primary">
+             className="btn btn-inverse-primary">
            Start hosting travellers
          </a>
          &nbsp;
          <a ui-sref="offer.meet.list"
-             class="btn btn-inverse-primary">
+             className="btn btn-inverse-primary">
            Meet people
          </a>
        </div>
@@ -171,15 +172,15 @@ export class Offers extends Component {
         offer="trOfferHost.offer"
         ></offer-location>
 
-        <div class="panel-footer text-center"
+        <div className="panel-footer text-center"
               ng-if="trOfferHost.offer.status === 'yes' || trOfferHost.offer.status === 'maybe'">
           <a ui-sref="search.map({offer: trOfferHost.offer._id})"
-              class="btn btn-sm btn-inverse-primary">
+              className="btn btn-sm btn-inverse-primary">
             Bigger map
           </a>
           <a ng-if="::trOfferHost.isMobile"
             ng-href="geo:{{trOfferHost.offer.location[0]}},{{trOfferHost.offer.location[1]}};u=200"
-              class="btn btn-sm btn-inverse-primary">
+              className="btn btn-sm btn-inverse-primary">
             Open on device
           </a>
         </div>
@@ -189,8 +190,8 @@ export class Offers extends Component {
 
   renderOffer() {
     return(
-      <div class="panel panel-default offer-view">
-        <div class="panel-heading">
+      <div className="panel panel-default offer-view">
+        <div className="panel-heading">
           Accommodation
          {/*  Button + dropdown for user's own profile  */}
          {isOwnOffer && this.renderButtonOwn()}
@@ -199,7 +200,7 @@ export class Offers extends Component {
         </div>
 
         {/*  Show offer  */}
-        <div class="panel-body">
+        <div className="panel-body">
         {/*  Hosting: yes | maybe  */}
         {(trOfferHost.offer.status && trOfferHost.offer.status !== 'no') && this.renderHostingYesMaybe()}
 
