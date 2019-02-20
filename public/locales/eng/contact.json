@@ -1,0 +1,4 @@
+{
+  "{{count}} contacts in common_plural": "{{count}} contacts in common",
+  "{{count}} contacts in common_interval": "(1){One contact in common};(2-inf){{{count}} contacts in common};"
+}

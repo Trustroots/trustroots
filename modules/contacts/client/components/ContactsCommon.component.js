@@ -1,11 +1,11 @@
 import React from 'react';
-// import { NamespacesConsumer } from 'react-i18next';
+import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 import PropTypes from 'prop-types';
-import Contact from './Contact.component';
+import Contact from './Contact';
 import { getContactsCommon } from '../api/contacts.api';
 import '@/config/lib/i18n';
 
-export default class ContactsCommon extends React.Component {
+export class ContactsCommon extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -25,24 +25,25 @@ export default class ContactsCommon extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     const isContactsCommonList = this.state.contacts.length;
 
     if (!isContactsCommonList) return null;
     return (
       <div className="panel panel-default">
         {/* convert ng-pluralize with NamespacesConsumer */}
+        <div className="panel-heading">{t('{{count}} contacts in common_interval', { postProcess: 'interval', count: this.state.contacts.length })}</div>
         <div className="panel-body">
-          <div className="contacts-contact">
-            {this.state.contacts.map((contact) =>
-              <div key={contact._id.toString()}>
-                <Contact
-                  contact={contact}
-                  hide-meta={true}
-                  avatar-size={64}
-                  selfId={this.props.profileId}
-                />
-              </div>)}
-          </div>
+          {this.state.contacts.map((contact) =>
+            <Contact
+              key={contact._id}
+              contact={contact}
+              className="contacts-contact"
+              hideMeta={true}
+              avatarSize={64}
+              selfId={this.props.profileId}
+            />
+          )}
         </div>
       </div>
     );
@@ -50,5 +51,8 @@ export default class ContactsCommon extends React.Component {
 }
 
 ContactsCommon.propTypes = {
-  profileId: PropTypes.string
+  profileId: PropTypes.string,
+  t: PropTypes.func.isRequired
 };
+
+export default withNamespaces('contact')(ContactsCommon);

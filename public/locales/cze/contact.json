@@ -1,0 +1,3 @@
+{
+  "{{count}} contacts in common_interval": "(1){Jeden společný kontakt};(2-4){{{count}} společné kontakty};(5-inf){{{count}} společných kontaktů};};"
+}
