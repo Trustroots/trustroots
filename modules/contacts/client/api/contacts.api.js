@@ -8,6 +8,6 @@ export async function remove(contactId) {
 }
 
 export async function getContactsCommon(id) {
-  const { data } = await axios.get('/api/contacts/'+ id + '/common');
+  const { data } = await axios.get(`/api/contacts/${id}/common`);
   return data;
 }

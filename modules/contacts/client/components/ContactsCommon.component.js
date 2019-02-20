@@ -13,15 +13,10 @@ export class ContactsCommon extends React.Component {
     };
   }
 
-  componentDidMount() {
-    const profileId = this.props.profileId;
-    getContactsCommon(profileId)
-      .then(lists => {
-        this.setState({
-          contacts: lists
-        });
-      });
-
+  async componentDidMount() {
+    const { profileId } = this.props;
+    const contacts = await getContactsCommon(profileId);
+    this.setState({ contacts });
   }
 
   render() {
