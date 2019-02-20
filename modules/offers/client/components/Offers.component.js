@@ -15,6 +15,85 @@ export class Offers extends Component {
       trOfferHost: {}
     };
   }
+  componentWillMount() {
+    this.setState(() => ({
+      offer: false,
+      isLoading: true,
+      isOwnOffer: false,
+      profile: false,
+      isUserPublic: false,
+      hostingDropdown: false,
+      hostingStatusLabel: this.hostingStatusLabel,
+      isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp // TODO check userAgent
+    }));
+  }
+
+  componentDidMount() {
+    console.log('MOUNTED');
+    const { profile, authUser } = this.props;
+    if (profile) {
+      this.setState(() => ({
+        isLoading: false
+      }));
+    }
+    if (profile && profile._id) {
+      this.setState(() => ({
+        profile: profile,
+        isOwnOffer: (authUser && authUser._id && authUser._id === profile._id),
+        isUserPublic: (authUser && authUser.public)
+      }));
+
+      // fetch offer data
+      fetch('/api/offers-by/:userId')
+        .then(response => response.json())
+        .then(data => {
+          console.log('KOTKI', data);
+        });
+
+      // OffersByService.query({
+      //   userId: String(profile._id),
+      //   types: 'host'
+      // }, function (offers) {
+
+      //   if (!offers || !offers.length) {
+      //     vm.isLoading = false;
+      //     return;
+      //   }
+
+      //   vm.offer = offers[0];
+      //   vm.isLoading = false;
+      // }, function () {
+      //   // No offer(s) found
+      //   vm.isLoading = false;
+      // });
+    }
+  }
+  /* @ngInject */
+
+  // function OffersByService($resource) {
+  //   return $resource('/api/offers-by/:userId', {
+  //     userId: '@id'
+  //   }, {
+  //     query: {
+  //       method: 'GET',
+  //       isArray: true
+  //     }
+  //   });
+  // }
+
+  /**
+   * Helper for hosting label
+   */
+  hostingStatusLabel(status) {
+    switch (status) {
+      case 'yes':
+        return 'Can host';
+      case 'maybe':
+        return 'Might be able to host';
+      default:
+        return 'Cannot host currently';
+    }
+  }
 
   setOfferDescriptionToggle(state) {
     this.setState(() => ({
@@ -23,7 +102,8 @@ export class Offers extends Component {
     );
   }
 
-  renderButtonOwn(trOfferHost) {
+  renderButtonOwn() {
+    const { offer, hostingStatusLabel } = this.state;
     return (
       <div
         className="pull-right btn-group"
@@ -35,11 +115,11 @@ export class Offers extends Component {
           uib-dropdown-toggle
           className={classnames(
             'btn', 'btn-sm', 'dropdown-toggle', 'btn-offer-hosting',
-            { 'btn-offer-hosting-yes': trOfferHost.offer.status === 'yes',
-              'btn-offer-hosting-maybe': trOfferHost.offer.status === 'maybe',
-              'btn-offer-hosting-no': (!trOfferHost.offer || trOfferHost.offer.status === 'no')
+            { 'btn-offer-hosting-yes': offer.status === 'yes',
+              'btn-offer-hosting-maybe': offer.status === 'maybe',
+              'btn-offer-hosting-no': (!offer || offer.status === 'no')
             })}>
-          { trOfferHost.hostingStatusLabel(trOfferHost.offer.status) }
+          { hostingStatusLabel(offer.status) }
           <span className="caret"></span>
         </button>
         <ul className="dropdown-menu" role="menu">
@@ -66,23 +146,25 @@ export class Offers extends Component {
     );
   }
 
-  renderButtonOther(trOfferHost) {
+  renderButtonOther() {
+    const { offer, hostingStatusLabel } = this.status;
     return (
       <a aria-label="Hosting status: {{ ::trOfferHost.hostingStatusLabel(trOfferHost.offer.status) }}"
         ui-sref="messageThread({username: trOfferHost.profile.username})"
         className={classnames(
           'btn', 'btn-sm', 'pull-right', 'btn-offer-hosting', 'btn-offer-hosting-yes',
           {
-            'btn-offer-hosting-no': !trOfferHost.offer || trOfferHost.offer.status === 'no',
-            'btn-offer-hosting-yes': trOfferHost.offer.status === 'yes',
-            'btn-offer-hosting-maybe': trOfferHost.offer.status === 'maybe'
+            'btn-offer-hosting-no': !offer || offer.status === 'no',
+            'btn-offer-hosting-yes': offer.status === 'yes',
+            'btn-offer-hosting-maybe': offer.status === 'maybe'
           })}>
-        { trOfferHost.hostingStatusLabel(trOfferHost.offer.status) }
+        { hostingStatusLabel(offer.status) }
       </a>
     );
   }
 
-  renderHostingYesMaybe(trOfferHost) {
+  renderHostingYesMaybe() {
+    const { offer, offerDescriptionToggle } = this.status;
     return (
       <div>
         {/*  Edit button  */}
@@ -95,17 +177,17 @@ export class Offers extends Component {
         }
 
         {/*  Short descriptions  */}
-        {(trOfferHost.offer.description && trOfferHost.offer.description.length < 2000) &&
-          <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(trOfferHost.offer.description) }}>
+        {(offer.description && offer.description.length < 2000) &&
+          <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(offer.description) }}>
           </div>
         }
 
         {/*  Long descriptions  */}
-        {trOfferHost.offer.description && trOfferHost.offer.description.length >= 2000 &&
+        {offer.description && offer.description.length >= 2000 &&
           <div>
-            {!trOfferHost.offerDescriptionToggle &&
+            {!offerDescriptionToggle &&
               <div className="panel-more-wrap">
-                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(limitTo(trOfferHost.offer.description), 2000) }}
+                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(limitTo(offer.description), 2000) }}
                   className="panel-more-excerpt"
                   onClick={this.setOfferDescriptionToggle(true)}>
                 </div>{/* // TODO - change or set true */}
@@ -115,8 +197,8 @@ export class Offers extends Component {
                 </div>
               </div>
             }
-            {trOfferHost.offerDescriptionToggle &&
-              <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(trOfferHost.offer.description) }}>
+            {offerDescriptionToggle &&
+              <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(offer.description) }}>
               </div>
             }
           </div>
@@ -134,7 +216,8 @@ export class Offers extends Component {
     );
   }
 
-  renderHostingNo(isOwnOffer, trOfferHost) {
+  renderHostingNo() {
+    const {isOwnOffer, offer} = this.state;
     return (
       <div>
         {/*  Edit button  */}
@@ -147,24 +230,24 @@ export class Offers extends Component {
         }
 
         {/*  User has written explanation  */}
-        {trOfferHost.offer.noOfferDescription &&
-        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(trOfferHost.offer.noOfferDescription) }}>
+        {offer.noOfferDescription &&
+        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(offer.noOfferDescription) }}>
         </div>
         }
         {/*  Default "sorry nope"  */}
-        {!trOfferHost.offer.noOfferDescription &&
+        {!offer.noOfferDescription &&
         <div className="content-empty text-muted">
           <div className="icon-sofa icon-3x text-muted"></div>
 
           {/*  Show for others  */}
-          {!trOfferHost.isOwnOffer &&
+          {!isOwnOffer &&
             <h4>
               Sorry, user is not hosting currently.
             </h4>
           }
 
           {/*  Show for the user  */}
-          {trOfferHost.isOwnOffer &&
+          {isOwnOffer &&
             <div>
               <br />
               <p className="lead">
@@ -177,7 +260,7 @@ export class Offers extends Component {
         }
 
         {/*  Action button  */}
-        {trOfferHost.isOwnOffer && (!trOfferHost.offer.status || trOfferHost.offer.status === 'no') &&
+        {isOwnOffer && (!offer.status || offer.status === 'no') &&
         <div className="text-center">
           <br />
           <hr className="hr-gray hr-tight hr-xs" />
@@ -196,10 +279,11 @@ export class Offers extends Component {
     );
   }
 
-  renderMap(trOfferHost) {
+  renderMap() {
+    const {offer} = this.state;
     return (
       <div> {/* / TODO change later to <> */}
-        {(trOfferHost.offer.status === 'yes' || trOfferHost.offer.status === 'maybe') &&
+        {(offer.status === 'yes' || offer.status === 'maybe') &&
           <offer-location offer="trOfferHost.offer">
           </offer-location>
         }
@@ -221,46 +305,45 @@ export class Offers extends Component {
     );
   }
 
-  renderOffer(isOwnOffer, trOfferHost) {
+  renderOffer() {
+    const { isOwnOffer, offer } = this.state;
     return (
       <div className="panel panel-default offer-view">
         <div className="panel-heading">
           Accommodation
           {/*  Button + dropdown for user's own profile  */}
-          {isOwnOffer && this.renderButtonOwn(trOfferHost)}
+          {isOwnOffer && this.renderButtonOwn()}
           {/*  Button for other profiles  */}
-          {!isOwnOffer && this.renderButtonOther(trOfferHost)}
+          {!isOwnOffer && this.renderButtonOther()}
         </div>
 
         {/*  Show offer  */}
         <div className="panel-body">
           {/*  Hosting: yes | maybe  */}
-          {(trOfferHost.offer.status && trOfferHost.offer.status !== 'no') && this.renderHostingYesMaybe(trOfferHost)}
+          {(offer.status && offer.status !== 'no') && this.renderHostingYesMaybe()}
 
           {/*  Hosting: no  */}
-          {(!trOfferHost.offer || !trOfferHost.offer.status || trOfferHost.offer.status === 'no') && this.renderHostingNo(isOwnOffer, trOfferHost)}
+          {(!offer || !offer.status || offer.status === 'no') && this.renderHostingNo()}
         </div>
 
         {/*  The map (React component)  */}
-        {this.renderMap(trOfferHost)}
+        {this.renderMap()}
       </div>
     );
   };
 
   render(){
-    const { isOwnOffer, isUserPublic, trOfferHost } = this.props;
     return (<>
-      { (isOwnOffer || isUserPublic) &&
-        this.renderOffer(isOwnOffer, trOfferHost) }
+      { (this.state.isOwnOffer || this.state.isUserPublic) &&
+        this.renderOffer(this.state.isOwnOffer) }
       </>
     );
   }
 };
 
 Offers.propTypes = {
-  isOwnOffer: PropTypes.bool,
-  isUserPublic: PropTypes.bool,
-  trOfferHost: PropTypes.object
+  authUser: PropTypes.object.isRequired,
+  profile: PropTypes.object.isRequired
 };
 
 export default withNamespaces(['user-profile'])(Offers);
