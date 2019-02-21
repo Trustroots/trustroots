@@ -44,13 +44,13 @@ describe('User account: change locale', () => {
 
         const { body } = await agent
           .put('/api/users')
-          .send({ locale: 'cze' })
+          .send({ locale: 'cs' })
           .expect(200);
 
-        should(body).have.property('locale', 'cze');
+        should(body).have.property('locale', 'cs');
 
         const userAfter = await User.findOne({ username }).lean();
-        should(userAfter).have.property('locale', 'cze');
+        should(userAfter).have.property('locale', 'cs');
       });
     });
 
@@ -89,11 +89,11 @@ describe('User account: change locale', () => {
 
       await agent
         .put('/api/users')
-        .send({ locale: 'eng' })
+        .send({ locale: 'en' })
         .expect(200);
 
       const userAfter = await User.findOne({ username }).lean();
-      should(userAfter).have.property('locale', 'eng');
+      should(userAfter).have.property('locale', 'en');
     });
   });
 
@@ -101,14 +101,14 @@ describe('User account: change locale', () => {
     it('403', async () => {
       await agent
         .put('/api/users')
-        .send({ locale: 'eng' })
+        .send({ locale: 'en' })
         .expect(403);
     });
   });
 });
 
 describe('User account: read locale', () => {
-  const publicUsers = utils.generateUsers(2, { public: true, locale: 'eng' });
+  const publicUsers = utils.generateUsers(2, { public: true, locale: 'en' });
 
   // save users
   beforeEach(async () => {
@@ -135,7 +135,7 @@ describe('User account: read locale', () => {
         .send({ username, password })
         .expect(200);
 
-      should(body).have.property('locale', 'eng');
+      should(body).have.property('locale', 'en');
     });
 
     it('response body of /api/users/:username shouldn\'t include locale', async () => {

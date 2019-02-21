@@ -15,8 +15,9 @@
  * or allow searching for them.
  * This will be relevant when we have a lot of translations done or in progress. Not now.
  */
+import locales from '@/config/shared/locales';
 
-export default [
+const availableLanguages = [
   { code: 'en', label: 'English' },
   { code: 'es', label: 'español' },
   { code: 'fr', label: 'français' },
@@ -27,6 +28,11 @@ export default [
   { code: 'fi', label: 'suomi' },
   { code: 'de', label: 'Deutsch' }
 ];
+
+/**
+ * export default only languages currently supported by API
+ */
+export default availableLanguages.filter(({ code }) => locales.includes(code));
 
 /**
  * The default language code
