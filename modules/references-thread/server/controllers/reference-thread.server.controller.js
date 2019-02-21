@@ -45,24 +45,23 @@ exports.createReferenceThread = function (req, res) {
         },
         'userTo userFrom',
         function (err, thread) {
-
           if (err || !thread) {
             return res.status(400).send({
               message: 'Thread does not exist.'
             });
-          } else if (thread) {
-            if (thread.userTo && thread.userTo.equals(req.user._id)) {
-              // UserTo at the thread is currently authenticated user
-              done(null, thread._id, thread.userFrom);
-            } else if (thread.userFrom && thread.userFrom.equals(req.user._id)) {
-              // userFrom at the thread is currently authenticated user
-              done(null, thread._id, thread.userTo);
-            } else {
-              // Currently authenticated user is not participating in this thread!
-              return res.status(403).send({
-                message: errorService.getErrorMessageByKey('forbidden')
-              });
-            }
+          }
+
+          if (thread.userTo && thread.userTo.equals(req.user._id)) {
+            // UserTo at the thread is currently authenticated user
+            done(null, thread._id, thread.userFrom);
+          } else if (thread.userFrom && thread.userFrom.equals(req.user._id)) {
+            // userFrom at the thread is currently authenticated user
+            done(null, thread._id, thread.userTo);
+          } else {
+            // Currently authenticated user is not participating in this thread!
+            return res.status(403).send({
+              message: errorService.getErrorMessageByKey('forbidden')
+            });
           }
         }
       );

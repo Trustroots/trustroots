@@ -36,7 +36,6 @@ i18n
     lng: 'eng',
     // allow keys to be phrases having `:`, `.`
     nsSeparator: false,
-    keySeparator: false,
     // saveMissing: true, // @TODO send not translated keys to endpoint
     keySeparator: false, // we do not use keys in form messages.welcome
     interpolation: {
