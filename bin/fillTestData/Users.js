@@ -202,7 +202,7 @@ var addUsers = function () {
                 // non admin user
                   user.email = index + faker.internet.email();
                   user.password = faker.internet.password();
-                  user.username = index + user.displayName.toLowerCase().replace('\'', '').replace(' ', '');
+                  user.username = index + user.displayName.toLowerCase().replace(/\'/g, '').replace(/\s/g, '');
                 }
 
                 // Add the user to tribes

@@ -823,10 +823,10 @@ exports.userByUsername = function (req, res, next, username) {
             return res.status(404).send({
               message: errorService.getErrorMessageByKey('not-found')
             });
-          } else if ((profile && req.user) && req.user._id.equals(profile._id)) {
+          } else if (req.user && req.user._id.equals(profile._id)) {
             // User's own profile, okay to send with public value in it
             done(err, profile);
-          } else if ((profile && req.user) && (!req.user._id.equals(profile._id) && !profile.public)) {
+          } else if (req.user && (!req.user._id.equals(profile._id) && !profile.public)) {
             // Not own profile and not public
             return res.status(404).send({
               message: errorService.getErrorMessageByKey('not-found')
