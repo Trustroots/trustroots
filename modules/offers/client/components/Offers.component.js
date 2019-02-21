@@ -12,44 +12,66 @@ export class Offers extends Component {
     this.renderOffer = this.renderOffer.bind(this);
     this.state = {
       offerDescriptionToggle: false,
-      trOfferHost: {}
-    };
-  }
-  componentWillMount() {
-    this.setState(() => ({
-      offer: false,
+      cats: 234,
+      offer: {},
       isLoading: true,
       isOwnOffer: false,
       profile: false,
       isUserPublic: false,
       hostingDropdown: false,
-      hostingStatusLabel: this.hostingStatusLabel,
+      hostingStatusLabel: () => (true), //this.hostingStatusLabel,
       isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp // TODO check userAgent
-    }));
+    }
   }
 
   componentDidMount() {
+    const that = this;
     console.log('MOUNTED');
     const { profile, authUser } = this.props;
-    if (profile) {
+    if (!profile) {
       this.setState(() => ({
         isLoading: false
       }));
+      return;
     }
     if (profile && profile._id) {
-      this.setState(() => ({
+      that.setState(() => ({
         profile: profile,
-        isOwnOffer: (authUser && authUser._id && authUser._id === profile._id),
-        isUserPublic: (authUser && authUser.public)
+        cats: 1,
+        isOwnOffer: true,
+        //isOwnOffer: 'dfa' //(authUser && authUser._id && authUser._id === profile._id),
+        //isUserPublic: (authUser && authUser.public)
       }));
 
-      // fetch offer data
-      fetch('/api/offers-by/:userId')
+      // TODO fetch offer data
+      fetch(`/api/offers-by/${profile._id}`,{
+        method: 'GET'
+      })
         .then(response => response.json())
-        .then(data => {
-          console.log('KOTKI', data);
-        });
-
+        .then(offers => {
+          console.log('KOTKI', offers);
+          console.log('KOTKI', offers[0]);
+          if(!offers || !offers.length) {
+            this.setState(() => ({
+              isLoading: false
+            })
+            );
+          } else {
+            console.log('aha', offers[0]._id);
+            console.log('THIS', this);
+            console.log('THSI', this.setState)
+            const off = offers[0]
+            that.setState(() => ({
+              offer: off,
+              isLoading: false
+            }), console.log('STATE INSIDE', this.state))
+            console.log('STATE INELSE', this.state)
+          }
+          console.log('STATE INSIDE', this.state)
+        })
+      
+      //); // setState
+        console.log('STATE', this.state)
       // OffersByService.query({
       //   userId: String(profile._id),
       //   types: 'host'
@@ -67,6 +89,7 @@ export class Offers extends Component {
       //   vm.isLoading = false;
       // });
     }
+    console.log('STATE', this.state)
   }
   /* @ngInject */
 
@@ -147,10 +170,10 @@ export class Offers extends Component {
   }
 
   renderButtonOther() {
-    const { offer, hostingStatusLabel } = this.status;
+    const { offer, hostingStatusLabel } = this.state;
     return (
-      <a aria-label="Hosting status: {{ ::trOfferHost.hostingStatusLabel(trOfferHost.offer.status) }}"
-        ui-sref="messageThread({username: trOfferHost.profile.username})"
+      <a aria-label="Hosting status: {{ hostingStatusLabel(offer.status) }}"
+        ui-sref="messageThread({username: profile.username})"
         className={classnames(
           'btn', 'btn-sm', 'pull-right', 'btn-offer-hosting', 'btn-offer-hosting-yes',
           {
@@ -164,11 +187,11 @@ export class Offers extends Component {
   }
 
   renderHostingYesMaybe() {
-    const { offer, offerDescriptionToggle } = this.status;
+    const { offer, offerDescriptionToggle, isOwnOffer } = this.state;
     return (
       <div>
         {/*  Edit button  */}
-        {trOfferHost.isOwnOffer &&
+        {isOwnOffer &&
           <a ui-sref="offer.host.edit"
             className="btn btn-inverse-primary btn-round btn-raised pull-right"
             aria-label="Modify hosting offer">
@@ -206,10 +229,10 @@ export class Offers extends Component {
 
         <p className="offer-restrictions">
           {/* TODO
-          {trOfferHost.offer.maxGuests, plural, offset:1
+          {offer.maxGuests, plural, offset:1
               =0    {No guests.}
               =1    {At most one guest.}
-              other {At most {{ trOfferHost.offer.maxGuests }} guests.}
+              other {At most {{ offer.maxGuests }} guests.}
           } */}
         </p>
       </div>
@@ -280,21 +303,21 @@ export class Offers extends Component {
   }
 
   renderMap() {
-    const {offer} = this.state;
+    const {offer, isMobile} = this.state;
     return (
       <div> {/* / TODO change later to <> */}
         {(offer.status === 'yes' || offer.status === 'maybe') &&
-          <offer-location offer="trOfferHost.offer">
+          <offer-location offer="offer">
           </offer-location>
         }
-        {(trOfferHost.offer.status === 'yes' || trOfferHost.offer.status === 'maybe') &&
+        {(offer.status === 'yes' || offer.status === 'maybe') &&
         <div className="panel-footer text-center">
-          <a ui-sref="search.map({offer: trOfferHost.offer._id})"
+          <a ui-sref="search.map({offer: offer._id})"
             className="btn btn-sm btn-inverse-primary">
             Bigger map
           </a>
-          {trOfferHost.isMobile &&
-          <a href="geo:{{trOfferHost.offer.location[0]}},{{trOfferHost.offer.location[1]}};u=200"
+          {isMobile &&
+          <a href="geo:{{offer.location[0]}},{{offer.location[1]}};u=200"
             className="btn btn-sm btn-inverse-primary">
             Open on device
           </a>
@@ -333,6 +356,8 @@ export class Offers extends Component {
   };
 
   render(){
+    console.log(this.state);
+    console.log('STATERRRRR', this.state)
     return (<>
       { (this.state.isOwnOffer || this.state.isUserPublic) &&
         this.renderOffer(this.state.isOwnOffer) }
