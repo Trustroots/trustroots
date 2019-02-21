@@ -10,7 +10,7 @@ Using Expo seems to block inclusion to the official F-Droid repository. As an al
 
 ## Repository details
 
-```html
+```
 Repository address: https://platschi.net/fdroid/repo
 Fingerprint: 2740 3908 C610 6BAC BF26 9C4F 94C7 21D7 8E45 EE81 EFA3 71CB 7D3C 069D 0D6C D6E5
 
