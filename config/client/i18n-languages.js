@@ -17,7 +17,7 @@
  */
 
 export default [
-  { code: 'en', label: 'English' }, // the first language is the default language of the app
+  { code: 'en', label: 'English' },
   { code: 'es', label: 'español' },
   { code: 'fr', label: 'français' },
   { code: 'ar', label: 'العربية' },
@@ -27,3 +27,8 @@ export default [
   { code: 'fi', label: 'suomi' },
   { code: 'de', label: 'Deutsch' }
 ];
+
+/**
+ * The default language code
+ */
+export const defaultLanguageCode = 'en';

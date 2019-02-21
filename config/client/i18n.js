@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import { reactI18nextModule } from 'react-i18next';
 import backend from 'i18next-xhr-backend';
 import moment from 'moment';
-import languages from '@/config/client/i18n-languages';
+import { defaultLanguageCode } from '@/config/client/i18n-languages';
 
 // translations are already at
 // '../public/locales/**/translation.json'
@@ -37,7 +37,7 @@ i18n
   .use(backend)
   .use(reactI18nextModule) // passes i18n down to react-i18next
   .init({
-    lng: languages[0].code,
+    lng: defaultLanguageCode,
     // allow keys to be phrases having `:`, `.`
     nsSeparator: false,
     // saveMissing: true, // @TODO send not translated keys to endpoint
