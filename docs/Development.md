@@ -21,6 +21,7 @@ We have a React Native app for Android written in ClojureScript: https://github.
 ### JS
 - See [Angular 1 Style Guide](https://github.com/johnpapa/angular-styleguide/blob/master/a1/README.md)
 - Somewhat along the lines of [AirBnb JavaScript style guide](https://github.com/airbnb/javascript) (ESLint enforces these, too)
+- We're migrating to ES2018. Write your code in modern JavaScript. Read a [migration manual](ES2018.md).
 
 ### CSS/LESS
 - We use [LESS CSS](http://lesscss.org/) for CSS.
