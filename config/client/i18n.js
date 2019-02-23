@@ -1,9 +1,8 @@
 import i18n from 'i18next';
 import { reactI18nextModule } from 'react-i18next';
 import backend from 'i18next-xhr-backend';
-import intervalPlural from 'i18next-intervalplural-postprocessor';
 import moment from 'moment';
-import { defaultLanguageCode } from '@/config/client/i18n-languages';
+import { defaultLanguageCode } from './i18n-languages';
 
 // translations are already at
 // '../public/locales/**/translation.json'
@@ -37,7 +36,6 @@ function format(value, format, languageCode) {
 i18n
   .use(backend)
   .use(reactI18nextModule) // passes i18n down to react-i18next
-  .use(intervalPlural) // add better pluralization @TODO still buggy (intervalPlural doesn't support interpolation)
   .init({
     lng: defaultLanguageCode,
     // allow keys to be phrases having `:`, `.`

@@ -3,7 +3,7 @@ import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 import PropTypes from 'prop-types';
 import Contact from './Contact';
 import { getContactsCommon } from '../api/contacts.api';
-import '@/config/lib/i18n';
+import '@/config/client/i18n';
 
 export class ContactsCommon extends React.Component {
   constructor(props) {
@@ -27,7 +27,7 @@ export class ContactsCommon extends React.Component {
     return (
       <div className="panel panel-default">
         {/* convert ng-pluralize with NamespacesConsumer */}
-        <div className="panel-heading">{t('{{count}} contacts in common_interval', { postProcess: 'interval', count: this.state.contacts.length })}</div>
+        <div className="panel-heading">{t('{{count}} contacts in common', { count: this.state.contacts.length })}</div>
         <div className="panel-body">
           {this.state.contacts.map((contact) =>
             <Contact
