@@ -1,19 +1,22 @@
 import React from 'react';
-import i18n from '@/config/client/i18n';
-import locales from '@/config/shared/locales';
+import PropTypes from 'prop-types';
+import LanguageSwitchContainer from './LanguageSwitchContainer';
+import { LanguageSwitchDropdown, LanguageSwitchSelect } from './LanguageSwitchPresentational';
 
-export default function LanguageSwitch() {
-  const changeLanguage = (languageCode) => {
-    i18n.changeLanguage(languageCode);
-  };
-
+/**
+ * The main LanguageSwitch component.
+ * @param {'dropdown'|'select'} presentation - should we show dropdown (header), or select (account) selector?
+ * @param {Boolean} [saveToAPI=false] - should we save selected language to API?
+ */
+export default function LanguageSwitch({ presentation='dropdown', saveToAPI=false }) {
   return (
-    <select onChange={(event) => changeLanguage(event.target.value)}>
-      {locales.map(({ code, label }) => (
-        <option key={code} value={code}>{label}</option>
-      ))}
-    </select>
+    <LanguageSwitchContainer presentation={
+      (presentation === 'dropdown') ? LanguageSwitchDropdown : LanguageSwitchSelect
+    } saveToAPI={saveToAPI} />
   );
-};
+}
 
-LanguageSwitch.propTypes = {};
+LanguageSwitch.propTypes = {
+  presentation: PropTypes.string,
+  saveToAPI: PropTypes.bool
+};
