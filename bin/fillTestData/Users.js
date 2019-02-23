@@ -69,7 +69,7 @@ function random(max) {
 /**
  * Generates a random float value for locations
  *
- * @returns {float} 
+ * @returns {float}
  */
 function randomizeLocation() {
   let random = Math.random();
