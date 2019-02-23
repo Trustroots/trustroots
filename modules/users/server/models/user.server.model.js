@@ -315,7 +315,7 @@ var UserSchema = new Schema({
   acquisitionStory: {
     type: String,
     default: '',
-    set: setPlainTextFieldAndLimit(5000)
+    set: setPlainTextFieldAndLimit(500)
   }
 });
 
