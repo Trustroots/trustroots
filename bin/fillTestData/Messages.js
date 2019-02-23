@@ -1,18 +1,24 @@
 'use strict';
 
-var _ = require('lodash'),
-    path = require('path'),
-    mongooseService = require(path.resolve('./config/lib/mongoose')),
-    chalk = require('chalk'),
-    yargs = require('yargs'),
-    faker = require('faker'),
-    mongoose = require('mongoose'),
-    async = require('async'),
-    config = require(path.resolve('./config/config'));
+/**
+ * Required dependencies
+ */
+const _ = require('lodash'),
+      path = require('path'),
+      mongooseService = require(path.resolve('./config/lib/mongoose')),
+      chalk = require('chalk'),
+      yargs = require('yargs'),
+      faker = require('faker'),
+      mongoose = require('mongoose'),
+      config = require(path.resolve('./config/config'));
 
-var argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
+
+/**
+ * Configure the script usage using yargs to obtain parameters and enforce usage.
+ */
+const argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
   'Seed database with number of threads with up to max messages per thread',
-  function (yargs) {
+  (yargs) => {
     return yargs
       .positional('numberOfThreads', {
         describe: 'Number of threads to add',
@@ -29,7 +35,7 @@ var argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
       .example('$0 100 10', 'Adds 100 random threads wth up to 10 messages per thread to the database')
       .example('$0 100 10 --debug', 'Adds 100 random threads wth up to 10 messages per thread to the database with debug database output')
       .example('$0 10 5 --limit', 'Adds up to 10 randomly seeded threads to the database with up to 5 message per thread (eg. If 5 threads already exist, 5 threads will be added)')
-      .check(function (argv) {
+      .check((argv) => {
         if (argv.numberOfThreads < 1) {
           throw new Error('Error: Number of threads should be greater than 0');
         }
@@ -42,24 +48,45 @@ var argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
   })
   .argv;
 
-var random = function (max) {
-  return Math.floor(Math.random() * max);
-};
 
-var addDays = function addDays(date, days) {
-  var result = new Date(date);
+/**
+ * This generates a random integer between 0 and max - 1 inclusively
+ *
+ * @param {number} max The max value to use to generate the random integer
+ * @returns random integer between 0 and max - 1
+ */
+function random(max) {
+  return Math.floor(Math.random() * max);
+}
+
+
+/**
+ * Adds number of days to the date and returns a new date
+ *
+ * @param {Date} date
+ * @param {number} days
+ * @returns {Date} the new date object
+ */
+function addDays(date, days) {
+  const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
-};
+}
 
-var addThreads = function () {
-  var index = 0;
-  var numThreads = argv.numberOfThreads;
-  var maxMessages= argv.maxMessages;
-  var debug = (argv.debug === true);
-  var limit = (argv.limit === true);
+/**
+ * This the the main method that seeds all the message threads. Based on the
+ * limit parameter and the number of threads and messages options, it
+ * determines how many new message threads to add. It then adds the
+ * threads and prints status accordingly.
+ */
+function seedThreads() {
+  let index = 0;
+  const numThreads = argv.numberOfThreads;
+  const maxMessages= argv.maxMessages;
+  const debug = (argv.debug === true);
+  const limit = (argv.limit === true);
 
-  console.log('Generating ' + numThreads + ' messages...');
+  console.log('Generating ' + numThreads + ' message threads...');
   if (numThreads > 2000) {
     console.log('...this might really take a while... go grab some coffee!');
   }
@@ -72,154 +99,184 @@ var addThreads = function () {
   config.db.debug = debug;
 
   // Bootstrap db connection
-  mongooseService.connect(function () {
-    mongooseService.loadModels(function () {
-      var Thread = mongoose.model('Thread');
-      var Message = mongoose.model('Message');
-      var User = mongoose.model('User');
+  mongooseService.connect(() => {
+    mongooseService.loadModels(async () => {
+      const Thread = mongoose.model('Thread');
+      const Message = mongoose.model('Message');
+      const User = mongoose.model('User');
 
-      async.waterfall([
-        function (done) {
-          Thread.find(function (err, threads) {
-            if (err) {
-              done(err, null);
-            }
-            done(null, threads);
-          });
-        },
 
-        function (threads, done) {
+      /**
+       * Adds the number of threads using the values and options specified
+       * by the user
+       *
+       * @param {number} initialThreadCount
+       * @returns {Promise} Promise that completes when all message threads have
+       *  successfully been added.
+       */
+      function addThreads(initialThreadCount) {
+        return new Promise(async (resolve, reject) => {
+          let threadsSaved = 0;
+
+          // handle the limit option
           if (limit) {
-            index = threads.length;
+            index = initialThreadCount;
           }
 
+          // if we already hit the limit
           if (index >= numThreads) {
-            console.log(chalk.green(threads.length + ' threads already exist. No threads created!'));
+            console.log(chalk.green(initialThreadCount + ' message threads already exist. No threads created!'));
             console.log(chalk.white('')); // Reset to white
-            process.exit(0);
+            resolve();
+            return;
           }
 
-          var getUsers = new Promise(function (resolve, reject) {
-            User.find(function (err, users) {
-              if (err) {
-                reject(err);
-              }
-              resolve(users);
-            });
-          });
+          // Get the users
+          let users = await User.find();
 
-          getUsers.then(function (users) {
+          // If we don't have enough users in the database
+          if (users.length < 2) {
+            reject('Error: At least 2 users must exist to create message threads. Please create more users and run again');
+            return;
+          }
 
-            if (users.length < 2) {
-              console.log('Error: At least 2 users must exist to create message threads. Please create more users and run again');
-              process.exit(1);
-            }
+          // Add threads until we reach the total
+          while (index < numThreads) {
+            const messageCount = random(maxMessages) + 1;
+            let messageIndex = messageCount;
+            let to,
+                from;
 
-            while (index < numThreads) {
-              var threadsSaved = 0;
+            // Add messages until we reach the total
+            while (messageIndex > 0) {
+              function addMessage(depth, userTo, userFrom) {
+                let message = new Message();
 
-              (function addNextMessageThread() {
-                var messageThread = new Thread;
-                var messageCount = random(maxMessages) + 1;
-                var messageIndex = messageCount;
-                var to,
-                    from;
+                message.created = addDays(Date.now(), -depth + 1);
+                message.content = faker.lorem.sentences();
 
-                while (messageIndex > 0) {
-                  function addNextMessage(depth, userTo, userFrom) {
-                    var message = new Message();
-
-                    message.created = addDays(Date.now(), -depth + 1);
-                    message.content = faker.lorem.sentences();
-
-                    // Randomize indecies
-                    var randomUsers = [];
-                    for (var i = 0; i < users.length; i++) {
-                      randomUsers[i] = i;
-                    }
-                    randomUsers = _.shuffle(randomUsers);
-
-                    if (userTo) {
-                      message.userTo = userTo;
-                    } else {
-                      message.userTo = users[randomUsers[1]]._id;
-                      to = message.userTo;
-                    }
-                    if (userFrom) {
-                      message.userFrom = userFrom;
-                    } else {
-                      message.userFrom = users[randomUsers[0]]._id;
-                      from = message.userFrom;
-                    }
-
-                    // Assume 80% of messages are read
-                    if (random(100) < 80) {
-                      message.read = true;
-                    } else {
-                      message.read = false;
-                    }
-
-                    message.notificationCount = 0;
-
-                    message.save(function (err) {
-                      if (err != null) {
-                        console.log(err);
-                      } else {
-                        // Add thread for the most recent message
-                        if (depth === 1) {
-                          messageThread.updated = message.created;
-                          messageThread.userFrom = message.userFrom;
-                          messageThread.userTo = message.userTo;
-                          messageThread.message = message._id;
-                          messageThread.read = true;
-                          messageThread.save(function (err) {
-                            if (err != null) {
-                              console.log(err);
-                            }
-                            else {
-                              process.stdout.write('.');
-                              threadsSaved += 1;
-                              if ((limit && (threadsSaved + threads.length >= numThreads))
-                                  || !limit && ((threadsSaved >= numThreads))) {
-                                console.log('');
-                                console.log(chalk.green(threads.length + ' threads existed in the database.'));
-                                console.log(chalk.green(threadsSaved + ' threads successfully added.'));
-                                console.log(chalk.green('Database now contains ' + (threads.length + threadsSaved) + ' threads.'));
-                                console.log(chalk.white('')); // Reset to white
-                                process.exit(0);
-                              }
-                            }
-                          });
-                        }
-                      }
-                    });
-                  };
-
-                  if (messageIndex === messageCount) {
-                    addNextMessage(messageIndex);
-                  } else if (((messageIndex + 1) % 2) === 0) {
-                    // Reverse the order of to and from to simulate a conversation going back and forth
-                    addNextMessage(messageIndex, from, to);
-                  } else if (((messageIndex + 1) % 2) === 1) {
-                    addNextMessage(messageIndex, to, from);
-                  }
-
-                  messageIndex -=1;
+                // Randomize indecies
+                let randomUsers = [];
+                for (let i = 0; i < users.length; i++) {
+                  randomUsers[i] = i;
                 }
-              }());
-              index += 1;
+                randomUsers = _.shuffle(randomUsers);
+
+                if (userTo) {
+                  message.userTo = userTo;
+                } else {
+                  message.userTo = users[randomUsers[1]]._id;
+                  to = message.userTo;
+                }
+                if (userFrom) {
+                  message.userFrom = userFrom;
+                } else {
+                  message.userFrom = users[randomUsers[0]]._id;
+                  from = message.userFrom;
+                }
+
+                // Assume 80% of messages are read
+                if (random(100) < 80) {
+                  message.read = true;
+                } else {
+                  message.read = false;
+                }
+
+                message.notificationCount = 0;
+
+                // save the newly created message
+                message.save((err) => {
+                  if (err != null) {
+                    console.log(err);
+                  } else {
+                    // Message was saved successfully
+
+                    // Add thread for the most recent message
+                    if (depth === 1) {
+                      let messageThread = new Thread;
+
+                      // seed the message thread data
+                      seedThread(messageThread, message);
+
+                      // save the message thread
+                      messageThread.save((err) => {
+                        if (err != null) {
+                          console.log(err);
+                        }
+                        else {
+                          // Thread was saved successfully
+                          process.stdout.write('.');
+                          threadsSaved += 1;
+
+                          // If all threads have been saved print a summary and
+                          // resolve the promise.
+                          if ((limit && (threadsSaved + initialThreadCount >= numThreads))
+                                  || !limit && ((threadsSaved >= numThreads))) {
+                            console.log('');
+                            console.log(chalk.green(initialThreadCount + ' message threads existed in the database.'));
+                            console.log(chalk.green(threadsSaved + ' message threads successfully added.'));
+                            console.log(chalk.green('Database now contains ' + (initialThreadCount + threadsSaved) + ' message threads.'));
+                            console.log(chalk.white('')); // Reset to white
+                            resolve();
+                            return;
+                          }
+                        }
+                      }); // messageThread.save
+                    }
+                  }
+                }); // message.save
+              } // addNextMessage
+
+              if (messageIndex === messageCount) {
+                addMessage(messageIndex);
+              } else if (((messageIndex + 1) % 2) === 0) {
+                // Reverse the order of to and from to simulate a conversation going back and forth
+                addMessage(messageIndex, from, to);
+              } else if (((messageIndex + 1) % 2) === 1) {
+                addMessage(messageIndex, to, from);
+              }
+
+              messageIndex -= 1;
             }
+            index += 1;
+          }
+        }); // Promise
+      } // addThreads
 
-          }).catch(function (err) {
-            console.log(err);
-            done(err, null);
-          });
-          done(null, null);
-        }
-      ]);
-    });
-  });
-};
+      // This is the main sequence to add the message threads.
+      //    * First get the current number of threads from the database
+      //    * Then seed all the new threads
+      try {
+        const initialThreadCount = await Thread.countDocuments();
+        await addThreads(initialThreadCount);
+      } catch (err) {
+        console.log(err);
+      }
 
-// Add messages
-addThreads();
+      // Disconnect from the database
+      mongooseService.disconnect();
+
+    }); // monggooseService.loadModels
+  }); // mongooseService.connect
+
+
+  /**
+   * Seed the message thread with fake data and data from the message.
+   *
+   * @param {Thread} thread
+   * @param {Message} message
+   * @returns
+   */
+  function seedThread(thread, message) {
+    thread.updated = message.created;
+    thread.userFrom = message.userFrom;
+    thread.userTo = message.userTo;
+    thread.message = message._id;
+    thread.read = true;
+
+    return thread;
+  } // seedThread
+
+} // seedThreads
+
+seedThreads();
