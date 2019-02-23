@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch.component';
 import '@/config/client/i18n';
-import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
+import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
 
 export function InterfaceLanguagePanel({ t }) {
   return (
@@ -45,4 +45,4 @@ InterfaceLanguagePanel.propTypes = {
   t: PropTypes.func.isRequired
 };
 
-export default withNamespaces('user')(InterfaceLanguagePanel);
+export default withTranslation('user')(InterfaceLanguagePanel);

@@ -2,10 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
 import '@/config/client/i18n';
-import { withNamespaces } from 'react-i18next';
+import { withTranslation } from 'react-i18next';
 import Report from './Report';
 
-const Recommend = withNamespaces('reference')(function ({ t, primaryInteraction, recommend, report, reportMessage, onChangeRecommend, onChangeReport, onChangeReportMessage }) {
+const Recommend = withTranslation('reference')(function ({ t, primaryInteraction, recommend, report, reportMessage, onChangeRecommend, onChangeReport, onChangeReportMessage }) {
 
   const recommendQuestions = {
     hostedMe: t('Would you recommend others to stay with them?'),

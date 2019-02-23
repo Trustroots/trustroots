@@ -1,9 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import '@/config/client/i18n';
-import { withNamespaces } from 'react-i18next';
+import { withTranslation } from 'react-i18next';
 
-const Report = withNamespaces('reference')(function ({ t, report, reportMessage, onChangeReport, onChangeReportMessage }) {
+const Report = withTranslation('reference')(function ({ t, report, reportMessage, onChangeReport, onChangeReportMessage }) {
   return (
     <div>
       <br /><br />

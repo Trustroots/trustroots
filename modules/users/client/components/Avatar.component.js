@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import has from 'lodash/has';
-import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
+import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
 
 /**
  * User's avatar
@@ -48,7 +48,7 @@ Avatar.propTypes = {
   link: PropTypes.bool
 };
 
-export default withNamespaces('user')(Avatar);
+export default withTranslation('user')(Avatar);
 
 
 /**
