@@ -405,6 +405,7 @@ exports.update = function (req, res) {
       delete req.body.publicReminderSent;
       delete req.body.welcomeSequenceStep;
       delete req.body.welcomeSequenceSent;
+      delete req.body.acquisitionStory;
 
       // Merge existing user
       var user = req.user;
