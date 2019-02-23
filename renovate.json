@@ -14,5 +14,6 @@
       "angular-touch"
     ],
     "allowedVersions": "<=1.5"
-  }]
+  }],
+  "supportPolicy": "lts_active"
 }
