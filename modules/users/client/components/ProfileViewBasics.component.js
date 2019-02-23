@@ -99,7 +99,7 @@ export function ProfileViewBasics({ t, profile }) {
     <div className="profile-sidebar-section">
       <i className="icon-fw icon-building text-muted" />
       <Trans>
-        Lives in <a href="search.map({locationLiving})">{{ locationLiving }}</a>
+        Lives in <a href={`/search?location=${locationLiving}`}>{{ locationLiving }}</a>
       </Trans>
     </div>
   );
@@ -108,7 +108,7 @@ export function ProfileViewBasics({ t, profile }) {
     <div className="profile-sidebar-section">
       <i className="icon-fw icon-home text-muted"></i>
       <Trans>
-        From <a href="search.map({locationFrom})">{{ locationFrom }}</a>
+        From <a href={`/search?location=${locationFrom}`}>{{ locationFrom }}</a>
       </Trans>
     </div>
   );

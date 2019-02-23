@@ -2,11 +2,21 @@ import i18n from 'i18next';
 import { reactI18nextModule } from 'react-i18next';
 import backend from 'i18next-xhr-backend';
 import moment from 'moment';
-import { defaultLanguageCode } from './i18n-languages';
 
-// translations are already at
-// '../public/locales/**/translation.json'
-// which is the default for the xhr backend to load from
+/**
+ * The locales currently supported by the app are specified in /config/shared/locales.json
+ * Add a language there if you want to support a new translation.
+ * Read more at /config/shared/README.md
+ *
+ * @TODO For a nice user experience we may want to sort the languages by their actual usage,
+ * or alphabetically,
+ * or allow searching for them.
+ * This will be relevant when we have a lot of translations done or in progress. Not now.
+ */
+
+/**
+ * translations are specified in /public/locales/{language-code}/translation.json
+ */
 
 /**
  * Format a translation parameter
@@ -37,7 +47,7 @@ i18n
   .use(backend)
   .use(reactI18nextModule) // passes i18n down to react-i18next
   .init({
-    lng: defaultLanguageCode,
+    lng: 'en', // a default app locale
     // allow keys to be phrases having `:`, `.`
     nsSeparator: false,
     // saveMissing: true, // @TODO send not translated keys to endpoint

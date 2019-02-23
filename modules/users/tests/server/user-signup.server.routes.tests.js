@@ -82,7 +82,8 @@ describe('User signup and authentication CRUD tests', function () {
       username: unConfirmedCredentials.username.toLowerCase(),
       displayUsername: unConfirmedCredentials.username,
       password: unConfirmedCredentials.password,
-      provider: 'local'
+      provider: 'local',
+      acquisitionStory: 'A fish told me...'
     };
 
     unConfirmedUser = new User(_unConfirmedUser);
@@ -112,6 +113,7 @@ describe('User signup and authentication CRUD tests', function () {
         signupRes.body.provider.should.equal('local');
         signupRes.body.public.should.equal(false);
         signupRes.body.created.should.not.be.empty();
+        signupRes.body.acquisitionStory.should.equal(_unConfirmedUser.acquisitionStory);
         should.not.exist(signupRes.body.updated);
         // Sensitive information should be not sent to the client
         should.not.exist(signupRes.body.emailToken);
