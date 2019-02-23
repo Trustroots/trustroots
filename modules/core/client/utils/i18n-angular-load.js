@@ -1,4 +1,4 @@
-import '@/config/lib/i18n';
+import '@/config/client/i18n';
 import { withNamespaces as withNamespacesOriginal } from 'react-i18next';
 
 /**

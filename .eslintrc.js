@@ -184,9 +184,9 @@ module.exports = {
   }, {
     // overrides for client/react code
     files: [
+      'config/client/i18n.js',
       'config/env/**',
       'config/webpack/**',
-      'config/lib/i18n.js',
       'modules/core/client/app/config.js',
       'modules/**/client/components/**',
       'modules/**/client/api/**',
