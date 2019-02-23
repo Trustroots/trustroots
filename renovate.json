@@ -24,6 +24,12 @@
   },{
     "packageNames": ["angular-confirm"],
     "allowedVersions": "<=1"
+  },{
+    "packageNames": ["bootstrap"],
+    "allowedVersions": "<=3"
+  },{
+    "packageNames": ["angular-ui-router"],
+    "allowedVersions": "<=0.3"
   }],
   "supportPolicy": "lts_active",
   "travis": {
