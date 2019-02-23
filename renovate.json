@@ -6,6 +6,9 @@
   "extends": [
     "config:base"
   ],
+  "ignorePaths": [
+    "scripts/mass-email/package.json"
+  ],
   "packageRules": [{
     "packageNames": [
       "angular",
