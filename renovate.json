@@ -21,6 +21,9 @@
       "angular-touch"
     ],
     "allowedVersions": "<=1.5"
+  },{
+    "packageNames": ["angular-confirm"],
+    "allowedVersions": "<=1"
   }],
   "supportPolicy": "lts_active",
   "travis": {
