@@ -1,6 +1,6 @@
-TODO: Move to code using http://usejsdoc.org/ format.
-
 # Trustroots Database
+
+_TODO: Move to code using http://usejsdoc.org/ format._
 
 ## Users
 - **_id**
@@ -13,7 +13,7 @@ TODO: Move to code using http://usejsdoc.org/ format.
 - **emailHash** (md5(**email**)) — *used for example with [Gravatar](http://en.gravatar.com/)*
 - **emailTemporary** (string) - new email is stored here until it is confirmed
 - **emailToken** (string) - for confirming email changes
-- **public** (boolean) - if user's profile should be publicly visible (false until first email confirm) 
+- **public** (boolean) - if user's profile should be publicly visible (false until first email confirm)
 - **description** (string)
 - **birthdate** (date)
 - **gender** (male,female,other)

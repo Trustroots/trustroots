@@ -25,13 +25,12 @@ console.log(chalk.white('--'));
 console.log('Connecting to MongoDB');
 console.log(config.db.uri);
 
-var duplicateCounter = 0,
-    removedCounter = 0,
+var removedCounter = 0,
     totalRecordsWithIssues,
     totalInitialContacts;
 
 // Bootstrap db connection
-var db = mongoose.connect(config.db.uri, function(err) {
+mongoose.connect(config.db.uri, function(err) {
   if (err) {
     console.error(chalk.red('Could not connect to MongoDB!'));
     console.log(err);

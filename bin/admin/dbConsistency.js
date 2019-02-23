@@ -4,8 +4,6 @@ var trshell = require('./trshell'),
     _ = require('lodash'),
     User = trshell.mongoose.model('User');
 
-const query = process.argv[2];
-
 console.log ('Trustroots admin shell: check database consistency');
 
 User.find( {}, async function(err, docs) {

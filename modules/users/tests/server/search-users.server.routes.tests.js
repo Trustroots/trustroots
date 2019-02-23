@@ -8,7 +8,6 @@ var request = require('supertest'),
     mongoose = require('mongoose'),
     should = require('should'),
     User = mongoose.model('User'),
-    express = require(path.resolve('./config/lib/express')),
     config = require(path.resolve('./config/config')),
     userHandler = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
 
@@ -20,6 +19,11 @@ describe('Search users: GET /users?search=string', function () {
 
   // initialize the testing environment
   before(function () {
+    // Stub the limit value
+    sinon.stub(config.limits, 'paginationLimit').value(limit);
+
+    // the limit is used in this config, so we needed to stub limit before importing this
+    var express = require(path.resolve('./config/lib/express'));
     // Get application
     var app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -37,11 +41,7 @@ describe('Search users: GET /users?search=string', function () {
     }, done);
   });
 
-  beforeEach(function () {
-    sinon.stub(config.limits, 'userSearchLimit').value(limit);
-  });
-
-  afterEach(function () {
+  after(function () {
     sinon.restore();
   });
 
@@ -91,7 +91,6 @@ describe('Search users: GET /users?search=string', function () {
     beforeEach(function (done) {
       createUsers([{ username: 'loggedUser', password: 'somepassword' }], function (err, users) {
         loggedUser = users[0];
-
         done(err);
       });
     });
@@ -321,44 +320,60 @@ describe('Search users: GET /users?search=string', function () {
         ], done);
       });
 
-      it('[many users matched] limit the amount (5-10, config)', function (done) {
-        async.waterfall([
+      context('limit the amount of results and pagination', function () {
+        // create some users
+        var testUsers = [
+          { username: 'aaaaaa' },
+          { firstName: 'aaaaaa' },
+          { lastName: 'aaaaaa' },
+          { lastName: 'aaaaaa' },
+          { firstName: 'aAaAaa' },
+          { lastName: 'aaaaaa' },
+          { firstName: 'aaaaaa' },
+          { lastName: 'aaaaaa' },
+          { firstName: 'aaaaaa' },
+          { lastName: 'aaaaaa' },
+          { firstName: 'aaaaaa' },
+          { lastName: 'aaaaaa' }
+        ];
 
-          // create some users
-          function (cb) {
-            createUsers([
-              { username: 'aaaaaa' },
-              { firstName: 'aaaaaa' },
-              { lastName: 'aaaaaa' },
-              { lastName: 'aaaaaa' },
-              { firstName: 'aAaAaa' },
-              { lastName: 'aaaaaa' },
-              { firstName: 'aaaaaa' },
-              { lastName: 'aaaaaa' },
-              { firstName: 'aaaaaa' },
-              { lastName: 'aaaaaa' },
-              { firstName: 'aaaaaa' },
-              { lastName: 'aaaaaa' }
-            ], cb);
-          },
+        beforeEach(function (done) {
+          createUsers(testUsers, function (err) {
+            done(err);
+          });
+        });
+        // TCs with different or missing page and limit parameters
+        var pageTests = [
+          { params: '', expected: limit },
+          { params: '&page=1', expected: limit },
+          { params: '&page=2', expected: testUsers.length - limit },
+          { params: '&limit=11', expected: 11 },
+          { params: '&page=1&limit=11', expected: 11 },
+          { params: '&page=2&limit=11', expected: testUsers.length - 11 }
+        ];
 
-          // search
-          function (users, cb) {
-            agent.get('/api/users?search=aaaaaa')
-              .expect(200)
-              .end(function (err, response) {
-                cb(err, response.body);
-              });
-          },
+        pageTests.forEach(function (test) {
+          it('should limit results to ' + test.expected + ', when param is ' + test.params,
+            function (done) {
+              async.waterfall([
 
-          // check that we found the users
-          function (foundUsers, cb) {
+                // search
+                function (cb) {
+                  agent.get('/api/users?search=aaaaaa' + test.params)
+                    .expect(200)
+                    .end(function (err, response) {
+                      cb(err, response.body);
+                    });
+                },
 
-            should(foundUsers).length(limit);
-
-            cb();
-          }
-        ], done);
+                // check that we found the users
+                function (foundUsers, cb) {
+                  should(foundUsers).length(test.expected);
+                  cb();
+                }
+              ], done);
+            });
+        });
       });
 
       it('search is case insensitive', function (done) {

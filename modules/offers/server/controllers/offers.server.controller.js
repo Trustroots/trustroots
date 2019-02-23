@@ -713,8 +713,6 @@ exports.offersByUserId = function (req, res, next, userId) {
         // }
         // ```
         _.set(query, 'type.$in[' + i + ']', paramType);
-      } else {
-        console.info('Ignored invalid offer type: ' + textService.plainText(paramType));
       }
     });
 

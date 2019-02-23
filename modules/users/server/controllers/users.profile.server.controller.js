@@ -230,10 +230,7 @@ exports.avatarUpload = function (req, res) {
 
             // Something's wrong with the file, stop here.
             if (err) {
-              if (process.env.NODE_ENV === 'development') {
-                console.error('Error while generating thumbnail ' + thumbSize);
-                console.error(err);
-              }
+              log('error', 'User profile avatar upload: failed to generate thumbnail.', err);
 
               // This stops us sending res multiple times since tasks are running paraller
               if (!asyncQueueErrorHappened) {
@@ -245,8 +242,7 @@ exports.avatarUpload = function (req, res) {
                 // Attempt to delete tmp file
                 fs.unlink(req.file.path, function (err) {
                   if (err) {
-                    console.error('Failed to clean out temporary image.');
-                    console.error(err);
+                    log('error', 'User profile avatar upload: failed to clean out temporary image.', err);
                   }
                   // @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
                   return res.status(422).send({
@@ -827,10 +823,10 @@ exports.userByUsername = function (req, res, next, username) {
             return res.status(404).send({
               message: errorService.getErrorMessageByKey('not-found')
             });
-          } else if ((profile && req.user) && req.user._id.equals(profile._id)) {
+          } else if (req.user && req.user._id.equals(profile._id)) {
             // User's own profile, okay to send with public value in it
             done(err, profile);
-          } else if ((profile && req.user) && (!req.user._id.equals(profile._id) && !profile.public)) {
+          } else if (req.user && (!req.user._id.equals(profile._id) && !profile.public)) {
             // Not own profile and not public
             return res.status(404).send({
               message: errorService.getErrorMessageByKey('not-found')
@@ -902,7 +898,6 @@ function isUsernameUpdateAllowed(user) {
  */
 exports.sanitizeProfile = function (profile, authenticatedUser) {
   if (!profile) {
-    console.warn('sanitizeProfile() needs profile data to sanitize.');
     return;
   }
 
@@ -1514,8 +1509,10 @@ exports.search = function (req, res, next) {
     // select only the right profile properties
     .select(exports.userSearchProfileFields)
     .sort({ score: { $meta: 'textScore' } })
-    // limit the amount of found users (config)
-    .limit(config.limits.userSearchLimit)
+    // limit the amount of found users
+    .limit(req.query.limit)
+    // skip to the page, automatically handles invalid page number
+    .skip(req.skip)
     .exec(function (err, users) {
       if (err) return next(err);
       return res.send(users);

@@ -1,17 +1,19 @@
 language: node_js
 node_js:
   - 10
-  - 11
 env:
   - $RUN="npm run test:client"
   - $RUN="npm run test:server"
-  - $RUN="npm run travis-ci"
+  - $RUN="npm run lint-and-build-prod"
 script:
   - $RUN
 install:
   - npm ci
 matrix:
   fast_finish: true
+  include:
+    - node_js: 11
+      env: $RUN="npm run test:server"
 # https://docs.travis-ci.com/user/reference/overview/#Virtualisation-Environment-vs-Operating-System
 dist: trusty
 services:

@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import '@/config/lib/i18n';
+import '@/config/client/i18n';
 import { withNamespaces } from 'react-i18next';
 
 /**

@@ -20,11 +20,12 @@ const defaultRules = {
   'new-cap': [2, { newIsCapExceptions: ['acl.memoryBackend', 'acl'] }],
   'no-bitwise': 0,
   'no-caller': 2,
-  'no-console': 0,
+  'no-console': 2,
   'no-else-return': 0,
   'no-empty-character-class': 2,
   'no-multi-spaces': 2,
   'no-param-reassign': 0,
+  'no-process-exit': 2,
   'no-shadow': 0,
   'no-spaced-func': 2,
   'no-throw-literal': 2,
@@ -170,10 +171,11 @@ module.exports = {
     // overrides for server code
     // ES 2018 - specify migrated files and folders here
     files: [
-      'testutils/data.server.testutils.js',
+      'bin/db-maintenance/ensure-indexes.js',
       'modules/references/server/**',
       'modules/references/tests/server/**',
-      'modules/users/tests/server/user-change-locale.server.routes.tests.js'
+      'modules/users/tests/server/user-change-locale.server.routes.tests.js',
+      'testutils/data.server.testutils.js'
     ],
     parserOptions: {
       ecmaVersion: 2018
@@ -182,9 +184,9 @@ module.exports = {
   }, {
     // overrides for client/react code
     files: [
+      'config/client/**',
       'config/env/**',
       'config/webpack/**',
-      'config/lib/i18n.js',
       'modules/core/client/app/config.js',
       'modules/**/client/components/**',
       'modules/**/client/api/**',
@@ -200,6 +202,27 @@ module.exports = {
     rules: {
       ...es2018rules,
       'react/no-access-state-in-setstate': 2
+    }
+  },{
+    // overrides for CLI scripts and application config
+    files: [
+      'bin/**',
+      'config/**',
+      'migrations/**',
+      'scripts/**',
+    ],
+    rules: {
+      'no-console': 0,
+      'no-process-exit': 0,
+    }
+  },{
+    // overrides for CLI scripts and application config
+    files: [
+      'bin/**',
+      'scripts/**',
+    ],
+    parserOptions: {
+      ecmaVersion: 2018
     }
   }]
 };

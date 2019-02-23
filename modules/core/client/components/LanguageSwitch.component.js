@@ -1,5 +1,6 @@
 import React from 'react';
-import i18n from '@/config/lib/i18n';
+import i18n from '@/config/client/i18n';
+import languages from '@/config/client/i18n-languages';
 
 export default function LanguageSwitch() {
   const changeLanguage = (languageCode) => {
@@ -8,8 +9,9 @@ export default function LanguageSwitch() {
 
   return (
     <select onChange={(event) => changeLanguage(event.target.value)}>
-      <option value="eng">eng</option>
-      <option value="cze">cze</option>
+      {languages.map(({ code, label }) => (
+        <option key={code} value={code}>{label}</option>
+      ))}
     </select>
   );
 };

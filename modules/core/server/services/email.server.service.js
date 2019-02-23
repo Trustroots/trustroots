@@ -14,6 +14,7 @@ var _ = require('lodash'),
     render = require(path.resolve('./config/lib/render')),
     agenda = require(path.resolve('./config/lib/agenda')),
     config = require(path.resolve('./config/config')),
+    log = require(path.resolve('./config/lib/logger')),
     url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
 exports.sendMessagesUnread = function (userFrom, userTo, notification, callback) {
@@ -456,7 +457,7 @@ exports.sendReferenceNotificationSecond = function (userFrom, userTo, reference,
  */
 exports.addEmailBaseTemplateParams = function (params) {
   if (params === null || typeof params !== 'object') {
-    console.error('addEmailBaseTemplateParams: requires param to be Object. No URL parameters added.');
+    log('error', 'addEmailBaseTemplateParams: requires param to be Object. No URL parameters added.', params);
     return {};
   }
 

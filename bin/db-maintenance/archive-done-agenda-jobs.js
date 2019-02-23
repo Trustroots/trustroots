@@ -75,16 +75,12 @@ function moveDoc(doc, callback) {
 
 
 function insertDocument(doc, callback) {
-  targetCollection.insertOne(doc, function (err, result) {
-    callback(err, result);
-  });
+  targetCollection.insertOne(doc, callback);
 }
 
 
 function removeDocument(doc, callback) {
-  sourceCollection.deleteOne(doc, function (err, result) {
-    callback(err, result);
-  });
+  sourceCollection.deleteOne(doc, callback);
 }
 
 

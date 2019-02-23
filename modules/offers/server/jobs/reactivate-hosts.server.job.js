@@ -17,6 +17,7 @@ var path = require('path'),
     config = require(path.resolve('./config/config')),
     async = require('async'),
     moment = require('moment'),
+    log = require(path.resolve('./config/lib/logger')),
     mongoose = require('mongoose'),
     Offer = mongoose.model('Offer');
 
@@ -70,9 +71,6 @@ module.exports = function (job, agendaDone) {
                 }
               },
               function (err) {
-                if (err) {
-                  console.error('Failed to mark offer\'s reactivation mail sent.');
-                }
                 callback(err);
               }
             );
@@ -86,7 +84,7 @@ module.exports = function (job, agendaDone) {
 
   ], function (err) {
     if (err) {
-      console.error(err);
+      log('error', 'Failure in reactivate hosts background job.', err);
     }
     return agendaDone(err);
   });

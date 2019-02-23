@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import '@/config/lib/i18n';
+import '@/config/client/i18n';
 import { withNamespaces, Trans } from 'react-i18next';
 
 // @TODO provide the value from API config endpoint

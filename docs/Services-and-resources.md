@@ -1,3 +1,5 @@
+# Services and Resources
+
 Store possible _future_ services, examples, resources (e.g. blog
 posts) etc that don't fit under any specific todo.
 

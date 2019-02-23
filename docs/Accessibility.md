@@ -1,6 +1,12 @@
+# Accessibility guide
+
 **Accessibility** is important. We want Trustroots to be inclusive and hence our websites have to be accessible to people who's abilities are limited in some way.
 
-See current [open accessibility issues](https://github.com/Trustroots/trustroots/labels/Accessibility)
+Generally speaking the status of the accessibility of Trustroots is currently unknown and should probably be assumed to be at bad state.
+
+There's lots to work on! This guide is to help navigate some of the basic concerns.
+
+See also current [open accessibility issues](https://github.com/Trustroots/trustroots/labels/Accessibility).
 
 ## Colours
 

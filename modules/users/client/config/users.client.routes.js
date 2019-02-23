@@ -118,6 +118,7 @@
           UserProfilesService: 'UserProfilesService',
           ContactByService: 'ContactByService',
           SettingsService: 'SettingsService',
+          ContactsListService: 'ContactsListService',
 
           appSettings: function (SettingsService) {
             return SettingsService.get();
@@ -218,7 +219,7 @@
       }).
       state('profile.contacts', {
         url: '/contacts',
-        templateUrl: '/modules/contacts/views/list-contacts.client.view.html',
+        template: '<contact-list onContactRemoved="profileCtrl.removeContact" appUser="app.user" contacts="profileCtrl.contacts"></contact-list>',
         requiresAuth: true,
         noScrollingTop: true,
         data: {

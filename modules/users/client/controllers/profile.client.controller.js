@@ -26,6 +26,14 @@
     vm.toggleAvatarModal = toggleAvatarModal;
     vm.isWarmshowersId = isWarmshowersId;
 
+    /**
+     * Remove contact via React RemoveContact component
+     */
+    vm.removeContact = function (contact) {
+      vm.contacts.splice(vm.contacts.indexOf(contact), 1);
+    };
+
+
     activate();
 
     /**
@@ -58,7 +66,7 @@
        * @todo: any better way to keep vm.contact $resolved but wipe out the actual content?
        */
       $scope.$on('contactRemoved', function () {
-        delete vm.contact._id;
+        if (vm.contact) delete vm.contact._id;
       });
     }
 
