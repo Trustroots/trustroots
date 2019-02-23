@@ -15,5 +15,8 @@
     ],
     "allowedVersions": "<=1.5"
   }],
-  "supportPolicy": "lts_active"
+  "supportPolicy": "lts_active",
+  "travis": {
+    "enabled": true
+  }
 }
