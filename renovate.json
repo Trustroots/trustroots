@@ -31,7 +31,7 @@
     "packageNames": ["angular-ui-router"],
     "allowedVersions": "<=0.3"
   }],
-  "supportPolicy": "active",
+  "supportPolicy": "lts_latest",
   "travis": {
     "enabled": true
   }
