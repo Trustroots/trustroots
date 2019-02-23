@@ -3,7 +3,16 @@
     "config:base"
   ],
   "packageRules": [{
-    "packageNames": ["angular"],
+    "packageNames": [
+      "angular",
+      "angular-animate",
+      "angular-aria",
+      "angular-message-format",
+      "angular-mocks",
+      "angular-resource",
+      "angular-sanitize",
+      "angular-touch"
+    ],
     "allowedVersions": "<=1.5"
   }]
 }
