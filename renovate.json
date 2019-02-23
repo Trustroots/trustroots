@@ -1,4 +1,8 @@
 {
+  "assignees": [
+    "mrkvon",
+    "simison"
+  ],
   "extends": [
     "config:base"
   ],
