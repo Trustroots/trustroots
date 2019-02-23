@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import { reactI18nextModule } from 'react-i18next';
 import backend from 'i18next-xhr-backend';
 import moment from 'moment';
-import { defaultLanguageCode } from '@/config/client/i18n-languages';
+import { defaultLanguageCode } from './i18n-languages';
 
 // translations are already at
 // '../public/locales/**/translation.json'

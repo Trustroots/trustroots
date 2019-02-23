@@ -58,6 +58,10 @@ export default class Contact extends Component {
   }
 }
 
+Contact.defaultProps = {
+  onContactRemoved: () => {}
+};
+
 Contact.propTypes = {
   className: PropTypes.string,
   contact: PropTypes.object.isRequired,
@@ -66,7 +70,7 @@ Contact.propTypes = {
   hideMeta: PropTypes.bool,
   // this is a function provided from Angular. It broadcasts the information that a contact was removed.
   // @TODO this won't be needed when migration is finished
-  onContactRemoved: PropTypes.func.isRequired
+  onContactRemoved: PropTypes.func
 };
 
 function getSituation(contact, selfId) {

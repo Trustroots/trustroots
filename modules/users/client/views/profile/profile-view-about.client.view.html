@@ -5,7 +5,7 @@
   </div>
 
   <div class="col-md-6">
-    
+
     <!-- Offers -->
     <div class="hidden-xs">
       <div tr-offer-host-view="profileCtrl.profile"
@@ -13,9 +13,9 @@
     </div>
 
     <!-- Contacts in common -->
-    <div ng-if="profileCtrl.profile._id !== app.user._id && profileCtrl.contacts.length"
-         tr-common-contacts="::profileCtrl.profile._id"></div>
-
+    <div ng-if="profileCtrl.profile._id !== app.user._id && profileCtrl.contacts.length">
+      <contacts-common profileId="::profileCtrl.profile._id"></contacts-common>
+    </div>
     <!-- Tribes -->
     <section class="panel panel-default" ng-if="profileCtrl.profile._id === app.user._id || profileCtrl.profile.member.length">
       <header class="panel-heading">
