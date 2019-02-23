@@ -10,8 +10,6 @@ import locales from '@/config/shared/locales';
  * @param {Function} onChangeLanguage - what to do when language is changed
  */
 export function LanguageSwitchDropdown({ currentLanguageCode, onChangeLanguage }) {
-  // languages which are not selected
-  const otherLanguages = locales.filter(language => language.code !== currentLanguageCode);
   // selected language
   const currentLanguage = locales.find(language => language.code === currentLanguageCode);
 
@@ -27,8 +25,8 @@ export function LanguageSwitchDropdown({ currentLanguageCode, onChangeLanguage }
         {currentLanguage.label}
       </Dropdown.Toggle>
       <Dropdown.Menu>
-        {otherLanguages.map(({ code, label }) => (
-          <MenuItem key={code} onClick={() => onChangeLanguage(code)}>
+        {locales.map(({ code, label }) => (
+          <MenuItem key={code} onClick={() => onChangeLanguage(code)} active={code === currentLanguageCode}>
             {label}
           </MenuItem>
         ))}
