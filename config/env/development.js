@@ -48,4 +48,5 @@ module.exports = {
       pool: true,
     },
   },
+  i18nBackend: true,
 };

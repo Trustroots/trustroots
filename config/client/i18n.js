@@ -75,7 +75,9 @@ i18n
     // allow keys to be phrases having `:`, `.`
     nsSeparator: false,
     keySeparator: false, // we do not use keys in form messages.welcome
-    // saveMissing: true, // @TODO send not translated keys to endpoint
+    saveMissing: true, // @TODO send not translated keys to endpoint
+    saveMissingTo: 'current',
+    returnEmptyString: false,
     interpolation: {
       escapeValue: false, // react already safes from xss
       format,
@@ -88,8 +90,11 @@ i18n
     react: {
       useSuspense: false,
     },
-    // saveMissingPlurals: true,
-    // debug: true // show missing translation keys in console.log
+    backend: {
+      addPath: '/api/locales/{{lng}}/{{ns}}',
+    },
+    saveMissingPlurals: true,
+    debug: true, // show missing translation keys in console.log
   });
 
 export default i18n;
