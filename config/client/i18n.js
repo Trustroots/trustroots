@@ -70,6 +70,9 @@ i18n
       lookupCookie: 'i18n',
       order: ['cookie'],
       caches: ['cookie']
+    },
+    react: {
+      useSuspense: false
     }
     // saveMissingPlurals: true,
     // debug: true // show missing translation keys in console.log
