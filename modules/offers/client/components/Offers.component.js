@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import {DropdownButton, MenuItem, ButtonGroup, Tooltip} from 'react-bootstrap';
 import classnames from 'classnames';
 import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 import '@/config/lib/i18n';
@@ -17,15 +18,22 @@ export class Offers extends Component {
       isOwnOffer: false,
       profile: false,
       isUserPublic: false,
-      hostingDropdown: false,
-      hostingStatusLabel: () => (true), //this.hostingStatusLabel,
+      hostingStatusLabel:   (status) => {
+        switch (status) {
+          case 'yes':
+            return 'Can host';
+          case 'maybe':
+            return 'Might be able to host';
+          default:
+            return 'Cannot host currently';
+        }
+      }, // this.hostingStatusLabel,
       isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp // TODO check userAgent
     }
   }
 
   componentDidMount() {
     const that = this;
-    console.log('MOUNTED');
     const { profile, authUser } = this.props;
     if (!profile) {
       this.setState(() => ({
@@ -36,9 +44,8 @@ export class Offers extends Component {
     if (profile && profile._id) {
       that.setState(() => ({
         profile: profile,
-        isOwnOffer: true,
-        //isOwnOffer: 'dfa' //(authUser && authUser._id && authUser._id === profile._id),
-        //isUserPublic: (authUser && authUser.public)
+        isOwnOffer: (authUser && authUser._id && authUser._id === profile._id),
+        isUserPublic: (authUser && authUser.public)
       }));
 
       // TODO fetch offer data
@@ -47,29 +54,20 @@ export class Offers extends Component {
       })
         .then(response => response.json())
         .then(offers => {
-          console.log('KOTKI', offers);
-          console.log('KOTKI', offers[0]);
-          if(!offers || !offers.length) {
+          if (!offers || !offers.length) {
             this.setState(() => ({
               isLoading: false
             })
             );
           } else {
-            console.log('aha', offers[0]._id);
-            console.log('THIS', this);
-            console.log('THSI', this.setState)
-            const off = offers[0]
+            const off = offers[0];
             that.setState(() => ({
               offer: off,
               isLoading: false
-            }), console.log('STATE INSIDE', this.state))
-            console.log('STATE INELSE', this.state)
+            }));
           }
-          console.log('STATE INSIDE', this.state)
-        })
-      
-      //); // setState
-        console.log('STATE', this.state)
+        });
+
       // OffersByService.query({
       //   userId: String(profile._id),
       //   types: 'host'
@@ -87,7 +85,6 @@ export class Offers extends Component {
       //   vm.isLoading = false;
       // });
     }
-    console.log('STATE', this.state)
   }
   /* @ngInject */
 
@@ -105,16 +102,7 @@ export class Offers extends Component {
   /**
    * Helper for hosting label
    */
-  hostingStatusLabel(status) {
-    switch (status) {
-      case 'yes':
-        return 'Can host';
-      case 'maybe':
-        return 'Might be able to host';
-      default:
-        return 'Cannot host currently';
-    }
-  }
+
 
   setOfferDescriptionToggle(state) {
     this.setState(() => ({
@@ -125,46 +113,82 @@ export class Offers extends Component {
 
   renderButtonOwn() {
     const { offer, hostingStatusLabel } = this.state;
+    const tooltip = (<Tooltip placement="left" className="in" id="tooltip-left">
+    Change
+  </Tooltip>);
     return (
-      <div
-        className="pull-right btn-group"
-        uib-dropdown
-        is-open="hostingDropdown">
-        <button
-          uib-tooltip="Change"
-          tooltip-placement="left"
-          uib-dropdown-toggle
+      <ButtonGroup className="pull-right">
+        <DropdownButton
+        pullRight
           className={classnames(
-            'btn', 'btn-sm', 'dropdown-toggle', 'btn-offer-hosting',
+            'btn-offer-hosting',
             { 'btn-offer-hosting-yes': offer.status === 'yes',
               'btn-offer-hosting-maybe': offer.status === 'maybe',
               'btn-offer-hosting-no': (!offer || offer.status === 'no')
-            })}>
-          { hostingStatusLabel(offer.status) }
-          <span className="caret"></span>
-        </button>
-        <ul className="dropdown-menu" role="menu">
-          <li>
-            <a ui-sref="offer.host.edit({'status': 'yes'})"
-              className="cursor-pointer offer-hosting-yes">
+            })}
+          bsSize="small"
+          bsStyle="success"
+          title={hostingStatusLabel(offer.status)}
+          id={`dropdown-basic-1`}
+        >
+          <MenuItem eventKey="1" overlay={tooltip}>
+          {/* ui-sref="offer.host.edit({'status': 'yes'})" */}
+            <a className="cursor-pointer offer-hosting-yes">
               I can host
             </a>
-          </li>
-          <li>
-            <a ui-sref="offer.host.edit({'status': 'maybe'})"
-              className="cursor-pointer offer-hosting-maybe">
+          </MenuItem>
+          <MenuItem eventKey="2">
+          {/* ui-sref="offer.host.edit({'status': 'maybe'})" */}
+            <a className="cursor-pointer offer-hosting-maybe">
               I might be able to host
             </a>
-          </li>
-          <li>
-            <a ui-sref="offer.host.edit({'status': 'no'})"
-              className="cursor-pointer offer-hosting-no">
+          </MenuItem>
+          <MenuItem eventKey="3">
+          {/* ui-sref="offer.host.edit({'status': 'no'})" */}
+            <a className="cursor-pointer offer-hosting-no">
               {'I can\'t host currently'}
             </a>
-          </li>
-        </ul>
-      </div>
-    );
+          </MenuItem>
+        </DropdownButton>
+      </ButtonGroup>);
+        {/* // <div
+        //   className="pull-right btn-group"
+
+        //   is-open="true">
+        //   <button
+        //     uib-tooltip="Change"
+        //     tooltip-placement="left"
+
+        //     className={classnames(
+        //       'btn', 'btn-sm', 'dropdown-toggle', 'btn-offer-hosting',
+        //       { 'btn-offer-hosting-yes': offer.status === 'yes',
+        //         'btn-offer-hosting-maybe': offer.status === 'maybe',
+        //         'btn-offer-hosting-no': (!offer || offer.status === 'no')
+        //       })}>
+        //     { hostingStatusLabel(offer.status) }
+        //     <span className="caret"></span>
+        //   </button>
+        //   <ul className="dropdown-menu" role="menu">
+        //     <li>
+        //       <a ui-sref="offer.host.edit({'status': 'yes'})"
+        //         className="cursor-pointer offer-hosting-yes">
+        //         I can host
+        //       </a>
+        //     </li>
+        //     <li>
+        //       <a ui-sref="offer.host.edit({'status': 'maybe'})"
+        //         className="cursor-pointer offer-hosting-maybe">
+        //         I might be able to host
+        //       </a>
+        //     </li>
+        //     <li>
+        //       <a ui-sref="offer.host.edit({'status': 'no'})"
+        //         className="cursor-pointer offer-hosting-no">
+        //         {'I can\'t host currently'}
+        //       </a>
+        //     </li>
+        //   </ul>
+          // </div> */}
   }
 
   renderButtonOther() {
@@ -354,8 +378,6 @@ export class Offers extends Component {
   };
 
   render(){
-    console.log(this.state);
-    console.log('STATERRRRR', this.state)
     return (<>
       { (this.state.isOwnOffer || this.state.isUserPublic) &&
         this.renderOffer(this.state.isOwnOffer) }
