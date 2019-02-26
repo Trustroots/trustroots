@@ -117,7 +117,7 @@ export class Offers extends Component {
     Change
   </Tooltip>);
     return (
-      <ButtonGroup className="pull-right">
+      <ButtonGroup className="pull-right dropdown-menu-offers">
         <DropdownButton
         pullRight
           className={classnames(
@@ -129,25 +129,20 @@ export class Offers extends Component {
           bsSize="small"
           bsStyle="success"
           title={hostingStatusLabel(offer.status)}
-          id={`dropdown-basic-1`}
+          id={`dropdown-offers-button`}
+          overlay={tooltip}
         >
-          <MenuItem eventKey="1" overlay={tooltip}>
-          {/* ui-sref="offer.host.edit({'status': 'yes'})" */}
-            <a className="cursor-pointer offer-hosting-yes">
-              I can host
-            </a>
+          <MenuItem eventKey="1" className="cursor-pointer offer-hosting-yes">
+            {/* ui-sref="offer.host.edit({'status': 'yes'})" */}
+            I can host
           </MenuItem>
-          <MenuItem eventKey="2">
-          {/* ui-sref="offer.host.edit({'status': 'maybe'})" */}
-            <a className="cursor-pointer offer-hosting-maybe">
-              I might be able to host
-            </a>
+          <MenuItem eventKey="2" className="cursor-pointer offer-hosting-maybe">
+            {/* ui-sref="offer.host.edit({'status': 'maybe'})" */}
+            I might be able to host
           </MenuItem>
-          <MenuItem eventKey="3">
-          {/* ui-sref="offer.host.edit({'status': 'no'})" */}
-            <a className="cursor-pointer offer-hosting-no">
-              {'I can\'t host currently'}
-            </a>
+          <MenuItem eventKey="3" className="cursor-pointer offer-hosting-no">
+            {/* ui-sref="offer.host.edit({'status': 'no'})" */}
+            {'I can\'t host currently'}
           </MenuItem>
         </DropdownButton>
       </ButtonGroup>);
