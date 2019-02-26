@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {DropdownButton, MenuItem, ButtonGroup, Tooltip} from 'react-bootstrap';
+import { Button, DropdownButton, MenuItem, ButtonGroup, Tooltip } from 'react-bootstrap';
 import classnames from 'classnames';
 import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 import '@/config/lib/i18n';
@@ -146,60 +146,25 @@ export class Offers extends Component {
           </MenuItem>
         </DropdownButton>
       </ButtonGroup>);
-        {/* // <div
-        //   className="pull-right btn-group"
-
-        //   is-open="true">
-        //   <button
-        //     uib-tooltip="Change"
-        //     tooltip-placement="left"
-
-        //     className={classnames(
-        //       'btn', 'btn-sm', 'dropdown-toggle', 'btn-offer-hosting',
-        //       { 'btn-offer-hosting-yes': offer.status === 'yes',
-        //         'btn-offer-hosting-maybe': offer.status === 'maybe',
-        //         'btn-offer-hosting-no': (!offer || offer.status === 'no')
-        //       })}>
-        //     { hostingStatusLabel(offer.status) }
-        //     <span className="caret"></span>
-        //   </button>
-        //   <ul className="dropdown-menu" role="menu">
-        //     <li>
-        //       <a ui-sref="offer.host.edit({'status': 'yes'})"
-        //         className="cursor-pointer offer-hosting-yes">
-        //         I can host
-        //       </a>
-        //     </li>
-        //     <li>
-        //       <a ui-sref="offer.host.edit({'status': 'maybe'})"
-        //         className="cursor-pointer offer-hosting-maybe">
-        //         I might be able to host
-        //       </a>
-        //     </li>
-        //     <li>
-        //       <a ui-sref="offer.host.edit({'status': 'no'})"
-        //         className="cursor-pointer offer-hosting-no">
-        //         {'I can\'t host currently'}
-        //       </a>
-        //     </li>
-        //   </ul>
-          // </div> */}
   }
 
   renderButtonOther() {
     const { offer, hostingStatusLabel } = this.state;
     return (
-      <a aria-label="Hosting status: {{ hostingStatusLabel(offer.status) }}"
-        ui-sref="messageThread({username: profile.username})"
-        className={classnames(
-          'btn', 'btn-sm', 'pull-right', 'btn-offer-hosting', 'btn-offer-hosting-yes',
-          {
-            'btn-offer-hosting-no': !offer || offer.status === 'no',
-            'btn-offer-hosting-yes': offer.status === 'yes',
-            'btn-offer-hosting-maybe': offer.status === 'maybe'
-          })}>
-        { hostingStatusLabel(offer.status) }
-      </a>
+      <Button className={classnames(
+        'btn-offer-hosting', 'pull-right', 'btn-offer-hosting-yes',
+        { 'btn-offer-hosting-yes': offer.status === 'yes',
+          'btn-offer-hosting-maybe': offer.status === 'maybe',
+          'btn-offer-hosting-no': (!offer || offer.status === 'no')
+        })}
+        aria-label={`Hosting status: ${hostingStatusLabel(offer.status)}`}
+        bsSize="small"
+        bsStyle="success"
+        id={`offers-button`}
+      >
+        {/* ui-sref="messageThread({username: profile.username})" */}
+        {hostingStatusLabel(offer.status)}
+      </Button>
     );
   }
 
