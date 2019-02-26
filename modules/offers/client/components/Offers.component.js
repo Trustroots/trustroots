@@ -11,6 +11,9 @@ export class Offers extends Component {
   constructor(props) {
     super(props);
     this.renderOffer = this.renderOffer.bind(this);
+    this.renderButtonOwn = this.renderButtonOwn.bind(this);
+    this.renderHostingYesMaybe = this.renderHostingYesMaybe.bind(this);
+    this.setOfferDescriptionToggle = this.setOfferDescriptionToggle.bind(this);
     this.state = {
       offerDescriptionToggle: false,
       offer: {},
@@ -29,6 +32,12 @@ export class Offers extends Component {
         }
       }, // this.hostingStatusLabel,
       isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp // TODO check userAgent
+    }
+  }
+
+  setOfferDescriptionToggle(toggleState) {
+    return () => {
+      this.setState(() => ({offerDescriptionToggle: toggleState}));
     }
   }
 
@@ -104,12 +113,7 @@ export class Offers extends Component {
    */
 
 
-  setOfferDescriptionToggle(state) {
-    this.setState(() => ({
-      offerDescriptionToggle: state // !prevState.offerDescriptionToggle
-    })
-    );
-  }
+
 
   renderButtonOwn() {
     const { offer, hostingStatusLabel } = this.state;
@@ -120,12 +124,7 @@ export class Offers extends Component {
       <ButtonGroup className="pull-right dropdown-menu-offers">
         <DropdownButton
         pullRight
-          className={classnames(
-            'btn-offer-hosting',
-            { 'btn-offer-hosting-yes': offer.status === 'yes',
-              'btn-offer-hosting-maybe': offer.status === 'maybe',
-              'btn-offer-hosting-no': (!offer || offer.status === 'no')
-            })}
+          className={`btn-offer-hosting, btn-offer-hosting-${offer.status}`}
           bsSize="small"
           bsStyle="success"
           title={hostingStatusLabel(offer.status)}
@@ -151,12 +150,7 @@ export class Offers extends Component {
   renderButtonOther() {
     const { offer, hostingStatusLabel } = this.state;
     return (
-      <Button className={classnames(
-        'btn-offer-hosting', 'pull-right', 'btn-offer-hosting-yes',
-        { 'btn-offer-hosting-yes': offer.status === 'yes',
-          'btn-offer-hosting-maybe': offer.status === 'maybe',
-          'btn-offer-hosting-no': (!offer || offer.status === 'no')
-        })}
+      <Button className={`btn-offer-hosting, btn-offer-hosting-${offer.status}, pull-right`}
         aria-label={`Hosting status: ${hostingStatusLabel(offer.status)}`}
         bsSize="small"
         bsStyle="success"
@@ -170,12 +164,13 @@ export class Offers extends Component {
 
   renderHostingYesMaybe() {
     const { offer, offerDescriptionToggle, isOwnOffer } = this.state;
+    console.log('ok')
     return (
       <div>
         {/*  Edit button  */}
+        {/* ui-sref="offer.host.edit" */}
         {isOwnOffer &&
-          <a ui-sref="offer.host.edit"
-            className="btn btn-inverse-primary btn-round btn-raised pull-right"
+          <a className="btn btn-inverse-primary btn-round btn-raised pull-right"
             aria-label="Modify hosting offer">
             <span className="icon-edit"></span>
           </a>
@@ -197,7 +192,7 @@ export class Offers extends Component {
                   onClick={this.setOfferDescriptionToggle(true)}>
                 </div>{/* // TODO - change or set true */}
                 <div className="panel-more-fade"
-                  onClick={this.setOfferDescriptionToggle(true)}>
+                  onClick={this.setOfferDescriptionToggle(false)}>
                   Show more...
                 </div>
               </div>
