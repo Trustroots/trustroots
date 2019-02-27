@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import { Button, DropdownButton, MenuItem, ButtonGroup, Tooltip } from 'react-bootstrap';
-import classnames from 'classnames';
 import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 import '@/config/lib/i18n';
 import { limitTo, sanitizeHtml } from '../../../utils/filters';
+import OfferLocation from './OfferLocation.component';
 
 import PropTypes from 'prop-types';
 
@@ -21,23 +21,31 @@ export class Offers extends Component {
       isOwnOffer: false,
       profile: false,
       isUserPublic: false,
-      hostingStatusLabel:   (status) => {
-        switch (status) {
-          case 'yes':
-            return 'Can host';
-          case 'maybe':
-            return 'Might be able to host';
-          default:
-            return 'Cannot host currently';
-        }
-      }, // this.hostingStatusLabel,
       isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp // TODO check userAgent
     }
   }
 
   setOfferDescriptionToggle(toggleState) {
+    console.log('state');
     return () => {
-      this.setState(() => ({offerDescriptionToggle: toggleState}));
+      console.log('in state', toggleState);
+      this.setState(() => ({ offerDescriptionToggle: toggleState }), console.log(this.state));
+    };
+  }
+
+  guestNumberDescription(guestNumber) {
+    switch (guestNumber){
+      case 0: return 'No guests.';
+      case 1: return 'At most one guest.';
+      default: return `At most ${guestNumber} guests.`;
+    }
+  }
+
+  hostingStatusLabel (status) {
+    switch (status) {
+      case 'yes': return 'Can host';
+      case 'maybe': return 'Might be able to host';
+      default: return 'Cannot host currently';
     }
   }
 
@@ -50,7 +58,7 @@ export class Offers extends Component {
       }));
       return;
     }
-    if (profile && profile._id) {
+    if (profile._id) {
       that.setState(() => ({
         profile: profile,
         isOwnOffer: (authUser && authUser._id && authUser._id === profile._id),
@@ -76,59 +84,24 @@ export class Offers extends Component {
             }));
           }
         });
-
-      // OffersByService.query({
-      //   userId: String(profile._id),
-      //   types: 'host'
-      // }, function (offers) {
-
-      //   if (!offers || !offers.length) {
-      //     vm.isLoading = false;
-      //     return;
-      //   }
-
-      //   vm.offer = offers[0];
-      //   vm.isLoading = false;
-      // }, function () {
-      //   // No offer(s) found
-      //   vm.isLoading = false;
-      // });
     }
   }
-  /* @ngInject */
-
-  // function OffersByService($resource) {
-  //   return $resource('/api/offers-by/:userId', {
-  //     userId: '@id'
-  //   }, {
-  //     query: {
-  //       method: 'GET',
-  //       isArray: true
-  //     }
-  //   });
-  // }
-
-  /**
-   * Helper for hosting label
-   */
-
-
-
 
   renderButtonOwn() {
-    const { offer, hostingStatusLabel } = this.state;
+    const { offer } = this.state;
     const tooltip = (<Tooltip placement="left" className="in" id="tooltip-left">
     Change
-  </Tooltip>);
+    </Tooltip>);
+    {/* Hosting status dropdown logged in user */}
     return (
       <ButtonGroup className="pull-right dropdown-menu-offers">
         <DropdownButton
-        pullRight
+          pullRight
           className={`btn-offer-hosting, btn-offer-hosting-${offer.status}`}
           bsSize="small"
           bsStyle="success"
-          title={hostingStatusLabel(offer.status)}
-          id={`dropdown-offers-button`}
+          title={this.hostingStatusLabel(offer.status)}
+          id={'dropdown-offers-button'}
           overlay={tooltip}
         >
           <MenuItem eventKey="1" className="cursor-pointer offer-hosting-yes">
@@ -148,23 +121,23 @@ export class Offers extends Component {
   }
 
   renderButtonOther() {
-    const { offer, hostingStatusLabel } = this.state;
+    const { offer } = this.state;
+    {/* Hosting status button other user */}
     return (
       <Button className={`btn-offer-hosting, btn-offer-hosting-${offer.status}, pull-right`}
         aria-label={`Hosting status: ${hostingStatusLabel(offer.status)}`}
         bsSize="small"
         bsStyle="success"
-        id={`offers-button`}
+        id={'offers-button'}
       >
         {/* ui-sref="messageThread({username: profile.username})" */}
-        {hostingStatusLabel(offer.status)}
+        {this.hostingStatusLabel(offer.status)}
       </Button>
     );
   }
 
   renderHostingYesMaybe() {
     const { offer, offerDescriptionToggle, isOwnOffer } = this.state;
-    console.log('ok')
     return (
       <div>
         {/*  Edit button  */}
@@ -187,30 +160,25 @@ export class Offers extends Component {
           <div>
             {!offerDescriptionToggle &&
               <div className="panel-more-wrap">
-                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(limitTo(offer.description), 2000) }}
+                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(limitTo(offer.description, 2000)) }}
                   className="panel-more-excerpt"
                   onClick={this.setOfferDescriptionToggle(true)}>
-                </div>{/* // TODO - change or set true */}
+                </div>
                 <div className="panel-more-fade"
-                  onClick={this.setOfferDescriptionToggle(false)}>
+                  onClick={this.setOfferDescriptionToggle(true)}>
                   Show more...
                 </div>
               </div>
             }
-            {offerDescriptionToggle &&
+            {this.state.offerDescriptionToggle &&
               <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(offer.description) }}>
               </div>
             }
           </div>
         }
-
+        {/* Number of guests */}
         <p className="offer-restrictions">
-          {/* TODO
-          {offer.maxGuests, plural, offset:1
-              =0    {No guests.}
-              =1    {At most one guest.}
-              other {At most {{ offer.maxGuests }} guests.}
-          } */}
+          {this.guestNumberDescription(offer.maxGuests)}
         </p>
       </div>
     );
@@ -221,9 +189,9 @@ export class Offers extends Component {
     return (
       <div>
         {/*  Edit button  */}
+        {/* ui-sref="offer.host.edit({'status': 'no'})" */}
         {isOwnOffer &&
-        <a ui-sref="offer.host.edit({'status': 'no'})"
-          className="btn btn-inverse-primary btn-round btn-raised pull-right"
+        <a className="btn btn-inverse-primary btn-round btn-raised pull-right"
           aria-label="Modify hosting offer">
           <span className="icon-edit"></span>
         </a>
@@ -259,18 +227,18 @@ export class Offers extends Component {
         </div>
         }
 
-        {/*  Action button  */}
+        {/*  Start hosting and meet people action buttons  */}
         {isOwnOffer && (!offer.status || offer.status === 'no') &&
         <div className="text-center">
           <br />
           <hr className="hr-gray hr-tight hr-xs" />
-          <a ui-sref="offer.host.edit({status: 'yes'})"
-            className="btn btn-inverse-primary">
+          {/* "offer.host.edit({status: 'yes'})" */}
+          <a className="btn btn-inverse-primary">
             Start hosting travellers
           </a>
           &nbsp;
-          <a ui-sref="offer.meet.list"
-            className="btn btn-inverse-primary">
+          {/* ui-sref="offer.meet.list" */}
+          <a className="btn btn-inverse-primary">
             Meet people
           </a>
         </div>
@@ -282,15 +250,15 @@ export class Offers extends Component {
   renderMap() {
     const {offer, isMobile} = this.state;
     return (
+      <div>
       <div> {/* / TODO change later to <> */}
         {(offer.status === 'yes' || offer.status === 'maybe') &&
-          <offer-location offer="offer">
-          </offer-location>
+          <OfferLocation offer={offer} ></OfferLocation>
         }
         {(offer.status === 'yes' || offer.status === 'maybe') &&
         <div className="panel-footer text-center">
-          <a ui-sref="search.map({offer: offer._id})"
-            className="btn btn-sm btn-inverse-primary">
+          {/* ui-sref="search.map({offer: offer._id})" */}
+          <a className="btn btn-sm btn-inverse-primary">
             Bigger map
           </a>
           {isMobile &&
@@ -301,6 +269,7 @@ export class Offers extends Component {
           }
         </div>
         }
+      </div>
       </div>
     );
   }
@@ -333,11 +302,8 @@ export class Offers extends Component {
   };
 
   render(){
-    return (<>
-      { (this.state.isOwnOffer || this.state.isUserPublic) &&
-        this.renderOffer(this.state.isOwnOffer) }
-      </>
-    );
+    return (this.state.isOwnOffer || this.state.isUserPublic) &&
+        this.renderOffer()
   }
 };
 
