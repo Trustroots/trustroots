@@ -14,16 +14,22 @@ export default function ProfileOverview({ profile }) {
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
   return (<>
+    {/* panel with avatar and basic info */}
     <div className="panel panel-default profile-overview">
-      <a onClick={() => setIsAvatarModalOpen(true)}>
+      {/* avatar */}
+      <a
+        className="hidden-xs"
+        aria-hidden={true}
+        onClick={() => setIsAvatarModalOpen(true)}
+      >
         <Avatar
           user={profile}
           size={256}
           link={false}
-          className="hidden-xs"
-          aria-hidden={true}
         />
       </a>
+
+      {/* basic info panel */}
       <div className="panel-body">
         <div className="profile-sidebar-section">
           <ProfileViewBasics profile={profile} />
@@ -31,6 +37,7 @@ export default function ProfileOverview({ profile }) {
       </div>
     </div>
 
+    {/* modal with avatar */}
     <Modal
       show={isAvatarModalOpen}
       onHide={() => setIsAvatarModalOpen(false)}
