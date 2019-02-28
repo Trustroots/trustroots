@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withNamespaces } from 'react-i18next';
+import { withTranslation } from 'react-i18next';
 import { Modal } from 'react-bootstrap';
 
 export function RemoveContact({ t, contact, show, inProgress, onHide, onRemoveContact, situation='confirmed' }) {
@@ -80,4 +80,4 @@ RemoveContact.propTypes = {
   situation: PropTypes.string
 };
 
-export default withNamespaces('contact')(RemoveContact);
+export default withTranslation('contact')(RemoveContact);

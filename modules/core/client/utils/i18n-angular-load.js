@@ -1,18 +1,18 @@
 import '@/config/client/i18n';
-import { withNamespaces as withNamespacesOriginal } from 'react-i18next';
+import { withTranslation as withTranslationOriginal } from 'react-i18next';
 
 /**
  * This wires up react component with i18n.
- * It sets up withNamespaces, propTypes and Component.name for React component.
+ * It sets up withTranslation, propTypes and Component.name for React component.
  * So it can be used in Angular.
  *
  * When we move everything to react, this won't be needed and should be removed.
  * This helper should be used only with react components which need to be imported to angular.
  */
-export function withNamespaces(namespaces) {
+export function withTranslation(namespaces) {
   return (Component) => {
     // add namespaces to Component
-    const ComponentHOC = withNamespacesOriginal(namespaces)(Component);
+    const ComponentHOC = withTranslationOriginal(namespaces)(Component);
 
     // clone propTypes and delete t function
     const hocPropTypes = { ...Component.propTypes };

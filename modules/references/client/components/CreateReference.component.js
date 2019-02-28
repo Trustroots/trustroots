@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Tab, Tabs } from 'react-bootstrap';
-import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
+import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
 import * as references from '../api/references.api';
 import Navigation from './create-reference/Navigation';
 import Interaction from './create-reference/Interaction';
@@ -170,4 +170,4 @@ CreateReference.propTypes = {
   t: PropTypes.func.isRequired
 };
 
-export default withNamespaces('reference')(CreateReference);
+export default withTranslation('reference')(CreateReference);

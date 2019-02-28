@@ -1,6 +1,6 @@
 import React from 'react';
 import classnames from 'classnames';
-import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
+import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
 import { Trans } from 'react-i18next';
 import '@/config/client/i18n';
 import PropTypes from 'prop-types';
@@ -221,4 +221,4 @@ ProfileViewBasics.propTypes = {
   t: PropTypes.func
 };
 
-export default withNamespaces(['user-profile', 'languages'])(ProfileViewBasics);
+export default withTranslation(['user-profile', 'languages'])(ProfileViewBasics);

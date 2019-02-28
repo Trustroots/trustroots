@@ -1,11 +1,15 @@
 import React from 'react';
-import { NamespacesConsumer } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 import { selectPhoto } from '@/modules/core/client/services/photos.service';
 
 export default function Volunteering() {
+
+  const { t } = useTranslation('volunteering');
+
   const photo = selectPhoto('happyhippies');
-  return (<NamespacesConsumer ns="volunteering">{ t => (<>
+
+  return (<>
     <section className="board volunteer-header board-happyhippies" style={{ backgroundImage: `url("${photo.imageUrl}")` }}>
       <div className="container">
         <div className="row">
@@ -30,7 +34,7 @@ export default function Volunteering() {
         <a className="btn btn-xs btn-primary pull-right" href="https://github.com/Trustroots/trustroots/edit/master/modules/pages/client/components/Volunteering.component.js" rel="noopener noreferrer" target="_blank">Edit this page<i className="icon-github icon-lg"></i></a>
       </div>
     </section>
-  </>) }</NamespacesConsumer>);
+  </>);
 }
 
 Volunteering.propTypes = {};
