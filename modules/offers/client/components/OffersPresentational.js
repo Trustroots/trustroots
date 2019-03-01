@@ -63,16 +63,13 @@ export class Offers extends Component {
           id={'dropdown-offers-button'}
           overlay={tooltip}
         >
-          <MenuItem eventKey="1" className="cursor-pointer offer-hosting-yes">
-            {/* ui-sref="offer.host.edit({'status': 'yes'})" */}
+          <MenuItem href='/offer/host?status=yes' eventKey="1" className="cursor-pointer offer-hosting-yes">
             I can host
           </MenuItem>
-          <MenuItem eventKey="2" className="cursor-pointer offer-hosting-maybe">
-            {/* ui-sref="offer.host.edit({'status': 'maybe'})" */}
+          <MenuItem href='/offer/host?status=maybe' eventKey="2" className="cursor-pointer offer-hosting-maybe">
             I might be able to host
           </MenuItem>
-          <MenuItem eventKey="3" className="cursor-pointer offer-hosting-no">
-            {/* ui-sref="offer.host.edit({'status': 'no'})" */}
+          <MenuItem href='/offer/host?status=no' eventKey="3" className="cursor-pointer offer-hosting-no">
             {'I can\'t host currently'}
           </MenuItem>
         </DropdownButton>
@@ -89,8 +86,7 @@ export class Offers extends Component {
         bsStyle="success"
         id={'offers-button'}
       >
-        {/* ui-sref="messageThread({username: profile.username})" */}
-        {this.hostingStatusLabel(offer.status)}
+        <a href={`/messages/${this.props.username}`}>{this.hostingStatusLabel(offer.status)}</a>
       </Button>
     );
   }
@@ -101,9 +97,8 @@ export class Offers extends Component {
     return (
       <div>
         {/*  Edit button  */}
-        {/* ui-sref="offer.host.edit" */}
         {isOwnOffer &&
-          <a className="btn btn-inverse-primary btn-round btn-raised pull-right"
+          <a  href='/offer/host' className="btn btn-inverse-primary btn-round btn-raised pull-right"
             aria-label="Modify hosting offer">
             <span className="icon-edit"></span>
           </a>
@@ -149,9 +144,8 @@ export class Offers extends Component {
     return (
       <div>
         {/*  Edit button  */}
-        {/* ui-sref="offer.host.edit({'status': 'no'})" */}
         {isOwnOffer &&
-        <a className="btn btn-inverse-primary btn-round btn-raised pull-right"
+        <a href='/offer/host' className="btn btn-inverse-primary btn-round btn-raised pull-right"
           aria-label="Modify hosting offer">
           <span className="icon-edit"></span>
         </a>
@@ -266,7 +260,8 @@ export class Offers extends Component {
 Offers.propTypes = {
   isOwnOffer: PropTypes.bool.isRequired,
   isUserPublic: PropTypes.bool.isRequired,
-  offer: PropTypes.object.isRequired
+  offer: PropTypes.object.isRequired,
+  username: PropTypes.string.isRequired
 };
 
 export default withNamespaces(['user-profile'])(Offers);

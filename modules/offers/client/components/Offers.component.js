@@ -58,7 +58,8 @@ export class Offers extends Component {
     return <OffersPresentational
       isOwnOffer={this.state.isOwnOffer}
       isUserPublic={this.state.isUserPublic}
-      offer={this.state.offer}>
+      offer={this.state.offer}
+      username={this.state.profile.username}>
     </OffersPresentational>;
   }
 };
