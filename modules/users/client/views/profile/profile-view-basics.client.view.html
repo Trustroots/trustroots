@@ -34,7 +34,6 @@
   </div>
 </div>
 
-<span
+<report-member-link
   ng-if="::app.user._id !== profileCtrl.profile._id"
-  tr-report-member="::profileCtrl.profile.username"
-  ng-attr-title="Report member {{::profileCtrl.profile.username}} to support"></span>
+  username="::profileCtrl.profile.username"></report-member-link>
