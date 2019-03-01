@@ -17,7 +17,7 @@ export default function AvatarNameMobile({ profile }) {
 
       {/* Avatar */}
       <a
-        onClick={() => setIsBiggerAvatar(!isBiggerAvatar)}
+        onClick={() => setIsBiggerAvatar(prevState => !prevState)}
         className={classNames('visible-xs-block', 'avatar-circle', { 'profile-avatar-lg': isBiggerAvatar })}
         aria-hidden={true}>
         <Avatar
