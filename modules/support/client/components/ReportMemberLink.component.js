@@ -12,11 +12,11 @@ export default function ReportMemberLink({ username }) {
   const { t } = useTranslation('support');
 
   return (
-    <span title={t('Report member {{username}} to support', { username })}>
-      <small>
-        <a href={`/support?report=${username}`} className="text-muted">{t('Report member')}</a>
-      </small>
-    </span>
+    <a
+      href={`/support?report=${username}`}
+      className="small text-muted"
+      aria-label={t('Report member {{username}} to support', { username })}
+    >{t('Report member')}</a>
   );
 }
 
