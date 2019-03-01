@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import '@/config/lib/i18n';
+import OffersPresentational from './OffersPresentational';
 
 import PropTypes from 'prop-types';
 
@@ -7,13 +7,14 @@ export class Offers extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      offerDescriptionToggle: false,
       offer: {},
       isLoading: true,
       isOwnOffer: false,
       isUserPublic: false,
       isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp // TODO check userAgent
     }
+      profile: {}
+    };
   }
 
   componentDidMount() {

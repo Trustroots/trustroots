@@ -2,12 +2,13 @@ import React, { Component } from 'react';
 import { Button, DropdownButton, MenuItem, ButtonGroup, Tooltip } from 'react-bootstrap';
 import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 import '@/config/client/i18n';
+import { Trans } from 'react-i18next';
 import { limitTo, sanitizeHtml } from '../../../utils/filters';
 import OfferLocation from './OfferLocation.component';
 
 import PropTypes from 'prop-types';
 
-export class Offers extends Component {
+export class OffersPresentational extends Component {
   constructor(props) {
     super(props);
     this.renderOffer = this.renderOffer.bind(this);
@@ -30,23 +31,26 @@ export class Offers extends Component {
 
   /* Content Formatting Functions */
   guestNumberDescription(guestNumber) {
+    const { t } = this.props;
     switch (guestNumber){
-      case 0: return 'No guests.';
-      case 1: return 'At most one guest.';
-      default: return `At most ${guestNumber} guests.`;
+      case 0: return t('No guests.');
+      case 1: return t('At most one guest.');
+      default: return t('At most {{guestNumber}} guests.', { guestNumber: guestNumber });
     }
   }
 
   hostingStatusLabel(status) {
+    const { t } = this.props;
     switch (status) {
-      case 'yes': return 'Can host';
-      case 'maybe': return 'Might be able to host';
-      default: return 'Cannot host currently';
+      case 'yes': return t('Can host');
+      case 'maybe': return t('Might be able to host');
+      default: return t('Cannot host currently');
     }
   }
 
   /* Render Functions */
   renderButtonOwn() {
+    const { t } = this.props;
     const { offer } = this.props;
     const tooltip = (<Tooltip placement="left" className="in" id="tooltip-left">
     Change
@@ -70,7 +74,7 @@ export class Offers extends Component {
             I might be able to host
           </MenuItem>
           <MenuItem href='/offer/host?status=no' eventKey="3" className="cursor-pointer offer-hosting-no">
-            {'I can\'t host currently'}
+            {t('I can\'t host currently')}
           </MenuItem>
         </DropdownButton>
       </ButtonGroup>);
@@ -225,11 +229,12 @@ export class Offers extends Component {
   }
 
   renderOffer() {
+    const { t } = this.props;
     const { isOwnOffer, offer } = this.props;
     return (
       <div className="panel panel-default offer-view">
         <div className="panel-heading">
-          Accommodation
+          {t('Accommodation')}
           {/*  Button + dropdown for user's own profile  */}
           {isOwnOffer && this.renderButtonOwn()}
           {/*  Button for other profiles  */}
@@ -257,11 +262,12 @@ export class Offers extends Component {
   }
 };
 
-Offers.propTypes = {
+OffersPresentational.propTypes = {
   isOwnOffer: PropTypes.bool.isRequired,
   isUserPublic: PropTypes.bool.isRequired,
   offer: PropTypes.object.isRequired,
-  username: PropTypes.string.isRequired
+  username: PropTypes.string,
+  t: PropTypes.func
 };
 
-export default withNamespaces(['user-profile'])(Offers);
+export default withNamespaces(['offers'])(OffersPresentational);
