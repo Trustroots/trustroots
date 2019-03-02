@@ -1,0 +1,16 @@
+{
+  "Accommodation": "Accomodation",
+  "No guests.": "No guests.",
+  "At most one guest.": "At most one guest.",
+  "At most {{guestNumber}} guests.": "At most {{guestNumber}} guests.",
+  "Can host": "Can host",
+  "Might be able to host": "Might be able to host",
+  "Cannot host currently": "Cannot host currently'",
+  "Hosting status: {{statusLabel}}": "Hosting status: {{statusLabel}}",
+  "I can host": "I can host",
+  "I might be able to host": "I might be able to host",
+  "I can't host currently": "I can't host currently",
+  "Sorry, user is not hosting currently.": "Sorry, user is not hosting currently.",
+  "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.",
+  "Bigger map": "Bigger map"
+}

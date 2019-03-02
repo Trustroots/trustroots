@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { Button, DropdownButton, MenuItem, ButtonGroup, Tooltip } from 'react-bootstrap';
 import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 import '@/config/client/i18n';
-import { Trans } from 'react-i18next';
 import { limitTo, sanitizeHtml } from '../../../utils/filters';
 import OfferLocation from './OfferLocation.component';
 
@@ -48,6 +47,11 @@ export class OffersPresentational extends Component {
     }
   }
 
+  getAriaLabel(status) {
+    const { t } = this.props;
+    return t('Hosting status: {{statusLabel}}', { statusLabel: this.hostingStatusLabel(status) } );
+  }
+
   /* Render Functions */
   renderButtonOwn() {
     const { t } = this.props;
@@ -68,13 +72,13 @@ export class OffersPresentational extends Component {
           overlay={tooltip}
         >
           <MenuItem href='/offer/host?status=yes' eventKey="1" className="cursor-pointer offer-hosting-yes">
-            I can host
+            {t('I can host')}
           </MenuItem>
           <MenuItem href='/offer/host?status=maybe' eventKey="2" className="cursor-pointer offer-hosting-maybe">
-            I might be able to host
+            {t('I might be able to host')}
           </MenuItem>
           <MenuItem href='/offer/host?status=no' eventKey="3" className="cursor-pointer offer-hosting-no">
-            {t('I can\'t host currently')}
+            {t(`I can't host currently`)}
           </MenuItem>
         </DropdownButton>
       </ButtonGroup>);
@@ -85,7 +89,7 @@ export class OffersPresentational extends Component {
     {/* Hosting status button other user */}
     return (
       <Button className={`btn-offer-hosting, btn-offer-hosting-${offer.status}, pull-right`}
-        aria-label={`Hosting status: ${this.hostingStatusLabel(offer.status)}`}
+        aria-label={this.getAriaLabel(offer.status)}
         bsSize="small"
         bsStyle="success"
         id={'offers-button'}
@@ -144,7 +148,7 @@ export class OffersPresentational extends Component {
   }
 
   renderHostingNo() {
-    const { isOwnOffer, offer } = this.props;
+    const { isOwnOffer, offer, t } = this.props;
     return (
       <div>
         {/*  Edit button  */}
@@ -168,7 +172,7 @@ export class OffersPresentational extends Component {
           {/*  Show for others  */}
           {!isOwnOffer &&
             <h4>
-              Sorry, user is not hosting currently.
+              {t('Sorry, user is not hosting currently.')}
             </h4>
           }
 
@@ -177,7 +181,7 @@ export class OffersPresentational extends Component {
             <div>
               <br />
               <p className="lead">
-                <em>Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.</em>
+                <em>{t('Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.')}</em>
               </p>
               <br />
             </div>
@@ -205,7 +209,7 @@ export class OffersPresentational extends Component {
 
   renderMap() {
     const { isMobile } = this.state;
-    const { offer } = this.props;
+    const { offer, t } = this.props;
     return (
       <div>
         {(offer.status === 'yes' || offer.status === 'maybe') &&
@@ -214,12 +218,12 @@ export class OffersPresentational extends Component {
         {(offer.status === 'yes' || offer.status === 'maybe') &&
         <div className="panel-footer text-center">
           <a href={`/search?offer=${offer._id}`} className="btn btn-sm btn-inverse-primary">
-            Bigger map
+            {t('Bigger map')}
           </a>
           {isMobile &&
           <a href="geo:{{offer.location[0]}},{{offer.location[1]}};u=200"
             className="btn btn-sm btn-inverse-primary">
-            Open on device
+            {t('Open on device')}
           </a>
           }
         </div>
