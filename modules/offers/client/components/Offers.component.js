@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import OffersPresentational from './OffersPresentational';
+import * as offersAPI from '../api/offers.api';
+
 
 import PropTypes from 'prop-types';
 
@@ -17,7 +19,7 @@ export class Offers extends Component {
     };
   }
 
-  componentDidMount() {
+  async componentDidMount () {
     const that = this;
     const { profile, authUser } = this.props;
     if (!profile) {
@@ -33,25 +35,19 @@ export class Offers extends Component {
         isUserPublic: (authUser && authUser.public)
       }));
 
-      // TODO fetch offer data
-      fetch(`/api/offers-by/${profile._id}`,{
-        method: 'GET'
-      })
-        .then(response => response.json())
-        .then(offers => {
-          if (!offers || !offers.length) {
-            this.setState(() => ({
-              isLoading: false
-            })
-            );
-          } else {
-            const off = offers[0];
-            that.setState(() => ({
-              offer: off,
-              isLoading: false
-            }));
-          }
-        });
+      const offers = await offersAPI.getOffers(profile._id);
+      if (!offers || !offers.length) {
+        this.setState(() => ({
+          isLoading: false
+        })
+        );
+      } else {
+        const off = offers[0];
+        that.setState(() => ({
+          offer: off,
+          isLoading: false
+        }));
+      }
     }
   }
 
