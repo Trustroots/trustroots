@@ -62,6 +62,14 @@
   </div>
 </nav>
 
+<top-navigation-small
+  isSelf="app.user._id === profileCtrl.profile._id"
+  username="profileCtrl.profile.username"
+  contact="profileCtrl.contact"
+  areReferences="app.appSettings.referencesEnabled"
+  isResolved="profileCtrl.contact.$resolved"
+></top-navigation-small>
+
 <!-- Bottom Navigation for small screens -->
 <!-- react component -->
 <bottom-navigation-small
