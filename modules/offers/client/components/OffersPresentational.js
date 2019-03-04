@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
 import { Button, DropdownButton, MenuItem, ButtonGroup, Tooltip } from 'react-bootstrap';
-import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
 import '@/config/client/i18n';
 import { limitTo, sanitizeHtml } from '../../../utils/filters';
 import OfferLocation from './OfferLocation.component';
 
 import PropTypes from 'prop-types';
+import { withTranslation } from 'react-i18next';
 
 export class OffersPresentational extends Component {
   constructor(props) {
@@ -274,4 +274,4 @@ OffersPresentational.propTypes = {
   t: PropTypes.func
 };
 
-export default withNamespaces(['offers'])(OffersPresentational);
+export default withTranslation(['offers'])(OffersPresentational);

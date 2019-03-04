@@ -1,5 +1,5 @@
 import sanitizeHtmlFunction from 'sanitize-html';
-import textService from './modules/core/server/services/text.server.service';
+import textService from '../core/server/services/text.server.service';
 
 export const limitTo = (text, length) => {
   return text.substring(0, length);

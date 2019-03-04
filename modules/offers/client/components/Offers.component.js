@@ -54,7 +54,7 @@ export class Offers extends Component {
       isOwnOffer={this.state.isOwnOffer}
       isUserPublic={this.state.isUserPublic}
       offer={this.state.offer}
-      username={this.state.profile.username}>
+      username={this.props.profile.username}>
     </OffersPresentational>;
   }
 };
