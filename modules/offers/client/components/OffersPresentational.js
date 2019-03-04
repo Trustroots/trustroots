@@ -24,7 +24,7 @@ export class OffersPresentational extends Component {
   /* Action Functions */
   setOfferDescriptionToggle(toggleState) {
     return () => {
-      this.setState(() => ({ offerDescriptionToggle: toggleState }), console.log(this.state));
+      this.setState(() => ({ offerDescriptionToggle: toggleState }));
     };
   }
 
@@ -49,7 +49,7 @@ export class OffersPresentational extends Component {
 
   getAriaLabel(status) {
     const { t } = this.props;
-    return t('Hosting status: {{statusLabel}}', { statusLabel: this.hostingStatusLabel(status) } );
+    return t('Hosting status: {{statusLabel}}', { statusLabel: this.hostingStatusLabel(status) });
   }
 
   /* Render Functions */
@@ -78,7 +78,7 @@ export class OffersPresentational extends Component {
             {t('I might be able to host')}
           </MenuItem>
           <MenuItem href='/offer/host?status=no' eventKey="3" className="cursor-pointer offer-hosting-no">
-            {t(`I can't host currently`)}
+            {t(`I can't host currently`)} {/* eslint-disable-line quotes */}
           </MenuItem>
         </DropdownButton>
       </ButtonGroup>);
@@ -106,7 +106,7 @@ export class OffersPresentational extends Component {
       <div>
         {/*  Edit button  */}
         {isOwnOffer &&
-          <a  href='/offer/host' className="btn btn-inverse-primary btn-round btn-raised pull-right"
+          <a href='/offer/host' className="btn btn-inverse-primary btn-round btn-raised pull-right"
             aria-label="Modify hosting offer">
             <span className="icon-edit"></span>
           </a>
@@ -194,11 +194,11 @@ export class OffersPresentational extends Component {
         <div className="text-center">
           <br />
           <hr className="hr-gray hr-tight hr-xs" />
-          <a href={`/offer/host?status=yes`}className="btn btn-inverse-primary">
+          <a href={'/offer/host?status=yes'}className="btn btn-inverse-primary">
             Start hosting travellers
           </a>
           &nbsp;
-          <a href={`/offer/meet`} className="btn btn-inverse-primary">
+          <a href={'/offer/meet'} className="btn btn-inverse-primary">
             Meet people
           </a>
         </div>

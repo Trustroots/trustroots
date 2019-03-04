@@ -26,7 +26,7 @@ export default [
   { code: 'cs', label: 'česky' },
   { code: 'fi', label: 'suomi' },
   { code: 'de', label: 'Deutsch' },
-  { code: 'pl', label: 'polski'}
+  { code: 'pl', label: 'polski' }
 ];
 
 /**

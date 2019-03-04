@@ -13,13 +13,11 @@ export class Offers extends Component {
       isLoading: true,
       isOwnOffer: false,
       isUserPublic: false,
-      isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp // TODO check userAgent
-    }
-      profile: {}
+      isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp
     };
   }
 
-  async componentDidMount () {
+  async componentDidMount() {
     const that = this;
     const { profile, authUser } = this.props;
     if (!profile) {

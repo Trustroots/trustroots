@@ -6,6 +6,6 @@ import axios from 'axios';
  * @returns Promise<Offer[]> - array of the found offers
  */
 export async function getOffers(userId){
-  let {data: offers} = await axios.get(`/api/offers-by/${userId}`);
+  const { data: offers } = await axios.get(`/api/offers-by/${userId}`);
   return offers;
 }
