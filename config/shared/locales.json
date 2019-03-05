@@ -1,5 +1,6 @@
 [
   { "code": "en", "label": "English" },
   { "code": "cs", "label": "česky" },
-  { "code": "fi", "label": "suomi" }
+  { "code": "fi", "label": "suomi" },
+  { "code": "pl", "label": "polski"}
 ]

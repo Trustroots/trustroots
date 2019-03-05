@@ -1,8 +1,9 @@
 {
   "Accommodation": "Můj barák",
   "No guests.": "No guests.",
-  "At most one guest.": "Ne víc jak jeden člověk",
-  "At most {{guestNumber}} guests.": "Ne víc jak {{guestNumber}} lidi.",
+  "At most {{count}} guests._0": "Nejvíce jeden host.",
+  "At most {{count}} guests._1": "Nejvíce {{count}} hosté.",
+  "At most {{count}} guests._2": "Nejvíce {{count}} hostů.",
   "Can host": "Može mět lidi",
   "Might be able to host": "Třeba može mět lidi",
   "Cannot host currently": "Nemože mět lidi",

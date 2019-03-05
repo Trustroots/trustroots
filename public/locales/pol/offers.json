@@ -1,0 +1,16 @@
+{
+  "Accommodation": "Mój dom",
+  "No guests.": "Nie przyjmuje gości",
+  "At most {{count}} guests._0": "Maksymalnie jeden gość.",
+  "At most {{count}} guests._1": "Maksymalnie {{count}} gości.",
+  "Can host": "Przyjmuje gości",
+  "Might be able to host": "Może przyjmuje  gości",
+  "Cannot host currently": "Nie przyjmuje gości",
+  "Hosting status: {{statusLabel}}": "Hosting status: {{statusLabel}}",
+  "I can host": "Przyjmuję gości",
+  "I might be able to host": "Może przyjmuję gości",
+  "I can't host currently": "Nie mogę gościć",
+  "Sorry, user is not hosting currently.": "Niestety użytkownik nie przyjmuje teraz gości",
+  "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.",
+  "Bigger map": "Większa mapa"
+}

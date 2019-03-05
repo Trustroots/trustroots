@@ -31,11 +31,10 @@ export class OffersPresentational extends Component {
   /* Content Formatting Functions */
   guestNumberDescription(guestNumber) {
     const { t } = this.props;
-    switch (guestNumber){
-      case 0: return t('No guests.');
-      case 1: return t('At most one guest.');
-      default: return t('At most {{guestNumber}} guests.', { guestNumber: guestNumber });
+    if (guestNumber === 0){
+      return t('No guests.');
     }
+    return t('At most {{count}} guests.', { count: guestNumber });
   }
 
   hostingStatusLabel(status) {
