@@ -1,5 +1,5 @@
-// const sanitizeHtmlFunction = require('sanitize-html');
-// const textService = require('../core/server/services/text.server.service');
+import sanitizeHtmlFunction from 'sanitize-html';
+import textService from '@/config/shared/sanitize';
 
 export const limitTo = (text, length) => {
   return text.substring(0, length);
@@ -10,7 +10,5 @@ export const plainTextLength = (text) => {
 };
 
 export const sanitizeHtml = (text) => {
-  // TODO solve a problem with sanitize html
-  return text;
-  // return sanitizeHtmlFunction(text, textService.sanitizeOptions);
+  return sanitizeHtmlFunction(text, JSON.parse(JSON.stringify(textService.sanitizeOptions)));
 };
