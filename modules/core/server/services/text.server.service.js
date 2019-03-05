@@ -5,6 +5,7 @@ const _ = require('lodash');
 const Autolinker = require('autolinker');
 const sanitizeHtml = require('sanitize-html');
 const he = require('he');
+const path = require('path');
 
 /**
  * Rules for sanitizing texts coming in and out
@@ -14,7 +15,7 @@ const he = require('he');
  *
  * @link https://github.com/punkave/sanitize-html
  */
-exports.sanitizeOptions = require(path.resolve('@/config/shared/sanitize'));
+exports.sanitizeOptions = require(path.resolve('@/config/shared/sanitize')).sanitizeOptions;
 
 
 /**

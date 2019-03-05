@@ -40,9 +40,8 @@ export class Offers extends Component {
         })
         );
       } else {
-        const off = offers[0];
         that.setState(() => ({
-          offer: off,
+          offer: offers[0],
           isLoading: false
         }));
       }
