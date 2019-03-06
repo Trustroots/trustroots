@@ -1,4 +1,4 @@
-import sanitizeHtmlFunction from 'sanitize-html';
+import sanitizeHtmlFunction from 'sanitize-html-react';
 import textService from '@/config/shared/sanitize';
 
 export const limitTo = (text, length) => {
