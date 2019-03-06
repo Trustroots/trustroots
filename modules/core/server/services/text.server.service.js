@@ -15,7 +15,7 @@ const path = require('path');
  *
  * @link https://github.com/punkave/sanitize-html
  */
-exports.sanitizeOptions = require(path.resolve('@/config/shared/sanitize')).sanitizeOptions;
+exports.sanitizeOptions = require(path.resolve('./config/shared/sanitize')).sanitizeOptions;
 
 
 /**
