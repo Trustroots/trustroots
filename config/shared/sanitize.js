@@ -6,6 +6,7 @@
  *
  * @link https://github.com/punkave/sanitize-html
  */
+var has = require('lodash/has');
 exports.sanitizeOptions = {
   allowedTags: [
     'p',
@@ -39,7 +40,7 @@ exports.sanitizeOptions = {
     // Don't allow empty <a> tags, such as:
     // - `<a href="http://trustroots.org"></a>`
     // - `<a>http://trustroots.org</a>`
-    if (frame.tag === 'a' && (!frame.text.trim() || !_.has(frame, 'attribs.href'))) {
+    if (frame.tag === 'a' && (!frame.text.trim() || !has(frame, 'attribs.href'))) {
       return true;
     }
 
