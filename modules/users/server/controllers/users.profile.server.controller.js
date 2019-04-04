@@ -48,7 +48,6 @@ exports.userProfileFields = [
   'id',
   'displayName',
   'username',
-  'displayUsername',
   'gender',
   'tagline',
   'description',
@@ -80,7 +79,6 @@ exports.userMiniProfileFields = [
   'updated', // Used as local-avatar cache buster
   'displayName',
   'username',
-  'displayUsername',
   'avatarSource',
   'avatarUploaded',
   'emailHash',
@@ -393,7 +391,6 @@ exports.update = function (req, res) {
       delete req.body.emailToken;
       delete req.body.emailTemporary;
       delete req.body.provider;
-      delete req.body.displayUsername;
       delete req.body.usernameUpdated;
       delete req.body.salt;
       delete req.body.password;

@@ -46,7 +46,6 @@ describe('User invites CRUD tests', function () {
       displayName: 'Full Name',
       email: 'test@example.org',
       username: credentials.username.toLowerCase(),
-      displayUsername: credentials.username,
       password: credentials.password,
       provider: 'local',
       public: true

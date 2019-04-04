@@ -47,7 +47,6 @@ describe('User password CRUD tests', function () {
       email: 'test@example.org',
       emailToken: 'initial email token',
       username: credentials.username.toLowerCase(),
-      displayUsername: credentials.username,
       password: credentials.password,
       provider: 'local'
     };

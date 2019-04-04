@@ -69,7 +69,6 @@ describe('User removal CRUD tests', function () {
       displayName: 'Full Name A',
       email: 'user_a@example.com',
       username: credentialsA.username.toLowerCase(),
-      displayUsername: credentialsA.username,
       password: credentialsA.password,
       provider: 'local'
     };
@@ -97,7 +96,6 @@ describe('User removal CRUD tests', function () {
       displayName: 'Full Name B',
       email: 'user_b@example.com',
       username: credentialsB.username.toLowerCase(),
-      displayUsername: credentialsB.username,
       password: credentialsB.password,
       provider: 'local'
     };
@@ -752,7 +750,6 @@ describe('User removal CRUD tests', function () {
             displayName: 'Full Name C',
             email: 'user_c@example.com',
             username: 'userc',
-            displayUsername: 'userc',
             password: '**********asdfasdf',
             provider: 'local'
           });

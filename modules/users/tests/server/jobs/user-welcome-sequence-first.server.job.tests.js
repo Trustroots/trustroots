@@ -57,7 +57,6 @@ describe('Job: welcome sequence, first email', function () {
       emailTemporary: 'test@test.com', // unconfirmed users have this set
       emailToken: 'initial email token',
       username: 'user_unconfirmed',
-      displayUsername: 'user_unconfirmed',
       password: 'M3@n.jsI$Aw3$0m3',
       provider: 'local',
       welcomeSequenceStep: 0,
@@ -80,7 +79,6 @@ describe('Job: welcome sequence, first email', function () {
       displayName: 'Full Name',
       email: 'confirmed-test@test.com',
       username: 'user_confirmed',
-      displayUsername: 'user_confirmed',
       password: 'M3@n.jsI$Aw3$0m4',
       provider: 'local',
       welcomeSequenceStep: 0,

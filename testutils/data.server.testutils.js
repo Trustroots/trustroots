@@ -40,7 +40,6 @@ function generateUsers(count, { username='username', firstName='GivenName', last
     lastName: lastName + i,
     email: i + email,
     username: username + i,
-    displayUsername: username + i,
     locale,
     password: password || crypto.randomBytes(24).toString('base64')
   }));

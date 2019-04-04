@@ -53,7 +53,6 @@ describe('User signup and authentication CRUD tests', function () {
       email: 'test@example.org',
       emailToken: 'initial email token',
       username: confirmedCredentials.username.toLowerCase(),
-      displayUsername: confirmedCredentials.username,
       password: confirmedCredentials.password,
       provider: 'local'
     };
@@ -80,7 +79,6 @@ describe('User signup and authentication CRUD tests', function () {
       emailTemporary: 'unconfirmed-test@example.org', // unconfirmed users have this set
       emailToken: 'initial email token',
       username: unConfirmedCredentials.username.toLowerCase(),
-      displayUsername: unConfirmedCredentials.username,
       password: unConfirmedCredentials.password,
       provider: 'local',
       acquisitionStory: 'A fish told me...'
@@ -107,7 +105,6 @@ describe('User signup and authentication CRUD tests', function () {
         }
         signupRes.body.username.should.equal(_unConfirmedUser.username.toLowerCase());
         signupRes.body.username.should.not.equal(_unConfirmedUser.username);
-        signupRes.body.displayUsername.should.equal(_unConfirmedUser.username);
         signupRes.body.email.should.equal(_unConfirmedUser.email);
         signupRes.body.emailTemporary.should.equal(_unConfirmedUser.email);
         signupRes.body.provider.should.equal('local');
