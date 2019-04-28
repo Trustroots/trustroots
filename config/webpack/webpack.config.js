@@ -31,8 +31,9 @@ module.exports = merge(shims, {
           options: {
             presets: [
               ['@babel/preset-env', {
-                useBuiltIns: 'usage',
-                modules: 'commonjs'
+                corejs: 2,
+                modules: 'commonjs',
+                useBuiltIns: 'usage'
               }],
               ['@babel/preset-react']
             ],
