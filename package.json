@@ -216,6 +216,7 @@
     "ngreact": "~0.5.1",
     "nodemailer-stub-transport": "~1.1.0",
     "nodemon": "~1.18.9",
+    "npm-merge-driver": "~2.3.5",
     "promise": "~8.0.2",
     "proxyquire": "~2.1.0",
     "semver": "~5.6.0",
