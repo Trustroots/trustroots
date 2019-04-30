@@ -14,11 +14,7 @@
     "mongodb": ">=3.6 <=4.0"
   },
   "browserslist": [
-    "last 2 versions",
-    "Safari >= 10",
-    "iOS >= 10",
-    "not ie <= 10",
-    "> 1%"
+    "extends @wordpress/browserslist-config"
   ],
   "scripts": {
     "agenda-maintenance": "node ./bin/db-maintenance/archive-done-agenda-jobs.js",
@@ -187,6 +183,7 @@
     "@babel/plugin-proposal-object-rest-spread": "~7.4.4",
     "@babel/preset-env": "~7.4.4",
     "@babel/preset-react": "~7.0.0",
+    "@wordpress/browserslist-config": "~2.3.0",
     "agendash": "~1.0.0",
     "babel-loader": "~8.0.5",
     "babel-plugin-angularjs-annotate": "~0.10.0",
