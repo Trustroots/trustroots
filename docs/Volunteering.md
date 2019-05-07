@@ -31,6 +31,6 @@ Some of the easiest ways to help *right now* are:
 
 If you write a post about Trustroots on your blog, definitely [let us know](https://www.trustroots.org/contact) so that we can share it.
 
-If you're still not sure and just want to chat to some humans, introduce yourself in our [volunteer chat](Chat.md). <!-- on our [volunteer forum](https://meta.trustroots.org/). --> All are welcome and we'll be happy to help you get started.
+If you're still not sure and just want to chat to some humans, introduce yourself in our [volunteer chat](Chat.md). All are welcome and we'll be happy to help you get started.
 
 _Thanks for helping out, we really appreciate it!_ ❤️
