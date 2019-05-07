@@ -52,9 +52,6 @@ title: Trustroots Team Guide
 
 ## More information
 - [Privacy Policy](Privacy-Policy.md)
-<!--
-- Project discussions at [meta.trustroots.org](https://meta.trustroots.org/)
--->
 - Logos and other graphics from [media repository](https://github.com/trustroots/media)
 - [Trustroots in Media](https://www.trustroots.org/media)
 
@@ -74,7 +71,4 @@ Is Trustroots.org down or is it just me? Check
 
 - [Contact us via our support form](https://www.trustroots.org/contact).
 - We are using [chat](Chat.md) for volunteer, day-to-day communications.
-<!--
-- For generic, async project conversations that are open for everyone head over to [meta forums](https://meta.trustroots.org/).
--->
 - It's also great if you join the [hacker tribe](https://www.trustroots.org/tribes/hackers)!
