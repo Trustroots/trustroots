@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import { searchUsers } from '../api/search.api';
-import { AdminHeader } from './AdminHeader.component.js';
+import AdminHeader from './AdminHeader.component.js';
 
 export default class AdminSearchUsers extends Component {
-
   constructor(props) {
     super(props);
     this.searchUserQuery = this.searchUserQuery.bind(this);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AdminHeader } from './AdminHeader.component.js';
+import AdminHeader from './AdminHeader.component.js';
 
 export default function Admin() {
   return (
