@@ -1,11 +1,11 @@
-import React from 'react';
-import { searchUsers } from './search.api';
+import React, { Component } from 'react';
+import { searchUsers } from '../api/search.api';
+import { AdminHeader } from './AdminHeader.component.js';
 
-export default class AdminSearchUsers extends React.Component {
+export default class AdminSearchUsers extends Component {
 
   constructor(props) {
     super(props);
-    // FYI, this is magic
     this.searchUserQuery = this.searchUserQuery.bind(this);
     this.state = { userResults: [] };
   }
@@ -13,36 +13,50 @@ export default class AdminSearchUsers extends React.Component {
   async searchUserQuery(event) {
     const query = event.target.value;
     const userResults = await searchUsers(query);
-    if (query.length > 5) {
+    if (query.length > 3) {
       this.setState(() => ({ userResults }));
     }
   }
 
-  render() { return (
-    <>
+  render() {
+    return (
       <div className="container container-spacer">
+        <AdminHeader />
 
-        <a href="/admin">/admin</a>
+        <h2>Search users</h2>
 
-        <h2>Trustroots admin search users</h2>
+        <label>Name, username or email
+          <input type="search" onChange={this.searchUserQuery} />
+        </label>
 
-        <p>Search users without regexp</p>
+        { this.state.userResults.length && (
+          <div id="search-users-results">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                {this.state.userResults.map(({ _id, displayName, email, username }) =>
+                  <tr key={_id}>
+                    <td><a href={'/profile/' + username}>{ username }</a></td>
+                    <td>{displayName}</td>
+                    <td>{email}</td>
+                    <td><code>{_id}</code></td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
 
-        <input type="search" onChange={this.searchUserQuery} />
-
-        <div id="search-users-results">
-          <table className="table">
-            <tr><th>username</th><th>name</th><th>email</th><th>id</th></tr>
-            {this.state.userResults.map((user) =>
-              <tr key={user.username}><td><a href={'/profile/' + user.username}>{ user.username }</a></td> <td>{user.displayName}</td> <td>{user.email}</td> <td>{user._id}</td></tr>)}
-          </table>
-
-        </div>
+          </div>
+        )}
       </div>
-    </>
-  );};
+    );
+  };
 }
-
-
 
 AdminSearchUsers.propTypes = {};
