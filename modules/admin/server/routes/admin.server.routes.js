@@ -1,13 +1,13 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var adminPolicy = require('../policies/admin.server.policy'),
-    userProfile = require('../controllers/admin.profile.server.controller');
+const adminPolicy = require('../policies/admin.server.policy');
+const adminUsers = require('../controllers/admin.users.server.controller');
 
-module.exports = function (app) {
-
+module.exports = (app) => {
   app.route('/api/admin/users').all(adminPolicy.isAllowed)
-    .get(userProfile.adminSearch);
+    .get(adminUsers.searchUsers);
+
+  app.route('/api/admin/user').all(adminPolicy.isAllowed)
+    .get(adminUsers.getUser);
 };
