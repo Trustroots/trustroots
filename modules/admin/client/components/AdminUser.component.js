@@ -1,5 +1,5 @@
 // External dependencies
-// import { debounce } from 'lodash';
+import { debounce } from 'lodash';
 import React, { Component } from 'react';
 
 // Internal dependencies
@@ -10,7 +10,7 @@ import AdminUserPreview from './AdminUserPreview.component.js';
 export default class AdminUser extends Component {
   constructor(props) {
     super(props);
-    this.onIdChange = this.onIdChange.bind(this);
+    this.onIdChange = debounce(this.onIdChange.bind(this), 500);
     this.state = { user: false };
   }
 
@@ -26,7 +26,9 @@ export default class AdminUser extends Component {
 
   onIdChange(event) {
     const { value } = event.target;
-    this.queryUser(value);
+    this.setState({ user: false }, () => {
+      this.queryUser(value);
+    });
   }
 
   async queryUser(id='') {
@@ -51,7 +53,7 @@ export default class AdminUser extends Component {
             User ID<br/>
             <input
               className="form-control input-lg"
-              onChange={ this.onIdChange }
+              onChange={ () => this.onIdChange(event) }
               type="search"
             />
           </label>

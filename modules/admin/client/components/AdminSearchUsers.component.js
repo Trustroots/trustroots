@@ -1,4 +1,5 @@
 // External dependencies
+import { debounce } from 'lodash';
 import classnames from 'classnames';
 import React, { Component } from 'react';
 
@@ -24,9 +25,8 @@ export function showUserRoles(roles) {
 export default class AdminSearchUsers extends Component {
   constructor(props) {
     super(props);
-    this.onSearchChange = this.onSearchChange.bind(this);
+    this.onSearchChange = debounce(this.onSearchChange.bind(this), 500);
     this.showUser = this.showUser.bind(this);
-    // this.onSearchChange = debounce(this.onSearchChange, 500);
     this.state = {
       userResults: [],
       user: false
@@ -86,7 +86,7 @@ export default class AdminSearchUsers extends Component {
             Name, username or email<br/>
             <input
               className="form-control input-lg"
-              onChange={ this.onSearchChange }
+              onChange={ () => this.onSearchChange(event) }
               type="search"
             />
           </label>
