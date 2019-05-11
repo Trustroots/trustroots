@@ -2,6 +2,7 @@
  * Module dependencies.
  */
 const _ = require('lodash');
+const escapeStringRegexp = require('escape-string-regexp');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 
@@ -18,7 +19,7 @@ exports.searchUsers = (req, res, next) => {
     });
   }
 
-  const regexpSearch = new RegExp('.*' + search + '.*', 'i');
+  const regexpSearch = new RegExp('.*' + escapeStringRegexp(search) + '.*', 'i');
 
   User
     .find({ $or: [
