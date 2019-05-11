@@ -42,10 +42,10 @@ export default class AdminSearchUsers extends Component {
 
   async componentDidMount() {
     const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('query');
+    const search = urlParams.get('search');
 
-    if (query) {
-      this.doSearchQuery(query);
+    if (search) {
+      this.doSearch(search);
     }
   }
 
@@ -56,12 +56,12 @@ export default class AdminSearchUsers extends Component {
 
   onSearchChange(event) {
     const { value } = event.target;
-    this.doSearchQuery(value);
+    this.doSearch(value);
   }
 
-  async doSearchQuery(query='') {
-    if (query.length >= 3) {
-      const userResults = await searchUsers(query);
+  async doSearch(search='') {
+    if (search.length >= 3) {
+      const userResults = await searchUsers(search);
       this.setState(() => ({ userResults }));
     }
   }

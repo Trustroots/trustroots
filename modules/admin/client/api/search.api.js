@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-export async function searchUsers(query) {
-  const { data } = await axios.post('/api/admin/users', { 'search': query });
+export async function searchUsers(search) {
+  const { data } = await axios.post('/api/admin/users', { search });
   return data;
 }
 
