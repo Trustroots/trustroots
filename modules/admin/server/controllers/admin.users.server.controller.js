@@ -93,6 +93,11 @@ exports.getUser = (req, res) => {
     .findById(userId)
     // Avoid pulling in sensitive fields from Mongoose
     .select('-password -salt')
+    .populate({
+      path: 'member.tribe',
+      select: 'slug label',
+      model: 'Tribe'
+    })
     .exec((err, user) => {
       if (err) {
         return res.status(400).send({
