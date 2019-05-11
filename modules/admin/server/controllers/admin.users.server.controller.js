@@ -10,7 +10,7 @@ const User = mongoose.model('User');
  * This middleware sends response with an array of found users
  */
 exports.searchUsers = (req, res, next) => {
-  const search = _.get(req, ['query', 'search']);
+  const search = _.get(req, ['body', 'search']);
 
   // Validate the query string
   if (!search || search.length < 3) {
@@ -42,7 +42,7 @@ exports.searchUsers = (req, res, next) => {
  * This middleware sends response with an array of found users
  */
 exports.getUser = (req, res, next) => {
-  const userId = _.get(req, ['query', 'id']);
+  const userId = _.get(req, ['body', 'id']);
 
   // Check that the search string is provided
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {

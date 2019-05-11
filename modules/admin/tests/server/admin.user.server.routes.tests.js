@@ -84,7 +84,8 @@ describe('Admin CRUD tests', () => {
 
   describe('Search users', () => {
     it('non-authenticated users should not be allowed to search', (done) => {
-      agent.get('/api/admin/users/?search=Name')
+      agent.post('/api/admin/users')
+        .send({ 'search': 'Name' })
         .expect(403)
         .end((err, res) => {
           res.body.message.should.equal('Forbidden.');
@@ -101,7 +102,8 @@ describe('Admin CRUD tests', () => {
             return done(signinErr);
           }
 
-          agent.get('/api/admin/users/?search=Name')
+          agent.post('/api/admin/users')
+            .send({ 'search': 'Name' })
             .expect(403)
             .end((err, res) => {
               res.body.message.should.equal('Forbidden.');
@@ -119,7 +121,8 @@ describe('Admin CRUD tests', () => {
             return done(signinErr);
           }
 
-          agent.get('/api/admin/users/?search=Name')
+          agent.post('/api/admin/users')
+            .send({ 'search': 'Name' })
             .expect(200)
             .end((err, res) => {
               res.body.length.should.equal(2);
@@ -145,7 +148,8 @@ describe('Admin CRUD tests', () => {
             return done(signinErr);
           }
 
-          agent.get('/api/admin/users/?search=user-regular')
+          agent.post('/api/admin/users')
+            .send({ 'search': 'user-regular' })
             .expect(200)
             .end((err, res) => {
               res.body.length.should.equal(1);
@@ -166,7 +170,8 @@ describe('Admin CRUD tests', () => {
             return done(signinErr);
           }
 
-          agent.get('/api/admin/users/?search=regular@example.com')
+          agent.post('/api/admin/users')
+            .send({ 'search': 'regular@example.com' })
             .expect(200)
             .end((err, res) => {
               res.body.length.should.equal(1);
@@ -181,7 +186,8 @@ describe('Admin CRUD tests', () => {
 
   describe('Get user by ID', () => {
     it('non-authenticated users should not be allowed to query', (done) => {
-      agent.get('/api/admin/user/?id=' + userRegularId)
+      agent.post('/api/admin/user')
+        .send({ id: userRegularId })
         .expect(403)
         .end((err, res) => {
           res.body.message.should.equal('Forbidden.');
@@ -198,7 +204,8 @@ describe('Admin CRUD tests', () => {
             return done(signinErr);
           }
 
-          agent.get('/api/admin/user/?id=' + userRegularId)
+          agent.post('/api/admin/user')
+            .send({ id: userRegularId })
             .expect(403)
             .end((err, res) => {
               res.body.message.should.equal('Forbidden.');
@@ -216,7 +223,8 @@ describe('Admin CRUD tests', () => {
             return done(signinErr);
           }
 
-          agent.get('/api/admin/user/?id=' + userRegularId)
+          agent.post('/api/admin/user')
+            .send({ id: userRegularId })
             .expect(200)
             .end((err, res) => {
               res.body.username.should.equal('user-regular');
@@ -236,7 +244,8 @@ describe('Admin CRUD tests', () => {
             return done(signinErr);
           }
 
-          agent.get('/api/admin/user/?id=')
+          agent.post('/api/admin/user')
+            .send({ id: '' })
             .expect(400)
             .end((err, res) => {
               res.body.message.should.equal('Invalid or missing ID.');
@@ -254,7 +263,8 @@ describe('Admin CRUD tests', () => {
             return done(signinErr);
           }
 
-          agent.get('/api/admin/user/?id=123')
+          agent.post('/api/admin/user')
+            .send({ id: '123' })
             .expect(400)
             .end((err, res) => {
               res.body.message.should.equal('Invalid or missing ID.');

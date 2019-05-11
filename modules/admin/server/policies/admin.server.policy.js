@@ -16,8 +16,8 @@ exports.invokeRolesPolicies = () => {
   aclInstance.allow([{
     roles: ['admin'],
     allows: [
-      { resources: '/api/admin/user', permissions: ['get'] },
-      { resources: '/api/admin/users', permissions: ['get'] }
+      { resources: '/api/admin/user', permissions: ['post'] },
+      { resources: '/api/admin/users', permissions: ['post'] }
     ]
   }]);
 };
