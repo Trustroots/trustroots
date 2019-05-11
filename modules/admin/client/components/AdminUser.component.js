@@ -6,36 +6,53 @@ import { getUser } from '../api/users.api';
 import AdminHeader from './AdminHeader.component.js';
 import UserState from './UserState.component.js';
 
+// Mongo ObjectId is always 24 chars long
+const MONGO_OBJECT_ID_LENGTH = 24;
+
 export default class AdminUser extends Component {
   constructor(props) {
     super(props);
     this.onIdChange = this.onIdChange.bind(this);
-    this.state = { user: false };
+    this.queryUser = this.queryUser.bind(this);
+    this.state = { id: '', user: false };
   }
 
   componentDidMount() {
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
 
-    // Mongoose ObjectId is always 24 chars long
-    if (id && id.length === 24) {
-      this.queryUser(id);
+    if (id && id.length === MONGO_OBJECT_ID_LENGTH) {
+      this.setState({ id }, this.queryUser);
     }
   }
 
   onIdChange(event) {
-    const { value } = event.target;
-    this.setState({ user: false }, () => {
-      this.queryUser(value);
-    });
+    const id = event.target.value;
+    this.setState({ id });
+
+    // Update URL
+    const url = new URL(document.location);
+    url.searchParams.set('id', id);
+    window.history.pushState(
+      { id },
+      window.document.title,
+      url.toString()
+    );
   }
 
-  async queryUser(id='') {
-    // Mongoose ObjectId is always 24 chars long
-    if (id.length === 24) {
-      const user = await getUser(id);
-      this.setState(() => ({ user }));
+  queryUser(event) {
+    if (event) {
+      event.preventDefault();
     }
+
+    const { id } = this.state;
+
+    this.setState({ user: false }, async () => {
+      if (id.length === MONGO_OBJECT_ID_LENGTH) {
+        const user = await getUser(id);
+        this.setState({ user });
+      }
+    });
   }
 
   render() {
@@ -48,14 +65,26 @@ export default class AdminUser extends Component {
 
           <h2>Show user</h2>
 
-          <label>
-            User ID<br/>
-            <input
-              className="form-control input-lg"
-              onChange={ this.onIdChange }
-              type="search"
-            />
-          </label>
+          <form onSubmit={ this.queryUser } className="form-inline">
+            <label>
+              User ID<br/>
+              <input
+                className="form-control input-lg"
+                onChange={ this.onIdChange }
+                size={ MONGO_OBJECT_ID_LENGTH + 2 }
+                maxLength={ MONGO_OBJECT_ID_LENGTH }
+                type="text"
+                value={ this.state.id }
+              />
+            </label>
+            <button
+              className="btn btn-lg btn-default"
+              disabled={ this.state.id.length !== MONGO_OBJECT_ID_LENGTH }
+              type="submit"
+            >
+              Show
+            </button>
+          </form>
 
           { user && (
             <div className="panel panel-default">

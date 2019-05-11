@@ -1,5 +1,4 @@
 // External dependencies
-import classnames from 'classnames';
 import React, { Component } from 'react';
 
 // Internal dependencies
@@ -8,14 +7,17 @@ import AdminHeader from './AdminHeader.component.js';
 import UserState from './UserState.component.js';
 import ZendeskInboxSearch from './ZendeskInboxSearch.component.js';
 
-// Maximum limit API will return
-const limit = 50;
+// Limitations set in the API
+const SEARCH_USERS_LIMIT = 50;
+const SEARCH_STRING_LIMIT = 3;
 
 export default class AdminSearchUsers extends Component {
   constructor(props) {
     super(props);
     this.onSearchChange = this.onSearchChange.bind(this);
+    this.doSearch = this.doSearch.bind(this);
     this.state = {
+      search: '',
       userResults: []
     };
   }
@@ -23,21 +25,33 @@ export default class AdminSearchUsers extends Component {
   componentDidMount() {
     const urlParams = new URLSearchParams(window.location.search);
     const search = urlParams.get('search');
-
     if (search) {
-      this.doSearch(search);
+      this.setState({ search }, this.doSearch);
     }
   }
 
   onSearchChange(event) {
-    const { value } = event.target;
-    this.doSearch(value);
+    const search = event.target.value;
+    this.setState({ search });
+
+    // Update URL
+    const url = new URL(document.location);
+    url.searchParams.set('search', search);
+    window.history.pushState(
+      { search },
+      window.document.title,
+      url.toString()
+    );
   }
 
-  async doSearch(search='') {
-    if (search.length >= 3) {
+  async doSearch(event) {
+    if (event) {
+      event.preventDefault();
+    }
+    const { search } = this.state;
+    if (search.length >= SEARCH_STRING_LIMIT) {
       const userResults = await searchUsers(search);
-      this.setState(() => ({ userResults }));
+      this.setState({ userResults });
     }
   }
 
@@ -48,16 +62,26 @@ export default class AdminSearchUsers extends Component {
       <>
         <AdminHeader />
         <div className="container">
-          <h2 className="font-brand-light">Search users</h2>
+          <h2>Search users</h2>
 
-          <label>
-            Name, username or email<br/>
-            <input
-              className="form-control input-lg"
-              onChange={ this.onSearchChange }
-              type="search"
-            />
-          </label>
+          <form onSubmit={ this.doSearch } className="form-inline">
+            <label>
+              Name, username or email<br/>
+              <input
+                className="form-control input-lg"
+                type="search"
+                value={ this.state.search }
+                onChange={ this.onSearchChange }
+              />
+            </label>
+            <button
+              className="btn btn-lg btn-default"
+              disabled={ this.state.search.length < SEARCH_STRING_LIMIT }
+              type="submit"
+            >
+              Search
+            </button>
+          </form>
 
           { userResults.length ? (
             <div className="panel panel-default">
@@ -74,7 +98,7 @@ export default class AdminSearchUsers extends Component {
                   <tbody>
                     {
                       userResults.map((user) => {
-                        const { _id, displayName, email, emailTemporary, roles, username } = user;
+                        const { _id, displayName, email, emailTemporary, username } = user;
                         return (
                           <tr key={_id}>
                             <td className="admin-search-users__actions">
@@ -113,7 +137,7 @@ export default class AdminSearchUsers extends Component {
               </div>
               <div className="panel-footer">
                 { userResults.length } user(s).
-                { userResults.length === limit && <p className="text-warning">There might be more results but { limit } is maximum.</p>}
+                { userResults.length === SEARCH_USERS_LIMIT && <p className="text-warning">There might be more results but { SEARCH_USERS_LIMIT } is maximum.</p>}
               </div>
             </div>
           ) : <p><br/><em className="text-muted">Search something...</em></p> }

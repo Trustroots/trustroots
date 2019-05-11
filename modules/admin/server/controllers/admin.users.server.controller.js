@@ -8,6 +8,9 @@ const escapeStringRegexp = require('escape-string-regexp');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 
+const SEARCH_USERS_LIMIT = 50;
+const SEARCH_STRING_LIMIT = 3;
+
 /**
  * Overwrite tokens from results as a security measure.
  * We still want to pull this info to know if it's there.
@@ -32,9 +35,9 @@ exports.searchUsers = (req, res) => {
   const search = _.get(req, ['body', 'search']);
 
   // Validate the query string
-  if (!search || search.length < 3) {
+  if (!search || search.length < SEARCH_STRING_LIMIT) {
     return res.status(400).send({
-      message: 'Query string at least 3 characters long required.'
+      message: `Query string at least ${ SEARCH_STRING_LIMIT } characters long required.`
     });
   }
 
@@ -62,7 +65,7 @@ exports.searchUsers = (req, res) => {
       'username'
     ])
     .sort('username displayName')
-    .limit(50)
+    .limit(SEARCH_USERS_LIMIT)
     .exec((err, users) => {
       if (err) {
         return res.status(400).send({
