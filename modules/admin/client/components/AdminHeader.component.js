@@ -3,7 +3,7 @@ import classnames from 'classnames';
 import React from 'react';
 
 // Internal dependencies
-import adminIcon from '../../../core/client/icons/baseline-feedback.svg';
+import adminIcon from '../images/bmo.png';
 
 export default function AdminHeader() {
   const path = window.location.pathname;
@@ -14,7 +14,7 @@ export default function AdminHeader() {
         <div className="container">
           <div className="navbar-header">
             <a className="navbar-brand" href="/admin" aria-label="Admin dash index">
-              <img src={ adminIcon } alt="" aria-hidden="true" focusable="false" />
+              <img src={ adminIcon } height="24" alt="" aria-hidden="true" focusable="false" />
             </a>
           </div>
           <ul className="nav navbar-nav">

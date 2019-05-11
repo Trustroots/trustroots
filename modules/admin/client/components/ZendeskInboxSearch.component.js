@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
-import zendeskInboxIcon from '../../../core/client/icons/zendesk-inbox.svg';
+import zendeskInboxIcon from '../images/zendesk-inbox.svg';
 
 export default function ZendeskInboxSearch({ className, q }) {
   return (
