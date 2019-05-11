@@ -15,11 +15,18 @@ const limit = 50;
 export function showUserRoles(roles) {
   return roles
     .filter((role) => role !== 'user')
-    .map((role) => (
-      <span className="label label-default admin-user-role" key={ role }>
-        { role }
-      </span>
-    ));
+    .map((role) => {
+      const classes = classnames('label admin-label', {
+        'label-danger': role === 'suspended',
+        'label-success': role === 'admin'
+      });
+
+      return (
+        <span className={ classes } key={ role }>
+          { role }
+        </span>
+      );
+    });
 }
 
 export default class AdminSearchUsers extends Component {
@@ -100,7 +107,6 @@ export default class AdminSearchUsers extends Component {
                       <th>Username</th>
                       <th>Name</th>
                       <th>Email</th>
-                      <th>Public</th>
                       <th>ID</th>
                     </tr>
                   </thead>
@@ -116,6 +122,7 @@ export default class AdminSearchUsers extends Component {
                             <td>
                               <a href={'/profile/' + username} title="Profile on Trustroots">{ username }</a>
                               { showUserRoles(roles) }
+                              { !user.public && <span className="label label-danger admin-label">Not public</span> }
                               <button
                                 className="btn btn-link btn-sm admin-hidden-until-hover"
                                 onClick={ () => this.showUser(_id) }
@@ -132,7 +139,6 @@ export default class AdminSearchUsers extends Component {
                               { email }
                               <ZendeskInboxSearch className="admin-hidden-until-hover" q={ email } />
                             </td>
-                            <td>{ user.public ? (<span title="Yep">✅</span>) : (<span title="Nope">🔴</span>) }</td>
                             <td><small><code style={ { 'userSelect': 'all' } }>{ _id }</code></small></td>
                           </tr>
                         );
