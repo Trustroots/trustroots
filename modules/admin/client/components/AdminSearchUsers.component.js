@@ -1,5 +1,4 @@
 // External dependencies
-import { debounce } from 'lodash';
 import classnames from 'classnames';
 import React, { Component } from 'react';
 
@@ -15,7 +14,7 @@ const limit = 50;
 export default class AdminSearchUsers extends Component {
   constructor(props) {
     super(props);
-    this.onSearchChange = debounce(this.onSearchChange.bind(this), 500);
+    this.onSearchChange = this.onSearchChange.bind(this);
     this.state = {
       userResults: []
     };
@@ -55,7 +54,7 @@ export default class AdminSearchUsers extends Component {
             Name, username or email<br/>
             <input
               className="form-control input-lg"
-              onChange={ () => this.onSearchChange(event) }
+              onChange={ this.onSearchChange }
               type="search"
             />
           </label>
