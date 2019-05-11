@@ -12,7 +12,7 @@
     .config(initConfig);
 
   /* @ngInject */
-  function initConfig(lockerProvider, cfpLoadingBarProvider, $locationProvider, $urlMatcherFactoryProvider, $messageCenterServiceProvider, $compileProvider, $uibTooltipProvider) {
+  function initConfig(lockerProvider, cfpLoadingBarProvider, $locationProvider, $urlMatcherFactoryProvider, $compileProvider, $uibTooltipProvider) {
 
     // Setting HTML5 Location Mode
     $locationProvider.html5Mode({
@@ -39,9 +39,6 @@
       eventsEnabled: false,
       extend: {}
     });
-
-    // Default timeout for success, error etc messages
-    $messageCenterServiceProvider.setGlobalOptions({ timeout: 6000 });
 
     // Disabling Debug Data for production environment
     // @link https://docs.angularjs.org/guide/production
