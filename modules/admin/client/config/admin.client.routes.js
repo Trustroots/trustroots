@@ -13,6 +13,8 @@
         url: '/admin',
         template: '<admin></admin>', // This should be lowercase
         requiresRole: 'admin',
+        requiresAuth: true,
+        footerHidden: true,
         data: {
           pageTitle: 'Admin'
         }
@@ -24,8 +26,23 @@
         // This is the bridge towards (and from) React
         template: '<admin-search-users></admin-search-users>',
         requiresRole: 'admin',
+        requiresAuth: true,
+        footerHidden: true,
         data: {
-          pageTitle: 'Admin: Search users'
+          pageTitle: 'Admin - Search users'
+        }
+      }).
+      state('admin-user', {
+        url: '/admin/user',
+        // `template` is Angular state so
+        // it should be lowercase, with dashes
+        // This is the bridge towards (and from) React
+        template: '<admin-user></admin-user>',
+        requiresRole: 'admin',
+        requiresAuth: true,
+        footerHidden: true,
+        data: {
+          pageTitle: 'Admin - User'
         }
       });
 

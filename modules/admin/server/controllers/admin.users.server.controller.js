@@ -5,11 +5,6 @@ const _ = require('lodash');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 
-// Avoid pulling in sensitive fields from Mongoose
-// Passed to Mongoose's `select()`
-// https://mongoosejs.com/docs/api.html#schematype_SchemaType-select
-const userFields = '-password -salt';
-
 /*
  * This middleware sends response with an array of found users
  */
@@ -31,9 +26,9 @@ exports.searchUsers = (req, res, next) => {
       { 'username': regexpSearch },
       { 'displayName': regexpSearch }
     ] })
-    .select(userFields)
+    .select('_id email username displayName public roles')
     .sort('username displayName')
-    .limit(30)
+    .limit(50)
     .exec((err, users) => {
       if (err) {
         return next(err);
@@ -57,7 +52,8 @@ exports.getUser = (req, res, next) => {
 
   User
     .findById(userId)
-    .select(userFields)
+    // Avoid pulling in sensitive fields from Mongoose
+    .select('-password -salt')
     .exec((err, user) => {
       if (err) {
         return next(err);
