@@ -2,14 +2,33 @@
  * Module dependencies.
  */
 const _ = require('lodash');
+const path = require('path');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
 const escapeStringRegexp = require('escape-string-regexp');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 
+/**
+ * Overwrite tokens from results as a security measure.
+ * We still want to pull this info to know if it's there.
+ */
+function obfuscateWriteTokens(user) {
+  if (!user) {
+    return;
+  }
+  const message = '(Hidden from admins.)';
+  return {
+    ...user.toObject(),
+    ...(user.emailToken ? { emailToken: message } : {}),
+    ...(user.removeProfileToken ? { removeProfileToken: message } : {}),
+    ...(user.resetPasswordToken ? { resetPasswordToken: message } : {})
+  };
+}
+
 /*
  * This middleware sends response with an array of found users
  */
-exports.searchUsers = (req, res, next) => {
+exports.searchUsers = (req, res) => {
   const search = _.get(req, ['body', 'search']);
 
   // Validate the query string
@@ -23,31 +42,50 @@ exports.searchUsers = (req, res, next) => {
 
   User
     .find({ $or: [
+      { 'displayName': regexpSearch },
       { 'email': regexpSearch },
-      { 'username': regexpSearch },
-      { 'displayName': regexpSearch }
+      { 'emailTemporary': regexpSearch },
+      { 'username': regexpSearch }
     ] })
-    .select('_id email username displayName public roles')
+    // Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
+    .select([
+      '_id',
+      'displayName',
+      'email',
+      'emailTemporary',
+      'public',
+      'removeProfileExpires',
+      'removeProfileToken',
+      'resetPasswordExpires',
+      'resetPasswordToken',
+      'roles',
+      'username'
+    ])
     .sort('username displayName')
     .limit(50)
     .exec((err, users) => {
       if (err) {
-        return next(err);
+        return res.status(400).send({
+          message: errorService.getErrorMessage(err)
+        });
       }
-      return res.send(users || []);
+
+      const result = users ? users.map(obfuscateWriteTokens) : [];
+
+      return res.send(result);
     });
 };
 
-/*
+/**
  * This middleware sends response with an array of found users
  */
-exports.getUser = (req, res, next) => {
+exports.getUser = (req, res) => {
   const userId = _.get(req, ['body', 'id']);
 
   // Check that the search string is provided
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
-      message: 'Invalid or missing ID.'
+      message: errorService.getErrorMessageByKey('invalid-id')
     });
   }
 
@@ -57,8 +95,17 @@ exports.getUser = (req, res, next) => {
     .select('-password -salt')
     .exec((err, user) => {
       if (err) {
-        return next(err);
+        return res.status(400).send({
+          message: errorService.getErrorMessage(err)
+        });
       }
-      return res.send(user || {});
+
+      if (!user) {
+        return res.status(404).send({
+          message: errorService.getErrorMessageByKey('not-found')
+        });
+      }
+
+      return res.send(obfuscateWriteTokens(user));
     });
 };

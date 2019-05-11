@@ -4,54 +4,30 @@ import classnames from 'classnames';
 import React, { Component } from 'react';
 
 // Internal dependencies
-import { searchUsers, getUser } from '../api/search.api';
+import { searchUsers } from '../api/users.api';
 import AdminHeader from './AdminHeader.component.js';
-import AdminUserPreview from './AdminUserPreview.component.js';
+import UserState from './UserState.component.js';
 import ZendeskInboxSearch from './ZendeskInboxSearch.component.js';
 
 // Maximum limit API will return
 const limit = 50;
 
-export function showUserRoles(roles) {
-  return roles
-    .filter((role) => role !== 'user')
-    .map((role) => {
-      const classes = classnames('label admin-label', {
-        'label-danger': role === 'suspended',
-        'label-success': role === 'admin'
-      });
-
-      return (
-        <span className={ classes } key={ role }>
-          { role }
-        </span>
-      );
-    });
-}
-
 export default class AdminSearchUsers extends Component {
   constructor(props) {
     super(props);
     this.onSearchChange = debounce(this.onSearchChange.bind(this), 500);
-    this.showUser = this.showUser.bind(this);
     this.state = {
-      userResults: [],
-      user: false
+      userResults: []
     };
   }
 
-  async componentDidMount() {
+  componentDidMount() {
     const urlParams = new URLSearchParams(window.location.search);
     const search = urlParams.get('search');
 
     if (search) {
       this.doSearch(search);
     }
-  }
-
-  async showUser(id) {
-    const user = await getUser(id);
-    this.setState(() => ({ user }));
   }
 
   onSearchChange(event) {
@@ -67,27 +43,13 @@ export default class AdminSearchUsers extends Component {
   }
 
   render() {
-    const { userResults, user } = this.state;
+    const { userResults } = this.state;
 
     return (
       <>
         <AdminHeader />
         <div className="container">
           <h2 className="font-brand-light">Search users</h2>
-
-          { user && (
-              <>
-                <h3>{ user.username }</h3>
-                <button
-                  aria-label="Close"
-                  className="btn btn-lg pull-right"
-                  onClick={ () => this.setState({ user: false }) }
-                >
-                  <span aria-hidden="true">&times;</span>
-                </button>
-                <AdminUserPreview user={ user } />
-              </>
-          ) }
 
           <label>
             Name, username or email<br/>
@@ -101,7 +63,7 @@ export default class AdminSearchUsers extends Component {
           { userResults.length ? (
             <div className="panel panel-default">
               <div className="panel-body">
-                <table className="table table-striped">
+                <table className="table table-striped table-responsive">
                   <thead>
                     <tr>
                       <th>Username</th>
@@ -119,25 +81,24 @@ export default class AdminSearchUsers extends Component {
                             className={ classnames({ 'bg-danger': roles.includes('suspended') }) }
                             key={_id}
                           >
-                            <td>
+                            <td className="admin-search-users__actions">
                               <a href={'/profile/' + username} title="Profile on Trustroots">{ username }</a>
-                              { showUserRoles(roles) }
-                              { !user.public && <span className="label label-danger admin-label">Not public</span> }
-                              <button
-                                className="btn btn-link btn-sm admin-hidden-until-hover"
-                                onClick={ () => this.showUser(_id) }
+                              <UserState user={ user } />
+                              <ZendeskInboxSearch className="admin-action admin-hidden-until-hover" q={ username } />
+                              <a
+                                className="admin-action admin-hidden-until-hover"
+                                href={ `/admin/user?id=${ _id }` }
                               >
-                                Show
-                              </button>
-                              <ZendeskInboxSearch className="admin-hidden-until-hover" q={ username } />
+                                Show more
+                              </a>
                             </td>
                             <td>
                               { displayName }
-                              <ZendeskInboxSearch className="admin-hidden-until-hover" q={ displayName } />
+                              <ZendeskInboxSearch className="admin-action admin-hidden-until-hover" q={ displayName } />
                             </td>
                             <td>
                               { email }
-                              <ZendeskInboxSearch className="admin-hidden-until-hover" q={ email } />
+                              <ZendeskInboxSearch className="admin-action admin-hidden-until-hover" q={ email } />
                             </td>
                             <td><small><code style={ { 'userSelect': 'all' } }>{ _id }</code></small></td>
                           </tr>

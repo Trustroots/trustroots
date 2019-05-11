@@ -3,9 +3,9 @@ import { debounce } from 'lodash';
 import React, { Component } from 'react';
 
 // Internal dependencies
-import { getUser } from '../api/search.api';
+import { getUser } from '../api/users.api';
 import AdminHeader from './AdminHeader.component.js';
-import AdminUserPreview from './AdminUserPreview.component.js';
+import UserState from './UserState.component.js';
 
 export default class AdminUser extends Component {
   constructor(props) {
@@ -58,7 +58,14 @@ export default class AdminUser extends Component {
             />
           </label>
 
-          { user && <AdminUserPreview user={ user } /> }
+          { user && (
+            <div className="panel panel-default">
+              <div className="panel-body">
+                <UserState user={ user } />
+                <pre>{ JSON.stringify(user, null, 2) }</pre>
+              </div>
+            </div>
+          ) }
         </div>
       </>
     );
