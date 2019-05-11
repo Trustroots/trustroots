@@ -74,7 +74,7 @@ export default class AdminSearchUsers extends Component {
                   <tbody>
                     {
                       userResults.map((user) => {
-                        const { _id, displayName, email, roles, username } = user;
+                        const { _id, displayName, email, emailTemporary, roles, username } = user;
                         return (
                           <tr
                             className={ classnames({ 'bg-danger': roles.includes('suspended') }) }
@@ -98,6 +98,13 @@ export default class AdminSearchUsers extends Component {
                             <td>
                               { email }
                               <ZendeskInboxSearch className="admin-action admin-hidden-until-hover" q={ email } />
+                              { (emailTemporary && emailTemporary !== email) && (
+                                <>
+                                  <br/>
+                                  { emailTemporary } (temporary email)
+                                  <ZendeskInboxSearch className="admin-action admin-hidden-until-hover" q={ emailTemporary } />
+                                </>
+                              ) }
                             </td>
                             <td><small><code style={ { 'userSelect': 'all' } }>{ _id }</code></small></td>
                           </tr>
