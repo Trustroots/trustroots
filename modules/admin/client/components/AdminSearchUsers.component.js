@@ -76,10 +76,7 @@ export default class AdminSearchUsers extends Component {
                       userResults.map((user) => {
                         const { _id, displayName, email, emailTemporary, roles, username } = user;
                         return (
-                          <tr
-                            className={ classnames({ 'bg-danger': roles.includes('suspended') }) }
-                            key={_id}
-                          >
+                          <tr key={_id}>
                             <td className="admin-search-users__actions">
                               <a href={'/profile/' + username} title="Profile on Trustroots">{ username }</a>
                               <UserState user={ user } />
