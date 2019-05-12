@@ -88,7 +88,7 @@ export default class AdminUser extends Component {
 
           { user && (
             <>
-              <h3>{ user.displayName || user.username } report card</h3>
+              <h3>{ user.displayName || user.username || user._id } report card</h3>
               <div className="panel panel-default">
                 <div className="panel-body">
                   <UserState user={ user } />
