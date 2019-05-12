@@ -4,6 +4,7 @@ import React, { Component } from 'react';
 // Internal dependencies
 import { searchUsers } from '../api/users.api';
 import AdminHeader from './AdminHeader.component.js';
+import UserLink from './UserLink.component.js';
 import UserState from './UserState.component.js';
 import ZendeskInboxSearch from './ZendeskInboxSearch.component.js';
 
@@ -89,8 +90,8 @@ export default class AdminSearchUsers extends Component {
                 <table className="table table-striped table-responsive">
                   <thead>
                     <tr>
-                      <th>Username</th>
                       <th>Name</th>
+                      <th>Username</th>
                       <th>Email</th>
                       <th>ID</th>
                     </tr>
@@ -102,19 +103,20 @@ export default class AdminSearchUsers extends Component {
                         return (
                           <tr key={_id}>
                             <td className="admin-search-users__actions">
-                              <a href={'/profile/' + username} title="Profile on Trustroots">{ username }</a>
+                              <UserLink user={ user } />
                               <UserState user={ user } />
-                              <ZendeskInboxSearch className="admin-action admin-hidden-until-hover" q={ username } />
+                              <ZendeskInboxSearch className="admin-action admin-hidden-until-hover" q={ displayName } />
                               <a
                                 className="admin-action admin-hidden-until-hover"
-                                href={ `/admin/user?id=${ _id }` }
+                                href={ `/profile/${ username }` }
+                                title="Profile on Trustroots"
                               >
-                                Show more
+                                TR Profile
                               </a>
                             </td>
                             <td>
-                              { displayName }
-                              <ZendeskInboxSearch className="admin-action admin-hidden-until-hover" q={ displayName } />
+                              { username }
+                              <ZendeskInboxSearch className="admin-action admin-hidden-until-hover" q={ username } />
                             </td>
                             <td>
                               { email }
