@@ -32,7 +32,7 @@ function getRandInt(exclusiveMaximum) {
  * @param {string} [defs.password] - password (defaults to a random password)
  * @returns {object[]} array of user data
  */
-function generateUsers(count, { username='username', firstName='GivenName', lastName='FamilyName', email='user@example.com', locale='', public: pub, password }={ }) {
+function generateUsers(count, { username='username', firstName='GivenName', lastName='FamilyName', email='user@example.com', locale='', public: pub, roles=['user'], password }={ }) {
 
   return _.range(count).map(i => ({
     public: (typeof pub === 'boolean') ? pub : !getRandInt(2),
@@ -42,6 +42,7 @@ function generateUsers(count, { username='username', firstName='GivenName', last
     username: username + i,
     displayUsername: username + i,
     locale,
+    roles,
     password: password || crypto.randomBytes(24).toString('base64')
   }));
 }

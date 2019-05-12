@@ -28,7 +28,11 @@ export default function AdminHeader() {
               <a href="/admin/messages">Messages</a>
             </li>
           </ul>
-          <p className="navbar-text pull-right text-muted hidden-xs"><em>Admin dash</em></p>
+          <ul className="nav navbar-nav pull-right">
+            <li className={ classnames({ 'active': path === '/admin/audit-log' })}>
+              <a href="/admin/audit-log">Audit log</a>
+            </li>
+          </ul>
         </div>
       </nav>
     </>
