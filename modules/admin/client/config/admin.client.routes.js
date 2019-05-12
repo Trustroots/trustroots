@@ -19,6 +19,19 @@
           pageTitle: 'Admin'
         }
       }).
+      state('admin-messages', {
+        url: '/admin/messages',
+        // `template` is Angular state so
+        // it should be lowercase, with dashes
+        // This is the bridge towards (and from) React
+        template: '<admin-messages></admin-messages>',
+        requiresRole: 'admin',
+        requiresAuth: true,
+        footerHidden: true,
+        data: {
+          pageTitle: 'Admin - Messages'
+        }
+      }).
       state('admin-search-users', {
         url: '/admin/search-users',
         // `template` is Angular state so
