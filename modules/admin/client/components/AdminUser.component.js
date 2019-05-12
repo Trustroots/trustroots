@@ -63,7 +63,7 @@ export default class AdminUser extends Component {
         <AdminHeader />
         <div className="container">
 
-          <h2>Show user</h2>
+          <h2>User report card</h2>
 
           <form onSubmit={ this.queryUser } className="form-inline">
             <label>
@@ -87,12 +87,15 @@ export default class AdminUser extends Component {
           </form>
 
           { user && (
-            <div className="panel panel-default">
-              <div className="panel-body">
-                <UserState user={ user } />
-                <pre>{ JSON.stringify(user, null, 2) }</pre>
+            <>
+              <h3>{ user.displayName || user.username || user._id } report card</h3>
+              <div className="panel panel-default">
+                <div className="panel-body">
+                  <UserState user={ user } />
+                  <pre>{ JSON.stringify(user, null, 2) }</pre>
+                </div>
               </div>
-            </div>
+            </>
           ) }
         </div>
       </>

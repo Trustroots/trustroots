@@ -19,7 +19,7 @@ let userRegularId;
 /**
  * Offer routes tests
  */
-describe('Admin CRUD tests', () => {
+describe('Admin User CRUD tests', () => {
 
   before((done) => {
     // Get application
@@ -29,63 +29,59 @@ describe('Admin CRUD tests', () => {
     done();
   });
 
-  beforeEach((done) => {
-    // Create admin credentials
-    credentialsAdmin = {
-      username: 'user-admin',
-      password: 'Password123!'
-    };
+  beforeEach(async () => {
+    try {
+      // Create admin credentials
+      credentialsAdmin = {
+        username: 'user-admin',
+        password: 'Password123!'
+      };
 
-    // Create regular user credentials
-    credentialsRegular = {
-      username: 'user-regular',
-      password: 'Password123!'
-    };
+      // Create regular user credentials
+      credentialsRegular = {
+        username: 'user-regular',
+        password: 'Password123!'
+      };
 
-    // Create a new admin user
-    userAdmin = new User({
-      displayName: 'Admin Name',
-      email: 'admin@example.com',
-      emailToken: 'test-token',
-      firstName: 'Admin',
-      lastName: 'Name',
-      member: [],
-      provider: 'local',
-      public: true,
-      removeProfileToken: 'test-token',
-      resetPasswordToken: 'test-token',
-      roles: ['user', 'admin'],
-      ...credentialsAdmin
-    });
-
-    // Create a new regular user
-    userRegular = new User({
-      displayName: 'Full Name',
-      email: 'regular@example.com',
-      emailToken: 'test-token',
-      firstName: 'Full',
-      lastName: 'Name',
-      member: [],
-      provider: 'local',
-      public: true,
-      removeProfileToken: 'test-token',
-      resetPasswordToken: 'test-token',
-      roles: ['user'],
-      ...credentialsRegular
-    });
-
-    userAdmin.save((err) => {
-      if (err) {
-        return done(err);
-      }
-      userRegular.save((err, user) => {
-        if (err) {
-          return done(err);
-        }
-        userRegularId = user._id;
-        return done();
+      // Create a new admin user
+      userAdmin = new User({
+        displayName: 'Admin Name',
+        email: 'admin@example.com',
+        emailToken: 'test-token',
+        firstName: 'Admin',
+        lastName: 'Name',
+        member: [],
+        provider: 'local',
+        public: true,
+        removeProfileToken: 'test-token',
+        resetPasswordToken: 'test-token',
+        roles: ['user', 'admin'],
+        ...credentialsAdmin
       });
-    });
+
+      // Create a new regular user
+      userRegular = new User({
+        displayName: 'Full Name',
+        email: 'regular@example.com',
+        emailToken: 'test-token',
+        firstName: 'Full',
+        lastName: 'Name',
+        member: [],
+        provider: 'local',
+        public: true,
+        removeProfileToken: 'test-token',
+        resetPasswordToken: 'test-token',
+        roles: ['user'],
+        ...credentialsRegular
+      });
+
+      await userAdmin.save();
+      const { _id: _userRegularId } = await userRegular.save();
+      userRegularId = _userRegularId;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(err);
+    }
   });
 
   describe('Search users', () => {

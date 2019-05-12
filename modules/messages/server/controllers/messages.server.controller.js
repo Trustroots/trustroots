@@ -61,6 +61,7 @@ function sanitizeMessages(messages) {
 
   return messagesCleaned;
 }
+exports.sanitizeMessages = sanitizeMessages;
 
 /**
  * Sanitize threads
