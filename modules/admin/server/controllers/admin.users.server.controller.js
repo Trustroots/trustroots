@@ -19,13 +19,28 @@ function obfuscateWriteTokens(user) {
   if (!user) {
     return;
   }
-  const message = '(Hidden from admins.)';
-  return {
-    ...user.toObject(),
-    ...(user.emailToken ? { emailToken: message } : {}),
-    ...(user.removeProfileToken ? { removeProfileToken: message } : {}),
-    ...(user.resetPasswordToken ? { resetPasswordToken: message } : {})
-  };
+
+  // Mongo object to regular object
+  const _user = user.toObject();
+
+  [
+    'emailToken',
+    'removeProfileToken',
+    'resetPasswordToken',
+    // Arrays just to speed up lodash operations. That's what lodash does internally anyway
+    ['additionalProvidersData', 'facebook', 'accessToken'],
+    ['additionalProvidersData', 'facebook', 'refreshToken'],
+    ['additionalProvidersData', 'github', 'accessToken'],
+    ['additionalProvidersData', 'github', 'refreshToken'],
+    ['additionalProvidersData', 'twitter', 'token'],
+    ['additionalProvidersData', 'twitter', 'tokenSecret']
+  ].forEach((path) => {
+    if (_.has(_user, path)) {
+      _.set(_user, path, '(Hidden from admins.)');
+    }
+  });
+
+  return _user;
 }
 
 /*
