@@ -12,7 +12,7 @@ install:
 matrix:
   fast_finish: true
   include:
-    - node_js: 11
+    - node_js: 12
       env: $RUN="npm run test:server"
 # https://docs.travis-ci.com/user/reference/overview/#Virtualisation-Environment-vs-Operating-System
 dist: trusty

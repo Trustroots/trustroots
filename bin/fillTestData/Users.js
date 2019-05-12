@@ -1,23 +1,26 @@
 'use strict';
 
-var _ = require('lodash'),
-    path = require('path'),
-    mongooseService = require(path.resolve('./config/lib/mongoose')),
-    chalk = require('chalk'),
-    yargs = require('yargs'),
-    faker = require('faker'),
-    fs = require('fs'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    async = require('async'),
-    config = require(path.resolve('./config/config')),
-    cities = JSON.parse(fs.readFileSync(path.resolve('./bin/fillTestData/data/Cities.json'), 'utf8')),
-    savedUsers = 0,
-    savedOffers = 0;
+/**
+ * Required dependencies
+ */
+const _ = require('lodash'),
+      path = require('path'),
+      mongooseService = require(path.resolve('./config/lib/mongoose')),
+      chalk = require('chalk'),
+      yargs = require('yargs'),
+      faker = require('faker'),
+      moment = require('moment'),
+      mongoose = require('mongoose'),
+      config = require(path.resolve('./config/config')),
+      cities = require(path.resolve('./bin/fillTestData/data/Cities.json'));
 
 require(path.resolve('./modules/offers/server/models/offer.server.model'));
 
-var argv = yargs.usage('$0 <numberOfUsers>', 'Seed database with number of tribes', function (yargs) {
+
+/**
+ * Configure the script usage using yargs to obtain parameters and enforce usage.
+ */
+const argv = yargs.usage('$0 <numberOfUsers>', 'Seed database with number of tribes', function (yargs) {
   return yargs
     .positional('numberOfUsers', {
       describe: 'Number of users to add',
@@ -43,68 +46,109 @@ var argv = yargs.usage('$0 <numberOfUsers>', 'Seed database with number of tribe
     .yargs;
 }).argv;
 
-var Offer = mongoose.model('Offer');
 
-var random = function (max) {
+/**
+ * Globals
+ */
+let savedUsers = 0,
+    savedOffers = 0;
+const Offer = mongoose.model('Offer');
+
+
+/**
+ * Generates a random integer between 0 and max - 1 inclusively
+ *
+ * @param {number} max The max value to use to generate the random integer
+ * @returns random integer between 0 and max - 1
+ */
+function random(max) {
   return Math.floor(Math.random() * max);
-};
+}
 
-var randomizeLoaction = function () {
-  var random = Math.random();
+
+/**
+ * Generates a random float value for locations
+ *
+ * @returns {float}
+ */
+function randomizeLocation() {
+  let random = Math.random();
   if (random > 0.98) {
     random = ((Math.random() - 0.5) * Math.random() * 4) - 1;
   } else {
     random = random / 10000 - 0.00005;
   }
   return parseFloat(random.toFixed(5));
-};
+}
 
-var printSummary = function (countExisting, countSaved) {
+
+/**
+ * Prints the final summary of how many users were saved
+ *
+ * @param {number} countExisting
+ * @param {number} countSaved
+ */
+function printSummary(countExisting, countSaved) {
   console.log('');
   console.log(chalk.green(countExisting + ' users existed in the database.'));
   console.log(chalk.green(countSaved + ' users successfully added.'));
   console.log(chalk.green('Database now contains ' + (countExisting + countSaved) + ' users.'));
   console.log(chalk.white(''));
-};
+}
 
-var addOffer = function (id, index, max, usersLength, limit, callback) {
-  var offer = new Offer();
 
-  var city = cities[random(cities.length)];
-  var lat = city.lat + randomizeLoaction();
-  var lon = city.lon + randomizeLoaction();
-  var location = [lat, lon];
+/**
+ * Seeds an offer and adds it to the database. When the last offer
+ * is saved calls the callback.
+ *
+ * @param {string} userID
+ * @param {number} maxUsers
+ * @param {number} initialUserCount
+ * @param {boolean} limit
+ * @param {function} callback
+ */
+function addOffer(userID, maxUsers, initialUserCount, limit, callback) {
+  let offer = new Offer();
+
+  const city = cities[random(cities.length)];
+  const lat = city.lat + randomizeLocation();
+  const lon = city.lon + randomizeLocation();
+  const location = [lat, lon];
 
   offer.type = 'host';
   offer.status = _.sample(['yes', 'maybe']);
   offer.description = faker.lorem.sentence();
   offer.maxGuests = random(10);
-  offer.user = id;
+  offer.user = userID;
   offer.location = location;
   offer.locationFuzzy = location;
 
-  offer.save(function (err) {
+  offer.save((err) => {
     if (err != null) console.log(err);
     else {
       savedOffers++;
       // Exit if we have completed saving all users and offers
-      if ((limit && (savedUsers + usersLength >= max && savedOffers + usersLength >= max))
-          || ((!limit && (savedUsers >= max && savedOffers >= max)))) {
-        printSummary(usersLength, savedUsers);
-        callback(null, null);
-        process.exit(0);
+      if ((limit && (savedUsers + initialUserCount >= maxUsers && savedOffers + initialUserCount >= maxUsers))
+          || (!limit && (savedUsers >= maxUsers && savedOffers >= maxUsers))) {
+        printSummary(initialUserCount, savedUsers);
+        callback(null);
       }
     }
   });
-};
+}
 
-var addUsers = function () {
-  var index = 0;
-  var numAdminUsers;
-  var debug = (argv.debug === true);
-  var limit = (argv.limit === true);
-  var max = argv.numberOfUsers;
-  var adminUsers = argv.userNames;
+/**
+ * Seed and add all the users
+ *
+ */
+function addUsers() {
+  let index = 0;
+  let numAdminUsers;
+
+  const debug = (argv.debug === true);
+  const limit = (argv.limit === true);
+  const max = argv.numberOfUsers;
+  const adminUsers = argv.userNames;
 
   if (adminUsers === null || adminUsers === undefined) {
     numAdminUsers = 0;
@@ -112,7 +156,7 @@ var addUsers = function () {
     numAdminUsers = adminUsers.length;
   }
 
-  var printWarning = function printWarning() {
+  const printWarning = function printWarning() {
     console.log('Generating ' + max + ' users...');
     if (max > 2000) {
       console.log('...this might really take a while... go grab some coffee!');
@@ -127,145 +171,193 @@ var addUsers = function () {
   config.db.debug = debug;
 
   // Bootstrap db connection
-  mongooseService.connect(function () {
-    mongooseService.loadModels(function () {
-      var Tribe = mongoose.model('Tribe');
-      var User = mongoose.model('User');
+  mongooseService.connect(() => {
+    mongooseService.loadModels(async () => {
+      const Tribe = mongoose.model('Tribe');
+      const User = mongoose.model('User');
 
-      async.waterfall([
-        function (done) {
-          User.find(function (err, users) {
-            if (err) {
-              done(err, null);
-            }
-            done(null, users);
-          });
-        },
+      let userCount = 0;
+      let tribes = null;
 
-        function (users, done) {
+      /**
+      * Gets the users and tribes from the database and saves them into the
+      * global variables
+      *
+      * @returns {Promise} Promise that completes when user and tribe data
+      *  have successfully loaded into global variables.
+      */
+      function getUserCountAndTribes() {
+        const getUserCount = User.countDocuments();
+        const getTribes = Tribe.find();
+
+        return Promise.all([getUserCount, getTribes]).then((results) => {
+          [userCount, tribes] = results;
+        }).catch(function (err) {
+          console.log(err);
+        });
+      } // getUsersAndTribes()
+
+
+      /**
+      * Adds the number of users using the options specified by the user
+      *
+      * @returns {Promise} Promise that completes when all users have
+      *  successfully been added.
+      */
+      function addAllUsers() {
+        return new Promise((resolve) => {
           if (limit) {
-            index = users.length;
+            index = userCount;
           }
 
           if (index >= max) {
-            console.log(chalk.green(users.length + ' users already exist. No users created!'));
+            console.log(chalk.green(userCount + ' users already exist. No users created!'));
             console.log(chalk.white('')); // Reset to white
-            process.exit(0);
+            resolve();
+            return;
           }
 
-          var getTribes = new Promise(function (resolve, reject) {
-            Tribe.find(function (err, tribes) {
-              if (err) {
-                reject(err);
+          console.log(chalk.white('--'));
+          console.log(chalk.green('Trustroots test user data'));
+          console.log(chalk.white('--'));
+
+          while (index < max) {
+            (function addNextUser(){
+              let user = new User();
+              let admin;
+
+              // Check if this is an admin user
+              if (numAdminUsers > 0) {
+                admin = adminUsers[adminUsers.length - numAdminUsers];
               }
-              resolve(tribes);
-            });
-          });
 
-          getTribes.then(function (tribes) {
+              // Add mock data
+              user.firstName = faker.name.firstName();
+              user.lastName = faker.name.lastName();
+              user.displayName = user.firstName + ' ' + user.lastName;
+              user.provider = 'local';
+              user.public = true;
+              user.avatarUploaded = false;
+              user.avatarSource = 'none';
+              user.welcomeSequenceStep = 3;
+              user.seen = moment()
+                .subtract(Math.random() * 365, 'd')
+                .subtract(Math.random() * 24, 'h')
+                .subtract(Math.random() * 3600, 's');
 
-            console.log(chalk.white('--'));
-            console.log(chalk.green('Trustroots test user data'));
-            console.log(chalk.white('--'));
-
-            while (index < max) {
-              (function addNextUser(){
-                var user = new User();
-                var admin;
-
-                // Check if this is an admin user
-                if (numAdminUsers > 0) {
-                  admin = adminUsers[adminUsers.length - numAdminUsers];
-                }
-
-                // Add mock data
-                user.firstName = faker.name.firstName();
-                user.lastName = faker.name.lastName();
-                user.displayName = user.firstName + ' ' + user.lastName;
-                user.provider = 'local';
-                user.public = true;
-                user.avatarUploaded = false;
-                user.avatarSource = 'none';
-                user.welcomeSequenceStep = 3;
-                user.seen = moment()
-                  .subtract(Math.random() * 365, 'd')
-                  .subtract(Math.random() * 24, 'h')
-                  .subtract(Math.random() * 3600, 's');
-
-                if (admin !== undefined) {
+              if (admin !== undefined) {
                 // admin user
-                  user.email = 'admin+' + admin + '@example.com';
-                  user.password = 'password123';
-                  user.username = admin;
-                }
-                else {
+                user.email = 'admin+' + admin + '@example.com';
+                user.password = 'password123';
+                user.username = admin;
+              }
+              else {
                 // non admin user
-                  user.email = index + faker.internet.email();
-                  user.password = faker.internet.password();
-                  user.username = index + user.displayName.toLowerCase().replace(/\'/g, '').replace(/\s/g, '');
+                user.email = index + faker.internet.email();
+                user.password = faker.internet.password();
+                user.username = index + user.displayName.toLowerCase().replace(/\'/g, '').replace(/\s/g, '');
+              }
+
+              // Add the user to tribes
+              if (tribes.length > 0) {
+                const userNumTribes = random(tribes.length);
+
+                // Randomize indecies
+                let randomTribes = [];
+                for (let i = 0; i < tribes.length; i++) {
+                  randomTribes[i] = i;
+                }
+                randomTribes = _.shuffle(randomTribes);
+
+                // Add the tribes using the random indecies
+                for (let j = 0; j < userNumTribes; j++) {
+                  let rand = randomTribes[j];
+                  user.member.push({ tribe: tribes[rand]._id, since: Date.now() });
+                  tribes[rand].count += 1;
+                }
+              }
+
+              // Save the user
+              user.save(function (err) {
+                savedUsers++;
+                process.stdout.write('.');
+
+                if (!err && admin!== undefined) {
+                  console.log('Created admin user. Login with: ' + admin + ' / password');
+                } else if (err && admin !== undefined) {
+                  console.log(chalk.red('Could not add admin user ' + admin));
+                  console.log(err);
+                } else if (err) {
+                  console.log(err);
                 }
 
-                // Add the user to tribes
-                if (tribes.length > 0) {
-                  var userNumTribes = random(tribes.length);
+                addOffer(user._id, max, userCount, limit, resolve);
+              });
 
-                  // Randomize indecies
-                  var randomTribes = [];
-                  for (var i = 0; i < tribes.length; i++) {
-                    randomTribes[i] = i;
-                  }
-                  randomTribes = _.shuffle(randomTribes);
 
-                  // Add the tribes using the random indecies
-                  for (var j = 0; j < userNumTribes; j++) {
-                    var rand = randomTribes[j];
-                    user.member.push({ tribe: tribes[rand]._id, since: Date.now() });
-                    tribes[rand].count += 1;
-                    Tribe.findByIdAndUpdate(tribes[rand]._id, tribes[rand], function (err) {
-                      if (err) {
-                        console.error(err);
-                      }
-                    });
-                  }
+              // No more admin users
+              if (numAdminUsers === 1) {
+                printWarning();
+              }
+
+              if (admin !== undefined) {
+                numAdminUsers--;
+              }
+            }());
+
+            index++;
+          }
+        });
+      } // addAllUsers()
+
+
+      /**
+      * Update tribes with the new tribe counts once all users have been  added
+      *
+      * @returns {Promise} Promise that completes when all the tribes have
+      *  successfully been updated.
+      */
+      function updateTribes() {
+        return new Promise((resolve) => {
+          let numTribesUpdated = 0;
+
+          // If we didn't add any users, tribes do not need to be updated
+          if (savedUsers === 0 || tribes.length === 0) {
+            resolve();
+          } else {
+            // Update tribes
+            for (let j = 0; j < tribes.length; j++) {
+              Tribe.findByIdAndUpdate(tribes[j]._id, tribes[j], (err) => {
+                if (err) {
+                  console.error(err);
                 }
 
-                // Save the user
-                user.save(function (err) {
-                  savedUsers++;
-                  process.stdout.write('.');
-                  if (!err && admin!== undefined) {
-                    console.log('Created admin user. Login with: ' + admin + ' / password');
-                  } else if (err && admin !== undefined) {
-                    console.log(chalk.red('Could not add admin user ' + admin));
-                    console.log(err);
-                  } else if (err) {
-                    console.log(err);
-                  }
-
-                  addOffer(user._id, index, max, users.length, limit, done);
-                });
-
-
-                // No more admin users
-                if (numAdminUsers === 1) {
-                  printWarning();
+                numTribesUpdated += 1;
+                if (tribes.length === numTribesUpdated) {
+                  resolve();
                 }
-
-                if (admin !== undefined) {
-                  numAdminUsers--;
-                }
-              }());
-
-              index++;
+              });
             }
-          }).catch(function (err) {
-            console.log(err);
-            done(err, null);
-          });
-        }
-      ]);
+          }
+        });
+      } // updateTribes()
 
 
+      // This is the main sequence to add all the users.
+      //    * First get the current number of users and tribe data
+      //    * Then seed all the new users
+      //    * Lastly update the number of users that were added to each tribe
+      try {
+        await getUserCountAndTribes();
+        await addAllUsers();
+        await updateTribes();
+
+        // Disconnect from the database
+        mongooseService.disconnect();
+
+      } catch (err) {
+        console.log(err);
+      }
     });
   });
 }; // addUsers()

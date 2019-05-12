@@ -4,7 +4,7 @@
   <a href="https://www.trustroots.org/"><img width="150" src="https://cdn.rawgit.com/Trustroots/trustroots/master/public/img/logo/color.svg" alt="Trustroots"></a>
   <br>
   <br>
-  _Travellers' community. Sharing, hosting and getting people together._
+  <em>Travellers' community. Sharing, hosting and getting people together.</em>
   <br>
   <br>
 </p>

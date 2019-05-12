@@ -1,5 +1,5 @@
 import React from 'react';
-import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
+import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
 import PropTypes from 'prop-types';
 import Contact from './Contact';
 import { getContactsCommon } from '../api/contacts.api';
@@ -50,4 +50,4 @@ ContactsCommon.propTypes = {
   t: PropTypes.func.isRequired
 };
 
-export default withNamespaces('contact')(ContactsCommon);
+export default withTranslation('contact')(ContactsCommon);

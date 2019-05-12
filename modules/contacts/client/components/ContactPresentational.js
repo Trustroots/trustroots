@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Trans, withNamespaces } from 'react-i18next';
+import { Trans, withTranslation } from 'react-i18next';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 
 export function ContactPresentational({ t, className, contact, avatarSize=128, hideMeta=false, situation, onClickRemove }) {
@@ -61,4 +61,4 @@ ContactPresentational.propTypes = {
   onClickRemove: PropTypes.func.isRequired
 };
 
-export default withNamespaces('contact')(ContactPresentational);
+export default withTranslation('contact')(ContactPresentational);

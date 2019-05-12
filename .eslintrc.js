@@ -172,6 +172,8 @@ module.exports = {
     // ES 2018 - specify migrated files and folders here
     files: [
       'bin/db-maintenance/ensure-indexes.js',
+      'modules/admin/server/**',
+      'modules/admin/tests/**',
       'modules/references/server/**',
       'modules/references/tests/server/**',
       'modules/users/tests/server/user-change-locale.server.routes.tests.js',
@@ -187,6 +189,7 @@ module.exports = {
       'config/client/**',
       'config/env/**',
       'config/webpack/**',
+      'modules/admin/client/**',
       'modules/core/client/app/config.js',
       'modules/**/client/components/**',
       'modules/**/client/api/**',

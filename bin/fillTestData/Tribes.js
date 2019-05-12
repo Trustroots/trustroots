@@ -1,15 +1,21 @@
 'use strict';
 
-var _ = require('lodash'),
-    path = require('path'),
-    mongooseService = require(path.resolve('./config/lib/mongoose')),
-    chalk = require('chalk'),
-    yargs = require('yargs'),
-    faker = require('faker'),
-    mongoose = require('mongoose'),
-    config = require(path.resolve('./config/config'));
+/**
+ * Required dependencies
+ */
+const _ = require('lodash'),
+      path = require('path'),
+      mongooseService = require(path.resolve('./config/lib/mongoose')),
+      chalk = require('chalk'),
+      yargs = require('yargs'),
+      faker = require('faker'),
+      mongoose = require('mongoose'),
+      config = require(path.resolve('./config/config'));
 
-var argv = yargs.usage('$0 <numberOfTribes>', 'Seed database with number of tribes', function (yargs) {
+/**
+ * Configure the script usage using yargs to obtain parameters and enforce usage.
+ */
+const argv = yargs.usage('$0 <numberOfTribes>', 'Seed database with number of tribes', (yargs) => {
   return yargs
     .positional('numberOfTribes', {
       describe: 'Number of tribes to add',
@@ -31,7 +37,12 @@ var argv = yargs.usage('$0 <numberOfTribes>', 'Seed database with number of trib
     .strict().yargs;
 }).argv;
 
-var tribeImageUUIDs = [
+
+/**
+ * Hardcoded tribe image ids stored on the CDN used for seeding. These were
+ * last updated 2018-10-20
+ */
+const tribeImageUUIDs = [
   '171433b0-853b-4d19-a8b4-44def956696d',
   '22028fde-5302-4172-954d-f54949afd7e4',
   'e69eb05f-773f-423c-9246-43629b5a8baf',
@@ -60,13 +71,46 @@ var tribeImageUUIDs = [
   '69a500a4-a16e-4c4d-9981-84fbe310d531'
 ];
 
-var addTribes = function () {
-  var index = 0;
-  var max = argv.numberOfTribes;
-  var debug = (argv.debug === true);
-  var limit = (argv.limit === true);
+/**
+ * Seeds an individual tribe with fake data. Tribe names are appended with tribeIndex
+ * to guarantee uniqueness.
+ *
+ * @param {object} tribe  The tribe to seed.
+ * @param {number} tribeIndex - index to add to the tribe label
+ * @returns {object} Returns the seeded tribe object
+ */
+function seedTribe(tribe, tribeIndex) {
 
-  // Add tribes
+  tribe.label = faker.lorem.word() + '_' + tribeIndex;
+  tribe.labelHistory = faker.random.words();
+  tribe.slugHistory = faker.random.words();
+  tribe.synonyms = faker.random.words();
+  tribe.color = faker.internet.color().slice(1);
+  tribe.count = 0;
+  tribe.created = Date.now();
+  tribe.modified = Date.now();
+  tribe.public = true;
+  tribe.image_UUID = _.sample(tribeImageUUIDs);
+  tribe.attribution = faker.name.findName();
+  tribe.attribution_url = faker.internet.url();
+  tribe.description = faker.lorem.sentences();
+  return tribe;
+
+} // seedTribe()
+
+
+/**
+ * This the the main method that seeds all the tribes. Based on the limit
+ * parameter it determines how many tribes to add. It adds the new tribes
+ * and prints status accordingly.
+ */
+function seedTribes() {
+  let index = 0;
+  const max = argv.numberOfTribes;
+  const debug = (argv.debug === true);
+  const limit = (argv.limit === true);
+
+  // Display number of tribes to add
   console.log('Generating ' + max + ' tribes...');
   if (max > 2000) {
     console.log('...this might really take a while... go grab some coffee!');
@@ -80,73 +124,89 @@ var addTribes = function () {
   config.db.debug = debug;
 
   // Bootstrap db connection
-  mongooseService.connect(function () {
-    mongooseService.loadModels(function () {
-      var Tribe = mongoose.model('Tribe');
+  mongooseService.connect(() => {
+    mongooseService.loadModels(async () => {
+      const Tribe = mongoose.model('Tribe');
 
-      var getTribes = new Promise(function (resolve, reject) {
-        Tribe.find(function (err, tribes) {
-          if (err) {
-            reject(err);
+      /**
+      * Adds the number of tribes using the values and options specified
+      * by the user
+      *
+      * @param {number} initialTribeCount - The number of tribes prior to adding
+      * any new tribes
+      * @returns {Promise} Promise that completes when all tribes have
+      *  successfully been added.
+      */
+      function addTribes(initialTribeCount) {
+        return new Promise((resolve) => {
+          let savedTribes = 0;
+
+          // handle the limit option
+          if (limit) {
+            index = initialTribeCount;
           }
-          resolve(tribes);
-        });
-      });
 
-      getTribes.then(function (tribes) {
-        if (limit) {
-          index = tribes.length;
-        }
+          // if we already hit the limit
+          if (index >= max) {
+            console.log(chalk.green(initialTribeCount + ' tribes already exist. No tribes created!'));
+            console.log(chalk.white('')); // Reset to white
+            resolve();
+          }
 
-        if (index >= max) {
-          console.log(chalk.green(tribes.length + ' tribes already exist. No tribes created!'));
-          console.log(chalk.white('')); // Reset to white
-          process.exit(0);
-        }
+          // Add tribes until we reach the total
+          while (index < max) {
+            let tribe = new Tribe();
 
-        while (index < max) {
-          var savedTribes = 0;
-          (function addNextTribe(tribeIndex) {
-            var tribe = new Tribe();
+            // seed the tribe data
+            seedTribe(tribe, initialTribeCount + index);
 
-            tribe.label = faker.lorem.word() + '_' + (tribes.length + tribeIndex);
-            tribe.labelHistory = faker.random.words();
-            tribe.slugHistory = faker.random.words();
-            tribe.synonyms = faker.random.words();
-            tribe.color = faker.internet.color().slice(1);
-            tribe.count = 0;
-            tribe.created = Date.now();
-            tribe.modified = Date.now();
-            tribe.public = true;
-            tribe.image_UUID = _.sample(tribeImageUUIDs);
-            tribe.attribution = faker.name.findName();
-            tribe.attribution_url = faker.internet.url();
-            tribe.description = faker.lorem.sentences();
+            // save the newly created tribe
+            tribe.save((err) => {
 
-            tribe.save(function (err) {
               if (err != null) {
                 console.log(err);
               }
               else {
+                // Tribe was saved successfully
                 process.stdout.write('.');
                 savedTribes += 1;
-                if ((limit && (savedTribes + tribes.length >= max))
+
+                // If all tribes have been saved print a summary and
+                // resolve the promise.
+                if ((limit && (savedTribes + initialTribeCount >= max))
                     || !limit && ((savedTribes >= max))) {
                   console.log('');
-                  console.log(chalk.green(tribes.length + ' tribes existed in the database.'));
+                  console.log(chalk.green(initialTribeCount + ' tribes existed in the database.'));
                   console.log(chalk.green(savedTribes + ' tribes successfully added.'));
-                  console.log(chalk.green('Database now contains ' + (tribes.length + savedTribes) + ' tribes.'));
+                  console.log(chalk.green('Database now contains ' + (initialTribeCount + savedTribes) + ' tribes.'));
                   console.log(chalk.white('')); // Reset to white
-                  process.exit(0);
+                  resolve();
                 }
               }
-            });
-          }(index));
-          index+=1;
-        }
-      });
-    });
-  });
-};
 
-addTribes();
+            });
+            index += 1;
+          }
+        }); // Promise
+      } // addAllTribes()
+
+
+      // This is the main sequence to add the tribes.
+      //    * First get the current number of tribes from the database
+      //    * Then seed all the new tribes
+      try {
+        const tribeCount = await Tribe.countDocuments();
+        await addTribes(tribeCount);
+      } catch (err) {
+        console.log(err);
+      }
+
+      // Disconnect from the database
+      mongooseService.disconnect();
+
+    }); // monggooseService.loadModels
+  }); // mongooseService.connect
+} // seedTribes
+
+seedTribes();
+

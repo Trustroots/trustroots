@@ -163,6 +163,18 @@
        */
       $scope.$on('$stateChangeStart', function (event, toState, toParams) {
 
+        if (toState.requiresRole) {
+          if (!Authentication.user) {
+            toState.requiresAuth = true;
+          }
+          // Check if user has the required role
+          else if (Authentication.user && !Authentication.user.roles.includes(toState.requiresRole)) {
+            event.preventDefault();
+            $window.alert('This page would require you to be a Trustroots volunteer. Wanna help us build Trustroots?');
+            $state.go('volunteering');
+          }
+        }
+
         // Redirect to login page if no user
         if (toState.requiresAuth && !Authentication.user) {
           // Cancel stateChange

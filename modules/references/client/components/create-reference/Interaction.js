@@ -1,12 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import '@/config/client/i18n';
-import { withNamespaces } from 'react-i18next';
+import { withTranslation } from 'react-i18next';
 
 /**
  * Presentational component for picking an interaction
  */
-const Interaction = withNamespaces('reference')(function ({ t, interactions, onChange }) {
+const Interaction = withTranslation('reference')(function ({ t, interactions, onChange }) {
   return (
     <div className="panel panel-default">
       <div className="panel-heading">

@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withNamespaces } from 'react-i18next';
+import { withTranslation } from 'react-i18next';
 
 /**
  * Navigation is a react component.
@@ -64,4 +64,4 @@ Navigation.propTypes = {
   tabDone: PropTypes.number.isRequired // which tab is already filled
 };
 
-export default withNamespaces('reference')(Navigation);
+export default withTranslation('reference')(Navigation);

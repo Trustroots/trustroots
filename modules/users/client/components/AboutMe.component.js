@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { withNamespaces } from '@/modules/core/client/utils/i18n-angular-load';
+import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
 import '@/config/client/i18n';
 import PropTypes from 'prop-types';
 import { limitTo, plainTextLength } from './utils/filters';
@@ -68,4 +68,4 @@ AboutMe.propTypes = {
   t: PropTypes.func
 };
 
-export default withNamespaces(['user-profile'])(AboutMe);
+export default withTranslation(['user-profile'])(AboutMe);

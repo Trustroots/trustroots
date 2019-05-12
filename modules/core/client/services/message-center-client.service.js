@@ -24,7 +24,7 @@
   /* @ngInject */
   function MessageCenterServiceProvider() {
     var _this = this;
-    _this.options = {};
+    _this.options = { timeout: 6000 };
     _this.setGlobalOptions = function (options) {
       _this.options = options;
     };

@@ -5,6 +5,8 @@ var path = require('path'),
     mongoose = require('mongoose'),
     User = mongoose.model('User');
 
+require('should');
+
 describe('job: send push message', function () {
 
   var sendPushJobHandler,

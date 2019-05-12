@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import '@/config/client/i18n';
-import { withNamespaces } from 'react-i18next';
+import { withTranslation } from 'react-i18next';
 import Contact from './Contact';
 
 export function ContactListPresentational({ t, selfId, contacts, filter, onContactRemoved, onFilterChange }) {
@@ -84,7 +84,7 @@ ContactListPresentational.propTypes = {
   onFilterChange: PropTypes.func.isRequired
 };
 
-export default withNamespaces('contact')(ContactListPresentational);
+export default withTranslation('contact')(ContactListPresentational);
 
 /**
  * This filter is probably different from the AngularJS filter.

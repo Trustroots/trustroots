@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import '@/config/client/i18n';
-import { withNamespaces, Trans } from 'react-i18next';
+import { withTranslation, Trans } from 'react-i18next';
 
 // @TODO provide the value from API config endpoint
 const daysToReply = 14;
@@ -21,14 +21,14 @@ UserLink.propTypes = {
 /**
  * Error message when trying to give a reference to oneself.
  */
-export const ReferenceToSelfInfo = withNamespaces('reference')(function ({ t }) {
+export const ReferenceToSelfInfo = withTranslation('reference')(function ({ t }) {
   return (<div className="alert alert-warning">{t('Sorry, you can\'t give a reference to yourself.')}</div>);
 });
 
 /**
  * Info that data are loading.
  */
-export const LoadingInfo = withNamespaces('reference')(function ({ t }) {
+export const LoadingInfo = withTranslation('reference')(function ({ t }) {
   return (<div className="alert alert-warning">{t('Wait a moment...')}</div>);
 });
 
@@ -36,7 +36,7 @@ export const LoadingInfo = withNamespaces('reference')(function ({ t }) {
  * Error message when reference was already given
  * @param {User} userTo
  */
-export const DuplicateInfo = withNamespaces('reference')(function ({ userTo }) {
+export const DuplicateInfo = withTranslation('reference')(function ({ userTo }) {
   return (<div className="alert alert-warning"><Trans>You&apos;ve already given a reference to <UserLink user={userTo} />.</Trans></div>);
 });
 
@@ -47,7 +47,7 @@ DuplicateInfo.propTypes = {
 /**
  * Info after successful submitting of a new reference.
  */
-export const SubmittedInfo = withNamespaces('reference')(function ({ t, isReported, isPublic, userFrom, userTo }) {
+export const SubmittedInfo = withTranslation('reference')(function ({ t, isReported, isPublic, userFrom, userTo }) {
   const name = userTo.displayName || userTo.username;
 
   const isPublicMessage = (isPublic) ?

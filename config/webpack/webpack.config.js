@@ -31,8 +31,9 @@ module.exports = merge(shims, {
           options: {
             presets: [
               ['@babel/preset-env', {
-                useBuiltIns: 'usage',
-                modules: 'commonjs'
+                corejs: 2,
+                modules: 'commonjs',
+                useBuiltIns: 'usage'
               }],
               ['@babel/preset-react']
             ],
@@ -42,6 +43,18 @@ module.exports = merge(shims, {
             ]
           }
         }]
+      },
+      {
+        test: /\.(png|jpe?g|gif|svg)$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[name]-[hash].[ext]',
+              outputPath: 'images/'
+            }
+          }
+        ]
       }
     ]
   },
