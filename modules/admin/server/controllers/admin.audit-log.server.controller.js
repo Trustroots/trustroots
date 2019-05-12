@@ -23,7 +23,7 @@ exports.record = (req, res, next) => {
     params: req.params,
     query: req.query,
     route: req.route.path,
-    user: req.user_id
+    user: req.user._id
   });
 
   // Save support request to db
@@ -39,12 +39,21 @@ exports.record = (req, res, next) => {
  * This middleware stores queries to audit log
  */
 exports.list = (req, res) => {
-  AuditLog.find().limit(500).exec((err, items) => {
-    if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err)
-      });
-    }
-    res.send(items || []);
-  });
+  AuditLog
+    .find()
+    .sort('-date')
+    .limit(100)
+    .populate({
+      path: 'user',
+      select: 'username',
+      model: 'User'
+    })
+    .exec((err, items) => {
+      if (err) {
+        return res.status(400).send({
+          message: errorService.getErrorMessage(err)
+        });
+      }
+      res.send(items || []);
+    });
 };
