@@ -94,10 +94,30 @@ exports.searchUsers = (req, res) => {
     });
 };
 
+const getUserById = (userId) => {
+  return User
+    .findById(userId)
+    // Avoid pulling in sensitive fields from Mongoose
+    .select('-password -salt')
+    .populate({
+      path: 'member.tribe',
+      select: 'slug label',
+      model: 'Tribe'
+    });
+};
+
+const handleAdminApiError = (res, err) => {
+  if (err) {
+    return res.status(400).send({
+      message: errorService.getErrorMessage(err)
+    });
+  }
+};
+
 /**
  * This middleware sends response with an array of found users
  */
-exports.getUser = (req, res) => {
+exports.getUser = async (req, res) => {
   const userId = _.get(req, ['body', 'id']);
 
   // Check that the search string is provided
@@ -107,28 +127,17 @@ exports.getUser = (req, res) => {
     });
   }
 
-  User
-    .findById(userId)
-    // Avoid pulling in sensitive fields from Mongoose
-    .select('-password -salt')
-    .populate({
-      path: 'member.tribe',
-      select: 'slug label',
-      model: 'Tribe'
-    })
-    .exec((err, user) => {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err)
-        });
-      }
+  try {
+    const user = await getUserById(userId);
 
-      if (!user) {
-        return res.status(404).send({
-          message: errorService.getErrorMessageByKey('not-found')
-        });
-      }
+    if (!user) {
+      return res.status(404).send({
+        message: errorService.getErrorMessageByKey('not-found')
+      });
+    }
 
-      return res.send(obfuscateWriteTokens(user));
-    });
+    res.send(obfuscateWriteTokens(user));
+  } catch (err) {
+    handleAdminApiError(res, err);
+  }
 };
