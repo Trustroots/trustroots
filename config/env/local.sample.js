@@ -76,6 +76,7 @@ module.exports = {
       //  legacy: true
       //},
       // New Trustroots main map layer (05/2019–)
+      // https://www.mapbox.com/maps/streets/
       streets: {
         map: 'streets-v11',
         user: 'mapbox',
