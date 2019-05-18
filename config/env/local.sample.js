@@ -69,10 +69,17 @@ module.exports = {
   /*
   mapbox: {
     maps: {
+      // Old Trustroots main map layer (2014–05/2019)
+      //streets: {
+      //  map: 'k8mokch5',
+      //  user: 'trustroots',
+      //  legacy: true
+      //},
+      // New Trustroots main map layer (05/2019–)
       streets: {
-        map: 'k8mokch5',
-        user: 'trustroots',
-        legacy: true
+        map: 'streets-v11',
+        user: 'mapbox',
+        legacy: false
       },
       satellite: {
         map: 'satellite-streets-v9',
