@@ -10,9 +10,9 @@ export default function MapLayers() {
   let tileAttribution;
 
   // Is Mapbox configuration available?
-  const mapboxConfig = get(window, ['settings', 'mapbox']);
+  const mapboxConfig = get(window, ['settings', 'mapbox'], {});
 
-  if (mapboxConfig && mapboxConfig.publicKey) {
+  if (mapboxConfig.publicKey) {
     // Other styles than `streets` are `outdoors` and `satellite` but we're not u sing them here yet.
     // Default to `streets-v11` if not configured
     const style = get(mapboxConfig, ['maps', 'streets', 'map'], 'streets-v11');
