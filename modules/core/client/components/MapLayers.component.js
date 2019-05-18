@@ -10,17 +10,17 @@ export default function MapLayers() {
   let tileAttribution;
 
   // Is Mapbox configuration available?
-  const mapboxToken = get(window, ['settings', 'mapbox', 'publicKey']);
+  const mapboxConfig = get(window, ['settings', 'mapbox']);
 
-  if (mapboxToken) {
+  if (mapboxConfig && mapboxConfig.publicKey) {
     // Other styles than `streets` are `outdoors` and `satellite` but we're not u sing them here yet.
     // Default to `streets-v11` if not configured
-    const style = get(window, ['settings', 'mapbox', 'maps', 'streets', 'map'], 'streets-v11');
+    const style = get(mapboxConfig, ['maps', 'streets', 'map'], 'streets-v11');
 
     // Default to `mapbox` if not configured but that works only with Mapbox' global public styles
-    const user = get(window, ['settings', 'mapbox', 'maps', 'streets', 'user'], 'mapbox');
+    const user = get(mapboxConfig, ['maps', 'streets', 'user'], 'mapbox');
 
-    tileUrl = `https://api.mapbox.com/styles/v1/${user}/${style}/tiles/256/{z}/{x}/{y}?access_token=${mapboxToken}`;
+    tileUrl = `https://api.mapbox.com/styles/v1/${user}/${style}/tiles/256/{z}/{x}/{y}?access_token=${mapboxConfig.publicKey}`;
     tileAttribution = '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a>';
   // Fall back to OSM
   } else {
