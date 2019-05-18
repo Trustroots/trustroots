@@ -1,6 +1,6 @@
 import { TileLayer } from 'react-leaflet';
 import React from 'react';
-import { get } from 'lodash';
+import get from 'lodash/get';
 
 /**
  * Configures Trustroots map layers
