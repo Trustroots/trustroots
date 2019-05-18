@@ -3,8 +3,9 @@ import React, { Component } from 'react';
 
 // Internal dependencies
 import { getMessages } from '../api/messages.api';
-import AdminHeader from './AdminHeader.component.js';
-import UserLink from './UserLink.component.js';
+import AdminHeader from './AdminHeader.component';
+import Json from './Json.component';
+import UserLink from './UserLink.component';
 
 // Mongo ObjectId is always 24 chars long
 const MONGO_OBJECT_ID_LENGTH = 24;
@@ -100,7 +101,7 @@ export default class AdminMessages extends Component {
                             <UserLink user={ message.userFrom } />
                             <details>
                               <summary>Message details</summary>
-                              <pre>{ JSON.stringify(message, null, 2) }</pre>
+                              <Json content={message} />
                             </details>
                           </div>
                         </div>
