@@ -174,6 +174,7 @@ module.exports = {
       'bin/db-maintenance/ensure-indexes.js',
       'modules/admin/server/**',
       'modules/admin/tests/**',
+      'modules/core/server/services/file-upload.service.js',
       'modules/references/server/**',
       'modules/references/tests/server/**',
       'modules/users/tests/server/user-change-locale.server.routes.tests.js',
