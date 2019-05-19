@@ -53,14 +53,14 @@ module.exports.uploadFileFilter = (validMimeTypes, uploadField, req, res, next) 
   upload(req, res, (err) => {
     // An error occurred when uploading
     // See Multer default error codes:
-    // @link https://github.com/expressjs/multer/blob/master/lib/make-error.js
+    // @link https://github.com/expressjs/multer/blob/805170c61530e1f1cafd818c9b63d16a9dd46c36/lib/multer-error.js
     if (err) {
       let errorMessage;
       let errorStatus;
 
+      // This error code is generated from Multer's fileFilter above
       if (err.code && err.code === 'UNSUPPORTED_MEDIA_TYPE') {
         // Unsupported media type -error
-        // This error is generated from ./config/lib/multer.js
         errorMessage = errorService.getErrorMessageByKey('unsupported-media-type');
         errorStatus = 415;
       } else if (err.code && err.code === 'LIMIT_FILE_SIZE') {
