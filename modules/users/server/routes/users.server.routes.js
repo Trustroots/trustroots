@@ -23,7 +23,7 @@ module.exports = function (app) {
     .delete(userProfile.removeProfile);
 
   app.route('/api/couchsurfing-import').all(usersPolicy.isAllowed)
-    .post(userImport.csImportUploadField); // , userProfile.processCsImport);
+    .post(userImport.csImportUploadField, userImport.processCsImport);
 
   app
     .route('/api/users-avatar')

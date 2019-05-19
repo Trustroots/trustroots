@@ -135,6 +135,8 @@
     "influx": "5.5.1",
     "juice": "6.0.0",
     "leaflet": "1.6.0",
+    "decompress": "4.2.0",
+    "decompress-unzip": "4.0.1",
     "leaflet-active-area": "git+https://github.com/Mappy/Leaflet-active-area.git#f09574a3eb7fdce3a6778e4822955c6416415e43",
     "lodash": "4.17.15",
     "mapbox-gl": "1.10.1",
