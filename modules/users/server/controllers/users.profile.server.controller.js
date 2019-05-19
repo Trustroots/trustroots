@@ -30,7 +30,6 @@ var _ = require('lodash'),
     mkdirRecursive = require('mkdir-recursive'),
     mongoose = require('mongoose'),
     fs = require('fs'),
-    mmmagic = require('mmmagic'),
     moment = require('moment'),
     User = mongoose.model('User');
 
@@ -99,22 +98,25 @@ exports.avatarUploadField = function (req, res, next) {
     });
   }
 
-  fileUpload.uploadFileFilter(fileUpload.validImageMimeTypes, 'avatar', req, res, next);
+  var validImageMimeTypes = [
+    'image/gif',
+    'image/jpeg',
+    'image/jpg',
+    'image/png'
+  ];
+
+  fileUpload.uploadFile(validImageMimeTypes, 'avatar', req, res, next);
 };
 
 
 /**
  * Upload user avatar
+ *
+ * Handles results from avatarUploadField and `uploadFile` service.
+ * Multer has placed uploaded the file in temp folder and path is now available
+ * via `req.file.path`
  */
 exports.avatarUpload = function (req, res) {
-  // `req.file` is placed there by Multer middleware.
-  // See `users.server.routes.js` for more details.
-  if (!req.file || !req.file.path) {
-    return res.status(422).send({
-      message: errorService.getErrorMessageByKey('unprocessable-entity')
-    });
-  }
-
   // Each user has their own folder for avatars
   var uploadDir = path.resolve(config.uploadDir) + '/' + req.user._id + '/avatar'; // No trailing slash
 
@@ -122,23 +124,6 @@ exports.avatarUpload = function (req, res) {
    * Process uploaded file
    */
   async.waterfall([
-
-    // Validate uploaded file using libmagic
-    // The check is performed with "magic bytes"
-    // @link https://www.npmjs.com/package/mmmagic
-    function (done) {
-      var Magic = mmmagic.Magic;
-      var magic = new Magic(mmmagic.MAGIC_MIME_TYPE);
-      magic.detectFile(req.file.path, function (err, result) {
-        if (err || (result && fileUpload.validImageMimeTypes.indexOf(result) === -1)) {
-          return res.status(415).send({
-            message: errorService.getErrorMessageByKey('unsupported-media-type')
-          });
-        }
-        done(err);
-      });
-    },
-
     // Ensure user's upload directory exists
     function (done) {
       mkdirRecursive.mkdir(uploadDir, function (err) {

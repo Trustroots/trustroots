@@ -2,30 +2,26 @@
 const multer = require('multer');
 const os = require('os');
 const path = require('path');
+const mmmagic = require('mmmagic');
 
 // Internal dependencies
 const config = require(path.resolve('./config/config'));
 const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
 
 /**
- * Valid image file mime types
- */
-module.exports.validImageMimeTypes = [
-  'image/gif',
-  'image/jpeg',
-  'image/jpg',
-  'image/png'
-];
-
-/**
+ * Upload file handler and validator using Multer and Mmmagic.
+ * Places the file in a temp folder
+ *
+ * @link https://github.com/expressjs/multer
+ * @link https://www.npmjs.com/package/mmmagic
  *
  * @param {Array} validMimeTypes - List of mime types filter should accept
- * @param {String} uploadField - Name of the POST upload field in the form
+ * @param {String} uploadField - Name of the POST upload field in the multipart-form
  * @param {Object} req - Express.js middleware request
  * @param {Object} res - Express.js middleware response
  * @param {Function} next — Next middleware function
  */
-module.exports.uploadFileFilter = (validMimeTypes, uploadField, req, res, next) => {
+module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
   // Create Multer instance
   // - Destination folder will default to `os.tmpdir()` if no configuration path available
   // - Destination filename will default to 16 bytes of
@@ -36,12 +32,10 @@ module.exports.uploadFileFilter = (validMimeTypes, uploadField, req, res, next) 
     limits: {
       fileSize: config.maxUploadSize // max file size in bytes
     },
-    /**
-     * Filter Multer uploads based on mime Type
-     * Note: A proper "magic byte" check is still required after this
-     */
+    // Filter Multer uploads based on mime Type
+    // Note: A proper "magic byte" check is still required after this
     fileFilter: (req, file, callback) => {
-      if (validMimeTypes.indexOf(file.mimetype) === -1) {
+      if (!file.mimetype || !validMimeTypes.includes(file.mimetype)) {
         const err = new Error('Please upload a file that is in correct format.');
         err.code = 'UNSUPPORTED_MEDIA_TYPE';
         return callback(err, false);
@@ -83,7 +77,31 @@ module.exports.uploadFileFilter = (validMimeTypes, uploadField, req, res, next) 
       });
     }
 
-    // Everything went fine, call next middleware
-    next();
+    // `req.file` is placed there by Multer
+    // See `users.server.routes.js` for more details.
+    if (!req.file || !req.file.path) {
+      return res.status(422).send({
+        message: errorService.getErrorMessageByKey('unprocessable-entity')
+      });
+    }
+
+    // Validate uploaded file using libmagic
+    // This is stronger and more secure than lightweight mime check that Multer does
+    // The check is performed with "magic bytes"
+    // @link https://www.npmjs.com/package/mmmagic
+    const Magic = mmmagic.Magic;
+    const magic = new Magic(mmmagic.MAGIC_MIME_TYPE);
+    magic.detectFile(req.file.path, (err, result) => {
+      if (err || (result && !validMimeTypes.includes(result))) {
+        return res.status(415).send({
+          message: errorService.getErrorMessageByKey('unsupported-media-type')
+        });
+      }
+
+      // Everything went fine, call next middleware than can then handle the
+      // file onwards from temp folder
+      next();
+    });
+
   });
 };
