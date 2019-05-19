@@ -130,7 +130,7 @@ exports.avatarUpload = function (req, res) {
       var Magic = mmmagic.Magic;
       var magic = new Magic(mmmagic.MAGIC_MIME_TYPE);
       magic.detectFile(req.file.path, function (err, result) {
-        if (err || (result && multerConfig.validImageMimeTypes.indexOf(result) === -1)) {
+        if (err || (result && fileUpload.validImageMimeTypes.indexOf(result) === -1)) {
           return res.status(415).send({
             message: errorService.getErrorMessageByKey('unsupported-media-type')
           });
