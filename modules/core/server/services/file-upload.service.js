@@ -20,7 +20,7 @@ module.exports.validImageMimeTypes = [
 /**
  *
  * @param {Array} validMimeTypes - List of mime types filter should accept
- * @param {String} uploadField - name of the POST upload field in the form
+ * @param {String} uploadField - Name of the POST upload field in the form
  * @param {Object} req - Express.js middleware request
  * @param {Object} res - Express.js middleware response
  * @param {Function} next — Next middleware function
@@ -65,9 +65,9 @@ module.exports.uploadFileFilter = (validMimeTypes, uploadField, req, res, next) 
         errorStatus = 415;
       } else if (err.code && err.code === 'LIMIT_FILE_SIZE') {
         // Too big file
-        // 413: "Request Entity Too Large"
-        errorMessage = 'Image too big. Please maximum ' + (config.maxUploadSize / (1024 * 1024)).toFixed(2) + ' Mb files.';
-        errorStatus = 413;
+        const maxUploadSizeMb = (config.maxUploadSize / (1024 * 1024)).toFixed(2);
+        errorMessage = `Image too big. Please maximum ${maxUploadSizeMb} Mb files.`;
+        errorStatus = 413; // 413: "Request Entity Too Large"
       } else if (err.code && err.code === 'LIMIT_UNEXPECTED_FILE') {
         // Field doesn't exist -error
         errorMessage = `Missing "${uploadField}" field from the API call.`;
