@@ -71,6 +71,13 @@ exports.invokeRolesPolicies = function () {
           resources: '/api/users-avatar',
           permissions: ['post'],
         },
+          resources: '/api/couchsurfing-import',
+          permissions: ['post']
+        },
+        {
+          resources: '/api/users/mini/:userId',
+          permissions: ['get']
+        },
         {
           resources: '/api/users/mini/:userId',
           permissions: ['get'],

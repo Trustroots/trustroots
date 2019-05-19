@@ -1,4 +1,4 @@
-const semver = require('semver');
+Ωconst semver = require('semver');
 
 // Converts semver range `~16.6.0` to strict version `16.6.0`
 const reactVersion = semver.coerce(require('./package.json').dependencies.react)
