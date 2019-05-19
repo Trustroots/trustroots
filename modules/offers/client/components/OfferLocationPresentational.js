@@ -1,8 +1,11 @@
+// External dependencies
 import React from 'react';
 import PropTypes from 'prop-types';
 import L from 'leaflet';
+import { Map, Circle, Marker } from 'react-leaflet';
 
-import { Map, TileLayer, Circle, Marker } from 'react-leaflet';
+// Internal dependencies
+import MapLayers from '../../../core/client/components/MapLayers.component';
 
 export default function OfferLocationPresentational({ zoom, location, onChangeZoom, marker='', windowWidth }) {
 
@@ -15,10 +18,7 @@ export default function OfferLocationPresentational({ zoom, location, onChangeZo
       onZoom={({ target: { _zoom: zoom } }) => onChangeZoom(zoom)}
       scrollWheelZoom={false}
     >
-      <TileLayer
-        attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      <MapLayers />
       {/* @TODO Circle and Marker will need to be reusable when we migrate the /search to React */}
       {(zoom >= 12) ?
         <Circle
@@ -112,5 +112,3 @@ OfferLocationPresentational.propTypes = {
   marker: PropTypes.string,
   windowWidth: PropTypes.number.isRequired
 };
-
-
