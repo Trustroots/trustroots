@@ -66,6 +66,12 @@
           View profile
         </a>
       </p>
+
+      <!-- @TODO: temporarily here -->
+      <form action="/api/couchsurfing-import" method="post" enctype="multipart/form-data">
+        <input type="file" name="import-file"><br/>
+        <input type="submit" value="Submit">
+      </form>
     </div>
     <div class="col-xs-12 col-sm-9">
       <div ui-view></div>
