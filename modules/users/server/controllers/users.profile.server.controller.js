@@ -18,6 +18,7 @@ var _ = require('lodash'),
     pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
     inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
     statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
+    fileUpload = require(path.resolve('./modules/core/server/services/file-upload.service')),
     log = require(path.resolve('./config/lib/logger')),
     del = require('del'),
     messageStatService = require(path.resolve(
@@ -28,12 +29,9 @@ var _ = require('lodash'),
     sanitizeHtml = require('sanitize-html'),
     mkdirRecursive = require('mkdir-recursive'),
     mongoose = require('mongoose'),
-    multer = require('multer'),
     fs = require('fs'),
-    os = require('os'),
     mmmagic = require('mmmagic'),
     moment = require('moment'),
-    multerConfig = require(path.resolve('./config/lib/multer')),
     User = mongoose.model('User');
 
 // Load either ImageMagick or GraphicsMagick as an image processor
@@ -95,58 +93,13 @@ exports.userSearchProfileFields = exports.userMiniProfileFields + ' gender locat
  * Middleware to validate+process avatar upload field
  */
 exports.avatarUploadField = function (req, res, next) {
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorService.getErrorMessageByKey('forbidden')
+    });
+  }
 
-  // Create Multer instance
-  // - Destination folder will default to `os.tmpdir()` if no configuration path available
-  // - Destination filename will default to 16 bytes of
-  //   random data as a hex-string (e.g. a087fda2cf19f341ddaeacacab285acc)
-  //   without file-extension.
-  var upload = multer({
-    dest: config.uploadTmpDir || os.tmpdir(),
-    limits: {
-      fileSize: config.maxUploadSize // max file size in bytes
-    },
-    fileFilter: multerConfig.uploadFileFilter
-  }).single('avatar');
-
-  upload(req, res, function (err) {
-
-    // An error occurred when uploading
-    // See Multer default error codes:
-    // @link https://github.com/expressjs/multer/blob/master/lib/make-error.js
-    if (err) {
-
-      var errorMessage,
-          errorStatus;
-
-      if (err.code && err.code === 'UNSUPPORTED_MEDIA_TYPE') {
-        // Unsupported media type -error
-        // This error is generated from ./config/lib/multer.js
-        errorMessage = errorService.getErrorMessageByKey('unsupported-media-type');
-        errorStatus = 415;
-      } else if (err.code && err.code === 'LIMIT_FILE_SIZE') {
-        // Too big file
-        // 413: "Request Entity Too Large"
-        errorMessage = 'Image too big. Please maximum ' + (config.maxUploadSize / (1024 * 1024)).toFixed(2) + ' Mb files.';
-        errorStatus = 413;
-      } else if (err.code && err.code === 'LIMIT_UNEXPECTED_FILE') {
-        // Field doesn't exist -error
-        errorMessage = 'Missing `avatar` field from the API call.';
-        errorStatus = 400;
-      } else {
-        // Any other error
-        errorMessage = errorService.getErrorMessageByKey('default');
-        errorStatus = 400;
-      }
-
-      return res.status(errorStatus).send({
-        message: errorMessage
-      });
-    }
-
-    // Everything went fine
-    next();
-  });
+  fileUpload.uploadFileFilter(fileUpload.validImageMimeTypes, 'avatar', req, res, next);
 };
 
 
@@ -154,13 +107,6 @@ exports.avatarUploadField = function (req, res, next) {
  * Upload user avatar
  */
 exports.avatarUpload = function (req, res) {
-
-  if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
-    });
-  }
-
   // `req.file` is placed there by Multer middleware.
   // See `users.server.routes.js` for more details.
   if (!req.file || !req.file.path) {
@@ -184,7 +130,7 @@ exports.avatarUpload = function (req, res) {
       var Magic = mmmagic.Magic;
       var magic = new Magic(mmmagic.MAGIC_MIME_TYPE);
       magic.detectFile(req.file.path, function (err, result) {
-        if (err || (result && multerConfig.validMimeTypes.indexOf(result) === -1)) {
+        if (err || (result && multerConfig.validImageMimeTypes.indexOf(result) === -1)) {
           return res.status(415).send({
             message: errorService.getErrorMessageByKey('unsupported-media-type')
           });

@@ -431,7 +431,7 @@ describe('User profile CRUD tests', function () {
             .attach('fieldThatDoesntWork', './modules/users/tests/server/img/avatar.jpg')
             .expect(400)
             .end(function (userInfoErr, userInfoRes) {
-              userInfoRes.body.message.should.equal('Missing `avatar` field from the API call.');
+              userInfoRes.body.message.should.equal('Missing "avatar" field from the API call.');
               done(userInfoErr);
             });
         });
