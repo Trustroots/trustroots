@@ -1,6 +1,6 @@
-import React from 'react';
+import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
 import PropTypes from 'prop-types';
-import { withNamespaces } from 'react-i18next';
+import React from 'react';
 
 export function NonpublicReference({ t, reference }) {
   const daysLeft = 14 - Math.round((Date.now() - new Date(reference.created).getTime()) / 3600 / 24 / 1000);
@@ -23,4 +23,4 @@ NonpublicReference.propTypes = {
   reference: PropTypes.object.isRequired
 };
 
-export default withNamespaces('reference')(NonpublicReference);
+export default withTranslation('reference')(NonpublicReference);

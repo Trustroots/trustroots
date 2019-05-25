@@ -1,6 +1,7 @@
-import React from 'react';
+import { Trans } from 'react-i18next';
+import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
 import PropTypes from 'prop-types';
-import { withNamespaces, Trans } from 'react-i18next';
+import React from 'react';
 import Reference from './Reference';
 
 export function ReferencesReadPresentational({ t, publicReferences, nonpublicReferences }) {
@@ -19,11 +20,11 @@ export function ReferencesReadPresentational({ t, publicReferences, nonpublicRef
         <Trans positiveCount={positiveCount} unknownCount={unknownCount} negativeCount={negativeCount}>
           References:
           {' '}
-          <span style={{ color: 'green' }}>{{ positiveCount }} recommend</span>
+          <span className="text-success">{{ positiveCount }} recommend</span>
           {' '}
-          <span style={{ color: 'grey' }}>{{ unknownCount }} unknown</span>
+          <span>{{ unknownCount }} unknown</span>
           {' '}
-          <span style={{ color: 'red' }}>{{ negativeCount }} not recommend</span>
+          <span className="text-danger">{{ negativeCount }} not recommend</span>
         </Trans>
       </h4>
     </div>
@@ -36,22 +37,24 @@ export function ReferencesReadPresentational({ t, publicReferences, nonpublicRef
       {referenceCount}
     </section>
     {[nonpublicReferences, publicReferences]
-      .map((references, index) => hasAny(references) && (<section key={index}>
-        <div className="row">
-          <div className="col-xs-12 col-sm-6">
-            <h4 className="text-muted">{index === 0 ? t('Pending') : t('Public')}</h4>
-          </div>
-        </div>
-        <div className="row">
-          {references.map(reference => (
-            <div key={reference._id} className="col-xs-12 col-sm-6">
-              <div id={reference._id} className="contacts-contact panel panel-default">
-                <Reference reference={reference} />
-              </div>
+      .map((references, index) => hasAny(references) && (
+        <section key={index}>
+          <div className="row">
+            <div className="col-xs-12 col-sm-6">
+              <h4 className="text-muted">{index === 0 ? t('Pending') : t('Public')}</h4>
             </div>
-          ))}
-        </div>
-      </section>))
+          </div>
+          <div className="row">
+            {references.map(reference => (
+              <div key={reference._id} className="col-xs-12 col-sm-6">
+                <div id={reference._id} className="contacts-contact panel panel-default">
+                  <Reference reference={reference} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ))
     }
 
     {!hasAny(nonpublicReferences) && !hasAny(publicReferences) && noReferences}
@@ -65,4 +68,4 @@ ReferencesReadPresentational.propTypes = {
   nonpublicReferences: PropTypes.array
 };
 
-export default withNamespaces('reference')(ReferencesReadPresentational);
+export default withTranslation('reference')(ReferencesReadPresentational);

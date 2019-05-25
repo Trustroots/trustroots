@@ -1,6 +1,6 @@
-import React from 'react';
+import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
 import PropTypes from 'prop-types';
-import { withNamespaces } from 'react-i18next';
+import React from 'react';
 
 export function PublicReference({ t, reference }) {
   const created = new Date(reference.created);
@@ -24,4 +24,4 @@ PublicReference.propTypes = {
   reference: PropTypes.object.isRequired
 };
 
-export default withNamespaces('reference')(PublicReference);
+export default withTranslation('reference')(PublicReference);
