@@ -6,7 +6,6 @@ import '@/config/client/i18n';
 import * as references from '../api/references.api';
 import StepNavigation from '@/modules/core/client/components/StepNavigation';
 import Interaction from './create-reference/Interaction';
-import Recommend from './create-reference/Recommend';
 import {
   ReferenceToSelfInfo,
   DuplicateInfo,
@@ -14,6 +13,7 @@ import {
 } from './create-reference/Info';
 import { createValidator } from '@/modules/core/client/utils/validation';
 import Loading from '@/modules/core/client/components/Loading';
+import Recommend from './create-reference/Recommend';
 
 const api = { references };
 
