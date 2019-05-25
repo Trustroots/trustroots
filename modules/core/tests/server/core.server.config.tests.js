@@ -46,7 +46,6 @@ describe('Configuration Tests:', function () {
         displayName: 'Full Name A',
         email: 'user_a@example.com',
         username: credentials.username,
-        displayUsername: credentials.username,
         password: credentials.password,
         provider: 'local'
       };

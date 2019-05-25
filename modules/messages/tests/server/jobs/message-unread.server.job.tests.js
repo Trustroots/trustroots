@@ -44,7 +44,6 @@ describe('Job: message unread', function () {
       displayName: 'FullFrom NameFrom',
       email: 'userfrom@test.com',
       username: 'userfrom',
-      displayUsername: 'userfrom',
       password: 'M3@n.jsI$Aw3$0m4',
       provider: 'local'
     };
@@ -68,7 +67,6 @@ describe('Job: message unread', function () {
       displayName: 'FullTo NameTo',
       email: 'userto@test.com',
       username: 'userto',
-      displayUsername: 'userto',
       password: 'M3@n.jsI$Aw3$0m4',
       provider: 'local'
     };
@@ -168,7 +166,6 @@ describe('Job: message unread', function () {
       displayName: 'Full3 Name3',
       email: 'user3@test.com',
       username: 'user3',
-      displayUsername: 'user3',
       password: 'M3@n.jsI$Aw3$0m4',
       provider: 'local'
     };

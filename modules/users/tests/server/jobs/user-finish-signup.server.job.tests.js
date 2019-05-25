@@ -42,7 +42,6 @@ describe('Job: user finish signup', function () {
       emailTemporary: 'test@test.com', // unconfirmed users have this set
       emailToken: 'initial email token',
       username: 'user_unconfirmed',
-      displayUsername: 'user_unconfirmed',
       password: 'M3@n.jsI$Aw3$0m3',
       provider: 'local',
       created: moment().subtract(moment.duration({ 'hours': 4 }))
@@ -64,7 +63,6 @@ describe('Job: user finish signup', function () {
       displayName: 'Full Name',
       email: 'confirmed-test@test.com',
       username: 'user_confirmed',
-      displayUsername: 'user_confirmed',
       password: 'M3@n.jsI$Aw3$0m4',
       provider: 'local',
       created: moment().subtract(moment.duration({ 'hours': 4 }))
@@ -259,7 +257,6 @@ describe('Job: user finish signup', function () {
     for (var i = 1; i <= config.limits.maxProcessSignupReminders + 1; i++) {
       var loopVars = {
         username: 'l' + i + _unConfirmedUser.username,
-        displayUsername: 'l' + i + _unConfirmedUser.displayUsername,
         emailToken: 'l' + i + _unConfirmedUser.emailToken,
         emailTemporary: 'l' + i + _unConfirmedUser.emailTemporary,
         email: 'l' + i + _unConfirmedUser.email

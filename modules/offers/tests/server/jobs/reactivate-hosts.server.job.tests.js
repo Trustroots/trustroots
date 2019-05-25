@@ -40,7 +40,6 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       displayName: 'Full Name',
       email: 'test@test.com',
       username: 'jobtester',
-      displayUsername: 'jobtester',
       password: 'M3@n.jsI$Aw3$0m3',
       provider: 'local'
     };
