@@ -9,11 +9,13 @@ export default function Reference({ reference }) {
   const body = (reference.public) ? <PublicReference reference={reference} /> : <NonpublicReference reference={reference} />;
 
   return (
-    <>
-      <Avatar user={reference.userFrom} size={64} />
-      <h4><UserLink user={reference.userFrom} /></h4>
-      {body}
-    </>
+    <div className="panel panel-default">
+      <div className="panel-body reference">
+        <Avatar user={reference.userFrom} size={64} />
+        <h4><UserLink user={reference.userFrom} /></h4>
+        {body}
+      </div>
+    </div>
   );
 }
 
