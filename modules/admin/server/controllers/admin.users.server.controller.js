@@ -208,3 +208,47 @@ exports.getUser = async (req, res) => {
     handleAdminApiError(res, err);
   }
 };
+
+/**
+ * This middleware suspends users by ID
+ */
+exports.suspend = async (req, res) => {
+  const userId = _.get(req, ['body', 'id']);
+
+  // Check that the search string is provided
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).send({
+      message: errorService.getErrorMessageByKey('invalid-id')
+    });
+  }
+
+  try {
+    // Unpublish user
+    const user = await User.updateOne(
+      { _id: userId },
+      {
+        $set: {
+          newsletter: false,
+          public: false
+        },
+        $addToSet: {
+          roles: 'suspended'
+        }
+      }
+    );
+
+    // No documents were updated
+    if (!user.n) {
+      return res.status(404).send({
+        message: errorService.getErrorMessageByKey('not-found')
+      });
+    }
+
+    res.send({ message: 'Suspended.' });
+  } catch (err) {
+    log('error', 'Failed to load member in admin tool. #ggi323', {
+      error: err
+    });
+    handleAdminApiError(res, err);
+  }
+};
