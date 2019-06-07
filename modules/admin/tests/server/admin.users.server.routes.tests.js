@@ -284,6 +284,94 @@ describe('Admin User CRUD tests', () => {
     });
   });
 
+  describe('Suspend user', () => {
+    it('non-authenticated users should not be allowed to suspend users', (done) => {
+      agent.post('/api/admin/user/suspend')
+        .send({ id: userRegularId })
+        .expect(403)
+        .end((err, res) => {
+          res.body.message.should.equal('Forbidden.');
+          done(err);
+        });
+    });
+
+    it('non-admin users should not be allowed to suspend users', (done) => {
+      agent.post('/api/auth/signin')
+        .send(credentialsRegular)
+        .expect(200)
+        .end((signinErr) => {
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          agent.post('/api/admin/user/suspend')
+            .send({ id: userRegularId })
+            .expect(403)
+            .end((err, res) => {
+              res.body.message.should.equal('Forbidden.');
+              done(err);
+            });
+        });
+    });
+
+    it('admin users should be allowed suspend users', (done) => {
+      agent.post('/api/auth/signin')
+        .send(credentialsAdmin)
+        .expect(200)
+        .end((signinErr) => {
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          agent.post('/api/admin/user/suspend')
+            .send({ id: userRegularId })
+            .expect(200)
+            .end((err, res) => {
+              res.body.message.should.equal('Suspended.');
+              done(err);
+            });
+        });
+    });
+
+    it('missing id should not suspend users', (done) => {
+      agent.post('/api/auth/signin')
+        .send(credentialsAdmin)
+        .expect(200)
+        .end((signinErr) => {
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          agent.post('/api/admin/user/suspend')
+            .send({ id: '' })
+            .expect(400)
+            .end((err, res) => {
+              res.body.message.should.equal('Cannot interpret id.');
+              done(err);
+            });
+        });
+    });
+
+    it('invalid id should not suspend users', (done) => {
+      agent.post('/api/auth/signin')
+        .send(credentialsAdmin)
+        .expect(200)
+        .end((signinErr) => {
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          agent.post('/api/admin/user/suspend')
+            .send({ id: '123' })
+            .expect(400)
+            .end((err, res) => {
+              res.body.message.should.equal('Cannot interpret id.');
+              done(err);
+            });
+        });
+    });
+  });
+
   afterEach((done) => {
     User.deleteMany().exec(done);
   });

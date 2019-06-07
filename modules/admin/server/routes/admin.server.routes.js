@@ -18,4 +18,7 @@ module.exports = (app) => {
 
   app.route('/api/admin/user').all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminUsers.getUser);
+
+  app.route('/api/admin/user/suspend').all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminUsers.suspend);
 };
