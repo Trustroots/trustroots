@@ -1,5 +1,5 @@
 // External dependencies
-import { get } from 'lodash';
+import get from 'lodash/get';
 import React, { Component } from 'react';
 
 // Internal dependencies
