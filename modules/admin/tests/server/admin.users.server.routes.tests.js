@@ -230,14 +230,16 @@ describe('Admin User CRUD tests', () => {
             .send({ id: userRegularId })
             .expect(200)
             .end((err, res) => {
-              res.body.username.should.equal('user-regular');
+              const profile = res.body.profile;
+
+              profile.username.should.equal('user-regular');
               // These should have been removed
-              should.not.exist(res.body.password);
-              should.not.exist(res.body.salt);
+              should.not.exist(profile.password);
+              should.not.exist(profile.salt);
               // These should have been obfuscated
-              res.body.emailToken.should.equal('(Hidden from admins.)');
-              res.body.removeProfileToken.should.equal('(Hidden from admins.)');
-              res.body.resetPasswordToken.should.equal('(Hidden from admins.)');
+              profile.emailToken.should.equal('(Hidden from admins.)');
+              profile.removeProfileToken.should.equal('(Hidden from admins.)');
+              profile.resetPasswordToken.should.equal('(Hidden from admins.)');
               return done(err);
             });
         });

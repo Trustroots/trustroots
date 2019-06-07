@@ -63,7 +63,7 @@ export default class AdminSearchUsers extends Component {
       <>
         <AdminHeader />
         <div className="container">
-          <h2>Search users</h2>
+          <h2>Search members</h2>
 
           <form onSubmit={ this.doSearch } className="form-inline">
             <label>
@@ -109,27 +109,27 @@ export default class AdminSearchUsers extends Component {
                               <a
                                 className="admin-action admin-hidden-until-hover"
                                 href={ `/profile/${ username }` }
-                                title="Profile on Trustroots"
+                                title="Public profile on Trustroots"
                               >
-                                TR Profile
+                                Public profile
                               </a>
                             </td>
                             <td>
-                              { username }
+                              <span className="admin-copy-text">{ username }</span>
                               <ZendeskInboxSearch className="admin-action admin-hidden-until-hover" q={ username } />
                             </td>
                             <td>
-                              { email }
+                              <span className="admin-copy-text">{ email }</span>
                               <ZendeskInboxSearch className="admin-action admin-hidden-until-hover" q={ email } />
                               { (emailTemporary && emailTemporary !== email) && (
                                 <>
                                   <br/>
-                                  { emailTemporary } (temporary email)
+                                  <span className="admin-copy-text">{ emailTemporary }</span> (temporary email)
                                   <ZendeskInboxSearch className="admin-action admin-hidden-until-hover" q={ emailTemporary } />
                                 </>
                               ) }
                             </td>
-                            <td><small><code style={ { 'userSelect': 'all' } }>{ _id }</code></small></td>
+                            <td><small><samp className="admin-copy-text">{ _id }</samp></small></td>
                           </tr>
                         );
                       })

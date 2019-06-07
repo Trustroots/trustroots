@@ -19,10 +19,10 @@ export default function AdminHeader() {
           </div>
           <ul className="nav navbar-nav">
             <li className={ classnames({ 'active': path === '/admin/user' })}>
-              <a href="/admin/user">User report card</a>
+              <a href="/admin/user">Member report card</a>
             </li>
             <li className={ classnames({ 'active': path === '/admin/search-users' })}>
-              <a href="/admin/search-users">Search users</a>
+              <a href="/admin/search-users">Search members</a>
             </li>
             <li className={ classnames({ 'active': path === '/admin/messages' })}>
               <a href="/admin/messages">Messages</a>
