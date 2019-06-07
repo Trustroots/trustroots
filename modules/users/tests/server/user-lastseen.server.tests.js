@@ -47,7 +47,6 @@ describe('User last seen CRUD tests', function () {
       displayName: 'Full Name',
       email: 'confirmed-test@test.com',
       username: 'usertest',
-      displayUsername: 'usertest',
       password: 'aPassWoRd_*....',
       provider: 'local'
     };

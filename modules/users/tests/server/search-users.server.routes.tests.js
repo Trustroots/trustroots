@@ -57,7 +57,6 @@ describe('Search users: GET /users?search=string', function () {
         get displayName() { return this.firstName + ' ' + this.lastName; },
         get emailTemporary() { return this.email; },
         emailToken: 'initial email token',
-        get displayUsername() { return this.username; },
         password: user.password || '******password',
         provider: 'local',
         public: _.has(user, 'public') ? user.public : true,

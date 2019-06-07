@@ -40,7 +40,6 @@ async.eachSeries(
     const user = _.extend(
       _.pick(doc, [
         "displayName",
-        "displayUsername",
         "email",
         "firstName",
         "lastName",

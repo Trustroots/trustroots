@@ -85,7 +85,6 @@ describe('User signup validation CRUD tests', function () {
         email: 'test@example.org',
         emailToken: 'initial email token',
         username: 'taken_username',
-        displayUsername: 'taken_username',
         password: 'TR-I$Aw3$0m4',
         provider: 'local'
       });

@@ -456,7 +456,6 @@ exports.contactListByUser = function (req, res, next, listUserId) {
           updated: '$user.updated',
           displayName: '$user.displayName',
           username: '$user.username',
-          displayUsername: '$user.displayUsername',
           avatarSource: '$user.avatarSource',
           avatarUploaded: '$user.avatarUploaded',
           locationFrom: '$user.locationFrom',

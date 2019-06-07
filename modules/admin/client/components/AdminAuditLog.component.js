@@ -3,8 +3,9 @@ import React, { Component } from 'react';
 
 // Internal dependencies
 import { getAuditLog } from '../api/audit-log.api';
-import AdminHeader from './AdminHeader.component.js';
-import UserLink from './UserLink.component.js';
+import AdminHeader from './AdminHeader.component';
+import Json from './Json.component';
+import UserLink from './UserLink.component';
 
 export default class AdminAuditLog extends Component {
   constructor(props) {
@@ -32,17 +33,17 @@ export default class AdminAuditLog extends Component {
             auditLog.map((item) => (
               <div key={ item._id } className="panel">
                 <div className="panel-heading">
-                  { item.route ? <code>{ item.route }</code> : <em>Unknown route</em> }
+                  { item.route ? <samp>{ item.route }</samp> : <em>Unknown route</em> }
                 </div>
                 <div className="panel-body">
-                  <small className="pull-right text-muted">Audit log ID: <code>{ item._id }</code></small>
+                  <small className="pull-right text-muted">Audit log ID: <samp>{ item._id }</samp></small>
                   <p>By <UserLink user={ item.user || {} } /> ({ item.ip || 'Unknown IP address' }), <time>{ item.date }</time></p>
                   {
                     ['body', 'params', 'query'].map((type) => item[type] && (
-                      <pre key={ type }>
-                        { `${ type }: ` }
-                        { JSON.stringify(item[type], null, 2) }
-                      </pre>
+                      <div key={ type }>
+                        <h5>{ `${ type }: ` }</h5>
+                        <Json content={item[type]}/>
+                      </div>
                     ))
                   }
                 </div>

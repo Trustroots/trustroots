@@ -61,7 +61,6 @@ exports.signup = function (req, res) {
       user.public = false;
       user.provider = 'local';
       user.displayName = user.firstName.trim() + ' ' + user.lastName.trim();
-      user.displayUsername = req.body.username;
 
       // Just to simplify email confirm process later
       // This field is normally needed when changing email after the signup process

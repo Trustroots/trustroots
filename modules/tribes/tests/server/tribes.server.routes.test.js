@@ -48,7 +48,6 @@ describe('Tribe CRUD tests', function () {
       displayName: 'Full Name',
       email: 'test@test.com',
       username: credentials.username,
-      displayUsername: credentials.username,
       password: credentials.password,
       provider: 'local',
       public: true

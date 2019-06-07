@@ -26,7 +26,7 @@ export default function UserState({ user }) {
     <div className="admin-user-state">
       { /* What special roles user has? */ }
       {
-        roles
+        roles && roles.length && roles
           .filter((role) => role !== 'user')
           .map((role) => {
             const classes = classnames('label admin-label', {

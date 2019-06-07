@@ -178,12 +178,6 @@ var UserSchema = new Schema({
   usernameUpdated: {
     type: Date
   },
-  // Stores unaltered original username
-  displayUsername: {
-    type: String,
-    trim: true,
-    set: setPlainTextField
-  },
   // Bewelcome.org username
   extSitesBW: {
     type: String,

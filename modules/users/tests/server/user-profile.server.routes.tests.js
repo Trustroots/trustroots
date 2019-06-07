@@ -50,7 +50,6 @@ describe('User profile CRUD tests', function () {
       displayName: 'Full Name',
       email: 'test@example.org',
       username: credentials.username.toLowerCase(),
-      displayUsername: credentials.username,
       password: credentials.password,
       provider: 'local'
     };
@@ -77,7 +76,6 @@ describe('User profile CRUD tests', function () {
       emailTemporary: 'unconfirmed-test@example.org', // unconfirmed users have this set
       emailToken: 'initial email token',
       username: unConfirmedCredentials.username.toLowerCase(),
-      displayUsername: unConfirmedCredentials.username,
       password: unConfirmedCredentials.password,
       provider: 'local'
     };
@@ -108,7 +106,6 @@ describe('User profile CRUD tests', function () {
 
             res.body.should.be.instanceof(Object);
             res.body.username.should.equal(unConfirmedUser.username);
-            res.body.displayUsername.should.equal(unConfirmedUser.displayUsername);
             res.body.public.should.equal(false); // Unpublic right after signup
             res.body.avatarSource.should.equal('gravatar'); // Defaults to `gravatar`
             should.exist(res.body.languages);
@@ -431,7 +428,7 @@ describe('User profile CRUD tests', function () {
             .attach('fieldThatDoesntWork', './modules/users/tests/server/img/avatar.jpg')
             .expect(400)
             .end(function (userInfoErr, userInfoRes) {
-              userInfoRes.body.message.should.equal('Missing `avatar` field from the API call.');
+              userInfoRes.body.message.should.equal('Missing "avatar" field from the API call.');
               done(userInfoErr);
             });
         });

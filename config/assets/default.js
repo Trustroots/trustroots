@@ -124,7 +124,7 @@ module.exports = {
         // Core CSS
         'node_modules/bootstrap/less/scaffolding.less',
         'node_modules/bootstrap/less/type.less',
-        // 'node_modules/bootstrap/less/code.less',
+        'node_modules/bootstrap/less/code.less',
         'node_modules/bootstrap/less/grid.less',
         'node_modules/bootstrap/less/tables.less',
         'node_modules/bootstrap/less/forms.less',
