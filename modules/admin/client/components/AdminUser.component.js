@@ -46,12 +46,17 @@ export default class AdminUser extends Component {
 
   handleSuspendUser() {
     const id = get(this, ['state', 'user', 'profile', '_id']);
-    this.setState({ isSuspending: true }, async () => {
-      await suspendUser(id);
-      // Get fresh user profile
-      this.getUserById(id);
-      this.setState({ isSuspending: false });
-    });
+    if (id) {
+      const username = get(this, ['state', 'user', 'profile', 'username']);
+      if (window.confirm(`Suspend ${username}?`)) {
+        this.setState({ isSuspending: true }, async () => {
+          await suspendUser(id);
+          // Get fresh user profile
+          this.getUserById(id);
+          this.setState({ isSuspending: false });
+        });
+      }
+    }
   }
 
   queryUser(event) {
