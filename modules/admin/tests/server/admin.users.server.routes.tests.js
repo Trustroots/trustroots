@@ -284,7 +284,6 @@ describe('Admin User CRUD tests', () => {
     });
   });
 
-  /*
   describe('Suspend user', () => {
     it('non-authenticated users should not be allowed to suspend users', (done) => {
       agent.post('/api/admin/user/suspend')
@@ -372,7 +371,6 @@ describe('Admin User CRUD tests', () => {
         });
     });
   });
-  */
 
   afterEach((done) => {
     User.deleteMany().exec(done);
