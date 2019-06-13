@@ -27,6 +27,9 @@ export default function AdminHeader() {
             <li className={ classnames({ 'active': path === '/admin/messages' })}>
               <a href="/admin/messages">Messages</a>
             </li>
+            <li className={ classnames({ 'active': path === '/admin/acquisition-stories' })}>
+              <a href="/admin/acquisition-stories">Acquisition stories</a>
+            </li>
           </ul>
           <ul className="nav navbar-nav pull-right">
             <li className={ classnames({ 'active': path === '/admin/audit-log' })}>
