@@ -20,7 +20,7 @@ describe('Admin acquisition stories CRUD tests', () => {
 
   describe('Acquisition stories', () => {
     it('non-authenticated users should not be allowed to read acquisition stories', (done) => {
-      agent.get('/api/admin/acquisition-stories').expect(403).end(done);
+      agent.post('/api/admin/acquisition-stories').expect(403).end(done);
     });
 
     it('non-admin users should not be allowed to read acquisition stories', (done) => {
@@ -28,7 +28,7 @@ describe('Admin acquisition stories CRUD tests', () => {
         .send(_users[1])
         .expect(200)
         .end(() => {
-          agent.get('/api/admin/acquisition-stories')
+          agent.post('/api/admin/acquisition-stories')
             .expect(403)
             .end(done);
         });
@@ -39,7 +39,7 @@ describe('Admin acquisition stories CRUD tests', () => {
         .send(_users[0])
         .expect(200)
         .end(() => {
-          agent.get('/api/admin/acquisition-stories')
+          agent.post('/api/admin/acquisition-stories')
             .expect(200)
             .end(done);
         });
