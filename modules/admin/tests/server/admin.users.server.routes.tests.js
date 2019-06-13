@@ -16,9 +16,6 @@ let userAdmin;
 let userRegular;
 let userRegularId;
 
-/**
- * Offer routes tests
- */
 describe('Admin User CRUD tests', () => {
 
   before((done) => {

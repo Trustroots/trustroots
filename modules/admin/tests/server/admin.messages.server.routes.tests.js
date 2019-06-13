@@ -19,9 +19,6 @@ let userRegular2;
 let userRegular1Id;
 let userRegular2Id;
 
-/**
- * Offer routes tests
- */
 describe('Admin Message CRUD tests', () => {
 
   before((done) => {
