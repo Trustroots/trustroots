@@ -24,7 +24,7 @@ var _ = require('lodash'),
  * @return String
  */
 function getSupportVolunteerName() {
-  _.sample(config.supportVolunteerNames);
+  return _.sample(config.supportVolunteerNames);
 }
 
 exports.sendMessagesUnread = function (userFrom, userTo, notification, callback) {
