@@ -323,7 +323,7 @@ exports.sendWelcomeSequenceFirst = function (user, callback) {
   var params = exports.addEmailBaseTemplateParams({
     subject: '👋 Welcome to Trustroots ' + user.firstName + '!',
     from: {
-      name: 'Natalia',
+      name: 'Dario',
       // Use support email instead of default "no-reply@":
       address: config.supportEmail
     },
@@ -355,7 +355,7 @@ exports.sendWelcomeSequenceSecond = function (user, callback) {
   var params = exports.addEmailBaseTemplateParams({
     subject: 'Meet new people at Trustroots, ' + user.firstName,
     from: {
-      name: 'Kasper',
+      name: 'Noah',
       // Use support email instead of default "no-reply@":
       address: config.supportEmail
     },
