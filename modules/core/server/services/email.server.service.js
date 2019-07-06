@@ -17,16 +17,6 @@ var _ = require('lodash'),
     log = require(path.resolve('./config/lib/logger')),
     url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
-/**
- * Get a randomized name from a list of support volunteer names.
- * Used in welcome sequence emails.
- *
- * @return String
- */
-function getSupportVolunteerName() {
-  _.sample(['Dario', 'Noah']);
-}
-
 exports.sendMessagesUnread = function (userFrom, userTo, notification, callback) {
 
   // Is the notification the first one?
@@ -333,7 +323,7 @@ exports.sendWelcomeSequenceFirst = function (user, callback) {
   var params = exports.addEmailBaseTemplateParams({
     subject: '👋 Welcome to Trustroots ' + user.firstName + '!',
     from: {
-      name: getSupportVolunteerName(),
+      name: _.sample(config.supportVolunteerNames),
       // Use support email instead of default "no-reply@":
       address: config.supportEmail
     },
@@ -365,7 +355,7 @@ exports.sendWelcomeSequenceSecond = function (user, callback) {
   var params = exports.addEmailBaseTemplateParams({
     subject: 'Meet new people at Trustroots, ' + user.firstName,
     from: {
-      name: getSupportVolunteerName(),
+      name: _.sample(config.supportVolunteerNames),
       // Use support email instead of default "no-reply@":
       address: config.supportEmail
     },
@@ -403,7 +393,7 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
   var params = exports.addEmailBaseTemplateParams({
     subject: 'How is it going, ' + user.firstName + '?',
     from: {
-      name: getSupportVolunteerName(),
+      name: _.sample(config.supportVolunteerNames),
       // Use support email instead of default "no-reply@":
       address: config.supportEmail
     },
