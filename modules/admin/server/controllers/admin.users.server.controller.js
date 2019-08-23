@@ -22,7 +22,7 @@ const SEARCH_STRING_LIMIT = 3;
  * Overwrite tokens from results as a security measure.
  * We still want to pull this info to know if it's there.
  */
-function obfuscateWriteTokens(user) {
+function obfuscateTokens(user) {
   if (!user) {
     return;
   }
@@ -31,7 +31,7 @@ function obfuscateWriteTokens(user) {
   const _user = user.toObject();
 
   [
-    'emailToken',
+    // 'emailToken', // Needed to generate email reset links visible at dashboard
     'removeProfileToken',
     'resetPasswordToken',
     // Arrays just to speed up lodash operations. That's what lodash does internally anyway
@@ -95,7 +95,7 @@ exports.searchUsers = (req, res) => {
         });
       }
 
-      const result = users ? users.map(obfuscateWriteTokens) : [];
+      const result = users ? users.map(obfuscateTokens) : [];
 
       return res.send(result);
     });
@@ -194,7 +194,7 @@ exports.getUser = async (req, res) => {
       messageFromCount,
       messageToCount,
       offers: offers || [],
-      profile: obfuscateWriteTokens(user),
+      profile: obfuscateTokens(user),
       threadCount,
       threadReferencesSentNo,
       threadReferencesReceivedNo,
