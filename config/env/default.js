@@ -52,6 +52,7 @@ module.exports = {
   sessionCollection: 'sessions',
   domain: 'localhost:3000',
   supportEmail: 'support@trustroots.org', // TO-address for support requests
+  supportVolunteerNames: ['Dario', 'Noah'], // Used as "from" name to send some automated emails
   surveyReactivateHosts: 'https://ideas.trustroots.org/?p=1302#page-1302', // Survey to send with host reactivation emails
   profileMinimumLength: 140, // Require User.profile.description to be >=140 chars to send messages
   // Strings not allowed as usernames and tag/tribe labels
