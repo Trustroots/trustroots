@@ -5,8 +5,9 @@ import React, { Component } from 'react';
 // Internal dependencies
 import { getUser, suspendUser } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
-import UserState from './UserState.component';
 import Json from './Json.component';
+import UserEmailConfirmLink from './UserEmailConfirmLink.component';
+import UserState from './UserState.component';
 
 // Mongo ObjectId is always 24 chars long
 const MONGO_OBJECT_ID_LENGTH = 24;
@@ -158,6 +159,7 @@ export default class AdminUser extends Component {
                       </ul>
                       <p><strong>{ user.contacts.length } contact(s)</strong></p>
                       <p><strong>{ user.offers.length } hosting or meet offer(s)</strong></p>
+                      <UserEmailConfirmLink user={ user.profile } />
                     </div>
                   </div>
 

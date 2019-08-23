@@ -230,11 +230,11 @@ describe('Admin User CRUD tests', () => {
               const profile = res.body.profile;
 
               profile.username.should.equal('user-regular');
+              profile.emailToken.should.equal('test-token');
               // These should have been removed
               should.not.exist(profile.password);
               should.not.exist(profile.salt);
               // These should have been obfuscated
-              profile.emailToken.should.equal('(Hidden from admins.)');
               profile.removeProfileToken.should.equal('(Hidden from admins.)');
               profile.resetPasswordToken.should.equal('(Hidden from admins.)');
               return done(err);
