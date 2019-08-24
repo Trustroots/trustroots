@@ -260,9 +260,7 @@ gulp.task('build:styles', function buildStyles() {
     // eslint-disable-next-line new-cap
     return MergeStream(lessStream, cssStream)
       .pipe(plugins.concat('application.css'))
-      .pipe(plugins.autoprefixer({
-        browsers: require('./package.json').browserslist
-      }))
+      .pipe(plugins.autoprefixer())
       .pipe(plugins.csso())
       .pipe(plugins.rename({ suffix: '.min' }))
       .pipe(gulp.dest('public/dist'));
@@ -278,9 +276,7 @@ gulp.task('build:styles', function buildStyles() {
     return gulp.src(_.union(defaultAssets.client.lib.less, defaultAssets.client.less))
       .pipe(plugins.concat('less-files.less'))
       .pipe(lessProcessor)
-      .pipe(plugins.autoprefixer({
-        browsers: require('./package.json').browserslist
-      }))
+      .pipe(plugins.autoprefixer())
       .pipe(plugins.rename({ basename: 'application', extname: '.css' }))
       .pipe(gulp.dest('public/dist'))
       .pipe(plugins.refresh());
