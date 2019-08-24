@@ -192,7 +192,7 @@
     "enzyme": "~3.10.0",
     "enzyme-adapter-react-16": "~1.14.0",
     "eslint-plugin-react": "~7.14.3",
-    "eslint-watch": "~5.1.2",
+    "eslint-watch": "~6.0.0",
     "exports-loader": "~0.7.0",
     "expose-loader": "~0.7.5",
     "faker": "~4.1.0",
