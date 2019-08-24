@@ -114,7 +114,6 @@
     "gulp-autoprefixer": "~7.0.0",
     "gulp-concat": "~2.6.1",
     "gulp-csso": "~3.0.1",
-    "gulp-eslint": "~6.0.0",
     "gulp-fontello": "~0.5.1",
     "gulp-htmlmin": "~5.0.1",
     "gulp-less": "~4.0.1",
