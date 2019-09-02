@@ -37,7 +37,7 @@
     var vm = this;
 
     // Exposed to the view
-    vm.boardHeight = $window.innerWidth <= 480 && $window.innerHeight < 700 ? 400 : $window.innerHeight - headerHeight - 10;
+    vm.boardHeight = $window.innerWidth <= 480 && $window.innerHeight < 700 ? 400 : $window.innerHeight - headerHeight + 14;
 
     // Load front page's landing photos
     if ($stateParams.tribe && ['hitchhikers', 'dumpster-divers', 'punks'].indexOf($stateParams.tribe) > -1) {
