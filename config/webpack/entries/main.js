@@ -62,7 +62,10 @@ function importComponents(r) {
   r.keys().forEach(path => {
     const Component = r(path).default;
     const name = extractComponentNameFromPath(path);
-    if (name !== Component.name && process.env.NODE_ENV !== 'production') {
+    if (
+      ![name, '_class'].includes(Component.name) &&
+      process.env.NODE_ENV !== 'production'
+    ) {
       throw new Error(
         `Component filename and component name do not match: ${name ||
           '<empty>'} vs ${Component.name || '<empty>'}`,

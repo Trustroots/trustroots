@@ -1,69 +1,65 @@
-import React from 'react';
+// External dependencies
+import { SVGOverlay } from 'react-map-gl';
 import PropTypes from 'prop-types';
-import OfferLocationPresentational from './OfferLocationPresentational';
-import throttle from 'lodash/throttle';
+import React from 'react';
 
-export default class OfferLocation extends React.Component {
-  constructor(props) {
-    super(props);
+// Internal dependencies
+import Map from '@/modules/core/client/components/Map';
 
-    this.state = {
-      zoom: 13,
-      windowWidth: 0,
-    };
+/*
+  <Marker latitude={location[0]} longitude={location[1]}>
+    {status.status}
+  </Marker>
+<path
+  cx={cx}
+  cy={cy}
 
-    this.handleChangeZoom = this.handleChangeZoom.bind(this);
-    this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
-    // update window size max every 200 milliseconds, not faster
-    this.throttledUpdateWindowDimensions = throttle(
-      this.updateWindowDimensions,
-      200,
-    );
-  }
-
-  /* updating windows size with https://stackoverflow.com/a/42141641 */
-  componentDidMount() {
-    this.updateWindowDimensions();
-    window.addEventListener('resize', this.throttledUpdateWindowDimensions);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('resize', this.throttledUpdateWindowDimensions);
-  }
-
-  updateWindowDimensions() {
-    this.setState(() => ({ windowWidth: window.innerWidth }));
-  }
-
-  handleChangeZoom(zoom) {
-    this.setState(() => ({ zoom }));
-  }
-
-  render() {
-    const marker = getOfferMarkerType(this.props.offer);
-
-    return (
-      <OfferLocationPresentational
-        zoom={this.state.zoom}
-        location={this.props.offer.location}
-        marker={marker}
-        onChangeZoom={this.handleChangeZoom}
-        windowWidth={this.state.windowWidth}
-      />
-    );
-  }
+  stroke="#989898"
+  strokeOpacity="1"
+  strokeWidth="2"
+  strokeLinecap="round"
+  strokeLinejoin="round"
+  fill="#b1b1b1"
+  fillOpacity="0.5"
+  fillRule="evenodd"
+  d="M862.571317711845,380.16179131902754a337,337 0 1,0 674,0 a337,337 0 1,0 -674,0 "
+></path>
+<circle id="e1_circle" cx="206" cy="344"  r="68.6002915446"></circle>
+  */
+export default function OfferLocation({ location }) {
+  return (
+    location &&
+    location.length === 2 && (
+      <Map
+        className="offer-location"
+        height={320}
+        location={location}
+        width="100%"
+      >
+        <SVGOverlay
+          redraw={({ project }) => {
+            // Longitude, latitude are in different order for projection than in our data source
+            const [cx, cy] = project([location[1], location[0]]);
+            return (
+              <circle
+                cx={cx}
+                cy={cy}
+                r={50}
+                style={{
+                  fill: '#b1b1b1',
+                  fillOpacity: '0.5',
+                  stroke: '#989898',
+                  strokeWidth: '2px',
+                }}
+              />
+            );
+          }}
+        />
+      </Map>
+    )
+  );
 }
 
 OfferLocation.propTypes = {
-  offer: PropTypes.object.isRequired,
+  location: PropTypes.arrayOf(PropTypes.number).isRequired,
 };
-
-function getOfferMarkerType(offer) {
-  const { type = 'other', status = 'yes' } = offer;
-
-  if (type === 'host' && status === 'yes') return 'yes';
-  if (type === 'host' && status === 'maybe') return 'maybe';
-  if (type === 'host' && status === 'no') return 'no';
-  if (type === 'meet') return 'meet';
-  return '';
-}

@@ -138,6 +138,7 @@
     "leaflet": "1.6.0",
     "leaflet-active-area": "git+https://github.com/Mappy/Leaflet-active-area.git#f09574a3eb7fdce3a6778e4822955c6416415e43",
     "lodash": "4.17.15",
+    "mapbox-gl": "1.8.1",
     "medium-editor": "5.23.3",
     "method-override": "3.0.0",
     "migrate": "1.6.2",
@@ -168,6 +169,7 @@
     "react-dom": "16.13.0",
     "react-i18next": "11.3.3",
     "react-leaflet": "2.6.3",
+    "react-map-gl": "5.2.3",
     "sanitize-html": "1.21.1",
     "serve-favicon": "2.5.0",
     "speakingurl": "14.0.1",
@@ -181,6 +183,7 @@
   },
   "devDependencies": {
     "@babel/core": "7.8.7",
+    "@babel/plugin-proposal-class-properties": "7.8.3",
     "@babel/plugin-proposal-nullish-coalescing-operator": "7.8.3",
     "@babel/plugin-proposal-object-rest-spread": "7.8.3",
     "@babel/plugin-proposal-optional-chaining": "7.8.3",

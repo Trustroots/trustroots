@@ -1,0 +1,40 @@
+@import '~bootstrap/less/mixins/size';
+@import '~less/global-variables';
+
+/**
+ * Mapbox-gl overrides
+ */
+
+.mapboxgl-map {
+  background: @gray-lighter;
+}
+
+.map-navigation-control-container {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+}
+
+.mapboxgl-ctrl-group {
+  background: transparent;
+  & > button {
+    .square(36px);
+    background: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid @gray-lighter;
+    border-radius: @border-radius-small;
+    border: 0;
+    color: @gray-dark;
+    display: block;
+    text-align: center;
+    transition: background 0.2s;
+    /*
+    @media (min-width: @screen-md-min) {
+      .square(36px);
+    }
+    */
+
+    &:hover {
+      background: rgba(255, 255, 255, 1);
+    }
+  }
+}

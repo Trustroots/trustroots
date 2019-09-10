@@ -345,8 +345,9 @@ module.exports.initHelmetHeaders = function(app) {
         imgSrc: [
           "'self'",
           'grafana.trustroots.org',
-          '*.tiles.mapbox.com', // Map tiles
-          'api.mapbox.com', // Map tiles/Geocoding
+          'https://*.tiles.mapbox.com', // Map tiles
+          'https://api.mapbox.com', // Map tiles/Geocoding
+          'https://events.mapbox.com',
           '*.tile.openstreetmap.org', // Map tiles
           '*.earthdata.nasa.gov', // Map tiles
           '*.facebook.com',
@@ -370,7 +371,8 @@ module.exports.initHelmetHeaders = function(app) {
         // If not allowed the browser emulates a 400 HTTP status code.
         connectSrc: [
           "'self'",
-          'api.mapbox.com',
+          'https://api.mapbox.com',
+          'https://events.mapbox.com',
           'fcm.googleapis.com',
           'maitreapp.co', // Signup waiting list feature
           'www.facebook.com',
@@ -393,7 +395,9 @@ module.exports.initHelmetHeaders = function(app) {
 
         // Defines valid sources for web workers and nested browsing contexts
         // loaded using elements such as `<frame>` and `<iframe>`
-        childSrc: ["'self'", '*.twitter.com', '*.facebook.com'],
+        childSrc: ["'self'", 'blob:', '*.twitter.com', '*.facebook.com'],
+
+        workerSrc: ["'self'", 'blob:'],
 
         // San
         // @link https://developers.google.com/web/fundamentals/security/csp/#sandboxing
