@@ -6,7 +6,7 @@
     .controller('InboxController', InboxController);
 
   /* @ngInject */
-  function InboxController($rootScope, $state, $analytics, Authentication, Messages) {
+  function InboxController($rootScope, $state, $analytics, Authentication, Messages, $log) {
 
     // ViewModel
     var vm = this;
@@ -19,9 +19,12 @@
     vm.openThread = openThread;
 
     // Fetches first page of messages
-    vm.messageHandler.fetchMessages().$promise.then(function (data) {
-      addMessages(data);
-    });
+    vm.messageHandler.fetchMessages().$promise
+      .then(function (data) {
+        addMessages(data);
+      }, function () {
+        $log.warn('Could not fetch messages.');
+      });
 
     activate();
 
@@ -64,7 +67,9 @@
     function otherParticipant(thread, value) {
       var other = (thread.userFrom && thread.userFrom._id === Authentication.user._id) ? thread.userTo : thread.userFrom;
 
-      if (!other) return;
+      if (!other) {
+        return;
+      }
 
       if (value && value === 'displayName') {
         return other.displayName;

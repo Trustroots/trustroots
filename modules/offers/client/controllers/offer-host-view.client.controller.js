@@ -33,7 +33,6 @@
           userId: $scope.profileCtrl.profile._id,
           types: 'host'
         }, function (offers) {
-
           if (!offers || !offers.length) {
             return;
           }

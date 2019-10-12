@@ -66,7 +66,9 @@
        * @todo: any better way to keep vm.contact $resolved but wipe out the actual content?
        */
       $scope.$on('contactRemoved', function () {
-        if (vm.contact) delete vm.contact._id;
+        if (vm.contact) {
+          delete vm.contact._id;
+        }
       });
     }
 

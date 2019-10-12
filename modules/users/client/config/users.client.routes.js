@@ -153,10 +153,12 @@
                 return;
               } else {
                 // Load contact
-                return ContactByService.get({
-                  userId: profile._id
-                });
+                return ContactByService.get({ userId: profile._id });
               }
+            },
+            // Fetch failures
+            function () {
+              return;
             });
           },
 
