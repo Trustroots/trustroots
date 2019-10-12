@@ -53,8 +53,8 @@ export const SubmittedInfo = withTranslation('reference')(function ({ t, isRepor
   const isPublicMessage = (isPublic) ?
     (
       <>
-      <div><Trans><a href={`/profile/${userTo.username}/references`}>Your reference</a> for <UserLink user={userTo} /> is public now.</Trans></div>
-      <div><a href={`/profile/${userFrom.username}/references`}>{t('See the reference from {{name}} to you.', name)}</a></div>
+        <div><Trans><a href={`/profile/${userTo.username}/references`}>Your reference</a> for <UserLink user={userTo} /> is public now.</Trans></div>
+        <div><a href={`/profile/${userFrom.username}/references`}>{t('See the reference from {{name}} to you.', name)}</a></div>
       </>
     ) :
     (

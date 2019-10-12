@@ -98,19 +98,6 @@ const angularRules = {
 };
 
 module.exports = {
-  /*
-   * this would ideally belong to the react overrides, but overrides can't include extends
-   * https://github.com/eslint/eslint/issues/8813
-   */
-  plugins: ['eslint-plugin-react'],
-  extends: [
-    'plugin:react/recommended'
-  ],
-  settings: {
-    react: {
-      version: reactVersion
-    }
-  },
   rules: defaultRules,
   env: {
     node: true,
@@ -138,6 +125,10 @@ module.exports = {
     because eventually, they want to become independent codebases.
   */
   overrides: [{
+    env: {
+      browser: true,
+      jquery: true
+    },
     // Overrides for Angular files
     files: [
       'modules/*/client/*.module.js',
@@ -168,6 +159,11 @@ module.exports = {
       PruneClusterForLeaflet: true,
     },
   },{
+    env: {
+      node: true,
+      jasmine: true,
+      mocha: true
+    },
     // overrides for server code
     // ES 2018 - specify migrated files and folders here
     files: [
@@ -185,6 +181,17 @@ module.exports = {
     },
     rules: es2018rules
   }, {
+    env: {
+      es6: true,
+      browser: true,
+    },
+    plugins: ['react'],
+    extends: 'plugin:react/recommended',
+    settings: {
+      react: {
+        version: reactVersion
+      }
+    },
     // overrides for client/react code
     files: [
       'config/client/**',
@@ -199,7 +206,11 @@ module.exports = {
       'modules/core/client/services/photos.service.js',
       'modules/references/tests/client/**'
     ],
+    parser: 'babel-eslint',
     parserOptions: {
+      ecmaFeatures: {
+        jsx: true
+      },
       ecmaVersion: 2018,
       sourceType: 'module'
     },
