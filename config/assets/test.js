@@ -19,9 +19,5 @@ module.exports = {
     less: defaultAssets.client.less,
     js: defaultAssets.client.js,
     views: defaultAssets.client.views
-  },
-  tests: {
-    client: ['modules/*/tests/client/**/*.js'],
-    server: ['modules/*/tests/server/**/*.js']
   }
 };

@@ -8,7 +8,6 @@
 var _ = require('lodash'),
     path = require('path'),
     defaultAssets = require('./config/assets/default'),
-    testAssets = require('./config/assets/test'),
     gulp = require('gulp'),
     gulpLoadPlugins = require('gulp-load-plugins'),
     MergeStream = require('merge-stream'),
@@ -111,14 +110,6 @@ function runNodemonWorker(done) {
   done();
 }
 
-// Set NODE_ENV to 'test' and prepare environment
-gulp.task('env:test', gulp.series(
-  function (done) {
-    process.env.NODE_ENV = 'test';
-    done();
-  }
-));
-
 // Set NODE_ENV to 'development' and prepare environment
 gulp.task('env:dev', gulp.series(
   function (done) {
@@ -192,7 +183,7 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
 
   // Add Server Test file rules
   gulp.watch([
-    testAssets.tests.server,
+    'modules/*/tests/server/**/*.js',
     defaultAssets.server.allJS,
     defaultAssets.server.migrations
   ],
@@ -201,7 +192,7 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
       changedTestFiles = [];
 
       // iterate through server test glob patterns
-      _.forEach(testAssets.tests.server, function (pattern) {
+      _.forEach('modules/*/tests/server/**/*.js', function (pattern) {
         // determine if the changed (watched) file is a server test
         _.forEach(glob.sync(pattern), function (file) {
           var filePath = path.resolve(file);
@@ -337,7 +328,7 @@ function mocha(done) {
   // Open mongoose connections
   var mongooseService = require('./config/lib/mongoose');
   var agenda = require('./config/lib/agenda');
-  var testSuites = changedTestFiles.length ? changedTestFiles : testAssets.tests.server;
+  var testSuites = changedTestFiles.length ? changedTestFiles : 'modules/*/tests/server/**/*.js';
   var error;
 
   // Connect mongoose
@@ -372,20 +363,7 @@ function mocha(done) {
   });
 }
 
-function karma(done) {
-  var KarmaServer = require('karma').Server;
-  new KarmaServer({
-    configFile: __dirname + '/karma.conf.js'
-  }, done).start();
-}
-
-function karmaWatch(done) {
-  var KarmaServer = require('karma').Server;
-  new KarmaServer({
-    configFile: __dirname + '/karma.conf.js',
-    singleRun: false
-  }, done).start();
-}
+gulp.task('angular-templatecache', gulp.series(angularTemplateCache, angularUibTemplatecache));
 
 // Clean dist css and js files
 gulp.task('clean', gulp.parallel('clean:css', 'clean:js'));
@@ -414,15 +392,7 @@ gulp.task('build:prod', gulp.series(
 // Run fontello update
 gulp.task('fontello', fontello);
 
-// Run the project tests
-gulp.task('test', gulp.series(
-  'env:test',
-  karma,
-  mocha
-));
-
 gulp.task('test:server', gulp.series(
-  'env:test',
   mocha
 ));
 
@@ -431,17 +401,6 @@ gulp.task('test:server', gulp.series(
 gulp.task('test:server:watch', gulp.series(
   'test:server',
   'watch:server:run-tests'
-));
-
-gulp.task('test:client', gulp.series(
-  'build:dev',
-  'env:test',
-  karma
-));
-
-gulp.task('test:client:watch', gulp.series(
-  'env:test',
-  karmaWatch
 ));
 
 // Run the project in development mode
