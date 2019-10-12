@@ -33,9 +33,7 @@
           SettingsService: 'SettingsService',
 
           userTo: function (UserProfilesService, $stateParams) {
-            return UserProfilesService.get({
-              username: $stateParams.username
-            });
+            return UserProfilesService.get({ username: $stateParams.username });
           },
           appSettings: function (SettingsService) {
             return SettingsService.get();

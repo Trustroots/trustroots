@@ -9,7 +9,9 @@
   function ContactAddController($state, $stateParams, Contact, Authentication, friend, existingContact) {
 
     // If no friend ID defined, go to elsewhere
-    if (!$stateParams.userId) $state.go('profile.about');
+    if (!$stateParams.userId) {
+      $state.go('profile.about');
+    }
 
     // ViewModel
     var vm = this;
@@ -35,6 +37,7 @@
       if ($stateParams.userId === Authentication.user._id) {
         vm.isConnected = true;
         vm.error = 'You cannot connect with yourself. That is just silly!';
+        return;
       }
 
       // If contact doesn't exist, stop here
@@ -52,8 +55,10 @@
       existingContact.$promise.then(function (response) {
         if (response) {
           vm.isConnected = true;
-          vm.success = (response.confirmed) ? 'You two are already connected. Great!' : 'Connection already initiated; now it has to be confirmed.';
+          vm.success = response.confirmed ? 'You two are already connected. Great!' : 'Connection already initiated; now it has to be confirmed.';
         }
+      }, function () {
+        vm.isConnected = false;
       });
 
     }

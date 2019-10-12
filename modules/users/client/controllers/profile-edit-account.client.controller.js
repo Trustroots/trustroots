@@ -145,7 +145,9 @@
      * Resend confirmation email for already sent email
      */
     function resendUserEmailConfirm($event) {
-      if ($event) $event.preventDefault();
+      if ($event) {
+        $event.preventDefault();
+      }
       if (vm.user.emailTemporary) {
         $http.post('/api/auth/resend-confirmation')
           .then(function () {

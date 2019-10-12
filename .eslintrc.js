@@ -80,7 +80,7 @@ const angularRules = {
   'angular/prefer-component': 0,
   'angular/no-cookiestore': 2,
   'angular/no-directive-replace': 0,
-  'angular/no-http-callback': 1,
+  'angular/no-http-callback': 2,
   'angular/angularelement': 2,
   'angular/definedundefined': 2,
   'angular/document-service': 2,

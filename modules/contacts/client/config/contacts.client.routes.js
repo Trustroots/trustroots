@@ -21,9 +21,7 @@
           UsersMini: 'UsersMini',
 
           existingContact: function (ContactByService, $stateParams) {
-            return ContactByService.get({
-              userId: $stateParams.userId
-            });
+            return ContactByService.get({ userId: $stateParams.userId });
           },
 
           friend: function (UsersMini, $stateParams) {
@@ -44,12 +42,10 @@
         controllerAs: 'contactConfirm',
         resolve: {
           // A string value resolves to a service
-          ContactByService: 'Contact',
+          ContactByService: 'ContactByService',
 
-          contact: function (Contact, $stateParams) {
-            return Contact.get({
-              contactId: $stateParams.contactId
-            });
+          contact: function (ContactByService, $stateParams) {
+            return ContactByService.get({ contactId: $stateParams.contactId });
           }
 
         },
