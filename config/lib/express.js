@@ -355,9 +355,10 @@ module.exports.initHelmetHeaders = function (app) {
       // If not allowed the browser emulates a 400 HTTP status code.
       connectSrc: [
         '\'self\'',
-        'maitreapp.co', // Signup waiting list feature
         'api.mapbox.com',
-        'fcm.googleapis.com'
+        'fcm.googleapis.com',
+        'maitreapp.co', // Signup waiting list feature
+        'www.facebook.com'
       ].concat(cspSrcDevelopment),
 
       // Allows control over Flash and other plugins.
