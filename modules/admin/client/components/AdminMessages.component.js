@@ -90,24 +90,24 @@ export default class AdminMessages extends Component {
                 { ' & ' }
                 <UserLink user={ messages[0].userTo } />
               </h3>
-                  {
-                    messages.map((message) => {
-                      const { _id } = message;
-                      return (
-                        <div className="panel panel-default" key={_id}>
-                          <div className="panel-body">
-                            { message.content }
-                            <br /><br />
-                            <UserLink user={ message.userFrom } />
-                            <details>
-                              <summary>Message details</summary>
-                              <Json content={message} />
-                            </details>
-                          </div>
-                        </div>
-                      );
-                    })
-                  }
+              {
+                messages.map((message) => {
+                  const { _id } = message;
+                  return (
+                    <div className="panel panel-default" key={_id}>
+                      <div className="panel-body">
+                        { message.content }
+                        <br /><br />
+                        <UserLink user={ message.userFrom } />
+                        <details>
+                          <summary>Message details</summary>
+                          <Json content={message} />
+                        </details>
+                      </div>
+                    </div>
+                  );
+                })
+              }
             </>
           ) : <p><br/><em className="text-muted">Choose two members...</em></p> }
         </div>
