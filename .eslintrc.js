@@ -167,6 +167,7 @@ module.exports = {
     // overrides for server code
     // ES 2018 - specify migrated files and folders here
     files: [
+      'karma.conf.js',
       'bin/db-maintenance/ensure-indexes.js',
       'modules/admin/server/**',
       'modules/admin/tests/**',
