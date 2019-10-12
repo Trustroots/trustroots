@@ -33,6 +33,21 @@ var environmentAssets,
     assets,
     config;
 
+// Globbed paths ignored by Nodemon
+var nodemonIgnores = [
+  'bin/**',
+  'migrations/**',
+  'modules/*/client/**',
+  'modules/*/tests/client/**/*.js',
+  'modules/*/tests/server/**/*.js',
+  'node_modules/**',
+  'public/**',
+  'scripts/**',
+  'tmp/**',
+  defaultAssets.server.fontelloConfig,
+  defaultAssets.server.gulpConfig
+];
+
 /**
  * Load config + assets
  * Note that loading config before `env:*`
@@ -59,20 +74,7 @@ function runNodemon(done) {
     // @link https://nodejs.org/api/debugger.html
     nodeArgs: ['--inspect=5858'],
     ext: 'js, html',
-    ignore: _.union(
-      testAssets.tests.server,
-      testAssets.tests.client,
-      [
-        defaultAssets.server.fontelloConfig,
-        defaultAssets.server.gulpConfig,
-        'modules/*/client/**',
-        'public/**',
-        'migrations/**',
-        'scripts/**',
-        'tmp/**',
-        'node_modules/**'
-      ]
-    ),
+    ignore: nodemonIgnores,
     watch: _.union(defaultAssets.server.views, defaultAssets.server.allJS, defaultAssets.server.config)
   })
     .on('crash', function () {
@@ -93,20 +95,7 @@ function runNodemonWorker(done) {
     // @link https://nodejs.org/api/debugger.html
     nodeArgs: ['--inspect=5859'],
     ext: 'js',
-    ignore: _.union(
-      testAssets.tests.server,
-      testAssets.tests.client,
-      [
-        defaultAssets.server.fontelloConfig,
-        defaultAssets.server.gulpConfig,
-        'modules/*/client/**',
-        'public/**',
-        'migrations/**',
-        'scripts/**',
-        'tmp/**',
-        'node_modules/**'
-      ]
-    ),
+    ignore: nodemonIgnores,
     watch: _.union(
       defaultAssets.server.workerJS,
       defaultAssets.server.allJS,
