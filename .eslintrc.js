@@ -63,60 +63,25 @@ const es2018rules = {
   'arrow-spacing': [2, { before: true, after: true }]
 };
 
-const angularRules = {
-  'angular/component-limit': 0,
-  'angular/controller-as-route': 1,
-  'angular/controller-as-vm': 1,
-  'angular/controller-as': 1,
-  'angular/deferred': 1,
-  'angular/di-unused': 2,
-  'angular/directive-restrict': 0,
-  'angular/empty-controller': 2,
-  'angular/no-controller': 0,
-  'angular/no-inline-template': 0,
-  'angular/no-run-logic': 0,
-  'angular/no-services': 0,
-  'angular/on-watch': 0,
-  'angular/prefer-component': 0,
-  'angular/no-cookiestore': 2,
-  'angular/no-directive-replace': 0,
-  'angular/no-http-callback': 2,
-  'angular/angularelement': 2,
-  'angular/definedundefined': 2,
-  'angular/document-service': 2,
-  'angular/interval-service': 2,
-  'angular/json-functions': 2,
-  'angular/log': 1,
-  'angular/timeout-service': 2,
-  'angular/typecheck-array': 2,
-  'angular/typecheck-date': 2,
-  'angular/typecheck-function': 2,
-  'angular/typecheck-number': 2,
-  'angular/typecheck-object': 2,
-  'angular/typecheck-string': 2,
-  'angular/window-service': 2
-};
-
 module.exports = {
   rules: defaultRules,
   env: {
-    node: true,
     browser: true,
     jasmine: true,
+    jquery: true,
     mocha: true,
-    jquery: true
+    node: true
   },
   globals: {
-    PhusionPassenger: true,
-    by: true,
-    browser: true,
-    element: true,
-    AppConfig: true,
-    angular: true,
-    inject: true,
-    Promise: true,
     __TESTING__: true,
     _: false,
+    angular: true,
+    AppConfig: true,
+    browser: true,
+    by: true,
+    element: true,
+    inject: true,
+    Promise: true
   },
   /*
     eventually, after the migration, these overrides will become the main rules
@@ -125,10 +90,6 @@ module.exports = {
     because eventually, they want to become independent codebases.
   */
   overrides: [{
-    env: {
-      browser: true,
-      jquery: true
-    },
     // Overrides for Angular files
     files: [
       'modules/*/client/*.module.js',
@@ -141,7 +102,39 @@ module.exports = {
       'modules/core/client/app/init.js',
     ],
     plugins: ['angular'],
-    rules: angularRules,
+    rules: {
+      'angular/component-limit': 0,
+      'angular/controller-as-route': 1,
+      'angular/controller-as-vm': 1,
+      'angular/controller-as': 1,
+      'angular/deferred': 1,
+      'angular/di-unused': 2,
+      'angular/directive-restrict': 0,
+      'angular/empty-controller': 2,
+      'angular/no-controller': 0,
+      'angular/no-inline-template': 0,
+      'angular/no-run-logic': 0,
+      'angular/no-services': 0,
+      'angular/on-watch': 0,
+      'angular/prefer-component': 0,
+      'angular/no-cookiestore': 2,
+      'angular/no-directive-replace': 0,
+      'angular/no-http-callback': 2,
+      'angular/angularelement': 2,
+      'angular/definedundefined': 2,
+      'angular/document-service': 2,
+      'angular/interval-service': 2,
+      'angular/json-functions': 2,
+      'angular/log': 1,
+      'angular/timeout-service': 2,
+      'angular/typecheck-array': 2,
+      'angular/typecheck-date': 2,
+      'angular/typecheck-function': 2,
+      'angular/typecheck-number': 2,
+      'angular/typecheck-object': 2,
+      'angular/typecheck-string': 2,
+      'angular/window-service': 2
+    },
     settings: {
       angular: 1,
     },
@@ -154,16 +147,10 @@ module.exports = {
       AppConfig: true,
       L: true,
       moment: true,
-      PhusionPassenger: true,
       PruneCluster: true,
       PruneClusterForLeaflet: true,
     },
   },{
-    env: {
-      node: true,
-      jasmine: true,
-      mocha: true
-    },
     // overrides for server code
     // ES 2018 - specify migrated files and folders here
     files: [
@@ -177,22 +164,19 @@ module.exports = {
       'modules/users/tests/server/user-change-locale.server.routes.tests.js',
       'testutils/data.server.testutils.js'
     ],
+    env: {
+      node: true,
+      jasmine: true,
+      mocha: true
+    },
     parserOptions: {
       ecmaVersion: 2018
     },
-    rules: es2018rules
+    rules: es2018rules,
+    globals: {
+      PhusionPassenger: true,
+    }
   }, {
-    env: {
-      es6: true,
-      browser: true,
-    },
-    plugins: ['react'],
-    extends: 'plugin:react/recommended',
-    settings: {
-      react: {
-        version: reactVersion
-      }
-    },
     // overrides for client/react code
     files: [
       'config/client/**',
@@ -207,6 +191,17 @@ module.exports = {
       'modules/core/client/services/photos.service.js',
       'modules/references/tests/client/**'
     ],
+    env: {
+      es6: true,
+      browser: true,
+    },
+    plugins: ['react'],
+    extends: 'plugin:react/recommended',
+    settings: {
+      react: {
+        version: reactVersion
+      }
+    },
     parser: 'babel-eslint',
     parserOptions: {
       ecmaFeatures: {
@@ -227,6 +222,9 @@ module.exports = {
       'migrations/**',
       'scripts/**',
     ],
+    env: {
+      node: true,
+    },
     rules: {
       'no-console': 0,
       'no-process-exit': 0,
@@ -237,6 +235,9 @@ module.exports = {
       'bin/**',
       'scripts/**',
     ],
+    env: {
+      node: true,
+    },
     parserOptions: {
       ecmaVersion: 2018
     }
