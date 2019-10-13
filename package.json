@@ -204,7 +204,7 @@
     "jasmine-core": "~3.5.0",
     "jasmine-enzyme": "~7.1.1",
     "jquery": "~3.4.1",
-    "karma": "~3.1.4",
+    "karma": "~4.3.0",
     "karma-chrome-launcher": "~3.1.0",
     "karma-jasmine": "~2.0.1",
     "karma-mocha-reporter": "~2.2.5",
