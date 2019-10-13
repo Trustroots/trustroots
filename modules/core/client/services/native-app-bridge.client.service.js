@@ -1,3 +1,5 @@
+window.isNativeMobileApp=true;//eslint-disable-line
+
 (function () {
   'use strict';
 
@@ -17,12 +19,21 @@
     var service = {
       activate: activate,
       getAppInfo: getAppInfo,
-      isNativeMobileApp: promisifyIsNativeMobileApp,
+      isNativeMobileApp: isNativeMobileApp,
       signalUnAuthenticated: signalUnAuthenticated,
       signalAuthenticated: signalAuthenticated
     };
 
     return service;
+
+    /**
+     * Tells if the site is wrapped inside native mobile app
+     *
+     * @returns {Boolea}
+     */
+    function isNativeMobileApp() {
+      return !!$window.isNativeMobileApp;
+    }
 
     /**
      * Activate event listener listening for mobile app wrapping the site in
@@ -36,7 +47,7 @@
         // eslint-disable-next-line angular/document-service
         document.addEventListener('message', function (event) {
           // event = event.originalEvent || event;
-          if (event && event.data === 'trMobileAppInit' && !$window.isNativeMobileApp) {
+          if (event && event.data === 'trMobileAppInit' && !isNativeMobileApp()) {
             // document.removeEventListener('message');
 
             bootstrapBridge();
@@ -71,17 +82,6 @@
       $rootScope.$on('$stateChangeSuccess', renderOutgoingUrls);
 
       logToNativeApp('Bootstrap native app bridge done');
-    }
-
-    /**
-     * Tells if the site is wrapped inside native mobile app
-     *
-     * @returns {Promise}
-     */
-    function promisifyIsNativeMobileApp() {
-      return $q(function (resolve, reject) {
-        return $window.isNativeMobileApp ? resolve(true) : reject(false);
-      });
     }
 
     /**
@@ -148,7 +148,7 @@
      * Send "unAuthenticated" signal to mobile app
      */
     function signalUnAuthenticated() {
-      if (!$window.isNativeMobileApp) {
+      if (!isNativeMobileApp()) {
         return;
       }
       postMessageToApp('unAuthenticated');
@@ -158,7 +158,7 @@
      * Send "authenticated" signal to mobile app
      */
     function signalAuthenticated() {
-      if (!$window.isNativeMobileApp) {
+      if (!isNativeMobileApp()) {
         return;
       }
       postMessageToApp('authenticated');
@@ -180,7 +180,7 @@
      * Value in postMessage has to be string.
      */
     function postMessageToApp(action, data) {
-      if (!$window.isNativeMobileApp ||
+      if (!isNativeMobileApp() ||
           !action ||
           !angular.isString(action) ||
           !angular.isFunction($window.postMessage)) {

@@ -75,7 +75,9 @@
 <!-- /Email -->
 
 <!-- Notifications -->
-<div class="panel panel-default" id="notifications">
+<div class="panel panel-default"
+     id="notifications"
+     ng-if="!profileEditAccount.isNativeMobileApp">
   <div class="panel-heading">
     Notifications
   </div>
@@ -84,7 +86,7 @@
     <form autocomplete="off">
       <div class="form-horizontal">
 
-        <div class="form-group" ng-if="!profileEditAccount.isNativeMobileApp">
+        <div class="form-group">
           <label class="col-sm-3 text-right control-label">Push</label>
           <div class="col-sm-9">
 
