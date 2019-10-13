@@ -1,5 +1,3 @@
-window.isNativeMobileApp=true;//eslint-disable-line
-
 (function () {
   'use strict';
 
