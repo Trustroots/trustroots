@@ -1,4 +1,4 @@
-FROM node:10.12
+FROM node:12
 
 # Install prerequisites
 # https://docs.docker.com/engine/articles/dockerfile_best-practices/#apt-get

@@ -4,13 +4,13 @@ matrix:
   # Generally using active LTS versions here, see https://github.com/nodejs/Release
   include:
     - name: "Test client"
-      node_js: 10
+      node_js: 12
       env: RUN="npm run test:client"
     - name: "Test server"
-      node_js: 10
+      node_js: 12
       env: RUN="npm run test:server"
     - name: "Lint and try building"
-      node_js: 10
+      node_js: 12
       env: RUN="npx concurrently --kill-others-on-fail 'npm:lint' 'npm:build:prod'"
 # https://docs.travis-ci.com/user/reference/overview/#Virtualisation-Environment-vs-Operating-System
 script: $RUN
