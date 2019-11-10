@@ -52,7 +52,7 @@
     "test:selenium": "python ./scripts/selenium/test.py",
     "test:server:watch": "npm run check-environment && NODE_ENV=test gulp test:server:watch",
     "test:server": "NODE_ENV=test gulp test:server",
-    "test": "npm run check-environment && npm run lint && npm test:client && npm run test:server",
+    "test": "npm run check-environment && npm run lint && npm run test:client && npm run test:server",
     "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.js"
   },
   "dependencies": {
