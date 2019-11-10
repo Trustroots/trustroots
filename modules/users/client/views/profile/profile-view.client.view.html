@@ -49,27 +49,24 @@
 </nav>
 
 <!-- Bottom Navigation for small screens -->
-<nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block" role="navigation">
-  <div class="container">
-    <ul class="nav navbar-nav" role="tablist">
-      <li ui-sref-active="active" role="presentation">
-        <a ui-sref="profile.overview" role="tab">Overview</a>
-      </li>
-      <li ui-sref-active="active" role="presentation">
-        <a ui-sref="profile.about" role="tab">About</a>
-      </li>
-      <li ui-sref-active="active" role="presentation">
-        <a ui-sref="profile.accommodation" role="tab">Hosting</a>
-      </li>
-      <li ui-sref-active="active" role="presentation" ng-if="profileCtrl.contacts.length || profileCtrl.profile._id === app.user._id">
-        <a ui-sref="profile.contacts" role="tab">
-          Contacts
-          <span class="badge" ng-bind="profileCtrl.contacts.length"></span>
-        </a>
-      </li>
-    </ul>
-  </div>
-</nav>
+<!-- react component -->
+<bottom-navigation-small
+  ng-if="profileCtrl.contacts.$resolved"
+  username="profileCtrl.profile.username"
+  isSelf="profileCtrl.profile._id === app.user._id"
+  contactCount="profileCtrl.contacts.length"
+></bottom-navigation-small>
+<!--
+this is just a hack because binding of contactCount doesn't work properly
+this is a fallback when the contacts are loading
+@TODO this should be removed when a profile is fully migrated to react
+-->
+<bottom-navigation-small
+  ng-if="!profileCtrl.contacts.$resolved"
+  username="profileCtrl.profile.username"
+  isSelf="profileCtrl.profile._id === app.user._id"
+  contactCount="0"
+></bottom-navigation-small>
 
 <section class="container container-spacer profile-view">
 
