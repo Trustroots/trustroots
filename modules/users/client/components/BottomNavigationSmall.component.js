@@ -36,8 +36,9 @@ export default function BottomNavigationSmall({ username, isSelf, contactCount }
   if (contactCount > 0 || isSelf) {
     tabs.push({
       key: 'contacts',
-      label: <>{t('Contacts')} <span className="badge">{contactCount}</span></>,
-      link: `/profile/${username}/contacts`
+      label: t('Contacts'),
+      link: `/profile/${username}/contacts`,
+      count: contactCount
     });
   }
 
@@ -45,7 +46,7 @@ export default function BottomNavigationSmall({ username, isSelf, contactCount }
     <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block" role="navigation">
       <div className="container">
         <ul className="nav navbar-nav" role="tablist">
-          {tabs.map(({ key, label, link }) => (
+          {tabs.map(({ key, label, link, count }) => (
             <li
               key={key}
               className={classNames({ active: active === key })}
@@ -54,7 +55,7 @@ export default function BottomNavigationSmall({ username, isSelf, contactCount }
                 href={link}
                 role="tab"
                 onClick={() => setActive(key)}
-              >{label}</a>
+              >{label} <span className="badge">{count}</span></a>
             </li>
           ))}
         </ul>
