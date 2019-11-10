@@ -6,7 +6,7 @@
     .controller('ProfileController', ProfileController);
 
   /* @ngInject */
-  function ProfileController($scope, $stateParams, $state, $uibModal, $filter, Authentication, $timeout, profile, contact, contacts) {
+  function ProfileController($scope, $stateParams, $state, $filter, Authentication, $timeout, profile, contact, contacts) {
 
     // No user defined at URL, just redirect to user's own profile
     if (!$stateParams.username) {
@@ -23,7 +23,6 @@
     vm.hasConnectedAdditionalSocialAccounts = hasConnectedAdditionalSocialAccounts;
     vm.isConnectedSocialAccount = isConnectedSocialAccount;
     vm.socialAccountLink = socialAccountLink;
-    vm.toggleAvatarModal = toggleAvatarModal;
     vm.isWarmshowersId = isWarmshowersId;
 
     /**
@@ -79,31 +78,6 @@
     function isWarmshowersId() {
       var x;
       return isNaN(vm.profile.extSitesWS) ? !1 : (x = parseFloat(vm.profile.extSitesWS), (0 | x) === x);
-    }
-
-
-    /**
-     * Open avatar modal (bigger photo)
-     */
-    function toggleAvatarModal() {
-      $uibModal.open({
-        template: '<a tr-avatar data-user="avatarModal.profile" data-size="512" data-link="false" ng-click="avatarModal.close()"></a>',
-        controller: function ($scope, $uibModalInstance, profile) {
-          var vm = this;
-          vm.profile = profile;
-          vm.close = function () {
-            $uibModalInstance.dismiss('cancel');
-          };
-        },
-        controllerAs: 'avatarModal',
-        animation: true,
-        windowClass: 'modal-avatar',
-        resolve: {
-          profile: function () {
-            return vm.profile;
-          }
-        }
-      });
     }
 
     /**

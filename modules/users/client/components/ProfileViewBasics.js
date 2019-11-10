@@ -1,8 +1,7 @@
 import React from 'react';
 import classnames from 'classnames';
-import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
+import { withTranslation } from 'react-i18next';
 import { Trans } from 'react-i18next';
-import '@/config/client/i18n';
 import PropTypes from 'prop-types';
 import * as languages from '@/config/languages/languages';
 import { hasConnectedAdditionalSocialAccounts, isWarmshowersId, socialAccountLink } from './utils/networks';
