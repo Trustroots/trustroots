@@ -13,6 +13,8 @@ import { Modal } from 'react-bootstrap';
 export default function ProfileOverview({ profile }) {
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
+  const handleClose = () => setIsAvatarModalOpen(false);
+
   return (<>
     {/* panel with avatar and basic info */}
     <div className="panel panel-default profile-overview">
@@ -40,13 +42,14 @@ export default function ProfileOverview({ profile }) {
     {/* modal with avatar */}
     <Modal
       show={isAvatarModalOpen}
-      onHide={() => setIsAvatarModalOpen(false)}
+      onHide={handleClose}
       className="modal-avatar"
     >
       <Avatar
         user={profile}
         size={512}
         link={false}
+        onClick={handleClose}
       />
     </Modal>
   </>);
