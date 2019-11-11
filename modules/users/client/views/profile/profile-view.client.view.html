@@ -63,8 +63,9 @@
 </nav>
 
 <top-navigation-small
-  isSelf="app.user._id === profileCtrl.profile._id"
   username="profileCtrl.profile.username"
+  selfId="app.user._id"
+  userId="profileCtrl.profile._id"
   contact="profileCtrl.contact"
   areReferences="app.appSettings.referencesEnabled"
   isResolved="profileCtrl.contact.$resolved"
