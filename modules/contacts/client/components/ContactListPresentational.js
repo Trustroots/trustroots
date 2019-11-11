@@ -64,7 +64,7 @@ export function ContactListPresentational({ t, selfId, contacts, filter, onConta
                   contact={contact}
                   avatarSize={128}
                   selfId={selfId}
-                  onContactRemoved={onContactRemoved}
+                  onContactRemoved={() => onContactRemoved(contact)}
                 />
               </div>
             )}</div>

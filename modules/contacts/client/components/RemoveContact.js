@@ -3,7 +3,15 @@ import PropTypes from 'prop-types';
 import { withTranslation } from 'react-i18next';
 import { Modal } from 'react-bootstrap';
 
-export function RemoveContact({ t, contact, show, inProgress, onHide, onRemoveContact, situation='confirmed' }) {
+function getSituation(contact, selfId) {
+  return (contact.confirmed === false && contact.userFrom === selfId && 'unconfirmedFromMe')
+    || (contact.confirmed === false && contact.userTo === selfId && 'unconfirmedToMe')
+    || 'confirmed';
+}
+
+export function RemoveContact({ t, contact, show, inProgress, onRemove, onCancel, selfId }) {
+
+  const situation = getSituation(contact, selfId);
 
   // parse contact.created to Date
   const created = new Date(contact.created);
@@ -32,10 +40,10 @@ export function RemoveContact({ t, contact, show, inProgress, onHide, onRemoveCo
   const labels = situationLabels[situation];
 
   return (
-    <Modal show={show} onHide={onHide}>
+    <Modal show={show} onHide={onCancel}>
       <div className="modal-content">
         <Modal.Header>
-          <button type="button" className="close" aria-hidden="true" onClick={onHide} ng-if="!removeContactModal.isLoading">&times;</button>
+          <button type="button" className="close" aria-hidden="true" onClick={onCancel} ng-if="!removeContactModal.isLoading">&times;</button>
           <Modal.Title>{labels.title}</Modal.Title>
         </Modal.Header>
 
@@ -48,12 +56,12 @@ export function RemoveContact({ t, contact, show, inProgress, onHide, onRemoveCo
         <Modal.Footer>
           <button
             className="btn btn-link"
-            onClick={onHide}
+            onClick={onCancel}
             disabled={inProgress}
           >{t('Cancel')}</button>
           <button
             className="btn btn-primary"
-            onClick={onRemoveContact}
+            onClick={onRemove}
             disabled={inProgress}
           >
             {!inProgress && <span>{labels.confirm}</span>}
@@ -75,9 +83,9 @@ RemoveContact.propTypes = {
   contact: PropTypes.object.isRequired,
   show: PropTypes.bool.isRequired,
   inProgress: PropTypes.bool.isRequired,
-  onHide: PropTypes.func.isRequired,
-  onRemoveContact: PropTypes.func.isRequired,
-  situation: PropTypes.string
+  onCancel: PropTypes.func.isRequired,
+  onRemove: PropTypes.func.isRequired,
+  selfId: PropTypes.string.isRequired
 };
 
 export default withTranslation('contact')(RemoveContact);
