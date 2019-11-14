@@ -38,6 +38,12 @@
             </div>
           </a>
           <div class="tribe-actions">
+            <join-button
+              ng-if="tribe"
+              tribe="tribe"
+              user="app.user"
+              icon="true"
+            ></join-button>
             <tr-tribe-join-button
               class="btn btn-sm btn-default tribe-join"
               tribe="tribe"
