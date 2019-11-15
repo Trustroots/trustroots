@@ -14,7 +14,7 @@ var _ = require('lodash'),
  */
 var getGlobbedPaths = function (globPatterns, excludes) {
   // URL paths regex
-  var urlRegex = new RegExp('^(?:[a-z]+:)?\/\/', 'i');
+  var urlRegex = new RegExp('^(?:[a-z]+:)?//', 'i');
 
   // The output array
   var output = [];
@@ -54,18 +54,18 @@ var getGlobbedPaths = function (globPatterns, excludes) {
  * Validate NODE_ENV existance
  */
 var validateEnvironmentVariable = function () {
-  var environmentFiles = glob.sync('./config/env/' + process.env.NODE_ENV + '.js');
+  var environmentFiles = glob.sync(`./config/env/${process.env.NODE_ENV}.js`);
 
   console.log();
   if (!environmentFiles.length) {
     if (process.env.NODE_ENV) {
-      console.error(chalk.red('No configuration file found for "' + process.env.NODE_ENV + '" environment using development instead'));
+      console.error(chalk.red(`No configuration file found for "${process.env.NODE_ENV}" environment using development instead`));
     } else {
       console.error(chalk.red('NODE_ENV is not defined! Using default development environment'));
     }
     process.env.NODE_ENV = 'development';
   } else {
-    console.log(chalk.bold('Loaded "' + process.env.NODE_ENV + '" environment configuration'));
+    console.log(chalk.bold(`Loaded "${process.env.NODE_ENV}" environment configuration`));
   }
   // Reset console color
   console.log(chalk.white(''));

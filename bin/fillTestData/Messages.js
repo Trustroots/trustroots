@@ -132,7 +132,7 @@ function seedThreads() {
           }
 
           // Get the users
-          let users = await User.find();
+          const users = await User.find();
 
           // If we don't have enough users in the database
           if (users.length < 2) {
@@ -150,7 +150,7 @@ function seedThreads() {
             // Add messages until we reach the total
             while (messageIndex > 0) {
               function addMessage(depth, userTo, userFrom) {
-                let message = new Message();
+                const message = new Message();
 
                 message.created = addDays(Date.now(), -depth + 1);
                 message.content = faker.lorem.sentences();
@@ -193,7 +193,7 @@ function seedThreads() {
 
                     // Add thread for the most recent message
                     if (depth === 1) {
-                      let messageThread = new Thread;
+                      const messageThread = new Thread;
 
                       // seed the message thread data
                       seedThread(messageThread, message);
