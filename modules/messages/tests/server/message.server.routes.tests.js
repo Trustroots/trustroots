@@ -1,5 +1,3 @@
-'use strict';
-
 var _ = require('lodash'),
     should = require('should'),
     async = require('async'),

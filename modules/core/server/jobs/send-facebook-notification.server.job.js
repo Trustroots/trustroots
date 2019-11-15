@@ -1,5 +1,3 @@
-'use strict';
-
 var _ = require('lodash'),
     path = require('path'),
     facebook = require(path.resolve('./config/lib/facebook-api.js')),

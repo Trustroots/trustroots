@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Join tribe button
    */
@@ -217,5 +215,4 @@
 
     }
   }
-
 }());

@@ -2,8 +2,6 @@
  * App client controller tests
  */
 (function () {
-  'use strict';
-
   describe('App Controller Tests', function () {
     // Initialize global variables
     var $scope,
@@ -76,5 +74,4 @@
       expect($scope.vm.user).toBeTruthy();
     });
   });
-
 }());

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('support')
     .config(SupportRoutes);
@@ -31,5 +29,4 @@
         }
       });
   }
-
 }());

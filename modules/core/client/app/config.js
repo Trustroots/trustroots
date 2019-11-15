@@ -1,4 +1,3 @@
-'use strict';
 /* eslint no-var: 0 */
 
 import ngreact from 'ngreact';

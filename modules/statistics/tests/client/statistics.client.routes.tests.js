@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   describe('Statistics Route Tests', function () {
     // Initialize global variables
     var $httpBackend;
@@ -61,5 +59,4 @@
 
     });
   });
-
 }());

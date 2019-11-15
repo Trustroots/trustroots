@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to validate usernames (and check for availability)
    *

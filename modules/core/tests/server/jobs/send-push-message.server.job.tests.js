@@ -1,5 +1,3 @@
-'use strict';
-
 var path = require('path'),
     proxyquire = require('proxyquire'),
     mongoose = require('mongoose'),

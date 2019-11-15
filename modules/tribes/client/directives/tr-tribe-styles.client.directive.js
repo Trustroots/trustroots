@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to apply tribe color + image styles to an element
    *
@@ -61,5 +59,4 @@
       }
     };
   }
-
 }());

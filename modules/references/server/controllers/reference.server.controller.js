@@ -1,5 +1,3 @@
-'use strict';
-
 const mongoose = require('mongoose'),
       _ = require('lodash'),
       path = require('path'),

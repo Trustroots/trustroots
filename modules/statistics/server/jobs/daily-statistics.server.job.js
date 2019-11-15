@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Task that collects daily statistics and sends them to Stats API
  *
@@ -232,4 +230,4 @@ function collectLastSeen(seenSinceDays, namespace, totalUserCount, callback) {
       }
     }, callback);
   });
-};
+}

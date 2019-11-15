@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('offers')
     .directive('trOfferHostView', trOfferHostViewDirective);
@@ -97,5 +95,4 @@
     }
 
   }
-
 }());

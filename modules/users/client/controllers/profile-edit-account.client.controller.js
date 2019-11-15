@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('users')
     .controller('ProfileEditAccountController', ProfileEditAccountController);
@@ -228,5 +226,4 @@
     }
 
   }
-
 }());

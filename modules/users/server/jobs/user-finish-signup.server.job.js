@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Task that checks for users who didn't finish their signup process and thus
  * have `public:false` in their profile. The script sends 3 (configurable)

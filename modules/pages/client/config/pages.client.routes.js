@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('pages')
     .config(PagesRoutes);
@@ -159,5 +157,4 @@
     }
 
   }
-
 }());

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('tribes')
     .controller('TribesListController', TribesListController);
@@ -26,5 +24,4 @@
       $state.go('tribes.tribe', { 'tribe': tribe.slug });
     }
   }
-
 }());

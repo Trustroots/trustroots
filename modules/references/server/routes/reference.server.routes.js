@@ -1,5 +1,3 @@
-'use strict';
-
 const path = require('path'),
       config = require(path.resolve('./config/config')),
       referencePolicy = require('../policies/references.server.policy'),

@@ -1,5 +1,3 @@
-'use strict';
-
 var path = require('path'),
     firebase = require('firebase-admin'),
     config = require(path.resolve('./config/config')),

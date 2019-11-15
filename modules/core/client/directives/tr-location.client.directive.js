@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to extend <input> to have location auto suggestions
    *
@@ -150,5 +148,4 @@
       }
     };
   }
-
 }());

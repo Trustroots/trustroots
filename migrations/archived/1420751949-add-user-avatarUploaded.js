@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Add avatarUploaded for user model
  * Determines if avatars exist at users upload folder

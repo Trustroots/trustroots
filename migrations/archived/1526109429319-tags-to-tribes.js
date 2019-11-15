@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Refactros 'Tag' schema into 'Tribe' schema
  * - Renames the db

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('pages')
     .controller('FaqController', FaqController);
@@ -84,5 +82,4 @@
     }
 
   }
-
 }());

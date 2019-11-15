@@ -2,8 +2,6 @@
  * Push service
  */
 (function () {
-  'use strict';
-
   describe('Push Service Tests', function () {
 
     var $httpBackend;
@@ -262,5 +260,4 @@
     return firebase;
 
   }
-
 }());

@@ -1,5 +1,3 @@
-'use strict';
-
 var nunjucks = require('nunjucks');
 
 // Configure nunjucks

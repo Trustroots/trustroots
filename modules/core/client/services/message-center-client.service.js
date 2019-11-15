@@ -9,8 +9,6 @@
  */
 
 (function () {
-  'use strict';
-
   /**
    * Service for error/success/info etc notifications
    *
@@ -115,5 +113,4 @@
       }
     };
   }
-
 }());

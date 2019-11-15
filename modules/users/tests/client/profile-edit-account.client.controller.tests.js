@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   describe('ProfileEditAccountController', function () {
 
     var ProfileEditAccountController,
@@ -126,5 +124,4 @@
     });
 
   });
-
 }());

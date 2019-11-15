@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // MessagesCount service used for communicating with the messages REST endpoints
   angular
     .module('messages')
@@ -10,5 +8,4 @@
   function MessagesCount($resource) {
     return $resource('/api/messages-count');
   }
-
 }());

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive show unread messages counter
    *
@@ -87,5 +85,4 @@
 
     }
   }
-
 }());

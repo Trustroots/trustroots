@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('users')
     .factory('UserMembershipsService', UserMembershipsService);
@@ -21,5 +19,4 @@
       }
     });
   }
-
 }());

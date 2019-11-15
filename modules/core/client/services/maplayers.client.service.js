@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Service for getting map layers for Leaflet
    *
@@ -181,5 +179,4 @@
     }
 
   }
-
 }());

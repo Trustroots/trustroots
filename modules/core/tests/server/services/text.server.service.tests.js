@@ -1,5 +1,3 @@
-'use strict';
-
 var path = require('path'),
     textService = require(path.resolve('./modules/core/server/services/text.server.service'));
 

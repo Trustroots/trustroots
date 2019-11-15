@@ -1,5 +1,3 @@
-'use strict';
-
 var request = require('supertest'),
     async = require('async'),
     _ = require('lodash'),

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Turn mongo date string into years
    *
@@ -25,5 +23,4 @@
       return Math.abs(ageDate.getUTCFullYear() - 1970) + ' years';
     };
   }
-
 }());

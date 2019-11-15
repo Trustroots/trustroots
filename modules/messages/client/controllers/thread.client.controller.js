@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /*
  * checklist:
  * - scope init variable - needed?
@@ -391,5 +389,4 @@
     }
 
   }
-
 }());

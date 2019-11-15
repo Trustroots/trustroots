@@ -2,8 +2,6 @@
 import photos from '@/modules/core/client/services/photos.service';
 
 (function () {
-  'use strict';
-
   /**
    * Directive that simply picks a background image given element and emits copyright info down the scope.
    *
@@ -65,5 +63,4 @@ import photos from '@/modules/core/client/services/photos.service';
       }
     };
   }
-
 }());

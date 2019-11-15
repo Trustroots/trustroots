@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('core')
     .filter('trustedHtml', trustedHtmlFilter);
@@ -11,5 +9,4 @@
       return $sce.trustAsHtml(input);
     };
   }
-
 }());

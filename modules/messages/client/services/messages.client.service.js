@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // Messages service used for communicating with the messages REST endpoints
   angular
     .module('messages')
@@ -63,5 +61,4 @@
     };
     return MessageHandler;
   }
-
 }());

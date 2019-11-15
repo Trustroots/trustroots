@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   describe('Search Route Tests', function () {
 
     // We can start by loading the main application module
@@ -108,5 +106,4 @@
 
     });
   });
-
 }());

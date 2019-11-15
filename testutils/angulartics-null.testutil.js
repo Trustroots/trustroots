@@ -5,8 +5,6 @@
  * https://github.com/angulartics/angulartics/blob/master/src/angulartics-debug.js
  */
 (function (angular) {
-  'use strict';
-
   /**
    * @ngdoc overview
    * @name angulartics.null
@@ -27,5 +25,4 @@
       /* eslint-enable no-use-before-define */
 
     }]);
-
 }(angular));

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('offers')
     .config(OffersRoutes);
@@ -124,5 +122,4 @@
     }
 
   }
-
 }());

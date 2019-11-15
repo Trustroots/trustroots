@@ -1,5 +1,3 @@
-'use strict';
-
 var _ = require('lodash'),
     nodemailer = require('nodemailer'),
     path = require('path'),

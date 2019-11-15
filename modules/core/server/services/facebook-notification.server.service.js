@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * This is used to send Facebook notifications for users who have connected
  * the app to their Facebook accounts.

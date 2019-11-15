@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Print out credits for photos used at the page by tr-boards directive
    */
@@ -24,5 +22,4 @@
       restrict: 'A'
     };
   }
-
 }());

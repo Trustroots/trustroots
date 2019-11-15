@@ -1,5 +1,3 @@
-'use strict';
-
 var request = require('supertest'),
     path = require('path'),
     mongoose = require('mongoose'),

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('tribes')
     .controller('TribeController', TribeController);
@@ -32,5 +30,4 @@
     }
 
   }
-
 }());

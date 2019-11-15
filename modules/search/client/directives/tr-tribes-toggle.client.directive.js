@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to show tribe selector filter
    * Keeps a list of tribe ids up to date in scope variable
@@ -101,5 +99,4 @@
 
     }
   }
-
 }());

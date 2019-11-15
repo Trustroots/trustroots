@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('support')
     .controller('SupportController', SupportController);
@@ -63,5 +61,4 @@
     }
 
   }
-
 }());

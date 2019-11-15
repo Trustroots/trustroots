@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * A directive to modify offer's `validUntil` dates
    */
@@ -101,5 +99,4 @@
     }
 
   }
-
 }());

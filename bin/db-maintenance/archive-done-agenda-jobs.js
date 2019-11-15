@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-'use strict';
 
 /**
  * Archive done Agenda jobs from `agendaJobs` collection by moving them

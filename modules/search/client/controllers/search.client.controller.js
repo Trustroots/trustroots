@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('search')
     .controller('SearchController', SearchController);
@@ -218,5 +216,4 @@
 
 
   }
-
 }());

@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Refactors `users` array to `userTo` and `userFrom` keys from Contact collection
  */

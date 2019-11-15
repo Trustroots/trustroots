@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * @ngdoc factory
    * @name core.factory:trNativeAppBridge
@@ -197,5 +195,4 @@
     }
 
   }
-
 }());

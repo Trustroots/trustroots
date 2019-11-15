@@ -1,5 +1,3 @@
-'use strict';
-
 const should = require('should'),
       mongoose = require('mongoose'),
       path = require('path'),

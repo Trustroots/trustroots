@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to create a pretty toggle switches out from `input[type=checkbox]`
    *
@@ -42,5 +40,4 @@
       }
     };
   }
-
 }());

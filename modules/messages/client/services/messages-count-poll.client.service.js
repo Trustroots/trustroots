@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * PollMessagesCount service used for automatically polling for unread message counter
    *
@@ -101,5 +99,4 @@
     }
 
   }
-
 }());

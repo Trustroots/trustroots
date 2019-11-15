@@ -2,8 +2,6 @@
  * Age filter tests
  */
 (function () {
-  'use strict';
-
   describe('Age Filter Tests', function () {
 
     // Load the main application module
@@ -24,5 +22,4 @@
     }));
 
   });
-
 }());

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Simple list of tribes user is member of
    */
@@ -29,5 +27,4 @@
       $scope.tribeListLimit = undefined;
     };
   }
-
 }());

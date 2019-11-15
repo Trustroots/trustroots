@@ -1,5 +1,3 @@
-'use strict';
-
 // This service takes care of fetching and sending message statistics to stats api.
 // It is mainly used in message controller: A new statistics point is created
 // after a new message is sent.

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('admin')
     .config(AdminRoutes);
@@ -86,5 +84,4 @@
       });
 
   }
-
 }());

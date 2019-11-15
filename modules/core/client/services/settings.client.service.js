@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('core')
     .factory('SettingsService', SettingsService);
@@ -22,15 +20,12 @@
       return settings;
     }
   }
-
 }());
 
 
 // TODO: Clean this out (deprecated)
 
 (function () {
-  'use strict';
-
   angular
     .module('core')
     .factory('SettingsFactory', SettingsFactory);
@@ -58,5 +53,4 @@
       return settings;
     }
   }
-
 }());

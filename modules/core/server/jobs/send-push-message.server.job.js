@@ -1,5 +1,3 @@
-'use strict';
-
 var path = require('path'),
     async = require('async'),
     firebaseMessaging = require(path.resolve('./config/lib/firebase-messaging')),

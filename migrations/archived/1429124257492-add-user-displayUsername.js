@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Updates model with displayUsername field
  */

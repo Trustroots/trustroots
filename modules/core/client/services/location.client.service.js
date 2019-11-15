@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Service for querying MapBox geocoder
    */
@@ -208,5 +206,4 @@
 
     return service;
   }
-
 }());

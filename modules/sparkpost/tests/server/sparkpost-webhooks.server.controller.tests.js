@@ -1,5 +1,3 @@
-'use strict';
-
 // test whether the daily statistics job reaches influxdb and stathat via Stats api
 
 var should = require('should'),

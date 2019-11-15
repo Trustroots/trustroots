@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive that shows time taking into account user's time related settings.
    *
@@ -94,5 +92,4 @@
       }
     };
   }
-
 }());

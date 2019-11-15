@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('offers')
     .controller('OfferListMeetController', OfferListMeetController);
@@ -70,5 +68,4 @@
     }
 
   }
-
 }());

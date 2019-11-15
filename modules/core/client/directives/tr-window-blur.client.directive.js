@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to watch window blur events.
    * See also `tr-window-focus.client.directive.js`
@@ -45,5 +43,4 @@
 
     }
   }
-
 }());

@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * A script to generate `languages.json`
  *

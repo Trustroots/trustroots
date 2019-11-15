@@ -1,7 +1,5 @@
 /* global FB */
 (function () {
-  'use strict';
-
   angular
     .module('core')
     .factory('Facebook', FacebookFactory);
@@ -136,5 +134,4 @@
     }
 
   }
-
 }());

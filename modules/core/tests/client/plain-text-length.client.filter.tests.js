@@ -2,8 +2,6 @@
  * PlainTextLength filter tests
  */
 (function () {
-  'use strict';
-
   describe('PlainTextLength Filter Tests', function () {
 
     // Load the main application module
@@ -31,5 +29,4 @@
     }));
 
   });
-
 }());

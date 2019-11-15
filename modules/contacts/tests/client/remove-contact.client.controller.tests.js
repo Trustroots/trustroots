@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   describe('ContactRemoveController', function () {
     // Initialize global variables
     var $templateCache,

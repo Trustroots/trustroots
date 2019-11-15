@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('offers')
     .controller('OfferHostViewController', OfferHostViewController);
@@ -59,5 +57,4 @@
     }
 
   }
-
 }());

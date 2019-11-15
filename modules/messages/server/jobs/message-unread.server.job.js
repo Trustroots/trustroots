@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Task that checks for unread messages from the DB and sends
  * notification emails for users who have unread messages.

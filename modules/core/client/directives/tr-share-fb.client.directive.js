@@ -1,7 +1,5 @@
 /* global FB */
 (function () {
-  'use strict';
-
   /**
    * FB share button for current URL
    *
@@ -70,5 +68,4 @@
 
     }
   }
-
 }());

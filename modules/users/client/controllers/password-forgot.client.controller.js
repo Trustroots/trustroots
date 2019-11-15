@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('users')
     .controller('ForgotPasswordController', ForgotPasswordController);
@@ -41,5 +39,4 @@
         );
     }
   }
-
 }());

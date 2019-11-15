@@ -1,7 +1,5 @@
 /* global twttr */
 (function () {
-  'use strict';
-
   /**
    * Twitter share button for current URL
    *
@@ -98,5 +96,4 @@
 
     }
   }
-
 }());

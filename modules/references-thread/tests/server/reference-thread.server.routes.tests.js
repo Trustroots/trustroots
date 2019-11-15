@@ -1,5 +1,3 @@
-'use strict';
-
 var should = require('should'),
     async = require('async'),
     request = require('supertest'),

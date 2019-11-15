@@ -1,5 +1,3 @@
-'use strict';
-
 // Testing that when we send general proper data points to stats api,
 // the correct data will arrive to the right endpoints (stathat, influx).
 

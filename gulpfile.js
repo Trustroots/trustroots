@@ -1,5 +1,3 @@
-'use strict';
-
 /* eslint-disable no-console */
 
 /**
@@ -278,7 +276,7 @@ function angularUibTemplatecache() {
       .pipe(plugins.templateCache('uib-templates-' + uibModule + '.js', {
         root: 'uib/template/' + uibModule + '/',
         module: 'core',
-        templateHeader: '(function() { \'use strict\'; angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
+        templateHeader: '(function() { angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
         templateBody: '$templateCache.put(\'<%= url %>\', \'<%= contents %>\');',
         templateFooter: '} })();'
       }));
@@ -304,7 +302,7 @@ function angularTemplateCache() {
         return url.replace('/client', '');
       },
       module: 'core',
-      templateHeader: '(function() { \'use strict\'; angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
+      templateHeader: '(function() { angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
       templateBody: '$templateCache.put(\'<%= url %>\', \'<%= contents %>\');',
       templateFooter: '} })();'
     }))

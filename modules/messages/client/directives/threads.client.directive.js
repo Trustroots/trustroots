@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('messages')
     .directive('threads', threadsDirective);
@@ -19,5 +17,4 @@
       }
     };
   }
-
 }());

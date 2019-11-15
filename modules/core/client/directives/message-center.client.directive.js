@@ -11,8 +11,6 @@
  */
 
 (function () {
-  'use strict';
-
   /**
    * Directive for error/success/info etc notifications
    */
@@ -58,5 +56,4 @@
       }
     };
   }
-
 }());

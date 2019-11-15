@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // Offers service used for communicating with the offers REST endpoints
   angular
     .module('offers')
@@ -47,5 +45,4 @@
     }
 
   }
-
 }());

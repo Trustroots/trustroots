@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // ContactBy factory used for communicating with the contacts REST endpoints
   // Read contact by userId
   angular
@@ -17,5 +15,4 @@
       }
     });
   }
-
 }());

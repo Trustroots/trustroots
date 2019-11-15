@@ -1,5 +1,3 @@
-'use strict';
-
 const path = require('path'),
       mongoose = require('mongoose'),
       moment = require('moment'),

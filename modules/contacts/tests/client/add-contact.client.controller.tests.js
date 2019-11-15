@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   describe('ContactAddController', function () {
     // Initialize global variables
     var $httpBackend,
@@ -169,5 +167,4 @@
     });
 
   });
-
 }());

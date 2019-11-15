@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   describe('Contact Route Tests', function () {
     // Initialize global variables
     var $httpBackend;
@@ -109,5 +107,4 @@
 
 
   });
-
 }());

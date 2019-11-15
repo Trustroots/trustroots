@@ -2,8 +2,6 @@
  * Trusted HTML filter tests
  */
 (function () {
-  'use strict';
-
   describe('Trusted HTML Filter Tests', function () {
 
     // Load the main application module
@@ -14,5 +12,4 @@
     }));
 
   });
-
 }());

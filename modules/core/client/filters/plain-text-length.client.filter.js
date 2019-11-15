@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Return length of a string without html
    * Very crude html stripping, which is enough for estimating if text is short/empty without html tags
@@ -23,5 +21,4 @@
       return string && angular.isString(string) ? String(string).replace(/&nbsp;/g, ' ').replace(/<[^>]+>/gm, '').trim().length : 0;
     };
   }
-
 }());

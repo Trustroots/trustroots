@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // Contact factory used for communicating with the contacts REST endpoints
   // Read contact by contactId
   angular
@@ -23,5 +21,4 @@
       }
     });
   }
-
 }());

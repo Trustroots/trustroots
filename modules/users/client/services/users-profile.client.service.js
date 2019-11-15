@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('users')
     .factory('UserProfilesService', UserProfilesService);
@@ -15,5 +13,4 @@
       }
     });
   }
-
 }());

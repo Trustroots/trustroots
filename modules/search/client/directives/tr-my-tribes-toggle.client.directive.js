@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to
    *
@@ -103,5 +101,4 @@
 
     }
   }
-
 }());

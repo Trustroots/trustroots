@@ -1,5 +1,3 @@
-'use strict';
-
 var should = require('should'),
     path = require('path'),
     stathat = require('stathat'),

@@ -1,5 +1,3 @@
-'use strict';
-
 var _ = require('lodash'),
     path = require('path'),
     agenda = require(path.resolve('./config/lib/agenda')),

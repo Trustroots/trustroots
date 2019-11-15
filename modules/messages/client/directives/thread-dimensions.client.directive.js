@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('messages')
     .directive('threadDimensions', threadDimensionsDirective);
@@ -127,5 +125,4 @@
       } // link()
     };
   }
-
 }());

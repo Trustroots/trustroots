@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('messages')
     .controller('InboxController', InboxController);
@@ -91,5 +89,4 @@
     }
 
   }
-
 }());

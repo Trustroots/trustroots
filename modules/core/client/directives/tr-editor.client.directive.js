@@ -1,7 +1,5 @@
 /* global MediumEditor */
 (function () {
-  'use strict';
-
   /**
    * Directive to embed Medium Editor instances
    *
@@ -123,5 +121,4 @@
       }
     };
   }
-
 }());

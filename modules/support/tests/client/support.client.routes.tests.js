@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   describe('Support Route Tests', function () {
 
     // We can start by loading the main application module
@@ -70,5 +68,4 @@
 
     });
   });
-
 }());

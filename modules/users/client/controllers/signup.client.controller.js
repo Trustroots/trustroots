@@ -1,6 +1,4 @@
 (function (jQuery) {
-  'use strict';
-
   angular
     .module('users')
     .controller('SignupController', SignupController);
@@ -357,5 +355,4 @@
     }
 
   }
-
 }(jQuery));

@@ -1,5 +1,3 @@
-'use strict';
-
 var path = require('path'),
     config = require('../config'),
     format = require('util').format,

@@ -1,5 +1,3 @@
-'use strict';
-
 var should = require('should'),
     path = require('path'),
     statsService = require(path.resolve('./modules/stats/server/services/stats.server.service')),

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * @ngdoc directive
    *
@@ -146,5 +144,4 @@
         }
       };
     }]);
-
 }());

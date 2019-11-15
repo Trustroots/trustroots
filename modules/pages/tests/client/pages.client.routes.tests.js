@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   describe('Pages Route Tests', function () {
 
     // We can start by loading the main application module
@@ -293,5 +291,4 @@
 
     });
   });
-
 }());

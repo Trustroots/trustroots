@@ -1,5 +1,3 @@
-'use strict';
-
 var path = require('path'),
     log = require(path.resolve('./config/lib/logger'));
 

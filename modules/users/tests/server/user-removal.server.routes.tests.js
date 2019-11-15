@@ -1,5 +1,3 @@
-'use strict';
-
 var fs = require('fs'),
     async = require('async'),
     should = require('should'),

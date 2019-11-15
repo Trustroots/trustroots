@@ -1,5 +1,3 @@
-'use strict';
-
 var Expo = require('expo-server-sdk'),
     log = require('./logger');
 

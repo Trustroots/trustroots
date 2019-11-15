@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * This module is used to receive incoming SparkPost events
  *

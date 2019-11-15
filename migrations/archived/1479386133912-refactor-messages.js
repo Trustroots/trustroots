@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Refactors message schema (mongoose) to be able to send multiple notifications
  * about unread messages.

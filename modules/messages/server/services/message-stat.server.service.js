@@ -1,5 +1,3 @@
-'use strict';
-
 var async = require('async'),
     mongoose = require('mongoose'),
     _ = require('lodash'),

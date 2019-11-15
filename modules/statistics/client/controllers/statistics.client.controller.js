@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('statistics')
     .controller('StatisticsController', StatisticsController);
@@ -55,5 +53,4 @@
     }
 
   }
-
 }());

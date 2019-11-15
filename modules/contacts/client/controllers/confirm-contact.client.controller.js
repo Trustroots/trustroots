@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('contacts')
     .controller('ContactConfirmController', ContactConfirmController);
@@ -54,5 +52,4 @@
     }
 
   }
-
 }());

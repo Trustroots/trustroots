@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * List tribes in common between two lists of tribes
    */

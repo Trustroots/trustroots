@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('contacts')
     .controller('ContactAddController', ContactAddController);
@@ -84,5 +82,4 @@
     }
 
   }
-
 }());

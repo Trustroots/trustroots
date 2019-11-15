@@ -1,5 +1,3 @@
-'use strict';
-
 var path = require('path'),
     should = require('should'),
     testutils = require(path.resolve('./testutils/server.testutil')),

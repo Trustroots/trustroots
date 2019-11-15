@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Application wide view controller
    */
@@ -278,5 +276,4 @@
 
 
   }
-
 }());

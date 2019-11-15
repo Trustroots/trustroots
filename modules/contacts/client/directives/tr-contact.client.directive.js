@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Produce a contact card
    *
@@ -48,5 +46,4 @@
 
     }
   }
-
 }());

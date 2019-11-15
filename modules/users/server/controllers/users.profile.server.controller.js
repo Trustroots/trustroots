@@ -811,7 +811,7 @@ function isUsernameUpdateAllowed(user) {
   var allowedDate = moment(user.usernameUpdated || user.created)
     .add(3, 'months');
   return moment().isSameOrAfter(allowedDate);
-};
+}
 
 /**
  * Sanitize profile before sending it to frontend

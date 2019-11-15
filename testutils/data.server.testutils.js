@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Various functions that repeat in tests a lot
  */

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('tribes')
     .factory('TribesService', TribesService);
@@ -16,5 +14,4 @@
       }
     });
   }
-
 }());

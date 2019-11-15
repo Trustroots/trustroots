@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('pages')
     .run(HomeRunBlock)
@@ -90,5 +88,4 @@
     });
 
   }
-
 }());

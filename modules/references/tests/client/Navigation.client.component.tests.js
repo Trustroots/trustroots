@@ -14,8 +14,6 @@ Enzyme.configure({ adapter: new Adapter() });
  */
 
 (function () {
-  'use strict';
-
   describe('Navigation through 3 tabs', () => {
 
     const t = key => key; // dummy translation function

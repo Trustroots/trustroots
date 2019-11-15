@@ -1,5 +1,3 @@
-'use strict';
-
 var path = require('path'),
     errorService = require('../services/error.server.service'),
     userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),

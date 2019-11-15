@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Service for handing filters
    */
@@ -90,5 +88,4 @@
     }
 
   }
-
 }());

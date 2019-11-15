@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * References-thread directive widget for asking feedback about the message thread
    *
@@ -94,5 +92,4 @@
     }
 
   }
-
 }());

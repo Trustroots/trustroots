@@ -1,5 +1,3 @@
-'use strict';
-
 module.exports = function (app) {
 
   var statistics = require('../controllers/statistics.server.controller');

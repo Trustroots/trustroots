@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to embed Trustroots host guide flashcards
    *
@@ -52,5 +50,4 @@
       }
     };
   }
-
 }());

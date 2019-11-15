@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Remove contact directive to open up a modal to disconnect contacts
    */
@@ -32,5 +30,4 @@
       }
     };
   }
-
 }());

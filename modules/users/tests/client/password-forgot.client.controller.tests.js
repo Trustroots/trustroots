@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // Authentication controller Spec
   describe('ForgotPasswordController', function () {
     // Initialize global variables

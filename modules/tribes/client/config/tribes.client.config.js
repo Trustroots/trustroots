@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('tribes')
     .config(TribesRoutes);
@@ -51,5 +49,4 @@
       });
 
   }
-
 }());

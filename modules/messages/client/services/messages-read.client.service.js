@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // MessagesRead service used for communicating with the messages REST endpoints
   angular
     .module('messages')
@@ -19,5 +17,4 @@
       }
     });
   }
-
 }());

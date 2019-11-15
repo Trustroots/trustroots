@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive that selects/highlights all text on input when clicking it.
    *
@@ -28,5 +26,4 @@
       }
     };
   }
-
 }());

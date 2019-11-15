@@ -1,5 +1,3 @@
-'use strict';
-
 var path = require('path'),
     should = require('should'),
     sinon = require('sinon'),

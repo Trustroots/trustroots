@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Onboarding/welcome sequence email for new members: 3/3 (last one)
  *

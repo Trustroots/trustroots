@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // SignupValidation service used for communicating with the signup validation REST endpoint
   angular
     .module('users')
@@ -14,5 +12,4 @@
       }
     });
   }
-
 }());

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive that simply Adds a helper text under the input and shows/hides it on focus/blur
    *
@@ -42,5 +40,4 @@
       }
     };
   }
-
 }());

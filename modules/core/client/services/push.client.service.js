@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('core')
     .factory('push', push);
@@ -243,5 +241,4 @@
     }
 
   }
-
 }());

@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Replaces "locale" with "local" from User.avatarSource
  */

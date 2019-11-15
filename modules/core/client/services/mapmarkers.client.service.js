@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Service for getting icons, markers and other objects for Leaflet maps
    */
@@ -118,5 +116,4 @@
     }
 
   }
-
 }());

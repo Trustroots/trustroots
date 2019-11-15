@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to select languages
    *
@@ -117,5 +115,4 @@
     }
 
   }
-
 }());

@@ -1,5 +1,3 @@
-'use strict';
-
 var path = require('path'),
     mongoose = require('mongoose'),
     testutils = require(path.resolve('./testutils/server.testutil'));

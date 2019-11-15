@@ -1,5 +1,3 @@
-'use strict';
-
 var _ = require('lodash'),
     request = require('supertest'),
     path = require('path'),

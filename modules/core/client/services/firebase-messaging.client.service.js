@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('core')
     .factory('firebaseMessaging', firebaseMessaging);
@@ -158,5 +156,4 @@
 
     return firebaseMessaging;
   }
-
 }());

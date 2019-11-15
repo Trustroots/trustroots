@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Task that checks for hosting offers that are set to "no" and were modified
  * longer than 3 months ago. Sends these users one reminder asking if they still

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to show offer type selector filter
    * Keeps a list of types up to date in scope variable
@@ -112,5 +110,4 @@
 
     }
   }
-
 }());
