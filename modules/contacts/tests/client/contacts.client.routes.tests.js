@@ -92,8 +92,6 @@
           $templateCache.put('/modules/contacts/views/confirm-contact.client.view.html', '');
           $httpBackend.when('GET', '/api/contact/123').respond(200, '');
           $httpBackend.expectGET('/api/contact/123');
-          $httpBackend.when('GET', '/api/contact-by?contactId=123').respond(200, '');
-          $httpBackend.expectGET('/api/contact-by?contactId=123');
 
           $state.go('contactConfirm', { contactId: '123' });
           $rootScope.$digest();
