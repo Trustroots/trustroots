@@ -37,7 +37,6 @@ const defaultRules = {
   'no-unused-expressions': 0,
   'no-unused-vars': 2,
   'no-use-before-define': [1, 'nofunc'],
-  'no-var': 0,
   'object-curly-spacing': [2, 'always'],
   'one-var': [0, 'never'],
   'one-var-declaration-per-line': [2, 'always'],
@@ -55,24 +54,27 @@ const defaultRules = {
   quotes: [1, 'single'],
   'wrap-iife': [2, 'outside'],
   'vars-on-top': 0,
-  'no-redeclare': 2,
-};
-
-const es2018rules = {
   'no-var': 2,
   'prefer-const': 2,
   'arrow-spacing': [2, { before: true, after: true }]
 };
 
 module.exports = {
+  extends: 'eslint:recommended',
   rules: defaultRules,
+  plugins: ['angular', 'react'],
   env: {
+    es6: true,
     browser: true,
     jasmine: true,
     jquery: true,
     mocha: true,
     node: true
   },
+  parserOptions: {
+    ecmaVersion: 2018
+  },
+  parser: 'babel-eslint',
   globals: {
     __TESTING__: true,
     _: false,
@@ -85,10 +87,10 @@ module.exports = {
     Promise: true
   },
   /*
-    eventually, after the migration, these overrides will become the main rules
-
-    it would be nice to keep the rules for client and server separate,
-    because eventually, they want to become independent codebases.
+   * Eventually, after the migration, these overrides will become the main rules.
+   *
+   * It would be nice to keep the rules for client and server separate,
+   * because eventually, they want to become independent codebases.
   */
   overrides: [{
     // Overrides for Angular files
@@ -102,7 +104,6 @@ module.exports = {
       'modules/core/client/app/config.js',
       'modules/core/client/app/init.js',
     ],
-    plugins: ['angular'],
     rules: {
       'angular/component-limit': 0,
       'angular/controller-as-route': 1,
@@ -152,32 +153,6 @@ module.exports = {
       PruneClusterForLeaflet: true,
     },
   },{
-    // overrides for server code
-    // ES 2018 - specify migrated files and folders here
-    files: [
-      'karma.conf.js',
-      'bin/db-maintenance/ensure-indexes.js',
-      'modules/admin/server/**',
-      'modules/admin/tests/**',
-      'modules/core/server/services/file-upload.service.js',
-      'modules/references/server/**',
-      'modules/references/tests/server/**',
-      'modules/users/tests/server/user-change-locale.server.routes.tests.js',
-      'testutils/data.server.testutils.js'
-    ],
-    env: {
-      node: true,
-      jasmine: true,
-      mocha: true
-    },
-    parserOptions: {
-      ecmaVersion: 2018
-    },
-    rules: es2018rules,
-    globals: {
-      PhusionPassenger: true,
-    }
-  }, {
     // overrides for client/react code
     files: [
       'config/client/**',
@@ -193,10 +168,8 @@ module.exports = {
       'modules/references/tests/client/**'
     ],
     env: {
-      es6: true,
       browser: true,
     },
-    plugins: ['react'],
     extends: 'plugin:react/recommended',
     settings: {
       react: {
@@ -212,7 +185,7 @@ module.exports = {
       sourceType: 'module'
     },
     rules: {
-      ...es2018rules,
+      ...defaultRules,
       'react/no-access-state-in-setstate': 2
     }
   },{
@@ -227,20 +200,9 @@ module.exports = {
       node: true,
     },
     rules: {
+      ...defaultRules,
       'no-console': 0,
       'no-process-exit': 0,
-    }
-  },{
-    // overrides for CLI scripts and application config
-    files: [
-      'bin/**',
-      'scripts/**',
-    ],
-    env: {
-      node: true,
     },
-    parserOptions: {
-      ecmaVersion: 2018
-    }
   }]
 };
