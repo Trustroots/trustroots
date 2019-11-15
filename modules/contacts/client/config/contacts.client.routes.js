@@ -42,10 +42,10 @@
         controllerAs: 'contactConfirm',
         resolve: {
           // A string value resolves to a service
-          ContactByService: 'ContactByService',
+          Contact: 'Contact',
 
-          contact: function (ContactByService, $stateParams) {
-            return ContactByService.get({ contactId: $stateParams.contactId });
+          contact: function (Contact, $stateParams) {
+            return Contact.get({ contactId: $stateParams.contactId });
           }
 
         },
