@@ -1,56 +1,54 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import { Modal } from 'react-bootstrap';
 
-function getSituation(contact, selfId) {
-  return (contact.confirmed === false && contact.userFrom === selfId && 'unconfirmedFromMe')
-    || (contact.confirmed === false && contact.userTo === selfId && 'unconfirmedToMe')
-    || 'confirmed';
-}
+export default function RemoveContact({ contact, show, inProgress, selfId, onRemove, onCancel }) {
 
-export function RemoveContact({ t, contact, show, inProgress, onRemove, onCancel, selfId }) {
+  const { t } = useTranslation('contact');
 
-  const situation = getSituation(contact, selfId);
+  // modal title, label for confirmation button, creation information
+  // depends on whether contact is confirmed and who sent the request
+  let labelTitle,
+      labelConfirm,
+      labelTime;
 
-  // parse contact.created to Date
+  const isFromMe = contact.userFrom === selfId;
+  const isConfirmed = contact.confirmed;
   const created = new Date(contact.created);
-  // Different confirm button label and modal title depending on situation
-  const situationLabels = {
-    // User is cancelling a request they sent
-    unconfirmedFromMe: {
-      confirm: t('Yes, revoke request'),
-      title: t('Revoke contact request?'),
-      time: t('Requested {{created, MMM D, YYYY}}', { created })
-    },
-    // Decline received request
-    unconfirmedToMe: {
-      confirm: t('Yes, decline request'),
-      title: t('Decline contact request?'),
-      time: t('Requested {{created, MMM D, YYYY}}', { created })
-    },
-    // Removing confirmed contact
-    confirmed: {
-      confirm: t('Yes, remove contact'),
-      title: t('Remove contact?'),
-      time: t('Connected since {{created, MMM D, YYYY}}', { created })
-    }
-  };
 
-  const labels = situationLabels[situation];
+  if (isConfirmed) {
+    // Remove confirmed contact
+    labelTitle = t('Remove contact?');
+    labelConfirm = t('Yes, remove contact');
+    labelTime = t('Connected since {{created, MMM D, YYYY}}', { created });
+  } else if (isFromMe) {
+    // Revoke contact request
+    labelTitle = t('Revoke contact request?');
+    labelConfirm = t('Yes, revoke request');
+    labelTime = t('Requested {{created, MMM D, YYYY}}', { created });
+  } else {
+    // Decline received contact request
+    labelTitle = t('Decline contact request?');
+    labelConfirm = t('Yes, decline request');
+    labelTime = t('Requested {{created, MMM D, YYYY}}', { created });
+  }
 
   return (
     <Modal show={show} onHide={onCancel}>
       <div className="modal-content">
         <Modal.Header>
-          <button type="button" className="close" aria-hidden="true" onClick={onCancel} ng-if="!removeContactModal.isLoading">&times;</button>
-          <Modal.Title>{labels.title}</Modal.Title>
+          {!inProgress && <button
+            type="button"
+            className="close"
+            aria-hidden="true"
+            onClick={onCancel}
+          >&times;</button>}
+          <Modal.Title>{labelTitle}</Modal.Title>
         </Modal.Header>
 
         <Modal.Body>
-
-          <p>{labels.time}</p>
-
+          <p>{labelTime}</p>
         </Modal.Body>
 
         <Modal.Footer>
@@ -64,7 +62,7 @@ export function RemoveContact({ t, contact, show, inProgress, onRemove, onCancel
             onClick={onRemove}
             disabled={inProgress}
           >
-            {!inProgress && <span>{labels.confirm}</span>}
+            {!inProgress && <span>{labelConfirm}</span>}
             {inProgress && <span
               role="alertdialog"
               aria-busy="true"
@@ -79,13 +77,10 @@ export function RemoveContact({ t, contact, show, inProgress, onRemove, onCancel
 }
 
 RemoveContact.propTypes = {
-  t: PropTypes.func.isRequired,
   contact: PropTypes.object.isRequired,
   show: PropTypes.bool.isRequired,
   inProgress: PropTypes.bool.isRequired,
+  selfId: PropTypes.string.isRequired,
   onCancel: PropTypes.func.isRequired,
-  onRemove: PropTypes.func.isRequired,
-  selfId: PropTypes.string.isRequired
+  onRemove: PropTypes.func.isRequired
 };
-
-export default withTranslation('contact')(RemoveContact);
