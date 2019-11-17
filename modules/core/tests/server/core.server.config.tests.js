@@ -7,7 +7,6 @@ var mongoose = require('mongoose'),
     path = require('path'),
     request = require('supertest'),
     express = require(path.resolve('./config/lib/express')),
-    mongoose = require('mongoose'),
     Tribe = mongoose.model('Tribe'),
     User = mongoose.model('User');
 

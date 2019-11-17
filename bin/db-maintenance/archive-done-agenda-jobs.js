@@ -28,15 +28,14 @@ var dbConnection,
     filter = { nextRunAt: null, lockedAt: null },
     total;
 
-if (process.argv[2] === 'reverse') {
-  console.log(chalk.red('🚨  Reverse action! Movind docs from archive back to live.'));
-  // Archived → back to live
-  var sourceCollectionName = 'agendaJobsArchived',
-      targetCollectionName = 'agendaJobs';
-} else {
-  // From live to achived
-  var sourceCollectionName = 'agendaJobs',
-      targetCollectionName = 'agendaJobsArchived';
+var isReverse = process.argv[2] === 'reverse';
+
+// By default from live to achived, but if requested "reverse" do Archived → back to live
+var sourceCollectionName = isReverse ? 'agendaJobsArchived' : 'agendaJobs';
+var targetCollectionName = isReverse ? 'agendaJobs' : 'agendaJobsArchived';
+
+if (isReverse) {
+  console.log(chalk.red('🚨 Reverse action! Movind docs from archive back to live.'));
 }
 
 function countTotals(done) {

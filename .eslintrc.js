@@ -54,7 +54,8 @@ const defaultRules = {
   'quote-props': 0,
   quotes: [1, 'single'],
   'wrap-iife': [2, 'outside'],
-  'vars-on-top': 0
+  'vars-on-top': 0,
+  'no-redeclare': 2,
 };
 
 const es2018rules = {
