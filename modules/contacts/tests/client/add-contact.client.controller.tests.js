@@ -1,23 +1,23 @@
 (function () {
   describe('ContactAddController', function () {
     // Initialize global variables
-    var $httpBackend,
-        Authentication,
-        UsersMini,
-        ContactByService,
-        ContactAddController;
+    let $httpBackend;
+    let Authentication;
+    let UsersMini;
+    let ContactByService;
+    let ContactAddController;
 
-    var user1 = {
+    const user1 = {
       _id: 'user1',
       displayName: 'User One'
     };
 
-    var user2 = {
+    const user2 = {
       _id: 'user2',
       displayName: 'User Two'
     };
 
-    var contactRequest = {
+    const contactRequest = {
       friendUserId: user2._id,
       message: '<p>Hi!</p><p>I would like to add you as a contact.</p><p>- ' + user1.displayName + '</p>'
     };
@@ -123,7 +123,7 @@
           });
 
           it('will make contact request with custom message', function () {
-            var customMessage = 'my custom message';
+            const customMessage = 'my custom message';
             ContactAddController.contact.message = customMessage;
             $httpBackend.expect('POST', '/api/contact', { friendUserId: user2._id, message: customMessage }).respond(200);
             ContactAddController.add();

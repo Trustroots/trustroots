@@ -1,18 +1,18 @@
 /**
  * Module dependencies.
  */
-var should = require('should'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Message = mongoose.model('Message'),
-    MessageStat = mongoose.model('MessageStat');
+const should = require('should');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Message = mongoose.model('Message');
+const MessageStat = mongoose.model('MessageStat');
 
 /**
  * Globals
  */
-var user0,
-    user1,
-    message;
+let user0;
+let user1;
+let message;
 
 /**
  * Unit tests
@@ -53,7 +53,7 @@ describe('MessageStats Model', function () {
   });
 
   it('new MessageStat should have specific fields', function () {
-    var messageStat = new MessageStat({
+    const messageStat = new MessageStat({
       firstMessageUserFrom: user0._id,
       firstMessageUserTo: user1._id,
       firstMessageCreated: message.created,
@@ -79,7 +79,7 @@ describe('MessageStats Model', function () {
   // timeToFirstReply: number
   // // messageCount: number (not now)
   it('should save without problems', function (done) {
-    var messageStat = new MessageStat({
+    const messageStat = new MessageStat({
       firstMessageUserFrom: user0._id,
       firstMessageUserTo: user1._id,
       firstMessageCreated: message.created,

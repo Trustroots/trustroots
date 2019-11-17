@@ -2,16 +2,16 @@
  * Refactors `users` array to `userTo` and `userFrom` keys from Contact collection
  */
 
-var path = require('path'),
-    async = require('async'),
-    mongooseService = require(path.resolve('./config/lib/mongoose')),
-    mongoose = require('mongoose'),
-    chalk = require('chalk'),
-    // userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
-    // User = mongoose.model('User'),
-    // eslint-disable-next-line no-unused-vars
-    contactModels = require(path.resolve('./modules/contacts/server/models/contacts.server.model')),
-    Contact = mongoose.model('Contact');
+const path = require('path');
+const async = require('async');
+const mongooseService = require(path.resolve('./config/lib/mongoose'));
+const mongoose = require('mongoose');
+const chalk = require('chalk');
+// userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
+// User = mongoose.model('User'),
+// eslint-disable-next-line no-unused-vars
+const contactModels = require(path.resolve('./modules/contacts/server/models/contacts.server.model'));
+const Contact = mongoose.model('Contact');
 
 exports.up = function (next) {
 
@@ -47,7 +47,7 @@ exports.up = function (next) {
       }
 
       // Count how many contacts we've processed
-      var counter = 0;
+      let counter = 0;
 
       // `mapSeries` runs only a single async operation at a time.
       async.mapSeries(
@@ -56,7 +56,7 @@ exports.up = function (next) {
         // Must call `contactDone()` after done
         function (contact, contactDone) {
           // Process contact
-          var contactObject = contact.toObject();
+          const contactObject = contact.toObject();
           Contact.update(
             { _id: contact._id },
             {

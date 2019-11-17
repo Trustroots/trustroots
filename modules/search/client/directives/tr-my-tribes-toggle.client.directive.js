@@ -12,7 +12,7 @@
   /* @ngInject */
   function trMyTribesToggleDirective(UserMembershipsService) {
 
-    var directive = {
+    const directive = {
       restrict: 'A',
       replace: true,
       scope: {
@@ -29,10 +29,10 @@
     function trMyTribesToggleController($scope) {
 
       // Flag used to detect if toggle was touched
-      var toggled = false;
+      let toggled = false;
 
       // View Model
-      var vm = this;
+      const vm = this;
 
       vm.onChange = onChange;
       vm.toggle = false;
@@ -70,7 +70,7 @@
             }
 
             // Fill `vm.userTribes` array with ids of tribes
-            var tribeIds = [];
+            const tribeIds = [];
             angular.forEach(userMemberships, function (membership) {
               tribeIds.push(membership.tribe._id);
             });

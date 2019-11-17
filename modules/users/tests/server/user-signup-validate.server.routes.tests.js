@@ -1,17 +1,17 @@
-var should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    express = require(path.resolve('./config/lib/express')),
-    config = require(path.resolve('./config/config'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const express = require(path.resolve('./config/lib/express'));
+const config = require(path.resolve('./config/config'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    user;
+let app;
+let agent;
+let user;
 
 function validationFailure(object, error, message, done) {
   agent.post('/api/auth/signup/validate')
@@ -106,7 +106,7 @@ describe('User signup validation CRUD tests', function () {
     });
 
     describe('Username is in invalid format', function () {
-      var invalidMessage = 'Username is in invalid format.';
+      const invalidMessage = 'Username is in invalid format.';
 
       it('should show error to validate username beginning with "." (dot)', function (done) {
         validationFailure(

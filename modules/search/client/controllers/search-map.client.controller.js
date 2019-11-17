@@ -7,14 +7,14 @@
   function SearchMapController($scope, $state, $stateParams, $timeout, $analytics, OffersService, Authentication, leafletData, messageCenterService, MapLayersFactory, MapMarkersFactory, SearchMapService, FiltersService) {
 
     // `search-map-canvas` is id of <leaflet> element
-    var mapId = 'search-map-canvas';
+    const mapId = 'search-map-canvas';
 
     // Prefix for Leaflet events
     // @link https://github.com/angular-ui/ui-leaflet/commit/d22b3f0
-    var listenerPrefix = 'leafletDirectiveMap.' + mapId;
+    const listenerPrefix = 'leafletDirectiveMap.' + mapId;
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.pruneCluster = new PruneClusterForLeaflet(60, 60);
@@ -270,7 +270,7 @@
           vm.mapBounds.southWest.lat < vm.mapLastBounds.southWestLat) {
 
         // We add a margin to the boundings depending on the zoom level
-        var boundingDelta = 10 / vm.mapCenter.zoom;
+        const boundingDelta = 10 / vm.mapCenter.zoom;
 
         // Saving the current bounding box amd zoom
         vm.mapLastBounds = {
@@ -299,8 +299,8 @@
 
           // Let's go through those markers
           // This loop might look weird but it's actually speed optimized :P
-          for (var i = -1, len = offers.length; ++i < len;) {
-            var marker = new PruneCluster.Marker(
+          for (let i = -1, len = offers.length; ++i < len;) {
+            const marker = new PruneCluster.Marker(
               offers[i].location[0],
               offers[i].location[1]
             );
@@ -332,7 +332,7 @@
 
       // If the zoom is big enough we wait for the map to be loaded with timeout and we get the markers
       if (vm.mapCenter.zoom > vm.mapMinimumZoom) {
-        var loadMarkers = function () {
+        const loadMarkers = function () {
           if (angular.isDefined(vm.mapBounds.northEast)) {
             getMarkers();
           } else {

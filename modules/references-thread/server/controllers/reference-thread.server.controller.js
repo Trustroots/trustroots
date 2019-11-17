@@ -1,15 +1,15 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    log = require(path.resolve('./config/lib/logger')),
-    async = require('async'),
-    mongoose = require('mongoose'),
-    Message = mongoose.model('Message'),
-    Thread = mongoose.model('Thread'),
-    ReferenceThread = mongoose.model('ReferenceThread');
+const path = require('path');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const statService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const log = require(path.resolve('./config/lib/logger'));
+const async = require('async');
+const mongoose = require('mongoose');
+const Message = mongoose.model('Message');
+const Thread = mongoose.model('Thread');
+const ReferenceThread = mongoose.model('ReferenceThread');
 
 /**
  * Create a new thread reference
@@ -98,7 +98,7 @@ exports.createReferenceThread = function (req, res) {
     // Save referenceThread
     function (threadId, referenceUserTo, done) {
 
-      var referenceThread = new ReferenceThread(req.body);
+      const referenceThread = new ReferenceThread(req.body);
 
       referenceThread.thread = threadId;
       referenceThread.userFrom = req.user._id;

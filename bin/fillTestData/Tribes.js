@@ -1,14 +1,14 @@
 /**
  * Required dependencies
  */
-const _ = require('lodash'),
-      path = require('path'),
-      mongooseService = require(path.resolve('./config/lib/mongoose')),
-      chalk = require('chalk'),
-      yargs = require('yargs'),
-      faker = require('faker'),
-      mongoose = require('mongoose'),
-      config = require(path.resolve('./config/config'));
+const _ = require('lodash');
+const path = require('path');
+const mongooseService = require(path.resolve('./config/lib/mongoose'));
+const chalk = require('chalk');
+const yargs = require('yargs');
+const faker = require('faker');
+const mongoose = require('mongoose');
+const config = require(path.resolve('./config/config'));
 
 /**
  * Configure the script usage using yargs to obtain parameters and enforce usage.
@@ -153,7 +153,7 @@ function seedTribes() {
 
           // Add tribes until we reach the total
           while (index < max) {
-            let tribe = new Tribe();
+            const tribe = new Tribe();
 
             // seed the tribe data
             seedTribe(tribe, initialTribeCount + index);

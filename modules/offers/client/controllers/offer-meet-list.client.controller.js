@@ -7,7 +7,7 @@
   function OfferListMeetController(offers, $timeout, $anchorScroll, $analytics, $confirm, OffersService, messageCenterService) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Expoxed to the view
     vm.offers = offers;
@@ -26,7 +26,7 @@
       $timeout(function () {
         // Offset for scrolling position
         $anchorScroll.yOffset = function () {
-          var $header = angular.element('#tr-header');
+          const $header = angular.element('#tr-header');
           // Set y-axis offset for scrolling to element to header's height
           return $header.length ? ($header.height() + 5) : 50;
         };
@@ -40,7 +40,7 @@
     function remove(offer) {
 
       // Index of this `offer` in `vm.offers` array
-      var index = vm.offers.indexOf(offer);
+      const index = vm.offers.indexOf(offer);
 
       // Ask for confirmation
       $confirm({
@@ -60,7 +60,7 @@
             // Remove `offer` from `vm.offers` array
             vm.offers.splice(index, 1);
           }, function (err) {
-            var errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
+            const errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
             messageCenterService.add('danger', errorMessage);
           });
         });

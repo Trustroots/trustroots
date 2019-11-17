@@ -1,9 +1,9 @@
 /**
  * Module dependencies.
  */
-const mongoose = require('mongoose'),
-      uniqueValidation = require('mongoose-beautiful-unique-validation'),
-      Schema = mongoose.Schema;
+const mongoose = require('mongoose');
+const uniqueValidation = require('mongoose-beautiful-unique-validation');
+const Schema = mongoose.Schema;
 
 /**
  * ReferenceUser Schema

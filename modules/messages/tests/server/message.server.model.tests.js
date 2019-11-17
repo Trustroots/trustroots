@@ -1,17 +1,17 @@
 /**
  * Module dependencies.
  */
-var should = require('should'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Message = mongoose.model('Message');
+const should = require('should');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Message = mongoose.model('Message');
 
 /**
  * Globals
  */
-var userTo,
-    userFrom,
-    message;
+let userTo;
+let userFrom;
+let message;
 
 /**
  * Unit tests

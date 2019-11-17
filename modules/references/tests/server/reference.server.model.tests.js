@@ -1,17 +1,17 @@
-const should = require('should'),
-      mongoose = require('mongoose'),
-      path = require('path'),
-      utils = require(path.resolve('./testutils/data.server.testutils')),
-      User = mongoose.model('User'),
-      Reference = mongoose.model('Reference');
+const should = require('should');
+const mongoose = require('mongoose');
+const path = require('path');
+const utils = require(path.resolve('./testutils/data.server.testutils'));
+const User = mongoose.model('User');
+const Reference = mongoose.model('Reference');
 
 describe('Reference Model Unit Tests', () => {
 
   describe('Method Save', () => {
 
-    let user1,
-        user2,
-        user3;
+    let user1;
+    let user2;
+    let user3;
 
     beforeEach(() => {
       [user1, user2, user3] = utils.generateUsers(3).map(_user => new User(_user));

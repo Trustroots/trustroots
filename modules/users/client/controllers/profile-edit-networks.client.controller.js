@@ -7,7 +7,7 @@
   function ProfileEditNetworksController($scope, $http, Users, Authentication, messageCenterService) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Copy user to make a temporary buffer for changes.
     // Prevents changes remaining here when cancelling profile editing.
@@ -26,7 +26,7 @@
      * @link https://github.com/Trustroots/trustroots/issues/308
      */
     function isWarmshowersId() {
-      var x;
+      let x;
       return isNaN(vm.user.extSitesWS) ? !1 : (x = parseFloat(vm.user.extSitesWS), (0 | x) === x);
     }
 

@@ -9,9 +9,9 @@ export default function RemoveContact({ contact, show, inProgress, selfId, onRem
 
   // modal title, label for confirmation button, creation information
   // depends on whether contact is confirmed and who sent the request
-  let labelTitle,
-      labelConfirm,
-      labelTime;
+  let labelTitle;
+  let labelConfirm;
+  let labelTime;
 
   const isFromMe = contact.userFrom === selfId;
   const isConfirmed = contact.confirmed;

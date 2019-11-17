@@ -7,7 +7,7 @@
   function StatisticsController($scope, $interval, Statistics, statisticsData) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     vm.statisticsData = statisticsData;
     vm.launchDate = new Date(2014, 11, 23); // Dec 23, 2014
@@ -18,7 +18,7 @@
     });
 
     // Update page every now and then while it's open
-    var statsInterval = $interval(function () {
+    const statsInterval = $interval(function () {
       Statistics.get({}, function (statisticsData) {
         processStats(statisticsData);
       });

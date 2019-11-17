@@ -21,7 +21,7 @@
 
   /* @ngInject */
   function MessageCenterServiceProvider() {
-    var _this = this;
+    const _this = this;
     _this.options = { timeout: 6000 };
     _this.setGlobalOptions = function (options) {
       _this.options = options;
@@ -55,15 +55,15 @@
         permanent: 'permanent'
       },
       add: function (type, message, options) {
-        var availableTypes = ['info', 'warning', 'danger', 'success'],
-            service = this;
+        const availableTypes = ['info', 'warning', 'danger', 'success'];
+        const service = this;
         options = options || {};
         options = angular.extend({}, $messageCenterService.getOptions(), options);
         if (availableTypes.indexOf(type) === -1) {
           // eslint-disable-next-line no-throw-literal
           throw 'Invalid message type';
         }
-        var messageObject = {
+        const messageObject = {
           type: type,
           status: options.status || this.status.unseen,
           processed: false,
@@ -82,21 +82,21 @@
         return messageObject;
       },
       remove: function (message) {
-        var index = this.mcMessages.indexOf(message);
+        const index = this.mcMessages.indexOf(message);
         this.mcMessages.splice(index, 1);
       },
       reset: function () {
         this.mcMessages = [];
       },
       removeShown: function () {
-        for (var index = this.mcMessages.length - 1; index >= 0; index--) {
+        for (let index = this.mcMessages.length - 1; index >= 0; index--) {
           if (this.mcMessages[index].status === this.status.shown) {
             this.remove(this.mcMessages[index]);
           }
         }
       },
       markShown: function () {
-        for (var index = this.mcMessages.length - 1; index >= 0; index--) {
+        for (let index = this.mcMessages.length - 1; index >= 0; index--) {
           if (!this.mcMessages[index].processed) {
             if (this.mcMessages[index].status === this.status.unseen) {
               this.mcMessages[index].status = this.status.shown;

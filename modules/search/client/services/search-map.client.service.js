@@ -11,12 +11,12 @@
 
     // Default location for all TR maps
     // Returns `{lat: Float, lng: Float, zoom: 6}`
-    var defaultLocation = LocationService.getDefaultLocation(6);
+    const defaultLocation = LocationService.getDefaultLocation(6);
 
     // Make cache id unique for this user
-    var cachePrefix = Authentication.user ? 'search.mapCenter.' + Authentication.user._id : 'search.mapCenter';
+    const cachePrefix = Authentication.user ? 'search.mapCenter.' + Authentication.user._id : 'search.mapCenter';
 
-    var service = {
+    const service = {
       getMapCenter: getMapCenter,
       cacheMapCenter: cacheMapCenter
     };
@@ -32,7 +32,7 @@
         // Is local/sessionStorage supported? This might fail in browser's incognito mode
         if (locker.supported()) {
           // Get location from cache, return `false` if it doesn't exist in locker
-          var cachedLocation = locker.get(cachePrefix, false);
+          const cachedLocation = locker.get(cachePrefix, false);
 
           // Validate cached location or fall back to default
           // If it's older than two days, we won't use it.

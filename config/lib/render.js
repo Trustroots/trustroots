@@ -1,4 +1,4 @@
-var nunjucks = require('nunjucks');
+const nunjucks = require('nunjucks');
 
 // Configure nunjucks
 // https://mozilla.github.io/nunjucks/

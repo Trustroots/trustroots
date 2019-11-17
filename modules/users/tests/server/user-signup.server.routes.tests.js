@@ -1,29 +1,29 @@
-var should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    express = require(path.resolve('./config/lib/express')),
-    testutils = require(path.resolve('./testutils/server.testutil'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const express = require(path.resolve('./config/lib/express'));
+const testutils = require(path.resolve('./testutils/server.testutil'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    confirmedCredentials,
-    confirmedUser,
-    _confirmedUser,
-    unConfirmedCredentials,
-    unConfirmedUser,
-    _unConfirmedUser;
+let app;
+let agent;
+let confirmedCredentials;
+let confirmedUser;
+let _confirmedUser;
+let unConfirmedCredentials;
+let unConfirmedUser;
+let _unConfirmedUser;
 
 /**
  * User routes tests
  */
 describe('User signup and authentication CRUD tests', function () {
 
-  var jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs();
 
   before(function (done) {
     // Get application

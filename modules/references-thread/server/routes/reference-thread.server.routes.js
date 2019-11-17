@@ -1,8 +1,8 @@
 /**
  * Module dependencies.
  */
-var referenceThreadPolicy = require('../policies/reference-thread.server.policy'),
-    referenceThread = require('../controllers/reference-thread.server.controller');
+const referenceThreadPolicy = require('../policies/reference-thread.server.policy');
+const referenceThread = require('../controllers/reference-thread.server.controller');
 
 module.exports = function (app) {
 

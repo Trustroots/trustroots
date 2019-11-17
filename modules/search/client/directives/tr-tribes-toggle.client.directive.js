@@ -15,9 +15,9 @@
   /* @ngInject */
   function trTribesToggleDirective(TribesService) {
 
-    var ignoreToggles = false;
+    let ignoreToggles = false;
 
-    var directive = {
+    const directive = {
       restrict: 'A',
       replace: true,
       scope: {
@@ -34,7 +34,7 @@
     function trTribesToggleDirectiveController($scope) {
 
       // View Model
-      var vm = this;
+      const vm = this;
 
       // Get all the tribes
       vm.tribes = TribesService.query();
@@ -63,7 +63,7 @@
        * into an array of tribe ids: `[id1, id2, ...]`
        */
       function onToggleChange() {
-        var TribeIds = [];
+        const TribeIds = [];
         angular.forEach(vm.toggles, function (active, tribeId) {
           if (active) TribeIds.push(tribeId);
         });

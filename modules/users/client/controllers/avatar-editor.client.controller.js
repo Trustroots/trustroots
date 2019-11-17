@@ -6,11 +6,11 @@
   /* @ngInject */
   function AvatarEditorController($scope, $uibModalInstance, Upload, messageCenterService, user, appSettings) {
 
-    var lastAvatarSource = user.avatarSource,
-        fileAvatar = {};
+    const lastAvatarSource = user.avatarSource;
+    let fileAvatar = {};
 
     // View model
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.user = user;
@@ -70,7 +70,7 @@
       }
 
       // Accept only one file at once
-      var file = $files[0];
+      const file = $files[0];
       fileAvatar = file;
       vm.user.avatarSource = 'local';
 
@@ -83,7 +83,7 @@
         vm.avatarUploading = true;
 
         // Show the local file as a preview
-        var fileReader = new FileReader();
+        const fileReader = new FileReader();
         fileReader.readAsDataURL(file);
         fileReader.onloadend = function () {
           vm.avatarPreview = true;
@@ -102,9 +102,9 @@
      * @link http://stackoverflow.com/a/18650828
      */
     function bytesToSize(bytes) {
-      var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
       if (bytes === 0) return '0 Byte';
-      var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
+      const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
       return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
     }
 

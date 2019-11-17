@@ -1,13 +1,13 @@
 // test whether the daily statistics job reaches influxdb and stathat via Stats api
 
-var should = require('should'),
-    path = require('path'),
-    influx = require('influx'),
-    stathat = require('stathat'),
-    sinon = require('sinon'),
-    _ = require('lodash'),
-    config = require(path.resolve('./config/config')),
-    statsJob = require(path.resolve('./modules/statistics/server/jobs/daily-statistics.server.job'));
+const should = require('should');
+const path = require('path');
+const influx = require('influx');
+const stathat = require('stathat');
+const sinon = require('sinon');
+const _ = require('lodash');
+const config = require(path.resolve('./config/config'));
+const statsJob = require(path.resolve('./modules/statistics/server/jobs/daily-statistics.server.job'));
 
 describe('Daily Statistics Job - Unit Test', function () {
 
@@ -61,9 +61,9 @@ describe('Daily Statistics Job - Unit Test', function () {
           sinon.assert.callCount(influx.InfluxDB.prototype.writeMeasurement, 17);
 
           // Member count stat point
-          var memberMeasurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-          var memberPoints = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
-          var memberPoint = memberPoints[0];
+          const memberMeasurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+          const memberPoints = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+          const memberPoint = memberPoints[0];
           should(memberPoints.length).eql(1);
           should(memberMeasurement).eql('members');
           should(memberPoint).have.propertyByPath('fields', 'count').eql(0);
@@ -71,9 +71,9 @@ describe('Daily Statistics Job - Unit Test', function () {
           should(memberPoint).not.have.property('timestamp');
 
           // Push registration count stat point
-          var pushMeasurement = influx.InfluxDB.prototype.writeMeasurement.getCall(1).args[0];
-          var pushPoints = influx.InfluxDB.prototype.writeMeasurement.getCall(1).args[1];
-          var pushPoint = pushPoints[0];
+          const pushMeasurement = influx.InfluxDB.prototype.writeMeasurement.getCall(1).args[0];
+          const pushPoints = influx.InfluxDB.prototype.writeMeasurement.getCall(1).args[1];
+          const pushPoint = pushPoints[0];
           should(pushPoints.length).eql(1);
           should(pushMeasurement).eql('pushRegistrations');
           should(pushPoint).have.propertyByPath('fields', 'count').eql(0);
@@ -111,13 +111,13 @@ describe('Daily Statistics Job - Unit Test', function () {
           sinon.assert.callCount(stathat.trackEZValue, 68);
 
           // `getCall(0)` and `getCall(1)` contain calls for member count
-          var memberGroupedArgs = _.zip.apply(this, [
+          const memberGroupedArgs = _.zip.apply(this, [
             stathat.trackEZValue.getCall(0).args,
             stathat.trackEZValue.getCall(1).args
           ]);
 
           // `getCall(2)` and `getCall(3)` contain calls for push registration count
-          var pushGroupedArgs = _.zip.apply(this, [
+          const pushGroupedArgs = _.zip.apply(this, [
             stathat.trackEZValue.getCall(2).args,
             stathat.trackEZValue.getCall(3).args
           ]);

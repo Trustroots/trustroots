@@ -1,13 +1,13 @@
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
 /**
  * Contact Schema
  */
-var ContactSchema = new Schema({
+const ContactSchema = new Schema({
   created: {
     type: Date,
     default: Date.now

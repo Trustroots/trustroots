@@ -20,7 +20,7 @@
 
   /* @ngInject */
   function mcMessages($rootScope, messageCenterService) {
-    var templateString = '\
+    const templateString = '\
     <div id="mc-messages-wrapper">\
       <div class="alert alert-{{ message.type }} {{ animation }}" ng-repeat="message in mcMessages">\
         <a class="close" ng-click="message.close();" data-dismiss="alert" aria-hidden="true">&times;</a>\
@@ -41,7 +41,7 @@
       link: function (scope, element, attrs) {
         // Bind the messages from the service to the root scope.
         messageCenterService.flush();
-        var changeReaction = function () { // event, to, from
+        const changeReaction = function () { // event, to, from
           // Update 'unseen' messages to be marked as 'shown'.
           messageCenterService.markShown();
           // Remove the messages that have been shown.

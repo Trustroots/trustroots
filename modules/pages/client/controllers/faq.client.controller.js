@@ -7,7 +7,7 @@
   function FaqController($scope, $timeout, $window, $location, $state, $uiViewScroll) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.allowStickySidebar = true;
@@ -69,7 +69,7 @@
      * Scroll+highlight a FAQ question when clicking title at sidebar
      */
     function highlightQuestion(id) {
-      var $el = angular.element('#' + id);
+      const $el = angular.element('#' + id);
 
       // Performs color flash for link, see faq.less for more.
       // Animation time at CSS is 1000ms

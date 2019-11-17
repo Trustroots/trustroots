@@ -2,11 +2,11 @@
   // Authentication controller Spec
   describe('ForgotPasswordController', function () {
     // Initialize global variables
-    var $scope,
-        $httpBackend,
-        $location,
-        $window,
-        Authentication;
+    let $scope;
+    let $httpBackend;
+    let $location;
+    let $window;
+    let Authentication;
 
     // The $resource service augments the response object with methods for updating and deleting the resource.
     // If we were to use the standard toEqual matcher, our tests would fail because the test values would not match
@@ -54,7 +54,7 @@
       });
 
       describe('askForPasswordReset', function () {
-        var credentials = {
+        const credentials = {
           username: 'test',
           password: 'test'
         };
@@ -76,7 +76,7 @@
         });
 
         describe('POST error', function () {
-          var errorMessage = 'No account with that username has been found';
+          const errorMessage = 'No account with that username has been found';
           beforeEach(function () {
 
             // Test expected GET request
@@ -100,7 +100,7 @@
         });
 
         describe('POST success', function () {
-          var successMessage = 'An email has been sent to the provided email with further instructions.';
+          const successMessage = 'An email has been sent to the provided email with further instructions.';
           beforeEach(function () {
 
             // Test expected requests

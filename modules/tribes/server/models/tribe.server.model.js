@@ -1,18 +1,18 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    config = require(path.resolve('./config/config')),
-    mongoose = require('mongoose'),
-    moment = require('moment'),
-    mongoosePaginate = require('mongoose-paginate'),
-    uniqueValidation = require('mongoose-beautiful-unique-validation'),
-    integerValidator = require('mongoose-integer'),
-    urlslugs = require('mongoose-url-slugs'),
-    randomColor = require('randomcolor'),
-    speakingurl = require('speakingurl'),
-    validator = require('validator'),
-    Schema = mongoose.Schema;
+const path = require('path');
+const config = require(path.resolve('./config/config'));
+const mongoose = require('mongoose');
+const moment = require('moment');
+const mongoosePaginate = require('mongoose-paginate');
+const uniqueValidation = require('mongoose-beautiful-unique-validation');
+const integerValidator = require('mongoose-integer');
+const urlslugs = require('mongoose-url-slugs');
+const randomColor = require('randomcolor');
+const speakingurl = require('speakingurl');
+const validator = require('validator');
+const Schema = mongoose.Schema;
 
 /**
  * Return random dark hex color without leading `#`
@@ -30,7 +30,7 @@ function randomHex() {
  * - not in list of illegal labels
  * - not begin or end with "."
  */
-var validateLabel = function (label) {
+const validateLabel = function (label) {
   return (label &&
           label.match(/[a-zA-Z]/) && // Should have at least one a-zA-Z (non case-insensitive regex)
           config.illegalStrings.indexOf(label.trim().toLowerCase()) < 0 &&
@@ -43,7 +43,7 @@ var validateLabel = function (label) {
  * Validation function for `TribeSchema.attribution_url`
  * @link https://www.npmjs.com/package/validator#validators
  */
-var validateURL = function (url) {
+const validateURL = function (url) {
   return !url || validator.isURL(url, {
     protocols: ['http', 'https'],
     require_tld: true,
@@ -61,14 +61,14 @@ var validateURL = function (url) {
  * @link https://en.wikipedia.org/wiki/Universally_unique_identifier#Variants_and_Versions
  * @link https://www.npmjs.com/package/validator#validators
  */
-var validateUUID = function (uuid) {
+const validateUUID = function (uuid) {
   return !uuid || validator.isUUID(uuid, 4);
 };
 
 /**
  * Tribe Schema
  */
-var TribeSchema = new Schema({
+const TribeSchema = new Schema({
   label: {
     type: String,
     minlength: 2,
@@ -152,7 +152,7 @@ TribeSchema.set('toJSON', { getters: true });
  */
 TribeSchema.virtual('new').get(function () {
   // Set comparison date to 30 days ago from now
-  var newLimit = moment().subtract(60, 'day');
+  const newLimit = moment().subtract(60, 'day');
 
   // Is `created` defined and after comparison date?
   return typeof this.created !== 'undefined' && moment(this.created).isAfter(newLimit);

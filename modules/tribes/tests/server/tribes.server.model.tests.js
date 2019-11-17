@@ -1,19 +1,19 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    config = require(path.resolve('./config/config')),
-    should = require('should'),
-    mongoose = require('mongoose'),
-    validator = require('validator'),
-    Tribe = mongoose.model('Tribe');
+const path = require('path');
+const config = require(path.resolve('./config/config'));
+const should = require('should');
+const mongoose = require('mongoose');
+const validator = require('validator');
+const Tribe = mongoose.model('Tribe');
 
 /**
  * Globals
  */
-var tribe1,
-    tribe2,
-    tribe3;
+let tribe1;
+let tribe2;
+let tribe3;
 
 /**
  * Unit tests
@@ -41,7 +41,7 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should be able to save without problems', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.save(function (err) {
         should.not.exist(err);
@@ -53,7 +53,7 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should be able to save without problems and have correct default values', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
       _tribe.save(function (err) {
         should.not.exist(err);
         _tribe.synonyms.should.be.an.Array();
@@ -74,8 +74,8 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should fail to save an existing tribe again', function (done) {
-      var _tribe = new Tribe(tribe1);
-      var _tribe2 = new Tribe(tribe2);
+      const _tribe = new Tribe(tribe1);
+      const _tribe2 = new Tribe(tribe2);
 
       _tribe.save(function () {
         _tribe2.save(function (err) {
@@ -86,15 +86,15 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should confirm that saving tribe model doesnt change the color', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.save(function (err) {
         should.not.exist(err);
-        var colorBefore = _tribe.color;
+        const colorBefore = _tribe.color;
         _tribe.label = 'test';
         _tribe.save(function (err) {
           should.not.exist(err);
-          var colorAfter = _tribe.color;
+          const colorAfter = _tribe.color;
           colorBefore.should.equal(colorAfter);
           done();
         });
@@ -102,8 +102,8 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should be able to save 2 different tribes', function (done) {
-      var _tribe = new Tribe(tribe1);
-      var _tribe3 = new Tribe(tribe3);
+      const _tribe = new Tribe(tribe1);
+      const _tribe3 = new Tribe(tribe3);
 
       _tribe.save(function (err) {
         should.not.exist(err);
@@ -115,7 +115,7 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should show error when trying to save tribe with invalid attribution URL', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.attribution_url = 'this-is-not-URL';
       _tribe.save(function (err) {
@@ -129,7 +129,7 @@ describe('Tribe Model Unit Tests:', function () {
   describe('Slug generator', function () {
 
     it('should generate slug for label with accents and special symbols', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.label = 'Hyvää päivää, herra Hüü!';
       _tribe.save(function (err) {
@@ -140,7 +140,7 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should generate slug from unicode label', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.label = 'unicode ♥';
       _tribe.save(function (err) {
@@ -154,7 +154,7 @@ describe('Tribe Model Unit Tests:', function () {
   describe('Label Validation', function () {
 
     it('should be able to show an error when try to save without label', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.label = '';
       _tribe.save(function (err) {
@@ -164,7 +164,7 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should be able to show an error when try to save with not allowed label', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.label = config.illegalStrings[0];
       _tribe.save(function (err) {
@@ -174,7 +174,7 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should be able to show an error when trying to save tribe label beginning with .', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.label = '.label';
       _tribe.save(function (err) {
@@ -184,7 +184,7 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should be able to show an error when trying to save tribe label end with .', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.label = 'label.';
       _tribe.save(function (err) {
@@ -194,7 +194,7 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should save label with dot', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.label = 'lab.el';
       _tribe.save(function (err) {
@@ -204,7 +204,7 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should be able to show an error when trying to save label shorter than 2 character', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.label = 's';
       _tribe.save(function (err) {
@@ -214,7 +214,7 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should save label with all capital letters', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.label = 'LABEL';
       _tribe.save(function (err) {
@@ -224,7 +224,7 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should be able to show an error when trying to save a label without at least one alpha character', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.label = '1234567890';
       _tribe.save(function (err) {
@@ -234,7 +234,7 @@ describe('Tribe Model Unit Tests:', function () {
     });
 
     it('should be able to show an error when trying to save a label longer than 255 characters', function (done) {
-      var _tribe = new Tribe(tribe1);
+      const _tribe = new Tribe(tribe1);
 
       _tribe.label = 'l'.repeat(256);
       _tribe.save(function (err) {

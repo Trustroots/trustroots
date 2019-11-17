@@ -59,10 +59,9 @@
 
     function toInnerText(value) {
       // eslint-disable-next-line angular/document-service
-      var tempEl = document.createElement('div'),
-          text;
+      const tempEl = document.createElement('div');
       tempEl.innerHTML = value;
-      text = tempEl.textContent || '';
+      const text = tempEl.textContent || '';
       return text.trim();
     }
 
@@ -74,7 +73,7 @@
       },
       link: function (scope, iElement, iAttrs, ngModel) {
 
-        var angularIElement = angular.element(iElement);
+        const angularIElement = angular.element(iElement);
 
         angularIElement.addClass('tr-editor');
 
@@ -84,7 +83,7 @@
         ngModel.$render = function () {
           iElement.html(ngModel.$viewValue || '');
 
-          var placeholder = ngModel.editor.getExtensionByName('placeholder');
+          const placeholder = ngModel.editor.getExtensionByName('placeholder');
           if (placeholder) {
             placeholder.updatePlaceholder(iElement[0]);
           }

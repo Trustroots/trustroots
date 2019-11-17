@@ -1,39 +1,39 @@
-var should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Contact = mongoose.model('Contact'),
-    express = require(path.resolve('./config/lib/express')),
-    agenda = require(path.resolve('./config/lib/agenda')),
-    testutils = require(path.resolve('./testutils/server.testutil'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Contact = mongoose.model('Contact');
+const express = require(path.resolve('./config/lib/express'));
+const agenda = require(path.resolve('./config/lib/agenda'));
+const testutils = require(path.resolve('./testutils/server.testutil'));
 
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    user1,
-    user2,
-    user3,
-    user4,
-    user1Id,
-    user2Id,
-    user3Id,
-    user4Id,
-    contact1,
-    contact2,
-    contact3,
-    contact1Id;
+let app;
+let agent;
+let credentials;
+let user1;
+let user2;
+let user3;
+let user4;
+let user1Id;
+let user2Id;
+let user3Id;
+let user4Id;
+let contact1;
+let contact2;
+let contact3;
+let contact1Id;
 
 /**
  * Contact routes tests
  */
 describe('Contact CRUD tests', function () {
 
-  var jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs();
 
   before(function (done) {
     // Get application
@@ -104,10 +104,10 @@ describe('Contact CRUD tests', function () {
     });
 
     // Set dates to the past to make sure contacts are storted in right order for tests
-    var yesterday = new Date();
+    const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
 
-    var daybefore = new Date();
+    const daybefore = new Date();
     daybefore.setDate(daybefore.getDate() - 2);
 
     // Contacts saved to DB
@@ -230,7 +230,7 @@ describe('Contact CRUD tests', function () {
           // Handle contact by error
           if (contactByErr) return done(contactByErr);
 
-          var contact = contactByRes.body;
+          const contact = contactByRes.body;
 
           contact._id.should.equal(contact1Id.toString());
 
@@ -255,7 +255,7 @@ describe('Contact CRUD tests', function () {
 
           // MongoDb returns these in random order as the query isn't sorted
           // figure out order here
-          var user1Order = (contactsGetRes.body[0].user.username === user1.username) ? 0 : 1;
+          const user1Order = (contactsGetRes.body[0].user.username === user1.username) ? 0 : 1;
 
           // Set assertions
           contactsGetRes.body[user1Order].user._id.should.equal(user1._id.toString());
@@ -285,8 +285,8 @@ describe('Contact CRUD tests', function () {
 
           // MongoDb returns these in random order as the query isn't sorted
           // figure out order here
-          var connectionA = 0;
-          var connectionB = 1;
+          let connectionA = 0;
+          let connectionB = 1;
           if (contactsGetRes.body[0].user.username === user1.username) {
             connectionA = 1;
             connectionB = 0;
@@ -324,8 +324,8 @@ describe('Contact CRUD tests', function () {
 
           // MongoDb returns these in random order as the query isn't sorted
           // figure out order here
-          var connectionA = 1;
-          var connectionB = 0;
+          let connectionA = 1;
+          let connectionB = 0;
           if (contactsGetRes.body[0].user.username === user2.username) {
             connectionA = 0;
             connectionB = 1;
@@ -411,7 +411,7 @@ describe('Contact CRUD tests', function () {
               // Handle contact by error
               if (contactByErr) return done(contactByErr);
 
-              var contact = contactByRes.body;
+              const contact = contactByRes.body;
 
               // User4 should be an unconfirmed contact now
               should.exist(contact);
@@ -447,7 +447,7 @@ describe('Contact CRUD tests', function () {
           // Handle contact confirm error
           if (contactConfirmErr) return done(contactConfirmErr);
 
-          var confirmedContact = contactConfirmRes.body;
+          const confirmedContact = contactConfirmRes.body;
 
           should.exist(confirmedContact);
           confirmedContact.confirmed.should.equal(true);
@@ -487,7 +487,7 @@ describe('Contact CRUD tests', function () {
 
     context('with email sending error', function () {
 
-      var originalNow;
+      let originalNow;
 
       beforeEach(function () {
         // Set the agenda.now() function to fail

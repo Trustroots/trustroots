@@ -6,19 +6,19 @@
   /* @ngInject */
   function firebaseMessaging($window, $q, $timeout, SettingsService) {
 
-    var appSettings = SettingsService.get();
+    const appSettings = SettingsService.get();
 
-    var SENDER_ID = appSettings && appSettings.fcmSenderId;
-    var SERVICE_WORKER_PATH = '/push-messaging-sw.js';
-    var SERVICE_WORKER_SCOPE = '/trustroots-push-messaging-scope';
+    const SENDER_ID = appSettings && appSettings.fcmSenderId;
+    const SERVICE_WORKER_PATH = '/push-messaging-sw.js';
+    const SERVICE_WORKER_SCOPE = '/trustroots-push-messaging-scope';
 
-    var firebase = require('firebase/app');
+    const firebase = require('firebase/app');
     require('firebase/messaging');
-    var _messaging = null; // set in initMessaging()
-    var onTokenRefreshCallbacks = [];
-    var onMessageCallbacks = [];
+    let _messaging = null; // set in initMessaging()
+    const onTokenRefreshCallbacks = [];
+    const onMessageCallbacks = [];
 
-    var firebaseMessaging = {
+    const firebaseMessaging = {
       name: 'fcm',
       shouldInitialize: !!SENDER_ID,
       getToken: getToken,
@@ -103,14 +103,14 @@
         _messaging.useServiceWorker(worker);
 
         _messaging.onTokenRefresh(function () {
-          var args = arguments;
+          const args = arguments;
           onTokenRefreshCallbacks.forEach(function (fn) {
             fn.apply(null, args);
           });
         });
 
         _messaging.onMessage(function () {
-          var args = arguments;
+          const args = arguments;
           onMessageCallbacks.forEach(function (fn) {
             fn.apply(null, args);
           });
@@ -130,7 +130,7 @@
       function wrapCallback(fn) {
         return function (callback) {
           fn.call(messaging, function () {
-            var args = arguments;
+            const args = arguments;
             $timeout(function () {
               callback.apply(null, args);
             });

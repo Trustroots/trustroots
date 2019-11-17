@@ -1,6 +1,6 @@
-var _ = require('lodash'),
-    path = require('path'),
-    defaultAssets = require(path.resolve('./config/assets/default'));
+const _ = require('lodash');
+const path = require('path');
+const defaultAssets = require(path.resolve('./config/assets/default'));
 
 module.exports = {
   // Override any default asset blocks here or add new blocks

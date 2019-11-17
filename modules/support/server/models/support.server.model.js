@@ -1,15 +1,15 @@
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
 /**
  * Support request Schema
  *
  * This collection serves as a backup for sent support requests
  */
-var SupportRequestSchema = new Schema({
+const SupportRequestSchema = new Schema({
   user: {
     type: Schema.ObjectId,
     ref: 'User'

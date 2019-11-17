@@ -1,28 +1,28 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    config = require('../config'),
-    errorService = require('../../modules/core/server/services/error.server.service'),
-    facebookNotificationService = require('../../modules/core/server/services/facebook-notification.server.service'),
-    languages = require('../languages/languages.json'),
-    express = require('express'),
-    morgan = require('morgan'),
-    bodyParser = require('body-parser'),
-    session = require('express-session'),
-    MongoStore = require('connect-mongo')(session),
-    favicon = require('serve-favicon'),
-    compress = require('compression'),
-    methodOverride = require('method-override'),
-    cookieParser = require('cookie-parser'),
-    helmet = require('helmet'),
-    expectCt = require('expect-ct'),
-    flash = require('connect-flash'),
-    nunjucks = require('nunjucks'),
-    git = require('git-rev'),
-    path = require('path'),
-    paginate = require('express-paginate'),
-    uuid = require('uuid');
+const _ = require('lodash');
+const config = require('../config');
+const errorService = require('../../modules/core/server/services/error.server.service');
+const facebookNotificationService = require('../../modules/core/server/services/facebook-notification.server.service');
+const languages = require('../languages/languages.json');
+const express = require('express');
+const morgan = require('morgan');
+const bodyParser = require('body-parser');
+const session = require('express-session');
+const MongoStore = require('connect-mongo')(session);
+const favicon = require('serve-favicon');
+const compress = require('compression');
+const methodOverride = require('method-override');
+const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
+const expectCt = require('expect-ct');
+const flash = require('connect-flash');
+const nunjucks = require('nunjucks');
+const git = require('git-rev');
+const path = require('path');
+const paginate = require('express-paginate');
+const uuid = require('uuid');
 
 /**
  * Initialize local variables
@@ -72,7 +72,7 @@ module.exports.initLocalVariables = function (app) {
     // Determine if to use https. When proxying (e.g. with Nginx) to localhost
     // from https front, req.protocol would end up being http when it should be https.
     // @todo: sniff if behind proxy and otherwise rely req.protocol.
-    var protocol = (config.https === true || req.protocol === 'https') ? 'https' : 'http';
+    const protocol = (config.https === true || req.protocol === 'https') ? 'https' : 'http';
 
     res.locals.hostPort = protocol + '://' + req.get('host');
     res.locals.host = protocol + '://' + req.hostname;
@@ -199,7 +199,7 @@ module.exports.initSession = function (app, connection) {
  * Wire in user last seen middleware
  */
 module.exports.initLastSeen = function (app) {
-  var lastSeenController = require(path.resolve('./modules/users/server/controllers/users.lastseen.server.controller'));
+  const lastSeenController = require(path.resolve('./modules/users/server/controllers/users.lastseen.server.controller'));
   app.use(lastSeenController);
 };
 
@@ -222,7 +222,7 @@ module.exports.initHelmetHeaders = function (app) {
    * X-Frame protection ("frameguard") default options.
    * @link https://helmetjs.github.io/docs/frameguard/
    */
-  var frameguardOptions = {
+  let frameguardOptions = {
     // Action `sameorigin` will prevent anyone from putting this page in an
     // iframe unless it’s on the same origin. That generally means that you can
     // put your own pages in iframes, but nobody else can.
@@ -235,7 +235,7 @@ module.exports.initHelmetHeaders = function (app) {
    * Content Security Policy (CSP) "frameAncestors" default value.
    * @link https://helmetjs.github.io/docs/csp/
    */
-  var cspFrameAncestors = [
+  let cspFrameAncestors = [
     '\'none\''
   ];
 
@@ -268,7 +268,7 @@ module.exports.initHelmetHeaders = function (app) {
   }
 
   // LiveReload security policy sources are needed only at development
-  var cspSrcDevelopment = process.env.NODE_ENV === 'development' ? ['ws://localhost:35729', 'localhost:35729'] : [];
+  const cspSrcDevelopment = process.env.NODE_ENV === 'development' ? ['ws://localhost:35729', 'localhost:35729'] : [];
 
   /*
    * Content Security Policy (CSP)
@@ -526,7 +526,7 @@ module.exports.initErrorRoutes = function (app) {
  */
 module.exports.init = function (connection) {
   // Initialize express app
-  var app = express();
+  const app = express();
 
   // Initialize local variables
   this.initLocalVariables(app);

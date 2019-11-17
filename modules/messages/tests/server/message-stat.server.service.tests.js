@@ -1,23 +1,23 @@
-var path = require('path'),
-    should = require('should'),
-    async = require('async'),
-    messageStatService = require(path.resolve(
-      './modules/messages/server/services/message-stat.server.service')),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Message = mongoose.model('Message'),
-    MessageStat = mongoose.model('MessageStat');
+const path = require('path');
+const should = require('should');
+const async = require('async');
+const messageStatService = require(path.resolve(
+  './modules/messages/server/services/message-stat.server.service'));
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Message = mongoose.model('Message');
+const MessageStat = mongoose.model('MessageStat');
 
-var initiator,
-    receiver,
-    firstMessage,
-    firstReply,
-    initiatorMessage,
-    receiverMessage;
+let initiator;
+let receiver;
+let firstMessage;
+let firstReply;
+let initiatorMessage;
+let receiverMessage;
 
 describe('Convert Message Statistics to human readable form', function () {
   it('should convert null values correctly', function () {
-    var converted = messageStatService.formatStats({
+    const converted = messageStatService.formatStats({
       replyRate: null,
       replyTime: null
     });
@@ -27,7 +27,7 @@ describe('Convert Message Statistics to human readable form', function () {
   });
 
   it('should convert finite values correctly', function () {
-    var converted = messageStatService.formatStats({
+    const converted = messageStatService.formatStats({
       replyRate: 0.37631,
       replyTime: 3600 * 1000 * 3.7
     });
@@ -38,14 +38,14 @@ describe('Convert Message Statistics to human readable form', function () {
 });
 
 describe('Count Message Statistics of User', function () {
-  var NOW = new Date('2002-02-20').getTime(); // an arbitrary date
-  var DAY = 24 * 3600 * 1000; // a length of a day in milliseconds
-  var messageStats = [];
-  var users = [];
+  const NOW = new Date('2002-02-20').getTime(); // an arbitrary date
+  const DAY = 24 * 3600 * 1000; // a length of a day in milliseconds
+  const messageStats = [];
+  const users = [];
 
   // create testing users
   before(function (done) {
-    for (var i = 0; i < 29; ++i) {
+    for (let i = 0; i < 29; ++i) {
       users.push(new User({
         firstName: 'firstName',
         lastName: 'lastName',
@@ -69,7 +69,7 @@ describe('Count Message Statistics of User', function () {
   before(function (done) {
     // every thread is initiated by different user (user 0 is the receiver of all)
 
-    var userno = 1; // the index of user who sent the first message
+    let userno = 1; // the index of user who sent the first message
     // is incremented for every message, closure
 
     /**
@@ -80,8 +80,8 @@ describe('Count Message Statistics of User', function () {
      * @param {timeNow} number - minimum timestamp of the firstMessageCreated
      */
     function generateMessageStats(count, repliedCount, replyTime, timeNow) {
-      for (var i = 0; i < count; ++i) {
-        var firstCreated = timeNow - replyTime - (i + 1) * DAY;
+      for (let i = 0; i < count; ++i) {
+        const firstCreated = timeNow - replyTime - (i + 1) * DAY;
         messageStats.push(new MessageStat({
           firstMessageUserFrom: users[userno]._id,
           firstMessageUserTo: users[0]._id,
@@ -149,8 +149,8 @@ describe('Count Message Statistics of User', function () {
         // expected statistics values
         // out of last 10 messages, 4 are replied;
         // 2 replied within 3 days and 2 within 1 day
-        var expectedReplyRate = 4 / 10;
-        var expectedReplyTime = (2 * 3 * DAY + 2 * 1 * DAY) / 4;
+        const expectedReplyRate = 4 / 10;
+        const expectedReplyTime = (2 * 3 * DAY + 2 * 1 * DAY) / 4;
 
         if (err) return done(err);
         try {
@@ -168,8 +168,8 @@ describe('Count Message Statistics of User', function () {
       function (err, stats) {
         // expected statistics values
         // out of last month 6/12 messages are replied; all within 2 days
-        var expectedReplyRate = 6 / 12;
-        var expectedReplyTime = 2 * DAY;
+        const expectedReplyRate = 6 / 12;
+        const expectedReplyTime = 2 * DAY;
 
         if (err) return done(err);
         try {
@@ -344,7 +344,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // check that the MessageStat is correct
             function (messageStat, cb) {
-              var ms = messageStat;
+              const ms = messageStat;
               try {
                 ms.should.have.property('firstMessageUserFrom', initiator._id);
                 ms.should.have.property('firstMessageUserTo', receiver._id);
@@ -413,7 +413,7 @@ describe('MessageStat Creation & Updating Test', function () {
             },
 
             function (messageStat, cb) {
-              var ms = messageStat;
+              const ms = messageStat;
               try {
                 ms.should.have.property('firstMessageUserFrom', initiator._id);
                 ms.should.have.property('firstMessageUserTo', receiver._id);
@@ -487,7 +487,7 @@ describe('MessageStat Creation & Updating Test', function () {
             },
 
             function (messageStat, cb) {
-              var ts = messageStat;
+              const ts = messageStat;
               try {
                 ts.should.have.property('firstMessageUserFrom', initiator._id);
                 ts.should.have.property('firstMessageUserTo', receiver._id);
@@ -572,7 +572,7 @@ describe('MessageStat Creation & Updating Test', function () {
             },
 
             function (messageStat, cb) {
-              var ts = messageStat;
+              const ts = messageStat;
               try {
                 ts.should.have.property('firstMessageUserFrom', initiator._id);
                 ts.should.have.property('firstMessageUserTo', receiver._id);
@@ -654,7 +654,7 @@ describe('MessageStat Creation & Updating Test', function () {
             },
 
             function (messageStat, cb) {
-              var ts = messageStat;
+              const ts = messageStat;
               try {
                 ts.should.have.property('firstMessageUserFrom', initiator._id);
                 ts.should.have.property('firstMessageUserTo', receiver._id);
@@ -720,7 +720,7 @@ describe('MessageStat Creation & Updating Test', function () {
             },
 
             function (messageStat, cb) {
-              var ts = messageStat;
+              const ts = messageStat;
               try {
                 should(ts).not.equal(null);
                 return done();

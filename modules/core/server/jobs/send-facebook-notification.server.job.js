@@ -1,20 +1,20 @@
-var _ = require('lodash'),
-    path = require('path'),
-    facebook = require(path.resolve('./config/lib/facebook-api.js')),
-    log = require(path.resolve('./config/lib/logger'));
+const _ = require('lodash');
+const path = require('path');
+const facebook = require(path.resolve('./config/lib/facebook-api.js'));
+const log = require(path.resolve('./config/lib/logger'));
 
 module.exports = function (job, done) {
 
   // Get job id from Agenda job attributes
   // Agenda stores Mongo `ObjectId` so turning that into a string here
-  var jobId = _.get(job, 'attrs._id').toString();
+  const jobId = _.get(job, 'attrs._id').toString();
 
   // Log that we're sending an email
   log('debug', 'Starting `send facebook notification` job #jdjh73', { jobId: jobId });
 
   // Collect parameters for FB notification object
   // https://developers.facebook.com/docs/games/services/appnotifications#parameters
-  var notification = {
+  const notification = {
     // The relative path or GET params of the target
     // (for example, `index.html?gift_id=123`, or `?gift_id=123`).
     // This will be used to construct an absolute target URL based on your app

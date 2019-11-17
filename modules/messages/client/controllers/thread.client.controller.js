@@ -24,17 +24,17 @@
     }
 
     // Vars
-    var elemThread,
-        syncReadTimer,
-        flaggedAsRead = [],
-        messageIdsInView = [],
-        editorContentChangedTimeout;
+    let elemThread;
+    let syncReadTimer;
+    let flaggedAsRead = [];
+    const messageIdsInView = [];
+    let editorContentChangedTimeout;
 
     // Make cache id unique for this user
-    var cachePrefix = 'messages.thread.' + Authentication.user._id + '-' + $stateParams.username;
+    const cachePrefix = 'messages.thread.' + Authentication.user._id + '-' + $stateParams.username;
 
     // View model
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.userFrom = Authentication.user;
@@ -84,7 +84,7 @@
           vm.isInitialized = true;
 
           if (data.length > 0) {
-            var userReplied = checkAuthUserReplied(data);
+            const userReplied = checkAuthUserReplied(data);
             if (!userReplied) {
               vm.isQuickReplyPanelHidden = false;
             }
@@ -122,7 +122,7 @@
     function sendHostingReply(reply) {
       vm.isQuickReplyPanelHidden = true;
 
-      var quickReplyMessage;
+      let quickReplyMessage;
 
       if (reply === 'yes') {
         quickReplyMessage = 'Yes, I can host!';
@@ -182,7 +182,7 @@
     * Check if Authenticated Receiver Replied to a request
     */
     function checkAuthUserReplied(data) {
-      for (var i = 0; i < data.length; i++) {
+      for (let i = 0; i < data.length; i++) {
         if (Authentication.user._id === data[i].userFrom._id) {
           return true;
         }
@@ -229,7 +229,7 @@
     function addMessages(data) {
 
       // Loop trough received data (for loop is the fastest)
-      for (var i = 0; i < data.length; i++) {
+      for (let i = 0; i < data.length; i++) {
 
         // Check if message by this ID doesn't exist yet
         // messageIdsInView is used as a key storage for quick reference of messages already in view
@@ -257,7 +257,7 @@
 
         if (!elemThread) elemThread = angular.element('#messages-thread');
 
-        var oldHeight = elemThread[0].scrollHeight;
+        const oldHeight = elemThread[0].scrollHeight;
 
         fetchMessages().$promise.then(function (data) {
           addMessages(data);
@@ -277,7 +277,7 @@
      */
     function setScrollPosition(oldHeight) {
       $timeout(function () {
-        var newHeight = elemThread[0].scrollHeight;
+        const newHeight = elemThread[0].scrollHeight;
         angular.element(elemThread.scrollTop(newHeight - oldHeight));
       });
     }
@@ -327,7 +327,7 @@
       if (message.userFrom._id === Authentication.user._id) return true;
 
       // It got marked read just now
-      var read = (scrollingUp === true || scrollingDown === true);
+      const read = (scrollingUp === true || scrollingDown === true);
       if (message.userFrom._id !== Authentication.user._id && !message.read && read) {
         message.read = true;
         flaggedAsRead.push(message._id);
@@ -354,7 +354,7 @@
       }
 
       // eslint-disable-next-line new-cap
-      var message = new vm.messageHandler.ajaxCall({
+      const message = new vm.messageHandler.ajaxCall({
         content: msg,
         userTo: userTo._id,
         read: false

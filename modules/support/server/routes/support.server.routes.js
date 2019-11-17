@@ -1,7 +1,7 @@
 /**
  * Module dependencies.
  */
-var support = require('../controllers/support.server.controller');
+const support = require('../controllers/support.server.controller');
 
 module.exports = function (app) {
 

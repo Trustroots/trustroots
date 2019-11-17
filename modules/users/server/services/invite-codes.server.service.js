@@ -1,14 +1,14 @@
-var _ = require('lodash'),
-    path = require('path'),
-    moment = require('moment'),
-    config = require(path.resolve('./config/config'));
+const _ = require('lodash');
+const path = require('path');
+const moment = require('moment');
+const config = require(path.resolve('./config/config'));
 
 // These functions use an integer `inviteKey` and a date (ignoring time) to
 // calculate invite codes. The invite code can then be turned back into a date
 // with the same `inviteKey`. If `inviteKey` is ever changed, then the old codes
 // will not work any more.
 
-var setMidnight = function (date) {
+const setMidnight = function (date) {
   // It's crucial we set these by UTC because we use the timestamp at
   // midnight as an integer to create a code. If each timezone generated a
   // different timestamp for midnight, then each timezone would create a
@@ -20,8 +20,8 @@ var setMidnight = function (date) {
 /**
  * Set date object to tomorrow
  */
-var setTomorrow = function (d) {
-  var date = new Date(d.getTime());
+const setTomorrow = function (d) {
+  const date = new Date(d.getTime());
   date.setDate(date.getDate() + 1);
   return date;
 };
@@ -29,8 +29,8 @@ var setTomorrow = function (d) {
 /**
  * Set date object to yesterday
  */
-var setYesterday = function (d) {
-  var date = new Date(d.getTime());
+const setYesterday = function (d) {
+  const date = new Date(d.getTime());
   date.setDate(date.getDate() - 1);
   return date;
 };
@@ -38,8 +38,8 @@ var setYesterday = function (d) {
 /**
  * Push the date 2 days back so it's the day before yesterday
  */
-var setYesterdayTwo = function (d) {
-  var date = new Date(d.getTime());
+const setYesterdayTwo = function (d) {
+  const date = new Date(d.getTime());
   date.setDate(date.getDate() - 2);
   return date;
 };
@@ -47,28 +47,28 @@ var setYesterdayTwo = function (d) {
 /**
  * Take a date object and return an integer
  */
-var dayToInt = function (d) {
+const dayToInt = function (d) {
   return Math.floor(d.getTime() / 1e3);
 };
 
 /**
  * Take an integer and return a date object
  */
-var intToDay = function (i) {
+const intToDay = function (i) {
   return new Date(i * 1e3);
 };
 
 /**
  * Take an integer code and generate a string
  */
-var intToCode = function (i) {
+const intToCode = function (i) {
   return i.toString(36);
 };
 
 /**
  * Take a string code and generate an integer
  */
-var codeToInt = function (s) {
+const codeToInt = function (s) {
   return parseInt(s, 36);
 };
 
@@ -80,7 +80,7 @@ var codeToInt = function (s) {
  * @param {String} code - a string representation of the invitation code
  * @return {Date} a date object (without time)
  */
-var codeToDate = function (code) {
+const codeToDate = function (code) {
   return intToDay(parseInt(config.invitations.key, 10) ^ codeToInt(code));
 };
 
@@ -93,10 +93,10 @@ var codeToDate = function (code) {
  */
 exports.getCode = function () {
 
-  var dateInt = dayToInt(setMidnight(new Date()));
+  const dateInt = dayToInt(setMidnight(new Date()));
 
   // Should always be the same, an integer
-  var inviteKey = parseInt(config.invitations.key, 10);
+  const inviteKey = parseInt(config.invitations.key, 10);
 
   return intToCode(inviteKey ^ dateInt);
 };
@@ -133,8 +133,8 @@ exports.validateCode = function (code) {
     return true;
   }
 
-  var now = moment(new Date()),
-      codeDate = codeToDate(code);
+  const now = moment(new Date());
+  const codeDate = codeToDate(code);
 
   return now.isSame(codeDate, 'day') ||
     now.isSame(setYesterday(codeDate), 'day') ||

@@ -7,7 +7,7 @@
   function SearchSignupController($stateParams, MapLayersFactory, LocationService) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Variables passed to leaflet directive at init
     vm.mapCenter = LocationService.getDefaultLocation(3);

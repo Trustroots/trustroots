@@ -1,29 +1,29 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    Influx = require('influx'),
-    _ = require('lodash'),
-    config = require(path.resolve('./config/config')),
-    log = require(path.resolve('./config/lib/logger'));
+const path = require('path');
+const Influx = require('influx');
+const _ = require('lodash');
+const config = require(path.resolve('./config/config'));
+const log = require(path.resolve('./config/lib/logger'));
 
 /**
  * Get InfluxDB Client
  */
-var getClient = function (callback) {
+const getClient = function (callback) {
 
   // Check that influxdb is enabled and that we have a host and database value.
-  var enabled = _.get(config, 'influxdb.enabled');
-  var host = _.get(config, 'influxdb.options.host');
-  var database = _.get(config, 'influxdb.options.database');
+  const enabled = _.get(config, 'influxdb.enabled');
+  const host = _.get(config, 'influxdb.options.host');
+  const database = _.get(config, 'influxdb.options.database');
 
-  var isNotConfigured = enabled !== true || _.isUndefined(host) || _.isUndefined(database);
+  const isNotConfigured = enabled !== true || _.isUndefined(host) || _.isUndefined(database);
   if (isNotConfigured) {
     return callback(new Error('No InfluxDB configured.'));
   }
 
   // Init Influx client with configuration
-  var client = new Influx.InfluxDB(config.influxdb.options);
+  const client = new Influx.InfluxDB(config.influxdb.options);
 
   callback(null, client);
 };
@@ -50,9 +50,9 @@ var getClient = function (callback) {
  * tag_value
  * @param {function} callback - expected to be like function (err, result) {}
  */
-var writeMeasurement = function (measurementName, fields, tags, callback) {
+const writeMeasurement = function (measurementName, fields, tags, callback) {
 
-  var errorMessage;
+  let errorMessage;
 
   if (!measurementName || !_.isString(measurementName)) {
     errorMessage = 'InfluxDB Service: no `measurementName` defined. #ghi3kH';
@@ -80,7 +80,7 @@ var writeMeasurement = function (measurementName, fields, tags, callback) {
   }
 
   // the point is the IPoint we'll send to node-influx's writeMeasurement
-  var point = {
+  const point = {
     fields: fields,
     tags: tags
   };
@@ -177,33 +177,33 @@ var writeMeasurement = function (measurementName, fields, tags, callback) {
  * @param {Function} callback
  *
  */
-var stat = function (stat, callback) {
+const stat = function (stat, callback) {
 
   // when influxdb is disabled, log info and finish without error
-  var enabled = _.get(config, 'influxdb.enabled');
+  const enabled = _.get(config, 'influxdb.enabled');
   if (!enabled) {
     return callback();
   }
 
-  var namespace = stat.namespace;
-  var meta = stat.meta;
-  var values = stat.values;
-  var counts = stat.counts;
-  var tags = stat.tags || {};
+  const namespace = stat.namespace;
+  const meta = stat.meta;
+  const values = stat.values;
+  const counts = stat.counts;
+  const tags = stat.tags || {};
 
   // If stat contains a time, we need to add it
-  var timeExtend = stat.time ? { time: stat.time } : {};
+  const timeExtend = stat.time ? { time: stat.time } : {};
 
   // the name of the measurement.
   // we rename 'messages' to stay compatible with older influxdb points
   // TODO let's decide whether to keep the old name or make a new standard
-  var name = (namespace === 'messages') ? 'messageSent' : namespace;
+  const name = (namespace === 'messages') ? 'messageSent' : namespace;
 
   // InfluxDB handles complex, multi value data points, so we simply combine all
   // of meta, values, counts and time.
   // We will move the time (optional) from (influx) IPoint.fields to
   // IPoint.timestamp in the writeMeasurement function.
-  var fields = _.extend({}, meta, values, counts, timeExtend);
+  const fields = _.extend({}, meta, values, counts, timeExtend);
 
   writeMeasurement(name, fields, tags, callback);
 };

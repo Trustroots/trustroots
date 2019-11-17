@@ -1,22 +1,22 @@
-var path = require('path'),
-    mongoose = require('mongoose'),
-    testutils = require(path.resolve('./testutils/server.testutil'));
+const path = require('path');
+const mongoose = require('mongoose');
+const testutils = require(path.resolve('./testutils/server.testutil'));
 
 /**
  * Globals
  */
-var sendEmailJobHandler;
+let sendEmailJobHandler;
 
 describe('job: send email', function () {
 
-  var sentEmails = testutils.catchEmails();
+  const sentEmails = testutils.catchEmails();
 
   before(function () {
     sendEmailJobHandler = require(path.resolve('./modules/core/server/jobs/send-email.server.job'));
   });
 
   it('will send an email', function (done) {
-    var job = {
+    const job = {
       attrs: {
         // eslint-disable-next-line new-cap
         _id: mongoose.Types.ObjectId(),

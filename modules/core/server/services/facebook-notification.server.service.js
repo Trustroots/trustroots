@@ -10,13 +10,13 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    async = require('async'),
-    analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
-    config = require(path.resolve('./config/config')),
-    render = require(path.resolve('./config/lib/render')),
-    agenda = require(path.resolve('./config/lib/agenda'));
+const _ = require('lodash');
+const path = require('path');
+const async = require('async');
+const analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller'));
+const config = require(path.resolve('./config/config'));
+const render = require(path.resolve('./config/lib/render'));
+const agenda = require(path.resolve('./config/lib/agenda'));
 
 exports.notifyMessagesUnread = function (userFrom, userTo, notification, callback) {
 
@@ -29,7 +29,7 @@ exports.notifyMessagesUnread = function (userFrom, userTo, notification, callbac
   }
 
   // Variables passed to Facebook notification template
-  var params = {
+  const params = {
     // Count used for template rendering
     messageCount: notification.messages.length,
 
@@ -54,7 +54,7 @@ exports.notifyMessagesUnread = function (userFrom, userTo, notification, callbac
   };
 
   // Use different templates for 1st and 2nd notification
-  var nth = !(notification.notificationCount > 0) ? 'first' : 'second';
+  const nth = !(notification.notificationCount > 0) ? 'first' : 'second';
 
   exports.renderNotificationAndSend('messages-unread-' + nth, params, callback);
 };
@@ -79,7 +79,7 @@ exports.canNotifyUser = function (user) {
 
 exports.renderNotification = function (templateName, params, callback) {
 
-  var templatePath = path.resolve('./modules/core/server/views/facebook-notifications/' + templateName + '.server.view.html');
+  const templatePath = path.resolve('./modules/core/server/views/facebook-notifications/' + templateName + '.server.view.html');
 
   render(templatePath, params, function (err, renderedTemplate) {
     if (err) return callback(err);
@@ -101,7 +101,7 @@ exports.renderNotification = function (templateName, params, callback) {
       if (err) return callback(err);
 
       // Params passed on for the Agenda job
-      var notification = params;
+      const notification = params;
 
       // Notification message rendered from template and params
       notification.template = renderedTemplate;

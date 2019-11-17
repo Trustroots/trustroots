@@ -1,37 +1,37 @@
-var fs = require('fs'),
-    async = require('async'),
-    should = require('should'),
-    sinon = require('sinon'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Contact = mongoose.model('Contact'),
-    Message = mongoose.model('Message'),
-    Offer = mongoose.model('Offer'),
-    Tribe = mongoose.model('Tribe'),
-    config = require(path.resolve('./config/config')),
-    express = require(path.resolve('./config/lib/express')),
-    testutils = require(path.resolve('./testutils/server.testutil'));
+const fs = require('fs');
+const async = require('async');
+const should = require('should');
+const sinon = require('sinon');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Contact = mongoose.model('Contact');
+const Message = mongoose.model('Message');
+const Offer = mongoose.model('Offer');
+const Tribe = mongoose.model('Tribe');
+const config = require(path.resolve('./config/config'));
+const express = require(path.resolve('./config/lib/express'));
+const testutils = require(path.resolve('./testutils/server.testutil'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentialsA,
-    credentialsB,
-    userA,
-    _userA,
-    userB,
-    _userB;
+let app;
+let agent;
+let credentialsA;
+let credentialsB;
+let userA;
+let _userA;
+let userB;
+let _userB;
 
 /**
  * User routes tests
  */
 describe('User removal CRUD tests', function () {
 
-  var jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs();
 
   before(function (done) {
     // Get application
@@ -521,10 +521,10 @@ describe('User removal CRUD tests', function () {
     it('should remove profile images', function (done) {
 
       // Each user has their own folder for avatars
-      var uploadDir = path.resolve(config.uploadDir) + '/' + userA._id + '/avatar'; // No trailing slash
+      const uploadDir = path.resolve(config.uploadDir) + '/' + userA._id + '/avatar'; // No trailing slash
 
       function checkAvatarExistence(shouldExist, cb) {
-        var exists = fs.existsSync(uploadDir);
+        const exists = fs.existsSync(uploadDir);
 
         try {
           should(exists).eql(shouldExist);
@@ -563,14 +563,14 @@ describe('User removal CRUD tests', function () {
       async.waterfall([
         // create some unnotified messages between the users
         function (cb) {
-          var messageAB = new Message({
+          const messageAB = new Message({
             content: 'Message content',
             userFrom: userA._id,
             userTo: userB._id,
             read: false
           });
 
-          var messageBA = new Message({
+          const messageBA = new Message({
             content: 'Message content',
             userFrom: userB._id,
             userTo: userA._id,
@@ -613,8 +613,8 @@ describe('User removal CRUD tests', function () {
 
     it('should subtract 1 from tribes.count for each tribe user is member of', function (done) {
 
-      var tribeA,
-          tribeB;
+      let tribeA;
+      let tribeB;
 
       async.waterfall([
         // Create some tribes
@@ -698,7 +698,7 @@ describe('User removal CRUD tests', function () {
 
         // Create an offer for the user
         function (cb) {
-          var offer = new Offer({
+          const offer = new Offer({
             user: userA._id,
             location: [0, 0]
           });
@@ -736,7 +736,7 @@ describe('User removal CRUD tests', function () {
 
     it('should remove contacts of the user', function (done) {
 
-      var userC;
+      let userC;
 
       async.waterfall([
         // create a 3rd user
@@ -757,19 +757,19 @@ describe('User removal CRUD tests', function () {
 
         // add contacts between the users
         function (cb) {
-          var contactAB = new Contact({
+          const contactAB = new Contact({
             userFrom: userA._id,
             userTo: userB._id,
             confirmed: true
           });
 
-          var contactBC = new Contact({
+          const contactBC = new Contact({
             userFrom: userB._id,
             userTo: userC._id,
             confirmed: true
           });
 
-          var contactCA = new Contact({
+          const contactCA = new Contact({
             userFrom: userC._id,
             userTo: userA._id,
             confirmed: false
@@ -820,7 +820,7 @@ describe('User removal CRUD tests', function () {
 
   // clear database
   afterEach(function (done) {
-    var collectionsToClear = [User, Contact, Message, Offer, Tribe];
+    const collectionsToClear = [User, Contact, Message, Offer, Tribe];
 
     async.each(collectionsToClear, function (collection, cb) {
       collection.deleteMany().exec(cb);

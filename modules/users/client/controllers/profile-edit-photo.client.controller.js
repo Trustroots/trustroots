@@ -7,13 +7,13 @@
   function ProfileEditPhotoController($scope, $window, Users, Authentication, messageCenterService, Upload, appSettings) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Copy user to make a temporary buffer for changes.
     // Prevents changes remaining here when cancelling profile editing.
     vm.user = new Users(Authentication.user);
 
-    var fileAvatar = {};
+    let fileAvatar = {};
 
     // Exposed
     vm.showDropzone = false;
@@ -69,7 +69,7 @@
           updateUserProfile();
         }).error(function (data, status) {
           // Default error
-          var saveAvatarErr = 'Oops! Something went wrong. Try again later.';
+          let saveAvatarErr = 'Oops! Something went wrong. Try again later.';
 
           if (status === 422) {
             // Could not process file
@@ -100,7 +100,7 @@
       }
 
       // Accept only one file at once
-      var file = $files[0];
+      const file = $files[0];
       fileAvatar = file;
       vm.user.avatarSource = 'local';
       vm.user.avatarUploaded = true;
@@ -116,7 +116,7 @@
         vm.avatarUploading = true;
 
         // Show the local file as a preview
-        var fileReader = new FileReader();
+        const fileReader = new FileReader();
         fileReader.readAsDataURL(file);
         fileReader.onloadend = function () {
           vm.avatarPreview = true;
@@ -154,9 +154,9 @@
      * @link http://stackoverflow.com/a/18650828
      */
     function bytesToSize(bytes) {
-      var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
       if (bytes === 0) return '0 Byte';
-      var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
+      const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
       return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
     }
 

@@ -1,13 +1,13 @@
-const moment = require('moment'),
-      mongoose = require('mongoose'),
-      path = require('path'),
-      should = require('should'),
-      sinon = require('sinon'),
-      util = require('util'),
-      config = require(path.resolve('./config/config')),
-      jobPublishReference = require('../../server/jobs/references-publish.server.job'),
-      utils = require(path.resolve('./testutils/data.server.testutils')),
-      Reference = mongoose.model('Reference');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const path = require('path');
+const should = require('should');
+const sinon = require('sinon');
+const util = require('util');
+const config = require(path.resolve('./config/config'));
+const jobPublishReference = require('../../server/jobs/references-publish.server.job');
+const utils = require(path.resolve('./testutils/data.server.testutils'));
+const Reference = mongoose.model('Reference');
 
 describe('Job: Set reference to public after a given period of time', () => {
 

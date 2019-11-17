@@ -10,7 +10,7 @@
 
     describe('Route Config', function () {
       describe('Main Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/search/views/search.client.view.html', '');
@@ -31,7 +31,7 @@
       });
 
       describe('Map Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/search/views/search.client.view.html', '');
@@ -64,7 +64,7 @@
       });
 
       describe('Search non-authenticated Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/search/views/search-signin.client.view.html', '');

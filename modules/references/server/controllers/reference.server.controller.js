@@ -1,13 +1,13 @@
-const mongoose = require('mongoose'),
-      _ = require('lodash'),
-      path = require('path'),
-      util = require('util'),
-      errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-      emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-      pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
-      userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-      Reference = mongoose.model('Reference'),
-      User = mongoose.model('User');
+const mongoose = require('mongoose');
+const _ = require('lodash');
+const path = require('path');
+const util = require('util');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const pushService = require(path.resolve('./modules/core/server/services/push.server.service'));
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const Reference = mongoose.model('Reference');
+const User = mongoose.model('User');
 
 /**
  * Validate the request body and data consistency

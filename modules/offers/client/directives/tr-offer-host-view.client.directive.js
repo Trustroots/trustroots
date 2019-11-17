@@ -5,7 +5,7 @@
 
   /* @ngInject */
   function trOfferHostViewDirective() {
-    var directive = {
+    const directive = {
       restrict: 'A',
       replace: true,
       scope: {
@@ -23,7 +23,7 @@
     function trOfferHostViewDirectiveController($scope, $window, OffersByService) {
 
       // ViewModel
-      var vm = this;
+      const vm = this;
 
       // Exposed
       vm.offer = false;

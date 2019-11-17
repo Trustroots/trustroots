@@ -1,11 +1,11 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    paginate = require('express-paginate'),
-    mongoose = require('mongoose'),
-    Tribe = mongoose.model('Tribe');
+const path = require('path');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const paginate = require('express-paginate');
+const mongoose = require('mongoose');
+const Tribe = mongoose.model('Tribe');
 
 // Publicly exposed fields from tribes
 exports.tribeFields = [
@@ -24,10 +24,10 @@ exports.tribeFields = [
 /**
  * Constructs link headers for pagination
  */
-var setLinkHeader = function (req, res, pageCount) {
+const setLinkHeader = function (req, res, pageCount) {
   if (paginate.hasNextPages(req)(pageCount)) {
-    var nextPage = { page: req.query.page + 1 };
-    var linkHead = '<' + req.protocol + ':' + res.locals.url.slice(0, -1) + res.locals.paginate.href(nextPage) + '>; rel="next"';
+    const nextPage = { page: req.query.page + 1 };
+    const linkHead = '<' + req.protocol + ':' + res.locals.url.slice(0, -1) + res.locals.paginate.href(nextPage) + '>; rel="next"';
     res.set('Link', linkHead);
   }
 };

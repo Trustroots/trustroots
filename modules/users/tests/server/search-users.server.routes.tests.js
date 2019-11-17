@@ -1,19 +1,19 @@
-var request = require('supertest'),
-    async = require('async'),
-    _ = require('lodash'),
-    path = require('path'),
-    sinon = require('sinon'),
-    mongoose = require('mongoose'),
-    should = require('should'),
-    User = mongoose.model('User'),
-    config = require(path.resolve('./config/config')),
-    userHandler = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const request = require('supertest');
+const async = require('async');
+const _ = require('lodash');
+const path = require('path');
+const sinon = require('sinon');
+const mongoose = require('mongoose');
+const should = require('should');
+const User = mongoose.model('User');
+const config = require(path.resolve('./config/config'));
+const userHandler = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
 
 describe('Search users: GET /users?search=string', function () {
 
-  var agent;
+  let agent;
 
-  var limit = 9;
+  const limit = 9;
 
   // initialize the testing environment
   before(function () {
@@ -21,9 +21,9 @@ describe('Search users: GET /users?search=string', function () {
     sinon.stub(config.limits, 'paginationLimit').value(limit);
 
     // the limit is used in this config, so we needed to stub limit before importing this
-    var express = require(path.resolve('./config/lib/express'));
+    const express = require(path.resolve('./config/lib/express'));
     // Get application
-    var app = express.init(mongoose.connection);
+    const app = express.init(mongoose.connection);
     agent = request.agent(app);
   });
 
@@ -45,9 +45,9 @@ describe('Search users: GET /users?search=string', function () {
 
 
   function createUsers(users, callback) {
-    var createdUsers = [];
+    const createdUsers = [];
     async.eachOfSeries(users, function (user, index, cb) {
-      var createdUser = new User({
+      const createdUser = new User({
         username: user.username || 'user' + index,
         firstName: user.firstName || 'firstName' + index,
         lastName: user.lastName || 'lastName' + index,
@@ -82,7 +82,7 @@ describe('Search users: GET /users?search=string', function () {
 
   context('logged in', function () {
 
-    var loggedUser;
+    let loggedUser;
 
     // create logged user
     beforeEach(function (done) {
@@ -305,10 +305,10 @@ describe('Search users: GET /users?search=string', function () {
 
             // _id is not specified in userSearchProfileFields, but gets included anyways
             // that's just how mongo works
-            var expectedFields = userHandler.userSearchProfileFields.split(' ').concat(['_id']);
-            var actualFields = _.keys(foundUsers[0]);
+            const expectedFields = userHandler.userSearchProfileFields.split(' ').concat(['_id']);
+            const actualFields = _.keys(foundUsers[0]);
 
-            var unexpectedFields = _.difference(actualFields, expectedFields);
+            const unexpectedFields = _.difference(actualFields, expectedFields);
 
             should(unexpectedFields).eql(['score']);
 
@@ -319,7 +319,7 @@ describe('Search users: GET /users?search=string', function () {
 
       context('limit the amount of results and pagination', function () {
         // create some users
-        var testUsers = [
+        const testUsers = [
           { username: 'aaaaaa' },
           { firstName: 'aaaaaa' },
           { lastName: 'aaaaaa' },
@@ -340,7 +340,7 @@ describe('Search users: GET /users?search=string', function () {
           });
         });
         // TCs with different or missing page and limit parameters
-        var pageTests = [
+        const pageTests = [
           { params: '', expected: limit },
           { params: '&page=1', expected: limit },
           { params: '&page=2', expected: testUsers.length - limit },

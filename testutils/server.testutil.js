@@ -2,17 +2,17 @@
  * Utility helpers for testing backend code
  */
 
-var path = require('path'),
-    config = require(path.resolve('./config/config')),
-    agenda = require(path.resolve('./config/lib/agenda'));
+const path = require('path');
+const config = require(path.resolve('./config/config'));
+const agenda = require(path.resolve('./config/lib/agenda'));
 
 /**
  * Helper for testing Agenda jobs
  */
 exports.catchJobs = function () {
 
-  var jobs = [],
-      originalNow;
+  const jobs = [];
+  let originalNow;
 
   beforeEach(function () {
 
@@ -50,8 +50,8 @@ exports.catchJobs = function () {
  */
 exports.catchEmails = function () {
 
-  var sentEmails = [],
-      originalMailerOptions;
+  const sentEmails = [];
+  let originalMailerOptions;
 
   beforeEach(function () {
     sentEmails.length = 0;

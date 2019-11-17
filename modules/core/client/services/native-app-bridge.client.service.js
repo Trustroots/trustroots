@@ -12,7 +12,7 @@
   /* @ngInject */
   function trNativeAppBridgeFactory($q, $rootScope, $log, $window, $timeout, $location) {
 
-    var service = {
+    const service = {
       activate: activate,
       getAppInfo: getAppInfo,
       isNativeMobileApp: isNativeMobileApp,
@@ -88,7 +88,7 @@
     function renderOutgoingUrls() {
       logToNativeApp('Render outbound urls');
 
-      var elementPattern = [
+      const elementPattern = [
         'a[href^="http://"]',
         ',', // And
         'a[href^="https://"]',
@@ -110,7 +110,7 @@
           angular.element(this)
             .addClass('tr-app-urlified')
             .click(function (e) {
-              var url = angular.element(this).attr('href');
+              const url = angular.element(this).attr('href');
               if (url) {
                 e.preventDefault();
                 postMessageToApp('openUrl', {
@@ -185,7 +185,7 @@
 
       data = data && angular.isObject(data) ? data : {};
 
-      var message = angular.extend({
+      const message = angular.extend({
         action: action
       }, data);
 

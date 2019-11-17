@@ -10,19 +10,19 @@
       link: function (scope, elemContainer) {
 
         // vars used with $timeout to cancel() timeouts.
-        var refreshLayoutTimeout,
-            scrollToBottomTimeout,
-            onScrollTimeout,
-            isInitialized = false;
+        let refreshLayoutTimeout;
+        let scrollToBottomTimeout;
+        let onScrollTimeout;
+        let isInitialized = false;
 
         // Directive is attached to #thread-container element (var elemContainer)
         // Rest of the elements are siblings (except <html> of course)
 
-        var elemThread = angular.element('#messages-thread'),
-            elemReply = angular.element('#message-reply'),
-            elemReplyHeight = elemReply.height(),
-            elemHtml = angular.element('html'),
-            elemQuickReply = angular.element('#message-quick-reply');
+        const elemThread = angular.element('#messages-thread');
+        const elemReply = angular.element('#message-reply');
+        let elemReplyHeight = elemReply.height();
+        const elemHtml = angular.element('html');
+        const elemQuickReply = angular.element('#message-quick-reply');
 
         /**
          * Fire resize() at <html> so that jQuery-Waypoints wakes up and can thus
@@ -47,7 +47,7 @@
         /**
          * Scroll thread to bottom to show latest messages
          */
-        var scrollToBottom = function () {
+        const scrollToBottom = function () {
           elemThread.scrollTop(elemThread[0].scrollHeight);
         };
 
@@ -80,12 +80,12 @@
           // Global for directive due it's used elsewhere as well
           elemReplyHeight = elemReply.height();
 
-          var elemContainerWidth = elemContainer.width();
+          const elemContainerWidth = elemContainer.width();
 
           // container has 15px padding on both sides when window is bigger than screen-sm-max (768px)
-          var elemContainerPadding = ($window.innerWidth < 768) ? -15 : 30;
+          const elemContainerPadding = ($window.innerWidth < 768) ? -15 : 30;
 
-          var combinedHeight = elemReplyHeight + (elemReplyHeight / 3);
+          const combinedHeight = elemReplyHeight + (elemReplyHeight / 3);
 
           elemQuickReply.css({
             bottom: combinedHeight

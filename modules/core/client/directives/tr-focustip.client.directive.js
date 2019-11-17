@@ -23,7 +23,7 @@
 
         // Compiled template
         // after() requires jQuery
-        var template = $compile('<div class="help-block" ng-show="enabled">' + scope.trFocustip + '</div>')(scope);
+        const template = $compile('<div class="help-block" ng-show="enabled">' + scope.trFocustip + '</div>')(scope);
         element.after(template);
 
         element

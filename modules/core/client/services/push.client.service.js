@@ -14,9 +14,9 @@
     locker,
     $q) {
 
-    var LOCKER_KEY = 'tr.push';
+    const LOCKER_KEY = 'tr.push';
 
-    var push = {
+    const push = {
       isSupported: getIsSupported(),
       isBusy: false,
       isEnabled: loadEnabled(),
@@ -50,7 +50,7 @@
 
     };
 
-    var store = {
+    const store = {
       token: null // so we can remove it when needed
     };
 
@@ -96,7 +96,7 @@
      * Ask user if they want to turn push notifications on
      */
     function askUser() {
-      var pushAskedKey = LOCKER_KEY + '.asked';
+      const pushAskedKey = LOCKER_KEY + '.asked';
 
       // Do not ask if:
       // - locker isn't supported (we can't store status)
@@ -109,7 +109,7 @@
       $uibModal.open({
         templateUrl: '/modules/core/views/push-notification-question-modal.client.view.html',
         controller: function ($scope, $uibModalInstance) {
-          var vm = this;
+          const vm = this;
 
           // Yes! Turn push notifications on
           vm.yes = function () {
@@ -218,7 +218,7 @@
     }
 
     function handleServerError(response) {
-      var errorMessage;
+      let errorMessage;
       if (response) {
         errorMessage = 'Error: ' + ((response.data && response.data.message) || 'Something went wrong.');
       } else {

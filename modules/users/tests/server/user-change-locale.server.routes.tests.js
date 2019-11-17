@@ -1,10 +1,10 @@
-const mongoose = require('mongoose'),
-      path = require('path'),
-      request = require('supertest'),
-      should = require('should'),
-      utils = require(path.resolve('./testutils/data.server.testutils')),
-      express = require(path.resolve('./config/lib/express')),
-      User = mongoose.model('User');
+const mongoose = require('mongoose');
+const path = require('path');
+const request = require('supertest');
+const should = require('should');
+const utils = require(path.resolve('./testutils/data.server.testutils'));
+const express = require(path.resolve('./config/lib/express'));
+const User = mongoose.model('User');
 
 const app = express.init(mongoose.connection);
 const agent = request.agent(app);

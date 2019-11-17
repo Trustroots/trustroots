@@ -1,19 +1,19 @@
 /**
  * Module dependencies.
  */
-var should = require('should'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Contact = mongoose.model('Contact');
+const should = require('should');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Contact = mongoose.model('Contact');
 
 /**
  * Globals
  */
-var user1,
-    user2,
-    user1Id,
-    user2Id,
-    contact;
+let user1;
+let user2;
+let user1Id;
+let user2Id;
+let contact;
 
 /**
  * Unit tests

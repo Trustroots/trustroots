@@ -53,7 +53,7 @@ export default class AdminAuditLog extends Component {
         </div>
       </>
     );
-  };
+  }
 }
 
 AdminAuditLog.propTypes = {};

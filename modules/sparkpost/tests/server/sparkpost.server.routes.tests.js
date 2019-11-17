@@ -1,15 +1,15 @@
-var request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    express = require(path.resolve('./config/lib/express')),
-    config = require(path.resolve('./config/config'));
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const express = require(path.resolve('./config/lib/express'));
+const config = require(path.resolve('./config/config'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    events;
+let app;
+let agent;
+let events;
 
 /**
  * Sparkpost routes tests

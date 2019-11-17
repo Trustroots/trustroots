@@ -23,7 +23,7 @@
     function trTribesInCommonController($scope, $state) {
 
       // View Model
-      var vm = this;
+      const vm = this;
 
       // Exposed to the view
       vm.openTribe = openTribe;
@@ -35,7 +35,7 @@
        * Initialize directive controller
        */
       function activate() {
-        var tribesInCommon = [];
+        const tribesInCommon = [];
 
         // Loop all tribes memberships
         if (angular.isDefined($scope.trTribesInCommon) &&

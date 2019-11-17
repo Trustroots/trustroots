@@ -9,16 +9,16 @@
   /* @ngInject */
   function LocationService($log, $http, SettingsFactory) {
 
-    var appSettings = SettingsFactory.get();
+    const appSettings = SettingsFactory.get();
 
     // Defaults location to be used with maps (Europe)
-    var defaultLocation = {
+    const defaultLocation = {
       lat: 48.6908333333,
       lng: 9.14055555556,
       zoom: 6
     };
 
-    var service = {
+    const service = {
       getDefaultLocation: getDefaultLocation,
       getBounds: getBounds,
       getCenter: getCenter,
@@ -63,11 +63,11 @@
      */
     function getBounds(geolocation) {
       if (!geolocation || !geolocation.bbox || !angular.isArray(geolocation.bbox) || geolocation.bbox.length !== 4) {
-        var center = geolocation.center;
+        const center = geolocation.center;
         if (!geolocation || !center || !angular.isArray(center) || center.length !== 2) {
           return false;
         } else {
-          var borderFromCenter = .002;
+          const borderFromCenter = .002;
           return getBoundsObject(
             parseFloat(center[1]) + borderFromCenter,
             parseFloat(center[0]) - borderFromCenter,
@@ -107,7 +107,7 @@
      * }
      */
     function getCenter(geolocation) {
-      var coords;
+      let coords;
 
       if (geolocation.center) {
         coords = geolocation.center;
@@ -179,15 +179,15 @@
      * @return String
      */
     function shortTitle(geolocation) {
-      var title = '';
+      let title = '';
 
       if (geolocation.text) {
         title = geolocation.text;
 
         // Relevant context strings
         if (geolocation.context) {
-          var contextLength = geolocation.context.length;
-          for (var i = 0; i < contextLength; i++) {
+          const contextLength = geolocation.context.length;
+          for (let i = 0; i < contextLength; i++) {
             if (geolocation.context[i].id.substring(0, 6) === 'place.') {
               title += ', ' + geolocation.context[i].text;
             } else if (geolocation.context[i].id.substring(0, 8) === 'country.') {

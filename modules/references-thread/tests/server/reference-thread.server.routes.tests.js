@@ -1,33 +1,33 @@
-var should = require('should'),
-    async = require('async'),
-    request = require('supertest'),
-    path = require('path'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Message = mongoose.model('Message'),
-    Thread = mongoose.model('Thread'),
-    ReferenceThread = mongoose.model('ReferenceThread'),
-    express = require(path.resolve('./config/lib/express'));
+const should = require('should');
+const async = require('async');
+const request = require('supertest');
+const path = require('path');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Message = mongoose.model('Message');
+const Thread = mongoose.model('Thread');
+const ReferenceThread = mongoose.model('ReferenceThread');
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    userFrom,
-    referenceUserFromId,
-    referenceUserFromCredentials,
-    userTo,
-    referenceUserToId,
-    userNonPublic,
-    referenceUserNonPublicId,
-    referenceUserNonpublicCredentials,
-    referenceThread,
-    message,
-    thread,
-    threadId,
-    threadNonpublicId;
+let app;
+let agent;
+let userFrom;
+let referenceUserFromId;
+let referenceUserFromCredentials;
+let userTo;
+let referenceUserToId;
+let userNonPublic;
+let referenceUserNonPublicId;
+let referenceUserNonpublicCredentials;
+let referenceThread;
+let message;
+let thread;
+let threadId;
+let threadNonpublicId;
 
 /**
  * Message routes tests

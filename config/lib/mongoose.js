@@ -1,12 +1,12 @@
 /**
  * Module dependencies.
  */
-var config = require('../config'),
-    async = require('async'),
-    path = require('path'),
-    log = require('./logger'),
-    mongoose = require('mongoose'),
-    semver = require('semver');
+const config = require('../config');
+const async = require('async');
+const path = require('path');
+const log = require('./logger');
+const mongoose = require('mongoose');
+const semver = require('semver');
 
 /**
  * Options for Native MongoDB connection
@@ -14,7 +14,7 @@ var config = require('../config'),
  * @link https://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
  * @link https://mongoosejs.com/docs/connections.html
  */
-var mongoConnectionOptions = {
+const mongoConnectionOptions = {
   server: {
     // Never stop reconnecting
     reconnectTries: Number.MAX_SAFE_INTEGER
@@ -40,7 +40,7 @@ module.exports.loadModels = function (callback) {
   });
 
   // Array of registered models
-  var models = mongoose.connection.modelNames();
+  const models = mongoose.connection.modelNames();
 
   // Logging for indexing events in models
   models.forEach(function (model) {
@@ -65,7 +65,7 @@ module.exports.loadModels = function (callback) {
 
 // Initialize Mongoose
 module.exports.connect = function (callback) {
-  var _this = this;
+  const _this = this;
 
   // Use native promises
   // You could use any ES6 promise constructor here, e.g. `bluebird`
@@ -93,8 +93,8 @@ module.exports.connect = function (callback) {
         return done();
       }
 
-      var engines = require(path.resolve('./package.json')).engines;
-      var admin = new mongoose.mongo.Admin(mongoose.connection.db);
+      const engines = require(path.resolve('./package.json')).engines;
+      const admin = new mongoose.mongo.Admin(mongoose.connection.db);
       admin.buildInfo(function (err, info) {
         log('info', 'MongoDB', {
           version: info.version

@@ -7,7 +7,7 @@
   function ProfileEditController($scope, $confirm, $state) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.unsavedModifications = false;

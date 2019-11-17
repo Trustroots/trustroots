@@ -13,7 +13,7 @@
     }
 
     // View Model
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.signin = signin;
@@ -58,8 +58,8 @@
             // Redirect to where we were left off before sign-in page
             // See modules/core/client/controllers/main.client.controller.js
             if (vm.continue) {
-              var stateTo = $rootScope.signinState || 'search',
-                  stateToParams = $rootScope.signinStateParams || {};
+              const stateTo = $rootScope.signinState || 'search';
+              const stateToParams = $rootScope.signinStateParams || {};
               delete $rootScope.signinState;
               delete $rootScope.signinStateParams;
               $state.go(stateTo, stateToParams);

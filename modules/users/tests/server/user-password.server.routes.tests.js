@@ -1,18 +1,18 @@
-var should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    express = require(path.resolve('./config/lib/express'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    user,
-    _user;
+let app;
+let agent;
+let credentials;
+let user;
+let _user;
 
 /**
  * User routes tests
@@ -78,7 +78,7 @@ describe('User password CRUD tests', function () {
   });
 
   it('forgot password should return 400 for no username provided', function (done) {
-    var provider = 'facebook';
+    const provider = 'facebook';
     user.provider = provider;
     user.roles = ['user'];
 
@@ -260,7 +260,7 @@ describe('User password CRUD tests', function () {
             return done(err);
           }
 
-          var invalidToken = 'someTOKEN1234567890';
+          const invalidToken = 'someTOKEN1234567890';
           agent.get('/api/auth/reset/' + invalidToken)
             .expect(302)
             .end(function (err, res) {

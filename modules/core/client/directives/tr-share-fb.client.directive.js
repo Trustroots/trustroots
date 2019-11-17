@@ -34,7 +34,7 @@
         activate();
       } else {
         // FB API was not ready, wait for the ready event
-        var watch = $rootScope.$on('facebookReady', function () {
+        const watch = $rootScope.$on('facebookReady', function () {
           activate();
           // Removes watch:
           watch();
@@ -47,7 +47,7 @@
        */
       function activate() {
 
-        var button = '<div ' +
+        const button = '<div ' +
           'class="fb-share-button" ' +
           'data-href="' + location.href + '" ' +
           'data-layout="button_count" ' +

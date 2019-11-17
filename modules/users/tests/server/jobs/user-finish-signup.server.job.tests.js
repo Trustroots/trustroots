@@ -1,27 +1,27 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    should = require('should'),
-    testutils = require(path.resolve('./testutils/server.testutil')),
-    config = require(path.resolve('./config/config')),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const should = require('should');
+const testutils = require(path.resolve('./testutils/server.testutil'));
+const config = require(path.resolve('./config/config'));
+const moment = require('moment');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
 
 /**
  * Globals
  */
-var unConfirmedUser,
-    _unConfirmedUser,
-    confirmedUser,
-    _confirmedUser,
-    userFinishSignupJobHandler;
+let unConfirmedUser;
+let _unConfirmedUser;
+let confirmedUser;
+let _confirmedUser;
+let userFinishSignupJobHandler;
 
 describe('Job: user finish signup', function () {
 
-  var jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs();
 
   before(function () {
     userFinishSignupJobHandler = require(path.resolve('./modules/users/server/jobs/user-finish-signup.server.job'));
@@ -251,15 +251,15 @@ describe('Job: user finish signup', function () {
   it('Remind multiple unconfirmed users >4 hours after their signup, but no more than maximum amount of notifications at once', function (done) {
 
     // Create test users
-    var _users = [];
-    for (var i = 1; i <= config.limits.maxProcessSignupReminders + 1; i++) {
-      var loopVars = {
+    const _users = [];
+    for (let i = 1; i <= config.limits.maxProcessSignupReminders + 1; i++) {
+      const loopVars = {
         username: 'l' + i + _unConfirmedUser.username,
         emailToken: 'l' + i + _unConfirmedUser.emailToken,
         emailTemporary: 'l' + i + _unConfirmedUser.emailTemporary,
         email: 'l' + i + _unConfirmedUser.email
       };
-      var _unConfirmedUserLooped = _.merge(_.clone(_unConfirmedUser), loopVars);
+      const _unConfirmedUserLooped = _.merge(_.clone(_unConfirmedUser), loopVars);
       _users.push(_unConfirmedUserLooped);
     }
 

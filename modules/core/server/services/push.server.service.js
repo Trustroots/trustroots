@@ -1,15 +1,15 @@
-var _ = require('lodash'),
-    path = require('path'),
-    agenda = require(path.resolve('./config/lib/agenda')),
-    config = require(path.resolve('./config/config')),
-    url = (config.https ? 'https' : 'http') + '://' + config.domain,
-    analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller'));
+const _ = require('lodash');
+const path = require('path');
+const agenda = require(path.resolve('./config/lib/agenda'));
+const config = require(path.resolve('./config/config'));
+const url = (config.https ? 'https' : 'http') + '://' + config.domain;
+const analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller'));
 
 exports.notifyPushDeviceAdded = function (user, platform, callback) {
 
   if (_.get(user, 'pushRegistration', []).length === 0) return callback();
 
-  var editAccountUrl = url + '/profile/edit/account';
+  const editAccountUrl = url + '/profile/edit/account';
 
   function platformVerbal(platform) {
     switch (platform) {
@@ -26,7 +26,7 @@ exports.notifyPushDeviceAdded = function (user, platform, callback) {
     }
   }
 
-  var notification = {
+  const notification = {
     title: 'Trustroots',
     body: 'You just enabled Trustroots ' + platformVerbal(platform) + ' notifications. Yay!',
     click_action: analyticsHandler.appendUTMParams(editAccountUrl, {
@@ -47,13 +47,13 @@ exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
     return callback();
   }
 
-  var messageCount = _.get(data, 'messages', []).length;
+  const messageCount = _.get(data, 'messages', []).length;
 
   // Is the notification the first one?
   // If not, we send a different message.
-  var isFirst = !(data.notificationCount > 0);
+  const isFirst = !(data.notificationCount > 0);
 
-  var body;
+  let body;
 
   if (isFirst) {
     // First notification
@@ -67,9 +67,9 @@ exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
     body = userFrom.displayName + ' is still waiting for a reply';
   }
 
-  var messagesUrl = url + '/messages';
+  const messagesUrl = url + '/messages';
 
-  var notification = {
+  const notification = {
     title: 'Trustroots',
     body: body,
     click_action: analyticsHandler.appendUTMParams(messagesUrl, {
@@ -91,15 +91,15 @@ exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
  * @param {boolean} data.isFirst - is it the first reference between users?
  */
 exports.notifyNewReference = function (userFrom, userTo, data, callback) {
-  var giveReferenceUrl = url + '/profile/' + userFrom.username + '/references/new';
-  var readReferencesUrl = url + '/profile/' + userTo.username + '/references';
+  const giveReferenceUrl = url + '/profile/' + userFrom.username + '/references/new';
+  const readReferencesUrl = url + '/profile/' + userTo.username + '/references';
 
   // When the reference is first, reply reference can be given.
   // Otherwise both references are public now and can be seen.
-  var actionText = (data.isFirst) ? 'Give a reference back.' : 'You can see it.';
-  var actionUrl = (data.isFirst) ? giveReferenceUrl : readReferencesUrl;
+  const actionText = (data.isFirst) ? 'Give a reference back.' : 'You can see it.';
+  const actionUrl = (data.isFirst) ? giveReferenceUrl : readReferencesUrl;
 
-  var notification = {
+  const notification = {
     title: 'Trustroots',
     body: userFrom.username + ' gave you a new reference. ' + actionText,
     click_action: analyticsHandler.appendUTMParams(actionUrl, {
@@ -114,7 +114,7 @@ exports.notifyNewReference = function (userFrom, userTo, data, callback) {
 
 exports.sendUserNotification = function (user, notification, callback) {
 
-  var data = {
+  const data = {
     userId: user._id,
     pushServices: user.pushRegistration,
     notification: notification

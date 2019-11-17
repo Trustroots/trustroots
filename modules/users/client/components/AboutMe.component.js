@@ -59,7 +59,7 @@ export class AboutMe extends Component {
       </section>
     </>);
   }
-};
+}
 
 AboutMe.propTypes = {
   profile: PropTypes.object,

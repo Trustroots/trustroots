@@ -1,27 +1,27 @@
-var _ = require('lodash'),
-    should = require('should'),
-    async = require('async'),
-    request = require('supertest'),
-    path = require('path'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Message = mongoose.model('Message'),
-    Thread = mongoose.model('Thread'),
-    config = require(path.resolve('./config/config')),
-    express = require(path.resolve('./config/lib/express'));
+const _ = require('lodash');
+const should = require('should');
+const async = require('async');
+const request = require('supertest');
+const path = require('path');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Message = mongoose.model('Message');
+const Thread = mongoose.model('Thread');
+const config = require(path.resolve('./config/config'));
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    userFrom,
-    userTo,
-    userFromId,
-    userToId,
-    message;
+let app;
+let agent;
+let credentials;
+let userFrom;
+let userTo;
+let userFromId;
+let userToId;
+let message;
 
 /**
  * Message routes tests
@@ -119,7 +119,7 @@ describe('Message CRUD tests', function () {
         if (signinErr) return done(signinErr);
 
         // Get user id
-        var userFromId = signinRes.body._id;
+        const userFromId = signinRes.body._id;
 
         // Save a new message
         agent.post('/api/messages')
@@ -136,7 +136,7 @@ describe('Message CRUD tests', function () {
                 if (messagesGetErr) return done(messagesGetErr);
 
                 // Get messages list
-                var thread = messagesGetRes.body;
+                const thread = messagesGetRes.body;
 
                 if (!thread[0] || !thread[0].content) {
                   return done(new Error('Missing messages from the message thread.'));
@@ -167,7 +167,7 @@ describe('Message CRUD tests', function () {
         if (signinErr) return done(signinErr);
 
         // Create html in message
-        var htmlMessage = message;
+        const htmlMessage = message;
         htmlMessage.content = '<p>' +
                                 '<b>bold</b><br />' +
                                 '<i>italic</i><br />' +
@@ -192,7 +192,7 @@ describe('Message CRUD tests', function () {
                 if (messagesGetErr) return done(messagesGetErr);
 
                 // Get messages list
-                var thread = messagesGetRes.body;
+                const thread = messagesGetRes.body;
 
                 if (!thread[0] || !thread[0].content) {
                   return done(new Error('Missing messages from the message thread.'));
@@ -218,7 +218,7 @@ describe('Message CRUD tests', function () {
         if (signinErr) return done(signinErr);
 
         // Create html in message
-        var htmlMessage = message;
+        const htmlMessage = message;
         htmlMessage.content = '<strong>strong</strong><br><img src="http://www.trustroots.org/">' +
                               '<foo>blockquote</foo><p>' +
                               '<script></script>' +
@@ -240,13 +240,13 @@ describe('Message CRUD tests', function () {
                 if (messagesGetErr) return done(messagesGetErr);
 
                 // Get messages list
-                var thread = messagesGetRes.body;
+                const thread = messagesGetRes.body;
 
                 if (!thread[0] || !thread[0].content) {
                   return done(new Error('Missing messages from the message thread.'));
                 } else {
                   // Set assertions
-                  var output = '<b>strong</b>' +
+                  const output = '<b>strong</b>' +
                     '<br />blockquote' +
                     '<p>' +
                     '<a href="https://www.trustroots.org/">link</a>' +
@@ -274,7 +274,7 @@ describe('Message CRUD tests', function () {
         if (signinErr) return done(signinErr);
 
         // Create html in message
-        var htmlMessage = message;
+        const htmlMessage = message;
         htmlMessage.content = '<a href="https://www.trustroots.org/" target="_blank">This is nice!</a>';
 
         // Save a new message
@@ -292,7 +292,7 @@ describe('Message CRUD tests', function () {
                 if (messagesGetErr) return done(messagesGetErr);
 
                 // Get messages list
-                var thread = messagesGetRes.body;
+                const thread = messagesGetRes.body;
 
                 if (!thread[0] || !thread[0].content) {
                   return done(new Error('Missing messages from the message thread.'));
@@ -321,7 +321,7 @@ describe('Message CRUD tests', function () {
         // Now loop 25 messages in...
         // "Older" messages will have smaller numbers
         // @link https://github.com/caolan/async#whilsttest-fn-callback
-        var count = 0;
+        let count = 0;
         async.whilst(
           function () {
             return count < 25;
@@ -329,7 +329,7 @@ describe('Message CRUD tests', function () {
           function (callback) {
 
             count++;
-            var newMessage = message;
+            const newMessage = message;
             newMessage.content = 'Message content ' + count;
 
             agent.post('/api/messages')
@@ -355,11 +355,11 @@ describe('Message CRUD tests', function () {
                 if (messagesGetErr) return done(messagesGetErr);
 
                 // Check for pagination header
-                var url = (config.https ? 'https' : 'http') + '://' + config.domain;
+                const url = (config.https ? 'https' : 'http') + '://' + config.domain;
                 messagesGetRes.headers.link.should.equal('<' + url + '/api/messages/' + userToId + '?page=2&limit=20>; rel="next"');
 
                 // Get messages list
-                var thread = messagesGetRes.body;
+                const thread = messagesGetRes.body;
 
                 if (!thread[0] || !thread[0].content) {
                   return done(new Error('Missing messages from the message thread.'));
@@ -382,7 +382,7 @@ describe('Message CRUD tests', function () {
                       should.not.exist(messagesGetRes.headers.link);
 
                       // Get messages list
-                      var thread = messagesGetRes.body;
+                      const thread = messagesGetRes.body;
 
                       if (!thread[0] || !thread[0].content) {
                         return done(new Error('Missing messages from the message thread.'));
@@ -417,9 +417,9 @@ describe('Message CRUD tests', function () {
         if (signinErr) return done(signinErr);
 
         // Get user id
-        var userFromId = signinRes.body._id;
+        const userFromId = signinRes.body._id;
 
-        var messageToMyself = message;
+        const messageToMyself = message;
         messageToMyself.userTo = userFromId;
 
         // Save a new message
@@ -563,7 +563,7 @@ describe('Message CRUD tests', function () {
   it('should be able to send a message when I have too short description but another user wrote me first', function (done) {
 
     // Save message to this user from other user
-    var newMessage = new Message({
+    const newMessage = new Message({
       content: 'Enabling the latent trust between humans.',
       userFrom: userToId,
       userTo: userFromId,
@@ -577,7 +577,7 @@ describe('Message CRUD tests', function () {
       // Handle save error
       if (newMessageErr) return done(newMessageErr);
 
-      var newThread = new Thread({
+      const newThread = new Thread({
         userFrom: userToId,
         userTo: userFromId,
         updated: new Date(),
@@ -668,7 +668,7 @@ describe('Message CRUD tests', function () {
   it('should be able to check for unread message count if logged in', function (done) {
 
     // Save message to this user from other user
-    var newMessage1 = new Message({
+    const newMessage1 = new Message({
       content: 'Enabling the latent trust between humans.',
       userFrom: userToId,
       userTo: userFromId,
@@ -676,7 +676,7 @@ describe('Message CRUD tests', function () {
       read: false,
       notified: true
     });
-    var newMessage2 = new Message({
+    const newMessage2 = new Message({
       content: 'Another one!',
       userFrom: userToId,
       userTo: userFromId,
@@ -695,7 +695,7 @@ describe('Message CRUD tests', function () {
         // Handle save error
         if (newMessage2Err) return done(newMessage2Err);
 
-        var newThread = new Thread({
+        const newThread = new Thread({
           userFrom: userToId,
           userTo: userFromId,
           updated: new Date(),
@@ -750,7 +750,7 @@ describe('Message CRUD tests', function () {
   it('should be able to read sync endpoint and show messages sent from currently authenticated user', function (done) {
 
     // Save message to this user from other user
-    var newMessage1 = new Message({
+    const newMessage1 = new Message({
       content: 'One',
       userFrom: userFromId,
       userTo: userToId,
@@ -758,7 +758,7 @@ describe('Message CRUD tests', function () {
       read: false,
       notified: true
     });
-    var newMessage2 = new Message({
+    const newMessage2 = new Message({
       content: 'Two',
       userFrom: userFromId,
       userTo: userToId,
@@ -777,7 +777,7 @@ describe('Message CRUD tests', function () {
         // Handle save error
         if (newMessage2Err) return done(newMessage2Err);
 
-        var newThread = new Thread({
+        const newThread = new Thread({
           userFrom: userFromId,
           userTo: userToId,
           updated: moment('2016-06-06 19:00:00.174Z').add(30, 'minutes').toDate(),
@@ -804,7 +804,7 @@ describe('Message CRUD tests', function () {
 
                   should.not.exist(syncReadRes.body.messages[userFromId.toString()]);
 
-                  var messages = syncReadRes.body.messages[userToId.toString()];
+                  const messages = syncReadRes.body.messages[userToId.toString()];
 
                   messages.length.should.equal(2);
 
@@ -822,7 +822,7 @@ describe('Message CRUD tests', function () {
                   messages[1].userFrom.should.equal(userFromId.toString());
                   messages[1].content.should.equal('One');
 
-                  var users = syncReadRes.body.users;
+                  const users = syncReadRes.body.users;
 
                   users.length.should.equal(2);
 
@@ -853,7 +853,7 @@ describe('Message CRUD tests', function () {
   it('should be able to read sync endpoint and show messages sent to currently authenticated user', function (done) {
 
     // Save message to this user from other user
-    var newMessage1 = new Message({
+    const newMessage1 = new Message({
       content: 'One',
       userFrom: userToId,
       userTo: userFromId,
@@ -861,7 +861,7 @@ describe('Message CRUD tests', function () {
       read: false,
       notified: true
     });
-    var newMessage2 = new Message({
+    const newMessage2 = new Message({
       content: 'Two',
       userFrom: userToId,
       userTo: userFromId,
@@ -880,7 +880,7 @@ describe('Message CRUD tests', function () {
         // Handle save error
         if (newMessage2Err) return done(newMessage2Err);
 
-        var newThread = new Thread({
+        const newThread = new Thread({
           userFrom: userToId,
           userTo: userFromId,
           updated: new Date(),
@@ -907,7 +907,7 @@ describe('Message CRUD tests', function () {
 
                   should.not.exist(syncReadRes.body.messages[userToId.toString()]);
 
-                  var messages = syncReadRes.body.messages[userFromId.toString()];
+                  const messages = syncReadRes.body.messages[userFromId.toString()];
 
                   messages.length.should.equal(2);
 
@@ -925,7 +925,7 @@ describe('Message CRUD tests', function () {
                   messages[1].userTo.should.equal(userFromId.toString());
                   messages[1].content.should.equal('One');
 
-                  var users = syncReadRes.body.users;
+                  const users = syncReadRes.body.users;
 
                   users.length.should.equal(2);
 

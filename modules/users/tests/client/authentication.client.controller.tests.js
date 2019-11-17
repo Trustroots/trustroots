@@ -2,10 +2,10 @@
   // Authentication controller Spec
   describe('AuthenticationController', function () {
     // Initialize global variables
-    var AuthenticationController,
-        $httpBackend,
-        $state,
-        Authentication;
+    let AuthenticationController;
+    let $httpBackend;
+    let $state;
+    let Authentication;
 
     beforeEach(function () {
       jasmine.addMatchers({
@@ -26,10 +26,10 @@
 
     describe('Logged out user', function () {
 
-      var $scope,
-          appSettings = {
-            flashTimeout: 0
-          };
+      let $scope;
+      const appSettings = {
+        flashTimeout: 0
+      };
 
       // The injector ignores leading and trailing underscores here (i.e. _$httpBackend_).
       // This allows us to inject a service but then attach it to a variable

@@ -7,7 +7,7 @@
   function ResetPasswordController($rootScope, $stateParams, $http, $state, Authentication) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.error = null;

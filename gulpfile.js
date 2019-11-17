@@ -3,35 +3,35 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    defaultAssets = require('./config/assets/default'),
-    gulp = require('gulp'),
-    gulpLoadPlugins = require('gulp-load-plugins'),
-    MergeStream = require('merge-stream'),
-    glob = require('glob'),
-    del = require('del'),
-    nodemon = require('nodemon'),
-    webpack = require('webpack'),
-    webpackStream = require('webpack-stream'),
-    merge = require('webpack-merge'),
-    print = require('gulp-print').default,
-    plugins = gulpLoadPlugins({
-      rename: {
-        'gulp-angular-templatecache': 'templateCache'
-      }
-    });
+const _ = require('lodash');
+const path = require('path');
+const defaultAssets = require('./config/assets/default');
+const gulp = require('gulp');
+const gulpLoadPlugins = require('gulp-load-plugins');
+const MergeStream = require('merge-stream');
+const glob = require('glob');
+const del = require('del');
+const nodemon = require('nodemon');
+const webpack = require('webpack');
+const webpackStream = require('webpack-stream');
+const merge = require('webpack-merge');
+const print = require('gulp-print').default;
+const plugins = gulpLoadPlugins({
+  rename: {
+    'gulp-angular-templatecache': 'templateCache'
+  }
+});
 
 // Local settings
-var changedTestFiles = [];
+let changedTestFiles = [];
 
 // These will be loaded in `loadConfig` task
-var environmentAssets,
-    assets,
-    config;
+let environmentAssets;
+let assets;
+let config;
 
 // Globbed paths ignored by Nodemon
-var nodemonIgnores = [
+const nodemonIgnores = [
   'bin/**',
   'migrations/**',
   'modules/*/client/**',
@@ -131,7 +131,7 @@ gulp.task('webpack', gulp.parallel(
 
 function webpackTask(opts) {
   return function () {
-    var resolvedEntry = require.resolve(opts.entry);
+    const resolvedEntry = require.resolve(opts.entry);
     return gulp.src(resolvedEntry)
       .pipe(webpackStream(merge(require('./config/webpack/webpack.config.js'), {
         watch: opts.watch,
@@ -193,7 +193,7 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
       _.forEach('modules/*/tests/server/**/*.js', function (pattern) {
         // determine if the changed (watched) file is a server test
         _.forEach(glob.sync(pattern), function (file) {
-          var filePath = path.resolve(file);
+          const filePath = path.resolve(file);
 
           if (filePath === path.resolve(changedFile)) {
             changedTestFiles.push(changedFile);
@@ -227,10 +227,10 @@ gulp.task('clean:css', function cleanCSS() {
 gulp.task('build:styles', function buildStyles() {
   if (process.env.NODE_ENV === 'production') {
 
-    var cssStream = gulp.src(defaultAssets.client.lib.css)
+    const cssStream = gulp.src(defaultAssets.client.lib.css)
       .pipe(plugins.concat('css-files.css'));
 
-    var lessStream = gulp.src(_.union(defaultAssets.client.lib.less, defaultAssets.client.less))
+    const lessStream = gulp.src(_.union(defaultAssets.client.lib.less, defaultAssets.client.less))
       .pipe(plugins.concat('less-files.less'))
       .pipe(plugins.less());
 
@@ -246,7 +246,7 @@ gulp.task('build:styles', function buildStyles() {
     // In non-production `NODE_ENV`
 
     // More verbose `less` errors
-    var lessProcessor = plugins.less();
+    const lessProcessor = plugins.less();
     lessProcessor.on('error', function (err) {
       console.error(err);
     });
@@ -266,12 +266,12 @@ gulp.task('build:styles', function buildStyles() {
 // we can pick modules we need. Therefore we need
 // to manually compile our UIB templates.
 function angularUibTemplatecache() {
-  var uibModulesStreams = new MergeStream();
+  const uibModulesStreams = new MergeStream();
 
   // Loop trough module names
   defaultAssets.client.lib.uibModuleTemplates.forEach(function (uibModule) {
 
-    var moduleStream = gulp.src(['node_modules/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
+    const moduleStream = gulp.src(['node_modules/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
       .pipe(plugins.htmlmin({ collapseWhitespace: true }))
       .pipe(plugins.templateCache('uib-templates-' + uibModule + '.js', {
         root: 'uib/template/' + uibModule + '/',
@@ -324,10 +324,10 @@ function fontello() {
 
 function mocha(done) {
   // Open mongoose connections
-  var mongooseService = require('./config/lib/mongoose');
-  var agenda = require('./config/lib/agenda');
-  var testSuites = changedTestFiles.length ? changedTestFiles : 'modules/*/tests/server/**/*.js';
-  var error;
+  const mongooseService = require('./config/lib/mongoose');
+  const agenda = require('./config/lib/agenda');
+  const testSuites = changedTestFiles.length ? changedTestFiles : 'modules/*/tests/server/**/*.js';
+  let error;
 
   // Connect mongoose
   mongooseService.connect(function (db) {

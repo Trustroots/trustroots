@@ -30,9 +30,9 @@
         }
 
         function renderSVG() {
-          var size = attrs.size || 'md',
-              square,
-              stroke;
+          const size = attrs.size || 'md';
+          let square;
+          let stroke;
 
           if (size === 'lg') {
             square = 85;
@@ -48,7 +48,7 @@
             stroke = 1;
           }
 
-          var svg = generateSVGMarkup(size, square, stroke);
+          const svg = generateSVGMarkup(size, square, stroke);
 
           element.html(svg);
         }

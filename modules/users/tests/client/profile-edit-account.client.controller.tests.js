@@ -1,12 +1,12 @@
 (function () {
   describe('ProfileEditAccountController', function () {
 
-    var ProfileEditAccountController,
-        $httpBackend,
-        messageCenterService,
-        Authentication;
+    let ProfileEditAccountController;
+    let $httpBackend;
+    let messageCenterService;
+    let Authentication;
 
-    var user = {
+    const user = {
       _id: 'user',
       displayName: 'User',
       emailTemporary: 'foo@foo.com'
@@ -53,7 +53,7 @@
 
         it('can update email address', function () {
           ProfileEditAccountController.user.emailTemporary = 'new@email.com';
-          var expectedPutData = {
+          const expectedPutData = {
             _id: 'user',
             displayName: 'User',
             emailTemporary: 'new@email.com'

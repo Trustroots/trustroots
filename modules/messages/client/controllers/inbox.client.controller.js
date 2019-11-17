@@ -7,7 +7,7 @@
   function InboxController($rootScope, $state, $analytics, Authentication, Messages, $log) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.threads = [];
@@ -63,7 +63,7 @@
      * Return either displayName or user object
      */
     function otherParticipant(thread, value) {
-      var other = (thread.userFrom && thread.userFrom._id === Authentication.user._id) ? thread.userTo : thread.userFrom;
+      const other = (thread.userFrom && thread.userFrom._id === Authentication.user._id) ? thread.userTo : thread.userFrom;
 
       if (!other) {
         return;

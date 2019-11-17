@@ -1,11 +1,11 @@
-const mongoose = require('mongoose'),
-      path = require('path'),
-      request = require('supertest'),
-      should = require('should'),
-      sinon = require('sinon'),
-      utils = require(path.resolve('./testutils/data.server.testutils')),
-      userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-      express = require(path.resolve('./config/lib/express'));
+const mongoose = require('mongoose');
+const path = require('path');
+const request = require('supertest');
+const should = require('should');
+const sinon = require('sinon');
+const utils = require(path.resolve('./testutils/data.server.testutils'));
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const express = require(path.resolve('./config/lib/express'));
 
 describe('Read references by userFrom Id or userTo Id', () => {
   // GET /references?userFrom=:UserId&userTo=:UserId

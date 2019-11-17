@@ -1,9 +1,9 @@
-var path = require('path'),
-    config = require(path.resolve('./config/config'));
+const path = require('path');
+const config = require(path.resolve('./config/config'));
 
 exports.generateEmailToken = function (user, saltBuffer) {
-  var email = user.emailTemporary || user.email;
-  var buf = Buffer.concat([saltBuffer, Buffer.from(email)]);
+  const email = user.emailTemporary || user.email;
+  const buf = Buffer.concat([saltBuffer, Buffer.from(email)]);
   return buf.toString('hex');
 };
 
@@ -21,8 +21,8 @@ exports.generateEmailToken = function (user, saltBuffer) {
  */
 exports.validateUsername = function (username) {
   username = String(username).toLowerCase();
-  var usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/,
-      dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/;
+  const usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/;
+  const dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/;
 
   return username &&
     usernameRegex.test(username) &&

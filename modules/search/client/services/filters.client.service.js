@@ -10,7 +10,7 @@
   function FiltersService($log, Authentication, locker) {
 
     // Default structure for filters object
-    var defaultFilters = {
+    const defaultFilters = {
       tribes: [],
       types: [
         'host',
@@ -23,18 +23,18 @@
     };
 
     // Make cache id unique for this user
-    var cachePrefix = (Authentication.user) ? 'search.filters.' + Authentication.user._id : 'search.filters';
+    const cachePrefix = (Authentication.user) ? 'search.filters.' + Authentication.user._id : 'search.filters';
 
     // Look up for filters from cache.
     // Returns `defaultFilters` if nothing is found.
-    var filters = locker.supported() ? locker.get(cachePrefix, defaultFilters) : defaultFilters;
+    let filters = locker.supported() ? locker.get(cachePrefix, defaultFilters) : defaultFilters;
 
     // If cached filters were found, their structure might've been incomplete
     // `angular.extend` extends `filters` by copying own enumerable
     // properties from `defaultFilters` to `filters`.
     filters = angular.extend(defaultFilters, filters);
 
-    var service = {
+    const service = {
       set: set,
       get: get
     };

@@ -2,9 +2,9 @@
  * Various functions that repeat in tests a lot
  */
 
-const _ = require('lodash'),
-      crypto = require('crypto'),
-      mongoose = require('mongoose');
+const _ = require('lodash');
+const crypto = require('crypto');
+const mongoose = require('mongoose');
 
 /**
  * Get random integer within [0, exclusiveMaximum)

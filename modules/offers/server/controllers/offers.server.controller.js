@@ -1,23 +1,23 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    async = require('async'),
-    config = require(path.resolve('./config/config')),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    tribes = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller')),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    log = require(path.resolve('./config/lib/logger')),
-    sanitizeHtml = require('sanitize-html'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    Offer = mongoose.model('Offer'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const async = require('async');
+const config = require(path.resolve('./config/config'));
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const tribes = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller'));
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const log = require(path.resolve('./config/lib/logger'));
+const sanitizeHtml = require('sanitize-html');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const Offer = mongoose.model('Offer');
+const User = mongoose.model('User');
 
 // Selected fields to return publicly for offers
-var publicOfferFields = [
+const publicOfferFields = [
   '_id',
   'type',
   'status',
@@ -31,7 +31,7 @@ var publicOfferFields = [
 ];
 
 // Offer fields users can modify
-var allowedOfferFields = [
+const allowedOfferFields = [
   'status',
   'description',
   'noOfferDescription',
@@ -45,7 +45,7 @@ var allowedOfferFields = [
  */
 function parseFiltersString(filtersString) {
   try {
-    var filtersObject = JSON.parse(filtersString);
+    const filtersObject = JSON.parse(filtersString);
 
     // Handle non-exception-throwing cases:
     // Neither JSON.parse(false) or JSON.parse(1234) throw errors, hence the type-checking,
@@ -113,7 +113,7 @@ function sanitizeOffer(offer, authenticatedUserId, alwaysFuzzyLocation) {
  * @returns {Boolean} true on success, false on failure.
  */
 function isValidCoordinate(coordinate) {
-  var regexp = /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/;
+  const regexp = /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/;
 
   return !_.isUndefined(coordinate) &&
          _.isFinite(parseFloat(coordinate)) &&
@@ -128,7 +128,7 @@ function isValidCoordinate(coordinate) {
  */
 function isValidOfferType(type) {
   // Get list of valid offer types directly from Mongoose Schema
-  var validOfferTypes = Offer.schema.path('type').enumValues || [];
+  const validOfferTypes = Offer.schema.path('type').enumValues || [];
 
   return type && validOfferTypes.indexOf(type) > -1;
 }
@@ -155,13 +155,13 @@ function isValidUntil(validUntil) {
   validUntil = validUntil.endOf('day');
 
   // Maximum valid date
-  var maxDate = moment()
+  const maxDate = moment()
     .add(config.limits.maxOfferValidFromNow || { days: 30 })
     // Add one extra day just to accommodate oddities from timezones
     .endOf('day');
 
   // Minimum valid date
-  var minDate = moment().startOf('day');
+  const minDate = moment().startOf('day');
 
   // Validate range
   return validUntil.isSameOrAfter(minDate) && validUntil.isSameOrBefore(maxDate);
@@ -208,7 +208,7 @@ exports.create = function (req, res) {
 
   // Create new offer by filtering out what users can modify
   // When creating an offer, we allow type field
-  var offer = new Offer(_.pick(req.body, _.concat(allowedOfferFields, 'type')));
+  const offer = new Offer(_.pick(req.body, _.concat(allowedOfferFields, 'type')));
 
   offer.user = req.user._id;
 
@@ -280,10 +280,10 @@ exports.update = function (req, res) {
       }
 
       // Pick only fields user is allowed to modify
-      var offerModifications = _.pick(req.body, allowedOfferFields);
+      const offerModifications = _.pick(req.body, allowedOfferFields);
 
       // Extend offer in request (picked by `offerById` middleware earlier)
-      var offer = _.extend(req.offer, offerModifications);
+      const offer = _.extend(req.offer, offerModifications);
 
       // Update timestamp
       offer.updated = new Date();
@@ -360,12 +360,12 @@ exports.list = function (req, res) {
   }
 
   // Validate required bounding box query parameters
-  var coordinateKeys = ['southWestLat', 'southWestLng', 'northEastLat', 'northEastLng'];
-  var isCoordinatesValid = _.every(coordinateKeys, function (coordinateKey) {
+  const coordinateKeys = ['southWestLat', 'southWestLng', 'northEastLat', 'northEastLng'];
+  const isCoordinatesValid = _.every(coordinateKeys, function (coordinateKey) {
 
     // Get query string from query
     // If there is no query string (`req.query`), it is the empty object, `{}`.
-    var coordinate = _.get(req.query, coordinateKey, false);
+    let coordinate = _.get(req.query, coordinateKey, false);
 
     // Trim string coordinates
     // This is because when using `+` in front of a coordinate,
@@ -388,7 +388,7 @@ exports.list = function (req, res) {
   }
 
   // Parse filters
-  var filters = {};
+  let filters = {};
   if (req.query.filters) {
     filters = parseFiltersString(req.query.filters);
 
@@ -409,7 +409,7 @@ exports.list = function (req, res) {
   };
 
   // Basic query has always bounding box
-  var query = [{
+  const query = [{
     $match: {
       locationFuzzy: {
         $geoWithin: {
@@ -452,7 +452,7 @@ exports.list = function (req, res) {
 
     // Accept only valid values, ignore the rest
     // @link https://lodash.com/docs/#filter
-    var filterTypes = _.filter(filters.types, function (type) {
+    const filterTypes = _.filter(filters.types, function (type) {
       return isValidOfferType(type);
     });
 
@@ -498,14 +498,14 @@ exports.list = function (req, res) {
 
   // Languages filter
   if (filters.hasArrayFilter('languages')) {
-    var languages = require(path.resolve('./config/languages/languages.json'));
+    let languages = require(path.resolve('./config/languages/languages.json'));
 
     // Above json `languages` object contains language names, but we need just keys.
     languages = _.keys(languages);
 
     // Accept only valid language codes, ignore the rest
     // @link https://lodash.com/docs/#filter
-    var filterLanguages = _.filter(filters.languages, function (language) {
+    const filterLanguages = _.filter(filters.languages, function (language) {
       return _.indexOf(languages, language) > -1;
     });
 
@@ -523,9 +523,9 @@ exports.list = function (req, res) {
 
   // Tribes filter
   if (filters.hasArrayFilter('tribes')) {
-    var tribeQueries = [];
+    const tribeQueries = [];
 
-    var isTribeFilterValid = filters.tribes.every(function (tribeId) {
+    const isTribeFilterValid = filters.tribes.every(function (tribeId) {
       // Return failure if tribe id is invalid, otherwise add id to query array
       return mongoose.Types.ObjectId.isValid(tribeId) &&
              tribeQueries.push({
@@ -672,7 +672,7 @@ exports.offersByUserId = function (req, res, next, userId) {
   }
 
   // Database query
-  var query = {
+  const query = {
     user: userId,
     $or: [
       { validUntil: { $gte: new Date() } },
@@ -684,19 +684,19 @@ exports.offersByUserId = function (req, res, next, userId) {
   if (_.has(req.query, 'types')) {
 
     // Get list of valid offer types directly from Mongoose Schema
-    var validOfferTypes = Offer.schema.path('type').enumValues;
+    const validOfferTypes = Offer.schema.path('type').enumValues;
 
     // Ensure we have array of type(s)
     // 3rd parameter sets max limit for array length,
     // ensuring users can't send insanely long arrays for our queries
-    var queryTypes = _.split(req.query.types, ',', validOfferTypes.length);
+    const queryTypes = _.split(req.query.types, ',', validOfferTypes.length);
 
     queryTypes.forEach(function (paramType) {
       // Return failure if type is invalid, otherwise add type to query array
       if (paramType && validOfferTypes.indexOf(paramType) > -1) {
         // Returns array length if other types exist already in db query,
         // otherwise returns `0`
-        var i = (_.get(query, 'type.$in') || []).length;
+        const i = (_.get(query, 'type.$in') || []).length;
         // Add type to db query array
         // Results with `query`:
         // ```

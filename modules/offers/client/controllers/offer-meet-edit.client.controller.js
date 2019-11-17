@@ -7,7 +7,7 @@
   function OfferMeetEditController($state, $analytics, moment, leafletData, messageCenterService, offer, defaultLocation) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Expoxed to the view
     vm.leafletData = leafletData;
@@ -61,7 +61,7 @@
       offer.description = vm.offer.description;
       offer.location = [parseFloat(vm.mapCenter.lat), parseFloat(vm.mapCenter.lng)];
 
-      var offerId = offer._id || false;
+      const offerId = offer._id || false;
 
       offer.$update(function () {
         // Done!
@@ -79,7 +79,7 @@
           $state.go('offer.meet.list');
         }
       }, function (err) {
-        var errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
+        const errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
         messageCenterService.add('danger', errorMessage);
       }).finally(function () {
         vm.isLoading = false;

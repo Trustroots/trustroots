@@ -1,38 +1,38 @@
-var should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    async = require('async'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Offer = mongoose.model('Offer'),
-    Tribe = mongoose.model('Tribe'),
-    express = require(path.resolve('./config/lib/express'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const async = require('async');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Offer = mongoose.model('Offer');
+const Tribe = mongoose.model('Tribe');
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    credentials2,
-    user1,
-    user2,
-    user3,
-    user1Id,
-    user2Id,
-    user3Id,
-    offer1,
-    offer2,
-    offer2Id,
-    offer3,
-    offerMeet,
-    tribe1,
-    tribe2,
-    tribe1Id,
-    tribe2Id;
+let app;
+let agent;
+let credentials;
+let credentials2;
+let user1;
+let user2;
+let user3;
+let user1Id;
+let user2Id;
+let user3Id;
+let offer1;
+let offer2;
+let offer2Id;
+let offer3;
+let offerMeet;
+let tribe1;
+let tribe2;
+let tribe1Id;
+let tribe2Id;
 
-var testLocations = {
+const testLocations = {
   'Europe': {
     queryBoundingBox:
       '?northEastLat=55.31212135084999' +
@@ -558,7 +558,7 @@ describe('Offer CRUD tests', function () {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
-          var offerWithoutStatus = offer1;
+          const offerWithoutStatus = offer1;
           delete offerWithoutStatus.status;
 
           // Save a new offer
@@ -594,7 +594,7 @@ describe('Offer CRUD tests', function () {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
-          var offerWithoutType = offer1;
+          const offerWithoutType = offer1;
           delete offerWithoutType.type;
 
           // Save a new offer
@@ -619,7 +619,7 @@ describe('Offer CRUD tests', function () {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
-          var offerWithoutLocation = offer1;
+          const offerWithoutLocation = offer1;
           delete offerWithoutLocation.location;
 
           // Save a new offer
@@ -809,7 +809,7 @@ describe('Offer CRUD tests', function () {
                 offer.noOfferDescription = 'MODIFIED';
 
                 // Store this for later comparison
-                var previousUpdated = offer.updated;
+                const previousUpdated = offer.updated;
 
                 // Update offer
                 agent.put('/api/offers/' + offer._id)
@@ -889,7 +889,7 @@ describe('Offer CRUD tests', function () {
                 if (offerFindErr) return done(offerFindErr);
 
                 // Modify offer
-                var modifiedOffer = offer1;
+                const modifiedOffer = offer1;
                 modifiedOffer.type = 'meet';
 
                 // Update offer
@@ -917,9 +917,9 @@ describe('Offer CRUD tests', function () {
 
     it('should be able to update `validUntil` value to 31 days from now', function (done) {
 
-      var now = moment();
-      var fromNow1 = moment().add(2, 'days');
-      var fromNow2 = moment().add(31, 'days');
+      const now = moment();
+      const fromNow1 = moment().add(2, 'days');
+      const fromNow2 = moment().add(31, 'days');
 
       offerMeet.user = user1Id;
       offerMeet.validUntil = fromNow1.toDate();
@@ -962,7 +962,7 @@ describe('Offer CRUD tests', function () {
 
     it('should be keep `validUntil` value to previously saved when updating offer', function (done) {
 
-      var now = moment();
+      const now = moment();
 
       offerMeet.user = user1Id;
       offerMeet.validUntil = moment().add(2, 'days');
@@ -1003,9 +1003,9 @@ describe('Offer CRUD tests', function () {
 
     it('should default to 30 days from now when attempting to set `validUntil` value to over 30 days from now', function (done) {
 
-      var now = moment();
-      var fromNow1 = moment().add(2, 'days');
-      var fromNow2 = moment().add(32, 'days');
+      const now = moment();
+      const fromNow1 = moment().add(2, 'days');
+      const fromNow2 = moment().add(32, 'days');
 
       offerMeet.user = user1Id;
       offerMeet.validUntil = fromNow1.toDate();
@@ -1049,9 +1049,9 @@ describe('Offer CRUD tests', function () {
 
     it('should default to 30 days from now when attempting to set `validUntil` value to past', function (done) {
 
-      var now = moment();
-      var fromNow1 = moment().add(2, 'days');
-      var fromNow2 = moment().subtract(1, 'days');
+      const now = moment();
+      const fromNow1 = moment().add(2, 'days');
+      const fromNow2 = moment().subtract(1, 'days');
 
       offerMeet.user = user1Id;
       offerMeet.validUntil = fromNow1.toDate();

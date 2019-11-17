@@ -1,8 +1,8 @@
-const path = require('path'),
-      mongoose = require('mongoose'),
-      moment = require('moment'),
-      config = require(path.resolve('./config/config')),
-      Reference = mongoose.model('Reference');
+const path = require('path');
+const mongoose = require('mongoose');
+const moment = require('moment');
+const config = require(path.resolve('./config/config'));
+const Reference = mongoose.model('Reference');
 
 /**
  * Find all references that are older than timeToReply Reference and non-public.

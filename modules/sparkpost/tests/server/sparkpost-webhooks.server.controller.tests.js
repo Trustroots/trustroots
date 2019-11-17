@@ -1,13 +1,13 @@
 // test whether the daily statistics job reaches influxdb and stathat via Stats api
 
-var should = require('should'),
-    path = require('path'),
-    influx = require('influx'),
-    stathat = require('stathat'),
-    sinon = require('sinon'),
-    _ = require('lodash'),
-    config = require(path.resolve('./config/config')),
-    sparkpostWebhooks = require(path.resolve('./modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller'));
+const should = require('should');
+const path = require('path');
+const influx = require('influx');
+const stathat = require('stathat');
+const sinon = require('sinon');
+const _ = require('lodash');
+const config = require(path.resolve('./config/config'));
+const sparkpostWebhooks = require(path.resolve('./modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller'));
 
 describe('Sparkpost Webhooks - Integration Test', function () {
 
@@ -42,7 +42,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     stathat.trackEZCountWithTime.callsArgWithAsync(4, 200, null);
   });
 
-  var testEvent = {
+  const testEvent = {
     msys: {
       message_event: {
         type: 'click',
@@ -72,10 +72,10 @@ describe('Sparkpost Webhooks - Integration Test', function () {
           // test influx endpoint
           sinon.assert.callCount(influx.InfluxDB.prototype.writeMeasurement, 1);
 
-          var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-          var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+          const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+          const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
           should(points.length).eql(1);
-          var point = points[0];
+          const point = points[0];
 
           should(measurement).eql('transactionalEmailEvent');
           should(point).have.propertyByPath('fields', 'count').eql(1);
@@ -114,11 +114,11 @@ describe('Sparkpost Webhooks - Integration Test', function () {
           // test stathat endpoint
           sinon.assert.callCount(stathat.trackEZCountWithTime, 3);
 
-          var calledWith = _.map(_.range(3), function (n) {
+          const calledWith = _.map(_.range(3), function (n) {
             return stathat.trackEZCountWithTime.getCall(n).args;
           });
 
-          var groupedArgs = _.zip.apply(this, calledWith);
+          const groupedArgs = _.zip.apply(this, calledWith);
 
           // the 2nd argument to the endpoint should be the name
           _.forEach([

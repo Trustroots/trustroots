@@ -12,7 +12,7 @@
     }
 
     // ViewModel
-    var vm = this;
+    const vm = this;
     vm.profile = profile;
     vm.contact = contact;
     vm.contacts = contacts;
@@ -74,7 +74,7 @@
      * @link https://github.com/Trustroots/trustroots/issues/308
      */
     function isWarmshowersId() {
-      var x;
+      let x;
       return isNaN(vm.profile.extSitesWS) ? !1 : (x = parseFloat(vm.profile.extSitesWS), (0 | x) === x);
     }
 

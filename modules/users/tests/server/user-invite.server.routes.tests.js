@@ -1,20 +1,20 @@
-var request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
-    express = require(path.resolve('./config/lib/express'));
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service'));
+const express = require(path.resolve('./config/lib/express'));
 
 require('should');
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    user,
-    _user;
+let app;
+let agent;
+let credentials;
+let user;
+let _user;
 
 /**
  * User routes tests
@@ -75,7 +75,7 @@ describe('User invites CRUD tests', function () {
             }
 
             // Get code from the service
-            var code = inviteCodeService.getCode();
+            const code = inviteCodeService.getCode();
 
             // Service code should match to the one received via route
             userInviteCodeRes.body.code.should.equal(code);
@@ -104,7 +104,7 @@ describe('User invites CRUD tests', function () {
 
   it('should be able to validate invite code when not authenticated', function (done) {
 
-    var code = inviteCodeService.getCode();
+    const code = inviteCodeService.getCode();
 
     agent.post('/api/users/invitecode/' + code)
       .expect(200)
@@ -123,7 +123,7 @@ describe('User invites CRUD tests', function () {
 
   it('should be able to validate invite code in all caps', function (done) {
 
-    var code = inviteCodeService.getCode();
+    const code = inviteCodeService.getCode();
 
     agent.post('/api/users/invitecode/' + code.toUpperCase())
       .expect(200)
@@ -159,7 +159,7 @@ describe('User invites CRUD tests', function () {
 
   it('should be able to validate invite code from predefined list', function (done) {
 
-    var code = 'trustroots'; // Defined at `./configs/env/default.js`
+    const code = 'trustroots'; // Defined at `./configs/env/default.js`
 
     agent.post('/api/users/invitecode/' + code)
       .expect(200)

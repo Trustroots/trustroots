@@ -1,21 +1,21 @@
 (function () {
   describe('ContactRemoveController', function () {
     // Initialize global variables
-    var $templateCache,
-        $httpBackend,
-        Authentication,
-        $rootScope,
-        $scope,
-        $uibModalInstance,
-        messageCenterService,
-        ContactRemoveController;
+    let $templateCache;
+    let $httpBackend;
+    let Authentication;
+    let $rootScope;
+    let $scope;
+    let $uibModalInstance;
+    let messageCenterService;
+    let ContactRemoveController;
 
-    var user1 = {
+    const user1 = {
       _id: 'user1',
       displayName: 'User One'
     };
 
-    var contactToRemove = {
+    const contactToRemove = {
       _id: 'contact1'
     };
 

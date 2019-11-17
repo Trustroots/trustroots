@@ -6,7 +6,7 @@
 
   /* @ngInject */
   function OffersService($resource) {
-    var Offer = $resource('/api/offers/:offerId', {
+    const Offer = $resource('/api/offers/:offerId', {
       offerId: '@_id'
     }, {
       get: {
@@ -26,7 +26,7 @@
 
     angular.extend(Offer.prototype, {
       createOrUpdate: function () {
-        var offer = this;
+        const offer = this;
         return createOrUpdate(offer);
       }
     });

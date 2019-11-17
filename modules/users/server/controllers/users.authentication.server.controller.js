@@ -1,22 +1,22 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service')),
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    facebook = require(path.resolve('./config/lib/facebook-api.js')),
-    config = require(path.resolve('./config/config')),
-    log = require(path.resolve('./config/lib/logger')),
-    moment = require('moment'),
-    passport = require('passport'),
-    async = require('async'),
-    crypto = require('crypto'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service'));
+const statService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const facebook = require(path.resolve('./config/lib/facebook-api.js'));
+const config = require(path.resolve('./config/config'));
+const log = require(path.resolve('./config/lib/logger'));
+const moment = require('moment');
+const passport = require('passport');
+const async = require('async');
+const crypto = require('crypto');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
 
 /**
  * Signup
@@ -37,7 +37,7 @@ exports.signup = function (req, res) {
     // Generate random token
     function (done) {
       crypto.randomBytes(20, function (err, buffer) {
-        var salt = buffer;
+        const salt = buffer;
         done(err, salt);
       });
     },
@@ -53,7 +53,7 @@ exports.signup = function (req, res) {
       delete req.body.created;
       delete req.body.updated;
 
-      var user = new User(req.body);
+      const user = new User(req.body);
 
       // Add missing user fields
       user.public = false;
@@ -100,7 +100,7 @@ exports.signup = function (req, res) {
 
   ], function (err, user) {
 
-    var statsObject = {
+    const statsObject = {
       namespace: 'signup',
       counts: {
         count: 1
@@ -144,7 +144,7 @@ exports.signup = function (req, res) {
  */
 exports.signupValidation = function (req, res) {
 
-  var username = String(req.body.username || '').toLowerCase();
+  const username = String(req.body.username || '').toLowerCase();
 
   async.waterfall([
 
@@ -185,7 +185,7 @@ exports.signupValidation = function (req, res) {
 
   ], function (err, errorCode) {
 
-    var statsObject = {
+    const statsObject = {
       namespace: 'signup-validation',
       counts: {
         count: 1
@@ -230,7 +230,7 @@ exports.signupValidation = function (req, res) {
  */
 exports.signin = function (req, res, next) {
 
-  var statsObject = {
+  const statsObject = {
     namespace: 'signin',
     counts: {
       count: 1
@@ -325,7 +325,7 @@ exports.signout = function (req, res) {
 exports.oauthCallback = function (strategy) {
   return function (req, res, next) {
 
-    var defaultRedirectUrl = '/profile/edit/networks';
+    const defaultRedirectUrl = '/profile/edit/networks';
 
     passport.authenticate(strategy, function (err, user, redirectURL) {
       if (err) {
@@ -368,7 +368,7 @@ exports.saveOAuthUserProfile = function (req, providerUserProfile, done) {
     return done(new Error('You must be logged in to connect to other networks.'), null);
   } else {
     // User is already logged in, join the provider data to the existing user
-    var user = req.user;
+    const user = req.user;
 
     // Check if user exists, is not signed in using this provider, and doesn't have that provider data already configured
     if (user.provider !== providerUserProfile.provider && (!user.additionalProvidersData || !user.additionalProvidersData[providerUserProfile.provider])) {
@@ -408,8 +408,8 @@ exports.removeOAuthProvider = function (req, res) {
     });
   }
 
-  var user = req.user;
-  var provider = req.params.provider;
+  let user = req.user;
+  const provider = req.params.provider;
 
   if (user && provider) {
     // Delete the additional provider
@@ -462,7 +462,7 @@ exports.updateFacebookOAuthToken = function (req, res) {
 
   // Shorthand for user and avoid need to access `req.user._doc`:
   // http://stackoverflow.com/a/34780800/1984644
-  var userObject = req.user.toObject();
+  const userObject = req.user.toObject();
 
   // Currently authenticated user isn't connected to Facebook
   if (!_.has(userObject, 'additionalProvidersData.facebook')) {
@@ -497,7 +497,7 @@ exports.updateFacebookOAuthToken = function (req, res) {
     function (accessTokenResponse, done) {
 
       // We can't use above `userObject` to perform Mongoose's `markModified` or `save` methods
-      var user = req.user;
+      const user = req.user;
 
       if (accessTokenResponse.expires) {
         // Update token's expiration date if available
@@ -547,8 +547,8 @@ exports.updateFacebookOAuthToken = function (req, res) {
  */
 exports.extendFBAccessToken = function (shortAccessToken, callback) {
 
-  var fbClientID = _.get(config, 'facebook.clientID');
-  var fbClientSecret = _.get(config, 'facebook.clientSecret');
+  const fbClientID = _.get(config, 'facebook.clientID');
+  const fbClientSecret = _.get(config, 'facebook.clientSecret');
 
   // Return error if no short-lived access token provided
   if (!shortAccessToken || !_.isString(shortAccessToken)) {
@@ -574,8 +574,8 @@ exports.extendFBAccessToken = function (shortAccessToken, callback) {
       return callback(err);
     }
 
-    var accessToken = _.get(accessTokenResponse, 'access_token');
-    var accessTokenExpires = _.get(accessTokenResponse, 'expires_in');
+    const accessToken = _.get(accessTokenResponse, 'access_token');
+    const accessTokenExpires = _.get(accessTokenResponse, 'expires_in');
 
     // Response from FB doesn't include access token
     if (!accessToken) {
@@ -586,7 +586,7 @@ exports.extendFBAccessToken = function (shortAccessToken, callback) {
     }
 
     // Callback's response object
-    var response = {
+    const response = {
       token: accessToken
     };
 
@@ -630,7 +630,7 @@ exports.confirmEmail = function (req, res) {
         if (!err && user) {
 
           // Will be the returned object when no errors
-          var result = {};
+          const result = {};
 
           // If users profile was hidden, it means it was first confirmation email after registration.
           result.profileMadePublic = !user.public;
@@ -728,7 +728,7 @@ exports.resendConfirmation = function (req, res) {
     });
   }
 
-  var isEmailChange = !!req.user.public;
+  const isEmailChange = !!req.user.public;
 
   async.waterfall([
 
@@ -742,7 +742,7 @@ exports.resendConfirmation = function (req, res) {
 
     // Save token
     function (salt, done) {
-      var user = req.user;
+      const user = req.user;
       user.updated = Date.now();
       user.emailToken = authenticationService.generateEmailToken(user, salt);
       user.save(function (err) {

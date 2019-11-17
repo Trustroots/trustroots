@@ -1,27 +1,27 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    should = require('should'),
-    testutils = require(path.resolve('./testutils/server.testutil')),
-    config = require(path.resolve('./config/config')),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Offer = mongoose.model('Offer');
+const path = require('path');
+const should = require('should');
+const testutils = require(path.resolve('./testutils/server.testutil'));
+const config = require(path.resolve('./config/config'));
+const moment = require('moment');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Offer = mongoose.model('Offer');
 
 /**
  * Globals
  */
-var user,
-    _user,
-    offerHost,
-    _offerHost,
-    reactivateHostsJobHandler;
+let user;
+let _user;
+let offerHost;
+let _offerHost;
+let reactivateHostsJobHandler;
 
 describe('Job: reactivate members with hosting offer status set to "no"', function () {
 
-  var jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs();
 
   before(function () {
     reactivateHostsJobHandler = require(path.resolve('./modules/offers/server/jobs/reactivate-hosts.server.job'));
@@ -166,7 +166,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
   });
 
   it('Do not send reactivation email for non-hosting offers', function (done) {
-    var _offerMeet = {
+    const _offerMeet = {
       type: 'meet',
       user: user._id,
       updated: moment().subtract(moment.duration(config.limits.timeToReactivateHosts)),
@@ -174,7 +174,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       locationFuzzy: [52.50155039101136, 13.42255019882177]
     };
 
-    var offerMeet = new Offer(_offerMeet);
+    const offerMeet = new Offer(_offerMeet);
 
     // Save meet offer to db
     offerMeet.save(function (err) {

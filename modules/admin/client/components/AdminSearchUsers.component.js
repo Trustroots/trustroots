@@ -146,7 +146,7 @@ export default class AdminSearchUsers extends Component {
         </div>
       </>
     );
-  };
+  }
 }
 
 AdminSearchUsers.propTypes = {};

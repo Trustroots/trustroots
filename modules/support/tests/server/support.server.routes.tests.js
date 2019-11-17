@@ -1,18 +1,18 @@
-var should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    express = require(path.resolve('./config/lib/express'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    user,
-    supportMessage;
+let app;
+let agent;
+let credentials;
+let user;
+let supportMessage;
 
 /**
  * Support routes tests

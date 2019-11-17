@@ -9,15 +9,15 @@
 /**
  * Module dependencies.
  */
-var async = require('async'),
-    path = require('path'),
-    statsService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    statistics = require(path.resolve('./modules/statistics/server/controllers/statistics.server.controller')),
-    log = require(path.resolve('./config/lib/logger'));
+const async = require('async');
+const path = require('path');
+const statsService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const statistics = require(path.resolve('./modules/statistics/server/controllers/statistics.server.controller'));
+const log = require(path.resolve('./config/lib/logger'));
 
 module.exports = function (job, agendaDone) {
 
-  var totalUserCount;
+  let totalUserCount;
 
   async.waterfall([
 
@@ -135,7 +135,7 @@ module.exports = function (job, agendaDone) {
 
     // Connected to networks counters
     function (done) {
-      var networks = [
+      const networks = [
         'couchsurfing',
         'warmshowers',
         'bewelcome',

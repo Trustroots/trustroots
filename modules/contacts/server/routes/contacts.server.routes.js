@@ -1,8 +1,8 @@
 /**
  * Module dependencies.
  */
-var contactsPolicy = require('../policies/contacts.server.policy'),
-    contacts = require('../controllers/contacts.server.controller');
+const contactsPolicy = require('../policies/contacts.server.policy');
+const contacts = require('../controllers/contacts.server.controller');
 
 module.exports = function (app) {
 

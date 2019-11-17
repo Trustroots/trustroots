@@ -1,20 +1,20 @@
-var _ = require('lodash'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    express = require(path.resolve('./config/lib/express')),
-    config = require(path.resolve('./config/config'));
+const _ = require('lodash');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const express = require(path.resolve('./config/lib/express'));
+const config = require(path.resolve('./config/config'));
 
 /**
  * Globals
  */
-var app,
-    agent;
+let app;
+let agent;
 
 // Demo CSP Violation report
 // Doesn't matter what's in here,
 // but this is how they generally look:
-var cspViolationReport = {
+const cspViolationReport = {
   'csp-report': {
     'document-uri': 'https://trustroots.org/foo/bar',
     'referrer': 'https://www.google.com/',
@@ -106,10 +106,10 @@ describe('Core CRUD tests', function () {
       agent.get('/')
         .expect(function (res) {
 
-          var header = _.get(res, 'headers.expect-ct');
+          const header = _.get(res, 'headers.expect-ct');
 
           // Build full URI
-          var uri = (config.https === true ? 'https' : 'http') +
+          const uri = (config.https === true ? 'https' : 'http') +
             '://' +
             config.domain +
             '/api/report-expect-ct-violation';
@@ -135,7 +135,7 @@ describe('Core CRUD tests', function () {
     it('Responses should not have Expect-CT header with "enforce" value', function (done) {
       agent.get('/')
         .expect(function (res) {
-          var header = _.get(res, 'headers.expect-ct');
+          const header = _.get(res, 'headers.expect-ct');
 
           if (!header || _.includes(header, 'enforce;')) {
             throw new Error('Found "enforce" value');

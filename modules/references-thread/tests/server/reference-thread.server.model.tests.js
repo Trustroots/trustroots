@@ -1,21 +1,21 @@
 /**
  * Module dependencies.
  */
-var should = require('should'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Thread = mongoose.model('Thread'),
-    Message = mongoose.model('Message'),
-    ReferenceThread = mongoose.model('ReferenceThread');
+const should = require('should');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Thread = mongoose.model('Thread');
+const Message = mongoose.model('Message');
+const ReferenceThread = mongoose.model('ReferenceThread');
 
 /**
  * Globals
  */
-var user1,
-    user2,
-    message,
-    thread,
-    referenceThread;
+let user1;
+let user2;
+let message;
+let thread;
+let referenceThread;
 
 /**
  * Unit tests

@@ -6,7 +6,7 @@
 
   /* @ngInject */
   function Authentication($window) {
-    var auth = {
+    const auth = {
       user: $window.user || null
     };
     return auth;

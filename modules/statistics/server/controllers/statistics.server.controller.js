@@ -1,16 +1,16 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    moment = require('moment'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    async = require('async'),
-    semver = require('semver'),
-    mongoose = require('mongoose'),
-    Offer = mongoose.model('Offer'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const moment = require('moment');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const statService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const async = require('async');
+const semver = require('semver');
+const mongoose = require('mongoose');
+const Offer = mongoose.model('Offer');
+const User = mongoose.model('User');
 
 /**
  * Get count of all public users
@@ -28,7 +28,7 @@ exports.getUsersCount = function (callback) {
  * Get count of all public users
  */
 exports.getExternalSiteCount = function (site, callback) {
-  var validSites = ['bewelcome', 'couchsurfing', 'warmshowers', 'facebook', 'twitter', 'github'];
+  const validSites = ['bewelcome', 'couchsurfing', 'warmshowers', 'facebook', 'twitter', 'github'];
 
   // Validate site
   if (!site || validSites.indexOf(site) === -1) {
@@ -36,7 +36,7 @@ exports.getExternalSiteCount = function (site, callback) {
   }
 
   // Build the query
-  var query = { public: true };
+  const query = { public: true };
 
   switch (site) {
     case 'bewelcome':
@@ -126,7 +126,7 @@ exports.getHostOffersCount = function (callback) {
     //     count: number // amount of 'no' offers
     //   }
     // ]
-    var values = {
+    const values = {
       yes: 0,
       maybe: 0,
       no: 0
@@ -183,7 +183,7 @@ exports.getPushRegistrationCount = function (callback) {
  * Generate statistics based on the user last seen attribute
  */
 exports.getLastSeenStatistic = function (since, callback) {
-  var query = {
+  const query = {
     seen: {
       '$gte': moment().subtract(since).toDate()
     }
@@ -334,11 +334,11 @@ exports.getPublicStatistics = function (req, res) {
  * ```
  */
 exports.collectStatistics = function (req, res) {
-  var collection = String(_.get(req, 'body.collection', ''));
+  const collection = String(_.get(req, 'body.collection', ''));
 
-  var validCollections = ['mobileAppInit'];
+  const validCollections = ['mobileAppInit'];
 
-  var updateMsg = 'You should update Trustroots app or otherwise it will not continue functioning.';
+  const updateMsg = 'You should update Trustroots app or otherwise it will not continue functioning.';
 
   if (!_.has(req, 'body.stats') || !_.isObject(req.body.stats)) {
     res
@@ -360,11 +360,11 @@ exports.collectStatistics = function (req, res) {
 
   if (collection === 'mobileAppInit') {
 
-    var appVersion = String(_.get(req, 'body.stats.version', 'unknown'));
-    var needsUpdate = semver.satisfies(appVersion, '< 1.0.0');
+    const appVersion = String(_.get(req, 'body.stats.version', 'unknown'));
+    const needsUpdate = semver.satisfies(appVersion, '< 1.0.0');
 
     // Object for statistics
-    var stats = {
+    const stats = {
       namespace: 'mobileAppInit',
       counts: {
         count: 1

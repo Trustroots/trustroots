@@ -113,7 +113,7 @@ export default class AdminMessages extends Component {
         </div>
       </>
     );
-  };
+  }
 }
 
 AdminMessages.propTypes = {};

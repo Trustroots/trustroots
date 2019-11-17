@@ -1,12 +1,12 @@
-const _ = require('lodash'),
-      mongoose = require('mongoose'),
-      path = require('path'),
-      request = require('supertest'),
-      should = require('should'),
-      sinon = require('sinon'),
-      utils = require(path.resolve('./testutils/data.server.testutils')),
-      userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-      express = require(path.resolve('./config/lib/express'));
+const _ = require('lodash');
+const mongoose = require('mongoose');
+const path = require('path');
+const request = require('supertest');
+const should = require('should');
+const sinon = require('sinon');
+const utils = require(path.resolve('./testutils/data.server.testutils'));
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const express = require(path.resolve('./config/lib/express'));
 
 describe('Read a single reference by reference id', () => {
   // GET /references/:referenceId
@@ -20,8 +20,8 @@ describe('Read a single reference by reference id', () => {
   const _usersPrivate = utils.generateUsers(1, { public: false, username: 'private', email: 'non@example.com' });
   const _users = [..._usersPublic, ..._usersPrivate];
 
-  let users,
-      references;
+  let users;
+  let references;
 
   beforeEach(() => {
     sinon.useFakeTimers({ now: new Date('2019-01-13 13:21:55.1'), toFake: ['Date'] });

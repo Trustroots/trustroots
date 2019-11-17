@@ -1,17 +1,17 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    profileHandler = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    log = require(path.resolve('./config/lib/logger')),
-    async = require('async'),
-    crypto = require('crypto'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User');
+const path = require('path');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller'));
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const profileHandler = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const statService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const log = require(path.resolve('./config/lib/logger'));
+const async = require('async');
+const crypto = require('crypto');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
 
 /**
  * Forgot for reset password (forgot POST)
@@ -22,7 +22,7 @@ exports.forgot = function (req, res, next) {
     // Generate random token
     function (done) {
       crypto.randomBytes(20, function (err, buffer) {
-        var token = buffer.toString('hex');
+        const token = buffer.toString('hex');
         done(err, token);
       });
     },
@@ -37,7 +37,7 @@ exports.forgot = function (req, res, next) {
         });
       }
 
-      var userHandle = req.body.username.toString().toLowerCase();
+      const userHandle = req.body.username.toString().toLowerCase();
 
       User.findOne({
         $or: [
@@ -126,7 +126,7 @@ exports.validateResetToken = function (req, res) {
       return res.redirect('/password/reset/invalid');
     }
 
-    var passwordResetUrl = '/password/reset/' + req.params.token;
+    let passwordResetUrl = '/password/reset/' + req.params.token;
 
     // Re-apply possible UTM variables to the redirect URL
     if (req.query && req.query.utm_source && req.query.utm_medium && req.query.utm_campaign) {
@@ -146,7 +146,7 @@ exports.validateResetToken = function (req, res) {
  */
 exports.reset = function (req, res) {
   // Init Variables
-  var passwordDetails = req.body;
+  const passwordDetails = req.body;
 
   async.waterfall([
 

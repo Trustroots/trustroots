@@ -1,21 +1,21 @@
-var request = require('supertest'),
-    path = require('path'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    should = require('should'),
-    sinon = require('sinon'),
-    User = mongoose.model('User'),
-    config = require(path.resolve('./config/config')),
-    express = require(path.resolve('./config/lib/express'));
+const request = require('supertest');
+const path = require('path');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const should = require('should');
+const sinon = require('sinon');
+const User = mongoose.model('User');
+const config = require(path.resolve('./config/config'));
+const express = require(path.resolve('./config/lib/express'));
 
 describe('User last seen CRUD tests', function () {
   /**
    * Globals
    */
-  var app,
-      agent,
-      _confirmedUser,
-      confirmedUser;
+  let app;
+  let agent;
+  let _confirmedUser;
+  let confirmedUser;
 
 
   before(function (done) {
@@ -62,7 +62,7 @@ describe('User last seen CRUD tests', function () {
   context('logged in', function () {
     // Sign in
     beforeEach(function (done) {
-      var credentials = { username: _confirmedUser.username, password: _confirmedUser.password };
+      const credentials = { username: _confirmedUser.username, password: _confirmedUser.password };
 
       agent.post('/api/auth/signin')
         .send(credentials)
@@ -106,16 +106,16 @@ describe('User last seen CRUD tests', function () {
 
     it('should update the last seen date only if a specific time passed since the last update', function (done) {
       // the user's username, shortcut
-      var username = _confirmedUser.username;
+      const username = _confirmedUser.username;
 
       // how long should we wait between updates on minimum
-      var minutesToUpdate = { minutes: 1 }; // 1 minute
+      const minutesToUpdate = { minutes: 1 }; // 1 minute
 
       sinon.stub(config.limits, 'timeToUpdateLastSeenUser').value(minutesToUpdate);
 
-      var timeToUpdate = moment.duration(minutesToUpdate).asMilliseconds();
+      const timeToUpdate = moment.duration(minutesToUpdate).asMilliseconds();
 
-      var originalTime = new Date();
+      const originalTime = new Date();
       // update for the first time, OK
       agent.get('/api/messages')
         .expect(200)

@@ -10,14 +10,14 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    config = require(path.resolve('./config/config')),
-    async = require('async'),
-    moment = require('moment'),
-    log = require(path.resolve('./config/lib/logger')),
-    mongoose = require('mongoose'),
-    Offer = mongoose.model('Offer');
+const path = require('path');
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const config = require(path.resolve('./config/config'));
+const async = require('async');
+const moment = require('moment');
+const log = require(path.resolve('./config/lib/logger'));
+const mongoose = require('mongoose');
+const Offer = mongoose.model('Offer');
 
 module.exports = function (job, agendaDone) {
   async.waterfall([
@@ -27,7 +27,7 @@ module.exports = function (job, agendaDone) {
 
       // Ignore only offers modified within past X days
       // Has to be a JS Date object, not a Moment object
-      var updatedTimeAgo = moment().subtract(moment.duration(config.limits.timeToReactivateHosts)).toDate();
+      const updatedTimeAgo = moment().subtract(moment.duration(config.limits.timeToReactivateHosts)).toDate();
 
       Offer
         .find({

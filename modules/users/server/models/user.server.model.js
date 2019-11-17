@@ -1,52 +1,52 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    languages = require(path.resolve('./config/languages/languages.json')),
-    authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service')),
-    crypto = require('crypto'),
-    mongoose = require('mongoose'),
-    uniqueValidation = require('mongoose-beautiful-unique-validation'),
-    validator = require('validator'),
-    Schema = mongoose.Schema;
+const _ = require('lodash');
+const path = require('path');
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const languages = require(path.resolve('./config/languages/languages.json'));
+const authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service'));
+const crypto = require('crypto');
+const mongoose = require('mongoose');
+const uniqueValidation = require('mongoose-beautiful-unique-validation');
+const validator = require('validator');
+const Schema = mongoose.Schema;
 
-var passwordMinLength = 8;
+const passwordMinLength = 8;
 
 /**
  * A Validation function for local strategy properties
  */
-var validateLocalStrategyProperty = function (property) {
+const validateLocalStrategyProperty = function (property) {
   return ((this.provider !== 'local' && !this.updated) || property.length);
 };
 
 /**
  * A Validation function for local strategy email
  */
-var validateLocalStrategyEmail = function (email) {
+const validateLocalStrategyEmail = function (email) {
   return ((this.provider !== 'local' && !this.updated) || validator.isEmail(email));
 };
 
 /**
  * A Validation function for password
  */
-var validatePassword = function (password) {
+const validatePassword = function (password) {
   return password && validator.isLength(password, passwordMinLength);
 };
 
 /**
  * A Validation function for username
  */
-var validateUsername = function (username) {
+const validateUsername = function (username) {
   return this.provider !== 'local' || authenticationService.validateUsername(username);
 };
 
-var setPlainTextField = function (value) {
+const setPlainTextField = function (value) {
   return textService.plainText(value, true);
 };
 
-var setPlainTextFieldAndLimit = function (limit) {
+const setPlainTextFieldAndLimit = function (limit) {
   return function (value) {
     return setPlainTextField(value).substring(0, limit);
   };
@@ -57,7 +57,7 @@ var setPlainTextFieldAndLimit = function (limit) {
  * This could be defined directly under `UserSchema` as well,
  * but then we'd have extra `_id`'s hanging around.
  */
-var UserMemberSchema = new Schema({
+const UserMemberSchema = new Schema({
   tribe: {
     type: Schema.Types.ObjectId,
     ref: 'Tribe',
@@ -73,7 +73,7 @@ var UserMemberSchema = new Schema({
 /**
  * SubSchema for `User` schema's `pushRegistration` array
  */
-var UserPushRegistrationSchema = new Schema({
+const UserPushRegistrationSchema = new Schema({
   platform: {
     type: String,
     // android, ios, web → Firebase; expo → Exponent
@@ -98,7 +98,7 @@ var UserPushRegistrationSchema = new Schema({
 /**
  * User Schema
  */
-var UserSchema = new Schema({
+const UserSchema = new Schema({
   firstName: {
     type: String,
     required: true,

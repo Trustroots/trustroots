@@ -11,12 +11,12 @@
   /* @ngInject */
   function PollMessagesCountFactory($interval, $rootScope, MessagesCount, Authentication) {
 
-    var highFrequency = 2 * 60 * 1000, // once every 2 minutes
-        lowFrequency = 5 * 60 * 1000, // once every 5 minutes
-        frequency = highFrequency,
-        isPolling = false,
-        unreadCount = 0,
-        pollingInterval;
+    const highFrequency = 2 * 60 * 1000; // once every 2 minutes
+    const lowFrequency = 5 * 60 * 1000; // once every 5 minutes
+    let frequency = highFrequency;
+    let isPolling = false;
+    let unreadCount = 0;
+    let pollingInterval;
 
     // Return the public API
     return {
@@ -66,7 +66,7 @@
       MessagesCount.get(function (data) {
         isPolling = false;
 
-        var newUnreadCount = (data && data.unread) ? parseInt(data.unread, 10) : 0;
+        const newUnreadCount = (data && data.unread) ? parseInt(data.unread, 10) : 0;
 
         if (unreadCount !== newUnreadCount) {
           unreadCount = newUnreadCount;
@@ -86,7 +86,7 @@
      * Set the frequency
      */
     function setFrequency(frequencyString) {
-      var newFrequency = (frequencyString === 'low') ? lowFrequency : highFrequency;
+      const newFrequency = (frequencyString === 'low') ? lowFrequency : highFrequency;
 
       if (newFrequency !== frequency) {
         frequency = newFrequency;

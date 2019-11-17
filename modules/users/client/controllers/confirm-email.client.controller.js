@@ -8,8 +8,8 @@
     if (token.length <= 40) {
       return null;
     }
-    var str = '';
-    for (var i = 40; i < token.length; i += 2) {
+    let str = '';
+    for (let i = 40; i < token.length; i += 2) {
       str += String.fromCharCode(parseInt(token.substr(i, 2), 16));
     }
     return str;
@@ -19,7 +19,7 @@
   function ConfirmEmailController($rootScope, $http, $state, $stateParams, Authentication) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.confirmEmail = confirmEmail;

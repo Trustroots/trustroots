@@ -6,7 +6,7 @@
 
     describe('Route Config', function () {
       describe('Main Route (support)', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/support/views/support.client.view.html', '');
@@ -28,7 +28,7 @@
       });
 
       describe('Alternative Route (contact)', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/support/views/support.client.view.html', '');

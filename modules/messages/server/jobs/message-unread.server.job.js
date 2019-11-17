@@ -28,28 +28,28 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service')),
-    pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    log = require(path.resolve('./config/lib/logger')),
-    config = require(path.resolve('./config/config')),
-    async = require('async'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    Message = mongoose.model('Message'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service'));
+const pushService = require(path.resolve('./modules/core/server/services/push.server.service'));
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const log = require(path.resolve('./config/lib/logger'));
+const config = require(path.resolve('./config/config'));
+const async = require('async');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const Message = mongoose.model('Message');
+const User = mongoose.model('User');
 
 module.exports = function (job, agendaDone) {
 
   // read timing of notifications from config
   // we expect an array of momentjs objects
   // i.e. [{ minutes: 10 }, { hours: 24 }]
-  var remindersConfig = config.limits.unreadMessageReminders;
+  const remindersConfig = config.limits.unreadMessageReminders;
 
   // sort the config from the earliest to the latest
-  var sortedConfig = _.sortBy(remindersConfig, function (timeSinceMessage) {
+  const sortedConfig = _.sortBy(remindersConfig, function (timeSinceMessage) {
     return moment.duration(timeSinceMessage).asMilliseconds();
   });
 
@@ -65,7 +65,7 @@ module.exports = function (job, agendaDone) {
    * hopefully there is not much harm in sending just one reminder in total
    * this case shouldn't happen too often
    */
-  var remappedConfig = _.reverse(_.map(sortedConfig, function (value, index) {
+  const remappedConfig = _.reverse(_.map(sortedConfig, function (value, index) {
     // remapped config for nth notifications, more comfortable for further use
     return {
       order: index, // nth notification
@@ -88,8 +88,8 @@ module.exports = function (job, agendaDone) {
  */
 function sendUnreadMessageReminders(reminder, callback) {
 
-  var timePassed = reminder.timing;
-  var reminderOrder = reminder.order;
+  const timePassed = reminder.timing;
+  const reminderOrder = reminder.order;
 
   async.waterfall([
 
@@ -98,7 +98,7 @@ function sendUnreadMessageReminders(reminder, callback) {
 
       // We want to remind user about messages, which remain unread for more than `timePassed`
       // Has to be a JS Date object, not a Moment object
-      var createdTimeAgo = moment().subtract(moment.duration(timePassed)).toDate();
+      const createdTimeAgo = moment().subtract(moment.duration(timePassed)).toDate();
 
       // Find all the unread messages which fit the reminder config requirements
       Message.aggregate([
@@ -151,7 +151,7 @@ function sendUnreadMessageReminders(reminder, callback) {
 
       // we pick only notifications which already have count > 0
       // the first ones we want to send for sure, so we keep `notification.dontSend` undefined
-      var furtherNotifications = _.filter(notifications, function (notification) {
+      const furtherNotifications = _.filter(notifications, function (notification) {
         return notification.notificationCount > 0;
       });
 
@@ -163,16 +163,16 @@ function sendUnreadMessageReminders(reminder, callback) {
           userTo: notification._id.userFrom
         }, function (err, count) {
 
-          var isThreadReplied = count > 0;
+          const isThreadReplied = count > 0;
 
           // find out whether it is too late to send the further notification
           // we just wrap it to function for clearer organisation
-          var isTooLate = (function () {
-            var lastMessage = _.maxBy(notification.messages, function (msg) {
+          const isTooLate = (function () {
+            const lastMessage = _.maxBy(notification.messages, function (msg) {
               return msg.created;
             });
-            var tooLate = config.limits.unreadMessageRemindersTooLate;
-            var tooOld = moment().subtract(moment.duration(tooLate)).toDate();
+            const tooLate = config.limits.unreadMessageRemindersTooLate;
+            const tooOld = moment().subtract(moment.duration(tooLate)).toDate();
             return lastMessage.created < tooOld;
           }());
 
@@ -190,7 +190,7 @@ function sendUnreadMessageReminders(reminder, callback) {
     // Fetch details for `userTo` and `userFrom`
     function (notifications, done) {
 
-      var userIds = [];
+      let userIds = [];
 
       // Collect all user ids from notifications
       notifications.forEach(function (notification) {
@@ -224,7 +224,7 @@ function sendUnreadMessageReminders(reminder, callback) {
           .exec(function (err, users) {
 
             // Re-organise users into more handy array (`collectedUsers`)
-            var collectedUsers = {};
+            const collectedUsers = {};
             if (users) {
               users.forEach(function (user) {
                 // @link https://lodash.com/docs/#set
@@ -251,10 +251,10 @@ function sendUnreadMessageReminders(reminder, callback) {
       // Create a queue worker to send notifications in parallel
       // Process at most 3 notifications at the same time
       // @link https://github.com/caolan/async#queueworker-concurrency
-      var notificationsQueue = async.queue(function (notification, notificationCallback) {
+      const notificationsQueue = async.queue(function (notification, notificationCallback) {
 
-        var userTo = _.get(users, notification._id.userTo.toString(), false),
-            userFrom = _.get(users, notification._id.userFrom.toString(), false);
+        const userTo = _.get(users, notification._id.userTo.toString(), false);
+        const userFrom = _.get(users, notification._id.userFrom.toString(), false);
 
         // If we don't have info about these users, they've been removed.
         // Don't send notification mail in such case.
@@ -314,10 +314,10 @@ function sendUnreadMessageReminders(reminder, callback) {
       }
 
       // Holds ids of messages to be set `notified:true`
-      var messageIds = [];
+      const messageIds = [];
 
       // Collect message ids for updating documents to `notified:true` later
-      for (var i = 0, len = notifications.length; i < len; i++) {
+      for (let i = 0, len = notifications.length; i < len; i++) {
         if (notifications[i].messages) {
           notifications[i].messages.forEach(function (message) {
             messageIds.push(message.id);

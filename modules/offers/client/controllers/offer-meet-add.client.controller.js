@@ -7,7 +7,7 @@
   function OfferMeetAddController($state, $analytics, leafletData, OffersService, messageCenterService, defaultLocation) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Expoxed to the view
     vm.leafletData = leafletData;
@@ -34,7 +34,7 @@
     function editOffer() {
       vm.isLoading = true;
 
-      var newOffer = new OffersService({
+      const newOffer = new OffersService({
         type: 'meet',
         description: vm.offer.description,
         location: [parseFloat(vm.mapCenter.lat), parseFloat(vm.mapCenter.lng)],
@@ -51,7 +51,7 @@
         $state.go('offer.meet.list');
       }, function (err) {
         vm.isLoading = false;
-        var errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
+        const errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
         messageCenterService.add('danger', errorMessage);
       });
 

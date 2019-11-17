@@ -1,12 +1,12 @@
-const should = require('should'),
-      request = require('supertest'),
-      path = require('path'),
-      sinon = require('sinon'),
-      mongoose = require('mongoose'),
-      Reference = mongoose.model('Reference'),
-      testutils = require(path.resolve('./testutils/server.testutil')),
-      utils = require(path.resolve('./testutils/data.server.testutils')),
-      express = require(path.resolve('./config/lib/express'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const sinon = require('sinon');
+const mongoose = require('mongoose');
+const Reference = mongoose.model('Reference');
+const testutils = require(path.resolve('./testutils/server.testutil'));
+const utils = require(path.resolve('./testutils/data.server.testutils'));
+const express = require(path.resolve('./config/lib/express'));
 
 describe('Create a reference', () => {
 
@@ -25,9 +25,9 @@ describe('Create a reference', () => {
   // we'll catch email and push notifications
   const jobs = testutils.catchJobs();
 
-  let user1,
-      user2,
-      user3Nonpublic;
+  let user1;
+  let user2;
+  let user3Nonpublic;
 
   const app = express.init(mongoose.connection);
   const agent = request.agent(app);

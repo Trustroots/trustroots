@@ -1,11 +1,11 @@
-var Expo = require('expo-server-sdk'),
-    log = require('./logger');
+const Expo = require('expo-server-sdk');
+const log = require('./logger');
 
 // to check if something is a push token
 exports.isPushToken = Expo.isExponentPushToken;
 
 // create a new Expo SDK client
-var expo = new Expo();
+const expo = new Expo();
 
 // send push notification (returns Promise)
 exports.sendToDevice = function sendToDevice(tokens, notification) {
@@ -15,7 +15,7 @@ exports.sendToDevice = function sendToDevice(tokens, notification) {
   // This array is a batch of notifications to reduce the number of requests
   // and to compress them (notifications with similar content will get
   // compressed).
-  var notifications = [];
+  const notifications = [];
 
   // iterate over tokens
   tokens.forEach(function (token) {
@@ -91,9 +91,9 @@ exports.sendToDevice = function sendToDevice(tokens, notification) {
   // There is a limit on the number of push notifications you can send at once.
   // `chunkPushNotifications` divides an array of push notification messages
   // into appropriately sized chunks.
-  var chunks = expo.chunkPushNotifications(notifications);
+  const chunks = expo.chunkPushNotifications(notifications);
 
-  var promises = [];
+  const promises = [];
 
   chunks.forEach(function (chunk) {
     promises.push(expo.sendPushNotificationsAsync(chunk));

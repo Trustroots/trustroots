@@ -1,9 +1,9 @@
 /**
  * Module dependencies.
  */
-var url = require('url'),
-    path = require('path'),
-    log = require(path.resolve('./config/lib/logger'));
+const url = require('url');
+const path = require('path');
+const log = require(path.resolve('./config/lib/logger'));
 
 /**
  * Append UTM parameters to URL for Analytics
@@ -61,7 +61,7 @@ exports.appendUTMParams = function (trackUrl, utmParams) {
   }
 
   // Append required UTM parameters
-  var obj = url.parse(trackUrl, true, false);
+  const obj = url.parse(trackUrl, true, false);
   obj.query.utm_source = String(utmParams.source);
   obj.query.utm_medium = String(utmParams.medium);
   obj.query.utm_campaign = String(utmParams.campaign);

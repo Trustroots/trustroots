@@ -1,14 +1,14 @@
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-    mongoosePaginate = require('mongoose-paginate'),
-    Schema = mongoose.Schema;
+const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate');
+const Schema = mongoose.Schema;
 
 /**
  * Message Schema
  */
-var MessageSchema = new Schema({
+const MessageSchema = new Schema({
   created: {
     type: Date,
     default: Date.now

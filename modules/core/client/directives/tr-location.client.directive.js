@@ -84,7 +84,7 @@
       controller: function ($scope, $timeout) {
 
         // View Model
-        var vm = this;
+        const vm = this;
 
         vm.searchSuggestions = searchSuggestions;
         vm.onSelect = onSelect;
@@ -130,8 +130,8 @@
         function locate(location) {
 
           // Set center bounds and center coordinates for (Angular-UI-Leaflet) model
-          var bounds = LocationService.getBounds(location),
-              center = LocationService.getCenter(location);
+          const bounds = LocationService.getBounds(location);
+          const center = LocationService.getCenter(location);
 
           if (angular.isObject($scope.trLocationBounds) && bounds) {
             $scope.trLocationBounds = bounds;

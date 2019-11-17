@@ -5,19 +5,19 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    _ = require('lodash'),
-    async = require('async'),
-    config = require(path.resolve('./config/config')),
-    mongoose = require('mongoose'),
-    log = require(path.resolve('./config/lib/logger')),
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const path = require('path');
+const _ = require('lodash');
+const async = require('async');
+const config = require(path.resolve('./config/config'));
+const mongoose = require('mongoose');
+const log = require(path.resolve('./config/lib/logger'));
+const statService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
 
 require(path.resolve('./modules/messages/server/models/message.server.model'));
 
 
-var Message = mongoose.model('Message');
+const Message = mongoose.model('Message');
 
 /**
  * The object which stats api .stat method expects as parameter
@@ -77,7 +77,7 @@ module.exports.save = function (message, callback) {
     // is enabled.
     // Quit if all are disabled. The further computation is not necessary.
     function (done) {
-      var areSomeStatsEnabled = _.get(config, 'influxdb.enabled') || _.get(config, 'stathat.enabled');
+      const areSomeStatsEnabled = _.get(config, 'influxdb.enabled') || _.get(config, 'stathat.enabled');
       if (areSomeStatsEnabled !== true) {
         return done(new Error('All stat services are disabled. Not creating a point for message statistics.'));
       }
@@ -120,15 +120,15 @@ module.exports.save = function (message, callback) {
  */
 module.exports.process = function (message, callback) {
   // declare some variables needed in multiple scopes of async.waterfall
-  var isFirstMessage,
-      isFirstReply;
+  let isFirstMessage;
+  let isFirstReply;
 
   // fixing some strange filling of message data
   // (userFrom is not id but user object)
-  var userFrom = (message.userFrom._id)
+  const userFrom = (message.userFrom._id)
     ? message.userFrom._id
     : message.userFrom;
-  var userTo = (message.userTo._id)
+  const userTo = (message.userTo._id)
     ? message.userTo._id
     : message.userTo;
 
@@ -155,7 +155,7 @@ module.exports.process = function (message, callback) {
       // if no message was found, throw error (there is always the first message
       // already (at least the one just saved))
       if (!firstMessage) {
-        var err = new Error('first message not found, but should have been already saved');
+        const err = new Error('first message not found, but should have been already saved');
         return done(err);
       }
 
@@ -166,7 +166,7 @@ module.exports.process = function (message, callback) {
       // can the message be the actual first reply?
       // - is it not the firstMessage?
       // is the sender and receiver in different order than in the firstMessage?
-      var canBeTheFirstReply = !isFirstMessage && String(firstMessage.userTo) === String(userFrom);
+      const canBeTheFirstReply = !isFirstMessage && String(firstMessage.userTo) === String(userFrom);
       // if this can be the oldest reply, find the oldest reply of the thread
       if (canBeTheFirstReply) {
         return Message.findOne({
@@ -187,18 +187,18 @@ module.exports.process = function (message, callback) {
       isFirstReply = Boolean(firstReply && String(firstReply._id) === String(message._id));
 
       // count the reply time for statistics (milliseconds)
-      var replyTime;
+      let replyTime;
       if (isFirstReply) {
         replyTime = firstReply.created.getTime() - firstMessage.created.getTime();
       }
 
       // count length of the message
       // excluding html tags and multiple whitespace characters
-      var msgLen = textService.plainText(message.content, true).length;
+      const msgLen = textService.plainText(message.content, true).length;
 
 
       // message position in the thread
-      var position;
+      let position;
       if (isFirstMessage) {
         position = 'first';
       } else if (isFirstReply) {
@@ -207,10 +207,10 @@ module.exports.process = function (message, callback) {
         position = 'other';
       }
 
-      var msgLenType = msgLen < config.limits.longMessageMinimumLength ? 'short' : 'long';
+      const msgLenType = msgLen < config.limits.longMessageMinimumLength ? 'short' : 'long';
 
       // values for stats
-      var statObject = {
+      const statObject = {
         namespace: 'messages',
         counts: {
           sent: 1

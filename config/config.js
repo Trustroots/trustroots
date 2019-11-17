@@ -1,21 +1,21 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    fs = require('fs'),
-    chalk = require('chalk'),
-    glob = require('glob'),
-    path = require('path');
+const _ = require('lodash');
+const fs = require('fs');
+const chalk = require('chalk');
+const glob = require('glob');
+const path = require('path');
 
 /**
  * Get files by glob patterns
  */
-var getGlobbedPaths = function (globPatterns, excludes) {
+const getGlobbedPaths = function (globPatterns, excludes) {
   // URL paths regex
-  var urlRegex = new RegExp('^(?:[a-z]+:)?//', 'i');
+  const urlRegex = new RegExp('^(?:[a-z]+:)?//', 'i');
 
   // The output array
-  var output = [];
+  let output = [];
 
   // If glob pattern is array so we use each pattern in a recursive way, otherwise we use glob
   if (_.isArray(globPatterns)) {
@@ -26,11 +26,11 @@ var getGlobbedPaths = function (globPatterns, excludes) {
     if (urlRegex.test(globPatterns)) {
       output.push(globPatterns);
     } else {
-      var files = glob.sync(globPatterns);
+      let files = glob.sync(globPatterns);
       if (excludes) {
         files = files.map(function (file) {
           if (_.isArray(excludes)) {
-            for (var i in excludes) {
+            for (const i in excludes) {
               if (_.has(excludes, i)) {
                 file = file.replace(excludes[i], '');
               }
@@ -51,8 +51,8 @@ var getGlobbedPaths = function (globPatterns, excludes) {
 /**
  * Validate NODE_ENV existance
  */
-var validateEnvironmentVariable = function () {
-  var environmentFiles = glob.sync(`./config/env/${process.env.NODE_ENV}.js`);
+const validateEnvironmentVariable = function () {
+  const environmentFiles = glob.sync(`./config/env/${process.env.NODE_ENV}.js`);
 
   console.log();
   if (!environmentFiles.length) {
@@ -72,7 +72,7 @@ var validateEnvironmentVariable = function () {
 /**
  * Initialize global configuration files
  */
-var initGlobalConfigFolders = function (config) {
+const initGlobalConfigFolders = function (config) {
   // Appending files
   config.folders = {
     server: {},
@@ -86,7 +86,7 @@ var initGlobalConfigFolders = function (config) {
 /**
  * Initialize global configuration files
  */
-var initGlobalConfigFiles = function (config, assets) {
+const initGlobalConfigFiles = function (config, assets) {
   // Appending files
   config.files = {
     server: {},
@@ -134,25 +134,25 @@ var initGlobalConfigFiles = function (config, assets) {
 /**
  * Initialize global configuration
  */
-var initGlobalConfig = function () {
+const initGlobalConfig = function () {
   // Validate NDOE_ENV existance
   validateEnvironmentVariable();
 
   // Get the default assets
-  var defaultAssets = require(path.join(process.cwd(), 'config/assets/default'));
+  const defaultAssets = require(path.join(process.cwd(), 'config/assets/default'));
 
   // Get the current assets
-  var environmentAssets = require(path.join(process.cwd(), 'config/assets/', process.env.NODE_ENV)) || {};
+  const environmentAssets = require(path.join(process.cwd(), 'config/assets/', process.env.NODE_ENV)) || {};
 
   // Merge assets
-  var assets = _.extend(defaultAssets, environmentAssets);
+  const assets = _.extend(defaultAssets, environmentAssets);
 
   /**
    * Resolve environment configuration by extending each env configuration file,
    * and lastly merge/override that with any local repository configuration that exists
    * in local.js
    */
-  var config = _.extend(
+  let config = _.extend(
     require(path.join(process.cwd(), 'config/env/default')),
     require(path.join(process.cwd(), 'config/env/', process.env.NODE_ENV)) || {}
   );

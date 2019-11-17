@@ -1,16 +1,16 @@
-var path = require('path'),
-    errorService = require('../services/error.server.service'),
-    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    config = require(path.resolve('./config/config')),
-    log = require(path.resolve('./config/lib/logger'));
+const path = require('path');
+const errorService = require('../services/error.server.service');
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const config = require(path.resolve('./config/config'));
+const log = require(path.resolve('./config/lib/logger'));
 
 /**
  * Render the main application page
  */
 exports.renderIndex = function (req, res) {
 
-  var renderVars = {
+  const renderVars = {
     user: null
   };
 

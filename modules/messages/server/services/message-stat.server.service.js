@@ -1,15 +1,15 @@
-var async = require('async'),
-    mongoose = require('mongoose'),
-    _ = require('lodash'),
-    moment = require('moment'),
-    Message = mongoose.model('Message'),
-    MessageStat = mongoose.model('MessageStat');
+const async = require('async');
+const mongoose = require('mongoose');
+const _ = require('lodash');
+const moment = require('moment');
+const Message = mongoose.model('Message');
+const MessageStat = mongoose.model('MessageStat');
 
 /**
  * Creates & saves a new MessageStat document
  */
 function createMessageStat(message, done) {
-  var messageStat = new MessageStat({
+  const messageStat = new MessageStat({
     firstMessageUserFrom: message.userFrom,
     firstMessageUserTo: message.userTo,
     firstMessageCreated: message.created,
@@ -88,9 +88,9 @@ exports.updateMessageStat = function (message, callback) {
     // - Both first and reply information already saved, do nothing, move on
     function (messageStat, done) {
       // If the MessageStat does already exist:
-      if (!!messageStat) {
+      if (messageStat) {
         // Does this MessageStat have a first reply?
-        if (!!messageStat.timeToFirstReply) {
+        if (messageStat.timeToFirstReply) {
           // Yes: Nothing to do, move on
           return done(null, 'other');
         } else {
@@ -187,7 +187,7 @@ exports.updateMessageStat = function (message, callback) {
 
       function (firstReply, done) {
         // If we do:
-        if (!!firstReply) {
+        if (firstReply) {
           // Update the MessageStat with the timeToFirstReply etc
           addFirstReplyInfo(messageStat, firstReply, function (err) {
             if (err) return done(err);
@@ -224,7 +224,7 @@ exports.updateMessageStat = function (message, callback) {
  * @param {readStatsCb} callback
  */
 exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
-  var DAY = 24 * 3600 * 1000;
+  const DAY = 24 * 3600 * 1000;
 
   async.waterfall([
     /**
@@ -259,7 +259,7 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
        * if we have more than 10 messages in last 30 days,
        *    use all from last 30 days
        */
-      var chosenStats = (function (messageStats) {
+      const chosenStats = (function (messageStats) {
         // less than 10 in 90 days
         if (messageStats.length < 10) {
           return messageStats;
@@ -285,15 +285,15 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
        *    replyRate is replied stats/all stats
        *    replyTime is average (mean) reply time of replied stats [milliseconds]
        */
-      var stats = (function (chosenStats) {
+      const stats = (function (chosenStats) {
 
-        var repliedCount = 0, // amount of replies
-            allCount = chosenStats.length, // amount of first messages received
-            replyTimeCumulated = 0; // sum of the timeToFirstReply
+        let repliedCount = 0; // amount of replies
+        const allCount = chosenStats.length; // amount of first messages received
+        let replyTimeCumulated = 0; // sum of the timeToFirstReply
 
         // Collect the data from chosenStats
-        for (var i = 0, len = chosenStats.length; i < len; ++i) {
-          var stat = chosenStats[i];
+        for (let i = 0, len = chosenStats.length; i < len; ++i) {
+          const stat = chosenStats[i];
           if (typeof(stat.timeToFirstReply) === 'number') {
             ++repliedCount;
             replyTimeCumulated += stat.timeToFirstReply;
@@ -301,8 +301,8 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
         }
 
         // count the replyRate and average replyTime from the chosen stats
-        var replyRate,
-            replyTime;
+        let replyRate;
+        let replyTime;
 
         // no message stats
         if (allCount === 0) {
@@ -354,13 +354,13 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
 exports.formatStats = function (stats) {
 
   // if reply rate is a well-behaved number, we convert the fraction to %
-  var replyRate = (_.isFinite(stats.replyRate))
+  const replyRate = (_.isFinite(stats.replyRate))
     ? Math.round(stats.replyRate * 100) + '%'
     : '';
 
   // if replyTime is a well-behaved number, we convert the milliseconds to
   // a human readable string
-  var replyTime = (_.isFinite(stats.replyTime))
+  const replyTime = (_.isFinite(stats.replyTime))
     ? moment.duration(stats.replyTime).humanize()
     : '';
 
@@ -391,7 +391,7 @@ exports.readFormattedMessageStatsOfUser = function (userId, timeNow, callback) {
 
     // format message stats (this one is synchronous)
     function (stats, done) {
-      var formatted = exports.formatStats(stats);
+      const formatted = exports.formatStats(stats);
       return done(null, formatted);
     }
   ], callback);

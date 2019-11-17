@@ -1,16 +1,16 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service')),
-    core = require('../controllers/core.server.controller'),
-    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    tribes = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller'));
+const path = require('path');
+const facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service'));
+const core = require('../controllers/core.server.controller');
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const tribes = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller'));
 
 
 module.exports = function (app) {
 
-  var redirect = function (src, dst) {
+  const redirect = function (src, dst) {
     app.route(src).get(function (req, res) {
       res.redirect(301, dst);
     });

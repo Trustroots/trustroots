@@ -2,12 +2,12 @@
   // Authentication controller Spec
   describe('ResetPasswordController', function () {
     // Initialize global variables
-    var $scope,
-        $httpBackend,
-        $stateParams,
-        $location,
-        $window,
-        Authentication;
+    let $scope;
+    let $httpBackend;
+    let $stateParams;
+    let $location;
+    let $window;
+    let Authentication;
 
     // The $resource service augments the response object with methods for updating and deleting the resource.
     // If we were to use the standard toEqual matcher, our tests would fail because the test values would not match
@@ -58,8 +58,8 @@
       });
 
       describe('resetUserPassword', function () {
-        var token = 'testToken';
-        var passwordDetails = {
+        const token = 'testToken';
+        const passwordDetails = {
           password: 'test'
         };
         beforeEach(function () {
@@ -79,7 +79,7 @@
         });
 
         it('POST error should set $scope.vm.error to response message', function () {
-          var errorMessage = 'Passwords do not match';
+          const errorMessage = 'Passwords do not match';
           $httpBackend.when('POST', '/api/auth/reset/' + token, passwordDetails).respond(400, {
             'message': errorMessage
           });
@@ -91,7 +91,7 @@
         });
 
         describe('POST success', function () {
-          var user = {
+          const user = {
             username: 'test'
           };
           beforeEach(function () {

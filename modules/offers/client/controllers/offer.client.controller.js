@@ -7,7 +7,7 @@
   function OfferController($timeout, MapLayersFactory) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
     vm.invalidateMapSize = invalidateMapSize;
 
     /**

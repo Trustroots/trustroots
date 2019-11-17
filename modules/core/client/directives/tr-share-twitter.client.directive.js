@@ -37,7 +37,7 @@
        */
       function activate() {
 
-        var button = '<a href="https://twitter.com/share" class="twitter-share-button" data-via="trustroots"';
+        let button = '<a href="https://twitter.com/share" class="twitter-share-button" data-via="trustroots"';
 
         // Predefined Tweet text
         if (attrs.text) {
@@ -75,11 +75,10 @@
       function initTwitterJS() {
 
         $window.twttr = (function (d, s, id) {
-          var js,
-              fjs = d.getElementsByTagName(s)[0],
-              t = $window.twttr || {};
+          const fjs = d.getElementsByTagName(s)[0];
+          const t = $window.twttr || {};
           if (d.getElementById(id)) return t;
-          js = d.createElement(s);
+          const js = d.createElement(s);
           js.id = id;
           js.src = 'https://platform.twitter.com/widgets.js';
           fjs.parentNode.insertBefore(js, fjs);

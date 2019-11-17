@@ -1,10 +1,10 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    Autolinker = require('autolinker'),
-    sanitizeHtml = require('sanitize-html'),
-    he = require('he');
+const _ = require('lodash');
+const Autolinker = require('autolinker');
+const sanitizeHtml = require('sanitize-html');
+const he = require('he');
 
 /**
  * Rules for sanitizing texts coming in and out

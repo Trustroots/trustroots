@@ -1,25 +1,25 @@
-var path = require('path'),
-    should = require('should'),
-    async = require('async'),
-    request = require('supertest'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    MessageStat = mongoose.model('MessageStat'),
-    express = require(path.resolve('./config/lib/express'));
+const path = require('path');
+const should = require('should');
+const async = require('async');
+const request = require('supertest');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const MessageStat = mongoose.model('MessageStat');
+const express = require(path.resolve('./config/lib/express'));
 
 describe('Display Message Statistics in User Route', function () {
-  var agent;
+  let agent;
 
-  var NOW = Date.now(); // a current timestamp
-  var DAY = 24 * 3600 * 1000; // a length of a day in milliseconds
-  var messageStats = [];
-  var users = [];
+  const NOW = Date.now(); // a current timestamp
+  const DAY = 24 * 3600 * 1000; // a length of a day in milliseconds
+  const messageStats = [];
+  const users = [];
 
-  var password = 'password123';
+  const password = 'password123';
 
   before(function (done) {
     // Get application
-    var app = express.init(mongoose.connection);
+    const app = express.init(mongoose.connection);
     agent = request.agent(app);
 
     done();
@@ -27,7 +27,7 @@ describe('Display Message Statistics in User Route', function () {
 
   // create testing users
   before(function (done) {
-    for (var i = 0; i < 23; ++i) {
+    for (let i = 0; i < 23; ++i) {
       users.push(new User({
         firstName: 'firstName',
         lastName: 'lastName',
@@ -51,7 +51,7 @@ describe('Display Message Statistics in User Route', function () {
   before(function (done) {
     // every thread is initiated by different user (user 0 is the receiver of all)
 
-    var userno = 3; // the index of user who sent the first message
+    let userno = 3; // the index of user who sent the first message
     // is incremented for every message, closure
 
     /**
@@ -63,8 +63,8 @@ describe('Display Message Statistics in User Route', function () {
      * @param {timeNow} number - minimum timestamp of the firstMessageCreated
      */
     function generateMessageStats(userTo, count, repliedCount, replyTime, timeNow) {
-      for (var i = 0; i < count; ++i) {
-        var firstCreated = timeNow - replyTime - (i + 1) * DAY;
+      for (let i = 0; i < count; ++i) {
+        const firstCreated = timeNow - replyTime - (i + 1) * DAY;
         messageStats.push(new MessageStat({
           firstMessageUserFrom: users[userno]._id,
           firstMessageUserTo: users[userTo]._id,
@@ -111,7 +111,7 @@ describe('Display Message Statistics in User Route', function () {
 
   // Sign in
   beforeEach(function (done) {
-    var credentials = { username: users[4].username, password: password };
+    const credentials = { username: users[4].username, password: password };
 
     agent.post('/api/auth/signin')
       .send(credentials)
@@ -140,7 +140,7 @@ describe('Display Message Statistics in User Route', function () {
         .end(function (err, resp) {
           if (err) return done(err);
           try {
-            var response = resp.body;
+            const response = resp.body;
 
             should(response).have.property('replyRate');
             should(response).have.property('replyTime');
@@ -160,7 +160,7 @@ describe('Display Message Statistics in User Route', function () {
         .end(function (err, resp) {
           if (err) return done(err);
           try {
-            var response = resp.body;
+            const response = resp.body;
 
             should(response).have.property('replyRate', '');
             should(response).have.property('replyTime', '');
@@ -180,7 +180,7 @@ describe('Display Message Statistics in User Route', function () {
         .end(function (err, resp) {
           if (err) return done(err);
           try {
-            var response = resp.body;
+            const response = resp.body;
 
             should(response).have.property('replyRate', '0%');
             should(response).have.property('replyTime', '');
@@ -200,7 +200,7 @@ describe('Display Message Statistics in User Route', function () {
         .end(function (err, resp) {
           if (err) return done(err);
           try {
-            var response = resp.body;
+            const response = resp.body;
 
             should(response).have.property('replyRate',
               Math.round(5 / 12 * 100) + '%');

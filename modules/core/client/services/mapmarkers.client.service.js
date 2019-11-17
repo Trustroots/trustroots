@@ -10,15 +10,15 @@
   function MapMarkersFactory($window) {
 
     // Size of the map icon in pixels (bigger for smaller screens)
-    var markerIconSize = $window.innerWidth < 768 ? 30 : 20;
+    const markerIconSize = $window.innerWidth < 768 ? 30 : 20;
 
     // Base path for icon images
-    var path = '/img/map/';
+    const path = '/img/map/';
 
     // Leaflet.js
-    var Leaflet = $window.L;
+    const Leaflet = $window.L;
 
-    var service = {
+    const service = {
       getIconConfig: getIconConfig,
       getIcon: getIcon,
       getOfferCircle: getOfferCircle
@@ -53,7 +53,7 @@
       offer.status = offer.status || 'yes';
 
       // Default icon settings
-      var config = {
+      const config = {
         // Default icon image
         iconUrl: path + 'marker-icon.svg',
 

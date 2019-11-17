@@ -7,7 +7,7 @@
   function OfferHostEditController($window, $state, $stateParams, $analytics, $timeout, leafletData, OffersService, Authentication, messageCenterService, offers, defaultLocation, $scope, $filter) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     vm.offers = offers;
 
@@ -28,7 +28,7 @@
      */
     function activate() {
 
-      var defaultOfferConfig = {
+      const defaultOfferConfig = {
         type: 'host',
         status: 'yes',
         description: '',
@@ -144,7 +144,7 @@
 
       function errorCallback(res) {
         vm.isLoading = false;
-        var errorMessage = (res && res.data && res.data.message) ? res.data.message : 'Snap! Something went wrong. If this keeps happening, please contact us.';
+        const errorMessage = (res && res.data && res.data.message) ? res.data.message : 'Snap! Something went wrong. If this keeps happening, please contact us.';
         messageCenterService.add('danger', errorMessage);
       }
 

@@ -7,7 +7,7 @@
   function RemoveProfileController($stateParams, Users, Authentication, messageCenterService) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.removeProfile = removeProfile;

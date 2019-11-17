@@ -1,25 +1,25 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    async = require('async'),
-    sanitizeHtml = require('sanitize-html'),
-    paginate = require('express-paginate'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    config = require(path.resolve('./config/config')),
-    messageToStatsService = require(path.resolve('./modules/messages/server/services/message-to-stats.server.service')),
-    messageStatService = require(path.resolve('./modules/messages/server/services/message-stat.server.service')),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    Message = mongoose.model('Message'),
-    Thread = mongoose.model('Thread'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const async = require('async');
+const sanitizeHtml = require('sanitize-html');
+const paginate = require('express-paginate');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const config = require(path.resolve('./config/config'));
+const messageToStatsService = require(path.resolve('./modules/messages/server/services/message-to-stats.server.service'));
+const messageStatService = require(path.resolve('./modules/messages/server/services/message-stat.server.service'));
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const Message = mongoose.model('Message');
+const Thread = mongoose.model('Thread');
+const User = mongoose.model('User');
 
 // Allowed fields of message object to be set over API
-var messageFields = [
+const messageFields = [
   '_id',
   'content',
   'created',
@@ -29,7 +29,7 @@ var messageFields = [
 ].join(' ');
 
 // Allowed fields of thread object to be set over API
-var threadFields = [
+const threadFields = [
   '_id',
   'message',
   'read',
@@ -49,7 +49,7 @@ function sanitizeMessages(messages) {
     return [];
   }
 
-  var messagesCleaned = [];
+  const messagesCleaned = [];
 
   // Sanitize each outgoing message's contents
   messages.forEach(function (message) {
@@ -74,7 +74,7 @@ function sanitizeThreads(threads, authenticatedUserId) {
   }
 
   // Sanitize each outgoing thread
-  var threadsCleaned = [];
+  const threadsCleaned = [];
 
   threads.forEach(function (thread) {
 
@@ -118,10 +118,10 @@ function sanitizeThreads(threads, authenticatedUserId) {
 /**
  * Constructs link headers for pagination
  */
-var setLinkHeader = function (req, res, pageCount) {
+const setLinkHeader = function (req, res, pageCount) {
   if (paginate.hasNextPages(req)(pageCount)) {
-    var url = (config.https ? 'https' : 'http') + '://' + config.domain;
-    var nextPage = url + res.locals.paginate.href({ page: req.query.page + 1 });
+    const url = (config.https ? 'https' : 'http') + '://' + config.domain;
+    const nextPage = url + res.locals.paginate.href({ page: req.query.page + 1 });
     res.links({
       next: nextPage
       // last: ''
@@ -167,7 +167,7 @@ exports.inbox = function (req, res) {
         });
       } else {
 
-        var threads = sanitizeThreads(data.docs, req.user._id);
+        const threads = sanitizeThreads(data.docs, req.user._id);
 
         // Pass pagination data to construct link header
         setLinkHeader(req, res, data.pages);
@@ -265,7 +265,7 @@ exports.send = function (req, res) {
             return done(err);
           }
 
-          var descriptionLength = (sender.description) ? textService.plainText(sender.description).length : 0;
+          const descriptionLength = (sender.description) ? textService.plainText(sender.description).length : 0;
 
           // If the sender has too empty description, return an error
           if (descriptionLength < config.profileMinimumLength) {
@@ -289,7 +289,7 @@ exports.send = function (req, res) {
     // Save message
     function (done) {
 
-      var message = new Message(req.body);
+      const message = new Message(req.body);
 
       // Allow some HTML
       message.content = textService.html(message.content);
@@ -307,7 +307,7 @@ exports.send = function (req, res) {
     // Create/upgrade Thread handle between these two users
     function (message, done) {
 
-      var thread = new Thread();
+      const thread = new Thread();
       thread.updated = Date.now();
       thread.userFrom = message.userFrom;
       thread.userTo = message.userTo;
@@ -316,7 +316,7 @@ exports.send = function (req, res) {
 
       // Convert the Model instance to a simple object using Model's 'toObject' function
       // to prevent weirdness like infinite looping...
-      var upsertData = thread.toObject();
+      const upsertData = thread.toObject();
 
       // Delete the _id property, otherwise Mongo will return a "Mod on _id not allowed" error
       delete upsertData._id;
@@ -487,7 +487,7 @@ exports.threadByUser = function (req, res, next, userId) {
 
       if (req.messages && req.messages.length > 0) {
 
-        var recentMessage = _.first(req.messages);
+        const recentMessage = _.first(req.messages);
 
         // If latest message in the thread was to current user, mark thread read
         if (recentMessage.userTo._id && recentMessage.userTo._id.toString() === req.user._id.toString()) {
@@ -544,7 +544,7 @@ exports.markRead = function (req, res) {
     });
   }
 
-  var messages = [];
+  const messages = [];
 
   // Produce an array of messages to be updated
   req.body.messageIds.forEach(function (messageId) {
@@ -619,7 +619,7 @@ exports.sync = function (req, res) {
   }
 
   // Root object to be sent out from this API endpoint
-  var data = {
+  const data = {
     messages: [],
     users: []
   };
@@ -630,9 +630,9 @@ exports.sync = function (req, res) {
     function (done) {
 
       // Validate and construct date filters
-      var dateFrom,
-          dateTo,
-          queryDate = {};
+      let dateFrom;
+      let dateTo;
+      const queryDate = {};
 
       if (_.has(req, 'query.dateFrom')) {
         dateFrom = moment(req.query.dateFrom);
@@ -669,10 +669,10 @@ exports.sync = function (req, res) {
       }
 
       // Construct final Mongo query
-      var query;
+      let query;
 
       // This is always part of the query
-      var queryUsers = {
+      const queryUsers = {
         $or: [
           { userFrom: req.user._id },
           { userTo: req.user._id }
@@ -707,7 +707,7 @@ exports.sync = function (req, res) {
           messages = sanitizeMessages(messages);
 
           // Collect user ids
-          var userIds = [];
+          let userIds = [];
 
           // Re-group messages by users
           data.messages = _.groupBy(messages, function (row) {

@@ -15,9 +15,9 @@
   /* @ngInject */
   function trTypesToggleDirective() {
 
-    var ignoreToggles = false;
+    let ignoreToggles = false;
 
-    var directive = {
+    const directive = {
       restrict: 'A',
       replace: true,
       scope: {
@@ -34,7 +34,7 @@
     function trTypesToggleDirectiveController($scope) {
 
       // View Model
-      var vm = this;
+      const vm = this;
 
       // Offer types and their labels
       vm.types = [
@@ -72,7 +72,7 @@
        * into an array of tribe ids: `[id1, id2, ...]`
        */
       function onToggleChange() {
-        var types = [];
+        const types = [];
         angular.forEach(vm.toggles, function (active, type) {
           if (active) {
             types.push(type);

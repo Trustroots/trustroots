@@ -7,7 +7,7 @@
   function ForgotPasswordController($http, $stateParams) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.success = null;

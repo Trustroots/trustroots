@@ -1,39 +1,39 @@
-var _ = require('lodash'),
-    should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    async = require('async'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Offer = mongoose.model('Offer'),
-    Tribe = mongoose.model('Tribe'),
-    express = require(path.resolve('./config/lib/express'));
+const _ = require('lodash');
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const async = require('async');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Offer = mongoose.model('Offer');
+const Tribe = mongoose.model('Tribe');
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    credentials2,
-    user1,
-    user2,
-    user3,
-    user2Id,
-    user3Id,
-    offer1,
-    offer2,
-    offer2Id,
-    offer3,
-    offer3Id,
-    offerMeet,
-    tribe1,
-    tribe2,
-    tribe1Id,
-    tribe2Id;
+let app;
+let agent;
+let credentials;
+let credentials2;
+let user1;
+let user2;
+let user3;
+let user2Id;
+let user3Id;
+let offer1;
+let offer2;
+let offer2Id;
+let offer3;
+let offer3Id;
+let offerMeet;
+let tribe1;
+let tribe2;
+let tribe1Id;
+let tribe2Id;
 
-var testLocations = {
+const testLocations = {
   'Europe': {
     queryBoundingBox:
       '?northEastLat=55.31212135084999' +
@@ -412,8 +412,8 @@ describe('Offer search tests', function () {
             if (offersGetErr) return done(offersGetErr);
 
             // MongoDb returns these in random order, figure out order here
-            var user2Order = 1;
-            var user3Order = 0;
+            let user2Order = 1;
+            let user3Order = 0;
             if (offersGetRes.body[0]._id === offer2Id.toString()) {
               user2Order = 0;
               user3Order = 1;
@@ -456,7 +456,7 @@ describe('Offer search tests', function () {
           Offer.deleteMany().exec(function () {
 
             // Create new offer to target location
-            var testLocationOffer = new Offer(offer1);
+            const testLocationOffer = new Offer(offer1);
             testLocationOffer.location = testLocation.location;
 
             testLocationOffer.save(function (saveErr, saveRes) {
@@ -513,7 +513,7 @@ describe('Offer search tests', function () {
 
               // Count different offer types
               // This produces `{'host': 2, 'meet': 1}`
-              var count = _.countBy(offersGetRes.body, function (offer) {
+              const count = _.countBy(offersGetRes.body, function (offer) {
                 return offer.type;
               });
 
@@ -580,7 +580,7 @@ describe('Offer search tests', function () {
             if (signinErr) return done(signinErr);
 
             // Get offers (around Berlin)
-            var filters = {
+            const filters = {
               types: ['host']
             };
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
@@ -590,8 +590,8 @@ describe('Offer search tests', function () {
                 if (offersGetErr) return done(offersGetErr);
 
                 // MongoDb returns these in random order, figure out order here
-                var user2Order = 1;
-                var user3Order = 0;
+                let user2Order = 1;
+                let user3Order = 0;
                 if (offersGetRes.body[0]._id === offer2Id.toString()) {
                   user2Order = 0;
                   user3Order = 1;
@@ -622,7 +622,7 @@ describe('Offer search tests', function () {
             if (signinErr) return done(signinErr);
 
             // Get offers (around Berlin)
-            var filters = {
+            const filters = {
               types: ['meet']
             };
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
@@ -655,7 +655,7 @@ describe('Offer search tests', function () {
             if (signinErr) return done(signinErr);
 
             // Get offers (around Berlin)
-            var filters = {
+            const filters = {
               types: ['foobar']
             };
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
@@ -669,7 +669,7 @@ describe('Offer search tests', function () {
 
                 // Count different offer types
                 // This produces `{'host': 2, 'meet': 1}`
-                var count = _.countBy(offersGetRes.body, function (offer) {
+                const count = _.countBy(offersGetRes.body, function (offer) {
                   return offer.type;
                 });
 
@@ -696,7 +696,7 @@ describe('Offer search tests', function () {
           if (signinErr) return done(signinErr);
 
           // Get offers (around Berlin)
-          var filters = {
+          const filters = {
             languages: ['fin']
           };
 
@@ -726,7 +726,7 @@ describe('Offer search tests', function () {
           if (signinErr) return done(signinErr);
 
           // Get offers (around Berlin)
-          var filters = {
+          const filters = {
             languages: ['fin', 'ita']
           };
 
@@ -737,8 +737,8 @@ describe('Offer search tests', function () {
               if (offersGetErr) return done(offersGetErr);
 
               // MongoDb returns these in random order, figure out order here
-              var user2Order = 1;
-              var user3Order = 0;
+              let user2Order = 1;
+              let user3Order = 0;
               if (offersGetRes.body[0]._id === offer2Id.toString()) {
                 user2Order = 0;
                 user3Order = 1;
@@ -768,7 +768,7 @@ describe('Offer search tests', function () {
           if (signinErr) return done(signinErr);
 
           // Get offers (around Berlin)
-          var filters = {
+          const filters = {
             tribes: [tribe2Id]
           };
           agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
@@ -806,7 +806,7 @@ describe('Offer search tests', function () {
             if (signinErr) return done(signinErr);
 
             // Get offers (around Berlin)
-            var filters = {
+            const filters = {
               tribes: [tribe1Id, tribe2Id]
             };
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
@@ -839,7 +839,7 @@ describe('Offer search tests', function () {
           if (signinErr) return done(signinErr);
 
           // Get offers (around Berlin)
-          var filters = {
+          const filters = {
             tribes: [tribe1Id, tribe2Id]
           };
           agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
@@ -852,8 +852,8 @@ describe('Offer search tests', function () {
               offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(2);
 
               // MongoDb returns these in random order, figure out order here
-              var user2Order = 1;
-              var user3Order = 0;
+              let user2Order = 1;
+              let user3Order = 0;
               if (offersGetRes.body[0]._id === offer2Id.toString()) {
                 user2Order = 0;
                 user3Order = 1;
@@ -951,7 +951,7 @@ describe('Offer search tests', function () {
               return done(signinErr);
             }
 
-            var filters = {
+            const filters = {
               seen: {
                 'months': 1
               }

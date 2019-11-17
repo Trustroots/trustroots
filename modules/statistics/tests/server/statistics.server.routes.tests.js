@@ -1,21 +1,21 @@
-var should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Offer = mongoose.model('Offer'),
-    express = require(path.resolve('./config/lib/express'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Offer = mongoose.model('Offer');
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    user1,
-    user2,
-    user3,
-    offer;
+let app;
+let agent;
+let credentials;
+let user1;
+let user2;
+let user3;
+let offer;
 
 /**
  * Statistics routes tests

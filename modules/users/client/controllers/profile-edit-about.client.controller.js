@@ -7,7 +7,7 @@
   function ProfileEditAboutController($scope, $state, Users, Authentication, messageCenterService) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Copy user to make a temporary buffer for changes.
     // Prevents changes remaining here when cancelling profile editing.

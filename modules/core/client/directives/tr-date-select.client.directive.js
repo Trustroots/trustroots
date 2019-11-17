@@ -16,7 +16,7 @@
 
     .run(['$templateCache', function ($templateCache) {
 
-      var template = [
+      const template = [
         '<div class="sb-date-select">',
         '  <select class="sb-date-select-day sb-date-select-select" ng-class="selectClass" ng-model="val.date" ng-options="d for d in dates track by d">',
         '    <option value disabled selected>Day</option>',
@@ -51,12 +51,12 @@
         link: function (scope, elem, attrs, ngModel) {
           scope.val = {};
 
-          var min = scope.min = moment(attrs.min || '1900-01-01');
-          var max = scope.max = moment(attrs.max); // Defaults to now
+          const min = scope.min = moment(attrs.min || '1900-01-01');
+          const max = scope.max = moment(attrs.max); // Defaults to now
 
           scope.years = [];
 
-          for (var i = max.year(); i >= min.year(); i--) {
+          for (let i = max.year(); i >= min.year(); i--) {
             scope.years.push(i);
           }
 
@@ -71,7 +71,7 @@
           scope.$watchCollection('[val.date, val.month, val.year]', function (newDate, oldDate) {
             if (scope.val.year && scope.val.month && scope.val.date) {
               if (!angular.equals(newDate, oldDate)) {
-                var m = moment([scope.val.year, scope.val.month - 1, scope.val.date]);
+                const m = moment([scope.val.year, scope.val.month - 1, scope.val.date]);
                 ngModel.$setViewValue(m.format('YYYY-MM-DD'));
               }
             } else {
@@ -83,12 +83,12 @@
             // Values begin at 1 to permit easier boolean testing
             scope.months = [];
 
-            var minMonth = scope.val.year && min.isSame([scope.val.year], 'year') ? min.month() : 0;
-            var maxMonth = scope.val.year && max.isSame([scope.val.year], 'year') ? max.month() : 11;
+            const minMonth = scope.val.year && min.isSame([scope.val.year], 'year') ? min.month() : 0;
+            const maxMonth = scope.val.year && max.isSame([scope.val.year], 'year') ? max.month() : 11;
 
-            var monthNames = moment.months();
+            const monthNames = moment.months();
 
-            for (var j = minMonth; j <= maxMonth; j++) {
+            for (let j = minMonth; j <= maxMonth; j++) {
               scope.months.push({
                 name: monthNames[j],
                 value: j + 1
@@ -101,8 +101,8 @@
           }
 
           function updateDateOptions() {
-            var minDate,
-                maxDate;
+            let minDate;
+            let maxDate;
 
             if (scope.val.year && scope.val.month && min.isSame([scope.val.year, scope.val.month - 1], 'month')) {
               minDate = min.date();
@@ -120,7 +120,7 @@
 
             scope.dates = [];
 
-            for (var i = minDate; i <= maxDate; i++) {
+            for (let i = minDate; i <= maxDate; i++) {
               scope.dates.push(i);
             }
             if (scope.val.date < minDate || scope.val.date > maxDate) {
@@ -132,7 +132,7 @@
           ngModel.$render = function () {
             if (!ngModel.$viewValue) return;
 
-            var m = moment(new Date(ngModel.$viewValue));
+            const m = moment(new Date(ngModel.$viewValue));
 
             // Always use a dot in ng-model attrs...
             scope.val = {

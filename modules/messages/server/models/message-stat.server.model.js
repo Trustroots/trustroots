@@ -1,13 +1,13 @@
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
 /**
  * MessageStat Schema
  */
-var messageStatSchema = new Schema({
+const messageStatSchema = new Schema({
   // The id of the user who wrote the first message of the thread
   firstMessageUserFrom: {
     type: Schema.ObjectId,

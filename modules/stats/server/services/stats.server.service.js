@@ -24,12 +24,12 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    async = require('async'),
-    // path = require('path'),
-    // config = require(path.resolve('./config/config')),
-    influxService = require('./influx.server.service.js'),
-    stathatService = require('./stathat.server.service.js');
+const _ = require('lodash');
+const async = require('async');
+// path = require('path'),
+// config = require(path.resolve('./config/config')),
+const influxService = require('./influx.server.service.js');
+const stathatService = require('./stathat.server.service.js');
 
 /**
  * The object which stats api .stat method expects as parameter
@@ -100,7 +100,7 @@ function count(name, count, time, callback) {
   count = count || 1;
   callback = callback || function () {};
 
-  var statObject = {
+  const statObject = {
     namespace: name,
     counts: {
       count: count
@@ -131,7 +131,7 @@ function value(name, value, time, callback) {
   callback = callback || function () {};
 
   // construct and send the stat
-  var statObject = {
+  const statObject = {
     namespace: name,
     values: {
       value: value
@@ -157,10 +157,10 @@ function validateStat(stat) {
   }
 
   // We must have at least one of `counts` or `values`, or both
-  var isCountsAndValuesMissing = _.isUndefined(stat.counts) && _.isUndefined(stat.values);
+  const isCountsAndValuesMissing = _.isUndefined(stat.counts) && _.isUndefined(stat.values);
   // @TODO check that they are plain objects or undefined with _.isPlainObject()
   // counts or values have to contain at least 1 property
-  var isCountsAndValuesEmpty = _.keys(stat.counts).length + _.keys(stat.values).length === 0;
+  const isCountsAndValuesEmpty = _.keys(stat.counts).length + _.keys(stat.values).length === 0;
   if (isCountsAndValuesMissing || isCountsAndValuesEmpty) {
     // error
     throw new Error('The stat should contain counts or values');
@@ -172,16 +172,16 @@ function validateStat(stat) {
   function areKeysUnique() {
     // keys is an array of arrays of keys of all objects passed as arguments
     // to the function
-    var keys = [];
-    var keyLength = 0;
+    const keys = [];
+    let keyLength = 0;
 
-    for (var i = 0, len = arguments.length; i < len; i++) {
-      var currentKeys = _.keys(arguments[i]);
+    for (let i = 0, len = arguments.length; i < len; i++) {
+      const currentKeys = _.keys(arguments[i]);
       keys.push(currentKeys);
       keyLength += currentKeys.length;
     }
 
-    var unionKeys = _.union.apply(this, keys);
+    const unionKeys = _.union.apply(this, keys);
 
     return keyLength === unionKeys.length;
   }
@@ -191,9 +191,9 @@ function validateStat(stat) {
   }
 
   // Every value in 'counts' and 'values' should be a number
-  var vals = _.concat(_.values(stat.counts), _.values(stat.values));
+  const vals = _.concat(_.values(stat.counts), _.values(stat.values));
 
-  var areNumbers = _.every(vals, _.isNumber);
+  const areNumbers = _.every(vals, _.isNumber);
 
   if (!areNumbers) {
     throw new Error('Each of counts and values should be a number');
@@ -273,8 +273,8 @@ function stat(stat, callback) {
   // send the stat to InfluxDB
   // send the stat to Stathat
   // let them both finish or fail and then report errors
-  var influxErr,
-      stathatErr;
+  let influxErr;
+  let stathatErr;
 
   // The wrap functions keep the errors in influxErr and stathatErr
   // and always finish without failing. Why? We want to finish all and report
@@ -298,7 +298,7 @@ function stat(stat, callback) {
     if (e) return callback(e); // this should not happen
 
     if (influxErr || stathatErr) {
-      var finalErr = new Error('Writing to Influx or Stathat service failed.');
+      const finalErr = new Error('Writing to Influx or Stathat service failed.');
 
       finalErr.errors = {
         influx: influxErr,

@@ -19,13 +19,13 @@
   /* @ngInject */
   function trValidateUsernameDirective($q, $timeout, SignupValidation) {
 
-    var delayedUsernameValidation;
+    let delayedUsernameValidation;
 
     return {
       restrict: 'A',
       require: 'ngModel',
       link: function (scope, elem, attr, ngModel) {
-        var minlength = angular.isDefined(attr.minlength) ? attr.minlength : 1;
+        const minlength = angular.isDefined(attr.minlength) ? attr.minlength : 1;
 
         ngModel.$asyncValidators.username = function (modelValue) {
           return $q(function (resolve, reject) {

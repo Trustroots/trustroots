@@ -12,10 +12,10 @@
       return;
     }
 
-    var appSettings = SettingsFactory.get();
+    const appSettings = SettingsFactory.get();
 
     // View Model
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.credentials = {};
@@ -68,7 +68,7 @@
         return '';
       }
 
-      var err = usernameModel.$error || {};
+      const err = usernameModel.$error || {};
 
       if (err.required || usernameModel.$usernameValue === '') {
         return 'Username is required.';
@@ -131,7 +131,7 @@
         limit: 20
       },
       function (tribes) {
-        var suggestedTribes = [];
+        const suggestedTribes = [];
 
         // Make sure to remove referred tribe from suggested tribes so that we won't have dublicates
         // We'll always show 2 or 3 of these at the frontend depending on if referred tribe is shown.
@@ -179,7 +179,7 @@
           },
           function (error) { // On error function
             vm.isLoading = false;
-            var errorMessage = error.data && error.data.message ? error.data.message : 'Something went wrong while signing you up. Try again!';
+            const errorMessage = error.data && error.data.message ? error.data.message : 'Something went wrong while signing you up. Try again!';
             messageCenterService.add('danger', errorMessage);
           }
         );
@@ -257,7 +257,7 @@
       // or pick it up from localStorage and put it back to URL
       // `mwr` is a Maitre invite parameter
       if (locker.supported()) {
-        var mwrLockerKey = 'waitinglist.mwr';
+        const mwrLockerKey = 'waitinglist.mwr';
         // If `mwr` attribute is in the URL...
         if ($stateParams.mwr) {
           // ...store it in local storage

@@ -9,7 +9,7 @@
 
   /* @ngInject */
   function trOfferValidUntilDirective() {
-    var directive = {
+    const directive = {
       restrict: 'A',
       replace: false,
       scope: {
@@ -25,10 +25,10 @@
     /* @ngInject */
     function trOfferValidUntilDirectiveController($scope, moment, SettingsFactory) {
 
-      var appSettings = SettingsFactory.get();
+      const appSettings = SettingsFactory.get();
 
       // View model
-      var vm = this;
+      const vm = this;
 
       vm.isCalendarVisible = false;
 
@@ -91,7 +91,7 @@
 
         // Defaults to max
         // @link https://momentjs.com/docs/#/manipulating/add/
-        var add = days ? { days: days } : appSettings.limits.maxOfferValidFromNow;
+        const add = days ? { days: days } : appSettings.limits.maxOfferValidFromNow;
 
         vm.validUntil = moment().endOf('day').add(add).toDate();
       }

@@ -1,17 +1,17 @@
 /**
  * Module dependencies.
  */
-var should = require('should'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    SupportRequest = mongoose.model('SupportRequest');
+const should = require('should');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const SupportRequest = mongoose.model('SupportRequest');
 
 /**
  * Globals
  */
-var user,
-    _support,
-    support;
+let user;
+let _support;
+let support;
 
 /**
  * Unit tests
@@ -63,7 +63,7 @@ describe('Support request Model Unit Tests:', function () {
     });
 
     it('should be able to save without problems without user id', function (done) {
-      var supportWithoutUser = new SupportRequest(_support);
+      const supportWithoutUser = new SupportRequest(_support);
 
       supportWithoutUser.save(function (err, supportRes) {
         should.not.exist(err);
@@ -74,7 +74,7 @@ describe('Support request Model Unit Tests:', function () {
 
     it('should not be able to save without message', function (done) {
       delete _support.message;
-      var supportWithoutMessage = new SupportRequest(_support);
+      const supportWithoutMessage = new SupportRequest(_support);
 
       supportWithoutMessage.save(function (err) {
         should.exist(err);
@@ -83,7 +83,7 @@ describe('Support request Model Unit Tests:', function () {
     });
 
     it('should be able to save without problems without any other fields than message', function (done) {
-      var supportOnlyMessage = new SupportRequest({
+      const supportOnlyMessage = new SupportRequest({
         message: _support.message
       });
 

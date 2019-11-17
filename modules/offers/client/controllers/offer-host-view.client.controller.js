@@ -7,7 +7,7 @@
   function OfferHostViewController($scope, OffersByService) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed
     vm.offer = false;

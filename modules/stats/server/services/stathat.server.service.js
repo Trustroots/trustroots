@@ -1,21 +1,21 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    _ = require('lodash'),
-    async = require('async'),
-    stathat = require('stathat'),
-    config = require(path.resolve('./config/config')),
-    log = require(path.resolve('./config/lib/logger'));
+const path = require('path');
+const _ = require('lodash');
+const async = require('async');
+const stathat = require('stathat');
+const config = require(path.resolve('./config/config'));
+const log = require(path.resolve('./config/lib/logger'));
 
 // send data to stathat.com over https (ecrypted)
 stathat.useHTTPS = true;
 
 // Get the stathat key from `config`
-var key = _.get(config, 'stathat.key', false);
+const key = _.get(config, 'stathat.key', false);
 
 // We use this to separate the parts of names in our stats
-var SEPARATOR = '.';
+const SEPARATOR = '.';
 
 if (!key) {
   log('error', 'No stathat key #LDoC3y');
@@ -27,7 +27,7 @@ if (!key) {
  * @param {Date} time
  * @returns {number} - the given time converted to unix timestamp [seconds]
  */
-var formatTime = function (time) {
+const formatTime = function (time) {
   if (_.isDate(time)) {
     return time.getTime() / 1000;
   } else {
@@ -40,7 +40,7 @@ var formatTime = function (time) {
  * @param {string} arguments - function accepts one or multiple strings
  * @returns {string} - the built name (arguments separated by SEPARATOR)
  */
-var buildName = function () {
+const buildName = function () {
   return Array.prototype.slice.call(arguments).join(SEPARATOR);
 };
 
@@ -53,9 +53,9 @@ var buildName = function () {
  * @param {Function} callback
  * @returns void
  */
-var send = function (type, name, value, time, callback) {
+const send = function (type, name, value, time, callback) {
   // Get a fresh stathat key from `config` (maybe it was stubbed since the instantiation of this module)
-  var key = _.get(config, 'stathat.key', false);
+  const key = _.get(config, 'stathat.key', false);
   // If we don't have a stathat key, silently drop this stat
   if (!key) {
     return callback();
@@ -65,10 +65,10 @@ var send = function (type, name, value, time, callback) {
   // trackEZCount, trackEZValue, trackEZCountWithTime, trackEZValueWithTime
 
   // Select the stathat method we want to use
-  var method = (type === 'count') ? 'trackEZCount' : 'trackEZValue';
+  let method = (type === 'count') ? 'trackEZCount' : 'trackEZValue';
 
   // Build an array of arguments for the method's `.apply()` below
-  var args = [key, name, value];
+  const args = [key, name, value];
 
   // If there is a date, prepend `WithTime` to the method name, and add the
   // formatted `time`  to the arguments array.
@@ -115,22 +115,22 @@ var send = function (type, name, value, time, callback) {
  */
 function processResponse(callback) {
   return function (code) {
-    var argLen = arguments.length;
+    const argLen = arguments.length;
 
     // response body
-    var body;
+    let body;
 
     try {
       if (argLen === 3 && code === 600) {
         body = arguments[2];
         // take care of the error
-        var errorMessage = arguments[1];
+        const errorMessage = arguments[1];
         throw new Error(errorMessage);
       } else if (argLen === 2) {
         body = arguments[1];
 
         // check various response codes and log errors
-        var codeGroup = parseInt(code / 100, 10);
+        const codeGroup = parseInt(code / 100, 10);
 
         switch (codeGroup) {
           case 2:
@@ -174,10 +174,10 @@ function processResponse(callback) {
  * @param {Date|undefined} time - time of the metric
  * @param {Function} callback
  */
-var sendStats = function (type, statName, statValue, tags, time, callback) {
+const sendStats = function (type, statName, statValue, tags, time, callback) {
 
   // collect the statNames (the default one and the ones created from tags)
-  var statNames = [[statName]];
+  const statNames = [[statName]];
   _.forOwn(tags, function (tagValue, tagName) {
     statNames.push([buildName(statName, tagName, tagValue)]);
   });
@@ -199,22 +199,22 @@ var sendStats = function (type, statName, statValue, tags, time, callback) {
  * @param {Date} [stat.time] - time of the data point
  * @param {Function} callback
  */
-var stat = function (stat, callback) {
+const stat = function (stat, callback) {
 
   // if stathat is disabled, log the info and quit without failing
-  var isEnabled = _.get(config, 'stathat.enabled', false);
+  const isEnabled = _.get(config, 'stathat.enabled', false);
   if (!isEnabled) {
     return callback();
   }
 
-  var namespace = stat.namespace;
-  var tags = stat.tags;
-  var counts = stat.counts;
-  var values = stat.values;
-  var time = stat.time;
+  const namespace = stat.namespace;
+  const tags = stat.tags;
+  const counts = stat.counts;
+  const values = stat.values;
+  const time = stat.time;
 
   // Iterate over the `counts`
-  var sendStatsParams = [];
+  const sendStatsParams = [];
   _.forOwn(counts, function (value, countName) {
     // Process this counter
     sendStatsParams.push(['count', buildName(namespace, countName), value, tags, time]);
@@ -249,7 +249,7 @@ exports._send = send;
  */
 function asyncEachFinish(coll, iteratee, callback) {
   // collect errors here
-  var sendErrors = [];
+  const sendErrors = [];
 
   /**
    * Calls the iteratee with an array of arguments.
@@ -259,7 +259,7 @@ function asyncEachFinish(coll, iteratee, callback) {
    */
   function errorCollectingIteratee(args, done) {
     // bind the iteratee's arguments to iteratee
-    var toRun = iteratee.bind.apply(iteratee, [null].concat(args));
+    const toRun = iteratee.bind.apply(iteratee, [null].concat(args));
 
     toRun(function (e) {
       // collect any errors to sendErrors array
@@ -279,7 +279,7 @@ function asyncEachFinish(coll, iteratee, callback) {
     if (e) return callback(e);
 
     if (sendErrors.length > 0) {
-      var responseError = new Error('Collected ' + sendErrors.length + '/' + coll.length + ' failures. See property errors');
+      const responseError = new Error('Collected ' + sendErrors.length + '/' + coll.length + ' failures. See property errors');
 
       responseError.errors = sendErrors;
 

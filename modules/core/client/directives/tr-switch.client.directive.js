@@ -34,7 +34,7 @@
         }
 
         // Add toggle
-        var toggle = angular.element('<div class="toggle"></div>');
+        const toggle = angular.element('<div class="toggle"></div>');
         elem.find('input').after(toggle);
 
       }

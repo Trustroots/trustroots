@@ -26,18 +26,18 @@
       link: function (scope, elem, attrs) {
 
         if (angular.isDefined(attrs.trTribeStyles) && attrs.trTribeStyles !== '') {
-          var style = '',
-              tribe = angular.fromJson(attrs.trTribeStyles);
+          let style = '';
+          const tribe = angular.fromJson(attrs.trTribeStyles);
 
           // Set background image
           // Uses Uploadcare.com to resize and deliver images
           if (tribe.image_UUID) {
-            var dimensions = (angular.isDefined(attrs.trTribeStylesDimensions) && attrs.trTribeStylesDimensions !== '') ? attrs.trTribeStylesDimensions : '1024x768',
-                quality = (angular.isDefined(attrs.trTribeStylesQuality) && attrs.trTribeStylesQuality !== '') ? attrs.trTribeStylesQuality : 'lighter',
-                progressive = (angular.isDefined(attrs.trTribeStylesProgressive) && (attrs.trTribeStylesProgressive === 'yes' || attrs.trTribeStylesProgressive === 'no')) ? attrs.trTribeStylesProgressive : 'no';
+            const dimensions = (angular.isDefined(attrs.trTribeStylesDimensions) && attrs.trTribeStylesDimensions !== '') ? attrs.trTribeStylesDimensions : '1024x768';
+            const quality = (angular.isDefined(attrs.trTribeStylesQuality) && attrs.trTribeStylesQuality !== '') ? attrs.trTribeStylesQuality : 'lighter';
+            const progressive = (angular.isDefined(attrs.trTribeStylesProgressive) && (attrs.trTribeStylesProgressive === 'yes' || attrs.trTribeStylesProgressive === 'no')) ? attrs.trTribeStylesProgressive : 'no';
 
             // Available CDN parameters: https://uploadcare.com/documentation/cdn/
-            var img_params = [
+            const img_params = [
               'progressive/' + progressive,
               'scale_crop/' + dimensions + '/center',
               'quality/' + quality,

@@ -7,7 +7,7 @@
   function TribesListController(tribes, $state, Authentication, TribeService) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.tribes = tribes;

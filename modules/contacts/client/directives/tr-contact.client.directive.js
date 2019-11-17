@@ -33,7 +33,7 @@
     function trContactController($scope) {
 
       // ViewModel
-      var vm = this;
+      const vm = this;
 
       // Exposed to the view
       vm.contact = $scope.contact;

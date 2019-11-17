@@ -5,8 +5,8 @@
 
   /* @ngInject */
   function SettingsService($window) {
-    var settings = {};
-    var service = {
+    let settings = {};
+    const service = {
       get: get,
       settings: settings
     };
@@ -32,8 +32,8 @@
 
   /* @ngInject */
   function SettingsFactory($window) {
-    var settings = {};
-    var service = {
+    let settings = {};
+    const service = {
       get: get,
       settings: settings
     };

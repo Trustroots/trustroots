@@ -2,18 +2,18 @@
  * Module dependencies.
  */
 
-var _ = require('lodash'),
-    path = require('path'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    sanitizeHtml = require('sanitize-html'),
-    htmlToText = require('html-to-text'),
-    async = require('async'),
-    mongoose = require('mongoose'),
-    Contact = mongoose.model('Contact'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const sanitizeHtml = require('sanitize-html');
+const htmlToText = require('html-to-text');
+const async = require('async');
+const mongoose = require('mongoose');
+const Contact = mongoose.model('Contact');
+const User = mongoose.model('User');
 
 /**
  * Add a contact
@@ -21,7 +21,7 @@ var _ = require('lodash'),
 exports.add = function (req, res) {
 
   // Defined in this scope so we can remove it in in the case of an error
-  var contact;
+  let contact;
 
   async.waterfall([
 
@@ -66,8 +66,8 @@ exports.add = function (req, res) {
     function (done) {
 
       // Catch message separately
-      var messageHTML = false;
-      var messagePlain = false;
+      let messageHTML = false;
+      let messagePlain = false;
       if (req.body.message && req.body.message !== '') {
         messageHTML = sanitizeHtml(req.body.message, textService.sanitizeOptions);
         messagePlain = htmlToText.fromString(req.body.message, { wordwrap: 80 });
@@ -137,7 +137,7 @@ exports.add = function (req, res) {
  * Disconnect contact
  */
 exports.remove = function (req, res) {
-  var contact = req.contact;
+  const contact = req.contact;
 
   contact.remove(function (err) {
     if (err) {
@@ -179,7 +179,7 @@ exports.confirm = function (req, res) {
   }
 
   // Ta'da!
-  var contact = req.contact;
+  const contact = req.contact;
   contact.confirmed = true;
 
   contact.save(function (err) {
@@ -338,10 +338,10 @@ exports.filterByCommon = function (req, res, next) {
       }
 
       // Remodel authenticated user's contact list to array of user ids
-      var authUserContactUsers = [];
+      const authUserContactUsers = [];
       _.map(authUserContacts, function (contact) {
       // Pick user id which isn't authenticated user themself
-        var userId = contact.userFrom.equals(req.user._id.valueOf()) ? contact.userTo : contact.userFrom;
+        const userId = contact.userFrom.equals(req.user._id.valueOf()) ? contact.userTo : contact.userFrom;
 
         // Ensure we have a list of string id's instead of Mongo ObjectId's
         // Otherwise checking against this list fails using `indexOf()`
@@ -383,7 +383,7 @@ exports.contactListByUser = function (req, res, next, listUserId) {
   // Turn `listUserId` String into a Mongo ObjectId
   listUserId = new mongoose.Types.ObjectId(listUserId);
 
-  var contactQuery = {
+  const contactQuery = {
     $or: [
       { userFrom: listUserId },
       { userTo: listUserId }

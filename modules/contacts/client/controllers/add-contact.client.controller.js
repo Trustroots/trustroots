@@ -12,7 +12,7 @@
     }
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.add = add;

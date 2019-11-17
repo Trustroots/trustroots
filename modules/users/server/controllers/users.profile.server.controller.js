@@ -3,38 +3,38 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    locales = require(path.resolve('./config/shared/locales')),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    tribesHandler = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller')),
-    contactHandler = require(path.resolve('./modules/contacts/server/controllers/contacts.server.controller')),
-    messageHandler = require(path.resolve('./modules/messages/server/controllers/messages.server.controller')),
-    offerHandler = require(path.resolve('./modules/offers/server/controllers/offers.server.controller')),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
-    inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    fileUpload = require(path.resolve('./modules/core/server/services/file-upload.service')),
-    log = require(path.resolve('./config/lib/logger')),
-    del = require('del'),
-    messageStatService = require(path.resolve(
-      './modules/messages/server/services/message-stat.server.service')),
-    config = require(path.resolve('./config/config')),
-    async = require('async'),
-    crypto = require('crypto'),
-    sanitizeHtml = require('sanitize-html'),
-    mkdirRecursive = require('mkdir-recursive'),
-    mongoose = require('mongoose'),
-    fs = require('fs'),
-    moment = require('moment'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const locales = require(path.resolve('./config/shared/locales'));
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const tribesHandler = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller'));
+const contactHandler = require(path.resolve('./modules/contacts/server/controllers/contacts.server.controller'));
+const messageHandler = require(path.resolve('./modules/messages/server/controllers/messages.server.controller'));
+const offerHandler = require(path.resolve('./modules/offers/server/controllers/offers.server.controller'));
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const pushService = require(path.resolve('./modules/core/server/services/push.server.service'));
+const inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service'));
+const statService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const fileUpload = require(path.resolve('./modules/core/server/services/file-upload.service'));
+const log = require(path.resolve('./config/lib/logger'));
+const del = require('del');
+const messageStatService = require(path.resolve(
+  './modules/messages/server/services/message-stat.server.service'));
+const config = require(path.resolve('./config/config'));
+const async = require('async');
+const crypto = require('crypto');
+const sanitizeHtml = require('sanitize-html');
+const mkdirRecursive = require('mkdir-recursive');
+const mongoose = require('mongoose');
+const fs = require('fs');
+const moment = require('moment');
+const User = mongoose.model('User');
 
 // Load either ImageMagick or GraphicsMagick as an image processor
 // Defaults to GraphicsMagick
 // @link https://github.com/aheckmann/gm#use-imagemagick-instead-of-gm
-var imageProcessor = (config.imageProcessor === 'imagemagic') ? require('gm').subClass({ imageMagick: true }) : require('gm');
+const imageProcessor = (config.imageProcessor === 'imagemagic') ? require('gm').subClass({ imageMagick: true }) : require('gm');
 
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
@@ -94,7 +94,7 @@ exports.avatarUploadField = function (req, res, next) {
     });
   }
 
-  var validImageMimeTypes = [
+  const validImageMimeTypes = [
     'image/gif',
     'image/jpeg',
     'image/jpg',
@@ -114,7 +114,7 @@ exports.avatarUploadField = function (req, res, next) {
  */
 exports.avatarUpload = function (req, res) {
   // Each user has their own folder for avatars
-  var uploadDir = path.resolve(config.uploadDir) + '/' + req.user._id + '/avatar'; // No trailing slash
+  const uploadDir = path.resolve(config.uploadDir) + '/' + req.user._id + '/avatar'; // No trailing slash
 
   /**
    * Process uploaded file
@@ -133,11 +133,11 @@ exports.avatarUpload = function (req, res) {
     // Make the thumbnails
     function (done) {
 
-      var asyncQueueErrorHappened;
+      let asyncQueueErrorHappened;
 
       // Create a queue worker
       // @link https://github.com/caolan/async#queueworker-concurrency
-      var q = async.queue(function (thumbSize, callback) {
+      const q = async.queue(function (thumbSize, callback) {
         // Create thumbnail size
         // Images are resized following quality/size -optimization tips from this article:
         // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/
@@ -228,7 +228,7 @@ exports.update = function (req, res) {
 
   // validate locale
   // @TODO validation framework
-  var localeCodes = locales.map(function (locale) { return locale.code; });
+  const localeCodes = locales.map(function (locale) { return locale.code; });
   if (req.body.locale && (typeof req.body.locale !== 'string' || !localeCodes.includes(req.body.locale))) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('bad-request')
@@ -275,7 +275,7 @@ exports.update = function (req, res) {
       // Generate only if email changed
       if (req.body.email && req.body.email !== req.user.email) {
         crypto.randomBytes(20, function (err, buffer) {
-          var token = buffer.toString('hex');
+          const token = buffer.toString('hex');
           done(err, token, req.body.email);
         });
       } else {
@@ -335,7 +335,7 @@ exports.update = function (req, res) {
       delete req.body.acquisitionStory;
 
       // Merge existing user
-      var user = req.user;
+      let user = req.user;
       user = _.extend(user, req.body);
       user.updated = Date.now();
 
@@ -403,7 +403,7 @@ exports.initializeRemoveProfile = function (req, res) {
     // Generate random token
     function (done) {
       crypto.randomBytes(20, function (err, buffer) {
-        var token = buffer.toString('hex');
+        const token = buffer.toString('hex');
         done(err, token);
       });
     },
@@ -412,7 +412,7 @@ exports.initializeRemoveProfile = function (req, res) {
     function (token, done) {
 
       // Token expires in 24 hours
-      var tokenExpires = Date.now() + (24 * 3600000);
+      const tokenExpires = Date.now() + (24 * 3600000);
 
       User.findOneAndUpdate(
         { _id: req.user._id },
@@ -663,7 +663,7 @@ exports.getMiniUser = function (req, res) {
     // 'public' isn't needed at frontend.
     // We had to bring it until here trough
     // ACL policy since it's needed there.
-    var profile = req.profile.toObject();
+    const profile = req.profile.toObject();
     delete profile.public;
     res.json(profile);
   } else {
@@ -808,7 +808,7 @@ exports.userByUsername = function (req, res, next, username) {
  * @return {Bool}
  */
 function isUsernameUpdateAllowed(user) {
-  var allowedDate = moment(user.usernameUpdated || user.created)
+  const allowedDate = moment(user.usernameUpdated || user.created)
     .add(3, 'months');
   return moment().isSameOrAfter(allowedDate);
 }
@@ -903,7 +903,7 @@ exports.joinTribe = function (req, res) {
     });
   }
 
-  var tribeId = req.params.tribeId;
+  const tribeId = req.params.tribeId;
 
   // Not a valid ObjectId
   if (!tribeId || !mongoose.Types.ObjectId.isValid(tribeId)) {
@@ -970,7 +970,7 @@ exports.joinTribe = function (req, res) {
     function (tribe, user, done) {
       // Preserver only public fields
       // Array of keys to preserve in tribe before sending it to the frontend
-      var pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
+      const pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
 
       // Sanitize user profile
       user = exports.sanitizeProfile(user, req.user);
@@ -1020,7 +1020,7 @@ exports.leaveTribe = function (req, res) {
     });
   }
 
-  var tribeId = req.params.tribeId;
+  const tribeId = req.params.tribeId;
 
   // Not a valid ObjectId
   if (!tribeId || !mongoose.Types.ObjectId.isValid(tribeId)) {
@@ -1086,7 +1086,7 @@ exports.leaveTribe = function (req, res) {
     function (tribe, user, done) {
       // Preserver only public fields
       // Array of keys to preserve in tribe before sending it to the frontend
-      var pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
+      const pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
 
       // Sanitize user profile
       user = exports.sanitizeProfile(user, req.user);
@@ -1172,10 +1172,10 @@ exports.removePushRegistration = function (req, res) {
     });
   }
 
-  var user = req.user;
-  var token = req.params.token;
+  const user = req.user;
+  const token = req.params.token;
 
-  var query = {
+  const query = {
     $pull: {
       pushRegistration: {
         token: token
@@ -1214,11 +1214,11 @@ exports.addPushRegistration = function (req, res) {
     });
   }
 
-  var user = req.user;
-  var token = String(_.get(req, 'body.token', ''));
-  var platform = String(_.get(req, 'body.platform', ''));
-  var deviceId = String(_.get(req, 'body.deviceId', ''));
-  var doNotNotify = Boolean(_.get(req, 'body.doNotNotify', false));
+  let user = req.user;
+  const token = String(_.get(req, 'body.token', ''));
+  const platform = String(_.get(req, 'body.platform', ''));
+  const deviceId = String(_.get(req, 'body.deviceId', ''));
+  const doNotNotify = Boolean(_.get(req, 'body.doNotNotify', false));
 
   if (!token) {
     return res.status(400).send({
@@ -1228,7 +1228,7 @@ exports.addPushRegistration = function (req, res) {
 
   // PushRegistration is a sub-schema at User schema, thus we need to dig deeper in to get `enumValues`
   // Will contain array of string values, e.g. `['android', 'ios', 'web']`
-  var validPlatforms = User.schema.path('pushRegistration').schema.path('platform').enumValues || [];
+  const validPlatforms = User.schema.path('pushRegistration').schema.path('platform').enumValues || [];
 
   if (!platform || validPlatforms.indexOf(platform) === -1) {
     return res.status(400).send({
@@ -1256,7 +1256,7 @@ exports.addPushRegistration = function (req, res) {
     // Add new registration
 
     function (done) {
-      var registration = {
+      const registration = {
         platform: platform,
         token: token,
         created: Date.now()
@@ -1350,16 +1350,16 @@ exports.getInviteCode = function (req, res) {
  */
 exports.validateInviteCode = function (req, res) {
 
-  var inviteCode = _.get(req.params, 'invitecode', false);
+  const inviteCode = _.get(req.params, 'invitecode', false);
 
   // Is invite code valid
-  var inviteCodeValid = inviteCode && inviteCodeService.validateCode(inviteCode.toLowerCase());
+  const inviteCodeValid = inviteCode && inviteCodeService.validateCode(inviteCode.toLowerCase());
 
   // Is code in predefined invite codes list?
-  var isPredefined = inviteCodeValid && inviteCodeService.isPredefined(inviteCode.toLowerCase());
+  const isPredefined = inviteCodeValid && inviteCodeService.isPredefined(inviteCode.toLowerCase());
 
   // Object for statistics
-  var stats = {
+  const stats = {
     namespace: 'inviteCodeValidation',
     counts: {
       count: 1
@@ -1417,7 +1417,7 @@ exports.search = function (req, res, next) {
 
   // validate the query string
   if (req.query.search.length < 3) {
-    var errorMessage = errorService.getErrorMessageByKey('bad-request');
+    const errorMessage = errorService.getErrorMessageByKey('bad-request');
     return res.status(400).send({
       message: errorMessage,
       detail: 'Query string should be at least 3 characters long.'

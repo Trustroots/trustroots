@@ -37,7 +37,7 @@
       messageCenterService
     ) {
 
-      var vm = this;
+      const vm = this;
 
       vm.tribe = $scope.tribe;
       vm.isMember = false;
@@ -130,7 +130,7 @@
               return;
             }
 
-            var errorMessage = err && err.data && err.data.message ? err.data.message : 'Failed to leave the tribe. Try again!';
+            const errorMessage = err && err.data && err.data.message ? err.data.message : 'Failed to leave the tribe. Try again!';
             messageCenterService.add('danger', errorMessage);
           })
           .finally(function () {

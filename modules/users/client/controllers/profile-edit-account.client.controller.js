@@ -8,7 +8,7 @@
     $http, Users, Authentication, messageCenterService, push, $scope, trNativeAppBridge) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed
     vm.updateUsername = updateUsername;
@@ -51,7 +51,7 @@
         return '';
       }
 
-      var err = usernameModel.$error || {};
+      const err = usernameModel.$error || {};
 
       if (err.required || usernameModel.$usernameValue === '') {
         return 'Username is required.';
@@ -102,7 +102,7 @@
      */
     function updateUsername() {
       vm.usernameSuccess = vm.usernameError = null;
-      var user = new Users(Authentication.user);
+      const user = new Users(Authentication.user);
       /* Just in case the user has changed the e-mail input */
       delete user.email;
 
@@ -119,7 +119,7 @@
      */
     function updateUserEmail() {
       vm.emailSuccess = vm.emailError = null;
-      var user = new Users(Authentication.user);
+      const user = new Users(Authentication.user);
       /* Just in case the user has changed the username input */
       delete user.username;
 
@@ -147,7 +147,7 @@
             messageCenterService.add('success', 'Confirmation email resent.');
           })
           .catch(function (response) {
-            var errorMessage;
+            let errorMessage;
             if (response) {
               errorMessage = 'Error: ' + ((response.data && response.data.message) || 'Something went wrong.');
             } else {
@@ -163,7 +163,7 @@
      */
     function updateUserSubscriptions() {
       vm.updatingUserSubscriptions = true;
-      var user = new Users(Authentication.user);
+      const user = new Users(Authentication.user);
       user.$update(function (response) {
         messageCenterService.add('success', 'Subscriptions updated.');
         vm.user = Authentication.user = response;

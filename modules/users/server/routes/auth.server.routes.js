@@ -1,10 +1,10 @@
 /**
  * Module dependencies.
  */
-var usersPolicy = require('../policies/users.server.policy'),
-    userAuthentication = require('../controllers/users.authentication.server.controller'),
-    userPassword = require('../controllers/users.password.server.controller'),
-    passport = require('passport');
+const usersPolicy = require('../policies/users.server.policy');
+const userAuthentication = require('../controllers/users.authentication.server.controller');
+const userPassword = require('../controllers/users.password.server.controller');
+const passport = require('passport');
 
 module.exports = function (app) {
 

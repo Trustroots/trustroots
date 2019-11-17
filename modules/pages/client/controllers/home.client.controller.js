@@ -29,10 +29,10 @@
   /* @ngInject */
   function HomeController($stateParams, $window, TribesService, TribeService) {
 
-    var headerHeight = angular.element('#tr-header').height() || 0;
+    const headerHeight = angular.element('#tr-header').height() || 0;
 
     // View model
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.boardHeight = $window.innerWidth <= 480 && $window.innerHeight < 700 ? 400 : $window.innerHeight - headerHeight + 14;

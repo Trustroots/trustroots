@@ -1,14 +1,14 @@
 // Testing that when we send general proper data points to stats api,
 // the correct data will arrive to the right endpoints (stathat, influx).
 
-var should = require('should'),
-    path = require('path'),
-    _ = require('lodash'),
-    statsService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    config = require(path.resolve('./config/config')),
-    influx = require('influx'),
-    stathat = require('stathat'),
-    sinon = require('sinon');
+const should = require('should');
+const path = require('path');
+const _ = require('lodash');
+const statsService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const config = require(path.resolve('./config/config'));
+const influx = require('influx');
+const stathat = require('stathat');
+const sinon = require('sinon');
 
 describe('Stat API integration tests', function () {
   // restoring stubs
@@ -68,7 +68,7 @@ describe('Stat API integration tests', function () {
     context('valid data', function () {
       it('correct data arrive to the endpoints', function (done) {
         // the testing data
-        var data = {
+        const data = {
           namespace: 'test',
           counts: {
             count1: 1,
@@ -87,10 +87,10 @@ describe('Stat API integration tests', function () {
           try {
             // test influx endpoint
             sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
-            var point = points[0];
+            const point = points[0];
 
             should(measurement).eql('test');
             should(point).have.propertyByPath('fields', 'count1').eql(1);
@@ -103,10 +103,10 @@ describe('Stat API integration tests', function () {
             sinon.assert.callCount(stathat.trackEZCount, 2);
             sinon.assert.callCount(stathat.trackEZValue, 2);
 
-            var calledWith0 = stathat.trackEZCount.getCall(0).args;
-            var calledWith1 = stathat.trackEZCount.getCall(1).args;
-            var calledWith2 = stathat.trackEZValue.getCall(0).args;
-            var calledWith3 = stathat.trackEZValue.getCall(1).args;
+            const calledWith0 = stathat.trackEZCount.getCall(0).args;
+            const calledWith1 = stathat.trackEZCount.getCall(1).args;
+            const calledWith2 = stathat.trackEZValue.getCall(0).args;
+            const calledWith3 = stathat.trackEZValue.getCall(1).args;
 
             // the first argument to the endpoint should be the stathat key
             should(calledWith0[0]).equal(config.stathat.key);
@@ -139,7 +139,7 @@ describe('Stat API integration tests', function () {
 
       it('[with time] correct data arrive to the endpoints', function (done) {
         // the testing data
-        var data = {
+        const data = {
           namespace: 'test',
           counts: {
             count1: 1,
@@ -159,10 +159,10 @@ describe('Stat API integration tests', function () {
           try {
             // test influx endpoint
             sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
-            var point = points[0];
+            const point = points[0];
 
             should(measurement).eql('test');
             should(point).have.propertyByPath('fields', 'count1').eql(1);
@@ -176,10 +176,10 @@ describe('Stat API integration tests', function () {
             sinon.assert.callCount(stathat.trackEZCountWithTime, 2);
             sinon.assert.callCount(stathat.trackEZValueWithTime, 2);
 
-            var calledWith0 = stathat.trackEZCountWithTime.getCall(0).args;
-            var calledWith1 = stathat.trackEZCountWithTime.getCall(1).args;
-            var calledWith2 = stathat.trackEZValueWithTime.getCall(0).args;
-            var calledWith3 = stathat.trackEZValueWithTime.getCall(1).args;
+            const calledWith0 = stathat.trackEZCountWithTime.getCall(0).args;
+            const calledWith1 = stathat.trackEZCountWithTime.getCall(1).args;
+            const calledWith2 = stathat.trackEZValueWithTime.getCall(0).args;
+            const calledWith3 = stathat.trackEZValueWithTime.getCall(1).args;
 
             // the first argument to the endpoint should be the stathat key
             should(calledWith0[0]).equal(config.stathat.key);
@@ -199,7 +199,7 @@ describe('Stat API integration tests', function () {
             should([calledWith2[2], calledWith3[2]]).containEql(4);
 
             // the 4th argument to the endpoint should be a timestamp in seconds
-            var secTime = data.time.getTime() / 1000;
+            const secTime = data.time.getTime() / 1000;
             should(calledWith0[3]).eql(secTime);
             should(calledWith1[3]).eql(secTime);
             should(calledWith2[3]).eql(secTime);
@@ -219,7 +219,7 @@ describe('Stat API integration tests', function () {
 
       it('[with tags] correct data arrive to the endpoints', function (done) {
         // the testing data
-        var data = {
+        const data = {
           namespace: 'test',
           counts: {
             count: 1
@@ -240,10 +240,10 @@ describe('Stat API integration tests', function () {
           try {
             // test influx endpoint
             sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
-            var point = points[0];
+            const point = points[0];
 
             should(measurement).eql('test');
             should(point).have.propertyByPath('fields', 'count').eql(1);
@@ -257,14 +257,14 @@ describe('Stat API integration tests', function () {
             sinon.assert.callCount(stathat.trackEZValue, 3);
 
             // collect the output from the stubbed stathat functions
-            var countsCalledWith = _.map(_.range(3), function (i) {
+            const countsCalledWith = _.map(_.range(3), function (i) {
               return stathat.trackEZCount.getCall(i).args;
             });
-            var valuesCalledWith = _.map(_.range(3), function (i) {
+            const valuesCalledWith = _.map(_.range(3), function (i) {
               return stathat.trackEZValue.getCall(i).args;
             });
 
-            var calledWith = _.concat(countsCalledWith, valuesCalledWith);
+            const calledWith = _.concat(countsCalledWith, valuesCalledWith);
 
             // the first argument to the endpoint should be the stathat key
             // the 4th argument should be a callback function
@@ -279,8 +279,8 @@ describe('Stat API integration tests', function () {
             // separate the nth arguments into groups
             // the arguments grouped by their position
             // [1st arguments[], 2nd[], 3rd[], ...]
-            var countGroupArgs = _.zip.apply(this, countsCalledWith);
-            var valueGroupArgs = _.zip.apply(this, valuesCalledWith);
+            const countGroupArgs = _.zip.apply(this, countsCalledWith);
+            const valueGroupArgs = _.zip.apply(this, valuesCalledWith);
 
             // *** counts ***
             _.forEach([
@@ -322,7 +322,7 @@ describe('Stat API integration tests', function () {
 
       it('[with metadata] correct data arrive to the endpoints', function (done) {
         // the testing data
-        var data = {
+        const data = {
           namespace: 'test',
           counts: {
             count: 1
@@ -343,10 +343,10 @@ describe('Stat API integration tests', function () {
           try {
             // test influx endpoint
             sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
-            var point = points[0];
+            const point = points[0];
 
             should(measurement).eql('test');
             should(point).have.propertyByPath('fields', 'count').eql(1);
@@ -362,8 +362,8 @@ describe('Stat API integration tests', function () {
             sinon.assert.callCount(stathat.trackEZValue, 1);
 
             // collect the output from the stubbed stathat functions
-            var countCalledWith = stathat.trackEZCount.getCall(0).args;
-            var valueCalledWith = stathat.trackEZValue.getCall(0).args;
+            const countCalledWith = stathat.trackEZCount.getCall(0).args;
+            const valueCalledWith = stathat.trackEZValue.getCall(0).args;
 
             should(countCalledWith[1]).equal('test.count');
             should(valueCalledWith[1]).equal('test.value');
@@ -383,10 +383,10 @@ describe('Stat API integration tests', function () {
           try {
             // test influx endpoint
             sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
-            var point = points[0];
+            const point = points[0];
 
             should(measurement).eql('testCount');
             should(point).have.propertyByPath('fields', 'count').eql(3.5);
@@ -398,7 +398,7 @@ describe('Stat API integration tests', function () {
             sinon.assert.callCount(stathat.trackEZCount, 1);
             sinon.assert.callCount(stathat.trackEZValue, 0);
 
-            var calledWith = stathat.trackEZCount.getCall(0).args;
+            const calledWith = stathat.trackEZCount.getCall(0).args;
 
             // the first argument to the endpoint should be the stathat key
             should(calledWith[0]).equal(config.stathat.key);
@@ -421,17 +421,17 @@ describe('Stat API integration tests', function () {
 
       it('[count with time] correct data arrive to the endpoints', function (done) {
         // call the stat api count(namespace, number, date, callback)
-        var testDate = new Date('2016-01-31 5:31:01.221');
+        const testDate = new Date('2016-01-31 5:31:01.221');
         statsService.count('testCountWithTime', 2.6, testDate, function (e) {
           if (e) return done(e);
 
           try {
             // test influx endpoint
             sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
-            var point = points[0];
+            const point = points[0];
 
             should(measurement).eql('testCountWithTime');
             should(point).have.propertyByPath('fields', 'count').eql(2.6);
@@ -442,7 +442,7 @@ describe('Stat API integration tests', function () {
             // test stathat endpoint
             sinon.assert.callCount(stathat.trackEZCountWithTime, 1);
 
-            var calledWith = stathat.trackEZCountWithTime.getCall(0).args;
+            const calledWith = stathat.trackEZCountWithTime.getCall(0).args;
 
             // the first argument to the endpoint should be the stathat key
             should(calledWith[0]).equal(config.stathat.key);
@@ -454,7 +454,7 @@ describe('Stat API integration tests', function () {
             should(calledWith[2]).equal(2.6);
 
             // the 4th argument is a timestamp in seconds
-            var secTimestamp = testDate.getTime() / 1000;
+            const secTimestamp = testDate.getTime() / 1000;
             should(calledWith[3]).equal(secTimestamp);
 
             // the 5th argument is a callback
@@ -475,10 +475,10 @@ describe('Stat API integration tests', function () {
           try {
             // test influx endpoint
             sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
-            var point = points[0];
+            const point = points[0];
 
             should(measurement).eql('testValue');
             should(point).have.propertyByPath('fields', 'value').eql(13.31);
@@ -490,7 +490,7 @@ describe('Stat API integration tests', function () {
             sinon.assert.callCount(stathat.trackEZCount, 0);
             sinon.assert.callCount(stathat.trackEZValue, 1);
 
-            var calledWith = stathat.trackEZValue.getCall(0).args;
+            const calledWith = stathat.trackEZValue.getCall(0).args;
 
             // the first argument to the endpoint should be the stathat key
             should(calledWith[0]).equal(config.stathat.key);
@@ -512,17 +512,17 @@ describe('Stat API integration tests', function () {
       });
       it('[value with time] correct data arrive to the endpoints', function (done) {
         // call the stat api value(namespace, number, date, callback)
-        var testDate = new Date('2016-01-30 5:32:01.221');
+        const testDate = new Date('2016-01-30 5:32:01.221');
         statsService.value('testValueWithTime', - 3.78, testDate, function (e) {
           if (e) return done(e);
 
           try {
             // test influx endpoint
             sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
-            var point = points[0];
+            const point = points[0];
 
             should(measurement).eql('testValueWithTime');
             should(point).have.propertyByPath('fields', 'value').eql(- 3.78);
@@ -533,7 +533,7 @@ describe('Stat API integration tests', function () {
             // test stathat endpoint
             sinon.assert.callCount(stathat.trackEZValueWithTime, 1);
 
-            var calledWith = stathat.trackEZValueWithTime.getCall(0).args;
+            const calledWith = stathat.trackEZValueWithTime.getCall(0).args;
 
             // the first argument to the endpoint should be the stathat key
             should(calledWith[0]).equal(config.stathat.key);
@@ -545,7 +545,7 @@ describe('Stat API integration tests', function () {
             should(calledWith[2]).equal(- 3.78);
 
             // the 4th argument is a timestamp in seconds
-            var secTimestamp = testDate.getTime() / 1000;
+            const secTimestamp = testDate.getTime() / 1000;
             should(calledWith[3]).equal(secTimestamp);
 
             // the 5th argument is a callback
@@ -561,7 +561,7 @@ describe('Stat API integration tests', function () {
 
     context('invalid data', function () {
       it('[duplicate property] should call callback with error', function (done) {
-        var invalidData = {
+        const invalidData = {
           namespace: 'test',
           counts: {
             sameName: 3
@@ -588,7 +588,7 @@ describe('Stat API integration tests', function () {
       });
 
       it('[missing count or value] should call callback with error', function (done) {
-        var invalidData = {
+        const invalidData = {
           namespace: 'test',
           counts: {},
           meta: {
@@ -613,7 +613,7 @@ describe('Stat API integration tests', function () {
       });
 
       it('[invalid datatype] should call callback with error', function (done) {
-        var invalidData = {
+        const invalidData = {
           namespace: 'test',
           counts: {
             stringCount: 'string'
@@ -637,7 +637,7 @@ describe('Stat API integration tests', function () {
       });
 
       it('[invalid time format] should call callback with error', function (done) {
-        var data = {
+        const data = {
           namespace: 'invalidTime',
           values: {
             v1: 5

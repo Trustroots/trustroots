@@ -7,7 +7,7 @@
   function ContactsListController($scope, $rootScope) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     /**
      * Fetch contact list for the profile currently open in parent view

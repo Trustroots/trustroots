@@ -12,15 +12,15 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    config = require(path.resolve('./config/config')),
-    log = require(path.resolve('./config/lib/logger')),
-    async = require('async'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const config = require(path.resolve('./config/config'));
+const log = require(path.resolve('./config/lib/logger'));
+const async = require('async');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
 
 module.exports = function (job, agendaDone) {
   async.waterfall([
@@ -29,10 +29,10 @@ module.exports = function (job, agendaDone) {
     function (done) {
 
       // Ignore very recently signed up users
-      var createdTimeAgo = moment().subtract(moment.duration({ 'hours': 4 }));
+      const createdTimeAgo = moment().subtract(moment.duration({ 'hours': 4 }));
 
       // Ignore very recently reminded users
-      var remindedTimeAgo = moment().subtract(moment.duration({ 'days': 2 }));
+      const remindedTimeAgo = moment().subtract(moment.duration({ 'days': 2 }));
 
       User
         .find({

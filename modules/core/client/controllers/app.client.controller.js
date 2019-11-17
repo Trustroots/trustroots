@@ -24,7 +24,7 @@
     trNativeAppBridge) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.user = Authentication.user;

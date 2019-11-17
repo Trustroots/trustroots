@@ -1,30 +1,30 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    testutils = require(path.resolve('./testutils/server.testutil')),
-    config = require(path.resolve('./config/config')),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User');
+const path = require('path');
+const testutils = require(path.resolve('./testutils/server.testutil'));
+const config = require(path.resolve('./config/config'));
+const moment = require('moment');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
 
 /**
  * Globals
  */
-var unConfirmedUser,
-    _unConfirmedUser,
-    confirmedUser,
-    _confirmedUser,
-    userWelcomeSequenceFirstJobHandler,
-    userWelcomeSequenceSecondJobHandler,
-    userWelcomeSequenceThirdJobHandler,
-    timeLimit,
-    timeFuture,
-    timePast;
+let unConfirmedUser;
+let _unConfirmedUser;
+let confirmedUser;
+let _confirmedUser;
+let userWelcomeSequenceFirstJobHandler;
+let userWelcomeSequenceSecondJobHandler;
+let userWelcomeSequenceThirdJobHandler;
+let timeLimit;
+let timeFuture;
+let timePast;
 
 describe('Job: welcome sequence, second email', function () {
 
-  var jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs();
 
   before(function () {
     userWelcomeSequenceFirstJobHandler = require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-first.server.job'));

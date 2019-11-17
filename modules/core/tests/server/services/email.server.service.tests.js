@@ -1,20 +1,20 @@
-var path = require('path'),
-    should = require('should'),
-    testutils = require(path.resolve('./testutils/server.testutil')),
-    config = require(path.resolve('./config/config'));
+const path = require('path');
+const should = require('should');
+const testutils = require(path.resolve('./testutils/server.testutil'));
+const config = require(path.resolve('./config/config'));
 
-var emailService;
+let emailService;
 
 describe('Service: email', function () {
 
-  var jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs();
 
   before(function () {
     emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
   });
 
   it('can send signup email confirmation', function (done) {
-    var user = {
+    const user = {
       displayName: 'test user',
       email: 'test@test.com',
       emailTemporary: 'test@test.com',
@@ -37,7 +37,7 @@ describe('Service: email', function () {
   });
 
   it('can send change email confirmation', function (done) {
-    var user = {
+    const user = {
       displayName: 'test user',
       email: 'test@test.com',
       emailTemporary: 'test-change@test.com',
@@ -59,7 +59,7 @@ describe('Service: email', function () {
   });
 
   it('can send password reset email', function (done) {
-    var user = {
+    const user = {
       displayName: 'test user',
       email: 'test@test.com',
       resetPasswordToken: 'SOMETOKEN'
@@ -80,7 +80,7 @@ describe('Service: email', function () {
   });
 
   it('can send password reset confirm email', function (done) {
-    var user = {
+    const user = {
       displayName: 'test user',
       email: 'test@test.com',
       emailToken: 'emailtoken'
@@ -97,8 +97,8 @@ describe('Service: email', function () {
   });
 
   it('can send host reactivation email', function (done) {
-    var urlOffer = (config.https ? 'https' : 'http') + '://' + config.domain + '/offer';
-    var user = {
+    const urlOffer = (config.https ? 'https' : 'http') + '://' + config.domain + '/offer';
+    const user = {
       firstName: 'first',
       lastName: 'last',
       displayName: 'first last',
@@ -120,19 +120,19 @@ describe('Service: email', function () {
   });
 
   it('can send messages unread email', function (done) {
-    var userFrom = {
+    const userFrom = {
       _id: 'from-user-id',
       username: 'userfrom',
       displayName: 'from name',
       email: 'from@test.com'
     };
-    var userTo = {
+    const userTo = {
       _id: 'to-user-id',
       username: 'userto',
       displayName: 'to name',
       email: 'to@test.com'
     };
-    var notification = {
+    const notification = {
       messages: [
         {
           id: 'message-id-1',
@@ -159,7 +159,7 @@ describe('Service: email', function () {
   });
 
   it('can send support request email', function (done) {
-    var supportRequest = {
+    const supportRequest = {
       message: 'test-support-message',
       username: 'joedoe',
       email: 'test@test.com',
@@ -172,7 +172,7 @@ describe('Service: email', function () {
       signupDate: new Date().toString(),
       reportMember: 'baduser'
     };
-    var replyTo = {
+    const replyTo = {
       email: 'replyto@test.com'
     };
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
@@ -201,7 +201,7 @@ describe('Service: email', function () {
   });
 
   it('can send signup reminder email', function (done) {
-    var user = {
+    const user = {
       _id: 'user-id',
       username: 'username',
       displayName: 'Firstname Lastname',
@@ -223,7 +223,7 @@ describe('Service: email', function () {
   });
 
   it('emails should have inline css styles', function (done) {
-    var params = emailService.addEmailBaseTemplateParams({
+    const params = emailService.addEmailBaseTemplateParams({
       subject: 'test',
       name: 'test',
       email: 'test@test.com',
@@ -240,7 +240,7 @@ describe('Service: email', function () {
   });
 
   it('emails should have Sparkpost `campaign_id` header', function (done) {
-    var user = {
+    const user = {
       displayName: 'test user',
       email: 'test@test.com',
       emailToken: 'emailtoken'
@@ -253,7 +253,7 @@ describe('Service: email', function () {
   });
 
   it('emails should have "do not reply" note when sending from default email', function (done) {
-    var params = emailService.addEmailBaseTemplateParams({
+    const params = emailService.addEmailBaseTemplateParams({
       subject: 'test',
       name: 'test',
       email: 'test@example.com',
@@ -272,7 +272,7 @@ describe('Service: email', function () {
   });
 
   it('emails should not have "do not reply" note when sending from custom email', function (done) {
-    var params = emailService.addEmailBaseTemplateParams({
+    const params = emailService.addEmailBaseTemplateParams({
       subject: 'test',
       name: 'test',
       email: 'test@example.com',
@@ -293,7 +293,7 @@ describe('Service: email', function () {
   describe('Plain text emails', function () {
 
     it('should be able to render text-only emails', function (done) {
-      var params = emailService.addEmailBaseTemplateParams({
+      const params = emailService.addEmailBaseTemplateParams({
         subject: 'test',
         name: 'test',
         email: 'test@test.com',
@@ -312,7 +312,7 @@ describe('Service: email', function () {
     });
 
     it('plain text emails should not contain html or html entities', function (done) {
-      var params = {
+      const params = {
         skipHtmlTemplate: true, // Don't render html template for this email
         request: {
           message: '> Foo &amp; <p>foo<br />bar</p> <script>alert()</script>bar'
@@ -333,19 +333,19 @@ describe('Service: email', function () {
 
   context('Confirm contact email', function () {
 
-    var user = {
+    const user = {
       displayName: 'test user',
       email: 'test@test.com'
     };
-    var friend = {
+    const friend = {
       displayName: 'friend user',
       email: 'friend@test.com'
     };
-    var contact = {
+    const contact = {
       _id: 'somecontactid'
     };
-    var messageHTML = '<span>nice custom message</span>';
-    var messageText = 'plain message';
+    const messageHTML = '<span>nice custom message</span>';
+    const messageText = 'plain message';
 
     beforeEach(function (done) {
       emailService.sendConfirmContact(user, friend, contact, messageHTML, messageText, done);
