@@ -38,7 +38,7 @@ const defaultRules = {
   'no-unused-vars': 2,
   'no-use-before-define': [1, 'nofunc'],
   'object-curly-spacing': [2, 'always'],
-  'one-var': [0, 'never'],
+  'one-var': [2, 'never'],
   'one-var-declaration-per-line': [2, 'always'],
   'padded-blocks': 0,
   'semi': [2, 'always'],
