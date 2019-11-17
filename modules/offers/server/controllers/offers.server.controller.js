@@ -146,7 +146,7 @@ function isValidOfferType(type) {
 function isValidUntil(validUntil) {
 
   // Input date
-  var validUntil = moment(validUntil);
+  validUntil = moment(validUntil);
 
   // Validate input date
   if (!validUntil.isValid()) {
@@ -637,7 +637,7 @@ exports.getOffer = function (req, res) {
 
     function (offer) {
       // Sanitize offer before returning it
-      var offer = sanitizeOffer(offer, req.user._id);
+      offer = sanitizeOffer(offer, req.user._id);
 
       res.json(offer);
     }

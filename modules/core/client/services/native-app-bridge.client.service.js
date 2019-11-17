@@ -185,7 +185,7 @@
         return;
       }
 
-      var data = data && angular.isObject(data) ? data : {};
+      data = data && angular.isObject(data) ? data : {};
 
       var message = angular.extend({
         action: action

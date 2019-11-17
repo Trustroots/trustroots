@@ -60,7 +60,7 @@
         var availableTypes = ['info', 'warning', 'danger', 'success'],
             service = this;
         options = options || {};
-        var options = angular.extend({}, $messageCenterService.getOptions(), options);
+        options = angular.extend({}, $messageCenterService.getOptions(), options);
         if (availableTypes.indexOf(type) === -1) {
           // eslint-disable-next-line no-throw-literal
           throw 'Invalid message type';

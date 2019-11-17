@@ -1,13 +1,11 @@
 'use strict';
 
-var path = require('path'),
-    locales = require(path.resolve('./config/shared/locales'));
-
 /**
  * Module dependencies.
  */
 var _ = require('lodash'),
     path = require('path'),
+    locales = require(path.resolve('./config/shared/locales')),
     errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
     textService = require(path.resolve('./modules/core/server/services/text.server.service')),
     tribesHandler = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller')),
