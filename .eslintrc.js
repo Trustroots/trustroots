@@ -160,8 +160,6 @@ module.exports = {
     {
       files: [
         'config/client/**',
-        'config/env/**',
-        'config/webpack/**',
         'modules/admin/client/**',
         'modules/core/client/app/config.js',
         'modules/**/client/components/**',
