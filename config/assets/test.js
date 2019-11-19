@@ -9,7 +9,7 @@ module.exports = {
       uibModuleTemplates: defaultAssets.client.lib.uibModuleTemplates,
       css: defaultAssets.client.lib.css,
       js: _.union(defaultAssets.client.lib.js, [
-        'testutils/angulartics-null.testutil.js'
+        'testutils/client/angulartics-null.testutil.js'
       ]),
       less: defaultAssets.client.lib.less,
       tests: defaultAssets.client.lib.tests

@@ -12,7 +12,7 @@ const Offer = mongoose.model('Offer');
 const Tribe = mongoose.model('Tribe');
 const config = require(path.resolve('./config/config'));
 const express = require(path.resolve('./config/lib/express'));
-const testutils = require(path.resolve('./testutils/server.testutil'));
+const testutils = require(path.resolve('./testutils/server/server.testutil'));
 
 /**
  * Globals

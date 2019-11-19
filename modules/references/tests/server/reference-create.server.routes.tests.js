@@ -4,8 +4,8 @@ const path = require('path');
 const sinon = require('sinon');
 const mongoose = require('mongoose');
 const Reference = mongoose.model('Reference');
-const testutils = require(path.resolve('./testutils/server.testutil'));
-const utils = require(path.resolve('./testutils/data.server.testutils'));
+const testutils = require(path.resolve('./testutils/server/server.testutil'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const express = require(path.resolve('./config/lib/express'));
 
 describe('Create a reference', () => {

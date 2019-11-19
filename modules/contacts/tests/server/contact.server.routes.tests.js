@@ -6,7 +6,7 @@ const User = mongoose.model('User');
 const Contact = mongoose.model('Contact');
 const express = require(path.resolve('./config/lib/express'));
 const agenda = require(path.resolve('./config/lib/agenda'));
-const testutils = require(path.resolve('./testutils/server.testutil'));
+const testutils = require(path.resolve('./testutils/server/server.testutil'));
 
 
 /**

@@ -1,6 +1,6 @@
 const path = require('path');
 const mongoose = require('mongoose');
-const testutils = require(path.resolve('./testutils/server.testutil'));
+const testutils = require(path.resolve('./testutils/server/server.testutil'));
 
 /**
  * Globals

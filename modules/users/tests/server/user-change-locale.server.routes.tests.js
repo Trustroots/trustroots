@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const request = require('supertest');
 const should = require('should');
-const utils = require(path.resolve('./testutils/data.server.testutils'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const express = require(path.resolve('./config/lib/express'));
 const User = mongoose.model('User');
 

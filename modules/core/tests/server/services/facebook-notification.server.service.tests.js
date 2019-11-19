@@ -1,5 +1,5 @@
 const path = require('path');
-const testutils = require(path.resolve('./testutils/server.testutil'));
+const testutils = require(path.resolve('./testutils/server/server.testutil'));
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 

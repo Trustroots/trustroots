@@ -6,7 +6,7 @@ const sinon = require('sinon');
 const util = require('util');
 const config = require(path.resolve('./config/config'));
 const jobPublishReference = require('../../server/jobs/references-publish.server.job');
-const utils = require(path.resolve('./testutils/data.server.testutils'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const Reference = mongoose.model('Reference');
 
 describe('Job: Set reference to public after a given period of time', () => {
