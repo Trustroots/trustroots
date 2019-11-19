@@ -77,7 +77,6 @@ module.exports = {
         'migrations/**',
         'modules/*/server/*.js',
         'modules/*/server/**/*.js',
-        'scripts/**',
         'testutils/server/**',
       ],
       env: {
@@ -238,7 +237,6 @@ module.exports = {
         'bin/**',
         'config/**',
         'migrations/**',
-        'scripts/**',
       ],
       env: {
         node: true,
