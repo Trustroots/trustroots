@@ -1,4 +1,3 @@
-/* eslint no-var: 0 */
 import photos from '@/modules/core/client/services/photos.service';
 
 (function () {
@@ -35,26 +34,26 @@ import photos from '@/modules/core/client/services/photos.service';
         }
 
         // If requested photo is missing or request is invalid, rely on this photo
-        var defaultPhoto = 'bokeh';
+        const defaultPhoto = 'bokeh';
 
         // scope.trBoards might be an array (therefore just pick one key from it) or a string (thus just use it as is)
-        var key = angular.isArray(scope.trBoards) ? scope.trBoards[Math.floor(Math.random() * (scope.trBoards.length))] : scope.trBoards;
+        const key = angular.isArray(scope.trBoards) ? scope.trBoards[Math.floor(Math.random() * (scope.trBoards.length))] : scope.trBoards;
 
         // Pick the photo
-        var photo = photos[key] || photos[defaultPhoto];
+        const photo = photos[key] || photos[defaultPhoto];
 
         // Add photo as a background to the element
         elem.addClass('board-' + key);
 
         // For small screens, if mobile image exists, use it
-        var file = ($window.innerWidth <= 480 && photo.file_mobile) ? photo.file_mobile : photo.file;
+        const file = ($window.innerWidth <= 480 && photo.file_mobile) ? photo.file_mobile : photo.file;
 
         elem.css({
           'background-image': 'url(/img/board/' + file + ')'
         });
 
         // To prevent key being literally `key`: `{key: ...}`, we want it to be actual keyname such as `hitchroad`.
-        var photoObject = {};
+        const photoObject = {};
         photoObject[key] = photo;
 
         // Send copyright info down the scope... something will pick it up! (pst, core/app-controller)
