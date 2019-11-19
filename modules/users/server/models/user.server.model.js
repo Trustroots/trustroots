@@ -129,7 +129,7 @@ const UserSchema = new Schema({
     trim: true,
     lowercase: true,
     default: '',
-    match: [/.+\@.+\..+/, 'Please enter a valid email address']
+    match: [/.+@.+\..+/, 'Please enter a valid email address']
   },
   tagline: {
     type: String,

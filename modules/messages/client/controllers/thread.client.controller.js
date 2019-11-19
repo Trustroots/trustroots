@@ -164,12 +164,12 @@
     function hostingReplyStatus(messageContent) {
 
       // Message has a hosting request reply and it's positive
-      if (messageContent.substr(0, 21) === '<p data-hosting=\"yes\"') {
+      if (messageContent.substr(0, 21) === '<p data-hosting="yes"') {
         return 'yes';
       }
 
       // Message has a hosting request reply and it's negative
-      if (messageContent.substr(0, 20) === '<p data-hosting=\"no\"') {
+      if (messageContent.substr(0, 20) === '<p data-hosting="no"') {
         return 'no';
       }
 
