@@ -61,144 +61,192 @@ module.exports = {
   plugins: ['angular', 'react'],
   env: {
     es6: true,
-    browser: true,
-    jasmine: true,
-    jquery: true,
-    mocha: true,
-    node: true
   },
   parserOptions: {
     ecmaVersion: 2018
   },
   parser: 'babel-eslint',
-  globals: {
-    __TESTING__: true,
-    _: false,
-    angular: true,
-    AppConfig: true,
-    browser: true,
-    by: true,
-    element: true,
-    inject: true,
-    Promise: true
-  },
-  /*
-   * Eventually, after the migration, these overrides will become the main rules.
-   *
-   * It would be nice to keep the rules for client and server separate,
-   * because eventually, they want to become independent codebases.
-  */
-  overrides: [{
-    // Overrides for Angular files
-    files: [
-      'modules/*/client/*.module.js',
-      'modules/*/client/config/*.js',
-      'modules/*/client/controllers/*.js',
-      'modules/*/client/directives/*.js',
-      'modules/*/client/filters/*.js',
-      'modules/*/client/services/*.js',
-      'modules/core/client/app/config.js',
-      'modules/core/client/app/init.js',
-    ],
-    rules: {
-      'angular/component-limit': 0,
-      'angular/controller-as-route': 1,
-      'angular/controller-as-vm': 1,
-      'angular/controller-as': 1,
-      'angular/deferred': 1,
-      'angular/di-unused': 2,
-      'angular/directive-restrict': 0,
-      'angular/empty-controller': 2,
-      'angular/no-controller': 0,
-      'angular/no-inline-template': 0,
-      'angular/no-run-logic': 0,
-      'angular/no-services': 0,
-      'angular/on-watch': 0,
-      'angular/prefer-component': 0,
-      'angular/no-cookiestore': 2,
-      'angular/no-directive-replace': 0,
-      'angular/no-http-callback': 2,
-      'angular/angularelement': 2,
-      'angular/definedundefined': 2,
-      'angular/document-service': 2,
-      'angular/interval-service': 2,
-      'angular/json-functions': 2,
-      'angular/log': 1,
-      'angular/timeout-service': 2,
-      'angular/typecheck-array': 2,
-      'angular/typecheck-date': 2,
-      'angular/typecheck-function': 2,
-      'angular/typecheck-number': 2,
-      'angular/typecheck-object': 2,
-      'angular/typecheck-string': 2,
-      'angular/window-service': 2
+  overrides: [
+    /**
+     * Overrides for server side app files
+     */
+    {
+      files: [
+        '*.js',
+        'config/**',
+        'migrations/**',
+        'modules/*/server/*.js',
+        'modules/*/server/**/*.js',
+        'scripts/**',
+        'testutils/server/**',
+      ],
+      env: {
+        node: true,
+      },
     },
-    settings: {
-      angular: 1,
+
+    /**
+     * Overrides for client Angular code
+     */
+    {
+      files: [
+        'modules/*/client/*.module.js',
+        'modules/*/client/config/*.js',
+        'modules/*/client/controllers/*.js',
+        'modules/*/client/directives/*.js',
+        'modules/*/client/filters/*.js',
+        'modules/*/client/services/*.js',
+        'modules/core/client/app/config.js',
+        'modules/core/client/app/init.js',
+        'testutils/client/*.js',
+      ],
+      rules: {
+        'angular/component-limit': 0,
+        'angular/controller-as-route': 1,
+        'angular/controller-as-vm': 1,
+        'angular/controller-as': 1,
+        'angular/deferred': 1,
+        'angular/di-unused': 2,
+        'angular/directive-restrict': 0,
+        'angular/empty-controller': 2,
+        'angular/no-controller': 0,
+        'angular/no-inline-template': 0,
+        'angular/no-run-logic': 0,
+        'angular/no-services': 0,
+        'angular/on-watch': 0,
+        'angular/prefer-component': 0,
+        'angular/no-cookiestore': 2,
+        'angular/no-directive-replace': 0,
+        'angular/no-http-callback': 2,
+        'angular/angularelement': 2,
+        'angular/definedundefined': 2,
+        'angular/document-service': 2,
+        'angular/interval-service': 2,
+        'angular/json-functions': 2,
+        'angular/log': 1,
+        'angular/timeout-service': 2,
+        'angular/typecheck-array': 2,
+        'angular/typecheck-date': 2,
+        'angular/typecheck-function': 2,
+        'angular/typecheck-number': 2,
+        'angular/typecheck-object': 2,
+        'angular/typecheck-string': 2,
+        'angular/window-service': 2
+      },
+      settings: {
+        angular: 1,
+      },
+      env: {
+        browser: true,
+        jquery: true,
+      },
+      globals: {
+        angular: true,
+        AppConfig: true,
+        L: true,
+        moment: true,
+        PruneCluster: true,
+        PruneClusterForLeaflet: true,
+      },
+      parser: 'babel-eslint',
+      parserOptions: {
+        ecmaVersion: 2018,
+        sourceType: 'module'
+      },
     },
-    env: {
-      browser: true,
-      jquery: true,
-    },
-    globals: {
-      angular: true,
-      AppConfig: true,
-      L: true,
-      moment: true,
-      PruneCluster: true,
-      PruneClusterForLeaflet: true,
-    },
-  },{
-    // overrides for client/react code
-    files: [
-      'config/client/**',
-      'config/env/**',
-      'config/webpack/**',
-      'modules/admin/client/**',
-      'modules/core/client/app/config.js',
-      'modules/**/client/components/**',
-      'modules/**/client/api/**',
-      'modules/**/client/utils/**',
-      'modules/core/client/directives/tr-boards.client.directive.js',
-      'modules/core/client/services/photos.service.js',
-      'modules/references/tests/client/**'
-    ],
-    env: {
-      browser: true,
-    },
-    extends: 'plugin:react/recommended',
-    settings: {
-      react: {
-        version: reactVersion
+
+    /**
+     * Overrides for client-React code
+     */
+    {
+      files: [
+        'config/client/**',
+        'config/env/**',
+        'config/webpack/**',
+        'modules/admin/client/**',
+        'modules/core/client/app/config.js',
+        'modules/**/client/components/**',
+        'modules/**/client/api/**',
+        'modules/**/client/utils/**',
+        'modules/core/client/services/photos.service.js',
+        'modules/references/tests/client/**'
+      ],
+      env: {
+        browser: true,
+      },
+      extends: 'plugin:react/recommended',
+      settings: {
+        react: {
+          version: reactVersion
+        }
+      },
+      parser: 'babel-eslint',
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true
+        },
+        ecmaVersion: 2018,
+        sourceType: 'module'
+      },
+      rules: {
+        'react/no-access-state-in-setstate': 2
       }
     },
-    parser: 'babel-eslint',
-    parserOptions: {
-      ecmaFeatures: {
-        jsx: true
+
+    /**
+     * Overrides for client side test files
+     */
+    {
+      files: [
+        'modules/*/tests/client/*.js',
+        'modules/*/tests/client/**/*.js',
+        'testutils/client/*.js',
+      ],
+      env: {
+        browser: true,
+        jasmine: true,
+        mocha: true,
+        jquery: true
       },
-      ecmaVersion: 2018,
-      sourceType: 'module'
+      globals: {
+        angular: true,
+        AppConfig: true,
+        inject: true,
+      },
     },
-    rules: {
-      ...defaultRules,
-      'react/no-access-state-in-setstate': 2
-    }
-  },{
-    // overrides for CLI scripts and application config
-    files: [
-      'bin/**',
-      'config/**',
-      'migrations/**',
-      'scripts/**',
-    ],
-    env: {
-      node: true,
+
+    /**
+     * Overrides for server side test files
+     */
+    {
+      files: [
+        'modules/*/tests/server/*.js',
+        'modules/*/tests/server/**/*.js',
+        'testutils/server/*.js',
+      ],
+      env: {
+        node: true,
+        mocha: true
+      }
     },
-    rules: {
-      ...defaultRules,
-      'no-console': 0,
-      'no-process-exit': 0,
+
+    /**
+     * Overrides for CLI scripts and application config
+     */
+    {
+      files: [
+        'bin/**',
+        'config/**',
+        'migrations/**',
+        'scripts/**',
+      ],
+      env: {
+        node: true,
+      },
+      rules: {
+        'no-console': 0,
+        'no-process-exit': 0,
+      },
     },
-  }]
+  ]
 };
