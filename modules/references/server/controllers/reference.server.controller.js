@@ -41,14 +41,14 @@ function validateCreate(req) {
 
   // Values of interactions must be boolean
   ['met', 'hostedMe', 'hostedThem'].forEach(function (interaction) {
-    if (req.body.interactions && req.body.interactions.hasOwnProperty(interaction) && typeof req.body.interactions[interaction] !== 'boolean') {
+    if (_.has(req, ['body', 'interactions', interaction]) && typeof req.body.interactions[interaction] !== 'boolean') {
       valid = false;
       interactionErrors[interaction] = 'boolean expected';
     }
   });
 
   // Value of userTo must exist and be a UserId
-  if (!req.body.hasOwnProperty('userTo')) {
+  if (!_.has(req, ['body', 'userTo'])) {
     valid = false;
     details.userTo = 'missing';
   } else if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {

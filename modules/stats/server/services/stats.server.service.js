@@ -202,10 +202,8 @@ function validateStat(stat) {
   }
 
   // time, if provided, should be of type Date
-  if (stat.hasOwnProperty('time')) {
-    if (!_.isDate(stat.time)) {
-      throw new Error('Time must be a Date object or not provided');
-    }
+  if (_.has(stat, 'time') && !_.isDate(stat.time)) {
+    throw new Error('Time must be a Date object or not provided');
   }
 }
 

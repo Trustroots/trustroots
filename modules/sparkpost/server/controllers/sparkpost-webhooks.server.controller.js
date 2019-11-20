@@ -55,7 +55,7 @@ exports.receiveBatch = function (req, res) {
  */
 exports.processAndSendMetrics = function (event, callback) {
   // When adding a webhook, Sparkpost sends us `[{"msys":{}}]`
-  if (!event.hasOwnProperty('msys') || _.isEmpty(event.msys)) {
+  if (!_.has(event, 'msys') || _.isEmpty(event.msys)) {
     return callback();
   }
 
