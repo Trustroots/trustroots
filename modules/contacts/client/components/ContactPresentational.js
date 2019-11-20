@@ -44,7 +44,7 @@ export function ContactPresentational({ t, className, contact, avatarSize=128, h
           {t('Confirm Request')}
         </a>
         <a className="btn btn-xs btn-warn" onClick={onClickRemove}>
-          {t('Delete Request')}
+          {t('Decline Request')}
         </a>
       </div>}
     </div>
