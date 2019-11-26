@@ -231,14 +231,14 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
   async.waterfall([
     /**
      * Get the data from the database
-     * get all MessageStat documents between timeNow and timeNow - 90 days
+     * get all MessageStat documents between timeNow - 3 days and timeNow - 90 days
      */
     function (done) {
       MessageStat.find({
         firstMessageUserTo: userId,
         firstMessageCreated: {
-          $lte: new Date(timeNow),
-          $gt: new Date(timeNow - 90 * DAY)
+	  $lte: new Date(timeNow),
+	  $gt: new Date(timeNow - 90 * DAY)
         }
       })
         .sort({ firstMessageCreated: -1 })
@@ -312,8 +312,20 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
           replyTime = null;
         // no replied stats
         } else if (repliedCount === 0) {
-          replyRate = 0;
-          replyTime = null;
+	  // keeps track of the number less than three days old
+	  var ltThreeDaysOld = 0;
+	  var i;
+	  for (i = 0; i < messageStats.length; i++){
+	    if (messageStats[i].firstMessageCreated.getTime() > timeNow - 3 * DAY){
+	      ltThreeDaysOld += 1;
+	    }
+	  }
+	  if (ltThreeDaysOld === messageStats.length){
+	    replyRate = null;
+	  }
+	  else {
+	    replyRate = 0;}
+	  replyTime = null;
         // some replied stats
         } else {
           replyRate = repliedCount / allCount;
@@ -398,3 +410,7 @@ exports.readFormattedMessageStatsOfUser = function (userId, timeNow, callback) {
     }
   ], callback);
 };
+
+
+
+
