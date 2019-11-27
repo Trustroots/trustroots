@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import LeaveTribeModal from './LeaveTribeModal';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 import * as api from '../api/tribes.api';
 
@@ -21,7 +22,8 @@ function JoinButtonPresentational({ isMember, isLoading, joinLabel='Join', joine
     </a>;
   }
 
-  return <button
+  const leaveTooltip = <Tooltip id={`tribe-${tribe._id}`} placement="bottom">{t('Leave Tribe')}</Tooltip>;
+  const btn = <button
     type="button"
     className={`${isMember ? 'btn-active' : ''} btn btn-sm btn-default tribe-join`}
     onClick={onToggle}
@@ -30,6 +32,12 @@ function JoinButtonPresentational({ isMember, isLoading, joinLabel='Join', joine
   >
     <i className={(isMember) ? 'icon-ok' : 'icon-plus'} /> {title}
   </button>;
+
+  if (isMember) {
+    return <OverlayTrigger placement="bottom" overlay={leaveTooltip}>{btn}</OverlayTrigger>;
+  } else {
+    return btn;
+  }
 }
 
 JoinButtonPresentational.propTypes = {
