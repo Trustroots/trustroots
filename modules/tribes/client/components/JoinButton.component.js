@@ -51,22 +51,21 @@ JoinButtonPresentational.propTypes = {
 };
 
 // @TODO this can (and should) be replaced by other container, when we finish the migration; when we start using redux etc.
-// @TODO onUpdated is required by angular only; to broadcast the changes to $rootScope. Remove!
 export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
-  const isMember = user && user.memberIds && user.memberIds.indexOf(tribe._id) > -1;
-
   // isLeaving controls whether the tribe delete modal is shown
   const [isLeaving, setIsLeaving] = useState(false);
 
   const [isUpdating, setIsUpdating] = useState(false);
-  const [_isMember, _setIsMember] = useState(isMember);
+
+  const isSelfMember = user && user.memberIds && user.memberIds.indexOf(tribe._id) > -1;
+  const [isMember, setIsMember] = useState(isSelfMember);
 
   async function handleToggleMembership() {
     if (isUpdating) {
       return;
     }
 
-    if (_isMember) {
+    if (isMember) {
       setIsLeaving(true);
     } else {
       // updating starts
@@ -75,7 +74,7 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
       // join
       const data = await api.join(tribe._id);
       // update the membership locally
-      _setIsMember(true);
+      setIsMember(true);
 
       // updating finished
       setIsUpdating(false);
@@ -88,7 +87,7 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
     const data = await api.leave(tribe._id);
     setIsUpdating(false);
     setIsLeaving(false);
-    _setIsMember(false);
+    setIsMember(false);
     onUpdated(data);
   }
 
@@ -98,7 +97,7 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
 
   return <>
     <LeaveTribeModal show={isLeaving} tribe={tribe} onConfirm={handleLeave} onCancel={handleCancelLeave}/>
-    <JoinButtonPresentational tribe={tribe} isLogged={!!user} isMember={_isMember} isLoading={isUpdating} {...rest} onToggle={handleToggleMembership} />
+    <JoinButtonPresentational tribe={tribe} isLogged={!!user} isMember={isMember} isLoading={isUpdating} {...rest} onToggle={handleToggleMembership} />
   </>;
 }
 
