@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
+import LeaveTribeModal from './LeaveTribeModal';
 
 import * as api from '../api/tribes.api';
 
@@ -42,8 +43,12 @@ JoinButtonPresentational.propTypes = {
 };
 
 // @TODO this can (and should) be replaced by other container, when we finish the migration; when we start using redux etc.
-export default function JoinButton({ tribe, user, isLoading, ...rest }) {
+// @TODO onUpdated is required by angular only; to broadcast the changes to $rootScope. Remove!
+export default function JoinButton({ tribe, user, isLoading, onUpdated, ...rest }) {
   const isMember = user && user.memberIds && user.memberIds.indexOf(tribe._id) > -1;
+
+  // isLeaving controls whether the tribe delete modal is shown
+  const [isLeaving, setIsLeaving] = useState(false);
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [_isMember, _setIsMember] = useState(isMember);
@@ -53,24 +58,45 @@ export default function JoinButton({ tribe, user, isLoading, ...rest }) {
       return;
     }
 
-    // updating starts
-    setIsUpdating(true);
+    if (_isMember) {
+      setIsLeaving(true);
+    } else {
+      // updating starts
+      setIsUpdating(true);
 
-    // join or leave
-    const joinOrLeave = (_isMember) ? api.leave : api.join;
-    await joinOrLeave(tribe._id);
-    // update the membership locally
-    _setIsMember(_isMember => !_isMember);
+      // join
+      const data = await api.join(tribe._id);
+      // update the membership locally
+      _setIsMember(true);
 
-    // updating finished
-    setIsUpdating(false);
+      // updating finished
+      setIsUpdating(false);
+      onUpdated(data);
+    }
   }
 
-  return <JoinButtonPresentational tribe={tribe} isLogged={!!user} isMember={_isMember} isLoading={isLoading || isUpdating} {...rest} onToggle={handleToggleMembership} />;
+  async function handleLeave() {
+    setIsUpdating(true);
+    const data = await api.leave(tribe._id);
+    setIsUpdating(false);
+    setIsLeaving(false);
+    _setIsMember(false);
+    onUpdated(data);
+  }
+
+  function handleCancelLeave() {
+    setIsLeaving(false);
+  }
+
+  return <>
+    <LeaveTribeModal show={isLeaving} tribe={tribe} onConfirm={handleLeave} onCancel={handleCancelLeave}/>
+    <JoinButtonPresentational tribe={tribe} isLogged={!!user} isMember={_isMember} isLoading={isLoading || isUpdating} {...rest} onToggle={handleToggleMembership} />
+  </>;
 }
 
 JoinButton.propTypes = {
   isLoading: PropTypes.bool.isRequired,
   tribe: PropTypes.object.isRequired,
-  user: PropTypes.object.isRequired
+  user: PropTypes.object.isRequired,
+  onUpdated: PropTypes.func.isRequired
 };

@@ -1,9 +1,11 @@
 import axios from 'axios';
 
 export async function join(tribeId) {
-  await axios.post(`/api/users/memberships/${tribeId}`, { tribeId });
+  const { data } = await axios.post(`/api/users/memberships/${tribeId}`, { tribeId });
+  return data;
 }
 
 export async function leave(tribeId) {
-  await axios.delete(`/api/users/memberships/${tribeId}`);
+  const { data } = await axios.delete(`/api/users/memberships/${tribeId}`);
+  return data;
 }
