@@ -1,0 +1,33 @@
+{
+  "name": "trustroots",
+  "description": "Trustroots.org",
+  "version": "0.3.3",
+  "author": "https://www.trustroots.org/foundation",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Trustroots/trustroots"
+  },
+  "engines": {
+    "node": ">=10.0.0",
+    "npm": ">=6.0.0",
+    "mongodb": ">=3.6 <=4.2"
+  },
+  "browserslist": [
+    "extends @wordpress/browserslist-config"
+  ],
+  "scripts": {
+    "client": "cd client && yarn start",
+    "server": "cd server && npm start",
+    "dev": "concurrently --kill-others-on-fail \"yarn server\" \"yarn client\""
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "concurrently": "^4.0.1"
+  },
+  "bugs": {
+    "url": "https://github.com/Trustroots/trustroots/issues"
+  },
+  "license": "MIT"
+}
