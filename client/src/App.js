@@ -9,7 +9,7 @@ function App() {
     (async () => {
       let data
       try {
-        ({ data } = await axios.get('/api/users/1'));
+        ({ data } = await axios.get('/api/users/me'));
       } catch (e) {
         ({ data } = e.response);
       } finally {
