@@ -52,7 +52,8 @@ const defaultRules = {
   'vars-on-top': 0,
   'no-var': 2,
   'prefer-const': 2,
-  'arrow-spacing': [2, { before: true, after: true }]
+  'arrow-spacing': [2, { before: true, after: true }],
+  'require-atomic-updates': 0,
 };
 
 module.exports = {
