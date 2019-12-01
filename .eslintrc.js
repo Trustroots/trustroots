@@ -45,7 +45,7 @@ const defaultRules = {
   }],
   'space-in-parens': [2, 'never'],
   'spaced-comment': [2, 'always'],
-  strict: 0,
+  strict: [2, 'never'],
   'quote-props': 0,
   quotes: [1, 'single'],
   'wrap-iife': [2, 'outside'],
