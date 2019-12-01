@@ -113,6 +113,8 @@ function seedThreads() {
        *  successfully been added.
        */
       function addThreads(initialThreadCount) {
+        // @TODO: valid lint issue that should be fixed
+        // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve, reject) => {
           let threadsSaved = 0;
 
@@ -147,6 +149,8 @@ function seedThreads() {
 
             // Add messages until we reach the total
             while (messageIndex > 0) {
+              // @TODO: valid lint issue that should be fixed
+              // eslint-disable-next-line no-inner-declarations
               function addMessage(depth, userTo, userFrom) {
                 const message = new Message();
 
