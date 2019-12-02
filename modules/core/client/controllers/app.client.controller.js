@@ -42,6 +42,7 @@ function AppController(
   vm.isFooterHidden = false;
   vm.isHeaderHidden = false;
   vm.isAboutPage = false;
+  vm.isNativeMobileApp = $window.isNativeMobileApp;
 
   /**
    * Handle the window blur event
