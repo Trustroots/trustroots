@@ -3,11 +3,11 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import Board from '../../../core/client/components/Board';
 
-export default function TribesHeader({ isLogged }) {
+export default function TribesHeader({ isLogged, onBoardChanged }) {
 
   const { t } = useTranslation('tribes');
 
-  return <Board name="tribes-1">
+  return <Board name="tribes-1" onNameChanged={onBoardChanged}>
     <section className="board tribes-header" tr-boards="'tribes-1'">
       <div className="container">
         <div className="row">
@@ -32,5 +32,6 @@ export default function TribesHeader({ isLogged }) {
 }
 
 TribesHeader.propTypes = {
-  isLogged: PropTypes.bool.isRequired
+  isLogged: PropTypes.bool.isRequired,
+  onBoardChanged: PropTypes.func.isRequired
 };

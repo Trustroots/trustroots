@@ -5,7 +5,7 @@ export default function Board({ name='bokeh', children, onNameChanged }) {
 
   // update
   useEffect(() => {
-    onNameChanged();
+    onNameChanged({ name: selectPhoto(name) });
   }, [name]);
 
   const photo = selectPhoto(name);
