@@ -1,25 +1,5 @@
 <!-- Avatar+Name for mobile screens -->
-<div class="text-center visible-xs-block" role="dialog">
-  <a tr-avatar
-     data-user="profileCtrl.profile"
-     data-size="512"
-     data-link="false"
-     class="visible-xs-block avatar-circle"
-     ng-click="profileCtrl.biggerAvatar = !profileCtrl.biggerAvatar"
-     ng-class="{'profile-avatar-lg': profileCtrl.biggerAvatar}"
-     aria-hidden="true"></a>
-  <h2 class="profile-name"
-      ng-show="profileCtrl.profile.displayName"
-      ng-bind="profileCtrl.profile.displayName"></h2>
-  <br>
-  <h4 class="profile-username">
-    @{{ profileCtrl.profile.username }}
-  </h4>
-  <br>
-  <p class="profile-tagline"
-     ng-show="profileCtrl.profile.tagline"
-     ng-bind="profileCtrl.profile.tagline"></p>
-</div>
+<avatar-name-mobile profile="profileCtrl.profile"></avatar-name-mobile>
 
 <profile-overview profile="profileCtrl.profile">
 </profile-overview>
