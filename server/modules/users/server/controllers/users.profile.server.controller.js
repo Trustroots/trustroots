@@ -715,11 +715,19 @@ exports.userByUsername = function (req, res, next, username) {
     });
   }
 
+  const isValidUsername = typeof username === 'string' && username.trim() !== '' && username.length >= 3;
+  const isSelf = username === 'me';
+  const isValid = isValidUsername || isSelf;
+
   // Proper 'username' value required
-  if (typeof username !== 'string' || username.trim() === '' || username.length < 3) {
+  if (!isValid) {
     return res.status(400).send({
       message: 'Valid username required.'
     });
+  }
+
+  if (username === 'me') {
+    username = req.user.username;
   }
 
   async.waterfall([
