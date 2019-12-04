@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to create a pretty toggle switches out from `input[type=checkbox]`
    *
@@ -36,11 +34,10 @@
         }
 
         // Add toggle
-        var toggle = angular.element('<div class="toggle"></div>');
+        const toggle = angular.element('<div class="toggle"></div>');
         elem.find('input').after(toggle);
 
       }
     };
   }
-
 }());

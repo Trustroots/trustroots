@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // Statistics service used for communicating with the statistics REST endpoints
 
   angular
@@ -11,5 +9,4 @@
   function StatisticsService($resource) {
     return $resource('/api/statistics');
   }
-
 }());

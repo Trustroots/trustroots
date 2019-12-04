@@ -1,17 +1,15 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
 /**
  * ReferenceThread Schema
  *
  * This collection is queried mostly with `userFrom` and `userTo` fields
  */
-var ReferenceThreadSchema = new Schema({
+const ReferenceThreadSchema = new Schema({
   thread: {
     type: Schema.ObjectId,
     ref: 'Thread',

@@ -1,9 +1,7 @@
 (function () {
-  'use strict';
-
   describe('Contact Route Tests', function () {
     // Initialize global variables
-    var $httpBackend;
+    let $httpBackend;
 
     // We can start by loading the main application module
     beforeEach(module(AppConfig.appModuleName));
@@ -17,7 +15,7 @@
 
     describe('Route Config for add contact', function () {
       describe('Add contact Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/contacts/views/add-contact.client.view.html', '');
@@ -65,7 +63,7 @@
 
     describe('Route Config for confirm contact', function () {
       describe('Confirm contact Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/contacts/views/confirm-contact.client.view.html', '');
@@ -109,5 +107,4 @@
 
 
   });
-
 }());

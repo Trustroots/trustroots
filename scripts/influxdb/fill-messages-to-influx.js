@@ -1,4 +1,3 @@
-'use strict';
 var path = require('path'),
     chalk = require('chalk'),
     async = require('async'),

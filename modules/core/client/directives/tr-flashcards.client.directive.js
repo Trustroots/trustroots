@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to embed Trustroots host guide flashcards
    *
@@ -27,7 +25,7 @@
                 '</a>',
       link: function (scope) {
 
-        var flashcards = [{
+        const flashcards = [{
           title: 'Make sure your profile is complete',
           content: 'You\'re much more likely to get a positive response if you have written a bit about yourself.'
         }, {
@@ -44,7 +42,7 @@
           content: 'Don\'t write to people 2 months ahead.'
         }];
 
-        var randomFlashcard = flashcards[Math.floor(Math.random() * flashcards.length)];
+        const randomFlashcard = flashcards[Math.floor(Math.random() * flashcards.length)];
 
         scope.flashTitle = randomFlashcard.title;
         scope.flashContent = randomFlashcard.content;
@@ -52,5 +50,4 @@
       }
     };
   }
-
 }());

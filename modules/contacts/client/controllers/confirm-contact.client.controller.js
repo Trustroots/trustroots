@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('contacts')
     .controller('ContactConfirmController', ContactConfirmController);
@@ -9,7 +7,7 @@
   function ContactConfirmController($stateParams, Authentication, contact) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // If no friend ID defined, go to elsewhere
     if (!$stateParams.contactId) {
@@ -54,5 +52,4 @@
     }
 
   }
-
 }());

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive that simply Adds a helper text under the input and shows/hides it on focus/blur
    *
@@ -25,7 +23,7 @@
 
         // Compiled template
         // after() requires jQuery
-        var template = $compile('<div class="help-block" ng-show="enabled">' + scope.trFocustip + '</div>')(scope);
+        const template = $compile('<div class="help-block" ng-show="enabled">' + scope.trFocustip + '</div>')(scope);
         element.after(template);
 
         element
@@ -42,5 +40,4 @@
       }
     };
   }
-
 }());

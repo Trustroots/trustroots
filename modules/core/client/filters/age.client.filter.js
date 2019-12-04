@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Turn mongo date string into years
    *
@@ -18,12 +16,11 @@
   /* @ngInject */
   function ageYearsFilter($filter) {
     return function (dateStringOrDate) {
-      var dateObj = new Date($filter('date')(dateStringOrDate, 'yyyy-MM-dd')),
-          ageDifMs = Date.now() - dateObj.getTime(),
-          ageDate = new Date(ageDifMs); // miliseconds from epoch
+      const dateObj = new Date($filter('date')(dateStringOrDate, 'yyyy-MM-dd'));
+      const ageDifMs = Date.now() - dateObj.getTime();
+      const ageDate = new Date(ageDifMs); // miliseconds from epoch
 
       return Math.abs(ageDate.getUTCFullYear() - 1970) + ' years';
     };
   }
-
 }());

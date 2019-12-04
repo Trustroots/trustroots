@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('tribes')
     .controller('TribesListController', TribesListController);
@@ -9,7 +7,7 @@
   function TribesListController(tribes, $state, Authentication, TribeService) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.tribes = tribes;
@@ -26,5 +24,4 @@
       $state.go('tribes.tribe', { 'tribe': tribe.slug });
     }
   }
-
 }());

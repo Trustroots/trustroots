@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to watch window blur events.
    * See also `tr-window-blur.client.directive.js`
@@ -17,7 +15,7 @@
 
   /* @ngInject */
   function trWindowFocusDirective($window) {
-    var directive = {
+    const directive = {
       link: link,
       restrict: 'A'
     };
@@ -27,7 +25,7 @@
     function link(scope, element, attributes) {
 
       // Hook up focus-handler
-      var win = angular.element($window).on('focus', handleFocus);
+      const win = angular.element($window).on('focus', handleFocus);
 
       // When the scope is destroyed, we have to make sure to teardown
       // the event binding so we don't get a leak.
@@ -45,5 +43,4 @@
 
     }
   }
-
 }());

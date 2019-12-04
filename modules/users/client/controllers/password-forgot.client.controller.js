@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('users')
     .controller('ForgotPasswordController', ForgotPasswordController);
@@ -9,7 +7,7 @@
   function ForgotPasswordController($http, $stateParams) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.success = null;
@@ -41,5 +39,4 @@
         );
     }
   }
-
 }());

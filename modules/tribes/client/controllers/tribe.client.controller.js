@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('tribes')
     .controller('TribeController', TribeController);
@@ -8,10 +6,10 @@
   /* @ngInject */
   function TribeController($scope, $state, tribe, Facebook) {
 
-    var headerHeight = angular.element('#tr-header').height() || 0;
+    const headerHeight = angular.element('#tr-header').height() || 0;
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.tribe = tribe;
@@ -32,5 +30,4 @@
     }
 
   }
-
 }());

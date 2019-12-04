@@ -1,18 +1,16 @@
-'use strict';
-
 /**
  * Required dependencies
  */
-const _ = require('lodash'),
-      path = require('path'),
-      mongooseService = require(path.resolve('./config/lib/mongoose')),
-      chalk = require('chalk'),
-      yargs = require('yargs'),
-      faker = require('faker'),
-      moment = require('moment'),
-      mongoose = require('mongoose'),
-      config = require(path.resolve('./config/config')),
-      cities = require(path.resolve('./bin/fillTestData/data/Cities.json'));
+const _ = require('lodash');
+const path = require('path');
+const mongooseService = require(path.resolve('./config/lib/mongoose'));
+const chalk = require('chalk');
+const yargs = require('yargs');
+const faker = require('faker');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const config = require(path.resolve('./config/config'));
+const cities = require(path.resolve('./bin/fillTestData/data/Cities.json'));
 
 require(path.resolve('./modules/offers/server/models/offer.server.model'));
 
@@ -50,8 +48,8 @@ const argv = yargs.usage('$0 <numberOfUsers>', 'Seed database with number of tri
 /**
  * Globals
  */
-let savedUsers = 0,
-    savedOffers = 0;
+let savedUsers = 0;
+let savedOffers = 0;
 const Offer = mongoose.model('Offer');
 
 
@@ -108,7 +106,7 @@ function printSummary(countExisting, countSaved) {
  * @param {function} callback
  */
 function addOffer(userID, maxUsers, initialUserCount, limit, callback) {
-  let offer = new Offer();
+  const offer = new Offer();
 
   const city = cities[random(cities.length)];
   const lat = city.lat + randomizeLocation();
@@ -223,7 +221,7 @@ function addUsers() {
 
           while (index < max) {
             (function addNextUser(){
-              let user = new User();
+              const user = new User();
               let admin;
 
               // Check if this is an admin user
@@ -255,7 +253,7 @@ function addUsers() {
                 // non admin user
                 user.email = index + faker.internet.email();
                 user.password = faker.internet.password();
-                user.username = index + user.displayName.toLowerCase().replace(/\'/g, '').replace(/\s/g, '');
+                user.username = index + user.displayName.toLowerCase().replace(/'/g, '').replace(/\s/g, '');
               }
 
               // Add the user to tribes
@@ -271,7 +269,7 @@ function addUsers() {
 
                 // Add the tribes using the random indecies
                 for (let j = 0; j < userNumTribes; j++) {
-                  let rand = randomTribes[j];
+                  const rand = randomTribes[j];
                   user.member.push({ tribe: tribes[rand]._id, since: Date.now() });
                   tribes[rand].count += 1;
                 }
@@ -360,6 +358,6 @@ function addUsers() {
       }
     });
   });
-}; // addUsers()
+} // addUsers()
 
 addUsers();

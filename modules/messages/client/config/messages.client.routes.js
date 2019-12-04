@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('messages')
     .config(MessagesRoutes);
@@ -44,5 +42,4 @@
         }
       });
   }
-
 }());

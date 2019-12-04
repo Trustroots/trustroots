@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('offers')
     .controller('OfferController', OfferController);
@@ -9,7 +7,7 @@
   function OfferController($timeout, MapLayersFactory) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
     vm.invalidateMapSize = invalidateMapSize;
 
     /**
@@ -48,5 +46,4 @@
     };
 
   }
-
 }());

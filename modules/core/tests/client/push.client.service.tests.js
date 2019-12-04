@@ -2,22 +2,20 @@
  * Push service
  */
 (function () {
-  'use strict';
-
   describe('Push Service Tests', function () {
 
-    var $httpBackend;
-    var firebaseMessaging;
-    var locker;
+    let $httpBackend;
+    let firebaseMessaging;
+    let locker;
 
-    var firebase = createFirebaseMock();
+    const firebase = createFirebaseMock();
 
     // Load the main application module
     beforeEach(module(AppConfig.appModuleName, firebase.moduleName));
 
     beforeEach(firebase.reset);
 
-    var notifications = [];
+    const notifications = [];
 
     beforeEach(inject(function (
       _$httpBackend_, $templateCache, _locker_, $window, Authentication, _firebaseMessaging_) {
@@ -50,7 +48,7 @@
       push, Authentication) {
       if (!push.isSupported) return;
 
-      var token = 'mynicetoken';
+      const token = 'mynicetoken';
       firebase.token = token;
 
       $httpBackend.expect('POST', '/api/users/push/registrations',
@@ -75,7 +73,7 @@
       push, Authentication) {
       if (!push.isSupported) return;
 
-      var token = 'mynicetokenforinitializing';
+      const token = 'mynicetokenforinitializing';
 
       $httpBackend.expect('POST', '/api/users/push/registrations',
         { token: token, platform: 'web' })
@@ -112,7 +110,7 @@
       push, Authentication, locker, $rootScope) {
       if (!push.isSupported) return;
 
-      var token = 'sometokenfordisabling';
+      const token = 'sometokenfordisabling';
 
       // Preregister it
       firebase.token = token;
@@ -157,7 +155,7 @@
       push, Authentication, $rootScope) {
       if (!push.isSupported) return;
 
-      var token = 'sometoken';
+      const token = 'sometoken';
       // Preregister it
       firebase.token = token;
       firebase.permissionGranted = true;
@@ -188,23 +186,23 @@
 
   function createFirebaseMock() {
 
-    var onMessageCallbacks = [];
-    var onTokenRefreshCallbacks = [];
+    const onMessageCallbacks = [];
+    const onTokenRefreshCallbacks = [];
 
-    var firebase = {
+    const firebase = {
       deletedTokens: [],
       reset: reset,
       moduleName: 'firebaseMessagingMock',
 
       triggerOnMessage: function () {
-        var args = arguments;
+        const args = arguments;
         onMessageCallbacks.forEach(function (fn) {
           fn.apply(null, args);
         });
       },
 
       triggerOnTokenRefresh: function () {
-        var args = arguments;
+        const args = arguments;
         onTokenRefreshCallbacks.forEach(function (fn) {
           fn.apply(null, args);
         });
@@ -262,5 +260,4 @@
     return firebase;
 
   }
-
 }());

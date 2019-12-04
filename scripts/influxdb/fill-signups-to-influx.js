@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * A script that goes trough all past user signups and pushes them as an event to InfluxDB
  *

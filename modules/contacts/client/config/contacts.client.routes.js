@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('contacts')
     .config(ContactsRoutes);
@@ -55,5 +53,4 @@
       });
 
   }
-
 }());

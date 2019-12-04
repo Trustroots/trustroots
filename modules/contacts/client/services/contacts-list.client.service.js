@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // ContactsList factory used for communicating with the contacts REST endpoints
   // Read contact list by userId
   angular
@@ -13,5 +11,4 @@
       listUserId: '@id'
     });
   }
-
 }());

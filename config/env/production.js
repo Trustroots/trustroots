@@ -1,5 +1,3 @@
-'use strict';
-
 /*
  * Please don't make your own config changes to this file!
  * Copy local.sample.js to local.js and make your changes there. Thanks.

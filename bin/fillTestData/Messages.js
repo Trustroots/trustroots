@@ -1,16 +1,14 @@
-'use strict';
-
 /**
  * Required dependencies
  */
-const _ = require('lodash'),
-      path = require('path'),
-      mongooseService = require(path.resolve('./config/lib/mongoose')),
-      chalk = require('chalk'),
-      yargs = require('yargs'),
-      faker = require('faker'),
-      mongoose = require('mongoose'),
-      config = require(path.resolve('./config/config'));
+const _ = require('lodash');
+const path = require('path');
+const mongooseService = require(path.resolve('./config/lib/mongoose'));
+const chalk = require('chalk');
+const yargs = require('yargs');
+const faker = require('faker');
+const mongoose = require('mongoose');
+const config = require(path.resolve('./config/config'));
 
 
 /**
@@ -115,6 +113,8 @@ function seedThreads() {
        *  successfully been added.
        */
       function addThreads(initialThreadCount) {
+        // @TODO: valid lint issue that should be fixed
+        // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve, reject) => {
           let threadsSaved = 0;
 
@@ -132,7 +132,7 @@ function seedThreads() {
           }
 
           // Get the users
-          let users = await User.find();
+          const users = await User.find();
 
           // If we don't have enough users in the database
           if (users.length < 2) {
@@ -144,13 +144,15 @@ function seedThreads() {
           while (index < numThreads) {
             const messageCount = random(maxMessages) + 1;
             let messageIndex = messageCount;
-            let to,
-                from;
+            let to;
+            let from;
 
             // Add messages until we reach the total
             while (messageIndex > 0) {
+              // @TODO: valid lint issue that should be fixed
+              // eslint-disable-next-line no-inner-declarations
               function addMessage(depth, userTo, userFrom) {
-                let message = new Message();
+                const message = new Message();
 
                 message.created = addDays(Date.now(), -depth + 1);
                 message.content = faker.lorem.sentences();
@@ -193,7 +195,7 @@ function seedThreads() {
 
                     // Add thread for the most recent message
                     if (depth === 1) {
-                      let messageThread = new Thread;
+                      const messageThread = new Thread;
 
                       // seed the message thread data
                       seedThread(messageThread, message);

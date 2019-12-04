@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Monkeybox directive to show a simple profile info box
    */

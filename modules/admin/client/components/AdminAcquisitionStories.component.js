@@ -45,7 +45,7 @@ export default class AdminAcquisitionStories extends Component {
         </div>
       </>
     );
-  };
+  }
 }
 
 AdminAcquisitionStories.propTypes = {};

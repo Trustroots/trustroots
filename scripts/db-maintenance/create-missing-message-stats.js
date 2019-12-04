@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-'use strict';
 
 /**
  * The purpose of this script is to fill the MessageStats collection with
@@ -159,5 +158,3 @@ async.waterfall([
 
   return; // all finished!
 });
-
-

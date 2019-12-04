@@ -6,7 +6,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Use mongoose configuration
-var mongooseService = require('../config/lib/mongoose.js');
+const mongooseService = require('../config/lib/mongoose.js');
 
 mongooseService.connect(function (db) {
   mongooseService.dropDatabase(db, function () {

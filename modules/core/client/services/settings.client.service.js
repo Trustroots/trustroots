@@ -1,14 +1,12 @@
 (function () {
-  'use strict';
-
   angular
     .module('core')
     .factory('SettingsService', SettingsService);
 
   /* @ngInject */
   function SettingsService($window) {
-    var settings = {};
-    var service = {
+    let settings = {};
+    const service = {
       get: get,
       settings: settings
     };
@@ -22,23 +20,20 @@
       return settings;
     }
   }
-
 }());
 
 
 // TODO: Clean this out (deprecated)
 
 (function () {
-  'use strict';
-
   angular
     .module('core')
     .factory('SettingsFactory', SettingsFactory);
 
   /* @ngInject */
   function SettingsFactory($window) {
-    var settings = {};
-    var service = {
+    let settings = {};
+    const service = {
       get: get,
       settings: settings
     };
@@ -58,5 +53,4 @@
       return settings;
     }
   }
-
 }());

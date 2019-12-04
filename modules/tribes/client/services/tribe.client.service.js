@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('tribes')
     .factory('TribeService', TribeService);
@@ -9,7 +7,7 @@
   function TribeService($resource, $q, $log) {
 
     // `$resource` to communicate with tribes REST API
-    var Tribe = $resource('/api/tribes/:tribeSlug', {
+    const Tribe = $resource('/api/tribes/:tribeSlug', {
       tribeSlug: '@slug'
     }, {
       get: {
@@ -17,9 +15,9 @@
       }
     });
 
-    var cachedTribe;
+    let cachedTribe;
 
-    var service = {
+    const service = {
       fillCache: fillCache,
       clearCache: clearCache,
       get: get
@@ -78,5 +76,4 @@
     }
 
   }
-
 }());

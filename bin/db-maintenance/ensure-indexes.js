@@ -22,7 +22,7 @@ if (process.argv[2]) {
   predefinedModel = process.argv[2];
 } else {
   console.log('Ensuring indexes for all Mongo collections');
-};
+}
 
 mongooseService.connect(async (connection) => {
   await mongooseService.loadModels();

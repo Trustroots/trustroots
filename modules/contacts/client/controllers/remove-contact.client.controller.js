@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('contacts')
     .controller('ContactRemoveController', ContactRemoveController);
@@ -8,10 +6,10 @@
   /* @ngInject */
   function ContactRemoveController($scope, $rootScope, $uibModalInstance, messageCenterService, Contact, Authentication) {
 
-    var contactToRemove = $scope.contactToRemove;
+    const contactToRemove = $scope.contactToRemove;
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.isLoading = false;
@@ -67,5 +65,4 @@
     }
 
   }
-
 }());

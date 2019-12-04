@@ -17,6 +17,8 @@ messaging.setBackgroundMessageHandler(function (payload) {
 // Ensure new workers to replace old ones...
 // https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerGlobalScope/skipWaiting
 
+/* eslint-disable no-undef */
+/* `self` refers to Service Worker https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerGlobalScope */
 self.addEventListener('install', function (event) {
   event.waitUntil(self.skipWaiting());
 });
@@ -24,3 +26,4 @@ self.addEventListener('install', function (event) {
 self.addEventListener('activate', function (event) {
   event.waitUntil(self.clients.claim());
 });
+/* eslint-enable no-undef */

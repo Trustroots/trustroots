@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // Users service used for communicating with the users REST endpoint
   angular
     .module('users')
@@ -8,7 +6,7 @@
 
   /* @ngInject */
   function UsersFactory($resource) {
-    var Users = $resource('/api/users', {}, {
+    const Users = $resource('/api/users', {}, {
       update: {
         method: 'PUT'
       },
@@ -36,5 +34,4 @@
 
     return Users;
   }
-
 }());

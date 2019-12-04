@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // Reference thread service used for communicating with the REST endpoints
   // Read reference by userToId
   angular
@@ -17,5 +15,4 @@
       }
     });
   }
-
 }());

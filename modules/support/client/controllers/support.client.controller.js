@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('support')
     .controller('SupportController', SupportController);
@@ -9,7 +7,7 @@
   function SupportController(SupportService, messageCenterService, $stateParams) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.sendSupportRequest = sendSupportRequest;
@@ -50,7 +48,7 @@
         return false;
       }
 
-      var supportRequest = new SupportService(vm.request);
+      const supportRequest = new SupportService(vm.request);
 
       supportRequest.$save(function () {
         vm.success = true;
@@ -63,5 +61,4 @@
     }
 
   }
-
 }());

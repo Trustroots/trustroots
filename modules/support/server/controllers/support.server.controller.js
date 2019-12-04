@@ -1,17 +1,15 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    log = require(path.resolve('./config/lib/logger')),
-    config = require(path.resolve('./config/config')),
-    mongoose = require('mongoose'),
-    SupportRequest = mongoose.model('SupportRequest'),
-    validator = require('validator');
+const path = require('path');
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const statService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const log = require(path.resolve('./config/lib/logger'));
+const config = require(path.resolve('./config/config'));
+const mongoose = require('mongoose');
+const SupportRequest = mongoose.model('SupportRequest');
+const validator = require('validator');
 
 /**
  * Send support request to our support systems
@@ -19,7 +17,7 @@ var path = require('path'),
 exports.supportRequest = function (req, res) {
 
   // Prepare support request variables for the email template
-  var supportRequestData = {
+  const supportRequestData = {
     /* eslint-disable key-spacing */
     message:       (req.body.message) ? textService.plainText(req.body.message) : '—',
     username:      (req.user) ? req.user.username : textService.plainText(req.body.username),
@@ -35,7 +33,7 @@ exports.supportRequest = function (req, res) {
     /* eslint-enable key-spacing */
   };
 
-  var replyTo = {
+  const replyTo = {
     // Trust registered user's email, otherwise validate it
     // Default to TO-support email
     address: (req.user || validator.isEmail(supportRequestData.email)) ? supportRequestData.email : config.supportEmail
@@ -47,7 +45,7 @@ exports.supportRequest = function (req, res) {
   }
 
   // Backup support request for storing it to db
-  var storedSupportRequestData = {
+  const storedSupportRequestData = {
     userAgent: supportRequestData.userAgent,
     username: supportRequestData.username,
     email: supportRequestData.email,
@@ -60,7 +58,7 @@ exports.supportRequest = function (req, res) {
     storedSupportRequestData.reportMember = supportRequestData.reportMember;
   }
 
-  var supportRequest = new SupportRequest(storedSupportRequestData);
+  const supportRequest = new SupportRequest(storedSupportRequestData);
 
   // Save support request to db
   supportRequest.save(function (dbErr) {
@@ -86,7 +84,7 @@ exports.supportRequest = function (req, res) {
         message: 'Support request sent.'
       });
 
-      var statsObject = {
+      const statsObject = {
         namespace: 'supportRequest',
         counts: {
           count: 1

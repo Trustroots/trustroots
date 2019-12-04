@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('contacts')
     .controller('ContactAddController', ContactAddController);
@@ -14,7 +12,7 @@
     }
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.add = add;
@@ -84,5 +82,4 @@
     }
 
   }
-
 }());

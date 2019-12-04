@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * References-thread directive widget for asking feedback about the message thread
    *
@@ -18,7 +16,7 @@
 
   /* @ngInject */
   function trReferenceThreadDirective() {
-    var directive = {
+    const directive = {
       restrict: 'A',
       replace: true,
       templateUrl: '/modules/references-thread/views/directives/tr-reference-thread.client.view.html',
@@ -39,7 +37,7 @@
   function trReferenceThreadDirectiveController($scope, $analytics, messageCenterService, ReferenceThreadService) {
 
     // View Model
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     vm.userTo = vm.trReferenceThread;
@@ -73,7 +71,7 @@
      * Send answer to the API
      */
     function createReference(reference) {
-      var newReference = new ReferenceThreadService({
+      const newReference = new ReferenceThreadService({
         userTo: vm.userTo,
         reference: String(reference)
       });
@@ -94,5 +92,4 @@
     }
 
   }
-
 }());

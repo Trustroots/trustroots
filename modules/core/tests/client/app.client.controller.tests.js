@@ -2,15 +2,13 @@
  * App client controller tests
  */
 (function () {
-  'use strict';
-
   describe('App Controller Tests', function () {
     // Initialize global variables
-    var $scope,
-        $state,
-        Authentication,
-        SettingsFactory,
-        Languages;
+    let $scope;
+    let $state;
+    let Authentication;
+    let SettingsFactory;
+    let Languages;
 
     // Load the main application module
     beforeEach(module(AppConfig.appModuleName));
@@ -76,5 +74,4 @@
       expect($scope.vm.user).toBeTruthy();
     });
   });
-
 }());

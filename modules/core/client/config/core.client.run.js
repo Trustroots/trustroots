@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('core')
     .run(coreRun);
@@ -18,5 +16,4 @@
     push.init();
 
   }
-
 }());

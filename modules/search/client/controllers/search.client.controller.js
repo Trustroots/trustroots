@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('search')
     .controller('SearchController', SearchController);
@@ -9,7 +7,7 @@
   function SearchController($scope, $window, $analytics, $stateParams, $timeout, offer, tribe, Authentication, FiltersService, messageCenterService, LocationService) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed to the view
     // Sidebar visible: registered users on bigger screens
@@ -54,7 +52,7 @@
       if (angular.isDefined(vm.searchQuery) && angular.isString(vm.searchQuery) && vm.searchQuery) {
         LocationService.suggestions(vm.searchQuery).then(function (suggestions) {
           if (suggestions.length) {
-            var bounds = LocationService.getBounds(suggestions[0]);
+            const bounds = LocationService.getBounds(suggestions[0]);
             onPlaceSearch(bounds, 'bounds');
             vm.searchQuery = suggestions[0].trTitle;
           }
@@ -218,5 +216,4 @@
 
 
   }
-
 }());

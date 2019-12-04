@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // Start by defining the main module and adding the module dependencies
   angular
     .module(AppConfig.appModuleName,
@@ -110,5 +108,4 @@
 
     /* eslint-enable angular/window-service */
   });
-
 }());

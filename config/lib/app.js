@@ -1,12 +1,10 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var config = require('../config'),
-    mongoose = require('./mongoose'),
-    express = require('./express'),
-    chalk = require('chalk');
+const config = require('../config');
+const mongoose = require('./mongoose');
+const express = require('./express');
+const chalk = require('chalk');
 
 // Initialize Models
 mongoose.loadModels();
@@ -15,14 +13,14 @@ module.exports.init = function init(callback) {
 
   mongoose.connect(function (connection) {
     // Initialize express
-    var app = express.init(connection);
+    const app = express.init(connection);
     if (callback) callback(app, connection, config);
   });
 };
 
 module.exports.start = function start(callback) {
 
-  var _this = this;
+  const _this = this;
 
   _this.init(function (app, db, config) {
 

@@ -43,7 +43,7 @@ export default class ContactList extends React.Component {
         onContactRemoved={onContactRemoved}
       />
     );
-  };
+  }
 }
 
 ContactList.propTypes = {

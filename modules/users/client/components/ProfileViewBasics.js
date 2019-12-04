@@ -213,7 +213,7 @@ export function ProfileViewBasics({ t, profile }) {
         renderSocialNetworks(profile)
     }
   </div>);
-};
+}
 
 ProfileViewBasics.propTypes = {
   profile: PropTypes.object,

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // Used to receive basic info to show avatars etc...
   angular
     .module('users')
@@ -16,5 +14,4 @@
       }
     });
   }
-
 }());

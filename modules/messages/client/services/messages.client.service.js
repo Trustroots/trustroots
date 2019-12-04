@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // Messages service used for communicating with the messages REST endpoints
   angular
     .module('messages')
@@ -34,8 +32,8 @@
        */
       fetchMessages: function (param) {
 
-        var that = this;
-        var query = (this.nextPage) ? angular.extend(this.nextPage, param) : param;
+        const that = this;
+        const query = (this.nextPage) ? angular.extend(this.nextPage, param) : param;
 
         if (!this.paginationTimeout) {
           this.paginationTimeout = true;
@@ -63,5 +61,4 @@
     };
     return MessageHandler;
   }
-
 }());

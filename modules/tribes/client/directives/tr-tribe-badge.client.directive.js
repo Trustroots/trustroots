@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * List tribes in common between two lists of tribes
    */
@@ -25,7 +23,7 @@
     function trTribeBadgeController($scope, $state) {
 
       // View Model
-      var vm = this;
+      const vm = this;
 
       // Exposed to the view
       vm.openTribe = openTribe;

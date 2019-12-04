@@ -1,12 +1,10 @@
-'use strict';
+const path = require('path');
+const config = require('../config');
+const format = require('util').format;
+const statService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const MongoClient = require('mongodb').MongoClient;
 
-var path = require('path'),
-    config = require('../config'),
-    format = require('util').format,
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    MongoClient = require('mongodb').MongoClient;
-
-var agenda;
+let agenda;
 
 exports.start = function (options, callback) {
 
@@ -110,7 +108,7 @@ exports.start = function (options, callback) {
   agenda.on('success', function (job) {
     if (process.env.NODE_ENV !== 'test') {
 
-      var statsObject = {
+      const statsObject = {
         namespace: 'agendaJob',
         counts: {
           count: 1
@@ -136,7 +134,7 @@ exports.start = function (options, callback) {
   // Error reporting and retry logic
   agenda.on('fail', function (err, job) {
 
-    var extraMessage = '';
+    let extraMessage = '';
 
     if (job.attrs.failCount >= options.maxAttempts) {
 
@@ -152,7 +150,7 @@ exports.start = function (options, callback) {
       job.save();
     }
 
-    var statsObject = {
+    const statsObject = {
       namespace: 'agendaJob',
       counts: {
         count: 1
@@ -200,7 +198,7 @@ exports.unlockAgendaJobs = function (callback) {
 
     // Re-use Agenda's MongoDB connection
     // var agendaJobs = agenda._mdb.collection('agendaJobs');
-    var agendaJobs = client.db().collection('agendaJobs');
+    const agendaJobs = client.db().collection('agendaJobs');
 
     agendaJobs.update({
       lockedAt: {

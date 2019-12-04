@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('offers')
     .controller('OfferHostViewController', OfferHostViewController);
@@ -9,7 +7,7 @@
   function OfferHostViewController($scope, OffersByService) {
 
     // ViewModel
-    var vm = this;
+    const vm = this;
 
     // Exposed
     vm.offer = false;
@@ -59,5 +57,4 @@
     }
 
   }
-
 }());

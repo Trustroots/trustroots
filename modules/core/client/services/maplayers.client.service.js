@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Service for getting map layers for Leaflet
    *
@@ -16,15 +14,15 @@
   /* @ngInject */
   function MapLayersFactory(SettingsFactory, LocationService) {
 
-    var appSettings = SettingsFactory.get();
+    const appSettings = SettingsFactory.get();
 
     // Is Mapbox configuration available
-    var isMapboxAvailable = (appSettings.mapbox && angular.isObject(appSettings.mapbox.maps) && appSettings.mapbox.user && appSettings.mapbox.publicKey);
+    const isMapboxAvailable = (appSettings.mapbox && angular.isObject(appSettings.mapbox.maps) && appSettings.mapbox.user && appSettings.mapbox.publicKey);
 
     // Location for "improve this map"-links
-    var location = LocationService.getDefaultLocation(3);
+    const location = LocationService.getDefaultLocation(3);
 
-    var service = {
+    const service = {
       getLayers: getLayers
     };
 
@@ -38,7 +36,7 @@
 
       if (!isMapboxAvailable || !layerConf) return;
 
-      var layer = {
+      const layer = {
         name: label || 'Mapbox',
         type: 'xyz',
         layerParams: {
@@ -62,7 +60,7 @@
       }
 
       // This feedback layer id is good for private styles
-      var feedbackLayer = appSettings.mapbox.user + '.' + layerConf.map;
+      let feedbackLayer = appSettings.mapbox.user + '.' + layerConf.map;
 
       // These feedback layer id's are required for public styles
       if (!layerConf.legacy && TRStyle === 'satellite') {
@@ -90,7 +88,7 @@
      */
     function getLayers(options) {
 
-      var layers = {};
+      const layers = {};
 
       // Set layer types to return
       // Defaults to return only `streets` layer
@@ -181,5 +179,4 @@
     }
 
   }
-
 }());

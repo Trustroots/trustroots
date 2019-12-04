@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   // Authentication service for user variables
   angular
     .module('users')
@@ -8,10 +6,9 @@
 
   /* @ngInject */
   function Authentication($window) {
-    var auth = {
+    const auth = {
       user: $window.user || null
     };
     return auth;
   }
-
 }());

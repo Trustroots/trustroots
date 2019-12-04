@@ -1,5 +1,3 @@
-/* eslint-disable angular/document-service,angular/window-service */
-
 const photos = {
   'bokeh': {
     'name': 'Sandra', // "pinkorchid_too"
@@ -158,6 +156,7 @@ const photos = {
 
 export function selectPhoto(name) {
   const photo = photos[name];
+  // eslint-disable-next-line angular/window-service
   const file = (window.innerWidth <= 480 && photo.file_mobile) ? photo.file_mobile : photo.file;
   const imageUrl = `/img/board/${file}`;
 

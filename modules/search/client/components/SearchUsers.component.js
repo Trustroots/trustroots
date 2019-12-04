@@ -78,7 +78,7 @@ class SearchUsers extends React.Component {
         this.setState({ isSearching: false });
       });
     });
-  };
+  }
 
   clearSearchQuery() {
     this.setState({ searchQuery: '' });

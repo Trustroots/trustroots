@@ -1,4 +1,3 @@
-'use strict';
 /* eslint no-var: 0 */
 
 import ngreact from 'ngreact';
@@ -59,7 +58,7 @@ var AppConfig = (function () {
     appModuleVendorDependencies.push('angulartics.debug');
   } else {
     // For "test" environment
-    // See `testutils/angulartics-null.testutil.js`
+    // See `testutils/client/angulartics-null.testutil.js`
     appModuleVendorDependencies.push('angulartics.null');
   }
 

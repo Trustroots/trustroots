@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   describe('Pages Route Tests', function () {
 
     // We can start by loading the main application module
@@ -15,7 +13,7 @@
 
     describe('Route Config', function () {
       describe('Rules Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/pages/views/rules.client.view.html', '');
@@ -36,7 +34,7 @@
       });
 
       describe('Team Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/pages/views/team.client.view.html', '');
@@ -57,7 +55,7 @@
       });
 
       describe('Privacy Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/pages/views/privacy.client.view.html', '');
@@ -78,7 +76,7 @@
       });
 
       describe('Donate Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/pages/views/donate.client.view.html', '');
@@ -99,7 +97,7 @@
       });
 
       describe('Donation help Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/pages/views/donate-help.client.view.html', '');
@@ -120,7 +118,7 @@
       });
 
       describe('Donation policy Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/pages/views/donate-policy.client.view.html', '');
@@ -141,7 +139,7 @@
       });
 
       describe('FAQ Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/pages/views/faq.client.view.html', '');
@@ -163,7 +161,7 @@
       });
 
       describe('FAQ Sub Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/pages/views/faq.client.view.html', '');
@@ -185,7 +183,7 @@
       });
 
       describe('Foundation Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/pages/views/foundation.client.view.html', '');
@@ -206,7 +204,7 @@
       });
 
       describe('Media Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/pages/views/media.client.view.html', '');
@@ -227,7 +225,7 @@
       });
 
       describe('Volunteering Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state) {
           mainstate = $state.get('volunteering');
         }));
@@ -246,7 +244,7 @@
       });
 
       describe('Guide Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/pages/views/guide.client.view.html', '');
@@ -267,7 +265,7 @@
       });
 
       describe('Mobile Navigation Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state, $templateCache) {
           // Test expected GET request
           $templateCache.put('/modules/pages/views/navigation.client.view.html', '');
@@ -293,5 +291,4 @@
 
     });
   });
-
 }());

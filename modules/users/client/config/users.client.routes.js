@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('users')
     .config(UsersRoutes);
@@ -394,5 +392,4 @@
         });
     }
   }
-
 }());

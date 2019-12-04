@@ -49,7 +49,7 @@ export default class OfferLocation extends React.Component {
       windowWidth={this.state.windowWidth}
     />;
   }
-};
+}
 
 OfferLocation.propTypes = {
   offer: PropTypes.object.isRequired

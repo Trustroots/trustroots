@@ -1,5 +1,3 @@
-'use strict';
-
 import { CreateReference } from '../../client/components/CreateReference.component';
 import { ReferenceToSelfInfo, LoadingInfo, DuplicateInfo, SubmittedInfo } from '../../client/components/create-reference/Info';
 import Interaction from '../../client/components/create-reference/Interaction';

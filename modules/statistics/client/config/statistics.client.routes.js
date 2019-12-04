@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('statistics')
     .config(StatisticsRoutes);
@@ -28,5 +26,4 @@
       });
 
   }
-
 }());

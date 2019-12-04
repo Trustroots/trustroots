@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to validate password matches to password in another field
    *

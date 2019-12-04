@@ -1,9 +1,7 @@
 (function () {
-  'use strict';
-
   describe('Statistics Route Tests', function () {
     // Initialize global variables
-    var $httpBackend;
+    let $httpBackend;
 
     // We can start by loading the main application module
     beforeEach(module(AppConfig.appModuleName));
@@ -17,7 +15,7 @@
 
     describe('Route Config', function () {
       describe('Main Route', function () {
-        var mainstate;
+        let mainstate;
         beforeEach(inject(function ($state) {
           // Test expected GET request
           $httpBackend.when('GET', '/modules/pages/views/home.client.view.html').respond(200, '');
@@ -61,5 +59,4 @@
 
     });
   });
-
 }());

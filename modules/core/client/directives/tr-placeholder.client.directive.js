@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('core')
     .directive('trPlaceholder', trPlaceholderDirective);
@@ -18,5 +16,4 @@
         '</div>'
     };
   }
-
 }());

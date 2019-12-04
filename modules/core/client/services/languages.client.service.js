@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   angular
     .module('core')
     .factory('Languages', LanguagesFactory);
@@ -8,7 +6,7 @@
   /* @ngInject */
   function LanguagesFactory($window) {
 
-    var service = {
+    const service = {
       get: get
     };
 
@@ -16,7 +14,7 @@
 
     function get(type) {
       if (type === 'array') {
-        var langsArr = [];
+        const langsArr = [];
 
         angular.forEach($window.languages, function (value, key) {
           this.push({ key: key, name: value });
@@ -30,5 +28,4 @@
     }
 
   }
-
 }());

@@ -1,6 +1,4 @@
 (function () {
-  'use strict';
-
   /**
    * Directive to select languages
    *
@@ -25,7 +23,7 @@
 
   /* @ngInject */
   function trLanguagesDirective() {
-    var directive = {
+    const directive = {
       restrict: 'A',
       replace: true,
       transclude: true,
@@ -51,7 +49,7 @@
     function trLanguagesDirectiveController($scope, Languages) {
 
       // View model
-      var vm = this;
+      const vm = this;
 
       // Exposed to the view
       vm.languages = Languages.get('array');
@@ -87,7 +85,7 @@
        * This array is used only internally for this directive.
        */
       function decodeSelectedLanguages() {
-        var selections = [];
+        const selections = [];
         if ($scope.output.length > 0) {
           $scope.output.forEach(function (key) {
             if (angular.isString(key)) {
@@ -108,7 +106,7 @@
        * This is the output format for this directive.
        */
       function encodeSelectedLanguages() {
-        var keys = [];
+        const keys = [];
         angular.forEach(vm.selectedLanguages, function (language) {
           this.push(String(language.key));
         }, keys);
@@ -117,5 +115,4 @@
     }
 
   }
-
 }());

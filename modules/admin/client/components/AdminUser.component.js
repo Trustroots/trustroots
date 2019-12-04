@@ -218,7 +218,7 @@ export default class AdminUser extends Component {
         </div>
       </>
     );
-  };
+  }
 }
 
 AdminUser.propTypes = {};

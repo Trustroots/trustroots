@@ -1,7 +1,5 @@
 /* global FB */
 (function () {
-  'use strict';
-
   angular
     .module('core')
     .factory('Facebook', FacebookFactory);
@@ -9,7 +7,7 @@
   /* @ngInject */
   function FacebookFactory($log, $window, $document, $http, $rootScope, Authentication) {
 
-    var service = {
+    const service = {
       init: init
     };
 
@@ -39,16 +37,15 @@
 
       // Initialize the `<script>`
       (function (d) {
-        var js,
-            id = 'facebook-jssdk',
-            fjs = d.getElementsByTagName('script')[0];
+        const id = 'facebook-jssdk';
+        const fjs = d.getElementsByTagName('script')[0];
 
         // Don't add `<script>` tag twice
         if (d.getElementById(id)) {
           return;
         }
 
-        js = d.createElement('script');
+        const js = d.createElement('script');
         js.id = id;
         js.async = true;
         js.src = '//connect.facebook.net/en_US/sdk.js';
@@ -136,5 +133,4 @@
     }
 
   }
-
 }());
