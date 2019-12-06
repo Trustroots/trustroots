@@ -5,7 +5,6 @@ import App from './App';
 // import * as serviceWorker from './serviceWorker';
 import { Provider } from 'react-redux';
 import { configureStore } from 'store';
-import { BrowserRouter as Router } from 'react-router-dom';
 import { initialLogin } from 'effects/auth';
 
 const store = configureStore();
@@ -18,9 +17,7 @@ const store = configureStore();
 
 ReactDOM.render(
   <Provider store={store}>
-    <Router>
-      <App />
-    </Router>
+    <App />
   </Provider>,
   document.getElementById('root')
 );

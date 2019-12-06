@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
-import axios from 'axios';
+// import axios from 'axios';
+import Routes from './Routes';
+import Layout from './Layout';
 
 function App() {
+  /*
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -18,9 +21,12 @@ function App() {
       }
     })();
   }, []);
+  */
 
   return (
-    <div>app, users {JSON.stringify(user)}</div>
+    <Layout>
+      <Routes />
+    </Layout>
   );
 }
 
