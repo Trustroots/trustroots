@@ -182,7 +182,7 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
   // Add Server Test file rules
   gulp.watch([
     'modules/*/tests/server/**/*.js',
-    defaultAssets.server.allJS,
+    ...defaultAssets.server.allJS,
     defaultAssets.server.migrations
   ],
   gulp.series('test:server'))
