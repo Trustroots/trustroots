@@ -169,6 +169,7 @@
     "serve-favicon": "~2.5.0",
     "speakingurl": "~14.0.1",
     "stathat": "0.0.8",
+    "styled-components": "~4.4.1",
     "ui-leaflet": "~2.0.0",
     "uuid": "~3.3.3",
     "validator": "~12.1.0",
