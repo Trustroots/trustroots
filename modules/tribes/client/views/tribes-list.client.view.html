@@ -1,21 +1,6 @@
-<tribes-header
-  isLoggedIn="!!app.user"
+<tribes-page
+  user="app.user"
   onDisplayPhoto="tribesList.addPhotoCredits"
   onHidePhoto="tribesList.removePhotoCredits"
-></tribes-header>
-
-<section class="container container-spacer">
-
-  <div class="row">
-    <div class="col-xs-12">
-      <tribes-list
-        tribes="tribesList.tribes"
-        user="app.user"
-        onMembershipUpdated="tribesList.broadcastChange"
-      ></tribes-list>
-    </div>
-  </div>
-
-  <tribes-join-trustroots ng-if="!app.user">
-
-</section>
+  onMembershipUpdated="tribesList.broadcastChange"
+></tribes-page>
