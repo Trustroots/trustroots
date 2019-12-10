@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-import TribesHeader from './TribesHeader.component';
-import TribesList from './TribesList.component';
-import TribesJoinTrustroots from './TribesJoinTrustroots.component';
+import TribesHeader from './TribesHeader';
+import TribesList from './TribesList';
+import TribesJoinTrustroots from './TribesJoinTrustroots';
 
 import * as api from '../api/tribes.api';
 
