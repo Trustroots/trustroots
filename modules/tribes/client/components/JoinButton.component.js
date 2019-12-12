@@ -6,22 +6,24 @@ import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 import * as api from '../api/tribes.api';
 
-function JoinButtonPresentational({ isMember, isLoading, joinLabel='Join', joinedLabel='Joined', tribe, isLogged, onToggle }) {
+function JoinButtonPresentational({ isMember, isLoading, joinLabel='Join', joinedLabel='Joined', tribe, isLoggedIn, onToggle }) {
   const { t } = useTranslation('tribes');
 
   const ariaLabel = (isMember) ? t('Leave Tribe') : t(`${joinLabel} ({{label}})`, { label: tribe.label });
-  const title = (isMember) ? t(joinedLabel) : t(joinLabel);
+  const buttonLabel = (isMember) ? t(joinedLabel) : t(joinLabel);
 
-  if (!isLogged) {
+  // a button to be shown when user is signed out
+  if (!isLoggedIn) {
     return <a
       href={`/signup?tribe=${tribe.slug}`}
       type="button"
       className="btn btn-sm btn-default tribe-join"
     >
-      <i className="icon-plus" /> {title}
+      <i className="icon-plus" /> {buttonLabel}
     </a>;
   }
 
+  // a button for joining and leaving a tribe
   const leaveTooltip = <Tooltip id={`tribe-${tribe._id}`} placement="bottom">{t('Leave Tribe')}</Tooltip>;
   const btn = <button
     type="button"
@@ -30,7 +32,7 @@ function JoinButtonPresentational({ isMember, isLoading, joinLabel='Join', joine
     disabled={isLoading}
     aria-label={ariaLabel}
   >
-    <i className={(isMember) ? 'icon-ok' : 'icon-plus'} /> {title}
+    <i className={(isMember) ? 'icon-ok' : 'icon-plus'} /> {buttonLabel}
   </button>;
 
   if (isMember) {
@@ -43,7 +45,7 @@ function JoinButtonPresentational({ isMember, isLoading, joinLabel='Join', joine
 JoinButtonPresentational.propTypes = {
   isMember: PropTypes.bool.isRequired,
   isLoading: PropTypes.bool,
-  isLogged: PropTypes.bool.isRequired,
+  isLoggedIn: PropTypes.bool.isRequired,
   joinLabel: PropTypes.string,
   joinedLabel: PropTypes.string,
   tribe: PropTypes.object.isRequired,
@@ -52,14 +54,19 @@ JoinButtonPresentational.propTypes = {
 
 // @TODO this can (and should) be replaced by other container, when we finish the migration; when we start using redux etc.
 export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
-  // isLeaving controls whether the tribe delete modal is shown
+  // isLeaving controls whether the modal for leaving a tribe is shown
   const [isLeaving, setIsLeaving] = useState(false);
 
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const isSelfMember = user && user.memberIds && user.memberIds.indexOf(tribe._id) > -1;
-  const [isMember, setIsMember] = useState(isSelfMember);
+  const isMemberInitial = user && user.memberIds && user.memberIds.indexOf(tribe._id) > -1;
+  const [isMember, setIsMember] = useState(isMemberInitial);
 
+  /**
+   * Handle joining or leaving of a tribe
+   * - Join: join tribe immediately (api call)
+   * - Leave: show confirmation modal
+   */
   async function handleToggleMembership() {
     if (isUpdating) {
       return;
@@ -78,16 +85,21 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
 
       // updating finished
       setIsUpdating(false);
+      // tell the ancestor components that the membership was updated
       onUpdated(data);
     }
   }
 
+  /**
+   * Leave a tribe (api call)
+   */
   async function handleLeave() {
     setIsUpdating(true);
     const data = await api.leave(tribe._id);
     setIsUpdating(false);
     setIsLeaving(false);
     setIsMember(false);
+    // tell the ancestor components that the membership was updated
     onUpdated(data);
   }
 
@@ -97,12 +109,12 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
 
   return <>
     <LeaveTribeModal show={isLeaving} tribe={tribe} onConfirm={handleLeave} onCancel={handleCancelLeave}/>
-    <JoinButtonPresentational tribe={tribe} isLogged={!!user} isMember={isMember} isLoading={isUpdating} {...rest} onToggle={handleToggleMembership} />
+    <JoinButtonPresentational tribe={tribe} isLoggedIn={!!user} isMember={isMember} isLoading={isUpdating} {...rest} onToggle={handleToggleMembership} />
   </>;
 }
 
 JoinButton.propTypes = {
   tribe: PropTypes.object.isRequired,
-  user: PropTypes.object.isRequired,
+  user: PropTypes.object,
   onUpdated: PropTypes.func.isRequired
 };
