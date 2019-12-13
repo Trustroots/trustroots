@@ -1,23 +1,8 @@
-<section class="board tribes-header" tr-boards="'tribes-1'">
-  <div class="container">
-    <div class="row">
-      <div class="col-xs-12 text-center">
-        <br><br>
-        <h2>Discover Tribes</h2>
-        <br>
-        <p class="lead">
-          Joining Tribes helps you find likeminded Trustroots members.
-        </p>
-        <div ng-if="!app.user">
-          <hr class="hr-white hr-xs"/>
-          <a ui-sref="signup" class="btn btn-action btn-default">
-            Sign up with Trustroots
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+<tribes-header
+  isLoggedIn="!!app.user"
+  onDisplayPhoto="tribesList.addPhotoCredits"
+  onHidePhoto="tribesList.removePhotoCredits"
+></tribes-header>
 
 <section class="container container-spacer">
 
