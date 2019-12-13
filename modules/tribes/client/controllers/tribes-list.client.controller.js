@@ -3,7 +3,7 @@ angular
   .controller('TribesListController', TribesListController);
 
 /* @ngInject */
-function TribesListController(tribes, $state, Authentication, TribeService, $scope) {
+function TribesListController(tribes, $state, Authentication, TribeService, $rootScope, $scope) {
 
   // ViewModel
   const vm = this;
@@ -12,6 +12,16 @@ function TribesListController(tribes, $state, Authentication, TribeService, $sco
   vm.tribes = tribes;
   vm.user = Authentication.user;
   vm.openTribe = openTribe;
+  vm.broadcastChange = function (data) {
+    if (data.tribe) {
+      $rootScope.$broadcast('tribeUpdated', data.tribe);
+    }
+
+    if (data.user) {
+      Authentication.user = data.user;
+      $rootScope.$broadcast('userUpdated');
+    }
+  };
 
   /**
    * Open tribe
