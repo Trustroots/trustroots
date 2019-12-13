@@ -12,6 +12,24 @@ if (process.env.NODE_ENV === 'production') {
   require('@/public/dist/templates');
 }
 
+
+/*
+ *  Main style import.
+ *  This includes the libraries, and any global overrides.
+ */
+import './main.less';
+
+/*
+ * Imports all the style files from the modules (*.less)
+ *
+ * Uses a webpack require context
+ *  See https://webpack.js.org/guides/dependency-management/#require-context
+ */
+importAll(require.context('../../../modules/', true, /\.less$/));
+function importAll(r) {
+  r.keys().forEach(r);
+}
+
 /*
  *  Imports all react components from modules/ and register them as angular components
  *

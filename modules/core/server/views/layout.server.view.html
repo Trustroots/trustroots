@@ -10,14 +10,8 @@
   <title tr-page-title>{% if tribe %}{{ tribe.label | striptags }} - Trustroots Tribe{% else %}{{ title }}{% endif %}</title>
   <base href="/">
   <meta name="fragment" content="!">
-  {% if env === 'development' %}
-    {% for cssFile in cssFiles %}<link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}">
-    {% endfor %}
-    <link rel="stylesheet" href="/dist/application.css?c={{appSettings.commit}}">
-  {% endif %}
-  {% if env === 'production' %}
-    <link rel="stylesheet" href="/dist/application.min.css?c={{appSettings.commit}}">
-  {% endif %}
+  {% for cssFile in cssFiles %}<link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}">
+  {% endfor %}
   {# Prefech some domains that are used for user avatars and tribe images #}
   {# https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-DNS-Prefetch-Control #}
   <link rel="dns-prefetch" href="//graph.facebook.com">
@@ -169,16 +163,12 @@
         user = {{ user | dump | safe }};
   </script>
 
-  {% if env === 'production' %}
-    <script src="/assets/main.js?c={{appSettings.commit}}"
-            nonce="{{ nonce }}"></script>
-  {% endif %}
-
-  {% if env === 'development' %}
   {% for jsFile in jsFiles %}
     <script src="/{{jsFile}}?c={{appSettings.commit}}"
             nonce="{{ nonce }}"></script>
   {% endfor %}
+
+  {% if env === 'development' %}
   <script nonce="{{ nonce }}">
     // Make sure we get livereload from the same host (IP/localhost/...)
     document.write('\x3Cscript type="text/javascript" src="//' + window.location.hostname + ':35729/livereload.js">\x3C/script>');

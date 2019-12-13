@@ -12,9 +12,6 @@ const MergeStream = require('merge-stream');
 const glob = require('glob');
 const del = require('del');
 const nodemon = require('nodemon');
-const webpack = require('webpack');
-const webpackStream = require('webpack-stream');
-const merge = require('webpack-merge');
 const print = require('gulp-print').default;
 const plugins = gulpLoadPlugins({
   rename: {
@@ -116,38 +113,6 @@ gulp.task('env:dev', gulp.series(
   }
 ));
 
-gulp.task('webpack', gulp.parallel(
-  webpackTask({
-    entry: './config/webpack/entries/main.js',
-    filename: 'main.js',
-    path: 'public/assets/'
-  }),
-  webpackTask({
-    entry: './config/webpack/entries/pushMessagingServiceWorker.js',
-    filename: 'push-messaging-sw.js',
-    path: 'public/'
-  })
-));
-
-function webpackTask(opts) {
-  return function () {
-    const resolvedEntry = require.resolve(opts.entry);
-    return gulp.src(resolvedEntry)
-      .pipe(webpackStream(merge(require('./config/webpack/webpack.config.js'), {
-        watch: opts.watch,
-        entry: resolvedEntry,
-        output: {
-          filename: opts.filename
-        }
-      }), webpack, function (err, stats){
-        if (opts.onChange) {
-          opts.onChange(err, stats);
-        }
-      }))
-      .pipe(gulp.dest(opts.path));
-  };
-}
-
 // Set NODE_ENV to 'production' and prepare environment
 gulp.task('env:prod', gulp.series(
   function (done) {
@@ -163,11 +128,10 @@ gulp.task('watch', function watch(done) {
 
   // Watch and generate app files
   gulp.watch(defaultAssets.server.views).on('change', plugins.refresh.changed);
-  gulp.watch(defaultAssets.client.less, gulp.series('clean:css', 'build:styles')).on('change', plugins.refresh.changed);
 
   if (process.env.NODE_ENV === 'production') {
-    gulp.watch(defaultAssets.client.js, gulp.series('clean:js', 'build:scripts'));
-    gulp.watch(defaultAssets.client.views, gulp.series('clean:js', 'build:scripts')).on('change', plugins.refresh.changed);
+    gulp.watch(defaultAssets.client.js, gulp.series('clean', 'build:scripts'));
+    gulp.watch(defaultAssets.client.views, gulp.series('clean', 'build:scripts')).on('change', plugins.refresh.changed);
   } else {
     gulp.watch(defaultAssets.client.views).on('change', plugins.refresh.changed);
   }
@@ -209,56 +173,12 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
 gulp.task('build:scripts', gulp.series(
   loadConfig,
   angularTemplateCache,
-  angularUibTemplatecache,
-  'webpack'
+  angularUibTemplatecache
 ));
 
 // Clean JS files -task
-gulp.task('clean:js', function cleanJS() {
+gulp.task('clean', function clean() {
   return del(['public/dist/*.js']);
-});
-
-// Clean CSS files -task
-gulp.task('clean:css', function cleanCSS() {
-  return del(['public/dist/*.css']);
-});
-
-// CSS styles task
-gulp.task('build:styles', function buildStyles() {
-  if (process.env.NODE_ENV === 'production') {
-
-    const cssStream = gulp.src(defaultAssets.client.lib.css)
-      .pipe(plugins.concat('css-files.css'));
-
-    const lessStream = gulp.src(_.union(defaultAssets.client.lib.less, defaultAssets.client.less))
-      .pipe(plugins.concat('less-files.less'))
-      .pipe(plugins.less());
-
-    // Combine CSS and LESS streams into one minified css file
-    // eslint-disable-next-line new-cap
-    return MergeStream(lessStream, cssStream)
-      .pipe(plugins.concat('application.css'))
-      .pipe(plugins.autoprefixer())
-      .pipe(plugins.csso())
-      .pipe(plugins.rename({ suffix: '.min' }))
-      .pipe(gulp.dest('public/dist'));
-  } else {
-    // In non-production `NODE_ENV`
-
-    // More verbose `less` errors
-    const lessProcessor = plugins.less();
-    lessProcessor.on('error', function (err) {
-      console.error(err);
-    });
-    // Process only LESS files, since CSS libs will be linked directly at the template
-    return gulp.src(_.union(defaultAssets.client.lib.less, defaultAssets.client.less))
-      .pipe(plugins.concat('less-files.less'))
-      .pipe(lessProcessor)
-      .pipe(plugins.autoprefixer())
-      .pipe(plugins.rename({ basename: 'application', extname: '.css' }))
-      .pipe(gulp.dest('public/dist'))
-      .pipe(plugins.refresh());
-  }
 });
 
 // Angular UI-Boostrap template cache task
@@ -363,28 +283,19 @@ function mocha(done) {
 
 gulp.task('angular-templatecache', gulp.series(angularTemplateCache, angularUibTemplatecache));
 
-// Clean dist css and js files
-gulp.task('clean', gulp.parallel('clean:css', 'clean:js'));
-
 // Build assets for development mode
 gulp.task('build:dev', gulp.series(
   'env:dev',
   'clean',
   angularUibTemplatecache,
-  gulp.parallel(
-    'build:styles',
-    'build:scripts'
-  )
+  'build:scripts'
 ));
 
 // Build assets for production mode
 gulp.task('build:prod', gulp.series(
   'env:prod',
   'clean',
-  gulp.parallel(
-    'build:styles',
-    'build:scripts'
-  )
+  'build:scripts'
 ));
 
 // Run fontello update
@@ -407,17 +318,7 @@ gulp.task('develop', gulp.series(
   'build:dev',
   gulp.parallel(
     runNodemon,
-    'watch',
-    webpackTask({
-      entry: './config/webpack/entries/main.js',
-      filename: 'main.js',
-      path: 'public/assets/',
-      watch: true,
-      onChange: function () {
-        console.log('Webpack detected a change');
-        plugins.refresh.changed('/assets/main.js');
-      }
-    })
+    'watch'
   )
 ));
 

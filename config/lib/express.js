@@ -55,9 +55,11 @@ module.exports.initLocalVariables = function (app) {
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
 
   // Assets
-  if (process.env.NODE_ENV !== 'production') {
-    app.locals.jsFiles = ['assets/main.js'];
-    app.locals.cssFiles = _.map(config.files.client.css, function (file) { return file.replace('/client', ''); });
+  app.locals.jsFiles = ['assets/main.js'];
+  if (process.env.NODE_ENV === 'production') {
+    app.locals.cssFiles = ['assets/main.css'];
+  } else {
+    app.locals.cssFiles = []; // style is bundled with javascript
   }
 
   // Get 'git rev-parse --short HEAD' (the latest git commit hash) to use as a cache buster

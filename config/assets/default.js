@@ -11,16 +11,6 @@ module.exports = {
         'tooltip',
         'typeahead'
       ],
-      css: [
-        'node_modules/angular/angular-csp.css', // https://docs.angularjs.org/api/ng/directive/ngCsp
-        'node_modules/leaflet/dist/leaflet.css',
-        'node_modules/medium-editor/dist/css/medium-editor.css',
-        'modules/core/client/fonts/fontello/css/tricons-codes.css',
-        'node_modules/angular-ui-bootstrap/src/datepicker/datepicker.css',
-        'node_modules/angular-ui-bootstrap/src/position/position.css',
-        'node_modules/angular-ui-bootstrap/src/typeahead/typeahead.css',
-        'node_modules/angular-ui-bootstrap/src/tooltip/tooltip.css'
-      ],
       js: [
         // Non minified versions
         'node_modules/jquery/dist/jquery.js',
@@ -68,106 +58,8 @@ module.exports = {
         'node_modules/angular-confirm/angular-confirm.js',
         'node_modules/angulargrid/angulargrid.js'
       ],
-      less: [
-        'node_modules/angular-trustpass/src/tr-trustpass.less',
-
-        // Bootstrap
-        // ---------
-
-        // Bootstrap core variables
-        'node_modules/bootstrap/less/variables.less',
-
-        // Bootstrap utility mixins
-        // See the full list from 'node_modules/bootstrap/less/mixins.less'
-        // Utility mixins
-        'node_modules/bootstrap/less/mixins/hide-text.less',
-        'node_modules/bootstrap/less/mixins/opacity.less',
-        'node_modules/bootstrap/less/mixins/image.less',
-        'node_modules/bootstrap/less/mixins/labels.less',
-        'node_modules/bootstrap/less/mixins/reset-filter.less',
-        'node_modules/bootstrap/less/mixins/resize.less',
-        'node_modules/bootstrap/less/mixins/responsive-visibility.less',
-        'node_modules/bootstrap/less/mixins/size.less',
-        'node_modules/bootstrap/less/mixins/tab-focus.less',
-        'node_modules/bootstrap/less/mixins/reset-text.less',
-        'node_modules/bootstrap/less/mixins/text-emphasis.less',
-        'node_modules/bootstrap/less/mixins/text-overflow.less',
-        'node_modules/bootstrap/less/mixins/vendor-prefixes.less',
-        // Component mixins
-        'node_modules/bootstrap/less/mixins/alerts.less',
-        'node_modules/bootstrap/less/mixins/buttons.less',
-        'node_modules/bootstrap/less/mixins/panels.less',
-        'node_modules/bootstrap/less/mixins/pagination.less',
-        'node_modules/bootstrap/less/mixins/list-group.less',
-        'node_modules/bootstrap/less/mixins/nav-divider.less',
-        'node_modules/bootstrap/less/mixins/forms.less',
-        'node_modules/bootstrap/less/mixins/progress-bar.less',
-        'node_modules/bootstrap/less/mixins/table-row.less',
-        // Skin mixins
-        'node_modules/bootstrap/less/mixins/background-variant.less',
-        'node_modules/bootstrap/less/mixins/border-radius.less',
-        'node_modules/bootstrap/less/mixins/gradients.less',
-        // Layout mixins
-        'node_modules/bootstrap/less/mixins/clearfix.less',
-        'node_modules/bootstrap/less/mixins/center-block.less',
-        'node_modules/bootstrap/less/mixins/nav-vertical-align.less',
-        'node_modules/bootstrap/less/mixins/grid-framework.less',
-        'node_modules/bootstrap/less/mixins/grid.less',
-
-        // Reset and dependencies
-        'node_modules/bootstrap/less/normalize.less',
-        // 'node_modules/bootstrap/less/print.less',
-        // 'node_modules/bootstrap/less/glyphicons.less',
-
-        // Core CSS
-        'node_modules/bootstrap/less/scaffolding.less',
-        'node_modules/bootstrap/less/type.less',
-        'node_modules/bootstrap/less/code.less',
-        'node_modules/bootstrap/less/grid.less',
-        'node_modules/bootstrap/less/tables.less',
-        'node_modules/bootstrap/less/forms.less',
-        'node_modules/bootstrap/less/buttons.less',
-
-        // Components
-        'node_modules/bootstrap/less/component-animations.less',
-        'node_modules/bootstrap/less/dropdowns.less',
-        'node_modules/bootstrap/less/button-groups.less',
-        'node_modules/bootstrap/less/input-groups.less',
-        'node_modules/bootstrap/less/navs.less',
-        'node_modules/bootstrap/less/navbar.less',
-        // 'node_modules/bootstrap/less/breadcrumbs.less',
-        // 'node_modules/bootstrap/less/pagination.less',
-        // 'node_modules/bootstrap/less/pager.less',
-        'node_modules/bootstrap/less/labels.less',
-        'node_modules/bootstrap/less/badges.less',
-        // 'node_modules/bootstrap/less/jumbotron.less',
-        // 'node_modules/bootstrap/less/thumbnails.less',
-        'node_modules/bootstrap/less/alerts.less',
-        'node_modules/bootstrap/less/progress-bars.less',
-        'node_modules/bootstrap/less/media.less',
-        'node_modules/bootstrap/less/list-group.less',
-        'node_modules/bootstrap/less/panels.less',
-        // 'node_modules/bootstrap/less/responsive-embed.less',
-        // 'node_modules/bootstrap/less/wells.less',
-        'node_modules/bootstrap/less/close.less',
-
-        // Components w/ JavaScript
-        'node_modules/bootstrap/less/modals.less',
-        'node_modules/bootstrap/less/tooltip.less',
-        'node_modules/bootstrap/less/popovers.less',
-        // 'node_modules/bootstrap/less/carousel.less',
-
-        // Utility classes
-        'node_modules/bootstrap/less/utilities.less',
-        'node_modules/bootstrap/less/responsive-utilities.less'
-      ],
       tests: ['node_modules/angular-mocks/angular-mocks.js']
     },
-    less: [
-      'modules/core/client/app/less/*.less',
-      'modules/core/client/less/**/*.less',
-      'modules/*/client/less/*.less'
-    ],
     js: [
       'modules/core/client/app/config.js',
       'modules/core/client/app/init.js',

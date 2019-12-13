@@ -1,22 +1,24 @@
+@import '~less/global-variables';
+@import '~bootstrap/less/mixins/vendor-prefixes';
+
 /*
  * Modified from https://raw.githubusercontent.com/harvesthq/chosen/master/sass/chosen.scss
  * Requires Bootstrap3 mixins
  */
-
-@chosen-sprite: '/modules/core/img/chosen-js/chosen-sprite.png';
-@chosen-sprite-retina: '/modules/core/img/chosen-js/chosen-sprite@2x.png';
+@chosen-sprite: url('~chosen-js/chosen-sprite.png');
+@chosen-sprite-retina: url('~chosen-js/chosen-sprite@2x.png');
 
 // Adapted from
 // https://github.com/localytics/angular-chosen/blob/master/chosen-spinner.css
 .localytics-chosen.loading {
   &.chosen-container-multi .chosen-choices {
-    background-image: url('/modules/core/img/angular-chosen-localytics/spinner.gif');
+    background-image: url('~angular-chosen-localytics/spinner.gif');
     background-repeat: no-repeat;
     background-position: 95%;
   }
   &.chosen-container-single .chosen-single {
     span {
-      background: url('/modules/core/img/angular-chosen-localytics/spinner.gif') no-repeat right;
+      background: url('~angular-chosen-localytics/spinner.gif') no-repeat right;
     }
     .search-choice-close {
       display: none;
@@ -109,7 +111,7 @@
     display: block;
     width: 12px;
     height: 12px;
-    background: url(@chosen-sprite) -42px 1px no-repeat;
+    background: @chosen-sprite -42px 1px no-repeat;
     font-size: 1px;
     &:hover {
       background-position: -42px -10px;
@@ -129,7 +131,7 @@
       display: block;
       width: 100%;
       height: 100%;
-      background: url(@chosen-sprite) no-repeat 0px 2px;
+      background: @chosen-sprite no-repeat 0px 2px;
     }
   }
   .chosen-search {
@@ -145,7 +147,7 @@
       height: auto;
       outline: 0;
       border: 1px solid @input-border;
-      background: #fff url(@chosen-sprite) no-repeat 100% -20px;
+      background: #fff @chosen-sprite no-repeat 100% -20px;
       font-size: 1em;
       font-family: sans-serif;
       line-height: normal;
@@ -277,7 +279,7 @@
         display: block;
         width: 12px;
         height: 12px;
-        background: url(@chosen-sprite) -42px 1px no-repeat;
+        background: @chosen-sprite -42px 1px no-repeat;
         font-size: 1px;
         &:hover {
           background-position: -42px -10px;
@@ -406,7 +408,7 @@
   }
   .chosen-search input[type="text"] {
     padding: 4px 5px 4px 20px;
-    background: #fff url(@chosen-sprite) no-repeat -30px -20px;
+    background: #fff @chosen-sprite no-repeat -30px -20px;
     direction: rtl;
   }
   &.chosen-container-single {
@@ -431,7 +433,7 @@
   .chosen-container-multi .chosen-choices .search-choice .search-choice-close,
   .chosen-container .chosen-results-scroll-down span,
   .chosen-container .chosen-results-scroll-up span {
-    background-image: url(@chosen-sprite-retina) !important;
+    background-image: @chosen-sprite-retina !important;
     background-size: 52px 37px !important;
     background-repeat: no-repeat !important;
   }

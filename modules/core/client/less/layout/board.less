@@ -1,3 +1,9 @@
+@import '~bootstrap/less/mixins/background-variant';
+@import '~bootstrap/less/mixins/text-emphasis';
+@import '~bootstrap/less/mixins/text-overflow';
+@import '~bootstrap/less/type';
+@import '~less/global-variables';
+
 /**
  * Wide full width landscape box
  */
@@ -80,10 +86,10 @@
   .page-header {
     margin: 0;
     h1 {
-      .h1();
+      // .h1(); @TODO find out what happened to this, not defined anywhere
     }
     h2 {
-      .h2();
+      // .h2();  @TODO find out what happened to this, not defined anywhere
     }
     &:before {
       border-color: #fff;
@@ -104,7 +110,7 @@
   &.board-error {
     // Photo by Mikael Korpela
     // @link https://creativecommons.org/licenses/by-nc-nd/4.0/
-    background-image: url(/img/board/error.jpg);
+    background-image: url(~img/board/error.jpg);
   }
 
 }
