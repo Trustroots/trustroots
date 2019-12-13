@@ -11,7 +11,6 @@ const config = require('../config');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-// @TODO add autoprefixer and gulp csso equivelents
 const styleLoaders = [
   isProduction ? {
     loader: MiniCssExtractPlugin.loader
@@ -19,7 +18,17 @@ const styleLoaders = [
     loader: 'style-loader'
   },
   {
-    loader: 'css-loader'
+    loader: 'css-loader',
+    options: { importLoaders: 1 }
+  },
+  {
+    loader: 'postcss-loader',
+    options: {
+      ident: 'postcss',
+      plugins: [
+        require('autoprefixer')()
+      ]
+    }
   }
 ];
 
