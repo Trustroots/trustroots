@@ -38,11 +38,13 @@
             </div>
           </a>
           <div class="tribe-actions">
-            <tr-tribe-join-button
-              class="btn btn-sm btn-default tribe-join"
+            <join-button
+              ng-if="tribe"
               tribe="tribe"
-              icon="true">
-            </tr-tribe-join-button>
+              user="app.user"
+              icon="true"
+              onUpdated="tribesList.broadcastChange"
+            ></join-button>
           </div>
         </li>
         <li>
