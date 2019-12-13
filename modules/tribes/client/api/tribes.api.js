@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export async function join(tribeId) {
-  const { data } = await axios.post(`/api/users/memberships/${tribeId}`, { tribeId });
+  const { data } = await axios.post(`/api/users/memberships/${tribeId}`);
   return data;
 }
 
