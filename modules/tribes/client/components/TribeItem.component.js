@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import classnames from 'classnames';
 import { useTranslation } from 'react-i18next';
 
-import JoinButton from './JoinButton.component';
+import JoinButton from './JoinButton';
 
 import getTribeBackground from './helpers/getTribeBackground';
 
@@ -24,7 +24,7 @@ export default function TribeItem({ tribe, user, onMembershipUpdated }) {
     <a href={`/tribes/${tribe.slug}`} className="tribe-link">
       {tribe.new && <span className="tribe-new" aria-hidden={true}>
         <span className="label label-primary">
-          New tribe!
+          {t('New tribe!')}
         </span>
       </span>}
       <div className={classnames('tribe-content', tribe.image_UUID ? 'is-image' : '')}>
