@@ -3,7 +3,7 @@ angular
   .controller('TribesListController', TribesListController);
 
 /* @ngInject */
-function TribesListController(tribes, $state, Authentication, TribeService) {
+function TribesListController(tribes, $state, Authentication, TribeService, $scope) {
 
   // ViewModel
   const vm = this;
@@ -22,4 +22,15 @@ function TribesListController(tribes, $state, Authentication, TribeService) {
     TribeService.fillCache(angular.copy(tribe));
     $state.go('tribes.tribe', { 'tribe': tribe.slug });
   }
+
+  /**
+   * Emit photo credits info
+   * @TODO remove this
+   */
+  vm.addPhotoCredits = function addPhotoCredits(photo) {
+    $scope.$emit('photoCreditsUpdated', photo);
+  };
+  vm.removePhotoCredits = function removePhotoCredits(photo) {
+    $scope.$emit('photoCreditsRemoved', photo);
+  };
 }
