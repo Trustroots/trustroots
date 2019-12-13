@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-const _ = require('lodash');
 const config = require('../config');
 const errorService = require('../../modules/core/server/services/error.server.service');
 const facebookNotificationService = require('../../modules/core/server/services/facebook-notification.server.service');
