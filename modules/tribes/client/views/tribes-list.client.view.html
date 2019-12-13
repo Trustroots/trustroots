@@ -1,4 +1,8 @@
-<tribes-header isLogged="!!app.user" onBoardChanged="tribesList.emitPhotoCredits"></tribes-header>
+<tribes-header
+  isLoggedIn="!!app.user"
+  onDisplayPhoto="tribesList.addPhotoCredits"
+  onHidePhoto="tribesList.removePhotoCredits"
+></tribes-header>
 
 <section class="container container-spacer">
 

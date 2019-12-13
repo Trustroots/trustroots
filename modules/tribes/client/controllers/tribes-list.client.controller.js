@@ -13,7 +13,6 @@
     vm.tribes = tribes;
     vm.user = Authentication.user;
     vm.openTribe = openTribe;
-    vm.emitPhotoCredits = emitPhotoCredits;
 
     /**
      * Open tribe
@@ -29,8 +28,11 @@
      * Emit photo credits info
      * @TODO remove this
      */
-    function emitPhotoCredits(photo) {
+    vm.addPhotoCredits = function addPhotoCredits(photo) {
       $scope.$emit('photoCreditsUpdated', photo);
-    }
+    };
+    vm.removePhotoCredits = function removePhotoCredits(photo) {
+      $scope.$emit('photoCreditsRemoved', photo);
+    };
   }
 }());

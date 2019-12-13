@@ -1,14 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import Board from '../../../core/client/components/Board';
+import Board from '@/modules/core/client/components/Board';
 
-export default function TribesHeader({ isLogged, onBoardChanged }) {
+export default function TribesHeader({ isLoggedIn, onDisplayPhoto, onHidePhoto }) {
 
   const { t } = useTranslation('tribes');
 
-  return <Board name="tribes-1" onNameChanged={onBoardChanged}>
-    <section className="board tribes-header" tr-boards="'tribes-1'">
+  return <Board names="tribes-1" onDisplayPhoto={onDisplayPhoto} onHidePhoto={onHidePhoto}>
+    <section className="board tribes-header">
       <div className="container">
         <div className="row">
           <div className="col-xs-12 text-center">
@@ -18,7 +18,7 @@ export default function TribesHeader({ isLogged, onBoardChanged }) {
             <p className="lead">
               {t('Joining Tribes helps you find likeminded Trustroots members.')}
             </p>
-            {!isLogged && <div>
+            {!isLoggedIn && <div>
               <hr className="hr-white hr-xs"/>
               <a href="/signup" className="btn btn-action btn-default">
                 {t('Sign up with Trustroots')}
@@ -32,6 +32,7 @@ export default function TribesHeader({ isLogged, onBoardChanged }) {
 }
 
 TribesHeader.propTypes = {
-  isLogged: PropTypes.bool.isRequired,
-  onBoardChanged: PropTypes.func.isRequired
+  isLoggedIn: PropTypes.bool.isRequired,
+  onDisplayPhoto: PropTypes.func.isRequired,
+  onHidePhoto: PropTypes.func.isRequired
 };
