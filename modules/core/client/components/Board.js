@@ -1,5 +1,6 @@
-import { Children, cloneElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
+import classNames from 'classnames';
 import { selectPhoto } from '../services/photos.service';
 
 /**
@@ -16,8 +17,10 @@ function selectName(names) {
  * modules/core/client/directives/tr-boards.client.directive.js
  *
  * @TODO implement tr-boards-ignore-small directive
+ * @TODO implement primary, inset, error and maybe other attributes, which are currently board classes
+ *  and which could become attributes <Board primary inset error names="bokeh" />
  */
-export default function Board({ names='bokeh', children, onDisplayPhoto=() => {}, onHidePhoto=() => {} }) {
+export default function Board({ names='bokeh', children, onDisplayPhoto=() => {}, onHidePhoto=() => {}, className, ...rest }) {
 
   const [photo, setPhoto] = useState(null);
 
@@ -40,7 +43,11 @@ export default function Board({ names='bokeh', children, onDisplayPhoto=() => {}
   }, []);
 
   const style = photo ? { backgroundImage: `url("${photo.imageUrl}")` } : null;
-  return Children.map(children, child => cloneElement(child, { style }));
+  return (
+    <section style={style} className={classNames('board', className)} {...rest}>
+      {children}
+    </section>
+  );
 }
 
 Board.propTypes = {
@@ -48,6 +55,8 @@ Board.propTypes = {
     PropTypes.string,
     PropTypes.arrayOf(PropTypes.string)
   ]).isRequired,
+  className: PropTypes.string,
+  children: PropTypes.node,
   onDisplayPhoto: PropTypes.func,
   onHidePhoto: PropTypes.func
 };

@@ -7,8 +7,13 @@ export default function TribesHeader({ isLoggedIn, onDisplayPhoto, onHidePhoto }
 
   const { t } = useTranslation('tribes');
 
-  return <Board names="tribes-1" onDisplayPhoto={onDisplayPhoto} onHidePhoto={onHidePhoto}>
-    <section className="board tribes-header">
+  return (
+    <Board
+      names="tribes-1"
+      className="tribes-header"
+      onDisplayPhoto={onDisplayPhoto}
+      onHidePhoto={onHidePhoto}
+    >
       <div className="container">
         <div className="row">
           <div className="col-xs-12 text-center">
@@ -27,8 +32,8 @@ export default function TribesHeader({ isLoggedIn, onDisplayPhoto, onHidePhoto }
           </div>
         </div>
       </div>
-    </section>
-  </Board>;
+    </Board>
+  );
 }
 
 TribesHeader.propTypes = {
