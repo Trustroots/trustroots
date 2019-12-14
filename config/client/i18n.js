@@ -5,6 +5,8 @@ import Backend from 'i18next-xhr-backend';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import moment from 'moment';
 
+const isTest = process.env.NODE_ENV === 'test';
+
 /**
  * The locales currently supported by the app are specified in /config/shared/locales.json
  * Add a language there if you want to support a new translation.
@@ -45,10 +47,13 @@ function format(value, format, languageCode) {
   return value;
 }
 
-i18n
+if (!isTest) {
   // load translation using xhr -> see /public/locales
   // learn more: https://github.com/i18next/i18next-xhr-backend
-  .use(Backend)
+  i18n.use(Backend);
+}
+
+i18n
   // detect user language
   // learn more: https://github.com/i18next/i18next-browser-languageDetector
   .use(LanguageDetector)
@@ -57,6 +62,11 @@ i18n
   // init i18next
   // for all options read: https://www.i18next.com/overview/configuration-options
   .init({
+    ...(isTest ? {
+      resources: {
+        en: {}
+      }
+    } : {}),
     fallbackLng: 'en', // a default app locale
     // allow keys to be phrases having `:`, `.`
     nsSeparator: false,
