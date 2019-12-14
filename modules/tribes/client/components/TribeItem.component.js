@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import JoinButton from './JoinButton';
 
-import getTribeBackground from './helpers/getTribeBackground';
+import getTribeBackgroundStyle from './helpers/getTribeBackgroundStyle';
 
 /**
  * @TODO maybe rename to Tribe
@@ -19,7 +19,7 @@ export default function TribeItem({ tribe, user, onMembershipUpdated }) {
 
   return <div
     className="panel tribe tribe-image"
-    style={getTribeBackground(tribe, { isProgressive: true, dimensions: '742x496' })}
+    style={getTribeBackgroundStyle(tribe, { isProgressive: true, dimensions: '742x496' })}
   >
     <a href={`/tribes/${tribe.slug}`} className="tribe-link">
       {tribe.new && <span className="tribe-new" aria-hidden={true}>

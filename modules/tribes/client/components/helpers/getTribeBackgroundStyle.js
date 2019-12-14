@@ -1,7 +1,7 @@
 /**
  * Generate background color + image styles for tribe panel
  *
- * usage in React: <div style={getTribeBackground(tribe, { quality: 'normal', dimensions: '742x496', isProgressive: true })}>...</div>
+ * usage in React: <div style={getTribeBackgroundStyle(tribe, { quality: 'normal', dimensions: '742x496', isProgressive: true })}>...</div>
  *
  * @param {object} tribe - the tribe data
  *
@@ -17,7 +17,7 @@
  *
  * @returns {object}
  */
-export default function getTribeBackground(tribe, { quality='lighter', dimensions='1024x768', isProgressive=false }={}) {
+export default function getTribeBackgroundStyle(tribe, { quality='lighter', dimensions='1024x768', isProgressive=false }={}) {
   const style = {};
 
   // Set background image
