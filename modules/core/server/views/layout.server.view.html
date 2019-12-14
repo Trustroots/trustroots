@@ -12,6 +12,15 @@
   <meta name="fragment" content="!">
   {% for cssFile in cssFiles %}<link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}">
   {% endfor %}
+
+  {% if env === 'development' %}
+  {# in dev load js in head, as it also contains CSS, so we prevent flash of unstyled page #}
+  {% for jsFile in jsFiles %}
+  <script src="/{{jsFile}}?c={{appSettings.commit}}"
+          nonce="{{ nonce }}"></script>
+  {% endfor %}
+  {% endif %}
+
   {# Prefech some domains that are used for user avatars and tribe images #}
   {# https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-DNS-Prefetch-Control #}
   <link rel="dns-prefetch" href="//graph.facebook.com">
@@ -163,16 +172,11 @@
         user = {{ user | dump | safe }};
   </script>
 
+  {% if env === 'production' %}
   {% for jsFile in jsFiles %}
     <script src="/{{jsFile}}?c={{appSettings.commit}}"
             nonce="{{ nonce }}"></script>
   {% endfor %}
-
-  {% if env === 'development' %}
-  <script nonce="{{ nonce }}">
-    // Make sure we get livereload from the same host (IP/localhost/...)
-    document.write('\x3Cscript type="text/javascript" src="//' + window.location.hostname + ':35729/livereload.js">\x3C/script>');
-  </script>
   {% endif %}
 </body>
 </html>

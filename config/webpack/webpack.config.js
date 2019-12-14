@@ -2,6 +2,11 @@ const webpack = require('webpack');
 const merge = require('webpack-merge');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
+// This is very experimental library
+// There might be another favourite react-refresh webpack plugin at some point ...
+// See https://github.com/facebook/react/issues/16604 for discussion
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+
 const { join } = require('path');
 
 const shims = require('./webpack.shims');
@@ -34,9 +39,25 @@ const styleLoaders = [
 
 module.exports = merge(shims, {
   mode: isProduction ? 'production' : 'development',
+  devtool: isProduction ? 'source-map' : 'cheap-module-eval-source-map',
   entry: require.resolve('./entries/main'),
   output: {
-    path: join(basedir, 'public/assets')
+    path: join(basedir, 'public/assets'),
+    publicPath: '/assets/'
+  },
+  devServer: {
+    index: '',
+    port: 3001,
+    contentBase: false,
+    publicPath: '/assets/',
+    proxy: {
+      context: () => true,
+      target: 'http://localhost:3000'
+    },
+    overlay: {
+      warnings: false,
+      errors: true
+    }
   },
   resolve: {
     alias: {
@@ -66,7 +87,8 @@ module.exports = merge(shims, {
             ],
             plugins: [
               '@babel/plugin-proposal-object-rest-spread',
-              'angularjs-annotate'
+              'angularjs-annotate',
+              'react-refresh/babel'
             ]
           }
         }]
@@ -115,6 +137,9 @@ module.exports = merge(shims, {
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
       'FCM_SENDER_ID': JSON.stringify(config.fcm.senderId)
+    }),
+    new ReactRefreshWebpackPlugin({
+      disableRefreshCheck: true
     })
   ]
 });

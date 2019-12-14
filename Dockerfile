@@ -50,7 +50,6 @@ COPY . /trustroots
 # - Nginx proxy     80
 # - Nodemon server  3000
 # - Node debug      5858
-# - LiveReload      35729
 # - MongoDB         27017
 EXPOSE 80
 EXPOSE 3000

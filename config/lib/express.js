@@ -54,10 +54,11 @@ module.exports.initLocalVariables = function (app) {
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
 
   // Assets
-  app.locals.jsFiles = ['assets/main.js'];
   if (process.env.NODE_ENV === 'production') {
+    app.locals.jsFiles = ['assets/main.js'];
     app.locals.cssFiles = ['assets/main.css'];
   } else {
+    app.locals.jsFiles = ['assets/main.js'];
     app.locals.cssFiles = []; // style is bundled with javascript
   }
 
@@ -268,9 +269,6 @@ module.exports.initHelmetHeaders = function (app) {
     ];
   }
 
-  // LiveReload security policy sources are needed only at development
-  const cspSrcDevelopment = process.env.NODE_ENV === 'development' ? ['ws://localhost:35729', 'localhost:35729'] : [];
-
   /*
    * Content Security Policy (CSP)
    *
@@ -311,7 +309,7 @@ module.exports.initHelmetHeaders = function (app) {
         function (req, res) {
           return '\'nonce-' + res.locals.nonce + '\''; // 'nonce-614d9122-d5b0-4760-aecf-3a5d17cf0ac9'
         }
-      ].concat(cspSrcDevelopment),
+      ],
 
       // Specifies the origins that can serve web fonts.
       fontSrc: [
@@ -358,7 +356,7 @@ module.exports.initHelmetHeaders = function (app) {
         'fcm.googleapis.com',
         'maitreapp.co', // Signup waiting list feature
         'www.facebook.com'
-      ].concat(cspSrcDevelopment),
+      ],
 
       // Allows control over Flash and other plugins.
       objectSrc: [
