@@ -14,6 +14,7 @@ const basedir = join(__dirname, '../..');
 
 const config = require('../config');
 
+const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
 const styleLoaders = [
@@ -88,7 +89,7 @@ module.exports = merge(shims, {
             plugins: [
               '@babel/plugin-proposal-object-rest-spread',
               'angularjs-annotate',
-              'react-refresh/babel'
+              ...(isDevelopment ? ['react-refresh/babel'] : [])
             ]
           }
         }]
