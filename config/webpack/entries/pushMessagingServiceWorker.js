@@ -1,5 +1,14 @@
 /* global FCM_SENDER_ID */
 
+/**
+ *  This will not rebuild on change, so if you're doing development you might want to rebuild it manually:
+ *  You can do this by running:
+ *
+ *      npm run webpack:service-worker
+ *
+ *  (additionally both "npm run build:dev" and "npm run build:prod" will build it)
+ */
+
 import firebase from 'firebase/app';
 import 'firebase/messaging';
 

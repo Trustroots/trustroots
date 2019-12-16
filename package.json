@@ -18,8 +18,8 @@
   ],
   "scripts": {
     "agenda-maintenance": "node ./bin/db-maintenance/archive-done-agenda-jobs.js",
-    "build:dev": "gulp build:dev && npm run clean:assets && NODE_ENV=development npm run webpack",
-    "build:prod": "gulp build:prod && npm run clean:assets && NODE_ENV=production npm run webpack",
+    "build:dev": "gulp build:dev && npm run clean:assets && NODE_ENV=development npm run webpack && NODE_ENV=development npm run webpack:service-worker",
+    "build:prod": "gulp build:prod && npm run clean:assets && NODE_ENV=production npm run webpack && NODE_ENV=production npm run webpack:service-worker",
     "build": "npm run build:dev",
     "check-environment": "npm run install-dependencies && npx check-node-version --package && npm run ensure-config-exists && npm run ensure-uploads-dir-exists",
     "clean:assets": "rm -fr public/assets",
@@ -56,6 +56,7 @@
     "test": "npm run check-environment && npm run lint && npm run test:client && npm run test:server",
     "webpack": "webpack --config config/webpack/webpack.config.js",
     "webpack:server": "webpack-dev-server --hot --config config/webpack/webpack.config.js",
+    "webpack:service-worker": "webpack --config config/webpack/webpack.push-messaging-sw.config.js",
     "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.js"
   },
   "dependencies": {
