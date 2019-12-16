@@ -12,7 +12,7 @@ module.exports = (karmaConfig) => {
     frameworks: ['jasmine'],
     preprocessors: {
       'config/webpack/entries/main.js': ['webpack'],
-      'modules/*/tests/client/**/*.js': ['webpack'],
+      'modules/*/tests/client/*.js': ['webpack'],
       'modules/*/client/views/**/*.html': ['ng-html2js']
     },
     webpack: webpackMerge(webpackConfig, {
@@ -30,7 +30,7 @@ module.exports = (karmaConfig) => {
     files: [
       'config/webpack/entries/main.js',
       require.resolve('angular-mocks'),
-      'modules/*/tests/client/**/*.js'
+      'modules/*/tests/client/*.js'
     ],
     reporters: ['mocha'],
     port: 9876,
