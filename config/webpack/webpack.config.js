@@ -18,12 +18,12 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
 const ifDevelopment = (...items) => {
-  return isDevelopment ? items : []
-}
+  return isDevelopment ? items : [];
+};
 
 const ifProduction = (...items) => {
-  return ifProduction ? items : []
-}
+  return ifProduction ? items : [];
+};
 
 const styleLoaders = [
   isProduction ? {
