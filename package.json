@@ -47,7 +47,7 @@
     "start:prod": "gulp prod",
     "start:worker:prod": "gulp worker:prod",
     "start:worker": "gulp worker:dev",
-    "start": "concurrently --raw --kill-others --kill-others-on-fail 'npm:lint:watch' 'npm:start:develop' 'npm:webpack:watch' 'npm:start:worker' 'npm:dashboard:mail'",
+    "start": "concurrently --raw --kill-others --kill-others-on-fail 'npm:lint:watch' 'npm:start:develop' 'npm:webpack:server' 'npm:start:worker' 'npm:dashboard:mail'",
     "test:client:watch": "gulp angular-templatecache && npm run check-environment && NODE_ENV=test karma start",
     "test:client": "gulp angular-templatecache && NODE_ENV=test karma start --single-run",
     "test:selenium": "python ./scripts/selenium/test.py",
@@ -55,7 +55,6 @@
     "test:server": "NODE_ENV=test gulp test:server",
     "test": "npm run check-environment && npm run lint && npm run test:client && npm run test:server",
     "webpack": "webpack --config config/webpack/webpack.config.js",
-    "webpack:watch": "npm run webpack -- --watch ",
     "webpack:server": "webpack-dev-server --hot --config config/webpack/webpack.config.js",
     "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.js"
   },

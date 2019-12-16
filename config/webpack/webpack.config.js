@@ -56,12 +56,12 @@ module.exports = merge(shims, {
   },
   devServer: {
     index: '',
-    port: 3001,
+    port: 3000,
     contentBase: false,
     publicPath: '/assets/',
     proxy: {
       context: () => true,
-      target: 'http://localhost:3000'
+      target: 'http://localhost:3001'
     },
     overlay: {
       warnings: false,
