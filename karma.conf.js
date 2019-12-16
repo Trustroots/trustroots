@@ -12,8 +12,7 @@ module.exports = (karmaConfig) => {
     frameworks: ['jasmine'],
     preprocessors: {
       'config/webpack/entries/main.js': ['webpack'],
-      'modules/*/tests/client/*.js': ['webpack'],
-      'modules/*/client/views/**/*.html': ['ng-html2js']
+      'modules/*/tests/client/*.js': ['webpack']
     },
     webpack: webpackMerge(webpackConfig, {
       plugins: [
@@ -22,10 +21,6 @@ module.exports = (karmaConfig) => {
         })
       ]
     }),
-    ngHtml2JsPreprocessor: {
-      moduleName: 'trustroots',
-      cacheIdFromPath: (filepath) => filepath
-    },
     // List of files / patterns to load in the browser
     files: [
       'config/webpack/entries/main.js',

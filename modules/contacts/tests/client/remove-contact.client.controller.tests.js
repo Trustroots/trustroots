@@ -1,7 +1,6 @@
 (function () {
   describe('ContactRemoveController', function () {
     // Initialize global variables
-    let $templateCache;
     let $httpBackend;
     let Authentication;
     let $rootScope;
@@ -22,8 +21,7 @@
     // Load the main application module
     beforeEach(module(AppConfig.appModuleName));
 
-    beforeEach(inject(function (_$templateCache_, _$httpBackend_, _Authentication_, _$rootScope_, _messageCenterService_) {
-      $templateCache = _$templateCache_;
+    beforeEach(inject(function (_$httpBackend_, _Authentication_, _$rootScope_, _messageCenterService_) {
       $httpBackend = _$httpBackend_;
       Authentication = _Authentication_;
 
@@ -37,8 +35,6 @@
 
       $scope = $rootScope.$new();
       $scope.contactToRemove = contactToRemove;
-
-      $templateCache.put('/modules/pages/views/home.client.view.html', '');
     }));
 
     afterEach(function () {

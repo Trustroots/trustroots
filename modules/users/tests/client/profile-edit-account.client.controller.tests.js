@@ -16,7 +16,6 @@
     beforeEach(module(AppConfig.appModuleName));
 
     beforeEach(inject(function (
-      $templateCache,
       _$httpBackend_,
       _Authentication_,
       _messageCenterService_
@@ -26,8 +25,6 @@
 
       messageCenterService = _messageCenterService_;
       spyOn(messageCenterService, 'add').and.callThrough();
-
-      $templateCache.put('/modules/pages/views/home.client.view.html', '');
     }));
 
     afterEach(function () {

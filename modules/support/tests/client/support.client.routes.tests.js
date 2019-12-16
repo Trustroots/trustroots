@@ -7,10 +7,7 @@
     describe('Route Config', function () {
       describe('Main Route (support)', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/support/views/support.client.view.html', '');
-
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('support');
         }));
 
@@ -29,10 +26,7 @@
 
       describe('Alternative Route (contact)', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/support/views/support.client.view.html', '');
-
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('contact');
         }));
 
@@ -50,10 +44,7 @@
       });
 
       describe('Handle Trailing Slash', function () {
-        beforeEach(inject(function ($state, $rootScope, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/support/views/support.client.view.html', '');
-
+        beforeEach(inject(function ($state, $rootScope) {
           $state.go('support');
           $rootScope.$digest();
         }));
