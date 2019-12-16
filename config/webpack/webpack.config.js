@@ -56,6 +56,7 @@ module.exports = merge(shims, {
   },
   devServer: {
     index: '',
+    host: config.host,
     port: 3000,
     contentBase: false,
     publicPath: '/assets/',
