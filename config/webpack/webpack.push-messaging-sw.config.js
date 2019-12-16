@@ -49,4 +49,4 @@ module.exports = {
       'FCM_SENDER_ID': JSON.stringify(config.fcm.senderId)
     })
   ]
-}
+};
