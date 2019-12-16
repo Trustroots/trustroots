@@ -48,7 +48,7 @@
     "start:worker": "gulp worker:dev",
     "start": "concurrently --raw --kill-others --kill-others-on-fail 'npm:lint:watch' 'npm:start:develop' 'npm:start:worker' 'npm:dashboard:mail'",
     "test:client:watch": "gulp angular-templatecache && npm run check-environment && NODE_ENV=test karma start",
-    "test:client": "gulp angular-templatecache && NODE_ENV=test karma start --single-run",
+    "test:client": "gulp angular-templatecache && NODE_ENV=test karma start --single-run && jest",
     "test:selenium": "python ./scripts/selenium/test.py",
     "test:server:watch": "npm run check-environment && NODE_ENV=test gulp test:server:watch",
     "test:server": "NODE_ENV=test gulp test:server",
