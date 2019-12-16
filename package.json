@@ -193,6 +193,7 @@
     "enzyme": "~3.10.0",
     "enzyme-adapter-react-16": "~1.15.1",
     "eslint": "~6.5.1",
+    "eslint-loader": "~3.0.3",
     "eslint-plugin-angular": "~4.0.1",
     "eslint-plugin-react": "~7.16.0",
     "eslint-watch": "~6.0.1",

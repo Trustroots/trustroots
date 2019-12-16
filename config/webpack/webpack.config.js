@@ -63,10 +63,9 @@ module.exports = merge(shims, {
       context: () => true,
       target: 'http://localhost:3001'
     },
-    overlay: {
-      warnings: false,
-      errors: true
-    }
+    // @pmmmwh/react-refresh-webpack-plugin is setting up an overlay too
+    // which seems a bit cheeky for a plugin to do, but we don't want two!
+    overlay: false
   },
   resolve: {
     alias: {
@@ -80,6 +79,11 @@ module.exports = merge(shims, {
   },
   module: {
     rules: [
+      {
+        enforce: 'pre',
+        test: /\.js$/,
+        loader: 'eslint-loader'
+      },
       {
         test: /\.js$/,
         exclude: /node_modules/,
