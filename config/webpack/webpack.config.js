@@ -17,6 +17,14 @@ const config = require('../config');
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
+const ifDevelopment = (...items) => {
+  return isDevelopment ? items : []
+}
+
+const ifProduction = (...items) => {
+  return ifProduction ? items : []
+}
+
 const styleLoaders = [
   isProduction ? {
     loader: MiniCssExtractPlugin.loader
@@ -89,7 +97,7 @@ module.exports = merge(shims, {
             plugins: [
               '@babel/plugin-proposal-object-rest-spread',
               'angularjs-annotate',
-              ...(isDevelopment ? ['react-refresh/babel'] : [])
+              ...ifDevelopment('react-refresh/babel')
             ]
           }
         }]
@@ -132,15 +140,15 @@ module.exports = merge(shims, {
     ]
   },
   plugins: [
-    ...(isProduction ? [new MiniCssExtractPlugin({
+    ...ifProduction(new MiniCssExtractPlugin({
       filename: 'main.css'
-    })] : []),
+    })),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
       'FCM_SENDER_ID': JSON.stringify(config.fcm.senderId)
     }),
-    new ReactRefreshWebpackPlugin({
+    ...ifDevelopment(new ReactRefreshWebpackPlugin({
       disableRefreshCheck: true
-    })
+    }))
   ]
 });
