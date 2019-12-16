@@ -4,12 +4,11 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const defaultAssets = require('./config/assets/default');
 const gulp = require('gulp');
 const gulpLoadPlugins = require('gulp-load-plugins');
 const MergeStream = require('merge-stream');
-const glob = require('glob');
+const minimatch = require('minimatch');
 const del = require('del');
 const nodemon = require('nodemon');
 const print = require('gulp-print').default;
@@ -123,26 +122,15 @@ gulp.task('env:prod', gulp.series(
 
 // Watch files for changes
 gulp.task('watch', function watch(done) {
-  // Start Refresh
-  plugins.refresh.listen();
-
-  // Watch and generate app files
-  gulp.watch(defaultAssets.server.views).on('change', plugins.refresh.changed);
-
   if (process.env.NODE_ENV === 'production') {
     gulp.watch(defaultAssets.client.js, gulp.series('clean', 'build:scripts'));
-    gulp.watch(defaultAssets.client.views, gulp.series('clean', 'build:scripts')).on('change', plugins.refresh.changed);
-  } else {
-    gulp.watch(defaultAssets.client.views).on('change', plugins.refresh.changed);
+    gulp.watch(defaultAssets.client.views, gulp.series('clean', 'build:scripts'));
   }
   done();
 });
 
 // Watch server test files
 gulp.task('watch:server:run-tests', function watchServerRunTests() {
-  // Start Refresh
-  plugins.refresh.listen();
-
   // Add Server Test file rules
   gulp.watch([
     'modules/*/tests/server/**/*.js',
@@ -152,20 +140,10 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
   gulp.series('test:server'))
     .on('change', function (changedFile) {
       changedTestFiles = [];
-
-      // iterate through server test glob patterns
-      _.forEach('modules/*/tests/server/**/*.js', function (pattern) {
-        // determine if the changed (watched) file is a server test
-        _.forEach(glob.sync(pattern), function (file) {
-          const filePath = path.resolve(file);
-
-          if (filePath === path.resolve(changedFile)) {
-            changedTestFiles.push(changedFile);
-          }
-        });
-      });
-
-      plugins.refresh.changed(changedFile);
+      // determine if the changed (watched) file is a server test
+      if (minimatch(changedFile, 'modules/*/tests/server/**/*.js')) {
+        changedTestFiles.push(changedFile);
+      }
     });
 });
 
@@ -238,15 +216,14 @@ function fontello() {
       assetsOnly: false
     }))
     .pipe(print())
-    .pipe(gulp.dest('modules/core/client/fonts/fontello'))
-    .pipe(plugins.refresh());
+    .pipe(gulp.dest('modules/core/client/fonts/fontello'));
 }
 
 function mocha(done) {
   // Open mongoose connections
   const mongooseService = require('./config/lib/mongoose');
   const agenda = require('./config/lib/agenda');
-  const testSuites = changedTestFiles.length ? changedTestFiles : 'modules/*/tests/server/**/*.js';
+  const testSuites = changedTestFiles.length > 0 ? changedTestFiles : 'modules/*/tests/server/**/*.js';
   let error;
 
   // Connect mongoose
