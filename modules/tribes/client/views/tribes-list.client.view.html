@@ -14,38 +14,12 @@
           ag-grid-width="288"
           ag-gutter-size="10"
           ag-refresh-on-img-load="false">
-        <li class="panel tribe tribe-image"
-            ng-repeat="tribe in tribesList.tribes track by tribe._id"
-            tr-tribe-styles="{{::tribe}}"
-            tr-tribe-styles-dimensions="742x496"
-            tr-tribe-styles-progressive="yes">
-          <a ng-click="tribesList.openTribe(tribe)" class="tribe-link">
-            <span ng-if="::tribe.new" class="tribe-new" aria-hidden="true">
-              <span class="label label-primary">
-                New tribe!
-              </span>
-            </span>
-            <div class="tribe-content" ng-class="{'is-image': tribe.image_UUID}">
-              <h3 class="font-brand-light tribe-label" ng-bind="::tribe.label"></h3>
-              <ng-pluralize
-                class="tribe-meta"
-                count="tribe.count"
-                when="{
-                  '0': 'No members yet',
-                  '1': 'One member',
-                  'other': '{{tribe.count|number}} members'
-                }"></ng-pluralize>
-            </div>
-          </a>
-          <div class="tribe-actions">
-            <join-button
-              ng-if="tribe"
-              tribe="tribe"
-              user="app.user"
-              icon="true"
-              onUpdated="tribesList.broadcastChange"
-            ></join-button>
-          </div>
+        <li ng-repeat="tribe in tribesList.tribes track by tribe._id">
+          <tribe-item
+            tribe="tribe"
+            user="app.user"
+            onMembershipUpdated="tribesList.broadcastChange"
+          ></tribe-item>
         </li>
         <li>
           <suggest-tribe></suggest-tribe>
