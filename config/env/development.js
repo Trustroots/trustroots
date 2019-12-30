@@ -14,7 +14,6 @@ module.exports = {
     i18n: false
   },
   // in dev we have webpack-dev-server on 3000, and the real server on 3001
-  // @TODO NS consider the docker case
   port: 3001,
   db: {
     uri: 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trustroots-dev',
