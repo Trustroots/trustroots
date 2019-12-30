@@ -66,8 +66,8 @@ module.exports = merge(shims, {
       '@': basedir,
 
       // These are (mainly) to use within less/css files
-      'img': join(basedir, 'public/img'),
-      'less': join(basedir, 'modules/core/client/less'),
+      'img': join(basedir, 'public', 'img'),
+      'less': join(basedir, 'modules', 'core', 'client', 'less'),
       'modules': join(basedir, 'modules')
     }
   },
