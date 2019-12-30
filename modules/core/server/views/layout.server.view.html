@@ -14,11 +14,11 @@
   {% endfor %}
 
   {% if env === 'development' %}
-  {# in dev load js in head, as it also contains CSS, so we prevent flash of unstyled page #}
-  {% for jsFile in jsFiles %}
-  <script src="/{{jsFile}}?c={{appSettings.commit}}"
-          nonce="{{ nonce }}"></script>
-  {% endfor %}
+    {# in dev load js in head, as it also contains CSS, so we prevent flash of unstyled page #}
+    {% for jsFile in jsFiles %}
+      <script src="/{{jsFile}}?c={{appSettings.commit}}"
+              nonce="{{ nonce }}"></script>
+    {% endfor %}
   {% endif %}
 
   {# Prefech some domains that are used for user avatars and tribe images #}
@@ -173,10 +173,10 @@
   </script>
 
   {% if env === 'production' %}
-  {% for jsFile in jsFiles %}
-    <script src="/{{jsFile}}?c={{appSettings.commit}}"
-            nonce="{{ nonce }}"></script>
-  {% endfor %}
+    {% for jsFile in jsFiles %}
+      <script src="/{{jsFile}}?c={{appSettings.commit}}"
+              nonce="{{ nonce }}"></script>
+    {% endfor %}
   {% endif %}
 </body>
 </html>
