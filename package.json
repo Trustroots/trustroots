@@ -239,13 +239,5 @@
   "bugs": {
     "url": "https://github.com/Trustroots/trustroots/issues"
   },
-  "license": "MIT",
-  "jest": {
-    "moduleNameMapper": {
-      "@/(.*)$": "<rootDir>/$1"
-    },
-    "testMatch": [
-      "<rootDir>/modules/*/tests/client/components/*.test.js"
-    ]
-  }
+  "license": "MIT"
 }
