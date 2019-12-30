@@ -1,5 +1,6 @@
 const webpack = require('webpack');
 const merge = require('webpack-merge');
+const compact = require('lodash/compact');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 // This is very experimental library
@@ -16,14 +17,6 @@ const config = require('../config');
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
-
-const ifDevelopment = (...items) => {
-  return isDevelopment ? items : [];
-};
-
-const ifProduction = (...items) => {
-  return ifProduction ? items : [];
-};
 
 const styleLoaders = [
   isProduction ? {
@@ -99,11 +92,11 @@ module.exports = merge(shims, {
               }],
               ['@babel/preset-react']
             ],
-            plugins: [
+            plugins: compact([
               '@babel/plugin-proposal-object-rest-spread',
               'angularjs-annotate',
-              ...ifDevelopment('react-refresh/babel')
-            ]
+              isDevelopment && 'react-refresh/babel'
+            ])
           }
         }]
       },
@@ -144,16 +137,16 @@ module.exports = merge(shims, {
       }
     ]
   },
-  plugins: [
-    ...ifProduction(new MiniCssExtractPlugin({
+  plugins: compact([
+    isProduction && new MiniCssExtractPlugin({
       filename: 'main.css'
-    })),
+    }),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
       'FCM_SENDER_ID': JSON.stringify(config.fcm.senderId)
     }),
-    ...ifDevelopment(new ReactRefreshWebpackPlugin({
+    isDevelopment && new ReactRefreshWebpackPlugin({
       disableRefreshCheck: true
-    }))
-  ]
+    })
+  ])
 });
