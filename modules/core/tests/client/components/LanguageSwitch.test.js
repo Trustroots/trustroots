@@ -2,10 +2,13 @@ import React from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import i18n from '@/config/client/i18n';
+import locales from '@/config/shared/locales';
 import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch.component';
 
 import * as users from '@/modules/users/client/api/users.api';
 const api = { users };
+
+const localeNames = locales.map(locale => locale.label);
 
 jest.mock('@/modules/users/client/api/users.api');
 
@@ -18,7 +21,7 @@ describe('default presentation', () => {
     const items = getAllByRole('menuitem');
     expect(items).toHaveLength(3);
     const names = items.map(item => item.innerHTML);
-    expect(names).toEqual(['English', 'česky', 'suomi']);
+    expect(names).toEqual(localeNames);
   });
 
   it('can change language', async () => {
@@ -43,7 +46,7 @@ describe('select presentation', () => {
     const items = getAllByRole('option');
     expect(items).toHaveLength(3);
     const names = items.map(item => item.innerHTML);
-    expect(names).toEqual(['English', 'česky', 'suomi']);
+    expect(names).toEqual(localeNames);
   });
 
   it('can change language', async () => {
