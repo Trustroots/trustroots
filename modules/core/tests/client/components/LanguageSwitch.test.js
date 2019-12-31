@@ -11,6 +11,7 @@ const api = { users };
 const localeNames = locales.map(locale => locale.label);
 
 jest.mock('@/modules/users/client/api/users.api');
+afterEach(() => jest.clearAllMocks());
 
 beforeEach(() => i18n.changeLanguage('en'));
 
@@ -57,8 +58,8 @@ describe('select presentation', () => {
   });
 
   it('can save the language to the API', async () => {
-    const { getByRole, getByText } = render(<LanguageSwitch presentation="select"/>);
-    fireEvent.change(getByRole('combobox'), { target: getByText('česky') });
+    const { getByRole, getByText } = render(<LanguageSwitch presentation="select" saveToAPI={true}/>);
+    fireEvent.change(getByRole('combobox'), { target: { value: getByText('česky').value } });
     expect(api.users.update).toHaveBeenCalledWith({ locale: 'cs' });
   });
 
