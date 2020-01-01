@@ -1,3 +1,5 @@
+const has = require('lodash/has');
+
 /**
  * Rules for sanitizing texts coming in and out
  * - messages
@@ -6,7 +8,6 @@
  *
  * @link https://github.com/punkave/sanitize-html
  */
-var has = require('lodash/has');
 exports.sanitizeOptions = {
   allowedTags: [
     'p',
@@ -64,4 +65,3 @@ exports.sanitizeOptions = {
     ]
   }
 };
-
