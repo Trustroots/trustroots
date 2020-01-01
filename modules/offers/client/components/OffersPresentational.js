@@ -28,6 +28,9 @@ export class OffersPresentational extends Component {
     return () => {
       this.setState(() => ({ offerDescriptionToggle: toggleState }));
     };
+  isHosting() {
+    const { offer } = this.props;
+    return offer && offer.hosting && (offer.hosting === 'yes' || offer.hosting === 'maybe');
   }
 
 
@@ -187,20 +190,20 @@ export class OffersPresentational extends Component {
         </div>
         }
 
-        {isOwnOffer && (!offer.status || offer.status === 'no') &&
         {/* Start hosting and meet people action buttons */}
-        <div className="text-center">
-          <br />
-          <hr className="hr-gray hr-tight hr-xs" />
-          <a href={'/offer/host?status=yes'}className="btn btn-inverse-primary">
-          </a>
-          &nbsp;
-          <a href={'/offer/meet'} className="btn btn-inverse-primary">
-          </a>
-        </div>
-        }
+        {isOwnOffer && !this.isHosting() && (
+          <div className="text-center">
+            <br />
+            <hr className="hr-gray hr-tight hr-xs" />
+            <a href={'/offer/host?status=yes'} className="btn btn-inverse-primary">
               {t('Start hosting travellers')}
+            </a>
+            &nbsp;
+            <a href={'/offer/meet'} className="btn btn-inverse-primary">
               {t('Meet people')}
+            </a>
+          </div>
+        )}
       </div>
     );
   }
@@ -210,29 +213,27 @@ export class OffersPresentational extends Component {
     const { offer, t } = this.props;
     return (
       <div>
-        {(offer.status === 'yes' || offer.status === 'maybe') &&
-          <OfferLocation offer={offer} ></OfferLocation>
-        }
-        {(offer.status === 'yes' || offer.status === 'maybe') &&
-        <div className="panel-footer text-center">
-          <a href={`/search?offer=${offer._id}`} className="btn btn-sm btn-inverse-primary">
-            {t('Bigger map')}
-          </a>
-        </div>
-        }
+        {this.isHosting() && <OfferLocation offer={offer} ></OfferLocation> }
+        {this.isHosting() && (
+          <div className="panel-footer text-center">
+            <a href={`/search?offer=${offer._id}`} className="btn btn-sm btn-inverse-primary">
+              {t('Bigger map')}
+            </a>
             {isMobile && (
               <a href={`geo:${offer.location[0]},${offer.location[1]};u=200`}
                 className="btn btn-sm btn-inverse-primary">
                 {t('Open on device')}
               </a>
             )}
+          </div>
+        )}
       </div>
     );
   }
 
   renderOffer() {
     const { t } = this.props;
-    const { isOwnOffer, offer } = this.props;
+    const { isOwnOffer } = this.props;
     return (
       <div className="panel panel-default offer-view">
         <div className="panel-heading">
@@ -245,11 +246,11 @@ export class OffersPresentational extends Component {
 
         {/* Show offer */}
         <div className="panel-body">
-          {(offer.status && offer.status !== 'no') && this.renderHostingYesMaybe()}
           {/* Hosting: yes | maybe */}
+          {this.isHosting() && this.renderHostingYesMaybe()}
 
-          {(!offer || !offer.status || offer.status === 'no') && this.renderHostingNo()}
           {/* Hosting: no */}
+          {!this.isHosting() && this.renderHostingNo()}
         </div>
 
         {/* The map (React component) */}
