@@ -30,14 +30,6 @@ export class OffersPresentational extends Component {
     };
   }
 
-  /* Content Formatting Functions */
-  guestNumberDescription(guestNumber) {
-    const { t } = this.props;
-    if (guestNumber === 0){
-      return t('No guests.');
-    }
-    return t('At most {{count}} guests.', { count: guestNumber });
-  }
 
   hostingStatusLabel(status) {
     const { t } = this.props;
@@ -49,11 +41,6 @@ export class OffersPresentational extends Component {
       default:
         return t('Cannot host currently');
     }
-  }
-
-  getAriaLabel(status) {
-    const { t } = this.props;
-    return t('Hosting status: {{statusLabel}}', { statusLabel: this.hostingStatusLabel(status) });
   }
 
   /* Render Functions */
@@ -91,11 +78,11 @@ export class OffersPresentational extends Component {
   }
 
   renderButtonOther() {
-    const { offer } = this.props;
+    const { offer, t } = this.props;
     {/* Hosting status button other user */}
     return (
-      <Button className={`btn-offer-hosting, btn-offer-hosting-${offer.status}, pull-right`}
-        aria-label={this.getAriaLabel(offer.status)}
+      <Button className={`btn-offer-hosting btn-offer-hosting-${offer.status} pull-right`}
+        aria-label={t('Hosting status: {{statusLabel}}', { statusLabel: this.hostingStatusLabel(status) })}
         bsSize="small"
         bsStyle="success"
         id={'offers-button'}
@@ -107,7 +94,7 @@ export class OffersPresentational extends Component {
 
   renderHostingYesMaybe() {
     const { offerDescriptionToggle } = this.state;
-    const { offer, isOwnOffer } = this.props;
+    const { offer, isOwnOffer, t } = this.props;
     return (
       <div>
         {/* Edit button */}
@@ -147,7 +134,10 @@ export class OffersPresentational extends Component {
         }
         {/* Number of guests */}
         <p className="offer-restrictions">
-          {this.guestNumberDescription(offer.maxGuests)}
+          { offer.maxGuests > 0
+            ? t('At most {{count}} guests.', { count: offer.maxGuests })
+            : t('No guests.')
+          }
         </p>
       </div>
     );
@@ -245,9 +235,9 @@ export class OffersPresentational extends Component {
       <div className="panel panel-default offer-view">
         <div className="panel-heading">
           {t('Accommodation')}
-          {/*  Button + dropdown for user's own profile  */}
+          {/* Button + dropdown for user's own profile */}
           {isOwnOffer && this.renderButtonOwn()}
-          {/*  Button for other profiles  */}
+          {/* Button for other profiles */}
           {!isOwnOffer && this.renderButtonOther()}
         </div>
 
