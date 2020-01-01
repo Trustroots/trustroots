@@ -1,3 +1,4 @@
+
 # A brief guide to the React migration
 
 If you want get familiar with React, start with the [official site](reactjs.org). It has a nice [tutorial](https://reactjs.org/tutorial/tutorial.html) and [guide](https://reactjs.org/docs/hello-world.html).
@@ -100,7 +101,7 @@ Read [a manual](i18n.md).
 
 ## Testing
 
-Testing is done with `Jasmine` and [`Enzyme`](https://github.com/airbnb/enzyme).
+Testing is done with [`jest`](https://jestjs.io/en/) and [`React Testing Library`](https://testing-library.com/docs/react-testing-library/intro).
 
 TODO add an example when references are in master.
 
