@@ -6,7 +6,7 @@
  *
  *      npm run webpack:service-worker
  *
- *  (additionally both "npm run build:dev" and "npm run build:prod" will build it)
+ *  (additionally "npm run build" will build it)
  */
 
 import firebase from 'firebase/app';
