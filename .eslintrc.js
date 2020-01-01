@@ -202,6 +202,28 @@ module.exports = {
     },
 
     /**
+     * Overrides for client side React test files
+     */
+    {
+      files: [
+        'modules/*/tests/client/**/components/*.test.js'
+      ],
+      extends: [
+        'plugin:react/recommended',
+        'plugin:testing-library/react',
+        'plugin:jest-dom/recommended'
+      ],
+      settings: {
+        react: {
+          version: reactVersion
+        }
+      },
+      env: {
+        jest: true
+      }
+    },
+
+    /**
      * Overrides for server side test files
      */
     {

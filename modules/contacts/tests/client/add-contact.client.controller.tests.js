@@ -29,13 +29,11 @@
     });
 
     beforeEach(function (done) {
-      inject(function ($templateCache, _$httpBackend_, _Authentication_, _UsersMini_, _ContactByService_) {
+      inject(function (_$httpBackend_, _Authentication_, _UsersMini_, _ContactByService_) {
         $httpBackend = _$httpBackend_;
         Authentication = _Authentication_;
         UsersMini = _UsersMini_;
         ContactByService = _ContactByService_;
-        $templateCache.put('/modules/pages/views/home.client.view.html', '');
-        $templateCache.put('/modules/core/views/404.client.view.html', '');
         done();
       });
     });

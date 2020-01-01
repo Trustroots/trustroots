@@ -8,7 +8,7 @@
 import '@/public/dist/uib-templates';
 import angular from 'angular';
 
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV !== 'development') {
   require('@/public/dist/templates');
 }
 

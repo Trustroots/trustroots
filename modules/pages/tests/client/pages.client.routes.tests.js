@@ -14,9 +14,7 @@
     describe('Route Config', function () {
       describe('Rules Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/rules.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('rules');
         }));
 
@@ -35,9 +33,7 @@
 
       describe('Team Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/team.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('team');
         }));
 
@@ -56,9 +52,7 @@
 
       describe('Privacy Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/privacy.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('privacy');
         }));
 
@@ -77,9 +71,7 @@
 
       describe('Donate Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/donate.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('donate');
         }));
 
@@ -98,9 +90,7 @@
 
       describe('Donation help Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/donate-help.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('donate-help');
         }));
 
@@ -119,9 +109,7 @@
 
       describe('Donation policy Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/donate-policy.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('donate-policy');
         }));
 
@@ -140,10 +128,7 @@
 
       describe('FAQ Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/faq.client.view.html', '');
-          $templateCache.put('/modules/pages/views/faq-general.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('faq');
         }));
 
@@ -162,10 +147,7 @@
 
       describe('FAQ Sub Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/faq.client.view.html', '');
-          $templateCache.put('/modules/pages/views/faq-foundation.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('faq.foundation');
         }));
 
@@ -184,9 +166,7 @@
 
       describe('Foundation Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/foundation.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('foundation');
         }));
 
@@ -205,9 +185,7 @@
 
       describe('Media Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/media.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('media');
         }));
 
@@ -245,9 +223,7 @@
 
       describe('Guide Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/guide.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('guide');
         }));
 
@@ -266,9 +242,7 @@
 
       describe('Mobile Navigation Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/pages/views/navigation.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('navigation');
         }));
 
