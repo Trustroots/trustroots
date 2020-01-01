@@ -1,3 +1,5 @@
+# Shared config files between client-side and server-side
+
 ## Supported locales
 
 The locales currently supported by the app are specified in [locales.json](./locales.json). Add a language there if you want to support a new translation.
