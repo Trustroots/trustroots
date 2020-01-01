@@ -42,9 +42,12 @@ export class OffersPresentational extends Component {
   hostingStatusLabel(status) {
     const { t } = this.props;
     switch (status) {
-      case 'yes': return t('Can host');
-      case 'maybe': return t('Might be able to host');
-      default: return t('Cannot host currently');
+      case 'yes':
+        return t('Can host');
+      case 'maybe':
+        return t('Might be able to host');
+      default:
+        return t('Cannot host currently');
     }
   }
 
@@ -57,9 +60,11 @@ export class OffersPresentational extends Component {
   renderButtonOwn() {
     const { t } = this.props;
     const { offer } = this.props;
-    const tooltip = (<Tooltip placement="left" className="in" id="tooltip-left">
-    Change
-    </Tooltip>);
+    const tooltip = (
+      <Tooltip placement="left" className="in" id="tooltip-left">
+        {t('Change')}
+      </Tooltip>
+    );
     {/* Hosting status dropdown logged in user */}
     return (
       <ButtonGroup className="pull-right dropdown-menu-offers">
@@ -105,7 +110,7 @@ export class OffersPresentational extends Component {
     const { offer, isOwnOffer } = this.props;
     return (
       <div>
-        {/*  Edit button  */}
+        {/* Edit button */}
         {isOwnOffer &&
           <a href='/offer/host' className="btn btn-inverse-primary btn-round btn-raised pull-right"
             aria-label="Modify hosting offer">
@@ -113,13 +118,13 @@ export class OffersPresentational extends Component {
           </a>
         }
 
-        {/*  Short descriptions  */}
+        {/* Short descriptions */}
         {(offer.description && offer.description.length < 2000) &&
           <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(offer.description) }}>
           </div>
         }
 
-        {/*  Long descriptions  */}
+        {/* Long descriptions */}
         {offer.description && offer.description.length >= 2000 &&
           <div>
             {!offerDescriptionToggle &&
@@ -152,7 +157,7 @@ export class OffersPresentational extends Component {
     const { isOwnOffer, offer, t } = this.props;
     return (
       <div>
-        {/*  Edit button  */}
+        {/* Edit button */}
         {isOwnOffer &&
         <a href='/offer/host' className="btn btn-inverse-primary btn-round btn-raised pull-right"
           aria-label="Modify hosting offer">
@@ -160,24 +165,24 @@ export class OffersPresentational extends Component {
         </a>
         }
 
-        {/*  User has written explanation  */}
+        {/* User has written explanation */}
         {offer.noOfferDescription &&
         <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(offer.noOfferDescription) }}>
         </div>
         }
-        {/*  Default "sorry nope"  */}
+        {/* Default "sorry nope" */}
         {!offer.noOfferDescription &&
         <div className="content-empty text-muted">
           <div className="icon-sofa icon-3x text-muted"></div>
 
-          {/*  Show for others  */}
+          {/* Show for others */}
           {!isOwnOffer &&
             <h4>
               {t('Sorry, user is not hosting currently.')}
             </h4>
           }
 
-          {/*  Show for the user  */}
+          {/* Show for the user */}
           {isOwnOffer &&
             <div>
               <br />
@@ -190,8 +195,8 @@ export class OffersPresentational extends Component {
         </div>
         }
 
-        {/*  Start hosting and meet people action buttons  */}
         {isOwnOffer && (!offer.status || offer.status === 'no') &&
+        {/* Start hosting and meet people action buttons */}
         <div className="text-center">
           <br />
           <hr className="hr-gray hr-tight hr-xs" />
@@ -246,26 +251,26 @@ export class OffersPresentational extends Component {
           {!isOwnOffer && this.renderButtonOther()}
         </div>
 
-        {/*  Show offer  */}
+        {/* Show offer */}
         <div className="panel-body">
-          {/*  Hosting: yes | maybe  */}
           {(offer.status && offer.status !== 'no') && this.renderHostingYesMaybe()}
+          {/* Hosting: yes | maybe */}
 
-          {/*  Hosting: no  */}
           {(!offer || !offer.status || offer.status === 'no') && this.renderHostingNo()}
+          {/* Hosting: no */}
         </div>
 
-        {/*  The map (React component)  */}
+        {/* The map (React component) */}
         {this.renderMap()}
       </div>
     );
-  };
+  }
 
-  render(){
     return (this.props.isOwnOffer || this.props.isUserPublic) &&
         this.renderOffer();
+  render() {
   }
-};
+}
 
 OffersPresentational.propTypes = {
   isOwnOffer: PropTypes.bool.isRequired,

@@ -22,24 +22,19 @@ export class Offers extends Component {
     const that = this;
     const { profile, authUser } = this.props;
     if (!profile) {
-      this.setState(() => ({
-        isLoading: false
-      }));
+      this.setState(() => ({ isLoading: false }));
       return;
     }
     if (profile._id) {
       that.setState(() => ({
-        profile: profile,
+        profile,
         isOwnOffer: (authUser && authUser._id && authUser._id === profile._id),
         isUserPublic: (authUser && authUser.public)
       }));
 
       const offers = await getOffers(profile._id);
       if (!offers || !offers.length) {
-        this.setState(() => ({
-          isLoading: false
-        })
-        );
+        this.setState(() => ({ isLoading: false }));
       } else {
         that.setState(() => ({
           offer: offers[0],
@@ -49,15 +44,19 @@ export class Offers extends Component {
     }
   }
 
-  render(){
-    return <OffersPresentational
-      isOwnOffer={this.state.isOwnOffer}
-      isUserPublic={this.state.isUserPublic}
-      offer={this.state.offer}
-      username={this.props.profile.username}>
-    </OffersPresentational>;
+  render() {
+    const { isOwnOffer, isUserPublic, offer } = this.state;
+
+    return (
+      <OffersPresentational
+        isOwnOffer={isOwnOffer}
+        isUserPublic={isUserPublic}
+        offer={offer}
+        username={this.props.profile.username}
+      />
+    );
   }
-};
+}
 
 Offers.propTypes = {
   authUser: PropTypes.object.isRequired,
