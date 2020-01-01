@@ -10,7 +10,7 @@
     $stateProvider.
       state('inbox', {
         url: '/messages',
-        templateUrl: '/modules/messages/views/inbox.client.view.html',
+        templateUrl: require('@/modules/messages/client/views/inbox.client.view.html'),
         controller: 'InboxController',
         controllerAs: 'inbox',
         requiresAuth: true,
@@ -20,7 +20,7 @@
       }).
       state('messageThread', {
         url: '/messages/:username',
-        templateUrl: '/modules/messages/views/thread.client.view.html',
+        templateUrl: require('@/modules/messages/client/views/thread.client.view.html'),
         controller: 'MessagesThreadController',
         controllerAs: 'thread',
         requiresAuth: true,

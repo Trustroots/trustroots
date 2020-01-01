@@ -1,3 +1,6 @@
+import '@/modules/users/client/users.client.module';
+import '@/modules/messages/client/messages.client.module';
+
 (function () {
   /**
    * Application wide view controller

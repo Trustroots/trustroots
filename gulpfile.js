@@ -68,7 +68,7 @@ function runNodemon(done) {
     nodeArgs: ['--inspect=5858'],
     ext: 'js, html',
     ignore: nodemonIgnores,
-    watch: _.union(defaultAssets.server.views, defaultAssets.server.allJS, defaultAssets.server.config)
+    watch: _.union(defaultAssets.server.allJS, defaultAssets.server.config)
   })
     .on('crash', function () {
       console.error('[Server] Script crashed.');
@@ -124,7 +124,7 @@ gulp.task('env:prod', gulp.series(
 gulp.task('watch', function watch(done) {
   if (process.env.NODE_ENV === 'production') {
     gulp.watch(defaultAssets.client.js, gulp.series('clean', 'build:scripts'));
-    gulp.watch(defaultAssets.client.views, gulp.series('clean', 'build:scripts'));
+    // gulp.watch(defaultAssets.client.views, gulp.series('clean', 'build:scripts'));
   }
   done();
 });
@@ -150,8 +150,8 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
 // JavaScript task
 gulp.task('build:scripts', gulp.series(
   loadConfig,
-  angularTemplateCache,
-  angularUibTemplatecache
+  // angularTemplateCache,
+  // angularUibTemplatecache
 ));
 
 // Clean JS files -task
@@ -258,13 +258,13 @@ function mocha(done) {
   });
 }
 
-gulp.task('angular-templatecache', gulp.series(angularTemplateCache, angularUibTemplatecache));
+// gulp.task('angular-templatecache', gulp.series(angularTemplateCache, angularUibTemplatecache));
 
 // Build assets for development mode
 gulp.task('build:dev', gulp.series(
   'env:dev',
-  'clean',
-  angularUibTemplatecache,
+  // 'clean',
+  // angularUibTemplatecache,
   'build:scripts'
 ));
 

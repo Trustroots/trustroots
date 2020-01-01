@@ -3,6 +3,7 @@ module.exports = {
     lib: {
       // Load Angular-UI-Bootstrap module templates for these modules:
       uibModuleTemplates: [
+        // Stream = gulp.src(['node_modules/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
         'datepicker',
         'modal',
         'popover',
@@ -13,6 +14,7 @@ module.exports = {
       ],
       js: [
         // Non minified versions
+        /*
         'node_modules/jquery/dist/jquery.js',
         'node_modules/angular/angular.js',
         'node_modules/angular-aria/angular-aria.js',
@@ -57,6 +59,7 @@ module.exports = {
         'node_modules/angular-locker/dist/angular-locker.js',
         'node_modules/angular-confirm/angular-confirm.js',
         'node_modules/angulargrid/angulargrid.js'
+         */
       ],
       tests: ['node_modules/angular-mocks/angular-mocks.js']
     },

@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/search/client/views/directives/tr-types-toggle.client.view.html';
+
 (function () {
   /**
    * Directive to show offer type selector filter
@@ -23,7 +25,7 @@
       scope: {
         types: '=trTypesToggle'
       },
-      templateUrl: '/modules/search/views/directives/tr-types-toggle.client.view.html',
+      templateUrl,
       controller: trTypesToggleDirectiveController,
       controllerAs: 'trTypesToggle'
     };

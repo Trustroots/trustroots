@@ -1,8 +1,14 @@
+import searchTemplate from '@/modules/search/client/views/search.client.view.html';
+import searchMapTemplate from '@/modules/search/client/views/search-map.client.view.html';
+import searchSidebarTemplate from '@/modules/search/client/views/search-sidebar.client.view.html';
+import searchSigninTemplate from '@/modules/search/client/views/search-signin.client.view.html';
+
 (function () {
   angular
     .module('search')
     .config(SearchRoutes);
-
+  // eslint-disable-next-line no-console
+  console.log('templateUrl is', searchTemplate);
   /* @ngInject */
   function SearchRoutes($stateProvider) {
 
@@ -13,7 +19,7 @@
           'offer',
           'tribe'
         ].join('?'),
-        templateUrl: '/modules/search/views/search.client.view.html',
+        templateUrl: searchTemplate,
         abstract: true,
         requiresAuth: true,
         footerHidden: true,
@@ -59,18 +65,18 @@
         },
         views: {
           'map': {
-            templateUrl: '/modules/search/views/search-map.client.view.html',
+            templateUrl: searchMapTemplate,
             controller: 'SearchMapController',
             controllerAs: 'searchMap'
           },
           'sidebar': {
-            templateUrl: '/modules/search/views/search-sidebar.client.view.html'
+            templateUrl: searchSidebarTemplate
           }
         }
       }).
       state('search-signin', {
         url: '/search?location?offer?tribe',
-        templateUrl: '/modules/search/views/search-signin.client.view.html',
+        templateUrl: searchSigninTemplate,
         requiresAuth: false,
         footerHidden: true,
         controller: 'SearchSignupController',

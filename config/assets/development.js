@@ -8,7 +8,7 @@ module.exports = {
     lib: {
       uibModuleTemplates: defaultAssets.client.lib.uibModuleTemplates,
       js: _.union(defaultAssets.client.lib.js, [
-        'node_modules/angulartics/src/angulartics-debug.js'
+        // 'node_modules/angulartics/src/angulartics-debug.js'
       ]),
       tests: defaultAssets.client.lib.tests
     },

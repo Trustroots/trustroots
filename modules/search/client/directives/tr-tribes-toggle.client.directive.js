@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/search/client/views/directives/tr-tribes-toggle.client.view.html';
+
 (function () {
   /**
    * Directive to show tribe selector filter
@@ -23,7 +25,7 @@
       scope: {
         tribeIds: '=trTribesToggle'
       },
-      templateUrl: '/modules/search/views/directives/tr-tribes-toggle.client.view.html',
+      templateUrl,
       controller: trTribesToggleDirectiveController,
       controllerAs: 'trTribesToggle'
     };

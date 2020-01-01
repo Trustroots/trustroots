@@ -111,7 +111,7 @@ module.exports = {
         'angular/document-service': 2,
         'angular/interval-service': 2,
         'angular/json-functions': 2,
-        'angular/log': 1,
+        'angular/log': 0,
         'angular/timeout-service': 2,
         'angular/typecheck-array': 2,
         'angular/typecheck-date': 2,
