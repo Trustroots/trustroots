@@ -1,11 +1,13 @@
-import React, { Component } from 'react';
+// External dependencies
 import { Button, DropdownButton, MenuItem, ButtonGroup, Tooltip } from 'react-bootstrap';
+import { withTranslation } from 'react-i18next';
+import PropTypes from 'prop-types';
+import React, { Component } from 'react';
+
+// Internal dependencies
 import '@/config/client/i18n';
 import { limitTo, sanitizeHtml } from '../../../utils/filters';
 import OfferLocation from './OfferLocation.component';
-
-import PropTypes from 'prop-types';
-import { withTranslation } from 'react-i18next';
 
 export class OffersPresentational extends Component {
   constructor(props) {

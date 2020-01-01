@@ -1,9 +1,10 @@
-import React, { Component } from 'react';
-import OffersPresentational from './OffersPresentational';
-import * as offersAPI from '../api/offers.api';
-
-
+// External dependencies
 import PropTypes from 'prop-types';
+import React, { Component } from 'react';
+
+// Internal dependencies
+import { getOffers } from '../api/offers.api';
+import OffersPresentational from './OffersPresentational';
 
 export class Offers extends Component {
   constructor(props) {
@@ -33,7 +34,7 @@ export class Offers extends Component {
         isUserPublic: (authUser && authUser.public)
       }));
 
-      const offers = await offersAPI.getOffers(profile._id);
+      const offers = await getOffers(profile._id);
       if (!offers || !offers.length) {
         this.setState(() => ({
           isLoading: false
