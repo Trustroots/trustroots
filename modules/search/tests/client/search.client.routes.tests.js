@@ -4,16 +4,10 @@
     // We can start by loading the main application module
     beforeEach(module(AppConfig.appModuleName));
 
-    beforeEach(inject(function ($rootScope, $templateCache) {
-      $templateCache.put('/modules/pages/views/home.client.view.html', '');
-    }));
-
     describe('Route Config', function () {
       describe('Main Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/search/views/search.client.view.html', '');
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('search');
         }));
 
@@ -32,12 +26,7 @@
 
       describe('Map Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/search/views/search.client.view.html', '');
-          $templateCache.put('/modules/search/views/search-map.client.view.html', '');
-          $templateCache.put('/modules/search/views/search-sidebar.client.view.html', '');
-
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('search.map');
         }));
 
@@ -65,10 +54,7 @@
 
       describe('Search non-authenticated Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/search/views/search-signin.client.view.html', '');
-
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('search-signin');
         }));
 
@@ -86,12 +72,7 @@
       });
 
       describe('Handle Trailing Slash', function () {
-        beforeEach(inject(function ($state, $rootScope, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/search/views/search.client.view.html', '');
-          $templateCache.put('/modules/search/views/search-map.client.view.html', '');
-          $templateCache.put('/modules/search/views/search-sidebar.client.view.html', '');
-
+        beforeEach(inject(function ($state, $rootScope) {
           $state.go('search.map');
           $rootScope.$digest();
         }));

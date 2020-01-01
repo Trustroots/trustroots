@@ -16,9 +16,8 @@
     describe('Route Config for add contact', function () {
       describe('Add contact Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
+        beforeEach(inject(function ($state) {
           // Test expected GET request
-          $templateCache.put('/modules/contacts/views/add-contact.client.view.html', '');
           $httpBackend.when('GET', '/api/contact-by/123').respond(200, '');
           $httpBackend.expectGET('/api/contact-by/123');
 
@@ -39,9 +38,8 @@
       });
 
       describe('Handle Trailing Slash', function () {
-        beforeEach(inject(function ($state, $rootScope, $templateCache) {
+        beforeEach(inject(function ($state, $rootScope) {
           // Test expected GET request
-          $templateCache.put('/modules/contacts/views/add-contact.client.view.html', '');
           $httpBackend.when('GET', '/api/contact-by/123').respond(200, '');
           $httpBackend.expectGET('/api/contact-by/123');
           $httpBackend.when('GET', '/api/users/mini/123').respond(200, '');
@@ -64,10 +62,7 @@
     describe('Route Config for confirm contact', function () {
       describe('Confirm contact Route', function () {
         let mainstate;
-        beforeEach(inject(function ($state, $templateCache) {
-          // Test expected GET request
-          $templateCache.put('/modules/contacts/views/confirm-contact.client.view.html', '');
-
+        beforeEach(inject(function ($state) {
           mainstate = $state.get('contactConfirm');
         }));
 
@@ -85,9 +80,8 @@
       });
 
       describe('Handle Trailing Slash', function () {
-        beforeEach(inject(function ($state, $rootScope, $templateCache) {
+        beforeEach(inject(function ($state, $rootScope) {
           // Test expected GET request
-          $templateCache.put('/modules/contacts/views/confirm-contact.client.view.html', '');
           $httpBackend.when('GET', '/api/contact/123').respond(200, '');
           $httpBackend.expectGET('/api/contact/123');
 
