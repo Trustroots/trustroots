@@ -99,8 +99,11 @@ export class OffersPresentational extends Component {
       <div>
         {/* Edit button */}
         {isOwnOffer &&
-          <a href='/offer/host' className="btn btn-inverse-primary btn-round btn-raised pull-right"
-            aria-label="Modify hosting offer">
+          <a
+            aria-label={t('Modify hosting offer')}
+            className="btn btn-inverse-primary btn-round btn-raised pull-right"
+            href='/offer/host'
+          >
             <span className="icon-edit"></span>
           </a>
         }
@@ -122,7 +125,7 @@ export class OffersPresentational extends Component {
                 </div>
                 <div className="panel-more-fade"
                   onClick={this.setOfferDescriptionToggle(true)}>
-                  Show more...
+                  {t('Show more…')}
                 </div>
               </div>
             }
@@ -148,12 +151,15 @@ export class OffersPresentational extends Component {
     return (
       <div>
         {/* Edit button */}
-        {isOwnOffer &&
-        <a href='/offer/host' className="btn btn-inverse-primary btn-round btn-raised pull-right"
-          aria-label="Modify hosting offer">
-          <span className="icon-edit"></span>
-        </a>
-        }
+        {isOwnOffer && (
+          <a
+            aria-label={t('Modify hosting offer')}
+            className="btn btn-inverse-primary btn-round btn-raised pull-right"
+            href='/offer/host'
+          >
+            <span className="icon-edit"></span>
+          </a>
+        )}
 
         {/* User has written explanation */}
         {offer.noOfferDescription &&
@@ -165,12 +171,8 @@ export class OffersPresentational extends Component {
         <div className="content-empty text-muted">
           <div className="icon-sofa icon-3x text-muted"></div>
 
-          {/* Show for others */}
-          {!isOwnOffer &&
-            <h4>
-              {t('Sorry, user is not hosting currently.')}
-            </h4>
-          }
+            {/* Show for others */}
+            {!isOwnOffer && <h4>{t('Sorry, user is not hosting currently.')}</h4> }
 
           {/* Show for the user */}
           {isOwnOffer &&
@@ -191,14 +193,14 @@ export class OffersPresentational extends Component {
           <br />
           <hr className="hr-gray hr-tight hr-xs" />
           <a href={'/offer/host?status=yes'}className="btn btn-inverse-primary">
-            Start hosting travellers
           </a>
           &nbsp;
           <a href={'/offer/meet'} className="btn btn-inverse-primary">
-            Meet people
           </a>
         </div>
         }
+              {t('Start hosting travellers')}
+              {t('Meet people')}
       </div>
     );
   }
