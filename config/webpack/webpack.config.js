@@ -75,6 +75,7 @@ module.exports = merge(shims, {
     rules: [
       {
         enforce: 'pre',
+        exclude: /node_modules/,
         test: /\.js$/,
         loader: 'eslint-loader'
       },
