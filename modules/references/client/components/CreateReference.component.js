@@ -80,11 +80,10 @@ export class CreateReference extends React.Component {
     const reference = { met, hostedThem, hostedMe, recommend };
 
     // save the reference
-    const savedReference = await api.references.create({ ...reference, userTo: this.props.userTo._id });
-
-    if (recommend === 'no' && report) {
-      await api.references.report(this.props.userTo, reportMessage);
-    }
+    const [savedReference] = await Promise.all([
+      api.references.create({ ...reference, userTo: this.props.userTo._id }),
+      recommend === 'no' && report ? api.references.report(this.props.userTo, reportMessage) : null
+    ]);
 
     this.setState(() => ({
       isSubmitting: false,

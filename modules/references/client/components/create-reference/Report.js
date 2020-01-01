@@ -25,7 +25,7 @@ const Report = withTranslation('reference')(function ({ t, report, reportMessage
           <label htmlFor="report-message" className="control-label">{t('Message to moderators')}</label>
           <textarea className="form-control input-lg"
             rows="7"
-            id="message"
+            id="report-message"
             onChange={(event) => onChangeReportMessage(event.target.value)}
             value={reportMessage}
           ></textarea>
