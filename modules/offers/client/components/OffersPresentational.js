@@ -216,14 +216,14 @@ export class OffersPresentational extends Component {
           <a href={`/search?offer=${offer._id}`} className="btn btn-sm btn-inverse-primary">
             {t('Bigger map')}
           </a>
-          {isMobile &&
-          <a href="geo:{{offer.location[0]}},{{offer.location[1]}};u=200"
-            className="btn btn-sm btn-inverse-primary">
-            {t('Open on device')}
-          </a>
-          }
         </div>
         }
+            {isMobile && (
+              <a href={`geo:${offer.location[0]},${offer.location[1]};u=200`}
+                className="btn btn-sm btn-inverse-primary">
+                {t('Open on device')}
+              </a>
+            )}
       </div>
     );
   }
