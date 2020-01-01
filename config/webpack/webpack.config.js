@@ -82,24 +82,7 @@ module.exports = merge(shims, {
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        use: [{
-          loader: 'babel-loader',
-          options: {
-            presets: [
-              ['@babel/preset-env', {
-                corejs: 2,
-                modules: 'commonjs',
-                useBuiltIns: 'usage'
-              }],
-              ['@babel/preset-react']
-            ],
-            plugins: compact([
-              '@babel/plugin-proposal-object-rest-spread',
-              'angularjs-annotate',
-              isDevelopment && 'react-refresh/babel'
-            ])
-          }
-        }]
+        use: 'babel-loader'
       },
       {
         test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
