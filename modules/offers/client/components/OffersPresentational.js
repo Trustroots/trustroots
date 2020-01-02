@@ -171,25 +171,23 @@ export class OffersPresentational extends Component {
         </div>
         }
         {/* Default "sorry nope" */}
-        {!offer.noOfferDescription &&
-        <div className="content-empty text-muted">
-          <div className="icon-sofa icon-3x text-muted"></div>
+        {!offer.noOfferDescription && (
+          <div className="content-empty text-muted">
+            <div className="icon-sofa icon-3x text-muted"></div>
 
             {/* Show for others */}
             {!isOwnOffer && <h4>{t('Sorry, user is not hosting currently.')}</h4> }
 
-          {/* Show for the user */}
-          {isOwnOffer &&
-            <div>
-              <br />
+            {/* Show for the user */}
+            {isOwnOffer && (
               <p className="lead">
+                <br />
                 <em>{t('Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.')}</em>
+                <br />
               </p>
-              <br />
-            </div>
-          }
-        </div>
-        }
+            )}
+          </div>
+        )}
 
         {/* Start hosting and meet people action buttons */}
         {isOwnOffer && !this.isHosting() && (
@@ -217,12 +215,17 @@ export class OffersPresentational extends Component {
         {this.isHosting() && <OfferLocation offer={offer} ></OfferLocation> }
         {this.isHosting() && (
           <div className="panel-footer text-center">
-            <a href={`/search?offer=${offer._id}`} className="btn btn-sm btn-inverse-primary">
+            <a
+              className="btn btn-sm btn-inverse-primary"
+              href={`/search?offer=${offer._id}`}
+            >
               {t('Bigger map')}
             </a>
             {isMobile && (
-              <a href={`geo:${offer.location[0]},${offer.location[1]};u=200`}
-                className="btn btn-sm btn-inverse-primary">
+              <a
+                className="btn btn-sm btn-inverse-primary"
+                href={`geo:${offer.location[0]},${offer.location[1]};u=200`}
+              >
                 {t('Open on device')}
               </a>
             )}
