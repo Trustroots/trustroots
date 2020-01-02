@@ -73,9 +73,6 @@ var appModuleVendorDependencies = [
   ...bootstrapModules
 ];
 
-// eslint-disable-next-line no-console
-// console.log('appModuleVendorDependencies', appModuleVendorDependencies);
-
 /**
  * Load different service dependency for Angulartics depending on environment
  * @link https://github.com/angulartics/angulartics
