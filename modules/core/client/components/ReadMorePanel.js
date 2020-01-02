@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 
 // Internal dependencies
-import { plainTextLength } from '../utils/filters';
+import { plainText, plainTextLength } from '../utils/filters';
 
 export class ReadMorePanel extends Component {
   constructor(props) {
@@ -39,7 +39,7 @@ export class ReadMorePanel extends Component {
       <div className="panel-more-wrap">
         <div
           className="panel-more-wrap"
-          dangerouslySetInnerHTML={{ __html: content.substr(0, limit) }}
+          dangerouslySetInnerHTML={{ __html: plainText(content).substr(0, limit) }}
           id={id}
           onClick={this.toggleMore}
         />
