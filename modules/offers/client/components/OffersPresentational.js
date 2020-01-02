@@ -33,7 +33,6 @@ export class OffersPresentational extends Component {
     return offer && offer.hosting && (offer.hosting === 'yes' || offer.hosting === 'maybe');
   }
 
-
   hostingStatusLabel(status) {
     const { t } = this.props;
     switch (status) {
@@ -55,6 +54,7 @@ export class OffersPresentational extends Component {
         {t('Change')}
       </Tooltip>
     );
+
     {/* Hosting status dropdown logged in user */}
     return (
       <ButtonGroup className="pull-right dropdown-menu-offers">
@@ -84,11 +84,12 @@ export class OffersPresentational extends Component {
     const { offer, t } = this.props;
     {/* Hosting status button other user */}
     return (
-      <Button className={`btn-offer-hosting btn-offer-hosting-${offer.status} pull-right`}
+      <Button
         aria-label={t('Hosting status: {{statusLabel}}', { statusLabel: this.hostingStatusLabel(status) })}
         bsSize="small"
         bsStyle="success"
-        id={'offers-button'}
+        className={`btn-offer-hosting btn-offer-hosting-${offer.status} pull-right`}
+        id="offers-button"
       >
         <a href={`/messages/${this.props.username}`}>{this.hostingStatusLabel(offer.status)}</a>
       </Button>
@@ -99,7 +100,7 @@ export class OffersPresentational extends Component {
     const { offerDescriptionToggle } = this.state;
     const { offer, isOwnOffer, t } = this.props;
     return (
-      <div>
+      <>
         {/* Edit button */}
         {isOwnOffer &&
           <a
@@ -145,14 +146,14 @@ export class OffersPresentational extends Component {
             : t('No guests.')
           }
         </p>
-      </div>
+      </>
     );
   }
 
   renderHostingNo() {
     const { isOwnOffer, offer, t } = this.props;
     return (
-      <div>
+      <>
         {/* Edit button */}
         {isOwnOffer && (
           <a
@@ -204,7 +205,7 @@ export class OffersPresentational extends Component {
             </a>
           </div>
         )}
-      </div>
+      </>
     );
   }
 
@@ -212,7 +213,7 @@ export class OffersPresentational extends Component {
     const { isMobile } = this.state;
     const { offer, t } = this.props;
     return (
-      <div>
+      <>
         {this.isHosting() && <OfferLocation offer={offer} ></OfferLocation> }
         {this.isHosting() && (
           <div className="panel-footer text-center">
@@ -227,7 +228,7 @@ export class OffersPresentational extends Component {
             )}
           </div>
         )}
-      </div>
+      </>
     );
   }
 
@@ -259,9 +260,9 @@ export class OffersPresentational extends Component {
     );
   }
 
+  render() {
     return (this.props.isOwnOffer || this.props.isUserPublic) &&
         this.renderOffer();
-  render() {
   }
 }
 
