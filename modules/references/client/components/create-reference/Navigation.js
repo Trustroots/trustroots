@@ -11,7 +11,6 @@ export function Navigation({ t, disabled, tab, tabs, tabDone, onBack, onNext, on
   const backButton = (
     <button
       type="button"
-      role="button"
       className="btn btn-action btn-link"
       aria-label="Previous section"
       onClick={onBack}>
@@ -23,7 +22,6 @@ export function Navigation({ t, disabled, tab, tabs, tabDone, onBack, onNext, on
   const nextButton = (
     <button
       type="button"
-      role="button"
       className="btn btn-action btn-primary"
       aria-label="Next section"
       onClick={onNext}
@@ -34,7 +32,6 @@ export function Navigation({ t, disabled, tab, tabs, tabDone, onBack, onNext, on
 
   const submitButton = (
     <button
-      role="button"
       className="btn btn-action btn-primary"
       aria-label="Submit reference"
       onClick={onSubmit}
