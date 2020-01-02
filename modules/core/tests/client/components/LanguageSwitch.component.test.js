@@ -20,7 +20,7 @@ describe('default presentation', () => {
   it('has a menu item for each language', async () => {
     const { getAllByRole } = render(<LanguageSwitch/>);
     const items = getAllByRole('menuitem');
-    expect(items).toHaveLength(3);
+    expect(items).toHaveLength(4);
     const names = items.map(item => item.innerHTML);
     expect(names).toEqual(localeNames);
   });
@@ -45,7 +45,7 @@ describe('select presentation', () => {
   it('has an option for each language', async () => {
     const { getAllByRole } = render(<LanguageSwitch presentation="select"/>);
     const items = getAllByRole('option');
-    expect(items).toHaveLength(3);
+    expect(items).toHaveLength(4);
     const names = items.map(item => item.innerHTML);
     expect(names).toEqual(localeNames);
   });
