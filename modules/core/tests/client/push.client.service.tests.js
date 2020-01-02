@@ -18,13 +18,11 @@
     const notifications = [];
 
     beforeEach(inject(function (
-      _$httpBackend_, $templateCache, _locker_, $window, Authentication, _firebaseMessaging_) {
+      _$httpBackend_, _locker_, $window, Authentication, _firebaseMessaging_) {
 
       $httpBackend = _$httpBackend_;
       locker = _locker_;
       firebaseMessaging = _firebaseMessaging_;
-      $templateCache.put('/modules/pages/views/home.client.view.html', '');
-      $templateCache.put('/modules/core/views/404.client.view.html', '');
       Authentication.user = {
         pushRegistration: []
       };

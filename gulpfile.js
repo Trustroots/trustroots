@@ -21,11 +21,6 @@ const plugins = gulpLoadPlugins({
 // Local settings
 let changedTestFiles = [];
 
-// These will be loaded in `loadConfig` task
-let environmentAssets;
-let assets;
-let config;
-
 // Globbed paths ignored by Nodemon
 const nodemonIgnores = [
   'bin/**',
@@ -40,24 +35,6 @@ const nodemonIgnores = [
   defaultAssets.server.fontelloConfig,
   defaultAssets.server.gulpConfig
 ];
-
-/**
- * Load config + assets
- * Note that loading config before `env:*`
- * tasks would load configs with wrong environment
- */
-function loadConfig(done) {
-  if (!config) {
-    config = require('./config/config');
-  }
-  if (!environmentAssets) {
-    environmentAssets = require('./config/assets/' + process.env.NODE_ENV || 'development') || {};
-  }
-  if (!assets) {
-    assets = _.extend(defaultAssets, environmentAssets);
-  }
-  done();
-}
 
 // Nodemon task for server
 function runNodemon(done) {
@@ -123,8 +100,8 @@ gulp.task('env:prod', gulp.series(
 // Watch files for changes
 gulp.task('watch', function watch(done) {
   if (process.env.NODE_ENV === 'production') {
-    gulp.watch(defaultAssets.client.js, gulp.series('clean', 'build:scripts'));
-    // gulp.watch(defaultAssets.client.views, gulp.series('clean', 'build:scripts'));
+    gulp.watch(defaultAssets.client.js, gulp.series('clean', 'angular-templatecache'));
+    // gulp.watch(defaultAssets.client.views, gulp.series('clean', 'angular-templatecache'));
   }
   done();
 });
@@ -146,13 +123,6 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
       }
     });
 });
-
-// JavaScript task
-gulp.task('build:scripts', gulp.series(
-  loadConfig,
-  // angularTemplateCache,
-  // angularUibTemplatecache
-));
 
 // Clean JS files -task
 gulp.task('clean', function clean() {
@@ -260,19 +230,11 @@ function mocha(done) {
 
 // gulp.task('angular-templatecache', gulp.series(angularTemplateCache, angularUibTemplatecache));
 
-// Build assets for development mode
-gulp.task('build:dev', gulp.series(
-  'env:dev',
-  // 'clean',
-  // angularUibTemplatecache,
-  'build:scripts'
-));
-
 // Build assets for production mode
 gulp.task('build:prod', gulp.series(
   'env:prod',
   'clean',
-  'build:scripts'
+  'angular-templatecache'
 ));
 
 // Run fontello update
@@ -292,7 +254,6 @@ gulp.task('test:server:watch', gulp.series(
 // Run the project in development mode
 gulp.task('develop', gulp.series(
   'env:dev',
-  'build:dev',
   gulp.parallel(
     runNodemon,
     'watch'

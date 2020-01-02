@@ -56,6 +56,12 @@ import '@/modules/support/client/support.client.module';
 import '@/modules/tribes/client/tribes.client.module';
 import '@/modules/users/client/users.client.module';
 
+/*
+ *  Main style import.
+ *  This includes the libraries, and any global overrides.
+ */
+import './main.less';
+
 // uibModuleTemplates: [
 //   // Stream = gulp.src(['node_modules/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
 //   'datepicker',
@@ -77,16 +83,9 @@ importAll(require.context('../../../modules/', true, /\.client\.view\.html$/));
 // import '@/modules/search/client/views/search-sidebar.client.view.html';
 // import '@/modules/search/client/views/search-sidebar-filters.client.view.html';
 
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV !== 'development') {
   require('@/public/dist/templates');
 }
-
-
-/*
- *  Main style import.
- *  This includes the libraries, and any global overrides.
- */
-import './main.less';
 
 /*
  * Imports all the style files from the modules (*.less)

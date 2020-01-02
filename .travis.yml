@@ -11,7 +11,7 @@ matrix:
       env: RUN="npm run test:server"
     - name: "Lint and try building"
       node_js: 12
-      env: RUN="npx concurrently --kill-others-on-fail 'npm:lint' 'npm:build:prod'"
+      env: RUN="npx concurrently --kill-others-on-fail 'npm:lint' 'npm:build'"
 # https://docs.travis-ci.com/user/reference/overview/#Virtualisation-Environment-vs-Operating-System
 script: $RUN
 install: npm ci
