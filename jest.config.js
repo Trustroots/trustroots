@@ -12,6 +12,11 @@ module.exports = {
   transform: {
     '^.+\\.js$': 'babel-jest',
     '^.+\\.html$': '<rootDir>/jest.transform.html.js'
-  }
+  },
+  transformIgnorePatterns: [
+    // we want to ignore everything in node_modules
+    // except the html templates inside angular-ui-bootstrap
+    '/node_modules/(?!angular-ui-bootstrap.+\\.html)'
+  ]
 };
 
