@@ -1,6 +1,5 @@
 module.exports = {
   moduleNameMapper: {
-    // '\\.html$': '<rootDir>/jest.mocks.html.js',
     '^@/(.*)$': '<rootDir>/$1',
     '^modules/(.*)$': '<rootDir>/modules/$1'
   },
