@@ -42,12 +42,27 @@ const defaultRules = {
   'prefer-const': 2,
   'arrow-spacing': [2, { before: true, after: true }],
   'require-atomic-updates': 0,
+  'import/first': 2
 };
 
 module.exports = {
-  extends: 'eslint:recommended',
+  extends: [
+    'eslint:recommended',
+    'plugin:import/errors'
+  ],
   rules: defaultRules,
-  plugins: ['angular', 'react'],
+  plugins: [
+    'angular',
+    'react',
+    'import'
+  ],
+  settings: {
+    'import/resolver': {
+      webpack: {
+        config: __dirname + '/config/webpack/webpack.config.js'
+      }
+    }
+  },
   env: {
     es6: true,
   },
