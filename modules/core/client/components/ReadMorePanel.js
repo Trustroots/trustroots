@@ -2,6 +2,9 @@
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 
+// Internal dependencies
+import { plainTextLength } from '../utils/filters';
+
 export class ReadMorePanel extends Component {
   constructor(props) {
     super(props);
@@ -28,7 +31,7 @@ export class ReadMorePanel extends Component {
       return;
     }
 
-    if (showMore || content.length <= limit) {
+    if (showMore || plainTextLength(content) <= limit) {
       return <div dangerouslySetInnerHTML={{ __html: content }} />;
     }
 

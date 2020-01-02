@@ -1,9 +1,12 @@
-export const limitTo = (text, length) => {
-  return text.substring(0, length);
+export const plainText = (html) => {
+  if (!html || typeof(html) !== 'string' || !document) {
+    return '';
+  }
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
 };
 
-export const plainTextLength = (text) => {
-  return text && typeof(text) === 'string'
-    ? String(text).replace(/&nbsp;/g, ' ').replace(/<[^>]+>/gm, '').trim().length
-    : 0;
+export const plainTextLength = (html) => {
+  return plainText(html).trim().length;
 };
