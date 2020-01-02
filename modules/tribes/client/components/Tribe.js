@@ -12,9 +12,6 @@ const Container = styled.div`
   position: relative;
 `;
 
-/**
- * @TODO maybe rename to Tribe
- */
 export default function Tribe({ tribe, user, onMembershipUpdated }) {
   const { t } = useTranslation('tribes');
 

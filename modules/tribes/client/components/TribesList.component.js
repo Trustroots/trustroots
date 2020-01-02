@@ -8,20 +8,18 @@ import SuggestTribe from './SuggestTribe';
 
 const List = styled.ul`
   margin: -5px -5px 15px -5px;
-  line-height: 0;
 `;
 
 const Item = styled.li`
-  line-height: 1.42857143; // set back the line-height set by bootstrap
   padding: 5px;
   display: inline-block;
   vertical-align: bottom;
-  // background-color: red;
-  @media (max-width: 615.9999px) {
+
+  @media (min-width: 0) {
     width: 100%;
   }
 
-  @media (min-width: 616px) and (max-width: 991.9999px) {
+  @media (min-width: 616px) {
     width: 50%;
   }
 
