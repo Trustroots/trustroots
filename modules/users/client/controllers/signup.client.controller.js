@@ -1,3 +1,5 @@
+import rulesModalTemplateUrl from '@/modules/users/client/views/authentication/rules-modal.client.view.html';
+
 (function (jQuery) {
   angular
     .module('users')
@@ -344,7 +346,7 @@
 
       // Open modal
       $uibModal.open({
-        templateUrl: '/modules/users/views/authentication/rules-modal.client.view.html'
+        templateUrl: rulesModalTemplateUrl
       });
 
       // Record event to analytics

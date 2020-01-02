@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/core/client/views/404.client.view.html';
+
 (function () {
   angular
     .module('core')
@@ -25,7 +27,7 @@
     $stateProvider.
       state('not-found', {
         url: '/not-found',
-        templateUrl: '/modules/core/views/404.client.view.html',
+        templateUrl,
         footerHidden: true,
         headerHidden: true,
         data: {

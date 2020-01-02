@@ -9,15 +9,10 @@ import ngTouch from 'angular-touch';
 import ngSanitize from 'angular-sanitize';
 import ngMessageFormat from 'angular-message-format';
 import 'angulartics/src/angulartics'; // provides 'angulartics' module
-// import 'angulartics/src/angulartics-debug';
 
-
-
-// import '@/testutils/client/angulartics-null.testutil';
 import uiRouter from 'angular-ui-router';
 
-// we don't use all of it
-// import uiBootstrap from 'angular-ui-bootstrap';
+// @TODO: perhaps move this bootstrap imports into their own place...? also with the .html imports from main.js?
 import 'angular-ui-bootstrap/src/buttons/buttons';
 import 'angular-ui-bootstrap/src/collapse/collapse';
 import 'angular-ui-bootstrap/src/dateparser/dateparser';
@@ -35,21 +30,12 @@ import 'angular-ui-bootstrap/src/tabs/tabs';
 import 'angular-ui-bootstrap/src/tooltip/tooltip';
 import 'angular-ui-bootstrap/src/typeahead/typeahead';
 
-import angularMoment from 'angular-moment'; // TODO: do I need to import moment too? no it does it
+import angularMoment from 'angular-moment';
 import 'angular-simple-logger'; // provides 'nemLogger' module
 import 'ui-leaflet'; // provides 'ui-leaflet' module
 import 'leaflet-active-area/src/leaflet.activearea';
 
-// TODO: what to do with this
-// import 'leaflet-active-area';
-
 import ngFileUpload from 'ng-file-upload';
-
-// can't import angular-waypoints as it expects this.angular to exist
-// but we can just define it here so the import doesn't complain...
-// TODO: find a way to import it properly...
-// angular.module('zumba.angular-waypoints', []);
-import 'angular-waypoints';
 
 import 'angular-chosen-localytics';
 import 'angular-loading-bar';
@@ -59,22 +45,17 @@ import angularLocker from 'angular-locker';
 import 'angular-confirm'; // provides 'angular-confirm' module
 import angularGrid from 'angulargrid';
 
-// import '@/modules/core/client/app/init';
-// import '@/modules/core/client/core.client.module';
-
-// import '@/modules/contacts/client/contacts.client.module';
-// import '@/modules/contacts/client/services/contact.client.service';
-// import '@/modules/contacts/client/services/contact-by.client.service';
-// import '@/modules/contacts/client/controllers/add-contact.client.controller';
-//
-// import '@/modules/users/client/users.client.module';
-// import '@/modules/users/client/services/authentication.client.service';
-// import '@/modules/users/client/services/users-mini.client.service';
-
 import 'chosen-js/chosen.jquery.js';
 import 'angular-chosen-localytics/dist/angular-chosen.js';
 
 import ngreact from 'ngreact';
+
+// @TODO can I import it properly in tests? seems tricky as it expects this.angular to exist
+if (process.env.NODE_ENV === 'test') {
+  angular.module('zumba.angular-waypoints', []);
+} else {
+  require('angular-waypoints/dist/angular-waypoints.all');
+}
 
 // Init the application configuration module for AngularJS application
 // Init module configuration options
@@ -120,7 +101,7 @@ var appModuleVendorDependencies = [
 ];
 
 // eslint-disable-next-line no-console
-console.log('appModuleVendorDependencies', appModuleVendorDependencies);
+// console.log('appModuleVendorDependencies', appModuleVendorDependencies);
 
 /**
  * Load different service dependency for Angulartics depending on environment
@@ -129,16 +110,14 @@ console.log('appModuleVendorDependencies', appModuleVendorDependencies);
 if (appEnv === 'production') {
   // @link https://github.com/angulartics/angulartics-google-analytics
   appModuleVendorDependencies.push('angulartics.google.analytics');
-  // TODO: load google analytics version
+  require('angulartics-google-analytics/lib/angulartics-ga');
 } else if (appEnv === 'development') {
   // @link https://github.com/angulartics/angulartics/blob/master/src/angulartics-debug.js
   appModuleVendorDependencies.push('angulartics.debug');
   require('angulartics/src/angulartics-debug');
-} else {
-  // For "test" environment
-  // See `testutils/client/angulartics-null.testutil.js`
+} else if (appEnv === 'test') {
   appModuleVendorDependencies.push('angulartics.null');
-  // TODO: load testutils version...
+  require('@/testutils/client/angulartics-null.testutil');
 }
 
 // Add a new vertical module
@@ -150,9 +129,11 @@ var registerModule = function (moduleName, dependencies) {
   angular.module(appModuleName).requires.push(moduleName);
 };
 
-module.exports = {
+const AppConfig = {
   appEnv: appEnv,
   appModuleName: appModuleName,
   appModuleVendorDependencies: appModuleVendorDependencies,
   registerModule: registerModule
 };
+
+export default AppConfig;

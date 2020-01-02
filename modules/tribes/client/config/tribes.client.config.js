@@ -1,3 +1,6 @@
+import listTemplateUrl from '@/modules/tribes/client/views/tribes-list.client.view.html';
+import showTemplateUrl from '@/modules/tribes/client/views/tribe.client.view.html';
+
 (function () {
   angular
     .module('tribes')
@@ -14,7 +17,7 @@
       }).
       state('tribes.list', {
         url: '',
-        templateUrl: '/modules/tribes/views/tribes-list.client.view.html',
+        templateUrl: listTemplateUrl,
         controller: 'TribesListController',
         controllerAs: 'tribesList',
         resolve: {
@@ -31,7 +34,7 @@
       state('tribes.tribe', {
         url: '/:tribe',
         footerHidden: true,
-        templateUrl: '/modules/tribes/views/tribe.client.view.html',
+        templateUrl: showTemplateUrl,
         controller: 'TribeController',
         controllerAs: 'tribeCtrl',
         resolve: {

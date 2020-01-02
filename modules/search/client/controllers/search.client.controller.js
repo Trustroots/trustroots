@@ -5,7 +5,6 @@
 
   /* @ngInject */
   function SearchController($scope, $window, $analytics, $stateParams, $timeout, offer, tribe, Authentication, FiltersService, messageCenterService, LocationService) {
-
     // ViewModel
     const vm = this;
 

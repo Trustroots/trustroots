@@ -1,3 +1,5 @@
+import questionModalTemplateUrl from '@/modules/core/client/views/push-notification-question-modal.client.view.html';
+
 (function () {
   angular
     .module('core')
@@ -107,7 +109,7 @@
       }
 
       $uibModal.open({
-        templateUrl: '/modules/core/views/push-notification-question-modal.client.view.html',
+        templateUrl: questionModalTemplateUrl,
         controller: function ($scope, $uibModalInstance) {
           const vm = this;
 

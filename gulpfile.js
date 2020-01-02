@@ -7,7 +7,6 @@ const _ = require('lodash');
 const defaultAssets = require('./config/assets/default');
 const gulp = require('gulp');
 const gulpLoadPlugins = require('gulp-load-plugins');
-const MergeStream = require('merge-stream');
 const minimatch = require('minimatch');
 const del = require('del');
 const nodemon = require('nodemon');
@@ -97,15 +96,6 @@ gulp.task('env:prod', gulp.series(
   }
 ));
 
-// Watch files for changes
-gulp.task('watch', function watch(done) {
-  if (process.env.NODE_ENV === 'production') {
-    gulp.watch(defaultAssets.client.js, gulp.series('clean', 'angular-templatecache'));
-    // gulp.watch(defaultAssets.client.views, gulp.series('clean', 'angular-templatecache'));
-  }
-  done();
-});
-
 // Watch server test files
 gulp.task('watch:server:run-tests', function watchServerRunTests() {
   // Add Server Test file rules
@@ -128,54 +118,6 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
 gulp.task('clean', function clean() {
   return del(['public/dist/*.js']);
 });
-
-// Angular UI-Boostrap template cache task
-// We're not using prebuild UI-Boostraps so that
-// we can pick modules we need. Therefore we need
-// to manually compile our UIB templates.
-function angularUibTemplatecache() {
-  const uibModulesStreams = new MergeStream();
-
-  // Loop trough module names
-  defaultAssets.client.lib.uibModuleTemplates.forEach(function (uibModule) {
-
-    const moduleStream = gulp.src(['node_modules/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
-      .pipe(plugins.htmlmin({ collapseWhitespace: true }))
-      .pipe(plugins.templateCache('uib-templates-' + uibModule + '.js', {
-        root: 'uib/template/' + uibModule + '/',
-        module: 'core',
-        templateHeader: '(function() { angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
-        templateBody: '$templateCache.put(\'<%= url %>\', \'<%= contents %>\');',
-        templateFooter: '} })();'
-      }));
-
-    // Combine with previouly processed templates
-    uibModulesStreams.add(moduleStream);
-  });
-
-  // Output all tempaltes to one file
-  return uibModulesStreams
-    .pipe(plugins.concat('uib-templates.js'))
-    .pipe(gulp.dest('public/dist'));
-
-}
-
-// Angular template cache task
-function angularTemplateCache() {
-  return gulp.src(defaultAssets.client.views)
-    .pipe(plugins.htmlmin({ collapseWhitespace: true }))
-    .pipe(plugins.templateCache('templates.js', {
-      root: '/modules/',
-      transformUrl: function (url) {
-        return url.replace('/client', '');
-      },
-      module: 'core',
-      templateHeader: '(function() { angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
-      templateBody: '$templateCache.put(\'<%= url %>\', \'<%= contents %>\');',
-      templateFooter: '} })();'
-    }))
-    .pipe(gulp.dest('public/dist'));
-}
 
 // Generate font icon files from Fontello.com
 function fontello() {
@@ -228,15 +170,6 @@ function mocha(done) {
   });
 }
 
-// gulp.task('angular-templatecache', gulp.series(angularTemplateCache, angularUibTemplatecache));
-
-// Build assets for production mode
-gulp.task('build:prod', gulp.series(
-  'env:prod',
-  'clean',
-  'angular-templatecache'
-));
-
 // Run fontello update
 gulp.task('fontello', fontello);
 
@@ -254,20 +187,13 @@ gulp.task('test:server:watch', gulp.series(
 // Run the project in development mode
 gulp.task('develop', gulp.series(
   'env:dev',
-  gulp.parallel(
-    runNodemon,
-    'watch'
-  )
+  runNodemon
 ));
 
 // Run the project in production mode
 gulp.task('prod', gulp.series(
   'env:prod',
-  'build:prod',
-  gulp.parallel(
-    runNodemon,
-    'watch'
-  )
+  runNodemon
 ));
 
 // Run worker script in development mode

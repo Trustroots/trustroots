@@ -1,3 +1,6 @@
+import supportTemplateUrl from '@/modules/support/client/views/support.client.view.html';
+import contactTemplateUrl from '@/modules/support/client/views/support.client.view.html';
+
 (function () {
   angular
     .module('support')
@@ -9,7 +12,7 @@
     $stateProvider.
       state('support', {
         url: '/support?report=',
-        templateUrl: '/modules/support/views/support.client.view.html',
+        templateUrl: supportTemplateUrl,
         requiresAuth: false,
         controller: 'SupportController',
         controllerAs: 'support',
@@ -20,7 +23,7 @@
       // Deprecated (02-2016):
       state('contact', {
         url: '/contact',
-        templateUrl: '/modules/support/views/support.client.view.html',
+        templateUrl: contactTemplateUrl,
         requiresAuth: false,
         controller: 'SupportController',
         controllerAs: 'support',

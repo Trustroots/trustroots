@@ -1,8 +1,14 @@
+import '@/modules/search/client/search.client.module';
+import '@/modules/offers/client/offers.client.module';
+import '@/modules/tribes/client/tribes.client.module';
+
+import AppConfig from '@/modules/core/client/app/config';
+
 (function () {
   describe('Search Route Tests', function () {
 
     // We can start by loading the main application module
-    beforeEach(module(AppConfig.appModuleName));
+    beforeEach(angular.mock.module(AppConfig.appModuleName));
 
     describe('Route Config', function () {
       describe('Main Route', function () {
@@ -72,9 +78,10 @@
       });
 
       describe('Handle Trailing Slash', function () {
-        beforeEach(inject(function ($state, $rootScope) {
+        beforeEach(inject(function ($state, $rootScope, $location) {
           $state.go('search.map');
           $rootScope.$digest();
+          expect($location.path()).toBe('/search');
         }));
 
         it('Should remove trailing slash', inject(function ($state, $location, $rootScope) {

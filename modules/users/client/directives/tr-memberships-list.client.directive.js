@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/users/client/views/directives/tr-memberships-list.client.view.html';
+
 (function () {
   /**
    * Simple list of tribes user is member of
@@ -9,7 +11,7 @@
   /* @ngInject */
   function trMembershipsListDirective() {
     return {
-      templateUrl: '/modules/users/views/directives/tr-memberships-list.client.view.html',
+      templateUrl,
       restrict: 'A',
       replace: true,
       scope: {

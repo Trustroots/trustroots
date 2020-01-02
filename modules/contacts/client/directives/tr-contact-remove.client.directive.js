@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/contacts/client/views/remove-contact.client.modal.html';
+
 (function () {
   /**
    * Remove contact directive to open up a modal to disconnect contacts
@@ -17,7 +19,7 @@
 
         function openModal() {
           $uibModal.open({
-            templateUrl: '/modules/contacts/views/remove-contact.client.modal.html',
+            templateUrl,
             controllerAs: 'removeContactModal',
             controller: 'ContactRemoveController',
             scope: scope

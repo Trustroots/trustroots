@@ -1,3 +1,20 @@
+import navigationTemplateUrl from '@/modules/pages/client/views/navigation.client.view.html';
+import rulesTemplateUrl from '@/modules/pages/client/views/rules.client.view.html';
+import teamTemplateUrl from '@/modules/pages/client/views/team.client.view.html';
+import privacyTemplateUrl from '@/modules/pages/client/views/privacy.client.view.html';
+import donateTemplateUrl from '@/modules/pages/client/views/donate.client.view.html';
+import donateHelpTemplateUrl from '@/modules/pages/client/views/donate-help.client.view.html';
+import donatePolicyTemplateUrl from '@/modules/pages/client/views/donate-policy.client.view.html';
+import faqTemplateUrl from '@/modules/pages/client/views/faq.client.view.html';
+import faqGeneralTemplateUrl from '@/modules/pages/client/views/faq-general.client.view.html';
+import faqTribesTemplateUrl from '@/modules/pages/client/views/faq-tribes.client.view.html';
+import faqFoundationTemplateUrl from '@/modules/pages/client/views/faq-foundation.client.view.html';
+import faqTechnologyTemplateUrl from '@/modules/pages/client/views/faq-technology.client.view.html';
+import foundationTemplateUrl from '@/modules/pages/client/views/foundation.client.view.html';
+import mediaTemplateUrl from '@/modules/pages/client/views/media.client.view.html';
+import guideTemplateUrl from '@/modules/pages/client/views/guide.client.view.html';
+import homeTemplateUrl from '@/modules/pages/client/views/home.client.view.html';
+
 (function () {
   angular
     .module('pages')
@@ -11,7 +28,7 @@
     $stateProvider.
       state('navigation', {
         url: '/navigation',
-        templateUrl: '/modules/pages/views/navigation.client.view.html',
+        templateUrl: navigationTemplateUrl,
         requiresAuth: true,
         footerHidden: true,
         data: {
@@ -20,49 +37,49 @@
       }).
       state('rules', {
         url: '/rules',
-        templateUrl: '/modules/pages/views/rules.client.view.html',
+        templateUrl: rulesTemplateUrl,
         data: {
           pageTitle: 'Rules'
         }
       }).
       state('team', {
         url: '/team',
-        templateUrl: '/modules/pages/views/team.client.view.html',
+        templateUrl: teamTemplateUrl,
         data: {
           pageTitle: 'Team'
         }
       }).
       state('privacy', {
         url: '/privacy',
-        templateUrl: '/modules/pages/views/privacy.client.view.html',
+        templateUrl: privacyTemplateUrl,
         data: {
           pageTitle: 'Privacy policy'
         }
       }).
       state('donate', {
         url: '/donate',
-        templateUrl: '/modules/pages/views/donate.client.view.html',
+        templateUrl: donateTemplateUrl,
         data: {
           pageTitle: 'Donate'
         }
       }).
       state('donate-help', {
         url: '/donate/help',
-        templateUrl: '/modules/pages/views/donate-help.client.view.html',
+        templateUrl: donateHelpTemplateUrl,
         data: {
           pageTitle: 'Donation help'
         }
       }).
       state('donate-policy', {
         url: '/donate/policy',
-        templateUrl: '/modules/pages/views/donate-policy.client.view.html',
+        templateUrl: donatePolicyTemplateUrl,
         data: {
           pageTitle: 'Donation policy'
         }
       }).
       state('faq', {
         url: '/faq',
-        templateUrl: '/modules/pages/views/faq.client.view.html',
+        templateUrl: faqTemplateUrl,
         abstract: true,
         controller: 'FaqController',
         controllerAs: 'faq',
@@ -72,42 +89,42 @@
       }).
       state('faq.general', {
         url: '',
-        templateUrl: '/modules/pages/views/faq-general.client.view.html',
+        templateUrl: faqGeneralTemplateUrl,
         data: {
           pageTitle: 'FAQ - Site & community'
         }
       }).
       state('faq.tribes', {
         url: '/tribes',
-        templateUrl: '/modules/pages/views/faq-tribes.client.view.html',
+        templateUrl: faqTribesTemplateUrl,
         data: {
           pageTitle: 'FAQ - Tribes'
         }
       }).
       state('faq.foundation', {
         url: '/foundation',
-        templateUrl: '/modules/pages/views/faq-foundation.client.view.html',
+        templateUrl: faqFoundationTemplateUrl,
         data: {
           pageTitle: 'FAQ - Foundation'
         }
       }).
       state('faq.technology', {
         url: '/technology',
-        templateUrl: '/modules/pages/views/faq-technology.client.view.html',
+        templateUrl: faqTechnologyTemplateUrl,
         data: {
           pageTitle: 'FAQ - Technology'
         }
       }).
       state('foundation', {
         url: '/foundation',
-        templateUrl: '/modules/pages/views/foundation.client.view.html',
+        templateUrl: foundationTemplateUrl,
         data: {
           pageTitle: 'Foundation'
         }
       }).
       state('media', {
         url: '/media',
-        templateUrl: '/modules/pages/views/media.client.view.html',
+        templateUrl: mediaTemplateUrl,
         data: {
           pageTitle: 'Media'
         }
@@ -121,7 +138,7 @@
       }).
       state('guide', {
         url: '/guide',
-        templateUrl: '/modules/pages/views/guide.client.view.html',
+        templateUrl: guideTemplateUrl,
         data: {
           pageTitle: 'Guide'
         }
@@ -147,7 +164,7 @@
     if (window.location.search.search('_escaped_fragment_') === -1) {
       $stateProvider.state('home', {
         url: '/?tribe',
-        templateUrl: '/modules/pages/views/home.client.view.html',
+        templateUrl: homeTemplateUrl,
         controller: 'HomeController',
         controllerAs: 'home',
         footerHidden: true

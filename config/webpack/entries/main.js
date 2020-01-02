@@ -11,41 +11,8 @@ import '@/modules/core/client/app/init';
 
 import '@/modules/core/client/core.client.module';
 
-import 'angular-ui-bootstrap/template/datepicker/datepicker.html';
-import 'angular-ui-bootstrap/template/datepicker/day.html';
-import 'angular-ui-bootstrap/template/datepicker/month.html';
-import 'angular-ui-bootstrap/template/datepicker/year.html';
-
-import 'angular-ui-bootstrap/template/modal/window.html';
-import 'angular-ui-bootstrap/template/modal/backdrop.html';
-
-import 'angular-ui-bootstrap/template/popover/popover.html';
-import 'angular-ui-bootstrap/template/popover/popover-html.html';
-import 'angular-ui-bootstrap/template/popover/popover-template.html';
-
-import 'angular-ui-bootstrap/template/progressbar/bar.html';
-import 'angular-ui-bootstrap/template/progressbar/progress.html';
-import 'angular-ui-bootstrap/template/progressbar/progressbar.html';
-
-import 'angular-ui-bootstrap/template/tabs/tab.html';
-import 'angular-ui-bootstrap/template/tabs/tabset.html';
-
-import 'angular-ui-bootstrap/template/tooltip/tooltip-html-popup.html';
-import 'angular-ui-bootstrap/template/tooltip/tooltip-popup.html';
-import 'angular-ui-bootstrap/template/tooltip/tooltip-template-popup.html';
-
-import 'angular-ui-bootstrap/template/typeahead/typeahead-match.html';
-import 'angular-ui-bootstrap/template/typeahead/typeahead-popup.html';
-
-// const uibModules = [
-//   'uib/template/tabs/tab.html'
-// ];
-
-// importAll(require.context('../../../modules/', true, /\.less$/));
-
 import '@/modules/admin/client/admin.client.module';
 import '@/modules/contacts/client/contacts.client.module';
-import '@/modules/core/client/core.client.module';
 import '@/modules/messages/client/messages.client.module';
 import '@/modules/offers/client/offers.client.module';
 import '@/modules/pages/client/pages.client.module';
@@ -56,36 +23,32 @@ import '@/modules/support/client/support.client.module';
 import '@/modules/tribes/client/tribes.client.module';
 import '@/modules/users/client/users.client.module';
 
+// @TODO put these elsewhere...
+import 'angular-ui-bootstrap/template/datepicker/datepicker.html';
+import 'angular-ui-bootstrap/template/datepicker/day.html';
+import 'angular-ui-bootstrap/template/datepicker/month.html';
+import 'angular-ui-bootstrap/template/datepicker/year.html';
+import 'angular-ui-bootstrap/template/modal/window.html';
+import 'angular-ui-bootstrap/template/modal/backdrop.html';
+import 'angular-ui-bootstrap/template/popover/popover.html';
+import 'angular-ui-bootstrap/template/popover/popover-html.html';
+import 'angular-ui-bootstrap/template/popover/popover-template.html';
+import 'angular-ui-bootstrap/template/progressbar/bar.html';
+import 'angular-ui-bootstrap/template/progressbar/progress.html';
+import 'angular-ui-bootstrap/template/progressbar/progressbar.html';
+import 'angular-ui-bootstrap/template/tabs/tab.html';
+import 'angular-ui-bootstrap/template/tabs/tabset.html';
+import 'angular-ui-bootstrap/template/tooltip/tooltip-html-popup.html';
+import 'angular-ui-bootstrap/template/tooltip/tooltip-popup.html';
+import 'angular-ui-bootstrap/template/tooltip/tooltip-template-popup.html';
+import 'angular-ui-bootstrap/template/typeahead/typeahead-match.html';
+import 'angular-ui-bootstrap/template/typeahead/typeahead-popup.html';
+
 /*
  *  Main style import.
  *  This includes the libraries, and any global overrides.
  */
 import './main.less';
-
-// uibModuleTemplates: [
-//   // Stream = gulp.src(['node_modules/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
-//   'datepicker',
-//   'modal',
-//   'popover',
-//   'progressbar',
-//   'tabs',
-//   'tooltip',
-//   'typeahead'
-// ],
-
-
-importAll(require.context('../../../modules/', true, /\.client\.view\.html$/));
-
-// import '@/public/dist/uib-templates';
-
-// require('@/modules/search/client/views/search-sidebar.client.view.html');
-// import '@/modules/search/client/views/search-map.client.view.html';
-// import '@/modules/search/client/views/search-sidebar.client.view.html';
-// import '@/modules/search/client/views/search-sidebar-filters.client.view.html';
-
-if (process.env.NODE_ENV !== 'development') {
-  require('@/public/dist/templates');
-}
 
 /*
  * Imports all the style files from the modules (*.less)

@@ -1,3 +1,6 @@
+import '@/modules/contacts/client/contacts.client.module';
+import AppConfig from '@/modules/core/client/app/config';
+
 (function () {
   describe('ContactAddController', function () {
     // Initialize global variables
@@ -24,7 +27,7 @@
 
     // Load the main application module
     beforeEach(function (done) {
-      module(AppConfig.appModuleName);
+      angular.mock.module(AppConfig.appModuleName);
       done();
     });
 

@@ -1,3 +1,31 @@
+import welcomeTemplateUrl from '@/modules/users/client/views/authentication/welcome.client.view.html';
+import profileEditTemplateUrl from '@/modules/users/client/views/profile/profile-edit.client.view.html';
+import profileEditAboutTemplateUrl from '@/modules/users/client/views/profile/profile-edit-about.client.view.html';
+import profileEditLocationsTemplateUrl from '@/modules/users/client/views/profile/profile-edit-locations.client.view.html';
+import profileEditPhotoTemplateUrl from '@/modules/users/client/views/profile/profile-edit-photo.client.view.html';
+import profileEditNetworksTemplateUrl from '@/modules/users/client/views/profile/profile-edit-networks.client.view.html';
+import profileEditAccountTemplateUrl from '@/modules/users/client/views/profile/profile-edit-account.client.view.html';
+import profileViewClientTemplateUrl from '@/modules/users/client/views/profile/profile-view.client.view.html';
+import profileViewAboutTemplateUrl from '@/modules/users/client/views/profile/profile-view-about.client.view.html';
+import profileviewAccommodationTemplateUrl from '@/modules/users/client/views/profile/profile-view-accommodation.client.view.html';
+// import offerHostTemplateUrl from '@/modules/offers/client/views/offer-host-view.client.view.html';
+import profileViewBasicsTemplateUrl from '@/modules/users/client/views/profile/profile-view-basics.client.view.html';
+import profileViewTribesTemplateUrl from '@/modules/users/client/views/profile/profile-view-tribes.client.view.html';
+import profileSignupTemplateUrl from '@/modules/users/client/views/profile/profile-signup.client.view.html';
+import signupTemplateUrl from '@/modules/users/client/views/authentication/signup.client.view.html';
+import signinTemplateUrl from '@/modules/users/client/views/authentication/signin.client.view.html';
+import confirmTemplateUrl from '@/modules/users/client/views/authentication/confirm-email.client.view.html';
+import confirmInvalidTemplateUrl from '@/modules/users/client/views/authentication/confirm-email-invalid.client.view.html';
+import forgotPasswordTemplateUrl from '@/modules/users/client/views/password/forgot-password.client.view.html';
+import resetPasswordInvalidTemplateUrl from '@/modules/users/client/views/password/reset-password-invalid.client.view.html';
+import resetPasswordSuccessTemplateUrl from '@/modules/users/client/views/password/reset-password-success.client.view.html';
+import resetPasswordTemplateUrl from '@/modules/users/client/views/password/reset-password.client.view.html';
+import profileRemoveTemplateUrl from '@/modules/users/client/views/profile/remove.client.view.html';
+import profileReferencesTemplateUrl from '@/modules/users/client/views/profile/profile-view-references.client.view.html';
+// import profileReferencesListTemplateUrl from '@/modules/users/client/views/profile/profile-view-references-list.client.view.html';
+
+import AppConfig from '@/modules/core/client/app/config';
+
 (function () {
   angular
     .module('users')
@@ -24,7 +52,7 @@
       // Users state routing
       state('welcome', {
         url: '/welcome',
-        templateUrl: '/modules/users/views/authentication/welcome.client.view.html',
+        templateUrl: welcomeTemplateUrl,
         requiresAuth: true,
         footerHidden: true,
         data: {
@@ -34,14 +62,14 @@
 
       state('profile-edit', {
         url: '/profile/edit',
-        templateUrl: '/modules/users/views/profile/profile-edit.client.view.html',
+        templateUrl: profileEditTemplateUrl,
         abstract: true,
         controller: 'ProfileEditController',
         controllerAs: 'profileEdit'
       }).
       state('profile-edit.about', {
         url: '',
-        templateUrl: '/modules/users/views/profile/profile-edit-about.client.view.html',
+        templateUrl: profileEditAboutTemplateUrl,
         controller: 'ProfileEditAboutController',
         controllerAs: 'profileEditAbout',
         requiresAuth: true,
@@ -51,7 +79,7 @@
       }).
       state('profile-edit.locations', {
         url: '/locations',
-        templateUrl: '/modules/users/views/profile/profile-edit-locations.client.view.html',
+        templateUrl: profileEditLocationsTemplateUrl,
         controller: 'ProfileEditLocationsController',
         controllerAs: 'profileEditLocations',
         requiresAuth: true,
@@ -68,7 +96,7 @@
       }).
       state('profile-edit.photo', {
         url: '/photo',
-        templateUrl: '/modules/users/views/profile/profile-edit-photo.client.view.html',
+        templateUrl: profileEditPhotoTemplateUrl,
         controller: 'ProfileEditPhotoController',
         controllerAs: 'profileEditPhoto',
         requiresAuth: true,
@@ -85,7 +113,7 @@
       }).
       state('profile-edit.networks', {
         url: '/networks',
-        templateUrl: '/modules/users/views/profile/profile-edit-networks.client.view.html',
+        templateUrl: profileEditNetworksTemplateUrl,
         controller: 'ProfileEditNetworksController',
         controllerAs: 'profileEditNetworks',
         requiresAuth: true,
@@ -95,7 +123,7 @@
       }).
       state('profile-edit.account', {
         url: '/account',
-        templateUrl: '/modules/users/views/profile/profile-edit-account.client.view.html',
+        templateUrl: profileEditAccountTemplateUrl,
         controller: 'ProfileEditAccountController',
         controllerAs: 'profileEditAccount',
         requiresAuth: true,
@@ -106,7 +134,7 @@
 
       state('profile', {
         url: '/profile/:username',
-        templateUrl: '/modules/users/views/profile/profile-view.client.view.html',
+        templateUrl: profileViewClientTemplateUrl,
         controller: 'ProfileController',
         controllerAs: 'profileCtrl',
         requiresAuth: true,
@@ -183,7 +211,7 @@
       }).
       state('profile.about', {
         url: '',
-        templateUrl: '/modules/users/views/profile/profile-view-about.client.view.html',
+        templateUrl: profileViewAboutTemplateUrl,
         requiresAuth: true,
         noScrollingTop: true,
         data: {
@@ -192,25 +220,28 @@
       }).
       state('profile.accommodation', {
         url: '/accommodation',
-        templateUrl: '/modules/users/views/profile/profile-view-accommodation.client.view.html',
+        templateUrl: profileviewAccommodationTemplateUrl,
         requiresAuth: true,
         noScrollingTop: true,
         data: {
           pageTitle: 'Profile accommodation'
         }
       }).
+      /*
+      @TODO find out what is wrong with this, template path did not seem to exist
       state('profile.meet', {
         url: '/meet',
-        templateUrl: '/modules/offers/views/offer-host-view.client.view.html',
+        templateUrl: offerHostTemplateUrl,
         requiresAuth: true,
         noScrollingTop: true,
         data: {
           pageTitle: 'Profile meet'
         }
       }).
+       */
       state('profile.overview', {
         url: '/overview',
-        templateUrl: '/modules/users/views/profile/profile-view-basics.client.view.html',
+        templateUrl: profileViewBasicsTemplateUrl,
         requiresAuth: true,
         noScrollingTop: true,
         data: {
@@ -228,7 +259,7 @@
       }).
       state('profile.tribes', {
         url: '/tribes',
-        templateUrl: '/modules/users/views/profile/profile-view-tribes.client.view.html',
+        templateUrl: profileViewTribesTemplateUrl,
         requiresAuth: true,
         noScrollingTop: true,
         data: {
@@ -239,7 +270,7 @@
       // When attempting to look at profile as non-authenticated user
       state('profile-signup', {
         url: '/profile-signup',
-        templateUrl: '/modules/users/views/profile/profile-signup.client.view.html',
+        templateUrl: profileSignupTemplateUrl,
         data: {
           pageTitle: 'Trustroots profile'
         }
@@ -251,7 +282,7 @@
         // `code`: prefill invite code
         // `mwr` used by Matre app if invite list is enabled
         url: '/signup?tribe&code&mwr',
-        templateUrl: '/modules/users/views/authentication/signup.client.view.html',
+        templateUrl: signupTemplateUrl,
         controller: 'SignupController',
         controllerAs: 'signup',
         headerHidden: true,
@@ -272,7 +303,7 @@
       }).
       state('signin', {
         url: '/signin?continue',
-        templateUrl: '/modules/users/views/authentication/signin.client.view.html',
+        templateUrl: signinTemplateUrl,
         controller: 'AuthenticationController',
         controllerAs: 'auth',
         headerHidden: true,
@@ -291,7 +322,7 @@
       }).
       state('confirm-email', {
         url: '/confirm-email/:token?signup',
-        templateUrl: '/modules/users/views/authentication/confirm-email.client.view.html',
+        templateUrl: confirmTemplateUrl,
         requiresAuth: false,
         controller: 'ConfirmEmailController',
         controllerAs: 'confirmEmail',
@@ -301,7 +332,7 @@
       }).
       state('confirm-email-invalid', {
         url: '/confirm-email-invalid',
-        templateUrl: '/modules/users/views/authentication/confirm-email-invalid.client.view.html',
+        templateUrl: confirmInvalidTemplateUrl,
         requiresAuth: false,
         data: {
           pageTitle: 'Confirm email invalid'
@@ -311,7 +342,7 @@
       // Password reset
       state('forgot', {
         url: '/password/forgot?userhandle=',
-        templateUrl: '/modules/users/views/password/forgot-password.client.view.html',
+        templateUrl: forgotPasswordTemplateUrl,
         controller: 'ForgotPasswordController',
         controllerAs: 'forgotPassword',
         footerHidden: true,
@@ -321,7 +352,7 @@
       }).
       state('reset-invalid', {
         url: '/password/reset/invalid',
-        templateUrl: '/modules/users/views/password/reset-password-invalid.client.view.html',
+        templateUrl: resetPasswordInvalidTemplateUrl,
         footerHidden: true,
         data: {
           pageTitle: 'Reset password'
@@ -329,7 +360,7 @@
       }).
       state('reset-success', {
         url: '/password/reset/success',
-        templateUrl: '/modules/users/views/password/reset-password-success.client.view.html',
+        templateUrl: resetPasswordSuccessTemplateUrl,
         footerHidden: true,
         data: {
           pageTitle: 'Reset password'
@@ -337,7 +368,7 @@
       }).
       state('reset', {
         url: '/password/reset/:token',
-        templateUrl: '/modules/users/views/password/reset-password.client.view.html',
+        templateUrl: resetPasswordTemplateUrl,
         footerHidden: true,
         controller: 'ResetPasswordController',
         controllerAs: 'resetPassword',
@@ -349,7 +380,7 @@
       // Profile removal
       state('remove', {
         url: '/remove/:token',
-        templateUrl: '/modules/users/views/profile/remove.client.view.html',
+        templateUrl: profileRemoveTemplateUrl,
         footerHidden: true,
         headerHidden: true,
         requiresAuth: true,
@@ -364,7 +395,7 @@
       $stateProvider.
         state('profile.references', {
           url: '/references',
-          templateUrl: '/modules/users/views/profile/profile-view-references.client.view.html',
+          templateUrl: profileReferencesTemplateUrl,
           requiresAuth: true,
           noScrollingTop: true,
           abstract: true,
@@ -372,15 +403,18 @@
             pageTitle: 'Profile references'
           }
         }).
+        /*
+        @TODO find out what is up with this, template did not exist
         state('profile.references.list', {
           url: '',
-          templateUrl: '/modules/users/views/profile/profile-view-references-list.client.view.html',
+          templateUrl: profileReferencesListTemplateUrl,
           requiresAuth: true,
           noScrollingTop: true,
           data: {
             pageTitle: 'Profile references'
           }
         }).
+         */
         state('profile.references.new', {
           url: '/new',
           template: '<create-reference userTo="profileCtrl.profile" userFrom="app.user"></create-reference>',

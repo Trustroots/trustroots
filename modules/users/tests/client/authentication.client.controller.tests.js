@@ -1,3 +1,7 @@
+import '@/modules/users/client/users.client.module';
+import '@/modules/search/client/search.client.module';
+import AppConfig from '@/modules/core/client/app/config';
+
 (function () {
   // Authentication controller Spec
   describe('AuthenticationController', function () {
@@ -7,22 +11,8 @@
     let $state;
     let Authentication;
 
-    beforeEach(function () {
-      jasmine.addMatchers({
-        toEqualData: function () {
-          return {
-            compare: function (actual, expected) {
-              return {
-                pass: angular.equals(actual, expected)
-              };
-            }
-          };
-        }
-      });
-    });
-
     // Load the main application module
-    beforeEach(module(AppConfig.appModuleName));
+    beforeEach(angular.mock.module(AppConfig.appModuleName));
 
     describe('Logged out user', function () {
 

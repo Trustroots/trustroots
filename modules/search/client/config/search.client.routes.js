@@ -1,14 +1,12 @@
-import searchTemplate from '@/modules/search/client/views/search.client.view.html';
-import searchMapTemplate from '@/modules/search/client/views/search-map.client.view.html';
-import searchSidebarTemplate from '@/modules/search/client/views/search-sidebar.client.view.html';
-import searchSigninTemplate from '@/modules/search/client/views/search-signin.client.view.html';
+import searchTemplateUrl from '@/modules/search/client/views/search.client.view.html';
+import searchMapTemplateUrl from '@/modules/search/client/views/search-map.client.view.html';
+import searchSidebarTemplateUrl from '@/modules/search/client/views/search-sidebar.client.view.html';
+import searchSigninTemplateUrl from '@/modules/search/client/views/search-signin.client.view.html';
 
 (function () {
   angular
     .module('search')
     .config(SearchRoutes);
-  // eslint-disable-next-line no-console
-  console.log('templateUrl is', searchTemplate);
   /* @ngInject */
   function SearchRoutes($stateProvider) {
 
@@ -19,7 +17,7 @@ import searchSigninTemplate from '@/modules/search/client/views/search-signin.cl
           'offer',
           'tribe'
         ].join('?'),
-        templateUrl: searchTemplate,
+        templateUrl: searchTemplateUrl,
         abstract: true,
         requiresAuth: true,
         footerHidden: true,
@@ -65,18 +63,18 @@ import searchSigninTemplate from '@/modules/search/client/views/search-signin.cl
         },
         views: {
           'map': {
-            templateUrl: searchMapTemplate,
+            templateUrl: searchMapTemplateUrl,
             controller: 'SearchMapController',
             controllerAs: 'searchMap'
           },
           'sidebar': {
-            templateUrl: searchSidebarTemplate
+            templateUrl: searchSidebarTemplateUrl
           }
         }
       }).
       state('search-signin', {
         url: '/search?location?offer?tribe',
-        templateUrl: searchSigninTemplate,
+        templateUrl: searchSigninTemplateUrl,
         requiresAuth: false,
         footerHidden: true,
         controller: 'SearchSignupController',

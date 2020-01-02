@@ -1,3 +1,6 @@
+import inboxTemplateUrl from '@/modules/messages/client/views/inbox.client.view.html';
+import messageThreadTemplateUrl from '@/modules/messages/client/views/thread.client.view.html';
+
 (function () {
   angular
     .module('messages')
@@ -10,7 +13,7 @@
     $stateProvider.
       state('inbox', {
         url: '/messages',
-        templateUrl: require('@/modules/messages/client/views/inbox.client.view.html'),
+        templateUrl: inboxTemplateUrl,
         controller: 'InboxController',
         controllerAs: 'inbox',
         requiresAuth: true,
@@ -20,7 +23,7 @@
       }).
       state('messageThread', {
         url: '/messages/:username',
-        templateUrl: require('@/modules/messages/client/views/thread.client.view.html'),
+        templateUrl: messageThreadTemplateUrl,
         controller: 'MessagesThreadController',
         controllerAs: 'thread',
         requiresAuth: true,
