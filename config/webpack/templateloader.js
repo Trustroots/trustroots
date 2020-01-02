@@ -17,7 +17,7 @@ module.exports = function (source) {
 
   return `
     ${source}
-    angular.module('core').run(['$templateCache', function($templateCache){
+    angular.module('ng').run(['$templateCache', function($templateCache){
       $templateCache.put('${templateName}', html);
     }]);
     module.exports = '${templateName}';

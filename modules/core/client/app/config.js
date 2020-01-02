@@ -2,6 +2,8 @@
 
 import angular from 'angular';
 
+import bootstrapModules from '@/config/client/bootstrap';
+
 import ngAria from 'angular-aria';
 import ngResource from 'angular-resource';
 import ngAnimate from 'angular-animate';
@@ -11,24 +13,6 @@ import ngMessageFormat from 'angular-message-format';
 import 'angulartics/src/angulartics'; // provides 'angulartics' module
 
 import uiRouter from 'angular-ui-router';
-
-// @TODO: perhaps move this bootstrap imports into their own place...? also with the .html imports from main.js?
-import 'angular-ui-bootstrap/src/buttons/buttons';
-import 'angular-ui-bootstrap/src/collapse/collapse';
-import 'angular-ui-bootstrap/src/dateparser/dateparser';
-import 'angular-ui-bootstrap/src/datepicker/datepicker';
-import 'angular-ui-bootstrap/src/debounce/debounce';
-import 'angular-ui-bootstrap/src/dropdown/dropdown';
-import 'angular-ui-bootstrap/src/isClass/isClass';
-import 'angular-ui-bootstrap/src/modal/modal';
-import 'angular-ui-bootstrap/src/multiMap/multiMap';
-import 'angular-ui-bootstrap/src/popover/popover';
-import 'angular-ui-bootstrap/src/position/position';
-import 'angular-ui-bootstrap/src/progressbar/progressbar';
-import 'angular-ui-bootstrap/src/stackedMap/stackedMap';
-import 'angular-ui-bootstrap/src/tabs/tabs';
-import 'angular-ui-bootstrap/src/tooltip/tooltip';
-import 'angular-ui-bootstrap/src/typeahead/typeahead';
 
 import angularMoment from 'angular-moment';
 import 'angular-simple-logger'; // provides 'nemLogger' module
@@ -74,17 +58,6 @@ var appModuleVendorDependencies = [
   ngMessageFormat,
   'angulartics',
   uiRouter,
-  'ui.bootstrap.dateparser',
-  'ui.bootstrap.buttons',
-  'ui.bootstrap.collapse',
-  'ui.bootstrap.dropdown',
-  'ui.bootstrap.modal',
-  'ui.bootstrap.popover',
-  'ui.bootstrap.progressbar',
-  'ui.bootstrap.tabs',
-  'ui.bootstrap.tooltip',
-  'ui.bootstrap.typeahead',
-  'ui.bootstrap.datepicker',
   angularMoment,
   'nemLogging',
   'ui-leaflet',
@@ -94,10 +67,10 @@ var appModuleVendorDependencies = [
   'angular-loading-bar',
   trTrustpass,
   'angular-mailcheck',
-  // 'angular-locker',
   angularLocker,
   'angular-confirm',
-  angularGrid
+  angularGrid,
+  ...bootstrapModules
 ];
 
 // eslint-disable-next-line no-console

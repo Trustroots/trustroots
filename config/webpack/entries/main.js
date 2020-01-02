@@ -21,27 +21,6 @@ import '@/modules/support/client/support.client.module';
 import '@/modules/tribes/client/tribes.client.module';
 import '@/modules/users/client/users.client.module';
 
-// @TODO put these elsewhere...
-import 'angular-ui-bootstrap/template/datepicker/datepicker.html';
-import 'angular-ui-bootstrap/template/datepicker/day.html';
-import 'angular-ui-bootstrap/template/datepicker/month.html';
-import 'angular-ui-bootstrap/template/datepicker/year.html';
-import 'angular-ui-bootstrap/template/modal/window.html';
-import 'angular-ui-bootstrap/template/modal/backdrop.html';
-import 'angular-ui-bootstrap/template/popover/popover.html';
-import 'angular-ui-bootstrap/template/popover/popover-html.html';
-import 'angular-ui-bootstrap/template/popover/popover-template.html';
-import 'angular-ui-bootstrap/template/progressbar/bar.html';
-import 'angular-ui-bootstrap/template/progressbar/progress.html';
-import 'angular-ui-bootstrap/template/progressbar/progressbar.html';
-import 'angular-ui-bootstrap/template/tabs/tab.html';
-import 'angular-ui-bootstrap/template/tabs/tabset.html';
-import 'angular-ui-bootstrap/template/tooltip/tooltip-html-popup.html';
-import 'angular-ui-bootstrap/template/tooltip/tooltip-popup.html';
-import 'angular-ui-bootstrap/template/tooltip/tooltip-template-popup.html';
-import 'angular-ui-bootstrap/template/typeahead/typeahead-match.html';
-import 'angular-ui-bootstrap/template/typeahead/typeahead-popup.html';
-
 /*
  *  Main style import.
  *  This includes the libraries, and any global overrides.
