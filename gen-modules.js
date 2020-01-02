@@ -5,7 +5,7 @@ const glob = require('glob');
 
 const modulePaths = glob.sync('./modules/*/client/*.client.module.js');
 
-const types = ['config', 'controllers', 'directives', 'filters', 'services', 'views']; // , 'views'];
+const types = ['config', 'controllers', 'directives', 'filters', 'services']; // , 'views'];
 
 for (const modulePath of modulePaths) {
   const dir = dirname(modulePath);

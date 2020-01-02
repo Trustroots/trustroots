@@ -33,6 +33,11 @@ require('@/modules/core/client/directives/tr-time.client.directive.js');
 require('@/modules/core/client/directives/tr-window-blur.client.directive.js');
 require('@/modules/core/client/directives/tr-window-focus.client.directive.js');
 
+// filters
+require('@/modules/core/client/filters/age.client.filter.js');
+require('@/modules/core/client/filters/plain-text-length.client.filter.js');
+require('@/modules/core/client/filters/trusted-html.client.filter.js');
+
 // services
 require('@/modules/core/client/services/facebook.client.service.js');
 require('@/modules/core/client/services/firebase-messaging.client.service.js');
