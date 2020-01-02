@@ -8,16 +8,16 @@
 import '@/public/dist/uib-templates';
 import angular from 'angular';
 
-if (process.env.NODE_ENV !== 'development') {
-  require('@/public/dist/templates');
-}
-
 
 /*
  *  Main style import.
  *  This includes the libraries, and any global overrides.
  */
 import './main.less';
+
+if (process.env.NODE_ENV !== 'development') {
+  require('@/public/dist/templates');
+}
 
 /*
  * Imports all the style files from the modules (*.less)
