@@ -20,8 +20,6 @@ const webpack = require('webpack');
 
 const { join } = require('path');
 
-// const config = require('../config');
-
 const basedir = join(__dirname, '../..');
 
 function localResolve(name) {
@@ -31,39 +29,11 @@ function localResolve(name) {
 module.exports = {
   module: {
     rules: [
-      // Make angular available to the templates
-      // {
-      //   test: localResolve('public/dist/uib-templates'),
-      //   loader: 'imports-loader?angular'
-      // },
-
       // Allow access to PruneClusterForLeaflet PruneCluster from outside the module
       {
         test: require.resolve('prunecluster/dist/PruneCluster'),
         loader: 'exports-loader?PruneClusterForLeaflet,PruneCluster'
       }
-      /* ,
-
-      // Ensure the "trustroots" angular module is defined before we define the "core" one
-      {
-        test: localResolve('modules/core/client/core.client.module'),
-        loader: `imports-loader?_=${localResolve('modules/core/client/app/init')}`
-      },
-
-      // Ensure the "core" angular module is defined before we define the templates
-      {
-        test: localResolve('public/dist/uib-templates'),
-        loader: `imports-loader?_=${localResolve('modules/core/client/core.client.module')}`
-      }
-
-      // Import all the existing dependencies (from assets/*)
-      {
-        test: require.resolve('./entries/main'),
-        use: config.files.webpack.js.map(filename => {
-          return `imports-loader?_=${localResolve(filename)}`;
-        })
-      }
-      */
     ]
   },
   plugins: [

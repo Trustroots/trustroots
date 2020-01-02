@@ -482,10 +482,6 @@ module.exports.initModulesClientRoutes = function (app) {
   // Setting the app router and static folder
   app.use('/', express.static(path.resolve('./public')));
   app.use('/', express.static(path.resolve('./public/assets')));
-
-  // if (process.env.NODE_ENV !== 'production') {
-  //   app.use('/node_modules', express.static(path.resolve('./node_modules'), { extensions: ['js', 'css'] }));
-  // }
 };
 
 /**
