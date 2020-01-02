@@ -9,12 +9,12 @@ import {
 import '@testing-library/jest-dom/extend-expect';
 
 import * as references from '@/modules/references/client/api/references.api';
+
+import CreateReference from '@/modules/references/client/components/CreateReference.component';
 const api = { references };
 
 jest.mock('@/modules/references/client/api/references.api');
 afterEach(() => jest.clearAllMocks());
-
-import CreateReference from '@/modules/references/client/components/CreateReference.component';
 
 async function waitForLoader() {
   await waitForElementToBeRemoved(() => screen.getByText('Wait a moment...'));
