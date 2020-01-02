@@ -39,7 +39,7 @@ export class ReadMorePanel extends Component {
       <div className="panel-more-wrap">
         <div
           className="panel-more-wrap"
-          dangerouslySetInnerHTML={{ __html: content }}
+          dangerouslySetInnerHTML={{ __html: content.substr(0, limit) }}
           id={id}
           onClick={this.toggleMore}
         />
