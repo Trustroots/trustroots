@@ -44,7 +44,11 @@ function runNodemon(done) {
     nodeArgs: ['--inspect=5858'],
     ext: 'js, html',
     ignore: nodemonIgnores,
-    watch: _.union(defaultAssets.server.allJS, defaultAssets.server.config)
+    watch: _.union(
+      defaultAssets.server.views,
+      defaultAssets.server.allJS,
+      defaultAssets.server.config
+    )
   })
     .on('crash', function () {
       console.error('[Server] Script crashed.');
