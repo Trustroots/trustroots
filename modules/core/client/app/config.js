@@ -45,10 +45,10 @@ if (process.env.NODE_ENV === 'test') {
 // Init module configuration options
 // When testing, `window.env` is undefined, thus default to 'test'
 // eslint-disable-next-line angular/window-service
-var appEnv = process.env.NODE_ENV || 'test';
+const appEnv = process.env.NODE_ENV || 'test';
 
-var appModuleName = 'trustroots';
-var appModuleVendorDependencies = [
+const appModuleName = 'trustroots';
+const appModuleVendorDependencies = [
   ngreact.name,
   ngAria,
   ngResource,
@@ -91,7 +91,7 @@ if (appEnv === 'production') {
 }
 
 // Add a new vertical module
-var registerModule = function (moduleName, dependencies) {
+const registerModule = function (moduleName, dependencies) {
   // Create angular module
   angular.module(moduleName, dependencies || []);
 
@@ -99,11 +99,9 @@ var registerModule = function (moduleName, dependencies) {
   angular.module(appModuleName).requires.push(moduleName);
 };
 
-const AppConfig = {
-  appEnv: appEnv,
-  appModuleName: appModuleName,
-  appModuleVendorDependencies: appModuleVendorDependencies,
-  registerModule: registerModule
+export default {
+  appEnv,
+  appModuleName,
+  appModuleVendorDependencies,
+  registerModule
 };
-
-export default AppConfig;
