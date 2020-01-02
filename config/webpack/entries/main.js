@@ -8,8 +8,26 @@
 import '@/public/dist/uib-templates';
 import angular from 'angular';
 
+
+/*
+ *  Main style import.
+ *  This includes the libraries, and any global overrides.
+ */
+import './main.less';
+
 if (process.env.NODE_ENV !== 'development') {
   require('@/public/dist/templates');
+}
+
+/*
+ * Imports all the style files from the modules (*.less)
+ *
+ * Uses a webpack require context
+ *  See https://webpack.js.org/guides/dependency-management/#require-context
+ */
+importAll(require.context('../../../modules/', true, /\.less$/));
+function importAll(r) {
+  r.keys().forEach(r);
 }
 
 /*

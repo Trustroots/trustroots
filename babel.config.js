@@ -1,3 +1,7 @@
+const compact = require('lodash/compact');
+
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 module.exports = {
   presets: [
     ['@babel/preset-env', {
@@ -7,8 +11,11 @@ module.exports = {
     }],
     ['@babel/preset-react']
   ],
-  plugins: [
+  plugins: compact([
+    '@babel/plugin-proposal-nullish-coalescing-operator',
     '@babel/plugin-proposal-object-rest-spread',
-    'angularjs-annotate'
-  ]
+    '@babel/plugin-proposal-optional-chaining',
+    'angularjs-annotate',
+    isDevelopment && 'react-refresh/babel'
+  ])
 };

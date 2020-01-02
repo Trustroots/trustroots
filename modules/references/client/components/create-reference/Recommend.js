@@ -17,8 +17,8 @@ const Recommend = withTranslation('reference')(function ({ t, primaryInteraction
 
   return (
     <div className="panel panel-default">
-      <div className="panel-heading" ng-switch="referenceNew.recommendationQuestion" id="recommendationQuestion">
-        <h4>{question}</h4>
+      <div className="panel-heading">
+        <h4 id="would-you-recommend-them-question">{question}</h4>
       </div>
       <div className="panel-body">
         <ToggleButtonGroup
@@ -26,7 +26,7 @@ const Recommend = withTranslation('reference')(function ({ t, primaryInteraction
           name="recommend"
           onChange={onChangeRecommend}
           value={recommend}
-          aria-labelledby="recommendationQuestion">
+          aria-labelledby="would-you-recommend-them-question">
           <ToggleButton
             className="btn btn-lg"
             aria-checked={recommend === 'yes'}

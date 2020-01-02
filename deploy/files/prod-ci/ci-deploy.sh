@@ -95,7 +95,7 @@ sudo npm install --cache /tmp/empty-cache
 # 2018-08-20
 #npm run postinstall
 
-npm run build:prod
+npm run build
 
 # Symlink config file
 echo ""
