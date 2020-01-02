@@ -6,8 +6,9 @@ import React, { Component } from 'react';
 
 // Internal dependencies
 import '@/config/client/i18n';
-import { limitTo, sanitizeHtml } from '../../../utils/filters';
 import OfferLocation from './OfferLocation.component';
+import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
+
 
 export class OffersPresentational extends Component {
   constructor(props) {
@@ -15,19 +16,12 @@ export class OffersPresentational extends Component {
     this.renderOffer = this.renderOffer.bind(this);
     this.renderButtonOwn = this.renderButtonOwn.bind(this);
     this.renderHostingYesMaybe = this.renderHostingYesMaybe.bind(this);
-    this.setOfferDescriptionToggle = this.setOfferDescriptionToggle.bind(this);
     this.state = {
-      offerDescriptionToggle: false,
       isLoading: true,
       isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp
     };
   }
 
-  /* Action Functions */
-  setOfferDescriptionToggle(toggleState) {
-    return () => {
-      this.setState(() => ({ offerDescriptionToggle: toggleState }));
-    };
   isHosting() {
     const { offer } = this.props;
     return offer && offer.hosting && (offer.hosting === 'yes' || offer.hosting === 'maybe');
@@ -97,7 +91,6 @@ export class OffersPresentational extends Component {
   }
 
   renderHostingYesMaybe() {
-    const { offerDescriptionToggle } = this.state;
     const { offer, isOwnOffer, t } = this.props;
     return (
       <>
@@ -111,34 +104,7 @@ export class OffersPresentational extends Component {
             <span className="icon-edit"></span>
           </a>
         }
-
-        {/* Short descriptions */}
-        {(offer.description && offer.description.length < 2000) &&
-          <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(offer.description) }}>
-          </div>
-        }
-
-        {/* Long descriptions */}
-        {offer.description && offer.description.length >= 2000 &&
-          <div>
-            {!offerDescriptionToggle &&
-              <div className="panel-more-wrap">
-                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(limitTo(offer.description, 2000)) }}
-                  className="panel-more-excerpt"
-                  onClick={this.setOfferDescriptionToggle(true)}>
-                </div>
-                <div className="panel-more-fade"
-                  onClick={this.setOfferDescriptionToggle(true)}>
-                  {t('Show more…')}
-                </div>
-              </div>
-            }
-            {this.state.offerDescriptionToggle &&
-              <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(offer.description) }}>
-              </div>
-            }
-          </div>
-        }
+        <ReadMorePanel content={offer.description} id="offer-yes-description" />
         {/* Number of guests */}
         <p className="offer-restrictions">
           { offer.maxGuests > 0
@@ -167,8 +133,7 @@ export class OffersPresentational extends Component {
 
         {/* User has written explanation */}
         {offer.noOfferDescription &&
-        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(offer.noOfferDescription) }}>
-        </div>
+          <ReadMorePanel content={offer.noOfferDescription} id="offer-no-description" />
         }
         {/* Default "sorry nope" */}
         {!offer.noOfferDescription && (
