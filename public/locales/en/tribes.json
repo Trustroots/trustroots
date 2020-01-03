@@ -1,5 +1,5 @@
 {
   "No members yet": "No members yet",
-  "{{count}} members": "One member",
-  "{{count}} members_plural": "{{count}} members"
+  "{{count, number}} members": "One member",
+  "{{count, number}} members_plural": "{{count, number}} members"
 }

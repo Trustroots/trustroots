@@ -15,7 +15,7 @@ export default function TribeItem({ tribe, user, onMembershipUpdated }) {
 
   const countInfo = (tribe.count === 0)
     ? t('No members yet')
-    : t('{{count}} members', { count: tribe.count });
+    : t('{{count, number}} members', { count: tribe.count });
 
   return <div
     className="panel tribe tribe-image"
