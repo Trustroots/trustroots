@@ -20,11 +20,6 @@ export class ReadMorePanel extends Component {
     this.setState({ showMore: true });
   }
 
-  componentDidCatch(error, errorInfo) {
-    // You can also log the error to an error reporting service
-    console.error(error, errorInfo); //eslint-disable-line
-  }
-
   render() {
     const { showMore } = this.state;
     const { content, id } = this.props;
