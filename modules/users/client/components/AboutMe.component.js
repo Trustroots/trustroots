@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
 import '@/config/client/i18n';
 import PropTypes from 'prop-types';
-import { limitTo, plainTextLength } from './utils/filters';
+import { limitTo, plainTextLength } from '@/modules/core/client/utils/filters';
 
 export class AboutMe extends Component {
   constructor(props) {
