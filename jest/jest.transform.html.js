@@ -2,7 +2,7 @@
  * This is a bit of a hack, using webpack loaders to transform templates in jest.
  */
 
-const templateLoader = require('./config/webpack/templateloader');
+const templateLoader = require('../config/webpack/templateloader');
 const htmlLoader = require('html-loader');
 
 module.exports = {

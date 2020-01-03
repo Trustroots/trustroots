@@ -34,12 +34,7 @@ import 'angular-chosen-localytics/dist/angular-chosen.js';
 
 import ngreact from 'ngreact';
 
-// @TODO can I import it properly in tests? seems tricky as it expects this.angular to exist
-if (process.env.NODE_ENV === 'test') {
-  angular.module('zumba.angular-waypoints', []);
-} else {
-  require('angular-waypoints/dist/angular-waypoints.all');
-}
+import 'angular-waypoints/dist/angular-waypoints.all';
 
 // Init the application configuration module for AngularJS application
 // Init module configuration options
