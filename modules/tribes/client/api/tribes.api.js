@@ -11,6 +11,6 @@ export async function leave(tribeId) {
 }
 
 export async function read() {
-  const { data } = await axios.get(`/api/tribes?limit=50`);
+  const { data } = await axios.get('/api/tribes?limit=50');
   return data;
 }
