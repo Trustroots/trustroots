@@ -15,15 +15,16 @@ const Item = styled.li`
   display: inline-block;
   vertical-align: bottom;
 
-  @media (min-width: 0) {
-    width: 100%;
-  }
+  // on small screens there is just one column of tribes
+  width: 100%;
 
   @media (min-width: 616px) {
+    // two columns of tribes
     width: 50%;
   }
 
   @media (min-width: 992px) {
+    // three columns of tribes
     width: 33.3333%;
   }
 `;

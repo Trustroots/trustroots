@@ -59,9 +59,7 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
 
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // This should always be true or false, even when user is null.
-  // Therefore we convert the output to boolean.
-  const isMemberInitial = Boolean(user && user.memberIds && user.memberIds.indexOf(tribe._id) > -1);
+  const isMemberInitial = (user?.memberIds || []).includes(tribe._id);
   const [isMember, setIsMember] = useState(isMemberInitial);
 
   /**
