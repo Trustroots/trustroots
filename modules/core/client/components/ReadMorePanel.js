@@ -1,8 +1,10 @@
 // External dependencies
+import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 
 // Internal dependencies
+import '@/config/client/i18n';
 import { plainText, plainTextLength } from '../utils/filters';
 
 const LIMIT = 2000;
@@ -22,7 +24,7 @@ export class ReadMorePanel extends Component {
 
   render() {
     const { showMore } = this.state;
-    const { content, id } = this.props;
+    const { content, id, t } = this.props;
 
     if (content.length === 0) {
       return;
@@ -47,8 +49,7 @@ export class ReadMorePanel extends Component {
           onClick={this.toggleMore}
           type="button"
         >
-          {/* TODO: translate */}
-          Read more…
+          {t('Read more…')}
         </div>
       </div>
     );
@@ -57,7 +58,8 @@ export class ReadMorePanel extends Component {
 
 ReadMorePanel.propTypes = {
   content: PropTypes.string.isRequired,
-  id: PropTypes.string.isRequired
+  id: PropTypes.string.isRequired,
+  t: PropTypes.func.isRequired
 };
 
-export default ReadMorePanel;
+export default withTranslation('core')(ReadMorePanel);
