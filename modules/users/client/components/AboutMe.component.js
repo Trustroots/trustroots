@@ -20,7 +20,6 @@ function AboutMe({ t, profile, isSelf, profileMinimumLength }) {
             <ReadMorePanel
               content={profile.description}
               id="profile-description"
-              limit={2400}
             />
           )}
 

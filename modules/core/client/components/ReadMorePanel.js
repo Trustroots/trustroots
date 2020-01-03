@@ -5,6 +5,8 @@ import React, { Component } from 'react';
 // Internal dependencies
 import { plainText, plainTextLength } from '../utils/filters';
 
+const LIMIT = 2000;
+
 export class ReadMorePanel extends Component {
   constructor(props) {
     super(props);
@@ -25,13 +27,13 @@ export class ReadMorePanel extends Component {
 
   render() {
     const { showMore } = this.state;
-    const { content, id, limit } = this.props;
+    const { content, id } = this.props;
 
     if (content.length === 0) {
       return;
     }
 
-    if (showMore || plainTextLength(content) <= limit) {
+    if (showMore || plainTextLength(content) <= LIMIT) {
       return <div dangerouslySetInnerHTML={{ __html: content }} />;
     }
 
@@ -39,7 +41,7 @@ export class ReadMorePanel extends Component {
       <div className="panel-more-wrap">
         <div
           className="panel-more-wrap"
-          dangerouslySetInnerHTML={{ __html: plainText(content).substr(0, limit) }}
+          dangerouslySetInnerHTML={{ __html: `${plainText(content).substr(0, LIMIT)} …` }}
           id={id}
           onClick={this.toggleMore}
         />
@@ -58,14 +60,9 @@ export class ReadMorePanel extends Component {
   }
 }
 
-ReadMorePanel.defaultProps = {
-  limit: 2000
-};
-
 ReadMorePanel.propTypes = {
   content: PropTypes.string.isRequired,
-  id: PropTypes.string.isRequired,
-  limit: PropTypes.number
+  id: PropTypes.string.isRequired
 };
 
 export default ReadMorePanel;
