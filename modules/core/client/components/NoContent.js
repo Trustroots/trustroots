@@ -12,5 +12,5 @@ export default function NoContent({ icon, message }) {
 
 NoContent.propTypes = {
   icon: PropTypes.string,
-  message: PropTypes.string.isRequired
+  message: PropTypes.string.isRequired,
 };

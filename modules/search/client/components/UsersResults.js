@@ -26,5 +26,5 @@ export default function UsersResults({ users }) {
 }
 
 UsersResults.propTypes = {
-  users: PropTypes.array
+  users: PropTypes.array,
 };

@@ -29,5 +29,5 @@ export default function UsersList({ users }) {
 }
 
 UsersList.propTypes = {
-  users: PropTypes.array.isRequired
+  users: PropTypes.array.isRequired,
 };
