@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import ContactListPresentational from './ContactListPresentational';
+import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import NoContent from '@/modules/core/client/components/NoContent';
 
 export default class ContactList extends React.Component {
@@ -23,8 +24,9 @@ export default class ContactList extends React.Component {
 
     const { appUser, contacts, onContactRemoved } = this.props;
 
-    // @TODO replace with a reusable Loading info
-    if (!contacts || !contacts.$resolved) return <div>Wait a moment...</div>;
+    if (!contacts || !contacts.$resolved) {
+      return <LoadingIndicator />;
+    }
 
     if (contacts.length === 0) {
       return (
