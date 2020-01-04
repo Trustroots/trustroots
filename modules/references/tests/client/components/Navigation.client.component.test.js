@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   render,
-  fireEvent
+  fireEvent,
 } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
@@ -15,7 +15,7 @@ describe('Navigation through 3 tabs', () => {
   const handlers = {
     onBack: f,
     onNext: f,
-    onSubmit: f
+    onSubmit: f,
   };
 
   /**
@@ -24,7 +24,7 @@ describe('Navigation through 3 tabs', () => {
   [
     { tab: 0, tabs: 3, buttons: ['Next'] },
     { tab: 1, tabs: 3, buttons: ['Back', 'Next'] },
-    { tab: 2, tabs: 3, buttons: ['Back', 'Submit'] }
+    { tab: 2, tabs: 3, buttons: ['Back', 'Submit'] },
   ].forEach(({ tab, tabs, buttons }) => {
     it(`when tab=${tab} and tabs=${3} there is only ${buttons.join(' and ')} button`, () => {
       const { getAllByRole } = render(<Navigation
@@ -48,7 +48,7 @@ describe('Navigation through 3 tabs', () => {
     { tab: 1, tabs: 3, tabDone: 0, buttons: [{ name: 'Back', disabled: false }, { name: 'Next', disabled: true }] },
     { tab: 1, tabs: 3, tabDone: 1, buttons: [{ name: 'Back', disabled: false }, { name: 'Next', disabled: false }] },
     { tab: 2, tabs: 3, tabDone: 1, buttons: [{ name: 'Back', disabled: false }, { name: 'Submit', disabled: true }] },
-    { tab: 2, tabs: 3, tabDone: 2, buttons: [{ name: 'Back', disabled: false }, { name: 'Submit', disabled: false }] }
+    { tab: 2, tabs: 3, tabDone: 2, buttons: [{ name: 'Back', disabled: false }, { name: 'Submit', disabled: false }] },
   ].forEach(({ tab, tabs, tabDone, buttons }) => {
 
     const expectations = buttons.map(({ name, disabled }) => `the ${name} button should be ${(disabled) ? 'disabled' : 'enabled'}`);
@@ -80,7 +80,7 @@ describe('Navigation through 3 tabs', () => {
   [
     { tab: 1, tabDone: 0, tabs: 3, button: 'Back', buttonIndex: 0, testTrigger: 'onBack' },
     { tab: 1, tabDone: 1, tabs: 3, button: 'Next', buttonIndex: 1, testTrigger: 'onNext' },
-    { tab: 2, tabDone: 2, tabs: 3, button: 'Submit', buttonIndex: 1, testTrigger: 'onSubmit' }
+    { tab: 2, tabDone: 2, tabs: 3, button: 'Submit', buttonIndex: 1, testTrigger: 'onSubmit' },
   ].forEach(({ tab, tabs, tabDone, button, buttonIndex, testTrigger }) => {
     it(`when ${button} button is clicked, the ${testTrigger} should be triggered`, () => {
       const handler = jest.fn();

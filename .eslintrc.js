@@ -4,7 +4,7 @@ const semver = require('semver');
 const reactVersion = semver.coerce(require('./package.json').dependencies.react).version;
 
 const defaultRules = {
-  'comma-dangle': [2, 'never'],
+  'comma-dangle': [2, 'always-multiline'],
   'comma-spacing': [2, { before: false, after: true }],
   curly: [2, 'multi-line'],
   eqeqeq: [2, 'smart'],

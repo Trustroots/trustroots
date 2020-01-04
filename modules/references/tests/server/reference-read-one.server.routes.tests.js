@@ -53,7 +53,7 @@ describe('Read a single reference by reference id', () => {
   const referenceData = [
     [0, 1], [0, 2, { public: false }],
     [1, 0, { public: false }], [1, 2],
-    [2, 0], [2, 1, { public: false }]
+    [2, 0], [2, 1, { public: false }],
   ];
 
   beforeEach(async () => {
@@ -89,9 +89,9 @@ describe('Read a single reference by reference id', () => {
         interactions: {
           met: references[3].interactions.met,
           hostedMe: references[3].interactions.hostedMe,
-          hostedThem: references[3].interactions.hostedThem
+          hostedThem: references[3].interactions.hostedThem,
         },
-        recommend: references[3].recommend
+        recommend: references[3].recommend,
       });
     });
 
@@ -102,7 +102,7 @@ describe('Read a single reference by reference id', () => {
 
       should(body).match({
         public: false,
-        _id: references[1]._id.toString()
+        _id: references[1]._id.toString(),
       });
     });
 
@@ -114,7 +114,7 @@ describe('Read a single reference by reference id', () => {
       should(body).match({
         public: false,
         _id: references[2]._id.toString(),
-        created: new Date().toISOString()
+        created: new Date().toISOString(),
       });
 
       should(body).have.only.keys('userFrom', 'userTo', '_id', 'public', 'created');
@@ -128,8 +128,8 @@ describe('Read a single reference by reference id', () => {
       should(body).eql({
         message: 'Not found.',
         details: {
-          reference: 'not found'
-        }
+          reference: 'not found',
+        },
       });
     });
 
@@ -141,8 +141,8 @@ describe('Read a single reference by reference id', () => {
       should(body).eql({
         message: 'Not found.',
         details: {
-          reference: 'not found'
-        }
+          reference: 'not found',
+        },
       });
     });
 
@@ -154,8 +154,8 @@ describe('Read a single reference by reference id', () => {
       should(body).eql({
         message: 'Bad request.',
         details: {
-          referenceId: 'invalid'
-        }
+          referenceId: 'invalid',
+        },
       });
     });
   });

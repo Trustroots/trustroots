@@ -35,7 +35,7 @@
       function (errorResponse) {
         vm.isWrongCode = true;
         vm.error = errorResponse.status === 404 ? 'Could not find contact request. Check the confirmation link from email or you might be logged in with wrong user?' : 'Something went wrong. Try again.';
-      }
+      },
     );
 
     function confirmContact() {

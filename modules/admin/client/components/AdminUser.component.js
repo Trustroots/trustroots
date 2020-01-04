@@ -41,7 +41,7 @@ export default class AdminUser extends Component {
     window.history.pushState(
       { id },
       window.document.title,
-      url.toString()
+      url.toString(),
     );
   }
 

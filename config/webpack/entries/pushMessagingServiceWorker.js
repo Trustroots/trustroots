@@ -13,7 +13,7 @@ import firebase from 'firebase/app';
 import 'firebase/messaging';
 
 firebase.initializeApp({
-  'messagingSenderId': FCM_SENDER_ID
+  'messagingSenderId': FCM_SENDER_ID,
 });
 
 const messaging = firebase.messaging();

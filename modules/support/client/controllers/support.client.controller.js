@@ -16,7 +16,7 @@
     vm.request = {
       username: '',
       email: '',
-      message: ''
+      message: '',
     };
 
     activate();

@@ -21,5 +21,5 @@ export default function ReportMemberLink({ username }) {
 }
 
 ReportMemberLink.propTypes = {
-  username: PropTypes.string.isRequired
+  username: PropTypes.string.isRequired,
 };

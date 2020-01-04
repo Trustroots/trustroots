@@ -40,7 +40,7 @@ describe('Message CRUD tests', function () {
     // Create userFrom credentials
     credentials = {
       username: 'username1',
-      password: 'password123'
+      password: 'password123',
     };
 
     // Create a new user
@@ -53,7 +53,7 @@ describe('Message CRUD tests', function () {
       password: credentials.password,
       provider: 'local',
       description: _.repeat('.', config.profileMinimumLength),
-      public: true
+      public: true,
     });
 
     userTo = new User({
@@ -65,7 +65,7 @@ describe('Message CRUD tests', function () {
       password: 'password123',
       provider: 'local',
       description: _.repeat('.', config.profileMinimumLength),
-      public: true
+      public: true,
     });
 
     // Save users to the test db and create new message
@@ -78,7 +78,7 @@ describe('Message CRUD tests', function () {
         // Create message
         message = {
           content: 'Message content',
-          userTo: userToId
+          userTo: userToId,
         };
         return done();
       });
@@ -402,7 +402,7 @@ describe('Message CRUD tests', function () {
                 }
               });
 
-          }
+          },
         );
 
       });
@@ -569,7 +569,7 @@ describe('Message CRUD tests', function () {
       userTo: userFromId,
       created: new Date(),
       read: true,
-      notified: true
+      notified: true,
     });
 
     newMessage.save(function (newMessageErr, newMessageRes) {
@@ -582,7 +582,7 @@ describe('Message CRUD tests', function () {
         userTo: userFromId,
         updated: new Date(),
         message: newMessageRes._id,
-        read: true
+        read: true,
       });
 
       newThread.save(function (newThreadErr) {
@@ -674,7 +674,7 @@ describe('Message CRUD tests', function () {
       userTo: userFromId,
       created: new Date(),
       read: false,
-      notified: true
+      notified: true,
     });
     const newMessage2 = new Message({
       content: 'Another one!',
@@ -682,7 +682,7 @@ describe('Message CRUD tests', function () {
       userTo: userFromId,
       created: new Date(),
       read: false,
-      notified: true
+      notified: true,
     });
 
     newMessage1.save(function (newMessage1Err) {
@@ -700,7 +700,7 @@ describe('Message CRUD tests', function () {
           userTo: userFromId,
           updated: new Date(),
           message: newMessage2Res._id,
-          read: false
+          read: false,
         });
 
         newThread.save(function (newThreadErr) {
@@ -756,7 +756,7 @@ describe('Message CRUD tests', function () {
       userTo: userToId,
       created: moment('2016-06-06 19:00:00.174Z').toDate(),
       read: false,
-      notified: true
+      notified: true,
     });
     const newMessage2 = new Message({
       content: 'Two',
@@ -764,7 +764,7 @@ describe('Message CRUD tests', function () {
       userTo: userToId,
       created: moment('2016-06-06 19:00:00.174Z').add(30, 'minutes').toDate(),
       read: false,
-      notified: true
+      notified: true,
     });
 
     newMessage1.save(function (newMessage1Err) {
@@ -782,7 +782,7 @@ describe('Message CRUD tests', function () {
           userTo: userToId,
           updated: moment('2016-06-06 19:00:00.174Z').add(30, 'minutes').toDate(),
           message: newMessage2Res._id,
-          read: false
+          read: false,
         });
 
         newThread.save(function (newThreadErr) {
@@ -859,7 +859,7 @@ describe('Message CRUD tests', function () {
       userTo: userFromId,
       created: moment('2016-06-06 19:00:00.174Z').toDate(),
       read: false,
-      notified: true
+      notified: true,
     });
     const newMessage2 = new Message({
       content: 'Two',
@@ -867,7 +867,7 @@ describe('Message CRUD tests', function () {
       userTo: userFromId,
       created: moment('2016-06-06 19:00:00.174Z').add(30, 'minutes').toDate(),
       read: false,
-      notified: true
+      notified: true,
     });
 
     newMessage1.save(function (newMessage1Err) {
@@ -885,7 +885,7 @@ describe('Message CRUD tests', function () {
           userTo: userFromId,
           updated: new Date(),
           message: newMessage2Res._id,
-          read: false
+          read: false,
         });
 
         newThread.save(function (newThreadErr) {

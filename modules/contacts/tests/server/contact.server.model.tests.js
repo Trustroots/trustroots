@@ -29,7 +29,7 @@ describe('Contact Model Unit Tests:', function () {
       email: 'test1@test.com',
       username: 'username1',
       password: 'password123!',
-      provider: 'local'
+      provider: 'local',
     });
 
     user2 = new User({
@@ -39,7 +39,7 @@ describe('Contact Model Unit Tests:', function () {
       email: 'test2@test.com',
       username: 'username2',
       password: 'password123!',
-      provider: 'local'
+      provider: 'local',
     });
 
     // Create users
@@ -56,7 +56,7 @@ describe('Contact Model Unit Tests:', function () {
           userFrom: user1Id,
           userTo: user2Id,
           created: new Date(),
-          confirmed: true
+          confirmed: true,
         });
 
         done();

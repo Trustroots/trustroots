@@ -5,7 +5,7 @@ const serviceAccount = config.fcm.serviceAccount;
 
 if (serviceAccount) {
   firebase.initializeApp({
-    credential: firebase.credential.cert(serviceAccount)
+    credential: firebase.credential.cert(serviceAccount),
   });
   module.exports = firebase.messaging();
 } else {

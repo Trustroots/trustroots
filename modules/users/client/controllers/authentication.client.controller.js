@@ -41,7 +41,7 @@
 
             $analytics.eventTrack('login.success', {
               category: 'authentication',
-              label: 'Login success'
+              label: 'Login success',
             });
 
             // Initialize FB SDK
@@ -74,9 +74,9 @@
             messageCenterService.add('danger', error.data.message || 'Something went wrong.');
             $analytics.eventTrack('login.failed', {
               category: 'authentication',
-              label: 'Login failed'
+              label: 'Login failed',
             });
-          }
+          },
         );
     }
 

@@ -18,14 +18,14 @@ export default class AdminMessages extends Component {
     this.state = {
       messages: [],
       user1: '',
-      user2: ''
+      user2: '',
     };
   }
 
   onUserChange(event) {
     const { name, value } = event.target;
     this.setState({
-      [name]: value
+      [name]: value,
     });
   }
 

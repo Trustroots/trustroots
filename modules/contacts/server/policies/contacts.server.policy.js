@@ -16,38 +16,38 @@ exports.invokeRolesPolicies = function () {
     roles: ['admin'],
     allows: [{
       resources: '/api/contact',
-      permissions: []
+      permissions: [],
     }, {
       resources: '/api/contact-by/:contactUserId',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/contact/:contactId',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/contacts/:listUserId',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/contacts/:listUserId/common',
-      permissions: ['get']
-    }]
+      permissions: ['get'],
+    }],
   }, {
     roles: ['user'],
     allows: [{
       resources: '/api/contact',
-      permissions: ['post']
+      permissions: ['post'],
     }, {
       resources: '/api/contact-by/:contactUserId',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/contact/:contactId',
-      permissions: ['get', 'put']
+      permissions: ['get', 'put'],
     }, {
       resources: '/api/contacts/:listUserId',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/contacts/:listUserId/common',
-      permissions: ['get']
-    }]
+      permissions: ['get'],
+    }],
   }]);
 };
 
@@ -60,7 +60,7 @@ exports.isAllowed = function (req, res, next) {
   // No contacts for un-published users
   if (req.user && req.user.public !== true) {
     return res.status(403).json({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -82,7 +82,7 @@ exports.isAllowed = function (req, res, next) {
     if (err) {
       // An authorization error occurred.
       return res.status(500).json({
-        message: 'Unexpected authorization error'
+        message: 'Unexpected authorization error',
       });
     } else {
       if (isAllowed) {
@@ -90,7 +90,7 @@ exports.isAllowed = function (req, res, next) {
         return next();
       } else {
         return res.status(403).json({
-          message: errorService.getErrorMessageByKey('forbidden')
+          message: errorService.getErrorMessageByKey('forbidden'),
         });
       }
     }

@@ -27,7 +27,7 @@ describe('Offer Model Unit Tests:', function () {
       email: 'test1@test.com',
       username: 'username1',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
 
     // Save user and hosting offer
@@ -43,7 +43,7 @@ describe('Offer Model Unit Tests:', function () {
         maxGuests: 1,
         updated: new Date(),
         location: [52.498981209298776, 13.418329954147339],
-        locationFuzzy: [52.50155039101136, 13.42255019882177]
+        locationFuzzy: [52.50155039101136, 13.42255019882177],
       });
 
       offerMeet = new Offer({
@@ -53,7 +53,7 @@ describe('Offer Model Unit Tests:', function () {
         updated: new Date(),
         validUntil: new Date(),
         location: [52.498981209298776, 13.418329954147339],
-        locationFuzzy: [52.50155039101136, 13.42255019882177]
+        locationFuzzy: [52.50155039101136, 13.42255019882177],
       });
 
       return done();

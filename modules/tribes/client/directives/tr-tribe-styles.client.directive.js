@@ -41,7 +41,7 @@
               'progressive/' + progressive,
               'scale_crop/' + dimensions + '/center',
               'quality/' + quality,
-              'format/jpeg'
+              'format/jpeg',
             ];
 
             style += 'background-image: url(https://ucarecdn.com/' + tribe.image_UUID + '/-/' + img_params.join('/-/') + '/);';
@@ -56,7 +56,7 @@
           }
         }
 
-      }
+      },
     };
   }
 }());

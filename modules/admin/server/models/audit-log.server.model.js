@@ -12,7 +12,7 @@ const AuditLogSchema = new Schema({
   body: { type: Object },
   date: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   ip: { type: String },
   params: { type: Object },
@@ -20,8 +20,8 @@ const AuditLogSchema = new Schema({
   route: { type: String },
   user: {
     type: Schema.ObjectId,
-    ref: 'User'
-  }
+    ref: 'User',
+  },
 });
 
 mongoose.model('AuditLog', AuditLogSchema);

@@ -18,67 +18,67 @@ exports.start = function (options, callback) {
     agenda.define(
       'send email',
       { priority: 'high', concurrency: 10 },
-      require(path.resolve('./modules/core/server/jobs/send-email.server.job'))
+      require(path.resolve('./modules/core/server/jobs/send-email.server.job')),
     );
 
     agenda.define(
       'send facebook notification',
       { priority: 'high', concurrency: 10 },
-      require(path.resolve('./modules/core/server/jobs/send-facebook-notification.server.job'))
+      require(path.resolve('./modules/core/server/jobs/send-facebook-notification.server.job')),
     );
 
     agenda.define(
       'send push message',
       { priority: 'high', concurrency: 10 },
-      require(path.resolve('./modules/core/server/jobs/send-push-message.server.job'))
+      require(path.resolve('./modules/core/server/jobs/send-push-message.server.job')),
     );
 
     agenda.define(
       'check unread messages',
       { lockLifetime: 10000 },
-      require(path.resolve('./modules/messages/server/jobs/message-unread.server.job'))
+      require(path.resolve('./modules/messages/server/jobs/message-unread.server.job')),
     );
 
     agenda.define(
       'daily statistics',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve('./modules/statistics/server/jobs/daily-statistics.server.job'))
+      require(path.resolve('./modules/statistics/server/jobs/daily-statistics.server.job')),
     );
 
     agenda.define(
       'send signup reminders',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve('./modules/users/server/jobs/user-finish-signup.server.job'))
+      require(path.resolve('./modules/users/server/jobs/user-finish-signup.server.job')),
     );
 
     agenda.define(
       'reactivate hosts',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve('./modules/offers/server/jobs/reactivate-hosts.server.job'))
+      require(path.resolve('./modules/offers/server/jobs/reactivate-hosts.server.job')),
     );
 
     agenda.define(
       'welcome sequence first',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-first.server.job'))
+      require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-first.server.job')),
     );
 
     agenda.define(
       'welcome sequence second',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-second.server.job'))
+      require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-second.server.job')),
     );
 
     agenda.define(
       'welcome sequence third',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-third.server.job'))
+      require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-third.server.job')),
     );
 
     agenda.define(
       'publish old unpublished references',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve('./modules/references/server/jobs/references-publish.server.job'))
+      require(path.resolve('./modules/references/server/jobs/references-publish.server.job')),
     );
 
     // Schedule job(s)
@@ -111,13 +111,13 @@ exports.start = function (options, callback) {
       const statsObject = {
         namespace: 'agendaJob',
         counts: {
-          count: 1
+          count: 1,
         },
         tags: {
           name: job.attrs.name,
           status: 'success',
-          failCount: job.attrs.failCount || 0
-        }
+          failCount: job.attrs.failCount || 0,
+        },
       };
 
       // Send job failure to stats servers
@@ -153,13 +153,13 @@ exports.start = function (options, callback) {
     const statsObject = {
       namespace: 'agendaJob',
       counts: {
-        count: 1
+        count: 1,
       },
       tags: {
         name: job.attrs.name,
         status: 'failed',
-        failCount: job.attrs.failCount || 0
-      }
+        failCount: job.attrs.failCount || 0,
+      },
     };
 
     // Send job failure to stats servers
@@ -202,22 +202,22 @@ exports.unlockAgendaJobs = function (callback) {
 
     agendaJobs.update({
       lockedAt: {
-        $exists: true
+        $exists: true,
       },
       lastFinishedAt: {
-        $exists: false
-      }
+        $exists: false,
+      },
     }, {
       $unset: {
         lockedAt: undefined,
         lastModifiedBy: undefined,
-        lastRunAt: undefined
+        lastRunAt: undefined,
       },
       $set: {
-        nextRunAt: new Date()
-      }
+        nextRunAt: new Date(),
+      },
     }, {
-      multi: true
+      multi: true,
     }, function (err, numUnlocked) {
       if (err) {
         console.error(err);

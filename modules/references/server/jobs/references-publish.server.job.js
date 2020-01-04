@@ -12,6 +12,6 @@ const Reference = mongoose.model('Reference');
 module.exports = function (job, agendaDone) {
   Reference.updateMany({
     created: { $lt: moment().subtract(config.limits.timeToReplyReference) },
-    public: false
+    public: false,
   }, { public: true }).exec(agendaDone);
 };

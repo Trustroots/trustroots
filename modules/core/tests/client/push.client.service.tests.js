@@ -24,7 +24,7 @@
       locker = _locker_;
       firebaseMessaging = _firebaseMessaging_;
       Authentication.user = {
-        pushRegistration: []
+        pushRegistration: [],
       };
       notifications.length = 0;
       firebaseMessaging.shouldInitialize = false;
@@ -53,8 +53,8 @@
         { token: token, platform: 'web' })
         .respond(200, {
           user: {
-            pushRegistration: [{ token: token, platform: 'web', created: Date.now() }]
-          }
+            pushRegistration: [{ token: token, platform: 'web', created: Date.now() }],
+          },
         });
 
       push.enable();
@@ -80,9 +80,9 @@
             pushRegistration: [{
               token: token,
               platform: 'web',
-              created: Date.now()
-            }]
-          }
+              created: Date.now(),
+            }],
+          },
         });
 
       // if we turn it on...
@@ -114,7 +114,7 @@
       firebase.token = token;
       firebase.permissionGranted = true;
       Authentication.user.pushRegistration.push({
-        token: token, platform: 'web'
+        token: token, platform: 'web',
       });
 
       expect(push.isEnabled).toBe(false);
@@ -134,8 +134,8 @@
       $httpBackend.expect('DELETE', '/api/users/push/registrations/' + token)
         .respond(200, {
           user: {
-            pushRegistration: []
-          }
+            pushRegistration: [],
+          },
         });
 
       push.disable();
@@ -158,7 +158,7 @@
       firebase.token = token;
       firebase.permissionGranted = true;
       Authentication.user.pushRegistration.push({
-        token: token, platform: 'web'
+        token: token, platform: 'web',
       });
       push.enable();
       $rootScope.$apply();
@@ -172,8 +172,8 @@
       firebase.triggerOnMessage({
         notification: {
           title: 'foo',
-          body: 'yay'
-        }
+          body: 'yay',
+        },
       });
       expect(notifications.length).toBe(1);
       expect(notifications[0].title).toBe('foo');
@@ -204,7 +204,7 @@
         onTokenRefreshCallbacks.forEach(function (fn) {
           fn.apply(null, args);
         });
-      }
+      },
 
     };
 
@@ -251,7 +251,7 @@
         },
         removeServiceWorker: function () {
           firebase.removeServiceWorkerCalled++;
-        }
+        },
       };
     }
 

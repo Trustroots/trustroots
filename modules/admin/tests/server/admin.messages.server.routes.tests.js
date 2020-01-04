@@ -34,13 +34,13 @@ describe('Admin Message CRUD tests', () => {
       // Create admin credentials
       credentialsAdmin = {
         username: 'user-admin',
-        password: 'Password123!'
+        password: 'Password123!',
       };
 
       // Create regular user credentials
       credentialsRegular = {
         username: 'user-regular1',
-        password: 'Password123!'
+        password: 'Password123!',
       };
 
       // Create a new admin user
@@ -53,7 +53,7 @@ describe('Admin Message CRUD tests', () => {
         provider: 'local',
         public: true,
         roles: ['user', 'admin'],
-        ...credentialsAdmin
+        ...credentialsAdmin,
       });
 
       await userAdmin.save();
@@ -68,7 +68,7 @@ describe('Admin Message CRUD tests', () => {
         provider: 'local',
         public: true,
         roles: ['user'],
-        ...credentialsRegular
+        ...credentialsRegular,
       });
 
       // Create a new regular user
@@ -82,7 +82,7 @@ describe('Admin Message CRUD tests', () => {
         public: true,
         roles: ['user'],
         username: 'user-regular2',
-        password: 'Password123!'
+        password: 'Password123!',
       });
 
       const { _id: _userRegular1Id } = await userRegular1.save();
@@ -94,14 +94,14 @@ describe('Admin Message CRUD tests', () => {
         content: 'test',
         notificationCount: 0,
         userFrom: userRegular1Id,
-        userTo: userRegular2Id
+        userTo: userRegular2Id,
       });
 
       const message2 = new Message({
         content: 'test',
         notificationCount: 0,
         userFrom: userRegular2Id,
-        userTo: userRegular1Id
+        userTo: userRegular1Id,
       });
 
       await message1.save();

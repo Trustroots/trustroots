@@ -40,7 +40,7 @@ function generateUsers(count, { username='username', firstName='GivenName', last
     username: username + i,
     locale,
     roles,
-    password: password || crypto.randomBytes(24).toString('base64')
+    password: password || crypto.randomBytes(24).toString('base64'),
   }));
 }
 
@@ -61,9 +61,9 @@ function generateReferences(users, referenceData) {
       interactions: {
         met: !getRandInt(2),
         hostedMe: !getRandInt(2),
-        hostedThem: !getRandInt(2)
+        hostedThem: !getRandInt(2),
       },
-      recommend: ['yes', 'no', 'unknown'][getRandInt(3)]
+      recommend: ['yes', 'no', 'unknown'][getRandInt(3)],
     };
 
     return _.defaultsDeep({}, data[2], defaultReference);
@@ -145,7 +145,7 @@ async function clearDatabaseCollections(collections) {
  */
 const collections = [
   'User',
-  'Reference'
+  'Reference',
 ];
 
 /**
@@ -190,5 +190,5 @@ module.exports = {
   saveReferences,
   clearDatabase,
   signIn,
-  signOut
+  signOut,
 };

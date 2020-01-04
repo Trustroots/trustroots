@@ -19,7 +19,7 @@
       restrict: 'A',
       require: 'ngModel',
       scope: {
-        comparisonValue: '=trConfirmPassword'
+        comparisonValue: '=trConfirmPassword',
       },
       link: function (scope, element, attributes, ngModel) {
 
@@ -30,7 +30,7 @@
         scope.$watch('comparisonValue', function () {
           ngModel.$validate();
         });
-      }
+      },
     };
   }
 }());

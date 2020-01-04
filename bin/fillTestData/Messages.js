@@ -20,11 +20,11 @@ const argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
     return yargs
       .positional('numberOfThreads', {
         describe: 'Number of threads to add',
-        type: 'number'
+        type: 'number',
       })
       .positional('maxMessages', {
         describe: 'Maximum number of messages per thread to add',
-        type: 'number'
+        type: 'number',
       })
       .boolean('debug')
       .boolean('limit')

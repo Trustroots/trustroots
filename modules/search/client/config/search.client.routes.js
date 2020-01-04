@@ -11,7 +11,7 @@
         url: '/search?' + [
           'location',
           'offer',
-          'tribe'
+          'tribe',
         ].join('?'),
         templateUrl: '/modules/search/views/search.client.view.html',
         abstract: true,
@@ -26,7 +26,7 @@
           offer: function ($stateParams, OffersService) {
             if ($stateParams.offer && $stateParams.offer.length === 24) {
               return OffersService.get({
-                offerId: $stateParams.offer
+                offerId: $stateParams.offer,
               });
             } else {
               return false;
@@ -38,35 +38,35 @@
           tribe: function (TribeService, $stateParams) {
             if ($stateParams.tribe && $stateParams.tribe.length) {
               return TribeService.get({
-                tribeSlug: $stateParams.tribe
+                tribeSlug: $stateParams.tribe,
               });
             } else {
               return false;
             }
-          }
+          },
 
         },
         data: {
-          pageTitle: 'Search'
-        }
+          pageTitle: 'Search',
+        },
       }).
       state('search.map', {
         url: '',
         requiresAuth: true,
         footerHidden: true,
         data: {
-          pageTitle: 'Search'
+          pageTitle: 'Search',
         },
         views: {
           'map': {
             templateUrl: '/modules/search/views/search-map.client.view.html',
             controller: 'SearchMapController',
-            controllerAs: 'searchMap'
+            controllerAs: 'searchMap',
           },
           'sidebar': {
-            templateUrl: '/modules/search/views/search-sidebar.client.view.html'
-          }
-        }
+            templateUrl: '/modules/search/views/search-sidebar.client.view.html',
+          },
+        },
       }).
       state('search-signin', {
         url: '/search?location?offer?tribe',
@@ -76,8 +76,8 @@
         controller: 'SearchSignupController',
         controllerAs: 'searchSignup',
         data: {
-          pageTitle: 'Search'
-        }
+          pageTitle: 'Search',
+        },
       }).
       state('search-users', {
         url: '/search/members',
@@ -85,8 +85,8 @@
         requiresAuth: true,
         footerHidden: true,
         data: {
-          pageTitle: 'Search members'
-        }
+          pageTitle: 'Search members',
+        },
       });
   }
 }());

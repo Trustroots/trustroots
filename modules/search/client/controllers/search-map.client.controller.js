@@ -22,7 +22,7 @@
     vm.notFound = false;
     vm.mapCenter = false;
     vm.currentSelection = MapMarkersFactory.getOfferCircle({
-      layer: 'selectedOffers'
+      layer: 'selectedOffers',
     });
 
     vm.mapMinimumZoom = 4;
@@ -33,9 +33,9 @@
         selectedOffers: {
           name: 'Selected hosts',
           type: 'group',
-          visible: false
-        }
-      }
+          visible: false,
+        },
+      },
     };
     vm.mapDefaults = {
       attributionControl: false, // Adding this manually below
@@ -46,12 +46,12 @@
         layers: {
           visible: true,
           position: 'bottomleft',
-          collapsed: true
-        }
-      }
+          collapsed: true,
+        },
+      },
     };
     vm.mapPaths = {
-      selected: vm.currentSelection
+      selected: vm.currentSelection,
     };
     /**
      * Catch map events:
@@ -63,14 +63,14 @@
     vm.mapEvents = {
       map: {
         enable: ['click', 'moveend', 'load', 'baselayerchange'],
-        logic: 'emit'
-      }
+        logic: 'emit',
+      },
     };
     vm.mapLastBounds = {
       northEastLng: 0,
       northEastLat: 0,
       southWestLng: 0,
-      southWestLat: 0
+      southWestLat: 0,
     };
 
     // Init
@@ -91,18 +91,18 @@
 
         // Add map scale
         map.addControl(L.control.scale({
-          position: 'bottomright'
+          position: 'bottomright',
         }));
 
         // Add map zoom control (+/- buttons)
         map.addControl(L.control.zoom({
-          position: 'bottomright'
+          position: 'bottomright',
         }));
 
         // Add map attribution
         map.addControl(L.control.attribution({
           position: 'bottomright',
-          prefix: ''
+          prefix: '',
         }));
 
         // Set active area to accommodate sidebar
@@ -204,12 +204,12 @@
             // See above explanation for using `$event` coordinates
             lat: $event && $event.latlng ? $event.latlng.lat : offer.location[0],
             lng: $event && $event.latlng ? $event.latlng.lng : offer.location[1],
-            zoom: 13
+            zoom: 13,
           };
         }
         $analytics.eventTrack('offer.preview', {
           category: 'search.map',
-          label: 'Preview offer'
+          label: 'Preview offer',
         });
       }
     }
@@ -234,8 +234,8 @@
           location: true, // will update the url in the location bar,
           inherit: true, // will inherit url parameters from current url.
           notify: false, // will not broadcast $stateChangeStart and $stateChangeSuccess events.
-          reload: false // will not force transition even if no state or params have changed
-        }
+          reload: false, // will not force transition even if no state or params have changed
+        },
       );
     }
 
@@ -277,7 +277,7 @@
           northEastLng: vm.mapBounds.northEast.lng + boundingDelta,
           northEastLat: vm.mapBounds.northEast.lat + boundingDelta,
           southWestLng: vm.mapBounds.southWest.lng - boundingDelta,
-          southWestLat: vm.mapBounds.southWest.lat - boundingDelta
+          southWestLat: vm.mapBounds.southWest.lat - boundingDelta,
         };
 
         vm.lastZoom = vm.mapCenter.zoom;
@@ -290,7 +290,7 @@
           northEastLat: vm.mapLastBounds.northEastLat,
           southWestLng: vm.mapLastBounds.southWestLng,
           southWestLat: vm.mapLastBounds.southWestLat,
-          filters: FiltersService.get()
+          filters: FiltersService.get(),
         }, function (offers) {
 
           // Remove last markers
@@ -302,7 +302,7 @@
           for (let i = -1, len = offers.length; ++i < len;) {
             const marker = new PruneCluster.Marker(
               offers[i].location[0],
-              offers[i].location[1]
+              offers[i].location[1],
             );
 
             marker.data.icon = MapMarkersFactory.getIcon(offers[i]);
@@ -363,7 +363,7 @@
           northEastLng: 0,
           northEastLat: 0,
           southWestLng: 0,
-          southWestLat: 0
+          southWestLat: 0,
         };
       }
 
@@ -376,7 +376,7 @@
     function onBaseLayerChange(event, layer) {
       $analytics.eventTrack('baselayerchange', {
         category: 'search.map',
-        label: layer.leafletEvent.name
+        label: layer.leafletEvent.name,
       });
       // Determine currently selected baselayer style 'TRStyle' has to be
       // set when defining layers. Possible values are: street, satellite

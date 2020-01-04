@@ -58,7 +58,7 @@ ContactPresentational.propTypes = {
   avatarSize: PropTypes.number,
   situation: PropTypes.string.isRequired,
   hideMeta: PropTypes.bool,
-  onClickRemove: PropTypes.func.isRequired
+  onClickRemove: PropTypes.func.isRequired,
 };
 
 export default withTranslation('contact')(ContactPresentational);

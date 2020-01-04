@@ -65,7 +65,7 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
     errorMessage = 'InfluxDB Service: no `fields` defined. #ghugGJ';
     // Log the failure
     log('error', errorMessage, {
-      measurement: measurementName
+      measurement: measurementName,
     });
     return callback(new Error(errorMessage));
   }
@@ -74,7 +74,7 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
     errorMessage = 'InfluxDB Service: no `tags` defined. #ghj3ig';
     // Log the failure
     log('error', errorMessage, {
-      measurement: measurementName
+      measurement: measurementName,
     });
     return callback(new Error(errorMessage));
   }
@@ -82,7 +82,7 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
   // the point is the IPoint we'll send to node-influx's writeMeasurement
   const point = {
     fields: fields,
-    tags: tags
+    tags: tags,
   };
 
   // deal with the time
@@ -93,7 +93,7 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
       // Log the failure
       log('error', errorMessage, {
         measurement: measurementName,
-        time: fields.time
+        time: fields.time,
       });
 
       // callback with error
@@ -111,7 +111,7 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
     }
 
     client.writeMeasurement(measurementName, [
-      point
+      point,
     ])
       .then(function () {
         if (callback) return callback();
@@ -122,7 +122,7 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
           error: err,
           measurement: measurementName,
           fields: fields,
-          tags: tags
+          tags: tags,
         });
 
         return callback(err);

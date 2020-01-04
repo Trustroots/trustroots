@@ -12,20 +12,20 @@ module.exports = (karmaConfig) => {
     frameworks: ['jasmine'],
     preprocessors: {
       'config/webpack/entries/main.js': ['webpack'],
-      'modules/*/tests/client/*.js': ['webpack']
+      'modules/*/tests/client/*.js': ['webpack'],
     },
     webpack: webpackMerge(webpackConfig, {
       plugins: [
         new webpack.DefinePlugin({
-          module: 'angular.mock.module'
-        })
-      ]
+          module: 'angular.mock.module',
+        }),
+      ],
     }),
     // List of files / patterns to load in the browser
     files: [
       'config/webpack/entries/main.js',
       require.resolve('angular-mocks'),
-      'modules/*/tests/client/*.js'
+      'modules/*/tests/client/*.js',
     ],
     reporters: ['mocha'],
     port: 9876,
@@ -34,6 +34,6 @@ module.exports = (karmaConfig) => {
     browsers: ['ChromeHeadless'],
     flags: ['--no-sandbox'],
     // If browser does not capture in given timeout [ms], kill it
-    captureTimeout: 60000
+    captureTimeout: 60000,
   });
 };

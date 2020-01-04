@@ -63,7 +63,7 @@ exports.userProfileFields = [
   'emailHash', // MD5 hashed email to use with Gravatars
   'additionalProvidersData.facebook.id', // For FB avatars and profile links
   'additionalProvidersData.twitter.screen_name', // For Twitter profile links
-  'additionalProvidersData.github.login' // For GitHub profile links
+  'additionalProvidersData.github.login', // For GitHub profile links
 ].join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed
@@ -75,7 +75,7 @@ exports.userMiniProfileFields = [
   'avatarSource',
   'avatarUploaded',
   'emailHash',
-  'additionalProvidersData.facebook.id' // For FB avatars
+  'additionalProvidersData.facebook.id', // For FB avatars
 ].join(' ');
 
 // Mini + a few fields we'll need at listings
@@ -88,7 +88,7 @@ exports.userSearchProfileFields = exports.userMiniProfileFields + ' gender locat
 exports.avatarUploadField = function (req, res, next) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -96,7 +96,7 @@ exports.avatarUploadField = function (req, res, next) {
     'image/gif',
     'image/jpeg',
     'image/jpg',
-    'image/png'
+    'image/png',
   ];
 
   fileUpload.uploadFile(validImageMimeTypes, 'avatar', req, res, next);
@@ -171,7 +171,7 @@ exports.avatarUpload = function (req, res) {
                   }
                   // @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
                   return res.status(422).send({
-                    message: 'Failed to process image, please try again.'
+                    message: 'Failed to process image, please try again.',
                   });
                 });
               } else {
@@ -196,18 +196,18 @@ exports.avatarUpload = function (req, res) {
       fs.unlink(req.file.path, function (err) {
         done(err);
       });
-    }
+    },
 
   // Catch errors
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err) || 'Failed to process image, please try again.'
+        message: errorService.getErrorMessage(err) || 'Failed to process image, please try again.',
       });
     } else {
       // All Done!
       return res.send({
-        message: 'Avatar image uploaded.'
+        message: 'Avatar image uploaded.',
       });
     }
   });
@@ -220,7 +220,7 @@ exports.update = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -229,7 +229,7 @@ exports.update = function (req, res) {
   const localeCodes = locales.map(function (locale) { return locale.code; });
   if (req.body.locale && (typeof req.body.locale !== 'string' || !localeCodes.includes(req.body.locale))) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('bad-request')
+      message: errorService.getErrorMessageByKey('bad-request'),
     });
   }
 
@@ -245,8 +245,8 @@ exports.update = function (req, res) {
       User.findOne({
         $or: [
           { emailTemporary: req.body.email.toLowerCase() },
-          { email: req.body.email.toLowerCase() }
-        ]
+          { email: req.body.email.toLowerCase() },
+        ],
       }, 'emailTemporary email', function (err, emailUser) {
         // Not available
         if (emailUser) {
@@ -257,7 +257,7 @@ exports.update = function (req, res) {
           } else {
             // Otherwise it was someone else's email. Block the way.
             return res.status(403).send({
-              message: 'This email is already in use. Please use another one.'
+              message: 'This email is already in use. Please use another one.',
             });
           }
         } else {
@@ -288,7 +288,7 @@ exports.update = function (req, res) {
         // They are not allowed to do so
         if (!isUsernameUpdateAllowed(req.user)) {
           return res.status(403).send({
-            message: 'You cannot change your username at this time.'
+            message: 'You cannot change your username at this time.',
           });
         }
 
@@ -374,12 +374,12 @@ exports.update = function (req, res) {
     function (user) {
       user = exports.sanitizeProfile(user, req.user);
       return res.json(user);
-    }
+    },
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
   });
@@ -392,7 +392,7 @@ exports.update = function (req, res) {
 exports.initializeRemoveProfile = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -417,12 +417,12 @@ exports.initializeRemoveProfile = function (req, res) {
         {
           $set: {
             removeProfileToken: token,
-            removeProfileExpires: tokenExpires
-          }
+            removeProfileExpires: tokenExpires,
+          },
         },
         {
           // Return updated user document
-          new: true
+          new: true,
         },
         function (err, user) {
           done(err, user);
@@ -436,7 +436,7 @@ exports.initializeRemoveProfile = function (req, res) {
         // Stop on errors
         if (err) {
           return res.status(400).send({
-            message: 'Failure while sending confirmation email to you. Please try again later.'
+            message: 'Failure while sending confirmation email to you. Please try again later.',
           });
         }
 
@@ -444,25 +444,25 @@ exports.initializeRemoveProfile = function (req, res) {
         return statService.stat({
           namespace: 'profileRemoval',
           counts: {
-            count: 1
+            count: 1,
           },
           tags: {
-            status: 'emailSent'
-          }
+            status: 'emailSent',
+          },
         }, function () {
           // Return success
           res.send({
-            message: 'We sent you an email with further instructions.'
+            message: 'We sent you an email with further instructions.',
           });
         });
 
       });
-    }
+    },
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: 'Removing your profile failed.'
+        message: 'Removing your profile failed.',
       });
     }
   });
@@ -475,7 +475,7 @@ exports.initializeRemoveProfile = function (req, res) {
 exports.removeProfile = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -487,8 +487,8 @@ exports.removeProfile = function (req, res) {
         _id: req.user._id,
         removeProfileToken: req.params.token,
         removeProfileExpires: {
-          $gt: Date.now()
-        }
+          $gt: Date.now(),
+        },
       }, function (err, user) {
 
         // Can't find user (=invalid or expired token) or other error
@@ -498,15 +498,15 @@ exports.removeProfile = function (req, res) {
           return statService.stat({
             namespace: 'profileRemoval',
             counts: {
-              count: 1
+              count: 1,
             },
             tags: {
-              status: 'failed'
-            }
+              status: 'failed',
+            },
           }, function () {
             // Return failure
             return res.status(400).send({
-              message: 'Profile remove token is invalid or has expired.'
+              message: 'Profile remove token is invalid or has expired.',
             });
           });
         }
@@ -518,7 +518,7 @@ exports.removeProfile = function (req, res) {
     // Remove profile
     function (user, done) {
       User.findOneAndRemove({
-        _id: user._id
+        _id: user._id,
       }, function (err) {
         done(err, user);
       });
@@ -529,7 +529,7 @@ exports.removeProfile = function (req, res) {
       offerHandler.removeAllByUserId(user._id, function (err) {
         if (err) {
           log('error', 'Error when removing all offers by user ID. #rj393', {
-            error: err
+            error: err,
           });
         }
         done(null, user);
@@ -541,7 +541,7 @@ exports.removeProfile = function (req, res) {
       contactHandler.removeAllByUserId(user._id, function (err) {
         if (err) {
           log('error', 'Error when removing all contacts by user ID. #j93hdd', {
-            error: err
+            error: err,
           });
         }
         done(null, user);
@@ -578,13 +578,13 @@ exports.removeProfile = function (req, res) {
     function (user, done) {
       emailService.sendRemoveProfileConfirmed({
         displayName: user.displayName,
-        email: user.email
+        email: user.email,
       }, function (err) {
         // Just log errors but don't mind about them as this is not critical step
         if (err) {
           // Log the failure to send the email
           log('error', 'Sending confirmation email about successfull profile removal failed #289hhs', {
-            error: err
+            error: err,
           });
         }
 
@@ -599,18 +599,18 @@ exports.removeProfile = function (req, res) {
       return statService.stat({
         namespace: 'profileRemoval',
         counts: {
-          count: 1
+          count: 1,
         },
         tags: {
-          status: 'removed'
-        }
+          status: 'removed',
+        },
       }, function () {
         // Return success
         return res.json({
-          message: 'Your profile has been removed.'
+          message: 'Your profile has been removed.',
         });
       });
-    }
+    },
 
   ], function (err) {
     if (err) {
@@ -618,15 +618,15 @@ exports.removeProfile = function (req, res) {
       return statService.stat({
         namespace: 'profileRemoval',
         counts: {
-          count: 1
+          count: 1,
         },
         tags: {
-          status: 'failed'
-        }
+          status: 'failed',
+        },
       }, function () {
         // Return failure
         return res.status(400).send({
-          message: 'Removing your profile failed.'
+          message: 'Removing your profile failed.',
         });
       });
     }
@@ -679,7 +679,7 @@ exports.userMiniByID = function (req, res, next, userId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
@@ -693,7 +693,7 @@ exports.userMiniByID = function (req, res, next, userId) {
     // No such user
     if (!profile || !profile.public) {
       return res.status(404).send({
-        message: errorService.getErrorMessageByKey('not-found')
+        message: errorService.getErrorMessageByKey('not-found'),
       });
     }
 
@@ -711,14 +711,14 @@ exports.userByUsername = function (req, res, next, username) {
   // Require user
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // Proper 'username' value required
   if (typeof username !== 'string' || username.trim() === '' || username.length < 3) {
     return res.status(400).send({
-      message: 'Valid username required.'
+      message: 'Valid username required.',
     });
   }
 
@@ -728,13 +728,13 @@ exports.userByUsername = function (req, res, next, username) {
     function (done) {
       User
         .findOne({
-          username: username.toLowerCase()
+          username: username.toLowerCase(),
         },
         exports.userProfileFields + ' public')
         .populate({
           path: 'member.tribe',
           select: tribesHandler.tribeFields,
-          model: 'Tribe'
+          model: 'Tribe',
           // Not possible at the moment due bug in Mongoose
           // http://mongoosejs.com/docs/faq.html#populate_sort_order
           // https://github.com/Automattic/mongoose/issues/2202
@@ -747,7 +747,7 @@ exports.userByUsername = function (req, res, next, username) {
           } else if (!profile) {
             // No such user
             return res.status(404).send({
-              message: errorService.getErrorMessageByKey('not-found')
+              message: errorService.getErrorMessageByKey('not-found'),
             });
           } else if (req.user && req.user._id.equals(profile._id)) {
             // User's own profile, okay to send with public value in it
@@ -755,7 +755,7 @@ exports.userByUsername = function (req, res, next, username) {
           } else if (req.user && (!req.user._id.equals(profile._id) && !profile.public)) {
             // Not own profile and not public
             return res.status(404).send({
-              message: errorService.getErrorMessageByKey('not-found')
+              message: errorService.getErrorMessageByKey('not-found'),
             });
           } else {
             // Transform profile into object so that we can add new fields to it
@@ -792,7 +792,7 @@ exports.userByUsername = function (req, res, next, username) {
     // Next Route
     function () {
       next();
-    }
+    },
 
   ], function (err) {
     if (err) return next(err);
@@ -897,7 +897,7 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
 exports.joinTribe = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -906,7 +906,7 @@ exports.joinTribe = function (req, res) {
   // Not a valid ObjectId
   if (!tribeId || !mongoose.Types.ObjectId.isValid(tribeId)) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
@@ -917,7 +917,7 @@ exports.joinTribe = function (req, res) {
       // Return if user is already a member
       if (isUserMemberOfTribe(req.user, tribeId)) {
         return res.status(409).send({
-          message: 'You are already a member of this tribe.'
+          message: 'You are already a member of this tribe.',
         });
       }
 
@@ -934,12 +934,12 @@ exports.joinTribe = function (req, res) {
           // Tribe by id `req.body.id` didn't exist
           if (!tribe || !tribe._id) {
             return res.status(400).send({
-              message: errorService.getErrorMessageByKey('bad-request')
+              message: errorService.getErrorMessageByKey('bad-request'),
             });
           }
 
           done(err, tribe);
-        }
+        },
       );
     },
 
@@ -951,14 +951,14 @@ exports.joinTribe = function (req, res) {
           $push: {
             member: {
               tribe: tribe._id,
-              since: Date.now()
-            }
-          }
+              since: Date.now(),
+            },
+          },
         },
         {
           safe: true, // @link http://stackoverflow.com/a/4975054/1984644
-          new: true // get the updated document in return
-        }
+          new: true, // get the updated document in return
+        },
       ).exec(function (err, user) {
         done(err, tribe, user);
       });
@@ -976,33 +976,33 @@ exports.joinTribe = function (req, res) {
       statService.stat({
         namespace: 'tagAction',
         counts: {
-          count: 1
+          count: 1,
         },
         tags: {
-          type: 'tribe'
+          type: 'tribe',
         },
         meta: {
-          slug: tribe.slug
-        }
+          slug: tribe.slug,
+        },
       }, function () {
 
         // Send response to API
         res.send({
           message: 'Joined tribe.',
           tribe: pickedTribe,
-          user: user
+          user: user,
         });
 
         done();
 
       });
-    }
+    },
 
   // Catch errors
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: 'Failed to join tribe.'
+        message: 'Failed to join tribe.',
       });
     }
   });
@@ -1014,7 +1014,7 @@ exports.joinTribe = function (req, res) {
 exports.leaveTribe = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -1023,7 +1023,7 @@ exports.leaveTribe = function (req, res) {
   // Not a valid ObjectId
   if (!tribeId || !mongoose.Types.ObjectId.isValid(tribeId)) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
@@ -1034,7 +1034,7 @@ exports.leaveTribe = function (req, res) {
       // Return if isn't a member anymore
       if (!isUserMemberOfTribe(req.user, tribeId)) {
         return res.status(409).send({
-          message: 'You are not a member of this tribe.'
+          message: 'You are not a member of this tribe.',
         });
       }
 
@@ -1051,12 +1051,12 @@ exports.leaveTribe = function (req, res) {
           // Tribe by id `req.body.id` didn't exist
           if (!tribe || !tribe._id) {
             return res.status(400).send({
-              message: errorService.getErrorMessageByKey('bad-request')
+              message: errorService.getErrorMessageByKey('bad-request'),
             });
           }
 
           done(err, tribe);
-        }
+        },
       );
     },
 
@@ -1067,14 +1067,14 @@ exports.leaveTribe = function (req, res) {
         {
           $pull: {
             member: {
-              tribe: tribeId
-            }
-          }
+              tribe: tribeId,
+            },
+          },
         },
         {
           safe: true, // @link http://stackoverflow.com/a/4975054/1984644
-          new: true // get the updated document in return
-        }
+          new: true, // get the updated document in return
+        },
       ).exec(function (err, user) {
         done(err, tribe, user);
       });
@@ -1092,33 +1092,33 @@ exports.leaveTribe = function (req, res) {
       statService.stat({
         namespace: 'tagAction',
         counts: {
-          count: -1
+          count: -1,
         },
         tags: {
-          type: 'tribe'
+          type: 'tribe',
         },
         meta: {
-          slug: tribe.slug
-        }
+          slug: tribe.slug,
+        },
       }, function () {
 
         // Send response to API
         res.send({
           message: 'Left tribe.',
           tribe: pickedTribe,
-          user: user
+          user: user,
         });
 
         done();
 
       });
-    }
+    },
 
   // Catch errors
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: 'Failed to leave tribe.'
+        message: 'Failed to leave tribe.',
       });
     }
   });
@@ -1131,7 +1131,7 @@ exports.getUserMemberships = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -1140,7 +1140,7 @@ exports.getUserMemberships = function (req, res) {
     .populate({
       path: 'member.tribe',
       select: tribesHandler.tribeFields,
-      model: 'Tribe'
+      model: 'Tribe',
       // Not possible at the moment due bug in Mongoose
       // http://mongoosejs.com/docs/faq.html#populate_sort_order
       // https://github.com/Automattic/mongoose/issues/2202
@@ -1151,7 +1151,7 @@ exports.getUserMemberships = function (req, res) {
       // Something went wrong
       if (err) {
         return res.status(400).send({
-          message: 'Failed to get list of tribes.'
+          message: 'Failed to get list of tribes.',
         });
       }
 
@@ -1166,7 +1166,7 @@ exports.removePushRegistration = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -1176,24 +1176,24 @@ exports.removePushRegistration = function (req, res) {
   const query = {
     $pull: {
       pushRegistration: {
-        token: token
-      }
-    }
+        token: token,
+      },
+    },
   };
 
   User.findByIdAndUpdate(user._id, query, {
     safe: true, // @link http://stackoverflow.com/a/4975054/1984644
-    new: true // get the updated document in return
+    new: true, // get the updated document in return
   })
     .exec(function (err, user) {
       if (err) {
         return res.status(400).send({
-          message: errorService.getErrorMessage(err) || 'Failed to remove registration, please try again.'
+          message: errorService.getErrorMessage(err) || 'Failed to remove registration, please try again.',
         });
       } else {
         return res.send({
           message: 'Removed registration.',
-          user: exports.sanitizeProfile(user, user)
+          user: exports.sanitizeProfile(user, user),
         });
       }
     });
@@ -1208,7 +1208,7 @@ exports.addPushRegistration = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -1220,7 +1220,7 @@ exports.addPushRegistration = function (req, res) {
 
   if (!token) {
     return res.status(400).send({
-      message: 'Token is invalid or missing.'
+      message: 'Token is invalid or missing.',
     });
   }
 
@@ -1230,7 +1230,7 @@ exports.addPushRegistration = function (req, res) {
 
   if (!platform || validPlatforms.indexOf(platform) === -1) {
     return res.status(400).send({
-      message: 'Platform is invalid or missing.'
+      message: 'Platform is invalid or missing.',
     });
   }
 
@@ -1242,9 +1242,9 @@ exports.addPushRegistration = function (req, res) {
       User.findByIdAndUpdate(user._id, {
         $pull: {
           pushRegistration: {
-            token: token
-          }
-        }
+            token: token,
+          },
+        },
       }).exec(function (err) {
         done(err);
       });
@@ -1257,7 +1257,7 @@ exports.addPushRegistration = function (req, res) {
       const registration = {
         platform: platform,
         token: token,
-        created: Date.now()
+        created: Date.now(),
       };
 
       if (deviceId) {
@@ -1266,10 +1266,10 @@ exports.addPushRegistration = function (req, res) {
 
       User.findByIdAndUpdate(user._id, {
         $push: {
-          pushRegistration: registration
-        }
+          pushRegistration: registration,
+        },
       }, {
-        new: true
+        new: true,
       }).exec(function (err, updatedUser) {
         if (err) {
           return done(err);
@@ -1291,28 +1291,28 @@ exports.addPushRegistration = function (req, res) {
         if (err) {
           // don't stop on error, but log it
           log('error', 'Error when sending push notification about added device. #9hsdff', {
-            error: err
+            error: err,
           });
         }
         done();
       });
-    }
+    },
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err) || 'Failed, please try again.'
+        message: errorService.getErrorMessage(err) || 'Failed, please try again.',
       });
     } else {
       User.findById(user._id).exec(function (err, user) {
         if (err) {
           return res.status(400).send({
-            message: errorService.getErrorMessage(err) || 'Failed to fetch user, please try again.'
+            message: errorService.getErrorMessage(err) || 'Failed to fetch user, please try again.',
           });
         }
         return res.send({
           message: 'Saved registration.',
-          user: exports.sanitizeProfile(user, user)
+          user: exports.sanitizeProfile(user, user),
         });
       });
     }
@@ -1334,12 +1334,12 @@ exports.getInviteCode = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   return res.send({
-    code: inviteCodeService.getCode()
+    code: inviteCodeService.getCode(),
   });
 };
 
@@ -1360,13 +1360,13 @@ exports.validateInviteCode = function (req, res) {
   const stats = {
     namespace: 'inviteCodeValidation',
     counts: {
-      count: 1
+      count: 1,
     },
     tags: {
       valid: inviteCodeValid ? 'yes' : 'no',
-      isPredefined: isPredefined ? 'yes' : 'no'
+      isPredefined: isPredefined ? 'yes' : 'no',
     },
-    meta: { }
+    meta: { },
   };
 
   // Store predefined codes to stats
@@ -1378,7 +1378,7 @@ exports.validateInviteCode = function (req, res) {
   statService.stat(stats, function () {
     // Send validation out to API
     return res.send({
-      valid: inviteCodeValid
+      valid: inviteCodeValid,
     });
   });
 };
@@ -1418,7 +1418,7 @@ exports.search = function (req, res, next) {
     const errorMessage = errorService.getErrorMessageByKey('bad-request');
     return res.status(400).send({
       message: errorMessage,
-      detail: 'Query string should be at least 3 characters long.'
+      detail: 'Query string should be at least 3 characters long.',
     });
   }
 
@@ -1428,9 +1428,9 @@ exports.search = function (req, res, next) {
       { public: true }, // only public users
       {
         $text: {
-          $search: req.query.search
-        }
-      }
+          $search: req.query.search,
+        },
+      },
     ] }, { score: { $meta: 'textScore' } })
     // select only the right profile properties
     .select(exports.userSearchProfileFields)

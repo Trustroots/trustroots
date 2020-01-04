@@ -14,9 +14,9 @@
       replace: true,
       scope: {
         memberships: '=trMembershipsList',
-        isOwnProfile: '='
+        isOwnProfile: '=',
       },
-      controller: trMembershipsListController
+      controller: trMembershipsListController,
 
     };
   }

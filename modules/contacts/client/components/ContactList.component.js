@@ -8,7 +8,7 @@ export default class ContactList extends React.Component {
     super(props);
 
     this.state = {
-      filter: ''
+      filter: '',
     };
 
     this.handleFilterChange = this.handleFilterChange.bind(this);
@@ -49,5 +49,5 @@ export default class ContactList extends React.Component {
 ContactList.propTypes = {
   contacts: PropTypes.array,
   appUser: PropTypes.object.isRequired,
-  onContactRemoved: PropTypes.func.isRequired
+  onContactRemoved: PropTypes.func.isRequired,
 };

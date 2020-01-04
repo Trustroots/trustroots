@@ -173,7 +173,7 @@ async.waterfall([
           process.stdout.clearLine();
           process.stdout.cursorTo(0);
           process.stdout.write(
-            '~' + progressPercent + '% (' + progress + '/' + total + ')'
+            '~' + progressPercent + '% (' + progress + '/' + total + ')',
           );
         }
         ++progress;
@@ -239,7 +239,7 @@ async.waterfall([
     countTotals(function () {
       done(null, progress);
     });
-  }
+  },
 
 ], function (err, totalProcessed) {
   if (err) {

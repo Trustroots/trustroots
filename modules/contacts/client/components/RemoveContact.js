@@ -82,5 +82,5 @@ RemoveContact.propTypes = {
   inProgress: PropTypes.bool.isRequired,
   selfId: PropTypes.string.isRequired,
   onCancel: PropTypes.func.isRequired,
-  onRemove: PropTypes.func.isRequired
+  onRemove: PropTypes.func.isRequired,
 };

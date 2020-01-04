@@ -13,27 +13,27 @@ const ReferenceThreadSchema = new Schema({
   thread: {
     type: Schema.ObjectId,
     ref: 'Thread',
-    required: true
+    required: true,
   },
   userFrom: {
     type: Schema.ObjectId,
     ref: 'User',
-    required: true
+    required: true,
   },
   userTo: {
     type: Schema.ObjectId,
     ref: 'User',
-    required: true
+    required: true,
   },
   reference: {
     type: String,
     enum: ['yes', 'no'],
-    required: true
+    required: true,
   },
   created: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
 /**

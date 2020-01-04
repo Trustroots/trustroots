@@ -64,8 +64,8 @@ i18n
   .init({
     ...(isTest ? {
       resources: {
-        en: {}
-      }
+        en: {},
+      },
     } : {}),
     fallbackLng: 'en', // a default app locale
     // allow keys to be phrases having `:`, `.`
@@ -74,16 +74,16 @@ i18n
     // saveMissing: true, // @TODO send not translated keys to endpoint
     interpolation: {
       escapeValue: false, // react already safes from xss
-      format
+      format,
     },
     detection: {
       lookupCookie: 'i18n',
       order: ['cookie'],
-      caches: ['cookie']
+      caches: ['cookie'],
     },
     react: {
-      useSuspense: false
-    }
+      useSuspense: false,
+    },
     // saveMissingPlurals: true,
     // debug: true // show missing translation keys in console.log
   });

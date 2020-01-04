@@ -8,14 +8,14 @@ module.exports = {
     lib: {
       uibModuleTemplates: defaultAssets.client.lib.uibModuleTemplates,
       js: _.union(defaultAssets.client.lib.js, [
-        'node_modules/angulartics-google-analytics/lib/angulartics-ga.js'
+        'node_modules/angulartics-google-analytics/lib/angulartics-ga.js',
       ]),
-      tests: defaultAssets.client.lib.tests
+      tests: defaultAssets.client.lib.tests,
     },
     js: _.union(defaultAssets.client.js, [
       'public/dist/uib-templates.js',
-      'public/dist/templates.js'
+      'public/dist/templates.js',
     ]),
-    views: defaultAssets.client.views
-  }
+    views: defaultAssets.client.views,
+  },
 };

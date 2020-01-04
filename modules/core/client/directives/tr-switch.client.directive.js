@@ -37,7 +37,7 @@
         const toggle = angular.element('<div class="toggle"></div>');
         elem.find('input').after(toggle);
 
-      }
+      },
     };
   }
 }());

@@ -17,7 +17,7 @@ exports.up = function (next) {
     User.update(
       { avatarUploaded: { $exists: false } },
       { '$set': { avatarUploaded: false } },
-      { multi: true }
+      { multi: true },
     ).exec(function (err, numberAffected) {
       if (err) {
         console.log(chalk.red(err));
@@ -39,7 +39,7 @@ exports.down = function (next) {
     User.update(
       { avatarUploaded: { $exists: true } },
       { '$unset': { avatarUploaded: '' } },
-      { multi: true }
+      { multi: true },
     ).exec(function (err, numberAffected) {
       if (err) {
         console.log(chalk.red(err));

@@ -25,7 +25,7 @@ const messageFields = [
   'created',
   'read',
   'userFrom',
-  'userTo'
+  'userTo',
 ].join(' ');
 
 // Allowed fields of thread object to be set over API
@@ -35,7 +35,7 @@ const threadFields = [
   'read',
   'updated',
   'userFrom',
-  'userTo'
+  'userTo',
 ].join(' ');
 
 /**
@@ -88,7 +88,7 @@ function sanitizeThreads(threads, authenticatedUserId) {
     } else {
       // Ensure this works even if messages couldn't be found for some reason
       thread.message = {
-        excerpt: '…'
+        excerpt: '…',
       };
     }
 
@@ -123,7 +123,7 @@ const setLinkHeader = function (req, res, pageCount) {
     const url = (config.https ? 'https' : 'http') + '://' + config.domain;
     const nextPage = url + res.locals.paginate.href({ page: req.query.page + 1 });
     res.links({
-      next: nextPage
+      next: nextPage,
       // last: ''
     });
   }
@@ -137,7 +137,7 @@ exports.inbox = function (req, res) {
   // No user
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -146,8 +146,8 @@ exports.inbox = function (req, res) {
       // Returns only threads where currently authenticated user is participating member
       $or: [
         { userFrom: req.user },
-        { userTo: req.user }
-      ]
+        { userTo: req.user },
+      ],
     },
     {
       page: req.query.page || 1,
@@ -156,14 +156,14 @@ exports.inbox = function (req, res) {
       select: threadFields,
       populate: {
         path: 'userFrom userTo message',
-        select: 'content ' + userProfile.userMiniProfileFields
-      }
+        select: 'content ' + userProfile.userMiniProfileFields,
+      },
     },
     function (err, data) {
 
       if (err) {
         return res.status(400).send({
-          message: errorService.getErrorMessage(err)
+          message: errorService.getErrorMessage(err),
         });
       } else {
 
@@ -174,7 +174,7 @@ exports.inbox = function (req, res) {
 
         res.json(threads);
       }
-    }
+    },
   );
 };
 
@@ -186,35 +186,35 @@ exports.send = function (req, res) {
   // No user
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // No receiver
   if (!req.body.userTo) {
     return res.status(400).send({
-      message: 'Missing `userTo` field.'
+      message: 'Missing `userTo` field.',
     });
   }
 
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
   // Don't allow sending messages to myself
   if (req.user._id.equals(req.body.userTo)) {
     return res.status(403).send({
-      message: 'Recepient cannot be currently authenticated user.'
+      message: 'Recepient cannot be currently authenticated user.',
     });
   }
 
   // No content or test if content is actually empty (when html is stripped out)
   if (!req.body.content || textService.isEmpty(req.body.content)) {
     return res.status(400).send({
-      message: 'Please write a message.'
+      message: 'Please write a message.',
     });
   }
 
@@ -226,7 +226,7 @@ exports.send = function (req, res) {
         // If we were unable to find the receiver, return the error and stop here
         if (err || !receiver || !receiver.public) {
           return res.status(404).send({
-            message: 'Member you are writing to does not exist.'
+            message: 'Member you are writing to does not exist.',
           });
         }
         done();
@@ -240,13 +240,13 @@ exports.send = function (req, res) {
         $or: [
           {
             userTo: req.user._id,
-            userFrom: req.body.userTo
+            userFrom: req.body.userTo,
           },
           {
             userTo: req.body.userTo,
-            userFrom: req.user._id
-          }
-        ]
+            userFrom: req.user._id,
+          },
+        ],
       },
       function (err, thread) {
         done(err, thread);
@@ -272,7 +272,7 @@ exports.send = function (req, res) {
             return res.status(400).send({
               error: 'empty-profile',
               limit: config.profileMinimumLength,
-              message: (descriptionLength === 0) ? 'Please fill out your profile description before you send messages.' : 'Please write longer profile description before you send messages.'
+              message: (descriptionLength === 0) ? 'Please fill out your profile description before you send messages.' : 'Please write longer profile description before you send messages.',
             });
           }
 
@@ -330,13 +330,13 @@ exports.send = function (req, res) {
         $or: [
           {
             userTo: upsertData.userTo,
-            userFrom: upsertData.userFrom
+            userFrom: upsertData.userFrom,
           },
           {
             userTo: upsertData.userFrom,
-            userFrom: upsertData.userTo
-          }
-        ]
+            userFrom: upsertData.userTo,
+          },
+        ],
       },
       upsertData,
       { upsert: true },
@@ -370,11 +370,11 @@ exports.send = function (req, res) {
       message
         .populate({
           path: 'userFrom',
-          select: userProfile.userMiniProfileFields
+          select: userProfile.userMiniProfileFields,
         })
         .populate({
           path: 'userTo',
-          select: userProfile.userMiniProfileFields
+          select: userProfile.userMiniProfileFields,
         }, function (err, message) {
           if (err) {
             return done(err);
@@ -389,13 +389,13 @@ exports.send = function (req, res) {
           // Finally return saved message
           return res.json(message);
         });
-    }
+    },
 
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
   });
@@ -422,14 +422,14 @@ exports.threadByUser = function (req, res, next, userId) {
 
       if (!req.user) {
         return res.status(403).send({
-          message: errorService.getErrorMessageByKey('forbidden')
+          message: errorService.getErrorMessageByKey('forbidden'),
         });
       }
 
       // Not user id or its not a valid ObjectId
       if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         return res.status(400).send({
-          message: errorService.getErrorMessageByKey('invalid-id')
+          message: errorService.getErrorMessageByKey('invalid-id'),
         });
       }
 
@@ -437,8 +437,8 @@ exports.threadByUser = function (req, res, next, userId) {
         {
           $or: [
             { userFrom: req.user._id, userTo: userId },
-            { userTo: req.user._id, userFrom: userId }
-          ]
+            { userTo: req.user._id, userFrom: userId },
+          ],
         },
         {
           page: req.query.page || 1,
@@ -447,8 +447,8 @@ exports.threadByUser = function (req, res, next, userId) {
           select: messageFields,
           populate: {
             path: 'userFrom userTo',
-            select: userProfile.userMiniProfileFields
-          }
+            select: userProfile.userMiniProfileFields,
+          },
         },
         function (err, data) {
           if (err) {
@@ -465,7 +465,7 @@ exports.threadByUser = function (req, res, next, userId) {
           }
 
           done(err, data.docs);
-        }
+        },
       );
 
     },
@@ -495,18 +495,18 @@ exports.threadByUser = function (req, res, next, userId) {
           Thread.update(
             {
               userTo: req.user._id,
-              userFrom: userId
+              userFrom: userId,
             },
             {
-              read: true
+              read: true,
             },
             // Options:
             {
-              multi: false
+              multi: false,
             },
             function (err) {
               done(err);
-            }
+            },
           );
 
         } else {
@@ -517,12 +517,12 @@ exports.threadByUser = function (req, res, next, userId) {
         done(null);
       }
 
-    }
+    },
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     } else {
       return next();
@@ -540,7 +540,7 @@ exports.markRead = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -554,30 +554,30 @@ exports.markRead = function (req, res) {
 
       // Although this isn't in index, but it ensures
       // user has access to update only his/hers own messages
-      userTo: req.user.id
+      userTo: req.user.id,
     });
   });
 
   // Mark messages read
   Message.update(
     {
-      $or: messages
+      $or: messages,
     },
     {
-      read: true
+      read: true,
     },
     {
-      multi: true
+      multi: true,
     },
     function (err) {
       if (err) {
         return res.status(400).send({
-          message: errorService.getErrorMessage(err)
+          message: errorService.getErrorMessage(err),
         });
       } else {
         res.status(200).send();
       }
-    }
+    },
   );
 
 };
@@ -590,17 +590,17 @@ exports.messagesCount = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   Thread.countDocuments({
     read: false,
-    userTo: req.user._id
+    userTo: req.user._id,
   }, function (err, unreadCount) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
     return res.json({ unread: unreadCount ? parseInt(unreadCount, 10) : 0 });
@@ -614,14 +614,14 @@ exports.sync = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // Root object to be sent out from this API endpoint
   const data = {
     messages: [],
-    users: []
+    users: [],
   };
 
   async.waterfall([
@@ -640,7 +640,7 @@ exports.sync = function (req, res) {
         // Validate `dateFrom`
         if (!dateFrom.isValid()) {
           return res.status(400).send({
-            message: 'Invalid `dateFrom`.'
+            message: 'Invalid `dateFrom`.',
           });
         }
 
@@ -653,7 +653,7 @@ exports.sync = function (req, res) {
         // Validate `dateTo`
         if (!dateTo.isValid()) {
           return res.status(400).send({
-            message: 'Invalid `dateTo`.'
+            message: 'Invalid `dateTo`.',
           });
         }
 
@@ -664,7 +664,7 @@ exports.sync = function (req, res) {
       // Validate correct order of dates
       if (dateFrom && dateTo && dateFrom.isAfter(dateTo)) {
         return res.status(400).send({
-          message: 'Invalid dates: `dateFrom` cannot be later than `dateTo`'
+          message: 'Invalid dates: `dateFrom` cannot be later than `dateTo`',
         });
       }
 
@@ -675,8 +675,8 @@ exports.sync = function (req, res) {
       const queryUsers = {
         $or: [
           { userFrom: req.user._id },
-          { userTo: req.user._id }
-        ]
+          { userTo: req.user._id },
+        ],
       };
 
       // Filter only by user or also by date?
@@ -685,8 +685,8 @@ exports.sync = function (req, res) {
         query = {
           $and: [
             queryUsers,
-            queryDate
-          ]
+            queryDate,
+          ],
         };
       } else {
         // Construct query without date limit
@@ -736,8 +736,8 @@ exports.sync = function (req, res) {
       // Get objects for users based on above user ids
       User.find({
         _id: {
-          $in: userIds
-        }
+          $in: userIds,
+        },
       })
         .select(userProfile.userMiniProfileFields)
         .exec(function (err, users) {
@@ -749,12 +749,12 @@ exports.sync = function (req, res) {
     // Return the package
     function () {
       return res.json(data);
-    }
+    },
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
   });

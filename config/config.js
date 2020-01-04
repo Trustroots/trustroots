@@ -76,7 +76,7 @@ const initGlobalConfigFolders = function (config) {
   // Appending files
   config.folders = {
     server: {},
-    client: {}
+    client: {},
   };
 
   // Setting globbed client paths
@@ -91,9 +91,9 @@ const initGlobalConfigFiles = function (config, assets) {
   config.files = {
     server: {},
     client: {
-      lib: {}
+      lib: {},
     },
-    webpack: {}
+    webpack: {},
   };
 
   // Setting Globbed model files
@@ -154,7 +154,7 @@ const initGlobalConfig = function () {
    */
   let config = _.extend(
     require(path.join(process.cwd(), 'config/env/default')),
-    require(path.join(process.cwd(), 'config/env/', process.env.NODE_ENV)) || {}
+    require(path.join(process.cwd(), 'config/env/', process.env.NODE_ENV)) || {},
   );
   config = _.merge(config, (fs.existsSync('./config/env/local.js') && require('./env/local.js')) || {});
 
@@ -166,7 +166,7 @@ const initGlobalConfig = function () {
 
   // Expose configuration utilities
   config.utils = {
-    getGlobbedPaths: getGlobbedPaths
+    getGlobbedPaths: getGlobbedPaths,
   };
 
   return config;

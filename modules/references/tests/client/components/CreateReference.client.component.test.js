@@ -4,7 +4,7 @@ import {
   fireEvent,
   waitForElement,
   waitForElementToBeRemoved,
-  screen
+  screen,
 } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
@@ -57,7 +57,7 @@ describe('<CreateReference />', () => {
     for (const label of [
       'Met in person',
       'I hosted them',
-      'They hosted me'
+      'They hosted me',
     ]) {
       expect(queryByLabelText(label)).toBeInTheDocument();
     }
@@ -71,7 +71,7 @@ describe('<CreateReference />', () => {
       getByText,
       getByLabelText,
       queryByLabelText,
-      queryByRole
+      queryByRole,
     } = render(<CreateReference userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
@@ -91,12 +91,12 @@ describe('<CreateReference />', () => {
       hostedMe: true,
       hostedThem: false,
       recommend: 'yes',
-      userTo: userTo._id
+      userTo: userTo._id,
     });
 
     const alert = await waitForElement(() => queryByRole('alert'));
     expect(alert).toHaveTextContent(
-      `Your reference will become public when ${userTo.username} gives you a reference back, or in 14 days.`
+      `Your reference will become public when ${userTo.username} gives you a reference back, or in 14 days.`,
     );
   });
 
@@ -108,7 +108,7 @@ describe('<CreateReference />', () => {
       getByText,
       getByLabelText,
       queryByLabelText,
-      queryByRole
+      queryByRole,
     } = render(<CreateReference userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
@@ -131,17 +131,17 @@ describe('<CreateReference />', () => {
       hostedMe: true,
       hostedThem: false,
       recommend: 'no',
-      userTo: userTo._id
+      userTo: userTo._id,
     });
 
     expect(api.references.report).toHaveBeenCalledWith(userTo, 'they were mean to me');
 
     const alert = await waitForElement(() => queryByRole('alert'));
     expect(alert).toHaveTextContent(
-      `Your reference will become public when ${userTo.username} gives you a reference back, or in 14 days.`
+      `Your reference will become public when ${userTo.username} gives you a reference back, or in 14 days.`,
     );
     expect(alert).toHaveTextContent(
-      `Also, ${userTo.username} was reported.`
+      `Also, ${userTo.username} was reported.`,
     );
   });
 });

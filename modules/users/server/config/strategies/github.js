@@ -23,7 +23,7 @@ module.exports = function (config) {
     clientID: clientID,
     clientSecret: clientSecret,
     callbackURL: callbackURL,
-    passReqToCallback: true
+    passReqToCallback: true,
   },
   function (req, accessToken, refreshToken, profile, done) {
     // Set the provider data and include tokens
@@ -38,7 +38,7 @@ module.exports = function (config) {
       username: profile.username || undefined,
       provider: 'github',
       providerIdentifierField: 'id',
-      providerData: providerData
+      providerData: providerData,
     };
 
     // Save the user OAuth profile

@@ -51,7 +51,7 @@
           '</div>',
         restrict: 'A',
         scope: {
-          user: '=user'
+          user: '=user',
         },
         controller: ['$scope', function ($scope) {
 
@@ -133,8 +133,8 @@
           // By default show the link
           scope.link = attr.link !== 'false';
 
-        }
+        },
       };
-    }
+    },
   ]);
 }());

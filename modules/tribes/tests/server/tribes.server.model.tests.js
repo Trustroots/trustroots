@@ -22,13 +22,13 @@ describe('Tribe Model Unit Tests:', function () {
 
   before(function () {
     tribe1 = new Tribe({
-      'label': 'Tribe label'
+      'label': 'Tribe label',
     });
     tribe2 = new Tribe({
-      'label': 'Tribe label'
+      'label': 'Tribe label',
     });
     tribe3 = new Tribe({
-      'label': 'Different tribe label'
+      'label': 'Different tribe label',
     });
   });
 

@@ -23,10 +23,10 @@
         contact: '=trContact',
         profileId: '=trContactProfileId',
         avatarSize: '@trContactAvatarSize',
-        hideMeta: '=trContactHideMeta'
+        hideMeta: '=trContactHideMeta',
       },
       controller: trContactController,
-      controllerAs: 'contactCtrl'
+      controllerAs: 'contactCtrl',
     };
 
     /* @ngInject */

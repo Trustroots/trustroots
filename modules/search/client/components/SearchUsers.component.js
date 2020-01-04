@@ -46,7 +46,7 @@ function UsersResults({ users }) {
 }
 
 UsersResults.propTypes = {
-  users: PropTypes.array
+  users: PropTypes.array,
 };
 
 class SearchUsers extends React.Component {
@@ -59,7 +59,7 @@ class SearchUsers extends React.Component {
 
     this.state = {
       searchQuery: '',
-      isSearching: false
+      isSearching: false,
     };
   }
 

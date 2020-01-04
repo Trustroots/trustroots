@@ -28,8 +28,8 @@
       baselayers: MapLayersFactory.getLayers({
         streets: true,
         satellite: false,
-        outdoors: false
-      })
+        outdoors: false,
+      }),
     };
     vm.mapDefaults = {
       scrollWheelZoom: false,
@@ -40,9 +40,9 @@
         layers: {
           visible: false,
           position: 'bottomleft',
-          collapsed: false
-        }
-      }
+          collapsed: false,
+        },
+      },
     };
 
   }

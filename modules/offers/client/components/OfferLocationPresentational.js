@@ -101,7 +101,7 @@ function getIcon(marker, windowWidth) {
     iconRetinaUrl: getMarkerUrl(marker),
     iconAnchor: [iconSize / 2, iconSize / 2],
     iconSize: [iconSize, iconSize],
-    ariaLabel: getAriaLabel(marker)
+    ariaLabel: getAriaLabel(marker),
   });
 }
 
@@ -110,5 +110,5 @@ OfferLocationPresentational.propTypes = {
   location: PropTypes.array.isRequired,
   onChangeZoom: PropTypes.func.isRequired,
   marker: PropTypes.string,
-  windowWidth: PropTypes.number.isRequired
+  windowWidth: PropTypes.number.isRequired,
 };

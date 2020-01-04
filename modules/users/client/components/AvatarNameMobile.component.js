@@ -47,5 +47,5 @@ export default function AvatarNameMobile({ profile }) {
 }
 
 AvatarNameMobile.propTypes = {
-  profile: PropTypes.object.isRequired
+  profile: PropTypes.object.isRequired,
 };

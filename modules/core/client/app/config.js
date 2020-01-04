@@ -43,7 +43,7 @@ var AppConfig = (function () {
     'angular-mailcheck',
     'angular-locker',
     'angular-confirm',
-    'angularGrid'
+    'angularGrid',
   ];
 
   /**
@@ -75,7 +75,7 @@ var AppConfig = (function () {
     appEnv: appEnv,
     appModuleName: appModuleName,
     appModuleVendorDependencies: appModuleVendorDependencies,
-    registerModule: registerModule
+    registerModule: registerModule,
   };
 }());
 

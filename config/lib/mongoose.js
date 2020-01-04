@@ -17,7 +17,7 @@ const semver = require('semver');
 const mongoConnectionOptions = {
   server: {
     // Never stop reconnecting
-    reconnectTries: Number.MAX_SAFE_INTEGER
+    reconnectTries: Number.MAX_SAFE_INTEGER,
   },
   // https://mongoosejs.com/docs/deprecations.html#-ensureindex-
   useCreateIndex: true,
@@ -25,13 +25,13 @@ const mongoConnectionOptions = {
   useFindAndModify: false,
   // Mongoose-specific option. Set to false to disable automatic index
   // creation for all models associated with this connection.
-  autoIndex: Boolean(config.db.autoIndex)
+  autoIndex: Boolean(config.db.autoIndex),
 };
 
 // Load the mongoose models
 module.exports.loadModels = function (callback) {
   log('info', 'Loading Mongoose Schemas.', {
-    autoIndex: mongoConnectionOptions.autoIndex
+    autoIndex: mongoConnectionOptions.autoIndex,
   });
 
   // Globbing model files
@@ -48,11 +48,11 @@ module.exports.loadModels = function (callback) {
       if (error) {
         log('error', 'Calling createIndex failed for Mongoose Schema.', {
           error: error,
-          model: model
+          model: model,
         });
       } else {
         log('info', 'Calling createIndex succeeded for Mongoose Schema.', {
-          model: model
+          model: model,
         });
       }
     });
@@ -80,7 +80,7 @@ module.exports.connect = function (callback) {
       mongoose.connect(config.db.uri, mongoConnectionOptions, function (err) {
         if (err) {
           log('error', 'Could not connect to MongoDB!', {
-            error: err
+            error: err,
           });
         }
         done(err);
@@ -97,13 +97,13 @@ module.exports.connect = function (callback) {
       const admin = new mongoose.mongo.Admin(mongoose.connection.db);
       admin.buildInfo(function (err, info) {
         log('info', 'MongoDB', {
-          version: info.version
+          version: info.version,
         });
 
         if (semver.valid(info.version) && !semver.satisfies(info.version, engines.mongodb)) {
           log('error', 'MongoDB version incompatibility!', {
             version: info.version,
-            compatibleVersion: engines.mongodb
+            compatibleVersion: engines.mongodb,
           });
           process.exit(1);
         }
@@ -116,7 +116,7 @@ module.exports.connect = function (callback) {
       _this.loadModels(function () {
         done();
       });
-    }
+    },
   ],
   function () {
     if (callback) {
@@ -143,7 +143,7 @@ module.exports.dropDatabase = function (connection, callback) {
   connection.dropDatabase(function (err) {
     if (err) {
       log('error', 'Failed to drop database', {
-        error: err
+        error: err,
       });
     } else {
       log('info', 'Successfully dropped database: ' + connection.db.databaseName);
@@ -163,7 +163,7 @@ module.exports.ensureIndexes = function (modelNames) {
         if (error) {
           log('error', 'Indexing Mongoose Schema failed', {
             model: modelName,
-            error: error
+            error: error,
           });
           callback(error);
         } else {
@@ -177,7 +177,7 @@ module.exports.ensureIndexes = function (modelNames) {
         // One of the iterations produced an error.
         // All processing will now stop.
         log('error', 'A Schema failed to index.', {
-          error: error
+          error: error,
         });
         reject(error);
       } else {

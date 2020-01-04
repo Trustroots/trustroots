@@ -14,8 +14,8 @@
         controller: 'SupportController',
         controllerAs: 'support',
         data: {
-          pageTitle: 'Support'
-        }
+          pageTitle: 'Support',
+        },
       }).
       // Deprecated (02-2016):
       state('contact', {
@@ -25,8 +25,8 @@
         controller: 'SupportController',
         controllerAs: 'support',
         data: {
-          pageTitle: 'Contact us'
-        }
+          pageTitle: 'Contact us',
+        },
       });
   }
 }());

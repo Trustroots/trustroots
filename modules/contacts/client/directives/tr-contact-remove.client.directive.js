@@ -11,7 +11,7 @@
     return {
       restrict: 'A',
       scope: {
-        contactToRemove: '=trContactRemove'
+        contactToRemove: '=trContactRemove',
       },
       link: function (scope, element) {
 
@@ -20,14 +20,14 @@
             templateUrl: '/modules/contacts/views/remove-contact.client.modal.html',
             controllerAs: 'removeContactModal',
             controller: 'ContactRemoveController',
-            scope: scope
+            scope: scope,
           });
         }
 
         // Bind opening modal to the click
         element.bind('click', openModal);
 
-      }
+      },
     };
   }
 }());

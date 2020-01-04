@@ -9,7 +9,7 @@
     const user = {
       _id: 'user',
       displayName: 'User',
-      emailTemporary: 'foo@foo.com'
+      emailTemporary: 'foo@foo.com',
     };
 
     // Load the main application module
@@ -18,7 +18,7 @@
     beforeEach(inject(function (
       _$httpBackend_,
       _Authentication_,
-      _messageCenterService_
+      _messageCenterService_,
     ) {
       $httpBackend = _$httpBackend_;
       Authentication = _Authentication_;
@@ -40,7 +40,7 @@
           ProfileEditAccountController = $controller('ProfileEditAccountController', {
             messageCenterService: messageCenterService,
             $scope: $rootScope.$new(),
-            push: {} // this ends up trying to load firebaseMessaging service otherwise
+            push: {}, // this ends up trying to load firebaseMessaging service otherwise
           });
           done();
         });
@@ -53,14 +53,14 @@
           const expectedPutData = {
             _id: 'user',
             displayName: 'User',
-            emailTemporary: 'new@email.com'
+            emailTemporary: 'new@email.com',
           };
           $httpBackend.expect('PUT', '/api/users', expectedPutData).respond(200);
           ProfileEditAccountController.updateUserEmail();
           $httpBackend.flush();
           expect(messageCenterService.add).toHaveBeenCalledWith(
             'success',
-            'Check your email for further instructions.'
+            'Check your email for further instructions.',
           );
         });
 
@@ -90,7 +90,7 @@
           $httpBackend.flush();
           expect(messageCenterService.add).toHaveBeenCalledWith(
             'success',
-            'Confirmation email resent.'
+            'Confirmation email resent.',
           );
         });
 
@@ -100,19 +100,19 @@
           $httpBackend.flush();
           expect(messageCenterService.add).toHaveBeenCalledWith(
             'danger',
-            'Error: Something went wrong.'
+            'Error: Something went wrong.',
           );
         });
 
         it('can show an custom error message during failure', function () {
           $httpBackend.expect('POST', '/api/auth/resend-confirmation').respond(400, {
-            message: 'my custom error'
+            message: 'my custom error',
           });
           ProfileEditAccountController.resendUserEmailConfirm();
           $httpBackend.flush();
           expect(messageCenterService.add).toHaveBeenCalledWith(
             'danger',
-            'Error: my custom error'
+            'Error: my custom error',
           );
         });
 

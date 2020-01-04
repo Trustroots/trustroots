@@ -24,7 +24,7 @@
       restrict: 'A',
       replace: true,
       scope: false,
-      link: trShareTwitterDirectiveLink
+      link: trShareTwitterDirectiveLink,
     };
 
     function trShareTwitterDirectiveLink(scope, element, attrs) {

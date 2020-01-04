@@ -7,14 +7,14 @@
   /* @ngInject */
   function MessagesRead($resource) {
     return $resource('/api/messages-read', {
-      messageIds: '@messageIds'
+      messageIds: '@messageIds',
     }, {
       query: {
         method: 'POST',
         isArray: false,
         cache: false,
-        ignoreLoadingBar: true
-      }
+        ignoreLoadingBar: true,
+      },
     });
   }
 }());

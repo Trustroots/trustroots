@@ -34,7 +34,7 @@ exports.up = function (next) {
         .update(
           { 'tribe': { '$exists': true } },
           { $unset: { tribe: 1 } },
-          { multi: true, strict: false }
+          { multi: true, strict: false },
         )
         .then(function (res) {
           console.log('Removed `tribe` keys:');
@@ -66,12 +66,12 @@ exports.up = function (next) {
             User.update(
               { _id: user._id },
               { $set: {
-                member: newMember
+                member: newMember,
               } },
               function (err) {
                 console.log('🚩 User processed: ' + user._id);
                 callback(err);
-              }
+              },
             );
 
           }, function (err) {
@@ -85,7 +85,7 @@ exports.up = function (next) {
 
         });
 
-    }
+    },
 
   ], function (err) {
     if (err) {

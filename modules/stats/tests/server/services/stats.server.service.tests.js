@@ -69,7 +69,7 @@ describe('General Stats API Service Unit Tests', function () {
           counts: { duplicate: 1 },
           values: { duplicate: 'value' },
           meta: { duplicate: 'meta' },
-          tags: { duplicate: 'tag' }
+          tags: { duplicate: 'tag' },
         };
 
         statsService.stat(statWithDuplicates, function (e) {
@@ -89,17 +89,17 @@ describe('General Stats API Service Unit Tests', function () {
       const validData = {
         namespace: 'test',
         counts: {
-          testCount: 1
+          testCount: 1,
         },
         values: {
-          testValue: 3.5
+          testValue: 3.5,
         },
         meta: {
-          testMeta: 13
+          testMeta: 13,
         },
         tags: {
-          testTag: 'testing'
-        }
+          testTag: 'testing',
+        },
       };
 
       it('should reach influxService.stat with correct data', function (done) {

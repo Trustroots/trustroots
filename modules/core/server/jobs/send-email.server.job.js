@@ -21,14 +21,14 @@ module.exports = function (job, done) {
       // Log the failure to send the message
       log('error', 'The `send email` job failed #VDKMbr', {
         jobId: jobId,
-        error: err
+        error: err,
       });
 
       return done(err);
     } else {
       // Log the successful delivery of the message
       log('info', 'Successfully finished `send email` job #4vO5Vt', {
-        jobId: jobId
+        jobId: jobId,
       });
 
       return done();

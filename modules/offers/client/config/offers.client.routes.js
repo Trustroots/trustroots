@@ -26,8 +26,8 @@
           defaultLocation: function (LocationService) {
             // Returns `{lat: Float, lng: Float, zoom: 4}`
             return LocationService.getDefaultLocation(4);
-          }
-        }
+          },
+        },
       }).
       state('offer.host', {
         url: '/host',
@@ -43,10 +43,10 @@
           offers: function (OffersByService, Authentication) {
             return OffersByService.query({
               userId: Authentication.user._id,
-              types: 'host'
+              types: 'host',
             });
-          }
-        }
+          },
+        },
       }).
       state('offer.host.edit', {
         url: '?status',
@@ -56,8 +56,8 @@
         controller: 'OfferHostEditController',
         controllerAs: 'offerHostEdit',
         data: {
-          pageTitle: 'Host travellers'
-        }
+          pageTitle: 'Host travellers',
+        },
       }).
       state('offer.meet', {
         url: '/meet',
@@ -65,7 +65,7 @@
         requiresAuth: true,
         template: '<div ui-view></div>',
         controller: 'OfferController',
-        controllerAs: 'offer'
+        controllerAs: 'offer',
       }).
       state('offer.meet.list', {
         url: '',
@@ -74,7 +74,7 @@
         controller: 'OfferListMeetController',
         controllerAs: 'offerListMeet',
         data: {
-          pageTitle: 'Meet'
+          pageTitle: 'Meet',
         },
         resolve: {
           // A string value resolves to a service
@@ -83,10 +83,10 @@
           offers: function (OffersByService, Authentication) {
             return OffersByService.query({
               userId: Authentication.user._id,
-              types: 'meet'
+              types: 'meet',
             });
-          }
-        }
+          },
+        },
       }).
       state('offer.meet.add', {
         url: '/add',
@@ -96,8 +96,8 @@
         controller: 'OfferMeetAddController',
         controllerAs: 'offerMeet',
         data: {
-          pageTitle: 'Add meeting offer'
-        }
+          pageTitle: 'Add meeting offer',
+        },
       }).
       state('offer.meet.edit', {
         url: '/:offerId',
@@ -107,17 +107,17 @@
         controller: 'OfferMeetEditController',
         controllerAs: 'offerMeet',
         data: {
-          pageTitle: 'Edit meeting offer'
+          pageTitle: 'Edit meeting offer',
         },
         resolve: {
-          offer: getOffer
-        }
+          offer: getOffer,
+        },
       });
 
     /* @ngInject */
     function getOffer($stateParams, OffersService) {
       return OffersService.get({
-        offerId: $stateParams.offerId
+        offerId: $stateParams.offerId,
       }).$promise;
     }
 

@@ -7,28 +7,28 @@
   /* @ngInject */
   function OffersService($resource) {
     const Offer = $resource('/api/offers/:offerId', {
-      offerId: '@_id'
+      offerId: '@_id',
     }, {
       get: {
         method: 'GET',
-        cancellable: true
+        cancellable: true,
       },
       update: {
-        method: 'PUT'
+        method: 'PUT',
       },
       save: {
-        method: 'POST'
+        method: 'POST',
       },
       delete: {
-        method: 'DELETE'
-      }
+        method: 'DELETE',
+      },
     });
 
     angular.extend(Offer.prototype, {
       createOrUpdate: function () {
         const offer = this;
         return createOrUpdate(offer);
-      }
+      },
     });
 
     return Offer;

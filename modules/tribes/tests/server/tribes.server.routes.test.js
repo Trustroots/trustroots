@@ -36,7 +36,7 @@ describe('Tribe CRUD tests', function () {
     // Create user credentials
     credentials = {
       username: 'tr_username',
-      password: 'M3@n.jsI$Aw3$0m3'
+      password: 'M3@n.jsI$Aw3$0m3',
     };
 
     // Create a new user
@@ -48,7 +48,7 @@ describe('Tribe CRUD tests', function () {
       username: credentials.username,
       password: credentials.password,
       provider: 'local',
-      public: true
+      public: true,
     };
 
     // Create a new tribe
@@ -58,14 +58,14 @@ describe('Tribe CRUD tests', function () {
       attribution_url: 'http://www.trustroots.org/team',
       image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
       tribe: true,
-      description: 'Lorem ipsum.'
+      description: 'Lorem ipsum.',
     };
 
     // Create a new non-public tribe
     _tribeNonPublic = {
       label: 'Non-public Tribe',
       tribe: true,
-      public: false
+      public: false,
     };
 
     user = new User(_user);

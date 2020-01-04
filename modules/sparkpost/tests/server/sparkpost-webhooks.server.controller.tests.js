@@ -26,7 +26,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     influx.InfluxDB.prototype.writeMeasurement.returns(
       new Promise(function (resolve) {
         process.nextTick(resolve());
-      })
+      }),
     );
 
     // provide config options for influxdb
@@ -34,7 +34,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
       host: 'localhost',
       port: 8086,
       protocol: 'http',
-      database: 'trustroots-test'
+      database: 'trustroots-test',
     });
 
     // stub the stathat endpoints
@@ -47,12 +47,12 @@ describe('Sparkpost Webhooks - Integration Test', function () {
       message_event: {
         type: 'click',
         geo_ip: {
-          country: 'abc'
+          country: 'abc',
         },
         timestamp: 1234567890,
-        campaign_id: 'this is a campaign id'
-      }
-    }
+        campaign_id: 'this is a campaign id',
+      },
+    },
   };
 
   context('influxdb configured', function () {
@@ -124,7 +124,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
           _.forEach([
             'transactionalEmailEvent.count',
             'transactionalEmailEvent.count.category.message_event',
-            'transactionalEmailEvent.count.type.click'
+            'transactionalEmailEvent.count.type.click',
           ], function (value) {
             should(groupedArgs[1]).containEql(value);
           });

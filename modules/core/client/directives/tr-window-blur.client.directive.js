@@ -17,7 +17,7 @@
   function trWindowBlurDirective($window) {
     const directive = {
       link: link,
-      restrict: 'A'
+      restrict: 'A',
     };
 
     return directive;

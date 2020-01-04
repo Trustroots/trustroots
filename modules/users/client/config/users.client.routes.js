@@ -18,8 +18,8 @@
         controllerAs: 'invite',
         requiresAuth: false,
         data: {
-          pageTitle: 'Signup'
-        }
+          pageTitle: 'Signup',
+        },
       }).
       // Users state routing
       state('welcome', {
@@ -28,8 +28,8 @@
         requiresAuth: true,
         footerHidden: true,
         data: {
-          pageTitle: 'Welcome'
-        }
+          pageTitle: 'Welcome',
+        },
       }).
 
       state('profile-edit', {
@@ -37,7 +37,7 @@
         templateUrl: '/modules/users/views/profile/profile-edit.client.view.html',
         abstract: true,
         controller: 'ProfileEditController',
-        controllerAs: 'profileEdit'
+        controllerAs: 'profileEdit',
       }).
       state('profile-edit.about', {
         url: '',
@@ -46,8 +46,8 @@
         controllerAs: 'profileEditAbout',
         requiresAuth: true,
         data: {
-          pageTitle: 'Edit profile'
-        }
+          pageTitle: 'Edit profile',
+        },
       }).
       state('profile-edit.locations', {
         url: '/locations',
@@ -60,11 +60,11 @@
           SettingsService: 'SettingsService',
           appSettings: function (SettingsService) {
             return SettingsService.get();
-          }
+          },
         },
         data: {
-          pageTitle: 'Edit your locations'
-        }
+          pageTitle: 'Edit your locations',
+        },
       }).
       state('profile-edit.photo', {
         url: '/photo',
@@ -77,11 +77,11 @@
           SettingsService: 'SettingsService',
           appSettings: function (SettingsService) {
             return SettingsService.get();
-          }
+          },
         },
         data: {
-          pageTitle: 'Edit profile photo'
-        }
+          pageTitle: 'Edit profile photo',
+        },
       }).
       state('profile-edit.networks', {
         url: '/networks',
@@ -90,8 +90,8 @@
         controllerAs: 'profileEditNetworks',
         requiresAuth: true,
         data: {
-          pageTitle: 'Edit Profile networks'
-        }
+          pageTitle: 'Edit Profile networks',
+        },
       }).
       state('profile-edit.account', {
         url: '/account',
@@ -100,8 +100,8 @@
         controllerAs: 'profileEditAccount',
         requiresAuth: true,
         data: {
-          pageTitle: 'Account'
-        }
+          pageTitle: 'Account',
+        },
       }).
 
       state('profile', {
@@ -124,7 +124,7 @@
 
           profile: function (UserProfilesService, $stateParams, $q) {
             return UserProfilesService.get({
-              username: $stateParams.username
+              username: $stateParams.username,
             }).$promise
               .catch(function (e) {
 
@@ -171,15 +171,15 @@
 
               // Load contact
               return ContactsListService.query({
-                listUserId: profile._id
+                listUserId: profile._id,
               });
             });
-          }
+          },
 
         },
         data: {
-          pageTitle: 'Profile'
-        }
+          pageTitle: 'Profile',
+        },
       }).
       state('profile.about', {
         url: '',
@@ -187,8 +187,8 @@
         requiresAuth: true,
         noScrollingTop: true,
         data: {
-          pageTitle: 'Profile'
-        }
+          pageTitle: 'Profile',
+        },
       }).
       state('profile.accommodation', {
         url: '/accommodation',
@@ -196,8 +196,8 @@
         requiresAuth: true,
         noScrollingTop: true,
         data: {
-          pageTitle: 'Profile accommodation'
-        }
+          pageTitle: 'Profile accommodation',
+        },
       }).
       state('profile.meet', {
         url: '/meet',
@@ -205,8 +205,8 @@
         requiresAuth: true,
         noScrollingTop: true,
         data: {
-          pageTitle: 'Profile meet'
-        }
+          pageTitle: 'Profile meet',
+        },
       }).
       state('profile.overview', {
         url: '/overview',
@@ -214,8 +214,8 @@
         requiresAuth: true,
         noScrollingTop: true,
         data: {
-          pageTitle: 'Profile overview'
-        }
+          pageTitle: 'Profile overview',
+        },
       }).
       state('profile.contacts', {
         url: '/contacts',
@@ -223,8 +223,8 @@
         requiresAuth: true,
         noScrollingTop: true,
         data: {
-          pageTitle: 'Profile contacts'
-        }
+          pageTitle: 'Profile contacts',
+        },
       }).
       state('profile.tribes', {
         url: '/tribes',
@@ -232,8 +232,8 @@
         requiresAuth: true,
         noScrollingTop: true,
         data: {
-          pageTitle: 'Profile tribes'
-        }
+          pageTitle: 'Profile tribes',
+        },
       }).
 
       // When attempting to look at profile as non-authenticated user
@@ -241,8 +241,8 @@
         url: '/profile-signup',
         templateUrl: '/modules/users/views/profile/profile-signup.client.view.html',
         data: {
-          pageTitle: 'Trustroots profile'
-        }
+          pageTitle: 'Trustroots profile',
+        },
       }).
 
       // Auth routes
@@ -264,11 +264,11 @@
 
           appSettings: function (SettingsService) {
             return SettingsService.get();
-          }
+          },
         },
         data: {
-          pageTitle: 'Sign up'
-        }
+          pageTitle: 'Sign up',
+        },
       }).
       state('signin', {
         url: '/signin?continue',
@@ -283,11 +283,11 @@
 
           appSettings: function (SettingsService) {
             return SettingsService.get();
-          }
+          },
         },
         data: {
-          pageTitle: 'Sign in'
-        }
+          pageTitle: 'Sign in',
+        },
       }).
       state('confirm-email', {
         url: '/confirm-email/:token?signup',
@@ -296,16 +296,16 @@
         controller: 'ConfirmEmailController',
         controllerAs: 'confirmEmail',
         data: {
-          pageTitle: 'Confirm email'
-        }
+          pageTitle: 'Confirm email',
+        },
       }).
       state('confirm-email-invalid', {
         url: '/confirm-email-invalid',
         templateUrl: '/modules/users/views/authentication/confirm-email-invalid.client.view.html',
         requiresAuth: false,
         data: {
-          pageTitle: 'Confirm email invalid'
-        }
+          pageTitle: 'Confirm email invalid',
+        },
       }).
 
       // Password reset
@@ -316,24 +316,24 @@
         controllerAs: 'forgotPassword',
         footerHidden: true,
         data: {
-          pageTitle: 'Reset password'
-        }
+          pageTitle: 'Reset password',
+        },
       }).
       state('reset-invalid', {
         url: '/password/reset/invalid',
         templateUrl: '/modules/users/views/password/reset-password-invalid.client.view.html',
         footerHidden: true,
         data: {
-          pageTitle: 'Reset password'
-        }
+          pageTitle: 'Reset password',
+        },
       }).
       state('reset-success', {
         url: '/password/reset/success',
         templateUrl: '/modules/users/views/password/reset-password-success.client.view.html',
         footerHidden: true,
         data: {
-          pageTitle: 'Reset password'
-        }
+          pageTitle: 'Reset password',
+        },
       }).
       state('reset', {
         url: '/password/reset/:token',
@@ -342,8 +342,8 @@
         controller: 'ResetPasswordController',
         controllerAs: 'resetPassword',
         data: {
-          pageTitle: 'Reset password'
-        }
+          pageTitle: 'Reset password',
+        },
       }).
 
       // Profile removal
@@ -356,8 +356,8 @@
         controller: 'RemoveProfileController',
         controllerAs: 'removeProfile',
         data: {
-          pageTitle: 'Remove profile'
-        }
+          pageTitle: 'Remove profile',
+        },
       });
 
     if (AppConfig.appEnv !== 'production') {
@@ -369,8 +369,8 @@
           noScrollingTop: true,
           abstract: true,
           data: {
-            pageTitle: 'Profile references'
-          }
+            pageTitle: 'Profile references',
+          },
         }).
         state('profile.references.list', {
           url: '',
@@ -378,8 +378,8 @@
           requiresAuth: true,
           noScrollingTop: true,
           data: {
-            pageTitle: 'Profile references'
-          }
+            pageTitle: 'Profile references',
+          },
         }).
         state('profile.references.new', {
           url: '/new',
@@ -387,8 +387,8 @@
           requiresAuth: true,
           noScrollingTop: true,
           data: {
-            pageTitle: 'Leave a reference'
-          }
+            pageTitle: 'Leave a reference',
+          },
         });
     }
   }

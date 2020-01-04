@@ -14,12 +14,12 @@
       tribes: [],
       types: [
         'host',
-        'meet'
+        'meet',
       ],
       languages: [],
       seen: {
-        months: 24
-      }
+        months: 24,
+      },
     };
 
     // Make cache id unique for this user
@@ -36,7 +36,7 @@
 
     const service = {
       set: set,
-      get: get
+      get: get,
     };
 
     return service;

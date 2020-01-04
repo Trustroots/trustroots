@@ -65,7 +65,7 @@ exports.catchEmails = function () {
         sentEmails.push(data);
         callback();
       },
-      logger: false
+      logger: false,
     };
 
   });

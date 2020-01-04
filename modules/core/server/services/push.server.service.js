@@ -33,8 +33,8 @@ exports.notifyPushDeviceAdded = function (user, platform, callback) {
       source: 'push-notification',
       medium: 'fcm',
       campaign: 'device-added',
-      content: 'reply-to'
-    })
+      content: 'reply-to',
+    }),
   };
 
   exports.sendUserNotification(user, notification, callback);
@@ -76,8 +76,8 @@ exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
       source: 'push-notification',
       medium: 'fcm',
       campaign: 'messages-unread',
-      content: 'reply-to'
-    })
+      content: 'reply-to',
+    }),
   };
 
   exports.sendUserNotification(userTo, notification, callback);
@@ -106,8 +106,8 @@ exports.notifyNewReference = function (userFrom, userTo, data, callback) {
       source: 'push-notification',
       medium: 'fcm',
       campaign: 'new-reference',
-      content: 'reply-to' // @TODO what are the correct parameters here? What do they mean?
-    })
+      content: 'reply-to', // @TODO what are the correct parameters here? What do they mean?
+    }),
   };
   exports.sendUserNotification(userTo, notification, callback);
 };
@@ -117,7 +117,7 @@ exports.sendUserNotification = function (user, notification, callback) {
   const data = {
     userId: user._id,
     pushServices: user.pushRegistration,
-    notification: notification
+    notification: notification,
   };
 
   agenda.now('send push message', data, callback);

@@ -69,7 +69,7 @@
       require: 'ngModel',
       restrict: 'AE',
       scope: {
-        trEditorOptions: '='
+        trEditorOptions: '=',
       },
       link: function (scope, iElement, iAttrs, ngModel) {
 
@@ -117,7 +117,7 @@
         scope.$watch('trEditorOptions', function (trEditorOptions) {
           ngModel.editor.init(iElement, trEditorOptions);
         });
-      }
+      },
     };
   }
 }());

@@ -18,29 +18,29 @@ exports.getMessages = (req, res) => {
   // Check that all provided IDs are  valid
   if (![user1, user2].every((user) => ! user || mongoose.Types.ObjectId.isValid(user))) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
   Message
     .find({ $or: [
       { 'userFrom': user1, 'userTo': user2 },
-      { 'userFrom': user2, 'userTo': user1 }
+      { 'userFrom': user2, 'userTo': user1 },
     ] })
     .populate({
       path: 'userFrom',
       select: 'username displayName',
-      model: 'User'
+      model: 'User',
     })
     .populate({
       path: 'userTo',
       select: 'username displayName',
-      model: 'User'
+      model: 'User',
     })
     .exec((err, messages) => {
       if (err) {
         return res.status(400).send({
-          message: errorService.getErrorMessage(err)
+          message: errorService.getErrorMessage(err),
         });
       }
 

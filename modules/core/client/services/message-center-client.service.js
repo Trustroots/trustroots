@@ -33,7 +33,7 @@
       return {
         setGlobalOptions: _this.setGlobalOptions,
         options: _this.options,
-        getOptions: _this.getOptions
+        getOptions: _this.getOptions,
       };
     };
   }
@@ -52,7 +52,7 @@
          * status, that will make the message available to the next page */
         next: 'next',
         /** @var Do not delete this message automatically. */
-        permanent: 'permanent'
+        permanent: 'permanent',
       },
       add: function (type, message, options) {
         const availableTypes = ['info', 'warning', 'danger', 'success'];
@@ -69,7 +69,7 @@
           processed: false,
           close: function () {
             return service.remove(this);
-          }
+          },
         };
         messageObject.message = options.html ? $sce.trustAsHtml(message) : message;
         messageObject.html = !!options.html;
@@ -110,7 +110,7 @@
       },
       flush: function () {
         $rootScope.mcMessages = this.mcMessages;
-      }
+      },
     };
   }
 }());

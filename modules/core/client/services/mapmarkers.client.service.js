@@ -21,7 +21,7 @@
     const service = {
       getIconConfig: getIconConfig,
       getIcon: getIcon,
-      getOfferCircle: getOfferCircle
+      getOfferCircle: getOfferCircle,
     };
 
     return service;
@@ -63,14 +63,14 @@
         // size of the icon in px
         iconSize: [
           markerIconSize,
-          markerIconSize
+          markerIconSize,
         ],
 
         // point of the icon which will correspond to marker's location
         iconAnchor: [
           parseInt(markerIconSize / 2, 10),
-          parseInt(markerIconSize / 2, 10)
-        ]
+          parseInt(markerIconSize / 2, 10),
+        ],
       };
 
       if (offer.type === 'host' && offer.status === 'yes') {
@@ -109,7 +109,7 @@
         // @link https://en.wikipedia.org/wiki/Null_Island
         // Accepts Leaflet.LatLng
         // @linkhttp://leafletjs.com/reference-1.2.0.html#latlng
-        latlngs: [0, 0]
+        latlngs: [0, 0],
 
       }, defaults || {});
 

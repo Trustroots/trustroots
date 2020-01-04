@@ -34,7 +34,7 @@
         description: '',
         noOfferDescription: '',
         location: defaultLocation,
-        maxGuests: 1
+        maxGuests: 1,
       };
 
       // Make sure offer is there
@@ -133,7 +133,7 @@
         $analytics.eventTrack('offer-modified', {
           category: 'offer.edit',
           label: 'Modified offer',
-          value: vm.offer.status
+          value: vm.offer.status,
         });
         if ($window.innerWidth < 768) {
           $state.go('profile.accommodation', { username: Authentication.user.username });

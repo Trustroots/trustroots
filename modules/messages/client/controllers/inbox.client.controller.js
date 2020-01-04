@@ -50,7 +50,7 @@
 
         $analytics.eventTrack('inbox-pagination', {
           category: 'messages.inbox',
-          label: 'Inbox page ' + vm.messageHandler.nextPage
+          label: 'Inbox page ' + vm.messageHandler.nextPage,
         });
       }
     }

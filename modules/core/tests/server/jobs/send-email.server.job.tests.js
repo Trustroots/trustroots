@@ -23,14 +23,14 @@ describe('job: send email', function () {
         data: {
           to: {
             name: 'foo',
-            address: 'to@test.com'
+            address: 'to@test.com',
           },
           from: 'from@test.com',
           subject: 'test subject',
           html: 'html content',
-          text: 'text content'
-        }
-      }
+          text: 'text content',
+        },
+      },
     };
     sendEmailJobHandler(job, function (err) {
       if (err) return done(err);

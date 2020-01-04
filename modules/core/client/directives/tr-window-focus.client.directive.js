@@ -17,7 +17,7 @@
   function trWindowFocusDirective($window) {
     const directive = {
       link: link,
-      restrict: 'A'
+      restrict: 'A',
     };
 
     return directive;

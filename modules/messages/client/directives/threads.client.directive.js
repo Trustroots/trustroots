@@ -14,7 +14,7 @@
             scope.$apply(attr.moremessages);
           }
         });
-      }
+      },
     };
   }
 }());

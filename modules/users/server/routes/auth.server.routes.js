@@ -38,8 +38,8 @@ module.exports = function (app) {
     .get(passport.authenticate('facebook', {
       scope: [
         'public_profile',
-        'email'
-      ]
+        'email',
+      ],
     }))
     .put(userAuthentication.updateFacebookOAuthToken);
   app.route('/api/auth/facebook/callback').all(usersPolicy.isAllowed)
@@ -55,8 +55,8 @@ module.exports = function (app) {
   app.route('/api/auth/github').all(usersPolicy.isAllowed)
     .get(passport.authenticate('github', {
       scope: [
-        'user:email'
-      ]
+        'user:email',
+      ],
     }));
   app.route('/api/auth/github/callback').all(usersPolicy.isAllowed)
     .get(userAuthentication.oauthCallback('github'));

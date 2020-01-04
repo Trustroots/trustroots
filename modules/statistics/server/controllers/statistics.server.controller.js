@@ -75,8 +75,8 @@ exports.getMeetOffersCount = function (callback) {
     type: 'meet',
     $or: [
       { validUntil: { $gte: new Date() } },
-      { validUntil: { $exists: false } }
-    ]
+      { validUntil: { $exists: false } },
+    ],
   }, function (err, count) {
     if (err) {
       return callback(err);
@@ -93,17 +93,17 @@ exports.getHostOffersCount = function (callback) {
   Offer.aggregate([
     {
       $match: {
-        type: 'host'
-      }
+        type: 'host',
+      },
     },
     {
       $group: {
         _id: '$status',
         count: {
-          $sum: 1
-        }
-      }
-    }
+          $sum: 1,
+        },
+      },
+    },
   ],
   function (err, counters) {
     if (err) {
@@ -129,7 +129,7 @@ exports.getHostOffersCount = function (callback) {
     const values = {
       yes: 0,
       maybe: 0,
-      no: 0
+      no: 0,
     };
 
     if (counters && counters.length > 0) {
@@ -150,7 +150,7 @@ exports.getHostOffersCount = function (callback) {
 exports.getNewsletterSubscriptionsCount = function (callback) {
   User.countDocuments({
     newsletter: true,
-    public: true
+    public: true,
   },
   function (err, count) {
     if (err) {
@@ -169,8 +169,8 @@ exports.getPushRegistrationCount = function (callback) {
     pushRegistration: {
       $exists: true,
       // `pushRegistration` array should not be empty
-      $not: { $size: 0 }
-    }
+      $not: { $size: 0 },
+    },
   }, function (err, count) {
     if (err) {
       return callback(err);
@@ -185,8 +185,8 @@ exports.getPushRegistrationCount = function (callback) {
 exports.getLastSeenStatistic = function (since, callback) {
   const query = {
     seen: {
-      '$gte': moment().subtract(since).toDate()
-    }
+      '$gte': moment().subtract(since).toDate(),
+    },
   };
 
   User.countDocuments(query, function (err, count) {
@@ -203,7 +203,7 @@ exports.getLastSeenStatistic = function (since, callback) {
 exports.getPublicStatistics = function (req, res) {
   req.statistics = {
     connected: {},
-    hosting: {}
+    hosting: {},
   };
 
   async.waterfall([
@@ -311,13 +311,13 @@ exports.getPublicStatistics = function (req, res) {
     // Done!
     function () {
       return res.json(req.statistics);
-    }
+    },
 
   ],
   function (err) {
     if (err) {
       res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
   });
@@ -345,7 +345,7 @@ exports.collectStatistics = function (req, res) {
       .header('x-tr-update-needed', updateMsg)
       .status(400)
       .send({
-        message: 'Missing or invalid `stats`.'
+        message: 'Missing or invalid `stats`.',
       });
   }
 
@@ -354,7 +354,7 @@ exports.collectStatistics = function (req, res) {
       .header('x-tr-update-needed', updateMsg)
       .status(400)
       .send({
-        message: 'Missing or invalid `collection`.'
+        message: 'Missing or invalid `collection`.',
       });
   }
 
@@ -367,21 +367,21 @@ exports.collectStatistics = function (req, res) {
     const stats = {
       namespace: 'mobileAppInit',
       counts: {
-        count: 1
+        count: 1,
       },
       tags: {
         // Trustroots app version (e.g. "0.2.0")
         version: appVersion,
         // Device year class, e.g. "2012"
         // @link https://github.com/facebook/device-year-class
-        deviceYearClass: String(_.get(req, 'body.stats.deviceYearClass', 'unknown'))
+        deviceYearClass: String(_.get(req, 'body.stats.deviceYearClass', 'unknown')),
       },
       meta: {
         // Device OS (e.g. "android")
         os: String(_.get(req, 'body.stats.os', 'unknown')),
         // Expo SDK version
-        expoVersion: String(_.get(req, 'body.stats.expoVersion', 'unknown'))
-      }
+        expoVersion: String(_.get(req, 'body.stats.expoVersion', 'unknown')),
+      },
     };
 
     // Send validation result to stats

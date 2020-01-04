@@ -27,7 +27,7 @@ export class CreateReference extends React.Component {
       isSubmitting: false,
       isDuplicate: false,
       isSubmitted: false,
-      isPublic: false
+      isPublic: false,
     };
 
     // bind methods
@@ -51,7 +51,7 @@ export class CreateReference extends React.Component {
 
   handleTabSwitch(move) {
     this.setState(state => ({
-      tab: state.tab + move
+      tab: state.tab + move,
     }));
   }
 
@@ -82,13 +82,13 @@ export class CreateReference extends React.Component {
     // save the reference
     const [savedReference] = await Promise.all([
       api.references.create({ ...reference, userTo: this.props.userTo._id }),
-      recommend === 'no' && report ? api.references.report(this.props.userTo, reportMessage) : null
+      recommend === 'no' && report ? api.references.report(this.props.userTo, reportMessage) : null,
     ]);
 
     this.setState(() => ({
       isSubmitting: false,
       isSubmitted: true,
-      isPublic: savedReference.public
+      isPublic: savedReference.public,
     }));
   }
 
@@ -112,7 +112,7 @@ export class CreateReference extends React.Component {
         onChangeRecommend={this.handleChangeRecommend}
         onChangeReport={this.handleChangeReport}
         onChangeReportMessage={this.handleChangeReportMessage}
-      />
+      />,
     ];
 
     const tabDone = (recommend) ? 1 : (hostedMe || hostedThem || met) ? 0 : -1;
@@ -166,7 +166,7 @@ export class CreateReference extends React.Component {
 CreateReference.propTypes = {
   userFrom: PropTypes.object.isRequired,
   userTo: PropTypes.object.isRequired,
-  t: PropTypes.func.isRequired
+  t: PropTypes.func.isRequired,
 };
 
 export default withTranslation('reference')(CreateReference);

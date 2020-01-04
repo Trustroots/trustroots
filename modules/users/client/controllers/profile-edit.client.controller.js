@@ -30,7 +30,7 @@
           title: 'Are you sure?',
           text: 'Your changes would be lost. Return and press "Save" to keep the changes, or press "Continue" to discard them.',
           ok: 'Continue',
-          cancel: 'Cancel'
+          cancel: 'Cancel',
         })
         // If user pressed "continue", create another state go
           .then(function () {

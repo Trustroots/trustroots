@@ -16,29 +16,29 @@ exports.invokeRolesPolicies = function () {
     roles: ['admin'],
     allows: [{
       resources: '/api/tribes',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/tribes/:tribe',
-      permissions: ['get']
-    }]
+      permissions: ['get'],
+    }],
   }, {
     roles: ['user'],
     allows: [{
       resources: '/api/tribes',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/tribes/:tribe',
-      permissions: ['get']
-    }]
+      permissions: ['get'],
+    }],
   }, {
     roles: ['guest'],
     allows: [{
       resources: '/api/tribes',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/tribes/:tribe',
-      permissions: ['get']
-    }]
+      permissions: ['get'],
+    }],
   }]);
 };
 
@@ -55,7 +55,7 @@ exports.isAllowed = function (req, res, next) {
     if (err) {
       // An authorization error occurred.
       return res.status(500).send({
-        message: 'Unexpected authorization error'
+        message: 'Unexpected authorization error',
       });
     } else {
       if (isAllowed) {
@@ -63,7 +63,7 @@ exports.isAllowed = function (req, res, next) {
         return next();
       } else {
         return res.status(403).json({
-          message: errorService.getErrorMessageByKey('forbidden')
+          message: errorService.getErrorMessageByKey('forbidden'),
         });
       }
     }

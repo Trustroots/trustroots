@@ -38,28 +38,28 @@ module.exports = function (job, agendaDone) {
         .find({
           public: false,
           created: {
-            $lt: createdTimeAgo
+            $lt: createdTimeAgo,
           },
           // Exlude users with `suspended` role
           roles: {
             $elemMatch: {
-              $ne: 'suspended'
-            }
-          }
+              $ne: 'suspended',
+            },
+          },
         })
         .and([
           {
             $or: [
               { publicReminderCount: { $lt: config.limits.maxSignupReminders || 3 } },
-              { publicReminderCount: { $exists: false } }
-            ]
+              { publicReminderCount: { $exists: false } },
+            ],
           },
           {
             $or: [
               { publicReminderSent: { $lt: remindedTimeAgo } },
-              { publicReminderSent: { $exists: false } }
-            ]
-          }
+              { publicReminderSent: { $exists: false } },
+            ],
+          },
         ])
         .limit(config.limits.maxProcessSignupReminders || 50)
         .exec(function (err, users) {
@@ -86,17 +86,17 @@ module.exports = function (job, agendaDone) {
               user._id,
               {
                 $set: {
-                  publicReminderSent: new Date()
+                  publicReminderSent: new Date(),
                 },
                 // If the field does not exist, $inc creates the field
                 // and sets the field to the specified value.
                 $inc: {
-                  publicReminderCount: 1
-                }
+                  publicReminderCount: 1,
+                },
               },
               function (err) {
                 callback(err);
-              }
+              },
             );
           }
         });
@@ -104,7 +104,7 @@ module.exports = function (job, agendaDone) {
         done(err);
       });
 
-    }
+    },
 
   ], function (err) {
     if (err) {
@@ -112,7 +112,7 @@ module.exports = function (job, agendaDone) {
       // Agenda stores Mongo `ObjectId` so turning that into a string here
       log('error', 'Failure in finish signup reminder background job.', {
         error: err,
-        jobId: _.get(job, 'attrs._id').toString()
+        jobId: _.get(job, 'attrs._id').toString(),
       });
     }
     return agendaDone(err);

@@ -29,5 +29,5 @@ RemoveContactContainer.propTypes = {
   contact: PropTypes.object.isRequired,
   show: PropTypes.bool.isRequired,
   onSuccess: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired
+  onCancel: PropTypes.func.isRequired,
 };

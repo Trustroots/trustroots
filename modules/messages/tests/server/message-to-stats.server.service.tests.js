@@ -32,7 +32,7 @@ describe('Message to stats server service Unit Tests:', function () {
       email: 'user1@test.com',
       username: 'username1',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
 
     user2 = new User({
@@ -42,7 +42,7 @@ describe('Message to stats server service Unit Tests:', function () {
       email: 'user2@test.com',
       username: 'username2',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
 
     // save those users to mongoDB
@@ -84,7 +84,7 @@ describe('Message to stats server service Unit Tests:', function () {
             message1to2 = new Message({
               userFrom: user1._id,
               userTo: user2._id,
-              content: 'message content'
+              content: 'message content',
             });
             done();
           }, 2);
@@ -95,7 +95,7 @@ describe('Message to stats server service Unit Tests:', function () {
             message2to1 = new Message({
               userFrom: user2._id,
               userTo: user1._id,
-              content: 'message content'
+              content: 'message content',
             });
             done();
           }, 2);
@@ -106,7 +106,7 @@ describe('Message to stats server service Unit Tests:', function () {
             shortMessage = new Message({
               userFrom: user1._id,
               userTo: user2._id,
-              content: shortMsgContent
+              content: shortMsgContent,
             });
             done();
           }, 2);
@@ -117,7 +117,7 @@ describe('Message to stats server service Unit Tests:', function () {
             longMessage = new Message({
               userFrom: user2._id,
               userTo: user1._id,
-              content: longMsgContent
+              content: longMsgContent,
             });
             done();
           }, 2);
@@ -129,7 +129,7 @@ describe('Message to stats server service Unit Tests:', function () {
             function (msg, callback) {
               msg.save(callback);
             }, done);
-        }
+        },
       ], done);
     });
 

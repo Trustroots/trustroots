@@ -13,13 +13,13 @@
       restrict: 'A',
       replace: true,
       scope: {
-        profile: '='
+        profile: '=',
       },
       controller: ['$scope', 'Languages', function ($scope, Languages) {
 
         $scope.languageNames = Languages.get('object');
 
-      }]
+      }],
     };
   }
 }());

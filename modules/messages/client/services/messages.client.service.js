@@ -20,7 +20,7 @@
         if (header) {
           return {
             page: /<.*\/[^<>]*\?.*page=(\d*).*>;.*/.exec(header)[1],
-            limit: /<.*\/[^<>]*\?.*limit=(\d*).*>;.*/.exec(header)[1]
+            limit: /<.*\/[^<>]*\?.*limit=(\d*).*>;.*/.exec(header)[1],
           };
         } else {
           return header;
@@ -50,14 +50,14 @@
             function () {
               that.paginationTimeout = false;
               that.resolved = false;
-            }
+            },
           );
         }
       },
       ajaxCall: $resource('/api/messages/:userId',
         { userId: '@_id' },
-        { update: { method: 'PUT' } }
-      )
+        { update: { method: 'PUT' } },
+      ),
     };
     return MessageHandler;
   }

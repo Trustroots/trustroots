@@ -56,7 +56,7 @@
         // Initialize svg
         renderSVG();
 
-      }
+      },
     };
   }
 }());

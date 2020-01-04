@@ -8,8 +8,8 @@
   function SignupValidationFactory($resource) {
     return $resource('/api/auth/signup/validate', {}, {
       post: {
-        method: 'POST'
-      }
+        method: 'POST',
+      },
     });
   }
 }());

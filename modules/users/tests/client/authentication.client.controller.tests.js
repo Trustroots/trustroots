@@ -13,11 +13,11 @@
           return {
             compare: function (actual, expected) {
               return {
-                pass: angular.equals(actual, expected)
+                pass: angular.equals(actual, expected),
               };
-            }
+            },
           };
-        }
+        },
       });
     });
 
@@ -28,7 +28,7 @@
 
       let $scope;
       const appSettings = {
-        flashTimeout: 0
+        flashTimeout: 0,
       };
 
       // The injector ignores leading and trailing underscores here (i.e. _$httpBackend_).
@@ -46,7 +46,7 @@
         // Initialize the Authentication controller
         AuthenticationController = $controller('AuthenticationController', {
           $scope: $scope,
-          appSettings: appSettings
+          appSettings: appSettings,
         });
 
         $scope.vm = AuthenticationController;
@@ -73,7 +73,7 @@
 
           // Test expected POST request
           $httpBackend.expectPOST('/api/auth/signin').respond(400, {
-            'message': 'Missing credentials'
+            'message': 'Missing credentials',
           });
           $httpBackend.when('GET', '/modules/pages/views/home.client.view.html').respond(200, '');
           $httpBackend.when('GET', '/modules/search/views/search.client.view.html').respond(200, '');
@@ -98,12 +98,12 @@
           // Mock logged in user
           _Authentication_.user = {
             username: 'test',
-            roles: ['user']
+            roles: ['user'],
           };
 
           AuthenticationController = $controller('AuthenticationController', {
             $scope: $scope,
-            appSettings: appSettings
+            appSettings: appSettings,
           });
         }));
 

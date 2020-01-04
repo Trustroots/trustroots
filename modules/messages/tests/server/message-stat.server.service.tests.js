@@ -19,7 +19,7 @@ describe('Convert Message Statistics to human readable form', function () {
   it('should convert null values correctly', function () {
     const converted = messageStatService.formatStats({
       replyRate: null,
-      replyTime: null
+      replyTime: null,
     });
 
     converted.should.have.property('replyRate', '');
@@ -29,7 +29,7 @@ describe('Convert Message Statistics to human readable form', function () {
   it('should convert finite values correctly', function () {
     const converted = messageStatService.formatStats({
       replyRate: 0.37631,
-      replyTime: 3600 * 1000 * 3.7
+      replyTime: 3600 * 1000 * 3.7,
     });
 
     converted.should.have.property('replyRate', '38%');
@@ -54,7 +54,7 @@ describe('Count Message Statistics of User', function () {
         username: 'username' + i,
         password: 'password123',
         provider: 'local',
-        public: true
+        public: true,
       }));
     }
 
@@ -89,7 +89,7 @@ describe('Count Message Statistics of User', function () {
           firstMessageLength: 100,
           firstReplyCreated: i < repliedCount ? new Date(firstCreated + replyTime) : null,
           firstReplyLength: i < repliedCount ? 50 : null,
-          timeToFirstReply: i < repliedCount ? replyTime : null
+          timeToFirstReply: i < repliedCount ? replyTime : null,
         }));
         // increment the userFrom
         ++userno;
@@ -125,7 +125,7 @@ describe('Count Message Statistics of User', function () {
       },
       function (cb) {
         MessageStat.deleteMany().exec(cb);
-      }
+      },
     ], done);
   });
 
@@ -240,7 +240,7 @@ describe('MessageStat Creation & Updating Test', function () {
       username: 'username1',
       password: 'password123',
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // create the receiver (User)
@@ -252,7 +252,7 @@ describe('MessageStat Creation & Updating Test', function () {
       username: 'username2',
       password: 'password123',
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // create a first message
@@ -260,14 +260,14 @@ describe('MessageStat Creation & Updating Test', function () {
       content: 'Message content',
       userFrom: initiator._id,
       userTo: receiver._id,
-      created: new Date('2016-01-01')
+      created: new Date('2016-01-01'),
     });
     // create a first reply
     firstReply = new Message({
       content: 'Message content',
       userFrom: receiver._id,
       userTo: initiator._id,
-      created: new Date('2016-01-02')
+      created: new Date('2016-01-02'),
     });
 
     // create a message by initiator
@@ -275,14 +275,14 @@ describe('MessageStat Creation & Updating Test', function () {
       content: 'Message content',
       userFrom: initiator._id,
       userTo: receiver._id,
-      created: new Date('2016-01-03')
+      created: new Date('2016-01-03'),
     });
     // create a message by receiver
     receiverMessage = new Message({
       content: 'Message content',
       userFrom: receiver._id,
       userTo: initiator._id,
-      created: new Date('2016-01-04')
+      created: new Date('2016-01-04'),
     });
   });
 
@@ -297,7 +297,7 @@ describe('MessageStat Creation & Updating Test', function () {
       },
       function (cb) {
         MessageStat.deleteMany().exec(cb);
-      }
+      },
     ], done);
   });
 
@@ -329,13 +329,13 @@ describe('MessageStat Creation & Updating Test', function () {
                   $or: [
                     {
                       firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id
+                      firstMessageUserTo: receiver._id,
                     },
                     {
                       firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id
-                    }
-                  ]
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
                 }, cb);
               } catch (e) {
                 cb(e);
@@ -354,7 +354,7 @@ describe('MessageStat Creation & Updating Test', function () {
               } catch (e) {
                 if (e) return cb(e);
               }
-            }
+            },
           ], done);
 
         });
@@ -399,13 +399,13 @@ describe('MessageStat Creation & Updating Test', function () {
                   $or: [
                     {
                       firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id
+                      firstMessageUserTo: receiver._id,
                     },
                     {
                       firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id
-                    }
-                  ]
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
                 }, cb);
               } catch (e) {
                 cb(e);
@@ -428,7 +428,7 @@ describe('MessageStat Creation & Updating Test', function () {
               } catch (e) {
                 if (e) return cb(e);
               }
-            }
+            },
 
           ], done);
         });
@@ -473,13 +473,13 @@ describe('MessageStat Creation & Updating Test', function () {
                   $or: [
                     {
                       firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id
+                      firstMessageUserTo: receiver._id,
                     },
                     {
                       firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id
-                    }
-                  ]
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
                 }, cb);
               } catch (e) {
                 cb(e);
@@ -501,7 +501,7 @@ describe('MessageStat Creation & Updating Test', function () {
               } catch (e) {
                 if (e) return cb(e);
               }
-            }
+            },
 
           ], done);
         });
@@ -558,13 +558,13 @@ describe('MessageStat Creation & Updating Test', function () {
                   $or: [
                     {
                       firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id
+                      firstMessageUserTo: receiver._id,
                     },
                     {
                       firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id
-                    }
-                  ]
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
                 }, cb);
               } catch (e) {
                 cb(e);
@@ -584,7 +584,7 @@ describe('MessageStat Creation & Updating Test', function () {
               } catch (e) {
                 if (e) return cb(e);
               }
-            }
+            },
 
           ], done);
         });
@@ -640,13 +640,13 @@ describe('MessageStat Creation & Updating Test', function () {
                   $or: [
                     {
                       firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id
+                      firstMessageUserTo: receiver._id,
                     },
                     {
                       firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id
-                    }
-                  ]
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
                 }, cb);
               } catch (e) {
                 cb(e);
@@ -666,7 +666,7 @@ describe('MessageStat Creation & Updating Test', function () {
               } catch (e) {
                 if (e) return cb(e);
               }
-            }
+            },
 
           ], done);
         });
@@ -706,13 +706,13 @@ describe('MessageStat Creation & Updating Test', function () {
                   $or: [
                     {
                       firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id
+                      firstMessageUserTo: receiver._id,
                     },
                     {
                       firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id
-                    }
-                  ]
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
                 }, cb);
               } catch (e) {
                 cb(e);
@@ -728,7 +728,7 @@ describe('MessageStat Creation & Updating Test', function () {
               } catch (e) {
                 if (e) return cb(e);
               }
-            }
+            },
 
           ], done);
         });

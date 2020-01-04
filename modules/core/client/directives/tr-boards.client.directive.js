@@ -24,7 +24,7 @@ import photos from '@/modules/core/client/services/photos.service';
       restrict: 'A',
       replace: false,
       scope: {
-        trBoards: '='
+        trBoards: '=',
       },
       link: function (scope, elem, attrs) {
 
@@ -49,7 +49,7 @@ import photos from '@/modules/core/client/services/photos.service';
         const file = ($window.innerWidth <= 480 && photo.file_mobile) ? photo.file_mobile : photo.file;
 
         elem.css({
-          'background-image': 'url(/img/board/' + file + ')'
+          'background-image': 'url(/img/board/' + file + ')',
         });
 
         // To prevent key being literally `key`: `{key: ...}`, we want it to be actual keyname such as `hitchroad`.
@@ -59,7 +59,7 @@ import photos from '@/modules/core/client/services/photos.service';
         // Send copyright info down the scope... something will pick it up! (pst, core/app-controller)
         scope.$emit('photoCreditsUpdated', photoObject);
 
-      }
+      },
     };
   }
 }());

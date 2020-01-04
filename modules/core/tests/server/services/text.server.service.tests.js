@@ -125,31 +125,31 @@ describe('Text processor tests', function () {
         [{
           'scheme': 'http',
           'in': 'http://www.example.com',
-          'out': '<a href="http://www.example.com">www.example.com</a>'
+          'out': '<a href="http://www.example.com">www.example.com</a>',
         }, {
           'scheme': 'https',
           'in': 'https://www.example.com',
-          'out': '<a href="https://www.example.com">www.example.com</a>'
+          'out': '<a href="https://www.example.com">www.example.com</a>',
         }, {
           'scheme': 'ftp',
           'in': 'ftp://example.com',
-          'out': '<a href="ftp://example.com">ftp://example.com</a>'
+          'out': '<a href="ftp://example.com">ftp://example.com</a>',
         }, {
           'scheme': 'sftp',
           'in': 'sftp://example.com',
-          'out': '<a href="sftp://example.com">sftp://example.com</a>'
+          'out': '<a href="sftp://example.com">sftp://example.com</a>',
         }, {
           'scheme': 'irc',
           'in': 'irc://example.com:80/channel?key',
-          'out': '<a href="irc://example.com:80/channel?key">irc://example.com:80/channel?key</a>'
+          'out': '<a href="irc://example.com:80/channel?key">irc://example.com:80/channel?key</a>',
         }, {
           'scheme': 'ge0 (Maps.me)',
           'in': 'ge0://w4aP1NSjwS/My_Position',
-          'out': '<a href="ge0://w4aP1NSjwS/My_Position">ge0://w4aP1NSjwS/My_Position</a>'
+          'out': '<a href="ge0://w4aP1NSjwS/My_Position">ge0://w4aP1NSjwS/My_Position</a>',
         }, {
           'scheme': 'tg (Telegram)',
           'in': 'tg://resolve?domain=trustroots',
-          'out': '<a href="tg://resolve?domain=trustroots">tg://resolve?domain=trustroots</a>'
+          'out': '<a href="tg://resolve?domain=trustroots">tg://resolve?domain=trustroots</a>',
         }].forEach(function (schemeTest) {
           it('Should autolink whitelisted URL scheme: ' + schemeTest.scheme, function () {
             const testString = textService.html(schemeTest.in);

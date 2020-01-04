@@ -43,7 +43,7 @@ function includeLanguage(language) {
   // significant "hobbyist" community around them
   if ([
     'grc', // Ancient Greek
-    'lat' // Latin
+    'lat', // Latin
   ].indexOf(language.iso_639_2b) > -1) {
     return true;
   }

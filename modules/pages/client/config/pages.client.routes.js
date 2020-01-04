@@ -15,50 +15,50 @@
         requiresAuth: true,
         footerHidden: true,
         data: {
-          pageTitle: 'Navigation'
-        }
+          pageTitle: 'Navigation',
+        },
       }).
       state('rules', {
         url: '/rules',
         templateUrl: '/modules/pages/views/rules.client.view.html',
         data: {
-          pageTitle: 'Rules'
-        }
+          pageTitle: 'Rules',
+        },
       }).
       state('team', {
         url: '/team',
         templateUrl: '/modules/pages/views/team.client.view.html',
         data: {
-          pageTitle: 'Team'
-        }
+          pageTitle: 'Team',
+        },
       }).
       state('privacy', {
         url: '/privacy',
         templateUrl: '/modules/pages/views/privacy.client.view.html',
         data: {
-          pageTitle: 'Privacy policy'
-        }
+          pageTitle: 'Privacy policy',
+        },
       }).
       state('donate', {
         url: '/donate',
         templateUrl: '/modules/pages/views/donate.client.view.html',
         data: {
-          pageTitle: 'Donate'
-        }
+          pageTitle: 'Donate',
+        },
       }).
       state('donate-help', {
         url: '/donate/help',
         templateUrl: '/modules/pages/views/donate-help.client.view.html',
         data: {
-          pageTitle: 'Donation help'
-        }
+          pageTitle: 'Donation help',
+        },
       }).
       state('donate-policy', {
         url: '/donate/policy',
         templateUrl: '/modules/pages/views/donate-policy.client.view.html',
         data: {
-          pageTitle: 'Donation policy'
-        }
+          pageTitle: 'Donation policy',
+        },
       }).
       state('faq', {
         url: '/faq',
@@ -67,64 +67,64 @@
         controller: 'FaqController',
         controllerAs: 'faq',
         data: {
-          pageTitle: 'FAQ'
-        }
+          pageTitle: 'FAQ',
+        },
       }).
       state('faq.general', {
         url: '',
         templateUrl: '/modules/pages/views/faq-general.client.view.html',
         data: {
-          pageTitle: 'FAQ - Site & community'
-        }
+          pageTitle: 'FAQ - Site & community',
+        },
       }).
       state('faq.tribes', {
         url: '/tribes',
         templateUrl: '/modules/pages/views/faq-tribes.client.view.html',
         data: {
-          pageTitle: 'FAQ - Tribes'
-        }
+          pageTitle: 'FAQ - Tribes',
+        },
       }).
       state('faq.foundation', {
         url: '/foundation',
         templateUrl: '/modules/pages/views/faq-foundation.client.view.html',
         data: {
-          pageTitle: 'FAQ - Foundation'
-        }
+          pageTitle: 'FAQ - Foundation',
+        },
       }).
       state('faq.technology', {
         url: '/technology',
         templateUrl: '/modules/pages/views/faq-technology.client.view.html',
         data: {
-          pageTitle: 'FAQ - Technology'
-        }
+          pageTitle: 'FAQ - Technology',
+        },
       }).
       state('foundation', {
         url: '/foundation',
         templateUrl: '/modules/pages/views/foundation.client.view.html',
         data: {
-          pageTitle: 'Foundation'
-        }
+          pageTitle: 'Foundation',
+        },
       }).
       state('media', {
         url: '/media',
         templateUrl: '/modules/pages/views/media.client.view.html',
         data: {
-          pageTitle: 'Media'
-        }
+          pageTitle: 'Media',
+        },
       }).
       state('volunteering', {
         url: '/volunteering',
         template: '<volunteering></volunteering>',
         data: {
-          pageTitle: 'Volunteering'
-        }
+          pageTitle: 'Volunteering',
+        },
       }).
       state('guide', {
         url: '/guide',
         templateUrl: '/modules/pages/views/guide.client.view.html',
         data: {
-          pageTitle: 'Guide'
-        }
+          pageTitle: 'Guide',
+        },
       }).
 
       // Redirect to home:
@@ -136,7 +136,7 @@
           function ($state) {
             $state.go('home');
           },
-        controllerAs: 'about'
+        controllerAs: 'about',
       });
 
     /**
@@ -150,7 +150,7 @@
         templateUrl: '/modules/pages/views/home.client.view.html',
         controller: 'HomeController',
         controllerAs: 'home',
-        footerHidden: true
+        footerHidden: true,
       });
     } else {
       $stateProvider.state('home', { url: '/' });

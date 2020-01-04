@@ -27,9 +27,9 @@
               }
             }
             return $q.reject(rejection);
-          }
+          },
         };
-      }
+      },
     ]);
   }
 }());

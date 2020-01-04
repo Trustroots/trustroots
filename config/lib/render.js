@@ -4,7 +4,7 @@ const nunjucks = require('nunjucks');
 // https://mozilla.github.io/nunjucks/
 nunjucks.configure('./modules/core/server/views', {
   watch: false,
-  noCache: true
+  noCache: true,
 });
 
 /**

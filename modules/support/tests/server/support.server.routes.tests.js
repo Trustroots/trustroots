@@ -31,7 +31,7 @@ describe('Support CRUD tests', function () {
     // Create user credentials
     credentials = {
       username: 'loremipsum',
-      password: 'Password123!'
+      password: 'Password123!',
     };
 
     // Create a new user
@@ -43,14 +43,14 @@ describe('Support CRUD tests', function () {
       username: credentials.username,
       password: credentials.password,
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // Create new support message
     supportMessage = {
       username: user.username,
       email: user.email,
-      message: 'Trustroots rocks!'
+      message: 'Trustroots rocks!',
     };
 
     // Save user to the test db
@@ -78,7 +78,7 @@ describe('Support CRUD tests', function () {
       .send({
         username: '',
         email: '',
-        message: 'Trustroots is cool!'
+        message: 'Trustroots is cool!',
       })
       .expect(200)
       .end(function (supportSaveErr, supportSaveRes) {

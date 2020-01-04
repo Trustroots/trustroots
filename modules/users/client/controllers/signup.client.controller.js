@@ -102,7 +102,7 @@
       if ($stateParams.tribe) {
         // Fetch information about referred tribe
         TribeService.get({
-          tribeSlug: $stateParams.tribe
+          tribeSlug: $stateParams.tribe,
         })
           .then(function (tribe) {
 
@@ -128,7 +128,7 @@
      */
     function getSuggestedTribes(withoutTribeId) {
       TribesService.query({
-        limit: 20
+        limit: 20,
       },
       function (tribes) {
         const suggestedTribes = [];
@@ -163,7 +163,7 @@
             // If there is referred tribe, add user to that next up
             if (vm.tribe && vm.tribe._id) {
               UserMembershipsService.post({
-                tribeId: vm.tribe._id
+                tribeId: vm.tribe._id,
               },
               function (data) {
                 updateUser(data.user || newUser.data);
@@ -181,7 +181,7 @@
             vm.isLoading = false;
             const errorMessage = error.data && error.data.message ? error.data.message : 'Something went wrong while signing you up. Try again!';
             messageCenterService.add('danger', errorMessage);
-          }
+          },
         );
     }
 
@@ -196,7 +196,7 @@
         if (vm.invitationCode) {
           // Validate code
           InvitationService.post({
-            invitecode: vm.invitationCode
+            invitecode: vm.invitationCode,
           }).$promise.then(function (data) {
 
             // UI
@@ -210,12 +210,12 @@
             if (data.valid) {
               $analytics.eventTrack('invitationCode.valid', {
                 category: 'invitation',
-                label: 'Valid invitation code entered'
+                label: 'Valid invitation code entered',
               });
             } else {
               $analytics.eventTrack('invitationCode.invalid', {
                 category: 'invitation',
-                label: 'Invalid invitation code entered'
+                label: 'Invalid invitation code entered',
               });
             }
           }, function () {
@@ -228,7 +228,7 @@
             messageCenterService.add('danger', 'Something went wrong, try again.');
             $analytics.eventTrack('invitationCode.failed', {
               category: 'invitation',
-              label: 'Failed to validate invitation code'
+              label: 'Failed to validate invitation code',
             });
           });
         } else {
@@ -264,7 +264,7 @@
           locker.put(mwrLockerKey, $stateParams.mwr);
           $analytics.eventTrack('waitinglist.enabled', {
             category: 'waitinglist',
-            label: 'Waiting list invitation code enabled'
+            label: 'Waiting list invitation code enabled',
           });
         // If previously stored `mwr` is available in locker...
         } else if (locker.get(mwrLockerKey)) {
@@ -276,7 +276,7 @@
           vm.waitinglistInvitation = true;
           $analytics.eventTrack('waitinglist.re-enabled', {
             category: 'waitinglist',
-            label: 'Waiting list invitation code re-enabled'
+            label: 'Waiting list invitation code re-enabled',
           });
         }
       }
@@ -303,7 +303,7 @@
 
         // `true`: show list of waiting up users
         // `false`: show number of waiting users
-        require_leaderboard: false
+        require_leaderboard: false,
       };
 
       // Initialize Maitre app by appending script to the page
@@ -317,7 +317,7 @@
           // Send event to analytics
           $analytics.eventTrack('waitinglist.failed', {
             category: 'waitinglist',
-            label: 'Waiting list script failed to load.'
+            label: 'Waiting list script failed to load.',
           });
         });
 
@@ -344,13 +344,13 @@
 
       // Open modal
       $uibModal.open({
-        templateUrl: '/modules/users/views/authentication/rules-modal.client.view.html'
+        templateUrl: '/modules/users/views/authentication/rules-modal.client.view.html',
       });
 
       // Record event to analytics
       $analytics.eventTrack('signup.rules.open', {
         category: 'signup',
-        label: 'Open rules from signup form'
+        label: 'Open rules from signup form',
       });
     }
 

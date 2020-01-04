@@ -25,7 +25,7 @@ describe('Daily Statistics Job - Unit Test', function () {
     influx.InfluxDB.prototype.writeMeasurement.returns(
       new Promise(function (resolve) {
         process.nextTick(resolve());
-      })
+      }),
     );
 
     // provide config options for influxdb
@@ -33,7 +33,7 @@ describe('Daily Statistics Job - Unit Test', function () {
       host: 'localhost',
       port: 8086,
       protocol: 'http',
-      database: 'trustroots-test'
+      database: 'trustroots-test',
     });
 
     // stub the stathat endpoints
@@ -113,13 +113,13 @@ describe('Daily Statistics Job - Unit Test', function () {
           // `getCall(0)` and `getCall(1)` contain calls for member count
           const memberGroupedArgs = _.zip.apply(this, [
             stathat.trackEZValue.getCall(0).args,
-            stathat.trackEZValue.getCall(1).args
+            stathat.trackEZValue.getCall(1).args,
           ]);
 
           // `getCall(2)` and `getCall(3)` contain calls for push registration count
           const pushGroupedArgs = _.zip.apply(this, [
             stathat.trackEZValue.getCall(2).args,
-            stathat.trackEZValue.getCall(3).args
+            stathat.trackEZValue.getCall(3).args,
           ]);
 
           // the first argument to the endpoint should be the stathat key
@@ -129,14 +129,14 @@ describe('Daily Statistics Job - Unit Test', function () {
           // the 2nd argument to the endpoint should be the name
           _.forEach([
             'members.count',
-            'members.count.members.members' // with the members tag
+            'members.count.members.members', // with the members tag
           ], function (value) {
             should(memberGroupedArgs[1]).containEql(value);
           });
 
           _.forEach([
             'pushRegistrations.count',
-            'pushRegistrations.count.type.all' // with the members tag
+            'pushRegistrations.count.type.all', // with the members tag
           ], function (value) {
             should(pushGroupedArgs[1]).containEql(value);
           });

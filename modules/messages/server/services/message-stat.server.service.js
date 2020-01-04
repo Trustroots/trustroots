@@ -13,7 +13,7 @@ function createMessageStat(message, done) {
     firstMessageUserFrom: message.userFrom,
     firstMessageUserTo: message.userTo,
     firstMessageCreated: message.created,
-    firstMessageLength: message.content.length
+    firstMessageLength: message.content.length,
   });
 
   messageStat.save(function (err) {
@@ -30,14 +30,14 @@ function addFirstReplyInfo(messageStat, message, done) {
   MessageStat.findOneAndUpdate({
     firstMessageUserFrom: message.userTo,
     firstMessageUserTo: message.userFrom,
-    firstReplyCreated: null
+    firstReplyCreated: null,
   }, {
     $set: {
       firstReplyCreated: message.created,
       firstReplyLength: message.content.length,
       timeToFirstReply: message.created.getTime()
-        - messageStat.firstMessageCreated.getTime()
-    }
+        - messageStat.firstMessageCreated.getTime(),
+    },
   })
     .exec(done);
 }
@@ -70,13 +70,13 @@ exports.updateMessageStat = function (message, callback) {
         $or: [
           {
             firstMessageUserFrom: message.userFrom,
-            firstMessageUserTo: message.userTo
+            firstMessageUserTo: message.userTo,
           },
           {
             firstMessageUserFrom: message.userTo,
-            firstMessageUserTo: message.userFrom
-          }
-        ]
+            firstMessageUserTo: message.userFrom,
+          },
+        ],
       }).exec(function (err, messageStat) {
         done(err, messageStat);
       });
@@ -102,7 +102,7 @@ exports.updateMessageStat = function (message, callback) {
         // No MessageStat was found, let's create a new one
         findMessagesCreateMessageStat(done);
       }
-    }
+    },
 
   ], function (err, response) {
     if (err) return callback(err);
@@ -121,13 +121,13 @@ exports.updateMessageStat = function (message, callback) {
           $or: [
             {
               userFrom: message.userFrom,
-              userTo: message.userTo
+              userTo: message.userTo,
             },
             {
               userFrom: message.userTo,
-              userTo: message.userFrom
-            }
-          ]
+              userTo: message.userFrom,
+            },
+          ],
         })
         // Sort by the `created` field to find the first message
         // sent or received between these two users
@@ -159,7 +159,7 @@ exports.updateMessageStat = function (message, callback) {
           response = 'first';
         }
         return done(null, response);
-      }
+      },
 
     ], cb);
   }
@@ -176,7 +176,7 @@ exports.updateMessageStat = function (message, callback) {
         // recipient and to the sender, that will be the first reply.
         Message.findOne({
           userFrom: messageStat.firstMessageUserTo,
-          userTo: messageStat.firstMessageUserFrom
+          userTo: messageStat.firstMessageUserFrom,
         })
         // Sort by `created` to get the *first* reply
           .sort({ created: 1 })
@@ -196,7 +196,7 @@ exports.updateMessageStat = function (message, callback) {
         } else {
           return done(null, 'other');
         }
-      }
+      },
     ], cb);
   }
 };
@@ -236,8 +236,8 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
         firstMessageUserTo: userId,
         firstMessageCreated: {
           $lte: new Date(timeNow),
-          $gt: new Date(timeNow - 90 * DAY)
-        }
+          $gt: new Date(timeNow - 90 * DAY),
+        },
       })
         .sort({ firstMessageCreated: -1 })
         .exec(function (err, resp) {
@@ -323,7 +323,7 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
       }(chosenStats));
 
       return done(null, stats);
-    }
+    },
 
   ], function (err, stats) {
     if (err) return callback(err);
@@ -393,6 +393,6 @@ exports.readFormattedMessageStatsOfUser = function (userId, timeNow, callback) {
     function (stats, done) {
       const formatted = exports.formatStats(stats);
       return done(null, formatted);
-    }
+    },
   ], callback);
 };

@@ -38,7 +38,7 @@
           function (response) { // On error function
             vm.error = response.data.message;
             vm.isLoading = false;
-          }
+          },
         );
     }
   }

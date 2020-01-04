@@ -13,11 +13,11 @@
 module.exports = {
   featureFlags: {
     reference: false,
-    i18n: false
+    i18n: false,
   },
   app: {
     title: 'Trustroots',
-    description: 'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.'
+    description: 'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.',
   },
   // Is site invitation only?
   invitations: {
@@ -29,7 +29,7 @@ module.exports = {
     maitreId: 'MF930c37aeb3',
     // These codes are always valid
     // ONLY lower case
-    alwaysValidCodes: ['trustroots']
+    alwaysValidCodes: ['trustroots'],
   },
 
   // Appears on top of every page for authenticated users.
@@ -39,7 +39,7 @@ module.exports = {
     enabled: false,
     // Can contain HTML
     // You can access user object like this: `{{app.user.displayName}}`
-    message: ''
+    message: '',
   },
   maxUploadSize: 10 * 1024 * 1024, // 10MB. Remember to change this to Nginx configs as well
   imageProcessor: 'graphicsmagick', // graphicsmagick|imagemagick
@@ -59,13 +59,13 @@ module.exports = {
   illegalStrings: ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'password',
     'username', 'unknown', 'anonymous', 'null', 'undefined', 'home', 'signup', 'signin', 'login', 'user',
     'edit', 'settings', 'username', 'user', 'demo', 'test', 'support', 'networks', 'profile', 'avatar', 'mini',
-    'photo', 'account', 'api', 'modify', 'feedback', 'security', 'accounts', 'tribe', 'tag', 'community', 'remove'
+    'photo', 'account', 'api', 'modify', 'feedback', 'security', 'accounts', 'tribe', 'tag', 'community', 'remove',
   ],
   // SparkPost webhook API endpoint configuration (`/api/sparkpost/webhook`)
   sparkpostWebhook: {
     enabled: true,
     username: 'sparkpost',
-    password: 'sparkpost'
+    password: 'sparkpost',
   },
   influxdb: {
     enabled: false,
@@ -75,14 +75,14 @@ module.exports = {
       protocol: 'http', // default 'http'
       // username: '',
       // password: '',
-      database: 'trustroots'
-    }
+      database: 'trustroots',
+    },
   },
   // Configuration of stathat.
   // www.stathat.com is a tool/service for tracking statistics
   stathat: {
     enabled: false,
-    key: ''
+    key: '',
   },
   limits: {
     // Messages shorter than this will be tagged 'short' in influxdb,
@@ -110,10 +110,10 @@ module.exports = {
     welcomeSequence: {
       first: { minutes: 0 },
       second: { hours: 24 },
-      third: { days: 14 }
+      third: { days: 14 },
     },
     // Up to how many days in future can meet offers be visible
-    maxOfferValidFromNow: { days: 30 }
+    maxOfferValidFromNow: { days: 30 },
   },
   mailer: {
     from: 'trustroots@localhost',
@@ -121,9 +121,9 @@ module.exports = {
       service: false,
       auth: {
         user: false,
-        pass: false
-      }
-    }
+        pass: false,
+      },
+    },
   },
   // Mapbox is publicly exposed to the frontend
   mapbox: {
@@ -131,21 +131,21 @@ module.exports = {
       streets: {
         map: 'streets-v9',
         user: 'mapbox',
-        legacy: false
+        legacy: false,
       },
       satellite: {
         map: 'satellite-streets-v9',
         user: 'mapbox',
-        legacy: false
+        legacy: false,
       },
       outdoors: {
         map: 'outdoors-v9',
         user: 'mapbox',
-        legacy: false
-      }
+        legacy: false,
+      },
     },
     user: '',
-    publicKey: ''
+    publicKey: '',
   },
   facebook: {
     page: '',
@@ -153,29 +153,29 @@ module.exports = {
     clientSecret: false,
     clientAccessToken: false,
     callbackURL: '/api/auth/facebook/callback',
-    notificationsEnabled: false
+    notificationsEnabled: false,
   },
   twitter: {
     username: '',
     clientID: '',
     clientSecret: '',
-    callbackURL: '/api/auth/twitter/callback'
+    callbackURL: '/api/auth/twitter/callback',
   },
   google: {
-    page: ''
+    page: '',
   },
   fcm: {
     senderId: '',
-    serviceAccount: false
+    serviceAccount: false,
   },
   github: {
     clientID: '',
     clientSecret: '',
-    callbackURL: '/api/auth/github/callback'
+    callbackURL: '/api/auth/github/callback',
   },
   googleAnalytics: {
     enabled: false,
-    code: ''
+    code: '',
   },
   log: {
     papertrail: {
@@ -184,7 +184,7 @@ module.exports = {
       port: false,
       level: 'debug',
       program: 'production',
-      inlineMeta: true
-    }
-  }
+      inlineMeta: true,
+    },
+  },
 };

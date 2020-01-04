@@ -15,7 +15,7 @@
     vm.isLoading = false;
     vm.credentials = {
       // Prefill input from URL if available
-      username: $stateParams.userhandle ? $stateParams.userhandle : ''
+      username: $stateParams.userhandle ? $stateParams.userhandle : '',
     };
     vm.askForPasswordReset = askForPasswordReset;
 
@@ -35,7 +35,7 @@
           // Show user error message
             vm.isLoading = false;
             vm.error = response.data.message;
-          }
+          },
         );
     }
   }

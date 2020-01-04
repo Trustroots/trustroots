@@ -46,7 +46,7 @@ describe('User last seen CRUD tests', function () {
       email: 'confirmed-test@test.com',
       username: 'usertest',
       password: 'aPassWoRd_*....',
-      provider: 'local'
+      provider: 'local',
     };
 
     confirmedUser = new User(_confirmedUser);

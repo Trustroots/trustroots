@@ -83,14 +83,14 @@ const nonpublicReferenceFields = [
   'public',
   'userFrom',
   'userTo',
-  'created'
+  'created',
 ];
 
 const referenceFields = nonpublicReferenceFields.concat([
   'interactions.met',
   'interactions.hostedMe',
   'interactions.hostedThem',
-  'recommend'
+  'recommend',
 ]);
 
 /**
@@ -168,9 +168,9 @@ async function isUserToPublic(req) {
       body: {
         errType: 'not-found',
         details: {
-          userTo: 'not found'
-        }
-      }
+          userTo: 'not found',
+        },
+      },
     });
   }
 
@@ -184,9 +184,9 @@ function validateReplyToPublicReference(otherReference, req) {
       body: {
         errType: 'bad-request',
         details: {
-          recommend: '\'yes\' expected - response to public'
-        }
-      }
+          recommend: '\'yes\' expected - response to public',
+        },
+      },
     });
   }
 }
@@ -243,7 +243,7 @@ exports.create = async function (req, res, next) {
     const savedReference = await saveNewReference({
       ...req.body,
       userFrom: req.user._id,
-      public: !!otherReference
+      public: !!otherReference,
     });
 
     // ...and if this is a reference reply, make the other reference public, too
@@ -258,7 +258,7 @@ exports.create = async function (req, res, next) {
     // finally, respond
     throw new ResponseError({
       status: 201,
-      body: formatReference(savedReference, true)
+      body: formatReference(savedReference, true),
     });
 
   } catch (e) {
@@ -347,7 +347,7 @@ exports.readMany = async function readMany(req, res, next) {
     // when userFrom is self, we can see the nonpublic references in their full form
     throw new ResponseError({
       status: 200,
-      body: references.map(reference => formatReference(reference, isSelfUserFrom))
+      body: references.map(reference => formatReference(reference, isSelfUserFrom)),
     });
   } catch (e) {
     processResponses(res, next, e);
@@ -403,9 +403,9 @@ exports.referenceById = async function referenceById(req, res, next, id) { // es
         body: {
           errType: 'not-found',
           details: {
-            reference: 'not found'
-          }
-        }
+            reference: 'not found',
+          },
+        },
       });
     }
 

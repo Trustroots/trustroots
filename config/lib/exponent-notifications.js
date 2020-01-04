@@ -22,7 +22,7 @@ exports.sendToDevice = function sendToDevice(tokens, notification) {
 
     if (!token || !Expo.isExpoPushToken(token)) {
       log('error', 'Invalid or missing Expo push notification token #mg9hwf', {
-        token: token
+        token: token,
       });
       return;
     }
@@ -78,8 +78,8 @@ exports.sendToDevice = function sendToDevice(tokens, notification) {
        */
       data: {
         // Action URL
-        url: notification.click_action
-      }
+        url: notification.click_action,
+      },
     });
   });
 

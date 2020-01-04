@@ -88,14 +88,14 @@
           const combinedHeight = elemReplyHeight + (elemReplyHeight / 3);
 
           elemQuickReply.css({
-            bottom: combinedHeight
+            bottom: combinedHeight,
           });
 
           elemThread.css({
             // container has 15px padding on both sides when window is bigger than screen-sm-max (768px)
             width: elemContainerWidth - elemContainerPadding,
             // Bottom part of the message thread should touch top part of textarea
-            bottom: combinedHeight + elemQuickReply.height()
+            bottom: combinedHeight + elemQuickReply.height(),
           });
 
           // Reply area has always padding 30 on the right
@@ -122,7 +122,7 @@
         activateScrollToBottom();
         scope.$emit('threadDimensinsLoaded');
 
-      } // link()
+      }, // link()
     };
   }
 }());

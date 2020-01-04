@@ -7,11 +7,11 @@
   /* @ngInject */
   function UsersMiniFactory($resource) {
     return $resource('/api/users/mini/:userId', {
-      userId: '@id'
+      userId: '@id',
     }, {
       get: {
-        method: 'GET'
-      }
+        method: 'GET',
+      },
     });
   }
 }());

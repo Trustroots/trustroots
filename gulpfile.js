@@ -14,8 +14,8 @@ const nodemon = require('nodemon');
 const print = require('gulp-print').default;
 const plugins = gulpLoadPlugins({
   rename: {
-    'gulp-angular-templatecache': 'templateCache'
-  }
+    'gulp-angular-templatecache': 'templateCache',
+  },
 });
 
 // Local settings
@@ -33,7 +33,7 @@ const nodemonIgnores = [
   'scripts/**',
   'tmp/**',
   defaultAssets.server.fontelloConfig,
-  defaultAssets.server.gulpConfig
+  defaultAssets.server.gulpConfig,
 ];
 
 // Nodemon task for server
@@ -45,7 +45,7 @@ function runNodemon(done) {
     nodeArgs: ['--inspect=5858'],
     ext: 'js, html',
     ignore: nodemonIgnores,
-    watch: _.union(defaultAssets.server.views, defaultAssets.server.allJS, defaultAssets.server.config)
+    watch: _.union(defaultAssets.server.views, defaultAssets.server.allJS, defaultAssets.server.config),
   })
     .on('crash', function () {
       console.error('[Server] Script crashed.');
@@ -69,8 +69,8 @@ function runNodemonWorker(done) {
     watch: _.union(
       defaultAssets.server.workerJS,
       defaultAssets.server.allJS,
-      defaultAssets.server.config
-    )
+      defaultAssets.server.config,
+    ),
   })
     .on('crash', function () {
       console.error('[Worker] Script crashed.');
@@ -86,7 +86,7 @@ gulp.task('env:dev', gulp.series(
   function (done) {
     process.env.NODE_ENV = 'development';
     done();
-  }
+  },
 ));
 
 // Set NODE_ENV to 'production' and prepare environment
@@ -94,7 +94,7 @@ gulp.task('env:prod', gulp.series(
   function (done) {
     process.env.NODE_ENV = 'production';
     done();
-  }
+  },
 ));
 
 // Watch files for changes
@@ -112,7 +112,7 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
   gulp.watch([
     'modules/*/tests/server/**/*.js',
     ...defaultAssets.server.allJS,
-    defaultAssets.server.migrations
+    defaultAssets.server.migrations,
   ],
   gulp.series('test:server'))
     .on('change', function (changedFile) {
@@ -146,7 +146,7 @@ function angularUibTemplatecache() {
         module: 'core',
         templateHeader: '(function() { angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
         templateBody: '$templateCache.put(\'<%= url %>\', \'<%= contents %>\');',
-        templateFooter: '} })();'
+        templateFooter: '} })();',
       }));
 
     // Combine with previouly processed templates
@@ -172,7 +172,7 @@ function angularTemplateCache() {
       module: 'core',
       templateHeader: '(function() { angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
       templateBody: '$templateCache.put(\'<%= url %>\', \'<%= contents %>\');',
-      templateFooter: '} })();'
+      templateFooter: '} })();',
     }))
     .pipe(gulp.dest('public/dist'));
 }
@@ -183,7 +183,7 @@ function fontello() {
     .pipe(plugins.fontello({
       font: 'font', // Destination dir for Fonts and Glyphs
       css: 'css', // Destination dir for CSS Styles,
-      assetsOnly: false
+      assetsOnly: false,
     }))
     .pipe(print())
     .pipe(gulp.dest('modules/core/client/fonts/fontello'));
@@ -206,7 +206,7 @@ function mocha(done) {
       gulp.src(testSuites)
         .pipe(plugins.mocha({
           reporter: 'spec',
-          timeout: 10000
+          timeout: 10000,
         }))
         .on('error', function (err) {
           // If an error occurs, save it
@@ -234,21 +234,21 @@ gulp.task('angular-templatecache', gulp.series(angularTemplateCache, angularUibT
 gulp.task('build:prod', gulp.series(
   'env:prod',
   'clean',
-  'angular-templatecache'
+  'angular-templatecache',
 ));
 
 // Run fontello update
 gulp.task('fontello', fontello);
 
 gulp.task('test:server', gulp.series(
-  mocha
+  mocha,
 ));
 
 
 // Watch all server files for changes & run server tests (test:server) task on changes
 gulp.task('test:server:watch', gulp.series(
   'test:server',
-  'watch:server:run-tests'
+  'watch:server:run-tests',
 ));
 
 // Run the project in development mode
@@ -256,8 +256,8 @@ gulp.task('develop', gulp.series(
   'env:dev',
   gulp.parallel(
     runNodemon,
-    'watch'
-  )
+    'watch',
+  ),
 ));
 
 // Run the project in production mode
@@ -266,18 +266,18 @@ gulp.task('prod', gulp.series(
   'build:prod',
   gulp.parallel(
     runNodemon,
-    'watch'
-  )
+    'watch',
+  ),
 ));
 
 // Run worker script in development mode
 gulp.task('worker:dev', gulp.series(
   'env:dev',
-  runNodemonWorker
+  runNodemonWorker,
 ));
 
 // Run worker script in production mode
 gulp.task('worker:prod', gulp.series(
   'env:prod',
-  runNodemonWorker
+  runNodemonWorker,
 ));

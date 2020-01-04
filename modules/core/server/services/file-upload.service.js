@@ -30,7 +30,7 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
   const upload = multer({
     dest: config.uploadTmpDir || os.tmpdir(),
     limits: {
-      fileSize: config.maxUploadSize // max file size in bytes
+      fileSize: config.maxUploadSize, // max file size in bytes
     },
     // Filter Multer uploads based on mime Type
     // Note: A proper "magic byte" check is still required after this
@@ -41,7 +41,7 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
         return callback(err, false);
       }
       callback(null, true);
-    }
+    },
   }).single(uploadField);
 
   upload(req, res, (err) => {
@@ -73,7 +73,7 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
       }
 
       return res.status(errorStatus).send({
-        message: errorMessage
+        message: errorMessage,
       });
     }
 
@@ -81,7 +81,7 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
     // See `users.server.routes.js` for more details.
     if (!req.file || !req.file.path) {
       return res.status(422).send({
-        message: errorService.getErrorMessageByKey('unprocessable-entity')
+        message: errorService.getErrorMessageByKey('unprocessable-entity'),
       });
     }
 
@@ -94,7 +94,7 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
     magic.detectFile(req.file.path, (err, result) => {
       if (err || (result && !validMimeTypes.includes(result))) {
         return res.status(415).send({
-          message: errorService.getErrorMessageByKey('unsupported-media-type')
+          message: errorService.getErrorMessageByKey('unsupported-media-type'),
         });
       }
 

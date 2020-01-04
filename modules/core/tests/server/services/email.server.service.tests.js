@@ -18,7 +18,7 @@ describe('Service: email', function () {
       displayName: 'test user',
       email: 'test@test.com',
       emailTemporary: 'test@test.com',
-      emailToken: 'emailtoken'
+      emailToken: 'emailtoken',
     };
     emailService.sendSignupEmailConfirmation(user, function (err) {
       if (err) return done(err);
@@ -41,7 +41,7 @@ describe('Service: email', function () {
       displayName: 'test user',
       email: 'test@test.com',
       emailTemporary: 'test-change@test.com',
-      emailToken: 'emailtoken'
+      emailToken: 'emailtoken',
     };
     emailService.sendChangeEmailConfirmation(user, function (err) {
       if (err) return done(err);
@@ -62,7 +62,7 @@ describe('Service: email', function () {
     const user = {
       displayName: 'test user',
       email: 'test@test.com',
-      resetPasswordToken: 'SOMETOKEN'
+      resetPasswordToken: 'SOMETOKEN',
     };
     emailService.sendResetPassword(user, function (err) {
       if (err) return done(err);
@@ -83,7 +83,7 @@ describe('Service: email', function () {
     const user = {
       displayName: 'test user',
       email: 'test@test.com',
-      emailToken: 'emailtoken'
+      emailToken: 'emailtoken',
     };
     emailService.sendResetPasswordConfirm(user, function (err) {
       if (err) return done(err);
@@ -102,7 +102,7 @@ describe('Service: email', function () {
       firstName: 'first',
       lastName: 'last',
       displayName: 'first last',
-      email: 'test@test.com'
+      email: 'test@test.com',
     };
     emailService.sendReactivateHosts(user, function (err) {
       if (err) return done(err);
@@ -124,21 +124,21 @@ describe('Service: email', function () {
       _id: 'from-user-id',
       username: 'userfrom',
       displayName: 'from name',
-      email: 'from@test.com'
+      email: 'from@test.com',
     };
     const userTo = {
       _id: 'to-user-id',
       username: 'userto',
       displayName: 'to name',
-      email: 'to@test.com'
+      email: 'to@test.com',
     };
     const notification = {
       messages: [
         {
           id: 'message-id-1',
-          content: 'message content 1'
-        }
-      ]
+          content: 'message content 1',
+        },
+      ],
     };
     emailService.sendMessagesUnread(userFrom, userTo, notification, function (err) {
       if (err) return done(err);
@@ -170,10 +170,10 @@ describe('Service: email', function () {
       authenticated: 'yes',
       profilePublic: 'yes',
       signupDate: new Date().toString(),
-      reportMember: 'baduser'
+      reportMember: 'baduser',
     };
     const replyTo = {
-      email: 'replyto@test.com'
+      email: 'replyto@test.com',
     };
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
@@ -207,7 +207,7 @@ describe('Service: email', function () {
       displayName: 'Firstname Lastname',
       email: 'email@test.com',
       emailTemporary: 'email@test.com',
-      emailToken: 'email-token'
+      emailToken: 'email-token',
     };
     emailService.sendSignupEmailReminder(user, function (err) {
       if (err) return done(err);
@@ -229,7 +229,7 @@ describe('Service: email', function () {
       email: 'test@test.com',
       utmCampaign: 'test',
       urlConfirmPlainText: '#',
-      urlConfirm: '#'
+      urlConfirm: '#',
     });
 
     emailService.renderEmail('reset-password', params, function (err, email) {
@@ -243,7 +243,7 @@ describe('Service: email', function () {
     const user = {
       displayName: 'test user',
       email: 'test@test.com',
-      emailToken: 'emailtoken'
+      emailToken: 'emailtoken',
     };
     emailService.sendResetPasswordConfirm(user, function (err) {
       if (err) return done(err);
@@ -259,7 +259,7 @@ describe('Service: email', function () {
       email: 'test@example.com',
       utmCampaign: 'test',
       urlConfirmPlainText: '#',
-      urlConfirm: '#'
+      urlConfirm: '#',
       // Ommiting `from` affects rendering of template's footer
       // from: 'test@example.com'
     });
@@ -280,7 +280,7 @@ describe('Service: email', function () {
       urlConfirmPlainText: '#',
       urlConfirm: '#',
       // Adding `from` affects rendering of template's footer
-      from: 'test@example.com'
+      from: 'test@example.com',
     });
 
     emailService.renderEmail('reset-password', params, function (err, email) {
@@ -300,7 +300,7 @@ describe('Service: email', function () {
         utmCampaign: 'test',
         urlConfirmPlainText: '#',
         urlConfirm: '#',
-        skipHtmlTemplate: true
+        skipHtmlTemplate: true,
       });
 
       emailService.renderEmail('reset-password', params, function (err, email) {
@@ -315,9 +315,9 @@ describe('Service: email', function () {
       const params = {
         skipHtmlTemplate: true, // Don't render html template for this email
         request: {
-          message: '> Foo &amp; <p>foo<br />bar</p> <script>alert()</script>bar'
+          message: '> Foo &amp; <p>foo<br />bar</p> <script>alert()</script>bar',
         },
-        subject: 'test'
+        subject: 'test',
       };
       emailService.renderEmail('support-request', params, function (err, email) {
         if (err) return done(err);
@@ -335,14 +335,14 @@ describe('Service: email', function () {
 
     const user = {
       displayName: 'test user',
-      email: 'test@test.com'
+      email: 'test@test.com',
     };
     const friend = {
       displayName: 'friend user',
-      email: 'friend@test.com'
+      email: 'friend@test.com',
     };
     const contact = {
-      _id: 'somecontactid'
+      _id: 'somecontactid',
     };
     const messageHTML = '<span>nice custom message</span>';
     const messageText = 'plain message';

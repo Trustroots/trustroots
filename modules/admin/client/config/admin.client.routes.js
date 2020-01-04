@@ -14,8 +14,8 @@
         requiresAuth: true,
         footerHidden: true,
         data: {
-          pageTitle: 'Admin'
-        }
+          pageTitle: 'Admin',
+        },
       }).
       state('admin-audit-log', {
         url: '/admin/audit-log',
@@ -27,8 +27,8 @@
         requiresAuth: true,
         footerHidden: true,
         data: {
-          pageTitle: 'Admin - Audit log'
-        }
+          pageTitle: 'Admin - Audit log',
+        },
       }).
       state('admin-acquisition-stories', {
         url: '/admin/acquisition-stories',
@@ -40,8 +40,8 @@
         requiresAuth: true,
         footerHidden: true,
         data: {
-          pageTitle: 'Admin - Acquisition stories'
-        }
+          pageTitle: 'Admin - Acquisition stories',
+        },
       }).
       state('admin-messages', {
         url: '/admin/messages',
@@ -53,8 +53,8 @@
         requiresAuth: true,
         footerHidden: true,
         data: {
-          pageTitle: 'Admin - Messages'
-        }
+          pageTitle: 'Admin - Messages',
+        },
       }).
       state('admin-search-users', {
         url: '/admin/search-users',
@@ -66,8 +66,8 @@
         requiresAuth: true,
         footerHidden: true,
         data: {
-          pageTitle: 'Admin - Search users'
-        }
+          pageTitle: 'Admin - Search users',
+        },
       }).
       state('admin-user', {
         url: '/admin/user',
@@ -79,8 +79,8 @@
         requiresAuth: true,
         footerHidden: true,
         data: {
-          pageTitle: 'Admin - User'
-        }
+          pageTitle: 'Admin - User',
+        },
       });
 
   }

@@ -8,28 +8,28 @@
   function UsersFactory($resource) {
     const Users = $resource('/api/users', {}, {
       update: {
-        method: 'PUT'
+        method: 'PUT',
       },
       get: {
-        method: 'GET'
+        method: 'GET',
       },
       delete: {
-        method: 'DELETE'
+        method: 'DELETE',
       },
       deleteConfirm: {
         method: 'DELETE',
-        url: '/api/users/remove/:token'
-      }
+        url: '/api/users/remove/:token',
+      },
     });
 
     angular.extend(Users, {
       deleteWithToken: function (token) {
         return this.deleteConfirm({
-          'token': token // api expects token as a parameter (i.e. /:token)
+          'token': token, // api expects token as a parameter (i.e. /:token)
         }, {
-          'token': token
+          'token': token,
         }).$promise;
-      }
+      },
     });
 
     return Users;

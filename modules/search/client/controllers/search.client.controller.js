@@ -98,7 +98,7 @@
         messageCenterService.add('danger', 'Sorry, we did not find what you are looking for.');
         $analytics.eventTrack('offer-not-found', {
           category: 'search.map',
-          label: 'Offer not found'
+          label: 'Offer not found',
         });
       }
 

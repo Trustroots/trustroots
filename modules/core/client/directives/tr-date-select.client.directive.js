@@ -27,7 +27,7 @@
         '  <select class="sb-date-select-year sb-date-select-select" ng-class="selectClass" ng-model="val.year" ng-options="y for y in years">',
         '    <option value disabled selected>Year</option>',
         '  </select>',
-        '</div>'
+        '</div>',
       ];
 
       $templateCache.put('tr-date-select.html', template.join(''));
@@ -45,7 +45,7 @@
         require: 'ngModel',
         scope: {
           disabled: '=ngDisabled',
-          selectClass: '@trSelectClass'
+          selectClass: '@trSelectClass',
         },
 
         link: function (scope, elem, attrs, ngModel) {
@@ -91,7 +91,7 @@
             for (let j = minMonth; j <= maxMonth; j++) {
               scope.months.push({
                 name: monthNames[j],
-                value: j + 1
+                value: j + 1,
               });
             }
 
@@ -138,10 +138,10 @@
             scope.val = {
               year: m.year(),
               month: m.month() + 1,
-              date: m.date()
+              date: m.date(),
             };
           };
-        }
+        },
       };
     }]);
 }());

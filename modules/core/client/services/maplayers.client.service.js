@@ -23,7 +23,7 @@
     const location = LocationService.getDefaultLocation(3);
 
     const service = {
-      getLayers: getLayers
+      getLayers: getLayers,
     };
 
     return service;
@@ -42,13 +42,13 @@
         layerParams: {
           map: layerConf.map,
           user: layerConf.user || appSettings.mapbox.user,
-          token: appSettings.mapbox.publicKey
+          token: appSettings.mapbox.publicKey,
         },
         layerOptions: {
           attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank" rel="noopener">© Mapbox © OpenStreetMap</a>',
           continuousWorld: true,
-          TRStyle: TRStyle || 'streets' // Not native Leaflet key, required by our layer switch
-        }
+          TRStyle: TRStyle || 'streets', // Not native Leaflet key, required by our layer switch
+        },
       };
 
       if (layerConf.legacy) {
@@ -95,7 +95,7 @@
       options = angular.merge({
         streets: true,
         satellite: false,
-        outdoors: false
+        outdoors: false,
       }, options || {});
 
       // Streets
@@ -104,7 +104,7 @@
         layers.streets = getMapboxLayer(
           'Streets',
           'streets',
-          appSettings.mapbox.maps.streets
+          appSettings.mapbox.maps.streets,
         );
         // Streets fallback
       } else if (options.streets) {
@@ -124,8 +124,8 @@
               'Improve the underlying map' +
               '</a>',
             continuousWorld: true,
-            TRStyle: 'streets' // Not native Leaflet key, required by our layer switch
-          }
+            TRStyle: 'streets', // Not native Leaflet key, required by our layer switch
+          },
         };
       }
 
@@ -135,7 +135,7 @@
         layers.satellite = getMapboxLayer(
           'Satellite',
           'satellite',
-          appSettings.mapbox.maps.satellite
+          appSettings.mapbox.maps.satellite,
         );
       } else if (options.satellite) {
         // Satellite fallback: NASA Earth Data
@@ -158,10 +158,10 @@
             // Prevent Leaflet from retrieving non-existent tiles on the borders
             bounds: [
               [-85.0511287776, -179.999999975],
-              [85.0511287776, 179.999999975]
+              [85.0511287776, 179.999999975],
             ],
-            TRStyle: 'satellite' // Not native Leaflet key, required by our layer switch
-          }
+            TRStyle: 'satellite', // Not native Leaflet key, required by our layer switch
+          },
         };
       }
 
@@ -171,7 +171,7 @@
         layers.outdoors = getMapboxLayer(
           'Outdoors',
           'streets',
-          appSettings.mapbox.maps.outdoors
+          appSettings.mapbox.maps.outdoors,
         );
       }
 

@@ -20,23 +20,23 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 const styleLoaders = [
   isProduction ? {
-    loader: MiniCssExtractPlugin.loader
+    loader: MiniCssExtractPlugin.loader,
   } : {
-    loader: 'style-loader'
+    loader: 'style-loader',
   },
   {
     loader: 'css-loader',
-    options: { importLoaders: 1 }
+    options: { importLoaders: 1 },
   },
   {
     loader: 'postcss-loader',
     options: {
       ident: 'postcss',
       plugins: [
-        require('autoprefixer')()
-      ]
-    }
-  }
+        require('autoprefixer')(),
+      ],
+    },
+  },
 ];
 
 module.exports = merge(shims, {
@@ -45,7 +45,7 @@ module.exports = merge(shims, {
   entry: require.resolve('./entries/main'),
   output: {
     path: join(basedir, 'public/assets'),
-    publicPath: '/assets/'
+    publicPath: '/assets/',
   },
   devServer: {
     index: '',
@@ -55,11 +55,11 @@ module.exports = merge(shims, {
     publicPath: '/assets/',
     proxy: {
       context: () => true,
-      target: 'http://localhost:3001'
+      target: 'http://localhost:3001',
     },
     // @pmmmwh/react-refresh-webpack-plugin is setting up an overlay too
     // which seems a bit cheeky for a plugin to do, but we don't want two!
-    overlay: false
+    overlay: false,
   },
   resolve: {
     alias: {
@@ -68,8 +68,8 @@ module.exports = merge(shims, {
       // These are (mainly) to use within less/css files
       'img': join(basedir, 'public', 'img'),
       'less': join(basedir, 'modules', 'core', 'client', 'less'),
-      'modules': join(basedir, 'modules')
-    }
+      'modules': join(basedir, 'modules'),
+    },
   },
   module: {
     rules: [
@@ -77,12 +77,12 @@ module.exports = merge(shims, {
         enforce: 'pre',
         exclude: /node_modules/,
         test: /\.js$/,
-        loader: 'eslint-loader'
+        loader: 'eslint-loader',
       },
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        use: 'babel-loader'
+        use: 'babel-loader',
       },
       {
         test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
@@ -90,8 +90,8 @@ module.exports = merge(shims, {
         options: {
           limit: 10000,
           name: '[name].[hash:7].[ext]',
-          outputPath: 'fonts/'
-        }
+          outputPath: 'fonts/',
+        },
       },
       {
         test: /\.(png|jpe?g|gif|svg)$/,
@@ -101,36 +101,36 @@ module.exports = merge(shims, {
             options: {
               limit: 10000,
               name: '[name]-[hash:7].[ext]',
-              outputPath: 'images/'
-            }
-          }
-        ]
+              outputPath: 'images/',
+            },
+          },
+        ],
       },
       {
         test: /\.css$/,
-        use: styleLoaders
+        use: styleLoaders,
       },
       {
         test: /\.less$/,
         use: [
           ...styleLoaders,
           {
-            loader: 'less-loader'
-          }
-        ]
-      }
-    ]
+            loader: 'less-loader',
+          },
+        ],
+      },
+    ],
   },
   plugins: compact([
     isProduction && new MiniCssExtractPlugin({
-      filename: 'main.css'
+      filename: 'main.css',
     }),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-      'FCM_SENDER_ID': JSON.stringify(config.fcm.senderId)
+      'FCM_SENDER_ID': JSON.stringify(config.fcm.senderId),
     }),
     isDevelopment && new ReactRefreshWebpackPlugin({
-      disableRefreshCheck: true
-    })
-  ])
+      disableRefreshCheck: true,
+    }),
+  ]),
 });

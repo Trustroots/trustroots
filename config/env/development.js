@@ -11,7 +11,7 @@
 module.exports = {
   featureFlags: {
     reference: true,
-    i18n: false
+    i18n: false,
   },
   // in dev we have webpack-dev-server on 3000, and the real server on 3001
   port: 3001,
@@ -19,8 +19,8 @@ module.exports = {
     uri: 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trustroots-dev',
     options: {
       auth: {
-        authMechanism: ''
-      }
+        authMechanism: '',
+      },
       // user: '',
       // pass: ''
     },
@@ -30,11 +30,11 @@ module.exports = {
     // Mongoose calls createIndex on each Model's index when staring the app
     autoIndex: true,
     // Check for MongoDB version compatibility on start
-    checkCompatibility: true
+    checkCompatibility: true,
   },
   app: {
     title: 'Trustroots Development version',
-    description: 'Trustroots development version.'
+    description: 'Trustroots development version.',
   },
   // Configuration to work with default MailDev dev setup
   // https://github.com/djfarrelly/MailDev
@@ -45,7 +45,7 @@ module.exports = {
       port: 1025,
       ignoreTLS: true,
       auth: false,
-      pool: true
-    }
-  }
+      pool: true,
+    },
+  },
 };

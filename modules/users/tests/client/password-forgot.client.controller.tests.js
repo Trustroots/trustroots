@@ -19,11 +19,11 @@
           return {
             compare: function (actual, expected) {
               return {
-                pass: angular.equals(actual, expected)
+                pass: angular.equals(actual, expected),
               };
-            }
+            },
           };
-        }
+        },
       });
     });
 
@@ -45,7 +45,7 @@
 
         // Initialize the Authentication controller
         $controller('ForgotPasswordController as vm', {
-          $scope: $scope
+          $scope: $scope,
         });
       }));
 
@@ -56,7 +56,7 @@
       describe('askForPasswordReset', function () {
         const credentials = {
           username: 'test',
-          password: 'test'
+          password: 'test',
         };
         beforeEach(function () {
           // Test expected GET request
@@ -82,7 +82,7 @@
             // Test expected GET request
             $httpBackend.when('GET', '/modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
             $httpBackend.when('POST', '/api/auth/forgot', credentials).respond(400, {
-              'message': errorMessage
+              'message': errorMessage,
             });
 
             Authentication.user = null;
@@ -106,7 +106,7 @@
             // Test expected requests
             $httpBackend.when('GET', '/modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
             $httpBackend.when('POST', '/api/auth/forgot', credentials).respond({
-              'message': successMessage
+              'message': successMessage,
             });
 
             Authentication.user = null;

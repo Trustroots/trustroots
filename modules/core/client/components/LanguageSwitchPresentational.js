@@ -59,5 +59,5 @@ export function LanguageSwitchSelect({ currentLanguageCode, onChangeLanguage }) 
 
 LanguageSwitchSelect.propTypes = LanguageSwitchDropdown.propTypes = {
   currentLanguageCode: PropTypes.string,
-  onChangeLanguage: PropTypes.func
+  onChangeLanguage: PropTypes.func,
 };

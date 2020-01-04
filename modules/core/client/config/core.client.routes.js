@@ -29,8 +29,8 @@
         footerHidden: true,
         headerHidden: true,
         data: {
-          pageTitle: 'Not found'
-        }
+          pageTitle: 'Not found',
+        },
       });
   }
 }());

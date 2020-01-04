@@ -36,7 +36,7 @@
         trLocationChange: '=?',
         trLocationNotfound: '=?',
         trLocationCenter: '=?',
-        trLocationBounds: '=?'
+        trLocationBounds: '=?',
       },
       replace: false,
       link: function (scope, element, attr, ngModel) {
@@ -145,7 +145,7 @@
 
         }
 
-      }
+      },
     };
   }
 }());

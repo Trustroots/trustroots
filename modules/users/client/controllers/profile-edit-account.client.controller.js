@@ -184,7 +184,7 @@
       $http.post('/api/users/password', {
         currentPassword: vm.currentPassword,
         newPassword: vm.newPassword,
-        verifyPassword: vm.verifyPassword
+        verifyPassword: vm.verifyPassword,
       })
         .then(
           function (response) { // On success function
@@ -199,7 +199,7 @@
           function (response) { // On error function
             vm.changeUserPasswordLoading = false;
             messageCenterService.add('danger', ((response.data.message && response.data.message !== '') ? response.data.message : 'Password not changed due error, try again.'), { timeout: 10000 });
-          }
+          },
         );
 
     }
@@ -220,7 +220,7 @@
           messageCenterService.add(
             'danger',
             response.message || 'Something went wrong while initializing profile removal, try again.',
-            { timeout: 10000 }
+            { timeout: 10000 },
           );
         });
     }

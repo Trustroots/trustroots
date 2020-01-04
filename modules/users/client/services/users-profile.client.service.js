@@ -6,11 +6,11 @@
   /* @ngInject */
   function UserProfilesService($resource) {
     return $resource('/api/users/:username', {
-      username: '@username'
+      username: '@username',
     }, {
       get: {
-        method: 'GET'
-      }
+        method: 'GET',
+      },
     });
   }
 }());

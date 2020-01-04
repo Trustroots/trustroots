@@ -19,7 +19,7 @@
         '    <span ng-if="($first && app.photoCreditsCount > 1) || $middle">, </span>' +
         '  </span>' +
         '</span>',
-      restrict: 'A'
+      restrict: 'A',
     };
   }
 }());
