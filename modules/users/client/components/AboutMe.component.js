@@ -5,8 +5,8 @@ import React from 'react';
 // Internal dependencies
 import '@/config/client/i18n';
 import { plainTextLength } from '@/modules/core/client/utils/filters';
-import { ReadMorePanel } from '@/modules/core/client/components/ReadMorePanel';
 import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
+import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
 
 function AboutMe({ t, profile, isSelf, profileMinimumLength }) {
   return (

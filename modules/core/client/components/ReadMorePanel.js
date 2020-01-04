@@ -1,7 +1,7 @@
 // External dependencies
 import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 
 // Internal dependencies
 import '@/config/client/i18n';
@@ -9,51 +9,36 @@ import { plainText, plainTextLength } from '../utils/filters';
 
 const LIMIT = 2000;
 
-export class ReadMorePanel extends Component {
-  constructor(props) {
-    super(props);
-    this.toggleMore = this.toggleMore.bind(this);
-    this.state = {
-      showMore: false
-    };
+function ReadMorePanel({ content, id, t }) {
+  const [showMore, setShowMore] = useState(false);
+
+  if (content.length === 0) {
+    return;
   }
 
-  toggleMore() {
-    this.setState({ showMore: true });
+  if (showMore || plainTextLength(content) <= LIMIT) {
+    return <div dangerouslySetInnerHTML={{ __html: content }} />;
   }
 
-  render() {
-    const { showMore } = this.state;
-    const { content, id, t } = this.props;
-
-    if (content.length === 0) {
-      return;
-    }
-
-    if (showMore || plainTextLength(content) <= LIMIT) {
-      return <div dangerouslySetInnerHTML={{ __html: content }} />;
-    }
-
-    return (
-      <div className="panel-more-wrap">
-        <div
-          className="panel-more-wrap"
-          dangerouslySetInnerHTML={{ __html: `${plainText(content).substr(0, LIMIT)} …` }}
-          id={id}
-          onClick={this.toggleMore}
-        />
-        <div
-          aria-controls={id}
-          aria-expanded="false"
-          className="panel-more-fade"
-          onClick={this.toggleMore}
-          type="button"
-        >
-          {t('Read more…')}
-        </div>
+  return (
+    <div className="panel-more-wrap">
+      <div
+        className="panel-more-wrap"
+        dangerouslySetInnerHTML={{ __html: `${plainText(content).substr(0, LIMIT)} …` }}
+        id={id}
+        onClick={() => setShowMore(true)}
+      />
+      <div
+        aria-controls={id}
+        aria-expanded="false"
+        className="panel-more-fade"
+        onClick={() => setShowMore(true)}
+        type="button"
+      >
+        {t('Read more…')}
       </div>
-    );
-  }
+    </div>
+  );
 }
 
 ReadMorePanel.propTypes = {
