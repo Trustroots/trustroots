@@ -52,7 +52,7 @@ class SearchUsers extends React.Component {
             aria-label="Search members"
             className="form-control input-lg"
             onChange={this.handleChange}
-            placeholder="Type name, username..."
+            placeholder="Type name, username…"
             tabIndex="0"
             type="text"
             value={this.state.searchQuery}
