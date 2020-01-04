@@ -44,7 +44,7 @@ function ReadMorePanel({ content, id, t }) {
 ReadMorePanel.propTypes = {
   content: PropTypes.string.isRequired,
   id: PropTypes.string.isRequired,
-  t: PropTypes.func.isRequired
+  t: PropTypes.func.isRequired,
 };
 
 export default withTranslation('core')(ReadMorePanel);
