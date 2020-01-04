@@ -1,6 +1,9 @@
-import React from 'react';
+// External dependencies
 import PropTypes from 'prop-types';
-import UsersList from './UsersList';
+import React from 'react';
+
+// Internal dependencies
+import UsersList from '@/modules/users/client/components/UsersList';
 import NoContent from '@/modules/core/client/components/NoContent';
 
 export default function UsersResults({ users }) {
@@ -11,15 +14,12 @@ export default function UsersResults({ users }) {
   }
 
   return (
-    <div className="contacts-list">
-      <div className="row">
-        <div className="col-xs-12">
-          <h4 className="text-muted">
-            {users.length === 1 && <p>One member found.</p>}
-            {users.length > 1 && <p>{users.length} members found.</p>}
-            <UsersList users={users}/>
-          </h4>
-        </div>
+    <div className="row">
+      <div className="col-xs-12">
+        <h4 className="text-muted">
+          {users.length === 1 ? 'One member found.' : `${users.length} members found.`}
+        </h4>
+        <UsersList users={users} />
       </div>
     </div>
   );
