@@ -13,7 +13,7 @@ function ReadMorePanel({ content, id, t }) {
   const [showMore, setShowMore] = useState(false);
 
   if (content.length === 0) {
-    return;
+    return null;
   }
 
   if (showMore || plainTextLength(content) <= LIMIT) {
