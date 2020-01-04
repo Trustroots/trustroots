@@ -7,7 +7,9 @@ import styled from 'styled-components';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 
 export default function UserSummary({ user }) {
-  const UserSummary = styled.div`
+  const UserSummary = styled.div.attrs({
+    className: 'panel panel-default'
+  })`
     margin: 0;
     overflow: hidden;
     .avatar {
@@ -25,7 +27,7 @@ export default function UserSummary({ user }) {
   `;
 
   return (
-    <UserSummary className="panel panel-default">
+    <UserSummary>
       <Avatar link size={128} user={user} />
       <h4>
         <a href={`/profile/${user.username}`}>
