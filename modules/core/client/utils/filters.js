@@ -1,5 +1,5 @@
 export const plainText = (html) => {
-  if (!html || typeof(html) !== 'string' || !document) {
+  if (!html || typeof html !== 'string' || typeof document !== 'undefined') {
     return '';
   }
   const div = document.createElement('div');
