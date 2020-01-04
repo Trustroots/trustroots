@@ -21,11 +21,11 @@
       replace: true,
       templateUrl: '/modules/references-thread/views/directives/tr-reference-thread.client.view.html',
       scope: {
-        trReferenceThread: '='
+        trReferenceThread: '=',
       },
       controller: trReferenceThreadDirectiveController,
       controllerAs: 'vm',
-      bindToController: true // because the scope is isolated
+      bindToController: true, // because the scope is isolated
     };
 
     return directive;
@@ -53,7 +53,7 @@
      */
     function activate() {
       ReferenceThreadService.get({
-        userToId: vm.userTo
+        userToId: vm.userTo,
       }, function (referenceThread) {
         vm.isLoading = false;
         if (referenceThread) {
@@ -73,7 +73,7 @@
     function createReference(reference) {
       const newReference = new ReferenceThreadService({
         userTo: vm.userTo,
-        reference: String(reference)
+        reference: String(reference),
       });
 
       vm.reference = newReference;
@@ -83,7 +83,7 @@
         messageCenterService.add('success', 'Thank you!');
         $analytics.eventTrack('reference-thread-give-' + String(reference), {
           category: 'reference.thread',
-          label: 'Give ' + String(reference) + ' thread reference'
+          label: 'Give ' + String(reference) + ' thread reference',
         });
       }, function () {
         vm.reference = false;

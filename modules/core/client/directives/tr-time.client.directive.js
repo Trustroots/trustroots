@@ -41,7 +41,7 @@
       scope: {
         trTime: '@',
         trTimeTooltipPlacement: '@',
-        trTimeFormat: '=?' // `?` makes it optional
+        trTimeFormat: '=?', // `?` makes it optional
       },
       link: function (scope, element, attrs) {
 
@@ -89,7 +89,7 @@
           $rootScope.$broadcast('timeModeAgoChanged', scope.timeModeAgo);
         };
 
-      }
+      },
     };
   }
 }());

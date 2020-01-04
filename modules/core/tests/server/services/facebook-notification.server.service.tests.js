@@ -16,19 +16,19 @@ describe('Service: facebook notifications', function () {
   it('should not send notification to user whos FB id is missing', function (done) {
     // Service expects to receive Mongo objects, thus `new User()` here
     const userFrom = new User({
-      username: 'usernameFrom'
+      username: 'usernameFrom',
     });
     const userTo = new User({
       additionalProvidersData: {
         facebook: {
-          accessToken: '1'
-        }
-      }
+          accessToken: '1',
+        },
+      },
     });
     const notification = {
       messages: [
-        { message: 1 }
-      ]
+        { message: 1 },
+      ],
     };
     facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function (err) {
       if (err) return done(err);
@@ -43,19 +43,19 @@ describe('Service: facebook notifications', function () {
   it('should not send notification to user whos FB access token is missing', function (done) {
     // Service expects to receive Mongo objects, thus `new User()` here
     const userFrom = new User({
-      username: 'usernameFrom'
+      username: 'usernameFrom',
     });
     const userTo = new User({
       additionalProvidersData: {
         facebook: {
-          id: 1
-        }
-      }
+          id: 1,
+        },
+      },
     });
     const notification = {
       messages: [
-        { message: 1 }
-      ]
+        { message: 1 },
+      ],
     };
     facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function (err) {
       if (err) return done(err);
@@ -86,20 +86,20 @@ describe('Service: facebook notifications', function () {
     it('can send unread messages notification', function (done) {
       // Service expects to receive Mongo objects, thus `new User()` here
       const userFrom = new User({
-        username: 'usernameFrom'
+        username: 'usernameFrom',
       });
       const userTo = new User({
         additionalProvidersData: {
           facebook: {
             id: 1,
-            accessToken: '1'
-          }
-        }
+            accessToken: '1',
+          },
+        },
       });
       const notification = {
         messages: [
-          { message: 1 }
-        ]
+          { message: 1 },
+        ],
       };
       facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function (err) {
         if (err) return done(err);
@@ -126,22 +126,22 @@ describe('Service: facebook notifications', function () {
         username: 'usernameFrom',
         additionalProvidersData: {
           facebook: {
-            id: 2
-          }
-        }
+            id: 2,
+          },
+        },
       });
       const userTo = new User({
         additionalProvidersData: {
           facebook: {
             id: 1,
-            accessToken: '1'
-          }
-        }
+            accessToken: '1',
+          },
+        },
       });
       const notification = {
         messages: [
-          { message: 1 }
-        ]
+          { message: 1 },
+        ],
       };
       facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function (err) {
         if (err) return done(err);
@@ -159,21 +159,21 @@ describe('Service: facebook notifications', function () {
     it('can have different template for 2nd notification', function (done) {
       // Service expects to receive Mongo objects, thus `new User()` here
       const userFrom = new User({
-        username: 'usernameFrom'
+        username: 'usernameFrom',
       });
       const userTo = new User({
         additionalProvidersData: {
           facebook: {
             id: 1,
-            accessToken: '1'
-          }
-        }
+            accessToken: '1',
+          },
+        },
       });
       const notification = {
         notificationCount: 1,
         messages: [
-          { message: 1 }
-        ]
+          { message: 1 },
+        ],
       };
       facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function (err) {
         if (err) return done(err);
@@ -197,22 +197,22 @@ describe('Service: facebook notifications', function () {
     it('should mention how many unread messages user has', function (done) {
       // Service expects to receive Mongo objects, thus `new User()` here
       const userFrom = new User({
-        username: 'usernameFrom'
+        username: 'usernameFrom',
       });
       const userTo = new User({
         additionalProvidersData: {
           facebook: {
             id: 1,
-            accessToken: '1'
-          }
-        }
+            accessToken: '1',
+          },
+        },
       });
       const notification = {
         messages: [
           { message: 1 },
           { message: 2 },
-          { message: 3 }
-        ]
+          { message: 3 },
+        ],
       };
       facebookNotificationService.notifyMessagesUnread(userFrom, userTo, notification, function (err) {
         if (err) return done(err);

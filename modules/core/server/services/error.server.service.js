@@ -22,7 +22,7 @@ exports.getErrorMessageByKey = function (key) {
     'bad-request': 'Bad request.', // Status 400
     'conflict': 'Conflict.', // Status 409
     'suspended': 'Your account has been suspended.',
-    'default': defaultErrorMessage
+    'default': defaultErrorMessage,
   };
 
   return (key && errorMessages[key]) ? errorMessages[key] : defaultErrorMessage;
@@ -73,7 +73,7 @@ exports.errorResponse = function (err, req, res, next) {
 
   // Construct error response
   const errorResponse = {
-    message: err.message || defaultErrorMessage
+    message: err.message || defaultErrorMessage,
   };
 
   // In development mode, pass the error with the response
@@ -91,7 +91,7 @@ exports.errorResponse = function (err, req, res, next) {
     },
     'default': function () {
       res.send(errorResponse.message);
-    }
+    },
   });
 
 };

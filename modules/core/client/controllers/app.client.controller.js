@@ -76,7 +76,7 @@
           'onclick', 'oncontextmenu', 'ondblclick', 'onmousedown', 'onmouseenter',
           'onmouseleave', 'onmousemove', 'onmouseover', 'onmouseout', 'onmouseup',
           'onwheel', 'onmousewheel', 'onmessage', 'ontouchstart', 'ontouchmove',
-          'ontouchend', 'ontouchcancel', 'onload', 'onscroll'
+          'ontouchend', 'ontouchcancel', 'onload', 'onscroll',
         ],
         // list of element tag names to remove during
         // paste when `cleanPastedHTML` is `true`
@@ -86,7 +86,7 @@
           'script', 'meta', 'head', 'title', 'svg', 'script', 'style',
           'input', 'textarea', 'form', 'hr', 'select', 'optgroup', 'label',
           'img', 'canvas', 'area', 'map', 'figure', 'picture', 'figcaption',
-          'noscript'
+          'noscript',
         ],
         //  list of element tag names to unwrap (remove the element tag but retain
         // its child elements) during paste when `cleanPastedHTML` is `true`
@@ -95,31 +95,31 @@
           'table', 'th', 'tr', 'td', 'tbody', 'thead', 'tfoot', 'article',
           'header', 'footer', 'section', 'aside', 'font', 'center', 'big',
           'code', 'pre', 'small', 'button', 'label', 'fieldset', 'legend',
-          'datalist', 'keygen', 'output', 'nav', 'main', 'div', 'span'
-        ]
+          'datalist', 'keygen', 'output', 'nav', 'main', 'div', 'span',
+        ],
       },
       // Toolbar buttons which appear when highlighting text
       toolbar: {
         buttons: [{
           name: 'bold',
-          contentDefault: '<span class="icon-bold"></span>'
+          contentDefault: '<span class="icon-bold"></span>',
         }, {
           name: 'italic',
-          contentDefault: '<span class="icon-italic"></span>'
+          contentDefault: '<span class="icon-italic"></span>',
         }, {
           name: 'underline',
-          contentDefault: '<span class="icon-underline"></span>'
+          contentDefault: '<span class="icon-underline"></span>',
         }, {
           name: 'anchor',
-          contentDefault: '<span class="icon-link"></span>'
+          contentDefault: '<span class="icon-link"></span>',
         }, {
           name: 'quote',
-          contentDefault: '<span class="icon-quote"></span>'
+          contentDefault: '<span class="icon-quote"></span>',
         }, {
           name: 'unorderedlist',
-          contentDefault: '<span class="icon-list"></span>'
-        }]
-      }
+          contentDefault: '<span class="icon-list"></span>',
+        }],
+      },
     };
 
     activate();
@@ -145,7 +145,7 @@
             '</div>' +
             '<div class="modal-footer">' +
             '  <button class="btn btn-primary" type="button" ng-click="$dismiss()">OK</button>' +
-            '</div>'
+            '</div>',
         });
       });
 
@@ -251,7 +251,7 @@
 
       $analytics.eventTrack('signout', {
         category: 'authentication',
-        label: 'Sign out'
+        label: 'Sign out',
       });
 
       // Clear out session/localstorage

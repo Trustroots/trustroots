@@ -20,8 +20,8 @@ const cspViolationReport = {
     'referrer': 'https://www.google.com/',
     'violated-directive': 'default-src self',
     'original-policy': 'default-src self; report-uri /api/report-csp-violation',
-    'blocked-uri': 'http://evil.com'
-  }
+    'blocked-uri': 'http://evil.com',
+  },
 };
 
 /**

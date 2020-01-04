@@ -67,7 +67,7 @@
         // Done!
         $analytics.eventTrack('offer-modified', {
           category: 'offer.meet.update',
-          label: 'Updated meet offer'
+          label: 'Updated meet offer',
         });
 
         // If offer already has id, add it to URL

@@ -42,7 +42,7 @@ exports.up = function (next) {
     processMessages.bind(this, true),
 
     // update the un-notified messages
-    processMessages.bind(this, false)
+    processMessages.bind(this, false),
 
   ], function (err) {
     if (err) {
@@ -115,11 +115,11 @@ function processMessages(processNotified, callback) {
         return message.update(
           {
             $set: {
-              notificationCount: (processNotified) ? maxNotifications : 0
+              notificationCount: (processNotified) ? maxNotifications : 0,
             },
             $unset: {
-              notified: ''
-            }
+              notified: '',
+            },
           },
           {
             // Mongoose will only update fields defined in the schema.
@@ -127,7 +127,7 @@ function processMessages(processNotified, callback) {
             // including the `strict:false` option
             strict: false,
             // Limits updates only to one document per update
-            multi: false
+            multi: false,
           })
           .exec()
           .then(function (raw) {
@@ -145,6 +145,6 @@ function processMessages(processNotified, callback) {
           return done(closingErr || err || null);
         });
       });
-    }
+    },
   ], callback);
 }

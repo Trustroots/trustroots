@@ -20,7 +20,7 @@ const Schema = mongoose.Schema;
 function randomHex() {
   return randomColor({
     luminosity: 'dark',
-    format: 'hex'
+    format: 'hex',
   }).substr(1);
 }
 
@@ -51,7 +51,7 @@ const validateURL = function (url) {
     require_valid_protocol: true,
     allow_underscores: false,
     allow_trailing_dot: false,
-    allow_protocol_relative_urls: false
+    allow_protocol_relative_urls: false,
   });
 };
 
@@ -76,64 +76,64 @@ const TribeSchema = new Schema({
     trim: true,
     required: true,
     unique: 'Tribe exists already.',
-    validate: [validateLabel, 'Please fill a valid name.']
+    validate: [validateLabel, 'Please fill a valid name.'],
   },
   labelHistory: {
-    type: [String]
+    type: [String],
   },
   slugHistory: {
-    type: [String]
+    type: [String],
   },
   synonyms: {
-    type: [String]
+    type: [String],
   },
   color: {
     type: String,
     minlength: 6,
     maxlength: 6,
     required: true,
-    default: randomHex
+    default: randomHex,
   },
   count: {
     type: Number,
     integer: true,
     min: 0,
     default: 0,
-    required: true
+    required: true,
   },
   created: {
     type: Date,
     default: Date.now,
-    required: true
+    required: true,
   },
   modified: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   public: {
     type: Boolean,
     default: true,
-    required: true
+    required: true,
   },
   image_UUID: {
     type: String,
-    validate: [validateUUID, 'Please use valid UUID.']
+    validate: [validateUUID, 'Please use valid UUID.'],
   },
   attribution: {
     type: String,
     minlength: 3,
-    maxlength: 255
+    maxlength: 255,
   },
   attribution_url: {
     type: String,
     minlength: 12,
     trim: true,
-    validate: [validateURL, 'Please fill a valid URL.']
+    validate: [validateURL, 'Please fill a valid URL.'],
   },
   description: {
     type: String,
-    trim: true
-  }
+    trim: true,
+  },
 });
 
 /**
@@ -172,9 +172,9 @@ TribeSchema.plugin(urlslugs('label', {
     return speakingurl(string, {
       separator: '-', // char that replaces the whitespaces
       maintainCase: false, // maintain case (true, convert all chars to lower case (false)
-      truncate: 255 // trim to max length ({number}), don't truncate (0)
+      truncate: 255, // trim to max length ({number}), don't truncate (0)
     });
-  }
+  },
 }));
 
 /**

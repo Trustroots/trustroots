@@ -60,7 +60,7 @@ describe('Search users: GET /users?search=string', function () {
         public: _.has(user, 'public') ? user.public : true,
         gender: 'non-binary',
         locationFrom: 'Wonderland',
-        locationLiving: 'La Islantilla'
+        locationLiving: 'La Islantilla',
 
       });
 
@@ -117,7 +117,7 @@ describe('Search users: GET /users?search=string', function () {
               { username: 'asdf' },
               { username: 'asdfg' },
               { username: 'asdia' },
-              { username: 'hasdfg' }
+              { username: 'hasdfg' },
             ], cb);
           },
 
@@ -136,7 +136,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(1);
 
             cb();
-          }
+          },
         ], done);
       });
 
@@ -151,7 +151,7 @@ describe('Search users: GET /users?search=string', function () {
               { firstName: 'qwery' },
               { firstName: 'qwer' },
               { firstName: 'qwe' },
-              { firstName: 'sqwero' }
+              { firstName: 'sqwero' },
             ], cb);
           },
 
@@ -170,7 +170,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(2);
 
             cb();
-          }
+          },
         ], done);
       });
 
@@ -188,7 +188,7 @@ describe('Search users: GET /users?search=string', function () {
               { lastName: 'zxcvba' },
               { lastName: 'zxcvz' },
               { lastName: 'asdia' },
-              { lastName: 'hasdfg' }
+              { lastName: 'hasdfg' },
             ], cb);
           },
 
@@ -207,7 +207,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(2);
 
             cb();
-          }
+          },
         ], done);
       });
 
@@ -223,7 +223,7 @@ describe('Search users: GET /users?search=string', function () {
               { firstName: 'jaCob', lastName: 'alid' },
               { firstName: 'jacob', lastName: 'aliE' },
               { firstName: 'jacob', lastName: 'alIA' },
-              { firstName: 'jaco', lastName: 'alg' }
+              { firstName: 'jaco', lastName: 'alg' },
             ], cb);
           },
 
@@ -242,7 +242,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(6);
 
             cb();
-          }
+          },
         ], done);
       });
 
@@ -256,7 +256,7 @@ describe('Search users: GET /users?search=string', function () {
               { username: 'zxcvba' },
               { firstName: 'xcvz' },
               { lastName: 'asdia' },
-              { username: 'hasdfg' }
+              { username: 'hasdfg' },
             ], cb);
           },
 
@@ -275,7 +275,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(0);
 
             cb();
-          }
+          },
         ], done);
       });
 
@@ -285,7 +285,7 @@ describe('Search users: GET /users?search=string', function () {
           // create some users
           function (cb) {
             createUsers([
-              { username: 'aaa' }
+              { username: 'aaa' },
             ], cb);
           },
 
@@ -313,7 +313,7 @@ describe('Search users: GET /users?search=string', function () {
             should(unexpectedFields).eql(['score']);
 
             cb();
-          }
+          },
         ], done);
       });
 
@@ -331,7 +331,7 @@ describe('Search users: GET /users?search=string', function () {
           { firstName: 'aaaaaa' },
           { lastName: 'aaaaaa' },
           { firstName: 'aaaaaa' },
-          { lastName: 'aaaaaa' }
+          { lastName: 'aaaaaa' },
         ];
 
         beforeEach(function (done) {
@@ -346,7 +346,7 @@ describe('Search users: GET /users?search=string', function () {
           { params: '&page=2', expected: testUsers.length - limit },
           { params: '&limit=11', expected: 11 },
           { params: '&page=1&limit=11', expected: 11 },
-          { params: '&page=2&limit=11', expected: testUsers.length - 11 }
+          { params: '&page=2&limit=11', expected: testUsers.length - 11 },
         ];
 
         pageTests.forEach(function (test) {
@@ -367,7 +367,7 @@ describe('Search users: GET /users?search=string', function () {
                 function (foundUsers, cb) {
                   should(foundUsers).length(test.expected);
                   cb();
-                }
+                },
               ], done);
             });
         });
@@ -382,7 +382,7 @@ describe('Search users: GET /users?search=string', function () {
               { username: 'abcdef' },
               { firstName: 'abCdef' },
               { lastName: 'ABCdEF' },
-              { username: 'aabc' }
+              { username: 'aabc' },
             ], cb);
           },
 
@@ -401,7 +401,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(3);
 
             cb();
-          }
+          },
         ], done);
       });
 
@@ -415,7 +415,7 @@ describe('Search users: GET /users?search=string', function () {
               { firstName: 'aAabCd', public: false },
               { lastName: 'aaABCc', public: false },
               { lastName: 'aaABCc', public: true }, // this one is not matched
-              { firstName: 'aabCDef', lastName: 'aAbcdef', public: true }
+              { firstName: 'aabCDef', lastName: 'aAbcdef', public: true },
             ], cb);
           },
 
@@ -434,7 +434,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(2);
 
             cb();
-          }
+          },
         ], done);
       });
     });

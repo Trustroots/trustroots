@@ -16,11 +16,11 @@
         tribe: '=',
         joinLabel: '=',
         joinedLabel: '=',
-        icon: '='
+        icon: '=',
       },
       templateUrl: '/modules/tribes/views/directives/tr-tribe-join-button.client.view.html',
       controller: trTribeJoinButtonDirectiveController,
-      controllerAs: 'tribeJoinButton'
+      controllerAs: 'tribeJoinButton',
     };
 
     /* @ngInject */
@@ -34,7 +34,7 @@
       Authentication,
       TribeService,
       UserMembershipsService,
-      messageCenterService
+      messageCenterService,
     ) {
 
       const vm = this;
@@ -96,7 +96,7 @@
               $analytics.eventTrack('join-tribe', {
                 category: 'tribes.membership',
                 label: 'Join tribe',
-                value: $scope.tribe.slug
+                value: $scope.tribe.slug,
               });
             })
             .catch(function () {
@@ -117,7 +117,7 @@
             $analytics.eventTrack('leave-tribe', {
               category: 'tribes.membership',
               label: 'Leave tribe',
-              value: $scope.tribe.slug
+              value: $scope.tribe.slug,
             });
           })
           .catch(function (err) {
@@ -125,7 +125,7 @@
               $analytics.eventTrack('leave-tribe-cancelled', {
                 category: 'tribes.membership',
                 label: 'Leaving tribe cancelled',
-                value: $scope.tribe.slug
+                value: $scope.tribe.slug,
               });
               return;
             }
@@ -144,7 +144,7 @@
       function join() {
         return $q(function (resolve, reject) {
           UserMembershipsService.post({
-            tribeId: $scope.tribe._id
+            tribeId: $scope.tribe._id,
           },
           function (data) {
             if (data.tribe && data.user) {
@@ -170,11 +170,11 @@
             title: 'Leave this Tribe?',
             text: 'Do you want to leave "' + $scope.tribe.label + '"?',
             ok: 'Leave Tribe',
-            cancel: 'Cancel'
+            cancel: 'Cancel',
           })
             .then(function () {
               UserMembershipsService.delete({
-                tribeId: $scope.tribe._id
+                tribeId: $scope.tribe._id,
               },
               function (data) {
                 if (data.tribe && data.user) {

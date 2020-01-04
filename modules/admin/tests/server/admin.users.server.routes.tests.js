@@ -31,13 +31,13 @@ describe('Admin User CRUD tests', () => {
       // Create admin credentials
       credentialsAdmin = {
         username: 'user-admin',
-        password: 'Password123!'
+        password: 'Password123!',
       };
 
       // Create regular user credentials
       credentialsRegular = {
         username: 'user-regular',
-        password: 'Password123!'
+        password: 'Password123!',
       };
 
       // Create a new admin user
@@ -53,7 +53,7 @@ describe('Admin User CRUD tests', () => {
         removeProfileToken: 'test-token',
         resetPasswordToken: 'test-token',
         roles: ['user', 'admin'],
-        ...credentialsAdmin
+        ...credentialsAdmin,
       });
 
       // Create a new regular user
@@ -69,7 +69,7 @@ describe('Admin User CRUD tests', () => {
         removeProfileToken: 'test-token',
         resetPasswordToken: 'test-token',
         roles: ['user'],
-        ...credentialsRegular
+        ...credentialsRegular,
       });
 
       await userAdmin.save();

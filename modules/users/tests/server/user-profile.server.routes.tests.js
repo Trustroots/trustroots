@@ -37,7 +37,7 @@ describe('User profile CRUD tests', function () {
     // Create user credentials
     credentials = {
       username: 'TR_username',
-      password: 'TR-I$Aw3$0m3'
+      password: 'TR-I$Aw3$0m3',
     };
 
     // Create a new user
@@ -49,7 +49,7 @@ describe('User profile CRUD tests', function () {
       email: 'test@example.org',
       username: credentials.username.toLowerCase(),
       password: credentials.password,
-      provider: 'local'
+      provider: 'local',
     };
 
     user = new User(_user);
@@ -63,7 +63,7 @@ describe('User profile CRUD tests', function () {
 
     unConfirmedCredentials = {
       username: 'TR_username_unconfirmed',
-      password: 'TR-I$Aw3$0m4'
+      password: 'TR-I$Aw3$0m4',
     };
 
     _unConfirmedUser = {
@@ -75,7 +75,7 @@ describe('User profile CRUD tests', function () {
       emailToken: 'initial email token',
       username: unConfirmedCredentials.username.toLowerCase(),
       password: unConfirmedCredentials.password,
-      provider: 'local'
+      provider: 'local',
     };
 
     unConfirmedUser = new User(_unConfirmedUser);
@@ -166,7 +166,7 @@ describe('User profile CRUD tests', function () {
 
           const userUpdate = {
             firstName: 'user_update_first',
-            lastName: 'user_update_last'
+            lastName: 'user_update_last',
           };
 
           agent.put('/api/users')
@@ -209,7 +209,7 @@ describe('User profile CRUD tests', function () {
           const userUpdate = {
             firstName: 'user_update_first',
             lastName: 'user_update_last',
-            roles: ['user', 'admin']
+            roles: ['user', 'admin'],
           };
 
           agent.put('/api/users')
@@ -244,7 +244,7 @@ describe('User profile CRUD tests', function () {
 
     const credentials2 = {
       username: 'username2',
-      password: 'TR-I$Aw3$0m4'
+      password: 'TR-I$Aw3$0m4',
     };
 
     _user2.username = credentials2.username;
@@ -267,7 +267,7 @@ describe('User profile CRUD tests', function () {
           const userUpdate = {
             firstName: 'user_update_first',
             lastName: 'user_update_last',
-            email: user.email
+            email: user.email,
           };
 
           agent.put('/api/users')
@@ -296,7 +296,7 @@ describe('User profile CRUD tests', function () {
 
       const userUpdate = {
         firstName: 'user_update_first',
-        lastName: 'user_update_last'
+        lastName: 'user_update_last',
       };
 
       agent.put('/api/users')
@@ -737,7 +737,7 @@ describe('User profile CRUD tests', function () {
             }
             agent.put('/api/users')
               .send({
-                usernameUpdateAllowed: true
+                usernameUpdateAllowed: true,
               })
               .expect(200)
               .end(function (err, res) {
@@ -768,7 +768,7 @@ describe('User profile CRUD tests', function () {
             }
             agent.put('/api/users')
               .send({
-                usernameUpdated: moment().subtract(3, 'months').toDate()
+                usernameUpdated: moment().subtract(3, 'months').toDate(),
               })
               .expect(200)
               .end(function (err) {

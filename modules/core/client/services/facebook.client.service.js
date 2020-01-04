@@ -8,7 +8,7 @@
   function FacebookFactory($log, $window, $document, $http, $rootScope, Authentication) {
 
     const service = {
-      init: init
+      init: init,
     };
 
     return service;
@@ -81,7 +81,7 @@
         // FB API version
         // https://developers.facebook.com/docs/apps/changelog/
         // https://developers.facebook.com/docs/apps/versions#howlong
-        version: 'v2.8'
+        version: 'v2.8',
       });
 
       // Get notified about user's authentication status to FB
@@ -128,7 +128,7 @@
         {
           // Tells Angular-Loading-Bar to ignore this http request
           // @link https://github.com/chieffancypants/angular-loading-bar#ignoring-particular-xhr-requests
-          ignoreLoadingBar: true
+          ignoreLoadingBar: true,
         });
     }
 

@@ -27,7 +27,7 @@ const publicOfferFields = [
   'maxGuests',
   'location',
   'updated',
-  'validUntil'
+  'validUntil',
 ];
 
 // Offer fields users can modify
@@ -37,7 +37,7 @@ const allowedOfferFields = [
   'noOfferDescription',
   'maxGuests',
   'location',
-  'validUntil'
+  'validUntil',
 ];
 
 /**
@@ -173,21 +173,21 @@ function isValidUntil(validUntil) {
 exports.create = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // Validate type
   if (!req.body.type || !isValidOfferType(req.body.type)) {
     return res.status(400).send({
-      message: 'Missing or invalid offer type.'
+      message: 'Missing or invalid offer type.',
     });
   }
 
   // Missing required fields
   if (!req.body.location) {
     return res.status(400).send({
-      message: 'Missing offer location.'
+      message: 'Missing offer location.',
     });
   }
 
@@ -218,12 +218,12 @@ exports.create = function (req, res) {
   offer.save(function (err) {
     if (err) {
       return res.status(400).send({
-        message: 'Failed to save offer.'
+        message: 'Failed to save offer.',
       });
     }
 
     res.json({
-      message: 'Offer saved.'
+      message: 'Offer saved.',
     });
   });
 };
@@ -240,21 +240,21 @@ exports.update = function (req, res) {
       // User can modify only their own offers
       if (!req.user || !req.offer.user._id.equals(req.user._id)) {
         return res.status(403).send({
-          message: errorService.getErrorMessageByKey('forbidden')
+          message: errorService.getErrorMessageByKey('forbidden'),
         });
       }
 
       // Missing required fields
       if (!req.body.location) {
         return res.status(400).send({
-          message: 'Missing offer location.'
+          message: 'Missing offer location.',
         });
       }
 
       // Attempting to change offer type yelds error
       if (req.body.type && req.body.type !== req.offer.type) {
         return res.status(400).send({
-          message: 'You cannot update offer type.'
+          message: 'You cannot update offer type.',
         });
       }
 
@@ -305,14 +305,14 @@ exports.update = function (req, res) {
     // Done!
     function () {
       return res.json({
-        message: 'Offer updated.'
+        message: 'Offer updated.',
       });
-    }
+    },
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
   });
@@ -328,22 +328,22 @@ exports.delete = function (req, res) {
   // User can remove only their own offers
   if (!req.user || !req.offer.user._id.equals(req.user._id)) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   Offer.findOneAndRemove({
     _id: req.offer._id,
-    user: req.user._id
+    user: req.user._id,
   }, function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
 
     res.json({
-      message: 'Offer removed.'
+      message: 'Offer removed.',
     });
   });
 };
@@ -355,7 +355,7 @@ exports.list = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -383,7 +383,7 @@ exports.list = function (req, res) {
   if (!isCoordinatesValid) {
     return res.status(400).send({
       message: 'Invalid or missing coordinate. ' +
-        'Required coordinates: ' + coordinateKeys.join(', ') + '.'
+        'Required coordinates: ' + coordinateKeys.join(', ') + '.',
     });
   }
 
@@ -395,7 +395,7 @@ exports.list = function (req, res) {
     // Could not parse filters json string into object
     if (!filters) {
       return res.status(400).send({
-        message: 'Could not parse filters.'
+        message: 'Could not parse filters.',
       });
     }
   }
@@ -418,11 +418,11 @@ exports.list = function (req, res) {
           // -> It's latitude first as in the database, not longitude first as in the documentation
           $box: [
             [parseFloat(req.query.southWestLat), parseFloat(req.query.southWestLng)],
-            [parseFloat(req.query.northEastLat), parseFloat(req.query.northEastLng)]
-          ]
-        }
-      }
-    }
+            [parseFloat(req.query.northEastLat), parseFloat(req.query.northEastLng)],
+          ],
+        },
+      },
+    },
   }];
 
   // Status filter
@@ -432,9 +432,9 @@ exports.list = function (req, res) {
       $or: [
         { status: 'yes' },
         { status: 'maybe' },
-        { status: { $exists: false } }
-      ]
-    }
+        { status: { $exists: false } },
+      ],
+    },
   });
 
   // Don't return outdated offers
@@ -442,9 +442,9 @@ exports.list = function (req, res) {
     $match: {
       $or: [
         { validUntil: { $gte: new Date() } },
-        { validUntil: { $exists: false } }
-      ]
-    }
+        { validUntil: { $exists: false } },
+      ],
+    },
   });
 
   // Types filter
@@ -461,9 +461,9 @@ exports.list = function (req, res) {
       query.push({
         $match: {
           type: {
-            $in: filterTypes
-          }
-        }
+            $in: filterTypes,
+          },
+        },
       });
     }
   }
@@ -475,13 +475,13 @@ exports.list = function (req, res) {
         from: 'users',
         localField: 'user',
         foreignField: '_id',
-        as: 'user'
-      }
+        as: 'user',
+      },
     });
     // Because above `$lookup` returns an array with one user
     // `[{userObject}]`, we have to unwind it back to `{userObject}`
     query.push({
-      $unwind: '$user'
+      $unwind: '$user',
     });
   }
 
@@ -490,9 +490,9 @@ exports.list = function (req, res) {
     query.push({
       $match: {
         'user.seen': {
-          $gte: moment().subtract(filters.seen).toDate()
-        }
-      }
+          $gte: moment().subtract(filters.seen).toDate(),
+        },
+      },
     });
   }
 
@@ -514,9 +514,9 @@ exports.list = function (req, res) {
       query.push({
         $match: {
           'user.languages': {
-            $in: filterLanguages
-          }
-        }
+            $in: filterLanguages,
+          },
+        },
       });
     }
   }
@@ -529,13 +529,13 @@ exports.list = function (req, res) {
       // Return failure if tribe id is invalid, otherwise add id to query array
       return mongoose.Types.ObjectId.isValid(tribeId) &&
              tribeQueries.push({
-               'user.member.tribe': new mongoose.Types.ObjectId(tribeId)
+               'user.member.tribe': new mongoose.Types.ObjectId(tribeId),
              });
     });
 
     if (!isTribeFilterValid) {
       return res.status(400).send({
-        message: errorService.getErrorMessageByKey('invalid-id')
+        message: errorService.getErrorMessageByKey('invalid-id'),
       });
     }
 
@@ -544,13 +544,13 @@ exports.list = function (req, res) {
       // Match multible tribes
       query.push({
         $match: {
-          $or: tribeQueries
-        }
+          $or: tribeQueries,
+        },
       });
     } else {
       // Just one tribe
       query.push({
-        $match: tribeQueries[0]
+        $match: tribeQueries[0],
       });
     }
   }
@@ -561,8 +561,8 @@ exports.list = function (req, res) {
       _id: '$_id',
       location: '$locationFuzzy',
       status: '$status',
-      type: '$type'
-    }
+      type: '$type',
+    },
   });
 
   Offer
@@ -573,10 +573,10 @@ exports.list = function (req, res) {
     }, function (err) {
       // Log the failure
       log('error', 'Querying for offers caused an error. #g28fb1', {
-        error: err
+        error: err,
       });
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     });
 };
@@ -601,7 +601,7 @@ exports.getOffer = function (req, res) {
       // Don't proceed if offer doesn't have user
       if (!req.offer || !req.offer.user || !req.offer.location) {
         return res.status(404).send({
-          message: errorService.getErrorMessageByKey('not-found')
+          message: errorService.getErrorMessageByKey('not-found'),
         });
       }
 
@@ -619,7 +619,7 @@ exports.getOffer = function (req, res) {
       User.populate(offer.user, {
         path: 'member.tribe',
         select: tribes.tribeFields,
-        model: 'Tribe'
+        model: 'Tribe',
         // Not possible at the moment due bug in Mongoose
         // http://mongoosejs.com/docs/faq.html#populate_sort_order
         // https://github.com/Automattic/mongoose/issues/2202
@@ -638,16 +638,16 @@ exports.getOffer = function (req, res) {
       offer = sanitizeOffer(offer, req.user._id);
 
       res.json(offer);
-    }
+    },
 
   ], function (err) {
     if (err) {
       // Something's wrong and we weren't prepared for itx
       log('error', 'Failed to load offer. #g34gss', {
-        error: err
+        error: err,
       });
       return res.status(400).send({
-        message: errorService.getErrorMessageByKey('default')
+        message: errorService.getErrorMessageByKey('default'),
       });
     }
   });
@@ -660,14 +660,14 @@ exports.offersByUserId = function (req, res, next, userId) {
   // Authenticated user required
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // Validate userId is valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
@@ -676,8 +676,8 @@ exports.offersByUserId = function (req, res, next, userId) {
     user: userId,
     $or: [
       { validUntil: { $gte: new Date() } },
-      { validUntil: { $exists: false } }
-    ]
+      { validUntil: { $exists: false } },
+    ],
   };
 
   // Validate optional type parameter
@@ -726,7 +726,7 @@ exports.offersByUserId = function (req, res, next, userId) {
 
     if (!offers || offers.length === 0) {
       return res.status(404).send({
-        message: errorService.getErrorMessageByKey('not-found')
+        message: errorService.getErrorMessageByKey('not-found'),
       });
     }
 
@@ -745,14 +745,14 @@ exports.offerById = function (req, res, next, offerId) {
   // Require user
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(offerId)) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
@@ -767,13 +767,13 @@ exports.offerById = function (req, res, next, offerId) {
           // No offer
           if (err) {
             log('error', 'Getting offer by id caused an error. #2kg3g3', {
-              error: err
+              error: err,
             });
           }
 
           if (err || !offer) {
             return res.status(404).send({
-              message: errorService.getErrorMessageByKey('not-found')
+              message: errorService.getErrorMessageByKey('not-found'),
             });
           }
 
@@ -787,12 +787,12 @@ exports.offerById = function (req, res, next, offerId) {
       req.offer = offer;
 
       done();
-    }
+    },
 
   ], function (err) {
     if (err) {
       log('error', 'Getting offer by id caused an error. #g34gj3', {
-        error: err
+        error: err,
       });
     }
     return next(err);
@@ -805,7 +805,7 @@ exports.offerById = function (req, res, next, offerId) {
  */
 exports.removeAllByUserId = function (userId, callback) {
   Offer.deleteMany({
-    user: userId
+    user: userId,
   }, function (err) {
     if (callback) {
       callback(err);

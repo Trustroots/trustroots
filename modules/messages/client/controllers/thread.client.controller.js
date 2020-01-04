@@ -138,12 +138,12 @@
           '<b><i>' +
             quickReplyMessage +
           '</i></b>' +
-        '</p>'
+        '</p>',
       );
 
       $analytics.eventTrack('messages.hostingreply.' + reply, {
         category: 'messages.hostingreply',
-        label: 'Message hosting hosting reply "' + reply + '"'
+        label: 'Message hosting hosting reply "' + reply + '"',
       });
     }
 
@@ -218,7 +218,7 @@
     function fetchMessages() {
       return (
         vm.messageHandler.fetchMessages({
-          userId: userTo._id
+          userId: userTo._id,
         })
       );
     }
@@ -266,7 +266,7 @@
 
         $analytics.eventTrack('thread-pagination', {
           category: 'messages.thread',
-          label: 'Message thread page ' + (vm.messageHandler.nextPage ? vm.messageHandler.nextPage.page : 0)
+          label: 'Message thread page ' + (vm.messageHandler.nextPage ? vm.messageHandler.nextPage.page : 0),
         });
       }
     }
@@ -302,7 +302,7 @@
      */
     function syncRead() {
       MessagesRead.query({
-        messageIds: flaggedAsRead
+        messageIds: flaggedAsRead,
       }, function () {
         flaggedAsRead = [];
         // Tell app controller to sync this counter
@@ -357,7 +357,7 @@
       const message = new vm.messageHandler.ajaxCall({
         content: msg,
         userTo: userTo._id,
-        read: false
+        read: false,
       });
 
       message.$save(function (response) {
@@ -374,7 +374,7 @@
 
         $analytics.eventTrack('message.send', {
           category: 'messages',
-          label: 'Message send'
+          label: 'Message send',
         });
 
         // $timeout ensures scroll happens only after DOM has finished rendering

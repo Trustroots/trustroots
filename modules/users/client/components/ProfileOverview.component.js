@@ -56,5 +56,5 @@ export default function ProfileOverview({ profile }) {
 }
 
 ProfileOverview.propTypes = {
-  profile: PropTypes.object.isRequired
+  profile: PropTypes.object.isRequired,
 };

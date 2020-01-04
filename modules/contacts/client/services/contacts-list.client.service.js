@@ -8,7 +8,7 @@
   /* @ngInject */
   function ContactsListService($resource) {
     return $resource('/api/contacts/:listUserId', {
-      listUserId: '@id'
+      listUserId: '@id',
     });
   }
 }());

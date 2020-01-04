@@ -33,7 +33,7 @@ describe('User password CRUD tests', function () {
     // Create user credentials
     credentials = {
       username: 'TR_username',
-      password: 'TR-I$Aw3$0m4'
+      password: 'TR-I$Aw3$0m4',
     };
 
     // Create a new user
@@ -46,7 +46,7 @@ describe('User password CRUD tests', function () {
       emailToken: 'initial email token',
       username: credentials.username.toLowerCase(),
       password: credentials.password,
-      provider: 'local'
+      provider: 'local',
     };
 
     user = new User(_user);
@@ -62,7 +62,7 @@ describe('User password CRUD tests', function () {
       should.not.exist(err);
       agent.post('/api/auth/forgot')
         .send({
-          username: 'some_username_that_doesnt_exist'
+          username: 'some_username_that_doesnt_exist',
         })
         .expect(404)
         .end(function (err, res) {
@@ -86,7 +86,7 @@ describe('User password CRUD tests', function () {
       should.not.exist(err);
       agent.post('/api/auth/forgot')
         .send({
-          username: ''
+          username: '',
         })
         .expect(400)
         .end(function (err, res) {
@@ -108,7 +108,7 @@ describe('User password CRUD tests', function () {
       should.not.exist(err);
       agent.post('/api/auth/forgot')
         .send({
-          username: user.username
+          username: user.username,
         })
         .expect(200)
         .end(function (err, res) {
@@ -135,7 +135,7 @@ describe('User password CRUD tests', function () {
       should.not.exist(err);
       agent.post('/api/auth/forgot')
         .send({
-          username: user.username.toUpperCase()
+          username: user.username.toUpperCase(),
         })
         .expect(200)
         .end(function (err, res) {
@@ -162,7 +162,7 @@ describe('User password CRUD tests', function () {
       should.not.exist(err);
       agent.post('/api/auth/forgot')
         .send({
-          username: user.email
+          username: user.email,
         })
         .expect(200)
         .end(function (err, res) {
@@ -189,7 +189,7 @@ describe('User password CRUD tests', function () {
       should.not.exist(err);
       agent.post('/api/auth/forgot')
         .send({
-          username: user.email.toUpperCase()
+          username: user.email.toUpperCase(),
         })
         .expect(200)
         .end(function (err, res) {
@@ -216,7 +216,7 @@ describe('User password CRUD tests', function () {
       should.not.exist(err);
       agent.post('/api/auth/forgot')
         .send({
-          username: user.username
+          username: user.username,
         })
         .expect(200)
         .end(function (err) {
@@ -251,7 +251,7 @@ describe('User password CRUD tests', function () {
       should.not.exist(err);
       agent.post('/api/auth/forgot')
         .send({
-          username: user.username
+          username: user.username,
         })
         .expect(200)
         .end(function (err) {
@@ -292,7 +292,7 @@ describe('User password CRUD tests', function () {
           .send({
             newPassword: '1234567890Aa$',
             verifyPassword: '1234567890Aa$',
-            currentPassword: credentials.password
+            currentPassword: credentials.password,
           })
           .expect(200)
           .end(function (err, res) {
@@ -321,7 +321,7 @@ describe('User password CRUD tests', function () {
           .send({
             newPassword: '1234567890Aa$',
             verifyPassword: '1234567890-ABC-123-Aa$',
-            currentPassword: credentials.password
+            currentPassword: credentials.password,
           })
           .expect(400)
           .end(function (err, res) {
@@ -350,7 +350,7 @@ describe('User password CRUD tests', function () {
           .send({
             newPassword: '1234567890Aa$',
             verifyPassword: '1234567890Aa$',
-            currentPassword: 'some_wrong_passwordAa$'
+            currentPassword: 'some_wrong_passwordAa$',
           })
           .expect(400)
           .end(function (err, res) {
@@ -379,7 +379,7 @@ describe('User password CRUD tests', function () {
           .send({
             newPassword: '',
             verifyPassword: '',
-            currentPassword: credentials.password
+            currentPassword: credentials.password,
           })
           .expect(400)
           .end(function (err, res) {
@@ -400,7 +400,7 @@ describe('User password CRUD tests', function () {
       .send({
         newPassword: '1234567890Aa$',
         verifyPassword: '1234567890Aa$',
-        currentPassword: credentials.password
+        currentPassword: credentials.password,
       })
       .expect(403)
       .end(function (err, res) {

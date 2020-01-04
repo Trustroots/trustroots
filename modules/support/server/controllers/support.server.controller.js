@@ -29,14 +29,14 @@ exports.supportRequest = function (req, res) {
     authenticated: (req.user) ? 'yes' : 'no',
     profilePublic: (req.user && req.user.public) ? 'yes' : 'no',
     signupDate:    (req.user) ? req.user.created.toString() : '-',
-    reportMember:  (req.body.reportMember) ? textService.plainText(req.body.reportMember) : false
+    reportMember:  (req.body.reportMember) ? textService.plainText(req.body.reportMember) : false,
     /* eslint-enable key-spacing */
   };
 
   const replyTo = {
     // Trust registered user's email, otherwise validate it
     // Default to TO-support email
-    address: (req.user || validator.isEmail(supportRequestData.email)) ? supportRequestData.email : config.supportEmail
+    address: (req.user || validator.isEmail(supportRequestData.email)) ? supportRequestData.email : config.supportEmail,
   };
 
   // Add name to sender if we have it
@@ -49,7 +49,7 @@ exports.supportRequest = function (req, res) {
     userAgent: supportRequestData.userAgent,
     username: supportRequestData.username,
     email: supportRequestData.email,
-    message: supportRequestData.message
+    message: supportRequestData.message,
   };
   if (req.user) {
     storedSupportRequestData.user = req.user._id;
@@ -64,7 +64,7 @@ exports.supportRequest = function (req, res) {
   supportRequest.save(function (dbErr) {
     if (dbErr) {
       log('error', 'Failed storing support request to the DB. #39ghsa', {
-        error: dbErr
+        error: dbErr,
       });
     }
 
@@ -72,27 +72,27 @@ exports.supportRequest = function (req, res) {
     emailService.sendSupportRequest(replyTo, supportRequestData, function (emailServiceErr) {
       if (emailServiceErr) {
         log('error', 'Failed sending support request via email. #49ghsd', {
-          error: emailServiceErr
+          error: emailServiceErr,
         });
 
         return res.status(400).send({
-          message: 'Failure while sending your support request. Please try again.'
+          message: 'Failure while sending your support request. Please try again.',
         });
       }
 
       res.json({
-        message: 'Support request sent.'
+        message: 'Support request sent.',
       });
 
       const statsObject = {
         namespace: 'supportRequest',
         counts: {
-          count: 1
+          count: 1,
         },
         tags: {
           authenticated: supportRequestData.authenticated,
-          type: supportRequestData.reportMember ? 'reportMember' : 'normal'
-        }
+          type: supportRequestData.reportMember ? 'reportMember' : 'normal',
+        },
       };
 
       statService.stat(statsObject, function () {

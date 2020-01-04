@@ -20,7 +20,7 @@ const User = ({ userData }) => {
 };
 
 User.propTypes = {
-  userData: PropTypes.object
+  userData: PropTypes.object,
 };
 
 
@@ -57,9 +57,9 @@ export default function UsersList({ users }) {
 }
 
 UsersList.defaultProps = {
-  users: []
+  users: [],
 };
 
 UsersList.propTypes = {
-  users: PropTypes.array
+  users: PropTypes.array,
 };

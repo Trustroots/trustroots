@@ -39,8 +39,8 @@ describe('Stathat Service Unit Test', function () {
       const stat = {
         namespace: 'testCount',
         counts: {
-          count: 2
-        }
+          count: 2,
+        },
       };
 
       stathatService.stat(stat, function (e) {
@@ -64,9 +64,9 @@ describe('Stathat Service Unit Test', function () {
       const stat = {
         namespace: 'testCountWithTime',
         counts: {
-          count: 2
+          count: 2,
         },
-        time: new Date('2033-07-13')
+        time: new Date('2033-07-13'),
       };
 
       stathatService.stat(stat, function (e) {
@@ -90,8 +90,8 @@ describe('Stathat Service Unit Test', function () {
       const stat = {
         namespace: 'testValue',
         values: {
-          value: 2
-        }
+          value: 2,
+        },
       };
 
       stathatService.stat(stat, function (e) {
@@ -115,9 +115,9 @@ describe('Stathat Service Unit Test', function () {
       const stat = {
         namespace: 'testValueWithTime',
         values: {
-          value: 3
+          value: 3,
         },
-        time: new Date('2033-07-15 12:03:05.332')
+        time: new Date('2033-07-15 12:03:05.332'),
       };
 
       stathatService.stat(stat, function (e) {
@@ -141,13 +141,13 @@ describe('Stathat Service Unit Test', function () {
       const stat = {
         namespace: 'testValueWithTime',
         values: {
-          value: 3
+          value: 3,
         },
         tags: {
           first: 'foo',
-          second: 'bar'
+          second: 'bar',
         },
-        time: new Date('2033-07-15 12:03:05.332')
+        time: new Date('2033-07-15 12:03:05.332'),
       };
 
       stathatService.stat(stat, function (e) {
@@ -175,7 +175,7 @@ describe('Stathat Service Unit Test', function () {
           should(argmGroups[1]).containEql([
             defaultName, // the default metric name
             defaultName + '.first.foo', // the name with 1st tag
-            defaultName + '.second.bar' // the name with 2nd tag
+            defaultName + '.second.bar', // the name with 2nd tag
           ][n]);
 
           // 3rd argument is a stat value
@@ -197,12 +197,12 @@ describe('Stathat Service Unit Test', function () {
         namespace: 'testCountWithTime',
         counts: {
           count: 2,
-          events: 5
+          events: 5,
         },
         values: {
           value: 3,
-          other: 7
-        }
+          other: 7,
+        },
       };
 
       stathatService.stat(stat, function (e) {

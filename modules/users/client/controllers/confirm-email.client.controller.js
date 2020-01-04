@@ -55,7 +55,7 @@
           },
           function () { // On error function
             vm.error = true;
-          }
+          },
         );
     }
 

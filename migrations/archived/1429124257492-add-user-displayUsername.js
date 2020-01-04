@@ -21,7 +21,7 @@ exports.up = function (next) {
           users.forEach(function (e) {
             User.findByIdAndUpdate(
               e._id,
-              { $set: { displayUsername: e.username } }
+              { $set: { displayUsername: e.username } },
             ).exec();
           });
           mongooseService.disconnect(function () {

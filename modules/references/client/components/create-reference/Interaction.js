@@ -52,7 +52,7 @@ const Interaction = withTranslation('reference')(function ({ t, interactions, on
 
 Interaction.propTypes = {
   onChange: PropTypes.func.isRequired,
-  interactions: PropTypes.object.isRequired
+  interactions: PropTypes.object.isRequired,
 };
 
 export default Interaction;

@@ -10,12 +10,12 @@ export class AboutMe extends Component {
     this.changeProfileDescriptionToggle = this.changeProfileDescriptionToggle.bind(this);
 
     this.state = {
-      profileDescriptionToggle: false
+      profileDescriptionToggle: false,
     };
   }
   changeProfileDescriptionToggle(){
     this.setState((prevState) => ({
-      profileDescriptionToggle: !prevState.profileDescriptionToggle
+      profileDescriptionToggle: !prevState.profileDescriptionToggle,
     }));
   }
 
@@ -65,7 +65,7 @@ AboutMe.propTypes = {
   profile: PropTypes.object,
   isSelf: PropTypes.bool,
   appSettings: PropTypes.object,
-  t: PropTypes.func
+  t: PropTypes.func,
 };
 
 export default withTranslation(['user-profile'])(AboutMe);

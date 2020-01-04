@@ -11,7 +11,7 @@ const log = require(path.resolve('./config/lib/logger'));
 exports.renderIndex = function (req, res) {
 
   const renderVars = {
-    user: null
+    user: null,
   };
 
   // Expose user
@@ -47,7 +47,7 @@ exports.renderNotFound = function (req, res) {
     },
     'default': function () {
       res.send(errorService.getErrorMessageByKey('not-found'));
-    }
+    },
   });
 };
 
@@ -58,7 +58,7 @@ exports.renderNotFound = function (req, res) {
 exports.receiveCSPViolationReport = function (req, res) {
   if (process.env.NODE_ENV !== 'test') {
     log('warn', 'CSP violation report #ljeanw', {
-      report: req.body ? textService.plainText(JSON.stringify(req.body)) : 'No report available.'
+      report: req.body ? textService.plainText(JSON.stringify(req.body)) : 'No report available.',
     });
   }
   res.status(204).json();
@@ -73,7 +73,7 @@ exports.receiveCSPViolationReport = function (req, res) {
 exports.receiveExpectCTViolationReport = function (req, res) {
   if (process.env.NODE_ENV !== 'test') {
     log('warn', 'Expect-CT violation report #3hg8ha', {
-      report: req.body ? textService.plainText(JSON.stringify(req.body)) : 'No report available.'
+      report: req.body ? textService.plainText(JSON.stringify(req.body)) : 'No report available.',
     });
   }
   res.status(204).json();

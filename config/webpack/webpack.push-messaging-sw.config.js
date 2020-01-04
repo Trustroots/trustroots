@@ -12,7 +12,7 @@ module.exports = {
   entry: require.resolve('./entries/pushMessagingServiceWorker'),
   output: {
     path: join(basedir, 'public'),
-    filename: 'push-messaging-sw.js'
+    filename: 'push-messaging-sw.js',
   },
   module: {
     rules: [
@@ -20,19 +20,19 @@ module.exports = {
         enforce: 'pre',
         test: /\.js$/,
         exclude: /node_modules/,
-        loader: 'eslint-loader'
+        loader: 'eslint-loader',
       },
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        loader: 'babel-loader'
-      }
-    ]
+        loader: 'babel-loader',
+      },
+    ],
   },
   plugins: [
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-      'FCM_SENDER_ID': JSON.stringify(config.fcm.senderId)
-    })
-  ]
+      'FCM_SENDER_ID': JSON.stringify(config.fcm.senderId),
+    }),
+  ],
 };

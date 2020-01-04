@@ -8,11 +8,11 @@
   /* @ngInject */
   function ReferenceThreadService($resource) {
     return $resource('/api/references-thread/:userToId', {
-      userToId: '@_id'
+      userToId: '@_id',
     }, {
       get: {
-        method: 'GET'
-      }
+        method: 'GET',
+      },
     });
   }
 }());

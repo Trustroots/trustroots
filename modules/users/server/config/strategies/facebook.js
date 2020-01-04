@@ -19,7 +19,7 @@ module.exports = function (config) {
     log('error', 'Cannot configure Facebook strategy due missing configuration #38h1jv', {
       clientIDExists: Boolean(clientID),
       clientSecretExists: Boolean(clientSecret),
-      callbackURLExists: Boolean(callbackURL)
+      callbackURLExists: Boolean(callbackURL),
     });
     return;
   }
@@ -40,7 +40,7 @@ module.exports = function (config) {
       'last_name',
       'gender',
       'link',
-      'picture'
+      'picture',
     ],
     // Note FB API version
     // v2.10 is available until November 7, 2019
@@ -49,7 +49,7 @@ module.exports = function (config) {
     // @link https://developers.facebook.com/docs/apps/changelog
     profileURL: 'https://graph.facebook.com/v2.10/me',
     passReqToCallback: true,
-    enableProof: false
+    enableProof: false,
   },
   function (req, accessToken, refreshToken, profile, done) {
     // Set the provider data and include tokens
@@ -65,7 +65,7 @@ module.exports = function (config) {
       email: _.get(profile, 'email', undefined),
       provider: 'facebook',
       providerIdentifierField: 'id',
-      providerData: providerData
+      providerData: providerData,
     };
 
     // Save the user OAuth profile

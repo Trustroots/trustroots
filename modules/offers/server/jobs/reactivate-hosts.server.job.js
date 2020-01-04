@@ -34,12 +34,12 @@ module.exports = function (job, agendaDone) {
           type: 'host',
           status: 'no',
           updated: {
-            $lt: updatedTimeAgo
+            $lt: updatedTimeAgo,
           },
           // Only offers we didn't notify yet
           reactivateReminderSent: {
-            $exists: false
-          }
+            $exists: false,
+          },
         })
         .populate('user', 'public email firstName displayName')
         .exec(function (err, offers) {
@@ -65,12 +65,12 @@ module.exports = function (job, agendaDone) {
               offer._id,
               {
                 $set: {
-                  reactivateReminderSent: new Date()
-                }
+                  reactivateReminderSent: new Date(),
+                },
               },
               function (err) {
                 callback(err);
-              }
+              },
             );
           }
         });
@@ -78,7 +78,7 @@ module.exports = function (job, agendaDone) {
         done(err);
       });
 
-    }
+    },
 
   ], function (err) {
     if (err) {

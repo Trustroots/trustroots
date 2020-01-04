@@ -96,7 +96,7 @@ module.exports.save = function (message, callback) {
       module.exports.send(statObject, function (err) {
         return done(err);
       });
-    }
+    },
   ], function (err) {
     if (err) {
       log('error', 'Saving message stats failed.', err);
@@ -139,13 +139,13 @@ module.exports.process = function (message, callback) {
         $or: [
           {
             userTo: userTo,
-            userFrom: userFrom
+            userFrom: userFrom,
           },
           {
             userTo: userFrom,
-            userFrom: userTo
-          }
-        ]
+            userFrom: userTo,
+          },
+        ],
       })
         .sort({ created: 1 })
         .exec(done);
@@ -171,7 +171,7 @@ module.exports.process = function (message, callback) {
       if (canBeTheFirstReply) {
         return Message.findOne({
           userTo: firstMessage.userFrom,
-          userFrom: firstMessage.userTo
+          userFrom: firstMessage.userTo,
         })
           .sort({ created: 1 })
           .exec(function (err, firstReply) {
@@ -213,20 +213,20 @@ module.exports.process = function (message, callback) {
       const statObject = {
         namespace: 'messages',
         counts: {
-          sent: 1
+          sent: 1,
         },
         values: {},
         tags: {
           position: position, // position (first|firstReply|other)
-          messageLengthType: msgLenType // (short|long) content (shortness defined in a config)
+          messageLengthType: msgLenType, // (short|long) content (shortness defined in a config)
         },
         meta: {
           messageId: String(message._id),
           userFrom: String(userFrom), // id of sender
           userTo: String(userTo), // id of receiver
-          messageLength: msgLen // length of the content
+          messageLength: msgLen, // length of the content
         },
-        time: message.created
+        time: message.created,
       };
 
       // we measure the reply time only for the first replies (time since the
@@ -236,7 +236,7 @@ module.exports.process = function (message, callback) {
       }
 
       return done(null, statObject);
-    }
+    },
   ], callback);
 };
 

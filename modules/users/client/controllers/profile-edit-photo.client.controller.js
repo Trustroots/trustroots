@@ -59,11 +59,11 @@
           url: '/api/users-avatar',
           method: 'POST',
           headers: {
-            'Content-Type': (fileAvatar.type !== '' ? fileAvatar.type : 'application/octet-stream')
+            'Content-Type': (fileAvatar.type !== '' ? fileAvatar.type : 'application/octet-stream'),
           },
           data: {
-            avatar: fileAvatar
-          }
+            avatar: fileAvatar,
+          },
         }).success(function () {
           vm.avatarUploading = false;
           updateUserProfile();

@@ -18,18 +18,18 @@ export default function BottomNavigationSmall({ username, isSelf, contactCount }
     {
       key: 'overview',
       label: t('Overview'),
-      link: `/profile/${username}/overview`
+      link: `/profile/${username}/overview`,
     },
     {
       key: 'about',
       label: t('About'),
-      link: `/profile/${username}`
+      link: `/profile/${username}`,
     },
     {
       key: 'accommodation',
       label: t('Hosting'),
-      link: `/profile/${username}/accommodation`
-    }
+      link: `/profile/${username}/accommodation`,
+    },
   ];
 
   // contacts tab is shown only sometimes
@@ -38,7 +38,7 @@ export default function BottomNavigationSmall({ username, isSelf, contactCount }
       key: 'contacts',
       label: t('Contacts'),
       link: `/profile/${username}/contacts`,
-      count: contactCount
+      count: contactCount,
     });
   }
 
@@ -67,5 +67,5 @@ export default function BottomNavigationSmall({ username, isSelf, contactCount }
 BottomNavigationSmall.propTypes = {
   isSelf: PropTypes.bool.isRequired,
   contactCount: PropTypes.number.isRequired,
-  username: PropTypes.string.isRequired
+  username: PropTypes.string.isRequired,
 };

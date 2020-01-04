@@ -34,5 +34,5 @@ export default function UserEmailConfirmLink({ user }) {
 }
 
 UserEmailConfirmLink.propTypes = {
-  user: PropTypes.object.isRequired
+  user: PropTypes.object.isRequired,
 };

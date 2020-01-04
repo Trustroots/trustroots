@@ -69,7 +69,7 @@ module.exports = function (job, agendaDone) {
     // remapped config for nth notifications, more comfortable for further use
     return {
       order: index, // nth notification
-      timing: value // when to send the notification
+      timing: value, // when to send the notification
     };
   }));
 
@@ -109,8 +109,8 @@ function sendUnreadMessageReminders(reminder, callback) {
             // second reminder is sent when notificationCount is 0 or 1
             // etc...
             notificationCount: { $lte: reminderOrder },
-            created: { $lt: createdTimeAgo }
-          }
+            created: { $lt: createdTimeAgo },
+          },
         },
         {
           $group: {
@@ -118,7 +118,7 @@ function sendUnreadMessageReminders(reminder, callback) {
             // Group separate emails
             _id: {
               'userTo': '$userTo',
-              'userFrom': '$userFrom'
+              'userFrom': '$userFrom',
             },
 
             // Collect unread messages count
@@ -130,9 +130,9 @@ function sendUnreadMessageReminders(reminder, callback) {
             // did we already send some notifications for the last unseen message?
             // the last unseen message has the minimum notification count
             // we'll use the value to determine whether the notification is the first one, or not; to change wording of the reminder
-            notificationCount: { $min: '$notificationCount' }
-          }
-        }
+            notificationCount: { $min: '$notificationCount' },
+          },
+        },
       ], function (err, notifications) {
         done(err, notifications);
       });
@@ -160,7 +160,7 @@ function sendUnreadMessageReminders(reminder, callback) {
         // count messages in the other direction
         Message.countDocuments({
           userFrom: notification._id.userTo,
-          userTo: notification._id.userFrom
+          userTo: notification._id.userFrom,
         }, function (err, count) {
 
           const isThreadReplied = count > 0;
@@ -218,8 +218,8 @@ function sendUnreadMessageReminders(reminder, callback) {
               // Used for FB notifications:
               'additionalProvidersData.facebook.id',
               'additionalProvidersData.facebook.accessToken',
-              'additionalProvidersData.facebook.accessTokenExpires'
-            ].join(' ')
+              'additionalProvidersData.facebook.accessTokenExpires',
+            ].join(' '),
           )
           .exec(function (err, users) {
 
@@ -281,7 +281,7 @@ function sendUnreadMessageReminders(reminder, callback) {
           },
           push: function (callback) {
             pushService.notifyMessagesUnread(userFrom, userTo, notification, callback);
-          }
+          },
         }, notificationCallback);
 
       }, 5); // How many notifications to process simultaneously?
@@ -297,7 +297,7 @@ function sendUnreadMessageReminders(reminder, callback) {
         if (err) {
           // Log the failure to send the notification
           log('error', 'Sending unread message notifications caused an error. #j38vax', {
-            error: err
+            error: err,
           });
         }
         done(null, notifications);
@@ -345,14 +345,14 @@ function sendUnreadMessageReminders(reminder, callback) {
           if (err) {
             // Log the failure to send the notification
             log('error', 'Error while marking messages as notified. #9ehvbn', {
-              error: err
+              error: err,
             });
           }
           // Now fail the job if error happens
           done(err);
         });
 
-    }
+    },
 
   ], function (err) {
     // Wrap it up

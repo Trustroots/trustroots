@@ -57,7 +57,7 @@
           },
           function (response) { // On error function
             messageCenterService.add('danger', response.data.message || 'Something went wrong. Try again or contact us to disconnect your profile.', { timeout: 10000 });
-          }
+          },
         );
     }
 

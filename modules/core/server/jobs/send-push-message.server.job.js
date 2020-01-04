@@ -27,7 +27,7 @@ module.exports = function (job, done) {
   // Validate notification
   if (!notification.body || !notification.click_action) {
     log('error', '`send push notification` job cannot send notification due missing required `body` or `click_action` values #zqo8bf', {
-      jobId: jobId
+      jobId: jobId,
     });
 
     // Don't return error, as we're not going to let Agenda attempt this job again
@@ -52,7 +52,7 @@ module.exports = function (job, done) {
         break;
       default:
         log('error', 'The `send push notification` job cannot process notification due missing platform value. #f932hf', {
-          jobId: jobId
+          jobId: jobId,
         });
     }
   });
@@ -99,11 +99,11 @@ module.exports = function (job, done) {
   // function that always completes with a result object, even when it errors.
   Promise.all([
     async.reflect(firebasePushPromise),
-    async.reflect(exponentPushPromise)
+    async.reflect(exponentPushPromise),
   ]).then(function () {
     process.nextTick(function () {
       log('info', 'Successfully finished `send push message` job', {
-        jobId: jobId
+        jobId: jobId,
       });
       return done();
     });
@@ -111,7 +111,7 @@ module.exports = function (job, done) {
     process.nextTick(function () {
       log('error', 'The `send push notification` job failed', {
         jobId: jobId,
-        error: err
+        error: err,
       });
       return done(new Error('Failed to send push message.'));
     });
@@ -127,16 +127,16 @@ function removeUserPushTokens(userId, tokens, callback) {
     $pull: {
       pushRegistration: {
         token: {
-          $in: tokens
-        }
-      }
-    }
+          $in: tokens,
+        },
+      },
+    },
   };
 
   User.findByIdAndUpdate(userId, query).exec(function (err) {
     if (err) {
       log('error', 'The `send push notification` job failed to remove invalid tokens from user. #gj932f', {
-        err: err
+        err: err,
       });
     }
     callback(err);

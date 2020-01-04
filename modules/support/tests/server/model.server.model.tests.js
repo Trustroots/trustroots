@@ -27,7 +27,7 @@ describe('Support request Model Unit Tests:', function () {
       email: 'test@test.com',
       username: 'joedoe',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
 
     _support = {
@@ -35,7 +35,7 @@ describe('Support request Model Unit Tests:', function () {
       username: 'joedoe',
       message: 'Testing.',
       userAgent: 'Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20100101 Firefox/10.0',
-      reportMember: 'baduser'
+      reportMember: 'baduser',
     };
 
     support = new SupportRequest(_support);
@@ -84,7 +84,7 @@ describe('Support request Model Unit Tests:', function () {
 
     it('should be able to save without problems without any other fields than message', function (done) {
       const supportOnlyMessage = new SupportRequest({
-        message: _support.message
+        message: _support.message,
       });
 
       supportOnlyMessage.save(function (err, supportRes) {

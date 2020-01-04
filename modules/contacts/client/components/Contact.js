@@ -4,7 +4,7 @@ import ContactPresentational from './ContactPresentational';
 import RemoveContact from './RemoveContactContainer';
 
 export default function Contact({
-  className, contact, avatarSize, selfId, hideMeta, onContactRemoved=() => {}
+  className, contact, avatarSize, selfId, hideMeta, onContactRemoved=() => {},
 }) {
   const [showRemoveModal, setShowRemoveModal] = useState(false);
 
@@ -42,7 +42,7 @@ Contact.propTypes = {
   hideMeta: PropTypes.bool,
   // this is a function provided from Angular. It broadcasts the information that a contact was removed.
   // @TODO this won't be needed when migration is finished
-  onContactRemoved: PropTypes.func
+  onContactRemoved: PropTypes.func,
 };
 
 function getSituation(contact, selfId) {

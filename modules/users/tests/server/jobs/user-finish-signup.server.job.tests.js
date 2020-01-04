@@ -42,7 +42,7 @@ describe('Job: user finish signup', function () {
       username: 'user_unconfirmed',
       password: 'M3@n.jsI$Aw3$0m3',
       provider: 'local',
-      created: moment().subtract(moment.duration({ 'hours': 4 }))
+      created: moment().subtract(moment.duration({ 'hours': 4 })),
     };
 
     unConfirmedUser = new User(_unConfirmedUser);
@@ -63,7 +63,7 @@ describe('Job: user finish signup', function () {
       username: 'user_confirmed',
       password: 'M3@n.jsI$Aw3$0m4',
       provider: 'local',
-      created: moment().subtract(moment.duration({ 'hours': 4 }))
+      created: moment().subtract(moment.duration({ 'hours': 4 })),
     };
 
     confirmedUser = new User(_confirmedUser);
@@ -257,7 +257,7 @@ describe('Job: user finish signup', function () {
         username: 'l' + i + _unConfirmedUser.username,
         emailToken: 'l' + i + _unConfirmedUser.emailToken,
         emailTemporary: 'l' + i + _unConfirmedUser.emailTemporary,
-        email: 'l' + i + _unConfirmedUser.email
+        email: 'l' + i + _unConfirmedUser.email,
       };
       const _unConfirmedUserLooped = _.merge(_.clone(_unConfirmedUser), loopVars);
       _users.push(_unConfirmedUserLooped);

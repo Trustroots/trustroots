@@ -21,11 +21,11 @@
       restrict: 'A',
       replace: true,
       scope: {
-        tribeIds: '=trTribesToggle'
+        tribeIds: '=trTribesToggle',
       },
       templateUrl: '/modules/search/views/directives/tr-tribes-toggle.client.view.html',
       controller: trTribesToggleDirectiveController,
-      controllerAs: 'trTribesToggle'
+      controllerAs: 'trTribesToggle',
     };
 
     return directive;

@@ -27,7 +27,7 @@ describe('MessageStats Model', function () {
       email: 'test1@test.com',
       username: 'username1',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
 
     user1 = new User({
@@ -37,14 +37,14 @@ describe('MessageStats Model', function () {
       email: 'test2@test.com',
       username: 'username2',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
 
     message = new Message({
       content: 'Message content',
       userFrom: user0._id,
       userTo: user1._id,
-      read: false
+      read: false,
     });
   });
 
@@ -57,7 +57,7 @@ describe('MessageStats Model', function () {
       firstMessageUserFrom: user0._id,
       firstMessageUserTo: user1._id,
       firstMessageCreated: message.created,
-      firstMessageLength: message.content.length
+      firstMessageLength: message.content.length,
     });
 
     messageStat.should.have.property('_id');
@@ -83,7 +83,7 @@ describe('MessageStats Model', function () {
       firstMessageUserFrom: user0._id,
       firstMessageUserTo: user1._id,
       firstMessageCreated: message.created,
-      firstMessageLength: message.content.length
+      firstMessageLength: message.content.length,
     });
 
     messageStat.save(function (err) {

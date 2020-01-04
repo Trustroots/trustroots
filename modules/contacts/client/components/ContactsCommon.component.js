@@ -9,7 +9,7 @@ export class ContactsCommon extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      contacts: []
+      contacts: [],
     };
   }
 
@@ -37,7 +37,7 @@ export class ContactsCommon extends React.Component {
               hideMeta={true}
               avatarSize={64}
               selfId={this.props.profileId}
-            />
+            />,
           )}
         </div>
       </div>
@@ -47,7 +47,7 @@ export class ContactsCommon extends React.Component {
 
 ContactsCommon.propTypes = {
   profileId: PropTypes.string,
-  t: PropTypes.func.isRequired
+  t: PropTypes.func.isRequired,
 };
 
 export default withTranslation('contact')(ContactsCommon);

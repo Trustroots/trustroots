@@ -21,11 +21,11 @@
       restrict: 'A',
       replace: true,
       scope: {
-        types: '=trTypesToggle'
+        types: '=trTypesToggle',
       },
       templateUrl: '/modules/search/views/directives/tr-types-toggle.client.view.html',
       controller: trTypesToggleDirectiveController,
-      controllerAs: 'trTypesToggle'
+      controllerAs: 'trTypesToggle',
     };
 
     return directive;
@@ -40,12 +40,12 @@
       vm.types = [
         {
           id: 'host',
-          label: 'Hosts'
+          label: 'Hosts',
         },
         {
           id: 'meet',
-          label: 'Meetups'
-        }
+          label: 'Meetups',
+        },
       ];
 
       // States of toggle switches inside this directive

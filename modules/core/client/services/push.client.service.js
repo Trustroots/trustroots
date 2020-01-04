@@ -46,12 +46,12 @@
         if (!push.isSupported) return $q.reject(new Error('push is unsupported'));
         saveEnabled(false);
         return disable();
-      }
+      },
 
     };
 
     const store = {
-      token: null // so we can remove it when needed
+      token: null, // so we can remove it when needed
     };
 
     firebaseMessaging.onTokenRefresh(setup);
@@ -59,7 +59,7 @@
     firebaseMessaging.onMessage(function (payload) {
       // eslint-disable-next-line no-new
       new $window.Notification(payload.notification.title, {
-        body: payload.notification.body
+        body: payload.notification.body,
       });
     });
 
@@ -128,7 +128,7 @@
 
         },
         controllerAs: 'askPushNotificationsModal',
-        animation: true
+        animation: true,
       });
     }
 
@@ -184,7 +184,7 @@
       if (!store.token) return $q.resolve();
       push.isBusy = true;
       return firebaseMessaging.deleteToken(
-        store.token
+        store.token,
       ).then(function () {
         return removeTokenFromServer(store.token);
       }).then(function () {

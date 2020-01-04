@@ -15,8 +15,8 @@
         controllerAs: 'inbox',
         requiresAuth: true,
         data: {
-          pageTitle: 'Messages'
-        }
+          pageTitle: 'Messages',
+        },
       }).
       state('messageThread', {
         url: '/messages/:username',
@@ -35,11 +35,11 @@
           },
           appSettings: function (SettingsService) {
             return SettingsService.get();
-          }
+          },
         },
         data: {
-          pageTitle: 'Messages'
-        }
+          pageTitle: 'Messages',
+        },
       });
   }
 }());

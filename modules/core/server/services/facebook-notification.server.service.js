@@ -49,8 +49,8 @@ exports.notifyMessagesUnread = function (userFrom, userTo, notification, callbac
       source: 'facebook-notification',
       medium: 'facebook',
       campaign: 'messages-unread',
-      content: 'reply-to'
-    })
+      content: 'reply-to',
+    }),
   };
 
   // Use different templates for 1st and 2nd notification

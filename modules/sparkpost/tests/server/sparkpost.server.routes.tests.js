@@ -30,10 +30,10 @@ describe('Sparkpost CRUD tests', function () {
             'message_event': {
               'type': 'delivery',
               'campaign_id': 'example',
-              'timestamp': '1454442600'
-            }
-          }
-        }
+              'timestamp': '1454442600',
+            },
+          },
+        },
       ];
 
       done();

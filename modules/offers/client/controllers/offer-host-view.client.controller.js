@@ -29,7 +29,7 @@
       if ($scope.profileCtrl.profile && $scope.profileCtrl.profile.$resolved && $scope.profileCtrl.profile._id) {
         OffersByService.query({
           userId: $scope.profileCtrl.profile._id,
-          types: 'host'
+          types: 'host',
         }, function (offers) {
           if (!offers || !offers.length) {
             return;

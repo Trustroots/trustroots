@@ -7,7 +7,7 @@
   function LanguagesFactory($window) {
 
     const service = {
-      get: get
+      get: get,
     };
 
     return service;

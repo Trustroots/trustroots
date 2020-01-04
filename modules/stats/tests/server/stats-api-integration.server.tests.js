@@ -26,7 +26,7 @@ describe('Stat API integration tests', function () {
     influx.InfluxDB.prototype.writeMeasurement.returns(
       new Promise(function (resolve) {
         process.nextTick(resolve());
-      })
+      }),
     );
 
     // provide config options for influxdb
@@ -34,7 +34,7 @@ describe('Stat API integration tests', function () {
       host: 'localhost',
       port: 8086,
       protocol: 'http',
-      database: 'trustroots-test'
+      database: 'trustroots-test',
     });
 
     // stub the stathat endpoints
@@ -72,12 +72,12 @@ describe('Stat API integration tests', function () {
           namespace: 'test',
           counts: {
             count1: 1,
-            count2: 2
+            count2: 2,
           },
           values: {
             value1: 3,
-            value2: 4
-          }
+            value2: 4,
+          },
         };
 
         // call the stat api with the testing data
@@ -143,13 +143,13 @@ describe('Stat API integration tests', function () {
           namespace: 'test',
           counts: {
             count1: 1,
-            count2: 2
+            count2: 2,
           },
           values: {
             value1: 3,
-            value2: 4
+            value2: 4,
           },
-          time: new Date('2012-12-21 13:41:01.134')
+          time: new Date('2012-12-21 13:41:01.134'),
         };
 
         // call the stat api with the testing data
@@ -222,15 +222,15 @@ describe('Stat API integration tests', function () {
         const data = {
           namespace: 'test',
           counts: {
-            count: 1
+            count: 1,
           },
           values: {
-            value: 2
+            value: 2,
           },
           tags: {
             tag1: 'string1',
-            tag2: 'string2'
-          }
+            tag2: 'string2',
+          },
         };
 
         // call the stat api with the testing data
@@ -287,7 +287,7 @@ describe('Stat API integration tests', function () {
               // the expected names
               'test.count',
               'test.count.tag1.string1',
-              'test.count.tag2.string2'
+              'test.count.tag2.string2',
             ], function (value) {
               // the 2nd arguments of the countsCalledWith
               should(countGroupArgs[1]).containEql(value);
@@ -303,7 +303,7 @@ describe('Stat API integration tests', function () {
               // the expected names
               'test.value',
               'test.value.tag1.string1',
-              'test.value.tag2.string2'
+              'test.value.tag2.string2',
             ], function (value) {
               // the 2nd arguments of the countsCalledWith
               should(valueGroupArgs[1]).containEql(value);
@@ -325,15 +325,15 @@ describe('Stat API integration tests', function () {
         const data = {
           namespace: 'test',
           counts: {
-            count: 1
+            count: 1,
           },
           values: {
-            value: 2
+            value: 2,
           },
           meta: {
             meta1: 'meta string',
-            meta2: 3
-          }
+            meta2: 3,
+          },
         };
 
         // call the stat api with the testing data
@@ -564,11 +564,11 @@ describe('Stat API integration tests', function () {
         const invalidData = {
           namespace: 'test',
           counts: {
-            sameName: 3
+            sameName: 3,
           },
           values: {
-            sameName: 2
-          }
+            sameName: 2,
+          },
         };
 
         // call the stat api with the testing data
@@ -592,8 +592,8 @@ describe('Stat API integration tests', function () {
           namespace: 'test',
           counts: {},
           meta: {
-            meta1: 1
-          }
+            meta1: 1,
+          },
         };
 
         // call the stat api with the testing data
@@ -616,8 +616,8 @@ describe('Stat API integration tests', function () {
         const invalidData = {
           namespace: 'test',
           counts: {
-            stringCount: 'string'
-          }
+            stringCount: 'string',
+          },
         };
 
         // call the stat api with the testing data
@@ -640,9 +640,9 @@ describe('Stat API integration tests', function () {
         const data = {
           namespace: 'invalidTime',
           values: {
-            v1: 5
+            v1: 5,
           },
-          time: 123456
+          time: 123456,
         };
         // call the stat api with the testing data
         statsService.stat(data, function (e) {
@@ -680,8 +680,8 @@ describe('Stat API integration tests', function () {
       statsService.stat({
         namespace: 'test',
         counts: {
-          c: 1
-        }
+          c: 1,
+        },
       }, function (e) {
         if (e) return done(e);
         try {
@@ -712,8 +712,8 @@ describe('Stat API integration tests', function () {
       statsService.stat({
         namespace: 'test',
         counts: {
-          c: 1
-        }
+          c: 1,
+        },
       }, function (e) {
         if (e) return done(e);
         try {

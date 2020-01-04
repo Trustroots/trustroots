@@ -18,7 +18,7 @@
 
     const service = {
       getMapCenter: getMapCenter,
-      cacheMapCenter: cacheMapCenter
+      cacheMapCenter: cacheMapCenter,
     };
 
     return service;
@@ -82,7 +82,7 @@
           'lat': location.lat,
           'lng': location.lng,
           'zoom': location.zoom,
-          'date': new Date()
+          'date': new Date(),
         });
       }
     }

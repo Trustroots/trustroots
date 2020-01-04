@@ -66,9 +66,9 @@ export function ContactListPresentational({ t, selfId, contacts, filter, onConta
                   selfId={selfId}
                   onContactRemoved={() => onContactRemoved(contact)}
                 />
-              </div>
+              </div>,
             )}</div>
-          )
+          ),
         )
       }
     </div>
@@ -81,7 +81,7 @@ ContactListPresentational.propTypes = {
   filter: PropTypes.string.isRequired,
   selfId: PropTypes.string.isRequired,
   onContactRemoved: PropTypes.func.isRequired,
-  onFilterChange: PropTypes.func.isRequired
+  onFilterChange: PropTypes.func.isRequired,
 };
 
 export default withTranslation('contact')(ContactListPresentational);

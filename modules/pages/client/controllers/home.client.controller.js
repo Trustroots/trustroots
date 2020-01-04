@@ -46,7 +46,7 @@
         'desertgirl',
         'hitchgirl1',
         'hitchgirl2',
-        'hitchtruck'
+        'hitchtruck',
       ];
     } else {
       vm.boards = [
@@ -56,7 +56,7 @@
         'hitchgirl1',
         'wavewatching',
         'sahara-backpacker',
-        'hitchtruck'
+        'hitchtruck',
       ];
     }
 
@@ -72,12 +72,12 @@
 
     // Load suggested tribes
     vm.tribes = TribesService.query({
-      limit: 3
+      limit: 3,
     }, function () {
       // Got those three tribes, now fetch one more if requested
       if ($stateParams.tribe && !isTribeLoaded($stateParams.tribe)) {
         TribeService.get({
-          tribeSlug: $stateParams.tribe
+          tribeSlug: $stateParams.tribe,
         }).then(function (tribe) {
           // If tribe was found, put it to the beginning of `vm.tribes` array
           if (tribe && tribe._id) {

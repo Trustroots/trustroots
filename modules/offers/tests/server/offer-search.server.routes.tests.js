@@ -40,7 +40,7 @@ const testLocations = {
       '&northEastLng=18.73318142361111' +
       '&southWestLat=44.66407507240992' +
       '&southWestLng=3.689914279513889',
-    location: [52.48556355813466, 13.489011526107788]
+    location: [52.48556355813466, 13.489011526107788],
   },
   'China': {
     queryBoundingBox:
@@ -48,7 +48,7 @@ const testLocations = {
       '&northEastLng=151.23828125000003' +
       '&southWestLat=-3.9332268264771106' +
       '&southWestLng=61.63281250000001',
-    location: [34.632532, 103.767519]
+    location: [34.632532, 103.767519],
   },
   'US': {
     queryBoundingBox:
@@ -56,7 +56,7 @@ const testLocations = {
       '&northEastLng=-48.44921875000001' +
       '&southWestLat=0.021065118766989688' +
       '&southWestLng=-138.05468750000003',
-    location: [40.514402, -88.990735]
+    location: [40.514402, -88.990735],
   },
   'NorthPole': {
     queryBoundingBox:
@@ -64,8 +64,8 @@ const testLocations = {
       '&northEastLng=145.61328125000003' +
       '&southWestLat=78.02765497223292' +
       '&southWestLng=56.00781250000001',
-    location: [80.912672, 79.732322]
-  }
+    location: [80.912672, 79.732322],
+  },
 };
 
 
@@ -86,13 +86,13 @@ describe('Offer search tests', function () {
     // Create user credentials
     credentials = {
       username: 'loremipsum',
-      password: 'Password123!'
+      password: 'Password123!',
     };
 
     // Create user2 credentials
     credentials2 = {
       username: 'loremipsum2',
-      password: 'Password123!'
+      password: 'Password123!',
     };
 
     // Create a new user
@@ -106,7 +106,7 @@ describe('Offer search tests', function () {
       password: credentials.password,
       provider: 'local',
       public: true,
-      seen: new Date()
+      seen: new Date(),
     });
 
     // Create a new user
@@ -121,7 +121,7 @@ describe('Offer search tests', function () {
       languages: ['fin', 'ita'],
       provider: 'local',
       public: true,
-      seen: new Date()
+      seen: new Date(),
     });
 
     // Create a new user
@@ -135,7 +135,7 @@ describe('Offer search tests', function () {
       languages: ['ita'],
       provider: 'local',
       public: true,
-      seen: new Date()
+      seen: new Date(),
     });
 
     // Used only for sending via POST and thus doesn't include some data
@@ -145,7 +145,7 @@ describe('Offer search tests', function () {
       description: '<p>1 I can host! :)</p>',
       noOfferDescription: '<p>1 I cannot host... :(</p>',
       maxGuests: 5,
-      location: testLocations.Europe.location
+      location: testLocations.Europe.location,
     };
 
     offer2 = new Offer({
@@ -155,7 +155,7 @@ describe('Offer search tests', function () {
       noOfferDescription: '<p>2 I cannot host... :(</p>',
       maxGuests: 3,
       updated: new Date(),
-      location: [52.498981209298776, 13.418329954147339]
+      location: [52.498981209298776, 13.418329954147339],
     });
 
     offer3 = new Offer({
@@ -165,7 +165,7 @@ describe('Offer search tests', function () {
       noOfferDescription: '<p>3 I cannot host... :(</p>',
       maxGuests: 1,
       updated: new Date(),
-      location: [52.498981209298775, 13.418329954147338]
+      location: [52.498981209298775, 13.418329954147338],
     });
 
     offerMeet = new Offer({
@@ -173,7 +173,7 @@ describe('Offer search tests', function () {
       description: '<p>Dinner party!</p>',
       validUntil: moment().add(30, 'day').toDate(),
       updated: new Date(),
-      location: [52.498981209298887, 13.418329954147449]
+      location: [52.498981209298887, 13.418329954147449],
     });
 
     tribe1 = new Tribe({
@@ -182,7 +182,7 @@ describe('Offer search tests', function () {
       'color': '111111',
       'tribe': true,
       'count': 1,
-      'public': true
+      'public': true,
     });
 
     tribe2 = new Tribe({
@@ -190,7 +190,7 @@ describe('Offer search tests', function () {
       'label': 'tribe2',
       'color': '222222',
       'count': 1,
-      'public': true
+      'public': true,
     });
 
     // Save data to the test db
@@ -219,7 +219,7 @@ describe('Offer search tests', function () {
       function (done) {
         user2.member = [{
           tribe: tribe2Id,
-          since: new Date()
+          since: new Date(),
         }];
         user2.save(function (err, user2res) {
           user2Id = user2res._id;
@@ -230,7 +230,7 @@ describe('Offer search tests', function () {
       function (done) {
         user3.member = [{
           tribe: tribe1Id,
-          since: new Date()
+          since: new Date(),
         }];
         user3.save(function (err, user3res) {
           user3Id = user3res._id;
@@ -252,7 +252,7 @@ describe('Offer search tests', function () {
           offer3Id = offer3._id;
           done(err);
         });
-      }
+      },
     ], function (err) {
       should.not.exist(err);
       doneBeforeEach(err);
@@ -272,7 +272,7 @@ describe('Offer search tests', function () {
             '?northEastLat=32.89472514359572' +
             '&northEastLng=25.598493303571427' +
             '&southWestLat=-20.49068931208608' +
-            '&southWestLng=-12.986188616071427'
+            '&southWestLng=-12.986188616071427',
         )
           .expect(200)
           .end(function (offersGetErr, offersGetRes) {
@@ -302,7 +302,7 @@ describe('Offer search tests', function () {
             '?northEastLat=+55.31212135084999' +
             '&northEastLng=+18.73318142361111' +
             '&southWestLat=+44.66407507240992' +
-            '&southWestLng=+3.689914279513889'
+            '&southWestLng=+3.689914279513889',
         )
           .expect(200)
           .end(function (offersGetErr, offersGetRes) {
@@ -331,7 +331,7 @@ describe('Offer search tests', function () {
         agent.get('/api/offers' +
             '?northEastLat=32.89472514359572' +
             '&northEastLng=25.598493303571427' +
-            '&southWestLat=-20.49068931208608'
+            '&southWestLat=-20.49068931208608',
         )
           .expect(400)
           .end(done);
@@ -352,7 +352,7 @@ describe('Offer search tests', function () {
             '?northEastLat=25.' + '1'.repeat(30) + 'foo' + // `foo` starts at 31
             '&northEastLng=25.598493303571427' +
             '&southWestLat=-20.49068931208608' +
-            '&southWestLng=-12.986188616071427'
+            '&southWestLng=-12.986188616071427',
         )
           .expect(400)
           .end(done);
@@ -373,7 +373,7 @@ describe('Offer search tests', function () {
             '?northEastLat=FAIL' +
             '&northEastLng=25.598493303571427' +
             '&southWestLat=-20.49068931208608' +
-            '&southWestLng=-12.986188616071427'
+            '&southWestLng=-12.986188616071427',
         )
           .expect(400)
           .end(done);
@@ -581,7 +581,7 @@ describe('Offer search tests', function () {
 
             // Get offers (around Berlin)
             const filters = {
-              types: ['host']
+              types: ['host'],
             };
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
               .expect(200)
@@ -623,7 +623,7 @@ describe('Offer search tests', function () {
 
             // Get offers (around Berlin)
             const filters = {
-              types: ['meet']
+              types: ['meet'],
             };
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
               .expect(200)
@@ -656,7 +656,7 @@ describe('Offer search tests', function () {
 
             // Get offers (around Berlin)
             const filters = {
-              types: ['foobar']
+              types: ['foobar'],
             };
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
               .expect(200)
@@ -697,7 +697,7 @@ describe('Offer search tests', function () {
 
           // Get offers (around Berlin)
           const filters = {
-            languages: ['fin']
+            languages: ['fin'],
           };
 
           agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
@@ -727,7 +727,7 @@ describe('Offer search tests', function () {
 
           // Get offers (around Berlin)
           const filters = {
-            languages: ['fin', 'ita']
+            languages: ['fin', 'ita'],
           };
 
           agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
@@ -769,7 +769,7 @@ describe('Offer search tests', function () {
 
           // Get offers (around Berlin)
           const filters = {
-            tribes: [tribe2Id]
+            tribes: [tribe2Id],
           };
           agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
             .expect(200)
@@ -807,7 +807,7 @@ describe('Offer search tests', function () {
 
             // Get offers (around Berlin)
             const filters = {
-              tribes: [tribe1Id, tribe2Id]
+              tribes: [tribe1Id, tribe2Id],
             };
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
               .expect(200)
@@ -840,7 +840,7 @@ describe('Offer search tests', function () {
 
           // Get offers (around Berlin)
           const filters = {
-            tribes: [tribe1Id, tribe2Id]
+            tribes: [tribe1Id, tribe2Id],
           };
           agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
             .expect(200)
@@ -953,8 +953,8 @@ describe('Offer search tests', function () {
 
             const filters = {
               seen: {
-                'months': 1
-              }
+                'months': 1,
+              },
             };
 
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))

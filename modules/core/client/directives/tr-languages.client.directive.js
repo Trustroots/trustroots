@@ -37,10 +37,10 @@
                 '</select>',
       scope: {
         output: '=trLanguages',
-        onChange: '@trLanguagesOnChange'
+        onChange: '@trLanguagesOnChange',
       },
       controller: trLanguagesDirectiveController,
-      controllerAs: 'trLanguages'
+      controllerAs: 'trLanguages',
     };
 
     return directive;
@@ -91,7 +91,7 @@
             if (angular.isString(key)) {
               this.push({
                 'key': key,
-                'name': vm.languages[key]
+                'name': vm.languages[key],
               });
             }
           }, selections);

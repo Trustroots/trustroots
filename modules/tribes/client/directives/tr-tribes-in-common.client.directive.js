@@ -13,10 +13,10 @@
       restrict: 'A',
       replace: true,
       scope: {
-        trTribesInCommon: '='
+        trTribesInCommon: '=',
       },
       controller: trTribesInCommonController,
-      controllerAs: 'tribesInCommon'
+      controllerAs: 'tribesInCommon',
     };
 
     /* @ngInject */

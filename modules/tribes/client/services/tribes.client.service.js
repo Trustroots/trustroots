@@ -6,12 +6,12 @@
   /* @ngInject */
   function TribesService($resource) {
     return $resource('/api/tribes', {
-      limit: 50
+      limit: 50,
     }, {
       'query': {
         method: 'GET',
-        isArray: true
-      }
+        isArray: true,
+      },
     });
   }
 }());

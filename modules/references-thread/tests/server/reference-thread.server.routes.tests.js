@@ -46,12 +46,12 @@ describe('Reference Thread CRUD tests', function () {
     // Create userFrom credentials
     referenceUserFromCredentials = {
       username: 'user_from',
-      password: 'password123!'
+      password: 'password123!',
     };
 
     referenceUserNonpublicCredentials = {
       username: 'user_non_public',
-      password: 'password123!'
+      password: 'password123!',
     };
 
     userFrom = new User({
@@ -62,7 +62,7 @@ describe('Reference Thread CRUD tests', function () {
       username: referenceUserFromCredentials.username,
       password: referenceUserFromCredentials.password,
       provider: 'local',
-      public: true
+      public: true,
     });
 
     userTo = new User({
@@ -73,7 +73,7 @@ describe('Reference Thread CRUD tests', function () {
       username: 'user_to',
       password: 'password123!',
       provider: 'local',
-      public: true
+      public: true,
     });
 
     userNonPublic = new User({
@@ -84,7 +84,7 @@ describe('Reference Thread CRUD tests', function () {
       username: referenceUserNonpublicCredentials.username,
       password: referenceUserNonpublicCredentials.password,
       provider: 'local',
-      public: false
+      public: false,
     });
 
     message = {
@@ -93,7 +93,7 @@ describe('Reference Thread CRUD tests', function () {
       userTo: null,
       userFrom: null,
       read: true,
-      created: new Date()
+      created: new Date(),
     };
 
     thread = {
@@ -101,7 +101,7 @@ describe('Reference Thread CRUD tests', function () {
       userTo: null,
       userFrom: null,
       read: true,
-      updated: new Date()
+      updated: new Date(),
     };
 
     referenceThread = {
@@ -109,7 +109,7 @@ describe('Reference Thread CRUD tests', function () {
       // userFrom: null,
       // userTo: null,
       reference: 'yes',
-      created: new Date()
+      created: new Date(),
     };
 
     // Create users, messages and prepare references
@@ -177,7 +177,7 @@ describe('Reference Thread CRUD tests', function () {
             return done(err);
           });
         });
-      }
+      },
 
     ], function (err) {
       if (err) {

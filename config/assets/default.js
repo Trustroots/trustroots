@@ -9,7 +9,7 @@ module.exports = {
         'progressbar',
         'tabs',
         'tooltip',
-        'typeahead'
+        'typeahead',
       ],
       js: [
         // Non minified versions
@@ -56,18 +56,18 @@ module.exports = {
         'node_modules/angular-mailcheck/angular-mailcheck.js',
         'node_modules/angular-locker/dist/angular-locker.js',
         'node_modules/angular-confirm/angular-confirm.js',
-        'node_modules/angulargrid/angulargrid.js'
+        'node_modules/angulargrid/angulargrid.js',
       ],
-      tests: ['node_modules/angular-mocks/angular-mocks.js']
+      tests: ['node_modules/angular-mocks/angular-mocks.js'],
     },
     js: [
       'modules/core/client/app/config.js',
       'modules/core/client/app/init.js',
       'modules/*/client/*.js',
       'modules/*/client/controllers/*.js',
-      'modules/*/client/**/*.js'
+      'modules/*/client/**/*.js',
     ],
-    views: ['modules/*/client/views/**/*.html']
+    views: ['modules/*/client/views/**/*.html'],
   },
   server: {
     fontelloConfig: 'modules/core/client/fonts/fontello/config.json',
@@ -79,6 +79,6 @@ module.exports = {
     config: 'modules/*/server/config/*.js',
     policies: 'modules/*/server/policies/*.js',
     views: 'modules/*/server/views/*.html',
-    migrations: 'migrations/*.js'
-  }
+    migrations: 'migrations/*.js',
+  },
 };

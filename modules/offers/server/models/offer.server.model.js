@@ -100,62 +100,62 @@ const OfferSchema = new Schema({
   type: {
     type: String,
     enum: ['host', 'meet'],
-    default: 'meet'
+    default: 'meet',
   },
   status: {
     type: String,
     enum: ['yes', 'maybe', 'no'],
-    default: 'yes'
+    default: 'yes',
   },
   description: {
     type: String,
     default: '',
     trim: true,
-    set: textService.html
+    set: textService.html,
   },
   // This is shown on profiles when users say they are not hosting
   noOfferDescription: {
     type: String,
     default: '',
     trim: true,
-    set: textService.html
+    set: textService.html,
   },
   maxGuests: {
     type: Number,
     min: 0,
     max: 99,
-    default: 1
+    default: 1,
   },
   // Actual location user has marked
   location: {
     type: [Number],
     required: true,
     validate: [validateLocation, 'Invalid coordinates for location.'],
-    set: setLocation
+    set: setLocation,
   },
   // This is sent publicly to frontend;
   // some 50-200m fuzzy presentation of actual location
   locationFuzzy: {
-    type: [Number]
+    type: [Number],
   },
   updated: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   validUntil: {
-    type: Date
+    type: Date,
   },
   user: {
     type: Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
   },
   reactivateReminderSent: {
-    type: Date
-  }
+    type: Date,
+  },
 });
 
 // Geospatial index (lat,lon)

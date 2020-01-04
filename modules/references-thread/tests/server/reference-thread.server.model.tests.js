@@ -31,7 +31,7 @@ describe('Reference Thread Model Unit Tests:', function () {
       email: 'test1@test.com',
       username: 'username1',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
 
     user2 = new User({
@@ -41,7 +41,7 @@ describe('Reference Thread Model Unit Tests:', function () {
       email: 'test2@test.com',
       username: 'username2',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
 
     message = {
@@ -50,7 +50,7 @@ describe('Reference Thread Model Unit Tests:', function () {
       userTo: null,
       userFrom: null,
       read: true,
-      created: new Date()
+      created: new Date(),
     };
 
     thread = {
@@ -58,7 +58,7 @@ describe('Reference Thread Model Unit Tests:', function () {
       userTo: null,
       userFrom: null,
       read: true,
-      updated: new Date()
+      updated: new Date(),
     };
 
     referenceThread = {
@@ -66,7 +66,7 @@ describe('Reference Thread Model Unit Tests:', function () {
       userFrom: null,
       userTo: null,
       reference: 'yes',
-      created: new Date()
+      created: new Date(),
     };
 
     // Create users and reference

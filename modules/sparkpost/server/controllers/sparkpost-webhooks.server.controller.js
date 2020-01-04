@@ -38,7 +38,7 @@ const config = require(path.resolve('./config/config'));
 exports.receiveBatch = function (req, res) {
   if (!_.isArray(req.body) || !req.body.length) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('bad-request')
+      message: errorService.getErrorMessageByKey('bad-request'),
     });
   }
 
@@ -61,7 +61,7 @@ exports.processAndSendMetrics = function (event, callback) {
   // only numbers can be saved as count/value in stathat, so every string value must be either tag (saved) or meta (ignored)
   const meta = {
     country: '',
-    campaignId: ''
+    campaignId: '',
   };
 
   const tags = {};
@@ -73,7 +73,7 @@ exports.processAndSendMetrics = function (event, callback) {
     'relay_event',
     'track_event',
     'gen_event',
-    'unsubscribe_event'
+    'unsubscribe_event',
   ];
 
   // Validate against these event types
@@ -98,7 +98,7 @@ exports.processAndSendMetrics = function (event, callback) {
     'relay_tempfail',
     'relay_permfail',
     'open',
-    'click'
+    'click',
   ];
 
   // Get what's in first key of `msys` object
@@ -123,7 +123,7 @@ exports.processAndSendMetrics = function (event, callback) {
   if (!tags.category || !tags.type) {
     log('error', 'Could not validate SparkPost event webhook.', {
       type: eventType,
-      category: eventCategory
+      category: eventCategory,
     });
     return callback();
   }
@@ -136,7 +136,7 @@ exports.processAndSendMetrics = function (event, callback) {
     meta.campaignId = speakingurl(campaignId, {
       separator: '-', // char that replaces the whitespaces
       maintainCase: false, // don't maintain case
-      truncate: 255 // truncate to 255 chars
+      truncate: 255, // truncate to 255 chars
     });
   }
 
@@ -149,10 +149,10 @@ exports.processAndSendMetrics = function (event, callback) {
   const statObj = {
     namespace: 'transactionalEmailEvent',
     counts: {
-      count: 1
+      count: 1,
     },
     tags: tags,
-    meta: meta
+    meta: meta,
   };
 
   // Set `time` field to event's timestamp
@@ -185,7 +185,7 @@ exports.basicAuthenticate = function (req, res, next) {
 
     res.set('WWW-Authenticate', 'Basic realm="Knock Knock"');
     return res.status(401).send({
-      message: 'Access denied'
+      message: 'Access denied',
     });
   }
 

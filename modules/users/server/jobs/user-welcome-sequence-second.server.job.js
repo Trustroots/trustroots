@@ -45,9 +45,9 @@ module.exports = function (job, agendaDone) {
           // Exlude users with `suspended` role
           roles: {
             $elemMatch: {
-              $ne: 'suspended'
-            }
-          }
+              $ne: 'suspended',
+            },
+          },
         })
         // Limit stops any crazy amounts of emails being processed at once
         // the rest would be processed in next round.
@@ -76,17 +76,17 @@ module.exports = function (job, agendaDone) {
               user._id,
               {
                 $set: {
-                  welcomeSequenceSent: new Date()
+                  welcomeSequenceSent: new Date(),
                 },
                 // If the field does not exist, $inc creates the field
                 // and sets the field to the specified value.
                 $inc: {
-                  welcomeSequenceStep: 1
-                }
+                  welcomeSequenceStep: 1,
+                },
               },
               function (err) {
                 callback(err);
-              }
+              },
             );
           }
         });
@@ -94,13 +94,13 @@ module.exports = function (job, agendaDone) {
         done(err);
       });
 
-    }
+    },
 
   ], function (err) {
     if (err) {
       log('error', 'Failure in second welcome sequence background job.', {
         error: err,
-        jobId: _.get(job, 'attrs._id').toString()
+        jobId: _.get(job, 'attrs._id').toString(),
       });
     }
     return agendaDone(err);

@@ -46,7 +46,7 @@ Avatar.propTypes = {
   size: PropTypes.number,
   source: PropTypes.string,
   link: PropTypes.bool,
-  onClick: PropTypes.func
+  onClick: PropTypes.func,
 };
 
 export default withTranslation('user')(Avatar);

@@ -40,7 +40,7 @@ function obfuscateTokens(user) {
     ['additionalProvidersData', 'github', 'accessToken'],
     ['additionalProvidersData', 'github', 'refreshToken'],
     ['additionalProvidersData', 'twitter', 'token'],
-    ['additionalProvidersData', 'twitter', 'tokenSecret']
+    ['additionalProvidersData', 'twitter', 'tokenSecret'],
   ].forEach((path) => {
     if (_.has(_user, path)) {
       _.set(_user, path, '(Hidden from admins.)');
@@ -59,7 +59,7 @@ exports.searchUsers = (req, res) => {
   // Validate the query string
   if (!search || search.length < SEARCH_STRING_LIMIT) {
     return res.status(400).send({
-      message: `Query string at least ${ SEARCH_STRING_LIMIT } characters long required.`
+      message: `Query string at least ${ SEARCH_STRING_LIMIT } characters long required.`,
     });
   }
 
@@ -70,7 +70,7 @@ exports.searchUsers = (req, res) => {
       { 'displayName': regexpSearch },
       { 'email': regexpSearch },
       { 'emailTemporary': regexpSearch },
-      { 'username': regexpSearch }
+      { 'username': regexpSearch },
     ] })
     // Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
     .select([
@@ -84,14 +84,14 @@ exports.searchUsers = (req, res) => {
       'resetPasswordExpires',
       'resetPasswordToken',
       'roles',
-      'username'
+      'username',
     ])
     .sort('username displayName')
     .limit(SEARCH_USERS_LIMIT)
     .exec((err, users) => {
       if (err) {
         return res.status(400).send({
-          message: errorService.getErrorMessage(err)
+          message: errorService.getErrorMessage(err),
         });
       }
 
@@ -104,7 +104,7 @@ exports.searchUsers = (req, res) => {
 const handleAdminApiError = (res, err) => {
   if (err) {
     return res.status(400).send({
-      message: errorService.getErrorMessage(err)
+      message: errorService.getErrorMessage(err),
     });
   }
 };
@@ -118,7 +118,7 @@ exports.getUser = async (req, res) => {
   // Check that the search string is provided
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
@@ -130,12 +130,12 @@ exports.getUser = async (req, res) => {
       .populate({
         path: 'member.tribe',
         select: 'slug label',
-        model: 'Tribe'
+        model: 'Tribe',
       });
 
     if (!user) {
       return res.status(404).send({
-        message: errorService.getErrorMessageByKey('not-found')
+        message: errorService.getErrorMessageByKey('not-found'),
       });
     }
 
@@ -150,7 +150,7 @@ exports.getUser = async (req, res) => {
     const threadCount = await Thread
       .find({ $or: [
         { 'userFrom': userId },
-        { 'userTo': userId }
+        { 'userTo': userId },
       ] })
       .count();
 
@@ -174,17 +174,17 @@ exports.getUser = async (req, res) => {
     const contacts = await Contact
       .find({ $or: [
         { 'userFrom': userId },
-        { 'userTo': userId }
+        { 'userTo': userId },
       ] })
       .populate({
         path: 'userFrom',
         select: 'username displayName',
-        model: 'User'
+        model: 'User',
       })
       .populate({
         path: 'userTo',
         select: 'username displayName',
-        model: 'User'
+        model: 'User',
       });
 
     const offers = await Offer.find({ user: userId });
@@ -199,11 +199,11 @@ exports.getUser = async (req, res) => {
       threadReferencesSentNo,
       threadReferencesReceivedNo,
       threadReferencesReceivedYes,
-      threadReferencesSentYes
+      threadReferencesSentYes,
     });
   } catch (err) {
     log('error', 'Failed to load member in admin tool. #ggi323', {
-      error: err
+      error: err,
     });
     handleAdminApiError(res, err);
   }
@@ -218,7 +218,7 @@ exports.suspend = async (req, res) => {
   // Check that the search string is provided
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
@@ -229,25 +229,25 @@ exports.suspend = async (req, res) => {
       {
         $set: {
           newsletter: false,
-          public: false
+          public: false,
         },
         $addToSet: {
-          roles: 'suspended'
-        }
-      }
+          roles: 'suspended',
+        },
+      },
     );
 
     // No documents were updated
     if (!user.n) {
       return res.status(404).send({
-        message: errorService.getErrorMessageByKey('not-found')
+        message: errorService.getErrorMessageByKey('not-found'),
       });
     }
 
     res.send({ message: 'Suspended.' });
   } catch (err) {
     log('error', 'Failed to load member in admin tool. #ggi323', {
-      error: err
+      error: err,
     });
     handleAdminApiError(res, err);
   }

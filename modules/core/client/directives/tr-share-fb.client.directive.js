@@ -19,7 +19,7 @@
       restrict: 'A',
       replace: true,
       scope: false,
-      link: trShareFbDirectiveLink
+      link: trShareFbDirectiveLink,
     };
 
     function trShareFbDirectiveLink(scope, element) {

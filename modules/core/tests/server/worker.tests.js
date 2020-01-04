@@ -9,7 +9,7 @@ describe('Worker tests', function () {
 
   const workerOptions = {
     maxAttempts: 3,
-    retryDelaySeconds: 3
+    retryDelaySeconds: 3,
   };
 
   let failHandler;
@@ -68,9 +68,9 @@ describe('Worker tests', function () {
       attrs: {
         _id: 'jobid',
         name: 'jobname',
-        failCount: 0
+        failCount: 0,
       },
-      save: function () {}
+      save: function () {},
     };
     const err = new Error('some regular error');
     const mock = sinon.mock(job).expects('save').never();
@@ -83,9 +83,9 @@ describe('Worker tests', function () {
       attrs: {
         _id: 'jobid',
         name: 'jobname',
-        failCount: workerOptions.maxAttempts - 1
+        failCount: workerOptions.maxAttempts - 1,
       },
-      save: function () {}
+      save: function () {},
     };
     const err = new Error('ECONNREFUSED');
     const mock = sinon.mock(job).expects('save').once();
@@ -100,9 +100,9 @@ describe('Worker tests', function () {
       attrs: {
         _id: 'jobid',
         name: 'jobname',
-        failCount: workerOptions.maxAttempts - 1
+        failCount: workerOptions.maxAttempts - 1,
       },
-      save: function () {}
+      save: function () {},
     };
     const err = new Error('ECONNRESET');
     const mock = sinon.mock(job).expects('save').once();
@@ -117,9 +117,9 @@ describe('Worker tests', function () {
       attrs: {
         _id: 'jobid',
         name: 'jobname',
-        failCount: workerOptions.maxAttempts
+        failCount: workerOptions.maxAttempts,
       },
-      save: function () {}
+      save: function () {},
     };
     const err = new Error('ECONNRESET');
     const mock = sinon.mock(job).expects('save').never();

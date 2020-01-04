@@ -24,13 +24,13 @@
 
           friend: function (UsersMini, $stateParams) {
             return UsersMini.get({
-              userId: $stateParams.userId
+              userId: $stateParams.userId,
             });
-          }
+          },
         },
         data: {
-          pageTitle: 'Add contact'
-        }
+          pageTitle: 'Add contact',
+        },
       }).
       state('contactConfirm', {
         url: '/contact-confirm/:contactId',
@@ -44,12 +44,12 @@
 
           contact: function (Contact, $stateParams) {
             return Contact.get({ contactId: $stateParams.contactId });
-          }
+          },
 
         },
         data: {
-          pageTitle: 'Confirm contact'
-        }
+          pageTitle: 'Confirm contact',
+        },
       });
 
   }

@@ -47,14 +47,14 @@
         // title: 'Are you sure?',
         text: 'Are you sure you want to remove this?',
         ok: 'Remove',
-        cancel: 'Cancel'
+        cancel: 'Cancel',
       })
       // If user pressed "continue", create another state go
         .then(function () {
           new OffersService(offer).$delete(function () {
             $analytics.eventTrack('offer-delete', {
               category: 'offer.meet.delete',
-              label: 'Removed meet offer'
+              label: 'Removed meet offer',
             });
 
             // Remove `offer` from `vm.offers` array

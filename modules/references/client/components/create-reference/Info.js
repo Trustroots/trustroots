@@ -15,7 +15,7 @@ function UserLink({ user }) {
 }
 
 UserLink.propTypes = {
-  user: PropTypes.object.isRequired
+  user: PropTypes.object.isRequired,
 };
 
 /**
@@ -41,7 +41,7 @@ export const DuplicateInfo = withTranslation('reference')(function ({ userTo }) 
 });
 
 DuplicateInfo.propTypes = {
-  userTo: PropTypes.object.isRequired
+  userTo: PropTypes.object.isRequired,
 };
 
 /**
@@ -76,5 +76,5 @@ SubmittedInfo.propTypes = {
   userFrom: PropTypes.object.isRequired,
   userTo: PropTypes.object.isRequired,
   isReported: PropTypes.bool.isRequired,
-  isPublic: PropTypes.bool.isRequired
+  isPublic: PropTypes.bool.isRequired,
 };

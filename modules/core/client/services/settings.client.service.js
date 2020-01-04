@@ -8,7 +8,7 @@
     let settings = {};
     const service = {
       get: get,
-      settings: settings
+      settings: settings,
     };
     return service;
 
@@ -35,7 +35,7 @@
     let settings = {};
     const service = {
       get: get,
-      settings: settings
+      settings: settings,
     };
     return service;
 
@@ -46,7 +46,7 @@
       // Extend with defaults
       angular.extend(settings, {
         // Default timeout for 'message-center' success/alert messages
-        flashTimeout: 6000
+        flashTimeout: 6000,
       });
 
       // Gimme settings

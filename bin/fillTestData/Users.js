@@ -22,7 +22,7 @@ const argv = yargs.usage('$0 <numberOfUsers>', 'Seed database with number of tri
   return yargs
     .positional('numberOfUsers', {
       describe: 'Number of users to add',
-      type: 'number'
+      type: 'number',
     })
     .array('userNames')
     .boolean('debug')

@@ -17,7 +17,7 @@
       getAppInfo: getAppInfo,
       isNativeMobileApp: isNativeMobileApp,
       signalUnAuthenticated: signalUnAuthenticated,
-      signalAuthenticated: signalAuthenticated
+      signalAuthenticated: signalAuthenticated,
     };
 
     return service;
@@ -101,7 +101,7 @@
         // Not:
         ':not(.tr-app-urlified)',
         ':not(a[href^="' + $location.protocol() + '://' + $location.host() + '"])',
-        ':not(a[ui-sref])'
+        ':not(a[ui-sref])',
       ].join('');
 
       // $timetout makes sure we have DOM rendered by Angular
@@ -114,7 +114,7 @@
               if (url) {
                 e.preventDefault();
                 postMessageToApp('openUrl', {
-                  url: url
+                  url: url,
                 });
               }
             });
@@ -186,7 +186,7 @@
       data = data && angular.isObject(data) ? data : {};
 
       const message = angular.extend({
-        action: action
+        action: action,
       }, data);
 
       // Note that `angular.toJson()` won't handle Date objects nicely on Safari

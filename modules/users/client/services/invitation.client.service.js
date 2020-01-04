@@ -6,14 +6,14 @@
   /* @ngInject */
   function InvitationService($resource) {
     return $resource('/api/users/invitecode/:invitecode', {
-      invitecode: '@invitecode'
+      invitecode: '@invitecode',
     }, {
       get: {
-        method: 'GET'
+        method: 'GET',
       },
       post: {
-        method: 'POST'
-      }
+        method: 'POST',
+      },
     });
   }
 }());

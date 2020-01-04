@@ -49,7 +49,7 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.maitreId = config.invitations.enabled ? config.invitations.maitreId : false;
   app.locals.appSettings.fcmSenderId = config.fcm.senderId;
   app.locals.appSettings.limits = {
-    maxOfferValidFromNow: config.limits.maxOfferValidFromNow
+    maxOfferValidFromNow: config.limits.maxOfferValidFromNow,
   };
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
 
@@ -106,7 +106,7 @@ module.exports.initMiddleware = function (app) {
     filter: function (req, res) {
       return (/json|text|javascript|css|font|svg/).test(res.getHeader('Content-Type'));
     },
-    level: 9
+    level: 9,
   }));
 
   // Initialize pagination middleware
@@ -129,7 +129,7 @@ module.exports.initMiddleware = function (app) {
 
   // Request body parsing middleware should be above methodOverride
   app.use(bodyParser.urlencoded({
-    extended: true
+    extended: true,
   }));
   app.use(bodyParser.json({
     type: [
@@ -138,8 +138,8 @@ module.exports.initMiddleware = function (app) {
       // - Chrome sends application/csp-report
       // - Firefox sends application/json
       // - it seems chrome is doing it well: https://w3c.github.io/webappsec/specs/content-security-policy/
-      'application/csp-report'
-    ]
+      'application/csp-report',
+    ],
   }));
   app.use(methodOverride());
 
@@ -159,7 +159,7 @@ module.exports.initViewEngine = function (app) {
   nunjucks.configure('./modules/core/server/views', {
     express: app,
     watch: false,
-    noCache: true
+    noCache: true,
   });
 
   // app.engine('nunjucks', nunjucks);
@@ -188,12 +188,12 @@ module.exports.initSession = function (app, connection) {
       // By default cookie.maxAge is null, meaning no "expires" parameter is
       // set so the cookie becomes a browser-session cookie. When the user
       // closes the browser the cookie (and session) will be removed.
-      maxAge: 2419200000 // (in milliseconds) 28 days
+      maxAge: 2419200000, // (in milliseconds) 28 days
     },
     store: new MongoStore({
       mongooseConnection: connection,
-      collection: config.sessionCollection
-    })
+      collection: config.sessionCollection,
+    }),
   }));
 };
 
@@ -230,7 +230,7 @@ module.exports.initHelmetHeaders = function (app) {
     // put your own pages in iframes, but nobody else can.
     //
     // action `deny` will prevent anyone from putting this page in an iframe.
-    action: 'sameorigin'
+    action: 'sameorigin',
   };
 
   /**
@@ -238,7 +238,7 @@ module.exports.initHelmetHeaders = function (app) {
    * @link https://helmetjs.github.io/docs/csp/
    */
   let cspFrameAncestors = [
-    '\'none\''
+    '\'none\'',
   ];
 
   /**
@@ -262,10 +262,10 @@ module.exports.initHelmetHeaders = function (app) {
   if (facebookNotificationService.isNotificationsEnabled()) {
     frameguardOptions = {
       action: 'allow-from',
-      domain: 'https://apps.facebook.com'
+      domain: 'https://apps.facebook.com',
     };
     cspFrameAncestors = [
-      'apps.facebook.com'
+      'apps.facebook.com',
     ];
   }
 
@@ -284,7 +284,7 @@ module.exports.initHelmetHeaders = function (app) {
   app.use(helmet.contentSecurityPolicy({
     directives: {
       defaultSrc: [
-        '\'self\''
+        '\'self\'',
       ],
 
       // Defines the origins from which scripts can be loaded.
@@ -308,19 +308,19 @@ module.exports.initHelmetHeaders = function (app) {
         // @link https://helmetjs.github.io/docs/csp/#generating-nonces
         function (req, res) {
           return '\'nonce-' + res.locals.nonce + '\''; // 'nonce-614d9122-d5b0-4760-aecf-3a5d17cf0ac9'
-        }
+        },
       ],
 
       // Specifies the origins that can serve web fonts.
       fontSrc: [
         '\'self\'',
-        'data:' // Inline fonts (`src: url('data:...')`)
+        'data:', // Inline fonts (`src: url('data:...')`)
       ],
 
       // Defines the origins from which stylesheets can be loaded.
       styleSrc: [
         '\'self\'',
-        '\'unsafe-inline\''
+        '\'unsafe-inline\'',
       ],
 
       // Defines the origins from which images can be loaded.
@@ -344,7 +344,7 @@ module.exports.initHelmetHeaders = function (app) {
         'i1.wp.com', // Gravatar (WordPress.com)
         'i2.wp.com', // Gravatar (WordPress.com)
         'ucarecdn.com', // Our Tribe image CDN "Uploadcare.com"
-        'data:' // Inline images (`<img src="data:...">`)
+        'data:', // Inline images (`<img src="data:...">`)
       ],
 
       // Limits the origins that you can connect to
@@ -355,23 +355,23 @@ module.exports.initHelmetHeaders = function (app) {
         'api.mapbox.com',
         'fcm.googleapis.com',
         'maitreapp.co', // Signup waiting list feature
-        'www.facebook.com'
+        'www.facebook.com',
       ],
 
       // Allows control over Flash and other plugins.
       objectSrc: [
-        '\'self\''
+        '\'self\'',
       ],
 
       // Allows control of media elements, e.g. HTML5 `<audio>`, `<video>`.
       mediaSrc: [
-        '\'self\''
+        '\'self\'',
       ],
 
       // Lists valid endpoints for submission from `<form>` tags.
       formAction: [
         '\'self\'',
-        'trustroots.us9.list-manage.com'
+        'trustroots.us9.list-manage.com',
       ],
 
       // specifies the sources that can embed the current page.
@@ -384,7 +384,7 @@ module.exports.initHelmetHeaders = function (app) {
       childSrc: [
         '\'self\'',
         '*.twitter.com',
-        '*.facebook.com'
+        '*.facebook.com',
       ],
 
       // San
@@ -408,7 +408,7 @@ module.exports.initHelmetHeaders = function (app) {
 
       // Restricts the URLs that can appear in a page's `<base>` element.
       baseUri: [
-        '\'self\''
+        '\'self\'',
       ],
 
       // Browsers report CSP violations to this path using `POST` method
@@ -416,7 +416,7 @@ module.exports.initHelmetHeaders = function (app) {
       // Note: If you’re using a CSRF module like csurf, you might have problems
       // handling these violations without a valid CSRF token. The fix is to put
       // your CSP report route above csurf middleware.
-      reportUri: '/api/report-csp-violation'
+      reportUri: '/api/report-csp-violation',
     },
 
     // Switch the header to `Content-Security-Policy-Report-Only`
@@ -427,7 +427,7 @@ module.exports.initHelmetHeaders = function (app) {
     //
     // You could also use function here:
     // `function (req, res) { return true; }`
-    reportOnly: process.env.NODE_ENV === 'development'
+    reportOnly: process.env.NODE_ENV === 'development',
   }));
 
   // X-Frame protection
@@ -442,7 +442,7 @@ module.exports.initHelmetHeaders = function (app) {
   app.use(expectCt({
     enforce: false,
     maxAge: 30,
-    reportUri: (config.https === true ? 'https' : 'http') + '://' + config.domain + '/api/report-expect-ct-violation'
+    reportUri: (config.https === true ? 'https' : 'http') + '://' + config.domain + '/api/report-expect-ct-violation',
   }));
 
   // Adds some small XSS protections
@@ -471,7 +471,7 @@ module.exports.initHelmetHeaders = function (app) {
   app.use(helmet.hsts({
     maxAge: 15778476, // 6 months in seconds. Must be at least 18 weeks to be approved by Google
     includeSubDomains: false, // Must be enabled to be approved by Google
-    force: true
+    force: true,
   }));
 };
 

@@ -13,7 +13,7 @@
           '<span>Lorem ipsum</span><br>' +
           '<span>Lorem ipsum Lorem ipsum Lorem</span><br>' +
           '<span>Lorem ipsum Lorem ipsum.</span>' +
-        '</div>'
+        '</div>',
     };
   }
 }());

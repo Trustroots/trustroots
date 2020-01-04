@@ -15,7 +15,7 @@
     const defaultLocation = {
       lat: 48.6908333333,
       lng: 9.14055555556,
-      zoom: 6
+      zoom: 6,
     };
 
     const service = {
@@ -23,7 +23,7 @@
       getBounds: getBounds,
       getCenter: getCenter,
       shortTitle: shortTitle,
-      suggestions: suggestions
+      suggestions: suggestions,
     };
 
     /**
@@ -41,7 +41,7 @@
       return {
         lat: defaultLocation.lat,
         lng: defaultLocation.lng,
-        zoom: parseInt(zoom || defaultLocation.zoom, 10)
+        zoom: parseInt(zoom || defaultLocation.zoom, 10),
       };
     }
 
@@ -86,12 +86,12 @@
       return {
         'northEast': {
           'lat': northEastLat,
-          'lng': northEastLng
+          'lng': northEastLng,
         },
         'southWest': {
           'lat': southWestLat,
-          'lng': southWestLng
-        }
+          'lng': southWestLng,
+        },
       };
     }
 
@@ -123,7 +123,7 @@
       // Return coordinates
       return {
         lng: parseFloat(coords[0]),
-        lat: parseFloat(coords[1])
+        lat: parseFloat(coords[1]),
       };
     }
 
@@ -156,7 +156,7 @@
         {
           // Tells Angular-Loading-Bar to ignore this http request
           // @link https://github.com/chieffancypants/angular-loading-bar#ignoring-particular-xhr-requests
-          ignoreLoadingBar: true
+          ignoreLoadingBar: true,
         })
         .then(function (response) {
           if (response.status === 200 && response.data.features && response.data.features.length > 0) {

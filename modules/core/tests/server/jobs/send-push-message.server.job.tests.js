@@ -21,7 +21,7 @@ describe('job: send push message', function () {
     const notification = {
       title: 'a title',
       body: 'a body',
-      click_action: 'http://example.com'
+      click_action: 'http://example.com',
     };
     const job = {
       attrs: {
@@ -32,11 +32,11 @@ describe('job: send push message', function () {
           userId: mongoose.Types.ObjectId().toString(),
           pushServices: [
             { platform: 'web', token: '123' },
-            { platform: 'web', token: '456' }
+            { platform: 'web', token: '456' },
           ],
-          notification: notification
-        }
-      }
+          notification: notification,
+        },
+      },
     };
     sendPushJobHandler(job, function (err) {
       if (err) return done(err);
@@ -51,7 +51,7 @@ describe('job: send push message', function () {
   it('will not send a push when notification is missing "click_action"', function (done) {
     const notification = {
       title: 'a title',
-      body: 'a body'
+      body: 'a body',
     };
     const job = {
       attrs: {
@@ -61,11 +61,11 @@ describe('job: send push message', function () {
           // eslint-disable-next-line new-cap
           userId: mongoose.Types.ObjectId().toString(),
           pushServices: [
-            { platform: 'web', token: '123' }
+            { platform: 'web', token: '123' },
           ],
-          notification: notification
-        }
-      }
+          notification: notification,
+        },
+      },
     };
     sendPushJobHandler(job, function (err) {
       if (err) return done(err);
@@ -77,7 +77,7 @@ describe('job: send push message', function () {
   it('will not send a push when notification is missing "body"', function (done) {
     const notification = {
       title: 'a title',
-      click_action: 'http://example.com'
+      click_action: 'http://example.com',
     };
     const job = {
       attrs: {
@@ -87,11 +87,11 @@ describe('job: send push message', function () {
           // eslint-disable-next-line new-cap
           userId: mongoose.Types.ObjectId().toString(),
           pushServices: [
-            { platform: 'web', token: '123' }
+            { platform: 'web', token: '123' },
           ],
-          notification: notification
-        }
-      }
+          notification: notification,
+        },
+      },
     };
     sendPushJobHandler(job, function (err) {
       if (err) return done(err);
@@ -104,7 +104,7 @@ describe('job: send push message', function () {
     const notification = {
       title: 'a title',
       body: 'a body',
-      click_action: 'http://example.com'
+      click_action: 'http://example.com',
     };
     const job = {
       attrs: {
@@ -115,11 +115,11 @@ describe('job: send push message', function () {
           userId: mongoose.Types.ObjectId().toString(),
           pushServices: [
             { token: '123' },
-            { token: '456' }
+            { token: '456' },
           ],
-          notification: notification
-        }
-      }
+          notification: notification,
+        },
+      },
     };
     sendPushJobHandler(job, function (err) {
       if (err) return done(err);
@@ -132,7 +132,7 @@ describe('job: send push message', function () {
     const notification = {
       title: 'a title',
       body: 'a body',
-      click_action: 'http://example.com'
+      click_action: 'http://example.com',
     };
     const job = {
       attrs: {
@@ -143,11 +143,11 @@ describe('job: send push message', function () {
           userId: mongoose.Types.ObjectId().toString(),
           pushServices: [
             { platform: 'INVALID', token: '123' },
-            { platform: 'INVALID', token: '456' }
+            { platform: 'INVALID', token: '456' },
           ],
-          notification: notification
-        }
-      }
+          notification: notification,
+        },
+      },
     };
     sendPushJobHandler(job, function (err) {
       if (err) return done(err);
@@ -170,17 +170,17 @@ describe('job: send push message', function () {
       pushRegistration: [
         {
           token: '123',
-          platform: 'web'
+          platform: 'web',
         },
         {
           token: '456',
-          platform: 'web'
+          platform: 'web',
         },
         {
           token: 'toberemoved',
-          platform: 'web'
-        }
-      ]
+          platform: 'web',
+        },
+      ],
     };
 
     let user;
@@ -203,7 +203,7 @@ describe('job: send push message', function () {
       const notification = {
         title: 'a title',
         body: 'a body',
-        click_action: 'http://example.com'
+        click_action: 'http://example.com',
       };
       const job = {
         attrs: {
@@ -214,11 +214,11 @@ describe('job: send push message', function () {
             pushServices: [
               { platform: 'web', token: '123' },
               { platform: 'web', token: '456' },
-              { platform: 'web', token: 'toberemoved' }
+              { platform: 'web', token: 'toberemoved' },
             ],
-            notification: notification
-          }
-        }
+            notification: notification,
+          },
+        },
       };
       sendPushJobHandler(job, function (err) {
         if (err) return done(err);
@@ -267,7 +267,7 @@ describe('job: send push message', function () {
           }
         });
         return Promise.resolve({ results: results });
-      }
+      },
     };
   }
 

@@ -55,7 +55,7 @@ exports.appendUTMParams = function (trackUrl, utmParams) {
       trackUrl: trackUrl,
       utmParamsSource: utmParams.source,
       utmParamsMedium: utmParams.medium,
-      utmParamsCampaign: utmParams.campaign
+      utmParamsCampaign: utmParams.campaign,
     });
     return trackUrl || '';
   }

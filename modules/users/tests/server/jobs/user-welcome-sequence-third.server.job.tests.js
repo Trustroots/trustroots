@@ -60,7 +60,7 @@ describe('Job: welcome sequence, third email', function () {
       password: 'M3@n.jsI$Aw3$0m3',
       provider: 'local',
       welcomeSequenceStep: 0,
-      created: moment().subtract(moment.duration({ 'minutes': 3 }))
+      created: moment().subtract(moment.duration({ 'minutes': 3 })),
     };
 
     unConfirmedUser = new User(_unConfirmedUser);
@@ -83,7 +83,7 @@ describe('Job: welcome sequence, third email', function () {
       provider: 'local',
       welcomeSequenceStep: 2,
       welcomeSequenceSent: timePast,
-      created: timePast
+      created: timePast,
     };
 
     confirmedUser = new User(_confirmedUser);

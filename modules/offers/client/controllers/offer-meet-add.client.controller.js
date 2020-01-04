@@ -38,7 +38,7 @@
         type: 'meet',
         description: vm.offer.description,
         location: [parseFloat(vm.mapCenter.lat), parseFloat(vm.mapCenter.lng)],
-        validUntil: vm.offer.validUntil
+        validUntil: vm.offer.validUntil,
       });
 
       newOffer.$save(function () {
@@ -46,7 +46,7 @@
         vm.isLoading = false;
         $analytics.eventTrack('offer-modified', {
           category: 'offer.meet.add',
-          label: 'Added meet offer'
+          label: 'Added meet offer',
         });
         $state.go('offer.meet.list');
       }, function (err) {

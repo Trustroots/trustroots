@@ -42,7 +42,7 @@
           messageCenterService.add(
             'danger',
             response.message || 'Something went wrong while initializing profile removal, try again.',
-            { timeout: 10000 }
+            { timeout: 10000 },
           );
         });
     }

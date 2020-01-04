@@ -26,7 +26,7 @@
       deleteToken: deleteToken,
       onTokenRefresh: onTokenRefresh,
       onMessage: onMessage,
-      removeServiceWorker: removeServiceWorker
+      removeServiceWorker: removeServiceWorker,
     };
 
     function getToken() {
@@ -95,7 +95,7 @@
         if (_messaging) return _messaging;
 
         firebase.initializeApp({
-          messagingSenderId: SENDER_ID
+          messagingSenderId: SENDER_ID,
         });
 
         _messaging = angularize(firebase.messaging());
@@ -150,7 +150,7 @@
         getToken: wrapFunction(messaging.getToken),
         requestPermission: wrapFunction(messaging.requestPermission),
         deleteToken: wrapFunction(messaging.deleteToken),
-        useServiceWorker: messaging.useServiceWorker.bind(messaging)
+        useServiceWorker: messaging.useServiceWorker.bind(messaging),
       };
     }
 

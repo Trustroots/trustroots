@@ -69,7 +69,7 @@ describe('User signup validation CRUD tests', function () {
         {},
         'username-missing',
         'Please provide required `username` field.',
-        done
+        done,
       );
     });
 
@@ -84,14 +84,14 @@ describe('User signup validation CRUD tests', function () {
         emailToken: 'initial email token',
         username: 'taken_username',
         password: 'TR-I$Aw3$0m4',
-        provider: 'local'
+        provider: 'local',
       });
       user.save(function () {
         validationFailure(
           { username: 'taken_username' },
           'username-not-available',
           'Username is not available.',
-          done
+          done,
         );
       });
     });
@@ -101,7 +101,7 @@ describe('User signup validation CRUD tests', function () {
         { username: config.illegalStrings[Math.floor(Math.random() * config.illegalStrings.length)] },
         'username-not-available-reserved',
         'Username is not available.',
-        done
+        done,
       );
     });
 
@@ -113,7 +113,7 @@ describe('User signup validation CRUD tests', function () {
           { username: '.login' },
           'username-invalid',
           invalidMessage,
-          done
+          done,
         );
       });
 
@@ -122,7 +122,7 @@ describe('User signup validation CRUD tests', function () {
           { username: 'login.' },
           'username-invalid',
           invalidMessage,
-          done
+          done,
         );
       });
 
@@ -131,7 +131,7 @@ describe('User signup validation CRUD tests', function () {
           { username: 'log..in' },
           'username-invalid',
           invalidMessage,
-          done
+          done,
         );
       });
 
@@ -140,7 +140,7 @@ describe('User signup validation CRUD tests', function () {
           { username: 'lo' },
           'username-invalid',
           invalidMessage,
-          done
+          done,
         );
       });
 
@@ -149,7 +149,7 @@ describe('User signup validation CRUD tests', function () {
           { username: '-_-' },
           'username-invalid',
           invalidMessage,
-          done
+          done,
         );
       });
 
@@ -158,7 +158,7 @@ describe('User signup validation CRUD tests', function () {
           { username: 'l'.repeat(35) },
           'username-invalid',
           invalidMessage,
-          done
+          done,
         );
       });
 
@@ -169,7 +169,7 @@ describe('User signup validation CRUD tests', function () {
       it('should validate username with dot in the middle', function (done) {
         validationSuccess(
           { username: 'log.in' },
-          done
+          done,
         );
       });
 

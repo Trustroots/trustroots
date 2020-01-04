@@ -26,7 +26,7 @@ module.exports = function (job, done) {
     href: job.attrs.data.href || '',
 
     // Notification messages are free-form text.
-    template: job.attrs.data.template
+    template: job.attrs.data.template,
   };
 
   // Separate your notifications into groups so they can be tracked
@@ -46,18 +46,18 @@ module.exports = function (job, done) {
         // Log the failure to send the notification
         log('error', 'The `send facebook notification` job failed #38hgsj', {
           jobId: jobId,
-          error: err
+          error: err,
         });
         return done(new Error('Failed to communicate with Facebook Graph API. #38hgtt'));
       } else {
         // Log the successful delivery of the notification
         log('info', 'Successfully finished `send facebook notification` job #39jjjd', {
-          jobId: jobId
+          jobId: jobId,
         });
 
         return done();
       }
-    }
+    },
   );
 
 };

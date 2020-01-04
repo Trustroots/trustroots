@@ -11,11 +11,11 @@
 
     const user1 = {
       _id: 'user1',
-      displayName: 'User One'
+      displayName: 'User One',
     };
 
     const contactToRemove = {
-      _id: 'contact1'
+      _id: 'contact1',
     };
 
     // Load the main application module
@@ -50,7 +50,7 @@
           ContactRemoveController = $controller('ContactRemoveController', {
             $scope: $scope,
             $uibModalInstance: $uibModalInstance,
-            messageCenterService: messageCenterService
+            messageCenterService: messageCenterService,
           });
           done();
         });

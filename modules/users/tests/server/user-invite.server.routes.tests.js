@@ -34,7 +34,7 @@ describe('User invites CRUD tests', function () {
     // Create user credentials
     credentials = {
       username: 'TR_username',
-      password: 'TR-I$Aw3$0m4'
+      password: 'TR-I$Aw3$0m4',
     };
 
     // Create a new user
@@ -46,7 +46,7 @@ describe('User invites CRUD tests', function () {
       username: credentials.username.toLowerCase(),
       password: credentials.password,
       provider: 'local',
-      public: true
+      public: true,
     };
 
     user = new User(_user);

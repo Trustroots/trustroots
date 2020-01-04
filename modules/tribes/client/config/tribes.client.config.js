@@ -10,7 +10,7 @@
       state('tribes', {
         url: '/tribes',
         abstract: true,
-        template: '<ui-view/>'
+        template: '<ui-view/>',
       }).
       state('tribes.list', {
         url: '',
@@ -22,11 +22,11 @@
           TribesService: 'TribesService',
           tribes: function (TribesService) {
             return TribesService.query();
-          }
+          },
         },
         data: {
-          pageTitle: 'Tribes'
-        }
+          pageTitle: 'Tribes',
+        },
       }).
       state('tribes.tribe', {
         url: '/:tribe',
@@ -39,13 +39,13 @@
           TribeService: 'TribeService',
           tribe: function (TribeService, $stateParams) {
             return TribeService.get({
-              tribeSlug: $stateParams.tribe
+              tribeSlug: $stateParams.tribe,
             });
-          }
+          },
         },
         data: {
-          pageTitle: 'Tribe'
-        }
+          pageTitle: 'Tribe',
+        },
       });
 
   }

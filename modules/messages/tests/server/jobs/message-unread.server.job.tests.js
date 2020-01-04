@@ -43,7 +43,7 @@ describe('Job: message unread', function () {
       email: 'userfrom@test.com',
       username: 'userfrom',
       password: 'M3@n.jsI$Aw3$0m4',
-      provider: 'local'
+      provider: 'local',
     };
 
     userFrom = new User(_userFrom);
@@ -66,7 +66,7 @@ describe('Job: message unread', function () {
       email: 'userto@test.com',
       username: 'userto',
       password: 'M3@n.jsI$Aw3$0m4',
-      provider: 'local'
+      provider: 'local',
     };
 
     userTo = new User(_userTo);
@@ -86,7 +86,7 @@ describe('Job: message unread', function () {
       userTo: userToId,
       content: 'a message',
       read: false,
-      notificationCount: 0
+      notificationCount: 0,
     };
 
     message = new Message(_message);
@@ -165,7 +165,7 @@ describe('Job: message unread', function () {
       email: 'user3@test.com',
       username: 'user3',
       password: 'M3@n.jsI$Aw3$0m4',
-      provider: 'local'
+      provider: 'local',
     };
     const user3 = new User(_user3);
     user3.save(function (err, user) {
@@ -317,7 +317,7 @@ describe('Job: message unread', function () {
         userTo: _message.userFrom,
         content: 'a message before',
         read: true,
-        notificationCount: 0
+        notificationCount: 0,
       });
 
       messageBefore.save(function (err) {
@@ -365,7 +365,7 @@ describe('Job: message unread', function () {
         userTo: _message.userTo,
         content: 'a message before',
         read: true,
-        notificationCount: 0
+        notificationCount: 0,
       });
 
       messageBefore.save(function (err) {

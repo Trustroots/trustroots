@@ -42,7 +42,7 @@ Report.propTypes = {
   report: PropTypes.bool.isRequired,
   reportMessage: PropTypes.string.isRequired,
   onChangeReport: PropTypes.func.isRequired,
-  onChangeReportMessage: PropTypes.func.isRequired
+  onChangeReportMessage: PropTypes.func.isRequired,
 };
 
 export default Report;

@@ -27,8 +27,8 @@ module.exports = {
       host: 'maildev',
       port: 25,
       ignoreTLS: true,
-      auth: false
-    }
+      auth: false,
+    },
   },
 
   /**
@@ -42,9 +42,9 @@ module.exports = {
       protocol: 'http',
       username: 'root',
       password: 'root',
-      database: 'trustroots'
-    }
-  }
+      database: 'trustroots',
+    },
+  },
 
   // See config/env/local.sample.js for how to configure mapbox layers, sending emails via Gmail etc
 

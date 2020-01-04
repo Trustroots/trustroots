@@ -46,7 +46,7 @@
       angular.forEach(data.connected, function (count, network) {
         vm.connections.push({
           network: network,
-          count: count
+          count: count,
         });
       });
 

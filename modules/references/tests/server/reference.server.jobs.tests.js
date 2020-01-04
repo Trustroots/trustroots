@@ -33,9 +33,9 @@ describe('Job: Set reference to public after a given period of time', () => {
       interactions: {
         met: true,
         hostedMe: false,
-        hostedThem: true
+        hostedThem: true,
       },
-      recommend: 'yes'
+      recommend: 'yes',
     };
   }
 

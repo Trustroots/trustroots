@@ -8,11 +8,11 @@
   /* @ngInject */
   function ContactByService($resource) {
     return $resource('/api/contact-by/:userId', {
-      userId: '@id'
+      userId: '@id',
     }, {
       get: {
-        method: 'GET'
-      }
+        method: 'GET',
+      },
     });
   }
 }());

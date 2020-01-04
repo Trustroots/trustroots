@@ -32,7 +32,7 @@ describe('User tribe memberships CRUD tests', function () {
     // Create user credentials
     credentials = {
       username: 'TR_username',
-      password: 'TR-I$Aw3$0m4'
+      password: 'TR-I$Aw3$0m4',
     };
 
     // Create a new user
@@ -45,7 +45,7 @@ describe('User tribe memberships CRUD tests', function () {
       emailToken: 'initial email token',
       username: credentials.username.toLowerCase(),
       password: credentials.password,
-      provider: 'local'
+      provider: 'local',
     };
 
     user = new User(_user);
@@ -66,7 +66,7 @@ describe('User tribe memberships CRUD tests', function () {
 
         // Create test tribe
         const tribe = new Tribe({
-          label: 'Awesome Tribe'
+          label: 'Awesome Tribe',
         });
 
         // Add tribe to test DB
@@ -117,7 +117,7 @@ describe('User tribe memberships CRUD tests', function () {
 
         // Create test tribe
         const tribe = new Tribe({
-          label: 'Hitchhikers'
+          label: 'Hitchhikers',
         });
 
         // Add tribe to test DB
@@ -180,7 +180,7 @@ describe('User tribe memberships CRUD tests', function () {
 
         // Create test tribe
         const tribe = new Tribe({
-          label: 'Russian literature students'
+          label: 'Russian literature students',
         });
 
         // Add tribe to test DB
@@ -238,7 +238,7 @@ describe('User tribe memberships CRUD tests', function () {
 
         // Create test tribe
         const tribe = new Tribe({
-          label: 'Japanese linguistics'
+          label: 'Japanese linguistics',
         });
 
         // Add tribe to test DB

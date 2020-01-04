@@ -12,7 +12,7 @@
     // Variables passed to leaflet directive at init
     vm.mapCenter = LocationService.getDefaultLocation(3);
     vm.mapLayers = {
-      baselayers: MapLayersFactory.getLayers({ streets: false, satellite: true, outdoors: false })
+      baselayers: MapLayersFactory.getLayers({ streets: false, satellite: true, outdoors: false }),
     };
     vm.mapDefaults = {
       attributionControl: false,
@@ -21,9 +21,9 @@
       zoomControl: false,
       controls: {
         layers: {
-          visible: false
-        }
-      }
+          visible: false,
+        },
+      },
     };
 
     /**

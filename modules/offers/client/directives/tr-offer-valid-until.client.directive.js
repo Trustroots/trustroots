@@ -13,11 +13,11 @@
       restrict: 'A',
       replace: false,
       scope: {
-        validUntil: '=trOfferValidUntil'
+        validUntil: '=trOfferValidUntil',
       },
       templateUrl: '/modules/offers/views/directives/tr-offer-valid-until.view.client.html',
       controller: trOfferValidUntilDirectiveController,
-      controllerAs: 'trOfferValidUntil'
+      controllerAs: 'trOfferValidUntil',
     };
 
     return directive;
@@ -40,7 +40,7 @@
         'A week': 7,
         'Two weeks': 14,
         'Three weeks': 23,
-        'A month': 30
+        'A month': 30,
       };
 
       // Options for Angular-UI Bootstrap datepicker
@@ -50,7 +50,7 @@
         maxDate: moment().add(appSettings.limits.maxOfferValidFromNow || { days: 30 }).toDate(),
         minDate: new Date(), // @TODO: this could be server date instead of client date
         startingDay: 1, // Start week on Monday
-        maxMode: 'month' // Disable year selector
+        maxMode: 'month', // Disable year selector
       };
 
       activate();

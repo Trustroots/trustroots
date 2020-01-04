@@ -45,8 +45,8 @@ describe('Service: influx', function () {
           host: 'example.com',
           port: 9876,
           protocol: 'https',
-          database: 'example'
-        }
+          database: 'example',
+        },
       });
 
       // stub the influx.writeMeasurement method
@@ -56,7 +56,7 @@ describe('Service: influx', function () {
       influx.InfluxDB.prototype.writeMeasurement.returns(
         new Promise(function (resolve) {
           process.nextTick(resolve());
-        })
+        }),
       );
     });
 
@@ -138,19 +138,19 @@ describe('Service: influx', function () {
         const validData = {
           namespace: 'messages',
           counts: {
-            sent: 1
+            sent: 1,
           },
           values: {
-            timeToFirstReply: 27364
+            timeToFirstReply: 27364,
           },
           tags: {
             position: 'firstMessage',
-            messageLengthType: 'long'
+            messageLengthType: 'long',
           },
           meta: {
             messageId: 'aabbccddee',
-            messageLength: 345
-          }
+            messageLength: 345,
+          },
         };
 
         influxService.stat(validData, function (e) {
@@ -189,12 +189,12 @@ describe('Service: influx', function () {
         const validData = {
           namespace: 'messages',
           counts: {
-            sent: 1
+            sent: 1,
           },
           values: {
-            value: 334
+            value: 334,
           },
-          time: new Date('2001-10-02')
+          time: new Date('2001-10-02'),
         };
 
         influxService.stat(validData, function (e) {

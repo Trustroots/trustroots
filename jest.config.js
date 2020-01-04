@@ -1,9 +1,9 @@
 module.exports = {
   moduleNameMapper: {
-    '@/(.*)$': '<rootDir>/$1'
+    '@/(.*)$': '<rootDir>/$1',
   },
   testMatch: [
-    '<rootDir>/modules/*/tests/client/components/*.test.js'
-  ]
+    '<rootDir>/modules/*/tests/client/components/*.test.js',
+  ],
 };
 

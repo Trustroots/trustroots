@@ -27,7 +27,7 @@ describe('Message Model Unit Tests:', function () {
       email: 'test1@test.com',
       username: 'username1',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
     userTo = new User({
       firstName: 'Full',
@@ -36,7 +36,7 @@ describe('Message Model Unit Tests:', function () {
       email: 'test2@test.com',
       username: 'username2',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
 
     // Create users
@@ -48,7 +48,7 @@ describe('Message Model Unit Tests:', function () {
           message = new Message({
             content: 'Message content',
             userTo: userTo._id,
-            read: false
+            read: false,
           });
           return done();
         });

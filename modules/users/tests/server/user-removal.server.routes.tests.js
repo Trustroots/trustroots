@@ -56,7 +56,7 @@ describe('User removal CRUD tests', function () {
     // Create user credentials for user A
     credentialsA = {
       username: 'user_a',
-      password: 'M3@n.jsI$Aw3$0m3'
+      password: 'M3@n.jsI$Aw3$0m3',
     };
 
     // Create a new user A
@@ -68,7 +68,7 @@ describe('User removal CRUD tests', function () {
       email: 'user_a@example.com',
       username: credentialsA.username.toLowerCase(),
       password: credentialsA.password,
-      provider: 'local'
+      provider: 'local',
     };
 
     userA = new User(_userA);
@@ -83,7 +83,7 @@ describe('User removal CRUD tests', function () {
     // Create user credentials for user B
     credentialsB = {
       username: 'user_b',
-      password: 'M3@n.jsI$Aw3$0m3'
+      password: 'M3@n.jsI$Aw3$0m3',
     };
 
     // Create a new user B
@@ -95,7 +95,7 @@ describe('User removal CRUD tests', function () {
       email: 'user_b@example.com',
       username: credentialsB.username.toLowerCase(),
       password: credentialsB.password,
-      provider: 'local'
+      provider: 'local',
     };
 
     userB = new User(_userB);
@@ -554,7 +554,7 @@ describe('User removal CRUD tests', function () {
         sendDeleteRequest,
 
         // Avatar should not exist anymore
-        checkAvatarExistence.bind(null, false)
+        checkAvatarExistence.bind(null, false),
 
       ], done);
     });
@@ -567,14 +567,14 @@ describe('User removal CRUD tests', function () {
             content: 'Message content',
             userFrom: userA._id,
             userTo: userB._id,
-            read: false
+            read: false,
           });
 
           const messageBA = new Message({
             content: 'Message content',
             userFrom: userB._id,
             userTo: userA._id,
-            read: false
+            read: false,
           });
 
           async.each([messageAB, messageBA], function (msg, callback) {
@@ -606,7 +606,7 @@ describe('User removal CRUD tests', function () {
               cb(e);
             }
           });
-        }
+        },
 
       ], done);
     });
@@ -625,7 +625,7 @@ describe('User removal CRUD tests', function () {
             attribution_url: 'http://www.trustroots.org/team',
             image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
             description: 'Lorem ipsum.',
-            count: 5
+            count: 5,
           });
 
           tribeB = new Tribe({
@@ -634,7 +634,7 @@ describe('User removal CRUD tests', function () {
             attribution_url: 'http://www.trustroots.org/team2',
             image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6d',
             description: 'Lorem ipsum.',
-            count: 5
+            count: 5,
           });
 
           async.each([tribeA, tribeB], function (tribe, callback) {
@@ -688,7 +688,7 @@ describe('User removal CRUD tests', function () {
               cb(e);
             }
           });
-        }
+        },
 
       ], done);
     });
@@ -700,7 +700,7 @@ describe('User removal CRUD tests', function () {
         function (cb) {
           const offer = new Offer({
             user: userA._id,
-            location: [0, 0]
+            location: [0, 0],
           });
 
           offer.save(function (err) { cb(err); });
@@ -730,7 +730,7 @@ describe('User removal CRUD tests', function () {
               cb(e);
             }
           });
-        }
+        },
       ], done);
     });
 
@@ -749,7 +749,7 @@ describe('User removal CRUD tests', function () {
             email: 'user_c@example.com',
             username: 'userc',
             password: '**********asdfasdf',
-            provider: 'local'
+            provider: 'local',
           });
 
           userC.save(function (err) { cb(err); });
@@ -760,19 +760,19 @@ describe('User removal CRUD tests', function () {
           const contactAB = new Contact({
             userFrom: userA._id,
             userTo: userB._id,
-            confirmed: true
+            confirmed: true,
           });
 
           const contactBC = new Contact({
             userFrom: userB._id,
             userTo: userC._id,
-            confirmed: true
+            confirmed: true,
           });
 
           const contactCA = new Contact({
             userFrom: userC._id,
             userTo: userA._id,
-            confirmed: false
+            confirmed: false,
           });
 
           async.each([contactAB, contactBC, contactCA], function (contact, callback) {
@@ -811,7 +811,7 @@ describe('User removal CRUD tests', function () {
           } catch (e) {
             cb(e);
           }
-        }
+        },
 
       ], done);
     });

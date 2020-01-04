@@ -119,7 +119,7 @@ export function ProfileViewBasics({ t, profile }) {
       </h4>
       <ul className="list-unstyled" aria-describedby="profile-languages">
         {languagesList.map(
-          code => <li key={code}>{getLanguage(code) || code}</li>
+          code => <li key={code}>{getLanguage(code) || code}</li>,
         )}
       </ul>
     </div>
@@ -147,7 +147,7 @@ export function ProfileViewBasics({ t, profile }) {
                   href={socialAccountLink(network, profile.additionalProvidersData[network])}>{network}
                 </a>
               </li>);
-          }
+          },
         )}
         {/* BeWelcome */}
         {profile.extSitesBW &&
@@ -217,7 +217,7 @@ export function ProfileViewBasics({ t, profile }) {
 
 ProfileViewBasics.propTypes = {
   profile: PropTypes.object,
-  t: PropTypes.func
+  t: PropTypes.func,
 };
 
 export default withTranslation(['user-profile', 'languages'])(ProfileViewBasics);

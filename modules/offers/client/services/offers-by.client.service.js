@@ -9,12 +9,12 @@
   /* @ngInject */
   function OffersByService($resource) {
     return $resource('/api/offers-by/:userId', {
-      userId: '@id'
+      userId: '@id',
     }, {
       query: {
         method: 'GET',
-        isArray: true
-      }
+        isArray: true,
+      },
     });
   }
 }());

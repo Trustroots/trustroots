@@ -55,7 +55,7 @@
           vm.isLoading = false;
           $uibModalInstance.dismiss('cancel');
           messageCenterService.add('danger', 'Oops! Something went wrong. Try again later.', { timeout: 7000 });
-        }
+        },
       );
     }
 

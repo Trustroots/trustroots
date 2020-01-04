@@ -10,22 +10,22 @@ const Schema = mongoose.Schema;
 const ContactSchema = new Schema({
   created: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   confirmed: {
     type: Boolean,
-    default: false
+    default: false,
   },
   userFrom: {
     type: Schema.ObjectId,
     ref: 'User',
-    required: 'Missing user!'
+    required: 'Missing user!',
   },
   userTo: {
     type: Schema.ObjectId,
     ref: 'User',
-    required: 'Missing user!'
-  }
+    required: 'Missing user!',
+  },
 });
 
 ContactSchema.index({ userFrom: 1 });

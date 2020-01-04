@@ -22,7 +22,7 @@
 
     vm.contact = new Contact({
       friendUserId: $stateParams.userId,
-      message: '<p>Hi!</p><p>I would like to add you as a contact.</p><p>- ' + Authentication.user.displayName + '</p>'
+      message: '<p>Hi!</p><p>I would like to add you as a contact.</p><p>- ' + Authentication.user.displayName + '</p>',
     });
 
     /**
@@ -46,7 +46,7 @@
         function () {
           vm.isConnected = true;
           vm.error = 'User does not exist.';
-        }
+        },
       );
 
       // If contact already exists, stop here

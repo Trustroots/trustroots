@@ -19,18 +19,18 @@ describe('Service: push', function () {
       _id: 5,
       pushRegistration: [
         {
-          token: '123'
+          token: '123',
         },
         {
-          token: '456'
-        }
-      ]
+          token: '456',
+        },
+      ],
     };
 
     const notification = {
       title: 'a nice title',
       body: 'a nice body',
-      click_action: 'http://example.com'
+      click_action: 'http://example.com',
     };
 
     pushService.sendUserNotification(user, notification, function (err) {
@@ -57,9 +57,9 @@ describe('Service: push', function () {
       _id: 15,
       pushRegistration: [
         {
-          token: 'abc'
-        }
-      ]
+          token: 'abc',
+        },
+      ],
     };
 
     const platform = 'web';
@@ -86,20 +86,20 @@ describe('Service: push', function () {
   it('can send a messages unread notification', function (done) {
 
     const userFrom = {
-      _id: 1
+      _id: 1,
     };
 
     const userTo = {
       _id: 5,
       pushRegistration: [
         {
-          token: '123'
-        }
-      ]
+          token: '123',
+        },
+      ],
     };
 
     const data = {
-      messages: ['foo']
+      messages: ['foo'],
     };
 
     pushService.notifyMessagesUnread(userFrom, userTo, data, function (err) {
@@ -124,21 +124,21 @@ describe('Service: push', function () {
 
     const userFrom = {
       _id: 1,
-      displayName: 'Albert Einstein'
+      displayName: 'Albert Einstein',
     };
 
     const userTo = {
       _id: 5,
       pushRegistration: [
         {
-          token: '123'
-        }
-      ]
+          token: '123',
+        },
+      ],
     };
 
     const data = {
       notificationCount: 1,
-      messages: ['foo']
+      messages: ['foo'],
     };
 
     pushService.notifyMessagesUnread(userFrom, userTo, data, function (err) {

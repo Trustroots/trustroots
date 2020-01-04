@@ -9,11 +9,11 @@ exports.invokeRolesPolicies = function () {
     roles: ['user', 'admin'],
     allows: [{
       resources: '/api/references',
-      permissions: ['get', 'post']
+      permissions: ['get', 'post'],
     }, {
       resources: '/api/references/:referenceId',
-      permissions: ['get']
-    }]
+      permissions: ['get'],
+    }],
   }]);
 };
 
@@ -29,7 +29,7 @@ exports.isAllowed = async function (req, res, next) {
     }
 
     return res.status(403).json({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   } catch (e) {
     return next(e);

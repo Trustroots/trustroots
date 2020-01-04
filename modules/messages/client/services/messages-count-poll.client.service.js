@@ -23,7 +23,7 @@
       setFrequency: setFrequency,
       getUnreadCount: getUnreadCount,
       initPolling: initPolling,
-      poll: poll
+      poll: poll,
     };
 
     /**

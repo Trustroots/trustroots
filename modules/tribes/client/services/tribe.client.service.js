@@ -8,11 +8,11 @@
 
     // `$resource` to communicate with tribes REST API
     const Tribe = $resource('/api/tribes/:tribeSlug', {
-      tribeSlug: '@slug'
+      tribeSlug: '@slug',
     }, {
       get: {
-        method: 'GET'
-      }
+        method: 'GET',
+      },
     });
 
     let cachedTribe;
@@ -20,7 +20,7 @@
     const service = {
       fillCache: fillCache,
       clearCache: clearCache,
-      get: get
+      get: get,
     };
 
     return service;
@@ -63,7 +63,7 @@
         } else {
           // Not found from cache, return $resource
           Tribe.get({
-            tribeSlug: options.tribeSlug
+            tribeSlug: options.tribeSlug,
           }).$promise
             .then(function (tribe) {
               resolve(tribe);

@@ -103,8 +103,8 @@ function count(name, count, time, callback) {
   const statObject = {
     namespace: name,
     counts: {
-      count: count
-    }
+      count: count,
+    },
   };
 
   if (time) { statObject.time = time; }
@@ -134,8 +134,8 @@ function value(name, value, time, callback) {
   const statObject = {
     namespace: name,
     values: {
-      value: value
-    }
+      value: value,
+    },
   };
 
   if (time) statObject.time = time;
@@ -302,7 +302,7 @@ function stat(stat, callback) {
 
       finalErr.errors = {
         influx: influxErr,
-        stathat: stathatErr
+        stathat: stathatErr,
       };
 
       return callback(finalErr);

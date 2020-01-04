@@ -53,7 +53,7 @@
           messageCenterService.offlistener = $rootScope.$on('$locationChangeSuccess', changeReaction);
         }
         scope.animation = attrs.animation || 'fade in';
-      }
+      },
     };
   }
 }());

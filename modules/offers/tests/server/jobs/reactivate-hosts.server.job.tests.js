@@ -39,7 +39,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       email: 'test@test.com',
       username: 'jobtester',
       password: 'M3@n.jsI$Aw3$0m3',
-      provider: 'local'
+      provider: 'local',
     };
 
     user = new User(_user);
@@ -60,7 +60,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       maxGuests: 1,
       updated: moment().subtract(moment.duration(config.limits.timeToReactivateHosts)),
       location: [52.498981209298776, 13.418329954147339],
-      locationFuzzy: [52.50155039101136, 13.42255019882177]
+      locationFuzzy: [52.50155039101136, 13.42255019882177],
     };
 
     offerHost = new Offer(_offerHost);
@@ -171,7 +171,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       user: user._id,
       updated: moment().subtract(moment.duration(config.limits.timeToReactivateHosts)),
       location: [52.498981209298776, 13.418329954147339],
-      locationFuzzy: [52.50155039101136, 13.42255019882177]
+      locationFuzzy: [52.50155039101136, 13.42255019882177],
     };
 
     const offerMeet = new Offer(_offerMeet);

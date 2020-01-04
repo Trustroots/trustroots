@@ -20,11 +20,11 @@
           return {
             compare: function (actual, expected) {
               return {
-                pass: angular.equals(actual, expected)
+                pass: angular.equals(actual, expected),
               };
-            }
+            },
           };
-        }
+        },
       });
     });
 
@@ -49,7 +49,7 @@
 
         // Initialize the Authentication controller
         $controller('ResetPasswordController as vm', {
-          $scope: $scope
+          $scope: $scope,
         });
       }));
 
@@ -60,7 +60,7 @@
       describe('resetUserPassword', function () {
         const token = 'testToken';
         const passwordDetails = {
-          password: 'test'
+          password: 'test',
         };
         beforeEach(function () {
 
@@ -81,7 +81,7 @@
         it('POST error should set $scope.vm.error to response message', function () {
           const errorMessage = 'Passwords do not match';
           $httpBackend.when('POST', '/api/auth/reset/' + token, passwordDetails).respond(400, {
-            'message': errorMessage
+            'message': errorMessage,
           });
 
           $scope.vm.resetUserPassword();
@@ -92,7 +92,7 @@
 
         describe('POST success', function () {
           const user = {
-            username: 'test'
+            username: 'test',
           };
           beforeEach(function () {
 

@@ -35,11 +35,11 @@ module.exports = function (job, agendaDone) {
         writeDailyStat({
           namespace: 'members',
           values: {
-            count: count
+            count: count,
           },
           tags: {
-            members: 'members'
-          }
+            members: 'members',
+          },
         }, done);
       });
     },
@@ -56,11 +56,11 @@ module.exports = function (job, agendaDone) {
         writeDailyStat({
           namespace: 'pushRegistrations',
           values: {
-            count: count
+            count: count,
           },
           tags: {
-            type: 'all'
-          }
+            type: 'all',
+          },
         }, done);
 
       });
@@ -100,12 +100,12 @@ module.exports = function (job, agendaDone) {
             namespace: 'offers',
             values: {
               count: count,
-              percentage: count / totalUserCount * 100
+              percentage: count / totalUserCount * 100,
             },
             tags: {
               type: 'host',
-              status: String(offerStatus) // `yes|maybe|no`
-            }
+              status: String(offerStatus), // `yes|maybe|no`
+            },
           }, doneStatus);
         }, done);
 
@@ -124,11 +124,11 @@ module.exports = function (job, agendaDone) {
         writeDailyStat({
           namespace: 'offers',
           values: {
-            count: count
+            count: count,
           },
           tags: {
-            type: 'meet'
-          }
+            type: 'meet',
+          },
         }, done);
       });
     },
@@ -141,7 +141,7 @@ module.exports = function (job, agendaDone) {
         'bewelcome',
         'facebook',
         'twitter',
-        'github'
+        'github',
       ];
 
       // Loop trough each network in series
@@ -158,15 +158,15 @@ module.exports = function (job, agendaDone) {
             namespace: 'membersInNetworks',
             values: {
               count: count,
-              percentage: count / totalUserCount * 100
+              percentage: count / totalUserCount * 100,
             },
             tags: {
-              network: networkName
-            }
+              network: networkName,
+            },
           }, doneNetwork);
         });
       }, done);
-    }
+    },
 
   ], function (err) {
     if (err) {
@@ -223,11 +223,11 @@ function collectLastSeen(seenSinceDays, namespace, totalUserCount, callback) {
       namespace: namespace,
       values: {
         count: count,
-        percentage: count / totalUserCount * 100
+        percentage: count / totalUserCount * 100,
       },
       tags: {
-        access: 'members'
-      }
+        access: 'members',
+      },
     }, callback);
   });
 }

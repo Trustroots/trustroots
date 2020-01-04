@@ -25,14 +25,14 @@
 
       // Mock logged in user
       Authentication.user = {
-        roles: ['user']
+        roles: ['user'],
       };
 
       // Mock settings
       SettingsFactory = {
         get: function () {
           return {};
-        }
+        },
       };
       spyOn(SettingsFactory, 'get');
 
@@ -40,7 +40,7 @@
       Languages = {
         get: function () {
           return {};
-        }
+        },
       };
       spyOn(Languages, 'get');
 
@@ -51,7 +51,7 @@
       $controller('AppController as vm', {
         $scope: $scope,
         SettingsFactory: SettingsFactory,
-        Languages: Languages
+        Languages: Languages,
       });
     }));
 

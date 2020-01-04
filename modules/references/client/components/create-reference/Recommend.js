@@ -10,7 +10,7 @@ const Recommend = withTranslation('reference')(function ({ t, primaryInteraction
   const recommendQuestions = {
     hostedMe: t('Would you recommend others to stay with them?'),
     hostedThem: t('Would you recommend others to host them?'),
-    met: t('Would you recommend others to meet them?')
+    met: t('Would you recommend others to meet them?'),
   };
 
   const question = recommendQuestions[primaryInteraction];
@@ -74,7 +74,7 @@ Recommend.propTypes = {
   reportMessage: PropTypes.string.isRequired,
   onChangeRecommend: PropTypes.func.isRequired,
   onChangeReport: PropTypes.func.isRequired,
-  onChangeReportMessage: PropTypes.func.isRequired
+  onChangeReportMessage: PropTypes.func.isRequired,
 };
 
 export default Recommend;

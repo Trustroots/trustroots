@@ -48,7 +48,7 @@ describe('Integration of the MessageStat service', function () {
       password: 'password123',
       provider: 'local',
       public: true,
-      description: _.repeat('.', config.profileMinimumLength)
+      description: _.repeat('.', config.profileMinimumLength),
     });
 
     user2 = new User({
@@ -59,7 +59,7 @@ describe('Integration of the MessageStat service', function () {
       username: 'username2',
       password: 'password123',
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // save those users to mongoDB
@@ -97,12 +97,12 @@ describe('Integration of the MessageStat service', function () {
 
       const req = {
         user: {
-          _id: user1._id
+          _id: user1._id,
         },
         body: {
           userTo: String(user2._id),
-          content: _.repeat('.', config.limits.longMessageMinimumLength - 1)
-        }
+          content: _.repeat('.', config.limits.longMessageMinimumLength - 1),
+        },
       };
 
       const res = new Res();

@@ -17,7 +17,7 @@
       restrict: 'A',
       replace: false,
       scope: {
-        trFocustip: '='
+        trFocustip: '=',
       },
       link: function (scope, element) {
 
@@ -37,7 +37,7 @@
             scope.$apply();
           });
 
-      }
+      },
     };
   }
 }());

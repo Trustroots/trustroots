@@ -18,11 +18,11 @@
           SettingsService: 'Statistics',
           statisticsData: function (Statistics) {
             return Statistics.get();
-          }
+          },
         },
         data: {
-          pageTitle: 'Statistics'
-        }
+          pageTitle: 'Statistics',
+        },
       });
 
   }

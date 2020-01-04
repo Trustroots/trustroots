@@ -10,11 +10,11 @@
       replace: true,
       scope: {
         profile: '=trOfferHostView', // Profile who's offer to load
-        authUser: '=trOfferHostViewAuthUser' // Currently authenticated user
+        authUser: '=trOfferHostViewAuthUser', // Currently authenticated user
       },
       templateUrl: '/modules/offers/views/directives/tr-offer-host-view.client.view.html',
       controller: trOfferHostViewDirectiveController,
-      controllerAs: 'trOfferHost'
+      controllerAs: 'trOfferHost',
     };
 
     return directive;
@@ -60,7 +60,7 @@
 
             OffersByService.query({
               userId: String(profile._id),
-              types: 'host'
+              types: 'host',
             }, function (offers) {
 
               if (!offers || !offers.length) {

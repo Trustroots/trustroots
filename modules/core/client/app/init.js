@@ -20,7 +20,7 @@
       enabled: true,
       // We do have <base> tag defined, but requiring it for Karma tests breaks tests...
       // @todo better solution?
-      requireBase: false
+      requireBase: false,
     }).hashPrefix('!');
 
     // Make a trailing slash optional for all routes (ui-router)
@@ -38,7 +38,7 @@
       namespace: AppConfig.appModuleName,
       separator: '.',
       eventsEnabled: false,
-      extend: {}
+      extend: {},
     });
 
     // Disabling Debug Data for production environment
@@ -62,7 +62,7 @@
     // @link https://angular-ui.github.io/bootstrap/#!#tooltip
     // @link https://angular-ui.github.io/bootstrap/#!#popover
     $uibTooltipProvider.options({
-      appendToBody: true
+      appendToBody: true,
     });
   }
 
@@ -82,7 +82,7 @@
         window.location.origin +
         window.location.pathname +
         window.location.search.replace('iframe_getaway', 'iframe_cleaned'),
-        '_top'
+        '_top',
       );
       // Don't bootstrap App, since we're reloading the page.
       return;
@@ -94,7 +94,7 @@
     // Then init the app
     // @link https://docs.angularjs.org/guide/production#strict-di-mode
     angular.bootstrap(document, [AppConfig.appModuleName], {
-      strictDi: (AppConfig.appEnv === 'production')
+      strictDi: (AppConfig.appEnv === 'production'),
     });
 
     // Register base service worker

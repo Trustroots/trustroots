@@ -29,15 +29,15 @@ exports.invalidateSuspendedSessions = function (req, res, next) {
         // For HTML calls send "suspended" html view
         'text/html': function () {
           res.render('suspended.server.view.html', {
-            message: suspendedMessage
+            message: suspendedMessage,
           });
         },
         // For API calls send "suspended" json message
         'application/json': function () {
           res.json({
-            message: suspendedMessage
+            message: suspendedMessage,
           });
-        }
+        },
       });
 
     });

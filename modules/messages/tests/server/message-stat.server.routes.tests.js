@@ -36,7 +36,7 @@ describe('Display Message Statistics in User Route', function () {
         username: 'username' + i,
         password: password,
         provider: 'local',
-        public: true
+        public: true,
       }));
     }
 
@@ -72,7 +72,7 @@ describe('Display Message Statistics in User Route', function () {
           firstMessageLength: 100,
           firstReplyCreated: i < repliedCount ? new Date(firstCreated + replyTime) : null,
           firstReplyLength: i < repliedCount ? 50 : null,
-          timeToFirstReply: i < repliedCount ? replyTime : null
+          timeToFirstReply: i < repliedCount ? replyTime : null,
         }));
 
         // increment the userFrom
@@ -105,7 +105,7 @@ describe('Display Message Statistics in User Route', function () {
       },
       function (cb) {
         MessageStat.deleteMany().exec(cb);
-      }
+      },
     ], done);
   });
 

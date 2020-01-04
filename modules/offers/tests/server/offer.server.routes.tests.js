@@ -39,7 +39,7 @@ const testLocations = {
       '&northEastLng=18.73318142361111' +
       '&southWestLat=44.66407507240992' +
       '&southWestLng=3.689914279513889',
-    location: [52.48556355813466, 13.489011526107788]
+    location: [52.48556355813466, 13.489011526107788],
   },
   'China': {
     queryBoundingBox:
@@ -47,7 +47,7 @@ const testLocations = {
       '&northEastLng=151.23828125000003' +
       '&southWestLat=-3.9332268264771106' +
       '&southWestLng=61.63281250000001',
-    location: [34.632532, 103.767519]
+    location: [34.632532, 103.767519],
   },
   'US': {
     queryBoundingBox:
@@ -55,7 +55,7 @@ const testLocations = {
       '&northEastLng=-48.44921875000001' +
       '&southWestLat=0.021065118766989688' +
       '&southWestLng=-138.05468750000003',
-    location: [40.514402, -88.990735]
+    location: [40.514402, -88.990735],
   },
   'NorthPole': {
     queryBoundingBox:
@@ -63,8 +63,8 @@ const testLocations = {
       '&northEastLng=145.61328125000003' +
       '&southWestLat=78.02765497223292' +
       '&southWestLng=56.00781250000001',
-    location: [80.912672, 79.732322]
-  }
+    location: [80.912672, 79.732322],
+  },
 };
 
 
@@ -85,13 +85,13 @@ describe('Offer CRUD tests', function () {
     // Create user credentials
     credentials = {
       username: 'loremipsum',
-      password: 'Password123!'
+      password: 'Password123!',
     };
 
     // Create user2 credentials
     credentials2 = {
       username: 'loremipsum2',
-      password: 'Password123!'
+      password: 'Password123!',
     };
 
     // Create a new user
@@ -104,7 +104,7 @@ describe('Offer CRUD tests', function () {
       username: credentials.username,
       password: credentials.password,
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // Create a new user
@@ -118,7 +118,7 @@ describe('Offer CRUD tests', function () {
       password: credentials2.password,
       languages: ['fin', 'ita'],
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // Create a new user
@@ -131,7 +131,7 @@ describe('Offer CRUD tests', function () {
       password: credentials.password,
       languages: ['ita'],
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // Used only for sending via POST and thus doesn't include some data
@@ -141,7 +141,7 @@ describe('Offer CRUD tests', function () {
       description: '<p>1 I can host! :)</p>',
       noOfferDescription: '<p>1 I cannot host... :(</p>',
       maxGuests: 5,
-      location: testLocations.Europe.location
+      location: testLocations.Europe.location,
     };
 
     offer2 = new Offer({
@@ -151,7 +151,7 @@ describe('Offer CRUD tests', function () {
       noOfferDescription: '<p>2 I cannot host... :(</p>',
       maxGuests: 3,
       updated: new Date(),
-      location: [52.498981209298776, 13.418329954147339]
+      location: [52.498981209298776, 13.418329954147339],
     });
 
     offer3 = new Offer({
@@ -161,7 +161,7 @@ describe('Offer CRUD tests', function () {
       noOfferDescription: '<p>3 I cannot host... :(</p>',
       maxGuests: 1,
       updated: new Date(),
-      location: [52.498981209298775, 13.418329954147338]
+      location: [52.498981209298775, 13.418329954147338],
     });
 
     offerMeet = new Offer({
@@ -169,7 +169,7 @@ describe('Offer CRUD tests', function () {
       description: '<p>Dinner party!</p>',
       validUntil: moment().add(30, 'day').toDate(),
       updated: new Date(),
-      location: [52.498981209298887, 13.418329954147449]
+      location: [52.498981209298887, 13.418329954147449],
     });
 
     tribe1 = new Tribe({
@@ -178,7 +178,7 @@ describe('Offer CRUD tests', function () {
       'color': '111111',
       'tribe': true,
       'count': 1,
-      'public': true
+      'public': true,
     });
 
     tribe2 = new Tribe({
@@ -186,7 +186,7 @@ describe('Offer CRUD tests', function () {
       'label': 'tribe2',
       'color': '222222',
       'count': 1,
-      'public': true
+      'public': true,
     });
 
     // Save data to the test db
@@ -216,7 +216,7 @@ describe('Offer CRUD tests', function () {
       function (done) {
         user2.member = [{
           tribe: tribe2Id,
-          since: new Date()
+          since: new Date(),
         }];
         user2.save(function (err, user2res) {
           user2Id = user2res._id;
@@ -227,7 +227,7 @@ describe('Offer CRUD tests', function () {
       function (done) {
         user3.member = [{
           tribe: tribe1Id,
-          since: new Date()
+          since: new Date(),
         }];
         user3.save(function (err, user3res) {
           user3Id = user3res._id;
@@ -248,7 +248,7 @@ describe('Offer CRUD tests', function () {
         offer3.save(function (err) {
           done(err);
         });
-      }
+      },
     ], function (err) {
       should.not.exist(err);
       doneBeforeEach(err);
@@ -426,7 +426,7 @@ describe('Offer CRUD tests', function () {
               if (offerSaveErr) return done(offerSaveErr);
 
               Offer.findOne({
-                _id: offer2Id
+                _id: offer2Id,
               }, function (err, offer) {
                 should.not.exist(err);
                 should.exist(offer);
@@ -454,7 +454,7 @@ describe('Offer CRUD tests', function () {
               if (offerSaveErr) return done(offerSaveErr);
 
               Offer.findOne({
-                _id: offer2Id
+                _id: offer2Id,
               }, function (err, offer) {
                 should.not.exist(err);
                 should.not.exist(offer);
@@ -799,7 +799,7 @@ describe('Offer CRUD tests', function () {
 
               // Get id for offer we just saved
               Offer.findOne({
-                user: user1Id
+                user: user1Id,
               }, function (offerFindErr, offer) {
                 // Handle error
                 if (offerFindErr) return done(offerFindErr);
@@ -822,7 +822,7 @@ describe('Offer CRUD tests', function () {
                     offerPutRes.body.message.should.equal('Offer updated.');
 
                     Offer.findOne({
-                      _id: offer._id
+                      _id: offer._id,
                     }, function (err, offerNew) {
                       offerNew.description.should.equal('MODIFIED');
                       offerNew.noOfferDescription.should.equal('MODIFIED');
@@ -854,7 +854,7 @@ describe('Offer CRUD tests', function () {
               if (offerSaveErr) return done(offerSaveErr);
 
               Offer.findOne({
-                _id: offer2Id
+                _id: offer2Id,
               }, function (err, offer) {
                 should.not.exist(err);
                 offer.description.should.not.equal(offer2.description);
@@ -883,7 +883,7 @@ describe('Offer CRUD tests', function () {
 
               // Get id for offer we just saved
               Offer.findOne({
-                user: user1Id
+                user: user1Id,
               }, function (offerFindErr, offer) {
                 // Handle error
                 if (offerFindErr) return done(offerFindErr);
@@ -903,7 +903,7 @@ describe('Offer CRUD tests', function () {
                     offerSaveRes.body.message.should.equal('You cannot update offer type.');
 
                     Offer.find({
-                      user: user1Id
+                      user: user1Id,
                     }, function (err, offers) {
                       offers.length.should.equal(1);
                       offers[0].type.should.equal('host');
@@ -948,7 +948,7 @@ describe('Offer CRUD tests', function () {
                 if (offerPutErr) return done(offerPutErr);
 
                 Offer.findOne({
-                  _id: offerMeetSaved._id
+                  _id: offerMeetSaved._id,
                 }, function (err, offerNew) {
 
                   moment(offerNew.validUntil).diff(now, 'days').should.equal(30);
@@ -989,7 +989,7 @@ describe('Offer CRUD tests', function () {
                 if (offerPutErr) return done(offerPutErr);
 
                 Offer.findOne({
-                  _id: offerMeetSaved._id
+                  _id: offerMeetSaved._id,
                 }, function (err, offerNew) {
 
                   moment(offerNew.validUntil).diff(now, 'days').should.equal(2);
@@ -1034,7 +1034,7 @@ describe('Offer CRUD tests', function () {
                 if (offerPutErr) return done(offerPutErr);
 
                 Offer.findOne({
-                  _id: offerMeetSaved._id
+                  _id: offerMeetSaved._id,
                 }, function (err, offerNew) {
 
                   // We set it to 32, but it should default to 30 days
@@ -1080,7 +1080,7 @@ describe('Offer CRUD tests', function () {
                 if (offerPutErr) return done(offerPutErr);
 
                 Offer.findOne({
-                  _id: offerMeetSaved._id
+                  _id: offerMeetSaved._id,
                 }, function (err, offerNew) {
 
                   // We set it to -2 days, but it should default to 30 days
@@ -1116,7 +1116,7 @@ describe('Offer CRUD tests', function () {
                 if (offerSaveErr) return done(offerSaveErr);
 
                 Offer.findOne({
-                  user: user2Id
+                  user: user2Id,
                 }, function (err, offer) {
                   should.not.exist(offer.reactivateReminderSent);
                   return done(err);

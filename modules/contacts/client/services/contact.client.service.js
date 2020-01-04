@@ -8,17 +8,17 @@
   /* @ngInject */
   function ContactService($resource) {
     return $resource('/api/contact/:contactId', {
-      contactId: '@_id'
+      contactId: '@_id',
     }, {
       get: {
-        method: 'GET'
+        method: 'GET',
       },
       update: {
-        method: 'PUT'
+        method: 'PUT',
       },
       delete: {
-        method: 'DELETE'
-      }
+        method: 'DELETE',
+      },
     });
   }
 }());

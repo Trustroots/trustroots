@@ -32,7 +32,7 @@ describe('Configuration Tests:', function () {
     beforeEach(function (done) {
       credentials = {
         username: 'helloworld',
-        password: 'M3@n.jsI$Aw3$0m3'
+        password: 'M3@n.jsI$Aw3$0m3',
       };
 
       // Create a new user
@@ -44,7 +44,7 @@ describe('Configuration Tests:', function () {
         email: 'user_a@example.com',
         username: credentials.username,
         password: credentials.password,
-        provider: 'local'
+        provider: 'local',
       };
 
       user = new User(_user);
@@ -115,7 +115,7 @@ describe('Configuration Tests:', function () {
       const _tribe = {
         slug: 'testers',
         label: 'Testers',
-        tribe: true
+        tribe: true,
       };
 
       const tribe = new Tribe(_tribe);

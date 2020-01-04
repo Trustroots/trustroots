@@ -18,7 +18,7 @@
           $rootScope.$broadcast('serviceUnavailable');
         }
         return $q.reject(rejection);
-      }
+      },
     };
   }
 }());

@@ -13,10 +13,10 @@
       restrict: 'AE',
       replace: true,
       scope: {
-        tribe: '=trTribeBadge'
+        tribe: '=trTribeBadge',
       },
       controller: trTribeBadgeController,
-      controllerAs: 'tribeBadge'
+      controllerAs: 'tribeBadge',
     };
 
     /* @ngInject */

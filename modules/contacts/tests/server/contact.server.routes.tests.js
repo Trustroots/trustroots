@@ -47,7 +47,7 @@ describe('Contact CRUD tests', function () {
     // Create userFrom credentials
     credentials = {
       username: 'loremipsum',
-      password: 'Password123!'
+      password: 'Password123!',
     };
 
     // Create a new user
@@ -62,9 +62,9 @@ describe('Contact CRUD tests', function () {
       public: true,
       additionalProvidersData: {
         facebook: {
-          id: '123'
-        }
-      }
+          id: '123',
+        },
+      },
     });
 
     // Create a new user
@@ -76,7 +76,7 @@ describe('Contact CRUD tests', function () {
       username: credentials.username + '2',
       password: credentials.password,
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // Create a new user
@@ -88,7 +88,7 @@ describe('Contact CRUD tests', function () {
       username: credentials.username + '3',
       password: credentials.password,
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // Create a new user
@@ -100,7 +100,7 @@ describe('Contact CRUD tests', function () {
       username: credentials.username + '4',
       password: credentials.password,
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // Set dates to the past to make sure contacts are storted in right order for tests
@@ -113,15 +113,15 @@ describe('Contact CRUD tests', function () {
     // Contacts saved to DB
     contact1 = new Contact({
       created: new Date(),
-      confirmed: false
+      confirmed: false,
     });
     contact2 = new Contact({
       created: yesterday,
-      confirmed: true
+      confirmed: true,
     });
     contact3 = new Contact({
       created: daybefore,
-      confirmed: true
+      confirmed: true,
     });
 
     // Save user to the test db
