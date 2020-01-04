@@ -1,14 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import UsersList from './UsersList';
+import NoContent from '@/modules/core/client/components/NoContent';
 
 export default function UsersResults({ users }) {
   if (!users || users.length === 0) {
     return (
-      <div className="row content-empty">
-        <i className="icon-3x icon-users"></i>
-        <h4>No members found by this name.</h4>
-      </div>
+      <NoContent icon="users" message="No members found by this name." />
     );
   }
 

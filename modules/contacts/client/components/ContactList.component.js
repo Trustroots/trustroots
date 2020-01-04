@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import ContactListPresentational from './ContactListPresentational';
+import NoContent from '@/modules/core/client/components/NoContent';
 
 export default class ContactList extends React.Component {
 
@@ -27,10 +28,7 @@ export default class ContactList extends React.Component {
 
     if (contacts.length === 0) {
       return (
-        <div className="row content-empty">
-          <i className="icon-3x icon-users"></i>
-          <h4>No contacts yet.</h4>
-        </div>
+        <NoContent icon="users" message="No contacts yet." />
       );
     }
 
