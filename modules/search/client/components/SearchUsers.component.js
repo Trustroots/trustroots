@@ -1,56 +1,12 @@
 import React from 'react';
-import PropTypes from 'prop-types';
-
-import UsersList from './UsersList';
+import UsersResults from './UsersResults';
+import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 
 import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
 
 const MINIMUM_QUERY_LENGTH = 3;
 
-function UsersResults({ users }) {
-  const userList = (
-    <div className="contacts-list">
-
-      <div className="row">
-        <div className="col-xs-12">
-          <h4 className="text-muted">
-
-            {users.length === 1 &&
-            <span>
-              One member found.
-            </span>
-            }
-
-            {users.length > 1 &&
-            <span>
-              {users.length} members found.
-            </span>
-            }
-
-            <UsersList users={users}/>
-
-          </h4>
-        </div>
-      </div>
-    </div>
-  );
-
-  const noUsers = (
-    <div className="row content-empty">
-      <i className="icon-3x icon-users"></i>
-      <h4>No members found by this name.</h4>
-    </div>
-  );
-
-  return users && users.length > 0 ? userList : noUsers;
-}
-
-UsersResults.propTypes = {
-  users: PropTypes.array,
-};
-
 class SearchUsers extends React.Component {
-
   constructor(props) {
     super(props);
     this.handleChange = this.handleChange.bind(this);
@@ -85,53 +41,53 @@ class SearchUsers extends React.Component {
   }
 
   render() {
-    const loading = (
-      <div className="content-wait"
-        role="alertdialog"
-        aria-busy="true"
-        aria-live="assertive">
-        <small>Wait a moment...</small>
-      </div>
-    );
-
     const searchForm = (
-      <form className="form-group search-form-group" id="search-users-form"
-        onSubmit={this.actionSearch}>
+      <form
+        className="form-group search-form-group"
+        id="search-users-form"
+        onSubmit={this.actionSearch}
+      >
         <div className="input-group">
-          <label htmlFor="search-query" className="sr-only">Search members</label>
-          <input type="text"
-            id="search-query"
+          <input
+            aria-label="Search members"
             className="form-control input-lg"
+            onChange={this.handleChange}
             placeholder="Type name, username..."
             tabIndex="0"
-            onChange={ this.handleChange }
-            value={this.state.searchQuery} />
+            type="text"
+            value={this.state.searchQuery}
+          />
           <span className="input-group-btn">
             <span>
-              <button type="button"
+              <button
+                aria-label="Clear members search"
+                className="btn btn-lg btn-default"
                 disabled={this.state.searchQuery.length < MINIMUM_QUERY_LENGTH}
                 onClick={this.clearSearchQuery}
-                className="btn btn-lg btn-default"
-                aria-label="Clear members search">
+                type="button"
+              >
                 <i className="icon-close"></i>
               </button>
             </span>
             <span>
-              <button type="submit"
-                disabled={this.state.searchQuery.length < MINIMUM_QUERY_LENGTH}
+              <button
+                aria-label="Search members"
                 className="btn btn-lg btn-default"
-                aria-label="Search members">
+                disabled={this.state.searchQuery.length < MINIMUM_QUERY_LENGTH}
+                type="submit"
+              >
                 <i className="icon-search"></i>
               </button>
             </span>
           </span>
         </div>
-      </form>);
+      </form>
+    );
 
     return (
       <section className="container container-spacer">
         {searchForm}
-        {this.state.isSearching && loading}
+        {this.state.isSearching && <LoadingIndicator />}
         {!this.state.isSearching && this.state.users &&
           <UsersResults users={this.state.users} />
         }
@@ -141,6 +97,5 @@ class SearchUsers extends React.Component {
 }
 
 SearchUsers.propTypes = {};
-
 
 export default SearchUsers;

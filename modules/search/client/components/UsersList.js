@@ -1,56 +1,33 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import UserSummary from './UserSummary';
 
-import Avatar from '@/modules/users/client/components/Avatar.component';
-
-const User = ({ userData }) => {
-  const profileUrl = `/profile/${userData.username}`;
-  return (
-    <div className="contacts-contact panel panel-default">
-      <Avatar size={128}
-        user={userData}
-        link={true}/>
-      <h4>
-        <a href={profileUrl}>
-          {userData.displayName}
-        </a>
-      </h4>
-    </div>
-  );
-};
-
-User.propTypes = {
-  userData: PropTypes.object,
-};
-
+const mapUsers = (users) => users.map((user) => (
+  <UserSummary
+    className="contacts-contact"
+    key={`user-results-${user.username}`}
+    user={user}
+  />
+));
 
 export default function UsersList({ users }) {
-  const usersEvenComponent = [];
-  const usersUnEvenComponent = [];
+  const usersEven = [];
+  const usersUnEven = [];
   for (let i = 0; i < users.length; i++) {
     if (i % 2 === 0) {
-      usersEvenComponent.push(<User userData={users[i]} key={`user-results-${i}`} />);
+      usersEven.push(users[i]);
     }
     else {
-      usersUnEvenComponent.push(<User userData={users[i]} key={`user-results-${i}`} />);
+      usersUnEven.push(users[i]);
     }
   }
   return (
-    <div>
-      <div className="row">
-        <div className="col-xs-12 col-sm-6">
-          <div>
-            {usersEvenComponent}
-          </div>
-
-        </div>
-
-        <div className="col-xs-12 col-sm-6">
-          <div>
-            {usersUnEvenComponent}
-          </div>
-
-        </div>
+    <div className="row">
+      <div className="col-xs-12 col-sm-6">
+        {mapUsers(usersEven)}
+      </div>
+      <div className="col-xs-12 col-sm-6">
+        {mapUsers(usersUnEven)}
       </div>
     </div>
   );
