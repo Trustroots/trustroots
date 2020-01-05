@@ -54,5 +54,5 @@ TribesPage.propTypes = {
   user: PropTypes.object,
   onMembershipUpdated: PropTypes.func.isRequired,
   onDisplayPhoto: PropTypes.func,
-  onHidePhoto: PropTypes.func
+  onHidePhoto: PropTypes.func,
 };
