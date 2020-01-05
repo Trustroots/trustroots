@@ -59,7 +59,7 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
 
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const isMemberInitial = user && user.memberIds && user.memberIds.indexOf(tribe._id) > -1;
+  const isMemberInitial = (user?.memberIds || []).includes(tribe._id);
   const [isMember, setIsMember] = useState(isMemberInitial);
 
   /**
