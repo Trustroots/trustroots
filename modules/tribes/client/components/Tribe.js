@@ -8,8 +8,15 @@ import JoinButton from './JoinButton';
 
 import getTribeBackgroundStyle from './helpers/getTribeBackgroundStyle';
 
-const Container = styled.div`
-  position: relative;
+const Container = styled.div.attrs({
+  className: 'panel tribe tribe-image',
+})`
+  // the following styles should have high specificity
+  // https://www.styled-components.com/docs/faqs#how-can-i-override-styles-with-higher-specificity
+  &&& {
+    position: relative;
+    ${({ tribe }) => getTribeBackgroundStyle(tribe, { isProgressive: true, dimensions: '742x496' })}
+  }
 `;
 
 export default function Tribe({ tribe, user, onMembershipUpdated }) {
@@ -19,10 +26,7 @@ export default function Tribe({ tribe, user, onMembershipUpdated }) {
     ? t('No members yet')
     : t('{{count, number}} members', { count: tribe.count });
 
-  return <Container
-    className="panel tribe tribe-image"
-    style={getTribeBackgroundStyle(tribe, { isProgressive: true, dimensions: '742x496' })}
-  >
+  return <Container tribe={tribe}>
     <a href={`/tribes/${tribe.slug}`} className="tribe-link">
       {tribe.new && <span className="tribe-new" aria-hidden={true}>
         <span className="label label-primary">

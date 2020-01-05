@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import Tribe from './Tribe';
 import SuggestTribe from './SuggestTribe';
 
-const List = styled.ul`
+const List = styled.ul.attrs({ className: 'list-unstyled tribes-grid' })`
   margin: -5px -5px 15px -5px;
 `;
 
@@ -31,7 +31,7 @@ const Item = styled.li`
 
 export default function TribesList({ tribes, user, onMembershipUpdated }) {
   return (
-    <List className="list-unstyled tribes-grid">
+    <List>
       {tribes.map(tribe => (
         <Item key={tribe._id}>
           <Tribe
