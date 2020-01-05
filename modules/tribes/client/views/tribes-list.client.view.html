@@ -8,23 +8,12 @@
 
   <div class="row">
     <div class="col-xs-12">
-
-      <ul class="list-unstyled tribes-grid"
-          angular-grid="tribesList.tribes"
-          ag-grid-width="288"
-          ag-gutter-size="10"
-          ag-refresh-on-img-load="false">
-        <li ng-repeat="tribe in tribesList.tribes track by tribe._id">
-          <tribe-item
-            tribe="tribe"
-            user="app.user"
-            onMembershipUpdated="tribesList.broadcastChange"
-          ></tribe-item>
-        </li>
-        <li>
-          <suggest-tribe></suggest-tribe>
-        </li>
-      </ul>
+      <tribes-list
+        tribes="tribesList.tribes"
+        user="app.user"
+        onMembershipUpdated="tribesList.broadcastChange"
+      ></tribes-list>
+    </div>
   </div>
 
   <tribes-join-trustroots ng-if="!app.user">
