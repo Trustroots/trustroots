@@ -1,5 +1,5 @@
 // External dependencies
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
@@ -9,8 +9,9 @@ import { plainText, plainTextLength } from '../utils/filters';
 
 const LIMIT = 2000;
 
-function ReadMorePanel({ content, id, t }) {
+export default function ReadMorePanel({ content, id }) {
   const [showMore, setShowMore] = useState(false);
+  const { t } = useTranslation('core');
 
   if (content.length === 0) {
     return null;
@@ -46,5 +47,3 @@ ReadMorePanel.propTypes = {
   id: PropTypes.string.isRequired,
   t: PropTypes.func.isRequired,
 };
-
-export default withTranslation('core')(ReadMorePanel);
