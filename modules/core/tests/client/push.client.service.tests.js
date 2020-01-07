@@ -1,3 +1,5 @@
+import AppConfig from '@/modules/core/client/app/config';
+
 /**
  * Push service
  */
@@ -11,7 +13,7 @@
     const firebase = createFirebaseMock();
 
     // Load the main application module
-    beforeEach(module(AppConfig.appModuleName, firebase.moduleName));
+    beforeEach(angular.mock.module(AppConfig.appModuleName, firebase.moduleName));
 
     beforeEach(firebase.reset);
 

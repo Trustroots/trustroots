@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/search/client/views/directives/tr-my-tribes-toggle.client.view.html';
+
 (function () {
   /**
    * Directive to
@@ -18,7 +20,7 @@
       scope: {
         tribeIds: '=trMyTribesToggle',
       },
-      templateUrl: '/modules/search/views/directives/tr-my-tribes-toggle.client.view.html',
+      templateUrl,
       controller: trMyTribesToggleController,
       controllerAs: 'myTribesToggle',
     };

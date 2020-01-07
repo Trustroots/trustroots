@@ -1,3 +1,7 @@
+import '@/modules/users/client/users.client.module';
+import '@/modules/search/client/search.client.module';
+import AppConfig from '@/modules/core/client/app/config';
+
 (function () {
   describe('ProfileEditAccountController', function () {
 
@@ -13,7 +17,7 @@
     };
 
     // Load the main application module
-    beforeEach(module(AppConfig.appModuleName));
+    beforeEach(angular.mock.module(AppConfig.appModuleName));
 
     beforeEach(inject(function (
       _$httpBackend_,

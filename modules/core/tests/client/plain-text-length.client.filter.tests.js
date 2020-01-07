@@ -1,3 +1,5 @@
+import AppConfig from '@/modules/core/client/app/config';
+
 /**
  * PlainTextLength filter tests
  */
@@ -5,7 +7,7 @@
   describe('PlainTextLength Filter Tests', function () {
 
     // Load the main application module
-    beforeEach(module(AppConfig.appModuleName));
+    beforeEach(angular.mock.module(AppConfig.appModuleName));
 
     it('should return length for a string', inject(function (plainTextLengthFilter) {
       expect(plainTextLengthFilter('test')).toBe(4);

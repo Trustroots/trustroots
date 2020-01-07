@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/statistics/client/views/statistics.client.view.html';
+
 (function () {
   angular
     .module('statistics')
@@ -9,7 +11,7 @@
     $stateProvider.
       state('statistics', {
         url: '/statistics',
-        templateUrl: '/modules/statistics/views/statistics.client.view.html',
+        templateUrl,
         controller: 'StatisticsController',
         controllerAs: 'stats',
         footerHidden: false,

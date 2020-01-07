@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/references-thread/client/views/directives/tr-reference-thread.client.view.html';
+
 (function () {
   /**
    * References-thread directive widget for asking feedback about the message thread
@@ -19,7 +21,7 @@
     const directive = {
       restrict: 'A',
       replace: true,
-      templateUrl: '/modules/references-thread/views/directives/tr-reference-thread.client.view.html',
+      templateUrl,
       scope: {
         trReferenceThread: '=',
       },

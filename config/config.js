@@ -76,11 +76,7 @@ const initGlobalConfigFolders = function (config) {
   // Appending files
   config.folders = {
     server: {},
-    client: {},
   };
-
-  // Setting globbed client paths
-  config.folders.client = getGlobbedPaths(path.join(process.cwd(), 'modules/*/client/'), process.cwd().replace(new RegExp(/\\/g), '/'));
 };
 
 /**
@@ -90,10 +86,6 @@ const initGlobalConfigFiles = function (config, assets) {
   // Appending files
   config.files = {
     server: {},
-    client: {
-      lib: {},
-    },
-    webpack: {},
   };
 
   // Setting Globbed model files
@@ -107,28 +99,6 @@ const initGlobalConfigFiles = function (config, assets) {
 
   // Setting Globbed policies files
   config.files.server.policies = getGlobbedPaths(assets.server.policies);
-
-  // Setting Globbed js files
-  if (process.env.NODE_ENV === 'production') {
-    // In production mode assets.client.lib.js are combined into client.js already
-    config.files.client.js = getGlobbedPaths(assets.client.js, ['client/', 'public/']);
-    config.files.client.lib.js = getGlobbedPaths(assets.client.lib.js, 'public/');
-  } else {
-    config.files.client.js = getGlobbedPaths(assets.client.lib.js, 'public/').concat(getGlobbedPaths(assets.client.js, ['client/', 'public/']));
-  }
-
-  config.files.webpack.js = getGlobbedPaths(assets.client.lib.js).concat(getGlobbedPaths(assets.client.js));
-
-  // Setting Globbed css files
-  if (process.env.NODE_ENV === 'production') {
-    // In production mode assets.client.lib.css are combined into client.css already
-    config.files.client.css = getGlobbedPaths(assets.client.css, ['client/', 'public/']);
-  } else {
-    config.files.client.css = getGlobbedPaths(assets.client.lib.css, 'public/').concat(getGlobbedPaths(assets.client.css, ['client/', 'public/']));
-  }
-
-  // Setting Globbed test files
-  config.files.client.tests = getGlobbedPaths(assets.client.tests);
 };
 
 /**

@@ -1,3 +1,8 @@
+import viewTemplateUrl from '@/modules/offers/client/views/offer.client.view.html';
+import hostEditTemplateUrl from '@/modules/offers/client/views/offer-host-edit.client.view.html';
+import meetListTemplateUrl from '@/modules/offers/client/views/offer-meet-list.client.view.html';
+import meetEditTemplateUrl from '@/modules/offers/client/views/offer-meet-edit.client.view.html';
+
 (function () {
   angular
     .module('offers')
@@ -15,7 +20,7 @@
         url: '/offer',
         abstract: true,
         requiresAuth: true,
-        templateUrl: '/modules/offers/views/offer.client.view.html',
+        templateUrl: viewTemplateUrl,
         controller: 'OfferController',
         controllerAs: 'offer',
         resolve: {
@@ -50,7 +55,7 @@
       }).
       state('offer.host.edit', {
         url: '?status',
-        templateUrl: '/modules/offers/views/offer-host-edit.client.view.html',
+        templateUrl: hostEditTemplateUrl,
         requiresAuth: true,
         footerHidden: true,
         controller: 'OfferHostEditController',
@@ -69,7 +74,7 @@
       }).
       state('offer.meet.list', {
         url: '',
-        templateUrl: '/modules/offers/views/offer-meet-list.client.view.html',
+        templateUrl: meetListTemplateUrl,
         requiresAuth: true,
         controller: 'OfferListMeetController',
         controllerAs: 'offerListMeet',
@@ -90,7 +95,7 @@
       }).
       state('offer.meet.add', {
         url: '/add',
-        templateUrl: '/modules/offers/views/offer-meet-edit.client.view.html',
+        templateUrl: meetEditTemplateUrl,
         requiresAuth: true,
         footerHidden: true,
         controller: 'OfferMeetAddController',
@@ -101,7 +106,7 @@
       }).
       state('offer.meet.edit', {
         url: '/:offerId',
-        templateUrl: '/modules/offers/views/offer-meet-edit.client.view.html',
+        templateUrl: meetEditTemplateUrl,
         requiresAuth: true,
         footerHidden: true,
         controller: 'OfferMeetEditController',

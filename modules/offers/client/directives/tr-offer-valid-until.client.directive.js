@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/offers/client/views/directives/tr-offer-valid-until.view.client.html';
+
 (function () {
   /**
    * A directive to modify offer's `validUntil` dates
@@ -15,7 +17,7 @@
       scope: {
         validUntil: '=trOfferValidUntil',
       },
-      templateUrl: '/modules/offers/views/directives/tr-offer-valid-until.view.client.html',
+      templateUrl,
       controller: trOfferValidUntilDirectiveController,
       controllerAs: 'trOfferValidUntil',
     };
