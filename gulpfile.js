@@ -11,11 +11,7 @@ const minimatch = require('minimatch');
 const del = require('del');
 const nodemon = require('nodemon');
 const print = require('gulp-print').default;
-const plugins = gulpLoadPlugins({
-  rename: {
-    'gulp-angular-templatecache': 'templateCache',
-  },
-});
+const plugins = gulpLoadPlugins();
 
 // Local settings
 let changedTestFiles = [];
