@@ -1,4 +1,5 @@
-/* global MediumEditor */
+import MediumEditor from 'medium-editor/dist/js/medium-editor';
+
 (function () {
   /**
    * Directive to embed Medium Editor instances
@@ -77,7 +78,6 @@
 
         angularIElement.addClass('tr-editor');
 
-        // Global MediumEditor
         ngModel.editor = new MediumEditor(iElement, scope.trEditorOptions);
 
         ngModel.$render = function () {

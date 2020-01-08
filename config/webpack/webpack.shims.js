@@ -46,7 +46,6 @@ module.exports = {
       AppConfig: localResolve('modules/core/client/app/config'),
       PruneClusterForLeaflet: [require.resolve('prunecluster/dist/PruneCluster'), 'PruneClusterForLeaflet'],
       PruneCluster: [require.resolve('prunecluster/dist/PruneCluster'), 'PruneCluster'],
-      MediumEditor: require.resolve('medium-editor/dist/js/medium-editor'),
     }),
   ],
 };
