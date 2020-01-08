@@ -482,15 +482,6 @@ module.exports.initModulesClientRoutes = function (app) {
   // Setting the app router and static folder
   app.use('/', express.static(path.resolve('./public')));
   app.use('/', express.static(path.resolve('./public/assets')));
-
-  // Globbing static routing
-  config.folders.client.forEach(function (staticPath) {
-    app.use(staticPath.replace('/client', ''), express.static(path.resolve('./' + staticPath)));
-  });
-
-  if (process.env.NODE_ENV !== 'production') {
-    app.use('/node_modules', express.static(path.resolve('./node_modules'), { extensions: ['js', 'css'] }));
-  }
 };
 
 /**

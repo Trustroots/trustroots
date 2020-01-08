@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/users/client/views/directives/tr-monkeybox.client.view.html';
+
 (function () {
   /**
    * Monkeybox directive to show a simple profile info box
@@ -9,7 +11,7 @@
   /* @ngInject */
   function trMonkeyboxDirective() {
     return {
-      templateUrl: '/modules/users/views/directives/tr-monkeybox.client.view.html',
+      templateUrl,
       restrict: 'A',
       replace: true,
       scope: {

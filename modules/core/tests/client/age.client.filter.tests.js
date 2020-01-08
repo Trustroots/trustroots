@@ -1,3 +1,5 @@
+import AppConfig from '@/modules/core/client/app/config';
+
 /**
  * Age filter tests
  */
@@ -5,7 +7,7 @@
   describe('Age Filter Tests', function () {
 
     // Load the main application module
-    beforeEach(module(AppConfig.appModuleName));
+    beforeEach(angular.mock.module(AppConfig.appModuleName));
 
     // Note that 10 is November in Date
     const dateObj = new Date(1985, 10, 22);

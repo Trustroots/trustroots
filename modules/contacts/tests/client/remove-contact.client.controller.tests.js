@@ -1,3 +1,7 @@
+import '@/modules/contacts/client/contacts.client.module';
+
+import AppConfig from '@/modules/core/client/app/config';
+
 (function () {
   describe('ContactRemoveController', function () {
     // Initialize global variables
@@ -19,7 +23,7 @@
     };
 
     // Load the main application module
-    beforeEach(module(AppConfig.appModuleName));
+    beforeEach(angular.mock.module(AppConfig.appModuleName));
 
     beforeEach(inject(function (_$httpBackend_, _Authentication_, _$rootScope_, _messageCenterService_) {
       $httpBackend = _$httpBackend_;

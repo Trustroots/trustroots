@@ -221,7 +221,7 @@ module.exports = {
      */
     {
       files: [
-        'modules/*/tests/client/**/components/*.test.js'
+        'modules/*/tests/client/**/components/*.tests.js'
       ],
       extends: [
         'plugin:react/recommended',

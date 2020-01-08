@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/contacts/client/views/directives/tr-contact.client.view.html';
+
 (function () {
   /**
    * Produce a contact card
@@ -16,7 +18,7 @@
   /* @ngInject */
   function trContactDirective(Authentication) {
     return {
-      templateUrl: '/modules/contacts/views/directives/tr-contact.client.view.html',
+      templateUrl,
       restrict: 'A',
       replace: true,
       scope: {

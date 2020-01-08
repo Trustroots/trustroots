@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/offers/client/views/directives/tr-offer-host-view.client.view.html';
+
 (function () {
   angular
     .module('offers')
@@ -12,7 +14,7 @@
         profile: '=trOfferHostView', // Profile who's offer to load
         authUser: '=trOfferHostViewAuthUser', // Currently authenticated user
       },
-      templateUrl: '/modules/offers/views/directives/tr-offer-host-view.client.view.html',
+      templateUrl,
       controller: trOfferHostViewDirectiveController,
       controllerAs: 'trOfferHost',
     };

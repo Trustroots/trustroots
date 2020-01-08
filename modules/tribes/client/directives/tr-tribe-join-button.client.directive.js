@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/tribes/client/views/directives/tr-tribe-join-button.client.view.html';
+
 (function () {
   /**
    * Join tribe button
@@ -18,7 +20,7 @@
         joinedLabel: '=',
         icon: '=',
       },
-      templateUrl: '/modules/tribes/views/directives/tr-tribe-join-button.client.view.html',
+      templateUrl,
       controller: trTribeJoinButtonDirectiveController,
       controllerAs: 'tribeJoinButton',
     };

@@ -1,10 +1,13 @@
+import '@/modules/statistics/client/statistics.client.module';
+import AppConfig from '@/modules/core/client/app/config';
+
 (function () {
   describe('Statistics Route Tests', function () {
     // Initialize global variables
     let $httpBackend;
 
     // We can start by loading the main application module
-    beforeEach(module(AppConfig.appModuleName));
+    beforeEach(angular.mock.module(AppConfig.appModuleName));
 
     // The injector ignores leading and trailing underscores here (i.e. _$httpBackend_).
     // This allows us to inject a service but then attach it to a variable

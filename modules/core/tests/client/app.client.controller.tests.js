@@ -1,3 +1,5 @@
+import AppConfig from '@/modules/core/client/app/config';
+
 /**
  * App client controller tests
  */
@@ -11,7 +13,7 @@
     let Languages;
 
     // Load the main application module
-    beforeEach(module(AppConfig.appModuleName));
+    beforeEach(angular.mock.module(AppConfig.appModuleName));
 
     beforeEach(inject(function ($controller, $rootScope, _$state_, _Authentication_, _SettingsFactory_, _Languages_) {
       $scope = $rootScope.$new();

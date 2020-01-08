@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/tribes/client/views/directives/tr-tribe-badge.client.view.html';
+
 (function () {
   /**
    * List tribes in common between two lists of tribes
@@ -9,7 +11,7 @@
   /* @ngInject */
   function trTribeBadgeDirective(TribeService) {
     return {
-      templateUrl: '/modules/tribes/views/directives/tr-tribe-badge.client.view.html',
+      templateUrl,
       restrict: 'AE',
       replace: true,
       scope: {

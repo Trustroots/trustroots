@@ -1,3 +1,6 @@
+import contactAddTemplateUrl from '@/modules/contacts/client/views/add-contact.client.view.html';
+import contactConfirmTemplateUrl from '@/modules/contacts/client/views/confirm-contact.client.view.html';
+
 (function () {
   angular
     .module('contacts')
@@ -9,7 +12,7 @@
     $stateProvider.
       state('contactAdd', {
         url: '/contact-add/:userId',
-        templateUrl: '/modules/contacts/views/add-contact.client.view.html',
+        templateUrl: contactAddTemplateUrl,
         requiresAuth: true,
         controller: 'ContactAddController',
         controllerAs: 'contactAdd',
@@ -34,7 +37,7 @@
       }).
       state('contactConfirm', {
         url: '/contact-confirm/:contactId',
-        templateUrl: '/modules/contacts/views/confirm-contact.client.view.html',
+        templateUrl: contactConfirmTemplateUrl,
         requiresAuth: true,
         controller: 'ContactConfirmController',
         controllerAs: 'contactConfirm',

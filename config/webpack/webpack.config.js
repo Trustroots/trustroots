@@ -8,7 +8,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 // See https://github.com/facebook/react/issues/16604 for discussion
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 
-const { join } = require('path');
+const { join, resolve } = require('path');
 
 const shims = require('./webpack.shims');
 const basedir = join(__dirname, '../..');
@@ -102,6 +102,24 @@ module.exports = merge(shims, {
               limit: 10000,
               name: '[name]-[hash:7].[ext]',
               outputPath: 'images/',
+            },
+          },
+        ],
+      },
+      {
+        test: /\.(html)$/,
+        use: [
+          {
+            loader: resolve(__dirname + '/templateloader.js'),
+          },
+          {
+            loader: 'html-loader',
+            options: {
+              minimize: true,
+              attrs: [
+                'img:src',
+                ':ng-include',
+              ],
             },
           },
         ],

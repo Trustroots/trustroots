@@ -1,8 +1,6 @@
 /**
  * External dependencies.
  */
-const webpackMerge = require('webpack-merge');
-const webpack = require('webpack');
 const webpackConfig = require('./config/webpack/webpack.config');
 
 // Karma configuration
@@ -14,13 +12,7 @@ module.exports = (karmaConfig) => {
       'config/webpack/entries/main.js': ['webpack'],
       'modules/*/tests/client/*.js': ['webpack'],
     },
-    webpack: webpackMerge(webpackConfig, {
-      plugins: [
-        new webpack.DefinePlugin({
-          module: 'angular.mock.module',
-        }),
-      ],
-    }),
+    webpack: webpackConfig,
     // List of files / patterns to load in the browser
     files: [
       'config/webpack/entries/main.js',

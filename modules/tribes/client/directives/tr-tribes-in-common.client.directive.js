@@ -1,3 +1,5 @@
+import templateUrl from '@/modules/tribes/client/views/directives/tr-tribes-in-common.client.view.html';
+
 (function () {
   /**
    * List tribes in common between two lists of tribes
@@ -9,7 +11,7 @@
   /* @ngInject */
   function trTribesInCommonDirective(Authentication, TribeService) {
     return {
-      templateUrl: '/modules/tribes/views/directives/tr-tribes-in-common.client.view.html',
+      templateUrl,
       restrict: 'A',
       replace: true,
       scope: {

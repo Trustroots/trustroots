@@ -1,8 +1,11 @@
+import '@/modules/support/client/support.client.module';
+import AppConfig from '@/modules/core/client/app/config';
+
 (function () {
   describe('Support Route Tests', function () {
 
     // We can start by loading the main application module
-    beforeEach(module(AppConfig.appModuleName));
+    beforeEach(angular.mock.module(AppConfig.appModuleName));
 
     describe('Route Config', function () {
       describe('Main Route (support)', function () {

@@ -1,3 +1,7 @@
+import '@/modules/users/client/users.client.module';
+import '@/modules/search/client/search.client.module';
+import AppConfig from '@/modules/core/client/app/config';
+
 (function () {
   // Authentication controller Spec
   describe('ResetPasswordController', function () {
@@ -9,27 +13,8 @@
     let $window;
     let Authentication;
 
-    // The $resource service augments the response object with methods for updating and deleting the resource.
-    // If we were to use the standard toEqual matcher, our tests would fail because the test values would not match
-    // the responses exactly. To solve the problem, we define a new toEqualData Jasmine matcher.
-    // When the toEqualData matcher compares two objects, it takes only object properties into
-    // account and ignores methods.
-    beforeEach(function () {
-      jasmine.addMatchers({
-        toEqualData: function () {
-          return {
-            compare: function (actual, expected) {
-              return {
-                pass: angular.equals(actual, expected),
-              };
-            },
-          };
-        },
-      });
-    });
-
     // Load the main application module
-    beforeEach(module(AppConfig.appModuleName));
+    beforeEach(angular.mock.module(AppConfig.appModuleName));
 
     describe('Logged out user', function () {
       beforeEach(inject(function ($controller, $rootScope, _$window_, _$stateParams_, _$httpBackend_, _$location_, _Authentication_) {

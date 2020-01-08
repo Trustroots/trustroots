@@ -1,13 +1,16 @@
+import '@/modules/pages/client/pages.client.module';
+import AppConfig from '@/modules/core/client/app/config';
+
 (function () {
   describe('Pages Route Tests', function () {
 
     // We can start by loading the main application module
-    beforeEach(module(AppConfig.appModuleName));
+    beforeEach(angular.mock.module(AppConfig.appModuleName));
 
     // Disable $urlRouterProvider transitions
     // You should comment this out if you want to test route transitions (e.g. "adding trailing slash"-test)
     // See http://stackoverflow.com/a/26613169/1984644 for more
-    beforeEach(module(function ($urlRouterProvider) {
+    beforeEach(angular.mock.module(function ($urlRouterProvider) {
       $urlRouterProvider.deferIntercept();
     }));
 
