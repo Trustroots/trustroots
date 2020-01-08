@@ -26,13 +26,13 @@ exports.sanitizeOptions = {
     'a',
     'li',
     'ul',
-    'blockquote'
+    'blockquote',
   ],
   allowedAttributes: {
     'a': ['href'],
     // Used for messages text
     // at `modules/messages/client/controllers/thread.client.controller.js`
-    'p': ['data-hosting']
+    'p': ['data-hosting'],
   },
   // If we would allow class attributes, you can limit which classes are allowed:
   // allowedClasses: {
@@ -41,7 +41,7 @@ exports.sanitizeOptions = {
   // Convert these tags to unify html
   transformTags: {
     'strong': 'b',
-    'em': 'i'
+    'em': 'i',
   },
   exclusiveFilter: function (frame) {
     // Don't allow empty <a> tags, such as:
@@ -67,9 +67,9 @@ exports.sanitizeOptions = {
       'geo',
       'irc',
       'ge0', // Maps.me
-      'tg' // Telegram
-    ]
-  }
+      'tg', // Telegram
+    ],
+  },
 };
 
 

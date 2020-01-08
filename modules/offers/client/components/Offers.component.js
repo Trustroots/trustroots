@@ -14,7 +14,7 @@ export class Offers extends Component {
       isLoading: true,
       isOwnOffer: false,
       isUserPublic: false,
-      isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp
+      isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp,
     };
   }
 
@@ -29,7 +29,7 @@ export class Offers extends Component {
       that.setState(() => ({
         profile,
         isOwnOffer: (authUser && authUser._id && authUser._id === profile._id),
-        isUserPublic: (authUser && authUser.public)
+        isUserPublic: (authUser && authUser.public),
       }));
 
       const offers = await getOffers(profile._id);
@@ -38,7 +38,7 @@ export class Offers extends Component {
       } else {
         that.setState(() => ({
           offer: offers[0],
-          isLoading: false
+          isLoading: false,
         }));
       }
     }
@@ -60,7 +60,7 @@ export class Offers extends Component {
 
 Offers.propTypes = {
   authUser: PropTypes.object.isRequired,
-  profile: PropTypes.object.isRequired
+  profile: PropTypes.object.isRequired,
 };
 
 export default Offers;

@@ -10,7 +10,7 @@ export class ReadMorePanel extends Component {
     super(props);
     this.toggleMore = this.toggleMore.bind(this);
     this.state = {
-      showMore: false
+      showMore: false,
     };
   }
 
@@ -59,13 +59,13 @@ export class ReadMorePanel extends Component {
 }
 
 ReadMorePanel.defaultProps = {
-  limit: 2000
+  limit: 2000,
 };
 
 ReadMorePanel.propTypes = {
   content: PropTypes.string.isRequired,
   id: PropTypes.string.isRequired,
-  limit: PropTypes.number
+  limit: PropTypes.number,
 };
 
 export default ReadMorePanel;

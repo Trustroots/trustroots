@@ -18,7 +18,7 @@ export class OffersPresentational extends Component {
     this.renderHostingYesMaybe = this.renderHostingYesMaybe.bind(this);
     this.state = {
       isLoading: true,
-      isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp
+      isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp,
     };
   }
 
@@ -239,7 +239,7 @@ OffersPresentational.propTypes = {
   isUserPublic: PropTypes.bool.isRequired,
   offer: PropTypes.object.isRequired,
   username: PropTypes.string,
-  t: PropTypes.func
+  t: PropTypes.func,
 };
 
 export default withTranslation(['offers'])(OffersPresentational);
