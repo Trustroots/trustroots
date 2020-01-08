@@ -1,7 +1,11 @@
 
 <div class="row">
   <div class="col-md-6">
-    <about-me profile="profileCtrl.profile" isSelf="app.user._id === profileCtrl.profile._id" appSettings="app.appSettings"></about-me>
+    <about-me
+      isSelf="app.user._id === profileCtrl.profile._id"
+      profile="profileCtrl.profile"
+      profileMinimumLength="app.appSettings.profileMinimumLength"
+    />
   </div>
 
   <div class="col-md-6">
