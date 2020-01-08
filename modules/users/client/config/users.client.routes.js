@@ -8,7 +8,6 @@ import profileEditAccountTemplateUrl from '@/modules/users/client/views/profile/
 import profileViewClientTemplateUrl from '@/modules/users/client/views/profile/profile-view.client.view.html';
 import profileViewAboutTemplateUrl from '@/modules/users/client/views/profile/profile-view-about.client.view.html';
 import profileviewAccommodationTemplateUrl from '@/modules/users/client/views/profile/profile-view-accommodation.client.view.html';
-// import offerHostTemplateUrl from '@/modules/offers/client/views/offer-host-view.client.view.html';
 import profileViewBasicsTemplateUrl from '@/modules/users/client/views/profile/profile-view-basics.client.view.html';
 import profileViewTribesTemplateUrl from '@/modules/users/client/views/profile/profile-view-tribes.client.view.html';
 import profileSignupTemplateUrl from '@/modules/users/client/views/profile/profile-signup.client.view.html';
@@ -227,18 +226,6 @@ import AppConfig from '@/modules/core/client/app/config';
           pageTitle: 'Profile accommodation',
         },
       }).
-      /*
-      @TODO find out what is wrong with this, template path did not seem to exist
-      state('profile.meet', {
-        url: '/meet',
-        templateUrl: offerHostTemplateUrl,
-        requiresAuth: true,
-        noScrollingTop: true,
-        data: {
-          pageTitle: 'Profile meet',
-        },
-      }).
-       */
       state('profile.overview', {
         url: '/overview',
         templateUrl: profileViewBasicsTemplateUrl,
