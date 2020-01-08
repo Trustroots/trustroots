@@ -35,7 +35,10 @@ import AppConfig from '@/modules/core/client/app/config';
       messageCenterService = _messageCenterService_;
       spyOn(messageCenterService, 'add').and.callThrough();
 
-      $uibModalInstance = jasmine.createSpyObj('$uibModalInstance', ['close', 'dismiss']);
+      $uibModalInstance = {
+        close: jest.fn(),
+        dismiss: jest.fn(),
+      };
 
       $scope = $rootScope.$new();
       $scope.contactToRemove = contactToRemove;

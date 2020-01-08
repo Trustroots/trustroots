@@ -203,26 +203,6 @@ module.exports = {
         'modules/*/tests/client/**/*.js',
         'testutils/client/*.js',
       ],
-      env: {
-        browser: true,
-        jasmine: true,
-        mocha: true,
-        jquery: true
-      },
-      globals: {
-        angular: true,
-        AppConfig: true,
-        inject: true,
-      },
-    },
-
-    /**
-     * Overrides for client side React test files
-     */
-    {
-      files: [
-        'modules/*/tests/client/**/components/*.tests.js'
-      ],
       extends: [
         'plugin:react/recommended',
         'plugin:testing-library/react',
@@ -234,8 +214,15 @@ module.exports = {
         }
       },
       env: {
-        jest: true
-      }
+        browser: true,
+        jest: true,
+        jasmine: true,
+        jquery: true,
+      },
+      globals: {
+        angular: true,
+        inject: true,
+      },
     },
 
     /**
