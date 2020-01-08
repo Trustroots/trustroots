@@ -45,5 +45,4 @@ export default function ReadMorePanel({ content, id }) {
 ReadMorePanel.propTypes = {
   content: PropTypes.string.isRequired,
   id: PropTypes.string.isRequired,
-  t: PropTypes.func.isRequired,
 };
