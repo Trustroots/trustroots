@@ -24,6 +24,7 @@ import ngFileUpload from 'ng-file-upload';
 import 'angular-chosen-localytics';
 import 'angular-loading-bar';
 import trTrustpass from 'angular-trustpass';
+import 'mailcheck'; // required for angular-mailcheck
 import 'angular-mailcheck'; // provides 'angular-mailcheck' module
 import angularLocker from 'angular-locker';
 import 'angular-confirm'; // provides 'angular-confirm' module
