@@ -21,7 +21,6 @@ import resetPasswordSuccessTemplateUrl from '@/modules/users/client/views/passwo
 import resetPasswordTemplateUrl from '@/modules/users/client/views/password/reset-password.client.view.html';
 import profileRemoveTemplateUrl from '@/modules/users/client/views/profile/remove.client.view.html';
 import profileReferencesTemplateUrl from '@/modules/users/client/views/profile/profile-view-references.client.view.html';
-// import profileReferencesListTemplateUrl from '@/modules/users/client/views/profile/profile-view-references-list.client.view.html';
 
 import AppConfig from '@/modules/core/client/app/config';
 
@@ -390,18 +389,15 @@ import AppConfig from '@/modules/core/client/app/config';
             pageTitle: 'Profile references',
           },
         }).
-        /*
-        @TODO find out what is up with this, template did not exist
         state('profile.references.list', {
           url: '',
-          templateUrl: profileReferencesListTemplateUrl,
+          template: '',
           requiresAuth: true,
           noScrollingTop: true,
           data: {
             pageTitle: 'Profile references',
           },
         }).
-         */
         state('profile.references.new', {
           url: '/new',
           template: '<create-reference userTo="profileCtrl.profile" userFrom="app.user"></create-reference>',
