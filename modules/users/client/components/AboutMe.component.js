@@ -1,14 +1,16 @@
 // External dependencies
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
 import '@/config/client/i18n';
 import { plainTextLength } from '@/modules/core/client/utils/filters';
-import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
 
-function AboutMe({ t, profile, isSelf, profileMinimumLength }) {
+export default function AboutMe({ profile, isSelf, profileMinimumLength }) {
+  const { t } = useTranslation('user-profile');
+
   return (
     <>
       <section className="panel panel-default">
@@ -52,7 +54,4 @@ AboutMe.propTypes = {
   profile: PropTypes.object,
   isSelf: PropTypes.bool,
   profileMinimumLength: PropTypes.number.isRequired,
-  t: PropTypes.func,
 };
-
-export default withTranslation(['user-profile'])(AboutMe);
