@@ -8,7 +8,6 @@ AppConfig.registerModule('messages', ['core']);
 require('@/modules/messages/client/config/messages.client.routes');
 
 // controllers
-require('@/modules/messages/client/controllers/inbox.client.controller');
 require('@/modules/messages/client/controllers/thread.client.controller');
 
 // directives
