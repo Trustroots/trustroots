@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import moment from 'moment';
+import { $broadcast } from '@/modules/core/client/services/angular-compat';
 
 import * as api from '../api/messages.api';
 import Avatar from '@/modules/users/client/components/Avatar.component';
@@ -38,6 +39,8 @@ export default function Inbox({ user }) {
   }
 
   useEffect(() => {
+    // Tell unread-messages directive to sync itself
+    $broadcast('syncUnreadMessagesCount');
     fetchThreads();
   }, []);
 
