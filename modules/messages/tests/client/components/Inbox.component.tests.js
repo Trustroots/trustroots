@@ -7,6 +7,7 @@ import Inbox from '@/modules/messages/client/components/Inbox.component';
 import * as api from '@/modules/messages/client/api/messages.api';
 
 jest.mock('@/modules/messages/client/api/messages.api');
+jest.mock('@/modules/core/client/services/angular-compat');
 
 afterEach(() => jest.clearAllMocks());
 
