@@ -6,6 +6,7 @@ import { $broadcast } from '@/modules/core/client/services/angular-compat';
 import * as api from '../api/messages.api';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import Activate from '@/modules/users/client/components/Activate';
+import { eventTrack } from '@/modules/core/client/services/angular-compat';
 
 const userType = PropTypes.shape({
   _id: PropTypes.string.isRequired,
@@ -30,6 +31,13 @@ export default function Inbox({ user }) {
   async function fetchThreads(next = false) {
     setIsFetching(true);
     try {
+      if (next) {
+        eventTrack('inbox-pagination', {
+          category: 'messages.inbox',
+          label: 'Inbox page ' + nextParams,
+        });
+      }
+
       const data = await api.fetchThreads(next ? nextParams : {});
       setThreads(threads => next ? threads.concat(data.threads) : data.threads);
       setNextParams(data.nextParams);
