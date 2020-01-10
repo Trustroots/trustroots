@@ -1,9 +1,9 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
+
 import '@/config/client/i18n';
 import Inbox from '@/modules/messages/client/components/Inbox.component';
-
 import * as api from '@/modules/messages/client/api/messages.api';
 
 jest.mock('@/modules/messages/client/api/messages.api');
