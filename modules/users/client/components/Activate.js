@@ -23,7 +23,15 @@ export default function Activate() {
         </p>
         <p>
           <br />
-          <small><a className="btn btn-xs btn-link text-muted" ui-sref="support" aria-label="Support">Help!</a></small>
+          <small>
+            <a
+              className="btn btn-xs btn-link text-muted"
+              href="/support"
+              aria-label={t('Support')}
+            >
+              {t('Help!')}
+            </a>
+          </small>
         </p>
       </div>
     </div>
