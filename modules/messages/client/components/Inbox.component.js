@@ -7,6 +7,7 @@ import * as api from '../api/messages.api';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import Activate from '@/modules/users/client/components/Activate';
 import { eventTrack } from '@/modules/core/client/services/angular-compat';
+import { useTranslation } from 'react-i18next';
 
 const userType = PropTypes.shape({
   _id: PropTypes.string.isRequired,
@@ -22,6 +23,8 @@ export default function Inbox({ user }) {
       </section>
     );
   }
+  const { t } = useTranslation('messages');
+
   const [nextParams, setNextParams] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const [threads, setThreads] = useState([]);
@@ -56,7 +59,7 @@ export default function Inbox({ user }) {
     {!isFetching && threads.length === 0 && (
       <div className="content-empty">
         <i className="icon-3x icon-messages-alt"/>
-        <h4 role="alert">No conversations yet.</h4>
+        <h4 role="alert">{t('No conversations yet.')}</h4>
       </div>
     )}
     {threads.length > 0 && (
@@ -76,7 +79,7 @@ export default function Inbox({ user }) {
           className="btn btn-primary btn-lg"
           onClick={() => fetchThreads(true)}
         >
-          More messages
+          {t('More messages')}
         </button>
       </div>
     )}
@@ -88,6 +91,7 @@ Inbox.propTypes = {
 };
 
 function InboxThread({ user, thread }) {
+  const { t } = useTranslation('messages');
   const otherUser = findOtherUser(user, thread);
   const haveReplied = thread.userFrom._id = user._id;
   const updated = moment(thread.updated);
@@ -99,12 +103,12 @@ function InboxThread({ user, thread }) {
         </div>
         <div className="media-body">
           <small className="text-muted pull-right">
-            {haveReplied && <i className="icon-reply" title="You replied"/>}
+            {haveReplied && <i className="icon-reply" title={t('You replied')}/>}
             &nbsp;
             {/* @TODO: these are not reactive */}
             <span title={updated.toString()}>{updated.fromNow()}</span>
           </small>
-          <span>{otherUser.displayName || 'Unknown member'}</span>
+          <span>{otherUser.displayName || t('Unknown member')}</span>
           <br/>
           <span
             className="text-muted threadlist-thread-excerpt"
