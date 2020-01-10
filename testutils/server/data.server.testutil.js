@@ -1,74 +1,13 @@
 /**
- * Various functions that repeat in tests a lot
+ * Various server functions that repeat in tests a lot
  */
 
-const _ = require('lodash');
-const crypto = require('crypto');
 const mongoose = require('mongoose');
 
-/**
- * Get random integer within [0, exclusiveMaximum)
- * Is not cryptographically secure!
- * @param {integer} exclusiveMaximum
- * @returns {integer} an integer in range [0, exclusiveMaximum), exclusiveMaximum is not included
- */
-function getRandInt(exclusiveMaximum) {
-  return Math.floor(exclusiveMaximum * Math.random());
-}
-
-/**
- * Generate user objects.
- * When running multiple times, username and email need to be specified and different to avoid conflict
- * @param {integer} count - how many users we create
- * @param {object} [defs] - default values for the users
- * @param {string} [defs.username=username] - username (will have a number appended)
- * @param {string} [defs.firstName=GivenName] - first name (will have a number appended)
- * @param {string} [defs.lastName=FamilyName] - last name (will have a number appended)
- * @param {string} [defs.email=user(at)example.com] - email (will have a number prepended)
- * @param {string} [defs.locale=] - locale (preferred language)
- * @param {boolean} [defs.publ] - is the user public? (defaults to a random boolean)
- * @param {string} [defs.password] - password (defaults to a random password)
- * @returns {object[]} array of user data
- */
-function generateUsers(count, { username='username', firstName='GivenName', lastName='FamilyName', email='user@example.com', locale='', public: pub, roles=['user'], password }={ }) {
-
-  return _.range(count).map(i => ({
-    public: (typeof pub === 'boolean') ? pub : !getRandInt(2),
-    firstName: firstName + i,
-    lastName: lastName + i,
-    email: i + email,
-    username: username + i,
-    locale,
-    roles,
-    password: password || crypto.randomBytes(24).toString('base64'),
-  }));
-}
-
-/**
- * Generate reference objects.
- * @param {object[]} users - array of mongodb User
- * @param {[number, number, object][]} referenceData - array of data for each reference
- * @param {number} referenceData[][0] - index of userFrom in users
- * @param {number} referenceData[][1] - index of userTo in users
- * @param {object} referenceData[][2] - object of property: value to override default reference properties
- */
-function generateReferences(users, referenceData) {
-  return referenceData.map(function (data) {
-    const defaultReference = {
-      userFrom: users[data[0]]._id,
-      userTo: users[data[1]]._id,
-      public: true,
-      interactions: {
-        met: !getRandInt(2),
-        hostedMe: !getRandInt(2),
-        hostedThem: !getRandInt(2),
-      },
-      recommend: ['yes', 'no', 'unknown'][getRandInt(3)],
-    };
-
-    return _.defaultsDeep({}, data[2], defaultReference);
-  });
-}
+const {
+  generateUsers,
+  generateReferences,
+} = require('../common/data.common.testutil');
 
 /**
  * Save documents to mongodb
