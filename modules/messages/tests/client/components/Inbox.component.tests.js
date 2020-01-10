@@ -61,8 +61,8 @@ describe('<Inbox>', () => {
 
   it('shows a nice message if there are no conversations', async () => {
     api.fetchThreads.mockResolvedValue({ threads: [] });
-    const { findByText } = render(<Inbox user={me}/>);
-    expect(await findByText('No conversations yet.')).toBeInTheDocument();
+    const { findByRole } = render(<Inbox user={me}/>);
+    expect(await findByRole('alert')).toHaveTextContent('No conversations yet.');
     expect(api.fetchThreads).toHaveBeenCalled();
   });
 

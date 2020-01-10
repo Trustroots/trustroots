@@ -56,7 +56,7 @@ export default function Inbox({ user }) {
     {!isFetching && threads.length === 0 && (
       <div className="content-empty">
         <i className="icon-3x icon-messages-alt"/>
-        <h4>No conversations yet.</h4>
+        <h4 role="alert">No conversations yet.</h4>
       </div>
     )}
     {threads.length > 0 && (
