@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import moment from 'moment';
-import { $broadcast } from '@/modules/core/client/services/angular-compat';
+import { useTranslation } from 'react-i18next';
 
 import * as api from '../api/messages.api';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import Activate from '@/modules/users/client/components/Activate';
-import { eventTrack } from '@/modules/core/client/services/angular-compat';
-import { useTranslation } from 'react-i18next';
+import { $broadcast, eventTrack } from '@/modules/core/client/services/angular-compat';
+import TimeAgo from '@/modules/core/client/components/TimeAgo';
 
 const userType = PropTypes.shape({
   _id: PropTypes.string.isRequired,
@@ -94,7 +93,6 @@ function InboxThread({ user, thread }) {
   const { t } = useTranslation('messages');
   const otherUser = findOtherUser(user, thread);
   const haveReplied = thread.userFrom._id = user._id;
-  const updated = moment(thread.updated);
   return <li className="list-group-item threadlist-thread">
     <a href={`/messages/${otherUser.username}`}>
       <div className="media">
@@ -105,8 +103,7 @@ function InboxThread({ user, thread }) {
           <small className="text-muted pull-right">
             {haveReplied && <i className="icon-reply" title={t('You replied')}/>}
             &nbsp;
-            {/* @TODO: these are not reactive */}
-            <span title={updated.toString()}>{updated.fromNow()}</span>
+            <TimeAgo date={thread.updated}/>
           </small>
           <span>{otherUser.displayName || t('Unknown member')}</span>
           <br/>
