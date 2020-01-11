@@ -1,11 +1,11 @@
-import React from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
+import React from 'react';
 import ContactListPresentational from './ContactListPresentational';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import NoContent from '@/modules/core/client/components/NoContent';
 
 export default class ContactList extends React.Component {
-
   constructor(props) {
     super(props);
 
@@ -21,8 +21,8 @@ export default class ContactList extends React.Component {
   }
 
   render() {
-
     const { appUser, contacts, onContactRemoved } = this.props;
+    const { t } = useTranslation('contact');
 
     if (!contacts || !contacts.$resolved) {
       return <LoadingIndicator />;
@@ -30,7 +30,7 @@ export default class ContactList extends React.Component {
 
     if (contacts.length === 0) {
       return (
-        <NoContent icon="users" message="No contacts yet." />
+        <NoContent icon="users" message={t('No contacts yet.')} />
       );
     }
 
