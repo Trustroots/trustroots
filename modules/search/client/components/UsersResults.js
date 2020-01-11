@@ -1,4 +1,5 @@
 // External dependencies
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React from 'react';
 
@@ -7,9 +8,10 @@ import UsersList from '@/modules/users/client/components/UsersList';
 import NoContent from '@/modules/core/client/components/NoContent';
 
 export default function UsersResults({ users }) {
+  const { t } = useTranslation('core');
   if (!users || users.length === 0) {
     return (
-      <NoContent icon="users" message="No members found by this name." />
+      <NoContent icon="users" message={t('No members found by this name.')} />
     );
   }
 
@@ -17,7 +19,7 @@ export default function UsersResults({ users }) {
     <div className="row">
       <div className="col-xs-12">
         <h4 className="text-muted">
-          {users.length === 1 ? 'One member found.' : `${users.length} members found.`}
+          {t('{{users.length}} members found', { count: users.length })}
         </h4>
         <UsersList users={users} />
       </div>
