@@ -18,11 +18,7 @@ export default function UsersList({ users }) {
   return (
     <Container>
       {users.map((user) => (
-        <UserSummary
-          className="user-summary"
-          key={`user-${user.username}`}
-          user={user}
-        />
+        <UserSummary key={`user-${user.username}`} user={user} />
       ))}
     </Container>
   );
