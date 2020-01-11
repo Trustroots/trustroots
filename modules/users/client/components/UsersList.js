@@ -5,18 +5,18 @@ import styled from 'styled-components';
 // Internal dependencies
 import UserSummary from './UserSummary';
 
-export default function UsersList({ users }) {
-  const UsersList = styled.div`
-    display: grid;
-    grid-gap: 0.75em;
-  	grid-template-columns: 1fr;
-    @media (min-width: 616px) {
-  	   grid-template-columns: 1fr 1fr;
-    }
-  `;
+const Container = styled.div`
+  display: grid;
+  grid-gap: 0.75em;
+	grid-template-columns: 1fr;
+  @media (min-width: 616px) {
+	   grid-template-columns: 1fr 1fr;
+  }
+`;
 
+export default function UsersList({ users }) {
   return (
-    <UsersList>
+    <Container>
       {users.map((user) => (
         <UserSummary
           className="user-summary"
@@ -24,7 +24,7 @@ export default function UsersList({ users }) {
           user={user}
         />
       ))}
-    </UsersList>
+    </Container>
   );
 }
 
