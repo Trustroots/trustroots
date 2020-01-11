@@ -1,12 +1,9 @@
 // External dependencies
-import { withTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 
-// Internal dependencies
-import '@/config/client/i18n';
-
-function LoadingIndicator({ t }) {
+export default function LoadingIndicator() {
+  const { t } = useTranslation('core');
   return (
     <div
       aria-busy="true"
@@ -18,9 +15,3 @@ function LoadingIndicator({ t }) {
     </div>
   );
 }
-
-LoadingIndicator.propTypes = {
-  t: PropTypes.func.isRequired,
-};
-
-export default withTranslation('core')(LoadingIndicator);
