@@ -103,7 +103,7 @@ function InboxThread({ user, thread }) {
           <small className="text-muted pull-right">
             {haveReplied && <i className="icon-reply" title={t('You replied')}/>}
             &nbsp;
-            <TimeAgo date={thread.updated}/>
+            <TimeAgo date={new Date(thread.updated)}/>
           </small>
           <span>{otherUser.displayName || t('Unknown member')}</span>
           <br/>
