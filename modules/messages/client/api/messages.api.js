@@ -2,7 +2,7 @@ import axios from 'axios';
 import parseLinkheader from 'parse-link-header';
 
 export async function fetchThreads(params = {}) {
-  const { data: threads, headers } = await axios.get('/api/messages', { params: { limit: 2, ...params } });
+  const { data: threads, headers } = await axios.get('/api/messages', { params });
   let nextParams;
   if (headers.link) {
     const links = parseLinkheader(headers.link);
