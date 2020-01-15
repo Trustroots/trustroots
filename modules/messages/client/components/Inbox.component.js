@@ -1,18 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import * as api from '../api/messages.api';
-import Avatar from '@/modules/users/client/components/Avatar.component';
 import Activate from '@/modules/users/client/components/Activate';
 import { $broadcast, eventTrack } from '@/modules/core/client/services/angular-compat';
-import TimeAgo from '@/modules/core/client/components/TimeAgo';
-
-const userType = PropTypes.shape({
-  _id: PropTypes.string.isRequired,
-  username: PropTypes.string.isRequired,
-  displayName: PropTypes.string.isRequired,
-});
+import InboxThread from 'modules/messages/client/components/InboxThread';
+import { userType } from '@/modules/users/client/users.prop-types';
 
 export default function Inbox({ user }) {
   if (!user.public) {
@@ -88,47 +81,3 @@ export default function Inbox({ user }) {
 Inbox.propTypes = {
   user: userType.isRequired,
 };
-
-function InboxThread({ user, thread }) {
-  const { t } = useTranslation('messages');
-  const otherUser = findOtherUser(user, thread);
-  const haveReplied = thread.userFrom._id = user._id;
-  return <li className="list-group-item threadlist-thread">
-    <a href={`/messages/${otherUser.username}`}>
-      <div className="media">
-        <div className="media-left">
-          <Avatar user={otherUser} size={32} link={false}/>
-        </div>
-        <div className="media-body">
-          <small className="text-muted pull-right">
-            {haveReplied && <i className="icon-reply" title={t('You replied')}/>}
-            &nbsp;
-            <TimeAgo date={new Date(thread.updated)}/>
-          </small>
-          <span>{otherUser.displayName || t('Unknown member')}</span>
-          <br/>
-          <span
-            className="text-muted threadlist-thread-excerpt"
-            dangerouslySetInnerHTML={{ __html: thread.message.excerpt }}
-          />
-        </div>
-      </div>
-    </a>
-  </li>;
-}
-
-InboxThread.propTypes = {
-  user: userType.isRequired,
-  thread: PropTypes.shape({
-    updated: PropTypes.string.isRequired,
-    userFrom: userType.isRequired,
-    userTo: userType.isRequired,
-    message: PropTypes.shape({
-      excerpt: PropTypes.string.isRequired,
-    }),
-  }),
-};
-
-function findOtherUser(currentUser, thread) {
-  return [thread.userFrom, thread.userTo].find(user => user._id !== currentUser._id);
-}
