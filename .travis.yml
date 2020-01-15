@@ -24,9 +24,6 @@ addons:
 before_script:
   - mongo --version
   - mongod --version
-
-  - sleep 3 # give xvfb some time to start
-
   # Ensure stable NPM version (avoids `-next.0` tags)
   - 'npm install -g npm'
 cache:
