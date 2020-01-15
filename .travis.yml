@@ -19,21 +19,11 @@ dist: trusty
 services: mongodb
 addons:
   apt:
-    sources:
-    - google-chrome
     packages:
-    - google-chrome-stable
     - graphicsmagick
 before_script:
   - mongo --version
   - mongod --version
-
-  # https://docs.travis-ci.com/user/gui-and-headless-browsers/#Using-xvfb-to-Run-Tests-That-Require-a-GUI
-  - 'export PATH=$PATH:/usr/lib/chromium-browser/'
-  - 'export DISPLAY=:99.0'
-  - 'sh -e /etc/init.d/xvfb start'
-  - sleep 3 # give xvfb some time to start
-
   # Ensure stable NPM version (avoids `-next.0` tags)
   - 'npm install -g npm'
 cache:

@@ -1,4 +1,3 @@
-import inboxTemplateUrl from '@/modules/messages/client/views/inbox.client.view.html';
 import messageThreadTemplateUrl from '@/modules/messages/client/views/thread.client.view.html';
 
 angular
@@ -12,9 +11,7 @@ function MessagesRoutes($stateProvider) {
   $stateProvider.
     state('inbox', {
       url: '/messages',
-      templateUrl: inboxTemplateUrl,
-      controller: 'InboxController',
-      controllerAs: 'inbox',
+      template: '<inbox user="app.user"></inbox>',
       requiresAuth: true,
       data: {
         pageTitle: 'Messages',
