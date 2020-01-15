@@ -29,7 +29,7 @@ export default function Inbox({ user }) {
       if (next) {
         eventTrack('inbox-pagination', {
           category: 'messages.inbox',
-          label: 'Inbox page ' + nextParams,
+          label: 'Inbox page ' + nextParams.page,
         });
       }
 
