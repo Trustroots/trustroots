@@ -18,3 +18,9 @@ export async function fetchThreads(params = {}) {
     nextParams,
   };
 }
+
+
+export async function fetchMessages(userId) {
+  const { data: messages } = await axios.get(`/api/messages/${userId}`);
+  return messages;
+}
