@@ -9,8 +9,8 @@ export function Monkeybox({ user, otherUser }) {
 
   useEffect(() => {
     // otherUser will have a filled out tribe details, my user won't...
-    const byId = keyBy(otherUser.member, entry => entry.tribe._id);
-    const tribesInCommon = user.memberIds.filter(id => byId[id]).map(id => byId[id].tribe);
+    const byId = keyBy(otherUser.member.map(membership => membership.tribe), tribe => tribe._id);
+    const tribesInCommon = user.memberIds.filter(id => byId[id]).map(id => byId[id]);
     setTribesInCommon(tribesInCommon);
   }, [user, otherUser]);
 
