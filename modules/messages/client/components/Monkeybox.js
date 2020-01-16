@@ -14,41 +14,43 @@ export function Monkeybox({ user, otherUser }) {
     setTribesInCommon(tribesInCommon);
   }, [user, otherUser]);
 
-  return <div className="monkeybox panel panel-default">
-    <div className="panel-body">
-      <Avatar user={user} size={64}/>
-      <h3>
-        <a>{user.displayName}</a>
-      </h3>
+  return (
+    <div className="monkeybox panel panel-default">
+      <div className="panel-body">
+        <Avatar user={user} size={64}/>
+        <h3>
+          <a>{user.displayName}</a>
+        </h3>
 
-      {tribesInCommon.length > 0 && (
-        <div className="monkeybox-section">
-          <div className="tribes-common">
-            <h4>Tribes in common</h4>
-            <ul className="list-inline">
-              {tribesInCommon.map(tribe => (
-                <li key={tribe._id}>
-                  <a
-                    className="tribe-link"
-                    href={`/tribes/${tribe.slug}`}
-                  >
-                    {tribe.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
+        {tribesInCommon.length > 0 && (
+          <div className="monkeybox-section">
+            <div className="tribes-common">
+              <h4>Tribes in common</h4>
+              <ul className="list-inline">
+                {tribesInCommon.map(tribe => (
+                  <li key={tribe._id}>
+                    <a
+                      className="tribe-link"
+                      href={`/tribes/${tribe.slug}`}
+                    >
+                      {tribe.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {user.languages.length > 0 && <div className="monkeybox-section">
-        <h4>Languages</h4>
-        <ul className="list-unstyled">
-          {user.languages.map(language => <li key={language.code}>{language.code}</li>)}
-        </ul>
-      </div>}
+        {user.languages.length > 0 && <div className="monkeybox-section">
+          <h4>Languages</h4>
+          <ul className="list-unstyled">
+            {user.languages.map(language => <li key={language.code}>{language.code}</li>)}
+          </ul>
+        </div>}
+      </div>
     </div>
-  </div>;
+  );
 }
 
 Monkeybox.propTypes = {
