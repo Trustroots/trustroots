@@ -6,44 +6,44 @@
  */
 
 #messages-thread {
-  position: fixed;
-  bottom: 250px;
-  width: 100%;
-  top: @navbar-height;
-  padding-top: @grid-gutter-width;
-  padding-right: (@grid-gutter-width / 2); // Leave some space for the scrollbar
-  overflow: auto;
-  @media (max-width: @screen-xs-max) {
-    padding-right: 0;
-  }
-
-  @media (min-width: @screen-xs-min) {
-    .content-empty {
-      // position: absolute;
-      // bottom: 50%;
-      // margin-top: -65px;
-      // left: 0;
-      // right: 0;
-    }
-  }
+  //position: fixed;
+  //bottom: 250px;
+  //width: 100%;
+  //top: @navbar-height;
+  //padding-top: @grid-gutter-width;
+  //padding-right: (@grid-gutter-width / 2); // Leave some space for the scrollbar
+  //overflow: auto;
+  //@media (max-width: @screen-xs-max) {
+  //  padding-right: 0;
+  //}
+  //
+  //@media (min-width: @screen-xs-min) {
+  //  .content-empty {
+  //    // position: absolute;
+  //    // bottom: 50%;
+  //    // margin-top: -65px;
+  //    // left: 0;
+  //    // right: 0;
+  //  }
+  //}
 
   // Message panel
-  .panel.message-content {
-    .avatar {
-      display: none;
-    }
-    @media (max-width: @screen-xs-max) {
-      .panel-body {
-        padding: 8px 15px 0 40px;
-      }
-      // Avatar next to message content at small screen-xs-max
-      .avatar {
-        display: inline-block;
-        float: left;
-        margin: 5px 0 0 5px;
-      }
-    }
-  }
+  //.panel.message-content {
+  //  //.avatar {
+  //  //  display: none;
+  //  //}
+  //  @media (max-width: @screen-xs-max) {
+  //    .panel-body {
+  //      padding: 8px 15px 0 40px;
+  //    }
+  //    // Avatar next to message content at small screen-xs-max
+  //    //.avatar {
+  //    //  display: inline-block;
+  //    //  float: left;
+  //    //  margin: 5px 0 0 5px;
+  //    //}
+  //  }
+  //}
 
   // Scrollbars for Chrome/Safari
   &::-webkit-scrollbar {
@@ -84,8 +84,8 @@
 
 // Single message in the thread
 .message {
-  clear: both;
-  margin-left: -(@grid-gutter-width / 2);
+  // clear: both;
+  // margin-left: -(@grid-gutter-width / 2);
   word-wrap: break-word;
   @media (min-width: @screen-sm-min) {
     .panel {
@@ -181,9 +181,9 @@
 
 // Reply box
 #message-reply {
-  position: fixed;
-  bottom: @padding-base-horizontal;
-  width: 800px;
+  //position: fixed;
+  //bottom: @padding-base-horizontal;
+  //width: 800px;
 
   // No color glow on hover with this Medium editor instance
   .tr-editor {

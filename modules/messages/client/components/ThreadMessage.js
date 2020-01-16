@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+// import styled from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
 import PropTypes from 'prop-types';
 
@@ -7,12 +7,7 @@ import Avatar from '@/modules/users/client/components/Avatar.component';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import { userType } from '@/modules/users/client/users.prop-types';
 
-const FloatAvatar = styled.div`
-  float: left;
-  margin: 5px 0 0 5px;
-`;
-
-export function ThreadMessage({ message, user }) {
+export default function ThreadMessage({ message, user }) {
 
   function isMe(otherUser) {
     return otherUser._id === user._id;
@@ -20,32 +15,29 @@ export function ThreadMessage({ message, user }) {
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
 
-  let avatar = null;
-
-  if (isExtraSmall) {
-    avatar = (
-      <FloatAvatar>
-        <Avatar user={message.userFrom} size={24} inline={false}/>
-      </FloatAvatar>
-    );
-  }
-
-  return <div className="message">
-    <div className="col-xs-12 col-sm-11">
+  return <div className="message" style={{ display: 'flex' }}>
+    <div style={{ flexGrow: '1' }}>
       <div className="message-meta">
-        {isMe(message.userFrom) ? <span>You</span> : <a>{message.userFrom.displayName}</a>}
+        {isMe(message.userFrom) ? (
+          <span>You</span>
+        ) : (
+          <a href={`/profile/${message.userFrom.username}`}>
+            {message.userFrom.displayName}
+          </a>
+        )}
         —
         <TimeAgo date={new Date(message.created)}/>
       </div>
-      <div className="message-content panel panel-default">
-        {avatar}
+      <div className="panel panel-default" style={{ display: 'flex' }}>
+        {isExtraSmall && <div style={{ padding: '8px' }}><Avatar user={message.userFrom} size={24} /></div>}
         <div
           className="panel-body"
+          style={isExtraSmall ? { padding: '8px 15px 8px 4px' } : {}}
           dangerouslySetInnerHTML={{ __html: message.content }}
         />
       </div>
     </div>
-    {!isExtraSmall && <div className="col-sm-1 message-author">
+    {!isExtraSmall && <div className="message-author" style={{ marginLeft: '15px' }}>
       <Avatar user={message.userFrom} size={32}/>
     </div>}
   </div>;
