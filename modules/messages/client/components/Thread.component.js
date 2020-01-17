@@ -11,6 +11,7 @@ import { getRouteParams } from '@/modules/core/client/services/angular-compat';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
 import ThreadMessage from 'modules/messages/client/components/ThreadMessage';
 import InfiniteMessages from '@/modules/messages/client/components/InfiniteMessages';
+import { $broadcast } from '@/modules/core/client/services/angular-compat';
 
 import range from 'lodash/range';
 import { useMediaQuery } from 'react-responsive';
@@ -22,6 +23,7 @@ import { generateMongoId } from '@/testutils/common/data.common.testutil';
 function generateMessage(userFrom) {
   return {
     _id: generateMongoId(),
+    fake: true,
     userFrom,
     created: new Date().toISOString(),
     content: faker.lorem.text(),
@@ -124,6 +126,21 @@ export default function Thread({ user }) {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    async function markRead() {
+      const unreadMessages = messages
+        .filter(message => !message.read) // only unread
+        .filter(message => message.userFrom._id !== user._id) // only other persons messages
+        .filter(message => !message.fake); // @TODO remove this later
+      if (unreadMessages.length > 0) {
+        await api.messages.markRead(unreadMessages.map(message => message._id));
+        setMessages(messages => messages.map(message => ({ ...message, read: true })));
+        $broadcast('syncUnreadMessagesCount');
+      }
+    }
+    markRead();
+  }, [messages]);
 
   return (
     <section className="container container-spacer">

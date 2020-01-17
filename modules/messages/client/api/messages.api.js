@@ -24,3 +24,9 @@ export async function fetchMessages(userId) {
   const { data: messages } = await axios.get(`/api/messages/${userId}`);
   return messages;
 }
+
+export async function markRead(messageIds) {
+  // the server response is a bit wrong, status 200, but no body or content-type, so we
+  // force the response type here to prevent the browser assuming it's XML (Firefox)
+  await axios.post('/api/messages-read', { messageIds }, { responseType: 'json' });
+}
