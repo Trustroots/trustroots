@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import TrEditor from '@/modules/messages/client/components/TrEditor';
+import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
 
 export default function ThreadReply({ onSend }) {
   const [editorKeyCounter, setEditorKeyCounter] = useState(0);
@@ -10,13 +11,15 @@ export default function ThreadReply({ onSend }) {
   function send(event){
     event.preventDefault();
     event.stopPropagation();
-    // remove the last <br>
-    onSend(content.replace(/<br><\/p>$/, '</p>'));
-    setContent('');
-    // There is a bug somewhere that means just setting content to '' does not
-    // the text in the editor after pressing send, we can work around that by
-    // recreating the TrEditor component after each send by setting a fresh key
-    setEditorKeyCounter(n => n + 1);
+    const value = content.replace(/<br><\/p>$/, '</p>'); // remove the last <br>
+    if (plainTextLength(value) > 0) {
+      onSend(value);
+      setContent('');
+      // There is a bug somewhere that means just setting content to '' does not
+      // the text in the editor after pressing send, we can work around that by
+      // recreating the TrEditor component after each send by setting a fresh key
+      setEditorKeyCounter(n => n + 1);
+    }
   }
   return (
     <form
