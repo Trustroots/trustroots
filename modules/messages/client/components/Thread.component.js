@@ -50,22 +50,22 @@ function QuickReply() {
 }
 
 const ThreadContainer = styled.div`
- position: fixed;
- top: 44px;
- bottom: 0;
- width: 100%;
- @media (min-width: 768px) {
-   width: 505px;
-   bottom: 12px;
- }
- @media (min-width: 992px) {
-   width: 667px;
- }
- @media (min-width: 1200px) {
-   width: 800px;
- }
- display: flex;
- flex-direction: column;
+  position: fixed;
+  top: 44px;
+  bottom: 0;
+  width: 100%;
+  @media (min-width: 768px) {
+    width: 505px;
+    bottom: 12px;
+  }
+  @media (min-width: 992px) {
+    width: 667px;
+  }
+  @media (min-width: 1200px) {
+    width: 800px;
+  }
+  display: flex;
+  flex-direction: column;
 `;
 
 const MessagesContainer = styled.div`
