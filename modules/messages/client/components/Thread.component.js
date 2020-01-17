@@ -10,19 +10,19 @@ import { Monkeybox } from '@/modules/messages/client/components/Monkeybox';
 import { getRouteParams } from '@/modules/core/client/services/angular-compat';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
 import ThreadMessage from 'modules/messages/client/components/ThreadMessage';
+import InfiniteMessages from '@/modules/messages/client/components/InfiniteMessages';
 
-import faker from 'faker';
 import range from 'lodash/range';
 import { useMediaQuery } from 'react-responsive';
-import { Avatar } from 'modules/users/client/components/Avatar.component';
+import Avatar from '@/modules/users/client/components/Avatar.component';
+// @TODO remove these once finished getting it working...
+import faker from 'faker';
+import { generateMongoId } from '@/testutils/common/data.common.testutil';
 
 function generateMessage(userFrom) {
   return {
+    _id: generateMongoId(),
     userFrom,
-    // userFrom: {
-    //   displayName: faker.name.findName(),
-    //   username: faker.internet.userName(),
-    // },
     created: new Date().toISOString(),
     content: faker.lorem.text(),
   };
@@ -71,13 +71,20 @@ const ThreadContainer = styled.div`
 const MessagesContainer = styled.div`
   flex-grow: 1;
   overflow-y: auto;
-  overflow-x: hidden;
   padding-right: 15px;
   padding-top: 30px;
 `;
 
+const LoadingContainer = styled.div`
+  position: absolute;
+  top: 10px;
+  width: 100%;
+  text-align: center;
+`;
+
 export default function Thread({ user }) {
   const [isFetching, setIsFetching] = useState(false);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [otherUser, setOtherUser] = useState(null);
   const [messages, setMessages] = useState([]);
 
@@ -85,76 +92,100 @@ export default function Thread({ user }) {
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
 
-  useEffect(() => {
-    async function fetchData() {
-      const username = getRouteParams().username;
-      try {
-        setIsFetching(true);
-        const otherUser = await api.users.fetch(username);
-        const messages = await api.messages.fetchMessages(otherUser._id);
+  function fetchMoreData() {
+    // @TODO only if there is more ...
+    setIsFetchingMore(true);
+    setTimeout(() => {
+      setMessages(messages => [
+        ...range(10).map(() => generateMessage(otherUser)),
+        ...messages,
+      ]);
+      setIsFetchingMore(false);
+    }, 500);
+  }
 
-        // @TODO remove these
-        messages.push(...range(10).map(() => generateMessage(otherUser)));
+  async function fetchData() {
+    const username = getRouteParams().username;
+    try {
+      setIsFetching(true);
+      const otherUser = await api.users.fetch(username);
+      const messages = await api.messages.fetchMessages(otherUser._id);
 
-        setOtherUser(otherUser);
-        setMessages(messages.sort((a, b) => a.created.localeCompare(b.created)));
-      } finally {
-        setIsFetching(false);
-      }
+      // @TODO remove these
+      messages.push(...range(10).map(() => generateMessage(otherUser)));
+
+      setOtherUser(otherUser);
+      setMessages(messages.sort((a, b) => a.created.localeCompare(b.created)));
+    } finally {
+      setIsFetching(false);
     }
+  }
+
+  useEffect(() => {
     fetchData();
   }, []);
 
-  if (isFetching || !otherUser) {
-    return <div>some kind of loading thing...</div>;
-  }
-
-  return <section className="container container-spacer">
-    <div className="row">
-      <div className="col-sm-9">
-        <ThreadContainer>
-          <MessagesContainer>
-            {isExtraSmall && (
-              <div className="message">
-                <div className="message-recipient panel panel-default">
-                  <a className="panel-body" href={`/profile/${user.username}`}>
-                    <Avatar user={otherUser} size={32} link={false} />
-                    <h4>
-                      { otherUser.displayName }
-                    </h4>
-                    <small className="text-muted">
-                      @{ otherUser.username }
-                    </small>
-                  </a>
+  return (
+    <section className="container container-spacer">
+      <div className="row">
+        <div className="col-sm-9">
+          {isFetching && (
+            <LoadingContainer>
+              {/* @TODO replace with a proper loader */}
+              Loading initial...
+            </LoadingContainer>
+          )}
+          {!isFetching && messages.length > 0 && (
+            <ThreadContainer>
+              {isFetchingMore && (
+                <LoadingContainer>
+                  {/* @TODO replace with a proper loader */}
+                  Loading...
+                </LoadingContainer>
+              )}
+              <InfiniteMessages component={MessagesContainer} onFetchMore={fetchMoreData}>
+                {isExtraSmall && (
+                  <div className="message">
+                    <div className="message-recipient panel panel-default">
+                      <a className="panel-body" href={`/profile/${user.username}`}>
+                        <Avatar user={otherUser} size={32} link={false} />
+                        <h4>
+                          { otherUser.displayName }
+                        </h4>
+                        <small className="text-muted">
+                          @{ otherUser.username }
+                        </small>
+                      </a>
+                    </div>
+                  </div>
+                )}
+                <div className="message">
+                  <div className="divider divider-first text-muted">
+                    <small>Conversation started {moment(messages[0].created).format('LL')}</small>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {messages.length > 0 && (
-              <div className="message">
-                <div className="divider divider-first text-muted">
-                  <small>Conversation started {moment(messages[0].created).format('LL')}</small>
-                </div>
-              </div>
-            )}
-            {messages.map(message => (
-              <ThreadMessage
-                key={message._id}
-                message={message}
-                user={user}
-              />
-            ))}
-          </MessagesContainer>
-          {showQuickReply && <QuickReply/>}
-          <ThreadReply/>
-        </ThreadContainer>
+                {messages.map(message => (
+                  <ThreadMessage
+                    key={message._id}
+                    message={message}
+                    user={user}
+                  />
+                ))}
+              </InfiniteMessages>
+              {showQuickReply && <QuickReply/>}
+              <ThreadReply/>
+            </ThreadContainer>
+          )}
+        </div>
+        {otherUser && (
+          <div className="col-sm-3 hidden-xs text-center">
+            <Monkeybox user={user} otherUser={otherUser}/>
+            <ReportMemberLink username={otherUser.username}/>
+          </div>
+        )}
       </div>
-      <div className="col-sm-3 hidden-xs text-center">
-        <Monkeybox user={user} otherUser={otherUser}/>
-        <ReportMemberLink username={otherUser.username}/>
-      </div>
-    </div>
-  </section>;
+    </section>
+  );
 }
 
 Thread.propTypes = {
