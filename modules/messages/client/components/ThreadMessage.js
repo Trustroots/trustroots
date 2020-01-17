@@ -1,5 +1,4 @@
 import React from 'react';
-// import styled from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
 import PropTypes from 'prop-types';
 
@@ -29,12 +28,21 @@ export default function ThreadMessage({ message, user }) {
         <TimeAgo date={new Date(message.created)}/>
       </div>
       <div className="panel panel-default" style={{ display: 'flex' }}>
-        {isExtraSmall && <div style={{ padding: '8px' }}><Avatar user={message.userFrom} size={24} /></div>}
-        <div
-          className="panel-body"
-          style={isExtraSmall ? { padding: '8px 15px 8px 4px' } : {}}
-          dangerouslySetInnerHTML={{ __html: message.content }}
-        />
+        {isExtraSmall ? (
+          <>
+            <div style={{ padding: '8px' }}><Avatar user={message.userFrom} size={24} /></div>
+            <div
+              className="panel-body"
+              style={{ padding: '8px 15px 8px 4px' }}
+              dangerouslySetInnerHTML={{ __html: message.content }}
+            />
+          </>
+        ) : (
+          <div
+            className="panel-body"
+            dangerouslySetInnerHTML={{ __html: message.content }}
+          />
+        )}
       </div>
     </div>
     {!isExtraSmall && <div className="message-author" style={{ marginLeft: '15px' }}>
