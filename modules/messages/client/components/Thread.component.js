@@ -124,13 +124,6 @@ export default function Thread({ user }) {
   }
 
   async function sendMessage(content) {
-    if (content === '') {
-      // eslint-disable-next-line no-console
-      console.error('empty content not sending');
-      return;
-    }
-    // eslint-disable-next-line no-console
-    console.log('a nice message to send!', content);
     const message = await api.messages.sendMessage(otherUser._id, content);
     setMessages(messages => [...messages, message]);
   }
@@ -206,8 +199,8 @@ export default function Thread({ user }) {
             </ThreadContainer>
           )}
         </div>
-        {otherUser && (
-          <div className="col-sm-3 hidden-xs text-center">
+        {otherUser && !isExtraSmall && (
+          <div className="col-sm-3 text-center">
             <Monkeybox user={user} otherUser={otherUser}/>
             <ReportMemberLink username={otherUser.username}/>
           </div>
