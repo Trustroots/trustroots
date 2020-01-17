@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import keyBy from 'lodash.keyby';
+import keyBy from 'lodash/keyBy';
 
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import { userType } from '@/modules/users/client/users.prop-types';

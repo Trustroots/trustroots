@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import last from 'lodash.last';
+import last from 'lodash/last';
 
 export default function InfiniteMessages({ component: Component, onFetchMore, children }) {
   const [initialScroll, setInitialScroll] = useState(true);
