@@ -154,7 +154,7 @@ export default function Thread({ user }) {
               Loading initial...
             </LoadingContainer>
           )}
-          {!isFetching && messages.length > 0 && (
+          {!isFetching && (
             <ThreadContainer>
               {isFetchingMore && (
                 <LoadingContainer>
@@ -162,35 +162,39 @@ export default function Thread({ user }) {
                   Loading...
                 </LoadingContainer>
               )}
-              <InfiniteMessages component={MessagesContainer} onFetchMore={fetchMoreData}>
-                {isExtraSmall && (
+              {messages.length > 0 ? (
+                <InfiniteMessages component={MessagesContainer} onFetchMore={fetchMoreData}>
+                  {isExtraSmall && (
+                    <div className="message">
+                      <div className="message-recipient panel panel-default">
+                        <a className="panel-body" href={`/profile/${user.username}`}>
+                          <Avatar user={otherUser} size={32} link={false} />
+                          <h4>
+                            { otherUser.displayName }
+                          </h4>
+                          <small className="text-muted">
+                            @{ otherUser.username }
+                          </small>
+                        </a>
+                      </div>
+                    </div>
+                  )}
                   <div className="message">
-                    <div className="message-recipient panel panel-default">
-                      <a className="panel-body" href={`/profile/${user.username}`}>
-                        <Avatar user={otherUser} size={32} link={false} />
-                        <h4>
-                          { otherUser.displayName }
-                        </h4>
-                        <small className="text-muted">
-                          @{ otherUser.username }
-                        </small>
-                      </a>
+                    <div className="divider divider-first text-muted">
+                      <small>Conversation started {moment(messages[0].created).format('LL')}</small>
                     </div>
                   </div>
-                )}
-                <div className="message">
-                  <div className="divider divider-first text-muted">
-                    <small>Conversation started {moment(messages[0].created).format('LL')}</small>
-                  </div>
-                </div>
-                {messages.map(message => (
-                  <ThreadMessage
-                    key={message._id}
-                    message={message}
-                    user={user}
-                  />
-                ))}
-              </InfiniteMessages>
+                  {messages.map(message => (
+                    <ThreadMessage
+                      key={message._id}
+                      message={message}
+                      user={user}
+                    />
+                  ))}
+                </InfiniteMessages>
+              ) : (
+                <MessagesContainer/>
+              )}
               {showQuickReply && <QuickReply/>}
               <ThreadReply cacheKey={cacheKey} onSend={content => sendMessage(content)}/>
             </ThreadContainer>
