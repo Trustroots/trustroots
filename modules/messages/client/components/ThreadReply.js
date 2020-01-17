@@ -5,9 +5,10 @@ import PropTypes from 'prop-types';
 import TrEditor from '@/modules/messages/client/components/TrEditor';
 import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
 
-export default function ThreadReply({ onSend }) {
+export default function ThreadReply({ onSend, cacheKey }) {
   const [editorKeyCounter, setEditorKeyCounter] = useState(0);
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(() => getDraft() || '');
+
   function send(event){
     event.preventDefault();
     event.stopPropagation();
@@ -19,8 +20,35 @@ export default function ThreadReply({ onSend }) {
       // the text in the editor after pressing send, we can work around that by
       // recreating the TrEditor component after each send by setting a fresh key
       setEditorKeyCounter(n => n + 1);
+      clearDraft();
     }
   }
+
+  function onChange(text) {
+    saveDraft(text);
+    setContent(text);
+  }
+
+  function saveDraft(text) {
+    if (window.localStorage && cacheKey) {
+      window.localStorage.setItem(cacheKey, text);
+    }
+  }
+
+  function getDraft() {
+    if (window.localStorage && cacheKey) {
+      return window.localStorage.getItem(cacheKey);
+    } else {
+      return null;
+    }
+  }
+
+  function clearDraft() {
+    if (window.localStorage && cacheKey) {
+      window.localStorage.removeItem(cacheKey);
+    }
+  }
+
   return (
     <form
       id="message-reply"
@@ -35,7 +63,7 @@ export default function ThreadReply({ onSend }) {
               key={editorKeyCounter}
               id="message-reply-content"
               text={content}
-              onChange={text => setContent(text)}
+              onChange={text => onChange(text)}
               onCtrlEnter={event => send(event)}
             />
           </div>
@@ -60,4 +88,5 @@ export default function ThreadReply({ onSend }) {
 
 ThreadReply.propTypes = {
   onSend: PropTypes.func.isRequired,
+  cacheKey: PropTypes.string,
 };

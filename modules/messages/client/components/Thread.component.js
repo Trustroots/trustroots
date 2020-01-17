@@ -89,6 +89,7 @@ export default function Thread({ user }) {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [otherUser, setOtherUser] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [cacheKey] = useState(() => `messages.thread.${user._id}-${getRouteParams().username}`);
 
   const showQuickReply = false;
 
@@ -195,7 +196,7 @@ export default function Thread({ user }) {
                 ))}
               </InfiniteMessages>
               {showQuickReply && <QuickReply/>}
-              <ThreadReply onSend={content => sendMessage(content)}/>
+              <ThreadReply cacheKey={cacheKey} onSend={content => sendMessage(content)}/>
             </ThreadContainer>
           )}
         </div>
