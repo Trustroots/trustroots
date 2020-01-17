@@ -1,15 +1,41 @@
 /*
  *  Our main js entrypoint :)
  *
- *  It looks kind of empty because almost everything is happening via webpack.shims.js for now.
- *
  */
 
-import '@/public/dist/uib-templates';
 import angular from 'angular';
 
-if (process.env.NODE_ENV === 'production') {
-  require('@/public/dist/templates');
+import '@/modules/core/client/app/init';
+
+import '@/modules/core/client/core.client.module';
+
+import '@/modules/admin/client/admin.client.module';
+import '@/modules/contacts/client/contacts.client.module';
+import '@/modules/messages/client/messages.client.module';
+import '@/modules/offers/client/offers.client.module';
+import '@/modules/pages/client/pages.client.module';
+import '@/modules/references-thread/client/references-thread.client.module';
+import '@/modules/search/client/search.client.module';
+import '@/modules/statistics/client/statistics.client.module';
+import '@/modules/support/client/support.client.module';
+import '@/modules/tribes/client/tribes.client.module';
+import '@/modules/users/client/users.client.module';
+
+/*
+ *  Main style import.
+ *  This includes the libraries, and any global overrides.
+ */
+import './main.less';
+
+/*
+ * Imports all the style files from the modules (*.less)
+ *
+ * Uses a webpack require context
+ *  See https://webpack.js.org/guides/dependency-management/#require-context
+ */
+importAll(require.context('../../../modules/', true, /\.less$/));
+function importAll(r) {
+  r.keys().forEach(r);
 }
 
 /*

@@ -18,5 +18,5 @@ export default function LanguageSwitch({ presentation='dropdown', saveToAPI=fals
 
 LanguageSwitch.propTypes = {
   presentation: PropTypes.string,
-  saveToAPI: PropTypes.bool
+  saveToAPI: PropTypes.bool,
 };

@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * This module is used to receive incoming SparkPost events
  *
@@ -11,15 +9,15 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    async = require('async'),
-    basicAuth = require('basic-auth'),
-    speakingurl = require('speakingurl'),
-    log = require(path.resolve('./config/lib/logger')),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    config = require(path.resolve('./config/config'));
+const _ = require('lodash');
+const path = require('path');
+const async = require('async');
+const basicAuth = require('basic-auth');
+const speakingurl = require('speakingurl');
+const log = require(path.resolve('./config/lib/logger'));
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const statService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const config = require(path.resolve('./config/config'));
 
 /**
  * Receive Sparkpost events webhook batch
@@ -40,7 +38,7 @@ var _ = require('lodash'),
 exports.receiveBatch = function (req, res) {
   if (!_.isArray(req.body) || !req.body.length) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('bad-request')
+      message: errorService.getErrorMessageByKey('bad-request'),
     });
   }
 
@@ -55,32 +53,32 @@ exports.receiveBatch = function (req, res) {
  */
 exports.processAndSendMetrics = function (event, callback) {
   // When adding a webhook, Sparkpost sends us `[{"msys":{}}]`
-  if (!event.hasOwnProperty('msys') || _.isEmpty(event.msys)) {
+  if (!_.has(event, 'msys') || _.isEmpty(event.msys)) {
     return callback();
   }
 
   // we changed fields to meta
   // only numbers can be saved as count/value in stathat, so every string value must be either tag (saved) or meta (ignored)
-  var meta = {
+  const meta = {
     country: '',
-    campaignId: ''
+    campaignId: '',
   };
 
-  var tags = {};
+  const tags = {};
 
   // Validate against these event categories
   // E.g. `{ msys: message_event: { } }`
-  var eventCategories = [
+  const eventCategories = [
     'message_event',
     'relay_event',
     'track_event',
     'gen_event',
-    'unsubscribe_event'
+    'unsubscribe_event',
   ];
 
   // Validate against these event types
   // E.g. `{ msys: message_event: { type: 'bounce' } }`
-  var eventTypes = [
+  const eventTypes = [
     'injection',
     'delivery',
     'policy_Rejection',
@@ -100,14 +98,14 @@ exports.processAndSendMetrics = function (event, callback) {
     'relay_tempfail',
     'relay_permfail',
     'open',
-    'click'
+    'click',
   ];
 
   // Get what's in first key of `msys` object
-  var eventCategory = _.keys(event.msys)[0];
+  const eventCategory = _.keys(event.msys)[0];
 
   // Get what's the `type` of that event
-  var eventType = _.get(event, 'msys.' + eventCategory + '.type');
+  const eventType = _.get(event, 'msys.' + eventCategory + '.type');
 
   // Validate event category
   tags.category = _.find(eventCategories, function (category) {
@@ -125,40 +123,40 @@ exports.processAndSendMetrics = function (event, callback) {
   if (!tags.category || !tags.type) {
     log('error', 'Could not validate SparkPost event webhook.', {
       type: eventType,
-      category: eventCategory
+      category: eventCategory,
     });
     return callback();
   }
 
   // Add campaign id to meta if present
-  var campaignId = _.get(event, 'msys.' + eventCategory + '.campaign_id');
+  const campaignId = _.get(event, 'msys.' + eventCategory + '.campaign_id');
   if (_.isString(campaignId) && campaignId.length > 0) {
     // "Slugify" `campaignId` to ensure we don't get any carbage
     // Allows only `A-Za-z0-9_-`
     meta.campaignId = speakingurl(campaignId, {
       separator: '-', // char that replaces the whitespaces
       maintainCase: false, // don't maintain case
-      truncate: 255 // truncate to 255 chars
+      truncate: 255, // truncate to 255 chars
     });
   }
 
   // Add country if present
-  var country = _.get(event, 'msys.' + eventCategory + '.geo_ip.country');
+  const country = _.get(event, 'msys.' + eventCategory + '.geo_ip.country');
   if (_.isString(country) && country.length > 0 && country.length <= 3) {
     meta.country = country.replace(/\W/g, '').toUpperCase();
   }
 
-  var statObj = {
+  const statObj = {
     namespace: 'transactionalEmailEvent',
     counts: {
-      count: 1
+      count: 1,
     },
     tags: tags,
-    meta: meta
+    meta: meta,
   };
 
   // Set `time` field to event's timestamp
-  var timestamp = _.get(event, 'msys.' + eventCategory + '.timestamp');
+  const timestamp = _.get(event, 'msys.' + eventCategory + '.timestamp');
   if (timestamp) {
     statObj.time = new Date(parseInt(timestamp, 10) * 1000);
   }
@@ -175,9 +173,9 @@ exports.basicAuthenticate = function (req, res, next) {
   // Get the basic auth credentials from the request.
   // The Authorization header is parsed and if the header is invalid,
   // undefined is returned, otherwise an object with name and pass properties.
-  var credentials = basicAuth(req);
+  const credentials = basicAuth(req);
 
-  var enabled = _.get(config, 'sparkpostWebhook.enabled');
+  const enabled = _.get(config, 'sparkpostWebhook.enabled');
 
   // Access denied
   if (!credentials ||
@@ -187,7 +185,7 @@ exports.basicAuthenticate = function (req, res, next) {
 
     res.set('WWW-Authenticate', 'Basic realm="Knock Knock"');
     return res.status(401).send({
-      message: 'Access denied'
+      message: 'Access denied',
     });
   }
 

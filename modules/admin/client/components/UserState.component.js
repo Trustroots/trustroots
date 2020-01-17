@@ -19,7 +19,7 @@ export default function UserState({ user }) {
     removeProfileToken,
     resetPasswordExpires,
     resetPasswordToken,
-    roles
+    roles,
   } = user;
 
   return (
@@ -31,7 +31,7 @@ export default function UserState({ user }) {
           .map((role) => {
             const classes = classnames('label admin-label', {
               'label-danger': role === 'suspended',
-              'label-success': role === 'admin'
+              'label-success': role === 'admin',
             });
 
             return (
@@ -78,5 +78,5 @@ export default function UserState({ user }) {
 }
 
 UserState.propTypes = {
-  user: PropTypes.object.isRequired
+  user: PropTypes.object.isRequired,
 };

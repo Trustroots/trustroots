@@ -19,7 +19,7 @@ export default class LanguageSwitchContainer extends React.Component {
     super(props);
 
     this.state = {
-      currentLanguageCode: i18n.language
+      currentLanguageCode: i18n.language,
     };
 
     // bind class context to class methods
@@ -49,5 +49,5 @@ export default class LanguageSwitchContainer extends React.Component {
 
 LanguageSwitchContainer.propTypes = {
   presentation: PropTypes.func.isRequired,
-  saveToAPI: PropTypes.bool.isRequired
+  saveToAPI: PropTypes.bool.isRequired,
 };

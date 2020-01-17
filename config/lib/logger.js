@@ -1,5 +1,3 @@
-'use strict';
-
 /*
  * A general purpose logging service that can be used anywhere in the app
  *
@@ -9,16 +7,16 @@
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    _ = require('lodash'),
-    winston = require('winston'),
-    config = require(path.resolve('./config/config'));
+const path = require('path');
+const _ = require('lodash');
+const winston = require('winston');
+const config = require(path.resolve('./config/config'));
 
 // Requiring `winston-papertrail` will expose
 // `winston.transports.Papertrail`
 require('winston-papertrail').Papertrail;
 
-var papertrailConfig = _.get(config, 'log.papertrail');
+const papertrailConfig = _.get(config, 'log.papertrail');
 
 // Add the `logFormat()` function to the papertrail config
 papertrailConfig.logFormat = function (level, message) {

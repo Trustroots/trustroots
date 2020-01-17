@@ -17,7 +17,7 @@
           <a ui-sref="signup" class="btn btn-action btn-default home-join hidden-xs">
             Join Trustroots now
           </a>
-          <div class="home-apps">
+          <div class="home-apps" ng-if="::!app.isNativeMobileApp">
             <a href="https://play.google.com/store/apps/details?id=org.trustroots.trustrootsApp"
                rel="noopener"
                class="btn btn-lg btn-default">
@@ -141,7 +141,7 @@
   <div class="container">
     <div class="row">
       <div class="col-md-offset-3 col-md-6 text-center lead font-brand-light">
-        <div ng-include="'/modules/pages/views/manifesto-text.client.partial.html'"></div>
+        <div ng-include="~modules/pages/client/views/manifesto-text.client.partial.html"></div>
         <p ng-if="::!app.user">
           <br><br>
           <a ui-sref="signup" class="btn btn-lg btn-action btn-default">Join Trustroots</a>
@@ -186,7 +186,7 @@
     <div class="row text-center">
       <hr class="hr-white hr-xs" />
 
-      <div class="home-apps">
+      <div class="home-apps" ng-if="::!app.isNativeMobileApp">
         <a href="https://play.google.com/store/apps/details?id=org.trustroots.trustrootsApp"
            rel="noopener"
            class="btn btn-lg btn-default">

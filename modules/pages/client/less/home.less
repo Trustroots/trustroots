@@ -1,3 +1,9 @@
+@import '~less/global-variables';
+@import '~less/layout/typography';
+@import '~bootstrap/less/mixins/buttons';
+@import '~bootstrap/less/mixins/image';
+@import '~bootstrap/less/mixins/size';
+
 /**
  * Home page
  */
@@ -131,10 +137,10 @@
   }
 }
 .home-browser-screenshot-search {
-  .img-retina('/img/screenshot-search.png', '/img/screenshot-search@2x.png', 600px, 387px);
+  .img-retina('~img/screenshot-search.png', '~img/screenshot-search@2x.png', 600px, 387px);
 }
 .home-browser-screenshot-profile {
-  .img-retina('/img/screenshot-profile.png', '/img/screenshot-profile@2x.png', 600px, 387px);
+  .img-retina('~img/screenshot-profile.png', '~img/screenshot-profile@2x.png', 600px, 387px);
 }
 
 // Home section - hospex & how
@@ -242,7 +248,7 @@
 .home-wohoo {
   width: 207px;
   height: 162px;
-  .img-retina('/img/wohoo.png', '/img/wohoo@2x.png', 207px, 162px);
+  .img-retina('~img/wohoo.png', '~img/wohoo@2x.png', 207px, 162px);
 }
 
 // Home section - footer

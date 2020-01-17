@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Task that collects daily statistics and sends them to Stats API
  *
@@ -11,15 +9,15 @@
 /**
  * Module dependencies.
  */
-var async = require('async'),
-    path = require('path'),
-    statsService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    statistics = require(path.resolve('./modules/statistics/server/controllers/statistics.server.controller')),
-    log = require(path.resolve('./config/lib/logger'));
+const async = require('async');
+const path = require('path');
+const statsService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const statistics = require(path.resolve('./modules/statistics/server/controllers/statistics.server.controller'));
+const log = require(path.resolve('./config/lib/logger'));
 
 module.exports = function (job, agendaDone) {
 
-  var totalUserCount;
+  let totalUserCount;
 
   async.waterfall([
 
@@ -37,11 +35,11 @@ module.exports = function (job, agendaDone) {
         writeDailyStat({
           namespace: 'members',
           values: {
-            count: count
+            count: count,
           },
           tags: {
-            members: 'members'
-          }
+            members: 'members',
+          },
         }, done);
       });
     },
@@ -58,11 +56,11 @@ module.exports = function (job, agendaDone) {
         writeDailyStat({
           namespace: 'pushRegistrations',
           values: {
-            count: count
+            count: count,
           },
           tags: {
-            type: 'all'
-          }
+            type: 'all',
+          },
         }, done);
 
       });
@@ -102,12 +100,12 @@ module.exports = function (job, agendaDone) {
             namespace: 'offers',
             values: {
               count: count,
-              percentage: count / totalUserCount * 100
+              percentage: count / totalUserCount * 100,
             },
             tags: {
               type: 'host',
-              status: String(offerStatus) // `yes|maybe|no`
-            }
+              status: String(offerStatus), // `yes|maybe|no`
+            },
           }, doneStatus);
         }, done);
 
@@ -126,24 +124,24 @@ module.exports = function (job, agendaDone) {
         writeDailyStat({
           namespace: 'offers',
           values: {
-            count: count
+            count: count,
           },
           tags: {
-            type: 'meet'
-          }
+            type: 'meet',
+          },
         }, done);
       });
     },
 
     // Connected to networks counters
     function (done) {
-      var networks = [
+      const networks = [
         'couchsurfing',
         'warmshowers',
         'bewelcome',
         'facebook',
         'twitter',
-        'github'
+        'github',
       ];
 
       // Loop trough each network in series
@@ -160,15 +158,15 @@ module.exports = function (job, agendaDone) {
             namespace: 'membersInNetworks',
             values: {
               count: count,
-              percentage: count / totalUserCount * 100
+              percentage: count / totalUserCount * 100,
             },
             tags: {
-              network: networkName
-            }
+              network: networkName,
+            },
           }, doneNetwork);
         });
       }, done);
-    }
+    },
 
   ], function (err) {
     if (err) {
@@ -225,11 +223,11 @@ function collectLastSeen(seenSinceDays, namespace, totalUserCount, callback) {
       namespace: namespace,
       values: {
         count: count,
-        percentage: count / totalUserCount * 100
+        percentage: count / totalUserCount * 100,
       },
       tags: {
-        access: 'members'
-      }
+        access: 'members',
+      },
     }, callback);
   });
-};
+}

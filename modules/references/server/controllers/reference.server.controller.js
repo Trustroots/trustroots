@@ -1,15 +1,13 @@
-'use strict';
-
-const mongoose = require('mongoose'),
-      _ = require('lodash'),
-      path = require('path'),
-      util = require('util'),
-      errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-      emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-      pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
-      userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-      Reference = mongoose.model('Reference'),
-      User = mongoose.model('User');
+const mongoose = require('mongoose');
+const _ = require('lodash');
+const path = require('path');
+const util = require('util');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const pushService = require(path.resolve('./modules/core/server/services/push.server.service'));
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const Reference = mongoose.model('Reference');
+const User = mongoose.model('User');
 
 /**
  * Validate the request body and data consistency
@@ -41,14 +39,14 @@ function validateCreate(req) {
 
   // Values of interactions must be boolean
   ['met', 'hostedMe', 'hostedThem'].forEach(function (interaction) {
-    if (req.body.interactions && req.body.interactions.hasOwnProperty(interaction) && typeof req.body.interactions[interaction] !== 'boolean') {
+    if (_.has(req, ['body', 'interactions', interaction]) && typeof req.body.interactions[interaction] !== 'boolean') {
       valid = false;
       interactionErrors[interaction] = 'boolean expected';
     }
   });
 
   // Value of userTo must exist and be a UserId
-  if (!req.body.hasOwnProperty('userTo')) {
+  if (!_.has(req, ['body', 'userTo'])) {
     valid = false;
     details.userTo = 'missing';
   } else if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
@@ -85,14 +83,14 @@ const nonpublicReferenceFields = [
   'public',
   'userFrom',
   'userTo',
-  'created'
+  'created',
 ];
 
 const referenceFields = nonpublicReferenceFields.concat([
   'interactions.met',
   'interactions.hostedMe',
   'interactions.hostedThem',
-  'recommend'
+  'recommend',
 ]);
 
 /**
@@ -170,9 +168,9 @@ async function isUserToPublic(req) {
       body: {
         errType: 'not-found',
         details: {
-          userTo: 'not found'
-        }
-      }
+          userTo: 'not found',
+        },
+      },
     });
   }
 
@@ -186,9 +184,9 @@ function validateReplyToPublicReference(otherReference, req) {
       body: {
         errType: 'bad-request',
         details: {
-          recommend: '\'yes\' expected - response to public'
-        }
-      }
+          recommend: '\'yes\' expected - response to public',
+        },
+      },
     });
   }
 }
@@ -245,7 +243,7 @@ exports.create = async function (req, res, next) {
     const savedReference = await saveNewReference({
       ...req.body,
       userFrom: req.user._id,
-      public: !!otherReference
+      public: !!otherReference,
     });
 
     // ...and if this is a reference reply, make the other reference public, too
@@ -260,7 +258,7 @@ exports.create = async function (req, res, next) {
     // finally, respond
     throw new ResponseError({
       status: 201,
-      body: formatReference(savedReference, true)
+      body: formatReference(savedReference, true),
     });
 
   } catch (e) {
@@ -349,7 +347,7 @@ exports.readMany = async function readMany(req, res, next) {
     // when userFrom is self, we can see the nonpublic references in their full form
     throw new ResponseError({
       status: 200,
-      body: references.map(reference => formatReference(reference, isSelfUserFrom))
+      body: references.map(reference => formatReference(reference, isSelfUserFrom)),
     });
   } catch (e) {
     processResponses(res, next, e);
@@ -405,9 +403,9 @@ exports.referenceById = async function referenceById(req, res, next, id) { // es
         body: {
           errType: 'not-found',
           details: {
-            reference: 'not found'
-          }
-        }
+            reference: 'not found',
+          },
+        },
       });
     }
 

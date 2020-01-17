@@ -1,9 +1,7 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var sparkpost = require('../controllers/sparkpost-webhooks.server.controller');
+const sparkpost = require('../controllers/sparkpost-webhooks.server.controller');
 
 module.exports = function (app) {
 

@@ -1,12 +1,10 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    Autolinker = require('autolinker'),
-    sanitizeHtml = require('sanitize-html'),
-    he = require('he');
+const _ = require('lodash');
+const Autolinker = require('autolinker');
+const sanitizeHtml = require('sanitize-html');
+const he = require('he');
 
 /**
  * Rules for sanitizing texts coming in and out
@@ -28,13 +26,13 @@ exports.sanitizeOptions = {
     'a',
     'li',
     'ul',
-    'blockquote'
+    'blockquote',
   ],
   allowedAttributes: {
     'a': ['href'],
     // Used for messages text
     // at `modules/messages/client/controllers/thread.client.controller.js`
-    'p': ['data-hosting']
+    'p': ['data-hosting'],
   },
   // If we would allow class attributes, you can limit which classes are allowed:
   // allowedClasses: {
@@ -43,7 +41,7 @@ exports.sanitizeOptions = {
   // Convert these tags to unify html
   transformTags: {
     'strong': 'b',
-    'em': 'i'
+    'em': 'i',
   },
   exclusiveFilter: function (frame) {
     // Don't allow empty <a> tags, such as:
@@ -69,9 +67,9 @@ exports.sanitizeOptions = {
       'geo',
       'irc',
       'ge0', // Maps.me
-      'tg' // Telegram
-    ]
-  }
+      'tg', // Telegram
+    ],
+  },
 };
 
 
@@ -128,19 +126,19 @@ exports.html = function (content) {
     // by replacing the end of the string with a two period ellipsis ('..').
     truncate: {
       length: 150,
-      location: 'middle' // end|middle|smart
+      location: 'middle', // end|middle|smart
     },
 
     // Strip 'http://' or 'https://' and/or the 'www.' from the beginning of links.
     // I.e.: `https://www.wikipedia.org/` => `<a href="https://www.wikipedia.org/">www.wikipedia.org</a>`
     stripPrefix: {
       scheme: true,
-      www: false
+      www: false,
     },
 
     // Don't add target="_blank" because of rel-noopener attack.
     // @link https://mathiasbynens.github.io/rel-noopener/
-    newWindow: false
+    newWindow: false,
   });
 
   // Some html is allowed
@@ -183,7 +181,7 @@ exports.plainText = function (content, cleanWhitespace) {
   }
 
   // Replace HTML breaklines
-  content = content.replace(/<br\s*[\/]?>/gi, '\n');
+  content = content.replace(/<br\s*[/]?>/gi, '\n');
 
   /*
    * Sanitize HTML tags AND HTML entities out

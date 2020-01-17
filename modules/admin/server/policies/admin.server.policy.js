@@ -21,8 +21,8 @@ exports.invokeRolesPolicies = () => {
       { resources: '/api/admin/messages', permissions: ['post'] },
       { resources: '/api/admin/user', permissions: ['post'] },
       { resources: '/api/admin/user/suspend', permissions: ['post'] },
-      { resources: '/api/admin/users', permissions: ['post'] }
-    ]
+      { resources: '/api/admin/users', permissions: ['post'] },
+    ],
   }]);
 };
 
@@ -36,7 +36,7 @@ exports.isAllowed = (req, res, next) => {
     if (err) {
       // An authorization error occurred.
       return res.status(500).send({
-        message: 'Unexpected authorization error'
+        message: 'Unexpected authorization error',
       });
     } else {
       if (isAllowed) {
@@ -44,7 +44,7 @@ exports.isAllowed = (req, res, next) => {
         return next();
       } else {
         return res.status(403).json({
-          message: errorService.getErrorMessageByKey('forbidden')
+          message: errorService.getErrorMessageByKey('forbidden'),
         });
       }
     }

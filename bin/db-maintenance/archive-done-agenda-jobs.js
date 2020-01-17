@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-'use strict';
 
 /**
  * Archive done Agenda jobs from `agendaJobs` collection by moving them
@@ -16,27 +15,26 @@
  *  npm run agenda-maintenance -- reverse
  */
 
-var MongoClient = require('mongodb').MongoClient,
-    path = require('path'),
-    chalk = require('chalk'),
-    async = require('async'),
-    config = require(path.resolve('./config/config'));
+const MongoClient = require('mongodb').MongoClient;
+const path = require('path');
+const chalk = require('chalk');
+const async = require('async');
+const config = require(path.resolve('./config/config'));
 
-var dbConnection,
-    sourceCollection,
-    targetCollection,
-    filter = { nextRunAt: null, lockedAt: null },
-    total;
+let dbConnection;
+let sourceCollection;
+let targetCollection;
+const filter = { nextRunAt: null, lockedAt: null };
+let total;
 
-if (process.argv[2] === 'reverse') {
-  console.log(chalk.red('🚨  Reverse action! Movind docs from archive back to live.'));
-  // Archived → back to live
-  var sourceCollectionName = 'agendaJobsArchived',
-      targetCollectionName = 'agendaJobs';
-} else {
-  // From live to achived
-  var sourceCollectionName = 'agendaJobs',
-      targetCollectionName = 'agendaJobsArchived';
+const isReverse = process.argv[2] === 'reverse';
+
+// By default from live to achived, but if requested "reverse" do Archived → back to live
+const sourceCollectionName = isReverse ? 'agendaJobsArchived' : 'agendaJobs';
+const targetCollectionName = isReverse ? 'agendaJobs' : 'agendaJobsArchived';
+
+if (isReverse) {
+  console.log(chalk.red('🚨 Reverse action! Movind docs from archive back to live.'));
 }
 
 function countTotals(done) {
@@ -151,12 +149,12 @@ async.waterfall([
     //
     // settings how often the progress will be printed to console
     // every PROGRESS_INTERVAL %
-    var PROGRESS_INTERVAL = 0.1; // percent
-    var keepGoing = true;
-    var progress = 1; // progress counter
+    const PROGRESS_INTERVAL = 0.1; // percent
+    let keepGoing = true;
+    let progress = 1; // progress counter
 
     // this is the test for async.doWhilst
-    var testKeepGoing = function () {
+    const testKeepGoing = function () {
       return keepGoing;
     };
 
@@ -171,11 +169,11 @@ async.waterfall([
         // showing the progress sometimes
         if (progress % Math.ceil(total / 100 * PROGRESS_INTERVAL) === 0) {
           // update the progress instead of logging to newline
-          var progressPercent = (progress / total * 100).toFixed(1);
+          const progressPercent = (progress / total * 100).toFixed(1);
           process.stdout.clearLine();
           process.stdout.cursorTo(0);
           process.stdout.write(
-            '~' + progressPercent + '% (' + progress + '/' + total + ')'
+            '~' + progressPercent + '% (' + progress + '/' + total + ')',
           );
         }
         ++progress;
@@ -241,7 +239,7 @@ async.waterfall([
     countTotals(function () {
       done(null, progress);
     });
-  }
+  },
 
 ], function (err, totalProcessed) {
   if (err) {

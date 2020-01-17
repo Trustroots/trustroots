@@ -10,15 +10,15 @@ const Recommend = withTranslation('reference')(function ({ t, primaryInteraction
   const recommendQuestions = {
     hostedMe: t('Would you recommend others to stay with them?'),
     hostedThem: t('Would you recommend others to host them?'),
-    met: t('Would you recommend others to meet them?')
+    met: t('Would you recommend others to meet them?'),
   };
 
   const question = recommendQuestions[primaryInteraction];
 
   return (
     <div className="panel panel-default">
-      <div className="panel-heading" ng-switch="referenceNew.recommendationQuestion" id="recommendationQuestion">
-        <h4>{question}</h4>
+      <div className="panel-heading">
+        <h4 id="would-you-recommend-them-question">{question}</h4>
       </div>
       <div className="panel-body">
         <ToggleButtonGroup
@@ -26,7 +26,7 @@ const Recommend = withTranslation('reference')(function ({ t, primaryInteraction
           name="recommend"
           onChange={onChangeRecommend}
           value={recommend}
-          aria-labelledby="recommendationQuestion">
+          aria-labelledby="would-you-recommend-them-question">
           <ToggleButton
             className="btn btn-lg"
             aria-checked={recommend === 'yes'}
@@ -74,7 +74,7 @@ Recommend.propTypes = {
   reportMessage: PropTypes.string.isRequired,
   onChangeRecommend: PropTypes.func.isRequired,
   onChangeReport: PropTypes.func.isRequired,
-  onChangeReportMessage: PropTypes.func.isRequired
+  onChangeReportMessage: PropTypes.func.isRequired,
 };
 
 export default Recommend;

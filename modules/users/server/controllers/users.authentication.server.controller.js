@@ -1,24 +1,22 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service')),
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    facebook = require(path.resolve('./config/lib/facebook-api.js')),
-    config = require(path.resolve('./config/config')),
-    log = require(path.resolve('./config/lib/logger')),
-    moment = require('moment'),
-    passport = require('passport'),
-    async = require('async'),
-    crypto = require('crypto'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service'));
+const statService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const facebook = require(path.resolve('./config/lib/facebook-api.js'));
+const config = require(path.resolve('./config/config'));
+const log = require(path.resolve('./config/lib/logger'));
+const moment = require('moment');
+const passport = require('passport');
+const async = require('async');
+const crypto = require('crypto');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
 
 /**
  * Signup
@@ -39,7 +37,7 @@ exports.signup = function (req, res) {
     // Generate random token
     function (done) {
       crypto.randomBytes(20, function (err, buffer) {
-        var salt = buffer;
+        const salt = buffer;
         done(err, salt);
       });
     },
@@ -55,7 +53,7 @@ exports.signup = function (req, res) {
       delete req.body.created;
       delete req.body.updated;
 
-      var user = new User(req.body);
+      const user = new User(req.body);
 
       // Add missing user fields
       user.public = false;
@@ -98,16 +96,16 @@ exports.signup = function (req, res) {
 
         done(err, user);
       });
-    }
+    },
 
   ], function (err, user) {
 
-    var statsObject = {
+    const statsObject = {
       namespace: 'signup',
       counts: {
-        count: 1
+        count: 1,
       },
-      tags: {}
+      tags: {},
     };
 
     // Signup process failed
@@ -115,7 +113,7 @@ exports.signup = function (req, res) {
 
       // Log the failure to signup
       log('error', 'User signup failed. #fywghg', {
-        error: err
+        error: err,
       });
 
       // Send signup failure to stats servers
@@ -123,7 +121,7 @@ exports.signup = function (req, res) {
       statService.stat(statsObject, function () {
         // Send error to the API
         res.status(400).send({
-          message: errorService.getErrorMessage(err)
+          message: errorService.getErrorMessage(err),
         });
       });
 
@@ -146,7 +144,7 @@ exports.signup = function (req, res) {
  */
 exports.signupValidation = function (req, res) {
 
-  var username = String(req.body.username || '').toLowerCase();
+  const username = String(req.body.username || '').toLowerCase();
 
   async.waterfall([
 
@@ -175,7 +173,7 @@ exports.signupValidation = function (req, res) {
     // Check username availability against database
     function (done) {
       User.findOne({
-        username: username
+        username: username,
       }, function (err, user) {
         if (user) {
           return done(new Error('Username is not available.'), 'username-not-available');
@@ -183,16 +181,16 @@ exports.signupValidation = function (req, res) {
 
         done();
       });
-    }
+    },
 
   ], function (err, errorCode) {
 
-    var statsObject = {
+    const statsObject = {
       namespace: 'signup-validation',
       counts: {
-        count: 1
+        count: 1,
       },
-      tags: {}
+      tags: {},
     };
 
     // Signup validation failed
@@ -207,7 +205,7 @@ exports.signupValidation = function (req, res) {
         res.status(200).send({
           valid: false,
           error: errorCode || 'other',
-          message: err.message || errorService.getErrorMessage(err)
+          message: err.message || errorService.getErrorMessage(err),
         });
       });
 
@@ -220,7 +218,7 @@ exports.signupValidation = function (req, res) {
     statsObject.tags.status = 'success';
     statService.stat(statsObject, function () {
       res.status(200).send({
-        valid: true
+        valid: true,
       });
     });
 
@@ -232,12 +230,12 @@ exports.signupValidation = function (req, res) {
  */
 exports.signin = function (req, res, next) {
 
-  var statsObject = {
+  const statsObject = {
     namespace: 'signin',
     counts: {
-      count: 1
+      count: 1,
     },
-    tags: {}
+    tags: {},
   };
 
   passport.authenticate('local', function (err, user, info) {
@@ -246,7 +244,7 @@ exports.signin = function (req, res, next) {
       // Log the failure to signin
       log('error', 'User signin failed. #3tfgbg-1', {
         reason: 'Wrong credentials',
-        error: err || null
+        error: err || null,
       });
 
       // Send signin failure to stats servers
@@ -264,7 +262,7 @@ exports.signin = function (req, res, next) {
     if (_.isArray(user.roles) && user.roles.indexOf('suspended') > -1) {
       // Log the failure to signin
       log('error', 'User signin failed. #3tfgbg-2', {
-        reason: 'Suspended user'
+        reason: 'Suspended user',
       });
 
       // Send signin failure to stats servers
@@ -273,7 +271,7 @@ exports.signin = function (req, res, next) {
 
         // Send error to the API
         res.status(403).send({
-          message: errorService.getErrorMessageByKey('suspended')
+          message: errorService.getErrorMessageByKey('suspended'),
         });
       });
 
@@ -285,7 +283,7 @@ exports.signin = function (req, res, next) {
         // Log the failure to signin
         log('error', 'User signin failed. #3tfgbg-3', {
           reason: 'Login error',
-          error: err
+          error: err,
         });
 
         // Send signin failure to stats servers
@@ -327,20 +325,20 @@ exports.signout = function (req, res) {
 exports.oauthCallback = function (strategy) {
   return function (req, res, next) {
 
-    var defaultRedirectUrl = '/profile/edit/networks';
+    const defaultRedirectUrl = '/profile/edit/networks';
 
     passport.authenticate(strategy, function (err, user, redirectURL) {
       if (err) {
         log('error', 'oAuth callback error #h3hg82', {
           strategy: strategy,
-          err: err
+          err: err,
         });
         return res.redirect(defaultRedirectUrl);
       }
 
       if (!user) {
         log('error', 'oAuth callback requires authenticated user #g82bff', {
-          strategy: strategy
+          strategy: strategy,
         });
         return res.redirect('/signin');
       }
@@ -348,7 +346,7 @@ exports.oauthCallback = function (strategy) {
       req.login(user, function (err) {
         if (err) {
           log('error', 'oAuth callback failed to login user #h2bgff', {
-            strategy: strategy
+            strategy: strategy,
           });
           return res.redirect('/signin');
         }
@@ -370,7 +368,7 @@ exports.saveOAuthUserProfile = function (req, providerUserProfile, done) {
     return done(new Error('You must be logged in to connect to other networks.'), null);
   } else {
     // User is already logged in, join the provider data to the existing user
-    var user = req.user;
+    const user = req.user;
 
     // Check if user exists, is not signed in using this provider, and doesn't have that provider data already configured
     if (user.provider !== providerUserProfile.provider && (!user.additionalProvidersData || !user.additionalProvidersData[providerUserProfile.provider])) {
@@ -399,19 +397,19 @@ exports.removeOAuthProvider = function (req, res) {
   // Return error if no user
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // Return error if no provider or wrong provider
   if (!req.params.provider || !_.includes(['github', 'facebook', 'twitter'], req.params.provider)) {
     return res.status(400).send({
-      message: 'No provider defined.'
+      message: 'No provider defined.',
     });
   }
 
-  var user = req.user;
-  var provider = req.params.provider;
+  let user = req.user;
+  const provider = req.params.provider;
 
   if (user && provider) {
     // Delete the additional provider
@@ -425,7 +423,7 @@ exports.removeOAuthProvider = function (req, res) {
     user.save(function (err) {
       if (err) {
         return res.status(400).send({
-          message: errorService.getErrorMessage(err)
+          message: errorService.getErrorMessage(err),
         });
       } else {
         req.login(user, function (err) {
@@ -451,29 +449,29 @@ exports.updateFacebookOAuthToken = function (req, res) {
   // Return error if no accessToken or userID
   if (!req.body.accessToken || !req.body.userID) {
     return res.status(400).send({
-      message: 'Missing `accessToken` or `userID`.'
+      message: 'Missing `accessToken` or `userID`.',
     });
   }
 
   // No authenticated user
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // Shorthand for user and avoid need to access `req.user._doc`:
   // http://stackoverflow.com/a/34780800/1984644
-  var userObject = req.user.toObject();
+  const userObject = req.user.toObject();
 
   // Currently authenticated user isn't connected to Facebook
   if (!_.has(userObject, 'additionalProvidersData.facebook')) {
     log('error', 'Currently authenticated user is not connected to Facebook #k2lJRK', {
       userId: userObject._id.toString(),
-      requestedFbUserId: req.body.userID
+      requestedFbUserId: req.body.userID,
     });
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -481,10 +479,10 @@ exports.updateFacebookOAuthToken = function (req, res) {
   if (userObject.additionalProvidersData.facebook.id !== req.body.userID) {
     log('error', 'Facebook user ids not matching when updating the token #jFiHjf', {
       userId: userObject._id.toString(),
-      requestedFbUserId: req.body.userID
+      requestedFbUserId: req.body.userID,
     });
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -499,7 +497,7 @@ exports.updateFacebookOAuthToken = function (req, res) {
     function (accessTokenResponse, done) {
 
       // We can't use above `userObject` to perform Mongoose's `markModified` or `save` methods
-      var user = req.user;
+      const user = req.user;
 
       if (accessTokenResponse.expires) {
         // Update token's expiration date if available
@@ -517,18 +515,18 @@ exports.updateFacebookOAuthToken = function (req, res) {
 
       // Save modified user
       user.save(done);
-    }
+    },
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
 
     // All done & good
     return res.json({
-      message: 'Token updated.'
+      message: 'Token updated.',
     });
   });
 
@@ -549,8 +547,8 @@ exports.updateFacebookOAuthToken = function (req, res) {
  */
 exports.extendFBAccessToken = function (shortAccessToken, callback) {
 
-  var fbClientID = _.get(config, 'facebook.clientID');
-  var fbClientSecret = _.get(config, 'facebook.clientSecret');
+  const fbClientID = _.get(config, 'facebook.clientID');
+  const fbClientSecret = _.get(config, 'facebook.clientSecret');
 
   // Return error if no short-lived access token provided
   if (!shortAccessToken || !_.isString(shortAccessToken)) {
@@ -567,29 +565,29 @@ exports.extendFBAccessToken = function (shortAccessToken, callback) {
   facebook.extendAccessToken({
     'access_token': shortAccessToken,
     'client_id': fbClientID,
-    'client_secret': fbClientSecret
+    'client_secret': fbClientSecret,
   }, function (err, accessTokenResponse) {
     if (err) {
       log('error', 'Failed to extend Facebook access token. #JG3jk3', {
-        error: err
+        error: err,
       });
       return callback(err);
     }
 
-    var accessToken = _.get(accessTokenResponse, 'access_token');
-    var accessTokenExpires = _.get(accessTokenResponse, 'expires_in');
+    const accessToken = _.get(accessTokenResponse, 'access_token');
+    const accessTokenExpires = _.get(accessTokenResponse, 'expires_in');
 
     // Response from FB doesn't include access token
     if (!accessToken) {
       log('error', 'Missing extended Facebook access token from response. #jlkFLl', {
-        response: accessTokenResponse
+        response: accessTokenResponse,
       });
       return callback(new Error(errorService.getErrorMessageByKey('default')), {});
     }
 
     // Callback's response object
-    var response = {
-      token: accessToken
+    const response = {
+      token: accessToken,
     };
 
     // Response from FB contains `expires_in` in seconds
@@ -608,7 +606,7 @@ exports.extendFBAccessToken = function (shortAccessToken, callback) {
 exports.validateEmailToken = function (req, res) {
 
   User.findOne({
-    emailToken: req.params.token
+    emailToken: req.params.token,
   }, function (err, user) {
     if (!user) {
       return res.redirect('/confirm-email-invalid');
@@ -627,12 +625,12 @@ exports.confirmEmail = function (req, res) {
 
       // Check if user exists with this token
       User.findOne({
-        emailToken: req.params.token
+        emailToken: req.params.token,
       }, function (err, user) {
         if (!err && user) {
 
           // Will be the returned object when no errors
-          var result = {};
+          const result = {};
 
           // If users profile was hidden, it means it was first confirmation email after registration.
           result.profileMadePublic = !user.public;
@@ -641,7 +639,7 @@ exports.confirmEmail = function (req, res) {
 
         } else {
           return res.status(400).send({
-            message: 'Email confirm token is invalid or has expired.'
+            message: 'Email confirm token is invalid or has expired.',
           });
         }
       });
@@ -663,7 +661,7 @@ exports.confirmEmail = function (req, res) {
             // That's fine: we'll just start sending 'finish signup' notifications from scratch
             // to the new email. That old email before the change might've been wrong anyway...
             publicReminderCount: 1,
-            publicReminderSent: 1
+            publicReminderSent: 1,
           },
           $set: {
             public: true,
@@ -672,12 +670,12 @@ exports.confirmEmail = function (req, res) {
             // Replace old email with new one
             email: user.emailTemporary,
             // @todo: this should be done at user.server.model.js
-            emailHash: crypto.createHash('md5').update(user.emailTemporary.trim().toLowerCase()).digest('hex')
-          }
+            emailHash: crypto.createHash('md5').update(user.emailTemporary.trim().toLowerCase()).digest('hex'),
+          },
         },
         {
           // Return the document after updates if `new = true`
-          new: true
+          new: true,
         },
         function (err, modifiedUser) {
           done(err, result, modifiedUser);
@@ -697,11 +695,11 @@ exports.confirmEmail = function (req, res) {
       result.user = userProfile.sanitizeProfile(user);
 
       return res.json(result);
-    }
+    },
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
   });
@@ -714,7 +712,7 @@ exports.resendConfirmation = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -726,11 +724,11 @@ exports.resendConfirmation = function (req, res) {
   */
   if (!req.user.emailTemporary) {
     return res.status(400).send({
-      message: 'Already confirmed.'
+      message: 'Already confirmed.',
     });
   }
 
-  var isEmailChange = !!req.user.public;
+  const isEmailChange = !!req.user.public;
 
   async.waterfall([
 
@@ -744,7 +742,7 @@ exports.resendConfirmation = function (req, res) {
 
     // Save token
     function (salt, done) {
-      var user = req.user;
+      const user = req.user;
       user.updated = Date.now();
       user.emailToken = authenticationService.generateEmailToken(user, salt);
       user.save(function (err) {
@@ -770,12 +768,12 @@ exports.resendConfirmation = function (req, res) {
     // Return confirmation
     function () {
       return res.json({ message: 'Sent confirmation email.' });
-    }
+    },
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
   });

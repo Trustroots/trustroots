@@ -1,19 +1,17 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var should = require('should'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Message = mongoose.model('Message');
+const should = require('should');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Message = mongoose.model('Message');
 
 /**
  * Globals
  */
-var userTo,
-    userFrom,
-    message;
+let userTo;
+let userFrom;
+let message;
 
 /**
  * Unit tests
@@ -29,7 +27,7 @@ describe('Message Model Unit Tests:', function () {
       email: 'test1@test.com',
       username: 'username1',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
     userTo = new User({
       firstName: 'Full',
@@ -38,7 +36,7 @@ describe('Message Model Unit Tests:', function () {
       email: 'test2@test.com',
       username: 'username2',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
 
     // Create users
@@ -50,7 +48,7 @@ describe('Message Model Unit Tests:', function () {
           message = new Message({
             content: 'Message content',
             userTo: userTo._id,
-            read: false
+            read: false,
           });
           return done();
         });

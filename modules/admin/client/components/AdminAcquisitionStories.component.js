@@ -9,7 +9,7 @@ export default class AdminAcquisitionStories extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      acquisitionStories: []
+      acquisitionStories: [],
     };
   }
 
@@ -45,7 +45,7 @@ export default class AdminAcquisitionStories extends Component {
         </div>
       </>
     );
-  };
+  }
 }
 
 AdminAcquisitionStories.propTypes = {};

@@ -1,10 +1,8 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var tribesPolicy = require('../policies/tribes.server.policy'),
-    tribes = require('../controllers/tribes.server.controller');
+const tribesPolicy = require('../policies/tribes.server.policy');
+const tribes = require('../controllers/tribes.server.controller');
 
 module.exports = function (app) {
 

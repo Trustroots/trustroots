@@ -1,38 +1,8 @@
 <!-- Avatar+Name for mobile screens -->
-<div class="text-center visible-xs-block" role="dialog">
-  <a tr-avatar
-     data-user="profileCtrl.profile"
-     data-size="512"
-     data-link="false"
-     class="visible-xs-block avatar-circle"
-     ng-click="profileCtrl.biggerAvatar = !profileCtrl.biggerAvatar"
-     ng-class="{'profile-avatar-lg': profileCtrl.biggerAvatar}"
-     aria-hidden="true"></a>
-  <h2 class="profile-name"
-      ng-show="profileCtrl.profile.displayName"
-      ng-bind="profileCtrl.profile.displayName"></h2>
-  <br>
-  <h4 class="profile-username">
-    @{{ profileCtrl.profile.username }}
-  </h4>
-  <br>
-  <p class="profile-tagline"
-     ng-show="profileCtrl.profile.tagline"
-     ng-bind="profileCtrl.profile.tagline"></p>
-</div>
+<avatar-name-mobile profile="profileCtrl.profile"></avatar-name-mobile>
 
-<div class="panel panel-default profile-overview">
-  <a ng-click="profileCtrl.toggleAvatarModal()">
-    <avatar user="profileCtrl.profile" size="256" link="false" class="hidden-xs" aria-hidden="true"></avatar>
-  </a>
-  <div class="panel-body">
-    <div class="profile-sidebar-section">
-      <!-- A React component, includes Member since, Online ... ago  -->
-      <!-- This component should expand to include all the fields here and replace this Angular component. -->
-      <profile-view-basics profile="profileCtrl.profile" hasConnectedAdditionalSocialAccounts = "profileCtrl.hasConnectedAdditionalSocialAccounts" isWarmshowersId="profileCtrl.isWarmshowersId", socialAccountLink="profileCtrl.socialAccountLink"></profile-view-basics>
-    </div>
-  </div>
-</div>
+<profile-overview profile="profileCtrl.profile">
+</profile-overview>
 
 <report-member-link
   ng-if="::app.user._id !== profileCtrl.profile._id"

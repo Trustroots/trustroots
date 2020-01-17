@@ -1,39 +1,37 @@
-'use strict';
-
-var fs = require('fs'),
-    async = require('async'),
-    should = require('should'),
-    sinon = require('sinon'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Contact = mongoose.model('Contact'),
-    Message = mongoose.model('Message'),
-    Offer = mongoose.model('Offer'),
-    Tribe = mongoose.model('Tribe'),
-    config = require(path.resolve('./config/config')),
-    express = require(path.resolve('./config/lib/express')),
-    testutils = require(path.resolve('./testutils/server.testutil'));
+const fs = require('fs');
+const async = require('async');
+const should = require('should');
+const sinon = require('sinon');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Contact = mongoose.model('Contact');
+const Message = mongoose.model('Message');
+const Offer = mongoose.model('Offer');
+const Tribe = mongoose.model('Tribe');
+const config = require(path.resolve('./config/config'));
+const express = require(path.resolve('./config/lib/express'));
+const testutils = require(path.resolve('./testutils/server/server.testutil'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentialsA,
-    credentialsB,
-    userA,
-    _userA,
-    userB,
-    _userB;
+let app;
+let agent;
+let credentialsA;
+let credentialsB;
+let userA;
+let _userA;
+let userB;
+let _userB;
 
 /**
  * User routes tests
  */
 describe('User removal CRUD tests', function () {
 
-  var jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs();
 
   before(function (done) {
     // Get application
@@ -58,7 +56,7 @@ describe('User removal CRUD tests', function () {
     // Create user credentials for user A
     credentialsA = {
       username: 'user_a',
-      password: 'M3@n.jsI$Aw3$0m3'
+      password: 'M3@n.jsI$Aw3$0m3',
     };
 
     // Create a new user A
@@ -70,7 +68,7 @@ describe('User removal CRUD tests', function () {
       email: 'user_a@example.com',
       username: credentialsA.username.toLowerCase(),
       password: credentialsA.password,
-      provider: 'local'
+      provider: 'local',
     };
 
     userA = new User(_userA);
@@ -85,7 +83,7 @@ describe('User removal CRUD tests', function () {
     // Create user credentials for user B
     credentialsB = {
       username: 'user_b',
-      password: 'M3@n.jsI$Aw3$0m3'
+      password: 'M3@n.jsI$Aw3$0m3',
     };
 
     // Create a new user B
@@ -97,7 +95,7 @@ describe('User removal CRUD tests', function () {
       email: 'user_b@example.com',
       username: credentialsB.username.toLowerCase(),
       password: credentialsB.password,
-      provider: 'local'
+      provider: 'local',
     };
 
     userB = new User(_userB);
@@ -523,10 +521,10 @@ describe('User removal CRUD tests', function () {
     it('should remove profile images', function (done) {
 
       // Each user has their own folder for avatars
-      var uploadDir = path.resolve(config.uploadDir) + '/' + userA._id + '/avatar'; // No trailing slash
+      const uploadDir = path.resolve(config.uploadDir) + '/' + userA._id + '/avatar'; // No trailing slash
 
       function checkAvatarExistence(shouldExist, cb) {
-        var exists = fs.existsSync(uploadDir);
+        const exists = fs.existsSync(uploadDir);
 
         try {
           should(exists).eql(shouldExist);
@@ -556,7 +554,7 @@ describe('User removal CRUD tests', function () {
         sendDeleteRequest,
 
         // Avatar should not exist anymore
-        checkAvatarExistence.bind(null, false)
+        checkAvatarExistence.bind(null, false),
 
       ], done);
     });
@@ -565,18 +563,18 @@ describe('User removal CRUD tests', function () {
       async.waterfall([
         // create some unnotified messages between the users
         function (cb) {
-          var messageAB = new Message({
+          const messageAB = new Message({
             content: 'Message content',
             userFrom: userA._id,
             userTo: userB._id,
-            read: false
+            read: false,
           });
 
-          var messageBA = new Message({
+          const messageBA = new Message({
             content: 'Message content',
             userFrom: userB._id,
             userTo: userA._id,
-            read: false
+            read: false,
           });
 
           async.each([messageAB, messageBA], function (msg, callback) {
@@ -608,15 +606,15 @@ describe('User removal CRUD tests', function () {
               cb(e);
             }
           });
-        }
+        },
 
       ], done);
     });
 
     it('should subtract 1 from tribes.count for each tribe user is member of', function (done) {
 
-      var tribeA,
-          tribeB;
+      let tribeA;
+      let tribeB;
 
       async.waterfall([
         // Create some tribes
@@ -627,7 +625,7 @@ describe('User removal CRUD tests', function () {
             attribution_url: 'http://www.trustroots.org/team',
             image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
             description: 'Lorem ipsum.',
-            count: 5
+            count: 5,
           });
 
           tribeB = new Tribe({
@@ -636,7 +634,7 @@ describe('User removal CRUD tests', function () {
             attribution_url: 'http://www.trustroots.org/team2',
             image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6d',
             description: 'Lorem ipsum.',
-            count: 5
+            count: 5,
           });
 
           async.each([tribeA, tribeB], function (tribe, callback) {
@@ -690,7 +688,7 @@ describe('User removal CRUD tests', function () {
               cb(e);
             }
           });
-        }
+        },
 
       ], done);
     });
@@ -700,9 +698,9 @@ describe('User removal CRUD tests', function () {
 
         // Create an offer for the user
         function (cb) {
-          var offer = new Offer({
+          const offer = new Offer({
             user: userA._id,
-            location: [0, 0]
+            location: [0, 0],
           });
 
           offer.save(function (err) { cb(err); });
@@ -732,13 +730,13 @@ describe('User removal CRUD tests', function () {
               cb(e);
             }
           });
-        }
+        },
       ], done);
     });
 
     it('should remove contacts of the user', function (done) {
 
-      var userC;
+      let userC;
 
       async.waterfall([
         // create a 3rd user
@@ -751,7 +749,7 @@ describe('User removal CRUD tests', function () {
             email: 'user_c@example.com',
             username: 'userc',
             password: '**********asdfasdf',
-            provider: 'local'
+            provider: 'local',
           });
 
           userC.save(function (err) { cb(err); });
@@ -759,22 +757,22 @@ describe('User removal CRUD tests', function () {
 
         // add contacts between the users
         function (cb) {
-          var contactAB = new Contact({
+          const contactAB = new Contact({
             userFrom: userA._id,
             userTo: userB._id,
-            confirmed: true
+            confirmed: true,
           });
 
-          var contactBC = new Contact({
+          const contactBC = new Contact({
             userFrom: userB._id,
             userTo: userC._id,
-            confirmed: true
+            confirmed: true,
           });
 
-          var contactCA = new Contact({
+          const contactCA = new Contact({
             userFrom: userC._id,
             userTo: userA._id,
-            confirmed: false
+            confirmed: false,
           });
 
           async.each([contactAB, contactBC, contactCA], function (contact, callback) {
@@ -813,7 +811,7 @@ describe('User removal CRUD tests', function () {
           } catch (e) {
             cb(e);
           }
-        }
+        },
 
       ], done);
     });
@@ -822,7 +820,7 @@ describe('User removal CRUD tests', function () {
 
   // clear database
   afterEach(function (done) {
-    var collectionsToClear = [User, Contact, Message, Offer, Tribe];
+    const collectionsToClear = [User, Contact, Message, Offer, Tribe];
 
     async.each(collectionsToClear, function (collection, cb) {
       collection.deleteMany().exec(cb);

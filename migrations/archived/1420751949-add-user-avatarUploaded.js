@@ -1,17 +1,15 @@
-'use strict';
-
 /**
  * Add avatarUploaded for user model
  * Determines if avatars exist at users upload folder
  */
 
-var path = require('path'),
-    mongooseService = require(path.resolve('./config/lib/mongoose')),
-    chalk = require('chalk'),
-    mongoose = require('mongoose'),
-    // eslint-disable-next-line no-unused-vars
-    userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
-    User = mongoose.model('User');
+const path = require('path');
+const mongooseService = require(path.resolve('./config/lib/mongoose'));
+const chalk = require('chalk');
+const mongoose = require('mongoose');
+// eslint-disable-next-line no-unused-vars
+const userModels = require(path.resolve('./modules/users/server/models/user.server.model'));
+const User = mongoose.model('User');
 
 exports.up = function (next) {
   mongooseService.connect(function () {
@@ -19,7 +17,7 @@ exports.up = function (next) {
     User.update(
       { avatarUploaded: { $exists: false } },
       { '$set': { avatarUploaded: false } },
-      { multi: true }
+      { multi: true },
     ).exec(function (err, numberAffected) {
       if (err) {
         console.log(chalk.red(err));
@@ -41,7 +39,7 @@ exports.down = function (next) {
     User.update(
       { avatarUploaded: { $exists: true } },
       { '$unset': { avatarUploaded: '' } },
-      { multi: true }
+      { multi: true },
     ).exec(function (err, numberAffected) {
       if (err) {
         console.log(chalk.red(err));

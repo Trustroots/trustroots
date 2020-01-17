@@ -1,48 +1,46 @@
-'use strict';
-
-var _ = require('lodash'),
-    should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    async = require('async'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Offer = mongoose.model('Offer'),
-    Tribe = mongoose.model('Tribe'),
-    express = require(path.resolve('./config/lib/express'));
+const _ = require('lodash');
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const async = require('async');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Offer = mongoose.model('Offer');
+const Tribe = mongoose.model('Tribe');
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    credentials2,
-    user1,
-    user2,
-    user3,
-    user2Id,
-    user3Id,
-    offer1,
-    offer2,
-    offer2Id,
-    offer3,
-    offer3Id,
-    offerMeet,
-    tribe1,
-    tribe2,
-    tribe1Id,
-    tribe2Id;
+let app;
+let agent;
+let credentials;
+let credentials2;
+let user1;
+let user2;
+let user3;
+let user2Id;
+let user3Id;
+let offer1;
+let offer2;
+let offer2Id;
+let offer3;
+let offer3Id;
+let offerMeet;
+let tribe1;
+let tribe2;
+let tribe1Id;
+let tribe2Id;
 
-var testLocations = {
+const testLocations = {
   'Europe': {
     queryBoundingBox:
       '?northEastLat=55.31212135084999' +
       '&northEastLng=18.73318142361111' +
       '&southWestLat=44.66407507240992' +
       '&southWestLng=3.689914279513889',
-    location: [52.48556355813466, 13.489011526107788]
+    location: [52.48556355813466, 13.489011526107788],
   },
   'China': {
     queryBoundingBox:
@@ -50,7 +48,7 @@ var testLocations = {
       '&northEastLng=151.23828125000003' +
       '&southWestLat=-3.9332268264771106' +
       '&southWestLng=61.63281250000001',
-    location: [34.632532, 103.767519]
+    location: [34.632532, 103.767519],
   },
   'US': {
     queryBoundingBox:
@@ -58,7 +56,7 @@ var testLocations = {
       '&northEastLng=-48.44921875000001' +
       '&southWestLat=0.021065118766989688' +
       '&southWestLng=-138.05468750000003',
-    location: [40.514402, -88.990735]
+    location: [40.514402, -88.990735],
   },
   'NorthPole': {
     queryBoundingBox:
@@ -66,8 +64,8 @@ var testLocations = {
       '&northEastLng=145.61328125000003' +
       '&southWestLat=78.02765497223292' +
       '&southWestLng=56.00781250000001',
-    location: [80.912672, 79.732322]
-  }
+    location: [80.912672, 79.732322],
+  },
 };
 
 
@@ -88,13 +86,13 @@ describe('Offer search tests', function () {
     // Create user credentials
     credentials = {
       username: 'loremipsum',
-      password: 'Password123!'
+      password: 'Password123!',
     };
 
     // Create user2 credentials
     credentials2 = {
       username: 'loremipsum2',
-      password: 'Password123!'
+      password: 'Password123!',
     };
 
     // Create a new user
@@ -108,7 +106,7 @@ describe('Offer search tests', function () {
       password: credentials.password,
       provider: 'local',
       public: true,
-      seen: new Date()
+      seen: new Date(),
     });
 
     // Create a new user
@@ -123,7 +121,7 @@ describe('Offer search tests', function () {
       languages: ['fin', 'ita'],
       provider: 'local',
       public: true,
-      seen: new Date()
+      seen: new Date(),
     });
 
     // Create a new user
@@ -137,7 +135,7 @@ describe('Offer search tests', function () {
       languages: ['ita'],
       provider: 'local',
       public: true,
-      seen: new Date()
+      seen: new Date(),
     });
 
     // Used only for sending via POST and thus doesn't include some data
@@ -147,7 +145,7 @@ describe('Offer search tests', function () {
       description: '<p>1 I can host! :)</p>',
       noOfferDescription: '<p>1 I cannot host... :(</p>',
       maxGuests: 5,
-      location: testLocations.Europe.location
+      location: testLocations.Europe.location,
     };
 
     offer2 = new Offer({
@@ -157,7 +155,7 @@ describe('Offer search tests', function () {
       noOfferDescription: '<p>2 I cannot host... :(</p>',
       maxGuests: 3,
       updated: new Date(),
-      location: [52.498981209298776, 13.418329954147339]
+      location: [52.498981209298776, 13.418329954147339],
     });
 
     offer3 = new Offer({
@@ -167,7 +165,7 @@ describe('Offer search tests', function () {
       noOfferDescription: '<p>3 I cannot host... :(</p>',
       maxGuests: 1,
       updated: new Date(),
-      location: [52.498981209298775, 13.418329954147338]
+      location: [52.498981209298775, 13.418329954147338],
     });
 
     offerMeet = new Offer({
@@ -175,7 +173,7 @@ describe('Offer search tests', function () {
       description: '<p>Dinner party!</p>',
       validUntil: moment().add(30, 'day').toDate(),
       updated: new Date(),
-      location: [52.498981209298887, 13.418329954147449]
+      location: [52.498981209298887, 13.418329954147449],
     });
 
     tribe1 = new Tribe({
@@ -184,7 +182,7 @@ describe('Offer search tests', function () {
       'color': '111111',
       'tribe': true,
       'count': 1,
-      'public': true
+      'public': true,
     });
 
     tribe2 = new Tribe({
@@ -192,7 +190,7 @@ describe('Offer search tests', function () {
       'label': 'tribe2',
       'color': '222222',
       'count': 1,
-      'public': true
+      'public': true,
     });
 
     // Save data to the test db
@@ -221,7 +219,7 @@ describe('Offer search tests', function () {
       function (done) {
         user2.member = [{
           tribe: tribe2Id,
-          since: new Date()
+          since: new Date(),
         }];
         user2.save(function (err, user2res) {
           user2Id = user2res._id;
@@ -232,7 +230,7 @@ describe('Offer search tests', function () {
       function (done) {
         user3.member = [{
           tribe: tribe1Id,
-          since: new Date()
+          since: new Date(),
         }];
         user3.save(function (err, user3res) {
           user3Id = user3res._id;
@@ -254,7 +252,7 @@ describe('Offer search tests', function () {
           offer3Id = offer3._id;
           done(err);
         });
-      }
+      },
     ], function (err) {
       should.not.exist(err);
       doneBeforeEach(err);
@@ -274,7 +272,7 @@ describe('Offer search tests', function () {
             '?northEastLat=32.89472514359572' +
             '&northEastLng=25.598493303571427' +
             '&southWestLat=-20.49068931208608' +
-            '&southWestLng=-12.986188616071427'
+            '&southWestLng=-12.986188616071427',
         )
           .expect(200)
           .end(function (offersGetErr, offersGetRes) {
@@ -304,7 +302,7 @@ describe('Offer search tests', function () {
             '?northEastLat=+55.31212135084999' +
             '&northEastLng=+18.73318142361111' +
             '&southWestLat=+44.66407507240992' +
-            '&southWestLng=+3.689914279513889'
+            '&southWestLng=+3.689914279513889',
         )
           .expect(200)
           .end(function (offersGetErr, offersGetRes) {
@@ -333,7 +331,7 @@ describe('Offer search tests', function () {
         agent.get('/api/offers' +
             '?northEastLat=32.89472514359572' +
             '&northEastLng=25.598493303571427' +
-            '&southWestLat=-20.49068931208608'
+            '&southWestLat=-20.49068931208608',
         )
           .expect(400)
           .end(done);
@@ -354,7 +352,7 @@ describe('Offer search tests', function () {
             '?northEastLat=25.' + '1'.repeat(30) + 'foo' + // `foo` starts at 31
             '&northEastLng=25.598493303571427' +
             '&southWestLat=-20.49068931208608' +
-            '&southWestLng=-12.986188616071427'
+            '&southWestLng=-12.986188616071427',
         )
           .expect(400)
           .end(done);
@@ -375,7 +373,7 @@ describe('Offer search tests', function () {
             '?northEastLat=FAIL' +
             '&northEastLng=25.598493303571427' +
             '&southWestLat=-20.49068931208608' +
-            '&southWestLng=-12.986188616071427'
+            '&southWestLng=-12.986188616071427',
         )
           .expect(400)
           .end(done);
@@ -414,8 +412,8 @@ describe('Offer search tests', function () {
             if (offersGetErr) return done(offersGetErr);
 
             // MongoDb returns these in random order, figure out order here
-            var user2Order = 1;
-            var user3Order = 0;
+            let user2Order = 1;
+            let user3Order = 0;
             if (offersGetRes.body[0]._id === offer2Id.toString()) {
               user2Order = 0;
               user3Order = 1;
@@ -458,7 +456,7 @@ describe('Offer search tests', function () {
           Offer.deleteMany().exec(function () {
 
             // Create new offer to target location
-            var testLocationOffer = new Offer(offer1);
+            const testLocationOffer = new Offer(offer1);
             testLocationOffer.location = testLocation.location;
 
             testLocationOffer.save(function (saveErr, saveRes) {
@@ -515,7 +513,7 @@ describe('Offer search tests', function () {
 
               // Count different offer types
               // This produces `{'host': 2, 'meet': 1}`
-              var count = _.countBy(offersGetRes.body, function (offer) {
+              const count = _.countBy(offersGetRes.body, function (offer) {
                 return offer.type;
               });
 
@@ -582,8 +580,8 @@ describe('Offer search tests', function () {
             if (signinErr) return done(signinErr);
 
             // Get offers (around Berlin)
-            var filters = {
-              types: ['host']
+            const filters = {
+              types: ['host'],
             };
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
               .expect(200)
@@ -592,8 +590,8 @@ describe('Offer search tests', function () {
                 if (offersGetErr) return done(offersGetErr);
 
                 // MongoDb returns these in random order, figure out order here
-                var user2Order = 1;
-                var user3Order = 0;
+                let user2Order = 1;
+                let user3Order = 0;
                 if (offersGetRes.body[0]._id === offer2Id.toString()) {
                   user2Order = 0;
                   user3Order = 1;
@@ -624,8 +622,8 @@ describe('Offer search tests', function () {
             if (signinErr) return done(signinErr);
 
             // Get offers (around Berlin)
-            var filters = {
-              types: ['meet']
+            const filters = {
+              types: ['meet'],
             };
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
               .expect(200)
@@ -657,8 +655,8 @@ describe('Offer search tests', function () {
             if (signinErr) return done(signinErr);
 
             // Get offers (around Berlin)
-            var filters = {
-              types: ['foobar']
+            const filters = {
+              types: ['foobar'],
             };
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
               .expect(200)
@@ -671,7 +669,7 @@ describe('Offer search tests', function () {
 
                 // Count different offer types
                 // This produces `{'host': 2, 'meet': 1}`
-                var count = _.countBy(offersGetRes.body, function (offer) {
+                const count = _.countBy(offersGetRes.body, function (offer) {
                   return offer.type;
                 });
 
@@ -698,8 +696,8 @@ describe('Offer search tests', function () {
           if (signinErr) return done(signinErr);
 
           // Get offers (around Berlin)
-          var filters = {
-            languages: ['fin']
+          const filters = {
+            languages: ['fin'],
           };
 
           agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
@@ -728,8 +726,8 @@ describe('Offer search tests', function () {
           if (signinErr) return done(signinErr);
 
           // Get offers (around Berlin)
-          var filters = {
-            languages: ['fin', 'ita']
+          const filters = {
+            languages: ['fin', 'ita'],
           };
 
           agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
@@ -739,8 +737,8 @@ describe('Offer search tests', function () {
               if (offersGetErr) return done(offersGetErr);
 
               // MongoDb returns these in random order, figure out order here
-              var user2Order = 1;
-              var user3Order = 0;
+              let user2Order = 1;
+              let user3Order = 0;
               if (offersGetRes.body[0]._id === offer2Id.toString()) {
                 user2Order = 0;
                 user3Order = 1;
@@ -770,8 +768,8 @@ describe('Offer search tests', function () {
           if (signinErr) return done(signinErr);
 
           // Get offers (around Berlin)
-          var filters = {
-            tribes: [tribe2Id]
+          const filters = {
+            tribes: [tribe2Id],
           };
           agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
             .expect(200)
@@ -808,8 +806,8 @@ describe('Offer search tests', function () {
             if (signinErr) return done(signinErr);
 
             // Get offers (around Berlin)
-            var filters = {
-              tribes: [tribe1Id, tribe2Id]
+            const filters = {
+              tribes: [tribe1Id, tribe2Id],
             };
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
               .expect(200)
@@ -841,8 +839,8 @@ describe('Offer search tests', function () {
           if (signinErr) return done(signinErr);
 
           // Get offers (around Berlin)
-          var filters = {
-            tribes: [tribe1Id, tribe2Id]
+          const filters = {
+            tribes: [tribe1Id, tribe2Id],
           };
           agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
             .expect(200)
@@ -854,8 +852,8 @@ describe('Offer search tests', function () {
               offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(2);
 
               // MongoDb returns these in random order, figure out order here
-              var user2Order = 1;
-              var user3Order = 0;
+              let user2Order = 1;
+              let user3Order = 0;
               if (offersGetRes.body[0]._id === offer2Id.toString()) {
                 user2Order = 0;
                 user3Order = 1;
@@ -953,10 +951,10 @@ describe('Offer search tests', function () {
               return done(signinErr);
             }
 
-            var filters = {
+            const filters = {
               seen: {
-                'months': 1
-              }
+                'months': 1,
+              },
             };
 
             agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))

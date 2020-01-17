@@ -42,7 +42,7 @@ export function InterfaceLanguagePanel({ t }) {
 }
 
 InterfaceLanguagePanel.propTypes = {
-  t: PropTypes.func.isRequired
+  t: PropTypes.func.isRequired,
 };
 
 export default withTranslation('user')(InterfaceLanguagePanel);

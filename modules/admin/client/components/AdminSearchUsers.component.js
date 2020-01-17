@@ -19,7 +19,7 @@ export default class AdminSearchUsers extends Component {
     this.doSearch = this.doSearch.bind(this);
     this.state = {
       search: '',
-      userResults: []
+      userResults: [],
     };
   }
 
@@ -41,7 +41,7 @@ export default class AdminSearchUsers extends Component {
     window.history.pushState(
       { search },
       window.document.title,
-      url.toString()
+      url.toString(),
     );
   }
 
@@ -146,7 +146,7 @@ export default class AdminSearchUsers extends Component {
         </div>
       </>
     );
-  };
+  }
 }
 
 AdminSearchUsers.propTypes = {};

@@ -1,21 +1,19 @@
-'use strict';
-
-var request = require('supertest'),
-    async = require('async'),
-    _ = require('lodash'),
-    path = require('path'),
-    sinon = require('sinon'),
-    mongoose = require('mongoose'),
-    should = require('should'),
-    User = mongoose.model('User'),
-    config = require(path.resolve('./config/config')),
-    userHandler = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const request = require('supertest');
+const async = require('async');
+const _ = require('lodash');
+const path = require('path');
+const sinon = require('sinon');
+const mongoose = require('mongoose');
+const should = require('should');
+const User = mongoose.model('User');
+const config = require(path.resolve('./config/config'));
+const userHandler = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
 
 describe('Search users: GET /users?search=string', function () {
 
-  var agent;
+  let agent;
 
-  var limit = 9;
+  const limit = 9;
 
   // initialize the testing environment
   before(function () {
@@ -23,9 +21,9 @@ describe('Search users: GET /users?search=string', function () {
     sinon.stub(config.limits, 'paginationLimit').value(limit);
 
     // the limit is used in this config, so we needed to stub limit before importing this
-    var express = require(path.resolve('./config/lib/express'));
+    const express = require(path.resolve('./config/lib/express'));
     // Get application
-    var app = express.init(mongoose.connection);
+    const app = express.init(mongoose.connection);
     agent = request.agent(app);
   });
 
@@ -47,9 +45,9 @@ describe('Search users: GET /users?search=string', function () {
 
 
   function createUsers(users, callback) {
-    var createdUsers = [];
+    const createdUsers = [];
     async.eachOfSeries(users, function (user, index, cb) {
-      var createdUser = new User({
+      const createdUser = new User({
         username: user.username || 'user' + index,
         firstName: user.firstName || 'firstName' + index,
         lastName: user.lastName || 'lastName' + index,
@@ -62,7 +60,7 @@ describe('Search users: GET /users?search=string', function () {
         public: _.has(user, 'public') ? user.public : true,
         gender: 'non-binary',
         locationFrom: 'Wonderland',
-        locationLiving: 'La Islantilla'
+        locationLiving: 'La Islantilla',
 
       });
 
@@ -84,7 +82,7 @@ describe('Search users: GET /users?search=string', function () {
 
   context('logged in', function () {
 
-    var loggedUser;
+    let loggedUser;
 
     // create logged user
     beforeEach(function (done) {
@@ -119,7 +117,7 @@ describe('Search users: GET /users?search=string', function () {
               { username: 'asdf' },
               { username: 'asdfg' },
               { username: 'asdia' },
-              { username: 'hasdfg' }
+              { username: 'hasdfg' },
             ], cb);
           },
 
@@ -138,7 +136,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(1);
 
             cb();
-          }
+          },
         ], done);
       });
 
@@ -153,7 +151,7 @@ describe('Search users: GET /users?search=string', function () {
               { firstName: 'qwery' },
               { firstName: 'qwer' },
               { firstName: 'qwe' },
-              { firstName: 'sqwero' }
+              { firstName: 'sqwero' },
             ], cb);
           },
 
@@ -172,7 +170,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(2);
 
             cb();
-          }
+          },
         ], done);
       });
 
@@ -190,7 +188,7 @@ describe('Search users: GET /users?search=string', function () {
               { lastName: 'zxcvba' },
               { lastName: 'zxcvz' },
               { lastName: 'asdia' },
-              { lastName: 'hasdfg' }
+              { lastName: 'hasdfg' },
             ], cb);
           },
 
@@ -209,7 +207,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(2);
 
             cb();
-          }
+          },
         ], done);
       });
 
@@ -225,7 +223,7 @@ describe('Search users: GET /users?search=string', function () {
               { firstName: 'jaCob', lastName: 'alid' },
               { firstName: 'jacob', lastName: 'aliE' },
               { firstName: 'jacob', lastName: 'alIA' },
-              { firstName: 'jaco', lastName: 'alg' }
+              { firstName: 'jaco', lastName: 'alg' },
             ], cb);
           },
 
@@ -244,7 +242,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(6);
 
             cb();
-          }
+          },
         ], done);
       });
 
@@ -258,7 +256,7 @@ describe('Search users: GET /users?search=string', function () {
               { username: 'zxcvba' },
               { firstName: 'xcvz' },
               { lastName: 'asdia' },
-              { username: 'hasdfg' }
+              { username: 'hasdfg' },
             ], cb);
           },
 
@@ -277,7 +275,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(0);
 
             cb();
-          }
+          },
         ], done);
       });
 
@@ -287,7 +285,7 @@ describe('Search users: GET /users?search=string', function () {
           // create some users
           function (cb) {
             createUsers([
-              { username: 'aaa' }
+              { username: 'aaa' },
             ], cb);
           },
 
@@ -307,21 +305,21 @@ describe('Search users: GET /users?search=string', function () {
 
             // _id is not specified in userSearchProfileFields, but gets included anyways
             // that's just how mongo works
-            var expectedFields = userHandler.userSearchProfileFields.split(' ').concat(['_id']);
-            var actualFields = _.keys(foundUsers[0]);
+            const expectedFields = userHandler.userSearchProfileFields.split(' ').concat(['_id']);
+            const actualFields = _.keys(foundUsers[0]);
 
-            var unexpectedFields = _.difference(actualFields, expectedFields);
+            const unexpectedFields = _.difference(actualFields, expectedFields);
 
             should(unexpectedFields).eql(['score']);
 
             cb();
-          }
+          },
         ], done);
       });
 
       context('limit the amount of results and pagination', function () {
         // create some users
-        var testUsers = [
+        const testUsers = [
           { username: 'aaaaaa' },
           { firstName: 'aaaaaa' },
           { lastName: 'aaaaaa' },
@@ -333,7 +331,7 @@ describe('Search users: GET /users?search=string', function () {
           { firstName: 'aaaaaa' },
           { lastName: 'aaaaaa' },
           { firstName: 'aaaaaa' },
-          { lastName: 'aaaaaa' }
+          { lastName: 'aaaaaa' },
         ];
 
         beforeEach(function (done) {
@@ -342,13 +340,13 @@ describe('Search users: GET /users?search=string', function () {
           });
         });
         // TCs with different or missing page and limit parameters
-        var pageTests = [
+        const pageTests = [
           { params: '', expected: limit },
           { params: '&page=1', expected: limit },
           { params: '&page=2', expected: testUsers.length - limit },
           { params: '&limit=11', expected: 11 },
           { params: '&page=1&limit=11', expected: 11 },
-          { params: '&page=2&limit=11', expected: testUsers.length - 11 }
+          { params: '&page=2&limit=11', expected: testUsers.length - 11 },
         ];
 
         pageTests.forEach(function (test) {
@@ -369,7 +367,7 @@ describe('Search users: GET /users?search=string', function () {
                 function (foundUsers, cb) {
                   should(foundUsers).length(test.expected);
                   cb();
-                }
+                },
               ], done);
             });
         });
@@ -384,7 +382,7 @@ describe('Search users: GET /users?search=string', function () {
               { username: 'abcdef' },
               { firstName: 'abCdef' },
               { lastName: 'ABCdEF' },
-              { username: 'aabc' }
+              { username: 'aabc' },
             ], cb);
           },
 
@@ -403,7 +401,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(3);
 
             cb();
-          }
+          },
         ], done);
       });
 
@@ -417,7 +415,7 @@ describe('Search users: GET /users?search=string', function () {
               { firstName: 'aAabCd', public: false },
               { lastName: 'aaABCc', public: false },
               { lastName: 'aaABCc', public: true }, // this one is not matched
-              { firstName: 'aabCDef', lastName: 'aAbcdef', public: true }
+              { firstName: 'aabCDef', lastName: 'aAbcdef', public: true },
             ], cb);
           },
 
@@ -436,7 +434,7 @@ describe('Search users: GET /users?search=string', function () {
             should(foundUsers).length(2);
 
             cb();
-          }
+          },
         ], done);
       });
     });

@@ -1,54 +1,52 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    languages = require(path.resolve('./config/languages/languages.json')),
-    authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service')),
-    crypto = require('crypto'),
-    mongoose = require('mongoose'),
-    uniqueValidation = require('mongoose-beautiful-unique-validation'),
-    validator = require('validator'),
-    Schema = mongoose.Schema;
+const _ = require('lodash');
+const path = require('path');
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const languages = require(path.resolve('./config/languages/languages.json'));
+const authenticationService = require(path.resolve('./modules/users/server/services/authentication.server.service'));
+const crypto = require('crypto');
+const mongoose = require('mongoose');
+const uniqueValidation = require('mongoose-beautiful-unique-validation');
+const validator = require('validator');
+const Schema = mongoose.Schema;
 
-var passwordMinLength = 8;
+const passwordMinLength = 8;
 
 /**
  * A Validation function for local strategy properties
  */
-var validateLocalStrategyProperty = function (property) {
+const validateLocalStrategyProperty = function (property) {
   return ((this.provider !== 'local' && !this.updated) || property.length);
 };
 
 /**
  * A Validation function for local strategy email
  */
-var validateLocalStrategyEmail = function (email) {
+const validateLocalStrategyEmail = function (email) {
   return ((this.provider !== 'local' && !this.updated) || validator.isEmail(email));
 };
 
 /**
  * A Validation function for password
  */
-var validatePassword = function (password) {
+const validatePassword = function (password) {
   return password && validator.isLength(password, passwordMinLength);
 };
 
 /**
  * A Validation function for username
  */
-var validateUsername = function (username) {
+const validateUsername = function (username) {
   return this.provider !== 'local' || authenticationService.validateUsername(username);
 };
 
-var setPlainTextField = function (value) {
+const setPlainTextField = function (value) {
   return textService.plainText(value, true);
 };
 
-var setPlainTextFieldAndLimit = function (limit) {
+const setPlainTextFieldAndLimit = function (limit) {
   return function (value) {
     return setPlainTextField(value).substring(0, limit);
   };
@@ -59,63 +57,63 @@ var setPlainTextFieldAndLimit = function (limit) {
  * This could be defined directly under `UserSchema` as well,
  * but then we'd have extra `_id`'s hanging around.
  */
-var UserMemberSchema = new Schema({
+const UserMemberSchema = new Schema({
   tribe: {
     type: Schema.Types.ObjectId,
     ref: 'Tribe',
-    required: true
+    required: true,
   },
   since: {
     type: Date,
     default: Date.now,
-    required: true
-  }
+    required: true,
+  },
 }, { _id: false });
 
 /**
  * SubSchema for `User` schema's `pushRegistration` array
  */
-var UserPushRegistrationSchema = new Schema({
+const UserPushRegistrationSchema = new Schema({
   platform: {
     type: String,
     // android, ios, web → Firebase; expo → Exponent
     enum: ['android', 'ios', 'web', 'expo'],
-    required: true
+    required: true,
   },
   token: {
     type: String,
-    required: true
+    required: true,
   },
   created: {
     type: Date,
     default: Date.now,
-    required: true
+    required: true,
   },
   deviceId: {
     type: String,
-    trim: true
-  }
+    trim: true,
+  },
 }, { _id: false });
 
 /**
  * User Schema
  */
-var UserSchema = new Schema({
+const UserSchema = new Schema({
   firstName: {
     type: String,
     required: true,
     validate: [validateLocalStrategyProperty, 'Please fill in your first name'],
-    set: setPlainTextField
+    set: setPlainTextField,
   },
   lastName: {
     type: String,
     required: true,
     validate: [validateLocalStrategyProperty, 'Please fill in your last name'],
-    set: setPlainTextField
+    set: setPlainTextField,
   },
   /* This is generated in Schema pre-save hook below */
   displayName: {
-    type: String
+    type: String,
   },
   email: {
     type: String,
@@ -123,7 +121,7 @@ var UserSchema = new Schema({
     unique: 'Email exists already.',
     lowercase: true,
     required: true,
-    validate: [validateLocalStrategyEmail, 'Please fill a valid email address']
+    validate: [validateLocalStrategyEmail, 'Please fill a valid email address'],
   },
   /* New email is stored here until it is confirmed */
   emailTemporary: {
@@ -131,40 +129,40 @@ var UserSchema = new Schema({
     trim: true,
     lowercase: true,
     default: '',
-    match: [/.+\@.+\..+/, 'Please enter a valid email address']
+    match: [/.+@.+\..+/, 'Please enter a valid email address'],
   },
   tagline: {
     type: String,
     default: '',
-    set: setPlainTextField
+    set: setPlainTextField,
   },
   description: {
     type: String,
     default: '',
-    set: textService.html
+    set: textService.html,
   },
   birthdate: {
-    type: Date
+    type: Date,
   },
   gender: {
     type: String,
     enum: ['', 'female', 'male', 'non-binary', 'other'],
-    default: ''
+    default: '',
   },
   languages: {
     type: [{
       type: String,
-      enum: _.keys(languages)
+      enum: _.keys(languages),
     }],
-    default: []
+    default: [],
   },
   locationLiving: {
     type: String,
-    set: setPlainTextField
+    set: setPlainTextField,
   },
   locationFrom: {
     type: String,
-    set: setPlainTextField
+    set: setPlainTextField,
   },
   // Lowercase enforced username
   username: {
@@ -173,46 +171,46 @@ var UserSchema = new Schema({
     required: true,
     validate: [validateUsername, 'Please fill in valid username: 3+ characters long, non banned word, characters "_-.", no consecutive dots, does not begin or end with dots, letters a-z and numbers 0-9.'],
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
-    trim: true
+    trim: true,
   },
   usernameUpdated: {
-    type: Date
+    type: Date,
   },
   // Bewelcome.org username
   extSitesBW: {
     type: String,
     trim: true,
-    set: setPlainTextField
+    set: setPlainTextField,
   },
   // Couchsurfing.com username
   extSitesCS: {
     type: String,
     trim: true,
-    set: setPlainTextField
+    set: setPlainTextField,
   },
   // Warmshowers.org username
   extSitesWS: {
     type: String,
     trim: true,
-    set: setPlainTextField
+    set: setPlainTextField,
   },
   password: {
     type: String,
     default: '',
-    validate: [validatePassword, 'Password should be more than ' + passwordMinLength + ' characters long.']
+    validate: [validatePassword, 'Password should be more than ' + passwordMinLength + ' characters long.'],
   },
   emailHash: {
-    type: String
+    type: String,
   },
   salt: {
-    type: String
+    type: String,
   },
   /* All this provider stuff relates to oauth logins, will always be local for
      Trustroots, comes from boilerplate. Will be removed one day. */
   provider: {
     type: String,
     required: true,
-    default: 'local'
+    default: 'local',
   },
   /* Facebook, Twitter etc data is stored here. */
   providerData: {},
@@ -220,96 +218,96 @@ var UserSchema = new Schema({
   roles: {
     type: [{
       type: String,
-      enum: ['user', 'admin', 'suspended']
+      enum: ['user', 'admin', 'suspended'],
     }],
-    default: ['user']
+    default: ['user'],
   },
   /* The last time the user was logged in; collected from July 2017 onwards */
   seen: {
-    type: Date
+    type: Date,
   },
   updated: {
-    type: Date
+    type: Date,
   },
   created: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   avatarSource: {
     type: String,
     enum: ['none', 'gravatar', 'facebook', 'local'],
-    default: 'gravatar'
+    default: 'gravatar',
   },
   avatarUploaded: {
     type: Boolean,
-    default: false
+    default: false,
   },
   newsletter: {
     type: Boolean,
-    default: false
+    default: false,
   },
   /* Preferred interface language (client, emails, ...) */
   locale: {
     type: String,
-    default: ''
+    default: '',
   },
   passwordUpdated: {
-    type: Date
+    type: Date,
   },
   /* For email confirmations */
   emailToken: {
-    type: String
+    type: String,
   },
   /* New users are public=false until they validate their email. If public=false,
      users can't email other users, can't be seen by other users. They are
      effectively black holed... */
   public: {
     type: Boolean,
-    default: false
+    default: false,
   },
   /* Count and latest date of emails sent to remind about un-finished signup
      Will be removed once user sets `public:true` */
   publicReminderCount: {
-    type: Number
+    type: Number,
   },
   publicReminderSent: {
-    type: Date
+    type: Date,
   },
   welcomeSequenceSent: {
-    type: Date
+    type: Date,
   },
   // Count on which welcome sequence step (onboarding emails) user is at
   welcomeSequenceStep: {
     type: Number,
-    default: 0
+    default: 0,
   },
   /* For reset password */
   resetPasswordToken: {
-    type: String
+    type: String,
   },
   resetPasswordExpires: {
-    type: Date
+    type: Date,
   },
   /* For removing the profile */
   removeProfileToken: {
-    type: String
+    type: String,
   },
   removeProfileExpires: {
-    type: Date
+    type: Date,
   },
   /* Tribes user is member of */
   member: {
-    type: [UserMemberSchema]
+    type: [UserMemberSchema],
   },
   pushRegistration: {
     type: [UserPushRegistrationSchema],
-    default: []
+    default: [],
   },
   acquisitionStory: {
     type: String,
     default: '',
-    set: setPlainTextFieldAndLimit(500)
-  }
+    set: setPlainTextFieldAndLimit(500),
+  },
 });
 
 /**

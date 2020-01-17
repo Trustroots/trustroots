@@ -1,31 +1,29 @@
-'use strict';
-
-var should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    express = require(path.resolve('./config/lib/express')),
-    testutils = require(path.resolve('./testutils/server.testutil'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const express = require(path.resolve('./config/lib/express'));
+const testutils = require(path.resolve('./testutils/server/server.testutil'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    confirmedCredentials,
-    confirmedUser,
-    _confirmedUser,
-    unConfirmedCredentials,
-    unConfirmedUser,
-    _unConfirmedUser;
+let app;
+let agent;
+let confirmedCredentials;
+let confirmedUser;
+let _confirmedUser;
+let unConfirmedCredentials;
+let unConfirmedUser;
+let _unConfirmedUser;
 
 /**
  * User routes tests
  */
 describe('User signup and authentication CRUD tests', function () {
 
-  var jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs();
 
   before(function (done) {
     // Get application
@@ -41,7 +39,7 @@ describe('User signup and authentication CRUD tests', function () {
     // Create user credentials
     confirmedCredentials = {
       username: 'TR_username',
-      password: 'TR-I$Aw3$0m4'
+      password: 'TR-I$Aw3$0m4',
     };
 
     // Create a new user
@@ -54,7 +52,7 @@ describe('User signup and authentication CRUD tests', function () {
       emailToken: 'initial email token',
       username: confirmedCredentials.username.toLowerCase(),
       password: confirmedCredentials.password,
-      provider: 'local'
+      provider: 'local',
     };
 
     confirmedUser = new User(_confirmedUser);
@@ -68,7 +66,7 @@ describe('User signup and authentication CRUD tests', function () {
 
     unConfirmedCredentials = {
       username: 'TR_username_unconfirmed',
-      password: 'TR-I$Aw3$0m4'
+      password: 'TR-I$Aw3$0m4',
     };
 
     _unConfirmedUser = {
@@ -81,7 +79,7 @@ describe('User signup and authentication CRUD tests', function () {
       username: unConfirmedCredentials.username.toLowerCase(),
       password: unConfirmedCredentials.password,
       provider: 'local',
-      acquisitionStory: 'A fish told me...'
+      acquisitionStory: 'A fish told me...',
     };
 
     unConfirmedUser = new User(_unConfirmedUser);
@@ -293,7 +291,7 @@ describe('User signup and authentication CRUD tests', function () {
     agent.post('/api/auth/signin')
       .send({
         username: 'test@example.org',
-        password: confirmedCredentials.password
+        password: confirmedCredentials.password,
       })
       .expect(200)
       .end(function (signinErr) {

@@ -1,15 +1,13 @@
-'use strict';
-
-var path = require('path'),
-    config = require(path.resolve('./config/config')),
-    url = (config.https ? 'https' : 'http') + '://' + config.domain,
-    testutils = require(path.resolve('./testutils/server.testutil'));
+const path = require('path');
+const config = require(path.resolve('./config/config'));
+const url = (config.https ? 'https' : 'http') + '://' + config.domain;
+const testutils = require(path.resolve('./testutils/server/server.testutil'));
 
 describe('Service: push', function () {
 
-  var jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs();
 
-  var pushService;
+  let pushService;
 
   before(function () {
     pushService = require(path.resolve('./modules/core/server/services/push.server.service'));
@@ -17,28 +15,28 @@ describe('Service: push', function () {
 
   it('can send a user notification', function (done) {
 
-    var user = {
+    const user = {
       _id: 5,
       pushRegistration: [
         {
-          token: '123'
+          token: '123',
         },
         {
-          token: '456'
-        }
-      ]
+          token: '456',
+        },
+      ],
     };
 
-    var notification = {
+    const notification = {
       title: 'a nice title',
       body: 'a nice body',
-      click_action: 'http://example.com'
+      click_action: 'http://example.com',
     };
 
     pushService.sendUserNotification(user, notification, function (err) {
 
       jobs.length.should.equal(1);
-      var job = jobs[0];
+      const job = jobs[0];
 
       job.type.should.equal('send push message');
 
@@ -55,21 +53,21 @@ describe('Service: push', function () {
 
   it('can send a new push device added notification', function (done) {
 
-    var user = {
+    const user = {
       _id: 15,
       pushRegistration: [
         {
-          token: 'abc'
-        }
-      ]
+          token: 'abc',
+        },
+      ],
     };
 
-    var platform = 'web';
+    const platform = 'web';
 
     pushService.notifyPushDeviceAdded(user, platform, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      var job = jobs[0];
+      const job = jobs[0];
 
       job.type.should.equal('send push message');
 
@@ -87,27 +85,27 @@ describe('Service: push', function () {
 
   it('can send a messages unread notification', function (done) {
 
-    var userFrom = {
-      _id: 1
+    const userFrom = {
+      _id: 1,
     };
 
-    var userTo = {
+    const userTo = {
       _id: 5,
       pushRegistration: [
         {
-          token: '123'
-        }
-      ]
+          token: '123',
+        },
+      ],
     };
 
-    var data = {
-      messages: ['foo']
+    const data = {
+      messages: ['foo'],
     };
 
     pushService.notifyMessagesUnread(userFrom, userTo, data, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      var job = jobs[0];
+      const job = jobs[0];
 
       job.type.should.equal('send push message');
 
@@ -124,29 +122,29 @@ describe('Service: push', function () {
 
   it('can have different text for a second messages unread notification', function (done) {
 
-    var userFrom = {
+    const userFrom = {
       _id: 1,
-      displayName: 'Albert Einstein'
+      displayName: 'Albert Einstein',
     };
 
-    var userTo = {
+    const userTo = {
       _id: 5,
       pushRegistration: [
         {
-          token: '123'
-        }
-      ]
+          token: '123',
+        },
+      ],
     };
 
-    var data = {
+    const data = {
       notificationCount: 1,
-      messages: ['foo']
+      messages: ['foo'],
     };
 
     pushService.notifyMessagesUnread(userFrom, userTo, data, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      var job = jobs[0];
+      const job = jobs[0];
 
       job.type.should.equal('send push message');
 

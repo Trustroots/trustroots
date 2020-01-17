@@ -1,31 +1,29 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var path = require('path'),
-    testutils = require(path.resolve('./testutils/server.testutil')),
-    config = require(path.resolve('./config/config')),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User');
+const path = require('path');
+const testutils = require(path.resolve('./testutils/server/server.testutil'));
+const config = require(path.resolve('./config/config'));
+const moment = require('moment');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
 
 /**
  * Globals
  */
-var unConfirmedUser,
-    _unConfirmedUser,
-    confirmedUser,
-    _confirmedUser,
-    userWelcomeSequenceFirstJobHandler,
-    userWelcomeSequenceSecondJobHandler,
-    userWelcomeSequenceThirdJobHandler,
-    timeLimit,
-    timePast;
+let unConfirmedUser;
+let _unConfirmedUser;
+let confirmedUser;
+let _confirmedUser;
+let userWelcomeSequenceFirstJobHandler;
+let userWelcomeSequenceSecondJobHandler;
+let userWelcomeSequenceThirdJobHandler;
+let timeLimit;
+let timePast;
 
 describe('Job: welcome sequence, first email', function () {
 
-  var jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs();
 
   before(function () {
     userWelcomeSequenceFirstJobHandler = require(path.resolve('./modules/users/server/jobs/user-welcome-sequence-first.server.job'));
@@ -60,7 +58,7 @@ describe('Job: welcome sequence, first email', function () {
       password: 'M3@n.jsI$Aw3$0m3',
       provider: 'local',
       welcomeSequenceStep: 0,
-      created: moment().subtract(moment.duration({ 'minutes': 3 }))
+      created: moment().subtract(moment.duration({ 'minutes': 3 })),
     };
 
     unConfirmedUser = new User(_unConfirmedUser);
@@ -83,7 +81,7 @@ describe('Job: welcome sequence, first email', function () {
       provider: 'local',
       welcomeSequenceStep: 0,
       welcomeSequenceSent: timePast,
-      created: timePast
+      created: timePast,
     };
 
     confirmedUser = new User(_confirmedUser);

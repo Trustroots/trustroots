@@ -1,19 +1,17 @@
-'use strict';
-
-const should = require('should'),
-      mongoose = require('mongoose'),
-      path = require('path'),
-      utils = require(path.resolve('./testutils/data.server.testutils')),
-      User = mongoose.model('User'),
-      Reference = mongoose.model('Reference');
+const should = require('should');
+const mongoose = require('mongoose');
+const path = require('path');
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const User = mongoose.model('User');
+const Reference = mongoose.model('Reference');
 
 describe('Reference Model Unit Tests', () => {
 
   describe('Method Save', () => {
 
-    let user1,
-        user2,
-        user3;
+    let user1;
+    let user2;
+    let user3;
 
     beforeEach(() => {
       [user1, user2, user3] = utils.generateUsers(3).map(_user => new User(_user));
@@ -28,9 +26,9 @@ describe('Reference Model Unit Tests', () => {
         interactions: {
           met: true,
           hostedMe: true,
-          hostedThem: false
+          hostedThem: false,
         },
-        recommend: 'no'
+        recommend: 'no',
       });
 
       const reference2 = new Reference({
@@ -39,9 +37,9 @@ describe('Reference Model Unit Tests', () => {
         interactions: {
           met: true,
           hostedMe: false,
-          hostedThem: true
+          hostedThem: true,
         },
-        recommend: 'yes'
+        recommend: 'yes',
       });
 
       await should(reference1.save()).be.resolved();
@@ -55,9 +53,9 @@ describe('Reference Model Unit Tests', () => {
         interactions: {
           met: true,
           hostedMe: true,
-          hostedThem: false
+          hostedThem: false,
         },
-        recommend: 'no'
+        recommend: 'no',
       });
 
       const reference2 = new Reference({
@@ -66,9 +64,9 @@ describe('Reference Model Unit Tests', () => {
         interactions: {
           met: true,
           hostedMe: false,
-          hostedThem: true
+          hostedThem: true,
         },
-        recommend: 'yes'
+        recommend: 'yes',
       });
 
       await should(reference1.save()).be.resolved();
@@ -82,9 +80,9 @@ describe('Reference Model Unit Tests', () => {
         interactions: {
           met: 'foo',
           hostedMe: 'foolme',
-          hostedThem: 'foolthem'
+          hostedThem: 'foolthem',
         },
-        recommend: 'bar'
+        recommend: 'bar',
       });
 
       const err = await should(reference.save()).be.rejected();
@@ -92,19 +90,19 @@ describe('Reference Model Unit Tests', () => {
         'interactions.met': { value: 'foo', kind: 'Boolean' },
         'interactions.hostedMe': { value: 'foolme', kind: 'Boolean' },
         'interactions.hostedThem': { value: 'foolthem', kind: 'Boolean' },
-        recommend: { value: 'bar', kind: 'enum' }
+        recommend: { value: 'bar', kind: 'enum' },
       } });
     });
 
     it('show error when saving duplicate reference (reference (from, to) already exists)', async () => {
       const reference1 = new Reference({
         userFrom: user2._id,
-        userTo: user1._id
+        userTo: user1._id,
       });
 
       const reference2 = new Reference({
         userFrom: user2._id,
-        userTo: user1._id
+        userTo: user1._id,
       });
 
       // the first reference should be successfully saved
@@ -114,7 +112,7 @@ describe('Reference Model Unit Tests', () => {
       const err = await should(reference2.save()).be.rejected();
       should(err).have.property('errors').match({
         userFrom: { kind: 'unique' },
-        userTo: { kind: 'unique' }
+        userTo: { kind: 'unique' },
       });
     });
   });

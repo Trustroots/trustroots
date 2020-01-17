@@ -44,7 +44,7 @@ export function ContactPresentational({ t, className, contact, avatarSize=128, h
           {t('Confirm Request')}
         </a>
         <a className="btn btn-xs btn-warn" onClick={onClickRemove}>
-          {t('Delete Request')}
+          {t('Decline Request')}
         </a>
       </div>}
     </div>
@@ -58,7 +58,7 @@ ContactPresentational.propTypes = {
   avatarSize: PropTypes.number,
   situation: PropTypes.string.isRequired,
   hideMeta: PropTypes.bool,
-  onClickRemove: PropTypes.func.isRequired
+  onClickRemove: PropTypes.func.isRequired,
 };
 
 export default withTranslation('contact')(ContactPresentational);

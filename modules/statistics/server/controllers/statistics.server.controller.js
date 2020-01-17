@@ -1,18 +1,16 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    moment = require('moment'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    async = require('async'),
-    semver = require('semver'),
-    mongoose = require('mongoose'),
-    Offer = mongoose.model('Offer'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const moment = require('moment');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const statService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const async = require('async');
+const semver = require('semver');
+const mongoose = require('mongoose');
+const Offer = mongoose.model('Offer');
+const User = mongoose.model('User');
 
 /**
  * Get count of all public users
@@ -30,7 +28,7 @@ exports.getUsersCount = function (callback) {
  * Get count of all public users
  */
 exports.getExternalSiteCount = function (site, callback) {
-  var validSites = ['bewelcome', 'couchsurfing', 'warmshowers', 'facebook', 'twitter', 'github'];
+  const validSites = ['bewelcome', 'couchsurfing', 'warmshowers', 'facebook', 'twitter', 'github'];
 
   // Validate site
   if (!site || validSites.indexOf(site) === -1) {
@@ -38,7 +36,7 @@ exports.getExternalSiteCount = function (site, callback) {
   }
 
   // Build the query
-  var query = { public: true };
+  const query = { public: true };
 
   switch (site) {
     case 'bewelcome':
@@ -77,8 +75,8 @@ exports.getMeetOffersCount = function (callback) {
     type: 'meet',
     $or: [
       { validUntil: { $gte: new Date() } },
-      { validUntil: { $exists: false } }
-    ]
+      { validUntil: { $exists: false } },
+    ],
   }, function (err, count) {
     if (err) {
       return callback(err);
@@ -95,17 +93,17 @@ exports.getHostOffersCount = function (callback) {
   Offer.aggregate([
     {
       $match: {
-        type: 'host'
-      }
+        type: 'host',
+      },
     },
     {
       $group: {
         _id: '$status',
         count: {
-          $sum: 1
-        }
-      }
-    }
+          $sum: 1,
+        },
+      },
+    },
   ],
   function (err, counters) {
     if (err) {
@@ -128,10 +126,10 @@ exports.getHostOffersCount = function (callback) {
     //     count: number // amount of 'no' offers
     //   }
     // ]
-    var values = {
+    const values = {
       yes: 0,
       maybe: 0,
-      no: 0
+      no: 0,
     };
 
     if (counters && counters.length > 0) {
@@ -152,7 +150,7 @@ exports.getHostOffersCount = function (callback) {
 exports.getNewsletterSubscriptionsCount = function (callback) {
   User.countDocuments({
     newsletter: true,
-    public: true
+    public: true,
   },
   function (err, count) {
     if (err) {
@@ -171,8 +169,8 @@ exports.getPushRegistrationCount = function (callback) {
     pushRegistration: {
       $exists: true,
       // `pushRegistration` array should not be empty
-      $not: { $size: 0 }
-    }
+      $not: { $size: 0 },
+    },
   }, function (err, count) {
     if (err) {
       return callback(err);
@@ -185,10 +183,10 @@ exports.getPushRegistrationCount = function (callback) {
  * Generate statistics based on the user last seen attribute
  */
 exports.getLastSeenStatistic = function (since, callback) {
-  var query = {
+  const query = {
     seen: {
-      '$gte': moment().subtract(since).toDate()
-    }
+      '$gte': moment().subtract(since).toDate(),
+    },
   };
 
   User.countDocuments(query, function (err, count) {
@@ -205,7 +203,7 @@ exports.getLastSeenStatistic = function (since, callback) {
 exports.getPublicStatistics = function (req, res) {
   req.statistics = {
     connected: {},
-    hosting: {}
+    hosting: {},
   };
 
   async.waterfall([
@@ -313,13 +311,13 @@ exports.getPublicStatistics = function (req, res) {
     // Done!
     function () {
       return res.json(req.statistics);
-    }
+    },
 
   ],
   function (err) {
     if (err) {
       res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
   });
@@ -336,18 +334,18 @@ exports.getPublicStatistics = function (req, res) {
  * ```
  */
 exports.collectStatistics = function (req, res) {
-  var collection = String(_.get(req, 'body.collection', ''));
+  const collection = String(_.get(req, 'body.collection', ''));
 
-  var validCollections = ['mobileAppInit'];
+  const validCollections = ['mobileAppInit'];
 
-  var updateMsg = 'You should update Trustroots app or otherwise it will not continue functioning.';
+  const updateMsg = 'You should update Trustroots app or otherwise it will not continue functioning.';
 
   if (!_.has(req, 'body.stats') || !_.isObject(req.body.stats)) {
     res
       .header('x-tr-update-needed', updateMsg)
       .status(400)
       .send({
-        message: 'Missing or invalid `stats`.'
+        message: 'Missing or invalid `stats`.',
       });
   }
 
@@ -356,34 +354,34 @@ exports.collectStatistics = function (req, res) {
       .header('x-tr-update-needed', updateMsg)
       .status(400)
       .send({
-        message: 'Missing or invalid `collection`.'
+        message: 'Missing or invalid `collection`.',
       });
   }
 
   if (collection === 'mobileAppInit') {
 
-    var appVersion = String(_.get(req, 'body.stats.version', 'unknown'));
-    var needsUpdate = semver.satisfies(appVersion, '< 1.0.0');
+    const appVersion = String(_.get(req, 'body.stats.version', 'unknown'));
+    const needsUpdate = semver.satisfies(appVersion, '< 1.0.0');
 
     // Object for statistics
-    var stats = {
+    const stats = {
       namespace: 'mobileAppInit',
       counts: {
-        count: 1
+        count: 1,
       },
       tags: {
         // Trustroots app version (e.g. "0.2.0")
         version: appVersion,
         // Device year class, e.g. "2012"
         // @link https://github.com/facebook/device-year-class
-        deviceYearClass: String(_.get(req, 'body.stats.deviceYearClass', 'unknown'))
+        deviceYearClass: String(_.get(req, 'body.stats.deviceYearClass', 'unknown')),
       },
       meta: {
         // Device OS (e.g. "android")
         os: String(_.get(req, 'body.stats.os', 'unknown')),
         // Expo SDK version
-        expoVersion: String(_.get(req, 'body.stats.expoVersion', 'unknown'))
-      }
+        expoVersion: String(_.get(req, 'body.stats.expoVersion', 'unknown')),
+      },
     };
 
     // Send validation result to stats

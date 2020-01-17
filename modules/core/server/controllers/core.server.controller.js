@@ -1,19 +1,17 @@
-'use strict';
-
-var path = require('path'),
-    errorService = require('../services/error.server.service'),
-    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    config = require(path.resolve('./config/config')),
-    log = require(path.resolve('./config/lib/logger'));
+const path = require('path');
+const errorService = require('../services/error.server.service');
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const config = require(path.resolve('./config/config'));
+const log = require(path.resolve('./config/lib/logger'));
 
 /**
  * Render the main application page
  */
 exports.renderIndex = function (req, res) {
 
-  var renderVars = {
-    user: null
+  const renderVars = {
+    user: null,
   };
 
   // Expose user
@@ -49,7 +47,7 @@ exports.renderNotFound = function (req, res) {
     },
     'default': function () {
       res.send(errorService.getErrorMessageByKey('not-found'));
-    }
+    },
   });
 };
 
@@ -60,7 +58,7 @@ exports.renderNotFound = function (req, res) {
 exports.receiveCSPViolationReport = function (req, res) {
   if (process.env.NODE_ENV !== 'test') {
     log('warn', 'CSP violation report #ljeanw', {
-      report: req.body ? textService.plainText(JSON.stringify(req.body)) : 'No report available.'
+      report: req.body ? textService.plainText(JSON.stringify(req.body)) : 'No report available.',
     });
   }
   res.status(204).json();
@@ -75,7 +73,7 @@ exports.receiveCSPViolationReport = function (req, res) {
 exports.receiveExpectCTViolationReport = function (req, res) {
   if (process.env.NODE_ENV !== 'test') {
     log('warn', 'Expect-CT violation report #3hg8ha', {
-      report: req.body ? textService.plainText(JSON.stringify(req.body)) : 'No report available.'
+      report: req.body ? textService.plainText(JSON.stringify(req.body)) : 'No report available.',
     });
   }
   res.status(204).json();

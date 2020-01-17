@@ -1,23 +1,21 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var should = require('should'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Thread = mongoose.model('Thread'),
-    Message = mongoose.model('Message'),
-    ReferenceThread = mongoose.model('ReferenceThread');
+const should = require('should');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Thread = mongoose.model('Thread');
+const Message = mongoose.model('Message');
+const ReferenceThread = mongoose.model('ReferenceThread');
 
 /**
  * Globals
  */
-var user1,
-    user2,
-    message,
-    thread,
-    referenceThread;
+let user1;
+let user2;
+let message;
+let thread;
+let referenceThread;
 
 /**
  * Unit tests
@@ -33,7 +31,7 @@ describe('Reference Thread Model Unit Tests:', function () {
       email: 'test1@test.com',
       username: 'username1',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
 
     user2 = new User({
@@ -43,7 +41,7 @@ describe('Reference Thread Model Unit Tests:', function () {
       email: 'test2@test.com',
       username: 'username2',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
 
     message = {
@@ -52,7 +50,7 @@ describe('Reference Thread Model Unit Tests:', function () {
       userTo: null,
       userFrom: null,
       read: true,
-      created: new Date()
+      created: new Date(),
     };
 
     thread = {
@@ -60,7 +58,7 @@ describe('Reference Thread Model Unit Tests:', function () {
       userTo: null,
       userFrom: null,
       read: true,
-      updated: new Date()
+      updated: new Date(),
     };
 
     referenceThread = {
@@ -68,7 +66,7 @@ describe('Reference Thread Model Unit Tests:', function () {
       userFrom: null,
       userTo: null,
       reference: 'yes',
-      created: new Date()
+      created: new Date(),
     };
 
     // Create users and reference

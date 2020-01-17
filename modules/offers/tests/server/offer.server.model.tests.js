@@ -1,19 +1,17 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var should = require('should'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Offer = mongoose.model('Offer');
+const should = require('should');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Offer = mongoose.model('Offer');
 
 /**
  * Globals
  */
-var user,
-    offerHost,
-    offerMeet;
+let user;
+let offerHost;
+let offerMeet;
 
 /**
  * Unit tests
@@ -29,7 +27,7 @@ describe('Offer Model Unit Tests:', function () {
       email: 'test1@test.com',
       username: 'username1',
       password: 'password123',
-      provider: 'local'
+      provider: 'local',
     });
 
     // Save user and hosting offer
@@ -45,7 +43,7 @@ describe('Offer Model Unit Tests:', function () {
         maxGuests: 1,
         updated: new Date(),
         location: [52.498981209298776, 13.418329954147339],
-        locationFuzzy: [52.50155039101136, 13.42255019882177]
+        locationFuzzy: [52.50155039101136, 13.42255019882177],
       });
 
       offerMeet = new Offer({
@@ -55,7 +53,7 @@ describe('Offer Model Unit Tests:', function () {
         updated: new Date(),
         validUntil: new Date(),
         location: [52.498981209298776, 13.418329954147339],
-        locationFuzzy: [52.50155039101136, 13.42255019882177]
+        locationFuzzy: [52.50155039101136, 13.42255019882177],
       });
 
       return done();
@@ -88,7 +86,7 @@ describe('Offer Model Unit Tests:', function () {
     });
 
     it('should be able to save without problems with with limited html in descriptions', function (done) {
-      var html = '<p><b>HTML</b></p>';
+      const html = '<p><b>HTML</b></p>';
       offerHost.description = html;
       offerHost.noOfferDescription = html;
 
@@ -101,8 +99,8 @@ describe('Offer Model Unit Tests:', function () {
     });
 
     it('should be able to clean excessive html from descriptions', function (done) {
-      var html = '<p><strong><img src="http://www.example.com/i.png"><script>alert();</script>HTML</strong></p>';
-      var htmlClean = '<p><b>HTML</b></p>';
+      const html = '<p><strong><img src="http://www.example.com/i.png"><script>alert();</script>HTML</strong></p>';
+      const htmlClean = '<p><b>HTML</b></p>';
       offerHost.description = html;
       offerHost.noOfferDescription = html;
 
@@ -115,7 +113,7 @@ describe('Offer Model Unit Tests:', function () {
     });
 
     it('should be able to save empty html descriptions as empty strings', function (done) {
-      var html = '<p> <br><br><br> </p>';
+      const html = '<p> <br><br><br> </p>';
       offerHost.description = html;
       offerHost.noOfferDescription = html;
 

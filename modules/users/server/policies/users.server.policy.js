@@ -1,11 +1,9 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var acl = require('acl'),
-    path = require('path'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+let acl = require('acl');
+const path = require('path');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
 
 // Using the memory backend
 acl = new acl(new acl.memoryBackend());
@@ -18,95 +16,95 @@ exports.invokeRolesPolicies = function () {
     roles: ['admin'],
     allows: [{
       resources: '/api/users',
-      permissions: []
+      permissions: [],
     }, {
       resources: '/api/users/:username',
-      permissions: []
+      permissions: [],
     }, {
       resources: '/api/users/avatar',
-      permissions: []
+      permissions: [],
     }, {
       resources: '/api/users/mini/:userId',
-      permissions: []
+      permissions: [],
     }, {
       resources: '/api/users/password',
-      permissions: []
+      permissions: [],
     }, {
       resources: '/api/auth/accounts',
-      permissions: []
+      permissions: [],
     }, {
       resources: '/api/users/memberships',
-      permissions: []
+      permissions: [],
     }, {
       resources: '/api/users/memberships/:tribeId',
-      permissions: []
-    }]
+      permissions: [],
+    }],
   }, {
     roles: ['user'],
     allows: [{
       resources: '/api/users',
-      permissions: ['get', 'put', 'delete']
+      permissions: ['get', 'put', 'delete'],
     }, {
       resources: '/api/users/remove/:token',
-      permissions: ['delete']
+      permissions: ['delete'],
     }, {
       resources: '/api/users/:username',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/users-avatar',
-      permissions: ['post']
+      permissions: ['post'],
     }, {
       resources: '/api/users/mini/:userId',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/users/password',
-      permissions: ['post']
+      permissions: ['post'],
     }, {
       resources: '/api/auth/accounts',
-      permissions: ['get', 'post', 'delete']
+      permissions: ['get', 'post', 'delete'],
     }, {
       resources: '/api/auth/twitter',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/auth/twitter/callback',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/auth/facebook',
-      permissions: ['get', 'put']
+      permissions: ['get', 'put'],
     }, {
       resources: '/api/auth/facebook/callback',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/auth/github',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/auth/github/callback',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/users/memberships',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/users/memberships/:tribeId',
-      permissions: ['post', 'delete']
+      permissions: ['post', 'delete'],
     }, {
       resources: '/api/users/push/registrations',
-      permissions: ['post']
+      permissions: ['post'],
     }, {
       resources: '/api/users/push/registrations/:token',
-      permissions: ['delete']
+      permissions: ['delete'],
     }, {
       resources: '/api/users/invitecode',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/users/invitecode/:invitecode',
-      permissions: ['post']
-    }]
+      permissions: ['post'],
+    }],
   }, {
     roles: ['guest'],
     allows: [{
       resources: '/api/users/invitecode/:invitecode',
-      permissions: ['post']
-    }]
+      permissions: ['post'],
+    }],
   }]);
 };
 
@@ -118,24 +116,24 @@ exports.isAllowed = function (req, res, next) {
   // Non-public profiles are invisible
   if (req.profile && !req.profile.public && req.user && !req.profile._id.equals(req.user._id)) {
     return res.status(404).json({
-      message: errorService.getErrorMessageByKey('not-found')
+      message: errorService.getErrorMessageByKey('not-found'),
     });
   }
 
   // No profile browsing for non-public users
   if (req.profile && req.user && !req.user.public && !req.profile._id.equals(req.user._id)) {
     return res.status(403).json({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // Check for user roles
-  var roles = (req.user && req.user.roles) ? req.user.roles : ['guest'];
+  const roles = (req.user && req.user.roles) ? req.user.roles : ['guest'];
   acl.areAnyRolesAllowed(roles, req.route.path, req.method.toLowerCase(), function (err, isAllowed) {
     if (err) {
       // An authorization error occurred
       return res.status(500).json({
-        message: 'Unexpected authorization error'
+        message: 'Unexpected authorization error',
       });
     } else {
       if (isAllowed) {
@@ -143,7 +141,7 @@ exports.isAllowed = function (req, res, next) {
         return next();
       } else {
         return res.status(403).json({
-          message: errorService.getErrorMessageByKey('forbidden')
+          message: errorService.getErrorMessageByKey('forbidden'),
         });
       }
     }

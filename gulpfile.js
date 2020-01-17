@@ -1,55 +1,35 @@
-'use strict';
-
 /* eslint-disable no-console */
 
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    defaultAssets = require('./config/assets/default'),
-    testAssets = require('./config/assets/test'),
-    gulp = require('gulp'),
-    gulpLoadPlugins = require('gulp-load-plugins'),
-    MergeStream = require('merge-stream'),
-    glob = require('glob'),
-    del = require('del'),
-    nodemon = require('nodemon'),
-    webpack = require('webpack'),
-    webpackStream = require('webpack-stream'),
-    merge = require('webpack-merge'),
-    print = require('gulp-print').default,
-    plugins = gulpLoadPlugins({
-      rename: {
-        'gulp-angular-templatecache': 'templateCache'
-      }
-    });
+const _ = require('lodash');
+const defaultAssets = require('./config/assets/default');
+const gulp = require('gulp');
+const gulpLoadPlugins = require('gulp-load-plugins');
+const minimatch = require('minimatch');
+const del = require('del');
+const nodemon = require('nodemon');
+const print = require('gulp-print').default;
+const plugins = gulpLoadPlugins();
 
 // Local settings
-var changedTestFiles = [];
+let changedTestFiles = [];
 
-// These will be loaded in `loadConfig` task
-var environmentAssets,
-    assets,
-    config;
-
-/**
- * Load config + assets
- * Note that loading config before `env:*`
- * tasks would load configs with wrong environment
- */
-function loadConfig(done) {
-  if (!config) {
-    config = require('./config/config');
-  }
-  if (!environmentAssets) {
-    environmentAssets = require('./config/assets/' + process.env.NODE_ENV || 'development') || {};
-  }
-  if (!assets) {
-    assets = _.extend(defaultAssets, environmentAssets);
-  }
-  done();
-}
+// Globbed paths ignored by Nodemon
+const nodemonIgnores = [
+  'bin/**',
+  'migrations/**',
+  'modules/*/client/**',
+  'modules/*/tests/client/**/*.js',
+  'modules/*/tests/server/**/*.js',
+  'node_modules/**',
+  'public/**',
+  'scripts/**',
+  'tmp/**',
+  defaultAssets.server.fontelloConfig,
+  defaultAssets.server.gulpConfig,
+];
 
 // Nodemon task for server
 function runNodemon(done) {
@@ -59,21 +39,12 @@ function runNodemon(done) {
     // @link https://nodejs.org/api/debugger.html
     nodeArgs: ['--inspect=5858'],
     ext: 'js, html',
-    ignore: _.union(
-      testAssets.tests.server,
-      testAssets.tests.client,
-      [
-        defaultAssets.server.fontelloConfig,
-        defaultAssets.server.gulpConfig,
-        'modules/*/client/**',
-        'public/**',
-        'migrations/**',
-        'scripts/**',
-        'tmp/**',
-        'node_modules/**'
-      ]
+    ignore: nodemonIgnores,
+    watch: _.union(
+      defaultAssets.server.views,
+      defaultAssets.server.allJS,
+      defaultAssets.server.config,
     ),
-    watch: _.union(defaultAssets.server.views, defaultAssets.server.allJS, defaultAssets.server.config)
   })
     .on('crash', function () {
       console.error('[Server] Script crashed.');
@@ -93,25 +64,12 @@ function runNodemonWorker(done) {
     // @link https://nodejs.org/api/debugger.html
     nodeArgs: ['--inspect=5859'],
     ext: 'js',
-    ignore: _.union(
-      testAssets.tests.server,
-      testAssets.tests.client,
-      [
-        defaultAssets.server.fontelloConfig,
-        defaultAssets.server.gulpConfig,
-        'modules/*/client/**',
-        'public/**',
-        'migrations/**',
-        'scripts/**',
-        'tmp/**',
-        'node_modules/**'
-      ]
-    ),
+    ignore: nodemonIgnores,
     watch: _.union(
       defaultAssets.server.workerJS,
       defaultAssets.server.allJS,
-      defaultAssets.server.config
-    )
+      defaultAssets.server.config,
+    ),
   })
     .on('crash', function () {
       console.error('[Worker] Script crashed.');
@@ -122,218 +80,44 @@ function runNodemonWorker(done) {
   done();
 }
 
-// Set NODE_ENV to 'test' and prepare environment
-gulp.task('env:test', gulp.series(
-  function (done) {
-    process.env.NODE_ENV = 'test';
-    done();
-  }
-));
-
 // Set NODE_ENV to 'development' and prepare environment
 gulp.task('env:dev', gulp.series(
   function (done) {
     process.env.NODE_ENV = 'development';
     done();
-  }
+  },
 ));
-
-gulp.task('webpack', gulp.parallel(
-  webpackTask({
-    entry: './config/webpack/entries/main.js',
-    filename: 'main.js',
-    path: 'public/assets/'
-  }),
-  webpackTask({
-    entry: './config/webpack/entries/pushMessagingServiceWorker.js',
-    filename: 'push-messaging-sw.js',
-    path: 'public/'
-  })
-));
-
-function webpackTask(opts) {
-  return function () {
-    var resolvedEntry = require.resolve(opts.entry);
-    return gulp.src(resolvedEntry)
-      .pipe(webpackStream(merge(require('./config/webpack/webpack.config.js'), {
-        watch: opts.watch,
-        entry: resolvedEntry,
-        output: {
-          filename: opts.filename
-        }
-      }), webpack, function (err, stats){
-        if (opts.onChange) {
-          opts.onChange(err, stats);
-        }
-      }))
-      .pipe(gulp.dest(opts.path));
-  };
-}
 
 // Set NODE_ENV to 'production' and prepare environment
 gulp.task('env:prod', gulp.series(
   function (done) {
     process.env.NODE_ENV = 'production';
     done();
-  }
+  },
 ));
-
-// Watch files for changes
-gulp.task('watch', function watch(done) {
-  // Start Refresh
-  plugins.refresh.listen();
-
-  // Watch and generate app files
-  gulp.watch(defaultAssets.server.views).on('change', plugins.refresh.changed);
-  gulp.watch(defaultAssets.client.less, gulp.series('clean:css', 'build:styles')).on('change', plugins.refresh.changed);
-
-  if (process.env.NODE_ENV === 'production') {
-    gulp.watch(defaultAssets.client.js, gulp.series('clean:js', 'build:scripts'));
-    gulp.watch(defaultAssets.client.views, gulp.series('clean:js', 'build:scripts')).on('change', plugins.refresh.changed);
-  } else {
-    gulp.watch(defaultAssets.client.views).on('change', plugins.refresh.changed);
-  }
-  done();
-});
 
 // Watch server test files
 gulp.task('watch:server:run-tests', function watchServerRunTests() {
-  // Start Refresh
-  plugins.refresh.listen();
-
   // Add Server Test file rules
   gulp.watch([
-    testAssets.tests.server,
-    defaultAssets.server.allJS,
-    defaultAssets.server.migrations
+    'modules/*/tests/server/**/*.js',
+    ...defaultAssets.server.allJS,
+    defaultAssets.server.migrations,
   ],
   gulp.series('test:server'))
     .on('change', function (changedFile) {
       changedTestFiles = [];
-
-      // iterate through server test glob patterns
-      _.forEach(testAssets.tests.server, function (pattern) {
-        // determine if the changed (watched) file is a server test
-        _.forEach(glob.sync(pattern), function (file) {
-          var filePath = path.resolve(file);
-
-          if (filePath === path.resolve(changedFile)) {
-            changedTestFiles.push(changedFile);
-          }
-        });
-      });
-
-      plugins.refresh.changed(changedFile);
+      // determine if the changed (watched) file is a server test
+      if (minimatch(changedFile, 'modules/*/tests/server/**/*.js')) {
+        changedTestFiles.push(changedFile);
+      }
     });
 });
-
-// JavaScript task
-gulp.task('build:scripts', gulp.series(
-  loadConfig,
-  angularTemplateCache,
-  angularUibTemplatecache,
-  'webpack'
-));
 
 // Clean JS files -task
-gulp.task('clean:js', function cleanJS() {
+gulp.task('clean', function clean() {
   return del(['public/dist/*.js']);
 });
-
-// Clean CSS files -task
-gulp.task('clean:css', function cleanCSS() {
-  return del(['public/dist/*.css']);
-});
-
-// CSS styles task
-gulp.task('build:styles', function buildStyles() {
-  if (process.env.NODE_ENV === 'production') {
-
-    var cssStream = gulp.src(defaultAssets.client.lib.css)
-      .pipe(plugins.concat('css-files.css'));
-
-    var lessStream = gulp.src(_.union(defaultAssets.client.lib.less, defaultAssets.client.less))
-      .pipe(plugins.concat('less-files.less'))
-      .pipe(plugins.less());
-
-    // Combine CSS and LESS streams into one minified css file
-    // eslint-disable-next-line new-cap
-    return MergeStream(lessStream, cssStream)
-      .pipe(plugins.concat('application.css'))
-      .pipe(plugins.autoprefixer({
-        browsers: require('./package.json').browserslist
-      }))
-      .pipe(plugins.csso())
-      .pipe(plugins.rename({ suffix: '.min' }))
-      .pipe(gulp.dest('public/dist'));
-  } else {
-    // In non-production `NODE_ENV`
-
-    // More verbose `less` errors
-    var lessProcessor = plugins.less();
-    lessProcessor.on('error', function (err) {
-      console.error(err);
-    });
-    // Process only LESS files, since CSS libs will be linked directly at the template
-    return gulp.src(_.union(defaultAssets.client.lib.less, defaultAssets.client.less))
-      .pipe(plugins.concat('less-files.less'))
-      .pipe(lessProcessor)
-      .pipe(plugins.autoprefixer({
-        browsers: require('./package.json').browserslist
-      }))
-      .pipe(plugins.rename({ basename: 'application', extname: '.css' }))
-      .pipe(gulp.dest('public/dist'))
-      .pipe(plugins.refresh());
-  }
-});
-
-// Angular UI-Boostrap template cache task
-// We're not using prebuild UI-Boostraps so that
-// we can pick modules we need. Therefore we need
-// to manually compile our UIB templates.
-function angularUibTemplatecache() {
-  var uibModulesStreams = new MergeStream();
-
-  // Loop trough module names
-  defaultAssets.client.lib.uibModuleTemplates.forEach(function (uibModule) {
-
-    var moduleStream = gulp.src(['node_modules/angular-ui-bootstrap/template/' + uibModule + '/*.html'])
-      .pipe(plugins.htmlmin({ collapseWhitespace: true }))
-      .pipe(plugins.templateCache('uib-templates-' + uibModule + '.js', {
-        root: 'uib/template/' + uibModule + '/',
-        module: 'core',
-        templateHeader: '(function() { \'use strict\'; angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
-        templateBody: '$templateCache.put(\'<%= url %>\', \'<%= contents %>\');',
-        templateFooter: '} })();'
-      }));
-
-    // Combine with previouly processed templates
-    uibModulesStreams.add(moduleStream);
-  });
-
-  // Output all tempaltes to one file
-  return uibModulesStreams
-    .pipe(plugins.concat('uib-templates.js'))
-    .pipe(gulp.dest('public/dist'));
-
-}
-
-// Angular template cache task
-function angularTemplateCache() {
-  return gulp.src(defaultAssets.client.views)
-    .pipe(plugins.htmlmin({ collapseWhitespace: true }))
-    .pipe(plugins.templateCache('templates.js', {
-      root: '/modules/',
-      transformUrl: function (url) {
-        return url.replace('/client', '');
-      },
-      module: 'core',
-      templateHeader: '(function() { \'use strict\'; angular.module(\'<%= module %>\'<%= standalone %>).run(templates); templates.$inject = [\'$templateCache\']; function templates($templateCache) {',
-      templateBody: '$templateCache.put(\'<%= url %>\', \'<%= contents %>\');',
-      templateFooter: '} })();'
-    }))
-    .pipe(gulp.dest('public/dist'));
-}
 
 // Generate font icon files from Fontello.com
 function fontello() {
@@ -341,19 +125,18 @@ function fontello() {
     .pipe(plugins.fontello({
       font: 'font', // Destination dir for Fonts and Glyphs
       css: 'css', // Destination dir for CSS Styles,
-      assetsOnly: false
+      assetsOnly: false,
     }))
     .pipe(print())
-    .pipe(gulp.dest('modules/core/client/fonts/fontello'))
-    .pipe(plugins.refresh());
+    .pipe(gulp.dest('modules/core/client/fonts/fontello'));
 }
 
 function mocha(done) {
   // Open mongoose connections
-  var mongooseService = require('./config/lib/mongoose');
-  var agenda = require('./config/lib/agenda');
-  var testSuites = changedTestFiles.length ? changedTestFiles : testAssets.tests.server;
-  var error;
+  const mongooseService = require('./config/lib/mongoose');
+  const agenda = require('./config/lib/agenda');
+  const testSuites = changedTestFiles.length > 0 ? changedTestFiles : 'modules/*/tests/server/**/*.js';
+  let error;
 
   // Connect mongoose
   mongooseService.connect(function (db) {
@@ -365,7 +148,7 @@ function mocha(done) {
       gulp.src(testSuites)
         .pipe(plugins.mocha({
           reporter: 'spec',
-          timeout: 10000
+          timeout: 10000,
         }))
         .on('error', function (err) {
           // If an error occurs, save it
@@ -387,116 +170,40 @@ function mocha(done) {
   });
 }
 
-function karma(done) {
-  var KarmaServer = require('karma').Server;
-  new KarmaServer({
-    configFile: __dirname + '/karma.conf.js'
-  }, done).start();
-}
-
-function karmaWatch(done) {
-  var KarmaServer = require('karma').Server;
-  new KarmaServer({
-    configFile: __dirname + '/karma.conf.js',
-    singleRun: false
-  }, done).start();
-}
-
-// Clean dist css and js files
-gulp.task('clean', gulp.parallel('clean:css', 'clean:js'));
-
-// Build assets for development mode
-gulp.task('build:dev', gulp.series(
-  'env:dev',
-  'clean',
-  angularUibTemplatecache,
-  gulp.parallel(
-    'build:styles',
-    'build:scripts'
-  )
-));
-
-// Build assets for production mode
-gulp.task('build:prod', gulp.series(
-  'env:prod',
-  'clean',
-  gulp.parallel(
-    'build:styles',
-    'build:scripts'
-  )
-));
-
 // Run fontello update
 gulp.task('fontello', fontello);
 
-// Run the project tests
-gulp.task('test', gulp.series(
-  'env:test',
-  karma,
-  mocha
-));
-
 gulp.task('test:server', gulp.series(
-  'env:test',
-  mocha
+  mocha,
 ));
 
 
 // Watch all server files for changes & run server tests (test:server) task on changes
 gulp.task('test:server:watch', gulp.series(
   'test:server',
-  'watch:server:run-tests'
-));
-
-gulp.task('test:client', gulp.series(
-  'build:dev',
-  'env:test',
-  karma
-));
-
-gulp.task('test:client:watch', gulp.series(
-  'env:test',
-  karmaWatch
+  'watch:server:run-tests',
 ));
 
 // Run the project in development mode
 gulp.task('develop', gulp.series(
   'env:dev',
-  'build:dev',
-  gulp.parallel(
-    runNodemon,
-    'watch',
-    webpackTask({
-      entry: './config/webpack/entries/main.js',
-      filename: 'main.js',
-      path: 'public/assets/',
-      watch: true,
-      onChange: function () {
-        console.log('Webpack detected a change');
-        plugins.refresh.changed('/assets/main.js');
-      }
-    })
-  )
+  runNodemon,
 ));
 
 // Run the project in production mode
 gulp.task('prod', gulp.series(
   'env:prod',
-  'build:prod',
-  gulp.parallel(
-    runNodemon,
-    'watch'
-  )
+  runNodemon,
 ));
 
 // Run worker script in development mode
 gulp.task('worker:dev', gulp.series(
   'env:dev',
-  runNodemonWorker
+  runNodemonWorker,
 ));
 
 // Run worker script in production mode
 gulp.task('worker:prod', gulp.series(
   'env:prod',
-  runNodemonWorker
+  runNodemonWorker,
 ));

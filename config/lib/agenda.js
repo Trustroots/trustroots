@@ -1,11 +1,9 @@
-'use strict';
-
-var Agenda = require('agenda'),
-    config = require('../config');
+const Agenda = require('agenda');
+const config = require('../config');
 
 module.exports = new Agenda({
   db: {
     address: config.db.uri,
-    collection: 'agendaJobs'
-  }
+    collection: 'agendaJobs',
+  },
 });

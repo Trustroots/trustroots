@@ -1,27 +1,25 @@
-'use strict';
+const path = require('path');
+const should = require('should');
+const async = require('async');
+const messageStatService = require(path.resolve(
+  './modules/messages/server/services/message-stat.server.service'));
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Message = mongoose.model('Message');
+const MessageStat = mongoose.model('MessageStat');
 
-var path = require('path'),
-    should = require('should'),
-    async = require('async'),
-    messageStatService = require(path.resolve(
-      './modules/messages/server/services/message-stat.server.service')),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Message = mongoose.model('Message'),
-    MessageStat = mongoose.model('MessageStat');
-
-var initiator,
-    receiver,
-    firstMessage,
-    firstReply,
-    initiatorMessage,
-    receiverMessage;
+let initiator;
+let receiver;
+let firstMessage;
+let firstReply;
+let initiatorMessage;
+let receiverMessage;
 
 describe('Convert Message Statistics to human readable form', function () {
   it('should convert null values correctly', function () {
-    var converted = messageStatService.formatStats({
+    const converted = messageStatService.formatStats({
       replyRate: null,
-      replyTime: null
+      replyTime: null,
     });
 
     converted.should.have.property('replyRate', '');
@@ -29,9 +27,9 @@ describe('Convert Message Statistics to human readable form', function () {
   });
 
   it('should convert finite values correctly', function () {
-    var converted = messageStatService.formatStats({
+    const converted = messageStatService.formatStats({
       replyRate: 0.37631,
-      replyTime: 3600 * 1000 * 3.7
+      replyTime: 3600 * 1000 * 3.7,
     });
 
     converted.should.have.property('replyRate', '38%');
@@ -40,14 +38,14 @@ describe('Convert Message Statistics to human readable form', function () {
 });
 
 describe('Count Message Statistics of User', function () {
-  var NOW = new Date('2002-02-20').getTime(); // an arbitrary date
-  var DAY = 24 * 3600 * 1000; // a length of a day in milliseconds
-  var messageStats = [];
-  var users = [];
+  const NOW = new Date('2002-02-20').getTime(); // an arbitrary date
+  const DAY = 24 * 3600 * 1000; // a length of a day in milliseconds
+  const messageStats = [];
+  const users = [];
 
   // create testing users
   before(function (done) {
-    for (var i = 0; i < 29; ++i) {
+    for (let i = 0; i < 29; ++i) {
       users.push(new User({
         firstName: 'firstName',
         lastName: 'lastName',
@@ -56,7 +54,7 @@ describe('Count Message Statistics of User', function () {
         username: 'username' + i,
         password: 'password123',
         provider: 'local',
-        public: true
+        public: true,
       }));
     }
 
@@ -71,7 +69,7 @@ describe('Count Message Statistics of User', function () {
   before(function (done) {
     // every thread is initiated by different user (user 0 is the receiver of all)
 
-    var userno = 1; // the index of user who sent the first message
+    let userno = 1; // the index of user who sent the first message
     // is incremented for every message, closure
 
     /**
@@ -82,8 +80,8 @@ describe('Count Message Statistics of User', function () {
      * @param {timeNow} number - minimum timestamp of the firstMessageCreated
      */
     function generateMessageStats(count, repliedCount, replyTime, timeNow) {
-      for (var i = 0; i < count; ++i) {
-        var firstCreated = timeNow - replyTime - (i + 1) * DAY;
+      for (let i = 0; i < count; ++i) {
+        const firstCreated = timeNow - replyTime - (i + 1) * DAY;
         messageStats.push(new MessageStat({
           firstMessageUserFrom: users[userno]._id,
           firstMessageUserTo: users[0]._id,
@@ -91,7 +89,7 @@ describe('Count Message Statistics of User', function () {
           firstMessageLength: 100,
           firstReplyCreated: i < repliedCount ? new Date(firstCreated + replyTime) : null,
           firstReplyLength: i < repliedCount ? 50 : null,
-          timeToFirstReply: i < repliedCount ? replyTime : null
+          timeToFirstReply: i < repliedCount ? replyTime : null,
         }));
         // increment the userFrom
         ++userno;
@@ -127,7 +125,7 @@ describe('Count Message Statistics of User', function () {
       },
       function (cb) {
         MessageStat.deleteMany().exec(cb);
-      }
+      },
     ], done);
   });
 
@@ -151,8 +149,8 @@ describe('Count Message Statistics of User', function () {
         // expected statistics values
         // out of last 10 messages, 4 are replied;
         // 2 replied within 3 days and 2 within 1 day
-        var expectedReplyRate = 4 / 10;
-        var expectedReplyTime = (2 * 3 * DAY + 2 * 1 * DAY) / 4;
+        const expectedReplyRate = 4 / 10;
+        const expectedReplyTime = (2 * 3 * DAY + 2 * 1 * DAY) / 4;
 
         if (err) return done(err);
         try {
@@ -170,8 +168,8 @@ describe('Count Message Statistics of User', function () {
       function (err, stats) {
         // expected statistics values
         // out of last month 6/12 messages are replied; all within 2 days
-        var expectedReplyRate = 6 / 12;
-        var expectedReplyTime = 2 * DAY;
+        const expectedReplyRate = 6 / 12;
+        const expectedReplyTime = 2 * DAY;
 
         if (err) return done(err);
         try {
@@ -242,7 +240,7 @@ describe('MessageStat Creation & Updating Test', function () {
       username: 'username1',
       password: 'password123',
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // create the receiver (User)
@@ -254,7 +252,7 @@ describe('MessageStat Creation & Updating Test', function () {
       username: 'username2',
       password: 'password123',
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // create a first message
@@ -262,14 +260,14 @@ describe('MessageStat Creation & Updating Test', function () {
       content: 'Message content',
       userFrom: initiator._id,
       userTo: receiver._id,
-      created: new Date('2016-01-01')
+      created: new Date('2016-01-01'),
     });
     // create a first reply
     firstReply = new Message({
       content: 'Message content',
       userFrom: receiver._id,
       userTo: initiator._id,
-      created: new Date('2016-01-02')
+      created: new Date('2016-01-02'),
     });
 
     // create a message by initiator
@@ -277,14 +275,14 @@ describe('MessageStat Creation & Updating Test', function () {
       content: 'Message content',
       userFrom: initiator._id,
       userTo: receiver._id,
-      created: new Date('2016-01-03')
+      created: new Date('2016-01-03'),
     });
     // create a message by receiver
     receiverMessage = new Message({
       content: 'Message content',
       userFrom: receiver._id,
       userTo: initiator._id,
-      created: new Date('2016-01-04')
+      created: new Date('2016-01-04'),
     });
   });
 
@@ -299,7 +297,7 @@ describe('MessageStat Creation & Updating Test', function () {
       },
       function (cb) {
         MessageStat.deleteMany().exec(cb);
-      }
+      },
     ], done);
   });
 
@@ -331,13 +329,13 @@ describe('MessageStat Creation & Updating Test', function () {
                   $or: [
                     {
                       firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id
+                      firstMessageUserTo: receiver._id,
                     },
                     {
                       firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id
-                    }
-                  ]
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
                 }, cb);
               } catch (e) {
                 cb(e);
@@ -346,7 +344,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // check that the MessageStat is correct
             function (messageStat, cb) {
-              var ms = messageStat;
+              const ms = messageStat;
               try {
                 ms.should.have.property('firstMessageUserFrom', initiator._id);
                 ms.should.have.property('firstMessageUserTo', receiver._id);
@@ -356,7 +354,7 @@ describe('MessageStat Creation & Updating Test', function () {
               } catch (e) {
                 if (e) return cb(e);
               }
-            }
+            },
           ], done);
 
         });
@@ -401,13 +399,13 @@ describe('MessageStat Creation & Updating Test', function () {
                   $or: [
                     {
                       firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id
+                      firstMessageUserTo: receiver._id,
                     },
                     {
                       firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id
-                    }
-                  ]
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
                 }, cb);
               } catch (e) {
                 cb(e);
@@ -415,7 +413,7 @@ describe('MessageStat Creation & Updating Test', function () {
             },
 
             function (messageStat, cb) {
-              var ms = messageStat;
+              const ms = messageStat;
               try {
                 ms.should.have.property('firstMessageUserFrom', initiator._id);
                 ms.should.have.property('firstMessageUserTo', receiver._id);
@@ -430,7 +428,7 @@ describe('MessageStat Creation & Updating Test', function () {
               } catch (e) {
                 if (e) return cb(e);
               }
-            }
+            },
 
           ], done);
         });
@@ -475,13 +473,13 @@ describe('MessageStat Creation & Updating Test', function () {
                   $or: [
                     {
                       firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id
+                      firstMessageUserTo: receiver._id,
                     },
                     {
                       firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id
-                    }
-                  ]
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
                 }, cb);
               } catch (e) {
                 cb(e);
@@ -489,7 +487,7 @@ describe('MessageStat Creation & Updating Test', function () {
             },
 
             function (messageStat, cb) {
-              var ts = messageStat;
+              const ts = messageStat;
               try {
                 ts.should.have.property('firstMessageUserFrom', initiator._id);
                 ts.should.have.property('firstMessageUserTo', receiver._id);
@@ -503,7 +501,7 @@ describe('MessageStat Creation & Updating Test', function () {
               } catch (e) {
                 if (e) return cb(e);
               }
-            }
+            },
 
           ], done);
         });
@@ -560,13 +558,13 @@ describe('MessageStat Creation & Updating Test', function () {
                   $or: [
                     {
                       firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id
+                      firstMessageUserTo: receiver._id,
                     },
                     {
                       firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id
-                    }
-                  ]
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
                 }, cb);
               } catch (e) {
                 cb(e);
@@ -574,7 +572,7 @@ describe('MessageStat Creation & Updating Test', function () {
             },
 
             function (messageStat, cb) {
-              var ts = messageStat;
+              const ts = messageStat;
               try {
                 ts.should.have.property('firstMessageUserFrom', initiator._id);
                 ts.should.have.property('firstMessageUserTo', receiver._id);
@@ -586,7 +584,7 @@ describe('MessageStat Creation & Updating Test', function () {
               } catch (e) {
                 if (e) return cb(e);
               }
-            }
+            },
 
           ], done);
         });
@@ -642,13 +640,13 @@ describe('MessageStat Creation & Updating Test', function () {
                   $or: [
                     {
                       firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id
+                      firstMessageUserTo: receiver._id,
                     },
                     {
                       firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id
-                    }
-                  ]
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
                 }, cb);
               } catch (e) {
                 cb(e);
@@ -656,7 +654,7 @@ describe('MessageStat Creation & Updating Test', function () {
             },
 
             function (messageStat, cb) {
-              var ts = messageStat;
+              const ts = messageStat;
               try {
                 ts.should.have.property('firstMessageUserFrom', initiator._id);
                 ts.should.have.property('firstMessageUserTo', receiver._id);
@@ -668,7 +666,7 @@ describe('MessageStat Creation & Updating Test', function () {
               } catch (e) {
                 if (e) return cb(e);
               }
-            }
+            },
 
           ], done);
         });
@@ -708,13 +706,13 @@ describe('MessageStat Creation & Updating Test', function () {
                   $or: [
                     {
                       firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id
+                      firstMessageUserTo: receiver._id,
                     },
                     {
                       firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id
-                    }
-                  ]
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
                 }, cb);
               } catch (e) {
                 cb(e);
@@ -722,7 +720,7 @@ describe('MessageStat Creation & Updating Test', function () {
             },
 
             function (messageStat, cb) {
-              var ts = messageStat;
+              const ts = messageStat;
               try {
                 should(ts).not.equal(null);
                 return done();
@@ -730,7 +728,7 @@ describe('MessageStat Creation & Updating Test', function () {
               } catch (e) {
                 if (e) return cb(e);
               }
-            }
+            },
 
           ], done);
         });

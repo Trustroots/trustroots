@@ -1,21 +1,19 @@
-'use strict';
-
-var mongoose = require('mongoose'),
-    should = require('should'),
-    path = require('path'),
-    _ = require('lodash'),
-    sinon = require('sinon'),
-    config = require(path.resolve('./config/config')),
-    User = mongoose.model('User'),
-    EventEmitter = require('events'),
-    influx = require('influx'),
-    Promise = require('promise'),
-    Message = mongoose.model('Message'),
-    messageController =
+const mongoose = require('mongoose');
+const should = require('should');
+const path = require('path');
+const _ = require('lodash');
+const sinon = require('sinon');
+const config = require(path.resolve('./config/config'));
+const User = mongoose.model('User');
+const EventEmitter = require('events');
+const influx = require('influx');
+const Promise = require('promise');
+const Message = mongoose.model('Message');
+const messageController =
   require(path.resolve('./modules/messages/server/controllers/messages.server.controller'));
 
 describe('Message to Stats API server service Integration Test', function () {
-  var reachEventEmitter;
+  let reachEventEmitter;
 
   before(function () {
     // this emitter will emit event 'reachedInfluxdb' with variables measurement,
@@ -38,8 +36,8 @@ describe('Message to Stats API server service Integration Test', function () {
     sinon.restore();
   });
 
-  var user1,
-      user2;
+  let user1;
+  let user2;
 
   // here we create the users before each test
   beforeEach(function (done) {
@@ -53,7 +51,7 @@ describe('Message to Stats API server service Integration Test', function () {
       password: 'password123',
       provider: 'local',
       public: true,
-      description: _.repeat('.', config.profileMinimumLength)
+      description: _.repeat('.', config.profileMinimumLength),
     });
 
     user2 = new User({
@@ -64,7 +62,7 @@ describe('Message to Stats API server service Integration Test', function () {
       username: 'username2',
       password: 'password123',
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // save those users to mongoDB
@@ -105,16 +103,16 @@ describe('Message to Stats API server service Integration Test', function () {
       };
       Res.prototype.json = Res.prototype.send;
 
-      var req = {
+      const req = {
         user: {
-          _id: user1._id
+          _id: user1._id,
         },
         body: {
           userTo: String(user2._id),
-          content: _.repeat('.', config.limits.longMessageMinimumLength - 1)
-        }
+          content: _.repeat('.', config.limits.longMessageMinimumLength - 1),
+        },
       };
-      var res = new Res();
+      const res = new Res();
 
       // sending the message via controller
       messageController.send(req, res);
@@ -129,7 +127,7 @@ describe('Message to Stats API server service Integration Test', function () {
           host: 'localhost',
           port: 4242,
           protocol: 'http',
-          database: 'will-never-be-reached'
+          database: 'will-never-be-reached',
         });
       });
 

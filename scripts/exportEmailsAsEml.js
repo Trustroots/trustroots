@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Generate eml files out of all Trustroots email templates,
  * so that you can open them for inspection with email clients.

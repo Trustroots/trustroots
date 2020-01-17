@@ -1,39 +1,37 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-    mongoosePaginate = require('mongoose-paginate'),
-    Schema = mongoose.Schema;
+const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate');
+const Schema = mongoose.Schema;
 
 /**
  * Thread Schema
  */
-var ThreadSchema = new Schema({
+const ThreadSchema = new Schema({
   updated: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   userFrom: {
     type: Schema.ObjectId,
     ref: 'User',
-    index: true
+    index: true,
   },
   userTo: {
     type: Schema.ObjectId,
     ref: 'User',
-    index: true
+    index: true,
   },
   // This points to the latest message inn this thread
   message: {
     type: Schema.ObjectId,
-    ref: 'Message'
+    ref: 'Message',
   },
   read: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
 ThreadSchema.plugin(mongoosePaginate);

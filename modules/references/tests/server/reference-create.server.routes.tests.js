@@ -1,14 +1,12 @@
-'use strict';
-
-const should = require('should'),
-      request = require('supertest'),
-      path = require('path'),
-      sinon = require('sinon'),
-      mongoose = require('mongoose'),
-      Reference = mongoose.model('Reference'),
-      testutils = require(path.resolve('./testutils/server.testutil')),
-      utils = require(path.resolve('./testutils/data.server.testutils')),
-      express = require(path.resolve('./config/lib/express'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const sinon = require('sinon');
+const mongoose = require('mongoose');
+const Reference = mongoose.model('Reference');
+const testutils = require(path.resolve('./testutils/server/server.testutil'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const express = require(path.resolve('./config/lib/express'));
 
 describe('Create a reference', () => {
 
@@ -27,9 +25,9 @@ describe('Create a reference', () => {
   // we'll catch email and push notifications
   const jobs = testutils.catchJobs();
 
-  let user1,
-      user2,
-      user3Nonpublic;
+  let user1;
+  let user2;
+  let user3Nonpublic;
 
   const app = express.init(mongoose.connection);
   const agent = request.agent(app);
@@ -38,7 +36,7 @@ describe('Create a reference', () => {
   const _usersNonpublic = utils.generateUsers(1, {
     public: false,
     username: 'nonpublic',
-    email: 'nonpublic@example.com'
+    email: 'nonpublic@example.com',
   });
 
   const _users = [..._usersPublic, ..._usersNonpublic];
@@ -72,9 +70,9 @@ describe('Create a reference', () => {
               interactions: {
                 met: true,
                 hostedMe: true,
-                hostedThem: true
+                hostedThem: true,
               },
-              recommend: 'yes'
+              recommend: 'yes',
             })
             .expect(201);
 
@@ -86,10 +84,10 @@ describe('Create a reference', () => {
             interactions: {
               met: true,
               hostedMe: true,
-              hostedThem: true
+              hostedThem: true,
             },
             recommend: 'yes',
-            _id: /^[0-9a-f]{24}$/
+            _id: /^[0-9a-f]{24}$/,
           });
         });
 
@@ -105,9 +103,9 @@ describe('Create a reference', () => {
               interactions: {
                 met: true,
                 hostedMe: true,
-                hostedThem: true
+                hostedThem: true,
               },
-              recommend: 'yes'
+              recommend: 'yes',
             })
             .expect(201);
 
@@ -120,8 +118,8 @@ describe('Create a reference', () => {
             interactions: {
               met: true,
               hostedMe: true,
-              hostedThem: true
-            }
+              hostedThem: true,
+            },
           });
         });
 
@@ -134,9 +132,9 @@ describe('Create a reference', () => {
               interactions: {
                 met: true,
                 hostedMe: true,
-                hostedThem: true
+                hostedThem: true,
               },
-              recommend: 'yes'
+              recommend: 'yes',
             })
             .expect(201);
 
@@ -147,9 +145,9 @@ describe('Create a reference', () => {
               interactions: {
                 met: false,
                 hostedMe: true,
-                hostedThem: false
+                hostedThem: false,
               },
-              recommend: 'no'
+              recommend: 'no',
             })
             .expect(409);
         });
@@ -161,17 +159,17 @@ describe('Create a reference', () => {
               interactions: {
                 met: false,
                 hostedMe: true,
-                hostedThem: false
+                hostedThem: false,
               },
-              recommend: 'no'
+              recommend: 'no',
             })
             .expect(400);
 
           should(body).match({
             message: 'Bad request.',
             details: {
-              userTo: 'self'
-            }
+              userTo: 'self',
+            },
           });
         });
 
@@ -182,17 +180,17 @@ describe('Create a reference', () => {
               interactions: {
                 met: false,
                 hostedMe: true,
-                hostedThem: false
+                hostedThem: false,
               },
-              recommend: 'no'
+              recommend: 'no',
             })
             .expect(404);
 
           should(body).match({
             message: 'Not found.',
             details: {
-              userTo: 'not found'
-            }
+              userTo: 'not found',
+            },
           });
         });
 
@@ -203,17 +201,17 @@ describe('Create a reference', () => {
               interactions: {
                 met: false,
                 hostedMe: true,
-                hostedThem: false
+                hostedThem: false,
               },
-              recommend: 'no'
+              recommend: 'no',
             })
             .expect(404);
 
           should(body).match({
             message: 'Not found.',
             details: {
-              userTo: 'not found'
-            }
+              userTo: 'not found',
+            },
           });
         });
       });
@@ -227,9 +225,9 @@ describe('Create a reference', () => {
               interactions: {
                 met: true,
                 hostedMe: true,
-                hostedThem: true
+                hostedThem: true,
               },
-              recommend: 'yes'
+              recommend: 'yes',
             })
             .expect(201);
 
@@ -249,9 +247,9 @@ describe('Create a reference', () => {
               interactions: {
                 met: true,
                 hostedMe: true,
-                hostedThem: true
+                hostedThem: true,
               },
-              recommend: 'yes'
+              recommend: 'yes',
             })
             .expect(201);
 
@@ -276,9 +274,9 @@ describe('Create a reference', () => {
               interactions: {
                 met: true,
                 hostedMe: true,
-                hostedThem: true
+                hostedThem: true,
               },
-              recommend: 'yes'
+              recommend: 'yes',
             })
             .expect(201);
 
@@ -305,7 +303,7 @@ describe('Create a reference', () => {
             userTo: user1._id,
             met: true,
             recommend: 'no',
-            public: false
+            public: false,
           });
 
           await reference.save();
@@ -318,9 +316,9 @@ describe('Create a reference', () => {
               interactions: {
                 met: true,
                 hostedMe: true,
-                hostedThem: true
+                hostedThem: true,
               },
-              recommend: 'yes'
+              recommend: 'yes',
             })
             .expect(201);
 
@@ -341,7 +339,7 @@ describe('Create a reference', () => {
             userTo: user1._id,
             met: true,
             recommend: 'no',
-            public: true
+            public: true,
           });
 
           await reference.save();
@@ -355,17 +353,17 @@ describe('Create a reference', () => {
               interactions: {
                 met: true,
                 hostedMe: true,
-                hostedThem: true
+                hostedThem: true,
               },
-              recommend: 'no'
+              recommend: 'no',
             })
             .expect(400);
 
           should(body).match({
             message: 'Bad request.',
             details: {
-              recommend: '\'yes\' expected - response to public'
-            }
+              recommend: '\'yes\' expected - response to public',
+            },
           });
 
           // create a response reference with recommend: 'yes'
@@ -376,9 +374,9 @@ describe('Create a reference', () => {
               interactions: {
                 met: true,
                 hostedMe: true,
-                hostedThem: true
+                hostedThem: true,
               },
-              recommend: 'yes'
+              recommend: 'yes',
             })
             .expect(201);
         });
@@ -391,7 +389,7 @@ describe('Create a reference', () => {
             userFrom: user2._id,
             userTo: user1._id,
             met: true,
-            recommend: 'no'
+            recommend: 'no',
           });
 
           await reference.save();
@@ -402,9 +400,9 @@ describe('Create a reference', () => {
               interactions: {
                 met: true,
                 hostedMe: true,
-                hostedThem: true
+                hostedThem: true,
               },
-              recommend: 'yes'
+              recommend: 'yes',
             })
             .expect(201);
 
@@ -432,9 +430,9 @@ describe('Create a reference', () => {
             userFrom: user2._id,
             userTo: user1._id,
             interaction: {
-              met: true
+              met: true,
             },
-            recommend: 'no'
+            recommend: 'no',
           });
 
           await reference.save();
@@ -445,9 +443,9 @@ describe('Create a reference', () => {
               interactions: {
                 met: true,
                 hostedMe: true,
-                hostedThem: true
+                hostedThem: true,
               },
-              recommend: 'yes'
+              recommend: 'yes',
             })
             .expect(201);
 
@@ -473,9 +471,9 @@ describe('Create a reference', () => {
             userTo: user2._id,
             interactions: {
               met: 'met',
-              hostedMe: false
+              hostedMe: false,
             },
-            recommend: 'unknown'
+            recommend: 'unknown',
           })
           .expect(400);
 
@@ -483,9 +481,9 @@ describe('Create a reference', () => {
           message: 'Bad request.',
           details: {
             interactions: {
-              met: 'boolean expected'
-            }
-          }
+              met: 'boolean expected',
+            },
+          },
         });
       });
 
@@ -495,17 +493,17 @@ describe('Create a reference', () => {
             userTo: user2._id,
             interactions: {
               met: true,
-              hostedMe: false
+              hostedMe: false,
             },
-            recommend: 'invalid'
+            recommend: 'invalid',
           })
           .expect(400);
 
         should(body).match({
           message: 'Bad request.',
           details: {
-            recommend: 'one of \'yes\', \'no\', \'unknown\' expected'
-          }
+            recommend: 'one of \'yes\', \'no\', \'unknown\' expected',
+          },
         });
       });
 
@@ -514,17 +512,17 @@ describe('Create a reference', () => {
           .send({
             userTo: 'hello',
             interactions: {
-              hostedMe: true
+              hostedMe: true,
             },
-            recommend: 'yes'
+            recommend: 'yes',
           })
           .expect(400);
 
         should(body).match({
           message: 'Bad request.',
           details: {
-            userTo: 'userId expected'
-          }
+            userTo: 'userId expected',
+          },
         });
       });
 
@@ -532,17 +530,17 @@ describe('Create a reference', () => {
         const { body } = await agent.post('/api/references')
           .send({
             interactions: {
-              hostedMe: true
+              hostedMe: true,
             },
-            recommend: 'yes'
+            recommend: 'yes',
           })
           .expect(400);
 
         should(body).match({
           message: 'Bad request.',
           details: {
-            userTo: 'missing'
-          }
+            userTo: 'missing',
+          },
         });
       });
 
@@ -551,18 +549,18 @@ describe('Create a reference', () => {
           .send({
             userTo: user2._id,
             interactions: {
-              hostedMe: true
+              hostedMe: true,
             },
             recommend: 'yes',
-            foo: 'bar'
+            foo: 'bar',
           })
           .expect(400);
 
         should(body).match({
           message: 'Bad request.',
           details: {
-            fields: 'unexpected'
-          }
+            fields: 'unexpected',
+          },
         });
       });
 
@@ -572,9 +570,9 @@ describe('Create a reference', () => {
             userTo: user2._id,
             met: false,
             interactions: {
-              hostedMe: false
+              hostedMe: false,
             },
-            recommend: 'yes'
+            recommend: 'yes',
           })
           .expect(400);
 
@@ -582,9 +580,9 @@ describe('Create a reference', () => {
           message: 'Bad request.',
           details: {
             interactions: {
-              any: 'missing'
-            }
-          }
+              any: 'missing',
+            },
+          },
         });
       });
     });

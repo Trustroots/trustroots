@@ -1,3 +1,4 @@
+
 # A brief guide to the React migration
 
 If you want get familiar with React, start with the [official site](reactjs.org). It has a nice [tutorial](https://reactjs.org/tutorial/tutorial.html) and [guide](https://reactjs.org/docs/hello-world.html).
@@ -94,15 +95,26 @@ export default class ProfileViewBasics {
 }
 ```
 
-## Internacionalization
+## Internationalization (i18n)
 
 Read [a manual](i18n.md).
 
 ## Testing
 
-Testing is done with `Jasmine` and [`Enzyme`](https://github.com/airbnb/enzyme).
+Testing is done with [`jest`](https://jestjs.io/en/) and [`React Testing Library`](https://testing-library.com/docs/react-testing-library/intro).
 
-TODO add an example when references are in master.
+React tests are ones that match the path `modules/*/tests/client/components/*.test.js`.
+
+e.g. [modules/core/tests/client/components/LanguageSwitch.component.test.js](../modules/core/tests/client/components/LanguageSwitch.component.test.js)
+
+We loosely follow the philosophy from Kent C. Dodds, summed up as:
+
+> testing using user facing features instead of implementation details
+
+See these two articles by him for more explanation: 
+- [Write tests. Not too many. Mostly integration.](https://kentcdodds.com/blog/write-tests)
+- [Why I Never Use Shallow Rendering](https://kentcdodds.com/blog/why-i-never-use-shallow-rendering)
+ 
 
 ## Time scale
 

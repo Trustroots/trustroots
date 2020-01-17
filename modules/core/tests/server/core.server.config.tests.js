@@ -1,25 +1,22 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-    path = require('path'),
-    request = require('supertest'),
-    express = require(path.resolve('./config/lib/express')),
-    mongoose = require('mongoose'),
-    Tribe = mongoose.model('Tribe'),
-    User = mongoose.model('User');
+const mongoose = require('mongoose');
+const path = require('path');
+const request = require('supertest');
+const express = require(path.resolve('./config/lib/express'));
+const Tribe = mongoose.model('Tribe');
+const User = mongoose.model('User');
 
 /**
  * Globals
  */
-var app,
-    agent,
-    _user,
-    user,
-    userId,
-    credentials;
+let app;
+let agent;
+let _user;
+let user;
+let userId;
+let credentials;
 
 describe('Configuration Tests:', function () {
 
@@ -35,7 +32,7 @@ describe('Configuration Tests:', function () {
     beforeEach(function (done) {
       credentials = {
         username: 'helloworld',
-        password: 'M3@n.jsI$Aw3$0m3'
+        password: 'M3@n.jsI$Aw3$0m3',
       };
 
       // Create a new user
@@ -47,7 +44,7 @@ describe('Configuration Tests:', function () {
         email: 'user_a@example.com',
         username: credentials.username,
         password: credentials.password,
-        provider: 'local'
+        provider: 'local',
       };
 
       user = new User(_user);
@@ -115,13 +112,13 @@ describe('Configuration Tests:', function () {
     it('should have user set to user object when authenticated and loading tribe page', function (done) {
 
       // Create a new tribe
-      var _tribe = {
+      const _tribe = {
         slug: 'testers',
         label: 'Testers',
-        tribe: true
+        tribe: true,
       };
 
-      var tribe = new Tribe(_tribe);
+      const tribe = new Tribe(_tribe);
 
       // Save a user to the test db
       tribe.save(function (saveErr) {

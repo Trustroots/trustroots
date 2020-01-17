@@ -13,14 +13,14 @@ const User = mongoose.model('User');
 exports.list = (req, res) => {
   User
     .find({
-      acquisitionStory: { $exists: true, $ne: '' }
+      acquisitionStory: { $exists: true, $ne: '' },
     }, '_id acquisitionStory created')
     .sort('-created')
     .limit(1000)
     .exec((err, items) => {
       if (err) {
         return res.status(400).send({
-          message: errorService.getErrorMessage(err)
+          message: errorService.getErrorMessage(err),
         });
       }
       res.send(items || []);

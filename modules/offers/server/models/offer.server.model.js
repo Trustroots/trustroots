@@ -1,13 +1,11 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    Schema = mongoose.Schema;
+const _ = require('lodash');
+const path = require('path');
+const mongoose = require('mongoose');
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const Schema = mongoose.Schema;
 
 /**
  * Create a fuzzy offset between specified distances
@@ -19,12 +17,12 @@ function fuzzyOffset(minimum, maximum) {
   // Please note that Math.random() is not cryptographically secure.
   // For this purpose it's probably ok, but can be improved i.e. with node crypto module.
   if (maximum < minimum) throw new Error('maximum must be greater than minimum');
-  var difference = maximum - minimum;
-  var randomDistance = Math.floor(difference * Math.random() + minimum); // Distance will be from interval [minimum, maximum)
-  var randomDirection = 2 * Math.PI * Math.random(); // Random direction is from interval [0, 2*PI) radians
+  const difference = maximum - minimum;
+  const randomDistance = Math.floor(difference * Math.random() + minimum); // Distance will be from interval [minimum, maximum)
+  const randomDirection = 2 * Math.PI * Math.random(); // Random direction is from interval [0, 2*PI) radians
 
-  var horizontal = randomDistance * Math.cos(randomDirection);
-  var vertical = randomDistance * Math.sin(randomDirection);
+  const horizontal = randomDistance * Math.cos(randomDirection);
+  const vertical = randomDistance * Math.sin(randomDirection);
 
   return [horizontal, vertical]; // The order doesn't matter here
 }
@@ -37,24 +35,24 @@ function fuzzyOffset(minimum, maximum) {
 function getFuzzyLocation(location) {
 
   // Offsets in meters, random between 100-200 meters to random direction
-  var offset = fuzzyOffset(100, 200);
-  var dn = offset[0];
-  var de = offset[1];
+  const offset = fuzzyOffset(100, 200);
+  const dn = offset[0];
+  const de = offset[1];
 
   // Position, decimal degrees
-  var lat = location[0];
-  var lng = location[1];
+  const lat = location[0];
+  const lng = location[1];
 
   // Earth’s radius, sphere
-  var Radius = 6378137;
+  const Radius = 6378137;
 
   // Coordinate offsets in radians
-  var dLat = dn / Radius;
-  var dLng = de / (Radius * Math.cos(Math.PI * lat / 180));
+  const dLat = dn / Radius;
+  const dLng = de / (Radius * Math.cos(Math.PI * lat / 180));
 
   // OffsetPosition, decimal degrees
-  var latO = lat + dLat * 180 / Math.PI;
-  var lngO = lng + dLng * 180 / Math.PI;
+  const latO = lat + dLat * 180 / Math.PI;
+  const lngO = lng + dLng * 180 / Math.PI;
 
   return [latO, lngO];
 }
@@ -65,7 +63,7 @@ function getFuzzyLocation(location) {
  * @param {Array} coordinates - Expects location coordinates in an array: [lat, lon]
  * @returns {Boolean} true on success, false on failure.
  */
-var validateLocation = function (coordinates) {
+const validateLocation = function (coordinates) {
 
   if (!_.isArray(coordinates) || coordinates.length !== 2) {
     return false;
@@ -77,11 +75,11 @@ var validateLocation = function (coordinates) {
 
   // Test latitude range (-90—+90)
   // Maximum length of digits after `.` is 30
-  var latRegexp = /^\(?[+-]?(90(\.0+)?|[1-8]?\d(\.\d{1,30})?)$/;
+  const latRegexp = /^\(?[+-]?(90(\.0+)?|[1-8]?\d(\.\d{1,30})?)$/;
 
   // Test longitude range (-180—+180)
   // Maximum length of digits after `.` is 30
-  var lonRegexp = /^\s?[+-]?(180(\.0+)?|1[0-7]\d(\.\d+)?|\d{1,2}(\.\d{1,30})?)\)?$/;
+  const lonRegexp = /^\s?[+-]?(180(\.0+)?|1[0-7]\d(\.\d+)?|\d{1,2}(\.\d{1,30})?)\)?$/;
 
   return latRegexp.test(coordinates[0]) && lonRegexp.test(coordinates[1]);
 };
@@ -90,7 +88,7 @@ var validateLocation = function (coordinates) {
  * When `location` is modified, set also `locationFuzzy`
  * Keeps `location` unaltered.
  */
-var setLocation = function (value) {
+const setLocation = function (value) {
   this.locationFuzzy = getFuzzyLocation(value);
   return value;
 };
@@ -98,66 +96,66 @@ var setLocation = function (value) {
 /**
  * Offers Schema
  */
-var OfferSchema = new Schema({
+const OfferSchema = new Schema({
   type: {
     type: String,
     enum: ['host', 'meet'],
-    default: 'meet'
+    default: 'meet',
   },
   status: {
     type: String,
     enum: ['yes', 'maybe', 'no'],
-    default: 'yes'
+    default: 'yes',
   },
   description: {
     type: String,
     default: '',
     trim: true,
-    set: textService.html
+    set: textService.html,
   },
   // This is shown on profiles when users say they are not hosting
   noOfferDescription: {
     type: String,
     default: '',
     trim: true,
-    set: textService.html
+    set: textService.html,
   },
   maxGuests: {
     type: Number,
     min: 0,
     max: 99,
-    default: 1
+    default: 1,
   },
   // Actual location user has marked
   location: {
     type: [Number],
     required: true,
     validate: [validateLocation, 'Invalid coordinates for location.'],
-    set: setLocation
+    set: setLocation,
   },
   // This is sent publicly to frontend;
   // some 50-200m fuzzy presentation of actual location
   locationFuzzy: {
-    type: [Number]
+    type: [Number],
   },
   updated: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   validUntil: {
-    type: Date
+    type: Date,
   },
   user: {
     type: Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
   },
   reactivateReminderSent: {
-    type: Date
-  }
+    type: Date,
+  },
 });
 
 // Geospatial index (lat,lon)

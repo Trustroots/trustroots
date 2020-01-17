@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * A script to remove duplicate contacts
  * Initial issue was fixed at https://github.com/Trustroots/trustroots/pull/372

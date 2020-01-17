@@ -1,35 +1,33 @@
-'use strict';
-
-var should = require('should'),
-    async = require('async'),
-    request = require('supertest'),
-    path = require('path'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Message = mongoose.model('Message'),
-    Thread = mongoose.model('Thread'),
-    ReferenceThread = mongoose.model('ReferenceThread'),
-    express = require(path.resolve('./config/lib/express'));
+const should = require('should');
+const async = require('async');
+const request = require('supertest');
+const path = require('path');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Message = mongoose.model('Message');
+const Thread = mongoose.model('Thread');
+const ReferenceThread = mongoose.model('ReferenceThread');
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    userFrom,
-    referenceUserFromId,
-    referenceUserFromCredentials,
-    userTo,
-    referenceUserToId,
-    userNonPublic,
-    referenceUserNonPublicId,
-    referenceUserNonpublicCredentials,
-    referenceThread,
-    message,
-    thread,
-    threadId,
-    threadNonpublicId;
+let app;
+let agent;
+let userFrom;
+let referenceUserFromId;
+let referenceUserFromCredentials;
+let userTo;
+let referenceUserToId;
+let userNonPublic;
+let referenceUserNonPublicId;
+let referenceUserNonpublicCredentials;
+let referenceThread;
+let message;
+let thread;
+let threadId;
+let threadNonpublicId;
 
 /**
  * Message routes tests
@@ -48,12 +46,12 @@ describe('Reference Thread CRUD tests', function () {
     // Create userFrom credentials
     referenceUserFromCredentials = {
       username: 'user_from',
-      password: 'password123!'
+      password: 'password123!',
     };
 
     referenceUserNonpublicCredentials = {
       username: 'user_non_public',
-      password: 'password123!'
+      password: 'password123!',
     };
 
     userFrom = new User({
@@ -64,7 +62,7 @@ describe('Reference Thread CRUD tests', function () {
       username: referenceUserFromCredentials.username,
       password: referenceUserFromCredentials.password,
       provider: 'local',
-      public: true
+      public: true,
     });
 
     userTo = new User({
@@ -75,7 +73,7 @@ describe('Reference Thread CRUD tests', function () {
       username: 'user_to',
       password: 'password123!',
       provider: 'local',
-      public: true
+      public: true,
     });
 
     userNonPublic = new User({
@@ -86,7 +84,7 @@ describe('Reference Thread CRUD tests', function () {
       username: referenceUserNonpublicCredentials.username,
       password: referenceUserNonpublicCredentials.password,
       provider: 'local',
-      public: false
+      public: false,
     });
 
     message = {
@@ -95,7 +93,7 @@ describe('Reference Thread CRUD tests', function () {
       userTo: null,
       userFrom: null,
       read: true,
-      created: new Date()
+      created: new Date(),
     };
 
     thread = {
@@ -103,7 +101,7 @@ describe('Reference Thread CRUD tests', function () {
       userTo: null,
       userFrom: null,
       read: true,
-      updated: new Date()
+      updated: new Date(),
     };
 
     referenceThread = {
@@ -111,7 +109,7 @@ describe('Reference Thread CRUD tests', function () {
       // userFrom: null,
       // userTo: null,
       reference: 'yes',
-      created: new Date()
+      created: new Date(),
     };
 
     // Create users, messages and prepare references
@@ -179,7 +177,7 @@ describe('Reference Thread CRUD tests', function () {
             return done(err);
           });
         });
-      }
+      },
 
     ], function (err) {
       if (err) {

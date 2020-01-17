@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Task that checks for users who didn't finish their signup process and thus
  * have `public:false` in their profile. The script sends 3 (configurable)
@@ -14,15 +12,15 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    config = require(path.resolve('./config/config')),
-    log = require(path.resolve('./config/lib/logger')),
-    async = require('async'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const config = require(path.resolve('./config/config'));
+const log = require(path.resolve('./config/lib/logger'));
+const async = require('async');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
 
 module.exports = function (job, agendaDone) {
   async.waterfall([
@@ -31,37 +29,37 @@ module.exports = function (job, agendaDone) {
     function (done) {
 
       // Ignore very recently signed up users
-      var createdTimeAgo = moment().subtract(moment.duration({ 'hours': 4 }));
+      const createdTimeAgo = moment().subtract(moment.duration({ 'hours': 4 }));
 
       // Ignore very recently reminded users
-      var remindedTimeAgo = moment().subtract(moment.duration({ 'days': 2 }));
+      const remindedTimeAgo = moment().subtract(moment.duration({ 'days': 2 }));
 
       User
         .find({
           public: false,
           created: {
-            $lt: createdTimeAgo
+            $lt: createdTimeAgo,
           },
           // Exlude users with `suspended` role
           roles: {
             $elemMatch: {
-              $ne: 'suspended'
-            }
-          }
+              $ne: 'suspended',
+            },
+          },
         })
         .and([
           {
             $or: [
               { publicReminderCount: { $lt: config.limits.maxSignupReminders || 3 } },
-              { publicReminderCount: { $exists: false } }
-            ]
+              { publicReminderCount: { $exists: false } },
+            ],
           },
           {
             $or: [
               { publicReminderSent: { $lt: remindedTimeAgo } },
-              { publicReminderSent: { $exists: false } }
-            ]
-          }
+              { publicReminderSent: { $exists: false } },
+            ],
+          },
         ])
         .limit(config.limits.maxProcessSignupReminders || 50)
         .exec(function (err, users) {
@@ -88,17 +86,17 @@ module.exports = function (job, agendaDone) {
               user._id,
               {
                 $set: {
-                  publicReminderSent: new Date()
+                  publicReminderSent: new Date(),
                 },
                 // If the field does not exist, $inc creates the field
                 // and sets the field to the specified value.
                 $inc: {
-                  publicReminderCount: 1
-                }
+                  publicReminderCount: 1,
+                },
               },
               function (err) {
                 callback(err);
-              }
+              },
             );
           }
         });
@@ -106,7 +104,7 @@ module.exports = function (job, agendaDone) {
         done(err);
       });
 
-    }
+    },
 
   ], function (err) {
     if (err) {
@@ -114,7 +112,7 @@ module.exports = function (job, agendaDone) {
       // Agenda stores Mongo `ObjectId` so turning that into a string here
       log('error', 'Failure in finish signup reminder background job.', {
         error: err,
-        jobId: _.get(job, 'attrs._id').toString()
+        jobId: _.get(job, 'attrs._id').toString(),
       });
     }
     return agendaDone(err);

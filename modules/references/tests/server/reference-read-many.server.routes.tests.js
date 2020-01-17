@@ -1,13 +1,11 @@
-'use strict';
-
-const mongoose = require('mongoose'),
-      path = require('path'),
-      request = require('supertest'),
-      should = require('should'),
-      sinon = require('sinon'),
-      utils = require(path.resolve('./testutils/data.server.testutils')),
-      userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-      express = require(path.resolve('./config/lib/express'));
+const mongoose = require('mongoose');
+const path = require('path');
+const request = require('supertest');
+const should = require('should');
+const sinon = require('sinon');
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const express = require(path.resolve('./config/lib/express'));
 
 describe('Read references by userFrom Id or userTo Id', () => {
   // GET /references?userFrom=:UserId&userTo=:UserId
@@ -27,7 +25,7 @@ describe('Read references by userFrom Id or userTo Id', () => {
   const _usersPrivate = utils.generateUsers(3, {
     public: false,
     username: 'nonpublic',
-    email: 'nonpublic@example.com'
+    email: 'nonpublic@example.com',
   });
   const _users = [..._usersPublic, ..._usersPrivate];
 
@@ -67,7 +65,7 @@ describe('Read references by userFrom Id or userTo Id', () => {
     [2, 0], [2, 3], [2, 4, { public: false }], [2, 5],
     [3, 0], [3, 2, { public: false }],
     [4, 0, { public: false }],
-    [5, 0]
+    [5, 0],
   ];
 
   beforeEach(async () => {
@@ -166,7 +164,7 @@ describe('Read references by userFrom Id or userTo Id', () => {
       should(nonpublic).be.Array().of.length(1);
       should(nonpublic[0]).match({
         public: false,
-        created: new Date().toISOString()
+        created: new Date().toISOString(),
       });
       should(nonpublic[0]).have.only.keys('_id', 'userFrom', 'userTo', 'created', 'public');
     });
@@ -180,8 +178,8 @@ describe('Read references by userFrom Id or userTo Id', () => {
         message: 'Bad request.',
         details: {
           userFrom: 'missing',
-          userTo: 'missing'
-        }
+          userTo: 'missing',
+        },
       });
     });
 
@@ -194,8 +192,8 @@ describe('Read references by userFrom Id or userTo Id', () => {
         message: 'Bad request.',
         details: {
           userFrom: 'invalid',
-          userTo: 'invalid'
-        }
+          userTo: 'invalid',
+        },
       });
     });
   });

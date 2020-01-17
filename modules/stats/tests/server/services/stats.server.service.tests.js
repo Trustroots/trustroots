@@ -1,11 +1,9 @@
-'use strict';
-
-var should = require('should'),
-    path = require('path'),
-    statsService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    stathatService = require(path.resolve('./modules/stats/server/services/stathat.server.service')),
-    influxService = require(path.resolve('./modules/stats/server/services/influx.server.service')),
-    sinon = require('sinon');
+const should = require('should');
+const path = require('path');
+const statsService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const stathatService = require(path.resolve('./modules/stats/server/services/stathat.server.service'));
+const influxService = require(path.resolve('./modules/stats/server/services/influx.server.service'));
+const sinon = require('sinon');
 
 describe('General Stats API Service Unit Tests', function () {
   // replace the influx & stathat service stat() functions with fake version
@@ -66,12 +64,12 @@ describe('General Stats API Service Unit Tests', function () {
       });
 
       it('[keys are duplicate in stat.<counts|values|meta|tags>] should throw error: Every key of stat counts, values, meta and tags must be unique', function (done) {
-        var statWithDuplicates = {
+        const statWithDuplicates = {
           namespace: 'test',
           counts: { duplicate: 1 },
           values: { duplicate: 'value' },
           meta: { duplicate: 'meta' },
-          tags: { duplicate: 'tag' }
+          tags: { duplicate: 'tag' },
         };
 
         statsService.stat(statWithDuplicates, function (e) {
@@ -88,20 +86,20 @@ describe('General Stats API Service Unit Tests', function () {
     });
 
     context('valid data', function () {
-      var validData = {
+      const validData = {
         namespace: 'test',
         counts: {
-          testCount: 1
+          testCount: 1,
         },
         values: {
-          testValue: 3.5
+          testValue: 3.5,
         },
         meta: {
-          testMeta: 13
+          testMeta: 13,
         },
         tags: {
-          testTag: 'testing'
-        }
+          testTag: 'testing',
+        },
       };
 
       it('should reach influxService.stat with correct data', function (done) {
@@ -110,7 +108,7 @@ describe('General Stats API Service Unit Tests', function () {
 
           sinon.assert.calledOnce(influxService.stat);
 
-          var calledWith = influxService.stat.getCall(0).args[0];
+          const calledWith = influxService.stat.getCall(0).args[0];
 
           should(calledWith).have.property('namespace', 'test');
           should(calledWith).have.propertyByPath('counts', 'testCount').eql(1);
@@ -129,7 +127,7 @@ describe('General Stats API Service Unit Tests', function () {
 
           sinon.assert.calledOnce(stathatService.stat);
 
-          var calledWith = stathatService.stat.getCall(0).args[0];
+          const calledWith = stathatService.stat.getCall(0).args[0];
 
           should(calledWith).have.property('namespace', 'test');
           should(calledWith).have.propertyByPath('counts', 'testCount').eql(1);
@@ -154,8 +152,8 @@ describe('General Stats API Service Unit Tests', function () {
         sinon.assert.calledOnce(influxService.stat);
         sinon.assert.calledOnce(stathatService.stat);
 
-        var influxCalledWith = influxService.stat.getCall(0).args[0];
-        var stathatCalledWith = stathatService.stat.getCall(0).args[0];
+        const influxCalledWith = influxService.stat.getCall(0).args[0];
+        const stathatCalledWith = stathatService.stat.getCall(0).args[0];
 
         should(influxCalledWith).have.property('namespace', 'testCount');
         should(stathatCalledWith).have.property('namespace', 'testCount');
@@ -182,8 +180,8 @@ describe('General Stats API Service Unit Tests', function () {
         sinon.assert.calledOnce(influxService.stat);
         sinon.assert.calledOnce(stathatService.stat);
 
-        var influxCalledWith = influxService.stat.getCall(0).args[0];
-        var stathatCalledWith = stathatService.stat.getCall(0).args[0];
+        const influxCalledWith = influxService.stat.getCall(0).args[0];
+        const stathatCalledWith = stathatService.stat.getCall(0).args[0];
 
         should(influxCalledWith).have.property('namespace', 'testCount');
         should(stathatCalledWith).have.property('namespace', 'testCount');
@@ -205,7 +203,7 @@ describe('General Stats API Service Unit Tests', function () {
     it('[count(name, count, time)] should reach the influx & stathat services with correct data', function (done) {
 
       // a random testing time
-      var time = new Date('2000-01-01');
+      const time = new Date('2000-01-01');
 
       statsService.count('testCount', 3, time, function (e) {
         if (e) return done(e);
@@ -213,8 +211,8 @@ describe('General Stats API Service Unit Tests', function () {
         sinon.assert.calledOnce(influxService.stat);
         sinon.assert.calledOnce(stathatService.stat);
 
-        var influxCalledWith = influxService.stat.getCall(0).args[0];
-        var stathatCalledWith = stathatService.stat.getCall(0).args[0];
+        const influxCalledWith = influxService.stat.getCall(0).args[0];
+        const stathatCalledWith = stathatService.stat.getCall(0).args[0];
 
         should(influxCalledWith).have.property('namespace', 'testCount');
         should(stathatCalledWith).have.property('namespace', 'testCount');
@@ -238,8 +236,8 @@ describe('General Stats API Service Unit Tests', function () {
 
     it('[value(name, value)] should reach the influx & stathat services with correct data', function (done) {
 
-      var name = 'testValue';
-      var value = - 13.31;
+      const name = 'testValue';
+      const value = - 13.31;
 
       statsService.value(name, value, function (e) {
         if (e) return done(e);
@@ -247,8 +245,8 @@ describe('General Stats API Service Unit Tests', function () {
         sinon.assert.calledOnce(influxService.stat);
         sinon.assert.calledOnce(stathatService.stat);
 
-        var influxCalledWith = influxService.stat.getCall(0).args[0];
-        var stathatCalledWith = stathatService.stat.getCall(0).args[0];
+        const influxCalledWith = influxService.stat.getCall(0).args[0];
+        const stathatCalledWith = stathatService.stat.getCall(0).args[0];
 
         should(influxCalledWith).have.property('namespace', name);
         should(stathatCalledWith).have.property('namespace', name);
@@ -269,9 +267,9 @@ describe('General Stats API Service Unit Tests', function () {
 
     it('[value(name, value, time)] should reach the influx & stathat services with correct data', function (done) {
 
-      var name = 'testValue';
-      var value = - 13.31;
-      var time = new Date('2000-01-01');
+      const name = 'testValue';
+      const value = - 13.31;
+      const time = new Date('2000-01-01');
 
       statsService.value(name, value, time, function (e) {
         if (e) return done(e);
@@ -279,8 +277,8 @@ describe('General Stats API Service Unit Tests', function () {
         sinon.assert.calledOnce(influxService.stat);
         sinon.assert.calledOnce(stathatService.stat);
 
-        var influxCalledWith = influxService.stat.getCall(0).args[0];
-        var stathatCalledWith = stathatService.stat.getCall(0).args[0];
+        const influxCalledWith = influxService.stat.getCall(0).args[0];
+        const stathatCalledWith = stathatService.stat.getCall(0).args[0];
 
         should(influxCalledWith).have.property('namespace', name);
         should(stathatCalledWith).have.property('namespace', name);

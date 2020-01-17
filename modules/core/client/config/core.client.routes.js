@@ -1,39 +1,36 @@
-(function () {
-  'use strict';
+import templateUrl from '@/modules/core/client/views/404.client.view.html';
 
-  angular
-    .module('core')
-    .config(CoreRoutes);
+angular
+  .module('core')
+  .config(CoreRoutes);
 
-  /* @ngInject */
-  function CoreRoutes($stateProvider, $urlRouterProvider) {
+/* @ngInject */
+function CoreRoutes($stateProvider, $urlRouterProvider) {
 
-    // Remove trailing slash from routes
-    $urlRouterProvider.rule(function ($injector, $location) {
-      var path = $location.path();
-      var hasTrailingSlash = path.length > 1 && path[path.length - 1] === '/';
+  // Remove trailing slash from routes
+  $urlRouterProvider.rule(function ($injector, $location) {
+    const path = $location.path();
+    const hasTrailingSlash = path.length > 1 && path[path.length - 1] === '/';
 
-      if (hasTrailingSlash) {
+    if (hasTrailingSlash) {
 
-        // If last character is a slash, return the same url without the slash
-        var newPath = path.substr(0, path.length - 1);
-        $location.replace().path(newPath);
-      }
+      // If last character is a slash, return the same url without the slash
+      const newPath = path.substr(0, path.length - 1);
+      $location.replace().path(newPath);
+    }
+  });
+
+  // Redirect to 404 when route not found
+  $urlRouterProvider.otherwise('not-found');
+
+  $stateProvider.
+    state('not-found', {
+      url: '/not-found',
+      templateUrl,
+      footerHidden: true,
+      headerHidden: true,
+      data: {
+        pageTitle: 'Not found',
+      },
     });
-
-    // Redirect to 404 when route not found
-    $urlRouterProvider.otherwise('not-found');
-
-    $stateProvider.
-      state('not-found', {
-        url: '/not-found',
-        templateUrl: '/modules/core/views/404.client.view.html',
-        footerHidden: true,
-        headerHidden: true,
-        data: {
-          pageTitle: 'Not found'
-        }
-      });
-  }
-
-}());
+}

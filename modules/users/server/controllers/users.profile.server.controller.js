@@ -1,42 +1,38 @@
-'use strict';
-
-var path = require('path'),
-    locales = require(path.resolve('./config/shared/locales'));
-
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    tribesHandler = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller')),
-    contactHandler = require(path.resolve('./modules/contacts/server/controllers/contacts.server.controller')),
-    messageHandler = require(path.resolve('./modules/messages/server/controllers/messages.server.controller')),
-    offerHandler = require(path.resolve('./modules/offers/server/controllers/offers.server.controller')),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    pushService = require(path.resolve('./modules/core/server/services/push.server.service')),
-    inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service')),
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service')),
-    fileUpload = require(path.resolve('./modules/core/server/services/file-upload.service')),
-    log = require(path.resolve('./config/lib/logger')),
-    del = require('del'),
-    messageStatService = require(path.resolve(
-      './modules/messages/server/services/message-stat.server.service')),
-    config = require(path.resolve('./config/config')),
-    async = require('async'),
-    crypto = require('crypto'),
-    sanitizeHtml = require('sanitize-html'),
-    mkdirRecursive = require('mkdir-recursive'),
-    mongoose = require('mongoose'),
-    fs = require('fs'),
-    moment = require('moment'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const locales = require(path.resolve('./config/shared/locales'));
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const tribesHandler = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller'));
+const contactHandler = require(path.resolve('./modules/contacts/server/controllers/contacts.server.controller'));
+const messageHandler = require(path.resolve('./modules/messages/server/controllers/messages.server.controller'));
+const offerHandler = require(path.resolve('./modules/offers/server/controllers/offers.server.controller'));
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const pushService = require(path.resolve('./modules/core/server/services/push.server.service'));
+const inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service'));
+const statService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+const fileUpload = require(path.resolve('./modules/core/server/services/file-upload.service'));
+const log = require(path.resolve('./config/lib/logger'));
+const del = require('del');
+const messageStatService = require(path.resolve(
+  './modules/messages/server/services/message-stat.server.service'));
+const config = require(path.resolve('./config/config'));
+const async = require('async');
+const crypto = require('crypto');
+const sanitizeHtml = require('sanitize-html');
+const mkdirRecursive = require('mkdir-recursive');
+const mongoose = require('mongoose');
+const fs = require('fs');
+const moment = require('moment');
+const User = mongoose.model('User');
 
 // Load either ImageMagick or GraphicsMagick as an image processor
 // Defaults to GraphicsMagick
 // @link https://github.com/aheckmann/gm#use-imagemagick-instead-of-gm
-var imageProcessor = (config.imageProcessor === 'imagemagic') ? require('gm').subClass({ imageMagick: true }) : require('gm');
+const imageProcessor = (config.imageProcessor === 'imagemagic') ? require('gm').subClass({ imageMagick: true }) : require('gm');
 
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
@@ -67,7 +63,7 @@ exports.userProfileFields = [
   'emailHash', // MD5 hashed email to use with Gravatars
   'additionalProvidersData.facebook.id', // For FB avatars and profile links
   'additionalProvidersData.twitter.screen_name', // For Twitter profile links
-  'additionalProvidersData.github.login' // For GitHub profile links
+  'additionalProvidersData.github.login', // For GitHub profile links
 ].join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed
@@ -79,7 +75,7 @@ exports.userMiniProfileFields = [
   'avatarSource',
   'avatarUploaded',
   'emailHash',
-  'additionalProvidersData.facebook.id' // For FB avatars
+  'additionalProvidersData.facebook.id', // For FB avatars
 ].join(' ');
 
 // Mini + a few fields we'll need at listings
@@ -92,15 +88,15 @@ exports.userSearchProfileFields = exports.userMiniProfileFields + ' gender locat
 exports.avatarUploadField = function (req, res, next) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
-  var validImageMimeTypes = [
+  const validImageMimeTypes = [
     'image/gif',
     'image/jpeg',
     'image/jpg',
-    'image/png'
+    'image/png',
   ];
 
   fileUpload.uploadFile(validImageMimeTypes, 'avatar', req, res, next);
@@ -116,7 +112,7 @@ exports.avatarUploadField = function (req, res, next) {
  */
 exports.avatarUpload = function (req, res) {
   // Each user has their own folder for avatars
-  var uploadDir = path.resolve(config.uploadDir) + '/' + req.user._id + '/avatar'; // No trailing slash
+  const uploadDir = path.resolve(config.uploadDir) + '/' + req.user._id + '/avatar'; // No trailing slash
 
   /**
    * Process uploaded file
@@ -135,11 +131,11 @@ exports.avatarUpload = function (req, res) {
     // Make the thumbnails
     function (done) {
 
-      var asyncQueueErrorHappened;
+      let asyncQueueErrorHappened;
 
       // Create a queue worker
       // @link https://github.com/caolan/async#queueworker-concurrency
-      var q = async.queue(function (thumbSize, callback) {
+      const q = async.queue(function (thumbSize, callback) {
         // Create thumbnail size
         // Images are resized following quality/size -optimization tips from this article:
         // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/
@@ -175,7 +171,7 @@ exports.avatarUpload = function (req, res) {
                   }
                   // @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
                   return res.status(422).send({
-                    message: 'Failed to process image, please try again.'
+                    message: 'Failed to process image, please try again.',
                   });
                 });
               } else {
@@ -200,18 +196,18 @@ exports.avatarUpload = function (req, res) {
       fs.unlink(req.file.path, function (err) {
         done(err);
       });
-    }
+    },
 
   // Catch errors
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err) || 'Failed to process image, please try again.'
+        message: errorService.getErrorMessage(err) || 'Failed to process image, please try again.',
       });
     } else {
       // All Done!
       return res.send({
-        message: 'Avatar image uploaded.'
+        message: 'Avatar image uploaded.',
       });
     }
   });
@@ -224,16 +220,16 @@ exports.update = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // validate locale
   // @TODO validation framework
-  var localeCodes = locales.map(function (locale) { return locale.code; });
+  const localeCodes = locales.map(function (locale) { return locale.code; });
   if (req.body.locale && (typeof req.body.locale !== 'string' || !localeCodes.includes(req.body.locale))) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('bad-request')
+      message: errorService.getErrorMessageByKey('bad-request'),
     });
   }
 
@@ -249,8 +245,8 @@ exports.update = function (req, res) {
       User.findOne({
         $or: [
           { emailTemporary: req.body.email.toLowerCase() },
-          { email: req.body.email.toLowerCase() }
-        ]
+          { email: req.body.email.toLowerCase() },
+        ],
       }, 'emailTemporary email', function (err, emailUser) {
         // Not available
         if (emailUser) {
@@ -261,7 +257,7 @@ exports.update = function (req, res) {
           } else {
             // Otherwise it was someone else's email. Block the way.
             return res.status(403).send({
-              message: 'This email is already in use. Please use another one.'
+              message: 'This email is already in use. Please use another one.',
             });
           }
         } else {
@@ -277,7 +273,7 @@ exports.update = function (req, res) {
       // Generate only if email changed
       if (req.body.email && req.body.email !== req.user.email) {
         crypto.randomBytes(20, function (err, buffer) {
-          var token = buffer.toString('hex');
+          const token = buffer.toString('hex');
           done(err, token, req.body.email);
         });
       } else {
@@ -292,7 +288,7 @@ exports.update = function (req, res) {
         // They are not allowed to do so
         if (!isUsernameUpdateAllowed(req.user)) {
           return res.status(403).send({
-            message: 'You cannot change your username at this time.'
+            message: 'You cannot change your username at this time.',
           });
         }
 
@@ -337,7 +333,7 @@ exports.update = function (req, res) {
       delete req.body.acquisitionStory;
 
       // Merge existing user
-      var user = req.user;
+      let user = req.user;
       user = _.extend(user, req.body);
       user.updated = Date.now();
 
@@ -378,12 +374,12 @@ exports.update = function (req, res) {
     function (user) {
       user = exports.sanitizeProfile(user, req.user);
       return res.json(user);
-    }
+    },
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
   });
@@ -396,7 +392,7 @@ exports.update = function (req, res) {
 exports.initializeRemoveProfile = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -405,7 +401,7 @@ exports.initializeRemoveProfile = function (req, res) {
     // Generate random token
     function (done) {
       crypto.randomBytes(20, function (err, buffer) {
-        var token = buffer.toString('hex');
+        const token = buffer.toString('hex');
         done(err, token);
       });
     },
@@ -414,19 +410,19 @@ exports.initializeRemoveProfile = function (req, res) {
     function (token, done) {
 
       // Token expires in 24 hours
-      var tokenExpires = Date.now() + (24 * 3600000);
+      const tokenExpires = Date.now() + (24 * 3600000);
 
       User.findOneAndUpdate(
         { _id: req.user._id },
         {
           $set: {
             removeProfileToken: token,
-            removeProfileExpires: tokenExpires
-          }
+            removeProfileExpires: tokenExpires,
+          },
         },
         {
           // Return updated user document
-          new: true
+          new: true,
         },
         function (err, user) {
           done(err, user);
@@ -440,7 +436,7 @@ exports.initializeRemoveProfile = function (req, res) {
         // Stop on errors
         if (err) {
           return res.status(400).send({
-            message: 'Failure while sending confirmation email to you. Please try again later.'
+            message: 'Failure while sending confirmation email to you. Please try again later.',
           });
         }
 
@@ -448,25 +444,25 @@ exports.initializeRemoveProfile = function (req, res) {
         return statService.stat({
           namespace: 'profileRemoval',
           counts: {
-            count: 1
+            count: 1,
           },
           tags: {
-            status: 'emailSent'
-          }
+            status: 'emailSent',
+          },
         }, function () {
           // Return success
           res.send({
-            message: 'We sent you an email with further instructions.'
+            message: 'We sent you an email with further instructions.',
           });
         });
 
       });
-    }
+    },
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: 'Removing your profile failed.'
+        message: 'Removing your profile failed.',
       });
     }
   });
@@ -479,7 +475,7 @@ exports.initializeRemoveProfile = function (req, res) {
 exports.removeProfile = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -491,8 +487,8 @@ exports.removeProfile = function (req, res) {
         _id: req.user._id,
         removeProfileToken: req.params.token,
         removeProfileExpires: {
-          $gt: Date.now()
-        }
+          $gt: Date.now(),
+        },
       }, function (err, user) {
 
         // Can't find user (=invalid or expired token) or other error
@@ -502,15 +498,15 @@ exports.removeProfile = function (req, res) {
           return statService.stat({
             namespace: 'profileRemoval',
             counts: {
-              count: 1
+              count: 1,
             },
             tags: {
-              status: 'failed'
-            }
+              status: 'failed',
+            },
           }, function () {
             // Return failure
             return res.status(400).send({
-              message: 'Profile remove token is invalid or has expired.'
+              message: 'Profile remove token is invalid or has expired.',
             });
           });
         }
@@ -522,7 +518,7 @@ exports.removeProfile = function (req, res) {
     // Remove profile
     function (user, done) {
       User.findOneAndRemove({
-        _id: user._id
+        _id: user._id,
       }, function (err) {
         done(err, user);
       });
@@ -533,7 +529,7 @@ exports.removeProfile = function (req, res) {
       offerHandler.removeAllByUserId(user._id, function (err) {
         if (err) {
           log('error', 'Error when removing all offers by user ID. #rj393', {
-            error: err
+            error: err,
           });
         }
         done(null, user);
@@ -545,7 +541,7 @@ exports.removeProfile = function (req, res) {
       contactHandler.removeAllByUserId(user._id, function (err) {
         if (err) {
           log('error', 'Error when removing all contacts by user ID. #j93hdd', {
-            error: err
+            error: err,
           });
         }
         done(null, user);
@@ -582,13 +578,13 @@ exports.removeProfile = function (req, res) {
     function (user, done) {
       emailService.sendRemoveProfileConfirmed({
         displayName: user.displayName,
-        email: user.email
+        email: user.email,
       }, function (err) {
         // Just log errors but don't mind about them as this is not critical step
         if (err) {
           // Log the failure to send the email
           log('error', 'Sending confirmation email about successfull profile removal failed #289hhs', {
-            error: err
+            error: err,
           });
         }
 
@@ -603,18 +599,18 @@ exports.removeProfile = function (req, res) {
       return statService.stat({
         namespace: 'profileRemoval',
         counts: {
-          count: 1
+          count: 1,
         },
         tags: {
-          status: 'removed'
-        }
+          status: 'removed',
+        },
       }, function () {
         // Return success
         return res.json({
-          message: 'Your profile has been removed.'
+          message: 'Your profile has been removed.',
         });
       });
-    }
+    },
 
   ], function (err) {
     if (err) {
@@ -622,15 +618,15 @@ exports.removeProfile = function (req, res) {
       return statService.stat({
         namespace: 'profileRemoval',
         counts: {
-          count: 1
+          count: 1,
         },
         tags: {
-          status: 'failed'
-        }
+          status: 'failed',
+        },
       }, function () {
         // Return failure
         return res.status(400).send({
-          message: 'Removing your profile failed.'
+          message: 'Removing your profile failed.',
         });
       });
     }
@@ -665,7 +661,7 @@ exports.getMiniUser = function (req, res) {
     // 'public' isn't needed at frontend.
     // We had to bring it until here trough
     // ACL policy since it's needed there.
-    var profile = req.profile.toObject();
+    const profile = req.profile.toObject();
     delete profile.public;
     res.json(profile);
   } else {
@@ -683,7 +679,7 @@ exports.userMiniByID = function (req, res, next, userId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
@@ -697,7 +693,7 @@ exports.userMiniByID = function (req, res, next, userId) {
     // No such user
     if (!profile || !profile.public) {
       return res.status(404).send({
-        message: errorService.getErrorMessageByKey('not-found')
+        message: errorService.getErrorMessageByKey('not-found'),
       });
     }
 
@@ -715,14 +711,14 @@ exports.userByUsername = function (req, res, next, username) {
   // Require user
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // Proper 'username' value required
   if (typeof username !== 'string' || username.trim() === '' || username.length < 3) {
     return res.status(400).send({
-      message: 'Valid username required.'
+      message: 'Valid username required.',
     });
   }
 
@@ -732,13 +728,13 @@ exports.userByUsername = function (req, res, next, username) {
     function (done) {
       User
         .findOne({
-          username: username.toLowerCase()
+          username: username.toLowerCase(),
         },
         exports.userProfileFields + ' public')
         .populate({
           path: 'member.tribe',
           select: tribesHandler.tribeFields,
-          model: 'Tribe'
+          model: 'Tribe',
           // Not possible at the moment due bug in Mongoose
           // http://mongoosejs.com/docs/faq.html#populate_sort_order
           // https://github.com/Automattic/mongoose/issues/2202
@@ -751,7 +747,7 @@ exports.userByUsername = function (req, res, next, username) {
           } else if (!profile) {
             // No such user
             return res.status(404).send({
-              message: errorService.getErrorMessageByKey('not-found')
+              message: errorService.getErrorMessageByKey('not-found'),
             });
           } else if (req.user && req.user._id.equals(profile._id)) {
             // User's own profile, okay to send with public value in it
@@ -759,7 +755,7 @@ exports.userByUsername = function (req, res, next, username) {
           } else if (req.user && (!req.user._id.equals(profile._id) && !profile.public)) {
             // Not own profile and not public
             return res.status(404).send({
-              message: errorService.getErrorMessageByKey('not-found')
+              message: errorService.getErrorMessageByKey('not-found'),
             });
           } else {
             // Transform profile into object so that we can add new fields to it
@@ -796,7 +792,7 @@ exports.userByUsername = function (req, res, next, username) {
     // Next Route
     function () {
       next();
-    }
+    },
 
   ], function (err) {
     if (err) return next(err);
@@ -810,10 +806,10 @@ exports.userByUsername = function (req, res, next, username) {
  * @return {Bool}
  */
 function isUsernameUpdateAllowed(user) {
-  var allowedDate = moment(user.usernameUpdated || user.created)
+  const allowedDate = moment(user.usernameUpdated || user.created)
     .add(3, 'months');
   return moment().isSameOrAfter(allowedDate);
-};
+}
 
 /**
  * Sanitize profile before sending it to frontend
@@ -901,16 +897,16 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
 exports.joinTribe = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
-  var tribeId = req.params.tribeId;
+  const tribeId = req.params.tribeId;
 
   // Not a valid ObjectId
   if (!tribeId || !mongoose.Types.ObjectId.isValid(tribeId)) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
@@ -921,7 +917,7 @@ exports.joinTribe = function (req, res) {
       // Return if user is already a member
       if (isUserMemberOfTribe(req.user, tribeId)) {
         return res.status(409).send({
-          message: 'You are already a member of this tribe.'
+          message: 'You are already a member of this tribe.',
         });
       }
 
@@ -938,12 +934,12 @@ exports.joinTribe = function (req, res) {
           // Tribe by id `req.body.id` didn't exist
           if (!tribe || !tribe._id) {
             return res.status(400).send({
-              message: errorService.getErrorMessageByKey('bad-request')
+              message: errorService.getErrorMessageByKey('bad-request'),
             });
           }
 
           done(err, tribe);
-        }
+        },
       );
     },
 
@@ -955,14 +951,14 @@ exports.joinTribe = function (req, res) {
           $push: {
             member: {
               tribe: tribe._id,
-              since: Date.now()
-            }
-          }
+              since: Date.now(),
+            },
+          },
         },
         {
           safe: true, // @link http://stackoverflow.com/a/4975054/1984644
-          new: true // get the updated document in return
-        }
+          new: true, // get the updated document in return
+        },
       ).exec(function (err, user) {
         done(err, tribe, user);
       });
@@ -972,7 +968,7 @@ exports.joinTribe = function (req, res) {
     function (tribe, user, done) {
       // Preserver only public fields
       // Array of keys to preserve in tribe before sending it to the frontend
-      var pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
+      const pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
 
       // Sanitize user profile
       user = exports.sanitizeProfile(user, req.user);
@@ -980,33 +976,33 @@ exports.joinTribe = function (req, res) {
       statService.stat({
         namespace: 'tagAction',
         counts: {
-          count: 1
+          count: 1,
         },
         tags: {
-          type: 'tribe'
+          type: 'tribe',
         },
         meta: {
-          slug: tribe.slug
-        }
+          slug: tribe.slug,
+        },
       }, function () {
 
         // Send response to API
         res.send({
           message: 'Joined tribe.',
           tribe: pickedTribe,
-          user: user
+          user: user,
         });
 
         done();
 
       });
-    }
+    },
 
   // Catch errors
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: 'Failed to join tribe.'
+        message: 'Failed to join tribe.',
       });
     }
   });
@@ -1018,16 +1014,16 @@ exports.joinTribe = function (req, res) {
 exports.leaveTribe = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
-  var tribeId = req.params.tribeId;
+  const tribeId = req.params.tribeId;
 
   // Not a valid ObjectId
   if (!tribeId || !mongoose.Types.ObjectId.isValid(tribeId)) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
@@ -1038,7 +1034,7 @@ exports.leaveTribe = function (req, res) {
       // Return if isn't a member anymore
       if (!isUserMemberOfTribe(req.user, tribeId)) {
         return res.status(409).send({
-          message: 'You are not a member of this tribe.'
+          message: 'You are not a member of this tribe.',
         });
       }
 
@@ -1055,12 +1051,12 @@ exports.leaveTribe = function (req, res) {
           // Tribe by id `req.body.id` didn't exist
           if (!tribe || !tribe._id) {
             return res.status(400).send({
-              message: errorService.getErrorMessageByKey('bad-request')
+              message: errorService.getErrorMessageByKey('bad-request'),
             });
           }
 
           done(err, tribe);
-        }
+        },
       );
     },
 
@@ -1071,14 +1067,14 @@ exports.leaveTribe = function (req, res) {
         {
           $pull: {
             member: {
-              tribe: tribeId
-            }
-          }
+              tribe: tribeId,
+            },
+          },
         },
         {
           safe: true, // @link http://stackoverflow.com/a/4975054/1984644
-          new: true // get the updated document in return
-        }
+          new: true, // get the updated document in return
+        },
       ).exec(function (err, user) {
         done(err, tribe, user);
       });
@@ -1088,7 +1084,7 @@ exports.leaveTribe = function (req, res) {
     function (tribe, user, done) {
       // Preserver only public fields
       // Array of keys to preserve in tribe before sending it to the frontend
-      var pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
+      const pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
 
       // Sanitize user profile
       user = exports.sanitizeProfile(user, req.user);
@@ -1096,33 +1092,33 @@ exports.leaveTribe = function (req, res) {
       statService.stat({
         namespace: 'tagAction',
         counts: {
-          count: -1
+          count: -1,
         },
         tags: {
-          type: 'tribe'
+          type: 'tribe',
         },
         meta: {
-          slug: tribe.slug
-        }
+          slug: tribe.slug,
+        },
       }, function () {
 
         // Send response to API
         res.send({
           message: 'Left tribe.',
           tribe: pickedTribe,
-          user: user
+          user: user,
         });
 
         done();
 
       });
-    }
+    },
 
   // Catch errors
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: 'Failed to leave tribe.'
+        message: 'Failed to leave tribe.',
       });
     }
   });
@@ -1135,7 +1131,7 @@ exports.getUserMemberships = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -1144,7 +1140,7 @@ exports.getUserMemberships = function (req, res) {
     .populate({
       path: 'member.tribe',
       select: tribesHandler.tribeFields,
-      model: 'Tribe'
+      model: 'Tribe',
       // Not possible at the moment due bug in Mongoose
       // http://mongoosejs.com/docs/faq.html#populate_sort_order
       // https://github.com/Automattic/mongoose/issues/2202
@@ -1155,7 +1151,7 @@ exports.getUserMemberships = function (req, res) {
       // Something went wrong
       if (err) {
         return res.status(400).send({
-          message: 'Failed to get list of tribes.'
+          message: 'Failed to get list of tribes.',
         });
       }
 
@@ -1170,34 +1166,34 @@ exports.removePushRegistration = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
-  var user = req.user;
-  var token = req.params.token;
+  const user = req.user;
+  const token = req.params.token;
 
-  var query = {
+  const query = {
     $pull: {
       pushRegistration: {
-        token: token
-      }
-    }
+        token: token,
+      },
+    },
   };
 
   User.findByIdAndUpdate(user._id, query, {
     safe: true, // @link http://stackoverflow.com/a/4975054/1984644
-    new: true // get the updated document in return
+    new: true, // get the updated document in return
   })
     .exec(function (err, user) {
       if (err) {
         return res.status(400).send({
-          message: errorService.getErrorMessage(err) || 'Failed to remove registration, please try again.'
+          message: errorService.getErrorMessage(err) || 'Failed to remove registration, please try again.',
         });
       } else {
         return res.send({
           message: 'Removed registration.',
-          user: exports.sanitizeProfile(user, user)
+          user: exports.sanitizeProfile(user, user),
         });
       }
     });
@@ -1212,29 +1208,29 @@ exports.addPushRegistration = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
-  var user = req.user;
-  var token = String(_.get(req, 'body.token', ''));
-  var platform = String(_.get(req, 'body.platform', ''));
-  var deviceId = String(_.get(req, 'body.deviceId', ''));
-  var doNotNotify = Boolean(_.get(req, 'body.doNotNotify', false));
+  let user = req.user;
+  const token = String(_.get(req, 'body.token', ''));
+  const platform = String(_.get(req, 'body.platform', ''));
+  const deviceId = String(_.get(req, 'body.deviceId', ''));
+  const doNotNotify = Boolean(_.get(req, 'body.doNotNotify', false));
 
   if (!token) {
     return res.status(400).send({
-      message: 'Token is invalid or missing.'
+      message: 'Token is invalid or missing.',
     });
   }
 
   // PushRegistration is a sub-schema at User schema, thus we need to dig deeper in to get `enumValues`
   // Will contain array of string values, e.g. `['android', 'ios', 'web']`
-  var validPlatforms = User.schema.path('pushRegistration').schema.path('platform').enumValues || [];
+  const validPlatforms = User.schema.path('pushRegistration').schema.path('platform').enumValues || [];
 
   if (!platform || validPlatforms.indexOf(platform) === -1) {
     return res.status(400).send({
-      message: 'Platform is invalid or missing.'
+      message: 'Platform is invalid or missing.',
     });
   }
 
@@ -1246,9 +1242,9 @@ exports.addPushRegistration = function (req, res) {
       User.findByIdAndUpdate(user._id, {
         $pull: {
           pushRegistration: {
-            token: token
-          }
-        }
+            token: token,
+          },
+        },
       }).exec(function (err) {
         done(err);
       });
@@ -1258,10 +1254,10 @@ exports.addPushRegistration = function (req, res) {
     // Add new registration
 
     function (done) {
-      var registration = {
+      const registration = {
         platform: platform,
         token: token,
-        created: Date.now()
+        created: Date.now(),
       };
 
       if (deviceId) {
@@ -1270,10 +1266,10 @@ exports.addPushRegistration = function (req, res) {
 
       User.findByIdAndUpdate(user._id, {
         $push: {
-          pushRegistration: registration
-        }
+          pushRegistration: registration,
+        },
       }, {
-        new: true
+        new: true,
       }).exec(function (err, updatedUser) {
         if (err) {
           return done(err);
@@ -1295,28 +1291,28 @@ exports.addPushRegistration = function (req, res) {
         if (err) {
           // don't stop on error, but log it
           log('error', 'Error when sending push notification about added device. #9hsdff', {
-            error: err
+            error: err,
           });
         }
         done();
       });
-    }
+    },
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err) || 'Failed, please try again.'
+        message: errorService.getErrorMessage(err) || 'Failed, please try again.',
       });
     } else {
       User.findById(user._id).exec(function (err, user) {
         if (err) {
           return res.status(400).send({
-            message: errorService.getErrorMessage(err) || 'Failed to fetch user, please try again.'
+            message: errorService.getErrorMessage(err) || 'Failed to fetch user, please try again.',
           });
         }
         return res.send({
           message: 'Saved registration.',
-          user: exports.sanitizeProfile(user, user)
+          user: exports.sanitizeProfile(user, user),
         });
       });
     }
@@ -1338,12 +1334,12 @@ exports.getInviteCode = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   return res.send({
-    code: inviteCodeService.getCode()
+    code: inviteCodeService.getCode(),
   });
 };
 
@@ -1352,25 +1348,25 @@ exports.getInviteCode = function (req, res) {
  */
 exports.validateInviteCode = function (req, res) {
 
-  var inviteCode = _.get(req.params, 'invitecode', false);
+  const inviteCode = _.get(req.params, 'invitecode', false);
 
   // Is invite code valid
-  var inviteCodeValid = inviteCode && inviteCodeService.validateCode(inviteCode.toLowerCase());
+  const inviteCodeValid = inviteCode && inviteCodeService.validateCode(inviteCode.toLowerCase());
 
   // Is code in predefined invite codes list?
-  var isPredefined = inviteCodeValid && inviteCodeService.isPredefined(inviteCode.toLowerCase());
+  const isPredefined = inviteCodeValid && inviteCodeService.isPredefined(inviteCode.toLowerCase());
 
   // Object for statistics
-  var stats = {
+  const stats = {
     namespace: 'inviteCodeValidation',
     counts: {
-      count: 1
+      count: 1,
     },
     tags: {
       valid: inviteCodeValid ? 'yes' : 'no',
-      isPredefined: isPredefined ? 'yes' : 'no'
+      isPredefined: isPredefined ? 'yes' : 'no',
     },
-    meta: { }
+    meta: { },
   };
 
   // Store predefined codes to stats
@@ -1382,7 +1378,7 @@ exports.validateInviteCode = function (req, res) {
   statService.stat(stats, function () {
     // Send validation out to API
     return res.send({
-      valid: inviteCodeValid
+      valid: inviteCodeValid,
     });
   });
 };
@@ -1419,10 +1415,10 @@ exports.search = function (req, res, next) {
 
   // validate the query string
   if (req.query.search.length < 3) {
-    var errorMessage = errorService.getErrorMessageByKey('bad-request');
+    const errorMessage = errorService.getErrorMessageByKey('bad-request');
     return res.status(400).send({
       message: errorMessage,
-      detail: 'Query string should be at least 3 characters long.'
+      detail: 'Query string should be at least 3 characters long.',
     });
   }
 
@@ -1432,9 +1428,9 @@ exports.search = function (req, res, next) {
       { public: true }, // only public users
       {
         $text: {
-          $search: req.query.search
-        }
-      }
+          $search: req.query.search,
+        },
+      },
     ] }, { score: { $meta: 'textScore' } })
     // select only the right profile properties
     .select(exports.userSearchProfileFields)

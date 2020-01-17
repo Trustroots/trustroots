@@ -1,15 +1,13 @@
-'use strict';
-
 // test whether the daily statistics job reaches influxdb and stathat via Stats api
 
-var should = require('should'),
-    path = require('path'),
-    influx = require('influx'),
-    stathat = require('stathat'),
-    sinon = require('sinon'),
-    _ = require('lodash'),
-    config = require(path.resolve('./config/config')),
-    sparkpostWebhooks = require(path.resolve('./modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller'));
+const should = require('should');
+const path = require('path');
+const influx = require('influx');
+const stathat = require('stathat');
+const sinon = require('sinon');
+const _ = require('lodash');
+const config = require(path.resolve('./config/config'));
+const sparkpostWebhooks = require(path.resolve('./modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller'));
 
 describe('Sparkpost Webhooks - Integration Test', function () {
 
@@ -28,7 +26,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     influx.InfluxDB.prototype.writeMeasurement.returns(
       new Promise(function (resolve) {
         process.nextTick(resolve());
-      })
+      }),
     );
 
     // provide config options for influxdb
@@ -36,7 +34,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
       host: 'localhost',
       port: 8086,
       protocol: 'http',
-      database: 'trustroots-test'
+      database: 'trustroots-test',
     });
 
     // stub the stathat endpoints
@@ -44,17 +42,17 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     stathat.trackEZCountWithTime.callsArgWithAsync(4, 200, null);
   });
 
-  var testEvent = {
+  const testEvent = {
     msys: {
       message_event: {
         type: 'click',
         geo_ip: {
-          country: 'abc'
+          country: 'abc',
         },
         timestamp: 1234567890,
-        campaign_id: 'this is a campaign id'
-      }
-    }
+        campaign_id: 'this is a campaign id',
+      },
+    },
   };
 
   context('influxdb configured', function () {
@@ -74,10 +72,10 @@ describe('Sparkpost Webhooks - Integration Test', function () {
           // test influx endpoint
           sinon.assert.callCount(influx.InfluxDB.prototype.writeMeasurement, 1);
 
-          var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-          var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+          const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+          const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
           should(points.length).eql(1);
-          var point = points[0];
+          const point = points[0];
 
           should(measurement).eql('transactionalEmailEvent');
           should(point).have.propertyByPath('fields', 'count').eql(1);
@@ -116,17 +114,17 @@ describe('Sparkpost Webhooks - Integration Test', function () {
           // test stathat endpoint
           sinon.assert.callCount(stathat.trackEZCountWithTime, 3);
 
-          var calledWith = _.map(_.range(3), function (n) {
+          const calledWith = _.map(_.range(3), function (n) {
             return stathat.trackEZCountWithTime.getCall(n).args;
           });
 
-          var groupedArgs = _.zip.apply(this, calledWith);
+          const groupedArgs = _.zip.apply(this, calledWith);
 
           // the 2nd argument to the endpoint should be the name
           _.forEach([
             'transactionalEmailEvent.count',
             'transactionalEmailEvent.count.category.message_event',
-            'transactionalEmailEvent.count.type.click'
+            'transactionalEmailEvent.count.type.click',
           ], function (value) {
             should(groupedArgs[1]).containEql(value);
           });

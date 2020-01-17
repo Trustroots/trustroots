@@ -1,21 +1,19 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    async = require('async'),
-    juice = require('juice'),
-    moment = require('moment'),
-    autolinker = require('autolinker'),
-    analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller')),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    render = require(path.resolve('./config/lib/render')),
-    agenda = require(path.resolve('./config/lib/agenda')),
-    config = require(path.resolve('./config/config')),
-    log = require(path.resolve('./config/lib/logger')),
-    url = (config.https ? 'https' : 'http') + '://' + config.domain;
+const _ = require('lodash');
+const path = require('path');
+const async = require('async');
+const juice = require('juice');
+const moment = require('moment');
+const autolinker = require('autolinker');
+const analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller'));
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const render = require(path.resolve('./config/lib/render'));
+const agenda = require(path.resolve('./config/lib/agenda'));
+const config = require(path.resolve('./config/config'));
+const log = require(path.resolve('./config/lib/logger'));
+const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
 /**
  * Get a randomized name from a list of support volunteer names.
@@ -31,20 +29,20 @@ exports.sendMessagesUnread = function (userFrom, userTo, notification, callback)
 
   // Is the notification the first one?
   // If not, we send a different subject.
-  var isFirst = !(notification.notificationCount > 0);
+  const isFirst = !(notification.notificationCount > 0);
 
   // Generate mail subject
-  var mailSubject = (isFirst)
+  const mailSubject = (isFirst)
     ? userFrom.displayName + ' wrote you from Trustroots'
     : userFrom.displayName + ' is still waiting for a reply on Trustroots';
 
   // URLs to use at email templates
-  var urlUserFromProfile = url + '/profile/' + userFrom.username,
-      urlReply = url + '/messages/' + userFrom.username,
-      campaign = 'messages-unread';
+  const urlUserFromProfile = url + '/profile/' + userFrom.username;
+  const urlReply = url + '/messages/' + userFrom.username;
+  const campaign = 'messages-unread';
 
   // Variables passed to email text/html templates
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: mailSubject,
     name: userTo.displayName,
     email: userTo.email,
@@ -58,28 +56,28 @@ exports.sendMessagesUnread = function (userFrom, userTo, notification, callback)
       source: 'transactional-email',
       medium: 'email',
       campaign: campaign,
-      content: 'reply-to'
+      content: 'reply-to',
     }),
     urlUserFromProfilePlainText: urlUserFromProfile,
     urlUserFromProfile: analyticsHandler.appendUTMParams(urlUserFromProfile, {
       source: 'transactional-email',
       medium: 'email',
       campaign: campaign,
-      content: 'profile'
+      content: 'profile',
     }),
     utmCampaign: campaign,
-    sparkpostCampaign: campaign
+    sparkpostCampaign: campaign,
   });
 
   exports.renderEmailAndSend('messages-unread', params, callback);
 };
 
 exports.sendConfirmContact = function (user, friend, contact, messageHTML, messageText, callback) {
-  var meURL = url + '/profile/' + user.username,
-      urlConfirm = url + '/contact-confirm/' + contact._id,
-      campaign = 'confirm-contact';
+  const meURL = url + '/profile/' + user.username;
+  const urlConfirm = url + '/contact-confirm/' + contact._id;
+  const campaign = 'confirm-contact';
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: 'Confirm contact',
     name: friend.displayName,
     email: friend.email,
@@ -91,17 +89,17 @@ exports.sendConfirmContact = function (user, friend, contact, messageHTML, messa
       source: 'transactional-email',
       medium: 'email',
       campaign: campaign,
-      content: 'profile'
+      content: 'profile',
     }),
     urlConfirmPlainText: urlConfirm,
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
       campaign: campaign,
-      content: 'confirm-contact'
+      content: 'confirm-contact',
     }),
     utmCampaign: campaign,
-    sparkpostCampaign: campaign
+    sparkpostCampaign: campaign,
   });
 
   exports.renderEmailAndSend('confirm-contact', params, callback);
@@ -111,10 +109,10 @@ exports.sendConfirmContact = function (user, friend, contact, messageHTML, messa
  * Email with a token to initialize removing a user
  */
 exports.sendRemoveProfile = function (user, callback) {
-  var urlConfirm = url + '/remove/' + user.removeProfileToken,
-      campaign = 'remove-profile';
+  const urlConfirm = url + '/remove/' + user.removeProfileToken;
+  const campaign = 'remove-profile';
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: 'Confirm removing your Trustroots profile',
     name: user.displayName,
     email: user.email,
@@ -124,8 +122,8 @@ exports.sendRemoveProfile = function (user, callback) {
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign
-    })
+      campaign: campaign,
+    }),
   });
   exports.renderEmailAndSend('remove-profile', params, callback);
 };
@@ -134,23 +132,23 @@ exports.sendRemoveProfile = function (user, callback) {
  * Email confirmation that user was removed
  */
 exports.sendRemoveProfileConfirmed = function (user, callback) {
-  var campaign = 'remove-profile-confirmed';
+  const campaign = 'remove-profile-confirmed';
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: 'Your Trustroots profile has been removed',
     name: user.displayName,
     email: user.email,
     utmCampaign: campaign,
-    sparkpostCampaign: campaign
+    sparkpostCampaign: campaign,
   });
   exports.renderEmailAndSend('remove-profile-confirmed', params, callback);
 };
 
 exports.sendResetPassword = function (user, callback) {
-  var urlConfirm = url + '/api/auth/reset/' + user.resetPasswordToken,
-      campaign = 'reset-password';
+  const urlConfirm = url + '/api/auth/reset/' + user.resetPasswordToken;
+  const campaign = 'reset-password';
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: 'Password Reset',
     name: user.displayName,
     email: user.email,
@@ -160,18 +158,18 @@ exports.sendResetPassword = function (user, callback) {
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign
-    })
+      campaign: campaign,
+    }),
   });
   exports.renderEmailAndSend('reset-password', params, callback);
 };
 
 exports.sendResetPasswordConfirm = function (user, callback) {
 
-  var urlResetPassword = url + '/password/forgot',
-      campaign = 'reset-password-confirm';
+  const urlResetPassword = url + '/password/forgot';
+  const campaign = 'reset-password-confirm';
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: 'Your password has been changed',
     name: user.displayName,
     email: user.email,
@@ -181,18 +179,18 @@ exports.sendResetPasswordConfirm = function (user, callback) {
     urlResetPassword: analyticsHandler.appendUTMParams(urlResetPassword, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign
-    })
+      campaign: campaign,
+    }),
   });
   exports.renderEmailAndSend('reset-password-confirm', params, callback);
 };
 
 exports.sendChangeEmailConfirmation = function (user, callback) {
 
-  var urlConfirm = url + '/confirm-email/' + user.emailToken,
-      campaign = 'confirm-email';
+  const urlConfirm = url + '/confirm-email/' + user.emailToken;
+  const campaign = 'confirm-email';
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: 'Confirm email change',
     name: user.displayName,
     email: user.emailTemporary,
@@ -200,10 +198,10 @@ exports.sendChangeEmailConfirmation = function (user, callback) {
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign
+      campaign: campaign,
     }),
     utmCampaign: campaign,
-    sparkpostCampaign: campaign
+    sparkpostCampaign: campaign,
   });
 
   exports.renderEmailAndSend('email-confirmation', params, callback);
@@ -211,10 +209,10 @@ exports.sendChangeEmailConfirmation = function (user, callback) {
 
 exports.sendSignupEmailConfirmation = function (user, callback) {
 
-  var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true',
-      campaign = 'confirm-email';
+  const urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true';
+  const campaign = 'confirm-email';
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: 'Confirm Email',
     name: user.displayName,
     email: user.emailTemporary || user.email,
@@ -222,10 +220,10 @@ exports.sendSignupEmailConfirmation = function (user, callback) {
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign
+      campaign: campaign,
     }),
     utmCampaign: campaign,
-    sparkpostCampaign: campaign
+    sparkpostCampaign: campaign,
   });
 
   exports.renderEmailAndSend('signup', params, callback);
@@ -233,7 +231,7 @@ exports.sendSignupEmailConfirmation = function (user, callback) {
 
 exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
 
-  var subject = 'Support request';
+  let subject = 'Support request';
 
   // I miss CoffeeSscript
   if (_.has(supportRequest, 'username') && supportRequest.username) {
@@ -243,7 +241,7 @@ exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
     subject += ' (' + supportRequest.displayName + ')';
   }
 
-  var params = {
+  const params = {
     from: 'Trustroots Support <' + config.supportEmail + '>',
     name: 'Trustroots Support', // `To:`
     email: config.supportEmail, // `To:`
@@ -251,7 +249,7 @@ exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
     subject: subject,
     request: supportRequest,
     skipHtmlTemplate: true, // Don't render html template for this email
-    sparkpostCampaign: 'support-request'
+    sparkpostCampaign: 'support-request',
   };
 
   exports.renderEmailAndSend('support-request', params, callback);
@@ -259,15 +257,15 @@ exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
 
 exports.sendSignupEmailReminder = function (user, callback) {
 
-  var urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true',
-      campaign = 'signup-reminder';
+  const urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true';
+  const campaign = 'signup-reminder';
 
   // This email is a reminder number `n` to this user
   // Set to `1` (first) if the field doesn't exist yet
   // `publicReminderCount` contains number of reminders already sent to user
-  var reminderCount = user.publicReminderCount ? user.publicReminderCount + 1 : 1;
+  const reminderCount = user.publicReminderCount ? user.publicReminderCount + 1 : 1;
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: 'Complete your signup to Trustroots',
     name: user.displayName,
     email: user.emailTemporary || user.email,
@@ -275,13 +273,13 @@ exports.sendSignupEmailReminder = function (user, callback) {
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign
+      campaign: campaign,
     }),
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
     reminderCount: reminderCount, // This email is a reminder number `n` to this user
     reminderCountMax: config.limits.maxSignupReminders, // Max n of reminders system sends
-    timeAgo: moment(user.created).fromNow() // A string, e.g. `3 days ago`
+    timeAgo: moment(user.created).fromNow(), // A string, e.g. `3 days ago`
   });
 
   // This will be the last reminder, mention that at the email subject line
@@ -293,15 +291,15 @@ exports.sendSignupEmailReminder = function (user, callback) {
 };
 
 exports.sendReactivateHosts = function (user, callback) {
-  var urlOffer = url + '/offer',
-      campaign = 'reactivate-hosts',
-      utmParams = {
-        source: 'transactional-email',
-        medium: 'email',
-        campaign: campaign
-      };
+  const urlOffer = url + '/offer';
+  const campaign = 'reactivate-hosts';
+  const utmParams = {
+    source: 'transactional-email',
+    medium: 'email',
+    campaign: campaign,
+  };
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: user.firstName + ', start hosting on Trustroots again?',
     firstName: user.firstName,
     name: user.displayName,
@@ -311,7 +309,7 @@ exports.sendReactivateHosts = function (user, callback) {
     urlSurveyPlainText: config.surveyReactivateHosts || false,
     urlSurvey: config.surveyReactivateHosts ? analyticsHandler.appendUTMParams(config.surveyReactivateHosts, utmParams) : false,
     utmCampaign: campaign,
-    sparkpostCampaign: campaign
+    sparkpostCampaign: campaign,
   });
 
   exports.renderEmailAndSend('reactivate-hosts', params, callback);
@@ -321,21 +319,21 @@ exports.sendReactivateHosts = function (user, callback) {
  * 1/3 welcome sequence email
  */
 exports.sendWelcomeSequenceFirst = function (user, callback) {
-  var urlEditProfile = url + '/profile/edit',
-      urlFAQ = url + '/faq',
-      campaign = 'welcome-sequence-first',
-      utmParams = {
-        source: 'transactional-email',
-        medium: 'email',
-        campaign: campaign
-      };
+  const urlEditProfile = url + '/profile/edit';
+  const urlFAQ = url + '/faq';
+  const campaign = 'welcome-sequence-first';
+  const utmParams = {
+    source: 'transactional-email',
+    medium: 'email',
+    campaign: campaign,
+  };
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: '👋 Welcome to Trustroots ' + user.firstName + '!',
     from: {
       name: getSupportVolunteerName(),
       // Use support email instead of default "no-reply@":
-      address: config.supportEmail
+      address: config.supportEmail,
     },
     firstName: user.firstName,
     name: user.displayName,
@@ -344,7 +342,7 @@ exports.sendWelcomeSequenceFirst = function (user, callback) {
     urlFAQ: analyticsHandler.appendUTMParams(urlFAQ, utmParams),
     urlEditProfile: analyticsHandler.appendUTMParams(urlEditProfile, utmParams),
     utmCampaign: campaign,
-    sparkpostCampaign: campaign
+    sparkpostCampaign: campaign,
   });
 
   exports.renderEmailAndSend('welcome-sequence-first', params, callback);
@@ -354,20 +352,20 @@ exports.sendWelcomeSequenceFirst = function (user, callback) {
  * 2/3 welcome sequence email
  */
 exports.sendWelcomeSequenceSecond = function (user, callback) {
-  var urlMeet = url + '/offer/meet',
-      campaign = 'welcome-sequence-second',
-      utmParams = {
-        source: 'transactional-email',
-        medium: 'email',
-        campaign: campaign
-      };
+  const urlMeet = url + '/offer/meet';
+  const campaign = 'welcome-sequence-second';
+  const utmParams = {
+    source: 'transactional-email',
+    medium: 'email',
+    campaign: campaign,
+  };
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: 'Meet new people at Trustroots, ' + user.firstName,
     from: {
       name: getSupportVolunteerName(),
       // Use support email instead of default "no-reply@":
-      address: config.supportEmail
+      address: config.supportEmail,
     },
     firstName: user.firstName,
     name: user.displayName,
@@ -375,7 +373,7 @@ exports.sendWelcomeSequenceSecond = function (user, callback) {
     username: user.username,
     urlMeetup: analyticsHandler.appendUTMParams(urlMeet, utmParams),
     utmCampaign: campaign,
-    sparkpostCampaign: campaign
+    sparkpostCampaign: campaign,
   });
 
   exports.renderEmailAndSend('welcome-sequence-second', params, callback);
@@ -389,23 +387,23 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
   // For members with empty profiles,
   // remind them how important it is to fill their profile.
   // Ask for feedback from the rest.
-  var descriptionLength = textService.plainText(user.description || '', true).length;
-  var messageTopic = (descriptionLength < config.profileMinimumLength) ? 'fill-profile' : 'feedback';
+  const descriptionLength = textService.plainText(user.description || '', true).length;
+  const messageTopic = (descriptionLength < config.profileMinimumLength) ? 'fill-profile' : 'feedback';
 
-  var urlEditProfile = url + '/profile/edit',
-      campaign = 'welcome-sequence-third' + '-' + messageTopic,
-      utmParams = {
-        source: 'transactional-email',
-        medium: 'email',
-        campaign: campaign
-      };
+  const urlEditProfile = url + '/profile/edit';
+  const campaign = 'welcome-sequence-third' + '-' + messageTopic;
+  const utmParams = {
+    source: 'transactional-email',
+    medium: 'email',
+    campaign: campaign,
+  };
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: 'How is it going, ' + user.firstName + '?',
     from: {
       name: getSupportVolunteerName(),
       // Use support email instead of default "no-reply@":
-      address: config.supportEmail
+      address: config.supportEmail,
     },
     firstName: user.firstName,
     name: user.displayName,
@@ -414,7 +412,7 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
     urlEditProfile: analyticsHandler.appendUTMParams(urlEditProfile, utmParams),
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
-    topic: messageTopic
+    topic: messageTopic,
   });
 
   exports.renderEmailAndSend('welcome-sequence-third', params, callback);
@@ -425,14 +423,14 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
  */
 exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
     username: userTo.username, // data needed for link to profile in footer
     userFrom: userFrom,
     userTo: userTo,
     userFromProfileUrl: url + '/profile/' + userFrom.username,
-    giveReferenceUrl: url + '/profile/' + userFrom.username + '/references/new'
+    giveReferenceUrl: url + '/profile/' + userFrom.username + '/references/new',
   });
 
   exports.renderEmailAndSend('reference-notification-first', params, callback);
@@ -443,7 +441,7 @@ exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
  */
 exports.sendReferenceNotificationSecond = function (userFrom, userTo, reference, callback) {
 
-  var params = exports.addEmailBaseTemplateParams({
+  const params = exports.addEmailBaseTemplateParams({
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
     username: userTo.username, // data needed for link to profile in footer
@@ -451,7 +449,7 @@ exports.sendReferenceNotificationSecond = function (userFrom, userTo, reference,
     userTo: userTo,
     userFromProfileUrl: url + '/profile/' + userFrom.username,
     seeReferencesUrl: url + '/profile/' + userTo.username + '/references',
-    recommend: reference.recommend
+    recommend: reference.recommend,
   });
 
   exports.renderEmailAndSend('reference-notification-second', params, callback);
@@ -471,17 +469,17 @@ exports.addEmailBaseTemplateParams = function (params) {
     return {};
   }
 
-  var baseUrl = (config.https ? 'https' : 'http') + '://' + config.domain;
+  const baseUrl = (config.https ? 'https' : 'http') + '://' + config.domain;
 
   params.urlSupportPlainText = baseUrl + '/support';
   params.footerUrlPlainText = baseUrl;
 
-  var buildAnalyticsUrl = function (url, content) {
+  const buildAnalyticsUrl = function (url, content) {
     return analyticsHandler.appendUTMParams(url, {
       source: 'transactional-email',
       medium: 'email',
       campaign: params.utmCampaign || 'transactional-email',
-      content: content
+      content: content,
     });
   };
 
@@ -496,7 +494,7 @@ exports.addEmailBaseTemplateParams = function (params) {
 
 exports.renderEmail = function (templateName, params, callback) {
 
-  var templatePaths = {};
+  const templatePaths = {};
 
   // `./modules/core/server/views/email-templates-text`
   templatePaths.text = path.join('email-templates-text', templateName + '.server.view.html');
@@ -535,17 +533,17 @@ exports.renderEmail = function (templateName, params, callback) {
       stripPrefix: false,
       replaceFn: function (match) {
         return '<' + match.getAnchorHref() + '>';
-      }
+      },
     });
 
-    var email = {
+    const email = {
       to: {
         name: params.name,
-        address: params.email
+        address: params.email,
       },
       from: params.from || 'Trustroots <' + config.mailer.from + '>',
       subject: params.subject,
-      text: result.text
+      text: result.text,
     };
     if (result.html) {
       // Inline CSS with Juice
@@ -559,8 +557,8 @@ exports.renderEmail = function (templateName, params, callback) {
     if (params.sparkpostCampaign) {
       email.headers = {
         'X-MSYS-API': {
-          'campaign_id': params.sparkpostCampaign
-        }
+          'campaign_id': params.sparkpostCampaign,
+        },
       };
     }
     callback(null, email);

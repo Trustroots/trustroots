@@ -1,25 +1,23 @@
-'use strict';
-
-var should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    moment = require('moment'),
-    User = mongoose.model('User'),
-    config = require(path.resolve('./config/config')),
-    express = require(path.resolve('./config/lib/express'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const moment = require('moment');
+const User = mongoose.model('User');
+const config = require(path.resolve('./config/config'));
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    user,
-    _user,
-    unConfirmedCredentials,
-    unConfirmedUser,
-    _unConfirmedUser;
+let app;
+let agent;
+let credentials;
+let user;
+let _user;
+let unConfirmedCredentials;
+let unConfirmedUser;
+let _unConfirmedUser;
 
 /**
  * User routes tests
@@ -39,7 +37,7 @@ describe('User profile CRUD tests', function () {
     // Create user credentials
     credentials = {
       username: 'TR_username',
-      password: 'TR-I$Aw3$0m3'
+      password: 'TR-I$Aw3$0m3',
     };
 
     // Create a new user
@@ -51,7 +49,7 @@ describe('User profile CRUD tests', function () {
       email: 'test@example.org',
       username: credentials.username.toLowerCase(),
       password: credentials.password,
-      provider: 'local'
+      provider: 'local',
     };
 
     user = new User(_user);
@@ -65,7 +63,7 @@ describe('User profile CRUD tests', function () {
 
     unConfirmedCredentials = {
       username: 'TR_username_unconfirmed',
-      password: 'TR-I$Aw3$0m4'
+      password: 'TR-I$Aw3$0m4',
     };
 
     _unConfirmedUser = {
@@ -77,7 +75,7 @@ describe('User profile CRUD tests', function () {
       emailToken: 'initial email token',
       username: unConfirmedCredentials.username.toLowerCase(),
       password: unConfirmedCredentials.password,
-      provider: 'local'
+      provider: 'local',
     };
 
     unConfirmedUser = new User(_unConfirmedUser);
@@ -166,9 +164,9 @@ describe('User profile CRUD tests', function () {
             return done(signinErr);
           }
 
-          var userUpdate = {
+          const userUpdate = {
             firstName: 'user_update_first',
-            lastName: 'user_update_last'
+            lastName: 'user_update_last',
           };
 
           agent.put('/api/users')
@@ -208,10 +206,10 @@ describe('User profile CRUD tests', function () {
             return done(signinErr);
           }
 
-          var userUpdate = {
+          const userUpdate = {
             firstName: 'user_update_first',
             lastName: 'user_update_last',
-            roles: ['user', 'admin']
+            roles: ['user', 'admin'],
           };
 
           agent.put('/api/users')
@@ -238,21 +236,21 @@ describe('User profile CRUD tests', function () {
 
   it('should not be able to update profile details with existing email', function (done) {
 
-    var _user2 = _user;
+    const _user2 = _user;
 
     _user2.username = 'user2_username';
     _user2.email = 'user2_email@example.org';
     _user2.emailTemporary = 'user2_email@example.org';
 
-    var credentials2 = {
+    const credentials2 = {
       username: 'username2',
-      password: 'TR-I$Aw3$0m4'
+      password: 'TR-I$Aw3$0m4',
     };
 
     _user2.username = credentials2.username;
     _user2.password = credentials2.password;
 
-    var user2 = new User(_user2);
+    const user2 = new User(_user2);
 
     user2.save(function (err) {
       should.not.exist(err);
@@ -266,10 +264,10 @@ describe('User profile CRUD tests', function () {
             return done(signinErr);
           }
 
-          var userUpdate = {
+          const userUpdate = {
             firstName: 'user_update_first',
             lastName: 'user_update_last',
-            email: user.email
+            email: user.email,
           };
 
           agent.put('/api/users')
@@ -296,9 +294,9 @@ describe('User profile CRUD tests', function () {
 
       should.not.exist(err);
 
-      var userUpdate = {
+      const userUpdate = {
         firstName: 'user_update_first',
-        lastName: 'user_update_last'
+        lastName: 'user_update_last',
       };
 
       agent.put('/api/users')
@@ -579,7 +577,7 @@ describe('User profile CRUD tests', function () {
           if (err) {
             return done(err);
           }
-          var user2 = _user;
+          const user2 = _user;
           user2.username = _user.username + '01';
           delete user2.email;
           agent.put('/api/users')
@@ -596,7 +594,7 @@ describe('User profile CRUD tests', function () {
     });
 
     it('should allow changing username for users created 3 months ago who never changed their username', function (done) {
-      var threeMonthsAgo = moment(user.created)
+      const threeMonthsAgo = moment(user.created)
         .subtract(3, 'months')
         .toDate();
       user.update({ $set: { created: threeMonthsAgo } }, function (err) {
@@ -608,7 +606,7 @@ describe('User profile CRUD tests', function () {
             if (err) {
               return done(err);
             }
-            var user2 = _user;
+            const user2 = _user;
             user2.username = _user.username + '01';
             delete user2.email;
             agent.put('/api/users')
@@ -627,7 +625,7 @@ describe('User profile CRUD tests', function () {
 
     it('should not be able to change username if username was changed within previous 3 months',
       function (done) {
-        var threeMonthsAgo = moment(user.created)
+        const threeMonthsAgo = moment(user.created)
           .subtract(3, 'months')
           .toDate();
         user.update({ $set: { created: threeMonthsAgo } }, function (err) {
@@ -639,7 +637,7 @@ describe('User profile CRUD tests', function () {
               if (err) {
                 return done(err);
               }
-              var user2 = _user;
+              const user2 = _user;
               user2.username = _user.username + '01';
               delete user2.email;
               // First username change
@@ -673,7 +671,7 @@ describe('User profile CRUD tests', function () {
 
     it('should be able to change username if username was changed more than 3 months ago',
       function (done) {
-        var threeMonthsAgo = moment(user.created)
+        const threeMonthsAgo = moment(user.created)
           .subtract(3, 'months')
           .toDate();
         user.update({ $set: { created: threeMonthsAgo } }, function (err) {
@@ -686,7 +684,7 @@ describe('User profile CRUD tests', function () {
                 return done(err);
               }
               // First change
-              var user2 = _user;
+              const user2 = _user;
               user2.username = _user.username + '01';
               delete user2.email;
               agent.put('/api/users')
@@ -701,7 +699,7 @@ describe('User profile CRUD tests', function () {
                     if (err) {
                       return done(err);
                     }
-                    var threeMonthsAgo = moment(user.usernameUpdated)
+                    const threeMonthsAgo = moment(user.usernameUpdated)
                       .subtract(3, 'months')
                       .toDate();
                     user.update(
@@ -739,7 +737,7 @@ describe('User profile CRUD tests', function () {
             }
             agent.put('/api/users')
               .send({
-                usernameUpdateAllowed: true
+                usernameUpdateAllowed: true,
               })
               .expect(200)
               .end(function (err, res) {
@@ -770,7 +768,7 @@ describe('User profile CRUD tests', function () {
             }
             agent.put('/api/users')
               .send({
-                usernameUpdated: moment().subtract(3, 'months').toDate()
+                usernameUpdated: moment().subtract(3, 'months').toDate(),
               })
               .expect(200)
               .end(function (err) {

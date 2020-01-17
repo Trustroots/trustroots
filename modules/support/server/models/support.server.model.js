@@ -1,43 +1,41 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
 /**
  * Support request Schema
  *
  * This collection serves as a backup for sent support requests
  */
-var SupportRequestSchema = new Schema({
+const SupportRequestSchema = new Schema({
   user: {
     type: Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
   },
   sent: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   email: {
     type: String,
     trim: true,
-    lowercase: true
+    lowercase: true,
   },
   username: {
-    type: String
+    type: String,
   },
   message: {
     type: String,
-    required: true
+    required: true,
   },
   userAgent: {
-    type: String
+    type: String,
   },
   reportMember: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 mongoose.model('SupportRequest', SupportRequestSchema);

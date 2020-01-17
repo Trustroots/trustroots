@@ -61,7 +61,7 @@ You can now access these from your browser:
 
 Refer to regular Install documentations for how to seed content, how to run tests etc.
 
-Just append `docker-compose run trustroots` to each command instructed at the documentation, for example:
+Just prepend `docker-compose run trustroots` to each command instructed at the documentation, for example:
 
 ```bash
 npm run test:server

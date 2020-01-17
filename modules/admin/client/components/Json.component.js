@@ -9,5 +9,5 @@ export default function Json({ content }) {
 }
 
 Json.propTypes = {
-  content: PropTypes.object.isRequired
+  content: PropTypes.object.isRequired,
 };

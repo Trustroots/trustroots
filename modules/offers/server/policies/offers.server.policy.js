@@ -1,11 +1,9 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var acl = require('acl'),
-    path = require('path'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+let acl = require('acl');
+const path = require('path');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
 
 // Using the memory backend
 acl = new acl(new acl.memoryBackend());
@@ -18,26 +16,26 @@ exports.invokeRolesPolicies = function () {
     roles: ['admin'],
     allows: [{
       resources: '/api/offers',
-      permissions: '*'
+      permissions: '*',
     }, {
       resources: '/api/offers-by/:offerUserId',
-      permissions: '*'
+      permissions: '*',
     }, {
       resources: '/api/offers/:offerId',
-      permissions: '*'
-    }]
+      permissions: '*',
+    }],
   }, {
     roles: ['user'],
     allows: [{
       resources: '/api/offers',
-      permissions: ['get', 'post']
+      permissions: ['get', 'post'],
     }, {
       resources: '/api/offers-by/:offerUserId',
-      permissions: ['get']
+      permissions: ['get'],
     }, {
       resources: '/api/offers/:offerId',
-      permissions: ['get', 'put', 'delete']
-    }]
+      permissions: ['get', 'put', 'delete'],
+    }],
   }]);
 };
 
@@ -50,7 +48,7 @@ exports.isAllowed = function (req, res, next) {
   // No offers for non-authenticated nor for authenticated but un-published users
   if (!req.user || (req.user && !req.user.public)) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -60,13 +58,13 @@ exports.isAllowed = function (req, res, next) {
   }
 
   // Check for user roles
-  var roles = (req.user && req.user.roles) ? req.user.roles : ['guest'];
+  const roles = (req.user && req.user.roles) ? req.user.roles : ['guest'];
   acl.areAnyRolesAllowed(roles, req.route.path, req.method.toLowerCase(), function (err, isAllowed) {
 
     if (err) {
       // An authorization error occurred.
       return res.status(500).send({
-        message: 'Unexpected authorization error'
+        message: 'Unexpected authorization error',
       });
     } else {
       if (isAllowed) {
@@ -74,7 +72,7 @@ exports.isAllowed = function (req, res, next) {
         return next();
       } else {
         return res.status(403).json({
-          message: errorService.getErrorMessageByKey('forbidden')
+          message: errorService.getErrorMessageByKey('forbidden'),
         });
       }
     }

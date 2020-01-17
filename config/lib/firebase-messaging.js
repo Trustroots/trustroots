@@ -1,13 +1,11 @@
-'use strict';
-
-var path = require('path'),
-    firebase = require('firebase-admin'),
-    config = require(path.resolve('./config/config')),
-    serviceAccount = config.fcm.serviceAccount;
+const path = require('path');
+const firebase = require('firebase-admin');
+const config = require(path.resolve('./config/config'));
+const serviceAccount = config.fcm.serviceAccount;
 
 if (serviceAccount) {
   firebase.initializeApp({
-    credential: firebase.credential.cert(serviceAccount)
+    credential: firebase.credential.cert(serviceAccount),
   });
   module.exports = firebase.messaging();
 } else {

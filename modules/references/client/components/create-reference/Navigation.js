@@ -61,7 +61,7 @@ Navigation.propTypes = {
   disabled: PropTypes.bool,
   tab: PropTypes.number.isRequired, // current tab index - indexed from 0
   tabs: PropTypes.number.isRequired, // amount of tabs to display
-  tabDone: PropTypes.number.isRequired // which tab is already filled
+  tabDone: PropTypes.number.isRequired, // which tab is already filled
 };
 
 export default withTranslation('reference')(Navigation);

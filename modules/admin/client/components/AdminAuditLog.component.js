@@ -11,7 +11,7 @@ export default class AdminAuditLog extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      auditLog: []
+      auditLog: [],
     };
   }
 
@@ -53,7 +53,7 @@ export default class AdminAuditLog extends Component {
         </div>
       </>
     );
-  };
+  }
 }
 
 AdminAuditLog.propTypes = {};

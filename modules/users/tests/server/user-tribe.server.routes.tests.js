@@ -1,21 +1,19 @@
-'use strict';
-
-var should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Tribe = mongoose.model('Tribe'),
-    express = require(path.resolve('./config/lib/express'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Tribe = mongoose.model('Tribe');
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    user,
-    _user;
+let app;
+let agent;
+let credentials;
+let user;
+let _user;
 
 /**
  * User routes tests
@@ -34,7 +32,7 @@ describe('User tribe memberships CRUD tests', function () {
     // Create user credentials
     credentials = {
       username: 'TR_username',
-      password: 'TR-I$Aw3$0m4'
+      password: 'TR-I$Aw3$0m4',
     };
 
     // Create a new user
@@ -47,7 +45,7 @@ describe('User tribe memberships CRUD tests', function () {
       emailToken: 'initial email token',
       username: credentials.username.toLowerCase(),
       password: credentials.password,
-      provider: 'local'
+      provider: 'local',
     };
 
     user = new User(_user);
@@ -67,8 +65,8 @@ describe('User tribe memberships CRUD tests', function () {
         }
 
         // Create test tribe
-        var tribe = new Tribe({
-          label: 'Awesome Tribe'
+        const tribe = new Tribe({
+          label: 'Awesome Tribe',
         });
 
         // Add tribe to test DB
@@ -118,8 +116,8 @@ describe('User tribe memberships CRUD tests', function () {
         }
 
         // Create test tribe
-        var tribe = new Tribe({
-          label: 'Hitchhikers'
+        const tribe = new Tribe({
+          label: 'Hitchhikers',
         });
 
         // Add tribe to test DB
@@ -181,8 +179,8 @@ describe('User tribe memberships CRUD tests', function () {
         }
 
         // Create test tribe
-        var tribe = new Tribe({
-          label: 'Russian literature students'
+        const tribe = new Tribe({
+          label: 'Russian literature students',
         });
 
         // Add tribe to test DB
@@ -239,8 +237,8 @@ describe('User tribe memberships CRUD tests', function () {
         }
 
         // Create test tribe
-        var tribe = new Tribe({
-          label: 'Japanese linguistics'
+        const tribe = new Tribe({
+          label: 'Japanese linguistics',
         });
 
         // Add tribe to test DB

@@ -1,13 +1,11 @@
-'use strict';
-
-var path = require('path'),
-    should = require('should'),
-    sinon = require('sinon'),
-    influx = require('influx'),
-    Promise = require('promise'),
-    // influx = require('influx'),
-    influxService = require(path.resolve('./modules/stats/server/services/influx.server.service')),
-    config = require(path.resolve('./config/config'));
+const path = require('path');
+const should = require('should');
+const sinon = require('sinon');
+const influx = require('influx');
+const Promise = require('promise');
+// influx = require('influx'),
+const influxService = require(path.resolve('./modules/stats/server/services/influx.server.service'));
+const config = require(path.resolve('./config/config'));
 
 describe('Service: influx', function () {
 
@@ -47,8 +45,8 @@ describe('Service: influx', function () {
           host: 'example.com',
           port: 9876,
           protocol: 'https',
-          database: 'example'
-        }
+          database: 'example',
+        },
       });
 
       // stub the influx.writeMeasurement method
@@ -58,7 +56,7 @@ describe('Service: influx', function () {
       influx.InfluxDB.prototype.writeMeasurement.returns(
         new Promise(function (resolve) {
           process.nextTick(resolve());
-        })
+        }),
       );
     });
 
@@ -137,22 +135,22 @@ describe('Service: influx', function () {
 
     context('valid data', function () {
       it('should reach influx.writeMeasurement method with proper data', function (done) {
-        var validData = {
+        const validData = {
           namespace: 'messages',
           counts: {
-            sent: 1
+            sent: 1,
           },
           values: {
-            timeToFirstReply: 27364
+            timeToFirstReply: 27364,
           },
           tags: {
             position: 'firstMessage',
-            messageLengthType: 'long'
+            messageLengthType: 'long',
           },
           meta: {
             messageId: 'aabbccddee',
-            messageLength: 345
-          }
+            messageLength: 345,
+          },
         };
 
         influxService.stat(validData, function (e) {
@@ -160,10 +158,10 @@ describe('Service: influx', function () {
           try {
             sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
 
-            var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
-            var point = points[0];
+            const point = points[0];
 
             // check the validity of the stat object
             should(measurement).eql('messageSent');
@@ -188,15 +186,15 @@ describe('Service: influx', function () {
       });
 
       it('[time provided as Date] should reach influx.writeMeasurement with properly formated and placed timestamp value (Date)', function (done) {
-        var validData = {
+        const validData = {
           namespace: 'messages',
           counts: {
-            sent: 1
+            sent: 1,
           },
           values: {
-            value: 334
+            value: 334,
           },
-          time: new Date('2001-10-02')
+          time: new Date('2001-10-02'),
         };
 
         influxService.stat(validData, function (e) {
@@ -204,10 +202,10 @@ describe('Service: influx', function () {
           try {
             sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
 
-            var measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            var points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
-            var point = points[0];
+            const point = points[0];
 
             should(measurement).eql('messageSent');
             should(point).not.have.propertyByPath('fields', 'time');

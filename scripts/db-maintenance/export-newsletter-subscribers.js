@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * A script to create csv files for importing newsletter subscribers to MailChimp
  * http://kb.mailchimp.com/lists/growth/import-subscribers-to-a-list#Import-From-a-CSV,-TXT,-or-Excel-File

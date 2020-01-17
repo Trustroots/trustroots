@@ -10,7 +10,7 @@ export default class OfferLocation extends React.Component {
 
     this.state = {
       zoom: 13,
-      windowWidth: 0
+      windowWidth: 0,
     };
 
     this.handleChangeZoom = this.handleChangeZoom.bind(this);
@@ -49,10 +49,10 @@ export default class OfferLocation extends React.Component {
       windowWidth={this.state.windowWidth}
     />;
   }
-};
+}
 
 OfferLocation.propTypes = {
-  offer: PropTypes.object.isRequired
+  offer: PropTypes.object.isRequired,
 };
 
 function getOfferMarkerType(offer) {

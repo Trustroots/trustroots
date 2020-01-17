@@ -23,5 +23,5 @@ export default function ZendeskInboxSearch({ className, q }) {
 
 ZendeskInboxSearch.propTypes = {
   className: PropTypes.string,
-  q: PropTypes.string.isRequired
+  q: PropTypes.string.isRequired,
 };

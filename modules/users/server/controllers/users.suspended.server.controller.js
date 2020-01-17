@@ -1,11 +1,9 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const _ = require('lodash');
+const path = require('path');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
 
 /**
  * Handle invalidating sessions of suspended users
@@ -23,7 +21,7 @@ exports.invalidateSuspendedSessions = function (req, res, next) {
     return req.session.destroy(function () {
 
       // A short one-liner
-      var suspendedMessage = errorService.getErrorMessageByKey('suspended');
+      const suspendedMessage = errorService.getErrorMessageByKey('suspended');
 
       // Do content negotiation and return a message
       // https://expressjs.com/en/api.html#res.format
@@ -31,15 +29,15 @@ exports.invalidateSuspendedSessions = function (req, res, next) {
         // For HTML calls send "suspended" html view
         'text/html': function () {
           res.render('suspended.server.view.html', {
-            message: suspendedMessage
+            message: suspendedMessage,
           });
         },
         // For API calls send "suspended" json message
         'application/json': function () {
           res.json({
-            message: suspendedMessage
+            message: suspendedMessage,
           });
-        }
+        },
       });
 
     });

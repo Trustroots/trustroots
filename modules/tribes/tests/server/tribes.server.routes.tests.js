@@ -1,25 +1,23 @@
-'use strict';
-
-var should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Tribe = mongoose.model('Tribe'),
-    express = require(path.resolve('./config/lib/express'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Tribe = mongoose.model('Tribe');
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    user,
-    _user,
-    tribe,
-    _tribe,
-    tribeNonPublic,
-    _tribeNonPublic;
+let app;
+let agent;
+let credentials;
+let user;
+let _user;
+let tribe;
+let _tribe;
+let tribeNonPublic;
+let _tribeNonPublic;
 
 /**
  * User routes tests
@@ -38,7 +36,7 @@ describe('Tribe CRUD tests', function () {
     // Create user credentials
     credentials = {
       username: 'tr_username',
-      password: 'M3@n.jsI$Aw3$0m3'
+      password: 'M3@n.jsI$Aw3$0m3',
     };
 
     // Create a new user
@@ -50,7 +48,7 @@ describe('Tribe CRUD tests', function () {
       username: credentials.username,
       password: credentials.password,
       provider: 'local',
-      public: true
+      public: true,
     };
 
     // Create a new tribe
@@ -60,14 +58,14 @@ describe('Tribe CRUD tests', function () {
       attribution_url: 'http://www.trustroots.org/team',
       image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
       tribe: true,
-      description: 'Lorem ipsum.'
+      description: 'Lorem ipsum.',
     };
 
     // Create a new non-public tribe
     _tribeNonPublic = {
       label: 'Non-public Tribe',
       tribe: true,
-      public: false
+      public: false,
     };
 
     user = new User(_user);
@@ -162,22 +160,22 @@ describe('Tribe CRUD tests', function () {
   it('should be able to read only 2 most popular tribes from page 1', function (done) {
 
     // Create more tribes
-    var tribe1 = new Tribe(_tribe);
+    const tribe1 = new Tribe(_tribe);
     tribe1.label = 'Tribe 1';
     tribe1.count = 50;
     tribe1.save(function (err) {
       should.not.exist(err);
-      var tribe2 = new Tribe(_tribe);
+      const tribe2 = new Tribe(_tribe);
       tribe2.label = 'Tribe 2';
       tribe2.count = 40;
       tribe2.save(function (err) {
         should.not.exist(err);
-        var tribe3 = new Tribe(_tribe);
+        const tribe3 = new Tribe(_tribe);
         tribe3.label = 'Tribe 3';
         tribe3.count = 30;
         tribe3.save(function (err) {
           should.not.exist(err);
-          var tribe4 = new Tribe(_tribe);
+          const tribe4 = new Tribe(_tribe);
           tribe4.label = 'Tribe 4';
           tribe4.count = 20;
           tribe4.save(function (err) {
@@ -205,22 +203,22 @@ describe('Tribe CRUD tests', function () {
   it('should be able to read most popular tribes from page 2', function (done) {
 
     // Create more tribes
-    var tribe1 = new Tribe(_tribe);
+    const tribe1 = new Tribe(_tribe);
     tribe1.label = 'Tribe 1';
     tribe1.count = 50;
     tribe1.save(function (err) {
       should.not.exist(err);
-      var tribe2 = new Tribe(_tribe);
+      const tribe2 = new Tribe(_tribe);
       tribe2.label = 'Tribe 2';
       tribe2.count = 40;
       tribe2.save(function (err) {
         should.not.exist(err);
-        var tribe3 = new Tribe(_tribe);
+        const tribe3 = new Tribe(_tribe);
         tribe3.label = 'Tribe 3';
         tribe3.count = 30;
         tribe3.save(function (err) {
           should.not.exist(err);
-          var tribe4 = new Tribe(_tribe);
+          const tribe4 = new Tribe(_tribe);
           tribe4.label = 'Tribe 4';
           tribe4.count = 20;
           tribe4.save(function (err) {

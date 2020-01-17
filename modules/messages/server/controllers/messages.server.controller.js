@@ -1,43 +1,41 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    async = require('async'),
-    sanitizeHtml = require('sanitize-html'),
-    paginate = require('express-paginate'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    config = require(path.resolve('./config/config')),
-    messageToStatsService = require(path.resolve('./modules/messages/server/services/message-to-stats.server.service')),
-    messageStatService = require(path.resolve('./modules/messages/server/services/message-stat.server.service')),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    Message = mongoose.model('Message'),
-    Thread = mongoose.model('Thread'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const async = require('async');
+const sanitizeHtml = require('sanitize-html');
+const paginate = require('express-paginate');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const config = require(path.resolve('./config/config'));
+const messageToStatsService = require(path.resolve('./modules/messages/server/services/message-to-stats.server.service'));
+const messageStatService = require(path.resolve('./modules/messages/server/services/message-stat.server.service'));
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const Message = mongoose.model('Message');
+const Thread = mongoose.model('Thread');
+const User = mongoose.model('User');
 
 // Allowed fields of message object to be set over API
-var messageFields = [
+const messageFields = [
   '_id',
   'content',
   'created',
   'read',
   'userFrom',
-  'userTo'
+  'userTo',
 ].join(' ');
 
 // Allowed fields of thread object to be set over API
-var threadFields = [
+const threadFields = [
   '_id',
   'message',
   'read',
   'updated',
   'userFrom',
-  'userTo'
+  'userTo',
 ].join(' ');
 
 /**
@@ -51,7 +49,7 @@ function sanitizeMessages(messages) {
     return [];
   }
 
-  var messagesCleaned = [];
+  const messagesCleaned = [];
 
   // Sanitize each outgoing message's contents
   messages.forEach(function (message) {
@@ -76,7 +74,7 @@ function sanitizeThreads(threads, authenticatedUserId) {
   }
 
   // Sanitize each outgoing thread
-  var threadsCleaned = [];
+  const threadsCleaned = [];
 
   threads.forEach(function (thread) {
 
@@ -90,7 +88,7 @@ function sanitizeThreads(threads, authenticatedUserId) {
     } else {
       // Ensure this works even if messages couldn't be found for some reason
       thread.message = {
-        excerpt: '…'
+        excerpt: '…',
       };
     }
 
@@ -120,12 +118,12 @@ function sanitizeThreads(threads, authenticatedUserId) {
 /**
  * Constructs link headers for pagination
  */
-var setLinkHeader = function (req, res, pageCount) {
+const setLinkHeader = function (req, res, pageCount) {
   if (paginate.hasNextPages(req)(pageCount)) {
-    var url = (config.https ? 'https' : 'http') + '://' + config.domain;
-    var nextPage = url + res.locals.paginate.href({ page: req.query.page + 1 });
+    const url = (config.https ? 'https' : 'http') + '://' + config.domain;
+    const nextPage = url + res.locals.paginate.href({ page: req.query.page + 1 });
     res.links({
-      next: nextPage
+      next: nextPage,
       // last: ''
     });
   }
@@ -139,7 +137,7 @@ exports.inbox = function (req, res) {
   // No user
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
@@ -148,8 +146,8 @@ exports.inbox = function (req, res) {
       // Returns only threads where currently authenticated user is participating member
       $or: [
         { userFrom: req.user },
-        { userTo: req.user }
-      ]
+        { userTo: req.user },
+      ],
     },
     {
       page: req.query.page || 1,
@@ -158,25 +156,25 @@ exports.inbox = function (req, res) {
       select: threadFields,
       populate: {
         path: 'userFrom userTo message',
-        select: 'content ' + userProfile.userMiniProfileFields
-      }
+        select: 'content ' + userProfile.userMiniProfileFields,
+      },
     },
     function (err, data) {
 
       if (err) {
         return res.status(400).send({
-          message: errorService.getErrorMessage(err)
+          message: errorService.getErrorMessage(err),
         });
       } else {
 
-        var threads = sanitizeThreads(data.docs, req.user._id);
+        const threads = sanitizeThreads(data.docs, req.user._id);
 
         // Pass pagination data to construct link header
         setLinkHeader(req, res, data.pages);
 
         res.json(threads);
       }
-    }
+    },
   );
 };
 
@@ -188,35 +186,35 @@ exports.send = function (req, res) {
   // No user
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // No receiver
   if (!req.body.userTo) {
     return res.status(400).send({
-      message: 'Missing `userTo` field.'
+      message: 'Missing `userTo` field.',
     });
   }
 
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
     return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
   // Don't allow sending messages to myself
   if (req.user._id.equals(req.body.userTo)) {
     return res.status(403).send({
-      message: 'Recepient cannot be currently authenticated user.'
+      message: 'Recepient cannot be currently authenticated user.',
     });
   }
 
   // No content or test if content is actually empty (when html is stripped out)
   if (!req.body.content || textService.isEmpty(req.body.content)) {
     return res.status(400).send({
-      message: 'Please write a message.'
+      message: 'Please write a message.',
     });
   }
 
@@ -228,7 +226,7 @@ exports.send = function (req, res) {
         // If we were unable to find the receiver, return the error and stop here
         if (err || !receiver || !receiver.public) {
           return res.status(404).send({
-            message: 'Member you are writing to does not exist.'
+            message: 'Member you are writing to does not exist.',
           });
         }
         done();
@@ -242,13 +240,13 @@ exports.send = function (req, res) {
         $or: [
           {
             userTo: req.user._id,
-            userFrom: req.body.userTo
+            userFrom: req.body.userTo,
           },
           {
             userTo: req.body.userTo,
-            userFrom: req.user._id
-          }
-        ]
+            userFrom: req.user._id,
+          },
+        ],
       },
       function (err, thread) {
         done(err, thread);
@@ -267,14 +265,14 @@ exports.send = function (req, res) {
             return done(err);
           }
 
-          var descriptionLength = (sender.description) ? textService.plainText(sender.description).length : 0;
+          const descriptionLength = (sender.description) ? textService.plainText(sender.description).length : 0;
 
           // If the sender has too empty description, return an error
           if (descriptionLength < config.profileMinimumLength) {
             return res.status(400).send({
               error: 'empty-profile',
               limit: config.profileMinimumLength,
-              message: (descriptionLength === 0) ? 'Please fill out your profile description before you send messages.' : 'Please write longer profile description before you send messages.'
+              message: (descriptionLength === 0) ? 'Please fill out your profile description before you send messages.' : 'Please write longer profile description before you send messages.',
             });
           }
 
@@ -291,7 +289,7 @@ exports.send = function (req, res) {
     // Save message
     function (done) {
 
-      var message = new Message(req.body);
+      const message = new Message(req.body);
 
       // Allow some HTML
       message.content = textService.html(message.content);
@@ -309,7 +307,7 @@ exports.send = function (req, res) {
     // Create/upgrade Thread handle between these two users
     function (message, done) {
 
-      var thread = new Thread();
+      const thread = new Thread();
       thread.updated = Date.now();
       thread.userFrom = message.userFrom;
       thread.userTo = message.userTo;
@@ -318,7 +316,7 @@ exports.send = function (req, res) {
 
       // Convert the Model instance to a simple object using Model's 'toObject' function
       // to prevent weirdness like infinite looping...
-      var upsertData = thread.toObject();
+      const upsertData = thread.toObject();
 
       // Delete the _id property, otherwise Mongo will return a "Mod on _id not allowed" error
       delete upsertData._id;
@@ -332,13 +330,13 @@ exports.send = function (req, res) {
         $or: [
           {
             userTo: upsertData.userTo,
-            userFrom: upsertData.userFrom
+            userFrom: upsertData.userFrom,
           },
           {
             userTo: upsertData.userFrom,
-            userFrom: upsertData.userTo
-          }
-        ]
+            userFrom: upsertData.userTo,
+          },
+        ],
       },
       upsertData,
       { upsert: true },
@@ -372,11 +370,11 @@ exports.send = function (req, res) {
       message
         .populate({
           path: 'userFrom',
-          select: userProfile.userMiniProfileFields
+          select: userProfile.userMiniProfileFields,
         })
         .populate({
           path: 'userTo',
-          select: userProfile.userMiniProfileFields
+          select: userProfile.userMiniProfileFields,
         }, function (err, message) {
           if (err) {
             return done(err);
@@ -391,13 +389,13 @@ exports.send = function (req, res) {
           // Finally return saved message
           return res.json(message);
         });
-    }
+    },
 
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
   });
@@ -424,14 +422,14 @@ exports.threadByUser = function (req, res, next, userId) {
 
       if (!req.user) {
         return res.status(403).send({
-          message: errorService.getErrorMessageByKey('forbidden')
+          message: errorService.getErrorMessageByKey('forbidden'),
         });
       }
 
       // Not user id or its not a valid ObjectId
       if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
         return res.status(400).send({
-          message: errorService.getErrorMessageByKey('invalid-id')
+          message: errorService.getErrorMessageByKey('invalid-id'),
         });
       }
 
@@ -439,8 +437,8 @@ exports.threadByUser = function (req, res, next, userId) {
         {
           $or: [
             { userFrom: req.user._id, userTo: userId },
-            { userTo: req.user._id, userFrom: userId }
-          ]
+            { userTo: req.user._id, userFrom: userId },
+          ],
         },
         {
           page: req.query.page || 1,
@@ -449,8 +447,8 @@ exports.threadByUser = function (req, res, next, userId) {
           select: messageFields,
           populate: {
             path: 'userFrom userTo',
-            select: userProfile.userMiniProfileFields
-          }
+            select: userProfile.userMiniProfileFields,
+          },
         },
         function (err, data) {
           if (err) {
@@ -467,7 +465,7 @@ exports.threadByUser = function (req, res, next, userId) {
           }
 
           done(err, data.docs);
-        }
+        },
       );
 
     },
@@ -489,7 +487,7 @@ exports.threadByUser = function (req, res, next, userId) {
 
       if (req.messages && req.messages.length > 0) {
 
-        var recentMessage = _.first(req.messages);
+        const recentMessage = _.first(req.messages);
 
         // If latest message in the thread was to current user, mark thread read
         if (recentMessage.userTo._id && recentMessage.userTo._id.toString() === req.user._id.toString()) {
@@ -497,18 +495,18 @@ exports.threadByUser = function (req, res, next, userId) {
           Thread.update(
             {
               userTo: req.user._id,
-              userFrom: userId
+              userFrom: userId,
             },
             {
-              read: true
+              read: true,
             },
             // Options:
             {
-              multi: false
+              multi: false,
             },
             function (err) {
               done(err);
-            }
+            },
           );
 
         } else {
@@ -519,12 +517,12 @@ exports.threadByUser = function (req, res, next, userId) {
         done(null);
       }
 
-    }
+    },
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     } else {
       return next();
@@ -542,11 +540,11 @@ exports.markRead = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
-  var messages = [];
+  const messages = [];
 
   // Produce an array of messages to be updated
   req.body.messageIds.forEach(function (messageId) {
@@ -556,30 +554,30 @@ exports.markRead = function (req, res) {
 
       // Although this isn't in index, but it ensures
       // user has access to update only his/hers own messages
-      userTo: req.user.id
+      userTo: req.user.id,
     });
   });
 
   // Mark messages read
   Message.update(
     {
-      $or: messages
+      $or: messages,
     },
     {
-      read: true
+      read: true,
     },
     {
-      multi: true
+      multi: true,
     },
     function (err) {
       if (err) {
         return res.status(400).send({
-          message: errorService.getErrorMessage(err)
+          message: errorService.getErrorMessage(err),
         });
       } else {
         res.status(200).send();
       }
-    }
+    },
   );
 
 };
@@ -592,17 +590,17 @@ exports.messagesCount = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   Thread.countDocuments({
     read: false,
-    userTo: req.user._id
+    userTo: req.user._id,
   }, function (err, unreadCount) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
     return res.json({ unread: unreadCount ? parseInt(unreadCount, 10) : 0 });
@@ -616,14 +614,14 @@ exports.sync = function (req, res) {
 
   if (!req.user) {
     return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // Root object to be sent out from this API endpoint
-  var data = {
+  const data = {
     messages: [],
-    users: []
+    users: [],
   };
 
   async.waterfall([
@@ -632,9 +630,9 @@ exports.sync = function (req, res) {
     function (done) {
 
       // Validate and construct date filters
-      var dateFrom,
-          dateTo,
-          queryDate = {};
+      let dateFrom;
+      let dateTo;
+      const queryDate = {};
 
       if (_.has(req, 'query.dateFrom')) {
         dateFrom = moment(req.query.dateFrom);
@@ -642,7 +640,7 @@ exports.sync = function (req, res) {
         // Validate `dateFrom`
         if (!dateFrom.isValid()) {
           return res.status(400).send({
-            message: 'Invalid `dateFrom`.'
+            message: 'Invalid `dateFrom`.',
           });
         }
 
@@ -655,7 +653,7 @@ exports.sync = function (req, res) {
         // Validate `dateTo`
         if (!dateTo.isValid()) {
           return res.status(400).send({
-            message: 'Invalid `dateTo`.'
+            message: 'Invalid `dateTo`.',
           });
         }
 
@@ -666,19 +664,19 @@ exports.sync = function (req, res) {
       // Validate correct order of dates
       if (dateFrom && dateTo && dateFrom.isAfter(dateTo)) {
         return res.status(400).send({
-          message: 'Invalid dates: `dateFrom` cannot be later than `dateTo`'
+          message: 'Invalid dates: `dateFrom` cannot be later than `dateTo`',
         });
       }
 
       // Construct final Mongo query
-      var query;
+      let query;
 
       // This is always part of the query
-      var queryUsers = {
+      const queryUsers = {
         $or: [
           { userFrom: req.user._id },
-          { userTo: req.user._id }
-        ]
+          { userTo: req.user._id },
+        ],
       };
 
       // Filter only by user or also by date?
@@ -687,8 +685,8 @@ exports.sync = function (req, res) {
         query = {
           $and: [
             queryUsers,
-            queryDate
-          ]
+            queryDate,
+          ],
         };
       } else {
         // Construct query without date limit
@@ -709,7 +707,7 @@ exports.sync = function (req, res) {
           messages = sanitizeMessages(messages);
 
           // Collect user ids
-          var userIds = [];
+          let userIds = [];
 
           // Re-group messages by users
           data.messages = _.groupBy(messages, function (row) {
@@ -738,8 +736,8 @@ exports.sync = function (req, res) {
       // Get objects for users based on above user ids
       User.find({
         _id: {
-          $in: userIds
-        }
+          $in: userIds,
+        },
       })
         .select(userProfile.userMiniProfileFields)
         .exec(function (err, users) {
@@ -751,12 +749,12 @@ exports.sync = function (req, res) {
     // Return the package
     function () {
       return res.json(data);
-    }
+    },
 
   ], function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     }
   });

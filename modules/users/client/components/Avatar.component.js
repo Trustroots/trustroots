@@ -10,7 +10,7 @@ import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
  * @param {string=''} source - Leave empty to use user's selected source. Values "none", "facebook", "local", "gravatar".
  * @param {boolean=true} link - Include a link to user's profile. Defaults to true.
  */
-export function Avatar({ t, user, size=256, source='', link=true }) {
+export function Avatar({ t, user, size=256, source='', link=true, onClick }) {
 
   source = source || user.avatarSource;
   const defaultAvatar = '/img/avatar.png';
@@ -27,7 +27,7 @@ export function Avatar({ t, user, size=256, source='', link=true }) {
   );
 
   return (
-    <div>{
+    <div onClick={onClick}>{
       (link)
         ?
         <a
@@ -45,7 +45,8 @@ Avatar.propTypes = {
   user: PropTypes.object.isRequired,
   size: PropTypes.number,
   source: PropTypes.string,
-  link: PropTypes.bool
+  link: PropTypes.bool,
+  onClick: PropTypes.func,
 };
 
 export default withTranslation('user')(Avatar);

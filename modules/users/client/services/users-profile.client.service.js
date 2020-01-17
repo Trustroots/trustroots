@@ -1,19 +1,14 @@
-(function () {
-  'use strict';
+angular
+  .module('users')
+  .factory('UserProfilesService', UserProfilesService);
 
-  angular
-    .module('users')
-    .factory('UserProfilesService', UserProfilesService);
-
-  /* @ngInject */
-  function UserProfilesService($resource) {
-    return $resource('/api/users/:username', {
-      username: '@username'
-    }, {
-      get: {
-        method: 'GET'
-      }
-    });
-  }
-
-}());
+/* @ngInject */
+function UserProfilesService($resource) {
+  return $resource('/api/users/:username', {
+    username: '@username',
+  }, {
+    get: {
+      method: 'GET',
+    },
+  });
+}

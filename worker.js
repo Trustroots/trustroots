@@ -1,15 +1,13 @@
-'use strict';
-
 /**
  * Trustroots
  *
  * Worker main entry file
  */
-var async = require('async'),
-    mongooseService = require('./config/lib/mongoose'),
-    worker = require('./config/lib/worker'),
-    path = require('path'),
-    log = require(path.resolve('./config/lib/logger'));
+const async = require('async');
+const mongooseService = require('./config/lib/mongoose');
+const worker = require('./config/lib/worker');
+const path = require('path');
+const log = require(path.resolve('./config/lib/logger'));
 
 async.waterfall([
 
@@ -36,9 +34,9 @@ async.waterfall([
     // Start the worker
     worker.start({
       maxAttempts: 10,
-      retryDelaySeconds: 10
+      retryDelaySeconds: 10,
     });
-  }
+  },
 
 ], function (err) {
   if (err) {

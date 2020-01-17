@@ -1,20 +1,18 @@
-'use strict';
-
-var should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    express = require(path.resolve('./config/lib/express'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    user,
-    supportMessage;
+let app;
+let agent;
+let credentials;
+let user;
+let supportMessage;
 
 /**
  * Support routes tests
@@ -33,7 +31,7 @@ describe('Support CRUD tests', function () {
     // Create user credentials
     credentials = {
       username: 'loremipsum',
-      password: 'Password123!'
+      password: 'Password123!',
     };
 
     // Create a new user
@@ -45,14 +43,14 @@ describe('Support CRUD tests', function () {
       username: credentials.username,
       password: credentials.password,
       provider: 'local',
-      public: true
+      public: true,
     });
 
     // Create new support message
     supportMessage = {
       username: user.username,
       email: user.email,
-      message: 'Trustroots rocks!'
+      message: 'Trustroots rocks!',
     };
 
     // Save user to the test db
@@ -80,7 +78,7 @@ describe('Support CRUD tests', function () {
       .send({
         username: '',
         email: '',
-        message: 'Trustroots is cool!'
+        message: 'Trustroots is cool!',
       })
       .expect(200)
       .end(function (supportSaveErr, supportSaveRes) {

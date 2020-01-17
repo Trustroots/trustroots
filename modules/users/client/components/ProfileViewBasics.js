@@ -1,11 +1,10 @@
 import React from 'react';
 import classnames from 'classnames';
-import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
+import { withTranslation } from 'react-i18next';
 import { Trans } from 'react-i18next';
-import '@/config/client/i18n';
 import PropTypes from 'prop-types';
 import * as languages from '@/config/languages/languages';
-import { hasConnectedAdditionalSocialAccounts, isWarmshowersId, socialAccountLink } from './utils/networks';
+import { hasConnectedAdditionalSocialAccounts, isWarmshowersId, socialAccountLink } from '../utils/networks';
 
 
 export function ProfileViewBasics({ t, profile }) {
@@ -120,7 +119,7 @@ export function ProfileViewBasics({ t, profile }) {
       </h4>
       <ul className="list-unstyled" aria-describedby="profile-languages">
         {languagesList.map(
-          code => <li key={code}>{getLanguage(code) || code}</li>
+          code => <li key={code}>{getLanguage(code) || code}</li>,
         )}
       </ul>
     </div>
@@ -148,7 +147,7 @@ export function ProfileViewBasics({ t, profile }) {
                   href={socialAccountLink(network, profile.additionalProvidersData[network])}>{network}
                 </a>
               </li>);
-          }
+          },
         )}
         {/* BeWelcome */}
         {profile.extSitesBW &&
@@ -180,7 +179,7 @@ export function ProfileViewBasics({ t, profile }) {
         <li className="social-profile">
           <i className="social-profile-icon icon-fw icon-lg icon-warmshowers"></i>
           <a className="social-profile-handle"
-            href={`https://www.warmshowers.org/${isWarmshowersId(profile) ? 'user' : 'users' }/${profile.extSitesWS}`}>
+            href={`https://www.warmshowers.org/${isWarmshowersId(profile.extSitesWS) ? 'user' : 'users' }/${profile.extSitesWS}`}>
             Warmshowers
           </a>
         </li>}
@@ -214,11 +213,11 @@ export function ProfileViewBasics({ t, profile }) {
         renderSocialNetworks(profile)
     }
   </div>);
-};
+}
 
 ProfileViewBasics.propTypes = {
   profile: PropTypes.object,
-  t: PropTypes.func
+  t: PropTypes.func,
 };
 
 export default withTranslation(['user-profile', 'languages'])(ProfileViewBasics);

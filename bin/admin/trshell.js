@@ -1,5 +1,3 @@
-'use strict'
-
 // Ensuring that we're in the right directory
 process.chdir(__dirname);
 process.chdir('../../');

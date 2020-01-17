@@ -23,7 +23,7 @@ exports.record = (req, res, next) => {
     params: req.params,
     query: req.query,
     route: req.route.path,
-    user: req.user._id
+    user: req.user._id,
   });
 
   // Save support request to db
@@ -46,12 +46,12 @@ exports.list = (req, res) => {
     .populate({
       path: 'user',
       select: 'username',
-      model: 'User'
+      model: 'User',
     })
     .exec((err, items) => {
       if (err) {
         return res.status(400).send({
-          message: errorService.getErrorMessage(err)
+          message: errorService.getErrorMessage(err),
         });
       }
       res.send(items || []);

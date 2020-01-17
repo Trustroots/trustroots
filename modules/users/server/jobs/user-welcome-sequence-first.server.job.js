@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Onboarding/welcome sequence email for new members: 1/3 (first one)
  *
@@ -12,20 +10,20 @@
 /**
  * Module dependencies.
  */
-var _ = require('lodash'),
-    path = require('path'),
-    log = require(path.resolve('./config/lib/logger')),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    config = require(path.resolve('./config/config')),
-    async = require('async'),
-    moment = require('moment'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const log = require(path.resolve('./config/lib/logger'));
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const config = require(path.resolve('./config/config'));
+const async = require('async');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
 
 module.exports = function (job, agendaDone) {
 
   // Ignore very recently confirmed (i.e. signed up) users
-  var emailConfirmedTimeAgo = moment().subtract(moment.duration(config.limits.welcomeSequence.first));
+  const emailConfirmedTimeAgo = moment().subtract(moment.duration(config.limits.welcomeSequence.first));
 
   async.waterfall([
 
@@ -47,9 +45,9 @@ module.exports = function (job, agendaDone) {
           // Exlude users with `suspended` role
           roles: {
             $elemMatch: {
-              $ne: 'suspended'
-            }
-          }
+              $ne: 'suspended',
+            },
+          },
         })
         // Limit stops any crazy amounts of emails being processed at once
         // the rest would be processed in next round.
@@ -79,30 +77,30 @@ module.exports = function (job, agendaDone) {
             user._id,
             {
               $set: {
-                welcomeSequenceSent: new Date()
+                welcomeSequenceSent: new Date(),
               },
               // If the field does not exist, $inc creates the field
               // and sets the field to the specified value.
               $inc: {
-                welcomeSequenceStep: 1
-              }
+                welcomeSequenceStep: 1,
+              },
             },
             function (err) {
               callback(err);
-            }
+            },
           );
         });
       }, function (err) {
         done(err);
       });
 
-    }
+    },
 
   ], function (err) {
     if (err) {
       log('error', 'Failure in first welcome sequence background job.', {
         error: err,
-        jobId: _.get(job, 'attrs._id').toString()
+        jobId: _.get(job, 'attrs._id').toString(),
       });
     }
     return agendaDone(err);

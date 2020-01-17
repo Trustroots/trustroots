@@ -1,40 +1,29 @@
 language: node_js
-node_js:
-  - 10
-env:
-  - $RUN="npm run test:client"
-  - $RUN="npm run test:server"
-  - $RUN="npm run lint-and-build-prod"
-script:
-  - $RUN
-install:
-  - npm ci
 matrix:
   fast_finish: true
+  # Generally using active LTS versions here, see https://github.com/nodejs/Release
   include:
-    - node_js: 12
-      env: $RUN="npm run test:server"
+    - name: "Test client"
+      node_js: 12
+      env: RUN="npm run test:client"
+    - name: "Test server"
+      node_js: 12
+      env: RUN="npm run test:server"
+    - name: "Lint and try building"
+      node_js: 12
+      env: RUN="npx concurrently --kill-others-on-fail 'npm:lint' 'npm:build'"
 # https://docs.travis-ci.com/user/reference/overview/#Virtualisation-Environment-vs-Operating-System
+script: $RUN
+install: npm ci
 dist: trusty
-services:
-  - mongodb
+services: mongodb
 addons:
   apt:
-    sources:
-    - google-chrome
     packages:
-    - google-chrome-stable
     - graphicsmagick
 before_script:
   - mongo --version
   - mongod --version
-
-  # https://docs.travis-ci.com/user/gui-and-headless-browsers/#Using-xvfb-to-Run-Tests-That-Require-a-GUI
-  - 'export PATH=$PATH:/usr/lib/chromium-browser/'
-  - 'export DISPLAY=:99.0'
-  - 'sh -e /etc/init.d/xvfb start'
-  - sleep 3 # give xvfb some time to start
-
   # Ensure stable NPM version (avoids `-next.0` tags)
   - 'npm install -g npm'
 cache:

@@ -33,7 +33,7 @@ export function LanguageSwitchDropdown({ currentLanguageCode, onChangeLanguage }
       </Dropdown.Menu>
     </Dropdown>
   );
-};
+}
 
 /**
  * A presentational component of LanguageSwitch.
@@ -55,9 +55,9 @@ export function LanguageSwitchSelect({ currentLanguageCode, onChangeLanguage }) 
       ))}
     </select>
   );
-};
+}
 
 LanguageSwitchSelect.propTypes = LanguageSwitchDropdown.propTypes = {
   currentLanguageCode: PropTypes.string,
-  onChangeLanguage: PropTypes.func
+  onChangeLanguage: PropTypes.func,
 };

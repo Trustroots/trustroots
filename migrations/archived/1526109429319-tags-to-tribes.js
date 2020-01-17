@@ -1,22 +1,20 @@
-'use strict';
-
 /**
  * Refactros 'Tag' schema into 'Tribe' schema
  * - Renames the db
  * - Removes `tribe` keys
  */
 
-var path = require('path'),
-    async = require('async'),
-    chalk = require('chalk'),
-    mongooseService = require(path.resolve('./config/lib/mongoose')),
-    mongoose = require('mongoose'),
-    // eslint-disable-next-line no-unused-vars
-    tribeModels = require(path.resolve('./modules/tribes/server/models/tribe.server.model')),
-    Tribe = mongoose.model('Tribe'),
-    // eslint-disable-next-line no-unused-vars
-    userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
-    User = mongoose.model('User');
+const path = require('path');
+const async = require('async');
+const chalk = require('chalk');
+const mongooseService = require(path.resolve('./config/lib/mongoose'));
+const mongoose = require('mongoose');
+// eslint-disable-next-line no-unused-vars
+const tribeModels = require(path.resolve('./modules/tribes/server/models/tribe.server.model'));
+const Tribe = mongoose.model('Tribe');
+// eslint-disable-next-line no-unused-vars
+const userModels = require(path.resolve('./modules/users/server/models/user.server.model'));
+const User = mongoose.model('User');
 
 exports.up = function (next) {
   async.waterfall([
@@ -36,7 +34,7 @@ exports.up = function (next) {
         .update(
           { 'tribe': { '$exists': true } },
           { $unset: { tribe: 1 } },
-          { multi: true, strict: false }
+          { multi: true, strict: false },
         )
         .then(function (res) {
           console.log('Removed `tribe` keys:');
@@ -54,10 +52,10 @@ exports.up = function (next) {
 
           async.each(users, function (user, callback) {
             console.log('Processing user ' + user._id);
-            var newMember = [];
+            const newMember = [];
 
-            for (var i = 0; i !== user.member.length; ++i) {
-              var membership = user.member[i].toObject();
+            for (let i = 0; i !== user.member.length; ++i) {
+              const membership = user.member[i].toObject();
 
               membership.tribe = membership.tag;
               delete membership.tag;
@@ -68,12 +66,12 @@ exports.up = function (next) {
             User.update(
               { _id: user._id },
               { $set: {
-                member: newMember
+                member: newMember,
               } },
               function (err) {
                 console.log('🚩 User processed: ' + user._id);
                 callback(err);
-              }
+              },
             );
 
           }, function (err) {
@@ -87,7 +85,7 @@ exports.up = function (next) {
 
         });
 
-    }
+    },
 
   ], function (err) {
     if (err) {

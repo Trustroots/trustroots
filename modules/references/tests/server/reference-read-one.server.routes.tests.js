@@ -1,14 +1,12 @@
-'use strict';
-
-const _ = require('lodash'),
-      mongoose = require('mongoose'),
-      path = require('path'),
-      request = require('supertest'),
-      should = require('should'),
-      sinon = require('sinon'),
-      utils = require(path.resolve('./testutils/data.server.testutils')),
-      userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-      express = require(path.resolve('./config/lib/express'));
+const _ = require('lodash');
+const mongoose = require('mongoose');
+const path = require('path');
+const request = require('supertest');
+const should = require('should');
+const sinon = require('sinon');
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const express = require(path.resolve('./config/lib/express'));
 
 describe('Read a single reference by reference id', () => {
   // GET /references/:referenceId
@@ -22,8 +20,8 @@ describe('Read a single reference by reference id', () => {
   const _usersPrivate = utils.generateUsers(1, { public: false, username: 'private', email: 'non@example.com' });
   const _users = [..._usersPublic, ..._usersPrivate];
 
-  let users,
-      references;
+  let users;
+  let references;
 
   beforeEach(() => {
     sinon.useFakeTimers({ now: new Date('2019-01-13 13:21:55.1'), toFake: ['Date'] });
@@ -55,7 +53,7 @@ describe('Read a single reference by reference id', () => {
   const referenceData = [
     [0, 1], [0, 2, { public: false }],
     [1, 0, { public: false }], [1, 2],
-    [2, 0], [2, 1, { public: false }]
+    [2, 0], [2, 1, { public: false }],
   ];
 
   beforeEach(async () => {
@@ -91,9 +89,9 @@ describe('Read a single reference by reference id', () => {
         interactions: {
           met: references[3].interactions.met,
           hostedMe: references[3].interactions.hostedMe,
-          hostedThem: references[3].interactions.hostedThem
+          hostedThem: references[3].interactions.hostedThem,
         },
-        recommend: references[3].recommend
+        recommend: references[3].recommend,
       });
     });
 
@@ -104,7 +102,7 @@ describe('Read a single reference by reference id', () => {
 
       should(body).match({
         public: false,
-        _id: references[1]._id.toString()
+        _id: references[1]._id.toString(),
       });
     });
 
@@ -116,7 +114,7 @@ describe('Read a single reference by reference id', () => {
       should(body).match({
         public: false,
         _id: references[2]._id.toString(),
-        created: new Date().toISOString()
+        created: new Date().toISOString(),
       });
 
       should(body).have.only.keys('userFrom', 'userTo', '_id', 'public', 'created');
@@ -130,8 +128,8 @@ describe('Read a single reference by reference id', () => {
       should(body).eql({
         message: 'Not found.',
         details: {
-          reference: 'not found'
-        }
+          reference: 'not found',
+        },
       });
     });
 
@@ -143,8 +141,8 @@ describe('Read a single reference by reference id', () => {
       should(body).eql({
         message: 'Not found.',
         details: {
-          reference: 'not found'
-        }
+          reference: 'not found',
+        },
       });
     });
 
@@ -156,8 +154,8 @@ describe('Read a single reference by reference id', () => {
       should(body).eql({
         message: 'Bad request.',
         details: {
-          referenceId: 'invalid'
-        }
+          referenceId: 'invalid',
+        },
       });
     });
   });

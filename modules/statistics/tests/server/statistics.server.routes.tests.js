@@ -1,23 +1,21 @@
-'use strict';
-
-var should = require('should'),
-    request = require('supertest'),
-    path = require('path'),
-    mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    Offer = mongoose.model('Offer'),
-    express = require(path.resolve('./config/lib/express'));
+const should = require('should');
+const request = require('supertest');
+const path = require('path');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const Offer = mongoose.model('Offer');
+const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
  */
-var app,
-    agent,
-    credentials,
-    user1,
-    user2,
-    user3,
-    offer;
+let app;
+let agent;
+let credentials;
+let user1;
+let user2;
+let user3;
+let offer;
 
 /**
  * Statistics routes tests
@@ -36,7 +34,7 @@ describe('Statistics CRUD tests', function () {
       // Create user credentials
       credentials = {
         username: 'loremipsum',
-        password: 'Password123!'
+        password: 'Password123!',
       };
 
       // Create a new user NON-public user
@@ -52,7 +50,7 @@ describe('Statistics CRUD tests', function () {
         public: false,
         extSitesCS: 'username1',
         extSitesBW: 'username1',
-        extSitesWS: '1231231'
+        extSitesWS: '1231231',
       });
 
       // Create a new user public user
@@ -68,7 +66,7 @@ describe('Statistics CRUD tests', function () {
         public: true,
         extSitesCS: 'username2',
         extSitesBW: 'username2',
-        extSitesWS: '12312312'
+        extSitesWS: '12312312',
       });
 
       // Create a new user public user without extSites and without newsletter
@@ -85,16 +83,16 @@ describe('Statistics CRUD tests', function () {
         extSitesCS: 'username3',
         additionalProvidersData: {
           facebook: {
-            username: 'username3'
+            username: 'username3',
           },
           twitter: {
-            username: 'username3'
+            username: 'username3',
           },
           github: {
-            username: 'username3'
-          }
+            username: 'username3',
+          },
         },
-        extSitesBW: ''
+        extSitesBW: '',
       });
 
       offer = {
@@ -104,7 +102,7 @@ describe('Statistics CRUD tests', function () {
         type: 'host',
         updated: new Date(),
         location: [52.498981209298776, 13.418329954147339],
-        locationFuzzy: [52.50155039101136, 13.42255019882177]
+        locationFuzzy: [52.50155039101136, 13.42255019882177],
       };
 
       // Save users and offers to the test db
@@ -216,8 +214,8 @@ describe('Statistics CRUD tests', function () {
             version: '1.0.0',
             deviceYearClass: '2015',
             expoVersion: '21.0.0',
-            os: 'android'
-          }
+            os: 'android',
+          },
         })
         // .expect(200)
         .end(function (statsWriteErr, statsWriteRes) {
@@ -244,8 +242,8 @@ describe('Statistics CRUD tests', function () {
             version: '1.0.0',
             deviceYearClass: '2015',
             expoVersion: '21.0.0',
-            os: 'android'
-          }
+            os: 'android',
+          },
         })
         .expect(400)
         .end(function (statsWriteErr, statsWriteRes) {
@@ -273,8 +271,8 @@ describe('Statistics CRUD tests', function () {
             version: '0.1.0',
             deviceYearClass: '2015',
             expoVersion: '21.0.0',
-            os: 'android'
-          }
+            os: 'android',
+          },
         })
         .expect(200)
         .end(function (statsWriteErr, statsWriteRes) {

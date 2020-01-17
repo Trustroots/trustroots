@@ -1,12 +1,10 @@
-'use strict';
-
-var should = require('should'),
-    path = require('path'),
-    stathat = require('stathat'),
-    sinon = require('sinon'),
-    _ = require('lodash'),
-    stathatService = require(path.resolve('./modules/stats/server/services/stathat.server.service')),
-    config = require(path.resolve('./config/config'));
+const should = require('should');
+const path = require('path');
+const stathat = require('stathat');
+const sinon = require('sinon');
+const _ = require('lodash');
+const stathatService = require(path.resolve('./modules/stats/server/services/stathat.server.service'));
+const config = require(path.resolve('./config/config'));
 
 describe('Stathat Service Unit Test', function () {
   // replace the stathat.trackEZ<Count|Value><WithTime> with stubs
@@ -38,11 +36,11 @@ describe('Stathat Service Unit Test', function () {
   context('valid data', function () {
 
     it('[single count] should call stathat.trackEZCount with proper arguments', function (done) {
-      var stat = {
+      const stat = {
         namespace: 'testCount',
         counts: {
-          count: 2
-        }
+          count: 2,
+        },
       };
 
       stathatService.stat(stat, function (e) {
@@ -50,7 +48,7 @@ describe('Stathat Service Unit Test', function () {
 
         sinon.assert.calledOnce(stathat.trackEZCount);
 
-        var calledWith = stathat.trackEZCount.getCall(0).args;
+        const calledWith = stathat.trackEZCount.getCall(0).args;
 
         should(calledWith[0]).equal(config.stathat.key);
         should(calledWith[1]).equal(stat.namespace + '.count');
@@ -63,12 +61,12 @@ describe('Stathat Service Unit Test', function () {
     });
 
     it('[single count with time] should call stathat.trackEZCountWithTime with proper arguments', function (done) {
-      var stat = {
+      const stat = {
         namespace: 'testCountWithTime',
         counts: {
-          count: 2
+          count: 2,
         },
-        time: new Date('2033-07-13')
+        time: new Date('2033-07-13'),
       };
 
       stathatService.stat(stat, function (e) {
@@ -76,7 +74,7 @@ describe('Stathat Service Unit Test', function () {
 
         sinon.assert.calledOnce(stathat.trackEZCountWithTime);
 
-        var calledWith = stathat.trackEZCountWithTime.getCall(0).args;
+        const calledWith = stathat.trackEZCountWithTime.getCall(0).args;
 
         should(calledWith[0]).equal(config.stathat.key);
         should(calledWith[1]).equal(stat.namespace + '.count');
@@ -89,11 +87,11 @@ describe('Stathat Service Unit Test', function () {
     });
 
     it('[single value] should call stathat.trackEZValue with proper arguments', function (done) {
-      var stat = {
+      const stat = {
         namespace: 'testValue',
         values: {
-          value: 2
-        }
+          value: 2,
+        },
       };
 
       stathatService.stat(stat, function (e) {
@@ -101,7 +99,7 @@ describe('Stathat Service Unit Test', function () {
 
         sinon.assert.calledOnce(stathat.trackEZValue);
 
-        var calledWith = stathat.trackEZValue.getCall(0).args;
+        const calledWith = stathat.trackEZValue.getCall(0).args;
 
         should(calledWith[0]).equal(config.stathat.key);
         should(calledWith[1]).equal(stat.namespace + '.value');
@@ -114,12 +112,12 @@ describe('Stathat Service Unit Test', function () {
     });
 
     it('[single value with time] should call stathat.trackEZValueWithTime with proper arguments', function (done) {
-      var stat = {
+      const stat = {
         namespace: 'testValueWithTime',
         values: {
-          value: 3
+          value: 3,
         },
-        time: new Date('2033-07-15 12:03:05.332')
+        time: new Date('2033-07-15 12:03:05.332'),
       };
 
       stathatService.stat(stat, function (e) {
@@ -127,7 +125,7 @@ describe('Stathat Service Unit Test', function () {
 
         sinon.assert.calledOnce(stathat.trackEZValueWithTime);
 
-        var calledWith = stathat.trackEZValueWithTime.getCall(0).args;
+        const calledWith = stathat.trackEZValueWithTime.getCall(0).args;
 
         should(calledWith[0]).equal(config.stathat.key);
         should(calledWith[1]).equal(stat.namespace + '.value');
@@ -140,16 +138,16 @@ describe('Stathat Service Unit Test', function () {
     });
 
     it('[a tag specified] should add the tag to the stat_name', function (done) {
-      var stat = {
+      const stat = {
         namespace: 'testValueWithTime',
         values: {
-          value: 3
+          value: 3,
         },
         tags: {
           first: 'foo',
-          second: 'bar'
+          second: 'bar',
         },
-        time: new Date('2033-07-15 12:03:05.332')
+        time: new Date('2033-07-15 12:03:05.332'),
       };
 
       stathatService.stat(stat, function (e) {
@@ -158,13 +156,13 @@ describe('Stathat Service Unit Test', function () {
         sinon.assert.callCount(stathat.trackEZValueWithTime, 3);
 
         // array of arguments of each call to stathat
-        var calledWith = _.map(_.range(3), function (n) {
+        const calledWith = _.map(_.range(3), function (n) {
           return stathat.trackEZValueWithTime.getCall(n).args;
         });
 
         // group the argumets from calls to stathat by their position
         // to test them in groups
-        var argmGroups = _.zip.apply(this, calledWith);
+        const argmGroups = _.zip.apply(this, calledWith);
 
         // test the arguments grouped by their position together
         // test the arguments of all the calls to stathat
@@ -173,11 +171,11 @@ describe('Stathat Service Unit Test', function () {
           should(argmGroups[0][n]).equal(config.stathat.key);
 
           // 2nd argument is a name
-          var defaultName = stat.namespace + '.value';
+          const defaultName = stat.namespace + '.value';
           should(argmGroups[1]).containEql([
             defaultName, // the default metric name
             defaultName + '.first.foo', // the name with 1st tag
-            defaultName + '.second.bar' // the name with 2nd tag
+            defaultName + '.second.bar', // the name with 2nd tag
           ][n]);
 
           // 3rd argument is a stat value
@@ -195,16 +193,16 @@ describe('Stathat Service Unit Test', function () {
     });
 
     it('[multiple counts and values] should call stathat.trackEZCount multiple times with proper arguments', function (done) {
-      var stat = {
+      const stat = {
         namespace: 'testCountWithTime',
         counts: {
           count: 2,
-          events: 5
+          events: 5,
         },
         values: {
           value: 3,
-          other: 7
-        }
+          other: 7,
+        },
       };
 
       stathatService.stat(stat, function (e) {
@@ -213,10 +211,10 @@ describe('Stathat Service Unit Test', function () {
         sinon.assert.callCount(stathat.trackEZCount, 2);
         sinon.assert.callCount(stathat.trackEZValue, 2);
 
-        var calledWith0 = stathat.trackEZCount.getCall(0).args;
-        var calledWith1 = stathat.trackEZCount.getCall(1).args;
-        var calledWith2 = stathat.trackEZValue.getCall(0).args;
-        var calledWith3 = stathat.trackEZValue.getCall(1).args;
+        const calledWith0 = stathat.trackEZCount.getCall(0).args;
+        const calledWith1 = stathat.trackEZCount.getCall(1).args;
+        const calledWith2 = stathat.trackEZValue.getCall(0).args;
+        const calledWith3 = stathat.trackEZValue.getCall(1).args;
 
         should(calledWith0[0]).equal(config.stathat.key);
         should([calledWith0[1], calledWith1[1]]).containEql(stat.namespace + '.count');

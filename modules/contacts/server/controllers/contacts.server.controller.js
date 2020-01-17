@@ -1,21 +1,19 @@
-'use strict';
-
 /**
  * Module dependencies.
  */
 
-var _ = require('lodash'),
-    path = require('path'),
-    errorService = require(path.resolve('./modules/core/server/services/error.server.service')),
-    textService = require(path.resolve('./modules/core/server/services/text.server.service')),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service')),
-    userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller')),
-    sanitizeHtml = require('sanitize-html'),
-    htmlToText = require('html-to-text'),
-    async = require('async'),
-    mongoose = require('mongoose'),
-    Contact = mongoose.model('Contact'),
-    User = mongoose.model('User');
+const _ = require('lodash');
+const path = require('path');
+const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const sanitizeHtml = require('sanitize-html');
+const htmlToText = require('html-to-text');
+const async = require('async');
+const mongoose = require('mongoose');
+const Contact = mongoose.model('Contact');
+const User = mongoose.model('User');
 
 /**
  * Add a contact
@@ -23,7 +21,7 @@ var _ = require('lodash'),
 exports.add = function (req, res) {
 
   // Defined in this scope so we can remove it in in the case of an error
-  var contact;
+  let contact;
 
   async.waterfall([
 
@@ -33,7 +31,7 @@ exports.add = function (req, res) {
       // Not a valid ObjectId
       if (!mongoose.Types.ObjectId.isValid(req.body.friendUserId)) {
         return res.status(400).json({
-          message: errorService.getErrorMessageByKey('invalid-id')
+          message: errorService.getErrorMessageByKey('invalid-id'),
         });
       }
 
@@ -42,13 +40,13 @@ exports.add = function (req, res) {
         $or: [
           {
             userTo: req.body.friendUserId,
-            userFrom: req.user._id
+            userFrom: req.user._id,
           },
           {
             userTo: req.user._id,
-            userFrom: req.body.friendUserId
-          }
-        ]
+            userFrom: req.body.friendUserId,
+          },
+        ],
       }).exec(function (err, existingContact) {
         if (err) return done(err);
 
@@ -56,7 +54,7 @@ exports.add = function (req, res) {
           // Contact already exists!
           return res.status(409).json({
             message: errorService.getErrorMessageByKey('conflict'),
-            confirmed: existingContact.confirmed
+            confirmed: existingContact.confirmed,
           });
         }
 
@@ -68,8 +66,8 @@ exports.add = function (req, res) {
     function (done) {
 
       // Catch message separately
-      var messageHTML = false;
-      var messagePlain = false;
+      let messageHTML = false;
+      let messagePlain = false;
       if (req.body.message && req.body.message !== '') {
         messageHTML = sanitizeHtml(req.body.message, textService.sanitizeOptions);
         messagePlain = htmlToText.fromString(req.body.message, { wordwrap: 80 });
@@ -111,22 +109,22 @@ exports.add = function (req, res) {
       emailService.sendConfirmContact(req.user, friend, contact, messageHTML, messagePlain, function (err) {
         if (err) return done(err);
         return res.send({
-          message: 'An email was sent to your contact.'
+          message: 'An email was sent to your contact.',
         });
       });
-    }
+    },
 
   ], function (err) {
     if (err) {
       if (contact) {
         contact.remove(function () {
           return res.status(400).send({
-            message: errorService.getErrorMessage(err)
+            message: errorService.getErrorMessage(err),
           });
         });
       } else {
         return res.status(400).send({
-          message: errorService.getErrorMessage(err)
+          message: errorService.getErrorMessage(err),
         });
       }
     }
@@ -139,12 +137,12 @@ exports.add = function (req, res) {
  * Disconnect contact
  */
 exports.remove = function (req, res) {
-  var contact = req.contact;
+  const contact = req.contact;
 
   contact.remove(function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     } else {
       res.json(contact);
@@ -159,8 +157,8 @@ exports.removeAllByUserId = function (userId, callback) {
   Contact.deleteMany({
     $or: [
       { userTo: userId },
-      { userFrom: userId }
-    ]
+      { userFrom: userId },
+    ],
   }, function (err) {
     if (callback) {
       callback(err);
@@ -176,18 +174,18 @@ exports.confirm = function (req, res) {
   // Only receiving user can confirm user connections
   if (!req.contact || !req.contact.userTo._id.equals(req.user._id.valueOf())) {
     return res.status(403).json({
-      message: errorService.getErrorMessageByKey('forbidden')
+      message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
 
   // Ta'da!
-  var contact = req.contact;
+  const contact = req.contact;
   contact.confirmed = true;
 
   contact.save(function (err) {
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessage(err)
+        message: errorService.getErrorMessage(err),
       });
     } else {
       res.json(contact);
@@ -219,14 +217,14 @@ exports.contactByUserId = function (req, res, next, userId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
   // User's own profile, don't bother hitting the DB
   if (req.user && req.user._id === userId) {
     return res.status(400).json({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
@@ -235,13 +233,13 @@ exports.contactByUserId = function (req, res, next, userId) {
       $or: [
         {
           userTo: userId,
-          userFrom: req.user._id
+          userFrom: req.user._id,
         },
         {
           userTo: req.user._id,
-          userFrom: userId
-        }
-      ]
+          userFrom: userId,
+        },
+      ],
     })
       .populate('userTo userFrom', userProfile.userMiniProfileFields)
       .exec(function (err, contact) {
@@ -249,7 +247,7 @@ exports.contactByUserId = function (req, res, next, userId) {
         if (err) return next(err);
         if (!contact) {
           return res.status(404).json({
-            message: errorService.getErrorMessageByKey('not-found')
+            message: errorService.getErrorMessageByKey('not-found'),
           });
         }
 
@@ -270,7 +268,7 @@ exports.contactById = function (req, res, next, contactId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(contactId)) {
     return res.status(400).json({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
@@ -286,7 +284,7 @@ exports.contactById = function (req, res, next, contactId) {
             !contact.userTo._id.equals(req.user._id.valueOf())
         )) {
           return res.status(404).json({
-            message: errorService.getErrorMessageByKey('not-found')
+            message: errorService.getErrorMessageByKey('not-found'),
           });
         }
 
@@ -315,10 +313,10 @@ exports.filterByCommon = function (req, res, next) {
   Contact.find({
     $or: [
       { userFrom: req.user._id },
-      { userTo: req.user._id }
+      { userTo: req.user._id },
     ],
     // Include only confirmed contacts
-    confirmed: true
+    confirmed: true,
   }, {
     // By default, the `_id` field is included in the results.
     // Leave it out.
@@ -326,7 +324,7 @@ exports.filterByCommon = function (req, res, next) {
     // Return only `userFrom` & `userTo` fields
     userFrom: 1,
     userTo: 1,
-    test: '$userTo'
+    test: '$userTo',
   })
     .exec(function (err, authUserContacts) {
       if (err) {
@@ -340,10 +338,10 @@ exports.filterByCommon = function (req, res, next) {
       }
 
       // Remodel authenticated user's contact list to array of user ids
-      var authUserContactUsers = [];
+      const authUserContactUsers = [];
       _.map(authUserContacts, function (contact) {
       // Pick user id which isn't authenticated user themself
-        var userId = contact.userFrom.equals(req.user._id.valueOf()) ? contact.userTo : contact.userFrom;
+        const userId = contact.userFrom.equals(req.user._id.valueOf()) ? contact.userTo : contact.userFrom;
 
         // Ensure we have a list of string id's instead of Mongo ObjectId's
         // Otherwise checking against this list fails using `indexOf()`
@@ -378,19 +376,19 @@ exports.contactListByUser = function (req, res, next, listUserId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(listUserId)) {
     return res.status(400).json({
-      message: errorService.getErrorMessageByKey('invalid-id')
+      message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
   // Turn `listUserId` String into a Mongo ObjectId
   listUserId = new mongoose.Types.ObjectId(listUserId);
 
-  var contactQuery = {
+  const contactQuery = {
     $or: [
       { userFrom: listUserId },
-      { userTo: listUserId }
+      { userTo: listUserId },
     ],
-    confirmed: true
+    confirmed: true,
   };
 
   // Remove `confirmed:true` requirement from queries if currently
@@ -420,10 +418,10 @@ exports.contactListByUser = function (req, res, next, listUserId) {
           $cond: {
             if: { $eq: ['$userFrom', listUserId] },
             then: '$userTo',
-            else: '$userFrom'
-          }
-        }
-      }
+            else: '$userFrom',
+          },
+        },
+      },
     },
 
     // Populate user field: receives whole document of user
@@ -432,8 +430,8 @@ exports.contactListByUser = function (req, res, next, listUserId) {
         from: 'users', // collection to join
         localField: 'user',
         foreignField: '_id', // field(s) from the documents of the "from" collection
-        as: 'user' // output array field
-      }
+        as: 'user', // output array field
+      },
     },
     // Because above `$lookup`s return and array with one user
     // `[{userObject}]`, we have to unwind it back to `{userObject}`
@@ -463,12 +461,12 @@ exports.contactListByUser = function (req, res, next, listUserId) {
           emailHash: '$user.emailHash',
           additionalProvidersData: {
             facebook: {
-              id: '$user.additionalProvidersData.facebook.id'
-            }
-          }
-        }
-      }
-    }
+              id: '$user.additionalProvidersData.facebook.id',
+            },
+          },
+        },
+      },
+    },
 
   ]).exec(function (err, contacts) {
     if (err) return next(err);

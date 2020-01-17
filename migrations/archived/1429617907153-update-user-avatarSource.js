@@ -1,16 +1,14 @@
-'use strict';
-
 /**
  * Replaces "locale" with "local" from User.avatarSource
  */
 
-var path = require('path'),
-    mongooseService = require(path.resolve('./config/lib/mongoose')),
-    chalk = require('chalk'),
-    mongoose = require('mongoose'),
-    // eslint-disable-next-line no-unused-vars
-    userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
-    User = mongoose.model('User');
+const path = require('path');
+const mongooseService = require(path.resolve('./config/lib/mongoose'));
+const chalk = require('chalk');
+const mongoose = require('mongoose');
+// eslint-disable-next-line no-unused-vars
+const userModels = require(path.resolve('./modules/users/server/models/user.server.model'));
+const User = mongoose.model('User');
 
 exports.up = function (next) {
 
