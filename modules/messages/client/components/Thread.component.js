@@ -19,6 +19,7 @@ import Avatar from '@/modules/users/client/components/Avatar.component';
 // @TODO remove these once finished getting it working...
 import faker from 'faker';
 import { generateMongoId } from '@/testutils/common/data.common.testutil';
+import Flashcard from '@/modules/messages/client/components/Flashcard';
 
 function generateMessage(userFrom) {
   return {
@@ -56,9 +57,11 @@ const ThreadContainer = styled.div`
   top: 44px;
   bottom: 0;
   width: 100%;
+  padding-right: 30px;
   @media (min-width: 768px) {
     width: 505px;
     bottom: 12px;
+    padding-right: 0;
   }
   @media (min-width: 992px) {
     width: 667px;
@@ -73,7 +76,6 @@ const ThreadContainer = styled.div`
 const MessagesContainer = styled.div`
   flex-grow: 1;
   overflow-y: auto;
-  padding-right: 15px;
   padding-top: 30px;
 `;
 
@@ -83,6 +85,20 @@ const LoadingContainer = styled.div`
   width: 100%;
   text-align: center;
 `;
+
+const FlexGrow = styled.div`
+  flex-grow: 1;
+`;
+
+function YouHaveNotBeenTalkingYet() {
+  return (
+    <div className="content-empty">
+      <i className="icon-3x icon-messages-alt"/>
+      <h4>You haven&apos;t been talking yet.</h4>
+      <Flashcard/>
+    </div>
+  );
+}
 
 export default function Thread({ user }) {
   const [isFetching, setIsFetching] = useState(false);
@@ -147,7 +163,7 @@ export default function Thread({ user }) {
   return (
     <section className="container container-spacer">
       <div className="row">
-        <div className="col-sm-9">
+        <div className="col-xs-12 col-sm-9">
           {isFetching && (
             <LoadingContainer>
               {/* @TODO replace with a proper loader */}
@@ -193,7 +209,11 @@ export default function Thread({ user }) {
                   ))}
                 </InfiniteMessages>
               ) : (
-                <MessagesContainer/>
+                <>
+                  <FlexGrow/>
+                  <YouHaveNotBeenTalkingYet/>
+                  <FlexGrow/>
+                </>
               )}
               {showQuickReply && <QuickReply/>}
               <ThreadReply cacheKey={cacheKey} onSend={content => sendMessage(content)}/>
