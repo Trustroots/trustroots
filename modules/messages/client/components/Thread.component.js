@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import moment from 'moment';
 import { useMediaQuery } from 'react-responsive';
@@ -7,6 +8,7 @@ import { getRouteParams, $broadcast } from '@/modules/core/client/services/angul
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import { userType } from '@/modules/users/client/users.prop-types';
+import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
 import Monkeybox from '@/modules/messages/client/components/Monkeybox';
 import ReportMemberLink from '@/modules/support/client/components/ReportMemberLink.component';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
@@ -100,7 +102,20 @@ function YouHaveNotBeenTalkingYet() {
   );
 }
 
-export default function Thread({ user }) {
+function YourProfileSeemsQuiteEmpty() {
+  return (
+    <div className="content-empty">
+      <i className="icon-3x icon-messages-alt"/>
+      <p className="lead">
+        Your profile seems quite empty.<br/>
+        Please write longer profile description before sending messages.<br/>
+        <a href="/profile/edit">Edit your profile</a>
+      </p>
+    </div>
+  );
+}
+
+export default function Thread({ user, profileMinimumLength }) {
   if (!user.public) {
     return (
       <section className="container-spacer">
@@ -147,6 +162,10 @@ export default function Thread({ user }) {
   async function sendMessage(content) {
     const message = await api.messages.sendMessage(otherUser._id, content);
     setMessages(messages => [...messages, message]);
+  }
+
+  function hasEmptyProfile() {
+    return plainTextLength(user.description) < profileMinimumLength;
   }
 
   useEffect(() => {
@@ -219,7 +238,7 @@ export default function Thread({ user }) {
               ) : (
                 <>
                   <FlexGrow/>
-                  <YouHaveNotBeenTalkingYet/>
+                  {hasEmptyProfile() ? <YourProfileSeemsQuiteEmpty/> : <YouHaveNotBeenTalkingYet/>}
                   <FlexGrow/>
                 </>
               )}
@@ -241,4 +260,5 @@ export default function Thread({ user }) {
 
 Thread.propTypes = {
   user: userType.isRequired,
+  profileMinimumLength: PropTypes.number.isRequired,
 };

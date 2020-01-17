@@ -19,7 +19,7 @@ function MessagesRoutes($stateProvider) {
     }).
     state('messageThread', {
       url: '/messages/:username',
-      template: '<thread user="app.user"></thread>',
+      template: '<thread user="app.user" profileMinimumLength="app.appSettings.profileMinimumLength"></thread>',
       requiresAuth: true,
       footerHidden: true,
       data: {
