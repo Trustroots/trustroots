@@ -123,6 +123,18 @@ export default function Thread({ user }) {
     }
   }
 
+  async function sendMessage(content) {
+    if (content === '') {
+      // eslint-disable-next-line no-console
+      console.error('empty content not sending');
+      return;
+    }
+    // eslint-disable-next-line no-console
+    console.log('a nice message to send!', content);
+    const message = await api.messages.sendMessage(otherUser._id, content);
+    setMessages(messages => [...messages, message]);
+  }
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -190,7 +202,7 @@ export default function Thread({ user }) {
                 ))}
               </InfiniteMessages>
               {showQuickReply && <QuickReply/>}
-              <ThreadReply/>
+              <ThreadReply onSend={content => sendMessage(content)}/>
             </ThreadContainer>
           )}
         </div>

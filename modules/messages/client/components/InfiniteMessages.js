@@ -1,24 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
+import last from 'lodash.last';
 
 export default function InfiniteMessages({ component: Component, onFetchMore, children }) {
-  const [scrollToEnd, setScrollToEnd] = useState(true);
+  const [initialScroll, setInitialScroll] = useState(true);
   const [scrollHeight, setScrollHeight] = useState(null);
+  const [lastChildKey, setLastChildKey] = useState(() => last(React.Children.toArray(children))?.key);
+
   const ref = React.createRef();
-  const endRef = React.createRef();
+
+  function scrollToEnd() {
+    ref.current.scrollTop = ref.current.scrollHeight - ref.current.offsetHeight;
+  }
 
   useEffect(() => {
-    if (!ref.current || !endRef.current) return; // wait until both are rendered
-    if (scrollToEnd && ref.current.scrollHeight > 0) {
-      // Initial scroll to bottom
-      endRef.current.scrollIntoView();
-      setScrollToEnd(false);
-    } else if (scrollHeight !== null) {
-      // Scroll down because new content was loaded at the top
+    if (initialScroll && ref.current.scrollHeight > 0) {
+      // initially we want go and look at the most recent message at the bottom
+      setInitialScroll(false);
+      setScrollHeight(ref.current.scrollHeight);
+      scrollToEnd();
+    } else if (scrollHeight !== null && scrollHeight !== ref.current.scrollHeight) {
+      // the height as changed, we must have added a message
+
       const newScrollHeight = ref.current.scrollHeight;
-      const diff = newScrollHeight - scrollHeight;
-      if (diff > 0) {
-        ref.current.scrollTop = diff;
+
+      const key = last(React.Children.toArray(children))?.key;
+      if (key !== lastChildKey) {
+        // last child is different
+        // we added a message to the bottom, go and look at it!
+        setLastChildKey(key);
+        scrollToEnd();
+      } else {
+        // we added a message to the top, maintain scroll position
+        ref.current.scrollTop = newScrollHeight - scrollHeight;
       }
       setScrollHeight(newScrollHeight);
     }
@@ -26,7 +40,6 @@ export default function InfiniteMessages({ component: Component, onFetchMore, ch
 
   function onScroll() {
     if (ref.current.scrollTop === 0) {
-      setScrollHeight(ref.current.scrollHeight);
       onFetchMore();
     }
   }
@@ -34,7 +47,6 @@ export default function InfiniteMessages({ component: Component, onFetchMore, ch
   return (
     <Component ref={ref} onScroll={onScroll}>
       {children}
-      <div ref={endRef}/>
     </Component>
   );
 }

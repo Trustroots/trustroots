@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import PropTypes from 'prop-types';
 import MediumEditor from 'react-medium-editor';
 import 'medium-editor/dist/css/medium-editor.css';
 
@@ -67,12 +68,38 @@ const options = {
   },
 };
 
-export default function TrEditor(props) {
+export default function TrEditor({ id, text, onChange, onCtrlEnter }) {
+  const ref = React.createRef();
+
+  useEffect(() => {
+    const { medium } = ref.current;
+    const onEnter = event => event.ctrlKey && onCtrlEnter(event);
+    medium.subscribe('editableKeydownEnter', onEnter);
+    return () => {
+      // the onCtrlEnter that gets passed through will change quite a lot as it
+      // probably gets redefined over and over with different bound state
+      // this means it'll actually subscribe/unsubscribe per keypress...
+      // seems a bit much, but that's how these react hooks work!
+      medium.unsubscribe('editableKeydownEnter', onEnter);
+    };
+  }, [onCtrlEnter]);
+
+  const props = { id, text, onChange, options, className: 'tr-editor' };
   return (
     <MediumEditor
-      className="tr-editor"
-      options={options}
+      ref={ref}
       {...props}
     />
   );
 }
+
+TrEditor.defaultProps = {
+  onCtrlEnter: () => {},
+};
+
+TrEditor.propTypes = {
+  id: PropTypes.string,
+  text: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+  onCtrlEnter: PropTypes.func.isRequired,
+};
