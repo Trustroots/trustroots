@@ -113,10 +113,6 @@ export default function Thread({ user }) {
       setIsFetching(true);
       const otherUser = await api.users.fetch(username);
       const messages = await api.messages.fetchMessages(otherUser._id);
-
-      // @TODO remove these
-      messages.push(...range(10).map(() => generateMessage(otherUser)));
-
       setOtherUser(otherUser);
       setMessages(messages.sort((a, b) => a.created.localeCompare(b.created)));
     } finally {
