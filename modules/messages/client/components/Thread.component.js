@@ -1,25 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import moment from 'moment';
+import { useMediaQuery } from 'react-responsive';
 
-import ReportMemberLink from '@/modules/support/client/components/ReportMemberLink.component';
+import { getRouteParams, $broadcast } from '@/modules/core/client/services/angular-compat';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import { userType } from '@/modules/users/client/users.prop-types';
-import { Monkeybox } from '@/modules/messages/client/components/Monkeybox';
-import { getRouteParams } from '@/modules/core/client/services/angular-compat';
+import Monkeybox from '@/modules/messages/client/components/Monkeybox';
+import ReportMemberLink from '@/modules/support/client/components/ReportMemberLink.component';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
 import ThreadMessage from 'modules/messages/client/components/ThreadMessage';
 import InfiniteMessages from '@/modules/messages/client/components/InfiniteMessages';
-import { $broadcast } from '@/modules/core/client/services/angular-compat';
-
-import range from 'lodash/range';
-import { useMediaQuery } from 'react-responsive';
+import Flashcard from '@/modules/messages/client/components/Flashcard';
+import Activate from 'modules/users/client/components/Activate';
 import Avatar from '@/modules/users/client/components/Avatar.component';
-// @TODO remove these once finished getting it working...
+
+// @TODO remove this stuff once ready
+import range from 'lodash/range';
 import faker from 'faker';
 import { generateMongoId } from '@/testutils/common/data.common.testutil';
-import Flashcard from '@/modules/messages/client/components/Flashcard';
 
 function generateMessage(userFrom) {
   return {
@@ -101,6 +101,14 @@ function YouHaveNotBeenTalkingYet() {
 }
 
 export default function Thread({ user }) {
+  if (!user.public) {
+    return (
+      <section className="container-spacer">
+        <Activate/>
+      </section>
+    );
+  }
+
   const [isFetching, setIsFetching] = useState(false);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [otherUser, setOtherUser] = useState(null);

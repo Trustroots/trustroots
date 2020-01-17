@@ -42,7 +42,7 @@ TribesInCommon.propTypes = {
   otherUser: userType.isRequired,
 };
 
-export function Monkeybox({ user, otherUser }) {
+export default function Monkeybox({ user, otherUser }) {
   return (
     <div className="monkeybox panel panel-default">
       <div className="panel-body">
