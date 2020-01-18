@@ -83,7 +83,7 @@ exports.start = function (options, callback) {
 
     // Schedule job(s)
 
-    agenda.every('5 minutes', 'check unread messages');
+    agenda.every('30 seconds', 'check unread messages');
     agenda.every('24 hours', 'daily statistics');
     agenda.every('30 minutes', 'send signup reminders');
     agenda.every('30 minutes', 'reactivate hosts');

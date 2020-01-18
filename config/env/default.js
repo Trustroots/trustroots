@@ -101,7 +101,7 @@ module.exports = {
     timeToUpdateLastSeenUser: { minutes: 5 },
     // when to send reminders about unread messages (since the last unread message was sent)
     // the maximum amount of reminders to send is defined by length of the array
-    unreadMessageReminders: [{ minutes: 10 }, { hours: 24 }],
+    unreadMessageReminders: [{ minutes: 0 }, { minutes: 0 }],
     // after what delay to stop sending further unread message reminders
     unreadMessageRemindersTooLate: { days: 14 },
     // pagination: how many results should we return per page
