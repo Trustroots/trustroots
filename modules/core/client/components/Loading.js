@@ -6,5 +6,5 @@ import { useTranslation } from 'react-i18next';
  */
 export default function Loading() {
   const { t } = useTranslation('core');
-  return (<div>{t('Wait a moment...')}</div>);
+  return <div>{t('Wait a moment...')}</div>;
 }

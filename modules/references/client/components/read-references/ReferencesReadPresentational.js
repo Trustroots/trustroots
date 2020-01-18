@@ -1,12 +1,18 @@
-import { Trans } from 'react-i18next';
-import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
+import { useTranslation, Trans } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React from 'react';
 import Reference from './Reference';
 
-export function ReferencesReadPresentational({ t, publicReferences, nonpublicReferences }) {
-  const hasAnyNonpublicReferences = publicReferences && publicReferences.length > 0;
-  const hasAnyPublicReferences = nonpublicReferences && nonpublicReferences.length > 0;
+export default function ReferencesReadPresentational({
+  publicReferences,
+  nonpublicReferences,
+}) {
+  const { t } = useTranslation('reference');
+
+  const hasAnyPublicReferences =
+    publicReferences && publicReferences.length > 0;
+  const hasAnyNonpublicReferences =
+    nonpublicReferences && nonpublicReferences.length > 0;
 
   // No references
   if (!hasAnyNonpublicReferences && !hasAnyPublicReferences) {
@@ -20,23 +26,30 @@ export function ReferencesReadPresentational({ t, publicReferences, nonpublicRef
   }
 
   const renderReferenceCount = () => {
-    const positiveCount = publicReferences.filter(({ recommend }) => recommend === 'yes').length;
-    const unknownCount = publicReferences.filter(({ recommend }) => recommend === 'unknown').length;
-    const negativeCount = publicReferences.filter(({ recommend }) => recommend === 'no').length;
+    const positiveCount = publicReferences.filter(
+      ({ recommend }) => recommend === 'yes',
+    ).length;
+    const unknownCount = publicReferences.filter(
+      ({ recommend }) => recommend === 'unknown',
+    ).length;
+    const negativeCount = publicReferences.filter(
+      ({ recommend }) => recommend === 'no',
+    ).length;
 
     return (
       <div className="panel panel-default">
         <div className="panel-body references-summary">
           <Trans
+            ns="reference"
             negativeCount={negativeCount}
             positiveCount={positiveCount}
             unknownCount={unknownCount}
           >
-            <span className="text-success">{{ positiveCount }} recommend</span>
-            {' '}
-            <span>{{ unknownCount }} unknown</span>
-            {' '}
-            <span className="text-danger">{{ negativeCount }} not recommend</span>
+            <span className="text-success">{{ positiveCount }} recommend</span>{' '}
+            <span>{{ unknownCount }} unknown</span>{' '}
+            <span className="text-danger">
+              {{ negativeCount }} not recommend
+            </span>
           </Trans>
         </div>
       </div>
@@ -67,17 +80,16 @@ export function ReferencesReadPresentational({ t, publicReferences, nonpublicRef
   return (
     <>
       {publicReferences && renderReferenceCount()}
-      {hasAnyNonpublicReferences && renderReferencesSection(t('Pending'), nonpublicReferences)}
-      {hasAnyPublicReferences && renderReferencesSection(t('Public'), publicReferences)}
+      {hasAnyNonpublicReferences &&
+        renderReferencesSection(t('Pending'), nonpublicReferences)}
+      {hasAnyPublicReferences &&
+        renderReferencesSection(t('Public'), publicReferences)}
     </>
   );
-};
+}
 
 ReferencesReadPresentational.propTypes = {
-  t: PropTypes.func.isRequired,
   user: PropTypes.object.isRequired,
   publicReferences: PropTypes.array.isRequired,
-  nonpublicReferences: PropTypes.array
+  nonpublicReferences: PropTypes.array,
 };
-
-export default withTranslation('reference')(ReferencesReadPresentational);

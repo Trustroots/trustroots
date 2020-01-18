@@ -12,6 +12,7 @@ export default function BottomNavigationSmall({
   username,
   isSelf,
   contactCount,
+  referencesEnabled = false,
 }) {
   // @TODO the default value for 'active' will need to be fetched in more React way
   // when we have a router in place
@@ -39,11 +40,11 @@ export default function BottomNavigationSmall({
     },
   ];
 
-  if (window.appSettings.referencesEnabled) {
+  if (referencesEnabled) {
     tabs.push({
       key: 'references',
       label: t('References'),
-      link: `/profile/${username}/references`
+      link: `/profile/${username}/references`,
     });
   }
 
@@ -86,4 +87,5 @@ BottomNavigationSmall.propTypes = {
   isSelf: PropTypes.bool.isRequired,
   contactCount: PropTypes.number.isRequired,
   username: PropTypes.string.isRequired,
+  referencesEnabled: PropTypes.bool,
 };

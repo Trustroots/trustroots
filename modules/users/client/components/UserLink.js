@@ -7,9 +7,15 @@ import PropTypes from 'prop-types';
  * @param {User} user - user to link to
  */
 export default function UserLink({ user }) {
-  return (<strong><a href={`/profile/${user.username}`}>{user.displayName || user.username}</a></strong>);
+  return (
+    <strong>
+      <a href={`/profile/${user.username}`}>
+        {user.displayName || user.username}
+      </a>
+    </strong>
+  );
 }
 
 UserLink.propTypes = {
-  user: PropTypes.object.isRequired
+  user: PropTypes.object.isRequired,
 };

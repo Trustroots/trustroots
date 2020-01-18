@@ -10,26 +10,30 @@ const api = { references };
  * This is a container component for a list of user's References
  */
 export default class ReferencesRead extends React.Component {
-
   constructor(props) {
     super(props);
     this.state = {
-      references: null
+      references: null,
     };
   }
 
   async componentDidMount() {
-    const references = await api.references.read({ userTo: this.props.user._id });
+    const references = await api.references.read({
+      userTo: this.props.user._id,
+    });
 
     this.setState(() => ({ references }));
   }
 
   render() {
-
     if (!this.state.references) return <Loading />;
 
-    const publicReferences = this.state.references.filter(reference => reference.public).sort((a, b) => a.created < b.created);
-    const nonpublicReferences = this.state.references.filter(reference => !reference.public).sort((a, b) => a.created > b.created);
+    const publicReferences = this.state.references
+      .filter(reference => reference.public)
+      .sort((a, b) => a.created < b.created);
+    const nonpublicReferences = this.state.references
+      .filter(reference => !reference.public)
+      .sort((a, b) => a.created > b.created);
 
     return (
       <ReferencesReadPresentational
@@ -42,5 +46,5 @@ export default class ReferencesRead extends React.Component {
 }
 
 ReferencesRead.propTypes = {
-  user: PropTypes.object.isRequired
+  user: PropTypes.object.isRequired,
 };
