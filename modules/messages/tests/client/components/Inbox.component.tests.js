@@ -37,6 +37,25 @@ describe('<Inbox>', () => {
     });
   });
 
+  it('shows that I have replied if the last message is from me', async () => {
+    const threads = generateThreads(1, { userFrom: me });
+    api.fetchThreads.mockResolvedValue({ threads });
+    const { container, findByRole } = render(<Inbox user={me}/>);
+    await findByRole('listitem');
+    const icon = container.querySelector('.icon-reply');
+    expect(icon).toBeInTheDocument();
+    expect(icon).toHaveAttribute('title', 'You replied');
+  });
+
+  it('does not show that I have replied if the last message is from them', async () => {
+    const threads = generateThreads(1, { userTo: me });
+    api.fetchThreads.mockResolvedValue({ threads });
+    const { container, findByRole } = render(<Inbox user={me}/>);
+    await findByRole('listitem');
+    const icon = container.querySelector('.icon-reply');
+    expect(icon).not.toBeInTheDocument();
+  });
+
   it('shows a read more button if there are more results', async () => {
     api.fetchThreads.mockResolvedValue({ threads, nextParams: { foo: 'bar' } });
     const { findByRole } = render(<Inbox user={me}/>);

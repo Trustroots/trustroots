@@ -42,7 +42,7 @@ const defaultRules = {
   'prefer-const': 2,
   'arrow-spacing': [2, { before: true, after: true }],
   'require-atomic-updates': 0,
-  'import/first': 2
+  'import/first': 2,
 };
 
 module.exports = {
@@ -190,7 +190,8 @@ module.exports = {
         sourceType: 'module'
       },
       rules: {
-        'react/no-access-state-in-setstate': 2
+        'react/no-access-state-in-setstate': 2,
+        'no-multi-assign': 2,
       }
     },
 

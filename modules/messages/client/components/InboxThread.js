@@ -9,7 +9,7 @@ import { userType } from '@/modules/users/client/users.prop-types';
 export default function InboxThread({ user, thread }) {
   const { t } = useTranslation('messages');
   const otherUser = findOtherUser(user, thread);
-  const haveReplied = thread.userFrom._id = user._id;
+  const haveReplied = thread.userFrom._id === user._id;
   return <li className="list-group-item threadlist-thread">
     <a href={`/messages/${otherUser.username}`}>
       <div className="media">

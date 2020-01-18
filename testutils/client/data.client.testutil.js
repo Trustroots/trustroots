@@ -8,11 +8,14 @@ import {
 
 export { generateClientUser };
 
-export function generateThreads(count) {
-  return range(count).map(generateThread);
+export function generateThreads(count, { userFrom, userTo } = {}) {
+  return range(count).map(() => generateThread({ userFrom, userTo }));
 }
 
-function generateThread() {
+function generateThread({
+  userFrom = generateClientUser(),
+  userTo = generateClientUser(),
+} = {}) {
   return {
     _id: generateMongoId(),
     read: true,
@@ -20,7 +23,7 @@ function generateThread() {
     message: {
       excerpt: faker.lorem.sentence(),
     },
-    userFrom: generateClientUser(),
-    userTo: generateClientUser(),
+    userFrom,
+    userTo,
   };
 }
