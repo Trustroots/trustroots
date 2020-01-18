@@ -162,7 +162,7 @@ export default function Thread({ user, profileMinimumLength }) {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [otherUser, setOtherUser] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [cacheKey] = useState(() => `messages.thread.${user._id}-${getRouteParams().username}`);
+  const cacheKey = `messages.thread.${user._id}-${getRouteParams().username}`;
 
   const userHasReplied = Boolean(messages.find(message => message.userFrom._id === user._id));
   const showQuickReply = !userHasReplied;
