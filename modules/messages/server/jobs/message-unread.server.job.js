@@ -206,7 +206,10 @@ function sendUnreadMessageReminders(reminder, callback) {
       if (userIds.length > 0) {
         User
           .find(
-            { '_id': { $in: userIds } },
+            {
+              '_id': { $in: userIds },
+              'roles': { $nin: [ 'suspended', 'shadowban' ] },
+            },
             [
               // Fields to get for each user:
               'email',
