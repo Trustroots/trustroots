@@ -220,11 +220,17 @@ exports.send = function (req, res) {
 
   async.waterfall([
 
-    // Check receiver
+    // Check that receiving user is legitimate:
+    // - Has to be confirmed their email (hence be public)
+    // - Not suspended profile
     function (done) {
-      User.findById(req.body.userTo, 'public').exec(function (err, receiver) {
+      User.findOne({
+        _id: req.body.userTo,
+        public: true,
+        roles: { $nin: [ 'suspended', 'shadowban' ] },
+      }).exec(function (err, receiver) {
         // If we were unable to find the receiver, return the error and stop here
-        if (err || !receiver || !receiver.public) {
+        if (err || !receiver) {
           return res.status(404).send({
             message: 'Member you are writing to does not exist.',
           });
