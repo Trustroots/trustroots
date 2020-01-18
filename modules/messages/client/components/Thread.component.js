@@ -1,22 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
-import moment from 'moment';
 import { useMediaQuery } from 'react-responsive';
 
-import { getRouteParams, $broadcast } from '@/modules/core/client/services/angular-compat';
+import { $broadcast, getRouteParams } from '@/modules/core/client/services/angular-compat';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import { userType } from '@/modules/users/client/users.prop-types';
-import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
 import Monkeybox from '@/modules/messages/client/components/Monkeybox';
 import ReportMemberLink from '@/modules/support/client/components/ReportMemberLink.component';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
-import ThreadMessage from 'modules/messages/client/components/ThreadMessage';
-import InfiniteMessages from '@/modules/messages/client/components/InfiniteMessages';
-import Flashcard from '@/modules/messages/client/components/Flashcard';
 import Activate from 'modules/users/client/components/Activate';
-import Avatar from '@/modules/users/client/components/Avatar.component';
+import ThreadMessages from '@/modules/messages/client/components/ThreadMessages';
+import QuickReply from '@/modules/messages/client/components/QuickReply';
 
 // @TODO remove this stuff once ready
 import range from 'lodash/range';
@@ -38,56 +34,6 @@ const api = {
   users: usersAPI,
 };
 
-const quickReplies = [
-  {
-    host: true,
-    content: 'Yes, I can host!',
-  },
-  {
-    host: false,
-    content: 'Sorry I can\'t host',
-  },
-  {
-    write: true,
-    content: 'Write back',
-  },
-];
-
-function QuickReply({ onSend, onFocus }) {
-  return (
-    <div className="btn-toolbar" id="message-quick-reply">
-      {quickReplies.map(({ write, host, content }) => {
-        const className = write ? 'btn-offer-meet' : `btn-offer-hosting-${host ? 'yes' : 'no'}`;
-        function onClick() {
-          if (write) {
-            onFocus();
-          } else {
-            onSend(`
-              <p data-hosting="${host ? 'yes' : 'no'}">
-                <b><i>${content}</i></b>
-              </p>
-            `);
-          }
-        }
-        return (
-          <button
-            key={content}
-            className={`btn btn-sm ${className}`}
-            onClick={onClick}
-          >
-            {content}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-QuickReply.propTypes = {
-  onSend: PropTypes.func.isRequired,
-  onFocus: PropTypes.func.isRequired,
-};
-
 const ThreadContainer = styled.div`
   position: fixed;
   top: 44px;
@@ -107,49 +53,12 @@ const ThreadContainer = styled.div`
   flex-direction: column;
 `;
 
-const MessagesContainer = styled.div`
-  flex-grow: 1;
-  overflow-y: auto;
-  padding-top: 30px;
-  padding-right: 30px;
-  @media (min-width: 768px) {
-    padding-right: 0;
-  }
-`;
-
 const LoadingContainer = styled.div`
   position: absolute;
   top: 10px;
   width: 100%;
   text-align: center;
 `;
-
-const FlexGrow = styled.div`
-  flex-grow: 1;
-`;
-
-function YouHaveNotBeenTalkingYet() {
-  return (
-    <div className="content-empty">
-      <i className="icon-3x icon-messages-alt"/>
-      <h4>You haven&apos;t been talking yet.</h4>
-      <Flashcard/>
-    </div>
-  );
-}
-
-function YourProfileSeemsQuiteEmpty() {
-  return (
-    <div className="content-empty">
-      <i className="icon-3x icon-messages-alt"/>
-      <p className="lead">
-        Your profile seems quite empty.<br/>
-        Please write longer profile description before sending messages.<br/>
-        <a href="/profile/edit">Edit your profile</a>
-      </p>
-    </div>
-  );
-}
 
 export default function Thread({ user, profileMinimumLength }) {
   if (!user.public) {
@@ -205,10 +114,6 @@ export default function Thread({ user, profileMinimumLength }) {
     document.querySelector('#message-reply-content')?.focus();
   }
 
-  function hasEmptyProfile() {
-    return plainTextLength(user.description) < profileMinimumLength;
-  }
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -246,43 +151,13 @@ export default function Thread({ user, profileMinimumLength }) {
                   Loading...
                 </LoadingContainer>
               )}
-              {messages.length > 0 ? (
-                <InfiniteMessages component={MessagesContainer} onFetchMore={fetchMoreData}>
-                  {isExtraSmall && (
-                    <div className="message">
-                      <div className="message-recipient panel panel-default">
-                        <a className="panel-body" href={`/profile/${user.username}`}>
-                          <Avatar user={otherUser} size={32} link={false} />
-                          <h4>
-                            { otherUser.displayName }
-                          </h4>
-                          <small className="text-muted">
-                            @{ otherUser.username }
-                          </small>
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                  <div className="message">
-                    <div className="divider divider-first text-muted">
-                      <small>Conversation started {moment(messages[0].created).format('LL')}</small>
-                    </div>
-                  </div>
-                  {messages.map(message => (
-                    <ThreadMessage
-                      key={message._id}
-                      message={message}
-                      user={user}
-                    />
-                  ))}
-                </InfiniteMessages>
-              ) : (
-                <>
-                  <FlexGrow/>
-                  {hasEmptyProfile() ? <YourProfileSeemsQuiteEmpty/> : <YouHaveNotBeenTalkingYet/>}
-                  <FlexGrow/>
-                </>
-              )}
+              <ThreadMessages
+                user={user}
+                otherUser={otherUser}
+                messages={messages}
+                profileMinimumLength={profileMinimumLength}
+                onFetchMore={fetchMoreData}
+              />
               {showQuickReply && <QuickReply onSend={content => sendMessage(content)} onFocus={focus}/>}
               <ThreadReply cacheKey={cacheKey} onSend={content => sendMessage(content)}/>
             </ThreadContainer>
