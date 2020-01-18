@@ -103,7 +103,7 @@
   }
 
   // "Yes, I can host!" messages
-  &[ng-data-hosting="yes"] {
+  &[data-hosting="yes"] {
     .panel-body {
       color: @offer-hosting-yes;
     }
@@ -116,7 +116,7 @@
   }
 
   // "Sorry, I can't host" messages
-  &[ng-data-hosting="no"] {
+  &[data-hosting="no"] {
     .panel-body {
       color: @offer-hosting-no;
     }
@@ -172,15 +172,15 @@
   }
 }
 
-#message-quick-reply {
-  position: fixed;
-  width: 90%;
-
-  &.ng-hide {
-   transition: 0.2s linear all;
-   opacity: 1;
-  }
-}
+//#message-quick-reply {
+//  position: fixed;
+//  width: 90%;
+//
+//  &.ng-hide {
+//   transition: 0.2s linear all;
+//   opacity: 1;
+//  }
+//}
 
 // Reply box
 #message-reply {

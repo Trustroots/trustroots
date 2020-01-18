@@ -38,21 +38,55 @@ const api = {
   users: usersAPI,
 };
 
-function QuickReply() {
+const quickReplies = [
+  {
+    host: true,
+    content: 'Yes, I can host!',
+  },
+  {
+    host: false,
+    content: 'Sorry I can\'t host',
+  },
+  {
+    write: true,
+    content: 'Write back',
+  },
+];
+
+function QuickReply({ onSend, onFocus }) {
   return (
     <div className="btn-toolbar" id="message-quick-reply">
-      <button className="btn btn-sm btn-offer-hosting-yes">
-        Yes, I can host!
-      </button>
-      <button className="btn btn-sm btn-offer-hosting-no">
-        Sorry, I can&apos;t host
-      </button>
-      <button className="btn btn-sm btn-offer-meet">
-        Write back
-      </button>
+      {quickReplies.map(({ write, host, content }) => {
+        const className = write ? 'btn-offer-meet' : `btn-offer-hosting-${host ? 'yes' : 'no'}`;
+        function onClick() {
+          if (write) {
+            onFocus();
+          } else {
+            onSend(`
+              <p data-hosting="${host ? 'yes' : 'no'}">
+                <b><i>${content}</i></b>
+              </p>
+            `);
+          }
+        }
+        return (
+          <button
+            key={content}
+            className={`btn btn-sm ${className}`}
+            onClick={onClick}
+          >
+            {content}
+          </button>
+        );
+      })}
     </div>
   );
 }
+
+QuickReply.propTypes = {
+  onSend: PropTypes.func.isRequired,
+  onFocus: PropTypes.func.isRequired,
+};
 
 const ThreadContainer = styled.div`
   position: fixed;
@@ -130,7 +164,8 @@ export default function Thread({ user, profileMinimumLength }) {
   const [messages, setMessages] = useState([]);
   const [cacheKey] = useState(() => `messages.thread.${user._id}-${getRouteParams().username}`);
 
-  const showQuickReply = false;
+  const userHasReplied = Boolean(messages.find(message => message.userFrom._id === user._id));
+  const showQuickReply = !userHasReplied;
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
 
@@ -162,6 +197,10 @@ export default function Thread({ user, profileMinimumLength }) {
   async function sendMessage(content) {
     const message = await api.messages.sendMessage(otherUser._id, content);
     setMessages(messages => [...messages, message]);
+  }
+
+  function focus() {
+    document.querySelector('#message-reply-content')?.focus();
   }
 
   function hasEmptyProfile() {
@@ -242,7 +281,7 @@ export default function Thread({ user, profileMinimumLength }) {
                   <FlexGrow/>
                 </>
               )}
-              {showQuickReply && <QuickReply/>}
+              {showQuickReply && <QuickReply onSend={content => sendMessage(content)} onFocus={focus}/>}
               <ThreadReply cacheKey={cacheKey} onSend={content => sendMessage(content)}/>
             </ThreadContainer>
           )}
