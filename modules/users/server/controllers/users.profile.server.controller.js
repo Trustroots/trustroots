@@ -396,6 +396,13 @@ exports.initializeRemoveProfile = function (req, res) {
     });
   }
 
+  // Don't let suspended or shadowbanned users remove themself, ask them to get in touch with support instead.
+  if (req.user.roles.includes('suspended') || req.user.roles.includes('shadowban')) {
+    return res.status(403).send({
+      message: 'Oops! Something went wrong. Please get in touch with Trustroots support at trustroots.org/support',
+    });
+  }
+
   async.waterfall([
 
     // Generate random token
@@ -730,7 +737,7 @@ exports.userByUsername = function (req, res, next, username) {
         .findOne({
           username: username.toLowerCase(),
         },
-        exports.userProfileFields + ' public')
+        exports.userProfileFields + ' roles public')
         .populate({
           path: 'member.tribe',
           select: tribesHandler.tribeFields,
@@ -754,6 +761,11 @@ exports.userByUsername = function (req, res, next, username) {
             done(err, profile);
           } else if (req.user && (!req.user._id.equals(profile._id) && !profile.public)) {
             // Not own profile and not public
+            return res.status(404).send({
+              message: errorService.getErrorMessageByKey('not-found'),
+            });
+          } else if (req.user && (!req.user._id.equals(profile._id) && (profile.roles.includes('suspended') || profile.roles.includes('shadowban')))) {
+            // Not own profile and looking at suspended or shadow user
             return res.status(404).send({
               message: errorService.getErrorMessageByKey('not-found'),
             });
@@ -876,6 +888,7 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   delete profile.emailToken;
   delete profile.password;
   delete profile.salt;
+  delete profile.roles;
 
   // This information is not sensitive, but isn't needed at frontend
   delete profile.publicReminderCount;

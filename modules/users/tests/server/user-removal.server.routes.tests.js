@@ -311,6 +311,32 @@ describe('User removal CRUD tests', function () {
     });
   });
 
+  it('should not able to initiate removing profile with role "shadowban"', function (done) {
+    userA.roles = ['user', 'shadowban'];
+
+    userA.save(function (err) {
+      should.not.exist(err);
+
+      agent.post('/api/auth/signin')
+        .send(credentialsA)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          agent.del('/api/users')
+            .expect(403)
+            .end(function (deleteErr, deleteRes) {
+              should.not.exist(deleteErr);
+
+              deleteRes.body.message.should.equal('Oops! Something went wrong. Please get in touch with Trustroots support at trustroots.org/support');
+              jobs.length.should.equal(0);
+
+              done();
+            });
+        });
+    });
+  });
+
   it('should not be able to confirm removing profile when not signed in', function (done) {
 
     userA.removeProfileExpires = Date.now() + (24 * 3600000);
