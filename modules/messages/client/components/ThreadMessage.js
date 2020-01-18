@@ -69,7 +69,7 @@ export default function ThreadMessage({ message, user }) {
           )}
         </div>
       </div>
-      {!isExtraSmall && <div className="message-author" style={{ marginLeft: '15px' }}>
+      {!isExtraSmall && <div className="message-author" style={{ marginLeft: '15px', marginRight: '15px' }}>
         <Avatar user={message.userFrom} size={32}/>
       </div>}
     </div>

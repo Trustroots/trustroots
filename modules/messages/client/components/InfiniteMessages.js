@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import last from 'lodash/last';
+import debounce from 'lodash/debounce';
+
+const debounceWait = 20;
 
 export default function InfiniteMessages({ component: Component, onFetchMore, children }) {
   const [initialScroll, setInitialScroll] = useState(true);
   const [scrollHeight, setScrollHeight] = useState(null);
+  const [scrollFromBottom, setScrollFromBottom] = useState(null);
   const [lastChildKey, setLastChildKey] = useState(() => last(React.Children.toArray(children))?.key);
 
   const ref = React.createRef();
@@ -14,6 +18,19 @@ export default function InfiniteMessages({ component: Component, onFetchMore, ch
   }
 
   useEffect(() => {
+    const onResize = debounce(() => {
+      if (!ref.current) return;
+      // preserve scroll position
+      const { scrollHeight, offsetHeight } = ref.current;
+      ref.current.scrollTop = scrollHeight - offsetHeight - scrollFromBottom;
+    }, debounceWait);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [scrollFromBottom]);
+
+  useEffect(() => {
+    if (!ref.current) return;
+
     if (initialScroll && ref.current.scrollHeight > 0) {
       // initially we want go and look at the most recent message at the bottom
       setInitialScroll(false);
@@ -39,13 +56,17 @@ export default function InfiniteMessages({ component: Component, onFetchMore, ch
   });
 
   function onScroll() {
-    if (ref.current.scrollTop === 0) {
+    if (!ref.current) return;
+
+    const { scrollHeight, scrollTop, offsetHeight } = ref.current;
+    if (scrollTop === 0) {
       onFetchMore();
     }
+    setScrollFromBottom(scrollHeight - scrollTop - offsetHeight);
   }
 
   return (
-    <Component ref={ref} onScroll={onScroll}>
+    <Component ref={ref} onScroll={debounce(() => onScroll(), debounceWait)}>
       {children}
     </Component>
   );

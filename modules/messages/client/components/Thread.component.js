@@ -93,11 +93,9 @@ const ThreadContainer = styled.div`
   top: 44px;
   bottom: 0;
   width: 100%;
-  padding-right: 30px;
   @media (min-width: 768px) {
     width: 505px;
     bottom: 12px;
-    padding-right: 0;
   }
   @media (min-width: 992px) {
     width: 667px;
@@ -113,6 +111,10 @@ const MessagesContainer = styled.div`
   flex-grow: 1;
   overflow-y: auto;
   padding-top: 30px;
+  padding-right: 30px;
+  @media (min-width: 768px) {
+    padding-right: 0;
+  }
 `;
 
 const LoadingContainer = styled.div`
