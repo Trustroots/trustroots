@@ -1,6 +1,7 @@
 import React from 'react';
-import { useMediaQuery } from 'react-responsive';
+// import { useMediaQuery } from 'react-responsive';
 import PropTypes from 'prop-types';
+import styled from 'styled-components';
 
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
@@ -24,22 +25,52 @@ function getHostingData(content) {
   };
 }
 
-export default function ThreadMessage({ message, user }) {
-  const hostingData = getHostingData(message.content);
+const MessageContainer = styled.div.attrs(({ message }) => ({
+  className: 'message',
+  ...getHostingData(message.content),
+}))`
+  display: flex;
 
+  .message-main {
+    flex-grow: 1;
+
+    .avatar {
+      display: none;
+    }
+  }
+
+  .panel {
+    display: flex;
+  }
+
+  .message-author {
+    margin: 0 15px;
+  }
+
+  @media (max-width: 767px) {
+    .panel-body {
+      padding: 8px 15px 8px 4px;
+    }
+    .message-main {
+      .avatar {
+        display: block;
+        margin: 8px;
+      }
+    }
+    .message-author {
+      display: none;
+    }
+  }
+`;
+
+export default function ThreadMessage({ message, user }) {
   function isMe(otherUser) {
     return otherUser._id === user._id;
   }
 
-  const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
-
   return (
-    <div
-      className="message"
-      style={{ display: 'flex' }}
-      {...hostingData}
-    >
-      <div style={{ flexGrow: '1' }}>
+    <MessageContainer message={message}>
+      <div className="message-main">
         <div className="message-meta">
           {isMe(message.userFrom) ? (
             <span>You</span>
@@ -51,28 +82,18 @@ export default function ThreadMessage({ message, user }) {
           —
           <TimeAgo date={new Date(message.created)}/>
         </div>
-        <div className="panel panel-default" style={{ display: 'flex' }}>
-          {isExtraSmall ? (
-            <>
-              <div style={{ padding: '8px' }}><Avatar user={message.userFrom} size={24} /></div>
-              <div
-                className="panel-body"
-                style={{ padding: '8px 15px 8px 4px' }}
-                dangerouslySetInnerHTML={{ __html: message.content }}
-              />
-            </>
-          ) : (
-            <div
-              className="panel-body"
-              dangerouslySetInnerHTML={{ __html: message.content }}
-            />
-          )}
+        <div className="panel panel-default">
+          <Avatar user={message.userFrom} size={24} />
+          <div
+            className="panel-body"
+            dangerouslySetInnerHTML={{ __html: message.content }}
+          />
         </div>
       </div>
-      {!isExtraSmall && <div className="message-author" style={{ marginLeft: '15px', marginRight: '15px' }}>
+      <div className="message-author">
         <Avatar user={message.userFrom} size={32}/>
-      </div>}
-    </div>
+      </div>
+    </MessageContainer>
   );
 }
 
