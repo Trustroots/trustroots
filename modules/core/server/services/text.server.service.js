@@ -203,3 +203,34 @@ exports.plainText = function (content, cleanWhitespace) {
 
   return content;
 };
+
+/**
+ * Strip all phone numbers, email addresses and links from the text.
+ *
+ * @link https://github.com/gregjacobs/Autolinker.js#custom-replacement-function
+ *
+ * @param {String} content - Content
+ * @returns {String}
+ */
+exports.stripContactDetails = function (content) {
+  // Don't bother with empty strings
+  if (!content) {
+    return '';
+  }
+
+  return Autolinker.link(content, {
+    replaceFn: function (match) {
+      switch (match.getType()) {
+        case 'url':
+        case 'email':
+        case 'phone' :
+          // This will hide the email/url/phone completely from the content
+          return '';
+        default:
+          // Let Autolinker perform its normal anchor tag replacement in
+          // other cases like `mention` or `hashtag`
+          return true;
+      }
+    },
+  });
+};

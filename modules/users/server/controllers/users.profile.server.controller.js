@@ -839,10 +839,21 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
     return;
   }
 
+  // Destruct Mongoose object to regular object so that we can manipulate it
   profile = profile.toObject();
 
-  // We're sanitizing this already on saving/updating the profile, but here we do it again just in case.
-  if (profile.description) profile.description = sanitizeHtml(profile.description, textService.sanitizeOptions);
+  const isOwnProfile = authenticatedUser && authenticatedUser._id.equals(profile._id);
+
+  if (profile.description) {
+    // If currently logged in user has role "shadowban", attempt to remove contact information from other profile's content
+    if (!isOwnProfile && authenticatedUser.roles.includes('shadowban')) {
+      console.log('strip!'); //eslint-disable-line
+      profile.description = textService.stripContactDetails(textService.plainText(profile.description));
+    } else {
+      profile.description = sanitizeHtml(profile.description, textService.sanitizeOptions);
+    }
+  }
+
 
   // Remove tribes without reference object (= they've been deleted from `tribes` table)
   if (profile.member && profile.member.length > 0) {
@@ -863,8 +874,7 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
     });
   }
 
-  // Profile belongs to currently authenticated user
-  if (authenticatedUser && authenticatedUser._id.equals(profile._id)) {
+  if (isOwnProfile) {
     // Is user allowed to update their username?
     profile.usernameUpdateAllowed = isUsernameUpdateAllowed(profile);
   } else {
