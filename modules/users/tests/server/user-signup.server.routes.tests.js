@@ -114,9 +114,7 @@ describe('User signup and authentication CRUD tests', function () {
         should.not.exist(signupRes.body.emailToken);
         should.not.exist(signupRes.body.password);
         should.not.exist(signupRes.body.salt);
-        // Assert we have just the default 'user' role
-        signupRes.body.roles.should.be.instanceof(Array).and.have.lengthOf(1);
-        signupRes.body.roles.indexOf('user').should.equal(0);
+        should.not.exist(signupRes.body.roles);
 
         jobs.length.should.equal(1);
         jobs[0].type.should.equal('send email');
@@ -124,6 +122,27 @@ describe('User signup and authentication CRUD tests', function () {
         jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
 
         done();
+      });
+  });
+
+  it('should be able to register a new user but not inject additional roles', function (done) {
+    _unConfirmedUser.username = 'Register_New_User';
+    _unConfirmedUser.email = 'register_new_user_@example.org';
+    _unConfirmedUser.roles = ['user', 'admin'];
+
+    agent.post('/api/auth/signup')
+      .send(_unConfirmedUser)
+      .expect(200)
+      .end(function (err, signupRes) {
+        should.not.exist(err);
+        should.not.exist(signupRes.body.roles);
+
+        User.findById(signupRes.body._id, function (err, userFindRes) {
+          should.not.exist(err);
+          userFindRes.roles.should.be.instanceof(Array).and.have.lengthOf(1);
+          userFindRes.roles.indexOf('user').should.equal(0);
+          done();
+        });
       });
   });
 
