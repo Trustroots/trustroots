@@ -259,7 +259,7 @@ exports.signin = function (req, res, next) {
     }
 
     // Don't let suspended users sign in
-    if (_.isArray(user.roles) && user.roles.indexOf('suspended') > -1) {
+    if (user.roles.includes('suspended')) {
       // Log the failure to signin
       log('error', 'User signin failed. #3tfgbg-2', {
         reason: 'Suspended user',
