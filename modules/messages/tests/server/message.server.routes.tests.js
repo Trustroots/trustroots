@@ -115,7 +115,6 @@ describe('Message CRUD tests', function () {
       .send(credentials)
       .expect(200)
       .end(function (signinErr, signinRes) {
-        console.log('Sign-in:', signinErr, signinRes.body); //eslint-disable-line
         // Handle signin error
         if (signinErr) return done(signinErr);
 
