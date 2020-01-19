@@ -396,6 +396,13 @@ exports.initializeRemoveProfile = function (req, res) {
     });
   }
 
+  // Don't let suspended or shadowbanned users remove themself, ask them to get in touch with support instead.
+  if (req.user.roles.includes('suspended') || req.user.roles.includes('shadowban')) {
+    return res.status(403).send({
+      message: 'Oops! Something went wrong. Please get in touch with support at trustroots.org/support',
+    });
+  }
+
   async.waterfall([
 
     // Generate random token
