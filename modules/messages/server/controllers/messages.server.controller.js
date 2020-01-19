@@ -500,40 +500,28 @@ exports.threadByUser = function (req, res, next, userId) {
      * @todo: mark it read:true only when it was read:false,
      * now it performs write each time thread is opened
      */
-    function (done) {
+    function (messages, done) {
 
-      if (req.messages && req.messages.length > 0) {
-
-        const recentMessage = _.first(req.messages);
-
-        // If latest message in the thread was to current user, mark thread read
-        if (recentMessage.userTo._id && recentMessage.userTo._id.toString() === req.user._id.toString()) {
-
-          Thread.update(
-            {
-              userTo: req.user._id,
-              userFrom: userId,
-            },
-            {
-              read: true,
-            },
-            // Options:
-            {
-              multi: false,
-            },
-            function (err) {
-              done(err);
-            },
-          );
-
-        } else {
-          done(null);
-        }
-
-      } else {
-        done(null);
+      if (!messages || messages.length === 0) {
+        return done();
       }
 
+      req.messages = messages;
+
+      // If latest message in the thread was to current user, mark thread read
+      if (messages[0].userTo._id && req.user._id.equals(messages[0].userTo._id)) {
+        Thread.update(
+          {
+            userTo: req.user._id,
+            userFrom: userId,
+          },
+          { read: true },
+          { multi: false },
+          done,
+        );
+      } else {
+        done();
+      }
     },
 
   ], function (err) {
@@ -541,9 +529,9 @@ exports.threadByUser = function (req, res, next, userId) {
       return res.status(400).send({
         message: errorService.getErrorMessage(err),
       });
-    } else {
-      return next();
     }
+
+    next();
   });
 
 };
