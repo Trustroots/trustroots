@@ -63,25 +63,39 @@ function parseFiltersString(filtersString) {
 /**
  * Sanitize offer fields
  */
-function sanitizeOffer(offer, authenticatedUserId, alwaysFuzzyLocation) {
+function sanitizeOffer(offer, authenticatedUser, alwaysFuzzyLocation) {
   // offer is a Mongo document, turn it into regular JS object
   // so that we can modify it on the fly
   offer = offer.toObject();
+
+  const offerUserId = offer.user._id || offer.user; // @TODO: why this?
+  const isOwnProfile = authenticatedUser && authenticatedUser._id.equals(offerUserId);
 
   // Sanitize each outgoing offer's contents
   // Offers are already sanitized when they go into the database,
   // but this is more lightweight sanitization just in case we've changed
   // our sanitization settings since we stored this data. And just in case.
-  if (!_.isUndefined(offer.description)) {
-    offer.description = sanitizeHtml(offer.description, textService.sanitizeOptions);
+  if (offer.description) {
+    // If currently logged in user has role "shadowban", attempt to remove contact information from content
+    if (!isOwnProfile && authenticatedUser.roles.includes('shadowban')) {
+      offer.description = textService.stripContactDetails(textService.plainText(offer.description));
+    } else {
+      offer.description = sanitizeHtml(offer.description, textService.sanitizeOptions);
+    }
   }
-  if (!_.isUndefined(offer.noOfferDescription)) {
-    offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textService.sanitizeOptions);
+
+  if (offer.noOfferDescription) {
+    // If currently logged in user has role "shadowban", attempt to remove contact information from content
+    if (!isOwnProfile && authenticatedUser.roles.includes('shadowban')) {
+      offer.noOfferDescription = textService.stripContactDetails(textService.plainText(offer.noOfferDescription));
+    } else {
+      offer.noOfferDescription = sanitizeHtml(offer.noOfferDescription, textService.sanitizeOptions);
+    }
   }
 
   // Make sure we return accurate location only for offer owner,
   // others will see pre generated fuzzy location
-  if (alwaysFuzzyLocation || !authenticatedUserId || !authenticatedUserId.equals((offer.user._id || offer.user))) {
+  if (alwaysFuzzyLocation || !isOwnProfile) {
     offer.location = offer.locationFuzzy;
   }
 
@@ -635,7 +649,7 @@ exports.getOffer = function (req, res) {
 
     function (offer) {
       // Sanitize offer before returning it
-      offer = sanitizeOffer(offer, req.user._id);
+      offer = sanitizeOffer(offer, req.user);
 
       res.json(offer);
     },
@@ -732,7 +746,7 @@ exports.offersByUserId = function (req, res, next, userId) {
 
     // Sanitize offers
     req.offers = _.map(offers, function (offer) {
-      return sanitizeOffer(offer, req.user._id);
+      return sanitizeOffer(offer, req.user);
     });
 
     next();
