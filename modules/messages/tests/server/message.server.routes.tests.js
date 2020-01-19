@@ -7,6 +7,7 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');
+const MessageStat = mongoose.model('MessageStat');
 const Thread = mongoose.model('Thread');
 const config = require(path.resolve('./config/config'));
 const express = require(path.resolve('./config/lib/express'));
@@ -110,7 +111,7 @@ describe('Message CRUD tests', function () {
       });
   });
 
-  it('should be able to send an message if logged in', function (done) {
+  it('should be able to send and read messages if logged in', function (done) {
     agent.post('/api/auth/signin')
       .send(credentials)
       .expect(200)
@@ -131,6 +132,7 @@ describe('Message CRUD tests', function () {
 
             // Get a list of messages
             agent.get('/api/messages/' + userToId)
+              .expect(200)
               .end(function (messagesGetErr, messagesGetRes) {
                 // Handle message get error
                 if (messagesGetErr) return done(messagesGetErr);
@@ -156,6 +158,85 @@ describe('Message CRUD tests', function () {
               });
           });
       });
+  });
+
+  it('should be able to send and read messages when with role "shadowban"', function (done) {
+    userFrom.roles = ['user', 'shadowban'];
+
+    userFrom.save(function (saveErr) {
+      should.not.exist(saveErr);
+
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          // Save a new message
+          agent.post('/api/messages')
+            .send(message)
+            .expect(200)
+            .end(function (messageSaveErr) {
+              should.not.exist(messageSaveErr);
+
+              // Get a list of messages
+              agent.get('/api/messages/' + userToId)
+                .expect(200)
+                .end(function (messagesGetErr, messagesGetRes) {
+                  should.not.exist(messagesGetErr);
+
+                  // Confirm message is on the list
+                  if (!messagesGetRes.body[0] || !messagesGetRes.body[0].content) {
+                    return done(new Error('Message list empty.'));
+                  }
+
+                  done();
+                });
+            });
+        });
+    });
+  });
+
+  it('should not be able to send messages to user with role "shadowban"', function (done) {
+    userTo.roles = ['user', 'shadowban'];
+
+    userTo.save(function (saveErr) {
+      should.not.exist(saveErr);
+
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          // Save a new message
+          agent.post('/api/messages')
+            .send(message)
+            .expect(404)
+            .end(done);
+        });
+    });
+  });
+
+
+  it('should not be able to read messages from user with role "shadowban"', function (done) {
+    userTo.roles = ['user', 'shadowban'];
+
+    userTo.save(function (saveErr) {
+      should.not.exist(saveErr);
+
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          // Get a list of messages
+          agent.get('/api/messages/' + userToId)
+            .expect(404)
+            .end(done);
+        });
+    });
   });
 
   it('should be able to send basic correctly formatted html in an message', function (done) {
@@ -957,7 +1038,9 @@ describe('Message CRUD tests', function () {
     // Uggggly pyramid revenge!
     User.deleteMany().exec(function () {
       Message.deleteMany().exec(function () {
-        Thread.deleteMany().exec(done);
+        Thread.deleteMany().exec(function () {
+          MessageStat.deleteMany().exec(done);
+        });
       });
     });
   });

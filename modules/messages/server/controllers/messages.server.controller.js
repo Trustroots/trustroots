@@ -220,11 +220,17 @@ exports.send = function (req, res) {
 
   async.waterfall([
 
-    // Check receiver
+    // Check that receiving user is legitimate:
+    // - Has to be confirmed their email (hence be public)
+    // - Not suspended profile
     function (done) {
-      User.findById(req.body.userTo, 'public').exec(function (err, receiver) {
+      User.findOne({
+        _id: req.body.userTo,
+        public: true,
+        roles: { $nin: [ 'suspended', 'shadowban' ] },
+      }).exec(function (err, receiver) {
         // If we were unable to find the receiver, return the error and stop here
-        if (err || !receiver || !receiver.public) {
+        if (err || !receiver) {
           return res.status(404).send({
             message: 'Member you are writing to does not exist.',
           });
@@ -407,32 +413,51 @@ exports.send = function (req, res) {
  * Thread of messages
  */
 exports.thread = function (req, res) {
-  res.json(req.messages || []);
+  // Sanitize messages
+  const messages = req.messages && req.messages.length ? sanitizeMessages(req.messages) : [];
+
+  res.json(messages);
 };
 
 /**
  * Thread middleware
  */
 exports.threadByUser = function (req, res, next, userId) {
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorService.getErrorMessageByKey('forbidden'),
+    });
+  }
+
+  // Not user id or its not a valid ObjectId
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).send({
+      message: errorService.getErrorMessageByKey('invalid-id'),
+    });
+  }
 
   async.waterfall([
+    // Check that other user is legitimate:
+    // - Has to be confirmed their email (hence be public)
+    // - Not suspended profile
+    function (done) {
+      User.findOne({
+        _id: userId,
+        public: true,
+        roles: { $nin: [ 'suspended', 'shadowban' ] },
+      }).exec(function (err, receiver) {
+        // If we were unable to find the receiver, return the error and stop here
+        if (err || !receiver) {
+          return res.status(404).send({
+            message: 'Member does not exist.',
+          });
+        }
+        done();
+      });
+    },
 
     // Find messages
     function (done) {
-
-      if (!req.user) {
-        return res.status(403).send({
-          message: errorService.getErrorMessageByKey('forbidden'),
-        });
-      }
-
-      // Not user id or its not a valid ObjectId
-      if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(400).send({
-          message: errorService.getErrorMessageByKey('invalid-id'),
-        });
-      }
-
       Message.paginate(
         {
           $or: [
@@ -470,53 +495,33 @@ exports.threadByUser = function (req, res, next, userId) {
 
     },
 
-    // Sanitize messages and return them for the API
-    function (messages, done) {
-
-      req.messages = sanitizeMessages(messages || []);
-
-      done(null);
-    },
-
     /* Mark the thread read
      *
      * @todo: mark it read:true only when it was read:false,
      * now it performs write each time thread is opened
      */
-    function (done) {
+    function (messages, done) {
 
-      if (req.messages && req.messages.length > 0) {
-
-        const recentMessage = _.first(req.messages);
-
-        // If latest message in the thread was to current user, mark thread read
-        if (recentMessage.userTo._id && recentMessage.userTo._id.toString() === req.user._id.toString()) {
-
-          Thread.update(
-            {
-              userTo: req.user._id,
-              userFrom: userId,
-            },
-            {
-              read: true,
-            },
-            // Options:
-            {
-              multi: false,
-            },
-            function (err) {
-              done(err);
-            },
-          );
-
-        } else {
-          done(null);
-        }
-
-      } else {
-        done(null);
+      if (!messages || messages.length === 0) {
+        return done();
       }
 
+      req.messages = messages;
+
+      // If latest message in the thread was to current user, mark thread read
+      if (messages[0].userTo._id && req.user._id.equals(messages[0].userTo._id)) {
+        Thread.update(
+          {
+            userTo: req.user._id,
+            userFrom: userId,
+          },
+          { read: true },
+          { multi: false },
+          done,
+        );
+      } else {
+        done();
+      }
     },
 
   ], function (err) {
@@ -524,9 +529,9 @@ exports.threadByUser = function (req, res, next, userId) {
       return res.status(400).send({
         message: errorService.getErrorMessage(err),
       });
-    } else {
-      return next();
     }
+
+    next();
   });
 
 };
