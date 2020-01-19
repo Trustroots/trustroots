@@ -663,18 +663,23 @@ exports.getUser = function (req, res) {
  * Show the mini profile of the user
  */
 exports.getMiniUser = function (req, res) {
-
   if (req.profile) {
+    const profile = req.profile.toObject();
+
     // 'public' isn't needed at frontend.
     // We had to bring it until here trough
     // ACL policy since it's needed there.
-    const profile = req.profile.toObject();
     delete profile.public;
-    res.json(profile);
-  } else {
-    res.json({});
+
+    // 'roles' isn't needed at frontend.
+    // We had to bring it until here trough
+    // checks in `userMiniByID`
+    delete profile.roles;
+
+    return res.json(profile);
   }
 
+  res.json({});
 };
 
 
@@ -690,15 +695,19 @@ exports.userMiniByID = function (req, res, next, userId) {
     });
   }
 
-  User.findById(userId, exports.userMiniProfileFields + ' public').exec(function (err, profile) {
-
-    // Something went wrong
-    if (err) {
-      return next(err);
+  User.findById(userId, exports.userMiniProfileFields + ' public roles').exec(function (err, profile) {
+    // Something went wrong or no profile
+    if (err || !profile) {
+      return res.status(404).send({
+        message: errorService.getErrorMessageByKey('not-found'),
+      });
     }
 
-    // No such user
-    if (!profile || !profile.public) {
+    const isOwnProfile = req.user._id.equals(profile._id);
+    const isBannedProfile = profile.roles.includes('suspended') || profile.roles.includes('shadowban');
+
+    // Not own profile, and not public, or suspended, or shadowbanned user
+    if (!isOwnProfile && (!profile.public || isBannedProfile)) {
       return res.status(404).send({
         message: errorService.getErrorMessageByKey('not-found'),
       });
@@ -737,7 +746,7 @@ exports.userByUsername = function (req, res, next, username) {
         .findOne({
           username: username.toLowerCase(),
         },
-        exports.userProfileFields + ' public')
+        exports.userProfileFields + ' roles public')
         .populate({
           path: 'member.tribe',
           select: tribesHandler.tribeFields,
@@ -748,30 +757,28 @@ exports.userByUsername = function (req, res, next, username) {
           // options: { sort: { count: -1 } }
         })
         .exec(function (err, profile) {
-          if (err) {
-            // Something went wrong
-            done(err);
-          } else if (!profile) {
+          if (err || !profile) {
             // No such user
             return res.status(404).send({
               message: errorService.getErrorMessageByKey('not-found'),
             });
-          } else if (req.user && req.user._id.equals(profile._id)) {
-            // User's own profile, okay to send with public value in it
-            done(err, profile);
-          } else if (req.user && (!req.user._id.equals(profile._id) && !profile.public)) {
-            // Not own profile and not public
+          }
+
+          const isOwnProfile = req.user._id.equals(profile._id);
+          const isBannedProfile = profile.roles.includes('suspended') || profile.roles.includes('shadowban');
+
+          // Not own profile, and not public, or suspended, or shadowbanned user
+          if (!isOwnProfile && (!profile.public || isBannedProfile)) {
             return res.status(404).send({
               message: errorService.getErrorMessageByKey('not-found'),
             });
-          } else {
-            // Transform profile into object so that we can add new fields to it
-            done(err, profile);
           }
+
+          done(err, profile);
         });
     },
 
-    // Sanitize & return profile
+    // Sanitize profile
     function (profile, done) {
       req.profile = exports.sanitizeProfile(profile, req.user);
       return done(null, profile);
@@ -834,6 +841,7 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
     return;
   }
 
+  // Destruct Mongoose object to regular object so that we can manipulate it
   profile = profile.toObject();
 
   // We're sanitizing this already on saving/updating the profile, but here we do it again just in case.
@@ -858,8 +866,9 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
     });
   }
 
-  // Profile belongs to currently authenticated user
-  if (authenticatedUser && authenticatedUser._id.equals(profile._id)) {
+  const isOwnProfile = authenticatedUser && authenticatedUser._id.equals(profile._id);
+
+  if (isOwnProfile) {
     // Is user allowed to update their username?
     profile.usernameUpdateAllowed = isUsernameUpdateAllowed(profile);
   } else {
@@ -883,6 +892,7 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   delete profile.emailToken;
   delete profile.password;
   delete profile.salt;
+  delete profile.roles;
 
   // This information is not sensitive, but isn't needed at frontend
   delete profile.publicReminderCount;

@@ -15,6 +15,8 @@ let agent;
 let credentials;
 let user;
 let _user;
+let user2;
+let _user2;
 let unConfirmedCredentials;
 let unConfirmedUser;
 let _unConfirmedUser;
@@ -50,12 +52,30 @@ describe('User profile CRUD tests', function () {
       username: credentials.username.toLowerCase(),
       password: credentials.password,
       provider: 'local',
+      roles: ['user'],
     };
 
     user = new User(_user);
 
     // Save a user to the test db
     user.save(done);
+  });
+
+  // Create another confirmed user
+  beforeEach(function (done) {
+    _user2 = {
+      public: true,
+      firstName: 'Full2',
+      lastName: 'Name2',
+      displayName: 'Full2 Name2',
+      email: 'test2@example.org',
+      username: 'tr_username2',
+      password: 'TR-I$Aw3$0m3',
+      provider: 'local',
+      roles: ['user'],
+    };
+    user2 = new User(_user2);
+    user2.save(done);
   });
 
   // Create an unconfirmed user
@@ -76,6 +96,7 @@ describe('User profile CRUD tests', function () {
       username: unConfirmedCredentials.username.toLowerCase(),
       password: unConfirmedCredentials.password,
       provider: 'local',
+      roles: ['user'],
     };
 
     unConfirmedUser = new User(_unConfirmedUser);
@@ -116,9 +137,67 @@ describe('User profile CRUD tests', function () {
             should.exist(res.body.emailHash);
             should.not.exist(res.body.salt);
             should.not.exist(res.body.password);
+            should.not.exist(res.body.roles);
             return done();
           });
       });
+  });
+
+  it('should be able to get own user details successfully with role "shadowban"', function (done) {
+    user.roles = ['user', 'shadowban'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          // Get own user details
+          agent.get('/api/users/' + user.username.toLowerCase())
+            .expect(200)
+            .end(done);
+        });
+    });
+  });
+
+  it('should be able to get other user details successfully when with role "shadowban"', function (done) {
+    user.roles = ['user', 'shadowban'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          // Get their user details
+          agent.get('/api/users/' + user2.username)
+            .expect(200)
+            .end(done);
+        });
+    });
+  });
+
+  it('should not be able to get other users details successfully that have "shadowban" role', function (done) {
+    user2.roles = ['user', 'shadowban'];
+
+    user2.save(function (err) {
+      should.not.exist(err);
+      agent.post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          // Get their user details
+          agent.get('/api/users/' + user2.username)
+            .expect(404)
+            .end(done);
+        });
+    });
   });
 
   it('should not be able to get any user details of confirmed user if not logged in', function (done) {
@@ -181,8 +260,6 @@ describe('User profile CRUD tests', function () {
               userInfoRes.body.should.be.instanceof(Object);
               userInfoRes.body.firstName.should.be.equal('user_update_first');
               userInfoRes.body.lastName.should.be.equal('user_update_last');
-              userInfoRes.body.roles.should.be.instanceof(Array).and.have.lengthOf(1);
-              userInfoRes.body.roles.indexOf('user').should.equal(0);
               userInfoRes.body._id.should.be.equal(String(user._id));
 
               // Call the assertion callback
@@ -209,26 +286,26 @@ describe('User profile CRUD tests', function () {
           const userUpdate = {
             firstName: 'user_update_first',
             lastName: 'user_update_last',
-            roles: ['user', 'admin'],
+            roles: ['user', 'admin'], // This admin role should not appear in their profile
           };
 
           agent.put('/api/users')
             .send(userUpdate)
             .expect(200)
-            .end(function (userInfoErr, userInfoRes) {
-              if (userInfoErr) {
-                return done(userInfoErr);
-              }
+            .end(function (userInfoErr) {
+              should.not.exist(userInfoErr);
 
-              userInfoRes.body.should.be.instanceof(Object);
-              userInfoRes.body.firstName.should.be.equal('user_update_first');
-              userInfoRes.body.lastName.should.be.equal('user_update_last');
-              userInfoRes.body.roles.should.be.instanceof(Array).and.have.lengthOf(1);
-              userInfoRes.body.roles.indexOf('user').should.equal(0);
-              userInfoRes.body._id.should.be.equal(String(user._id));
+              User.findById(user._id, function (err, userFindRes) {
+                should.not.exist(userInfoErr);
 
-              // Call the assertion callback
-              return done();
+                userFindRes.firstName.should.be.equal('user_update_first');
+                userFindRes.lastName.should.be.equal('user_update_last');
+                userFindRes._id.toString().should.be.equal(user._id.toString());
+                userFindRes.roles.should.be.instanceof(Array).and.have.lengthOf(1);
+                userFindRes.roles.indexOf('user').should.equal(0);
+
+                return done();
+              });
             });
         });
     });
