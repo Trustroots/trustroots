@@ -160,7 +160,6 @@ describe('Message CRUD tests', function () {
       });
   });
 
-  /*
   it('should be able to send and read messages when with role "shadowban"', function (done) {
     userFrom.roles = ['user', 'shadowban'];
 
@@ -250,7 +249,6 @@ describe('Message CRUD tests', function () {
         });
     });
   });
-  */
 
   it('should be able to send basic correctly formatted html in an message', function (done) {
     agent.post('/api/auth/signin')
