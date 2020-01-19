@@ -1,53 +1,37 @@
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
-import React from 'react';
 import ContactListPresentational from './ContactListPresentational';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import NoContent from '@/modules/core/client/components/NoContent';
+import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 
-export default class ContactList extends React.Component {
-  constructor(props) {
-    super(props);
+export default function ContactList({ appUser, contacts, onContactRemoved }) {
+  const { t } = useTranslation('contact');
+  const [filter, setFilter] = useState('');
 
-    this.state = {
-      filter: '',
-    };
-
-    this.handleFilterChange = this.handleFilterChange.bind(this);
+  if (!contacts || !contacts.$resolved) {
+    return <LoadingIndicator />;
   }
 
-  handleFilterChange(filter) {
-    this.setState(() => ({ filter }));
-  }
-
-  render() {
-    const { appUser, contacts, onContactRemoved } = this.props;
-    const { t } = useTranslation('contact');
-
-    if (!contacts || !contacts.$resolved) {
-      return <LoadingIndicator />;
-    }
-
-    if (contacts.length === 0) {
-      return (
-        <NoContent icon="users" message={t('No contacts yet.')} />
-      );
-    }
-
+  if (contacts.length === 0) {
     return (
-      <ContactListPresentational
-        selfId={appUser._id}
-        contacts={contacts}
-        filter={this.state.filter}
-        onFilterChange={this.handleFilterChange}
-        onContactRemoved={onContactRemoved}
-      />
+      <NoContent icon="users" message={t('No contacts yet.')} />
     );
   }
+
+  return (
+    <ContactListPresentational
+      contacts={contacts}
+      filter={filter}
+      onContactRemoved={onContactRemoved}
+      onFilterChange={setFilter}
+      selfId={appUser._id}
+    />
+  );
 }
 
 ContactList.propTypes = {
-  contacts: PropTypes.array,
   appUser: PropTypes.object.isRequired,
+  contacts: PropTypes.array,
   onContactRemoved: PropTypes.func.isRequired,
 };
