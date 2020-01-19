@@ -413,32 +413,51 @@ exports.send = function (req, res) {
  * Thread of messages
  */
 exports.thread = function (req, res) {
-  res.json(req.messages || []);
+  // Sanitize messages
+  const messages = req.messages && req.messages.length ? sanitizeMessages(req.messages) : [];
+
+  res.json(messages);
 };
 
 /**
  * Thread middleware
  */
 exports.threadByUser = function (req, res, next, userId) {
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorService.getErrorMessageByKey('forbidden'),
+    });
+  }
+
+  // Not user id or its not a valid ObjectId
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).send({
+      message: errorService.getErrorMessageByKey('invalid-id'),
+    });
+  }
 
   async.waterfall([
+    // Check that other user is legitimate:
+    // - Has to be confirmed their email (hence be public)
+    // - Not suspended profile
+    function (done) {
+      User.findOne({
+        _id: userId,
+        public: true,
+        roles: { $nin: [ 'suspended', 'shadowban' ] },
+      }).exec(function (err, receiver) {
+        // If we were unable to find the receiver, return the error and stop here
+        if (err || !receiver) {
+          return res.status(404).send({
+            message: 'Member does not exist.',
+          });
+        }
+        done();
+      });
+    },
 
     // Find messages
     function (done) {
-
-      if (!req.user) {
-        return res.status(403).send({
-          message: errorService.getErrorMessageByKey('forbidden'),
-        });
-      }
-
-      // Not user id or its not a valid ObjectId
-      if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(400).send({
-          message: errorService.getErrorMessageByKey('invalid-id'),
-        });
-      }
-
       Message.paginate(
         {
           $or: [
@@ -474,14 +493,6 @@ exports.threadByUser = function (req, res, next, userId) {
         },
       );
 
-    },
-
-    // Sanitize messages and return them for the API
-    function (messages, done) {
-
-      req.messages = sanitizeMessages(messages || []);
-
-      done(null);
     },
 
     /* Mark the thread read
