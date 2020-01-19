@@ -1,4 +1,3 @@
-import listTemplateUrl from '@/modules/tribes/client/views/tribes-list.client.view.html';
 import showTemplateUrl from '@/modules/tribes/client/views/tribe.client.view.html';
 
 angular
@@ -16,7 +15,14 @@ function TribesRoutes($stateProvider) {
     }).
     state('tribes.list', {
       url: '',
-      templateUrl: listTemplateUrl,
+      template: `
+        <tribes-page
+          user="app.user"
+          onDisplayPhoto="tribesList.addPhotoCredits"
+          onHidePhoto="tribesList.removePhotoCredits"
+          onMembershipUpdated="tribesList.broadcastUpdatedUser"
+        ></tribes-page>
+      `,
       controller: 'TribesListController',
       controllerAs: 'tribesList',
       data: {

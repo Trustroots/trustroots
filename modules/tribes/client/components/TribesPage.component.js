@@ -13,19 +13,18 @@ export default function TribesPage({ user, onDisplayPhoto, onHidePhoto, onMember
   const handleMembershipUpdated = data => {
     // update the tribes in state
 
-    setTribes(tribes => {
-      const i = tribes.findIndex(tribe => tribe._id === data.tribe._id);
-      return [...tribes.slice(0, i), data.tribe, ...tribes.slice(i + 1)];
-    });
+    setTribes(tribes => tribes.map(tribe => tribe._id === data.tribe._id ? data.tribe : tribe));
 
     onMembershipUpdated(data);
   };
 
+  const fetchData = async () => {
+    const tribes = await api.read();
+    setTribes(tribes);
+  };
+
   useEffect(() => {
-    (async () => {
-      const tribes = await api.read();
-      setTribes(tribes);
-    })();
+    fetchData();
   }, []);
 
   return (<>

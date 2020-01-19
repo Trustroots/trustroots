@@ -1,3 +1,8 @@
+/**
+ * TODO remove this controller
+ * https://github.com/Trustroots/trustroots/pull/1145#discussion_r364183325
+ */
+
 angular
   .module('tribes')
   .controller('TribesListController', TribesListController);
@@ -7,9 +12,6 @@ function TribesListController(Authentication, $rootScope, $scope) {
 
   // ViewModel
   const vm = this;
-
-  // Exposed to the view
-  vm.user = Authentication.user;
 
   /**
    * Update the Authentication.user with updated tribe membership
