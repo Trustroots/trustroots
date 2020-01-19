@@ -331,6 +331,26 @@ describe('User Model Unit Tests:', function () {
       });
     });
 
+    it('should save with "moderator" role', function (done) {
+      const _user = new User(user);
+
+      _user.roles = ['moderator'];
+      _user.save(function (err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
+    it('should save with "shadowban" role', function (done) {
+      const _user = new User(user);
+
+      _user.roles = ['shadowban'];
+      _user.save(function (err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
     it('should save with "suspended" role', function (done) {
       const _user = new User(user);
 
