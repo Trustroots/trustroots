@@ -200,6 +200,52 @@ describe('User profile CRUD tests', function () {
     });
   });
 
+  it('should be able to get other users details successfully that have "shadowban" role when with role "moderator"', function (done) {
+    user.roles = ['user', 'moderator'];
+    user2.roles = ['user', 'shadowban'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      user2.save(function (err) {
+        should.not.exist(err);
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            should.not.exist(signinErr);
+
+            // Get their user details
+            agent.get('/api/users/' + user2.username)
+              .expect(200)
+              .end(done);
+          });
+      });
+    });
+  });
+
+  it('should be able to get other users details successfully that have "shadowban" role when with role "admin"', function (done) {
+    user.roles = ['user', 'admin'];
+    user2.roles = ['user', 'shadowban'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      user2.save(function (err) {
+        should.not.exist(err);
+        agent.post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            should.not.exist(signinErr);
+
+            // Get their user details
+            agent.get('/api/users/' + user2.username)
+              .expect(200)
+              .end(done);
+          });
+      });
+    });
+  });
+
   it('should not be able to get any user details of confirmed user if not logged in', function (done) {
     // Get own user details
     agent.get('/api/users/' + user.username)

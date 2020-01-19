@@ -51,6 +51,7 @@ describe('Message to Stats API server service Integration Test', function () {
       password: 'password123',
       provider: 'local',
       public: true,
+      roles: ['user'],
       description: _.repeat('.', config.profileMinimumLength),
     });
 
@@ -63,6 +64,7 @@ describe('Message to Stats API server service Integration Test', function () {
       password: 'password123',
       provider: 'local',
       public: true,
+      roles: ['user'],
     });
 
     // save those users to mongoDB
@@ -106,6 +108,7 @@ describe('Message to Stats API server service Integration Test', function () {
       const req = {
         user: {
           _id: user1._id,
+          roles: ['user'],
         },
         body: {
           userTo: String(user2._id),
