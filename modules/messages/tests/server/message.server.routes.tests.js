@@ -212,17 +212,13 @@ describe('Message CRUD tests', function () {
           agent.post('/api/messages')
             .send(message)
             .expect(403)
-            .end(function (messageSaveErr, messageSaveRes) {
-              console.log('---->',messageSaveRes.body);//eslint-disable-line
-              should.exist(messageSaveErr);
-              done();
-            });
+            .end(done);
         });
     });
   });
 
 
-  it('should not be able to send messages to, and read messages from user with role "shadowban"', function (done) {
+  it('should not be able to read messages from user with role "shadowban"', function (done) {
     userTo.roles = ['user', 'shadowban'];
 
     userTo.save(function (saveErr) {
@@ -236,15 +232,8 @@ describe('Message CRUD tests', function () {
 
           // Get a list of messages
           agent.get('/api/messages/' + userToId)
-            .expect(403)
-            .end(function (messagesGetErr, messagesGetRes) {
-              should.not.exist(messagesGetErr);
-
-              // messagesGetRes.body.length.should.equal(0); //eslint-disable-line
-              console.log('---->',messagesGetRes.body);//eslint-disable-line
-
-              done();
-            });
+            .expect(404)
+            .end(done);
         });
     });
   });
