@@ -748,35 +748,28 @@ exports.userByUsername = function (req, res, next, username) {
           // options: { sort: { count: -1 } }
         })
         .exec(function (err, profile) {
-          if (err) {
-            // Something went wrong
-            done(err);
-          } else if (!profile) {
+          if (err || !profile) {
             // No such user
             return res.status(404).send({
               message: errorService.getErrorMessageByKey('not-found'),
             });
-          } else if (req.user && req.user._id.equals(profile._id)) {
-            // User's own profile, okay to send with public value in it
-            done(err, profile);
-          } else if (req.user && (!req.user._id.equals(profile._id) && !profile.public)) {
-            // Not own profile and not public
-            return res.status(404).send({
-              message: errorService.getErrorMessageByKey('not-found'),
-            });
-          } else if (req.user && (!req.user._id.equals(profile._id) && (profile.roles.includes('suspended') || profile.roles.includes('shadowban')))) {
-            // Not own profile and looking at suspended or shadow user
-            return res.status(404).send({
-              message: errorService.getErrorMessageByKey('not-found'),
-            });
-          } else {
-            // Transform profile into object so that we can add new fields to it
-            done(err, profile);
           }
+
+          const isOwnProfile = req.user._id.equals(profile._id);
+          const isBannedProfile = profile.roles.includes('suspended') || profile.roles.includes('shadowban');
+
+          // Not own profile, and not public, or suspended, or shadowbanned user
+          if (!isOwnProfile && (!profile.public || isBannedProfile)) {
+            return res.status(404).send({
+              message: errorService.getErrorMessageByKey('not-found'),
+            });
+          }
+
+          done(err, profile);
         });
     },
 
-    // Sanitize & return profile
+    // Sanitize profile
     function (profile, done) {
       req.profile = exports.sanitizeProfile(profile, req.user);
       return done(null, profile);
