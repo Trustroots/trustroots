@@ -38,6 +38,6 @@ export default function TribesHeader({ isLoggedIn, onDisplayPhoto, onHidePhoto }
 
 TribesHeader.propTypes = {
   isLoggedIn: PropTypes.bool.isRequired,
-  onDisplayPhoto: PropTypes.func.isRequired,
-  onHidePhoto: PropTypes.func.isRequired,
+  onDisplayPhoto: PropTypes.func,
+  onHidePhoto: PropTypes.func,
 };
