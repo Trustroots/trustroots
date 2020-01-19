@@ -7,6 +7,7 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');
+const MessageStat = mongoose.model('MessageStat');
 const Thread = mongoose.model('Thread');
 const config = require(path.resolve('./config/config'));
 const express = require(path.resolve('./config/lib/express'));
@@ -211,7 +212,7 @@ describe('Message CRUD tests', function () {
           // Save a new message
           agent.post('/api/messages')
             .send(message)
-            .expect(403)
+            .expect(404)
             .end(done);
         });
     });
@@ -1037,7 +1038,9 @@ describe('Message CRUD tests', function () {
     // Uggggly pyramid revenge!
     User.deleteMany().exec(function () {
       Message.deleteMany().exec(function () {
-        Thread.deleteMany().exec(done);
+        Thread.deleteMany().exec(function () {
+          MessageStat.deleteMany().exec(done);
+        });
       });
     });
   });
