@@ -20,9 +20,12 @@ module.exports = (app) => {
   app.route('/api/admin/users').all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminUsers.searchUsers);
 
+  app.route('/api/admin/users/by-role').all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminUsers.listUsersByRole);
+
   app.route('/api/admin/user').all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminUsers.getUser);
 
-  app.route('/api/admin/user/suspend').all(adminPolicy.isAllowed)
-    .post(adminAuditLog.record, adminUsers.suspend);
+  app.route('/api/admin/user/change-role').all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminUsers.changeRole);
 };

@@ -30,8 +30,8 @@ export default function UserState({ user }) {
           .filter((role) => role !== 'user')
           .map((role) => {
             const classes = classnames('label admin-label', {
-              'label-danger': role === 'suspended',
-              'label-success': role === 'admin',
+              'label-danger': ['suspended', 'shadowban'].includes(role),
+              'label-success': ['admin', 'moderator'].includes(role),
             });
 
             return (
