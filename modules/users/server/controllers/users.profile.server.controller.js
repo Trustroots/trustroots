@@ -705,9 +705,10 @@ exports.userMiniByID = function (req, res, next, userId) {
 
     const isOwnProfile = req.user._id.equals(profile._id);
     const isBannedProfile = profile.roles.includes('suspended') || profile.roles.includes('shadowban');
+    const isAdminOrModerator = req.user.roles.includes('moderator') || req.user.roles.includes('admin');
 
     // Not own profile, and not public, or suspended, or shadowbanned user
-    if (!isOwnProfile && (!profile.public || isBannedProfile)) {
+    if (!isAdminOrModerator && !isOwnProfile && (!profile.public || isBannedProfile)) {
       return res.status(404).send({
         message: errorService.getErrorMessageByKey('not-found'),
       });
@@ -766,9 +767,10 @@ exports.userByUsername = function (req, res, next, username) {
 
           const isOwnProfile = req.user._id.equals(profile._id);
           const isBannedProfile = profile.roles.includes('suspended') || profile.roles.includes('shadowban');
+          const isAdminOrModerator = req.user.roles.includes('moderator') || req.user.roles.includes('admin');
 
           // Not own profile, and not public, or suspended, or shadowbanned user
-          if (!isOwnProfile && (!profile.public || isBannedProfile)) {
+          if (!isAdminOrModerator && !isOwnProfile && (!profile.public || isBannedProfile)) {
             return res.status(404).send({
               message: errorService.getErrorMessageByKey('not-found'),
             });

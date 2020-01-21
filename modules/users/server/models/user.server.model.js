@@ -218,7 +218,7 @@ const UserSchema = new Schema({
   roles: {
     type: [{
       type: String,
-      enum: ['user', 'admin', 'suspended', 'shadowban'],
+      enum: ['user', 'admin', 'suspended', 'shadowban', 'moderator'],
     }],
     default: ['user'],
   },

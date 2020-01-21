@@ -44,6 +44,10 @@ function format(value, format, languageCode) {
     return moment(value).format(format);
   }
 
+  if (typeof value === 'number' && format === 'number') {
+    return value.toLocaleString(languageCode);
+  }
+
   return value;
 }
 

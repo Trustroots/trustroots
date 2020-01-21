@@ -47,6 +47,7 @@ describe('Integration of the MessageStat service', function () {
       username: 'username1',
       password: 'password123',
       provider: 'local',
+      roles: ['user'],
       public: true,
       description: _.repeat('.', config.profileMinimumLength),
     });
@@ -59,6 +60,7 @@ describe('Integration of the MessageStat service', function () {
       username: 'username2',
       password: 'password123',
       provider: 'local',
+      roles: ['user'],
       public: true,
     });
 
@@ -98,6 +100,7 @@ describe('Integration of the MessageStat service', function () {
       const req = {
         user: {
           _id: user1._id,
+          roles: ['user'],
         },
         body: {
           userTo: String(user2._id),
