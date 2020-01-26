@@ -98,12 +98,12 @@ describe('TribesPage', () => {
 
     it('the join button should be a link to tribe page', async () => {
       // get tribes and omit the last one, which is "Missing your Tribe?"
-      const tribes = page.getAllByRole('listitem').slice(0, -1);
+      const buttons = page.getAllByText('Join', { selector: 'a' });
 
-      tribes.forEach((tribe, i) => {
-        // the join button
-        const button = within(tribe).getByText('Join');
-        expect(button).toHaveAttribute('href', `/signup?tribe=${dummyTribes[i].slug}`);
+      expect(buttons).toHaveLength(dummyTribes.length);
+
+      dummyTribes.forEach((tribeData, i) => {
+        expect(buttons[i]).toHaveAttribute('href', `/signup?tribe=${tribeData.slug}`);
       });
     });
 
