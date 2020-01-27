@@ -3,6 +3,11 @@ import sample from 'lodash/sample';
 import sampleSize from 'lodash/sampleSize';
 import moment from 'moment';
 
+/**
+ * Most of the logic for creating the users and tribes is copied from @/bin/fillTestData/...
+ * @TODO DRY if such DRYing makes sense
+ */
+
 const tribeImageUUIDs = [
   '171433b0-853b-4d19-a8b4-44def956696d',
   '22028fde-5302-4172-954d-f54949afd7e4',
