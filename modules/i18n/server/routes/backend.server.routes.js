@@ -1,5 +1,3 @@
-
-
 const path = require('path');
 const backend = require('../controllers/backend.server.controller');
 const config = require(path.resolve('./config/config'));

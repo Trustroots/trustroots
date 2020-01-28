@@ -1,5 +1,3 @@
-
-
 const should = require('should');
 const request = require('supertest');
 const fs = require('fs-extra');
@@ -14,10 +12,9 @@ describe('Save a missing translation', () => {
   const dirFoo = path.resolve('./public/locales/foo/');
   const fileEn = path.resolve('./public/locales/en/bar.json');
 
-  const body = {
-    'A bcde f': 'A bcde f',
-    '_t': Date(),
-  };
+  const text = 'Send us suggestions!';
+
+  const body = { [text]: text };
 
   afterEach(async () => {
     await fs.remove(dirFoo);
@@ -46,7 +43,7 @@ describe('Save a missing translation', () => {
           .expect(200);
         const output = await fs.readJSON(fileEn);
 
-        should(output).deepEqual({ 'A bcde f': 'A bcde f' });
+        should(output).deepEqual({ [text]: text });
       });
 
       it('[not en] save key, but value will be an empty string', async () => {
@@ -55,7 +52,7 @@ describe('Save a missing translation', () => {
           .expect(200);
         const output = await fs.readJSON(fileFoo);
 
-        should(output).deepEqual({ 'A bcde f': '' });
+        should(output).deepEqual({ [text]: '' });
       });
     });
 
@@ -79,20 +76,20 @@ describe('Save a missing translation', () => {
           .expect(200);
         const output = await fs.readJSON(fileEn);
 
-        should(output).deepEqual({ 'A bcde f': 'A bcde f' });
+        should(output).deepEqual({ [text]: text });
       });
 
       it('[translation exists] don\'t save it', async () => {
 
         // create the file with a different translation
-        await fs.outputJson(fileEn, { 'A bcde f': 'gggggg' });
+        await fs.outputJson(fileEn, { [text]: 'gggggg' });
 
         await agent.post('/api/locales/en/bar')
           .send(body)
           .expect(200);
 
         const output = await fs.readJSON(fileEn);
-        should(output).deepEqual({ 'A bcde f': 'gggggg' });
+        should(output).deepEqual({ [text]: 'gggggg' });
       });
 
       it('[other translation exists] save the new one, keep the old one', async () => {
@@ -105,7 +102,7 @@ describe('Save a missing translation', () => {
           .expect(200);
 
         const output = await fs.readJSON(fileFoo);
-        should(output).deepEqual({ 'A bcde f': '', foo: 'bar' });
+        should(output).deepEqual({ [text]: '', foo: 'bar' });
       });
     });
 

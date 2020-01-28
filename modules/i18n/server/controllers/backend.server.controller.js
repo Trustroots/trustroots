@@ -33,7 +33,8 @@ async function processRequest(req, res) {
     await fs.ensureFile(file);
 
     // read current translations or set a default
-    const content = await fs.readJson(file, 'utf8') || '{}';
+    const rawContent = await fs.readFile(file, 'utf8') || '{}';
+    const content = JSON.parse(rawContent);
 
     const newContent = sortObject({ [key]: value, ...content });
 
