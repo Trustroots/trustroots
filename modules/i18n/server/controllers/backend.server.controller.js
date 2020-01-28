@@ -12,6 +12,12 @@ function enqueue(func, ...args) {
 }
 
 /**
+ * Object property order matters since ES2015
+ * So we can sort it alphabetically by keys
+ */
+const sortObject = object => Object.fromEntries(Object.entries(object).sort(([a], [b]) => a > b ? 1 : -1));
+
+/**
  * Here we execute the standard request, not concerned with waiting
  */
 async function processRequest(req, res) {
@@ -27,11 +33,12 @@ async function processRequest(req, res) {
     await fs.ensureFile(file);
 
     // read current translations or set a default
-    const rawContent = await fs.readFile(file, 'utf8') || '{}';
-    const content = JSON.parse(rawContent);
+    const content = await fs.readJson(file, 'utf8') || '{}';
+
+    const newContent = sortObject({ [key]: value, ...content });
 
     // save the new translation
-    await fs.writeJSON(file, { ...{ [key]: value }, ...content }, { spaces: 2 });
+    await fs.writeJSON(file, newContent, { spaces: 2 });
   } catch (e) {
     // clean up in case of an error
     await fs.writeJSON(file, {}, { spaces: 2 });

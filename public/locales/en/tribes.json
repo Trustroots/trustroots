@@ -1,5 +1,16 @@
 {
+  "Cancel": "Cancel",
+  "Discover Tribes": "Discover Tribes",
+  "Do you want to leave \"{{label}}\"?": "Do you want to leave \"{{label}}\"?",
+  "Join": "Join",
+  "Join ({{label}})": "Join ({{label}})",
+  "Joined": "Joined",
+  "Joining Tribes helps you find likeminded Trustroots members.": "Joining Tribes helps you find likeminded Trustroots members.",
+  "Leave Tribe": "Leave Tribe",
+  "Leave this Tribe?": "Leave this Tribe?",
+  "Missing your Tribe?": "Missing your Tribe?",
   "No members yet": "No members yet",
+  "Send us suggestions!": "Send us suggestions!",
   "{{count, number}} members": "One member",
   "{{count, number}} members_plural": "{{count, number}} members"
 }
