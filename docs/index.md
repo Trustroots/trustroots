@@ -45,7 +45,8 @@ title: Trustroots Team Guide
 
 - [Angular Directives](Angular-Directives.md) (deprecated)
 - [App and server Monitoring](Monitoring.md)
-- [i18n](i18n.md)
+- [Internationalization (i18n)](i18n.md)
+- [Localization (l10n)](l10n.md)
 - [Icons](Icons.md)
 - [InfluxDB](InfluxDB.md)
 - [Logging](Logging.md)
