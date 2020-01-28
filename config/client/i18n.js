@@ -75,7 +75,7 @@ i18n
     // allow keys to be phrases having `:`, `.`
     nsSeparator: false,
     keySeparator: false, // we do not use keys in form messages.welcome
-    saveMissing: true, // @TODO send not translated keys to endpoint
+    saveMissing: true, // send not translated keys to endpoint
     saveMissingTo: 'current',
     returnEmptyString: false,
     interpolation: {
@@ -94,7 +94,7 @@ i18n
       addPath: '/api/locales/{{lng}}/{{ns}}',
     },
     saveMissingPlurals: true,
-    debug: true, // show missing translation keys in console.log
+    // debug: true, // show missing translation keys in console.log
   });
 
 export default i18n;
