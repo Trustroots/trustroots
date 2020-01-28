@@ -75,7 +75,7 @@ i18n
     // allow keys to be phrases having `:`, `.`
     nsSeparator: false,
     keySeparator: false, // we do not use keys in form messages.welcome
-    saveMissing: true, // send not translated keys to endpoint
+    saveMissing: process.env.NODE_ENV === 'development', // send not translated keys to endpoint
     saveMissingTo: 'current',
     returnEmptyString: false,
     interpolation: {
