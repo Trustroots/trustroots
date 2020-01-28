@@ -71,7 +71,7 @@ i18n
         en: {},
       },
     } : {}),
-    fallbackLng: 'en', // a default app locale
+    // fallbackLng: 'en', // a default app locale
     // allow keys to be phrases having `:`, `.`
     nsSeparator: false,
     keySeparator: false, // we do not use keys in form messages.welcome
