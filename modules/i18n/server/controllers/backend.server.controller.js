@@ -22,11 +22,11 @@ const sortObject = object => Object.fromEntries(Object.entries(object).sort(([a]
  */
 async function processRequest(req, res) {
   // get the needed variables
-  const { lng, ns } = req.params;
+  const { language, namespace } = req.params;
   const [key] = Object.keys(req.body).filter(key => key !== '_t');
-  const value = (lng === 'en') ? req.body[key] : '';
+  const value = (language === 'en') ? req.body[key] : '';
 
-  const file = path.resolve(`./public/locales/${lng}/${ns}.json`);
+  const file = path.resolve(`./public/locales/${language}/${namespace}.json`);
 
   try {
     // create file if it doesn't exist

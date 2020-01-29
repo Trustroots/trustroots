@@ -4,6 +4,6 @@ const config = require(path.resolve('./config/config'));
 
 module.exports = (app) => {
   if (config.i18nBackend) {
-    app.route('/api/locales/:lng/:ns').post(backend);
+    app.route('/api/locales/:language/:namespace').post(backend);
   }
 };
