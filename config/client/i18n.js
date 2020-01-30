@@ -4,6 +4,7 @@ import { initReactI18next } from 'react-i18next';
 import Backend from 'i18next-xhr-backend';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import moment from 'moment';
+import locales from '@/config/shared/locales';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -51,6 +52,18 @@ function format(value, format, languageCode) {
   return value;
 }
 
+const defaultLanguageDetector = {
+  name: 'default',
+
+  lookup({ detection={} }) {
+    return detection.defaultLng || 'en';
+  },
+};
+
+const languageDetector = new LanguageDetector();
+languageDetector.addDetector(defaultLanguageDetector);
+
+
 if (!isTest) {
   // load translation using xhr -> see /public/locales
   // learn more: https://github.com/i18next/i18next-xhr-backend
@@ -60,7 +73,7 @@ if (!isTest) {
 i18n
   // detect user language
   // learn more: https://github.com/i18next/i18next-browser-languageDetector
-  .use(LanguageDetector)
+  .use(languageDetector)
   // pass the i18n instance to react-i18next.
   .use(initReactI18next)
   // init i18next
@@ -71,7 +84,7 @@ i18n
         en: {},
       },
     } : {}),
-    // fallbackLng: 'en', // a default app locale
+    fallbackLng: false, // a default app locale
     // allow keys to be phrases having `:`, `.`
     nsSeparator: false,
     keySeparator: false, // we do not use keys in form messages.welcome
@@ -84,7 +97,7 @@ i18n
     },
     detection: {
       lookupCookie: 'i18n',
-      order: ['cookie'],
+      order: ['cookie', 'default'],
       caches: ['cookie'],
     },
     react: {
@@ -94,6 +107,7 @@ i18n
       addPath: '/api/locales/{{lng}}/{{ns}}',
     },
     saveMissingPlurals: true,
+    whitelist: locales.map(({ code }) => code),
     // debug: true, // show missing translation keys in console.log
   });
 
