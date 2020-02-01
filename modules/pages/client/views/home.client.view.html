@@ -52,7 +52,21 @@
         <p class="font-brand-light">
           Have a look! Travel anywhere and easily find great people who want to meet you as well. See where other travellers are and help each other out, whether through welcoming them to your home, sharing your stories or becoming friends.
           <br><br>
-          Trustroots is over <a ui-sref="statistics">36,000 members</a> strong!
+          Trustroots is over
+          <a ui-sref="statistics">
+
+            <span ng-if="stats.statisticsData.$resolved"
+                  class="stats-count stats-count-lg" ng-bind="stats.usersNo | number">
+            </span>
+
+            <span ng-if="!stats.statisticsData.$resolved"
+                  class="stats-count stats-count-lg">
+            40,000+
+            </span>
+
+
+          members</a> strong!
+
         </p>
       </div>
       <div class="col-md-7">

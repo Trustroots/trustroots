@@ -25,8 +25,9 @@ function HomeRunBlock($location, $window, Authentication) {
   }
 }
 
+
 /* @ngInject */
-function HomeController($stateParams, $window, TribesService, TribeService) {
+function HomeController($stateParams, $window, TribesService, TribeService, statisticsData) {
 
   const headerHeight = angular.element('#tr-header').height() || 0;
 
@@ -35,6 +36,15 @@ function HomeController($stateParams, $window, TribesService, TribeService) {
 
   // Exposed to the view
   vm.boardHeight = $window.innerWidth <= 480 && $window.innerHeight < 700 ? 400 : $window.innerHeight - headerHeight + 14;
+
+  vm.statisticsData = statisticsData;
+
+  // get statistics data at init
+  statisticsData.$promise.then(function () {
+    vm.usersNo = statisticsData;
+  });
+
+
 
   // Load front page's landing photos
   if ($stateParams.tribe && ['hitchhikers', 'dumpster-divers', 'punks'].indexOf($stateParams.tribe) > -1) {

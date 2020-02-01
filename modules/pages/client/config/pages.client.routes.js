@@ -169,7 +169,18 @@ function PagesRoutes($stateProvider) {
       footerHidden: true,
     });
   } else {
-    $stateProvider.state('home', { url: '/' });
+    $stateProvider.state('home', {
+      url: '/',
+      controller: 'HomeController',
+      controllerAs: 'stats',
+      resolve: {
+        // A string value resolves to a service
+        SettingsService: 'Home',
+        statisticsData: function (UserCountService) {
+          return UserCountService.get();
+        },
+      },
+    });
   }
 
 }
