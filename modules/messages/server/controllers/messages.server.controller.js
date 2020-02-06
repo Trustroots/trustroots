@@ -98,8 +98,6 @@ function sanitizeThreads(threads, authenticatedUserId) {
       thread.read = true;
     }
 
-    threadsCleaned.push(thread);
-
     // If users weren't populated, they were removed.
     // Don't return thread at all at this point.
     //
@@ -107,9 +105,9 @@ function sanitizeThreads(threads, authenticatedUserId) {
     // Return thread but with placeholder user and old user's ID
     // With ID we could fetch the message thread — now all we could
     // show is this line at inbox but not actual messages
-    // if (thread.userTo && thread.userFrom) {
-    //   threadsCleaned.push(thread);
-    // }
+    if (thread.userTo && thread.userFrom) {
+      threadsCleaned.push(thread);
+    }
   });
 
   return threadsCleaned;
