@@ -8,9 +8,9 @@ import UserSummary from './UserSummary';
 const Container = styled.div`
   display: grid;
   grid-gap: 0.75em;
-	grid-template-columns: 1fr;
+  grid-template-columns: 1fr;
   @media (min-width: 616px) {
-	   grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 `;
 
