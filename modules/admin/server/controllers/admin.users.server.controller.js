@@ -18,6 +18,21 @@ const User = mongoose.model('User');
 const SEARCH_USERS_LIMIT = 50;
 const SEARCH_STRING_LIMIT = 3;
 
+// Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
+const USER_LIST_FIELDS = [
+  '_id',
+  'displayName',
+  'email',
+  'emailTemporary',
+  'public',
+  'removeProfileExpires',
+  'removeProfileToken',
+  'resetPasswordExpires',
+  'resetPasswordToken',
+  'roles',
+  'username',
+];
+
 /**
  * Overwrite tokens from results as a security measure.
  * We still want to pull this info to know if it's there.
@@ -72,22 +87,41 @@ exports.searchUsers = (req, res) => {
       { 'emailTemporary': regexpSearch },
       { 'username': regexpSearch },
     ] })
-    // Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
-    .select([
-      '_id',
-      'displayName',
-      'email',
-      'emailTemporary',
-      'public',
-      'removeProfileExpires',
-      'removeProfileToken',
-      'resetPasswordExpires',
-      'resetPasswordToken',
-      'roles',
-      'username',
-    ])
+    .select(USER_LIST_FIELDS)
     .sort('username displayName')
     .limit(SEARCH_USERS_LIMIT)
+    .exec((err, users) => {
+      if (err) {
+        return res.status(400).send({
+          message: errorService.getErrorMessage(err),
+        });
+      }
+
+      const result = users ? users.map(obfuscateTokens) : [];
+
+      return res.send(result);
+    });
+};
+
+/*
+ * This middleware sends response with an array of found users
+ */
+exports.listUsersByRole = (req, res) => {
+  const role = _.get(req, ['body', 'role']);
+
+  // Allowed roles to query
+  if (!role || !['shadowban', 'suspended', 'admin', 'moderator'].includes(role)) {
+    return res.status(400).send({
+      message: 'Invalid role.',
+    });
+  }
+
+  User
+    .find({
+      roles: { $in: [role] },
+    })
+    .select(USER_LIST_FIELDS)
+    .sort('username displayName')
     .exec((err, users) => {
       if (err) {
         return res.status(400).send({
@@ -210,10 +244,19 @@ exports.getUser = async (req, res) => {
 };
 
 /**
- * This middleware suspends users by ID
+ * This middleware changes user roles by ID
+ * Used for suspending users or setting them a "shadow ban"
  */
-exports.suspend = async (req, res) => {
+exports.changeRole = async (req, res) => {
   const userId = _.get(req, ['body', 'id']);
+  const role = _.get(req, ['body', 'role']);
+
+  // Allowed new roles — for security reasons never allow `admin` role to be changed programmatically.
+  if (!role || !['shadowban', 'suspended', 'moderator'].includes(role)) {
+    return res.status(400).send({
+      message: 'Invalid role.',
+    });
+  }
 
   // Check that the search string is provided
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
@@ -222,17 +265,18 @@ exports.suspend = async (req, res) => {
     });
   }
 
+  // If switching role to 'suspended', change also these settings straight up
+  const additionalChanges = role === 'suspended'
+    ? { $set: { newsletter: false, public: false } }
+    : {};
+
   try {
-    // Unpublish user
     const user = await User.updateOne(
       { _id: userId },
       {
-        $set: {
-          newsletter: false,
-          public: false,
-        },
+        ...additionalChanges,
         $addToSet: {
-          roles: 'suspended',
+          roles: role,
         },
       },
     );
@@ -244,7 +288,7 @@ exports.suspend = async (req, res) => {
       });
     }
 
-    res.send({ message: 'Suspended.' });
+    res.send({ message: 'Role changed.' });
   } catch (err) {
     log('error', 'Failed to load member in admin tool. #ggi323', {
       error: err,

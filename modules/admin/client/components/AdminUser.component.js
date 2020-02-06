@@ -3,7 +3,7 @@ import get from 'lodash/get';
 import React, { Component } from 'react';
 
 // Internal dependencies
-import { getUser, suspendUser } from '../api/users.api';
+import { getUser, setUserRole } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
 import Json from './Json.component';
 import UserEmailConfirmLink from './UserEmailConfirmLink.component';
@@ -16,10 +16,10 @@ export default class AdminUser extends Component {
   constructor(props) {
     super(props);
     this.getUserById = this.getUserById.bind(this);
-    this.handleSuspendUser = this.handleSuspendUser.bind(this);
+    this.handleUserRoleChange = this.handleUserRoleChange.bind(this);
     this.onIdChange = this.onIdChange.bind(this);
     this.queryUser = this.queryUser.bind(this);
-    this.state = { id: '', user: false, isSuspending: false };
+    this.state = { id: '', user: false, isSettingUserRole: false };
   }
 
   componentDidMount() {
@@ -45,16 +45,16 @@ export default class AdminUser extends Component {
     );
   }
 
-  handleSuspendUser() {
+  handleUserRoleChange(role) {
     const id = get(this, ['state', 'user', 'profile', '_id']);
     if (id) {
       const username = get(this, ['state', 'user', 'profile', 'username']);
-      if (window.confirm(`Suspend ${username}?`)) {
-        this.setState({ isSuspending: true }, async () => {
-          await suspendUser(id);
+      if (window.confirm(`Set ${username} role to ${role}?`)) {
+        this.setState({ isSettingUserRole: true }, async () => {
+          await setUserRole(id, role);
           // Get fresh user profile
           this.getUserById(id);
-          this.setState({ isSuspending: false });
+          this.setState({ isSettingUserRole: false });
         });
       }
     }
@@ -77,10 +77,13 @@ export default class AdminUser extends Component {
     });
   }
 
+  hasRole(role) {
+    return get(this.state.user, ['profile', 'roles'], []).includes(role);
+  }
+
   render() {
-    const { user, isSuspending } = this.state;
+    const { user, isSettingUserRole } = this.state;
     const isProfile = user && user.profile;
-    const isSuspended = get(user, ['profile', 'roles'], []).includes('suspended');
 
     return (
       <>
@@ -111,70 +114,93 @@ export default class AdminUser extends Component {
           </form>
 
           { isProfile && (
-            <button
-              className="btn btn-lg btn-danger pull-right"
-              disabled={ isSuspended || isSuspending }
-              onClick={ this.handleSuspendUser }
-            >
-              Suspend
-            </button>
+            <>
+              <div className="row">
+                <div className="col-xs-12 col-md-6">
+                  <h3 className="pull-left">
+                    <strong>{ user.profile.displayName || user.profile.username || user.profile._id }</strong>
+                    {' '}
+                    report card
+                  </h3>
+                </div>
+                <div className="col-xs-12 col-md-6">
+                  <div className="btn-group pull-right">
+                    <button
+                      className="btn btn-danger"
+                      disabled={ user.profile.roles.includes('suspended') || isSettingUserRole }
+                      onClick={ () => this.handleUserRoleChange('suspended') }
+                    >
+                      Suspend
+                    </button>
+                    <button
+                      className="btn btn-danger"
+                      disabled={ user.profile.roles.includes('shadowban') || isSettingUserRole }
+                      onClick={ () => this.handleUserRoleChange('shadowban') }
+                    >
+                      Shadow ban
+                    </button>
+                    <button
+                      className="btn btn-success"
+                      disabled={ user.profile.roles.includes('moderator') || isSettingUserRole }
+                      onClick={ () => this.handleUserRoleChange('moderator') }
+                    >
+                      Make moderator
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <h4 id="stats">
+                Stats
+                <a href="#stats" className="btn btn-link">#</a>
+              </h4>
+              <div className="panel panel-default admin-user">
+                <div className="panel-body">
+                  <UserState user={ user.profile } />
+                  <ul className="list-inline">
+                    <li><strong>Messages</strong></li>
+                    <li>{ user.messageFromCount || 0 } sent</li>
+                    <li>{ user.messageToCount || 0 } received</li>
+                    <li>{ user.threadCount || 0 } threads total</li>
+                  </ul>
+                  <ul className="list-inline">
+                    <li><strong>Thread votes received</strong></li>
+                    <li className="text-success">
+                      { user.threadReferencesReceivedYes } positive
+                    </li>
+                    <li className="text-danger">
+                      { user.threadReferencesReceivedNo } negative
+                    </li>
+                  </ul>
+                  <ul className="list-inline">
+                    <li><strong>Thread votes gave</strong></li>
+                    <li className="text-success">
+                      { user.threadReferencesSentYes } positive
+                    </li>
+                    <li className="text-danger">
+                      { user.threadReferencesSentNo } negative
+                    </li>
+                  </ul>
+                  <p><strong>{ user.contacts.length } contact(s)</strong></p>
+                  <p><strong>{ user.offers.length } hosting or meet offer(s)</strong></p>
+                  <UserEmailConfirmLink user={ user.profile } />
+                </div>
+              </div>
+
+              <h4 id="profile">
+                Profile
+                <a href="#profile" className="btn btn-link">#</a>
+              </h4>
+              <div className="panel panel-default">
+                <div className="panel-body">
+                  <Json content={user.profile} />
+                </div>
+              </div>
+            </>
           ) }
 
           { user && (
             <>
-              { user.profile && (
-                <>
-                  <h3>{ user.profile.displayName || user.profile.username || user.profile._id } report card</h3>
-
-                  <h4 id="stats">
-                    Stats
-                    <a href="#stats" className="btn btn-link">#</a>
-                  </h4>
-                  <div className="panel panel-default admin-user">
-                    <div className="panel-body">
-                      <UserState user={ user.profile } />
-                      <ul className="list-inline">
-                        <li><strong>Messages</strong></li>
-                        <li>{ user.messageFromCount || 0 } sent</li>
-                        <li>{ user.messageToCount || 0 } received</li>
-                        <li>{ user.threadCount || 0 } threads total</li>
-                      </ul>
-                      <ul className="list-inline">
-                        <li><strong>Thread votes received</strong></li>
-                        <li className="text-success">
-                          { user.threadReferencesReceivedYes } positive
-                        </li>
-                        <li className="text-danger">
-                          { user.threadReferencesReceivedNo } negative
-                        </li>
-                      </ul>
-                      <ul className="list-inline">
-                        <li><strong>Thread votes gave</strong></li>
-                        <li className="text-success">
-                          { user.threadReferencesSentYes } positive
-                        </li>
-                        <li className="text-danger">
-                          { user.threadReferencesSentNo } negative
-                        </li>
-                      </ul>
-                      <p><strong>{ user.contacts.length } contact(s)</strong></p>
-                      <p><strong>{ user.offers.length } hosting or meet offer(s)</strong></p>
-                      <UserEmailConfirmLink user={ user.profile } />
-                    </div>
-                  </div>
-
-                  <h4 id="profile">
-                    Profile
-                    <a href="#profile" className="btn btn-link">#</a>
-                  </h4>
-                  <div className="panel panel-default">
-                    <div className="panel-body">
-                      <Json content={user.profile} />
-                    </div>
-                  </div>
-                </>
-              ) }
-
               <h4 id="offers">
                 Hosting & meeting offers
                 <a href="#offers" className="btn btn-link">#</a>
