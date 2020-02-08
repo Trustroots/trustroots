@@ -31,6 +31,10 @@
   },{
     "packageNames": ["angular-ui-router"],
     "allowedVersions": "<=0.4"
+  },{
+    "sourceUrlPrefixes": ["https://github.com/babel/babel"]
+  },{
+    "sourceUrlPrefixes": ["https://github.com/facebook/react"]
   }],
   "supportPolicy": "lts_latest",
   "travis": {
