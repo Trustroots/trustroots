@@ -20,7 +20,7 @@
       "angular-sanitize",
       "angular-touch"
     ],
-    "allowedVersions": "<=1.5"
+    "allowedVersions": "<=1.6"
   },{
     "packageNames": ["angular-confirm"],
     "allowedVersions": "<=1"
@@ -29,7 +29,7 @@
     "allowedVersions": "<=3"
   },{
     "packageNames": ["angular-ui-router"],
-    "allowedVersions": "<=0.3"
+    "allowedVersions": "<=0.4"
   }],
   "supportPolicy": "lts_latest",
   "travis": {
