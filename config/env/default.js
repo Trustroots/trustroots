@@ -187,4 +187,5 @@ module.exports = {
       inlineMeta: true,
     },
   },
+  i18nBackend: false,
 };
