@@ -40,6 +40,9 @@ export default function AdminHeader() {
             <li className={classnames({ active: path === '/admin/messages' })}>
               <a href="/admin/messages">Messages</a>
             </li>
+            <li className={classnames({ active: path === '/admin/threads' })}>
+              <a href="/admin/threads">Threads</a>
+            </li>
             <li
               className={classnames({
                 active: path === '/admin/acquisition-stories',

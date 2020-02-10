@@ -173,7 +173,11 @@ export default class AdminUser extends Component {
                     </li>
                     <li>{user.messageFromCount || 0} sent</li>
                     <li>{user.messageToCount || 0} received</li>
-                    <li>{user.threadCount || 0} threads total</li>
+                    <li>
+                      <a href={`/admin/threads?userId=${user.profile._id}`}>
+                        {user.threadCount || 0} threads total
+                      </a>
+                    </li>
                   </ul>
                   <ul className="list-inline">
                     <li>

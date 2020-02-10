@@ -117,7 +117,7 @@ export default class AdminMessages extends Component {
           ) : (
             <p>
               <br />
-              <em className="text-muted">Choose two members...</em>
+              <em className="text-muted">Choose two members…</em>
             </p>
           )}
         </div>

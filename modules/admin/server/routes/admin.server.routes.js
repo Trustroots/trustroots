@@ -5,6 +5,7 @@ const adminAcquisitionStories = require('../controllers/admin.acquisition-storie
 const adminAuditLog = require('../controllers/admin.audit-log.server.controller');
 const adminMessages = require('../controllers/admin.messages.server.controller');
 const adminPolicy = require('../policies/admin.server.policy');
+const adminThreads = require('../controllers/admin.threads.server.controller');
 const adminUsers = require('../controllers/admin.users.server.controller');
 
 module.exports = app => {
@@ -22,6 +23,11 @@ module.exports = app => {
     .route('/api/admin/messages')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminMessages.getMessages);
+
+  app
+    .route('/api/admin/threads')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminThreads.getThreads);
 
   app
     .route('/api/admin/users')
