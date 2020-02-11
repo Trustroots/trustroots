@@ -1,11 +1,15 @@
 /* global FB */
-angular
-  .module('core')
-  .factory('Facebook', FacebookFactory);
+angular.module('core').factory('Facebook', FacebookFactory);
 
 /* @ngInject */
-function FacebookFactory($log, $window, $document, $http, $rootScope, Authentication) {
-
+function FacebookFactory(
+  $log,
+  $window,
+  $document,
+  $http,
+  $rootScope,
+  Authentication,
+) {
   const service = {
     init: init,
   };
@@ -17,9 +21,11 @@ function FacebookFactory($log, $window, $document, $http, $rootScope, Authentica
    * Will invoke `fbAsyncInit` when done.
    */
   function init() {
-
     // Stop loading if the app doesn't have Facebook app ID defined
-    if (!angular.isString($window.facebookAppId) || $window.facebookAppId === '') {
+    if (
+      !angular.isString($window.facebookAppId) ||
+      $window.facebookAppId === ''
+    ) {
       $log.info('No Facebook app ID; skipping `FB.init()`');
       return;
     }
@@ -27,7 +33,11 @@ function FacebookFactory($log, $window, $document, $http, $rootScope, Authentica
     // Stop loading when:
     // - user isn't authenticated
     // - authenticated user isn't connected to FB
-    if (!Authentication.user || !Authentication.user.additionalProvidersData || !Authentication.user.additionalProvidersData.facebook) {
+    if (
+      !Authentication.user ||
+      !Authentication.user.additionalProvidersData ||
+      !Authentication.user.additionalProvidersData.facebook
+    ) {
       return;
     }
 
@@ -35,7 +45,7 @@ function FacebookFactory($log, $window, $document, $http, $rootScope, Authentica
     $window.fbAsyncInit = fbAsyncInit;
 
     // Initialize the `<script>`
-    (function (d) {
+    (function(d) {
       const id = 'facebook-jssdk';
       const fjs = d.getElementsByTagName('script')[0];
 
@@ -49,9 +59,7 @@ function FacebookFactory($log, $window, $document, $http, $rootScope, Authentica
       js.async = true;
       js.src = '//connect.facebook.net/en_US/sdk.js';
       fjs.parentNode.insertBefore(js, fjs);
-
-    }($document[0]));
-
+    })($document[0]);
   }
 
   /**
@@ -60,7 +68,6 @@ function FacebookFactory($log, $window, $document, $http, $rootScope, Authentica
    */
   function fbAsyncInit() {
     FB.init({
-
       // The app id of the web app;
       // To register a new app visit Facebook App Dashboard
       // https://developers.facebook.com/apps/
@@ -122,13 +129,10 @@ function FacebookFactory($log, $window, $document, $http, $rootScope, Authentica
       return;
     }
 
-    $http.put('/api/auth/facebook',
-      authResponse,
-      {
-        // Tells Angular-Loading-Bar to ignore this http request
-        // @link https://github.com/chieffancypants/angular-loading-bar#ignoring-particular-xhr-requests
-        ignoreLoadingBar: true,
-      });
+    $http.put('/api/auth/facebook', authResponse, {
+      // Tells Angular-Loading-Bar to ignore this http request
+      // @link https://github.com/chieffancypants/angular-loading-bar#ignoring-particular-xhr-requests
+      ignoreLoadingBar: true,
+    });
   }
-
 }

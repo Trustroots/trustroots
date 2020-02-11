@@ -14,9 +14,7 @@ export default function ContactList({ appUser, contacts, onContactRemoved }) {
   }
 
   if (contacts.length === 0) {
-    return (
-      <NoContent icon="users" message={t('No contacts yet.')} />
-    );
+    return <NoContent icon="users" message={t('No contacts yet.')} />;
   }
 
   return (

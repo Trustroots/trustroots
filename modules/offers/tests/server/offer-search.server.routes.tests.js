@@ -34,7 +34,7 @@ let tribe1Id;
 let tribe2Id;
 
 const testLocations = {
-  'Europe': {
+  Europe: {
     queryBoundingBox:
       '?northEastLat=55.31212135084999' +
       '&northEastLng=18.73318142361111' +
@@ -42,7 +42,7 @@ const testLocations = {
       '&southWestLng=3.689914279513889',
     location: [52.48556355813466, 13.489011526107788],
   },
-  'China': {
+  China: {
     queryBoundingBox:
       '?northEastLat=68.58321725728176' +
       '&northEastLng=151.23828125000003' +
@@ -50,7 +50,7 @@ const testLocations = {
       '&southWestLng=61.63281250000001',
     location: [34.632532, 103.767519],
   },
-  'US': {
+  US: {
     queryBoundingBox:
       '?northEastLat=70.1061015189654' +
       '&northEastLng=-48.44921875000001' +
@@ -58,7 +58,7 @@ const testLocations = {
       '&southWestLng=-138.05468750000003',
     location: [40.514402, -88.990735],
   },
-  'NorthPole': {
+  NorthPole: {
     queryBoundingBox:
       '?northEastLat=89.99703020040681' +
       '&northEastLng=145.61328125000003' +
@@ -68,13 +68,11 @@ const testLocations = {
   },
 };
 
-
 /**
  * Offer routes tests
  */
-describe('Offer search tests', function () {
-
-  before(function (done) {
+describe('Offer search tests', function() {
+  before(function(done) {
     // Get application
     app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -82,7 +80,7 @@ describe('Offer search tests', function () {
     done();
   });
 
-  beforeEach(function (doneBeforeEach) {
+  beforeEach(function(doneBeforeEach) {
     // Create user credentials
     credentials = {
       username: 'loremipsum',
@@ -171,111 +169,123 @@ describe('Offer search tests', function () {
     offerMeet = new Offer({
       type: 'meet',
       description: '<p>Dinner party!</p>',
-      validUntil: moment().add(30, 'day').toDate(),
+      validUntil: moment()
+        .add(30, 'day')
+        .toDate(),
       updated: new Date(),
       location: [52.498981209298887, 13.418329954147449],
     });
 
     tribe1 = new Tribe({
-      'slug': 'tribe1',
-      'label': 'tribe1',
-      'color': '111111',
-      'tribe': true,
-      'count': 1,
-      'public': true,
+      slug: 'tribe1',
+      label: 'tribe1',
+      color: '111111',
+      tribe: true,
+      count: 1,
+      public: true,
     });
 
     tribe2 = new Tribe({
-      'slug': 'tribe2',
-      'label': 'tribe2',
-      'color': '222222',
-      'count': 1,
-      'public': true,
+      slug: 'tribe2',
+      label: 'tribe2',
+      color: '222222',
+      count: 1,
+      public: true,
     });
 
     // Save data to the test db
-    async.waterfall([
-      // Save tribe 1
-      function (done) {
-        tribe1.save(function (err, tribe1) {
-          tribe1Id = tribe1._id;
-          done(err);
-        });
+    async.waterfall(
+      [
+        // Save tribe 1
+        function(done) {
+          tribe1.save(function(err, tribe1) {
+            tribe1Id = tribe1._id;
+            done(err);
+          });
+        },
+        // Save tribe 2
+        function(done) {
+          tribe2.save(function(err, tribe2) {
+            tribe2Id = tribe2._id;
+            done(err);
+          });
+        },
+        // Save user 1 (without tribe membership)
+        function(done) {
+          user1.save(function(err) {
+            done(err);
+          });
+        },
+        // Save user 2 (with tribe membership)
+        function(done) {
+          user2.member = [
+            {
+              tribe: tribe2Id,
+              since: new Date(),
+            },
+          ];
+          user2.save(function(err, user2res) {
+            user2Id = user2res._id;
+            done(err);
+          });
+        },
+        // Save user 3 (with tribe membership)
+        function(done) {
+          user3.member = [
+            {
+              tribe: tribe1Id,
+              since: new Date(),
+            },
+          ];
+          user3.save(function(err, user3res) {
+            user3Id = user3res._id;
+            return done(err);
+          });
+        },
+        // Save hosting offer 2
+        function(done) {
+          offer2.user = user2Id;
+          offer2.save(function(err, offer2) {
+            offer2Id = offer2._id;
+            done(err);
+          });
+        },
+        // Save hosting offer 3
+        function(done) {
+          offer3.user = user3Id;
+          offer3.save(function(err, offer3) {
+            offer3Id = offer3._id;
+            done(err);
+          });
+        },
+      ],
+      function(err) {
+        should.not.exist(err);
+        doneBeforeEach(err);
       },
-      // Save tribe 2
-      function (done) {
-        tribe2.save(function (err, tribe2) {
-          tribe2Id = tribe2._id;
-          done(err);
-        });
-      },
-      // Save user 1 (without tribe membership)
-      function (done) {
-        user1.save(function (err) {
-          done(err);
-        });
-      },
-      // Save user 2 (with tribe membership)
-      function (done) {
-        user2.member = [{
-          tribe: tribe2Id,
-          since: new Date(),
-        }];
-        user2.save(function (err, user2res) {
-          user2Id = user2res._id;
-          done(err);
-        });
-      },
-      // Save user 3 (with tribe membership)
-      function (done) {
-        user3.member = [{
-          tribe: tribe1Id,
-          since: new Date(),
-        }];
-        user3.save(function (err, user3res) {
-          user3Id = user3res._id;
-          return done(err);
-        });
-      },
-      // Save hosting offer 2
-      function (done) {
-        offer2.user = user2Id;
-        offer2.save(function (err, offer2) {
-          offer2Id = offer2._id;
-          done(err);
-        });
-      },
-      // Save hosting offer 3
-      function (done) {
-        offer3.user = user3Id;
-        offer3.save(function (err, offer3) {
-          offer3Id = offer3._id;
-          done(err);
-        });
-      },
-    ], function (err) {
-      should.not.exist(err);
-      doneBeforeEach(err);
-    });
+    );
   });
 
-  it('should be able to get empty list from an area where there are no offers', function (done) {
-    agent.post('/api/auth/signin')
+  it('should be able to get empty list from an area where there are no offers', function(done) {
+    agent
+      .post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Get offers (in Niger)
-        agent.get('/api/offers' +
-            '?northEastLat=32.89472514359572' +
-            '&northEastLng=25.598493303571427' +
-            '&southWestLat=-20.49068931208608' +
-            '&southWestLng=-12.986188616071427',
-        )
+        agent
+          .get(
+            '/api/offers' +
+              '?northEastLat=32.89472514359572' +
+              '&northEastLng=25.598493303571427' +
+              '&southWestLat=-20.49068931208608' +
+              '&southWestLng=-12.986188616071427',
+          )
           .expect(200)
-          .end(function (offersGetErr, offersGetRes) {
+          .end(function(offersGetErr, offersGetRes) {
             // Handle offer get error
             if (offersGetErr) return done(offersGetErr);
 
@@ -285,27 +295,29 @@ describe('Offer search tests', function () {
             // Call the assertion callback
             return done();
           });
-
       });
   });
 
-  it('should be able to use + in front of positive coordinates', function (done) {
-    agent.post('/api/auth/signin')
+  it('should be able to use + in front of positive coordinates', function(done) {
+    agent
+      .post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Get offers (in Niger)
-        agent.get('/api/offers' +
-            '?northEastLat=+55.31212135084999' +
-            '&northEastLng=+18.73318142361111' +
-            '&southWestLat=+44.66407507240992' +
-            '&southWestLng=+3.689914279513889',
-        )
+        agent
+          .get(
+            '/api/offers' +
+              '?northEastLat=+55.31212135084999' +
+              '&northEastLng=+18.73318142361111' +
+              '&southWestLat=+44.66407507240992' +
+              '&southWestLng=+3.689914279513889',
+          )
           .expect(200)
-          .end(function (offersGetErr, offersGetRes) {
+          .end(function(offersGetErr, offersGetRes) {
             // Handle offer get error
             if (offersGetErr) return done(offersGetErr);
 
@@ -315,77 +327,85 @@ describe('Offer search tests', function () {
             // Call the assertion callback
             return done();
           });
-
       });
   });
 
-  it('should return error when missing bounding box parameter', function (done) {
-    agent.post('/api/auth/signin')
+  it('should return error when missing bounding box parameter', function(done) {
+    agent
+      .post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Missing `southWestLng` paramter
-        agent.get('/api/offers' +
-            '?northEastLat=32.89472514359572' +
-            '&northEastLng=25.598493303571427' +
-            '&southWestLat=-20.49068931208608',
-        )
+        agent
+          .get(
+            '/api/offers' +
+              '?northEastLat=32.89472514359572' +
+              '&northEastLng=25.598493303571427' +
+              '&southWestLat=-20.49068931208608',
+          )
           .expect(400)
           .end(done);
-
       });
   });
 
-  it('should return error with invalid bounding box parameter (string after decimals)', function (done) {
-    agent.post('/api/auth/signin')
+  it('should return error with invalid bounding box parameter (string after decimals)', function(done) {
+    agent
+      .post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Missing `southWestLng` paramter
-        agent.get('/api/offers' +
-            '?northEastLat=25.' + '1'.repeat(30) + 'foo' + // `foo` starts at 31
-            '&northEastLng=25.598493303571427' +
-            '&southWestLat=-20.49068931208608' +
-            '&southWestLng=-12.986188616071427',
-        )
+        agent
+          .get(
+            '/api/offers' +
+            '?northEastLat=25.' +
+            '1'.repeat(30) +
+            'foo' + // `foo` starts at 31
+              '&northEastLng=25.598493303571427' +
+              '&southWestLat=-20.49068931208608' +
+              '&southWestLng=-12.986188616071427',
+          )
           .expect(400)
           .end(done);
-
       });
   });
 
-  it('should return error with invalid bounding box parameter (string instead of coordinate)', function (done) {
-    agent.post('/api/auth/signin')
+  it('should return error with invalid bounding box parameter (string instead of coordinate)', function(done) {
+    agent
+      .post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Missing `southWestLng` paramter
-        agent.get('/api/offers' +
-            '?northEastLat=FAIL' +
-            '&northEastLng=25.598493303571427' +
-            '&southWestLat=-20.49068931208608' +
-            '&southWestLng=-12.986188616071427',
-        )
+        agent
+          .get(
+            '/api/offers' +
+              '?northEastLat=FAIL' +
+              '&northEastLng=25.598493303571427' +
+              '&southWestLat=-20.49068931208608' +
+              '&southWestLng=-12.986188616071427',
+          )
           .expect(400)
           .end(done);
-
       });
   });
 
-  it('should not be able to get list of offers from an area if not authenticated', function (done) {
+  it('should not be able to get list of offers from an area if not authenticated', function(done) {
     // Get offers (around Berlin)
-    agent.get('/api/offers' + testLocations.Europe.queryBoundingBox)
+    agent
+      .get('/api/offers' + testLocations.Europe.queryBoundingBox)
       .expect(403)
-      .end(function (offersGetErr, offersGetRes) {
+      .end(function(offersGetErr, offersGetRes) {
         // Handle offer get error
         if (offersGetErr) return done(offersGetErr);
 
@@ -396,18 +416,20 @@ describe('Offer search tests', function () {
       });
   });
 
-  it('should be able to get list of offers from an area (Europe)', function (done) {
-    agent.post('/api/auth/signin')
+  it('should be able to get list of offers from an area (Europe)', function(done) {
+    agent
+      .post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Get offers (around Berlin)
-        agent.get('/api/offers' + testLocations.Europe.queryBoundingBox)
+        agent
+          .get('/api/offers' + testLocations.Europe.queryBoundingBox)
           .expect(200)
-          .end(function (offersGetErr, offersGetRes) {
+          .end(function(offersGetErr, offersGetRes) {
             // Handle offer get error
             if (offersGetErr) return done(offersGetErr);
 
@@ -422,16 +444,32 @@ describe('Offer search tests', function () {
             // Set assertions
             offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(2);
             offersGetRes.body[user2Order].status.should.equal(offer2.status);
-            offersGetRes.body[user2Order].location.should.be.instanceof(Array).and.have.lengthOf(2);
-            offersGetRes.body[user2Order].location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
-            offersGetRes.body[user2Order].location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
+            offersGetRes.body[user2Order].location.should.be
+              .instanceof(Array)
+              .and.have.lengthOf(2);
+            offersGetRes.body[user2Order].location[0].should.be.approximately(
+              offer2.locationFuzzy[0],
+              0.0000000000001,
+            );
+            offersGetRes.body[user2Order].location[1].should.be.approximately(
+              offer2.locationFuzzy[1],
+              0.0000000000001,
+            );
             offersGetRes.body[user2Order]._id.should.equal(offer2Id.toString());
             should.not.exist(offersGetRes.body[user2Order].locationFuzzy);
 
             offersGetRes.body[user3Order].status.should.equal(offer3.status);
-            offersGetRes.body[user3Order].location.should.be.instanceof(Array).and.have.lengthOf(2);
-            offersGetRes.body[user3Order].location[0].should.be.approximately(offer3.locationFuzzy[0], 0.0000000000001);
-            offersGetRes.body[user3Order].location[1].should.be.approximately(offer3.locationFuzzy[1], 0.0000000000001);
+            offersGetRes.body[user3Order].location.should.be
+              .instanceof(Array)
+              .and.have.lengthOf(2);
+            offersGetRes.body[user3Order].location[0].should.be.approximately(
+              offer3.locationFuzzy[0],
+              0.0000000000001,
+            );
+            offersGetRes.body[user3Order].location[1].should.be.approximately(
+              offer3.locationFuzzy[1],
+              0.0000000000001,
+            );
             offersGetRes.body[user3Order]._id.should.equal(offer3Id.toString());
             should.not.exist(offersGetRes.body[user3Order].locationFuzzy);
 
@@ -442,78 +480,88 @@ describe('Offer search tests', function () {
   });
 
   // Tests different regions in the globe (Asia, USA, North Pole etc)
-  _.forEach(testLocations, function (testLocation, area) {
-    it('should be able to get offer from an area (' + area + ')', function (done) {
-
-      agent.post('/api/auth/signin')
+  _.forEach(testLocations, function(testLocation, area) {
+    it('should be able to get offer from an area (' + area + ')', function(
+      done,
+    ) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
           // Clean out the DB from other offers
-          Offer.deleteMany().exec(function () {
-
+          Offer.deleteMany().exec(function() {
             // Create new offer to target location
             const testLocationOffer = new Offer(offer1);
             testLocationOffer.location = testLocation.location;
 
-            testLocationOffer.save(function (saveErr, saveRes) {
+            testLocationOffer.save(function(saveErr, saveRes) {
               if (saveErr) return done(saveErr);
 
               // Get offers (around Berlin)
-              agent.get('/api/offers' + testLocation.queryBoundingBox)
+              agent
+                .get('/api/offers' + testLocation.queryBoundingBox)
                 .expect(200)
-                .end(function (offersGetErr, offersGetRes) {
+                .end(function(offersGetErr, offersGetRes) {
                   // Handle offer get error
                   if (offersGetErr) return done(offersGetErr);
 
                   // Set assertions
-                  offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(1);
+                  offersGetRes.body.should.be
+                    .instanceof(Array)
+                    .and.have.lengthOf(1);
                   offersGetRes.body[0]._id.should.equal(saveRes._id.toString());
-                  offersGetRes.body[0].location[0].should.be.approximately(testLocation.location[0], 0.1);
-                  offersGetRes.body[0].location[1].should.be.approximately(testLocation.location[1], 0.1);
+                  offersGetRes.body[0].location[0].should.be.approximately(
+                    testLocation.location[0],
+                    0.1,
+                  );
+                  offersGetRes.body[0].location[1].should.be.approximately(
+                    testLocation.location[1],
+                    0.1,
+                  );
 
                   // Call the assertion callback
                   return done();
                 });
-
             });
-
           });
-
         });
     });
   });
 
-  it('should include both meet and host offers when getting a list of offers from an area', function (done) {
-
-    offerMeet.save(function (saveErr) {
+  it('should include both meet and host offers when getting a list of offers from an area', function(done) {
+    offerMeet.save(function(saveErr) {
       // Handle save error
       if (saveErr) return done(saveErr);
 
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
           // Get offers (around Berlin)
-          agent.get('/api/offers' + testLocations.Europe.queryBoundingBox)
+          agent
+            .get('/api/offers' + testLocations.Europe.queryBoundingBox)
             .expect(200)
-            .end(function (offersGetErr, offersGetRes) {
+            .end(function(offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
 
               // Set assertions
 
-              offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(3);
+              offersGetRes.body.should.be
+                .instanceof(Array)
+                .and.have.lengthOf(3);
 
               // Count different offer types
               // This produces `{'host': 2, 'meet': 1}`
-              const count = _.countBy(offersGetRes.body, function (offer) {
+              const count = _.countBy(offersGetRes.body, function(offer) {
                 return offer.type;
               });
 
@@ -527,31 +575,36 @@ describe('Offer search tests', function () {
     });
   });
 
-  it('should not include outdated meet offers when getting a list of offers from an area', function (done) {
-
+  it('should not include outdated meet offers when getting a list of offers from an area', function(done) {
     // Set date to past
-    offerMeet.validUntil = moment().subtract(1, 'minute').toDate();
+    offerMeet.validUntil = moment()
+      .subtract(1, 'minute')
+      .toDate();
 
-    offerMeet.save(function (saveErr) {
+    offerMeet.save(function(saveErr) {
       // Handle save error
       if (saveErr) return done(saveErr);
 
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
           // Get offers (around Berlin)
-          agent.get('/api/offers' + testLocations.Europe.queryBoundingBox)
+          agent
+            .get('/api/offers' + testLocations.Europe.queryBoundingBox)
             .expect(200)
-            .end(function (offersGetErr, offersGetRes) {
+            .end(function(offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
 
               // Set assertions
-              offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(2);
+              offersGetRes.body.should.be
+                .instanceof(Array)
+                .and.have.lengthOf(2);
 
               // Only "host" offers here
               // Note that these are in random order from Mongo but it doesn't matter here
@@ -565,17 +618,17 @@ describe('Offer search tests', function () {
     });
   });
 
-  describe('Search offers by "types" filter', function () {
-
-    it('should be able to get list of offers from an area filtered by type "host"', function (done) {
-      offerMeet.save(function (saveErr) {
+  describe('Search offers by "types" filter', function() {
+    it('should be able to get list of offers from an area filtered by type "host"', function(done) {
+      offerMeet.save(function(saveErr) {
         // Handle save error
         if (saveErr) return done(saveErr);
 
-        agent.post('/api/auth/signin')
+        agent
+          .post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function (signinErr) {
+          .end(function(signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
 
@@ -583,9 +636,15 @@ describe('Offer search tests', function () {
             const filters = {
               types: ['host'],
             };
-            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+            agent
+              .get(
+                '/api/offers' +
+                  testLocations.Europe.queryBoundingBox +
+                  '&filters=' +
+                  encodeURIComponent(JSON.stringify(filters)),
+              )
               .expect(200)
-              .end(function (offersGetErr, offersGetRes) {
+              .end(function(offersGetErr, offersGetRes) {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
 
@@ -598,7 +657,9 @@ describe('Offer search tests', function () {
                 }
 
                 // Set assertions
-                offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(2);
+                offersGetRes.body.should.be
+                  .instanceof(Array)
+                  .and.have.lengthOf(2);
                 offersGetRes.body[user2Order].type.should.equal(offer2.type);
                 offersGetRes.body[user3Order].type.should.equal(offer3.type);
 
@@ -609,15 +670,16 @@ describe('Offer search tests', function () {
       });
     });
 
-    it('should be able to get list of offers from an area filtered by type "meet"', function (done) {
-      offerMeet.save(function (saveErr) {
+    it('should be able to get list of offers from an area filtered by type "meet"', function(done) {
+      offerMeet.save(function(saveErr) {
         // Handle save error
         if (saveErr) return done(saveErr);
 
-        agent.post('/api/auth/signin')
+        agent
+          .post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function (signinErr) {
+          .end(function(signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
 
@@ -625,14 +687,22 @@ describe('Offer search tests', function () {
             const filters = {
               types: ['meet'],
             };
-            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+            agent
+              .get(
+                '/api/offers' +
+                  testLocations.Europe.queryBoundingBox +
+                  '&filters=' +
+                  encodeURIComponent(JSON.stringify(filters)),
+              )
               .expect(200)
-              .end(function (offersGetErr, offersGetRes) {
+              .end(function(offersGetErr, offersGetRes) {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
 
                 // Set assertions
-                offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(1);
+                offersGetRes.body.should.be
+                  .instanceof(Array)
+                  .and.have.lengthOf(1);
                 offersGetRes.body[0].type.should.equal(offerMeet.type);
 
                 // Call the assertion callback
@@ -642,15 +712,16 @@ describe('Offer search tests', function () {
       });
     });
 
-    it('should be able to get list of offers from an area filtered by non existing type', function (done) {
-      offerMeet.save(function (saveErr) {
+    it('should be able to get list of offers from an area filtered by non existing type', function(done) {
+      offerMeet.save(function(saveErr) {
         // Handle save error
         if (saveErr) return done(saveErr);
 
-        agent.post('/api/auth/signin')
+        agent
+          .post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function (signinErr) {
+          .end(function(signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
 
@@ -658,18 +729,26 @@ describe('Offer search tests', function () {
             const filters = {
               types: ['foobar'],
             };
-            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+            agent
+              .get(
+                '/api/offers' +
+                  testLocations.Europe.queryBoundingBox +
+                  '&filters=' +
+                  encodeURIComponent(JSON.stringify(filters)),
+              )
               .expect(200)
-              .end(function (offersGetErr, offersGetRes) {
+              .end(function(offersGetErr, offersGetRes) {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
 
                 // Set assertions
-                offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(3);
+                offersGetRes.body.should.be
+                  .instanceof(Array)
+                  .and.have.lengthOf(3);
 
                 // Count different offer types
                 // This produces `{'host': 2, 'meet': 1}`
-                const count = _.countBy(offersGetRes.body, function (offer) {
+                const count = _.countBy(offersGetRes.body, function(offer) {
                   return offer.type;
                 });
 
@@ -682,16 +761,15 @@ describe('Offer search tests', function () {
           });
       });
     });
-
   });
 
-  describe('Search offers by "languages" filter', function () {
-
-    it('should be able to get list of offers from an area filtered by one language and ignore users by other language', function (done) {
-      agent.post('/api/auth/signin')
+  describe('Search offers by "languages" filter', function() {
+    it('should be able to get list of offers from an area filtered by one language and ignore users by other language', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -700,14 +778,22 @@ describe('Offer search tests', function () {
             languages: ['fin'],
           };
 
-          agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+          agent
+            .get(
+              '/api/offers' +
+                testLocations.Europe.queryBoundingBox +
+                '&filters=' +
+                encodeURIComponent(JSON.stringify(filters)),
+            )
             .expect(200)
-            .end(function (offersGetErr, offersGetRes) {
+            .end(function(offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
 
               // Set assertions
-              offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(1);
+              offersGetRes.body.should.be
+                .instanceof(Array)
+                .and.have.lengthOf(1);
               offersGetRes.body[0]._id.should.equal(offer2._id.toString());
 
               // Call the assertion callback
@@ -716,12 +802,12 @@ describe('Offer search tests', function () {
         });
     });
 
-    it('should be able to get list of offers from an area filtered by multiple languages', function (done) {
-
-      agent.post('/api/auth/signin')
+    it('should be able to get list of offers from an area filtered by multiple languages', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -730,9 +816,15 @@ describe('Offer search tests', function () {
             languages: ['fin', 'ita'],
           };
 
-          agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+          agent
+            .get(
+              '/api/offers' +
+                testLocations.Europe.queryBoundingBox +
+                '&filters=' +
+                encodeURIComponent(JSON.stringify(filters)),
+            )
             .expect(200)
-            .end(function (offersGetErr, offersGetRes) {
+            .end(function(offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
 
@@ -745,25 +837,30 @@ describe('Offer search tests', function () {
               }
 
               // Set assertions
-              offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(2);
-              offersGetRes.body[user2Order]._id.should.equal(offer2._id.toString());
-              offersGetRes.body[user3Order]._id.should.equal(offer3._id.toString());
+              offersGetRes.body.should.be
+                .instanceof(Array)
+                .and.have.lengthOf(2);
+              offersGetRes.body[user2Order]._id.should.equal(
+                offer2._id.toString(),
+              );
+              offersGetRes.body[user3Order]._id.should.equal(
+                offer3._id.toString(),
+              );
 
               // Call the assertion callback
               return done();
             });
         });
     });
-
   });
 
-  describe('Search offers by "tribes" filter', function () {
-
-    it('should be able to get list of offers from an area filtered by one tribe', function (done) {
-      agent.post('/api/auth/signin')
+  describe('Search offers by "tribes" filter', function() {
+    it('should be able to get list of offers from an area filtered by one tribe', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -771,19 +868,35 @@ describe('Offer search tests', function () {
           const filters = {
             tribes: [tribe2Id],
           };
-          agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+          agent
+            .get(
+              '/api/offers' +
+                testLocations.Europe.queryBoundingBox +
+                '&filters=' +
+                encodeURIComponent(JSON.stringify(filters)),
+            )
             .expect(200)
-            .end(function (offersGetErr, offersGetRes) {
+            .end(function(offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
 
               // Set assertions
-              offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(1);
+              offersGetRes.body.should.be
+                .instanceof(Array)
+                .and.have.lengthOf(1);
               offersGetRes.body[0].status.should.equal(offer2.status);
               offersGetRes.body[0].type.should.equal(offer2.type);
-              offersGetRes.body[0].location.should.be.instanceof(Array).and.have.lengthOf(2);
-              offersGetRes.body[0].location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
-              offersGetRes.body[0].location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
+              offersGetRes.body[0].location.should.be
+                .instanceof(Array)
+                .and.have.lengthOf(2);
+              offersGetRes.body[0].location[0].should.be.approximately(
+                offer2.locationFuzzy[0],
+                0.0000000000001,
+              );
+              offersGetRes.body[0].location[1].should.be.approximately(
+                offer2.locationFuzzy[1],
+                0.0000000000001,
+              );
               offersGetRes.body[0]._id.should.equal(offer2Id.toString());
               should.not.exist(offersGetRes.body[0].locationFuzzy);
 
@@ -793,15 +906,16 @@ describe('Offer search tests', function () {
         });
     });
 
-    it('should be able to get list of offers from an area filtered by tribes and not get tribe-less offers', function (done) {
+    it('should be able to get list of offers from an area filtered by tribes and not get tribe-less offers', function(done) {
       user3.member = [];
-      user3.save(function (err, user3res) {
+      user3.save(function(err, user3res) {
         should.not.exist(err);
         user3res.member.length.should.equal(0);
-        agent.post('/api/auth/signin')
+        agent
+          .post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function (signinErr) {
+          .end(function(signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
 
@@ -809,19 +923,35 @@ describe('Offer search tests', function () {
             const filters = {
               tribes: [tribe1Id, tribe2Id],
             };
-            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+            agent
+              .get(
+                '/api/offers' +
+                  testLocations.Europe.queryBoundingBox +
+                  '&filters=' +
+                  encodeURIComponent(JSON.stringify(filters)),
+              )
               .expect(200)
-              .end(function (offersGetErr, offersGetRes) {
+              .end(function(offersGetErr, offersGetRes) {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
 
                 // Set assertions
-                offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(1);
+                offersGetRes.body.should.be
+                  .instanceof(Array)
+                  .and.have.lengthOf(1);
                 offersGetRes.body[0].status.should.equal(offer2.status);
                 offersGetRes.body[0].type.should.equal(offer2.type);
-                offersGetRes.body[0].location.should.be.instanceof(Array).and.have.lengthOf(2);
-                offersGetRes.body[0].location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
-                offersGetRes.body[0].location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
+                offersGetRes.body[0].location.should.be
+                  .instanceof(Array)
+                  .and.have.lengthOf(2);
+                offersGetRes.body[0].location[0].should.be.approximately(
+                  offer2.locationFuzzy[0],
+                  0.0000000000001,
+                );
+                offersGetRes.body[0].location[1].should.be.approximately(
+                  offer2.locationFuzzy[1],
+                  0.0000000000001,
+                );
 
                 // Call the assertion callback
                 return done();
@@ -830,11 +960,12 @@ describe('Offer search tests', function () {
       });
     });
 
-    it('should be able to get list of offers from an area filtered by many tribes', function (done) {
-      agent.post('/api/auth/signin')
+    it('should be able to get list of offers from an area filtered by many tribes', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
@@ -842,14 +973,22 @@ describe('Offer search tests', function () {
           const filters = {
             tribes: [tribe1Id, tribe2Id],
           };
-          agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+          agent
+            .get(
+              '/api/offers' +
+                testLocations.Europe.queryBoundingBox +
+                '&filters=' +
+                encodeURIComponent(JSON.stringify(filters)),
+            )
             .expect(200)
-            .end(function (offersGetErr, offersGetRes) {
+            .end(function(offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
 
               // Set assertions
-              offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(2);
+              offersGetRes.body.should.be
+                .instanceof(Array)
+                .and.have.lengthOf(2);
 
               // MongoDb returns these in random order, figure out order here
               let user2Order = 1;
@@ -862,19 +1001,39 @@ describe('Offer search tests', function () {
               // User 2 offer
               offersGetRes.body[user2Order].status.should.equal(offer2.status);
               offersGetRes.body[user2Order].type.should.equal(offer2.type);
-              offersGetRes.body[user2Order].location.should.be.instanceof(Array).and.have.lengthOf(2);
-              offersGetRes.body[user2Order].location[0].should.be.approximately(offer2.locationFuzzy[0], 0.0000000000001);
-              offersGetRes.body[user2Order].location[1].should.be.approximately(offer2.locationFuzzy[1], 0.0000000000001);
-              offersGetRes.body[user2Order]._id.should.equal(offer2Id.toString());
+              offersGetRes.body[user2Order].location.should.be
+                .instanceof(Array)
+                .and.have.lengthOf(2);
+              offersGetRes.body[user2Order].location[0].should.be.approximately(
+                offer2.locationFuzzy[0],
+                0.0000000000001,
+              );
+              offersGetRes.body[user2Order].location[1].should.be.approximately(
+                offer2.locationFuzzy[1],
+                0.0000000000001,
+              );
+              offersGetRes.body[user2Order]._id.should.equal(
+                offer2Id.toString(),
+              );
               should.not.exist(offersGetRes.body[user2Order].locationFuzzy);
 
               // User 3 offer
               offersGetRes.body[user3Order].status.should.equal(offer3.status);
               offersGetRes.body[user3Order].type.should.equal(offer2.type);
-              offersGetRes.body[user3Order].location.should.be.instanceof(Array).and.have.lengthOf(2);
-              offersGetRes.body[user3Order].location[0].should.be.approximately(offer3.locationFuzzy[0], 0.0000000000001);
-              offersGetRes.body[user3Order].location[1].should.be.approximately(offer3.locationFuzzy[1], 0.0000000000001);
-              offersGetRes.body[user3Order]._id.should.equal(offer3Id.toString());
+              offersGetRes.body[user3Order].location.should.be
+                .instanceof(Array)
+                .and.have.lengthOf(2);
+              offersGetRes.body[user3Order].location[0].should.be.approximately(
+                offer3.locationFuzzy[0],
+                0.0000000000001,
+              );
+              offersGetRes.body[user3Order].location[1].should.be.approximately(
+                offer3.locationFuzzy[1],
+                0.0000000000001,
+              );
+              offersGetRes.body[user3Order]._id.should.equal(
+                offer3Id.toString(),
+              );
               should.not.exist(offersGetRes.body[user3Order].locationFuzzy);
 
               // Call the assertion callback
@@ -883,22 +1042,30 @@ describe('Offer search tests', function () {
         });
     });
 
-    it('should be able able to send empty filter request', function (done) {
-      agent.post('/api/auth/signin')
+    it('should be able able to send empty filter request', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
-          agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=&types=')
+          agent
+            .get(
+              '/api/offers' +
+                testLocations.Europe.queryBoundingBox +
+                '&filters=&types=',
+            )
             .expect(200)
-            .end(function (offersGetErr, offersGetRes) {
+            .end(function(offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
 
               // Set assertions
-              offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(2);
+              offersGetRes.body.should.be
+                .instanceof(Array)
+                .and.have.lengthOf(2);
 
               // Call the assertion callback
               return done();
@@ -906,46 +1073,54 @@ describe('Offer search tests', function () {
         });
     });
 
-    it('should not be able to send non-json filter request', function (done) {
-      agent.post('/api/auth/signin')
+    it('should not be able to send non-json filter request', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
-          agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters={wrong}')
+          agent
+            .get(
+              '/api/offers' +
+                testLocations.Europe.queryBoundingBox +
+                '&filters={wrong}',
+            )
             .expect(400)
-            .end(function (offersGetErr, offersGetRes) {
+            .end(function(offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
 
               // Set assertions
-              offersGetRes.body.message.should.equal('Could not parse filters.');
+              offersGetRes.body.message.should.equal(
+                'Could not parse filters.',
+              );
 
               // Call the assertion callback
               return done();
             });
-
         });
     });
-
   });
 
-  describe('Search offers by "seen" filter', function () {
+  describe('Search offers by "seen" filter', function() {
+    it('should be able to get list of offers from an area filtered by last seen', function(done) {
+      user2.seen = moment()
+        .subtract({ months: 2 })
+        .toDate();
 
-    it('should be able to get list of offers from an area filtered by last seen', function (done) {
-      user2.seen = moment().subtract({ 'months': 2 }).toDate();
-
-      user2.save(function (user2SaveErr) {
+      user2.save(function(user2SaveErr) {
         if (user2SaveErr) {
           return done(user2SaveErr);
         }
 
-        agent.post('/api/auth/signin')
+        agent
+          .post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function (signinErr) {
+          .end(function(signinErr) {
             // Handle signin error
             if (signinErr) {
               return done(signinErr);
@@ -953,19 +1128,27 @@ describe('Offer search tests', function () {
 
             const filters = {
               seen: {
-                'months': 1,
+                months: 1,
               },
             };
 
-            agent.get('/api/offers' + testLocations.Europe.queryBoundingBox + '&filters=' + encodeURIComponent(JSON.stringify(filters)))
+            agent
+              .get(
+                '/api/offers' +
+                  testLocations.Europe.queryBoundingBox +
+                  '&filters=' +
+                  encodeURIComponent(JSON.stringify(filters)),
+              )
               .expect(200)
-              .end(function (offersGetErr, offersGetRes) {
+              .end(function(offersGetErr, offersGetRes) {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
 
                 // Set assertions
                 // User2's offer should be filtered out
-                offersGetRes.body.should.be.instanceof(Array).and.have.lengthOf(1);
+                offersGetRes.body.should.be
+                  .instanceof(Array)
+                  .and.have.lengthOf(1);
                 offersGetRes.body[0]._id.should.equal(offer3Id.toString());
 
                 // Call the assertion callback
@@ -974,15 +1157,13 @@ describe('Offer search tests', function () {
           });
       });
     });
-
   });
 
-  afterEach(function (done) {
-    User.deleteMany().exec(function () {
-      Tribe.deleteMany().exec(function () {
+  afterEach(function(done) {
+    User.deleteMany().exec(function() {
+      Tribe.deleteMany().exec(function() {
         Offer.deleteMany().exec(done);
       });
     });
   });
-
 });

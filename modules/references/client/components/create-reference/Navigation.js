@@ -7,13 +7,23 @@ import { withTranslation } from 'react-i18next';
  * It can contain three different buttons: Back, Next, Submit.
  * Each of them has a related property onBack, onNext, onSubmit
  */
-export function Navigation({ t, disabled, tab, tabs, tabDone, onBack, onNext, onSubmit }) {
+export function Navigation({
+  t,
+  disabled,
+  tab,
+  tabs,
+  tabDone,
+  onBack,
+  onNext,
+  onSubmit,
+}) {
   const backButton = (
     <button
       type="button"
       className="btn btn-action btn-link"
       aria-label="Previous section"
-      onClick={onBack}>
+      onClick={onBack}
+    >
       <span className="icon-left"></span>
       {t('Back')}
     </button>
@@ -25,7 +35,8 @@ export function Navigation({ t, disabled, tab, tabs, tabDone, onBack, onNext, on
       className="btn btn-action btn-primary"
       aria-label="Next section"
       onClick={onNext}
-      disabled={tabDone < tab}>
+      disabled={tabDone < tab}
+    >
       {t('Next')}
     </button>
   );
@@ -35,7 +46,8 @@ export function Navigation({ t, disabled, tab, tabs, tabDone, onBack, onNext, on
       className="btn btn-action btn-primary"
       aria-label="Submit reference"
       onClick={onSubmit}
-      disabled={tabDone < tabs - 1 || disabled}>
+      disabled={tabDone < tabs - 1 || disabled}
+    >
       {t('Submit')}
     </button>
   );

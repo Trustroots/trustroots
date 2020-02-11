@@ -27,12 +27,14 @@ title: Trustroots Team Guide
 - [Mobile app source code](https://github.com/trustroots/trustroots-expo-mobile)
 
 ## Guides
+
 - [Design principles](Design-principles.md)
 - [Photos](Photos.md)
 
 ## Documentation
 
 ### Basics
+
 - [Accessibility](Accessibility.md)
 - [Getting started troubleshooting](Troubleshooting.md)
 - [We are moving to React](React.md)
@@ -40,6 +42,7 @@ title: Trustroots Team Guide
 - [Pull request workflow](Pull-Request-Workflow.md)
 
 ### In-depth documentation
+
 - [Angular Directives](Angular-Directives.md) (deprecated)
 - [App and server Monitoring](Monitoring.md)
 - [Database](Database.md)
@@ -51,6 +54,7 @@ title: Trustroots Team Guide
 - [Server](Server.md)
 
 ## More information
+
 - [Privacy Policy](Privacy-Policy.md)
 - Logos and other graphics from [media repository](https://github.com/trustroots/media)
 - [Trustroots in Media](https://www.trustroots.org/media)

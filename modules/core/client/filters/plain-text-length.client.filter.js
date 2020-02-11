@@ -11,12 +11,15 @@
  * @link https://docs.angularjs.org/api/ng/filter/filter
  * @link http://stackoverflow.com/a/17315483/1984644
  */
-angular
-  .module('core')
-  .filter('plainTextLength', plainTextLengthFilter);
+angular.module('core').filter('plainTextLength', plainTextLengthFilter);
 
 function plainTextLengthFilter() {
-  return function (string) {
-    return string && angular.isString(string) ? String(string).replace(/&nbsp;/g, ' ').replace(/<[^>]+>/gm, '').trim().length : 0;
+  return function(string) {
+    return string && angular.isString(string)
+      ? String(string)
+          .replace(/&nbsp;/g, ' ')
+          .replace(/<[^>]+>/gm, '')
+          .trim().length
+      : 0;
   };
 }

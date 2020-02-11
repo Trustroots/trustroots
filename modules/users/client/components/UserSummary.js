@@ -30,9 +30,7 @@ export default function UserSummary({ user }) {
     <Container>
       <Avatar link size={128} user={user} />
       <h4>
-        <a href={`/profile/${user.username}`}>
-          {user.displayName}
-        </a>
+        <a href={`/profile/${user.username}`}>{user.displayName}</a>
       </h4>
     </Container>
   );

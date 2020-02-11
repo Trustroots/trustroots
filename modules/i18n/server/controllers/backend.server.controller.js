@@ -15,7 +15,10 @@ function enqueue(func, ...args) {
  * Object property order matters since ES2015
  * So we can sort it alphabetically by keys
  */
-const sortObject = object => Object.fromEntries(Object.entries(object).sort(([a], [b]) => a > b ? 1 : -1));
+const sortObject = object =>
+  Object.fromEntries(
+    Object.entries(object).sort(([a], [b]) => (a > b ? 1 : -1)),
+  );
 
 /**
  * Here we execute the standard request, not concerned with waiting
@@ -24,7 +27,7 @@ async function processRequest(req, res) {
   // get the needed variables
   const { language, namespace } = req.params;
   const [key] = Object.keys(req.body).filter(key => key !== '_t');
-  const value = (language === 'en') ? req.body[key] : '';
+  const value = language === 'en' ? req.body[key] : '';
 
   const file = path.resolve(`./public/locales/${language}/${namespace}.json`);
 
@@ -33,7 +36,7 @@ async function processRequest(req, res) {
     await fs.ensureFile(file);
 
     // read current translations or set a default
-    const rawContent = await fs.readFile(file, 'utf8') || '{}';
+    const rawContent = (await fs.readFile(file, 'utf8')) || '{}';
     const content = JSON.parse(rawContent);
 
     const newContent = sortObject({ [key]: value, ...content });
@@ -51,4 +54,3 @@ async function processRequest(req, res) {
 module.exports = (req, res) => {
   return enqueue(processRequest, req, res);
 };
-

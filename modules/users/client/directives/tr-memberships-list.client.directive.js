@@ -18,13 +18,12 @@ function trMembershipsListDirective() {
       isOwnProfile: '=',
     },
     controller: trMembershipsListController,
-
   };
 }
 
 function trMembershipsListController($scope) {
   $scope.tribeListLimit = 5;
-  $scope.toggle = function () {
+  $scope.toggle = function() {
     $scope.tribeListLimit = undefined;
   };
 }

@@ -16,9 +16,7 @@
         aria-label="Demo languages"></div>
  * ```
  */
-angular
-  .module('core')
-  .directive('trLanguages', trLanguagesDirective);
+angular.module('core').directive('trLanguages', trLanguagesDirective);
 
 /* @ngInject */
 function trLanguagesDirective() {
@@ -26,14 +24,15 @@ function trLanguagesDirective() {
     restrict: 'A',
     replace: true,
     transclude: true,
-    template: '<select multiple chosen' +
-              '  class="form-control"' +
-              '  placeholder-text-multiple="\'Type to search...\'"' +
-              '  no-results-text="\'Not found: \'"' +
-              '  search-contains="true"' +
-              '  ng-model="trLanguages.selectedLanguages"' +
-              '  ng-options="language.name for language in ::trLanguages.languages track by language.key">' +
-              '</select>',
+    template:
+      '<select multiple chosen' +
+      '  class="form-control"' +
+      '  placeholder-text-multiple="\'Type to search...\'"' +
+      '  no-results-text="\'Not found: \'"' +
+      '  search-contains="true"' +
+      '  ng-model="trLanguages.selectedLanguages"' +
+      '  ng-options="language.name for language in ::trLanguages.languages track by language.key">' +
+      '</select>',
     scope: {
       output: '=trLanguages',
       onChange: '@trLanguagesOnChange',
@@ -46,7 +45,6 @@ function trLanguagesDirective() {
 
   /* @ngInject */
   function trLanguagesDirectiveController($scope, Languages) {
-
     // View model
     const vm = this;
 
@@ -60,7 +58,6 @@ function trLanguagesDirective() {
      * Initialize controller
      */
     function activate() {
-
       // Ensure output is always an array, even on initialization
       if (!$scope.output || !angular.isArray($scope.output)) {
         $scope.output = [];
@@ -70,7 +67,10 @@ function trLanguagesDirective() {
       decodeSelectedLanguages();
 
       // Watch for changes in select and encode to array on changes
-      $scope.$watch('trLanguages.selectedLanguages', function (newValue, oldValue) {
+      $scope.$watch('trLanguages.selectedLanguages', function(
+        newValue,
+        oldValue,
+      ) {
         if (newValue.length !== oldValue.length) {
           encodeSelectedLanguages();
         }
@@ -86,11 +86,11 @@ function trLanguagesDirective() {
     function decodeSelectedLanguages() {
       const selections = [];
       if ($scope.output.length > 0) {
-        $scope.output.forEach(function (key) {
+        $scope.output.forEach(function(key) {
           if (angular.isString(key)) {
             this.push({
-              'key': key,
-              'name': vm.languages[key],
+              key: key,
+              name: vm.languages[key],
             });
           }
         }, selections);
@@ -106,11 +106,14 @@ function trLanguagesDirective() {
      */
     function encodeSelectedLanguages() {
       const keys = [];
-      angular.forEach(vm.selectedLanguages, function (language) {
-        this.push(String(language.key));
-      }, keys);
+      angular.forEach(
+        vm.selectedLanguages,
+        function(language) {
+          this.push(String(language.key));
+        },
+        keys,
+      );
       $scope.output = keys;
     }
   }
-
 }

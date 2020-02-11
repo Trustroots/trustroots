@@ -1,16 +1,16 @@
-angular
-  .module('users')
-  .config(UsersConfig);
+angular.module('users').config(UsersConfig);
 
 /* @ngInject */
 function UsersConfig($httpProvider) {
-
   // Config HTTP Error Handling
   // Set the httpProvider "not authorized" interceptor
-  $httpProvider.interceptors.push(['$q', '$location', 'Authentication',
-    function ($q, $location, Authentication) {
+  $httpProvider.interceptors.push([
+    '$q',
+    '$location',
+    'Authentication',
+    function($q, $location, Authentication) {
       return {
-        responseError: function (rejection) {
+        responseError: function(rejection) {
           if (rejection.config.url.startsWith('/api/')) {
             switch (rejection.status) {
               case 401:

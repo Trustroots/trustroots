@@ -17,18 +17,16 @@ angular
 
 /* @ngInject */
 function trValidateUsernameDirective($q, $timeout, SignupValidation) {
-
   let delayedUsernameValidation;
 
   return {
     restrict: 'A',
     require: 'ngModel',
-    link: function (scope, elem, attr, ngModel) {
+    link: function(scope, elem, attr, ngModel) {
       const minlength = angular.isDefined(attr.minlength) ? attr.minlength : 1;
 
-      ngModel.$asyncValidators.username = function (modelValue) {
-        return $q(function (resolve, reject) {
-
+      ngModel.$asyncValidators.username = function(modelValue) {
+        return $q(function(resolve, reject) {
           ngModel.$setValidity('username', true);
 
           if (modelValue && modelValue.length >= minlength) {
@@ -36,18 +34,19 @@ function trValidateUsernameDirective($q, $timeout, SignupValidation) {
               $timeout.cancel(delayedUsernameValidation);
             }
 
-            delayedUsernameValidation = $timeout(function () {
+            delayedUsernameValidation = $timeout(function() {
               delayedUsernameValidation = false;
 
               // If current value is the same as initial input value, don't do anything
-              if (attr.trValidateUsername && modelValue === attr.trValidateUsername) {
+              if (
+                attr.trValidateUsername &&
+                modelValue === attr.trValidateUsername
+              ) {
                 return resolve();
               }
 
-              SignupValidation
-                .post({ username: modelValue })
-                .$promise
-                .then(function (results) {
+              SignupValidation.post({ username: modelValue }).$promise.then(
+                function(results) {
                   if (results && !results.valid) {
                     // Got result and it's negative
                     reject();
@@ -57,12 +56,12 @@ function trValidateUsernameDirective($q, $timeout, SignupValidation) {
                     // Otherwise we'd flag everything invalid
                     resolve();
                   }
-                });
+                },
+              );
             }, 1000);
           }
         });
       };
-
     },
   };
 }

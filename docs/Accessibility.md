@@ -29,26 +29,31 @@ Trustroots should first get level A compliance, then work on AA and keep AA. AAA
 ## WCAG: four principles
 
 ### Principle 1: Perceivable
-* Text Alternatives: e.g. alt attributes for images
-* Time-based Media
-* Adaptable
-* Distinguishable
+
+- Text Alternatives: e.g. alt attributes for images
+- Time-based Media
+- Adaptable
+- Distinguishable
 
 ### Principle 2: Operable
-* Keyboard Accessible
-* Enough Time
-* Seizures
-* Navigable
+
+- Keyboard Accessible
+- Enough Time
+- Seizures
+- Navigable
 
 ### Principle 3: Understandable
-* Readable
-* Predictable
-* Input Assistance
 
-###  Principle 4: Robust
-* Compatible
+- Readable
+- Predictable
+- Input Assistance
+
+### Principle 4: Robust
+
+- Compatible
 
 ## Resources
-* A readable [WCAG tutorial](http://www.evengrounds.com/wcag-tutorial)
-* [a11yproject](http://a11yproject.com/): Simple articles and nice resources
-* Please familiarise yourself with [these accessibility tutorials](https://developer.mozilla.org/en-US/docs/Web/Accessibility) by Mozilla.
+
+- A readable [WCAG tutorial](http://www.evengrounds.com/wcag-tutorial)
+- [a11yproject](http://a11yproject.com/): Simple articles and nice resources
+- Please familiarise yourself with [these accessibility tutorials](https://developer.mozilla.org/en-US/docs/Web/Accessibility) by Mozilla.

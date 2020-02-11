@@ -1,4 +1,3 @@
-
 <div class="row">
   <div class="col-md-6">
     <about-me
@@ -9,33 +8,41 @@
   </div>
 
   <div class="col-md-6">
-
     <!-- Offers -->
     <div class="hidden-xs">
-      <div tr-offer-host-view="profileCtrl.profile"
-           tr-offer-host-view-auth-user="::app.user"></div>
+      <div
+        tr-offer-host-view="profileCtrl.profile"
+        tr-offer-host-view-auth-user="::app.user"
+      ></div>
     </div>
 
     <!-- Contacts in common -->
-    <div ng-if="profileCtrl.profile._id !== app.user._id && profileCtrl.contacts.length">
+    <div
+      ng-if="profileCtrl.profile._id !== app.user._id && profileCtrl.contacts.length"
+    >
       <contacts-common profileId="::profileCtrl.profile._id"></contacts-common>
     </div>
     <!-- Tribes -->
-    <section class="panel panel-default" ng-if="profileCtrl.profile._id === app.user._id || profileCtrl.profile.member.length">
+    <section
+      class="panel panel-default"
+      ng-if="profileCtrl.profile._id === app.user._id || profileCtrl.profile.member.length"
+    >
       <header class="panel-heading">
         Tribes
       </header>
       <div class="panel-body">
+        <div
+          class="profile-tribes-common"
+          ng-if="::profileCtrl.profile._id !== app.user._id"
+          tr-tribes-in-common="profileCtrl.profile.member"
+        ></div>
 
-        <div class="profile-tribes-common"
-             ng-if="::profileCtrl.profile._id !== app.user._id"
-             tr-tribes-in-common="profileCtrl.profile.member"></div>
-
-        <div tr-memberships-list="profileCtrl.profile.member" is-own-profile="::profileCtrl.profile._id === app.user._id"></div>
-
+        <div
+          tr-memberships-list="profileCtrl.profile.member"
+          is-own-profile="::profileCtrl.profile._id === app.user._id"
+        ></div>
       </div>
     </section>
-
   </div>
-
-</div><!-- /.row -->
+</div>
+<!-- /.row -->

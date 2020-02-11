@@ -30,12 +30,13 @@ function randomHex() {
  * - not in list of illegal labels
  * - not begin or end with "."
  */
-const validateLabel = function (label) {
-  return (label &&
-          label.match(/[a-zA-Z]/) && // Should have at least one a-zA-Z (non case-insensitive regex)
-          config.illegalStrings.indexOf(label.trim().toLowerCase()) < 0 &&
-          label.charAt(0) !== '.' && // Don't start with `.`
-          label.slice(-1) !== '.' // Don't end with `.`
+const validateLabel = function(label) {
+  return (
+    label &&
+    label.match(/[a-zA-Z]/) && // Should have at least one a-zA-Z (non case-insensitive regex)
+    config.illegalStrings.indexOf(label.trim().toLowerCase()) < 0 &&
+    label.charAt(0) !== '.' && // Don't start with `.`
+    label.slice(-1) !== '.' // Don't end with `.`
   );
 };
 
@@ -43,16 +44,19 @@ const validateLabel = function (label) {
  * Validation function for `TribeSchema.attribution_url`
  * @link https://www.npmjs.com/package/validator#validators
  */
-const validateURL = function (url) {
-  return !url || validator.isURL(url, {
-    protocols: ['http', 'https'],
-    require_tld: true,
-    require_protocol: true,
-    require_valid_protocol: true,
-    allow_underscores: false,
-    allow_trailing_dot: false,
-    allow_protocol_relative_urls: false,
-  });
+const validateURL = function(url) {
+  return (
+    !url ||
+    validator.isURL(url, {
+      protocols: ['http', 'https'],
+      require_tld: true,
+      require_protocol: true,
+      require_valid_protocol: true,
+      allow_underscores: false,
+      allow_trailing_dot: false,
+      allow_protocol_relative_urls: false,
+    })
+  );
 };
 
 /**
@@ -61,7 +65,7 @@ const validateURL = function (url) {
  * @link https://en.wikipedia.org/wiki/Universally_unique_identifier#Variants_and_Versions
  * @link https://www.npmjs.com/package/validator#validators
  */
-const validateUUID = function (uuid) {
+const validateUUID = function(uuid) {
   return !uuid || validator.isUUID(uuid, 4);
 };
 
@@ -150,12 +154,15 @@ TribeSchema.set('toJSON', { getters: true });
  *
  * @link http://mongoosejs.com/docs/guide.html#virtuals
  */
-TribeSchema.virtual('new').get(function () {
+TribeSchema.virtual('new').get(function() {
   // Set comparison date to 30 days ago from now
   const newLimit = moment().subtract(60, 'day');
 
   // Is `created` defined and after comparison date?
-  return typeof this.created !== 'undefined' && moment(this.created).isAfter(newLimit);
+  return (
+    typeof this.created !== 'undefined' &&
+    moment(this.created).isAfter(newLimit)
+  );
 });
 
 /**
@@ -166,16 +173,18 @@ TribeSchema.virtual('new').get(function () {
  * @link https://npmjs.org/package/speakingurl
  * @link https://github.com/mindblaze/mongoose-url-slugs/issues/17
  */
-TribeSchema.plugin(urlslugs('label', {
-  field: 'slug',
-  generator: function (string) {
-    return speakingurl(string, {
-      separator: '-', // char that replaces the whitespaces
-      maintainCase: false, // maintain case (true, convert all chars to lower case (false)
-      truncate: 255, // trim to max length ({number}), don't truncate (0)
-    });
-  },
-}));
+TribeSchema.plugin(
+  urlslugs('label', {
+    field: 'slug',
+    generator: function(string) {
+      return speakingurl(string, {
+        separator: '-', // char that replaces the whitespaces
+        maintainCase: false, // maintain case (true, convert all chars to lower case (false)
+        truncate: 255, // trim to max length ({number}), don't truncate (0)
+      });
+    },
+  }),
+);
 
 /**
  * Make sure unique fields yeld verbal errors

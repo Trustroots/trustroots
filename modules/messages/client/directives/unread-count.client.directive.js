@@ -13,19 +13,18 @@ angular
 
 /* @ngInject */
 function messagesUnreadCountDirective(PollMessagesCount, Authentication) {
-
   const directive = {
     restrict: 'A',
     replace: true,
     scope: true,
-    template: '<span class="notification-badge" ng-show="unread > 0" ng-bind="unread" aria-label="{{unread}} unread messages" tabindex="0"></span>',
+    template:
+      '<span class="notification-badge" ng-show="unread > 0" ng-bind="unread" aria-label="{{unread}} unread messages" tabindex="0"></span>',
     link: link,
   };
 
   return directive;
 
   function link(scope) {
-
     const favicon1xElem = angular.element('#favicon');
     const favicon2xElem = angular.element('#favicon2x');
     const faviconPath = '/img/';
@@ -40,7 +39,7 @@ function messagesUnreadCountDirective(PollMessagesCount, Authentication) {
     function activate() {
       if (!Authentication.user || !Authentication.user.public) {
         // If user wasn't authenticated or public, set up watch
-        const activationWatch = scope.$on('userUpdated', function () {
+        const activationWatch = scope.$on('userUpdated', function() {
           // Did user become public with that update?
           if (Authentication.user.public) {
             // Remove this watch
@@ -62,7 +61,10 @@ function messagesUnreadCountDirective(PollMessagesCount, Authentication) {
       PollMessagesCount.poll();
 
       // When we have new messages, act upon them
-      const clearUnreadCountUpdated = scope.$on('unreadCountUpdated', onUnreadCountUpdated);
+      const clearUnreadCountUpdated = scope.$on(
+        'unreadCountUpdated',
+        onUnreadCountUpdated,
+      );
 
       // Clean out `$on` watcher when directive is removed from DOM
       scope.$on('$destroy', clearUnreadCountUpdated);
@@ -81,6 +83,5 @@ function messagesUnreadCountDirective(PollMessagesCount, Authentication) {
         favicon2xElem.prop('href', faviconPath + 'favicon@2x.png');
       }
     }
-
   }
 }

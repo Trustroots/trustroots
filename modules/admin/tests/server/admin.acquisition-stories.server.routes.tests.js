@@ -19,27 +19,34 @@ describe('Admin acquisition stories CRUD tests', () => {
   afterEach(utils.clearDatabase);
 
   describe('Acquisition stories', () => {
-    it('non-authenticated users should not be allowed to read acquisition stories', (done) => {
-      agent.post('/api/admin/acquisition-stories').expect(403).end(done);
+    it('non-authenticated users should not be allowed to read acquisition stories', done => {
+      agent
+        .post('/api/admin/acquisition-stories')
+        .expect(403)
+        .end(done);
     });
 
-    it('non-admin users should not be allowed to read acquisition stories', (done) => {
-      agent.post('/api/auth/signin')
+    it('non-admin users should not be allowed to read acquisition stories', done => {
+      agent
+        .post('/api/auth/signin')
         .send(_users[1])
         .expect(200)
         .end(() => {
-          agent.post('/api/admin/acquisition-stories')
+          agent
+            .post('/api/admin/acquisition-stories')
             .expect(403)
             .end(done);
         });
     });
 
-    it('admin users should be allowed to read acquisition stories', (done) => {
-      agent.post('/api/auth/signin')
+    it('admin users should be allowed to read acquisition stories', done => {
+      agent
+        .post('/api/auth/signin')
         .send(_users[0])
         .expect(200)
         .end(() => {
-          agent.post('/api/admin/acquisition-stories')
+          agent
+            .post('/api/admin/acquisition-stories')
             .expect(200)
             .end(done);
         });

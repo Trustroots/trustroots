@@ -44,8 +44,14 @@ module.exports = {
       'window.jQuery': require.resolve('jquery'),
       moment: require.resolve('moment'),
       AppConfig: localResolve('modules/core/client/app/config'),
-      PruneClusterForLeaflet: [require.resolve('prunecluster/dist/PruneCluster'), 'PruneClusterForLeaflet'],
-      PruneCluster: [require.resolve('prunecluster/dist/PruneCluster'), 'PruneCluster'],
+      PruneClusterForLeaflet: [
+        require.resolve('prunecluster/dist/PruneCluster'),
+        'PruneClusterForLeaflet',
+      ],
+      PruneCluster: [
+        require.resolve('prunecluster/dist/PruneCluster'),
+        'PruneCluster',
+      ],
     }),
   ],
 };

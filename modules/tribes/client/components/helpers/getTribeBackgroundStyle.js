@@ -17,7 +17,10 @@
  *
  * @returns {object}
  */
-export default function getTribeBackgroundStyle(tribe, { quality='lighter', dimensions='1024x768', isProgressive=false }={}) {
+export default function getTribeBackgroundStyle(
+  tribe,
+  { quality = 'lighter', dimensions = '1024x768', isProgressive = false } = {},
+) {
   const style = {};
 
   // Set background image
@@ -32,7 +35,9 @@ export default function getTribeBackgroundStyle(tribe, { quality='lighter', dime
       'format/jpeg',
     ];
 
-    const imageUrl = `https://ucarecdn.com/${tribe.image_UUID}/-/${imgParams.join('/-/')}/`;
+    const imageUrl = `https://ucarecdn.com/${
+      tribe.image_UUID
+    }/-/${imgParams.join('/-/')}/`;
     style.backgroundImage = `url(${imageUrl})`;
   }
 

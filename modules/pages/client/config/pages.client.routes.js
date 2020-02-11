@@ -15,17 +15,14 @@ import mediaTemplateUrl from '@/modules/pages/client/views/media.client.view.htm
 import guideTemplateUrl from '@/modules/pages/client/views/guide.client.view.html';
 import homeTemplateUrl from '@/modules/pages/client/views/home.client.view.html';
 
-angular
-  .module('pages')
-  .config(PagesRoutes);
+angular.module('pages').config(PagesRoutes);
 
 /* @ngInject */
 function PagesRoutes($stateProvider) {
-
   // Remember to update `./public/sitemap.xml`
 
-  $stateProvider.
-    state('navigation', {
+  $stateProvider
+    .state('navigation', {
       url: '/navigation',
       templateUrl: navigationTemplateUrl,
       requiresAuth: true,
@@ -33,50 +30,50 @@ function PagesRoutes($stateProvider) {
       data: {
         pageTitle: 'Navigation',
       },
-    }).
-    state('rules', {
+    })
+    .state('rules', {
       url: '/rules',
       templateUrl: rulesTemplateUrl,
       data: {
         pageTitle: 'Rules',
       },
-    }).
-    state('team', {
+    })
+    .state('team', {
       url: '/team',
       templateUrl: teamTemplateUrl,
       data: {
         pageTitle: 'Team',
       },
-    }).
-    state('privacy', {
+    })
+    .state('privacy', {
       url: '/privacy',
       templateUrl: privacyTemplateUrl,
       data: {
         pageTitle: 'Privacy policy',
       },
-    }).
-    state('donate', {
+    })
+    .state('donate', {
       url: '/donate',
       templateUrl: donateTemplateUrl,
       data: {
         pageTitle: 'Donate',
       },
-    }).
-    state('donate-help', {
+    })
+    .state('donate-help', {
       url: '/donate/help',
       templateUrl: donateHelpTemplateUrl,
       data: {
         pageTitle: 'Donation help',
       },
-    }).
-    state('donate-policy', {
+    })
+    .state('donate-policy', {
       url: '/donate/policy',
       templateUrl: donatePolicyTemplateUrl,
       data: {
         pageTitle: 'Donation policy',
       },
-    }).
-    state('faq', {
+    })
+    .state('faq', {
       url: '/faq',
       templateUrl: faqTemplateUrl,
       abstract: true,
@@ -85,71 +82,70 @@ function PagesRoutes($stateProvider) {
       data: {
         pageTitle: 'FAQ',
       },
-    }).
-    state('faq.general', {
+    })
+    .state('faq.general', {
       url: '',
       templateUrl: faqGeneralTemplateUrl,
       data: {
         pageTitle: 'FAQ - Site & community',
       },
-    }).
-    state('faq.tribes', {
+    })
+    .state('faq.tribes', {
       url: '/tribes',
       templateUrl: faqTribesTemplateUrl,
       data: {
         pageTitle: 'FAQ - Tribes',
       },
-    }).
-    state('faq.foundation', {
+    })
+    .state('faq.foundation', {
       url: '/foundation',
       templateUrl: faqFoundationTemplateUrl,
       data: {
         pageTitle: 'FAQ - Foundation',
       },
-    }).
-    state('faq.technology', {
+    })
+    .state('faq.technology', {
       url: '/technology',
       templateUrl: faqTechnologyTemplateUrl,
       data: {
         pageTitle: 'FAQ - Technology',
       },
-    }).
-    state('foundation', {
+    })
+    .state('foundation', {
       url: '/foundation',
       templateUrl: foundationTemplateUrl,
       data: {
         pageTitle: 'Foundation',
       },
-    }).
-    state('media', {
+    })
+    .state('media', {
       url: '/media',
       templateUrl: mediaTemplateUrl,
       data: {
         pageTitle: 'Media',
       },
-    }).
-    state('volunteering', {
+    })
+    .state('volunteering', {
       url: '/volunteering',
       template: '<volunteering></volunteering>',
       data: {
         pageTitle: 'Volunteering',
       },
-    }).
-    state('guide', {
+    })
+    .state('guide', {
       url: '/guide',
       templateUrl: guideTemplateUrl,
       data: {
         pageTitle: 'Guide',
       },
-    }).
-
+    })
     // Redirect to home:
-    state('about', {
+    .state('about', {
       url: '/about',
       footerHidden: true,
       controller:
         /* @ngInject */
-        function ($state) {
+        function($state) {
           $state.go('home');
         },
       controllerAs: 'about',
@@ -171,5 +167,4 @@ function PagesRoutes($stateProvider) {
   } else {
     $stateProvider.state('home', { url: '/' });
   }
-
 }

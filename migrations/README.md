@@ -3,11 +3,13 @@
 These scripts are always run on `npm update`.
 
 Run migration scripts manually:
+
 ```bash
 npx npm run migrate
 ```
 
 Create new migration scripts:
+
 ```bash
 npx migrate create migration-name-here
 ```

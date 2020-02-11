@@ -10,14 +10,14 @@ const log = require(path.resolve('./config/lib/logger'));
 /**
  * Get InfluxDB Client
  */
-const getClient = function (callback) {
-
+const getClient = function(callback) {
   // Check that influxdb is enabled and that we have a host and database value.
   const enabled = _.get(config, 'influxdb.enabled');
   const host = _.get(config, 'influxdb.options.host');
   const database = _.get(config, 'influxdb.options.database');
 
-  const isNotConfigured = enabled !== true || _.isUndefined(host) || _.isUndefined(database);
+  const isNotConfigured =
+    enabled !== true || _.isUndefined(host) || _.isUndefined(database);
   if (isNotConfigured) {
     return callback(new Error('No InfluxDB configured.'));
   }
@@ -50,8 +50,7 @@ const getClient = function (callback) {
  * tag_value
  * @param {function} callback - expected to be like function (err, result) {}
  */
-const writeMeasurement = function (measurementName, fields, tags, callback) {
-
+const writeMeasurement = function(measurementName, fields, tags, callback) {
   let errorMessage;
 
   if (!measurementName || !_.isString(measurementName)) {
@@ -89,7 +88,8 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
   if (fields.time) {
     // Validate time: it should always be a `Date` object
     if (!_.isDate(fields.time)) {
-      errorMessage = 'InfluxDB Service: expected `fields.time` to be `Date` object. #f93jkh';
+      errorMessage =
+        'InfluxDB Service: expected `fields.time` to be `Date` object. #f93jkh';
       // Log the failure
       log('error', errorMessage, {
         measurement: measurementName,
@@ -105,25 +105,28 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
     delete fields.time;
   }
 
-  exports._getClient(function (err, client) {
+  exports._getClient(function(err, client) {
     if (err) {
       return callback(err);
     }
 
-    client.writeMeasurement(measurementName, [
-      point,
-    ])
-      .then(function () {
+    client
+      .writeMeasurement(measurementName, [point])
+      .then(function() {
         if (callback) return callback();
       })
-      .catch(function (err) {
-      // Log the failure
-        log('error', 'InfluxDB Service: Error while writing to InfluxDB #fj38hh', {
-          error: err,
-          measurement: measurementName,
-          fields: fields,
-          tags: tags,
-        });
+      .catch(function(err) {
+        // Log the failure
+        log(
+          'error',
+          'InfluxDB Service: Error while writing to InfluxDB #fj38hh',
+          {
+            error: err,
+            measurement: measurementName,
+            fields: fields,
+            tags: tags,
+          },
+        );
 
         return callback(err);
       });
@@ -177,8 +180,7 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
  * @param {Function} callback
  *
  */
-const stat = function (stat, callback) {
-
+const stat = function(stat, callback) {
   // when influxdb is disabled, log info and finish without error
   const enabled = _.get(config, 'influxdb.enabled');
   if (!enabled) {
@@ -197,7 +199,7 @@ const stat = function (stat, callback) {
   // the name of the measurement.
   // we rename 'messages' to stay compatible with older influxdb points
   // TODO let's decide whether to keep the old name or make a new standard
-  const name = (namespace === 'messages') ? 'messageSent' : namespace;
+  const name = namespace === 'messages' ? 'messageSent' : namespace;
 
   // InfluxDB handles complex, multi value data points, so we simply combine all
   // of meta, values, counts and time.

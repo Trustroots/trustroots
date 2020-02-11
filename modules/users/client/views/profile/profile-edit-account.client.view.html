@@ -4,110 +4,164 @@
     Email
   </div>
   <div class="panel-body">
-
     <!-- Email Address -->
-    <form ng-submit="profileEditAccount.updateUserEmail()" autocomplete="off" name="settingsEmail">
+    <form
+      ng-submit="profileEditAccount.updateUserEmail()"
+      autocomplete="off"
+      name="settingsEmail"
+    >
       <div class="form-horizontal">
-
-          <div class="form-group" ng-class="{'has-error': (settingsEmail.email.$invalid && settingsEmail.email.$dirty) || profileEditAccount.emailError}">
-            <label for="email" class="col-sm-3 text-right control-label">Email Address</label>
-            <div class="col-sm-9">
-              <input type="email"
-                     id="email"
-                     name="email"
-                     class="form-control"
-                     ng-model="profileEditAccount.user.email"
-                     placeholder="Email"
-                     mailcheck>
-              <p class="help-block" ng-show="profileEditAccount.user.emailTemporary && !profileEditAccount.emailSuccess && !profileEditAccount.emailError">
-                We sent you an email to "<strong>{{profileEditAccount.user.emailTemporary}}</strong>" with further instructions. If you don't see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".
-              </p>
-              <p class="help-block" ng-show="profileEditAccount.emailError" ng-bind="profileEditAccount.emailError"></p>
-              <p class="help-block" ng-show="profileEditAccount.emailSuccess" ng-bind="profileEditAccount.emailSuccess"></p>
-            </div>
+        <div
+          class="form-group"
+          ng-class="{'has-error': (settingsEmail.email.$invalid && settingsEmail.email.$dirty) || profileEditAccount.emailError}"
+        >
+          <label for="email" class="col-sm-3 text-right control-label"
+            >Email Address</label
+          >
+          <div class="col-sm-9">
+            <input
+              type="email"
+              id="email"
+              name="email"
+              class="form-control"
+              ng-model="profileEditAccount.user.email"
+              placeholder="Email"
+              mailcheck
+            />
+            <p
+              class="help-block"
+              ng-show="profileEditAccount.user.emailTemporary && !profileEditAccount.emailSuccess && !profileEditAccount.emailError"
+            >
+              We sent you an email to
+              "<strong>{{profileEditAccount.user.emailTemporary}}</strong>" with
+              further instructions. If you don't see this email in your inbox
+              within 15 minutes, look for it in your junk mail folder. If you
+              find it there, please mark it as "Not Junk".
+            </p>
+            <p
+              class="help-block"
+              ng-show="profileEditAccount.emailError"
+              ng-bind="profileEditAccount.emailError"
+            ></p>
+            <p
+              class="help-block"
+              ng-show="profileEditAccount.emailSuccess"
+              ng-bind="profileEditAccount.emailSuccess"
+            ></p>
           </div>
+        </div>
 
-          <div class="form-group">
-            <div class="col-sm-push-3 col-sm-9">
-              <button type="submit" class="btn btn-primary" ng-disabled="settingsEmail.email.$invalid && settingsEmail.email.$dirty">Change email</button>
-              <button class="btn btn-default" ng-if="profileEditAccount.user.emailTemporary" ng-click="profileEditAccount.resendUserEmailConfirm($event)">Resend confirmation</button>
-            </div>
+        <div class="form-group">
+          <div class="col-sm-push-3 col-sm-9">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              ng-disabled="settingsEmail.email.$invalid && settingsEmail.email.$dirty"
+            >
+              Change email
+            </button>
+            <button
+              class="btn btn-default"
+              ng-if="profileEditAccount.user.emailTemporary"
+              ng-click="profileEditAccount.resendUserEmailConfirm($event)"
+            >
+              Resend confirmation
+            </button>
           </div>
-
+        </div>
       </div>
     </form>
     <!-- /Email Address -->
 
-    <br><br>
+    <br /><br />
 
     <!-- Email subscriptions -->
-    <form ng-submit="profileEditAccount.updateUserSubscriptions()" autocomplete="off">
+    <form
+      ng-submit="profileEditAccount.updateUserSubscriptions()"
+      autocomplete="off"
+    >
       <div class="form-horizontal">
-
         <div class="form-group">
-          <label class="col-sm-3 text-right control-label">News and updates</label>
+          <label class="col-sm-3 text-right control-label"
+            >News and updates</label
+          >
           <div class="col-sm-9">
-
             <div class="checkbox">
               <label>
-                <input type="checkbox" name="newsletter" ng-model="profileEditAccount.user.newsletter" ng-disabled="profileEditAccount.updatingUserSubscriptions" ng-change="profileEditAccount.updateUserSubscriptions()">
+                <input
+                  type="checkbox"
+                  name="newsletter"
+                  ng-model="profileEditAccount.user.newsletter"
+                  ng-disabled="profileEditAccount.updatingUserSubscriptions"
+                  ng-change="profileEditAccount.updateUserSubscriptions()"
+                />
                 Community newsletter
               </label>
             </div>
 
             <div class="checkbox">
               <label>
-                <input type="checkbox" disabled="disabled" checked="checked">
+                <input type="checkbox" disabled="disabled" checked="checked" />
                 Policy updates
               </label>
             </div>
-            <p class="help-block"><small>Note: Sending policy updates is mandatory: you can't opt out of receiving them.</small></p>
-
+            <p class="help-block">
+              <small
+                >Note: Sending policy updates is mandatory: you can't opt out of
+                receiving them.</small
+              >
+            </p>
           </div>
         </div>
-
       </div>
     </form>
     <!-- /Email subscriptions -->
-
   </div>
 </div>
 <!-- /Email -->
 
 <!-- Notifications -->
-<div class="panel panel-default"
-     id="notifications"
-     ng-if="!profileEditAccount.isNativeMobileApp">
+<div
+  class="panel panel-default"
+  id="notifications"
+  ng-if="!profileEditAccount.isNativeMobileApp"
+>
   <div class="panel-heading">
     Notifications
   </div>
   <div class="panel-body">
-
     <form autocomplete="off">
       <div class="form-horizontal">
-
         <div class="form-group">
           <label class="col-sm-3 text-right control-label">Push</label>
           <div class="col-sm-9">
-
             <div class="checkbox">
               <label>
-                <input type="checkbox"
-                       name="browser"
-                       ng-model="profileEditAccount.pushEnabled"
-                       ng-disabled="profileEditAccount.pushIsDisabled()"
-                       ng-change="profileEditAccount.pushUpdate()">
+                <input
+                  type="checkbox"
+                  name="browser"
+                  ng-model="profileEditAccount.pushEnabled"
+                  ng-disabled="profileEditAccount.pushIsDisabled()"
+                  ng-change="profileEditAccount.pushUpdate()"
+                />
                 Current web browser
               </label>
             </div>
 
-            <p class="help-block" ng-if="profileEditAccount.push.isSupported"><small>This will send notifications even when the website is closed.</small></p>
-            <p class="help-block" ng-if="!profileEditAccount.push.isSupported"><small>Your browser does not support push notifications.</small></p>
-            <p class="help-block" ng-if="profileEditAccount.push.isBlocked"><small><strong>Push notifications are blocked.</strong></small></p>
-
+            <p class="help-block" ng-if="profileEditAccount.push.isSupported">
+              <small
+                >This will send notifications even when the website is
+                closed.</small
+              >
+            </p>
+            <p class="help-block" ng-if="!profileEditAccount.push.isSupported">
+              <small>Your browser does not support push notifications.</small>
+            </p>
+            <p class="help-block" ng-if="profileEditAccount.push.isBlocked">
+              <small><strong>Push notifications are blocked.</strong></small>
+            </p>
           </div>
         </div>
-
       </div>
     </form>
   </div>
@@ -115,7 +169,9 @@
 <!-- /Notifications -->
 
 <!-- Interface language -->
-<interface-language-panel ng-if="app.appSettings.i18nEnabled"></interface-language-panel>
+<interface-language-panel
+  ng-if="app.appSettings.i18nEnabled"
+></interface-language-panel>
 <!-- /Interface language -->
 
 <!-- Password -->
@@ -124,63 +180,85 @@
     Change your password
   </div>
   <div class="panel-body">
-    <form ng-submit="profileEditAccount.changeUserPassword()" autocomplete="off">
+    <form
+      ng-submit="profileEditAccount.changeUserPassword()"
+      autocomplete="off"
+    >
       <div class="form-horizontal">
-
         <div class="form-group">
-          <label for="currentPassword" class="col-sm-3 text-right control-label">Current password</label>
+          <label for="currentPassword" class="col-sm-3 text-right control-label"
+            >Current password</label
+          >
           <div class="col-sm-9">
-            <input type="password"
-                   id="currentPassword"
-                   name="currentPassword"
-                   class="form-control"
-                   ng-model="profileEditAccount.currentPassword"
-                   ng-disabled="profileEditAccount.changeUserPasswordLoading">
+            <input
+              type="password"
+              id="currentPassword"
+              name="currentPassword"
+              class="form-control"
+              ng-model="profileEditAccount.currentPassword"
+              ng-disabled="profileEditAccount.changeUserPasswordLoading"
+            />
           </div>
         </div>
 
-        <div class="form-group" ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}">
-          <label for="newPassword" class="col-sm-3 text-right control-label">New Password</label>
+        <div
+          class="form-group"
+          ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}"
+        >
+          <label for="newPassword" class="col-sm-3 text-right control-label"
+            >New Password</label
+          >
           <div class="col-sm-9">
-            <input type="password"
-                   id="newPassword"
-                   name="newPassword"
-                   class="form-control"
-                   ng-model="profileEditAccount.newPassword"
-                   ng-minlength="8"
-                   tr-trustpass="{ special: false, number: false, lowercase: false, uppercase: false, messageDone: 'Your password is secure and you are good to go!' }"
-                   ng-disabled="profileEditAccount.changeUserPasswordLoading">
+            <input
+              type="password"
+              id="newPassword"
+              name="newPassword"
+              class="form-control"
+              ng-model="profileEditAccount.newPassword"
+              ng-minlength="8"
+              tr-trustpass="{ special: false, number: false, lowercase: false, uppercase: false, messageDone: 'Your password is secure and you are good to go!' }"
+              ng-disabled="profileEditAccount.changeUserPasswordLoading"
+            />
           </div>
         </div>
 
         <div class="form-group">
-          <label for="verifyPassword" class="col-sm-3 text-right control-label">Verify Password</label>
+          <label for="verifyPassword" class="col-sm-3 text-right control-label"
+            >Verify Password</label
+          >
           <div class="col-sm-9">
-            <input type="password"
-                   id="verifyPassword"
-                   name="verifyPassword"
-                   class="form-control"
-                   ng-model="profileEditAccount.verifyPassword"
-                   ng-disabled="profileEditAccount.changeUserPasswordLoading">
+            <input
+              type="password"
+              id="verifyPassword"
+              name="verifyPassword"
+              class="form-control"
+              ng-model="profileEditAccount.verifyPassword"
+              ng-disabled="profileEditAccount.changeUserPasswordLoading"
+            />
           </div>
         </div>
 
         <div class="form-group">
           <div class="col-sm-push-3 col-sm-9">
-            <button type="submit" class="btn btn-large btn-primary" ng-disabled="changeUserPasswordLoading">
+            <button
+              type="submit"
+              class="btn btn-large btn-primary"
+              ng-disabled="changeUserPasswordLoading"
+            >
               <span ng-hide="profileEditAccount.changeUserPasswordLoading">
                 Change Password
               </span>
-              <span ng-show="profileEditAccount.changeUserPasswordLoading"
-                    role="alertdialog"
-                    aria-busy="true"
-                    aria-live="assertive">
+              <span
+                ng-show="profileEditAccount.changeUserPasswordLoading"
+                role="alertdialog"
+                aria-busy="true"
+                aria-live="assertive"
+              >
                 Wait a moment...
               </span>
             </button>
           </div>
         </div>
-
       </div>
     </form>
   </div>
@@ -193,50 +271,69 @@
     Username
   </div>
   <div class="panel-body">
-    <form ng-submit="profileEditAccount.updateUsername()" autocomplete="off" name="settingsUsernameForm">
+    <form
+      ng-submit="profileEditAccount.updateUsername()"
+      autocomplete="off"
+      name="settingsUsernameForm"
+    >
       <div class="form-horizontal">
-        <div class="form-group"
-             ng-class="{
+        <div
+          class="form-group"
+          ng-class="{
                'has-error': (settingsUsernameForm.username.$invalid && settingsUsernameForm.username.$dirty) || profileEditAccount.usernameError
-             }">
-          <label for="username" class="col-sm-3 text-right control-label">Username</label>
+             }"
+        >
+          <label for="username" class="col-sm-3 text-right control-label"
+            >Username</label
+          >
           <div class="col-sm-9">
-            <input type="text"
-                   id="username"
-                   name="username"
-                   class="form-control"
-                   required
-                   autocapitalize="off"
-                   ng-minlength="3"
-                   ng-maxlength="34"
-                   ng-pattern="/^(?=.*[0-9A-Za-z])[0-9A-Za-z.\-_]{3,34}$/"
-                   tr-validate-username="{{::profileEditAccount.user.username}}"
-                   tr-focustip="'Can contain only letters, numbers, periods, hyphens, and underscores.<br>3—34 characters long.'"
-                   tooltip-is-open="!settingsUsernameForm.username.$pending && settingsUsernameForm.username.$dirty && !settingsUsernameForm.username.$valid"
-                   uib-tooltip="{{profileEditAccount.getUsernameValidationError(settingsUsernameForm.username)}}"
-                   tooltip-popup-delay="500"
-                   tooltip-trigger="'none'"
-                   tooltip-placement="top"
-                   ng-disabled="!profileEditAccount.user.usernameUpdateAllowed"
-                   ng-model="profileEditAccount.user.username">
+            <input
+              type="text"
+              id="username"
+              name="username"
+              class="form-control"
+              required
+              autocapitalize="off"
+              ng-minlength="3"
+              ng-maxlength="34"
+              ng-pattern="/^(?=.*[0-9A-Za-z])[0-9A-Za-z.\-_]{3,34}$/"
+              tr-validate-username="{{::profileEditAccount.user.username}}"
+              tr-focustip="'Can contain only letters, numbers, periods, hyphens, and underscores.<br>3—34 characters long.'"
+              tooltip-is-open="!settingsUsernameForm.username.$pending && settingsUsernameForm.username.$dirty && !settingsUsernameForm.username.$valid"
+              uib-tooltip="{{profileEditAccount.getUsernameValidationError(settingsUsernameForm.username)}}"
+              tooltip-popup-delay="500"
+              tooltip-trigger="'none'"
+              tooltip-placement="top"
+              ng-disabled="!profileEditAccount.user.usernameUpdateAllowed"
+              ng-model="profileEditAccount.user.username"
+            />
             <p class="help-block" ng-show="!profileEditAccount.usernameError">
               Changing username is limited to once in 3 months.
             </p>
-            <p class="help-block" ng-show="profileEditAccount.usernameError" ng-bind="profileEditAccount.usernameError"></p>
-            <p class="help-block" ng-show="profileEditAccount.usernameSuccess" ng-bind="profileEditAccount.usernameSuccess"></p>
+            <p
+              class="help-block"
+              ng-show="profileEditAccount.usernameError"
+              ng-bind="profileEditAccount.usernameError"
+            ></p>
+            <p
+              class="help-block"
+              ng-show="profileEditAccount.usernameSuccess"
+              ng-bind="profileEditAccount.usernameSuccess"
+            ></p>
           </div>
         </div>
 
         <div class="form-group">
           <div class="col-sm-push-3 col-sm-9">
-            <button type="submit"
-                    class="btn btn-primary"
-                    ng-disabled="!profileEditAccount.user.usernameUpdateAllowed || settingsUsernameForm.username.$invalid">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              ng-disabled="!profileEditAccount.user.usernameUpdateAllowed || settingsUsernameForm.username.$invalid"
+            >
               Change username
             </button>
           </div>
         </div>
-
       </div>
     </form>
   </div>
@@ -249,43 +346,60 @@
     Download your data
   </div>
   <div class="panel-body">
-
-  <div class="row">
-    <div class="col-xs-12 col-sm-5">
-      <p class="text-muted">
-        Your data is <em>Yours</em>. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.
-      </p>
+    <div class="row">
+      <div class="col-xs-12 col-sm-5">
+        <p class="text-muted">
+          Your data is <em>Yours</em>. We are committed to making it easy for
+          you to get all of your data into, and out of, Trustroots at any time.
+        </p>
+      </div>
+      <div class="ccol-xs-12 col-sm-7">
+        <ul class="list-unstyled">
+          <li>
+            <a
+              class="btn btn-link btn-sm"
+              href="/api/users/{{app.user.username}}"
+              target="_top"
+              type="application/json"
+              download="profile.json"
+              analytics-on="click"
+              analytics-event="user-data-download"
+              analytics-properties="{ category: 'user.data', label: 'Download User Data: Download User Data: Profile' }"
+              >Profile</a
+            >
+            <small class="text-muted">(json)</small>
+          </li>
+          <li>
+            <a
+              class="btn btn-link btn-sm"
+              href="/api/contacts/{{app.user._id}}"
+              target="_top"
+              type="application/json"
+              download="contacts.json"
+              analytics-on="click"
+              analytics-event="user-data-download"
+              analytics-properties="{ category: 'user.data', label: 'Download User Data: Contacts' }"
+              >Contacts</a
+            >
+            <small class="text-muted">(json)</small>
+          </li>
+          <li>
+            <a
+              class="btn btn-link btn-sm"
+              href="/api/offers-by/{{app.user._id}}"
+              target="_top"
+              type="application/json"
+              download="offers.json"
+              analytics-on="click"
+              analytics-event="user-data-download"
+              analytics-properties="{ category: 'user.data', label: 'Download User Data: Hosting offer' }"
+              >Hosting offer</a
+            >
+            <small class="text-muted">(json)</small>
+          </li>
+        </ul>
+      </div>
     </div>
-    <div class="ccol-xs-12 col-sm-7">
-      <ul class="list-unstyled">
-        <li><a class="btn btn-link btn-sm"
-               href="/api/users/{{app.user.username}}"
-               target="_top"
-               type="application/json"
-               download="profile.json"
-               analytics-on="click"
-               analytics-event="user-data-download"
-               analytics-properties="{ category: 'user.data', label: 'Download User Data: Download User Data: Profile' }">Profile</a> <small class="text-muted">(json)</small></li>
-        <li><a class="btn btn-link btn-sm"
-               href="/api/contacts/{{app.user._id}}"
-               target="_top"
-               type="application/json"
-               download="contacts.json"
-               analytics-on="click"
-               analytics-event="user-data-download"
-               analytics-properties="{ category: 'user.data', label: 'Download User Data: Contacts' }">Contacts</a> <small class="text-muted">(json)</small></li>
-        <li><a class="btn btn-link btn-sm"
-               href="/api/offers-by/{{app.user._id}}"
-               target="_top"
-               type="application/json"
-               download="offers.json"
-               analytics-on="click"
-               analytics-event="user-data-download"
-               analytics-properties="{ category: 'user.data', label: 'Download User Data: Hosting offer' }">Hosting offer</a> <small class="text-muted">(json)</small></li>
-      </ul>
-    </div>
-  </div>
-
   </div>
 </div>
 <!-- /Data liberation -->
@@ -296,34 +410,40 @@
     Remove your account
   </div>
   <div class="panel-body">
+    <div
+      class="alert alert-success text-center"
+      role="alert"
+      ng-if="profileEditAccount.removeProfileInitialized"
+      ng-bind="profileEditAccount.removeProfileInitialized"
+    ></div>
 
-    <div class="alert alert-success text-center"
-         role="alert"
-         ng-if="profileEditAccount.removeProfileInitialized"
-         ng-bind="profileEditAccount.removeProfileInitialized"></div>
-
-    <form ng-submit="profileEditAccount.removeProfile()"
-          autocomplete="off"
-          ng-if="!profileEditAccount.removeProfileInitialized">
+    <form
+      ng-submit="profileEditAccount.removeProfile()"
+      autocomplete="off"
+      ng-if="!profileEditAccount.removeProfileInitialized"
+    >
       <div class="checkbox">
         <label>
-          <input type="checkbox"
-                 required
-                 ng-model="profileEditAccount.removeProfileConfirm">
+          <input
+            type="checkbox"
+            required
+            ng-model="profileEditAccount.removeProfileConfirm"
+          />
           I understand this cannot be undone
         </label>
       </div>
       <div class="form-group">
-        <br>
-        <button class="btn btn-danger"
-                type="submit"
-                ng-disabled="!profileEditAccount.removeProfileConfirm || profileEditAccount.removeProfileLoading">
+        <br />
+        <button
+          class="btn btn-danger"
+          type="submit"
+          ng-disabled="!profileEditAccount.removeProfileConfirm || profileEditAccount.removeProfileLoading"
+        >
           Yes, remove my account permanently
         </button>
-        <br>
+        <br />
       </div>
     </form>
-
   </div>
 </div>
 <!-- /Remove -->

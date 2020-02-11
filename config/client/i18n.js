@@ -37,7 +37,6 @@ const isTest = process.env.NODE_ENV === 'test';
  *                         or the original value, if the value type or format not recognized)
  */
 function format(value, format, languageCode) {
-
   if (value instanceof Date) {
     moment.locale(languageCode);
     if (format === 'fromNow') return moment(value).fromNow();
@@ -55,14 +54,13 @@ function format(value, format, languageCode) {
 const defaultLanguageDetector = {
   name: 'default',
 
-  lookup({ detection={} }) {
+  lookup({ detection = {} }) {
     return detection.defaultLng || 'en';
   },
 };
 
 const languageDetector = new LanguageDetector();
 languageDetector.addDetector(defaultLanguageDetector);
-
 
 if (!isTest) {
   // load translation using xhr -> see /public/locales
@@ -79,11 +77,13 @@ i18n
   // init i18next
   // for all options read: https://www.i18next.com/overview/configuration-options
   .init({
-    ...(isTest ? {
-      resources: {
-        en: {},
-      },
-    } : {}),
+    ...(isTest
+      ? {
+          resources: {
+            en: {},
+          },
+        }
+      : {}),
     fallbackLng: false, // a default app locale
     // allow keys to be phrases having `:`, `.`
     nsSeparator: false,

@@ -21,7 +21,7 @@ Please start by joining our [volunteer chat](Chat.md). You should start by intro
 - [Legal](Legal-Getting-Started.md).
 - Other? If you have ideas, please let us know!
 
-Some of the easiest ways to help *right now* are:
+Some of the easiest ways to help _right now_ are:
 
 **Use the website:** travel and host! Test it out with different mobile devices, browsers, and screen sizes. Report bugs by opening [an issue on GitHub](https://github.com/Trustroots/trustroots/issues/new) or [drop us a message](https://www.trustroots.org/contact).
 

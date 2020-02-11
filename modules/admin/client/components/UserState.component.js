@@ -24,55 +24,59 @@ export default function UserState({ user }) {
 
   return (
     <div className="admin-user-state">
-      { /* What special roles user has? */ }
-      {
-        roles && roles.length && roles
-          .filter((role) => role !== 'user')
-          .map((role) => {
+      {/* What special roles user has? */}
+      {roles &&
+        roles.length &&
+        roles
+          .filter(role => role !== 'user')
+          .map(role => {
             const classes = classnames('label admin-label', {
               'label-danger': ['suspended', 'shadowban'].includes(role),
               'label-success': ['admin', 'moderator'].includes(role),
             });
 
             return (
-              <span className={ classes } key={ role }>
-                { role }
+              <span className={classes} key={role}>
+                {role}
               </span>
             );
-          })
-      }
+          })}
 
-      { /* Is profile public? */ }
-      { !user.public && <span className="label label-danger admin-label">Hidden profile</span> }
+      {/* Is profile public? */}
+      {!user.public && (
+        <span className="label label-danger admin-label">Hidden profile</span>
+      )}
 
-      { /* Has email been confirmed */ }
-      { emailTemporary && (
-        <span className="label label-warning admin-label">{
-          // On initial signup both `email` and `emailTemporary` are the same, when email is confirmed
+      {/* Has email been confirmed */}
+      {emailTemporary && (
+        <span className="label label-warning admin-label">
+          {// On initial signup both `email` and `emailTemporary` are the same, when email is confirmed
           // `emailTemporary` is set empty. When user changes email, these values are different.
-          emailTemporary === email ? 'Unconfirmed signup' : 'Unconfirmed email change'
-        }</span>
-      ) }
+          emailTemporary === email
+            ? 'Unconfirmed signup'
+            : 'Unconfirmed email change'}
+        </span>
+      )}
 
-      { /* Pending removal? */ }
-      { removeProfileToken && (
+      {/* Pending removal? */}
+      {removeProfileToken && (
         <span
           className="label label-warning admin-label"
-          title={ `Link expiration ${ removeProfileExpires }` }
+          title={`Link expiration ${removeProfileExpires}`}
         >
           Pending removal
         </span>
-      ) }
+      )}
 
-      { /* Pending password change? */ }
-      { resetPasswordToken && (
+      {/* Pending password change? */}
+      {resetPasswordToken && (
         <span
           className="label label-warning admin-label"
-          title={ `Link expiration ${ resetPasswordExpires }` }
+          title={`Link expiration ${resetPasswordExpires}`}
         >
           Pending password change
         </span>
-      ) }
+      )}
     </div>
   );
 }

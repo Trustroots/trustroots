@@ -12,13 +12,10 @@
  * <div tr-share-twitter data-text="Tweet text here"></div>
  * ```
  */
-angular
-  .module('core')
-  .directive('trShareTwitter', trShareTwitterDirective);
+angular.module('core').directive('trShareTwitter', trShareTwitterDirective);
 
 /* @ngInject */
 function trShareTwitterDirective($window, $document) {
-
   return {
     restrict: 'A',
     replace: true,
@@ -27,7 +24,6 @@ function trShareTwitterDirective($window, $document) {
   };
 
   function trShareTwitterDirectiveLink(scope, element, attrs) {
-
     activate();
 
     /**
@@ -35,8 +31,8 @@ function trShareTwitterDirective($window, $document) {
      * @link https://dev.twitter.com/web/tweet-button
      */
     function activate() {
-
-      let button = '<a href="https://twitter.com/share" class="twitter-share-button" data-via="trustroots"';
+      let button =
+        '<a href="https://twitter.com/share" class="twitter-share-button" data-via="trustroots"';
 
       // Predefined Tweet text
       if (attrs.text) {
@@ -72,8 +68,7 @@ function trShareTwitterDirective($window, $document) {
      *    is available.
      */
     function initTwitterJS() {
-
-      $window.twttr = (function (d, s, id) {
+      $window.twttr = (function(d, s, id) {
         const fjs = d.getElementsByTagName(s)[0];
         const t = $window.twttr || {};
         if (d.getElementById(id)) return t;
@@ -83,14 +78,12 @@ function trShareTwitterDirective($window, $document) {
         fjs.parentNode.insertBefore(js, fjs);
 
         t._e = [];
-        t.ready = function (f) {
+        t.ready = function(f) {
           t._e.push(f);
         };
 
         return t;
-      }($document[0], 'script', 'twitter-wjs'));
-
+      })($document[0], 'script', 'twitter-wjs');
     }
-
   }
 }

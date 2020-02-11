@@ -4,13 +4,17 @@
  * @description
  * Service for communicating with Native Trustroots mobile app
  */
-angular
-  .module('core')
-  .factory('trNativeAppBridge', trNativeAppBridgeFactory);
+angular.module('core').factory('trNativeAppBridge', trNativeAppBridgeFactory);
 
 /* @ngInject */
-function trNativeAppBridgeFactory($q, $rootScope, $log, $window, $timeout, $location) {
-
+function trNativeAppBridgeFactory(
+  $q,
+  $rootScope,
+  $log,
+  $window,
+  $timeout,
+  $location,
+) {
   const service = {
     activate: activate,
     getAppInfo: getAppInfo,
@@ -37,17 +41,17 @@ function trNativeAppBridgeFactory($q, $rootScope, $log, $window, $timeout, $loca
    * @returns {Promise}
    */
   function activate() {
-    return $q(function (resolve) {
+    return $q(function(resolve) {
       logToNativeApp('trNativeAppBridgeFactory activate');
       // eslint-disable-next-line angular/document-service
-      document.addEventListener('message', function (event) {
+      document.addEventListener('message', function(event) {
         // event = event.originalEvent || event;
         if (event && event.data === 'trMobileAppInit' && !isNativeMobileApp()) {
           // document.removeEventListener('message');
 
           bootstrapBridge();
 
-          resolve($window.trMobileApp || { 'res': 'No data' });
+          resolve($window.trMobileApp || { res: 'No data' });
         }
       });
     });
@@ -99,16 +103,21 @@ function trNativeAppBridgeFactory($q, $rootScope, $log, $window, $timeout, $loca
       'a[href^="tel://"]',
       // Not:
       ':not(.tr-app-urlified)',
-      ':not(a[href^="' + $location.protocol() + '://' + $location.host() + '"])',
+      ':not(a[href^="' +
+        $location.protocol() +
+        '://' +
+        $location.host() +
+        '"])',
       ':not(a[ui-sref])',
     ].join('');
 
     // $timetout makes sure we have DOM rendered by Angular
-    $timeout(function () {
-      angular.element(elementPattern).each(function () {
-        angular.element(this)
+    $timeout(function() {
+      angular.element(elementPattern).each(function() {
+        angular
+          .element(this)
           .addClass('tr-app-urlified')
-          .click(function (e) {
+          .click(function(e) {
             const url = angular.element(this).attr('href');
             if (url) {
               e.preventDefault();
@@ -175,22 +184,26 @@ function trNativeAppBridgeFactory($q, $rootScope, $log, $window, $timeout, $loca
    * Value in postMessage has to be string.
    */
   function postMessageToApp(action, data) {
-    if (!isNativeMobileApp() ||
-        !action ||
-        !angular.isString(action) ||
-        !angular.isFunction($window.postMessage)) {
+    if (
+      !isNativeMobileApp() ||
+      !action ||
+      !angular.isString(action) ||
+      !angular.isFunction($window.postMessage)
+    ) {
       return;
     }
 
     data = data && angular.isObject(data) ? data : {};
 
-    const message = angular.extend({
-      action: action,
-    }, data);
+    const message = angular.extend(
+      {
+        action: action,
+      },
+      data,
+    );
 
     // Note that `angular.toJson()` won't handle Date objects nicely on Safari
     // https://docs.angularjs.org/api/ng/function/angular.toJson
     $window.postMessage(angular.toJson(message));
   }
-
 }

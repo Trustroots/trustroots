@@ -7,7 +7,6 @@ const sinon = require('sinon');
 const config = require(path.resolve('./config/config'));
 
 describe('Save a missing translation', () => {
-
   const fileFoo = path.resolve('./public/locales/foo/bar.json');
   const dirFoo = path.resolve('./public/locales/foo/');
   const fileEn = path.resolve('./public/locales/en/bar.json');
@@ -26,7 +25,6 @@ describe('Save a missing translation', () => {
   });
 
   context('activated in config', () => {
-
     let agent;
 
     before(async () => {
@@ -38,7 +36,8 @@ describe('Save a missing translation', () => {
 
     context('different languages', () => {
       it('[en] save key and value', async () => {
-        await agent.post('/api/locales/en/bar')
+        await agent
+          .post('/api/locales/en/bar')
           .send(body)
           .expect(200);
         const output = await fs.readJSON(fileEn);
@@ -47,7 +46,8 @@ describe('Save a missing translation', () => {
       });
 
       it('[not en] save key, but value will be an empty string', async () => {
-        await agent.post('/api/locales/foo/bar')
+        await agent
+          .post('/api/locales/foo/bar')
           .send(body)
           .expect(200);
         const output = await fs.readJSON(fileFoo);
@@ -56,12 +56,12 @@ describe('Save a missing translation', () => {
       });
     });
 
-    context('file doesn\'t exist', () => {
+    context("file doesn't exist", () => {
       it('create a new translation file', async () => {
-
         await fs.access(fileFoo).should.be.rejected();
 
-        await agent.post('/api/locales/foo/bar')
+        await agent
+          .post('/api/locales/foo/bar')
           .send(body)
           .expect(200);
 
@@ -70,8 +70,9 @@ describe('Save a missing translation', () => {
     });
 
     context('file exists', () => {
-      it('[translation doesn\'t exist] save it', async () => {
-        await agent.post('/api/locales/en/bar')
+      it("[translation doesn't exist] save it", async () => {
+        await agent
+          .post('/api/locales/en/bar')
           .send(body)
           .expect(200);
         const output = await fs.readJSON(fileEn);
@@ -79,12 +80,12 @@ describe('Save a missing translation', () => {
         should(output).deepEqual({ [text]: text });
       });
 
-      it('[translation exists] don\'t save it', async () => {
-
+      it("[translation exists] don't save it", async () => {
         // create the file with a different translation
         await fs.outputJson(fileEn, { [text]: 'gggggg' });
 
-        await agent.post('/api/locales/en/bar')
+        await agent
+          .post('/api/locales/en/bar')
           .send(body)
           .expect(200);
 
@@ -93,11 +94,11 @@ describe('Save a missing translation', () => {
       });
 
       it('[other translation exists] save the new one, keep the old one', async () => {
-
         // create the file with a different translation
-        await fs.outputJson(fileFoo, { 'foo': 'bar' });
+        await fs.outputJson(fileFoo, { foo: 'bar' });
 
-        await agent.post('/api/locales/foo/bar')
+        await agent
+          .post('/api/locales/foo/bar')
           .send(body)
           .expect(200);
 
@@ -105,7 +106,6 @@ describe('Save a missing translation', () => {
         should(output).deepEqual({ [text]: '', foo: 'bar' });
       });
     });
-
   });
 
   context('desactivated in config', () => {
@@ -119,11 +119,10 @@ describe('Save a missing translation', () => {
     });
 
     it('404', async () => {
-      await agent.post('/api/locales/en/bar')
+      await agent
+        .post('/api/locales/en/bar')
         .send(body)
         .expect(404);
     });
-
   });
-
 });

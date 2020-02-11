@@ -1,32 +1,38 @@
-<div class="form-group search-form-group search-place"
-     ng-class="{ 'has-warning': search.locationNotFound }">
+<div
+  class="form-group search-form-group search-place"
+  ng-class="{ 'has-warning': search.locationNotFound }"
+>
   <div class="input-group input-location">
     <label for="search-query" class="sr-only">Search places</label>
-    <input type="text"
-           id="search-query"
-           class="form-control input-lg"
-           placeholder="Search places"
-           tabindex="0"
-           ng-model="search.searchQuery"
-           tr-location
-           tr-location-change="search.onPlaceSearch"
-           tr-location-skipsuggestions="search.skipSuggestions"
-           tr-location-notound="search.locationNotFound">
+    <input
+      type="text"
+      id="search-query"
+      class="form-control input-lg"
+      placeholder="Search places"
+      tabindex="0"
+      ng-model="search.searchQuery"
+      tr-location
+      tr-location-change="search.onPlaceSearch"
+      tr-location-skipsuggestions="search.skipSuggestions"
+      tr-location-notound="search.locationNotFound"
+    />
     <span class="input-group-btn">
-      <button type="button"
-              ng-disabled="!search.searchQuery.length"
-              class="btn btn-lg btn-default"
-              ng-click="search.searchQuery = ''"
-              uib-tooltip="Clear search"
-              tooltip-enable="::search.screenWidth >= 768"
-              tooltip-placement="bottom"
-              aria-label="Clear location search">
+      <button
+        type="button"
+        ng-disabled="!search.searchQuery.length"
+        class="btn btn-lg btn-default"
+        ng-click="search.searchQuery = ''"
+        uib-tooltip="Clear search"
+        tooltip-enable="::search.screenWidth >= 768"
+        tooltip-placement="bottom"
+        aria-label="Clear location search"
+      >
         <i class="icon-close"></i>
       </button>
     </span>
   </div>
   <p class="help-block" ng-if="search.locationNotFound">
-    We could not find <em ng-bind="::search.locationNotFound"></em><br>
+    We could not find <em ng-bind="::search.locationNotFound"></em><br />
     <small>Make sure your search is spelled correctly.</small>
   </p>
 </div>

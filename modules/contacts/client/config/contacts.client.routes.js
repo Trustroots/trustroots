@@ -1,15 +1,12 @@
 import contactAddTemplateUrl from '@/modules/contacts/client/views/add-contact.client.view.html';
 import contactConfirmTemplateUrl from '@/modules/contacts/client/views/confirm-contact.client.view.html';
 
-angular
-  .module('contacts')
-  .config(ContactsRoutes);
+angular.module('contacts').config(ContactsRoutes);
 
 /* @ngInject */
 function ContactsRoutes($stateProvider) {
-
-  $stateProvider.
-    state('contactAdd', {
+  $stateProvider
+    .state('contactAdd', {
       url: '/contact-add/:userId',
       templateUrl: contactAddTemplateUrl,
       requiresAuth: true,
@@ -20,11 +17,11 @@ function ContactsRoutes($stateProvider) {
         ContactByService: 'ContactByService',
         UsersMini: 'UsersMini',
 
-        existingContact: function (ContactByService, $stateParams) {
+        existingContact: function(ContactByService, $stateParams) {
           return ContactByService.get({ userId: $stateParams.userId });
         },
 
-        friend: function (UsersMini, $stateParams) {
+        friend: function(UsersMini, $stateParams) {
           return UsersMini.get({
             userId: $stateParams.userId,
           });
@@ -33,8 +30,8 @@ function ContactsRoutes($stateProvider) {
       data: {
         pageTitle: 'Add contact',
       },
-    }).
-    state('contactConfirm', {
+    })
+    .state('contactConfirm', {
       url: '/contact-confirm/:contactId',
       templateUrl: contactConfirmTemplateUrl,
       requiresAuth: true,
@@ -44,14 +41,12 @@ function ContactsRoutes($stateProvider) {
         // A string value resolves to a service
         Contact: 'Contact',
 
-        contact: function (Contact, $stateParams) {
+        contact: function(Contact, $stateParams) {
           return Contact.get({ contactId: $stateParams.contactId });
         },
-
       },
       data: {
         pageTitle: 'Confirm contact',
       },
     });
-
 }

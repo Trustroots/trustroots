@@ -18,19 +18,25 @@ const mongooseService = require('../../config/lib/mongoose');
 
 let predefinedModel;
 if (process.argv[2]) {
-  console.log(`Ensuring indexes only for Mongo collection "${process.argv[2]}"`);
+  console.log(
+    `Ensuring indexes only for Mongo collection "${process.argv[2]}"`,
+  );
   predefinedModel = process.argv[2];
 } else {
   console.log('Ensuring indexes for all Mongo collections');
 }
 
-mongooseService.connect(async (connection) => {
+mongooseService.connect(async connection => {
   await mongooseService.loadModels();
   const modelNames = connection.modelNames();
 
   // Validate manually defined model
   if (predefinedModel && !modelNames.includes(predefinedModel)) {
-    console.error(`"${predefinedModel}" is not a valid model name. Models: ${modelNames.join(', ')}`);
+    console.error(
+      `"${predefinedModel}" is not a valid model name. Models: ${modelNames.join(
+        ', ',
+      )}`,
+    );
     process.exit(1);
   }
 

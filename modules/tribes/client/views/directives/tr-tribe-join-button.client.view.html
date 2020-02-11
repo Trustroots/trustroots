@@ -1,15 +1,20 @@
-<button type="button"
-        ng-class="{'btn-active': tribeJoinButton.isMember}"
-        ng-click="tribeJoinButton.toggleMembership()"
-        ng-disabled="tribeJoinButton.isLoading"
-        aria-label="{{ (tribeJoinButton.isMember ? 'Leave Tribe' : tribeJoinButton.joinLabel) +  ' (' + tribeJoinButton.tribe.label + ')' }}"
-        uib-tooltip="Leave Tribe"
-        tooltip-enable="tribeJoinButton.isMember"
-        tooltip-placement="bottom">
-  <i ng-if="::tribeJoinButton.icon"
-     ng-class="{
+<button
+  type="button"
+  ng-class="{'btn-active': tribeJoinButton.isMember}"
+  ng-click="tribeJoinButton.toggleMembership()"
+  ng-disabled="tribeJoinButton.isLoading"
+  aria-label="{{ (tribeJoinButton.isMember ? 'Leave Tribe' : tribeJoinButton.joinLabel) +  ' (' + tribeJoinButton.tribe.label + ')' }}"
+  uib-tooltip="Leave Tribe"
+  tooltip-enable="tribeJoinButton.isMember"
+  tooltip-placement="bottom"
+>
+  <i
+    ng-if="::tribeJoinButton.icon"
+    ng-class="{
        'icon-plus': !tribeJoinButton.isMember,
        'icon-ok': tribeJoinButton.isMember
-     }"></i>
-  {{ tribeJoinButton.isMember ? tribeJoinButton.joinedLabel : tribeJoinButton.joinLabel }}
+     }"
+  ></i>
+  {{ tribeJoinButton.isMember ? tribeJoinButton.joinedLabel :
+  tribeJoinButton.joinLabel }}
 </button>

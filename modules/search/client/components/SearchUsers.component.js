@@ -28,11 +28,13 @@ class SearchUsers extends React.Component {
     event.stopPropagation();
 
     this.setState({ isSearching: true }, () => {
-      searchUsers(this.state.searchQuery).then(({ data }) => {
-        this.setState({ users: data, isSearching: false });
-      }).catch(() => {
-        this.setState({ isSearching: false });
-      });
+      searchUsers(this.state.searchQuery)
+        .then(({ data }) => {
+          this.setState({ users: data, isSearching: false });
+        })
+        .catch(() => {
+          this.setState({ isSearching: false });
+        });
     });
   }
 
@@ -88,9 +90,9 @@ class SearchUsers extends React.Component {
       <section className="container container-spacer">
         {searchForm}
         {this.state.isSearching && <LoadingIndicator />}
-        {!this.state.isSearching && this.state.users &&
+        {!this.state.isSearching && this.state.users && (
           <UsersResults users={this.state.users} />
-        }
+        )}
       </section>
     );
   }

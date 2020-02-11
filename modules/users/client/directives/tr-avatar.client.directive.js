@@ -22,9 +22,9 @@
  * <div tr-avatar data-user="user" link="false" source="local" size="36"></div>
  * </pre>
  */
-angular.module('users').directive('trAvatar', ['$location',
-  function ($location) {
-
+angular.module('users').directive('trAvatar', [
+  '$location',
+  function($location) {
     // Options
     const defaultSize = 256;
     const defaultAvatar = '/img/avatar.png';
@@ -52,74 +52,108 @@ angular.module('users').directive('trAvatar', ['$location',
       scope: {
         user: '=user',
       },
-      controller: ['$scope', function ($scope) {
+      controller: [
+        '$scope',
+        function($scope) {
+          $scope.avatar = defaultAvatar;
+          $scope.size = defaultSize;
 
-        $scope.avatar = defaultAvatar;
-        $scope.size = defaultSize;
+          function determineSource() {
+            // Determine source for avatar
+            if ($scope.fixedSource) {
+              $scope.source = $scope.fixedSource;
+            } else if ($scope.user && $scope.user.avatarSource) {
+              $scope.source = $scope.user.avatarSource;
+            } else {
+              $scope.source = 'none';
+            }
 
-        function determineSource() {
-
-          // Determine source for avatar
-          if ($scope.fixedSource) {
-            $scope.source = $scope.fixedSource;
-          } else if ($scope.user && $scope.user.avatarSource) {
-            $scope.source = $scope.user.avatarSource;
-          } else {
-            $scope.source = 'none';
-          }
-
-          // Avatar via FB
-          // @link https://developers.facebook.com/docs/graph-api/reference/user/picture/
-          if ($scope.source === 'facebook') {
-            if ($scope.user &&
+            // Avatar via FB
+            // @link https://developers.facebook.com/docs/graph-api/reference/user/picture/
+            if ($scope.source === 'facebook') {
+              if (
+                $scope.user &&
                 $scope.user.additionalProvidersData &&
                 $scope.user.additionalProvidersData.facebook &&
-                $scope.user.additionalProvidersData.facebook.id) {
-              $scope.avatar = $location.protocol() + '://graph.facebook.com/' + $scope.user.additionalProvidersData.facebook.id + '/picture/?width=' + ($scope.size || defaultSize) + '&height=' + ($scope.size || defaultSize);
+                $scope.user.additionalProvidersData.facebook.id
+              ) {
+                $scope.avatar =
+                  $location.protocol() +
+                  '://graph.facebook.com/' +
+                  $scope.user.additionalProvidersData.facebook.id +
+                  '/picture/?width=' +
+                  ($scope.size || defaultSize) +
+                  '&height=' +
+                  ($scope.size || defaultSize);
+              } else {
+                $scope.avatar = defaultAvatar;
+              }
+              // Avatar via Gravatar
+              // @link https://en.gravatar.com/site/implement/images/
+            } else if ($scope.source === 'gravatar') {
+              if ($scope.user.emailHash) {
+                $scope.avatar =
+                  $location.protocol() +
+                  '://gravatar.com/avatar/' +
+                  $scope.user.emailHash +
+                  '?s=' +
+                  ($scope.size || defaultSize);
+
+                // This fallback image won't work via localhost since Gravatar fallback is required to be online.
+                $scope.avatar +=
+                  '&d=' +
+                  encodeURIComponent(
+                    $location.protocol() +
+                      '://' +
+                      $location.host() +
+                      ':' +
+                      $location.port() +
+                      defaultAvatar,
+                  );
+              } else {
+                $scope.avatar = defaultAvatar;
+              }
+              // Locally uploaded avatar
+            } else if ($scope.source === 'local') {
+              if (
+                $scope.user.avatarUploaded &&
+                $scope.user &&
+                $scope.user._id
+              ) {
+                // Cache buster
+                const timestamp = $scope.user.updated
+                  ? new Date($scope.user.updated).getTime()
+                  : '';
+
+                // 32 is the smallest and 2048 biggest file size we're generating.
+                const fileSize = $scope.size < 32 ? 32 : $scope.size;
+
+                $scope.avatar =
+                  '/uploads-profile/' +
+                  $scope.user._id +
+                  '/avatar/' +
+                  fileSize +
+                  '.jpg?' +
+                  timestamp;
+              } else {
+                $scope.avatar = defaultAvatar;
+              }
+              // Dummy avatar
             } else {
-              $scope.avatar = defaultAvatar;
+              $scope.avatar = defaultAvatar + '?none';
             }
-          // Avatar via Gravatar
-          // @link https://en.gravatar.com/site/implement/images/
-          } else if ($scope.source === 'gravatar') {
-            if ($scope.user.emailHash) {
-              $scope.avatar = $location.protocol() + '://gravatar.com/avatar/' + $scope.user.emailHash + '?s=' + ($scope.size || defaultSize);
+          } // determineSource()
 
-              // This fallback image won't work via localhost since Gravatar fallback is required to be online.
-              $scope.avatar += '&d=' + encodeURIComponent($location.protocol() + '://' + $location.host() + ':' + $location.port() + defaultAvatar);
-            } else {
-              $scope.avatar = defaultAvatar;
-            }
-          // Locally uploaded avatar
-          } else if ($scope.source === 'local') {
-            if ($scope.user.avatarUploaded && $scope.user && $scope.user._id) {
-              // Cache buster
-              const timestamp = $scope.user.updated ? new Date($scope.user.updated).getTime() : '';
+          $scope.$watch('user.avatarSource', function() {
+            determineSource();
+          });
 
-              // 32 is the smallest and 2048 biggest file size we're generating.
-              const fileSize = ($scope.size < 32) ? 32 : $scope.size;
-
-              $scope.avatar = '/uploads-profile/' + $scope.user._id + '/avatar/' + fileSize + '.jpg?' + timestamp;
-            } else {
-              $scope.avatar = defaultAvatar;
-            }
-          // Dummy avatar
-          } else {
-            $scope.avatar = defaultAvatar + '?none';
-          }
-        } // determineSource()
-
-        $scope.$watch('user.avatarSource', function () {
-          determineSource();
-        });
-
-        $scope.$watch('user.updated', function () {
-          determineSource();
-        });
-
-      }],
-      link: function (scope, element, attr) {
-
+          $scope.$watch('user.updated', function() {
+            determineSource();
+          });
+        },
+      ],
+      link: function(scope, element, attr) {
         // Make sure source won't change dynamicly when user changes
         if (attr.source) {
           scope.source = attr.source;
@@ -131,7 +165,6 @@ angular.module('users').directive('trAvatar', ['$location',
 
         // By default show the link
         scope.link = attr.link !== 'false';
-
       },
     };
   },

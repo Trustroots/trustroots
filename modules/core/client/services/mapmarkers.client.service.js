@@ -1,13 +1,10 @@
 /**
  * Service for getting icons, markers and other objects for Leaflet maps
  */
-angular
-  .module('core')
-  .factory('MapMarkersFactory', MapMarkersFactory);
+angular.module('core').factory('MapMarkersFactory', MapMarkersFactory);
 
 /* @ngInject */
 function MapMarkersFactory($window) {
-
   // Size of the map icon in pixels (bigger for smaller screens)
   const markerIconSize = $window.innerWidth < 768 ? 30 : 20;
 
@@ -46,7 +43,6 @@ function MapMarkersFactory($window) {
    * @return {Object} Leaflet icon options
    */
   function getIconConfig(offer) {
-
     // Set defaults
     offer.type = offer.type || 'other';
     offer.status = offer.status || 'yes';
@@ -60,10 +56,7 @@ function MapMarkersFactory($window) {
       ariaLabel: 'Other',
 
       // size of the icon in px
-      iconSize: [
-        markerIconSize,
-        markerIconSize,
-      ],
+      iconSize: [markerIconSize, markerIconSize],
 
       // point of the icon which will correspond to marker's location
       iconAnchor: [
@@ -92,26 +85,26 @@ function MapMarkersFactory($window) {
    * @param {Object} defaults - pass any key to add or replace in default circle config
    */
   function getOfferCircle(defaults) {
-    return angular.extend({
-      weight: 2,
-      color: '#989898',
-      fillColor: '#b1b1b1',
-      fillOpacity: 0.5,
-      radius: 500, // Meters
-      type: 'circle',
-      clickable: false,
+    return angular.extend(
+      {
+        weight: 2,
+        color: '#989898',
+        fillColor: '#b1b1b1',
+        fillOpacity: 0.5,
+        radius: 500, // Meters
+        type: 'circle',
+        clickable: false,
 
-      // Circle will not emit mouse events and will act as a part of the underlying map
-      interactive: false,
+        // Circle will not emit mouse events and will act as a part of the underlying map
+        interactive: false,
 
-      // Note that by default circle is places at "Null Island"
-      // @link https://en.wikipedia.org/wiki/Null_Island
-      // Accepts Leaflet.LatLng
-      // @linkhttp://leafletjs.com/reference-1.2.0.html#latlng
-      latlngs: [0, 0],
-
-    }, defaults || {});
-
+        // Note that by default circle is places at "Null Island"
+        // @link https://en.wikipedia.org/wiki/Null_Island
+        // Accepts Leaflet.LatLng
+        // @linkhttp://leafletjs.com/reference-1.2.0.html#latlng
+        latlngs: [0, 0],
+      },
+      defaults || {},
+    );
   }
-
 }

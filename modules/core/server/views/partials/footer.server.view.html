@@ -1,13 +1,19 @@
-<footer id="tr-footer"
-        role="contentinfo"
-        class="container hidden-print hidden-xs"
-        ng-if="!app.isFooterHidden">
+<footer
+  id="tr-footer"
+  role="contentinfo"
+  class="container hidden-print hidden-xs"
+  ng-if="!app.isFooterHidden"
+>
   <div class="row">
     <div class="col-xs-3">
       <ul class="list-unstyled">
         <li><a ui-sref="volunteering">Volunteering</a></li>
         <li><a ui-sref="team">Teams</a></li>
-        <li><a href="https://meta.trustroots.org/t/lets-translate-trustroots/59">Translations</a></li>
+        <li>
+          <a href="https://meta.trustroots.org/t/lets-translate-trustroots/59"
+            >Translations</a
+          >
+        </li>
         <li><a href="https://meta.trustroots.org/">Meta</a></li>
         <li><a href="https://wiki.trustroots.org/">Wiki</a></li>
       </ul>
@@ -21,8 +27,8 @@
           <a ui-sref="foundation" itemprop="name">
             Trustroots Foundation
           </a>
-          <link itemprop="url" href="{{hostPort}}">
-          <link itemprop="logo" href="{{hostPort}}/img/logo/color.png">
+          <link itemprop="url" href="{{hostPort}}" />
+          <link itemprop="logo" href="{{hostPort}}/img/logo/color.png" />
         </li>
         <li><a ui-sref="donate">Donate</a></li>
         <li><a ui-sref="contact">Contact</a></li>
@@ -31,45 +37,58 @@
     <div class="col-xs-6">
       <ul class="list-inline pull-right">
         <li>
-          <a href="https://www.facebook.com/trustroots.org"
-             uib-tooltip="Facebook"
-             aria-label="Trustroots at Facebook">
+          <a
+            href="https://www.facebook.com/trustroots.org"
+            uib-tooltip="Facebook"
+            aria-label="Trustroots at Facebook"
+          >
             <i class="icon-facebook icon-lg"></i>
           </a>
         </li>
         <li>
-          <a href="https://twitter.com/trustroots"
-             uib-tooltip="Twitter"
-             aria-label="Trustroots at Twitter">
+          <a
+            href="https://twitter.com/trustroots"
+            uib-tooltip="Twitter"
+            aria-label="Trustroots at Twitter"
+          >
             <i class="icon-twitter icon-lg"></i>
           </a>
         </li>
         <li>
-          <a href="https://www.instagram.com/trustroots_org/"
-             uib-tooltip="Instagram"
-             aria-label="Trustroots at Instagram">
+          <a
+            href="https://www.instagram.com/trustroots_org/"
+            uib-tooltip="Instagram"
+            aria-label="Trustroots at Instagram"
+          >
             <i class="icon-instagram icon-lg"></i>
           </a>
         </li>
         <li>
           {% if appSettings.commit %}
-          <a href="https://github.com/Trustroots/trustroots/tree/{{ appSettings.commit }}"
-             uib-tooltip="Currently deployed code at GitHub"
-             aria-label="Currently deployed code at GitHub">
-          {% else %}
-          <a href="https://github.com/Trustroots/trustroots"
-             uib-tooltip="GitHub"
-             aria-label="Trustroots at GitHub">
-            {% endif %}
+          <a
+            href="https://github.com/Trustroots/trustroots/tree/{{ appSettings.commit }}"
+            uib-tooltip="Currently deployed code at GitHub"
+            aria-label="Currently deployed code at GitHub"
+          >
             <i class="icon-github icon-lg"></i>
           </a>
+          {% else %}
+          <a
+            href="https://github.com/Trustroots/trustroots"
+            uib-tooltip="GitHub"
+            aria-label="Trustroots at GitHub"
+          >
+            <i class="icon-github icon-lg"></i>
+          </a>
+          {% endif %}
         </li>
       </ul>
 
-      <span ng-if="app.photoCreditsCount"
-            tr-board-credits
-            aria-hidden="true"></span>
-
+      <span
+        ng-if="app.photoCreditsCount"
+        tr-board-credits
+        aria-hidden="true"
+      ></span>
     </div>
   </div>
 </footer>

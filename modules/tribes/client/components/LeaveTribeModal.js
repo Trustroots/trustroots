@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { Modal } from 'react-bootstrap';
 
 export default function LeaveTribeModal({ tribe, show, onConfirm, onCancel }) {
-
   const { t } = useTranslation('tribes');
 
   return (
@@ -19,8 +18,12 @@ export default function LeaveTribeModal({ tribe, show, onConfirm, onCancel }) {
         </Modal.Body>
 
         <Modal.Footer>
-          <button className="btn btn-primary" onClick={onConfirm}>{t('Leave Tribe')}</button>
-          <button className="btn btn-default" onClick={onCancel}>{t('Cancel')}</button>
+          <button className="btn btn-primary" onClick={onConfirm}>
+            {t('Leave Tribe')}
+          </button>
+          <button className="btn btn-default" onClick={onCancel}>
+            {t('Cancel')}
+          </button>
         </Modal.Footer>
       </div>
     </Modal>
